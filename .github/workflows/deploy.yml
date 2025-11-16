@@ -19,9 +19,9 @@ jobs:
       - name: Deploy via FTP
         uses: SamKirkland/FTP-Deploy-Action@4.3.3
         with:
-          server: ftp.punktepass.de
-          username: githubdeploy
-          password: ${{ secrets.FTP_PASSWORD }}
+          server: 89.116.147.72
+          username: u660905446.punktepass.de
+          password: Brtegk84047+_
           port: 21
           protocol: ftps
           server-dir: /home/u660905446/domains/punktepass.de/public_html/wp-content/plugins/punktepass/
