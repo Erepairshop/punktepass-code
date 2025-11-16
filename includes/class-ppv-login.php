@@ -124,13 +124,24 @@ class PPV_Login {
             true
         );
         
+        // Get OAuth credentials
+        $facebook_app_id = defined('PPV_FACEBOOK_APP_ID') ? PPV_FACEBOOK_APP_ID : get_option('ppv_facebook_app_id', '');
+        $google_client_id = defined('PPV_GOOGLE_CLIENT_ID') ? PPV_GOOGLE_CLIENT_ID : get_option('ppv_google_client_id', '453567547051-odmqrinafba8ls8ktp9snlp7d2fpl9q0.apps.googleusercontent.com');
+        $tiktok_client_key = defined('PPV_TIKTOK_CLIENT_KEY') ? PPV_TIKTOK_CLIENT_KEY : get_option('ppv_tiktok_client_key', '');
+
+        // Debug log
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('PPV Login - Facebook App ID: ' . ($facebook_app_id ? 'SET' : 'NOT SET'));
+            error_log('PPV Login - Facebook from constant: ' . (defined('PPV_FACEBOOK_APP_ID') ? 'YES' : 'NO'));
+        }
+
         // Localize
         wp_localize_script('ppv-login', 'ppvLogin', [
             'ajaxurl' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('ppv_login_nonce'),
-            'google_client_id' => defined('PPV_GOOGLE_CLIENT_ID') ? PPV_GOOGLE_CLIENT_ID : get_option('ppv_google_client_id', '453567547051-odmqrinafba8ls8ktp9snlp7d2fpl9q0.apps.googleusercontent.com'),
-            'facebook_app_id' => defined('PPV_FACEBOOK_APP_ID') ? PPV_FACEBOOK_APP_ID : get_option('ppv_facebook_app_id', ''),
-            'tiktok_client_key' => defined('PPV_TIKTOK_CLIENT_KEY') ? PPV_TIKTOK_CLIENT_KEY : get_option('ppv_tiktok_client_key', ''),
+            'google_client_id' => $google_client_id,
+            'facebook_app_id' => $facebook_app_id,
+            'tiktok_client_key' => $tiktok_client_key,
             'redirect_url' => home_url('/user_dashboard')
         ]);
     }

@@ -332,10 +332,18 @@ function initLogin() {
      * Initialize Facebook Login
      */
     function initFacebookLogin() {
+        // Check if ppvLogin object exists
+        if (typeof ppvLogin === 'undefined') {
+            console.error('ppvLogin object not found - wp_localize_script may not have loaded');
+            $('#ppv-facebook-login-btn').prop('disabled', true).css('opacity', '0.5');
+            return;
+        }
+
         const appId = ppvLogin.facebook_app_id;
+        console.log('Facebook App ID:', appId ? '✓ Found' : '✗ Not configured');
 
         if (!appId) {
-            console.warn('Facebook App ID not configured');
+            console.warn('Facebook App ID not configured in wp-config.php or WordPress settings');
             $('#ppv-facebook-login-btn').prop('disabled', true).css('opacity', '0.5');
             return;
         }
