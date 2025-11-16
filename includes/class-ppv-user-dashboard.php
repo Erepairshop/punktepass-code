@@ -1,0 +1,1488 @@
+<?php
+if (!defined('ABSPATH')) exit;
+
+/**
+ * PunktePass – User Dashboard (v4.5 GLOBAL HEADER)
+ * ✅ Original working version
+ * ✅ + company_name, gallery, social media fields
+ * ✅ Distance-based sorting
+ * ✅ PWA optimized
+ * ✅ GLOBAL HEADER - appears on all pages for logged-in users
+ */
+
+class PPV_User_Dashboard {
+
+    const CACHE_KEY_PREFIX = 'ppv_dashboard_';
+    const CACHE_TTL = 3600;
+
+    public static function hooks() {
+        add_shortcode('ppv_user_dashboard', [__CLASS__, 'render_dashboard']);
+        add_action('rest_api_init', [__CLASS__, 'register_routes']);
+        add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
+        add_action('wp_body_open', [__CLASS__, 'render_global_header'], 5); // ← GLOBAL HEADER
+    }
+
+    private static function ensure_session() {
+        static $session_started = false;
+        if ($session_started) return;
+
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+            @session_start();
+        }
+        $session_started = true;
+    }
+
+    private static function get_user_lang() {
+        static $lang = null;
+        if ($lang !== null) return $lang;
+
+        if (isset($_COOKIE['ppv_lang'])) {
+            $lang = sanitize_text_field($_COOKIE['ppv_lang']);
+        } elseif (isset($_GET['lang'])) {
+            $lang = sanitize_text_field($_GET['lang']);
+        } else {
+            $lang = substr(get_locale(), 0, 2);
+        }
+
+        return $lang ?: 'de';
+    }
+
+    private static function get_safe_user_id() {
+        self::ensure_session();
+
+        if (!empty($_SESSION['ppv_user_id'])) {
+            return intval($_SESSION['ppv_user_id']);
+        }
+
+        $wp_uid = get_current_user_id();
+        if ($wp_uid > 0) {
+            return $wp_uid;
+        }
+
+        if (!empty($_SESSION['ppv_store_user'])) {
+            return 0;
+        }
+
+        return 0;
+    }
+
+    private static function get_user_stats($uid) {
+        global $wpdb;
+
+        if ($uid <= 0) {
+            return ['points' => 0, 'rewards' => 0];
+        }
+
+        $cache_key = self::CACHE_KEY_PREFIX . 'stats_' . $uid;
+        $cached = wp_cache_get($cache_key);
+        if ($cached) {
+            return $cached;
+        }
+
+        $prefix = $wpdb->prefix;
+
+        $result = $wpdb->get_row($wpdb->prepare("
+            SELECT
+                COALESCE(SUM(p.points), 0) as points,
+                (SELECT COUNT(*) FROM {$prefix}ppv_rewards) as rewards
+            FROM {$prefix}ppv_points p
+            WHERE p.user_id=%d
+        ", $uid));
+
+        $stats = [
+            'points' => (int)($result->points ?? 0),
+            'rewards' => (int)($result->rewards ?? 0)
+        ];
+
+        wp_cache_set($cache_key, $stats, '', self::CACHE_TTL);
+        return $stats;
+    }
+
+    private static function get_user_qr_token($uid) {
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+
+        if ($uid <= 0) return null;
+
+        $token = $wpdb->get_var($wpdb->prepare("
+            SELECT token FROM {$prefix}ppv_tokens
+            WHERE entity_type='user' AND entity_id=%d
+            AND expires_at > NOW()
+            ORDER BY created_at DESC LIMIT 1
+        ", $uid));
+
+        if (empty($token)) {
+            $token = wp_generate_password(8, false);
+            $wpdb->insert("{$prefix}ppv_tokens", [
+                'entity_type' => 'user',
+                'entity_id' => $uid,
+                'token' => $token,
+                'created_at' => current_time('mysql'),
+                'expires_at' => date('Y-m-d H:i:s', strtotime('+30 days'))
+            ]);
+        }
+
+        return $token;
+    }
+
+    private static function get_user_email($uid) {
+        self::ensure_session();
+
+        if (!empty($_SESSION['ppv_user_email'])) {
+            return sanitize_email($_SESSION['ppv_user_email']);
+        }
+
+        $user = get_userdata($uid);
+        return $user ? $user->user_email : '';
+    }
+
+    private static function generate_qr_code($uid, $token) {
+        if ($uid <= 0 || empty($token)) return '';
+
+        $qr_dir = WP_CONTENT_DIR . '/uploads/ppv_qr/';
+        if (!file_exists($qr_dir)) {
+            wp_mkdir_p($qr_dir);
+        }
+
+        $qr_file = $qr_dir . "user_{$uid}.png";
+
+        if (file_exists($qr_file)) {
+            $age = time() - filemtime($qr_file);
+            if ($age < 86400) {
+                return content_url("uploads/ppv_qr/user_{$uid}.png") . '?v=' . md5_file($qr_file);
+            }
+        }
+
+        $short = substr((string)$token, 0, 6);
+        $data = "PPU{$uid}{$short}";
+        $qr_api = "https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=" . urlencode($data);
+
+        $response = wp_remote_get($qr_api, ['timeout' => 5]);
+        if (is_wp_error($response)) {
+            error_log("🚫 [PPV_Dashboard] QR generation failed: " . $response->get_error_message());
+            return '';
+        }
+
+        $img = wp_remote_retrieve_body($response);
+        if (!empty($img)) {
+            file_put_contents($qr_file, $img);
+            return content_url("uploads/ppv_qr/user_{$uid}.png") . '?v=' . md5($img);
+        }
+
+        return '';
+    }
+
+    private static function cleanup_tokens($uid) {
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+
+        if ($uid <= 0) return;
+
+        $wpdb->query($wpdb->prepare("
+            DELETE FROM {$prefix}ppv_tokens
+            WHERE entity_type='user' AND entity_id=%d
+            AND created_at < DATE_SUB(NOW(), INTERVAL 30 DAY)
+        ", $uid));
+
+        $wpdb->query($wpdb->prepare("
+            DELETE FROM {$prefix}ppv_tokens
+            WHERE entity_type='user' AND entity_id=%d
+            AND id NOT IN (
+                SELECT id FROM (
+                    SELECT id FROM {$prefix}ppv_tokens
+                    WHERE entity_type='user' AND entity_id=%d
+                    ORDER BY created_at DESC
+                    LIMIT 3
+                ) t
+            )
+        ", $uid, $uid));
+    }
+
+private static function is_store_open($opening_hours) {
+    if (empty($opening_hours)) {
+        return false;
+    }
+
+    $now = current_time('timestamp');
+    
+    // ✅ FIX: Map English day names to 2-char codes
+    $day_map = [
+        'monday' => 'mo',
+        'tuesday' => 'di',
+        'wednesday' => 'mi',
+        'thursday' => 'do',
+        'friday' => 'fr',
+        'saturday' => 'sa',
+        'sunday' => 'so'
+    ];
+    
+    $day_name = strtolower(date('l', $now));
+    $day = $day_map[$day_name] ?? 'mo';
+    
+    $current_time = date('H:i', $now);
+
+    $hours = json_decode($opening_hours, true);
+    if (!is_array($hours)) {
+        return false;
+    }
+
+    error_log("🕒 [Open Check] Day: {$day}, Time: {$current_time}, Data: " . json_encode($hours));
+
+    // ✅ NEW FORMAT: Check if it's closed
+    if (!isset($hours[$day])) {
+        return false;
+    }
+
+    $day_hours = $hours[$day];
+    
+    // ✅ NEW FORMAT: Check closed flag
+    if (!is_array($day_hours)) {
+        return false;
+    }
+    
+    if (!empty($day_hours['closed'])) {
+        error_log("🕒 [Open Check] CLOSED flag set for {$day}");
+        return false;
+    }
+
+    // ✅ NEW FORMAT: Extract von & bis
+    $von = $day_hours['von'] ?? '';
+    $bis = $day_hours['bis'] ?? '';
+
+    if (empty($von) || empty($bis)) {
+        error_log("🕒 [Open Check] Empty hours for {$day}: von={$von}, bis={$bis}");
+        return false;
+    }
+
+    $is_open = ($current_time >= $von && $current_time <= $bis);
+    error_log("🕒 [Open Check] {$day}: {$von}-{$bis}, Current: {$current_time}, Result: " . ($is_open ? 'NYITVA' : 'ZÁRVA'));
+    
+    return $is_open;
+}
+
+private static function get_today_hours($opening_hours) {
+    if (empty($opening_hours)) {
+        return '';
+    }
+
+    $now = current_time('timestamp');
+    
+    // ✅ FIX: Map English day names to 2-char codes
+    $day_map = [
+        'monday' => 'mo',
+        'tuesday' => 'di',
+        'wednesday' => 'mi',
+        'thursday' => 'do',
+        'friday' => 'fr',
+        'saturday' => 'sa',
+        'sunday' => 'so'
+    ];
+    
+    $day_name = strtolower(date('l', $now));
+    $day = $day_map[$day_name] ?? 'mo';
+
+    $hours = json_decode($opening_hours, true);
+    if (!is_array($hours) || !isset($hours[$day])) {
+        return '';
+    }
+
+    $day_hours = $hours[$day];
+    
+    // ✅ NEW FORMAT: Return formatted string
+    if (is_array($day_hours)) {
+        $von = $day_hours['von'] ?? '';
+        $bis = $day_hours['bis'] ?? '';
+        $closed = $day_hours['closed'] ?? 0;
+        
+        if ($closed) {
+    return '🔴 ' . (class_exists('PPV_Lang') ? PPV_Lang::t('dashboard_store_closed') : 'Zárva');
+        }
+        
+        return $von && $bis ? "{$von} - {$bis}" : '';
+    }
+
+    return '';
+}
+
+/** ============================================================
+     * 🌐 GLOBAL COMPACT HEADER - COMPLETE WITH CSS + LOGO FIX
+     * ============================================================ */
+    public static function render_global_header() {
+        // 1️⃣ Skip if not logged in
+        self::ensure_session();
+        $uid = self::get_safe_user_id();
+        if ($uid <= 0) {
+            return;
+        }
+
+        // 2️⃣ Skip on login/signup pages
+        if (function_exists('ppv_is_login_page') && ppv_is_login_page()) {
+            return;
+        }
+
+        $uri = $_SERVER['REQUEST_URI'] ?? '';
+        $exclude_patterns = ['/login', '/signup', '/anmelden', '/registrierung', '/bejelentkezes', '/regisztracio'];
+        foreach ($exclude_patterns as $pattern) {
+            if (strpos($uri, $pattern) !== false) {
+                return;
+            }
+        }
+
+        // 3️⃣ Skip on admin pages
+        if (is_admin()) {
+            return;
+        }
+
+        // 4️⃣ Detect user type (FIXED - ALWAYS CHECK DB IF 'user')
+        global $wpdb;
+
+        $user_type = 'user'; // default
+        $detection_source = 'default';
+
+        // 🔍 DEBUG: Start detection
+        error_log("🔍 [PPV_Header] === USER TYPE DETECTION START === User ID: {$uid}");
+
+        // First try session
+        if (!empty($_SESSION['ppv_user_type'])) {
+            $user_type = $_SESSION['ppv_user_type'];
+            $detection_source = 'session';
+            error_log("✅ [PPV_Header] User type from SESSION: '{$user_type}'");
+            
+            // ✅ FIX: If session says 'user', double-check the DB!
+            // (Session might be stale or incorrect)
+            if (strtolower($user_type) === 'user') {
+                error_log("⚠️ [PPV_Header] Session says 'user', double-checking DB...");
+                
+                $db_user_type = $wpdb->get_var($wpdb->prepare(
+                    "SELECT user_type FROM {$wpdb->prefix}ppv_users WHERE id=%d LIMIT 1",
+                    $uid
+                ));
+                
+                if ($db_user_type && strtolower($db_user_type) !== 'user') {
+                    error_log("✅ [PPV_Header] DB override! Changed from 'user' to '{$db_user_type}'");
+                    $user_type = $db_user_type;
+                    $detection_source = 'ppv_users (override)';
+                    $_SESSION['ppv_user_type'] = $db_user_type; // Update session!
+                } else {
+                    error_log("ℹ️ [PPV_Header] DB confirms: user type is 'user'");
+                }
+            }
+        } 
+        // Then check ppv_users table
+        else {
+            error_log("⚠️ [PPV_Header] Session empty, checking ppv_users table...");
+            
+            $db_user_type = $wpdb->get_var($wpdb->prepare(
+                "SELECT user_type FROM {$wpdb->prefix}ppv_users WHERE id=%d LIMIT 1",
+                $uid
+            ));
+            
+            if ($db_user_type) {
+                $user_type = $db_user_type;
+                $detection_source = 'ppv_users';
+                $_SESSION['ppv_user_type'] = $db_user_type; // Cache in session
+                error_log("✅ [PPV_Header] User type from ppv_users: '{$db_user_type}'");
+            } 
+            // Fallback: Check ppv_stores table (if user is store owner)
+            else {
+                error_log("⚠️ [PPV_Header] Not found in ppv_users, checking ppv_stores...");
+                
+                $store_check = $wpdb->get_var($wpdb->prepare(
+                    "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id=%d LIMIT 1",
+                    $uid
+                ));
+                
+                if ($store_check) {
+                    $user_type = 'handler';
+                    $detection_source = 'ppv_stores';
+                    $_SESSION['ppv_user_type'] = 'handler';
+                    error_log("✅ [PPV_Header] User is store owner → Set as 'handler'");
+                } else {
+                    error_log("❌ [PPV_Header] User #{$uid} NOT FOUND in ppv_users OR ppv_stores!");
+                }
+            }
+        }
+
+        // Clean and check user type
+        $user_type_clean = strtolower(trim($user_type));
+        $handler_types = ['store', 'handler', 'vendor', 'admin'];
+        $is_handler = in_array($user_type_clean, $handler_types);
+
+        // 🔍 DEBUG: Final result
+        error_log("🔍 [PPV_Header] === DETECTION RESULT ===");
+        error_log("   User ID: {$uid}");
+        error_log("   Raw type: '{$user_type}'");
+        error_log("   Clean type: '{$user_type_clean}'");
+        error_log("   Source: {$detection_source}");
+        error_log("   Is Handler: " . ($is_handler ? 'YES ✅' : 'NO ❌'));
+        error_log("   Valid handler types: " . implode(', ', $handler_types));
+        
+        if ($is_handler) {
+            error_log("✅ [PPV_Header] WILL RENDER: User Dashboard + Scanner buttons");
+        } else {
+            error_log("ℹ️ [PPV_Header] WILL RENDER: Points + Rewards stats");
+        }
+        error_log("🔍 [PPV_Header] === DETECTION END ===");
+
+        // 5️⃣ Get user data
+        $email = self::get_user_email($uid);
+        $stats = self::get_user_stats($uid);
+        $lang = self::get_user_lang();
+
+        // 6️⃣ Translations
+        $translations = [
+            'de' => [
+                'welcome' => 'PunktePass',
+                'points' => 'Punkte',
+                'rewards' => 'Prämien',
+                'user_dashboard' => 'Benutzer',
+                'qr_center' => 'Scanner',
+                'logout' => 'Abmelden'
+            ],
+            'hu' => [
+                'welcome' => 'PunktePass',
+                'points' => 'Pontok',
+                'rewards' => 'Jutalmak',
+                'user_dashboard' => 'Felhasználó',
+                'qr_center' => 'Scanner',
+                'logout' => 'Kijelentkezés'
+            ],
+            'ro' => [
+                'welcome' => 'PunktePass',
+                'points' => 'Puncte',
+                'rewards' => 'Recompense',
+                'user_dashboard' => 'Utilizator',
+                'qr_center' => 'Scanner',
+                'logout' => 'Deconectare'
+            ]
+        ];
+        $T = $translations[$lang] ?? $translations['de'];
+
+        // 7️⃣ URLs (FIXED - Use PPV_Logout URL!)
+        $user_dashboard_url = home_url('/user_dashboard');
+        $qr_center_url = home_url('/qr-center');
+        $logout_url = site_url('/?ppv_logout=1'); // ← PPV_Logout URL!
+
+        // 8️⃣ Render compact header
+        ?>
+        <div id="ppv-global-header" class="ppv-compact-header <?php echo $is_handler ? 'ppv-handler-mode' : ''; ?>">
+            
+            <!-- Logo + Email -->
+            <div class="ppv-header-left">
+                <img src="<?php echo PPV_PLUGIN_URL; ?>assets/img/logo.webp" alt="PunktePass" class="ppv-header-logo-tiny">
+                <div class="ppv-user-info">
+                    <span class="ppv-user-email"><?php echo esc_html($email); ?></span>
+                </div>
+            </div>
+            
+            <!-- Stats (USER only) -->
+            <?php if (!$is_handler): ?>
+            <div class="ppv-header-stats">
+                <div class="ppv-stat-mini">
+                    <i class="ri-star-fill"></i>
+                    <span id="ppv-global-points"><?php echo esc_html($stats['points']); ?></span>
+                </div>
+                <div class="ppv-stat-mini">
+                    <i class="ri-gift-fill"></i>
+                    <span id="ppv-global-rewards"><?php echo esc_html($stats['rewards']); ?></span>
+                </div>
+            </div>
+            <?php endif; ?>
+            
+            <!-- Navigation Buttons -->
+            <div class="ppv-header-nav">
+                
+                <?php if ($is_handler): ?>
+                <!-- User Dashboard (HANDLER only) -->
+               <a href="<?php echo esc_url($user_dashboard_url); ?>" 
+   class="ppv-nav-btn ppv-btn-user"
+   title="<?php echo esc_attr($T['user_dashboard']); ?>"
+   onclick="window.location.href=this.href; return false;">
+                    <i class="ri-user-line"></i>
+                    <span class="ppv-nav-text"><?php echo esc_html($T['user_dashboard']); ?></span>
+                </a>
+                
+                <!-- QR Center (HANDLER only) -->
+                <a href="<?php echo esc_url($qr_center_url); ?>" 
+   class="ppv-nav-btn ppv-btn-scanner"
+   title="<?php echo esc_attr($T['qr_center']); ?>"
+   onclick="window.location.href=this.href; return false;">
+                    <i class="ri-qr-scan-line"></i>
+                    <span class="ppv-nav-text"><?php echo esc_html($T['qr_center']); ?></span>
+                </a>
+                <?php endif; ?>
+                
+                <!-- Logout (EVERYONE - PPV_Logout integration) -->
+                <a href="<?php echo esc_url($logout_url); ?>" 
+                   class="ppv-nav-btn ppv-btn-logout"
+                   id="ppv-logout-btn"
+                   title="<?php echo esc_attr($T['logout']); ?>">
+                    <i class="ri-logout-box-line"></i>
+                    <span class="ppv-nav-text"><?php echo esc_html($T['logout']); ?></span>
+                </a>
+            </div>
+            
+            <!-- Settings (Language + Theme) -->
+            <div class="ppv-header-settings">
+                <select id="ppv-lang-select-global" class="ppv-lang-mini" title="Sprache / Nyelv / Limbă">
+                    <option value="de" <?php selected($lang, 'de'); ?>>🇩🇪</option>
+                    <option value="hu" <?php selected($lang, 'hu'); ?>>🇭🇺</option>
+                    <option value="ro" <?php selected($lang, 'ro'); ?>>🇷🇴</option>
+                </select>
+                <button id="ppv-theme-toggle-global" 
+                        class="ppv-theme-btn-mini" 
+                        type="button"
+title="<?php echo esc_attr(class_exists('PPV_Lang') ? PPV_Lang::t('dashboard_theme_toggle') : 'Theme wechseln'); ?>"
+<i class="ri-contrast-line"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- ============================================================
+             🎨 COMPLETE CSS STYLES
+             ============================================================ -->
+        <style>
+        /* ============================================================
+           COMPACT GLOBAL HEADER - BASE STYLES
+           ============================================================ */
+        #ppv-global-header.ppv-compact-header {
+            position: sticky;
+            top: 0;
+            z-index: 999;
+            background: rgba(10, 10, 30, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0, 230, 255, 0.2);
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            min-height: 56px;
+        }
+
+        /* ============================================================
+           LOGO FIX - VARIÁCIÓ 1: FEHÉR HÁTTÉR + ÁRNYÉK ⭐
+           ============================================================ */
+        #ppv-global-header .ppv-header-logo-tiny {
+            width: 85px !important;
+            height: 85px !important;
+            padding: 8px;
+            background: transparent;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            object-fit: contain;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        #ppv-global-header .ppv-header-logo-tiny:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        }
+
+        /* Dark mode logo adjustment */
+        body.ppv-dark #ppv-global-header .ppv-header-logo-tiny {
+            box-shadow: 0 2px 8px rgba(0, 230, 255, 0.3),
+                        0 0 20px rgba(0, 230, 255, 0.1);
+        }
+
+        /* ============================================================
+           LEFT SECTION (Logo + Email)
+           ============================================================ */
+        .ppv-header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        .ppv-user-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ppv-user-email {
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.9);
+            line-height: 1.2;
+        }
+
+        /* ============================================================
+           STATS (USER only)
+           ============================================================ */
+        .ppv-header-stats {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .ppv-stat-mini {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(0, 230, 255, 0.2);
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #00e6ff;
+        }
+
+        .ppv-stat-mini i {
+            font-size: 16px;
+        }
+
+        .ppv-stat-mini span {
+            color: white;
+        }
+
+        /* ============================================================
+           NAVIGATION BUTTONS
+           ============================================================ */
+        .ppv-header-nav {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-left: auto;
+        }
+
+        .ppv-nav-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: rgba(255, 255, 255, 0.9);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .ppv-nav-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(0, 230, 255, 0.5);
+            color: #00e6ff;
+            transform: translateY(-1px);
+        }
+
+        .ppv-nav-btn i {
+            font-size: 16px;
+        }
+
+        /* Specific button colors */
+        .ppv-btn-user:hover {
+            background: rgba(59, 130, 246, 0.1);
+            border-color: #3b82f6;
+            color: #60a5fa;
+        }
+
+        .ppv-btn-scanner:hover {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: #10b981;
+            color: #34d399;
+        }
+
+        .ppv-btn-logout:hover {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: #ef4444;
+            color: #f87171;
+        }
+
+        /* ============================================================
+           SETTINGS (Language + Theme)
+           ============================================================ */
+        .ppv-header-settings {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .ppv-lang-mini {
+            padding: 6px 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: white;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .ppv-lang-mini:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(0, 230, 255, 0.5);
+        }
+
+        .ppv-theme-btn-mini {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: rgba(255, 255, 255, 0.9);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .ppv-theme-btn-mini:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(0, 230, 255, 0.5);
+            color: #00e6ff;
+        }
+
+        .ppv-theme-btn-mini i {
+            font-size: 18px;
+        }
+
+        /* ============================================================
+           RESPONSIVE
+           ============================================================ */
+        @media (max-width: 1024px) {
+            #ppv-global-header.ppv-compact-header {
+                padding: 8px 12px;
+                gap: 8px;
+            }
+
+            .ppv-nav-text {
+                display: none;
+            }
+
+            .ppv-nav-btn {
+                padding: 8px;
+                width: 36px;
+                height: 36px;
+                justify-content: center;
+            }
+
+            .ppv-nav-btn i {
+                margin: 0;
+            }
+        }
+
+        @media (max-width: 768px) {
+            #ppv-global-header.ppv-compact-header {
+                gap: 6px;
+            }
+
+            .ppv-header-logo-tiny {
+                width: 40px !important;
+                height: 40px !important;
+                padding: 6px;
+            }
+
+            .ppv-user-email {
+                font-size: 12px;
+            }
+
+            .ppv-stat-mini {
+                padding: 4px 8px;
+                font-size: 12px;
+            }
+
+            .ppv-header-nav {
+                gap: 4px;
+            }
+
+            .ppv-nav-btn {
+                padding: 6px;
+                width: 32px;
+                height: 32px;
+            }
+
+            .ppv-nav-btn i {
+                font-size: 14px;
+            }
+
+            .ppv-lang-mini {
+                padding: 4px 8px;
+                font-size: 12px;
+            }
+
+            .ppv-theme-btn-mini {
+                width: 32px;
+                height: 32px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .ppv-user-email {
+                max-width: 120px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .ppv-header-stats {
+                gap: 4px;
+            }
+
+            .ppv-stat-mini {
+                padding: 4px 6px;
+            }
+        }
+
+        /* ============================================================
+           HANDLER MODE SPECIFIC
+           ============================================================ */
+        #ppv-global-header.ppv-handler-mode {
+            border-bottom-color: rgba(59, 130, 246, 0.3);
+        }
+
+        #ppv-global-header.ppv-handler-mode::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+            opacity: 0.5;
+        }
+        </style>
+
+        <!-- ============================================================
+             🎯 JAVASCRIPT
+             ============================================================ -->
+        <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // ============================================================
+            // LOGOUT WITH CACHE CLEARING
+            // ============================================================
+            const logoutBtn = document.getElementById('ppv-logout-btn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    console.log('🚪 [PPV] Logout initiated - clearing cache...');
+                    
+                    // 1️⃣ Clear localStorage
+                    try {
+                        localStorage.clear();
+                        console.log('✅ [PPV] localStorage cleared');
+                    } catch (ex) {
+                        console.error('❌ [PPV] localStorage clear failed:', ex);
+                    }
+                    
+                    // 2️⃣ Clear sessionStorage
+                    try {
+                        sessionStorage.clear();
+                        console.log('✅ [PPV] sessionStorage cleared');
+                    } catch (ex) {
+                        console.error('❌ [PPV] sessionStorage clear failed:', ex);
+                    }
+                    
+                    // 3️⃣ Clear cookies
+                    try {
+                        document.cookie.split(";").forEach(c => {
+                            const eq = c.indexOf("=");
+                            const name = eq > -1 ? c.substr(0, eq).trim() : c.trim();
+                            document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+                            document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=" + window.location.hostname;
+                            document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=." + window.location.hostname;
+                        });
+                        console.log('✅ [PPV] Cookies cleared');
+                    } catch (ex) {
+                        console.error('❌ [PPV] Cookie clear failed:', ex);
+                    }
+                    
+                    // 4️⃣ Clear service worker cache
+                    if ('serviceWorker' in navigator) {
+                        navigator.serviceWorker.getRegistrations().then(regs => {
+                            regs.forEach(reg => {
+                                reg.unregister();
+                                console.log('✅ [PPV] Service worker unregistered');
+                            });
+                        }).catch(ex => {
+                            console.error('❌ [PPV] Service worker clear failed:', ex);
+                        });
+                    }
+                    
+                    if ('caches' in window) {
+                        caches.keys().then(names => {
+                            names.forEach(name => {
+                                caches.delete(name);
+                                console.log('✅ [PPV] Cache deleted:', name);
+                            });
+                        }).catch(ex => {
+                            console.error('❌ [PPV] Cache clear failed:', ex);
+                        });
+                    }
+                    
+                    // 5️⃣ Redirect to PPV_Logout URL
+                    console.log('🚪 [PPV] Redirecting to:', this.getAttribute('href'));
+                    setTimeout(() => {
+                        window.location.href = this.getAttribute('href');
+                    }, 150);
+                });
+            }
+            
+            // ============================================================
+            // THEME TOGGLE
+            // ============================================================
+            const themeBtn = document.getElementById('ppv-theme-toggle-global');
+            if (themeBtn) {
+                themeBtn.addEventListener('click', () => {
+                    const current = localStorage.getItem('ppv_theme') || 'dark';
+                    const next = current === 'dark' ? 'light' : 'dark';
+                    localStorage.setItem('ppv_theme', next);
+                    document.cookie = `ppv_theme=${next};path=/;max-age=${60*60*24*365}`;
+                    
+                    const href = `/wp-content/plugins/punktepass/assets/css/ppv-theme-${next}.css?v=${Date.now()}`;
+                    document.querySelectorAll('link[id="ppv-theme-css"]').forEach(e => e.remove());
+                    const link = document.createElement('link');
+                    link.id = 'ppv-theme-css';
+                    link.rel = 'stylesheet';
+                    link.href = href;
+                    document.head.appendChild(link);
+                    
+                    document.body.classList.remove('ppv-light', 'ppv-dark');
+                    document.body.classList.add(`ppv-${next}`);
+                    
+                    if (navigator.vibrate) navigator.vibrate(20);
+                });
+            }
+
+            // ============================================================
+            // LANGUAGE SWITCH
+            // ============================================================
+            const langSel = document.getElementById('ppv-lang-select-global');
+            if (langSel) {
+                langSel.addEventListener('change', (e) => {
+                    const v = e.target.value;
+                    document.cookie = `ppv_lang=${v};path=/;max-age=${60*60*24*365}`;
+                    localStorage.setItem('ppv_lang', v);
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('lang', v);
+                    window.location.href = url.toString();
+                });
+            }
+
+            <?php if (!$is_handler): ?>
+            // ============================================================
+            // POINTS POLLING (USER ONLY)
+            // ============================================================
+            setInterval(async () => {
+                try {
+                    const res = await fetch('<?php echo esc_url(rest_url('ppv/v1/user/points-poll')); ?>', {
+                        method: 'GET',
+                        headers: {'Content-Type': 'application/json'}
+                    });
+                    if (!res.ok) return;
+                    const data = await res.json();
+                    if (data.success) {
+                        const pointsEl = document.getElementById('ppv-global-points');
+                        const rewardsEl = document.getElementById('ppv-global-rewards');
+                        if (pointsEl) pointsEl.textContent = data.points;
+                        if (rewardsEl) rewardsEl.textContent = data.rewards;
+                    }
+                } catch (e) {
+                    // Silent fail
+                }
+            }, 5000);
+            <?php endif; ?>
+        });
+        </script>
+        <?php
+    }
+    public static function enqueue_assets() {
+        wp_enqueue_style(
+            'remixicons',
+            'https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css',
+            [],
+            null
+        );
+
+        wp_enqueue_script(
+            'ppv-dashboard',
+            PPV_PLUGIN_URL . 'assets/js/ppv-user-dashboard.js',
+            ['jquery'],
+            time(),
+            true
+        );
+
+        $boot = self::build_boot_payload();
+
+        wp_add_inline_script(
+            'ppv-dashboard',
+            'window.ppv_boot = ' . wp_json_encode($boot) . ';',
+            'before'
+        );
+
+        if (class_exists('PPV_Lang') && !empty(PPV_Lang::$strings)) {
+            wp_add_inline_script(
+                'ppv-dashboard',
+                'window.ppv_lang = ' . wp_json_encode(PPV_Lang::$strings) . ';',
+                'before'
+            );
+        }
+    }
+
+    private static function build_boot_payload() {
+        $uid = self::get_safe_user_id();
+
+        $email = self::get_user_email($uid);
+        $lang = self::get_user_lang();
+        
+        if ($uid <= 0) {
+            return [
+                'uid' => $uid,
+                'email' => $email,
+                'lang' => $lang,
+                'qr_url' => '',
+                'points' => 0,
+                'rewards' => 0,
+                'api' => esc_url_raw(rest_url('ppv/v1/')),
+                'assets' => [
+                    'logo' => PPV_PLUGIN_URL . 'assets/img/logo.webp',
+                    'store_default' => PPV_PLUGIN_URL . 'assets/img/store-default-logo.webp'
+                ]
+            ];
+        }
+
+        $stats = self::get_user_stats($uid);
+        $token = self::get_user_qr_token($uid);
+        $qr_url = $token ? self::generate_qr_code($uid, $token) : '';
+
+        self::cleanup_tokens($uid);
+
+        return [
+            'uid' => $uid,
+            'email' => $email,
+            'lang' => $lang,
+            'qr_url' => $qr_url,
+            'points' => $stats['points'],
+            'rewards' => $stats['rewards'],
+            'api' => esc_url_raw(rest_url('ppv/v1/')),
+            'assets' => [
+                'logo' => PPV_PLUGIN_URL . 'assets/img/logo.webp',
+                'store_default' => PPV_PLUGIN_URL . 'assets/img/store-default-logo.webp'
+            ]
+        ];
+    }
+
+public static function render_dashboard() {
+    echo '<script>document.body.classList.add("ppv-user-dashboard");</script>';
+    
+    return '<div id="ppv-dashboard-root"></div>' . do_shortcode('[ppv_bottom_nav]');
+}
+
+    public static function register_routes() {
+    // ✅ DETAILED POINTS (for My Points page)
+    register_rest_route('ppv/v1', '/user/points-detailed', [
+        'methods' => 'GET',
+        'callback' => [__CLASS__, 'rest_get_detailed_points'],
+        'permission_callback' => '__return_true',
+    ]);
+
+    // Simple poll (for header)
+    register_rest_route('ppv/v1', '/user/points-poll', [
+        'methods' => 'GET',
+        'callback' => [__CLASS__, 'rest_poll_points'],
+        'permission_callback' => '__return_true',
+    ]);
+
+    // Stores
+    register_rest_route('ppv/v1', '/stores/list-optimized', [
+        'methods' => 'GET',
+        'callback' => [__CLASS__, 'rest_stores_optimized'],
+        'permission_callback' => '__return_true',
+    ]);
+
+    error_log("✅ [PPV_Dashboard] REST routes registered (with points-detailed)");
+}
+    
+    public static function rest_poll_points(WP_REST_Request $request) {
+        global $wpdb;
+        
+        $user_id = get_current_user_id();
+        
+        if (!$user_id && !empty($_SESSION['ppv_user_id'])) {
+            $user_id = intval($_SESSION['ppv_user_id']);
+        }
+        
+        if ($user_id <= 0) {
+            error_log("❌ [PPV_Dashboard] rest_poll_points: No user found");
+            return new WP_REST_Response(['success' => false, 'points' => 0], 401);
+        }
+        
+        $stats = self::get_user_stats($user_id);
+        
+        error_log("✅ [PPV_Dashboard] rest_poll_points: User=$user_id, Points=" . $stats['points']);
+        
+        return new WP_REST_Response([
+            'success' => true,
+            'points' => $stats['points'],
+            'rewards' => $stats['rewards']
+        ], 200);
+    }
+    
+   public static function rest_get_detailed_points(WP_REST_Request $request) {
+    global $wpdb;
+    $prefix = $wpdb->prefix;
+    
+    self::ensure_session();
+    $user_id = self::get_safe_user_id();
+    
+    if ($user_id <= 0) {
+        return new WP_REST_Response([
+            'success' => false,
+            'message' => 'Not authenticated',
+            'data' => [
+                'total' => 0,
+                'avg' => 0,
+                'top_day' => null,
+                'top_store' => null,
+                'top3' => [],
+                'entries' => [],
+                'rewards_by_store' => []
+            ]
+        ], 401);
+    }
+    
+    // TOTAL POINTS
+    $total_points = $wpdb->get_var($wpdb->prepare("
+        SELECT COALESCE(SUM(points), 0)
+        FROM {$prefix}ppv_points
+        WHERE user_id = %d
+    ", $user_id));
+    
+    // AVERAGE
+    $avg_points = $wpdb->get_var($wpdb->prepare("
+        SELECT COALESCE(AVG(points), 0)
+        FROM {$prefix}ppv_points
+        WHERE user_id = %d
+    ", $user_id));
+    
+    // BEST DAY
+    $best_day = $wpdb->get_row($wpdb->prepare("
+        SELECT DATE(created) as day, SUM(points) as total
+        FROM {$prefix}ppv_points
+        WHERE user_id = %d
+        GROUP BY DATE(created)
+        ORDER BY total DESC
+        LIMIT 1
+    ", $user_id));
+    
+    // TOP STORE
+    $top_store = $wpdb->get_row($wpdb->prepare("
+        SELECT s.company_name as store_name, SUM(p.points) as total
+        FROM {$prefix}ppv_points p
+        LEFT JOIN {$prefix}ppv_stores s ON p.store_id = s.id
+        WHERE p.user_id = %d
+        GROUP BY p.store_id
+        ORDER BY total DESC
+        LIMIT 1
+    ", $user_id));
+    
+    // TOP 3 STORES
+    $top3_stores = $wpdb->get_results($wpdb->prepare("
+        SELECT s.company_name as store_name, SUM(p.points) as total
+        FROM {$prefix}ppv_points p
+        LEFT JOIN {$prefix}ppv_stores s ON p.store_id = s.id
+        WHERE p.user_id = %d
+        GROUP BY p.store_id
+        ORDER BY total DESC
+        LIMIT 3
+    ", $user_id));
+    
+    // RECENT ENTRIES
+    $recent_entries = $wpdb->get_results($wpdb->prepare("
+        SELECT p.points, p.created as created, s.company_name as store_name
+        FROM {$prefix}ppv_points p
+        LEFT JOIN {$prefix}ppv_stores s ON p.store_id = s.id
+        WHERE p.user_id = %d
+        ORDER BY p.created DESC
+        LIMIT 20
+    ", $user_id));
+    
+    // ✅ ÚJ! BOLT-SPECIFIKUS REWARD TRACKING
+    // 1️⃣ Megkeressük melyik boltokban gyűjtött pontot
+    $stores_with_points = $wpdb->get_results($wpdb->prepare("
+        SELECT 
+            s.id as store_id,
+            s.company_name as store_name,
+            SUM(p.points) as total_points
+        FROM {$prefix}ppv_points p
+        LEFT JOIN {$prefix}ppv_stores s ON p.store_id = s.id
+        WHERE p.user_id = %d
+        GROUP BY p.store_id
+    ", $user_id));
+    
+    // 2️⃣ Minden bolthoz megkeressük a következő jutalmat
+    $rewards_by_store = [];
+    
+    foreach ($stores_with_points as $store) {
+        $store_id = (int) $store->store_id;
+        $store_points = (int) $store->total_points;
+        
+        // Lekérdezzük a bolt jutalmait
+        $store_rewards = $wpdb->get_results($wpdb->prepare("
+            SELECT required_points
+            FROM {$prefix}ppv_rewards
+            WHERE store_id = %d AND required_points > 0
+            ORDER BY required_points ASC
+        ", $store_id));
+        
+        if (empty($store_rewards)) {
+            continue; // Nincs jutalom ebben a boltban
+        }
+        
+        // Megkeressük a következő jutalmat
+        $next_goal = null;
+        $remaining = null;
+        $progress_percent = 0;
+        $achieved = false;
+        
+        foreach ($store_rewards as $reward) {
+            $req = (int) $reward->required_points;
+            if ($req > $store_points) {
+                $next_goal = $req;
+                $remaining = $req - $store_points;
+                $progress_percent = round(($store_points / $req) * 100, 1);
+                break;
+            }
+        }
+        
+        // Ha nem találtunk (elérte az összeset)
+        if ($next_goal === null && !empty($store_rewards)) {
+            $last_reward = (int) end($store_rewards)->required_points;
+            if ($store_points >= $last_reward) {
+                $achieved = true;
+                $next_goal = $last_reward;
+                $remaining = 0;
+                $progress_percent = 100;
+            }
+        }
+        
+        $rewards_by_store[] = [
+            'store_id' => $store_id,
+            'store_name' => $store->store_name ?: 'Unknown',
+            'current_points' => $store_points,
+            'next_goal' => $next_goal,
+            'remaining' => $remaining,
+            'progress_percent' => $progress_percent,
+            'achieved' => $achieved
+        ];
+    }
+    
+    return new WP_REST_Response([
+        'success' => true,
+        'data' => [
+            'total' => (int) $total_points,
+            'avg' => round((float) $avg_points, 1),
+            'top_day' => $best_day ? [
+                'day' => $best_day->day,
+                'total' => (int) $best_day->total
+            ] : null,
+            'top_store' => $top_store ? [
+                'store_name' => $top_store->store_name ?: 'Unknown',
+                'total' => (int) $top_store->total
+            ] : null,
+            'top3' => array_map(function($s) {
+                return [
+                    'store_name' => $s->store_name ?: 'Unknown',
+                    'total' => (int) $s->total
+                ];
+            }, $top3_stores),
+            'entries' => array_map(function($e) {
+                return [
+                    'points' => (int) $e->points,
+                    'created' => $e->created,
+                    'store_name' => $e->store_name ?: 'Unknown'
+                ];
+            }, $recent_entries),
+            'rewards_by_store' => $rewards_by_store // ✅ ÚJ!
+        ]
+    ], 200);
+}
+
+   public static function rest_stores_optimized(WP_REST_Request $request) {
+    global $wpdb;
+    error_log("🛰️ [REST DEBUG] rest_stores_optimized START");
+
+    $prefix = $wpdb->prefix;
+
+    $user_lat = floatval($request->get_param('lat'));
+    $user_lng = floatval($request->get_param('lng'));
+    $max_distance = floatval($request->get_param('max_distance') ?? 10);
+
+    // ✅ Cache kulcs
+    $cache_key = 'ppv_stores_list_' . md5("{$user_lat}_{$user_lng}_{$max_distance}");
+    $cached = wp_cache_get($cache_key);
+    if ($cached !== false) {
+        return new WP_REST_Response($cached, 200);
+    }
+
+    // ✅ Alap lekérdezés – csak aktív boltok
+    $stores = $wpdb->get_results("
+        SELECT id, company_name, address, city, plz, latitude, longitude,
+               phone, website, logo, qr_logo, opening_hours, description,
+               gallery, facebook, instagram, tiktok
+        FROM {$prefix}ppv_stores
+        WHERE active = 1
+        ORDER BY company_name ASC
+    ");
+
+    if (empty($stores)) {
+        return new WP_REST_Response([], 200);
+    }
+
+    $result = [];
+    error_log("🛰️ [REST DEBUG] stores count: " . count($stores));
+
+    foreach ($stores as $store) {
+            error_log("🏪 [REST DEBUG] Store: {$store->company_name} (ID: {$store->id})");
+
+        $lat = floatval($store->latitude);
+        $lng = floatval($store->longitude);
+
+        // ✅ Distance calc safe
+        $distance_km = null;
+        if ($user_lat && $user_lng && $lat && $lng) {
+            $distance_km = self::calculate_distance($user_lat, $user_lng, $lat, $lng);
+            if ($distance_km > $max_distance) continue;
+        }
+
+        // ✅ Open + hours safe
+        $is_open = self::is_store_open($store->opening_hours);
+        $today_hours = self::get_today_hours($store->opening_hours);
+
+        // ✅ Gallery safe
+        $gallery_images = [];
+        if (!empty($store->gallery)) {
+            $decoded = json_decode($store->gallery, true);
+            if (is_array($decoded)) $gallery_images = array_slice($decoded, 0, 6);
+        }
+
+        // ✅ Rewards quick & safe
+        $rewards = [];
+        $rws = $wpdb->get_results($wpdb->prepare("
+    SELECT 
+        id, 
+        title, 
+        required_points, 
+        points_given,      -- ✅ új mező
+        action_type, 
+        action_value, 
+        currency, 
+        description
+    FROM {$prefix}ppv_rewards
+    WHERE store_id = %d 
+      AND required_points > 0
+    ORDER BY required_points ASC 
+    LIMIT 5
+", $store->id));
+
+if ($rws) {
+    foreach ($rws as $r) {
+        $rewards[] = [
+            'id' => (int)$r->id,
+            'title' => $r->title,
+            'description' => $r->description,
+            'required_points' => (int)$r->required_points,
+            'points_given' => (int)$r->points_given, // ✅ hozzáadva
+            'action_type' => $r->action_type,
+            'action_value' => $r->action_value,
+            'currency' => $r->currency
+        ];
+    }
+}
+
+
+        // ✅ Campaigns - TELJES ADAT!
+$campaigns = [];
+$camps = $wpdb->get_results($wpdb->prepare("
+    SELECT id, title, start_date, end_date, campaign_type, 
+           discount_percent, extra_points, multiplier, 
+           min_purchase, fixed_amount, required_points,
+           free_product, free_product_value, points_given, description
+    FROM {$prefix}ppv_campaigns
+    WHERE store_id = %d
+      AND status = 'active'
+      AND start_date <= CURDATE()
+      AND end_date >= CURDATE()
+    ORDER BY start_date ASC LIMIT 5
+", $store->id));
+if ($camps) {
+    foreach ($camps as $c) {
+        $campaigns[] = [
+            'id' => (int)$c->id,
+            'title' => $c->title,
+            'start_date' => $c->start_date,
+            'end_date' => $c->end_date,
+            'campaign_type' => $c->campaign_type,
+            'discount_percent' => (float)$c->discount_percent,
+            'extra_points' => (int)$c->extra_points,
+            'multiplier' => (int)$c->multiplier,
+            'min_purchase' => (float)$c->min_purchase,
+            'fixed_amount' => (float)$c->fixed_amount,
+            'required_points' => (int)$c->required_points,
+            'free_product' => $c->free_product,
+            'free_product_value' => (float)$c->free_product_value,
+            'points_given' => (int)$c->points_given,
+            'description' => $c->description
+        ];
+    }
+}
+        $result[] = [
+            'id' => (int)$store->id,
+            'company_name' => $store->company_name,
+            'address' => $store->address,
+            'city' => $store->city,
+            'plz' => $store->plz,
+            'latitude' => $lat,
+            'longitude' => $lng,
+            'distance_km' => $distance_km ? round($distance_km, 1) : null,
+            'open_now' => $is_open,
+            'open_hours_today' => $today_hours,
+            'phone' => $store->phone,
+            'website' => $store->website,
+            'logo' => $store->logo,
+            'gallery' => $gallery_images,
+            'social' => [
+                'facebook' => $store->facebook ?: null,
+                'instagram' => $store->instagram ?: null,
+                'tiktok' => $store->tiktok ?: null
+            ],
+            'rewards' => $rewards,
+            'campaigns' => $campaigns
+        ];
+    }
+
+    // ✅ Distance sort
+    if ($user_lat && $user_lng) {
+        usort($result, fn($a, $b) => ($a['distance_km'] ?? 99999) <=> ($b['distance_km'] ?? 99999));
+    }
+
+    // ✅ Cache mentés 1 órára
+    wp_cache_set($cache_key, $result, '', 3600);
+
+    return new WP_REST_Response($result, 200);
+}
+
+ 
+    private static function calculate_distance($lat1, $lon1, $lat2, $lon2) {
+        $earth_radius = 6371;
+
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLon = deg2rad($lon2 - $lon1);
+
+        $a = sin($dLat / 2) * sin($dLat / 2) +
+             cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+             sin($dLon / 2) * sin($dLon / 2);
+
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+        return $earth_radius * $c;
+    }
+}
+
+PPV_User_Dashboard::hooks();
