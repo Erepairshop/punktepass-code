@@ -129,10 +129,13 @@ class PPV_Login {
         $google_client_id = defined('PPV_GOOGLE_CLIENT_ID') ? PPV_GOOGLE_CLIENT_ID : get_option('ppv_google_client_id', '453567547051-odmqrinafba8ls8ktp9snlp7d2fpl9q0.apps.googleusercontent.com');
         $tiktok_client_key = defined('PPV_TIKTOK_CLIENT_KEY') ? PPV_TIKTOK_CLIENT_KEY : get_option('ppv_tiktok_client_key', '');
 
-        // Debug log
+        // Debug log - SHOW ACTUAL VALUES
         if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('PPV Login - Facebook App ID: ' . ($facebook_app_id ? 'SET' : 'NOT SET'));
-            error_log('PPV Login - Facebook from constant: ' . (defined('PPV_FACEBOOK_APP_ID') ? 'YES' : 'NO'));
+            error_log('PPV Login - Facebook constant defined: ' . (defined('PPV_FACEBOOK_APP_ID') ? 'YES' : 'NO'));
+            error_log('PPV Login - Facebook constant value: "' . (defined('PPV_FACEBOOK_APP_ID') ? PPV_FACEBOOK_APP_ID : 'N/A') . '"');
+            error_log('PPV Login - Facebook final value: "' . $facebook_app_id . '"');
+            error_log('PPV Login - Facebook length: ' . strlen($facebook_app_id));
+            error_log('PPV Login - Facebook empty: ' . (empty($facebook_app_id) ? 'YES' : 'NO'));
         }
 
         // Localize
