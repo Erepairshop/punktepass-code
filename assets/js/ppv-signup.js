@@ -251,17 +251,21 @@
             showAlert(t('error_google_failed'), 'error');
             return;
         }
-        
+
         const $btn = $('#ppv-google-signup-btn');
         $btn.prop('disabled', true).html('<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/></path></svg><span>' + t('registering') + '</span>');
-        
+
+        // Get selected user type
+        const userType = $('#ppv-user-type').val() || 'user';
+
         $.ajax({
             url: ppvSignup.ajaxurl,
             type: 'POST',
             data: {
                 action: 'ppv_google_signup',
                 nonce: ppvSignup.nonce,
-                credential: response.credential
+                credential: response.credential,
+                user_type: userType
             },
             success: function(res) {
                 if (res.success) {
@@ -314,6 +318,7 @@
             const passwordConfirm = $('#ppv-password-confirm').val();
             const terms = $('#ppv-terms').is(':checked');
             const privacy = $('#ppv-privacy').is(':checked');
+            const userType = $('#ppv-user-type').val() || 'user';
             
             // Validation
             if (!email || !password || !passwordConfirm) {
@@ -372,7 +377,8 @@
                     password: password,
                     password_confirm: passwordConfirm,
                     terms: terms,
-                    privacy: privacy
+                    privacy: privacy,
+                    user_type: userType
                 },
                 success: function(res) {
                     if (res.success) {
