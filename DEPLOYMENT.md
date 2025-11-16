@@ -1,6 +1,6 @@
 # Automatikus GitHub → Hostinger Telepítés
 
-**Status:** ✅ Aktív - Automatikus deployment beállítva! (FTP javítva - IP: 89.116.147.72)
+**Status:** ✅ Aktív - Deployment tesztelés új FTP fiókkal (githubdeploy)
 
 ## Beállítás lépései
 
