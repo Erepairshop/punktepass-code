@@ -330,37 +330,104 @@
 }
 
 /* ============================================
-   🔵 GOOGLE BUTTON
+   🎨 SOCIAL LOGIN GRID
    ============================================ */
-.ppv-google-btn {
-    width: 100%;
+.ppv-social-login-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+@media (max-width: 640px) {
+    .ppv-social-login-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+}
+
+/* ============================================
+   🔘 SOCIAL BUTTON BASE
+   ============================================ */
+.ppv-social-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
-    padding: 13px 24px;
-    background: var(--ppv-card-bg);
-    border: 1.5px solid var(--ppv-border);
+    gap: 10px;
+    padding: 12px 16px;
+    border: none;
     border-radius: var(--ppv-radius-sm);
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 600;
-    color: var(--ppv-text);
     cursor: pointer;
     transition: var(--ppv-transition);
     box-shadow: var(--ppv-shadow-sm);
-    margin-bottom: 20px;
     font-family: inherit;
+    position: relative;
+    overflow: hidden;
+}
+
+.ppv-social-btn:hover {
+    box-shadow: var(--ppv-shadow);
+    transform: translateY(-2px);
+}
+
+.ppv-social-btn:active {
+    transform: translateY(0);
+}
+
+.ppv-social-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.ppv-social-btn svg {
+    flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+    .ppv-social-btn {
+        padding: 13px 20px;
+        gap: 12px;
+    }
+}
+
+/* ============================================
+   🔵 GOOGLE BUTTON
+   ============================================ */
+.ppv-google-btn {
+    background: var(--ppv-card-bg);
+    border: 1.5px solid var(--ppv-border);
+    color: var(--ppv-text);
 }
 
 .ppv-google-btn:hover {
     background: #FAFAFA;
     border-color: #D1D5DB;
-    box-shadow: var(--ppv-shadow);
-    transform: translateY(-1px);
 }
 
-.ppv-google-btn:active {
-    transform: translateY(0);
+/* ============================================
+   🔵 FACEBOOK BUTTON
+   ============================================ */
+.ppv-facebook-btn {
+    background: #1877F2;
+    color: white;
+}
+
+.ppv-facebook-btn:hover {
+    background: #166FE5;
+}
+
+/* ============================================
+   ⚫ TIKTOK BUTTON
+   ============================================ */
+.ppv-tiktok-btn {
+    background: linear-gradient(135deg, #000000 0%, #EE1D52 50%, #69C9D0 100%);
+    color: white;
+}
+
+.ppv-tiktok-btn:hover {
+    background: linear-gradient(135deg, #1a1a1a 0%, #ff2d68 50%, #7dd9e6 100%);
 }
 
 /* ============================================
