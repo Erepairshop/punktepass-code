@@ -1,4 +1,289 @@
 /**
+ * PunktePass – User Dashboard CSS v7.0 LIGHT THEME (OPTIMIZED)
+ * ✅ Consolidated variables & animations
+ * ✅ Modern Design
+ * ✅ PWA Compatible
+ * ✅ Kompakt & Clean
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap');
+
+/* ============================================================
+   🎨 UNIFIED VARIABLES
+   ============================================================ */
+:root {
+  --color-primary: #667eea;
+  --color-primary-dark: #764ba2;
+  --color-primary-light: rgba(102, 126, 234, 0.1);
+  --color-secondary: #00a878;
+  --color-secondary-dark: #007d5e;
+  --color-accent: #9333ea;
+  --color-accent-light: #d8b4fe;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-bg: #f8fafc;
+  --color-bg-secondary: #f1f5f9;
+  --color-bg-tertiary: #e2e8f0;
+  --color-header-bg: #0f172a;
+  --color-header-dark: #0a0f1a;
+  --color-surface: #ffffff;
+  --color-surface-light: #f9fafb;
+  --color-text: #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-muted: #94a3b8;
+  --color-border: #e2e8f0;
+  --color-border-light: #f1f5f9;
+  --color-border-dark: rgba(0, 168, 204, 0.25);
+  --shadow-sm: 0 2px 8px rgba(102, 126, 234, 0.08);
+  --shadow-md: 0 4px 16px rgba(102, 126, 234, 0.12);
+  --shadow-lg: 0 8px 24px rgba(102, 126, 234, 0.15);
+  --shadow-glow: 0 0 20px rgba(0, 168, 204, 0.15);
+  --shadow-glow-strong: 0 0 40px rgba(0, 168, 204, 0.25);
+  --gradient-primary: linear-gradient(135deg, #00a8cc 0%, #0077a8 100%);
+  --gradient-secondary: linear-gradient(135deg, #00a878 0%, #007d5e 100%);
+  --gradient-accent: linear-gradient(135deg, #9333ea 0%, #7e22ce 100%);
+  --gradient-card: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(249, 250, 251, 0.98));
+  --gradient-header: linear-gradient(135deg, #0f172a 0%, #0a0f1a 100%);
+  --radius: 16px;
+  --radius-lg: 20px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+  --radius-xs: 6px;
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-display: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --backdrop: blur(12px) saturate(150%);
+  --color-bg-light: #ffffff;
+  --color-card: #ffffff;
+  --color-primary-rgb: 102, 126, 234;
+  --color-info: #00b8e6;
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 12px 32px rgba(102, 126, 234, 0.2);
+  --transition-fast: all 0.15s ease;
+  --qr-primary: #0088cc;
+  --qr-primary-dark: #006699;
+  --qr-primary-light: rgba(0, 136, 204, 0.1);
+  --qr-accent: #00b8e6;
+  --qr-accent-dark: #0095c7;
+  --qr-gradient: linear-gradient(135deg, #0088cc, #00b8e6);
+  --qr-gradient-alt: linear-gradient(135deg, #006699, #0088cc);
+  --ppv-primary: #6366f1;
+  --ppv-primary-dark: #4f46e5;
+  --ppv-primary-light: #818cf8;
+  --ppv-success: #10b981;
+  --ppv-warning: #f59e0b;
+  --ppv-error: #ff6b6b;
+  --ppv-bg: #f8fafc;
+  --ppv-card: #ffffff;
+  --ppv-text: #0f172a;
+  --ppv-text-secondary: #666666;
+  --ppv-text-muted: #94a3b8;
+  --ppv-border: #e0e0e0;
+  --ppv-border-light: #f0f0f0;
+  --ppv-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --ppv-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --ppv-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --ppv-radius: 16px;
+  --ppv-radius-lg: 14px;
+  --ppv-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --ppv-rgb: 99, 102, 241;
+  --ppv-info: #3b82f6;
+  --ppv-bg-light: #ffffff;
+  --ppv-sp: 6px;
+  --ppv-bg-primary: #ffffff;
+  --ppv-bg-secondary: #f8f9fa;
+  --ppv-bg-tertiary: #e9ecef;
+  --ppv-text-primary: #1a1a1a;
+  --ppv-text-tertiary: #999999;
+  --ppv-danger: #ef4444;
+  --ppv-neon: #00e6ff;
+  --ppv-neon-alt: #00ff88;
+  --ppv-glass-bg: rgba(255, 255, 255, 0.8);
+  --ppv-glass-border: rgba(255, 255, 255, 0.3);
+  --ppv-glass-blur: blur(10px);
+  --ppv-shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.15);
+  --ppv-spacing: 8px;
+  --ppv-color-primary: #00d4ff;
+  --ppv-color-primary-dark: #0099cc;
+  --ppv-color-primary-light: rgba(0, 212, 255, 0.15);
+  --ppv-color-success: #34d399;
+  --ppv-color-warning: #fbbf24;
+  --ppv-color-error: #f87171;
+  --ppv-color-bg: #0b0f17;
+  --ppv-color-bg-light: #131820;
+  --ppv-color-card: #1a1f2e;
+  --ppv-color-card-hover: #242d3f;
+  --ppv-color-text: #f3f4f6;
+  --ppv-color-text-secondary: #d1d5db;
+  --ppv-color-text-muted: #9ca3af;
+  --ppv-color-border: rgba(0, 212, 255, 0.15);
+  --ppv-color-border-light: rgba(0, 212, 255, 0.08);
+  --ppv-radius-sm: 12px;
+  --ppv-radius-xs: 8px;
+}
+
+/* ============================================================
+   🎬 ANIMATIONS
+   ============================================================ */
+@keyframes fadeIn {
+
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  
+}
+
+@keyframes slideInDown {
+
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  
+}
+
+@keyframes shimmer {
+
+  0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); 
+}
+
+@keyframes slideInUp {
+
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  
+}
+
+@keyframes toastPop {
+
+  0% {
+    transform: translate(-50%, -50%) scale(0.5);
+    opacity: 0;
+  
+}
+
+@keyframes pulse {
+
+  0%, 100% { opacity: 0.6; 
+}
+
+@keyframes slideDown {
+
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  
+}
+
+@keyframes slideUp {
+
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  
+}
+
+@keyframes fadeInUp {
+
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  
+}
+
+@keyframes spin {
+
+  from {
+    transform: rotate(0deg);
+  
+}
+
+@keyframes wiggle {
+
+  0%, 100% {
+    transform: rotate(0deg);
+  
+}
+
+@keyframes bounce {
+
+  0%, 100% {
+    transform: translateY(0);
+  
+}
+
+@keyframes shimmer-bg {
+
+  0%, 100% { opacity: 0.5; 
+}
+
+@keyframes pulse-icon {
+
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  
+}
+
+@keyframes pop-in {
+
+  0% {
+    opacity: 0;
+    transform: scale(0.7);
+  
+}
+
+@keyframes blink {
+
+  0%, 100% {
+    opacity: 1;
+  
+}
+
+@keyframes pulse-glow {
+
+  0%, 100% { opacity: 1; 
+}
+
+@keyframes pulse-fade {
+
+  0%, 100% { opacity: 1; 
+}
+
+@keyframes badge-pulse {
+
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.5);
+  
+}
+
+@keyframes ppv-spin {
+
+  to { transform: rotate(360deg); 
+}
+
+@keyframes ri-spin {
+
+  0% {
+    transform: rotate(0deg);
+  
+}
+
+@keyframes ri-pulse {
+
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  
+}
+
+/* ============================================================
+   🌐 GLOBAL STYLES
+   ============================================================ */
+/**
  * PunktePass – User Dashboard CSS v6.2 LIGHT THEME
  * ✅ Dark Header (Vastagabb fekete)
  * ✅ Light Content (Fehér/világos szürke)
@@ -8,85 +293,6 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap');
 
-/* ============================================================
-   🎨 LIGHT THEME COLOR PALETTE
-   ============================================================ */
-:root {
-  /* Primary - Vibrant Cyan */
-  --color-primary: #00a8cc;
-  --color-primary-dark: #0077a8;
-  --color-primary-light: #00d4ff;
-  
-  /* Secondary - Teal Green */
-  --color-secondary: #00a878;
-  --color-secondary-dark: #007d5e;
-  
-  /* Accent - Purple */
-  --color-accent: #9333ea;
-  --color-accent-light: #d8b4fe;
-  
-  /* Status Colors */
-  --color-success: #10b981;
-  --color-warning: #f59e0b;
-  --color-error: #ef4444;
-  
-  /* Light Theme - Világos paletta */
-  --color-bg: #f8fafc;
-  --color-bg-secondary: #f1f5f9;
-  --color-bg-tertiary: #e2e8f0;
-  
-  /* Header - VASTAGABB FEKETE */
-  --color-header-bg: #0f172a;
-  --color-header-dark: #0a0f1a;
-  
-  --color-surface: #ffffff;
-  --color-surface-light: #f9fafb;
-  
-  --color-text: #1e293b;
-  --color-text-secondary: #475569;
-  --color-text-muted: #64748b;
-  
-  /* Border Colors */
-  --color-border: rgba(0, 168, 204, 0.15);
-  --color-border-light: rgba(0, 168, 204, 0.08);
-  --color-border-dark: rgba(0, 168, 204, 0.25);
-  
-  /* Shadows - Light theme */
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
-  --shadow-glow: 0 0 20px rgba(0, 168, 204, 0.15);
-  --shadow-glow-strong: 0 0 40px rgba(0, 168, 204, 0.25);
-  
-  /* Gradients */
-  --gradient-primary: linear-gradient(135deg, #00a8cc 0%, #0077a8 100%);
-  --gradient-secondary: linear-gradient(135deg, #00a878 0%, #007d5e 100%);
-  --gradient-accent: linear-gradient(135deg, #9333ea 0%, #7e22ce 100%);
-  --gradient-card: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(249, 250, 251, 0.98));
-  --gradient-header: linear-gradient(135deg, #0f172a 0%, #0a0f1a 100%);
-  
-  /* Spacing */
-  --radius: 16px;
-  --radius-lg: 20px;
-  --radius-md: 14px;
-  --radius-sm: 10px;
-  --radius-xs: 6px;
-  
-  /* Transitions */
-  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-slow: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  
-  /* Font Stack */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-display: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  
-  /* Backdrop Filter */
-  --backdrop: blur(12px) saturate(150%);
-}
-
-/* ============================================================
-   🌍 GLOBAL STYLES
-   ============================================================ */
 * {
   margin: 0;
   padding: 0;
@@ -108,9 +314,6 @@ body.ppv-user-dashboard {
   overflow: hidden;
 }
 
-/* ============================================================
-   📱 MAIN LAYOUT
-   ============================================================ */
 #ppv-dashboard-root {
   width: 100%;
   height: 100%;
@@ -138,21 +341,12 @@ body.ppv-user-dashboard {
   animation: fadeIn 0.6s ease-out;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
 
-
-/* ============================================================
-   🎫 QR BANNER - LIGHT THEME
-   ============================================================ */
 .ppv-qr-banner {
   display: flex;
   align-items: center;
@@ -168,11 +362,6 @@ body.ppv-user-dashboard {
   animation: slideInDown 0.6s ease-out;
 }
 
-@keyframes slideInDown {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
   to {
     opacity: 1;
     transform: translateY(0);
@@ -250,8 +439,6 @@ body.ppv-user-dashboard {
   animation: shimmer 3s infinite;
 }
 
-@keyframes shimmer {
-  0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
   100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
 }
 
@@ -260,9 +447,6 @@ body.ppv-user-dashboard {
   box-shadow: 0 0 20px rgba(0, 168, 204, 0.5), var(--shadow-lg);
 }
 
-/* ============================================================
-   🎫 QR MODAL
-   ============================================================ */
 .ppv-qr-overlay {
   position: fixed;
   inset: 0;
@@ -369,9 +553,6 @@ body.ppv-user-dashboard {
   margin-bottom: 8px;
 }
 
-/* ============================================================
-   🏪 STORE SECTION
-   ============================================================ */
 .ppv-section-title {
   font-family: var(--font-display);
   font-size: 20px;
@@ -397,9 +578,6 @@ body.ppv-user-dashboard {
   gap: 12px;
 }
 
-/* ============================================================
-   🏪 STORE CARDS - LIGHT THEME
-   ============================================================ */
 .ppv-store-card-enhanced {
   background: var(--color-surface);
   backdrop-filter: var(--backdrop);
@@ -411,11 +589,6 @@ body.ppv-user-dashboard {
   animation: slideInUp 0.5s ease-out;
 }
 
-@keyframes slideInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
   to {
     opacity: 1;
     transform: translateY(0);
@@ -539,9 +712,6 @@ body.ppv-user-dashboard {
   transform: rotate(180deg);
 }
 
-/* ============================================================
-   🎨 STORE DETAILS
-   ============================================================ */
 .ppv-store-details {
   max-height: 0;
   overflow: hidden;
@@ -606,9 +776,6 @@ body.ppv-user-dashboard {
   color: var(--color-primary);
 }
 
-/* ============================================================
-   🎁 REWARDS & CAMPAIGNS
-   ============================================================ */
 .ppv-store-rewards,
 .ppv-store-campaigns {
   margin-bottom: 12px;
@@ -671,9 +838,6 @@ body.ppv-user-dashboard {
   font-weight: 600;
 }
 
-/* ============================================================
-   🔘 ACTION BUTTONS
-   ============================================================ */
 .ppv-store-actions {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
@@ -716,9 +880,6 @@ body.ppv-user-dashboard {
   background: var(--gradient-accent);
 }
 
-/* ============================================================
-   🎚️ DISTANCE SLIDER
-   ============================================================ */
 .ppv-distance-filter {
   background: var(--color-surface);
   backdrop-filter: var(--backdrop);
@@ -787,9 +948,6 @@ body.ppv-user-dashboard {
   color: var(--color-text-muted);
 }
 
-/* ============================================================
-   TOAST NOTIFICATIONS
-   ============================================================ */
 .ppv-point-toast {
   position: fixed;
   top: 50%;
@@ -841,11 +999,6 @@ body.ppv-user-dashboard {
   font-size: 17px;
 }
 
-@keyframes toastPop {
-  0% {
-    transform: translate(-50%, -50%) scale(0.5);
-    opacity: 0;
-  }
   70% {
     transform: translate(-50%, -50%) scale(1.08);
     opacity: 1;
@@ -863,9 +1016,6 @@ body.ppv-user-dashboard {
     max-width: 280px;
   }
 
-/* ============================================================
-   📱 BOTTOM NAVIGATION
-   ============================================================ */
 .ppv-bottom-nav {
   position: fixed;
   bottom: 0;
@@ -912,9 +1062,6 @@ body.ppv-user-dashboard {
   text-shadow: 0 0 8px rgba(0, 168, 204, 0.3);
 }
 
-/* ============================================================
-   📍 LIGHTBOX
-   ============================================================ */
 .ppv-lightbox {
   position: fixed;
   inset: 0;
@@ -1020,9 +1167,6 @@ body.ppv-user-dashboard {
   font-weight: 600;
 }
 
-/* ============================================================
-   ⚠️ LOADING & EMPTY STATES
-   ============================================================ */
 .ppv-loading,
 .ppv-no-stores,
 .ppv-error {
@@ -1037,8 +1181,6 @@ body.ppv-user-dashboard {
   animation: pulse 2s ease-in-out infinite;
 }
 
-@keyframes pulse {
-  0%, 100% { opacity: 0.6; }
   50% { opacity: 1; }
 }
 
@@ -1051,10 +1193,6 @@ body.ppv-user-dashboard {
   font-weight: 700;
 }
 
-
-/* ============================================================
-   ♿ ACCESSIBILITY
-   ============================================================ */
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;
@@ -1063,9 +1201,6 @@ body.ppv-user-dashboard {
   }
 }
 
-/* ============================================================
-   🔧 SCROLLBAR - Light Theme
-   ============================================================ */
 ::-webkit-scrollbar {
   width: 8px;
 }
@@ -1084,12 +1219,6 @@ body.ppv-user-dashboard {
   background: linear-gradient(180deg, var(--color-primary-dark), var(--color-accent));
   box-shadow: 0 0 10px rgba(0, 168, 204, 0.3);
 }
-
-
-
-/* ============================================================
-   LOGO - SIMA, NINCS SHADOW/EFFECT
-   ============================================================ */
 
 #ppv-global-header .ppv-header-left {
   display: flex !important;
@@ -1117,10 +1246,6 @@ body.ppv-user-dashboard {
   /* NEM kell shadow! */
 }
 
-/* ============================================================
-   USER EMAIL
-   ============================================================ */
-
 #ppv-global-header .ppv-user-info {
   display: flex !important;
   flex-direction: column !important;
@@ -1138,10 +1263,6 @@ body.ppv-user-dashboard {
   white-space: nowrap !important;
   letter-spacing: 0.3px !important;
 }
-
-/* ============================================================
-   STATS - Kék highlight
-   ============================================================ */
 
 #ppv-global-header .ppv-header-stats {
   display: flex !important;
@@ -1171,10 +1292,6 @@ body.ppv-user-dashboard {
   color: rgba(255, 255, 255, 0.98) !important;
   font-weight: 800 !important;
 }
-
-/* ============================================================
-   NAV BUTTONS
-   ============================================================ */
 
 #ppv-global-header .ppv-header-nav {
   display: flex !important;
@@ -1229,10 +1346,6 @@ body.ppv-user-dashboard {
   color: #f87171 !important;
 }
 
-/* ============================================================
-   SETTINGS - Lang + Theme
-   ============================================================ */
-
 #ppv-global-header .ppv-header-settings {
   display: flex !important;
   gap: 10px !important;
@@ -1282,15 +1395,9 @@ body.ppv-user-dashboard {
   font-size: 16px !important;
 }
 
-/* ============================================================
-   Handler Mode
-   ============================================================ */
-
 #ppv-global-header.ppv-handler-mode {
   border-bottom-color: rgba(59, 130, 246, 0.4) !important;
 }
-
-
 
 /**
  * PunktePass – Admin Profile / Händler Management CSS (v5.0)
@@ -1306,42 +1413,6 @@ body.ppv-user-dashboard {
  * ✅ PWA optimized
  */
 
-/* ============================================================
-   🌐 ROOT VARIABLES
-   ============================================================ */
-:root {
-  --color-primary: #00b8e6;
-  --color-primary-dark: #0088b0;
-  --color-primary-light: rgba(0, 184, 230, 0.1);
-  --color-success: #10b981;
-  --color-error: #ef4444;
-  --color-warning: #f59e0b;
-  
-  --color-bg: #f9fbff;
-  --color-bg-light: #faffff;
-  --color-card: #ffffff;
-  
-  --color-text: #0a0f1a;
-  --color-text-secondary: #4a5c6e;
-  --color-text-muted: #8b92a7;
-  
-  --color-border: rgba(0, 184, 230, 0.15);
-  --color-border-light: rgba(0, 184, 230, 0.08);
-  
-  --shadow-sm: 0 2px 8px rgba(0, 184, 230, 0.08);
-  --shadow-md: 0 4px 16px rgba(0, 184, 230, 0.12);
-  --shadow-lg: 0 8px 24px rgba(0, 184, 230, 0.15);
-  
-  --radius: 16px;
-  --radius-sm: 12px;
-  --radius-xs: 8px;
-  
-  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* ============================================================
-   🌐 GLOBAL STYLES
-   ============================================================ */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -1356,18 +1427,12 @@ html, body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ============================================================
-   📦 MAIN CONTAINER
-   ============================================================ */
 .ppv-admin-profile {
   max-width: 1000px;
   margin: 0 auto;
   padding: 24px;
 }
 
-/* ============================================================
-   📌 HEADER
-   ============================================================ */
 .ppv-profile-header {
   display: flex;
   justify-content: space-between;
@@ -1428,9 +1493,6 @@ html, body {
   color: var(--color-text-muted);
 }
 
-/* ============================================================
-   🌍 LANGUAGE SWITCHER
-   ============================================================ */
 .ppv-lang-switcher-inline {
   display: flex;
   gap: 8px;
@@ -1464,9 +1526,6 @@ html, body {
   box-shadow: 0 0 12px rgba(0, 184, 230, 0.3);
 }
 
-/* ============================================================
-   📑 TABS NAVIGATION
-   ============================================================ */
 .ppv-tabs-nav {
   display: flex;
   gap: 8px;
@@ -1513,9 +1572,6 @@ html, body {
   font-size: 16px;
 }
 
-/* ============================================================
-   ⚠️ ALERTS
-   ============================================================ */
 #ppv-alert-zone {
   margin-bottom: 24px;
 }
@@ -1530,11 +1586,6 @@ html, body {
   animation: slideDown 0.3s ease;
 }
 
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1580,9 +1631,6 @@ html, body {
   opacity: 1;
 }
 
-/* ============================================================
-   📄 TAB CONTENT
-   ============================================================ */
 .ppv-tab-content {
   display: none;
   padding: 24px;
@@ -1597,10 +1645,6 @@ html, body {
   display: block;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
   to {
     opacity: 1;
   }
@@ -1632,9 +1676,6 @@ html, body {
   margin: 0 0 16px 0;
 }
 
-/* ============================================================
-   📋 FORM GROUPS
-   ============================================================ */
 .ppv-form {
   display: flex;
   flex-direction: column;
@@ -1706,18 +1747,12 @@ html, body {
   margin: 0;
 }
 
-/* ============================================================
-   🔄 FORM ROW (2 Columns)
-   ============================================================ */
 .ppv-form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
 }
 
-/* ============================================================
-   🕒 OPENING HOURS
-   ============================================================ */
 .ppv-opening-hours-wrapper {
   display: flex;
   flex-direction: column;
@@ -1776,9 +1811,6 @@ html, body {
   accent-color: var(--color-primary);
 }
 
-/* ============================================================
-   🖼️ MEDIA / GALLERY
-   ============================================================ */
 .ppv-media-group {
   padding: 16px;
   background: var(--color-bg-light);
@@ -1882,9 +1914,6 @@ html, body {
   background: rgba(239, 68, 68, 1);
 }
 
-/* ============================================================
-   🔗 SOCIAL MEDIA
-   ============================================================ */
 .ppv-social-group {
   padding: 16px;
   background: var(--color-bg-light);
@@ -1946,9 +1975,6 @@ html, body {
   border-color: var(--color-primary);
 }
 
-/* ============================================================
-   ☑️ CHECKBOXES & TOGGLES
-   ============================================================ */
 .ppv-checkbox-group {
   padding: 16px;
   background: var(--color-bg-light);
@@ -1990,9 +2016,6 @@ html, body {
   margin-top: 4px;
 }
 
-/* ============================================================
-   🔘 BUTTONS
-   ============================================================ */
 .ppv-form-footer {
   display: flex;
   align-items: center;
@@ -2062,9 +2085,6 @@ html, body {
   font-size: 16px;
 }
 
-/* ============================================================
-   💾 SAVE INDICATOR
-   ============================================================ */
 #ppv-save-indicator {
   font-size: 13px;
   color: var(--color-text-muted);
@@ -2084,9 +2104,6 @@ html, body {
   color: var(--color-error);
 }
 
-/* ============================================================
-   📱 RESPONSIVE
-   ============================================================ */
 @media (max-width: 768px) {
   .ppv-admin-profile {
     padding: 16px;
@@ -2172,9 +2189,6 @@ html, body {
   }
 }
 
-/* ============================================================
-   ♿ ACCESSIBILITY
-   ============================================================ */
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;
@@ -2190,9 +2204,6 @@ html, body {
   outline-offset: 2px;
 }
 
-/* ============================================================
-   ✨ UTILITIES
-   ============================================================ */
 ::selection {
   background: var(--color-primary-light);
   color: var(--color-text);
@@ -2243,10 +2254,6 @@ html, body {
   letter-spacing: 0.2px;
 }
 
-/* ============================================================
-   🌙 DARK MODE - FULL THEME
-   ============================================================ */
-
 body.ppv-dark {
   background: #0f1419;
   color: #e0e6ed;
@@ -2265,8 +2272,6 @@ body.ppv-dark .ppv-user-greet p.welcome {
 body.ppv-dark .ppv-user-greet p.user {
   color: #7a8895;
 }
-
-
 
 /* QR Banner */
 body.ppv-dark .ppv-qr-banner {
@@ -2394,59 +2399,6 @@ body.ppv-dark #ppv-theme-toggle {
  * ✅ Performance focused
  */
 
-/* ============================================================
-   🌐 ROOT VARIABLES – LIGHT THEME (DEFAULT)
-   ============================================================ */
-:root {
-  /* Primary Colors */
-  --color-primary: #667eea;
-  --color-primary-dark: #764ba2;
-  --color-primary-light: rgba(102, 126, 234, 0.1);
-  --color-primary-rgb: 102, 126, 234;
-  
-  /* Status Colors */
-  --color-success: #10b981;
-  --color-warning: #f59e0b;
-  --color-error: #ef4444;
-  --color-info: #00b8e6;
-  
-  /* Backgrounds */
-  --color-bg: #f8fafc;
-  --color-bg-light: #ffffff;
-  --color-card: #ffffff;
-  
-  /* Text */
-  --color-text: #0f172a;
-  --color-text-secondary: #475569;
-  --color-text-muted: #94a3b8;
-  
-  /* Borders */
-  --color-border: #e2e8f0;
-  --color-border-light: #f1f5f9;
-  
-  /* Shadows */
-  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-sm: 0 2px 8px rgba(102, 126, 234, 0.08);
-  --shadow-md: 0 4px 16px rgba(102, 126, 234, 0.12);
-  --shadow-lg: 0 8px 24px rgba(102, 126, 234, 0.15);
-  --shadow-xl: 0 12px 32px rgba(102, 126, 234, 0.2);
-  
-  /* Spacing & Radius */
-  --radius: 16px;
-  --radius-lg: 20px;
-  --radius-md: 12px;
-  --radius-sm: 8px;
-  --radius-xs: 6px;
-  
-  /* Transitions */
-  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-fast: all 0.15s ease;
-  --transition-slow: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* ============================================================
-   🌙 DARK MODE VARIABLES
-   ============================================================ */
 body.ppv-dark,
 body.ppv-dark-mode {
   --color-primary: #a78bfa;
@@ -2465,9 +2417,6 @@ body.ppv-dark-mode {
   --color-border-light: #1e293b;
 }
 
-/* ============================================================
-   🔧 GLOBAL RESET
-   ============================================================ */
 *,
 *::before,
 *::after {
@@ -2491,9 +2440,6 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* ============================================================
-   📱 MAIN CONTAINER
-   ============================================================ */
 #ppv-my-points-app {
   width: 100%;
   min-height: 100vh;
@@ -2505,11 +2451,6 @@ body {
   animation: fadeIn 0.4s ease;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
   to {
     opacity: 1;
     transform: translateY(0);
@@ -2522,9 +2463,6 @@ body {
   padding: 24px 16px;
 }
 
-/* ============================================================
-   📡 OFFLINE BANNER
-   ============================================================ */
 .ppv-offline-banner {
   display: flex;
   align-items: center;
@@ -2546,40 +2484,23 @@ body {
   animation: pulse 1.5s infinite;
 }
 
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
 
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
   50% {
     opacity: 0.6;
   }
 }
 
-/* ============================================================
-   🎯 HEADER SECTION
-   ============================================================ */
 .ppv-points-header {
   text-align: center;
   margin-bottom: 32px;
   animation: slideUp 0.5s ease;
 }
 
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
   to {
     opacity: 1;
     transform: translateY(0);
@@ -2610,9 +2531,6 @@ body {
   letter-spacing: -0.01em;
 }
 
-/* ============================================================
-   ⭐ MAIN POINTS SUMMARY
-   ============================================================ */
 .ppv-points-summary {
   display: flex;
   flex-direction: column;
@@ -2656,9 +2574,6 @@ body {
   letter-spacing: 0.5px;
 }
 
-/* ============================================================
-   💬 MOTIVATION TEXT
-   ============================================================ */
 .ppv-motivation {
   text-align: center;
   font-size: 15px;
@@ -2668,9 +2583,6 @@ body {
   line-height: 1.6;
 }
 
-/* ============================================================
-   📊 STATS GRID
-   ============================================================ */
 .ppv-stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -2737,9 +2649,6 @@ body {
   line-height: 1.2;
 }
 
-/* ============================================================
-   🎁 NEXT REWARD SECTION
-   ============================================================ */
 .ppv-next-reward {
   padding: 24px;
   background: linear-gradient(135deg, var(--color-primary-light), rgba(var(--color-primary-rgb), 0.05));
@@ -2797,18 +2706,11 @@ body {
   animation: shimmer 2s infinite;
 }
 
-@keyframes shimmer {
-  0% {
-    transform: translateX(-100%);
-  }
   100% {
     transform: translateX(100%);
   }
 }
 
-/* ============================================================
-   🏆 TOP 3 STORES
-   ============================================================ */
 .ppv-top3 {
   margin-bottom: 32px;
 }
@@ -2903,9 +2805,6 @@ body {
   color: var(--color-primary);
 }
 
-/* ============================================================
-   ⏱️ RECENT ENTRIES / HISTORY
-   ============================================================ */
 .ppv-points-list {
   margin-bottom: 32px;
 }
@@ -2943,11 +2842,6 @@ body {
 .ppv-point-card:nth-child(3) { animation-delay: 0.15s; }
 .ppv-point-card:nth-child(n+4) { animation-delay: 0.2s; }
 
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
   to {
     opacity: 1;
     transform: translateY(0);
@@ -2993,9 +2887,6 @@ body {
   text-align: right;
 }
 
-/* ============================================================
-   ⏳ LOADING STATES
-   ============================================================ */
 .ppv-loading {
   text-align: center;
   padding: 60px 20px;
@@ -3016,18 +2907,11 @@ body {
   animation: spin 1s linear infinite;
 }
 
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
   to {
     transform: rotate(360deg);
   }
 }
 
-/* ============================================================
-   🎯 EMPTY STATES
-   ============================================================ */
 .ppv-no-entries,
 .ppv-error {
   text-align: center;
@@ -3046,16 +2930,10 @@ body {
   margin: 20px 0;
 }
 
-/* ============================================================
-   🏁 FOOTER SPACING
-   ============================================================ */
 .ppv-dashboard-inner {
   padding-bottom: 100px;
 }
 
-/* ============================================================
-   📱 RESPONSIVE DESIGN
-   ============================================================ */
 @media (max-width: 768px) {
   .ppv-dashboard-inner {
     padding: 20px 12px;
@@ -3191,9 +3069,6 @@ body {
   }
 }
 
-/* ============================================================
-   ♿ ACCESSIBILITY
-   ============================================================ */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -3211,13 +3086,6 @@ body {
   }
 }
 
-/* ============================================================
-   🎨 ANIMATIONS
-   ============================================================ */
-@keyframes wiggle {
-  0%, 100% {
-    transform: rotate(0deg);
-  }
   10% {
     transform: rotate(-1deg);
   }
@@ -3226,10 +3094,6 @@ body {
   }
 }
 
-@keyframes bounce {
-  0%, 100% {
-    transform: translateY(0);
-  }
   50% {
     transform: translateY(-4px);
   }
@@ -3239,9 +3103,6 @@ body {
   animation: bounce 0.6s ease 2;
 }
 
-/* ============================================================
-   📱 BOTTOM NAV SAFE AREA
-   ============================================================ */
 body {
   padding-bottom: 70px;
 }
@@ -3252,9 +3113,6 @@ body {
   }
 }
 
-/* ============================================================
-   🎨 UTILITIES
-   ============================================================ */
 ::selection {
   background-color: var(--color-primary-light);
   color: var(--color-text);
@@ -3279,9 +3137,6 @@ body {
   background: var(--color-primary-dark);
 }
 
-/* ============================================================
-   🧰 THEME TRANSITION
-   ============================================================ */
 body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
@@ -3291,9 +3146,6 @@ body.ppv-dark-mode * {
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
-/* ============================================================
-   💾 PWA SPECIFIC
-   ============================================================ */
 @media (display-mode: standalone) {
   body {
     padding-bottom: max(70px, env(safe-area-inset-bottom));
@@ -3304,9 +3156,6 @@ body.ppv-dark-mode * {
   }
 }
 
-/* ============================================================
-   🖥️ DESKTOP ENHANCEMENTS
-   ============================================================ */
 @media (min-width: 1024px) {
   .ppv-dashboard-inner {
     padding: 32px 24px;
@@ -3341,9 +3190,6 @@ body.ppv-dark-mode * {
   }
 }
 
-/* ============================================================
-   🌐 PRINT STYLES
-   ============================================================ */
 @media print {
   body {
     background: white;
@@ -3369,9 +3215,6 @@ body.ppv-dark-mode * {
  * Charts • Summary Cards • Responsive
  */
 
-/* ============================================================
-   🌐 ANALYTICS WRAPPER
-   ============================================================ */
 .ppv-analytics-wrapper {
   width: 100%;
   animation: fadeIn 0.4s ease;
@@ -3402,9 +3245,6 @@ body.ppv-dark-mode * {
   color: var(--color-primary);
 }
 
-/* ============================================================
-   🎚️ RANGE SELECTOR
-   ============================================================ */
 .ppv-analytics-controls {
   display: flex;
   align-items: center;
@@ -3438,9 +3278,6 @@ body.ppv-dark-mode * {
   box-shadow: 0 0 0 3px var(--color-primary-light);
 }
 
-/* ============================================================
-   📊 SUMMARY CARDS
-   ============================================================ */
 .ppv-analytics-summary {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -3505,9 +3342,6 @@ body.ppv-dark-mode * {
   color: var(--color-text-secondary);
 }
 
-/* ============================================================
-   📈 ANALYTICS SECTION
-   ============================================================ */
 .ppv-analytics-section {
   margin-bottom: 32px;
   padding: 24px;
@@ -3524,9 +3358,6 @@ body.ppv-dark-mode * {
   color: var(--color-text);
 }
 
-/* ============================================================
-   📊 CHART CONTAINERS
-   ============================================================ */
 .ppv-chart-container {
   width: 100%;
   min-height: 300px;
@@ -3574,9 +3405,6 @@ body.ppv-dark-mode * {
   filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.15));
 }
 
-/* ============================================================
-   🏪 STORES BREAKDOWN
-   ============================================================ */
 .ppv-stores-breakdown {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -3648,9 +3476,6 @@ body.ppv-dark-mode * {
   color: var(--color-text-muted);
 }
 
-/* ============================================================
-   🏆 BEST DAY
-   ============================================================ */
 .ppv-best-day-card {
   padding: 24px;
   background: linear-gradient(135deg, var(--color-primary-light), rgba(var(--color-primary-rgb), 0.05));
@@ -3687,9 +3512,6 @@ body.ppv-dark-mode * {
   color: var(--color-primary);
 }
 
-/* ============================================================
-   ⚠️ ERROR STATES
-   ============================================================ */
 .ppv-analytics-error {
   padding: 20px;
   background: linear-gradient(135deg, #fee2e2, #fecaca);
@@ -3705,9 +3527,6 @@ body.ppv-dark-mode * {
   margin-bottom: 8px;
 }
 
-/* ============================================================
-   📱 RESPONSIVE
-   ============================================================ */
 @media (max-width: 1024px) {
   .ppv-analytics-summary {
     grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -3862,9 +3681,6 @@ body.ppv-dark-mode * {
   }
 }
 
-/* ============================================================
-   🌙 DARK MODE
-   ============================================================ */
 body.ppv-dark .ppv-analytics-header,
 body.ppv-dark .ppv-analytics-summary,
 body.ppv-dark .ppv-analytics-section {
@@ -3889,14 +3705,6 @@ body.ppv-dark .ppv-best-day-card {
   );
 }
 
-/* ============================================================
-   ✨ ANIMATIONS
-   ============================================================ */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
   to {
     opacity: 1;
     transform: translateY(0);
@@ -3911,7 +3719,6 @@ body.ppv-dark .ppv-best-day-card {
     transition: none;
   }
 }
-
 
         .ppv-bottom-nav {
             position: fixed;
@@ -3977,23 +3784,6 @@ body.ppv-dark .ppv-best-day-card {
  * Author: Erik Borota / PunktePass
  */
 
-/* ============================================================
-   🎨 QR SECTION – ROOT VARIABLES
-   ============================================================ */
-:root {
-  --qr-primary: #0088cc;           /* Erős tiszta kék */
-  --qr-primary-dark: #006699;      /* Sötétebb kék */
-  --qr-primary-light: rgba(0, 136, 204, 0.1);
-  --qr-accent: #00b8e6;            /* Világos kék accent */
-  --qr-accent-dark: #0095c7;       /* Sötétebb accent */
-  --qr-gradient: linear-gradient(135deg, #0088cc, #00b8e6);
-  --qr-gradient-alt: linear-gradient(135deg, #006699, #0088cc);
-}
-
-/* ============================================================
-   🎫 QR BANNER – CENTERED MODERN DESIGN
-   ============================================================ */
-
 .ppv-qr-banner {
   display: flex;
   justify-content: center;
@@ -4036,8 +3826,6 @@ body.ppv-dark .ppv-best-day-card {
   z-index: 0;
 }
 
-@keyframes shimmer-bg {
-  0%, 100% { opacity: 0.5; }
   50% { opacity: 1; }
 }
 
@@ -4055,10 +3843,6 @@ body.ppv-dark .ppv-best-day-card {
   border-color: rgba(99, 102, 241, 0.3);
 }
 
-/* ============================================================
-   📝 QR BANNER TEXT
-   ============================================================ */
-
 .ppv-qr-text {
   display: flex;
   align-items: center;
@@ -4074,11 +3858,6 @@ body.ppv-dark .ppv-best-day-card {
   animation: pulse-icon 2s ease-in-out infinite;
 }
 
-@keyframes pulse-icon {
-  0%, 100% {
-    opacity: 1;
-    transform: scale(1);
-  }
   50% {
     opacity: 0.8;
     transform: scale(1.05);
@@ -4108,10 +3887,6 @@ body.ppv-dark .ppv-best-day-card {
   color: rgba(0, 0, 0, 0.6);
   line-height: 1.4;
 }
-
-/* ============================================================
-   🔘 QR BUTTON
-   ============================================================ */
 
 .ppv-btn-qr {
   background: linear-gradient(135deg, var(--qr-primary), var(--qr-accent));
@@ -4168,10 +3943,6 @@ body.ppv-dark .ppv-best-day-card {
   transform: translateY(0) scale(0.98);
 }
 
-/* ============================================================
-   🌙 DARK MODE – QR BANNER
-   ============================================================ */
-
 body.ppv-dark .ppv-qr-banner {
   background: linear-gradient(
     135deg,
@@ -4202,10 +3973,6 @@ body.ppv-dark .ppv-qr-banner:hover {
 body.ppv-dark .ppv-qr-text p {
   color: rgba(255, 255, 255, 0.7);
 }
-
-/* ============================================================
-   🎫 QR MODAL – MODERN POPUP
-   ============================================================ */
 
 .ppv-user-qr {
   position: fixed;
@@ -4285,11 +4052,6 @@ body.ppv-dark .ppv-qr-text p {
   animation: pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-@keyframes pop-in {
-  0% {
-    opacity: 0;
-    transform: scale(0.7);
-  }
   100% {
     opacity: 1;
     transform: scale(1);
@@ -4326,10 +4088,6 @@ body.ppv-dark .ppv-qr-text p {
   color: var(--qr-primary);
   font-weight: 700;
 }
-
-/* ============================================================
-   🌙 DARK MODE – QR MODAL
-   ============================================================ */
 
 body.ppv-dark .ppv-user-qr {
   background: linear-gradient(
@@ -4374,10 +4132,6 @@ body.ppv-dark .ppv-qr-instructions {
 body.ppv-dark .ppv-qr-instructions strong {
   color: #00bfff;
 }
-
-/* ============================================================
-   📱 MOBILE RESPONSIVE
-   ============================================================ */
 
 @media (max-width: 768px) {
   .ppv-qr-banner {
@@ -4454,10 +4208,6 @@ body.ppv-dark .ppv-qr-instructions strong {
   }
 }
 
-/* ============================================================
-   ♿ ACCESSIBILITY
-   ============================================================ */
-
 .ppv-btn-qr:focus {
   outline: 2px solid var(--qr-primary);
   outline-offset: 2px;
@@ -4485,12 +4235,7 @@ body.ppv-dark .ppv-qr-instructions strong {
     border-width: 2px;
   }
 
-
 }
-
-/* ============================================================
-   🌌 AMBIENT BACKGROUND (OPTIONAL)
-   ============================================================ */
 
 .ppv-qr-banner::after {
   content: '';
@@ -4504,10 +4249,6 @@ body.ppv-dark .ppv-qr-instructions strong {
   pointer-events: none;
   z-index: -1;
 }
-
-/* ============================================================
-   ⏰ ANIMATION STATES
-   ============================================================ */
 
 /* Button press animation */
 .ppv-btn-qr:active {
@@ -4540,10 +4281,6 @@ body.ppv-dark .ppv-qr-overlay {
   background: rgba(0, 0, 0, 0.6);
 }
 
-/* ============================================================
-   ✨ PRINT STYLES
-   ============================================================ */
-
 @media print {
   .ppv-qr-banner {
     page-break-inside: avoid;
@@ -4570,87 +4307,6 @@ body.ppv-dark .ppv-qr-overlay {
  * ✅ Clean & optimized
  */
 
-/* ============================================================
-   🌐 ROOT – LIGHT MODE DEFAULT (ALL VARIABLES)
-   ============================================================ */
-:root {
-  color-scheme: light;
-  
- 
-
-  /* Primary Colors */
-  --color-primary: #667eea;
-  --color-primary-dark: #764ba2;
-  --color-primary-light: rgba(102, 126, 234, 0.1);
-  
-  /* ... többi --color-* ... */
-  
-  /* ✅ ADD BELOHNUNGEN PPV VARIABLES */
-  --ppv-primary: #6366f1;
-  --ppv-primary-dark: #764ba2;
-  --ppv-primary-light: rgba(99, 102, 241, 0.1);
-  --ppv-success: #10b981;
-  --ppv-warning: #ffd43b;
-  --ppv-error: #ff6b6b;
-  --ppv-bg: #f8fafc;
-  --ppv-card: #ffffff;
-  --ppv-text: #0f172a;
-  --ppv-text-secondary: #475569;
-  --ppv-text-muted: #94a3b8;
-  --ppv-border: #e2e8f0;
-  --ppv-border-light: #f1f5f9;
-  --ppv-shadow-sm: 0 2px 4px rgba(99, 102, 241, 0.08);
-  --ppv-shadow-md: 0 2px 8px rgba(99, 102, 241, 0.1);
-  --ppv-shadow-lg: 0 4px 16px rgba(99, 102, 241, 0.12);
-  --ppv-radius: 10px;
-  --ppv-radius-lg: 14px;
-  --ppv-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-
-
-  
-  /* Colors - Modern Indigo */
-  --ppv-primary: #6366f1;
-  --ppv-primary-dark: #764ba2;
-  --ppv-primary-light: rgba(99, 102, 241, 0.1);
-  --ppv-rgb: 99, 102, 241;
-  
-  /* Status Colors */
-  --ppv-success: #10b981;
-  --ppv-warning: #ffd43b;
-  --ppv-error: #ff6b6b;
-  --ppv-info: #00b8e6;
-  
-  /* ✅ LIGHT MODE BACKGROUNDS */
-  --ppv-bg: #f8fafc;
-  --ppv-bg-light: #ffffff;
-  --ppv-card: #ffffff;
-  
-  /* ✅ LIGHT MODE TEXT */
-  --ppv-text: #0f172a;
-  --ppv-text-secondary: #475569;
-  --ppv-text-muted: #94a3b8;
-  
-  /* ✅ LIGHT MODE BORDERS */
-  --ppv-border: #e2e8f0;
-  --ppv-border-light: #f1f5f9;
-  
-  /* Shadows */
-  --ppv-shadow-sm: 0 2px 4px rgba(99, 102, 241, 0.08);
-  --ppv-shadow-md: 0 2px 8px rgba(99, 102, 241, 0.1);
-  --ppv-shadow-lg: 0 4px 16px rgba(99, 102, 241, 0.12);
-  
-  /* Spacing */
-  --ppv-sp: 6px;
-  --ppv-radius: 10px;
-  --ppv-radius-lg: 14px;
-  
-  /* Transitions */
-  --ppv-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* ============================================================
-   🌙 DARK MODE – OPTIONAL (body.ppv-dark)
-   ============================================================ */
 body.ppv-dark,
 body.ppv-dark-mode {
   color-scheme: dark;
@@ -4674,9 +4330,6 @@ body.ppv-dark-mode {
   --ppv-border-light: #1e293b;
 }
 
-/* ============================================================
-   🔧 RESET
-   ============================================================ */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -4694,9 +4347,6 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* ============================================================
-   🎁 BELOHNUNGEN CONTAINER
-   ============================================================ */
 .ppv-belohnungen {
   width: 100%;
   max-width: 900px;
@@ -4706,20 +4356,12 @@ body {
   animation: fadeIn 0.4s ease;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
 
-/* ============================================================
-   📡 HEADER
-   ============================================================ */
 .ppv-rewards-header {
   text-align: center;
   margin-bottom: 20px;
@@ -4751,9 +4393,6 @@ body {
   font-weight: 500;
 }
 
-/* ============================================================
-   💰 USER POINTS CARD
-   ============================================================ */
 .ppv-user-points-card {
   display: flex;
   flex-direction: column;
@@ -4783,9 +4422,6 @@ body {
   letter-spacing: 0.5px;
 }
 
-/* ============================================================
-   🔍 SEARCH & FILTER
-   ============================================================ */
 .ppv-search-filter {
   display: flex;
   flex-direction: column;
@@ -4881,9 +4517,6 @@ body {
   transform: scale(0.98);
 }
 
-/* ============================================================
-   🎁 REWARD GRID
-   ============================================================ */
 .ppv-reward-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -4891,9 +4524,6 @@ body {
   margin-bottom: 20px;
 }
 
-/* ============================================================
-   🏆 REWARD CARD
-   ============================================================ */
 .ppv-reward-card {
   display: flex;
   flex-direction: column;
@@ -4964,9 +4594,6 @@ body {
   font-size: 16px;
 }
 
-/* ============================================================
-   🔘 REDEEM BUTTON
-   ============================================================ */
 .ppv-redeem-btn {
   padding: 10px 14px;
   background: linear-gradient(135deg, var(--ppv-primary), var(--ppv-primary-dark));
@@ -5005,9 +4632,6 @@ body {
   opacity: 0.6;
 }
 
-/* ============================================================
-   ⏳ PENDING SECTION
-   ============================================================ */
 .ppv-pending-section {
   margin-top: 30px;
   padding: 16px;
@@ -5038,9 +4662,6 @@ body {
   gap: 12px;
 }
 
-/* ============================================================
-   📋 PENDING CARD
-   ============================================================ */
 .ppv-pending-card {
   padding: 12px;
   background: var(--ppv-card);
@@ -5105,9 +4726,6 @@ body {
   white-space: nowrap;
 }
 
-/* ============================================================
-   🎨 STATUS COLORS
-   ============================================================ */
 .ppv-pending-card.status-pending,
 .ppv-pending-card.status-offen {
   border-color: var(--ppv-warning);
@@ -5125,9 +4743,6 @@ body {
   background: rgba(255, 107, 107, 0.05);
 }
 
-/* ============================================================
-   📭 EMPTY STATES
-   ============================================================ */
 .ppv-empty,
 .ppv-no-results {
   text-align: center;
@@ -5147,9 +4762,6 @@ body {
   opacity: 0.5;
 }
 
-/* ============================================================
-   🔴 ERROR NOTICE (NO INLINE STYLE!)
-   ============================================================ */
 .ppv-notice,
 .ppv-notice-error {
   padding: 16px;
@@ -5162,9 +4774,6 @@ body {
   margin: 16px 0;
 }
 
-/* ============================================================
-   🌐 RESPONSIVE
-   ============================================================ */
 @media (max-width: 768px) {
   .ppv-belohnungen {
     padding: 10px;
@@ -5245,9 +4854,6 @@ body {
   }
 }
 
-/* ============================================================
-   🖥️ DESKTOP
-   ============================================================ */
 @media (min-width: 1024px) {
   .ppv-belohnungen {
     padding: 20px 24px;
@@ -5281,9 +4887,6 @@ body {
   }
 }
 
-/* ============================================================
-   ♿ ACCESSIBILITY
-   ============================================================ */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -5294,9 +4897,6 @@ body {
   }
 }
 
-/* ============================================================
-   🔧 UTILITIES
-   ============================================================ */
 ::selection {
   background-color: var(--ppv-primary-light);
   color: var(--ppv-text);
@@ -5319,9 +4919,6 @@ body {
   background: var(--ppv-primary-dark);
 }
 
-/* ============================================================
-   📱 PWA
-   ============================================================ */
 @media (display-mode: standalone) {
   body {
     padding-bottom: max(0px, env(safe-area-inset-bottom));
@@ -5332,10 +4929,6 @@ body {
   }
 }
 
-
-
-
-
 /**
  * ✅ PunktePass – QR Scanner & Kampagnen CSS v5.3
  * 🎨 Modern, Compact, PWA-compatible
@@ -5343,52 +4936,6 @@ body {
  * 📱 Mobile-first, Fullscreen Scanner
  * Author: Erik Borota / PunktePass
  */
-
-/* ============================================================
-   🌐 CSS VARIABLES - THEME SYSTEM
-   ============================================================ */
-
-:root {
-  /* Light Theme */
-  --ppv-bg-primary: #ffffff;
-  --ppv-bg-secondary: #f8f9fa;
-  --ppv-bg-tertiary: #e9ecef;
-  --ppv-text-primary: #1a1a1a;
-  --ppv-text-secondary: #666666;
-  --ppv-text-tertiary: #999999;
-  --ppv-border: #e0e0e0;
-  --ppv-border-light: #f0f0f0;
-  
-  /* Accent Colors */
-  --ppv-primary: #6366f1;
-  --ppv-primary-light: #818cf8;
-  --ppv-primary-dark: #4f46e5;
-  --ppv-success: #10b981;
-  --ppv-warning: #f59e0b;
-  --ppv-danger: #ef4444;
-  --ppv-info: #3b82f6;
-  
-  /* Neon Colors */
-  --ppv-neon: #00e6ff;
-  --ppv-neon-alt: #00ff88;
-  
-  /* Glass Effect */
-  --ppv-glass-bg: rgba(255, 255, 255, 0.8);
-  --ppv-glass-border: rgba(255, 255, 255, 0.3);
-  --ppv-glass-blur: blur(10px);
-  
-  /* Shadows */
-  --ppv-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --ppv-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
-  --ppv-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
-  --ppv-shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.15);
-  
-  /* Spacing */
-  --ppv-spacing: 8px;
-  
-  /* Transitions */
-  --ppv-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
 
 /* Dark Theme */
 body.ppv-dark {
@@ -5404,10 +4951,6 @@ body.ppv-dark {
   --ppv-glass-bg: rgba(26, 26, 26, 0.8);
   --ppv-glass-border: rgba(255, 255, 255, 0.1);
 }
-
-/* ============================================================
-   📱 GLOBAL QR CENTER STYLES
-   ============================================================ */
 
 .ppv-welcome-block {
   display: flex;
@@ -5490,10 +5033,6 @@ body.ppv-dark {
   border-color: var(--ppv-primary);
 }
 
-/* ============================================================
-   💬 GLASS CARD & SECTION STYLES
-   ============================================================ */
-
 .glass-card,
 .glass-section {
   background: var(--ppv-glass-bg);
@@ -5521,10 +5060,6 @@ body.ppv-dark {
   font-weight: 700;
   color: var(--ppv-text-primary);
 }
-
-/* ============================================================
-   🎯 TAB NAVIGATION
-   ============================================================ */
 
 .ppv-tabs {
   display: flex;
@@ -5557,10 +5092,6 @@ body.ppv-dark {
   border-bottom: 3px solid var(--ppv-primary);
   margin-bottom: -2px;
 }
-
-/* ============================================================
-   📲 SCANNER SECTION
-   ============================================================ */
 
 .ppv-pos-center {
   margin-bottom: calc(var(--ppv-spacing) * 2);
@@ -5607,10 +5138,6 @@ body.ppv-dark {
 #ppv-pos-input::placeholder {
   color: var(--ppv-text-tertiary);
 }
-
-/* ============================================================
-   🔘 BUTTONS
-   ============================================================ */
 
 .ppv-btn {
   padding: calc(var(--ppv-spacing) * 1.5) calc(var(--ppv-spacing) * 2.5);
@@ -5678,10 +5205,6 @@ body.ppv-dark {
   font-size: 12px;
 }
 
-/* ============================================================
-   📊 RESULT BOX
-   ============================================================ */
-
 .ppv-result-box {
   padding: calc(var(--ppv-spacing) * 2);
   margin: calc(var(--ppv-spacing) * 2) 0;
@@ -5721,10 +5244,6 @@ body.ppv-dark {
   border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
-/* ============================================================
-   📋 TABLE STYLES
-   ============================================================ */
-
 .glass-table {
   width: 100%;
   border-collapse: collapse;
@@ -5753,10 +5272,6 @@ body.ppv-dark {
 .glass-table tbody tr:hover {
   background: var(--ppv-bg-secondary);
 }
-
-/* ============================================================
-   🎯 CAMPAIGNS SECTION
-   ============================================================ */
 
 .ppv-campaigns {
   margin-top: calc(var(--ppv-spacing) * 3);
@@ -5855,10 +5370,6 @@ body.ppv-dark {
   color: var(--ppv-text-secondary);
 }
 
-/* ============================================================
-   🎬 MODAL STYLES
-   ============================================================ */
-
 .ppv-modal {
   display: none;
   position: fixed;
@@ -5942,10 +5453,6 @@ body.ppv-dark {
   margin-left: 4px;
   cursor: help;
 }
-
-/* ============================================================
-   📷 FULLSCREEN CAMERA SCANNER – EXTRA LARGE (95vmin)
-   ============================================================ */
 
 #ppv-fullscreen-scanner {
   display: none;
@@ -6084,12 +5591,6 @@ body.ppv-dark {
   font-weight: 600;
 }
 
-
-
-/* ============================================================
-   ♿ ACCESSIBILITY
-   ============================================================ */
-
 .sr-only {
   position: absolute;
   width: 1px;
@@ -6109,10 +5610,6 @@ select:focus-visible {
   outline-offset: 2px;
 }
 
-/* ============================================================
-   🌙 SAFE AREA INSETS (PWA)
-   ============================================================ */
-
 @supports (padding: max(0px)) {
   #ppv-fullscreen-scanner {
     padding-top: max(0px, env(safe-area-inset-top));
@@ -6127,10 +5624,6 @@ select:focus-visible {
   }
 }
 
-/* ============================================================
-   🎭 TAB CONTENT VISIBILITY
-   ============================================================ */
-
 .ppv-tab-content {
   display: none;
   animation: fadeIn 0.3s ease-in;
@@ -6140,20 +5633,11 @@ select:focus-visible {
   display: block;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
-
-/* ============================================================
-   🛰️ OFFLINE BANNER
-   ============================================================ */
 
 #ppv-offline-banner {
   display: flex;
@@ -6182,18 +5666,10 @@ select:focus-visible {
   margin-right: 8px;
 }
 
-@keyframes blink {
-  0%, 100% {
-    opacity: 1;
-  }
   50% {
     opacity: 0.3;
   }
 }
-
-/* ============================================================
-   ⏳ LOADING STATE
-   ============================================================ */
 
 .ppv-loading {
   display: flex;
@@ -6215,15 +5691,7 @@ select:focus-visible {
   animation: spin 0.8s linear infinite;
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
-
-/* ============================================================
-   📱 SCROLLBAR STYLING
-   ============================================================ */
 
 /* Chrome, Safari, Edge */
 ::-webkit-scrollbar {
@@ -6250,17 +5718,9 @@ select:focus-visible {
   scrollbar-width: thin;
 }
 
-/* ============================================================
-   🎯 SMOOTH SCROLL
-   ============================================================ */
-
 html {
   scroll-behavior: smooth;
 }
-
-/* ============================================================
-   🔔 ADDITIONAL UTILITY CLASSES
-   ============================================================ */
 
 .hidden {
   display: none !important;
@@ -6310,10 +5770,6 @@ html {
   gap: calc(var(--ppv-spacing) * 2);
 }
 
-/* ============================================================
-   🌐 PRINT STYLES
-   ============================================================ */
-
 @media print {
   #ppv-fullscreen-scanner,
   .ppv-theme-btn,
@@ -6336,10 +5792,6 @@ html {
   }
 }
 
-/* ============================================================
-   🎬 TRANSITIONS & ANIMATIONS
-   ============================================================ */
-
 .transition-all {
   transition: var(--ppv-transition);
 }
@@ -6351,10 +5803,6 @@ html {
 .ease-in-out {
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
-
-/* ============================================================
-   ⚡ PERFORMANCE - GPU ACCELERATION
-   ============================================================ */
 
 .ppv-campaign-item,
 .ppv-btn,
@@ -6369,9 +5817,7 @@ html {
      color: #ffffff !important;
    }
    
-   /* ============================================================
-   🎯 IKON HÁTTÉR ELTÁVOLÍTÁSA - FONTOS FIX
-   ============================================================ */
+   
 
 /* Minden olyan elem, ahol lilás/kékes háttér van az ikonoknál */
 .ppv-feature-icon,
@@ -6393,15 +5839,8 @@ html {
   background-image: none !important;
 }
 
-
   
-  /* ============================================================
-   ✅ EINLÖSUNGEN (REDEEM) SECTION - Light & Dark Compatible
-   ============================================================ */
-
-/* ============================================================
-   📋 REDEEM SECTION WRAPPER
-   ============================================================ */
+  
 
 .ppv-redeem-section {
   margin-bottom: calc(var(--ppv-spacing) * 3);
@@ -6417,10 +5856,6 @@ html {
   gap: calc(var(--ppv-spacing) * 1);
 }
 
-/* ============================================================
-   🎴 REDEEM GRID LAYOUT
-   ============================================================ */
-
 .ppv-redeem-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -6433,10 +5868,6 @@ html {
     grid-template-columns: 1fr;
   }
 }
-
-/* ============================================================
-   🎁 REDEEM ITEM CARD
-   ============================================================ */
 
 .ppv-redeem-item {
   background: var(--ppv-glass-bg);
@@ -6481,14 +5912,8 @@ html {
   animation: pulse-glow 2s infinite;
 }
 
-@keyframes pulse-glow {
-  0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
 }
-
-/* ============================================================
-   📝 REDEEM ITEM CONTENT
-   ============================================================ */
 
 .ppv-redeem-item strong {
   display: block;
@@ -6528,10 +5953,6 @@ html {
   font-size: 16px;
   color: var(--ppv-neon);
 }
-
-/* ============================================================
-   🔘 REDEEM ACTION BUTTONS
-   ============================================================ */
 
 .ppv-redeem-actions {
   display: flex;
@@ -6582,10 +6003,6 @@ html {
   color: var(--ppv-danger);
 }
 
-/* ============================================================
-   📜 LOG BOX (Letzte 10 Einlösungen)
-   ============================================================ */
-
 .ppv-log-box {
   background: var(--ppv-glass-bg);
   backdrop-filter: var(--ppv-glass-blur);
@@ -6635,10 +6052,6 @@ html {
   color: var(--ppv-text-secondary);
 }
 
-/* ============================================================
-   🔄 LOADING STATE
-   ============================================================ */
-
 .ppv-loading {
   display: flex;
   align-items: center;
@@ -6650,8 +6063,6 @@ html {
   animation: pulse-fade 1.5s infinite;
 }
 
-@keyframes pulse-fade {
-  0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
 }
 
@@ -6661,14 +6072,8 @@ html {
   animation: spin 2s linear infinite;
 }
 
-@keyframes spin {
-  from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
-
-/* ============================================================
-   ℹ️ EMPTY STATE
-   ============================================================ */
 
 .ppv-redeem-empty {
   text-align: center;
@@ -6684,10 +6089,6 @@ html {
   margin-bottom: calc(var(--ppv-spacing) * 2);
   opacity: 0.5;
 }
-
-/* ============================================================
-   🔔 NOTIFICATION BADGE (Tab Badge)
-   ============================================================ */
 
 .ppv-badge {
   position: absolute;
@@ -6708,22 +6109,11 @@ html {
   animation: badge-pulse 2s infinite;
 }
 
-@keyframes badge-pulse {
-  0%, 100% {
-    transform: scale(1);
-    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.5);
-  }
   50% {
     transform: scale(1.15);
     box-shadow: 0 4px 12px rgba(239, 68, 68, 0.7);
   }
 }
-
-
-
-/* ============================================================
-   📱 RESPONSIVE ADJUSTMENTS
-   ============================================================ */
 
 @media (max-width: 640px) {
   .ppv-redeem-actions {
@@ -6744,10 +6134,6 @@ html {
     padding: calc(var(--ppv-spacing) * 2);
   }
 }
-
-/* ============================================================
-   🌙 DARK MODE SPECIFIC OVERRIDES
-   ============================================================ */
 
 body.ppv-dark .ppv-redeem-item {
   background: rgba(26, 26, 26, 0.9);
@@ -6772,10 +6158,6 @@ body.ppv-dark .ppv-reject:hover {
   background: rgba(239, 68, 68, 0.15);
 }
 
-/* ============================================================
-   ♿ ACCESSIBILITY
-   ============================================================ */
-
 .ppv-approve:focus-visible,
 .ppv-reject:focus-visible {
   outline: 2px solid var(--ppv-neon);
@@ -6798,10 +6180,6 @@ body.ppv-dark .ppv-reject:hover {
     transform: none;
   }
 }
-
-/* ============================================================
-   🌟 PWA SAFE AREA INSETS
-   ============================================================ */
 
 @supports (padding: max(0px)) {
   .ppv-log-box {
@@ -6831,75 +6209,10 @@ body.ppv-dark .ppv-reject:hover {
  * ✅ Responsive Design
  */
 
-/* ============================================================
-   🌐 ROOT VARIABLES – LIGHT THEME
-   ============================================================ */
-:root {
-  --ppv-color-primary: #00b8e6;
-  --ppv-color-primary-dark: #0088b0;
-  --ppv-color-primary-light: rgba(0, 184, 230, 0.1);
-  
-  --ppv-color-success: #10b981;
-  --ppv-color-warning: #f59e0b;
-  --ppv-color-error: #ef4444;
-  
-  --ppv-color-bg: #f9fbff;
-  --ppv-color-bg-light: #faffff;
-  --ppv-color-card: #ffffff;
-  --ppv-color-card-hover: #f0f7ff;
-  
-  --ppv-color-text: #0a0f1a;
-  --ppv-color-text-secondary: #4a5c6e;
-  --ppv-color-text-muted: #8b92a7;
-  
-  --ppv-color-border: rgba(0, 184, 230, 0.15);
-  --ppv-color-border-light: rgba(0, 184, 230, 0.08);
-  
-  --ppv-shadow-sm: 0 2px 8px rgba(0, 184, 230, 0.08);
-  --ppv-shadow-md: 0 4px 16px rgba(0, 184, 230, 0.12);
-  --ppv-shadow-lg: 0 8px 24px rgba(0, 184, 230, 0.15);
-  
-  --ppv-radius: 16px;
-  --ppv-radius-sm: 12px;
-  --ppv-radius-xs: 8px;
-  
-  --ppv-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* ============================================================
-   🌙 DARK THEME
-   ============================================================ */
 @media (prefers-color-scheme: dark) {
-  :root {
-    --ppv-color-primary: #00d4ff;
-    --ppv-color-primary-dark: #0099cc;
-    --ppv-color-primary-light: rgba(0, 212, 255, 0.15);
-    
-    --ppv-color-success: #34d399;
-    --ppv-color-warning: #fbbf24;
-    --ppv-color-error: #f87171;
-    
-    --ppv-color-bg: #0b0f17;
-    --ppv-color-bg-light: #131820;
-    --ppv-color-card: #1a1f2e;
-    --ppv-color-card-hover: #242d3f;
-    
-    --ppv-color-text: #f3f4f6;
-    --ppv-color-text-secondary: #d1d5db;
-    --ppv-color-text-muted: #9ca3af;
-    
-    --ppv-color-border: rgba(0, 212, 255, 0.15);
-    --ppv-color-border-light: rgba(0, 212, 255, 0.08);
-    
-    --ppv-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
-    --ppv-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
-    --ppv-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
-  }
+  
 }
 
-/* ============================================================
-   🔧 GLOBAL
-   ============================================================ */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -6914,9 +6227,6 @@ html, body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* ============================================================
-   📊 STATS WRAPPER
-   ============================================================ */
 .ppv-stats-wrapper {
   max-width: 1200px;
   margin: 0 auto;
@@ -6937,9 +6247,6 @@ html, body {
   color: var(--ppv-color-primary);
 }
 
-/* ============================================================
-   📋 LOADING & ERROR
-   ============================================================ */
 .ppv-stats-loading {
   display: flex;
   flex-direction: column;
@@ -6958,8 +6265,6 @@ html, body {
   animation: ppv-spin 1s linear infinite;
 }
 
-@keyframes ppv-spin {
-  to { transform: rotate(360deg); }
 }
 
 .ppv-stats-error {
@@ -6982,9 +6287,6 @@ html, body {
   padding: 1rem;
 }
 
-/* ============================================================
-   🎮 CONTROLS
-   ============================================================ */
 .ppv-stats-controls {
   display: flex;
   gap: 1rem;
@@ -7052,9 +6354,6 @@ html, body {
   cursor: not-allowed;
 }
 
-/* ============================================================
-   📊 BASIC STATS CARDS
-   ============================================================ */
 .ppv-stats-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -7095,9 +6394,6 @@ html, body {
   line-height: 1;
 }
 
-/* ============================================================
-   📈 CHART
-   ============================================================ */
 .ppv-stats-chart {
   padding: 2rem;
   background: var(--ppv-color-card);
@@ -7111,9 +6407,6 @@ html, body {
   max-height: 400px;
 }
 
-/* ============================================================
-   🏆 TOP 5 USERS
-   ============================================================ */
 .ppv-stats-section {
   margin-top: 2rem;
   padding: 1.5rem;
@@ -7214,9 +6507,6 @@ html, body {
   display: block;
 }
 
-/* ============================================================
-   🎁 REWARDS STATS
-   ============================================================ */
 .ppv-rewards-stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -7264,9 +6554,6 @@ html, body {
   color: var(--ppv-color-warning);
 }
 
-/* ============================================================
-   ⏰ PEAK HOURS
-   ============================================================ */
 .ppv-peak-hours {
   display: flex;
   flex-direction: column;
@@ -7322,9 +6609,6 @@ html, body {
   font-size: 1rem;
 }
 
-/* ============================================================
-   4️⃣ TREND STYLES
-   ============================================================ */
 .ppv-trend-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -7432,9 +6716,6 @@ html, body {
   color: var(--ppv-color-text-muted);
 }
 
-/* ============================================================
-   5️⃣ SPENDING STYLES
-   ============================================================ */
 .ppv-spending-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -7594,9 +6875,6 @@ html, body {
   color: var(--ppv-color-success);
 }
 
-/* ============================================================
-   6️⃣ CONVERSION STYLES
-   ============================================================ */
 .ppv-conversion-metrics {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -7704,9 +6982,6 @@ html, body {
   color: var(--ppv-color-text-muted);
 }
 
-/* ============================================================
-   7️⃣ EXPORT ADVANCED
-   ============================================================ */
 .ppv-export-advanced-controls {
   display: flex;
   gap: 1rem;
@@ -7722,9 +6997,6 @@ html, body {
   flex-shrink: 0;
 }
 
-/* ============================================================
-   📱 RESPONSIVE
-   ============================================================ */
 @media (max-width: 768px) {
   .ppv-stats-wrapper {
     padding: 1rem 0.75rem;
@@ -7838,9 +7110,6 @@ html, body {
   }
 }
 
-/* ============================================================
-   ♿ ACCESSIBILITY
-   ============================================================ */
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;
@@ -7855,9 +7124,6 @@ html, body {
   outline-offset: 2px;
 }
 
-/* ============================================================
-   🎨 SCROLLBAR
-   ============================================================ */
 ::-webkit-scrollbar {
   width: 8px;
 }
@@ -7875,9 +7141,6 @@ html, body {
   background: linear-gradient(135deg, #0088b0, var(--ppv-color-primary));
 }
 
-/* ============================================================
-   ✨ UTILITIES
-   ============================================================ */
 ::selection {
   background: var(--ppv-color-primary-light);
   color: var(--ppv-color-text);
@@ -7960,7 +7223,6 @@ body.ppv-dark .ppv-user-qr {
     background: #ffffff !important;
 }
 
-
 /* Ha a PPV kód HTML-ben más class-t használ, ez elkapja a blokkot */
 .ppv-user-qr .ppv-qr-instructions img {
     width: 45% !important;
@@ -7980,43 +7242,25 @@ body.ppv-dark .ppv-user-qr {
  * CDN: https://cdn.jsdelivr.net/npm/remixicon@4.0.0/fonts/remixicon.css
  */
 
-/* ============================================================
-   ICON SPIN ANIMATION (for loading states)
-   ============================================================ */
 .ri-spin {
   animation: ri-spin 1s linear infinite;
 }
 
-@keyframes ri-spin {
-  0% {
-    transform: rotate(0deg);
-  }
   100% {
     transform: rotate(360deg);
   }
 }
 
-/* ============================================================
-   ICON PULSE (for notifications)
-   ============================================================ */
 .ri-pulse {
   animation: ri-pulse 1.5s ease-in-out infinite;
 }
 
-@keyframes ri-pulse {
-  0%, 100% {
-    opacity: 1;
-    transform: scale(1);
-  }
   50% {
     opacity: 0.7;
     transform: scale(1.1);
   }
 }
 
-/* ============================================================
-   STATUS BADGE ICONS (colored circles)
-   ============================================================ */
 .ppv-status-badge.ppv-open .ri-checkbox-blank-circle-fill {
   color: #34d399;
   font-size: 12px;
@@ -8029,9 +7273,6 @@ body.ppv-dark .ppv-user-qr {
   margin-right: 4px;
 }
 
-/* ============================================================
-   ICON SPACING & ALIGNMENT
-   ============================================================ */
 .ppv-qr-text i,
 .ppv-btn-qr i,
 .ppv-section-title i,
@@ -8047,9 +7288,6 @@ body.ppv-dark .ppv-user-qr {
   opacity: 0.8;
 }
 
-/* ============================================================
-   SOCIAL ICONS (hover effects)
-   ============================================================ */
 .ppv-social-btn i {
   font-size: 20px;
   transition: transform 0.2s ease;
@@ -8071,17 +7309,11 @@ body.ppv-dark .ppv-user-qr {
   color: #000000;
 }
 
-/* ============================================================
-   LIGHTBOX NAVIGATION ICONS
-   ============================================================ */
 .ppv-lightbox-prev i,
 .ppv-lightbox-next i {
   font-size: 32px;
 }
 
-/* ============================================================
-   TOAST ICONS
-   ============================================================ */
 .ppv-toast-icon i {
   font-size: 24px;
 }
@@ -8102,17 +7334,11 @@ body.ppv-dark .ppv-user-qr {
   color: #60a5fa;
 }
 
-/* ============================================================
-   LOADING SPINNER
-   ============================================================ */
 .ppv-loading i {
   margin-right: 8px;
   color: #00e6ff;
 }
 
-/* ============================================================
-   RESPONSIVE ICON SIZES
-   ============================================================ */
 @media (max-width: 768px) {
   .ppv-qr-text i {
     font-size: 32px;
