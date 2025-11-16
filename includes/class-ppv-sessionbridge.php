@@ -97,10 +97,13 @@ class PPV_SessionBridge {
         if (!empty($_SESSION['ppv_store_id'])) {
             $GLOBALS['ppv_active_store'] = $_SESSION['ppv_store_id'];
             $GLOBALS['ppv_is_pos'] = true;
-            // 🔒 Soha ne írja felül a user_id-t
-            if (!empty($_SESSION['ppv_user_id']) && $_SESSION['ppv_user_id'] == $_SESSION['ppv_store_id']) {
+            // 🔒 Only remove user_id if it's EXACTLY the store_id AND user_type is NOT set
+            // This prevents kicking out legitimate vendor users
+            if (!empty($_SESSION['ppv_user_id']) &&
+                $_SESSION['ppv_user_id'] == $_SESSION['ppv_store_id'] &&
+                empty($_SESSION['ppv_user_type'])) {
                 unset($_SESSION['ppv_user_id']);
-                error_log("⚠️ [PPV_SessionBridge] Removed invalid user_id (was same as store_id)");
+                error_log("⚠️ [PPV_SessionBridge] Removed invalid user_id (was same as store_id, no user_type)");
             }
             error_log("✅ [PPV_SessionBridge] Fallback POS active | store={$_SESSION['ppv_store_id']}");
             return;

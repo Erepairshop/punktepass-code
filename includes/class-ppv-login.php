@@ -67,7 +67,7 @@ class PPV_Login {
         if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
             $domain = str_replace('www.', '', $_SERVER['HTTP_HOST'] ?? 'punktepass.de');
             session_set_cookie_params([
-                'lifetime' => 86400,
+                'lifetime' => 86400 * 180,  // 180 days (was 1 day - caused logout!)
                 'path'     => '/',
                 'domain'   => $domain,
                 'secure'   => !empty($_SERVER['HTTPS']),
