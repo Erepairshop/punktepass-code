@@ -149,6 +149,16 @@ body.ppv-user-dashboard {
   }
 }
 
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
 /* ============================================================
    🎫 QR BANNER - LIGHT THEME
@@ -1307,46 +1317,8 @@ body.ppv-user-dashboard {
  */
 
 /* ============================================================
-   🌐 ROOT VARIABLES
-   ============================================================ */
-:root {
-  --color-primary: #00b8e6;
-  --color-primary-dark: #0088b0;
-  --color-primary-light: rgba(0, 184, 230, 0.1);
-  --color-success: #10b981;
-  --color-error: #ef4444;
-  --color-warning: #f59e0b;
-  
-  --color-bg: #f9fbff;
-  --color-bg-light: #faffff;
-  --color-card: #ffffff;
-  
-  --color-text: #0a0f1a;
-  --color-text-secondary: #4a5c6e;
-  --color-text-muted: #8b92a7;
-  
-  --color-border: rgba(0, 184, 230, 0.15);
-  --color-border-light: rgba(0, 184, 230, 0.08);
-  
-  --shadow-sm: 0 2px 8px rgba(0, 184, 230, 0.08);
-  --shadow-md: 0 4px 16px rgba(0, 184, 230, 0.12);
-  --shadow-lg: 0 8px 24px rgba(0, 184, 230, 0.15);
-  
-  --radius: 16px;
-  --radius-sm: 12px;
-  --radius-xs: 8px;
-  
-  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* ============================================================
    🌐 GLOBAL STYLES
    ============================================================ */
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
 
 html, body {
   font-family: "Inter", "Poppins", -apple-system, sans-serif;
@@ -1530,17 +1502,6 @@ html, body {
   animation: slideDown 0.3s ease;
 }
 
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 .ppv-alert-success {
   background: #D1FAE5;
   color: #065F46;
@@ -1595,15 +1556,6 @@ html, body {
 
 .ppv-tab-content.active {
   display: block;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
 }
 
 .ppv-tab-content h2 {
@@ -2198,23 +2150,6 @@ html, body {
   color: var(--color-text);
 }
 
-::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--color-primary-light);
-}
-
-::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, var(--color-primary), #0088b0);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #0088b0, var(--color-primary));
-}
-
 .ppv-distance-filter label {
   display: block;
   margin-bottom: 12px !important;
@@ -2395,77 +2330,6 @@ body.ppv-dark #ppv-theme-toggle {
  */
 
 /* ============================================================
-   🌐 ROOT VARIABLES – LIGHT THEME (DEFAULT)
-   ============================================================ */
-:root {
-  /* Primary Colors */
-  --color-primary: #667eea;
-  --color-primary-dark: #764ba2;
-  --color-primary-light: rgba(102, 126, 234, 0.1);
-  --color-primary-rgb: 102, 126, 234;
-  
-  /* Status Colors */
-  --color-success: #10b981;
-  --color-warning: #f59e0b;
-  --color-error: #ef4444;
-  --color-info: #00b8e6;
-  
-  /* Backgrounds */
-  --color-bg: #f8fafc;
-  --color-bg-light: #ffffff;
-  --color-card: #ffffff;
-  
-  /* Text */
-  --color-text: #0f172a;
-  --color-text-secondary: #475569;
-  --color-text-muted: #94a3b8;
-  
-  /* Borders */
-  --color-border: #e2e8f0;
-  --color-border-light: #f1f5f9;
-  
-  /* Shadows */
-  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-sm: 0 2px 8px rgba(102, 126, 234, 0.08);
-  --shadow-md: 0 4px 16px rgba(102, 126, 234, 0.12);
-  --shadow-lg: 0 8px 24px rgba(102, 126, 234, 0.15);
-  --shadow-xl: 0 12px 32px rgba(102, 126, 234, 0.2);
-  
-  /* Spacing & Radius */
-  --radius: 16px;
-  --radius-lg: 20px;
-  --radius-md: 12px;
-  --radius-sm: 8px;
-  --radius-xs: 6px;
-  
-  /* Transitions */
-  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-fast: all 0.15s ease;
-  --transition-slow: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* ============================================================
-   🌙 DARK MODE VARIABLES
-   ============================================================ */
-body.ppv-dark,
-body.ppv-dark-mode {
-  --color-primary: #a78bfa;
-  --color-primary-dark: #c4b5fd;
-  --color-primary-light: rgba(167, 139, 250, 0.15);
-  
-  --color-bg: #0f172a;
-  --color-bg-light: #1e293b;
-  --color-card: #1e293b;
-  
-  --color-text: #f1f5f9;
-  --color-text-secondary: #cbd5e1;
-  --color-text-muted: #64748b;
-  
-  --color-border: #334155;
-  --color-border-light: #1e293b;
-}
-
-/* ============================================================
    🔧 GLOBAL RESET
    ============================================================ */
 *,
@@ -2505,17 +2369,6 @@ body {
   animation: fadeIn 0.4s ease;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 .ppv-dashboard-inner {
   max-width: 900px;
   margin: 0 auto;
@@ -2544,26 +2397,6 @@ body {
 .ppv-offline-banner i {
   font-size: 18px;
   animation: pulse 1.5s infinite;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.6;
-  }
 }
 
 /* ============================================================
@@ -2795,15 +2628,6 @@ body {
   inset: 0;
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
   animation: shimmer 2s infinite;
-}
-
-@keyframes shimmer {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(100%);
-  }
 }
 
 /* ============================================================
@@ -3258,25 +3082,6 @@ body {
 ::selection {
   background-color: var(--color-primary-light);
   color: var(--color-text);
-}
-
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--color-border-light);
-}
-
-::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, var(--color-primary), var(--color-primary-dark));
-  border-radius: 4px;
-  transition: background 0.3s ease;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--color-primary-dark);
 }
 
 /* ============================================================
@@ -3892,16 +3697,6 @@ body.ppv-dark .ppv-best-day-card {
 /* ============================================================
    ✨ ANIMATIONS
    ============================================================ */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
 
 @media (prefers-reduced-motion: reduce) {
   .ppv-analytics-wrapper,
@@ -3976,19 +3771,6 @@ body.ppv-dark .ppv-best-day-card {
  * ✅ Mobile responsive
  * Author: Erik Borota / PunktePass
  */
-
-/* ============================================================
-   🎨 QR SECTION – ROOT VARIABLES
-   ============================================================ */
-:root {
-  --qr-primary: #0088cc;           /* Erős tiszta kék */
-  --qr-primary-dark: #006699;      /* Sötétebb kék */
-  --qr-primary-light: rgba(0, 136, 204, 0.1);
-  --qr-accent: #00b8e6;            /* Világos kék accent */
-  --qr-accent-dark: #0095c7;       /* Sötétebb accent */
-  --qr-gradient: linear-gradient(135deg, #0088cc, #00b8e6);
-  --qr-gradient-alt: linear-gradient(135deg, #006699, #0088cc);
-}
 
 /* ============================================================
    🎫 QR BANNER – CENTERED MODERN DESIGN
@@ -4571,117 +4353,8 @@ body.ppv-dark .ppv-qr-overlay {
  */
 
 /* ============================================================
-   🌐 ROOT – LIGHT MODE DEFAULT (ALL VARIABLES)
-   ============================================================ */
-:root {
-  color-scheme: light;
-  
- 
-
-  /* Primary Colors */
-  --color-primary: #667eea;
-  --color-primary-dark: #764ba2;
-  --color-primary-light: rgba(102, 126, 234, 0.1);
-  
-  /* ... többi --color-* ... */
-  
-  /* ✅ ADD BELOHNUNGEN PPV VARIABLES */
-  --ppv-primary: #6366f1;
-  --ppv-primary-dark: #764ba2;
-  --ppv-primary-light: rgba(99, 102, 241, 0.1);
-  --ppv-success: #10b981;
-  --ppv-warning: #ffd43b;
-  --ppv-error: #ff6b6b;
-  --ppv-bg: #f8fafc;
-  --ppv-card: #ffffff;
-  --ppv-text: #0f172a;
-  --ppv-text-secondary: #475569;
-  --ppv-text-muted: #94a3b8;
-  --ppv-border: #e2e8f0;
-  --ppv-border-light: #f1f5f9;
-  --ppv-shadow-sm: 0 2px 4px rgba(99, 102, 241, 0.08);
-  --ppv-shadow-md: 0 2px 8px rgba(99, 102, 241, 0.1);
-  --ppv-shadow-lg: 0 4px 16px rgba(99, 102, 241, 0.12);
-  --ppv-radius: 10px;
-  --ppv-radius-lg: 14px;
-  --ppv-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-
-
-  
-  /* Colors - Modern Indigo */
-  --ppv-primary: #6366f1;
-  --ppv-primary-dark: #764ba2;
-  --ppv-primary-light: rgba(99, 102, 241, 0.1);
-  --ppv-rgb: 99, 102, 241;
-  
-  /* Status Colors */
-  --ppv-success: #10b981;
-  --ppv-warning: #ffd43b;
-  --ppv-error: #ff6b6b;
-  --ppv-info: #00b8e6;
-  
-  /* ✅ LIGHT MODE BACKGROUNDS */
-  --ppv-bg: #f8fafc;
-  --ppv-bg-light: #ffffff;
-  --ppv-card: #ffffff;
-  
-  /* ✅ LIGHT MODE TEXT */
-  --ppv-text: #0f172a;
-  --ppv-text-secondary: #475569;
-  --ppv-text-muted: #94a3b8;
-  
-  /* ✅ LIGHT MODE BORDERS */
-  --ppv-border: #e2e8f0;
-  --ppv-border-light: #f1f5f9;
-  
-  /* Shadows */
-  --ppv-shadow-sm: 0 2px 4px rgba(99, 102, 241, 0.08);
-  --ppv-shadow-md: 0 2px 8px rgba(99, 102, 241, 0.1);
-  --ppv-shadow-lg: 0 4px 16px rgba(99, 102, 241, 0.12);
-  
-  /* Spacing */
-  --ppv-sp: 6px;
-  --ppv-radius: 10px;
-  --ppv-radius-lg: 14px;
-  
-  /* Transitions */
-  --ppv-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* ============================================================
-   🌙 DARK MODE – OPTIONAL (body.ppv-dark)
-   ============================================================ */
-body.ppv-dark,
-body.ppv-dark-mode {
-  color-scheme: dark;
-  
-  --ppv-primary: #a78bfa;
-  --ppv-primary-dark: #c4b5fd;
-  --ppv-primary-light: rgba(167, 139, 250, 0.15);
-  
-  /* ✅ DARK MODE BACKGROUNDS */
-  --ppv-bg: #0f172a;
-  --ppv-bg-light: #1e293b;
-  --ppv-card: #1e293b;
-  
-  /* ✅ DARK MODE TEXT */
-  --ppv-text: #f1f5f9;
-  --ppv-text-secondary: #cbd5e1;
-  --ppv-text-muted: #64748b;
-  
-  /* ✅ DARK MODE BORDERS */
-  --ppv-border: #334155;
-  --ppv-border-light: #1e293b;
-}
-
-/* ============================================================
    🔧 RESET
    ============================================================ */
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
 
 /* ✅ BODY – Use variables (NOT hardcoded) */
 body {
@@ -4704,17 +4377,6 @@ body {
   padding: 12px;
   padding-bottom: 100px;
   animation: fadeIn 0.4s ease;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 /* ============================================================
@@ -5302,23 +4964,6 @@ body {
   color: var(--ppv-text);
 }
 
-::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--ppv-border-light);
-}
-
-::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, var(--ppv-primary), var(--ppv-primary-dark));
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--ppv-primary-dark);
-}
-
 /* ============================================================
    📱 PWA
    ============================================================ */
@@ -5343,67 +4988,6 @@ body {
  * 📱 Mobile-first, Fullscreen Scanner
  * Author: Erik Borota / PunktePass
  */
-
-/* ============================================================
-   🌐 CSS VARIABLES - THEME SYSTEM
-   ============================================================ */
-
-:root {
-  /* Light Theme */
-  --ppv-bg-primary: #ffffff;
-  --ppv-bg-secondary: #f8f9fa;
-  --ppv-bg-tertiary: #e9ecef;
-  --ppv-text-primary: #1a1a1a;
-  --ppv-text-secondary: #666666;
-  --ppv-text-tertiary: #999999;
-  --ppv-border: #e0e0e0;
-  --ppv-border-light: #f0f0f0;
-  
-  /* Accent Colors */
-  --ppv-primary: #6366f1;
-  --ppv-primary-light: #818cf8;
-  --ppv-primary-dark: #4f46e5;
-  --ppv-success: #10b981;
-  --ppv-warning: #f59e0b;
-  --ppv-danger: #ef4444;
-  --ppv-info: #3b82f6;
-  
-  /* Neon Colors */
-  --ppv-neon: #00e6ff;
-  --ppv-neon-alt: #00ff88;
-  
-  /* Glass Effect */
-  --ppv-glass-bg: rgba(255, 255, 255, 0.8);
-  --ppv-glass-border: rgba(255, 255, 255, 0.3);
-  --ppv-glass-blur: blur(10px);
-  
-  /* Shadows */
-  --ppv-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --ppv-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
-  --ppv-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
-  --ppv-shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.15);
-  
-  /* Spacing */
-  --ppv-spacing: 8px;
-  
-  /* Transitions */
-  --ppv-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Dark Theme */
-body.ppv-dark {
-  --ppv-bg-primary: #0a0a0a;
-  --ppv-bg-secondary: #1a1a1a;
-  --ppv-bg-tertiary: #2d2d2d;
-  --ppv-text-primary: #ffffff;
-  --ppv-text-secondary: #b0b0b0;
-  --ppv-text-tertiary: #808080;
-  --ppv-border: #333333;
-  --ppv-border-light: #1f1f1f;
-  
-  --ppv-glass-bg: rgba(26, 26, 26, 0.8);
-  --ppv-glass-border: rgba(255, 255, 255, 0.1);
-}
 
 /* ============================================================
    📱 GLOBAL QR CENTER STYLES
@@ -6140,17 +5724,6 @@ select:focus-visible {
   display: block;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 /* ============================================================
    🛰️ OFFLINE BANNER
    ============================================================ */
@@ -6213,41 +5786,6 @@ select:focus-visible {
   border-top-color: transparent;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* ============================================================
-   📱 SCROLLBAR STYLING
-   ============================================================ */
-
-/* Chrome, Safari, Edge */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--ppv-bg-secondary);
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--ppv-border);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--ppv-primary);
-}
-
-/* Firefox */
-* {
-  scrollbar-color: var(--ppv-border) var(--ppv-bg-secondary);
-  scrollbar-width: thin;
 }
 
 /* ============================================================
@@ -6661,11 +6199,6 @@ html {
   animation: spin 2s linear infinite;
 }
 
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
 /* ============================================================
    ℹ️ EMPTY STATE
    ============================================================ */
@@ -6830,89 +6363,6 @@ body.ppv-dark .ppv-reject:hover {
  * ✅ Advanced Stats (4-7)
  * ✅ Responsive Design
  */
-
-/* ============================================================
-   🌐 ROOT VARIABLES – LIGHT THEME
-   ============================================================ */
-:root {
-  --ppv-color-primary: #00b8e6;
-  --ppv-color-primary-dark: #0088b0;
-  --ppv-color-primary-light: rgba(0, 184, 230, 0.1);
-  
-  --ppv-color-success: #10b981;
-  --ppv-color-warning: #f59e0b;
-  --ppv-color-error: #ef4444;
-  
-  --ppv-color-bg: #f9fbff;
-  --ppv-color-bg-light: #faffff;
-  --ppv-color-card: #ffffff;
-  --ppv-color-card-hover: #f0f7ff;
-  
-  --ppv-color-text: #0a0f1a;
-  --ppv-color-text-secondary: #4a5c6e;
-  --ppv-color-text-muted: #8b92a7;
-  
-  --ppv-color-border: rgba(0, 184, 230, 0.15);
-  --ppv-color-border-light: rgba(0, 184, 230, 0.08);
-  
-  --ppv-shadow-sm: 0 2px 8px rgba(0, 184, 230, 0.08);
-  --ppv-shadow-md: 0 4px 16px rgba(0, 184, 230, 0.12);
-  --ppv-shadow-lg: 0 8px 24px rgba(0, 184, 230, 0.15);
-  
-  --ppv-radius: 16px;
-  --ppv-radius-sm: 12px;
-  --ppv-radius-xs: 8px;
-  
-  --ppv-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* ============================================================
-   🌙 DARK THEME
-   ============================================================ */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --ppv-color-primary: #00d4ff;
-    --ppv-color-primary-dark: #0099cc;
-    --ppv-color-primary-light: rgba(0, 212, 255, 0.15);
-    
-    --ppv-color-success: #34d399;
-    --ppv-color-warning: #fbbf24;
-    --ppv-color-error: #f87171;
-    
-    --ppv-color-bg: #0b0f17;
-    --ppv-color-bg-light: #131820;
-    --ppv-color-card: #1a1f2e;
-    --ppv-color-card-hover: #242d3f;
-    
-    --ppv-color-text: #f3f4f6;
-    --ppv-color-text-secondary: #d1d5db;
-    --ppv-color-text-muted: #9ca3af;
-    
-    --ppv-color-border: rgba(0, 212, 255, 0.15);
-    --ppv-color-border-light: rgba(0, 212, 255, 0.08);
-    
-    --ppv-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
-    --ppv-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
-    --ppv-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
-  }
-}
-
-/* ============================================================
-   🔧 GLOBAL
-   ============================================================ */
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-html, body {
-  width: 100%;
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: var(--ppv-color-bg);
-  color: var(--ppv-color-text);
-  -webkit-font-smoothing: antialiased;
-}
 
 /* ============================================================
    📊 STATS WRAPPER
@@ -7855,25 +7305,6 @@ html, body {
   outline-offset: 2px;
 }
 
-/* ============================================================
-   🎨 SCROLLBAR
-   ============================================================ */
-::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--ppv-color-bg);
-}
-
-::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, var(--ppv-color-primary), #0088b0);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #0088b0, var(--ppv-color-primary));
-}
 
 /* ============================================================
    ✨ UTILITIES
