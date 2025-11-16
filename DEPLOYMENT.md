@@ -1,6 +1,6 @@
 # Automatikus GitHub → Hostinger Telepítés
 
-**Status:** ✅ Aktív - Automatikus deployment beállítva!
+**Status:** ✅ Aktív - Automatikus deployment beállítva! (Secrets konfigurálva)
 
 ## Beállítás lépései
 
