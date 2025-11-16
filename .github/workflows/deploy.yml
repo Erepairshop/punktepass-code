@@ -19,12 +19,12 @@ jobs:
       - name: Deploy via FTP
         uses: SamKirkland/FTP-Deploy-Action@4.3.3
         with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
+          server: 89.116.147.72
+          username: u660905446.punktepass.de
           password: ${{ secrets.FTP_PASSWORD }}
           port: 21
           protocol: ftp
-          server-dir: ${{ secrets.FTP_SERVER_DIR }}
+          server-dir: /public_html/wp-content/plugins/punktepass/
           exclude: |
             **/.git*
             **/.git*/**
