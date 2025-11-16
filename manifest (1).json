@@ -1,0 +1,77 @@
+{
+  "name": "PunktePass",
+  "short_name": "PunktePass",
+  "description": "Digitales Treuepunkt-System mit QR-Code, Belohnungen und POS-Integration.",
+  
+  "id": "/",
+  "start_url": "/login?source=pwa",
+  "scope": "/",
+
+  "display": "standalone",
+  "orientation": "portrait",
+  "lang": "de",
+  
+  "theme_color": "#00BFFF",
+  "background_color": "#0B0F17",
+
+  "categories": ["shopping", "business", "lifestyle"],
+
+  "icons": [
+    {
+      "src": "/wp-content/plugins/punktepass/assets/img/pwa-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/wp-content/plugins/punktepass/assets/img/pwa-icon-192-maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/wp-content/plugins/punktepass/assets/img/pwa-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/wp-content/plugins/punktepass/assets/img/pwa-icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+
+  "screenshots": [
+    {
+      "src": "/wp-content/plugins/punktepass/assets/img/screenshot-login.png",
+      "sizes": "1871x862",
+      "type": "image/png",
+      "label": "Login"
+    },
+    {
+      "src": "/wp-content/plugins/punktepass/assets/img/screenshot-dashboard.png",
+      "sizes": "1850x792",
+      "type": "image/png",
+      "label": "User Dashboard"
+    }
+  ],
+
+  "shortcuts": [
+    {
+      "name": "QR Scanner",
+      "short_name": "Scanner",
+      "description": "Schnell den QR-Scanner öffnen",
+      "url": "/qr-scanner"
+    },
+    {
+      "name": "User Dashboard",
+      "short_name": "Dashboard",
+      "description": "Öffne dein PunktePass Dashboard",
+      "url": "/user_dashboard"
+    }
+  ],
+
+  "handle_links": "preferred"
+}
