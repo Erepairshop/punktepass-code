@@ -23,7 +23,7 @@ jobs:
           username: u660905446.punktepass.de
           password: Brtegk84047+_
           port: 21
-          protocol: ftps
+          protocol: ftp
           server-dir: /home/u660905446/domains/punktepass.de/public_html/wp-content/plugins/punktepass/
           exclude: |
             **/.git*
