@@ -419,7 +419,7 @@ class PPV_Signup {
         <script>
         // User Type Toggle
         document.addEventListener('DOMContentLoaded', function() {
-            const typeOptions = document.querySAll('.ppv-type-option');
+            const typeOptions = document.querySelectorAll('.ppv-type-option');
             const hiddenInput = document.getElementById('ppv-user-type');
 
             typeOptions.forEach(option => {
