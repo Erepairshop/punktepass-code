@@ -1,0 +1,152 @@
+/**
+ * PunktePass - Modern Icons Animation
+ * Remix Icon animations & enhancements
+ * CDN: https://cdn.jsdelivr.net/npm/remixicon@4.0.0/fonts/remixicon.css
+ */
+
+/* ============================================================
+   ICON SPIN ANIMATION (for loading states)
+   ============================================================ */
+.ri-spin {
+  animation: ri-spin 1s linear infinite;
+}
+
+@keyframes ri-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* ============================================================
+   ICON PULSE (for notifications)
+   ============================================================ */
+.ri-pulse {
+  animation: ri-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes ri-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.1);
+  }
+}
+
+/* ============================================================
+   STATUS BADGE ICONS (colored circles)
+   ============================================================ */
+.ppv-status-badge.ppv-open .ri-checkbox-blank-circle-fill {
+  color: #34d399;
+  font-size: 12px;
+  margin-right: 4px;
+}
+
+.ppv-status-badge.ppv-closed .ri-checkbox-blank-circle-fill {
+  color: #ef4444;
+  font-size: 12px;
+  margin-right: 4px;
+}
+
+/* ============================================================
+   ICON SPACING & ALIGNMENT
+   ============================================================ */
+.ppv-qr-text i,
+.ppv-btn-qr i,
+.ppv-section-title i,
+.ppv-store-preview i,
+.ppv-action-btn i {
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.ppv-reward-label i,
+.ppv-campaign-details i {
+  margin-right: 4px;
+  opacity: 0.8;
+}
+
+/* ============================================================
+   SOCIAL ICONS (hover effects)
+   ============================================================ */
+.ppv-social-btn i {
+  font-size: 20px;
+  transition: transform 0.2s ease;
+}
+
+.ppv-social-btn:hover i {
+  transform: scale(1.15);
+}
+
+.ppv-social-btn.ppv-fb:hover i {
+  color: #1877f2;
+}
+
+.ppv-social-btn.ppv-ig:hover i {
+  color: #e4405f;
+}
+
+.ppv-social-btn.ppv-tk:hover i {
+  color: #000000;
+}
+
+/* ============================================================
+   LIGHTBOX NAVIGATION ICONS
+   ============================================================ */
+.ppv-lightbox-prev i,
+.ppv-lightbox-next i {
+  font-size: 32px;
+}
+
+/* ============================================================
+   TOAST ICONS
+   ============================================================ */
+.ppv-toast-icon i {
+  font-size: 24px;
+}
+
+.ppv-point-toast.success .ppv-toast-icon i {
+  color: #34d399;
+}
+
+.ppv-point-toast.error .ppv-toast-icon i {
+  color: #ef4444;
+}
+
+.ppv-point-toast.duplicate .ppv-toast-icon i {
+  color: #fbbf24;
+}
+
+.ppv-point-toast.pending .ppv-toast-icon i {
+  color: #60a5fa;
+}
+
+/* ============================================================
+   LOADING SPINNER
+   ============================================================ */
+.ppv-loading i {
+  margin-right: 8px;
+  color: #00e6ff;
+}
+
+/* ============================================================
+   RESPONSIVE ICON SIZES
+   ============================================================ */
+@media (max-width: 768px) {
+  .ppv-qr-text i {
+    font-size: 32px;
+  }
+
+  .ppv-section-title i {
+    font-size: 20px;
+  }
+
+  .ppv-social-btn i {
+    font-size: 18px;
+  }
+}
