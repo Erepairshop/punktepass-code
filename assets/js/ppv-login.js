@@ -334,19 +334,27 @@ function initLogin() {
     function initFacebookLogin() {
         // Check if ppvLogin object exists
         if (typeof ppvLogin === 'undefined') {
-            console.error('ppvLogin object not found - wp_localize_script may not have loaded');
+            console.error('❌ ppvLogin object not found - wp_localize_script may not have loaded');
             $('#ppv-facebook-login-btn').prop('disabled', true).css('opacity', '0.5');
             return;
         }
+
+        // Debug: Show full ppvLogin object
+        console.log('🔍 ppvLogin object:', ppvLogin);
+        console.log('🔍 facebook_app_id value:', ppvLogin.facebook_app_id);
+        console.log('🔍 facebook_app_id type:', typeof ppvLogin.facebook_app_id);
+        console.log('🔍 facebook_app_id length:', ppvLogin.facebook_app_id ? ppvLogin.facebook_app_id.length : 0);
 
         const appId = ppvLogin.facebook_app_id;
-        console.log('Facebook App ID:', appId ? '✓ Found' : '✗ Not configured');
 
-        if (!appId) {
-            console.warn('Facebook App ID not configured in wp-config.php or WordPress settings');
+        if (!appId || appId === '') {
+            console.warn('⚠️ Facebook App ID is empty');
+            console.log('🔍 Checking if defined in wp-config.php...');
             $('#ppv-facebook-login-btn').prop('disabled', true).css('opacity', '0.5');
             return;
         }
+
+        console.log('✅ Facebook App ID found:', appId.substring(0, 5) + '...');
 
         // Load Facebook SDK
         window.fbAsyncInit = function() {
