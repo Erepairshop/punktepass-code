@@ -1,85 +1,70 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * 🎨 PunktePass Belohnungen - Ultra Modern Native App Design
+ * 🎨 PunktePass Belohnungen - Ultra Compact Dark Content Design
  * ═══════════════════════════════════════════════════════════════
- * Version: 2.0 ULTRA MODERN
- * Design: Glassmorphism + Neumorphism + Modern Gradients
- * Typography: Inter + SF Pro + System Fonts
- * Mobile-First, Touch-Optimized, Buttery Smooth Animations
+ * Version: 2.1 COMPACT DARK
+ * Design: Light Background + Dark Content Cards
+ * Typography: Inter + System Fonts
+ * Mobile-First, Compact, Modern
  */
 
 /* ═══════════════════════════════════════════════════════════════
    🎯 CUSTOM PROPERTIES (Design Tokens)
    ═══════════════════════════════════════════════════════════════ */
 :root {
-  /* 🎨 Colors - Modern Vibrant Palette */
+  /* 🎨 Colors - Dark Content on Light BG */
   --ppv-primary: #6366f1;
   --ppv-primary-light: #818cf8;
   --ppv-primary-dark: #4f46e5;
-  --ppv-secondary: #ec4899;
   --ppv-success: #10b981;
   --ppv-warning: #f59e0b;
   --ppv-danger: #ef4444;
-  --ppv-info: #3b82f6;
 
   /* 🌈 Gradients */
   --ppv-gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  --ppv-gradient-success: linear-gradient(135deg, #0cebeb 0%, #20e3b2 50%, #29ffc6 100%);
-  --ppv-gradient-warm: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-  --ppv-gradient-cool: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-  --ppv-gradient-gold: linear-gradient(135deg, #ffd89b 0%, #19547b 100%);
-  --ppv-gradient-purple: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+  --ppv-gradient-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
 
-  /* 🖼️ Backgrounds */
-  --ppv-bg-primary: #ffffff;
-  --ppv-bg-secondary: #f8fafc;
-  --ppv-bg-card: #ffffff;
-  --ppv-bg-overlay: rgba(255, 255, 255, 0.95);
+  /* 🖼️ Backgrounds - Inverse Design */
+  --ppv-bg-page: #f8fafc;
+  --ppv-bg-card: #1e293b;
+  --ppv-bg-card-hover: #334155;
+  --ppv-bg-input: #0f172a;
+  --ppv-bg-secondary: #475569;
 
-  /* 📝 Text */
-  --ppv-text-primary: #0f172a;
-  --ppv-text-secondary: #64748b;
+  /* 📝 Text - Light on Dark */
+  --ppv-text-primary: #f1f5f9;
+  --ppv-text-secondary: #cbd5e1;
   --ppv-text-muted: #94a3b8;
-  --ppv-text-inverse: #ffffff;
+  --ppv-text-inverse: #0f172a;
 
   /* 🔳 Borders */
-  --ppv-border: #e2e8f0;
-  --ppv-border-light: #f1f5f9;
+  --ppv-border: #334155;
+  --ppv-border-light: #475569;
 
-  /* 🌫️ Shadows - Elevated Design */
-  --ppv-shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --ppv-shadow-sm: 0 2px 8px -2px rgba(0, 0, 0, 0.1);
-  --ppv-shadow-md: 0 4px 16px -4px rgba(0, 0, 0, 0.12);
-  --ppv-shadow-lg: 0 8px 32px -8px rgba(0, 0, 0, 0.15);
-  --ppv-shadow-xl: 0 20px 48px -12px rgba(0, 0, 0, 0.2);
-  --ppv-shadow-2xl: 0 24px 64px -16px rgba(0, 0, 0, 0.25);
+  /* 🌫️ Shadows - Subtle for Light BG */
+  --ppv-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  --ppv-shadow-md: 0 2px 8px -2px rgba(0, 0, 0, 0.12);
+  --ppv-shadow-lg: 0 4px 16px -4px rgba(0, 0, 0, 0.15);
 
-  /* 🔘 Border Radius */
-  --ppv-radius-sm: 8px;
-  --ppv-radius-md: 12px;
-  --ppv-radius-lg: 16px;
-  --ppv-radius-xl: 20px;
-  --ppv-radius-2xl: 24px;
+  /* 🔘 Border Radius - Smaller for Compact */
+  --ppv-radius-sm: 6px;
+  --ppv-radius-md: 10px;
+  --ppv-radius-lg: 14px;
   --ppv-radius-full: 9999px;
 
-  /* ⏱️ Transitions - Buttery Smooth */
-  --ppv-transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  --ppv-transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
-  --ppv-transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
-  --ppv-transition-bounce: 400ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  /* ⏱️ Transitions */
+  --ppv-transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
 
-  /* 📏 Spacing */
+  /* 📏 Spacing - Compact */
   --ppv-space-xs: 4px;
-  --ppv-space-sm: 8px;
-  --ppv-space-md: 12px;
-  --ppv-space-lg: 16px;
-  --ppv-space-xl: 24px;
-  --ppv-space-2xl: 32px;
-  --ppv-space-3xl: 48px;
+  --ppv-space-sm: 6px;
+  --ppv-space-md: 10px;
+  --ppv-space-lg: 14px;
+  --ppv-space-xl: 18px;
+  --ppv-space-2xl: 24px;
 
   /* 🔤 Typography */
-  --ppv-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
-  --ppv-font-mono: 'SF Mono', 'Monaco', 'Cascadia Code', 'Courier New', monospace;
+  --ppv-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -90,147 +75,84 @@
   font-family: var(--ppv-font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  color: var(--ppv-text-primary);
-  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  background: var(--ppv-bg-page);
   min-height: 100vh;
-  padding: var(--ppv-space-lg);
-  padding-bottom: 120px;
-}
-
-/* Fade-in animation */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.ppv-belohnungen {
-  animation: fadeInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: var(--ppv-space-md);
+  padding-bottom: 90px;
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   📱 HEADER - Glassmorphism Design
+   📱 HEADER - Compact Dark Card
    ═══════════════════════════════════════════════════════════════ */
 .ppv-rewards-header {
-  position: relative;
   text-align: center;
-  padding: var(--ppv-space-2xl) var(--ppv-space-xl);
-  margin-bottom: var(--ppv-space-xl);
-  background: var(--ppv-gradient-primary);
-  border-radius: var(--ppv-radius-2xl);
-  box-shadow: var(--ppv-shadow-xl);
-  overflow: hidden;
-  backdrop-filter: blur(20px);
-}
-
-.ppv-rewards-header::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  right: -20%;
-  width: 300px;
-  height: 300px;
-  background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
-  border-radius: 50%;
-  animation: float 8s ease-in-out infinite;
-}
-
-@keyframes float {
-  0%, 100% { transform: translate(0, 0) rotate(0deg); }
-  50% { transform: translate(-20px, -20px) rotate(180deg); }
+  padding: var(--ppv-space-xl) var(--ppv-space-lg);
+  margin-bottom: var(--ppv-space-lg);
+  background: var(--ppv-bg-card);
+  border-radius: var(--ppv-radius-lg);
+  box-shadow: var(--ppv-shadow-md);
 }
 
 .ppv-rewards-header h2 {
-  position: relative;
-  z-index: 1;
-  font-size: clamp(24px, 5vw, 32px);
-  font-weight: 800;
-  color: var(--ppv-text-inverse);
-  margin: 0 0 var(--ppv-space-sm) 0;
-  letter-spacing: -0.02em;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ppv-text-primary);
+  margin: 0 0 var(--ppv-space-xs) 0;
+  letter-spacing: -0.01em;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--ppv-space-md);
-  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.15);
+  gap: var(--ppv-space-sm);
 }
 
 .ppv-rewards-header h2 i {
-  font-size: 1.2em;
-  animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
+  font-size: 24px;
+  color: var(--ppv-primary-light);
 }
 
 .ppv-rewards-header p {
-  position: relative;
-  z-index: 1;
-  font-size: 15px;
-  color: rgba(255, 255, 255, 0.95);
+  font-size: 13px;
+  color: var(--ppv-text-secondary);
   margin: 0;
   font-weight: 500;
-  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   💎 USER POINTS CARD - Neumorphism
+   💎 USER POINTS CARD - Compact
    ═══════════════════════════════════════════════════════════════ */
 .ppv-user-points-card {
-  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: var(--ppv-space-2xl);
-  margin-bottom: var(--ppv-space-xl);
+  padding: var(--ppv-space-xl);
+  margin-bottom: var(--ppv-space-lg);
   background: var(--ppv-bg-card);
-  border-radius: var(--ppv-radius-2xl);
-  box-shadow:
-    var(--ppv-shadow-lg),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.5);
-  border: 1px solid var(--ppv-border-light);
-  overflow: hidden;
-  transition: all var(--ppv-transition-slow);
-}
-
-.ppv-user-points-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: var(--ppv-gradient-primary);
+  border-radius: var(--ppv-radius-lg);
+  box-shadow: var(--ppv-shadow-md);
+  border-top: 3px solid var(--ppv-primary);
+  transition: all var(--ppv-transition);
 }
 
 .ppv-user-points-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--ppv-shadow-2xl);
+  transform: translateY(-2px);
+  box-shadow: var(--ppv-shadow-lg);
 }
 
 .points-value {
-  font-size: clamp(48px, 10vw, 72px);
+  font-size: 42px;
   font-weight: 900;
   background: var(--ppv-gradient-primary);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   line-height: 1;
-  margin-bottom: var(--ppv-space-sm);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.03em;
+  margin-bottom: var(--ppv-space-xs);
+  letter-spacing: -0.02em;
 }
 
 .points-label {
-  font-size: 16px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--ppv-text-secondary);
   text-transform: uppercase;
@@ -238,149 +160,125 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   🔍 SEARCH & FILTER - Modern Input Design
+   🔍 SEARCH & FILTER - Compact Dark
    ═══════════════════════════════════════════════════════════════ */
 #ppv-search-filter-container {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--ppv-space-md);
-  margin-bottom: var(--ppv-space-xl);
-  padding: var(--ppv-space-lg);
+  gap: var(--ppv-space-sm);
+  margin-bottom: var(--ppv-space-lg);
+  padding: var(--ppv-space-md);
   background: var(--ppv-bg-card);
-  border-radius: var(--ppv-radius-xl);
-  box-shadow: var(--ppv-shadow-md);
-  border: 1px solid var(--ppv-border);
+  border-radius: var(--ppv-radius-md);
+  box-shadow: var(--ppv-shadow-sm);
 }
 
-/* Search Input */
 .ppv-search-input,
 .ppv-filter-select {
   flex: 1;
-  min-width: 200px;
-  padding: var(--ppv-space-md) var(--ppv-space-lg);
-  font-size: 15px;
+  min-width: 180px;
+  padding: var(--ppv-space-sm) var(--ppv-space-md);
+  font-size: 14px;
   font-weight: 500;
   color: var(--ppv-text-primary);
-  background: var(--ppv-bg-secondary);
-  border: 2px solid transparent;
+  background: var(--ppv-bg-input);
+  border: 1px solid var(--ppv-border);
   border-radius: var(--ppv-radius-full);
   outline: none;
-  transition: all var(--ppv-transition-base);
+  transition: all var(--ppv-transition);
   font-family: var(--ppv-font-sans);
 }
 
 .ppv-search-input:focus,
 .ppv-filter-select:focus {
   border-color: var(--ppv-primary);
-  background: var(--ppv-bg-card);
-  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
-  transform: translateY(-1px);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
 }
 
 .ppv-search-input::placeholder {
   color: var(--ppv-text-muted);
 }
 
-/* Reset Button */
 .ppv-filter-reset {
-  padding: var(--ppv-space-md) var(--ppv-space-xl);
-  font-size: 14px;
+  padding: var(--ppv-space-sm) var(--ppv-space-lg);
+  font-size: 13px;
   font-weight: 600;
   color: var(--ppv-text-secondary);
   background: var(--ppv-bg-secondary);
-  border: 2px solid var(--ppv-border);
+  border: 1px solid var(--ppv-border);
   border-radius: var(--ppv-radius-full);
   cursor: pointer;
-  transition: all var(--ppv-transition-base);
+  transition: all var(--ppv-transition);
   white-space: nowrap;
 }
 
 .ppv-filter-reset:hover {
-  color: var(--ppv-primary);
+  color: var(--ppv-primary-light);
   border-color: var(--ppv-primary);
-  background: rgba(99, 102, 241, 0.05);
   transform: translateY(-1px);
 }
 
-.ppv-filter-reset:active {
-  transform: scale(0.97);
-}
-
 /* ═══════════════════════════════════════════════════════════════
-   🎴 REWARD GRID - Responsive Masonry
+   🎴 REWARD GRID - Compact
    ═══════════════════════════════════════════════════════════════ */
 .ppv-reward-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
-  gap: var(--ppv-space-lg);
-  margin-bottom: var(--ppv-space-2xl);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+  gap: var(--ppv-space-md);
+  margin-bottom: var(--ppv-space-xl);
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   🏆 REWARD CARD - Premium Card Design
+   🏆 REWARD CARD - Compact Dark
    ═══════════════════════════════════════════════════════════════ */
 .ppv-reward-card {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: var(--ppv-space-md);
-  padding: var(--ppv-space-xl);
+  gap: var(--ppv-space-sm);
+  padding: var(--ppv-space-lg);
   background: var(--ppv-bg-card);
   border: 1px solid var(--ppv-border);
-  border-radius: var(--ppv-radius-xl);
-  box-shadow: var(--ppv-shadow-md);
-  transition: all var(--ppv-transition-slow);
-  overflow: hidden;
+  border-radius: var(--ppv-radius-md);
+  box-shadow: var(--ppv-shadow-sm);
+  transition: all var(--ppv-transition);
   cursor: pointer;
 }
 
-/* Gradient Accent Bar */
 .ppv-reward-card::before {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  height: 3px;
+  height: 2px;
   background: var(--ppv-gradient-primary);
   opacity: 0;
-  transition: opacity var(--ppv-transition-base);
+  transition: opacity var(--ppv-transition);
 }
 
 .ppv-reward-card.available::before {
   opacity: 1;
 }
 
-/* Hover Effects */
 .ppv-reward-card:hover {
-  transform: translateY(-8px) scale(1.02);
-  box-shadow: var(--ppv-shadow-xl);
+  transform: translateY(-4px);
+  box-shadow: var(--ppv-shadow-lg);
+  background: var(--ppv-bg-card-hover);
   border-color: var(--ppv-primary-light);
 }
 
-.ppv-reward-card.available:hover {
-  box-shadow:
-    var(--ppv-shadow-2xl),
-    0 0 0 1px var(--ppv-primary-light);
-}
-
-.ppv-reward-card:active {
-  transform: translateY(-6px) scale(1.01);
-}
-
-/* Locked State */
 .ppv-reward-card.locked {
-  opacity: 0.65;
-  background: var(--ppv-bg-secondary);
+  opacity: 0.6;
 }
 
 .ppv-reward-card.locked:hover {
   transform: none;
-  box-shadow: var(--ppv-shadow-md);
+  background: var(--ppv-bg-card);
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   📋 REWARD CARD CONTENT
+   📋 REWARD CARD CONTENT - Compact
    ═══════════════════════════════════════════════════════════════ */
 .reward-header {
   display: flex;
@@ -389,104 +287,74 @@
 }
 
 .reward-header h4 {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--ppv-text-primary);
   line-height: 1.3;
   margin: 0;
-  letter-spacing: -0.01em;
 }
 
 .reward-header small {
   display: flex;
   align-items: center;
   gap: var(--ppv-space-xs);
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 600;
-  color: var(--ppv-text-secondary);
+  color: var(--ppv-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
 
 .reward-header small i {
-  font-size: 14px;
-  color: var(--ppv-primary);
+  font-size: 12px;
+  color: var(--ppv-primary-light);
 }
 
-/* Description */
 .ppv-reward-card p {
-  font-size: 14px;
-  line-height: 1.6;
+  font-size: 13px;
+  line-height: 1.5;
   color: var(--ppv-text-secondary);
   margin: 0;
 }
 
-/* Meta Info */
 .reward-meta {
   display: flex;
   align-items: center;
-  gap: var(--ppv-space-sm);
-  padding: var(--ppv-space-sm) var(--ppv-space-md);
-  background: var(--ppv-bg-secondary);
-  border-radius: var(--ppv-radius-md);
-  font-size: 15px;
+  gap: var(--ppv-space-xs);
+  padding: var(--ppv-space-xs) var(--ppv-space-sm);
+  background: var(--ppv-bg-input);
+  border-radius: var(--ppv-radius-sm);
+  font-size: 14px;
   font-weight: 700;
   color: var(--ppv-text-primary);
 }
 
 .reward-meta i {
-  font-size: 18px;
+  font-size: 16px;
   color: var(--ppv-warning);
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   📊 PROGRESS BAR - Modern Animated
+   📊 PROGRESS BAR - Compact
    ═══════════════════════════════════════════════════════════════ */
 .ppv-progress-container {
-  position: relative;
   width: 100%;
-  height: 8px;
-  background: var(--ppv-bg-secondary);
+  height: 6px;
+  background: var(--ppv-bg-input);
   border-radius: var(--ppv-radius-full);
   overflow: hidden;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .ppv-progress-bar {
   height: 100%;
   background: var(--ppv-gradient-success);
   border-radius: var(--ppv-radius-full);
-  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  overflow: hidden;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Shimmer Effect */
-.ppv-progress-bar::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.4),
-    transparent
-  );
-  animation: shimmer 2s infinite;
-}
-
-@keyframes shimmer {
-  0% { left: -100%; }
-  100% { left: 100%; }
-}
-
-/* Progress Text */
 .ppv-progress-text {
-  margin-top: var(--ppv-space-sm);
-  font-size: 13px;
+  margin-top: var(--ppv-space-xs);
+  font-size: 12px;
   font-weight: 600;
   color: var(--ppv-text-secondary);
   text-align: center;
@@ -498,83 +366,48 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   🔘 REDEEM BUTTON - Premium Button Design
+   🔘 REDEEM BUTTON - Compact
    ═══════════════════════════════════════════════════════════════ */
 .ppv-redeem-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--ppv-space-sm);
+  gap: var(--ppv-space-xs);
   width: 100%;
-  padding: var(--ppv-space-lg);
-  font-size: 16px;
+  padding: var(--ppv-space-md);
+  font-size: 14px;
   font-weight: 700;
-  color: var(--ppv-text-inverse);
+  color: white;
   background: var(--ppv-gradient-primary);
   border: none;
   border-radius: var(--ppv-radius-full);
   cursor: pointer;
-  transition: all var(--ppv-transition-base);
-  box-shadow:
-    0 4px 16px rgba(99, 102, 241, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transition: all var(--ppv-transition);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
   font-family: var(--ppv-font-sans);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  position: relative;
-  overflow: hidden;
-}
-
-.ppv-redeem-btn::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.3);
-  transform: translate(-50%, -50%);
-  transition: width 0.6s, height 0.6s;
-}
-
-.ppv-redeem-btn:hover::before {
-  width: 300px;
-  height: 300px;
+  letter-spacing: 0.03em;
 }
 
 .ppv-redeem-btn:hover {
   transform: translateY(-2px);
-  box-shadow:
-    0 8px 24px rgba(99, 102, 241, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
 }
 
 .ppv-redeem-btn:active {
   transform: translateY(0);
-  box-shadow:
-    0 2px 8px rgba(99, 102, 241, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .ppv-redeem-btn i {
-  font-size: 20px;
-  position: relative;
-  z-index: 1;
+  font-size: 16px;
 }
 
-.ppv-redeem-btn span {
-  position: relative;
-  z-index: 1;
-}
-
-/* Disabled State */
 .ppv-redeem-btn.disabled,
 .ppv-redeem-btn:disabled {
-  background: linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%);
+  background: var(--ppv-bg-secondary);
   cursor: not-allowed;
   box-shadow: none;
-  opacity: 0.6;
+  opacity: 0.5;
 }
 
 .ppv-redeem-btn.disabled:hover,
@@ -583,66 +416,49 @@
   box-shadow: none;
 }
 
-/* Loading State */
-.ppv-redeem-btn.loading {
-  pointer-events: none;
-}
-
-.ppv-redeem-btn.loading i {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
 /* ═══════════════════════════════════════════════════════════════
-   ⏳ PENDING SECTION
+   ⏳ PENDING SECTION - Compact Dark
    ═══════════════════════════════════════════════════════════════ */
 .ppv-pending-section {
-  margin-top: var(--ppv-space-3xl);
-  padding: var(--ppv-space-xl);
+  margin-top: var(--ppv-space-2xl);
+  padding: var(--ppv-space-lg);
   background: var(--ppv-bg-card);
-  border-radius: var(--ppv-radius-2xl);
-  box-shadow: var(--ppv-shadow-lg);
-  border: 1px solid var(--ppv-border);
+  border-radius: var(--ppv-radius-lg);
+  box-shadow: var(--ppv-shadow-md);
 }
 
 .ppv-pending-section h3 {
   display: flex;
   align-items: center;
-  gap: var(--ppv-space-md);
-  font-size: 22px;
-  font-weight: 800;
+  gap: var(--ppv-space-sm);
+  font-size: 18px;
+  font-weight: 700;
   color: var(--ppv-text-primary);
-  margin: 0 0 var(--ppv-space-xl) 0;
-  letter-spacing: -0.01em;
+  margin: 0 0 var(--ppv-space-lg) 0;
 }
 
 .ppv-pending-section h3 i {
-  font-size: 26px;
-  color: var(--ppv-primary);
+  font-size: 20px;
+  color: var(--ppv-primary-light);
 }
 
-/* Pending Grid */
 .ppv-pending-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
-  gap: var(--ppv-space-md);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+  gap: var(--ppv-space-sm);
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   🎫 PENDING CARD
+   🎫 PENDING CARD - Compact
    ═══════════════════════════════════════════════════════════════ */
 .ppv-pending-card {
   position: relative;
-  padding: var(--ppv-space-lg);
-  background: var(--ppv-bg-secondary);
-  border: 2px solid var(--ppv-border);
-  border-radius: var(--ppv-radius-lg);
-  transition: all var(--ppv-transition-base);
-  overflow: hidden;
+  padding: var(--ppv-space-md);
+  background: var(--ppv-bg-input);
+  border: 1px solid var(--ppv-border);
+  border-radius: var(--ppv-radius-sm);
+  transition: all var(--ppv-transition);
+  padding-left: calc(var(--ppv-space-md) + 4px);
 }
 
 .ppv-pending-card::before {
@@ -650,30 +466,30 @@
   position: absolute;
   top: 0;
   left: 0;
-  width: 4px;
+  width: 3px;
   height: 100%;
   background: var(--ppv-gradient-primary);
 }
 
 .ppv-pending-card.status-pending::before {
-  background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
+  background: var(--ppv-warning);
 }
 
 .ppv-pending-card.status-approved::before {
-  background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+  background: var(--ppv-success);
 }
 
 .ppv-pending-card.status-cancelled::before {
-  background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%);
+  background: var(--ppv-danger);
 }
 
 .ppv-pending-card:hover {
-  transform: translateX(4px);
-  box-shadow: var(--ppv-shadow-md);
+  transform: translateX(2px);
+  border-color: var(--ppv-border-light);
 }
 
 .ppv-pending-card h4 {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--ppv-text-primary);
   margin: 0 0 var(--ppv-space-xs) 0;
@@ -684,71 +500,63 @@
   display: flex;
   align-items: center;
   gap: var(--ppv-space-xs);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
-  color: var(--ppv-text-secondary);
-  margin-bottom: var(--ppv-space-sm);
+  color: var(--ppv-text-muted);
+  margin-bottom: var(--ppv-space-xs);
   text-transform: uppercase;
-  letter-spacing: 0.03em;
 }
 
 .ppv-pending-card p {
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: 12px;
+  line-height: 1.4;
   color: var(--ppv-text-secondary);
-  margin: 0 0 var(--ppv-space-md) 0;
+  margin: 0 0 var(--ppv-space-sm) 0;
 }
 
-/* Pending Meta */
 .pending-meta {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--ppv-space-sm);
+  gap: var(--ppv-space-xs);
   flex-wrap: wrap;
 }
 
-/* Status Badge */
 .status-badge {
   display: inline-flex;
   align-items: center;
   gap: var(--ppv-space-xs);
-  padding: var(--ppv-space-xs) var(--ppv-space-md);
-  font-size: 12px;
+  padding: 3px var(--ppv-space-sm);
+  font-size: 11px;
   font-weight: 700;
   border-radius: var(--ppv-radius-full);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.03em;
 }
 
 .status-badge.pending {
-  color: #d97706;
-  background: rgba(245, 158, 11, 0.1);
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.15);
 }
 
 .status-badge.approved {
-  color: #059669;
-  background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.15);
 }
 
 .status-badge.cancelled {
-  color: #dc2626;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.15);
 }
 
 .status-badge i {
-  font-size: 14px;
+  font-size: 12px;
 }
 
-/* Date Badge */
 .date-badge {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--ppv-text-muted);
-  font-variant-numeric: tabular-nums;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -759,22 +567,22 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--ppv-space-lg);
-  padding: var(--ppv-space-3xl);
+  gap: var(--ppv-space-md);
+  padding: var(--ppv-space-2xl);
   text-align: center;
   color: var(--ppv-text-muted);
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
 }
 
 .ppv-empty i {
-  font-size: 64px;
-  opacity: 0.4;
+  font-size: 48px;
+  opacity: 0.3;
   color: var(--ppv-text-secondary);
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   🎭 MODERN POPUP/MODAL
+   🎭 POPUP/MODAL - Compact
    ═══════════════════════════════════════════════════════════════ */
 .ppv-reward-popup {
   position: fixed;
@@ -785,104 +593,81 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(15, 23, 42, 0.8);
-  backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
   z-index: 9999;
   padding: var(--ppv-space-lg);
-  animation: fadeIn 0.3s ease;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
 }
 
 .ppv-reward-popup-inner {
-  position: relative;
-  max-width: 420px;
+  max-width: 380px;
   width: 100%;
-  padding: var(--ppv-space-2xl);
+  padding: var(--ppv-space-xl);
   background: var(--ppv-bg-card);
-  border-radius: var(--ppv-radius-2xl);
-  box-shadow: var(--ppv-shadow-2xl);
-  animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(40px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+  border-radius: var(--ppv-radius-lg);
+  box-shadow: var(--ppv-shadow-lg);
+  border: 1px solid var(--ppv-border);
 }
 
 .ppv-reward-popup-inner p {
-  font-size: 16px;
-  line-height: 1.6;
+  font-size: 14px;
+  line-height: 1.5;
   color: var(--ppv-text-primary);
-  margin: 0 0 var(--ppv-space-xl) 0;
+  margin: 0 0 var(--ppv-space-lg) 0;
   text-align: center;
   font-weight: 500;
 }
 
 .popup-button {
   width: 100%;
-  padding: var(--ppv-space-lg);
-  font-size: 16px;
+  padding: var(--ppv-space-md);
+  font-size: 14px;
   font-weight: 700;
-  color: var(--ppv-text-inverse);
+  color: white;
   background: var(--ppv-gradient-primary);
   border: none;
   border-radius: var(--ppv-radius-full);
   cursor: pointer;
-  transition: all var(--ppv-transition-base);
-  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
+  transition: all var(--ppv-transition);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
   font-family: var(--ppv-font-sans);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.03em;
 }
 
 .popup-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.5);
-}
-
-.popup-button:active {
-  transform: translateY(0);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   📱 RESPONSIVE DESIGN - Mobile First
+   📱 RESPONSIVE - Mobile First
    ═══════════════════════════════════════════════════════════════ */
 @media (max-width: 640px) {
   .ppv-belohnungen,
   .ppv-modern-rewards {
-    padding: var(--ppv-space-md);
-    padding-bottom: 100px;
+    padding: var(--ppv-space-sm);
+    padding-bottom: 80px;
   }
 
   .ppv-rewards-header {
-    padding: var(--ppv-space-xl) var(--ppv-space-lg);
+    padding: var(--ppv-space-lg) var(--ppv-space-md);
   }
 
   .ppv-rewards-header h2 {
-    font-size: 24px;
+    font-size: 20px;
   }
 
   .ppv-user-points-card {
-    padding: var(--ppv-space-xl);
+    padding: var(--ppv-space-lg);
   }
 
   .points-value {
-    font-size: 56px;
+    font-size: 36px;
   }
 
   #ppv-search-filter-container {
     flex-direction: column;
-    padding: var(--ppv-space-md);
   }
 
   .ppv-search-input,
@@ -894,37 +679,10 @@
   .ppv-pending-grid {
     grid-template-columns: 1fr;
   }
-
-  .ppv-reward-card {
-    padding: var(--ppv-space-lg);
-  }
-
-  .ppv-pending-section {
-    padding: var(--ppv-space-lg);
-  }
-}
-
-/* Tablet */
-@media (min-width: 641px) and (max-width: 1024px) {
-  .ppv-reward-grid,
-  .ppv-pending-grid {
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  }
-}
-
-/* Desktop */
-@media (min-width: 1025px) {
-  .ppv-reward-grid {
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  }
-
-  .ppv-reward-card:hover {
-    transform: translateY(-12px) scale(1.03);
-  }
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   ✨ ACCESSIBILITY & FOCUS STATES
+   ✨ ACCESSIBILITY
    ═══════════════════════════════════════════════════════════════ */
 .ppv-redeem-btn:focus-visible,
 .ppv-filter-reset:focus-visible,
@@ -935,34 +693,12 @@
   outline-offset: 2px;
 }
 
-/* Reduce Motion */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
-  }
-}
-
-/* Dark Mode Support */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --ppv-bg-primary: #0f172a;
-    --ppv-bg-secondary: #1e293b;
-    --ppv-bg-card: #1e293b;
-    --ppv-bg-overlay: rgba(30, 41, 59, 0.95);
-    --ppv-text-primary: #f1f5f9;
-    --ppv-text-secondary: #cbd5e1;
-    --ppv-text-muted: #94a3b8;
-    --ppv-border: #334155;
-    --ppv-border-light: #1e293b;
-  }
-
-  .ppv-belohnungen,
-  .ppv-modern-rewards {
-    background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
   }
 }
 
@@ -971,18 +707,6 @@
    ═══════════════════════════════════════════════════════════════ */
 .ppv-hidden {
   display: none !important;
-}
-
-.ppv-visible {
-  display: block !important;
-}
-
-.ppv-flex {
-  display: flex !important;
-}
-
-.ppv-grid {
-  display: grid !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════
