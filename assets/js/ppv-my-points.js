@@ -221,10 +221,10 @@
    * ============================ */
   async function initMyPoints() {
     console.log('🌍 [PPV_MYPOINTS] initMyPoints started');
-    
+
     const container = document.getElementById("ppv-my-points-app");
     if (!container) {
-      console.error('❌ Container NOT FOUND!');
+      console.log('ℹ️ [PPV_MYPOINTS] Container not found - script not needed on this page');
       return;
     }
 

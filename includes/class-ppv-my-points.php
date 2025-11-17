@@ -11,6 +11,8 @@ if (!defined('ABSPATH')) exit;
 
 class PPV_My_Points {
 
+    private static $shortcode_used = false;
+
     public static function hooks() {
         add_shortcode('ppv_my_points', [__CLASS__, 'render_shell']);
         add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
@@ -42,6 +44,12 @@ class PPV_My_Points {
      *  🔹 ENQUEUE SCRIPTS + INLINE STRINGS
      * ============================================================ */
     public static function enqueue_assets() {
+
+        // Only load if shortcode is used on the page
+        global $post;
+        if (!is_a($post, 'WP_Post') || !has_shortcode($post->post_content, 'ppv_my_points')) {
+            return;
+        }
 
         // Start session
         if (session_status() === PHP_SESSION_NONE) {
