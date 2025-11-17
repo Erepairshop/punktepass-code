@@ -19,46 +19,9 @@
       // ⛔ Skip entire script on POS dashboard pages
 if (document.body.classList.contains("ppv-pos-dashboard")) return;
 
-    const btn = document.getElementById("ppv-theme-toggle");
-    const logo = document.querySelector(".ppv-header-logo-min");
+// 🧹 Service worker cache ürítése (ha van)
 if (navigator.serviceWorker?.controller) {
   navigator.serviceWorker.controller.postMessage({ type: "clear-theme-cache" });
-}
-
-    if (btn) {
-  btn.addEventListener("click", () => {
-    theme = theme === "light" ? "dark" : "light";
-    localStorage.setItem(THEME_KEY, theme);
-    document.cookie = `${THEME_KEY}=${theme};path=/;max-age=${60 * 60 * 24 * 365}`;
-
-    // ⚡ CSS újratöltés
-    const link = document.getElementById("ppv-theme-css");
-    if (link) {
-      const base = link.href.split("?")[0];
-      link.href = `${base}?t=${Date.now()}`;
-    }
-
-    // ⚡ Logo újratöltés
-    const logo = document.querySelector(".ppv-header-logo-min");
-    if (logo) {
-      const src =
-        theme === "light"
-          ? "/wp-content/plugins/punktepass/assets/img/logo.webp"
-          : "/wp-content/plugins/punktepass/assets/img/logo.webp";
-      logo.src = src + "?t=" + Date.now();
-    }
-
-    // 🧹 Cache törlés
-    if (navigator.serviceWorker?.controller) {
-      navigator.serviceWorker.controller.postMessage("clear-theme-cache");
-    }
-  });
-}
-
-
-       // 🧹 Service worker cache ürítése
-if (navigator.serviceWorker?.controller) {
-  navigator.serviceWorker.controller.postMessage("clear-theme-cache");
 }
 
 // 🔁 Biztonsági reflow (azonnali redraw)
@@ -71,7 +34,7 @@ setTimeout(() => {
 // 🔹 LOGO update – biztonságosan DOM után
 document.addEventListener("DOMContentLoaded", () => {
   const logoEl = document.querySelector("#ppv-logo img, .ppv-logo img");
-  const activeTheme = document.body.dataset.theme || localStorage.getItem(THEME_KEY) || "dark";
+  const activeTheme = document.body.dataset.theme || localStorage.getItem(THEME_KEY) || "light";
   if (logoEl) updateLogo(logoEl, activeTheme);
 });
 
@@ -81,28 +44,34 @@ document.addEventListener("DOMContentLoaded", () => {
    * ============================ */
   function applyTheme(t, logoEl) {
     document.documentElement.setAttribute("data-theme", t);
+    document.body.classList.remove("ppv-light", "ppv-dark");
+    document.body.classList.add(`ppv-${t}`);
+
     const linkId = "ppv-theme-css";
 
-    let link = document.getElementById(linkId);
-    if (!link) {
-      link = document.createElement("link");
-      link.id = linkId;
-      link.rel = "stylesheet";
-      document.head.appendChild(link);
+    // Töröljük a régit
+    const oldLink = document.getElementById(linkId);
+    if (oldLink) {
+      oldLink.remove();
     }
+
+    // Hozzuk létre az újat
+    const link = document.createElement("link");
+    link.id = linkId;
+    link.rel = "stylesheet";
     link.href = `/wp-content/plugins/punktepass/assets/css/ppv-theme-${t}.css?v=${Date.now()}`;
+    document.head.appendChild(link);
 
     if (logoEl) updateLogo(logoEl, t);
     console.log("🎨 Theme aktiv:", t);
   }
 
   /** ============================
-   * 🎨 THEME INIT
+   * 🎨 THEME INIT (handled by ppv-theme-loader.js)
    * ============================ */
-  let theme = localStorage.getItem(THEME_KEY) || getCookie(THEME_KEY) || "dark";
- 
-applyTheme(theme);
-updateLogo(theme);
+  // Theme loading is now handled by ppv-theme-loader.js
+  // Only keep logo functionality here
+  let theme = localStorage.getItem(THEME_KEY) || getCookie(THEME_KEY) || "light";
   function updateLogo(theme) {
   // Mindig újra keresi a logót (Elementor újraépülhet)
   const logoEl = document.querySelector(".ppv-header-logo-min");
@@ -242,7 +211,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const observer = new MutationObserver(() => {
     console.log("🎨 [PPV_THEME_DEBUG] Theme changed →", document.body.dataset.theme);
     const currentLogo = document.querySelector("#ppv-logo img, .ppv-logo img");
-    const currentTheme = document.body.dataset.theme || "dark";
+    const currentTheme = document.body.dataset.theme || "light";
     if (currentLogo) updateLogo(currentTheme);
   });
 
@@ -251,7 +220,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 /** 🔄 LOGO váltás valós időben (custom event) */
 document.addEventListener("ppv-theme-changed", () => {
-  const activeTheme = document.body.dataset.theme || "dark";
+  const activeTheme = document.body.dataset.theme || "light";
   updateLogo(activeTheme);
   console.log("🎨 [PPV_THEME_DEBUG] Logo updated for theme:", activeTheme);
 });
