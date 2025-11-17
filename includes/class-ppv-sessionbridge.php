@@ -63,23 +63,26 @@ class PPV_SessionBridge {
                 "SELECT * FROM {$prefix}ppv_users WHERE login_token=%s AND active=1 LIMIT 1",
                 $user_token
             ));
-            
+
             if ($user) {
                 $_SESSION['ppv_user_id'] = $user->id;
                 $_SESSION['ppv_user_type'] = $user->user_type ?? 'user';
                 $_SESSION['ppv_user_email'] = $user->email;
-                
+
                 // Vendor user esetén restore store is
                 if ($user->user_type === 'vendor' && !empty($user->vendor_store_id)) {
                     $_SESSION['ppv_vendor_store_id'] = $user->vendor_store_id;
                     $_SESSION['ppv_store_id'] = $user->vendor_store_id;
                     $_SESSION['ppv_active_store'] = $user->vendor_store_id;
                 }
-                
+
                 error_log("✅ [PPV_SessionBridge] User restored from token: ID={$user->id}, type=" . ($user->user_type ?? 'user'));
                 return;
             } else {
-                error_log("⚠️ [PPV_SessionBridge] Invalid user token (deleted or expired)");
+                // ✅ FIX: Invalid token - töröljük a cookie-t hogy ne próbálkozzon újra
+                error_log("⚠️ [PPV_SessionBridge] Invalid user token (deleted or expired) - removing cookie");
+                setcookie('ppv_user_token', '', time() - 3600, '/', '', true, true);
+                unset($_COOKIE['ppv_user_token']);
             }
         }
         
