@@ -121,14 +121,32 @@ class PPV_Belohnungen {
             return;
         }
 
-        $plugin_url = defined('PPV_PLUGIN_URL') 
-            ? PPV_PLUGIN_URL 
+        // Start session for language detection
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+
+        $plugin_url = defined('PPV_PLUGIN_URL')
+            ? PPV_PLUGIN_URL
             : plugin_dir_url(dirname(__FILE__));
 
-        $lang = sanitize_text_field($_GET['lang'] ?? ($_SESSION['ppv_lang'] ?? 'de'));
-        if (!in_array($lang, ['de', 'hu', 'ro'])) {
+        // ✅ GET ACTIVE LANGUAGE (same logic as ppv-my-points)
+        $lang = sanitize_text_field($_GET['lang'] ?? '');
+        if (!in_array($lang, ['de', 'hu', 'ro'], true)) {
+            $lang = sanitize_text_field($_COOKIE['ppv_lang'] ?? '');
+        }
+        if (!in_array($lang, ['de', 'hu', 'ro'], true)) {
+            $lang = sanitize_text_field($_SESSION['ppv_lang'] ?? 'de');
+        }
+        if (!in_array($lang, ['de', 'hu', 'ro'], true)) {
             $lang = 'de';
         }
+
+        // Save to session + cookie
+        $_SESSION['ppv_lang'] = $lang;
+        setcookie('ppv_lang', $lang, time() + 31536000, '/', '', false, true);
+
+        error_log("🌍 [PPV_Belohnungen] Active language: {$lang}");
 
         wp_enqueue_script(
             'ppv-theme-loader',
