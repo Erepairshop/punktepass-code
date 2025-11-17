@@ -629,6 +629,15 @@ jQuery(document).ready(function($) {
         return;
     }
 
+    // Check if user has a store (is a handler/merchant)
+    if (!config.store_id || config.store_id === 0) {
+        console.log("ℹ️ [Stats] No store ID - stats not available for this user");
+        $loading.hide();
+        $content.hide();
+        $error.show().find('p').html('ℹ️ ' + (T['no_store_access'] || 'Statistics only available for merchants'));
+        return;
+    }
+
     // Load all sections
     loadBasicStats('week');
     loadTrend();
