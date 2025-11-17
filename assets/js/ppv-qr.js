@@ -893,19 +893,27 @@ class CameraScanner {
     let currentY = 0;
     let initialX = 0;
     let initialY = 0;
+    let offsetX = 0;
+    let offsetY = 0;
 
     const dragStart = (e) => {
+      // Get the current actual position from the DOM
+      const rect = this.miniContainer.getBoundingClientRect();
+      currentX = rect.left;
+      currentY = rect.top;
+
       if (e.type === 'touchstart') {
-        initialX = e.touches[0].clientX - currentX;
-        initialY = e.touches[0].clientY - currentY;
+        offsetX = e.touches[0].clientX - currentX;
+        offsetY = e.touches[0].clientY - currentY;
       } else {
-        initialX = e.clientX - currentX;
-        initialY = e.clientY - currentY;
+        offsetX = e.clientX - currentX;
+        offsetY = e.clientY - currentY;
       }
 
       if (e.target === handle || e.target.classList.contains('ppv-drag-icon')) {
         isDragging = true;
         this.miniContainer.style.cursor = 'grabbing';
+        this.miniContainer.style.transition = 'none';
       }
     };
 
@@ -915,11 +923,11 @@ class CameraScanner {
       e.preventDefault();
 
       if (e.type === 'touchmove') {
-        currentX = e.touches[0].clientX - initialX;
-        currentY = e.touches[0].clientY - initialY;
+        currentX = e.touches[0].clientX - offsetX;
+        currentY = e.touches[0].clientY - offsetY;
       } else {
-        currentX = e.clientX - initialX;
-        currentY = e.clientY - initialY;
+        currentX = e.clientX - offsetX;
+        currentY = e.clientY - offsetY;
       }
 
       // Constrain to viewport
@@ -940,6 +948,7 @@ class CameraScanner {
       if (isDragging) {
         isDragging = false;
         this.miniContainer.style.cursor = 'grab';
+        this.miniContainer.style.transition = '';
         this.savePosition(currentX, currentY);
       }
     };
