@@ -1,50 +1,54 @@
 /**
- * PunktePass - Landing Page + Login CSS
- * Modern Hero Section with Features + Login
+ * PunktePass - Modern Login & Landing Page
+ * Optimized & Clean CSS Architecture
  * Author: Erik Borota / PunktePass
  */
 
 /* ============================================
-   🎨 CSS VARIABLES
+   CSS VARIABLES
    ============================================ */
 :root {
+    /* Colors */
     --ppv-primary: #0066FF;
     --ppv-primary-hover: #0052CC;
     --ppv-primary-light: #E6F0FF;
     --ppv-bg: #F8F9FB;
-    --ppv-card-bg: #FFFFFF;
+    --ppv-card: #FFFFFF;
     --ppv-text: #1A1A1A;
     --ppv-text-muted: #6B7280;
     --ppv-border: #E5E7EB;
     --ppv-success: #10B981;
     --ppv-error: #EF4444;
-    --ppv-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
-    --ppv-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    --ppv-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    --ppv-radius: 12px;
-    --ppv-radius-sm: 8px;
-    --ppv-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Shadows */
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+    --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+
+    /* Spacing & Sizing */
+    --radius: 12px;
+    --radius-sm: 8px;
+    --transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
 }
 
 /* ============================================
-   🌍 GLOBAL STYLES
+   BASE CONTAINER
    ============================================ */
 .ppv-landing-container {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
 }
 
 /* ============================================
-   📌 HEADER
+   HEADER
    ============================================ */
 .ppv-landing-header {
     position: relative;
     z-index: 100;
-    background: var(--ppv-card-bg);
+    background: var(--ppv-card);
     border-bottom: 1px solid var(--ppv-border);
     padding: 20px 0;
 }
@@ -85,9 +89,8 @@
     color: var(--ppv-text-muted);
     margin: 0;
 }
-/* ============================================
-   🌍 LANGUAGE SWITCHER
-   ============================================ */
+
+/* Language Switcher */
 .ppv-lang-switcher {
     display: flex;
     align-items: center;
@@ -98,6 +101,7 @@
     padding: 4px;
 }
 
+.ppv-lang-select,
 .ppv-lang-btn {
     padding: 6px 12px;
     background: transparent;
@@ -107,11 +111,12 @@
     font-weight: 600;
     color: var(--ppv-text-muted);
     cursor: pointer;
-    transition: var(--ppv-transition);
+    transition: var(--transition);
     font-family: inherit;
 }
 
-.ppv-lang-btn:hover {
+.ppv-lang-btn:hover,
+.ppv-lang-select:hover {
     color: var(--ppv-text);
     background: rgba(0, 102, 255, 0.05);
 }
@@ -119,14 +124,10 @@
 .ppv-lang-btn.active {
     background: var(--ppv-primary);
     color: white;
-    cursor: default;
 }
 
-.ppv-lang-btn.active:hover {
-    background: var(--ppv-primary);
-}
 /* ============================================
-   🎭 HERO SECTION
+   HERO SECTION
    ============================================ */
 .ppv-hero-section {
     flex: 1;
@@ -159,7 +160,6 @@
     background: linear-gradient(135deg, #0066FF, #00BFFF);
     top: -150px;
     left: -150px;
-    animation-delay: 0s;
 }
 
 .ppv-shape-2 {
@@ -186,7 +186,6 @@
     66% { transform: translate(-30px, 30px) scale(0.85); }
 }
 
-/* Hero Content */
 .ppv-hero-content {
     position: relative;
     z-index: 10;
@@ -201,21 +200,10 @@
 }
 
 /* ============================================
-   ⭐ FEATURES SECTION (LEFT)
+   FEATURES SECTION
    ============================================ */
 .ppv-features-section {
-    animation: slideInLeft 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes slideInLeft {
-    from {
-        opacity: 0;
-        transform: translateX(-40px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
+    animation: slideIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .ppv-features-grid {
@@ -225,33 +213,16 @@
 }
 
 .ppv-feature-card {
-    background: var(--ppv-card-bg);
+    background: var(--ppv-card);
     border: 1px solid var(--ppv-border);
-    border-radius: var(--ppv-radius);
+    border-radius: var(--radius);
     padding: 28px 24px;
-    transition: var(--ppv-transition);
-    animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
-}
-
-.ppv-feature-card:nth-child(1) { animation-delay: 0.1s; }
-.ppv-feature-card:nth-child(2) { animation-delay: 0.2s; }
-.ppv-feature-card:nth-child(3) { animation-delay: 0.3s; }
-.ppv-feature-card:nth-child(4) { animation-delay: 0.4s; }
-
-@keyframes slideUp {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    transition: var(--transition);
 }
 
 .ppv-feature-card:hover {
     border-color: var(--ppv-primary-light);
-    box-shadow: var(--ppv-shadow);
+    box-shadow: var(--shadow-md);
     transform: translateY(-4px);
 }
 
@@ -272,7 +243,6 @@
     font-weight: 600;
     color: var(--ppv-text);
     margin: 0 0 8px 0;
-    letter-spacing: -0.01em;
 }
 
 .ppv-feature-card p {
@@ -282,30 +252,24 @@
     margin: 0;
 }
 
+@keyframes slideIn {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
 /* ============================================
-   💳 LOGIN SECTION (RIGHT)
+   LOGIN CARD
    ============================================ */
 .ppv-login-section {
     position: sticky;
     top: 20px;
-    animation: slideInRight 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes slideInRight {
-    from {
-        opacity: 0;
-        transform: translateX(40px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
+    animation: slideIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .ppv-login-card {
-    background: var(--ppv-card-bg);
-    border-radius: var(--ppv-radius);
-    box-shadow: var(--ppv-shadow-lg);
+    background: var(--ppv-card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
     padding: 36px;
 }
 
@@ -319,52 +283,88 @@
     font-weight: 600;
     color: var(--ppv-text);
     margin: 0 0 8px 0;
-    letter-spacing: -0.01em;
 }
 
 .ppv-login-welcome p {
     font-size: 14px;
     color: var(--ppv-text-muted);
     margin: 0;
-    line-height: 1.5;
 }
 
 /* ============================================
-   🔵 GOOGLE BUTTON
+   SOCIAL LOGIN BUTTONS
    ============================================ */
-.ppv-google-btn {
-    width: 100%;
+.ppv-social-login-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.ppv-social-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
-    padding: 13px 24px;
-    background: var(--ppv-card-bg);
-    border: 1.5px solid var(--ppv-border);
-    border-radius: var(--ppv-radius-sm);
-    font-size: 15px;
+    gap: 10px;
+    padding: 12px 16px;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
     font-weight: 600;
-    color: var(--ppv-text);
     cursor: pointer;
-    transition: var(--ppv-transition);
-    box-shadow: var(--ppv-shadow-sm);
-    margin-bottom: 20px;
+    transition: var(--transition);
+    box-shadow: var(--shadow-sm);
     font-family: inherit;
+}
+
+.ppv-social-btn:hover:not(:disabled) {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.ppv-social-btn:active {
+    transform: translateY(0);
+}
+
+.ppv-social-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Google Button */
+.ppv-google-btn {
+    background: var(--ppv-card);
+    border: 1.5px solid var(--ppv-border);
+    color: var(--ppv-text);
 }
 
 .ppv-google-btn:hover {
     background: #FAFAFA;
     border-color: #D1D5DB;
-    box-shadow: var(--ppv-shadow);
-    transform: translateY(-1px);
 }
 
-.ppv-google-btn:active {
-    transform: translateY(0);
+/* Facebook Button */
+.ppv-facebook-btn {
+    background: #1877F2;
+    color: white;
+}
+
+.ppv-facebook-btn:hover {
+    background: #166FE5;
+}
+
+/* TikTok Button */
+.ppv-tiktok-btn {
+    background: linear-gradient(135deg, #000 0%, #EE1D52 50%, #69C9D0 100%);
+    color: white;
+}
+
+.ppv-tiktok-btn:hover {
+    background: linear-gradient(135deg, #1a1a1a 0%, #ff2d68 50%, #7dd9e6 100%);
 }
 
 /* ============================================
-   ➗ DIVIDER
+   DIVIDER
    ============================================ */
 .ppv-login-divider {
     display: flex;
@@ -385,7 +385,7 @@
 }
 
 /* ============================================
-   📝 FORM STYLES
+   FORM STYLES
    ============================================ */
 .ppv-login-form {
     display: flex;
@@ -415,21 +415,22 @@
 }
 
 .ppv-form-group input[type="email"],
-.ppv-form-group input[type="password"] {
+.ppv-form-group input[type="password"],
+.ppv-form-group input[type="text"] {
     width: 100%;
     padding: 11px 16px;
     background: var(--ppv-bg);
     border: 1.5px solid var(--ppv-border);
-    border-radius: var(--ppv-radius-sm);
+    border-radius: var(--radius-sm);
     font-size: 15px;
     color: var(--ppv-text);
-    transition: var(--ppv-transition);
+    transition: var(--transition);
     font-family: inherit;
 }
 
 .ppv-form-group input:focus {
     outline: none;
-    background: var(--ppv-card-bg);
+    background: var(--ppv-card);
     border-color: var(--ppv-primary);
     box-shadow: 0 0 0 3px var(--ppv-primary-light);
 }
@@ -453,8 +454,7 @@
     padding: 4px;
     cursor: pointer;
     color: var(--ppv-text-muted);
-    transition: var(--ppv-transition);
-    display: flex;
+    transition: var(--transition);
 }
 
 .ppv-password-toggle:hover {
@@ -462,7 +462,7 @@
 }
 
 /* ============================================
-   ✅ FORM FOOTER
+   FORM FOOTER
    ============================================ */
 .ppv-form-footer {
     display: flex;
@@ -487,12 +487,21 @@
     cursor: pointer;
 }
 
+.ppv-checkbox a {
+    color: var(--ppv-primary);
+    text-decoration: none;
+}
+
+.ppv-checkbox a:hover {
+    text-decoration: underline;
+}
+
 .ppv-forgot-link {
     font-size: 14px;
     color: var(--ppv-primary);
     text-decoration: none;
     font-weight: 500;
-    transition: var(--ppv-transition);
+    transition: var(--transition);
 }
 
 .ppv-forgot-link:hover {
@@ -501,7 +510,7 @@
 }
 
 /* ============================================
-   🚀 SUBMIT BUTTON
+   SUBMIT BUTTON
    ============================================ */
 .ppv-submit-btn {
     width: 100%;
@@ -509,12 +518,12 @@
     background: var(--ppv-primary);
     color: white;
     border: none;
-    border-radius: var(--ppv-radius-sm);
+    border-radius: var(--radius-sm);
     font-size: 15px;
     font-weight: 600;
     cursor: pointer;
-    transition: var(--ppv-transition);
-    box-shadow: var(--ppv-shadow-sm);
+    transition: var(--transition);
+    box-shadow: var(--shadow-sm);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -525,11 +534,11 @@
 
 .ppv-submit-btn:hover:not(:disabled) {
     background: var(--ppv-primary-hover);
-    box-shadow: var(--ppv-shadow);
+    box-shadow: var(--shadow-md);
     transform: translateY(-1px);
 }
 
-.ppv-submit-btn:active:not(:disabled) {
+.ppv-submit-btn:active {
     transform: translateY(0);
 }
 
@@ -539,25 +548,19 @@
 }
 
 /* ============================================
-   ⚠️ ALERT BOX
+   ALERT BOX
    ============================================ */
 .ppv-alert {
     padding: 12px 16px;
-    border-radius: var(--ppv-radius-sm);
+    border-radius: var(--radius-sm);
     font-size: 14px;
     margin-top: 16px;
     animation: slideDown 0.3s ease;
 }
 
 @keyframes slideDown {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .ppv-alert.success {
@@ -573,7 +576,7 @@
 }
 
 /* ============================================
-   🔗 REGISTER LINK
+   REGISTER LINK
    ============================================ */
 .ppv-register-link {
     text-align: center;
@@ -592,7 +595,7 @@
     color: var(--ppv-primary);
     text-decoration: none;
     font-weight: 600;
-    transition: var(--ppv-transition);
+    transition: var(--transition);
 }
 
 .ppv-register-link a:hover {
@@ -601,14 +604,14 @@
 }
 
 /* ============================================
-   👣 FOOTER
+   FOOTER
    ============================================ */
 .ppv-landing-footer {
     position: relative;
     z-index: 10;
-    background: var(--ppv-card-bg);
+    background: var(--ppv-card);
     border-top: 1px solid var(--ppv-border);
-    padding: 24px 24px;
+    padding: 24px;
     text-align: center;
     color: var(--ppv-text-muted);
     font-size: 13px;
@@ -629,7 +632,7 @@
 .ppv-footer-links a {
     color: var(--ppv-text-muted);
     text-decoration: none;
-    transition: var(--ppv-transition);
+    transition: var(--transition);
 }
 
 .ppv-footer-links a:hover {
@@ -638,26 +641,17 @@
 }
 
 /* ============================================
-   📱 RESPONSIVE
+   RESPONSIVE DESIGN
    ============================================ */
 @media (max-width: 1024px) {
     .ppv-hero-content {
         grid-template-columns: 1fr;
         gap: 40px;
     }
-    
-    .ppv-features-section {
-        order: 2;
-    }
-    
-    .ppv-login-section {
-        order: 1;
-        position: static;
-    }
-    
-    .ppv-features-grid {
-        grid-template-columns: 1fr 1fr;
-    }
+
+    .ppv-features-section { order: 2; }
+    .ppv-login-section { order: 1; position: static; }
+    .ppv-features-grid { grid-template-columns: 1fr 1fr; }
 }
 
 @media (max-width: 640px) {
@@ -666,53 +660,28 @@
         text-align: center;
         gap: 12px;
     }
-    
-    .ppv-slogan {
-        font-size: 14px;
-    }
-    .ppv-lang-switcher {
-        margin-top: 8px;
-    }
-    
-    .ppv-lang-btn {
-        padding: 8px 14px;
-        font-size: 14px;
-    }
-    
-    .ppv-hero-section {
-        padding: 40px 0;
-    }
-    
-    .ppv-features-grid {
-        grid-template-columns: 1fr;
-        gap: 16px;
-    }
-    
-    .ppv-login-card {
-        padding: 28px 24px;
-    }
-    
-    .ppv-login-welcome h2 {
-        font-size: 18px;
-    }
-    
-    .ppv-form-group input {
-        padding: 10px 14px;
-        font-size: 14px;
-    }
-    
-    .ppv-google-btn,
+
+    .ppv-slogan { font-size: 14px; }
+    .ppv-lang-switcher { margin-top: 8px; }
+    .ppv-hero-section { padding: 40px 0; }
+    .ppv-features-grid { grid-template-columns: 1fr; gap: 16px; }
+    .ppv-social-login-grid { grid-template-columns: 1fr; gap: 10px; }
+    .ppv-login-card { padding: 28px 24px; }
+    .ppv-login-welcome h2 { font-size: 18px; }
+
+    .ppv-form-group input,
+    .ppv-social-btn,
     .ppv-submit-btn {
-        padding: 11px 20px;
+        padding: 11px 16px;
         font-size: 14px;
     }
 }
 
 /* ============================================
-   🎭 ACCESSIBILITY
+   ACCESSIBILITY
    ============================================ */
 @media (prefers-reduced-motion: reduce) {
-    * {
+    *, *::before, *::after {
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
