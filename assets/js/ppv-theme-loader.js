@@ -99,11 +99,16 @@
     const expire = new Date();
     expire.setFullYear(expire.getFullYear() + 1);
     const path = '/';
+    const isSecure = window.location.protocol === 'https:';
 
-    // Set on current domain
-    document.cookie = `${THEME_KEY}=${value};path=${path};expires=${expire.toUTCString()};SameSite=Lax;Secure`;
+    // Set on current domain (only use Secure flag on HTTPS)
+    const cookieStr = isSecure
+      ? `${THEME_KEY}=${value};path=${path};expires=${expire.toUTCString()};SameSite=Lax;Secure`
+      : `${THEME_KEY}=${value};path=${path};expires=${expire.toUTCString()};SameSite=Lax`;
 
-    log('DEBUG', '🍪 Cookie set:', value);
+    document.cookie = cookieStr;
+
+    log('DEBUG', '🍪 Cookie set:', value, isSecure ? '(Secure)' : '(HTTP)');
   }
 
   // ============================================================
