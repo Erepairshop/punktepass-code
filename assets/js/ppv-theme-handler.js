@@ -27,9 +27,18 @@ if (navigator.serviceWorker?.controller) {
 
     if (btn) {
   btn.addEventListener("click", () => {
-    theme = theme === "light" ? "dark" : "light";
+    // 🔹 Read current theme from DOM (not closure variable)
+    const currentTheme = document.documentElement.getAttribute("data-theme") || localStorage.getItem(THEME_KEY) || "light";
+    theme = currentTheme === "light" ? "dark" : "light";
+
+    // 💾 Save to localStorage + cookie
     localStorage.setItem(THEME_KEY, theme);
     document.cookie = `${THEME_KEY}=${theme};path=/;max-age=${60 * 60 * 24 * 365}`;
+
+    // 🎨 Update DOM immediately
+    document.documentElement.setAttribute("data-theme", theme);
+    document.body.classList.remove("ppv-light", "ppv-dark");
+    document.body.classList.add(`ppv-${theme}`);
 
     // ⚡ CSS újratöltés
     const link = document.getElementById("ppv-theme-css");
