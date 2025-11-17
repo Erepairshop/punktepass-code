@@ -764,12 +764,19 @@ class PPV_QR {
         $store = $validation['store'];
 
         // 🎯 Kampány adatok előkészítése
+        // ✅ FIX: Don't accept empty campaign_type
+        $campaign_type = sanitize_text_field($data['campaign_type'] ?? '');
+        if (empty($campaign_type)) {
+            error_log("⚠️ [PPV_QR] Empty campaign_type received, defaulting to 'points'");
+            $campaign_type = 'points';
+        }
+
         $fields = [
             'store_id'           => $store->id,
             'title'              => sanitize_text_field($data['title'] ?? ''),
             'start_date'         => sanitize_text_field($data['start_date'] ?? ''),
             'end_date'           => sanitize_text_field($data['end_date'] ?? ''),
-            'campaign_type'      => sanitize_text_field($data['campaign_type'] ?? 'points'),
+            'campaign_type'      => $campaign_type,
             'required_points'    => (int)($data['required_points'] ?? 0),
             'points_given'       => (int)($data['points_given'] ?? 1),
             'status'             => sanitize_text_field($data['status'] ?? 'active'),
@@ -796,7 +803,17 @@ class PPV_QR {
                 break;
         }
 
+        // ✅ DEBUG: Log fields before insert
+        error_log("🔍 [PPV_QR] Fields to insert: " . print_r($fields, true));
+
         $wpdb->insert("{$prefix}ppv_campaigns", $fields);
+
+        // ✅ DEBUG: Check if insert succeeded
+        if ($wpdb->last_error) {
+            error_log("❌ [PPV_QR] SQL Error: " . $wpdb->last_error);
+        } else {
+            error_log("✅ [PPV_QR] Insert success, ID: " . $wpdb->insert_id);
+        }
 
         return new WP_REST_Response([
             'success' => true,
@@ -957,11 +974,18 @@ class PPV_QR {
         $store = $validation['store'];
 
         // 🎯 Frissítési mezők
+        // ✅ FIX: Don't accept empty campaign_type
+        $campaign_type = sanitize_text_field($d['campaign_type'] ?? '');
+        if (empty($campaign_type)) {
+            error_log("⚠️ [PPV_QR] Empty campaign_type in update, defaulting to 'points'");
+            $campaign_type = 'points';
+        }
+
         $fields = [
             'title'           => sanitize_text_field($d['title'] ?? ''),
             'start_date'      => sanitize_text_field($d['start_date'] ?? ''),
             'end_date'        => sanitize_text_field($d['end_date'] ?? ''),
-            'campaign_type'   => sanitize_text_field($d['campaign_type'] ?? 'points'),
+            'campaign_type'   => $campaign_type,
             'required_points' => (int)($d['required_points'] ?? 0),
             'points_given'    => (int)($d['points_given'] ?? 1),
             'status'          => sanitize_text_field($d['status'] ?? 'active'),

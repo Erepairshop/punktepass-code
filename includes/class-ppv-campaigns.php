@@ -146,6 +146,13 @@ wp_add_inline_script('ppv-campaigns', "window.ppv_campaigns = {$__json};", 'befo
         $store = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}ppv_stores WHERE user_id=%d", $user_id));
         if (!$store) wp_send_json_error(['msg' => 'Kein Store gefunden.']);
 
+        // ✅ FIX: Validate campaign_type, reject empty
+        $campaign_type = sanitize_text_field($_POST['campaign_type'] ?? '');
+        if (empty($campaign_type)) {
+            error_log("⚠️ [PPV_Campaigns] Empty campaign_type in AJAX save, defaulting to 'points'");
+            $campaign_type = 'points';
+        }
+
         $data = [
             'store_id'        => $store->id,
             'title'           => sanitize_text_field($_POST['title']),
@@ -154,7 +161,7 @@ wp_add_inline_script('ppv-campaigns', "window.ppv_campaigns = {$__json};", 'befo
             'extra_points'    => intval($_POST['extra_points']),
             'daily_limit'     => intval($_POST['daily_limit']),
             'discount_percent'=> floatval($_POST['discount_percent']),
-            'campaign_type'   => sanitize_text_field($_POST['campaign_type']),
+            'campaign_type'   => $campaign_type,
             'start_date'      => sanitize_text_field($_POST['start']),
             'end_date'        => sanitize_text_field($_POST['end']),
             'status'          => 'active',
@@ -171,6 +178,14 @@ wp_add_inline_script('ppv-campaigns', "window.ppv_campaigns = {$__json};", 'befo
         global $wpdb;
 
         $id = intval($_POST['id']);
+
+        // ✅ FIX: Validate campaign_type, reject empty
+        $campaign_type = sanitize_text_field($_POST['campaign_type'] ?? '');
+        if (empty($campaign_type)) {
+            error_log("⚠️ [PPV_Campaigns] Empty campaign_type in AJAX update, defaulting to 'points'");
+            $campaign_type = 'points';
+        }
+
         $wpdb->update($wpdb->prefix . 'ppv_campaigns', [
             'title'           => sanitize_text_field($_POST['title']),
             'description'     => sanitize_textarea_field($_POST['description']),
@@ -178,7 +193,7 @@ wp_add_inline_script('ppv-campaigns', "window.ppv_campaigns = {$__json};", 'befo
             'extra_points'    => intval($_POST['extra_points']),
             'daily_limit'     => intval($_POST['daily_limit']),
             'discount_percent'=> floatval($_POST['discount_percent']),
-            'campaign_type'   => sanitize_text_field($_POST['campaign_type']),
+            'campaign_type'   => $campaign_type,
             'start_date'      => sanitize_text_field($_POST['start']),
             'end_date'        => sanitize_text_field($_POST['end'])
         ], ['id' => $id]);

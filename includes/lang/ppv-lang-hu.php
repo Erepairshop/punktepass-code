@@ -322,7 +322,37 @@ return [
   'delete_info' => 'Ha törölni szeretnéd a fiókodat, kattints az alábbi gombra.',
   'delete_account' => 'Fiók törlése',
   'save_settings' => 'Beállítások mentése',
-  
+
+  // Settings - AJAX messages
+  'not_logged_in' => 'Nem vagy bejelentkezve',
+  'upload_failed' => 'Feltöltés sikertelen',
+  'settings_saved' => 'Beállítások mentve',
+  'all_devices_logged_out' => 'Minden eszközről kijelentkeztetve',
+  'wrong_password' => 'Hibás jelszó',
+  'account_deleted' => 'Fiók törölve',
+
+  // Settings - Form fields
+  'zip' => 'Irányítószám',
+  'street_address' => 'Utca és házszám',
+  'street_placeholder' => 'Fő utca 123',
+  'zip_placeholder' => '1234',
+  'city_placeholder' => 'Budapest',
+  'notifications' => 'Értesítések',
+  'email_notifications' => 'E-mail értesítések',
+  'push_notifications' => 'Push értesítések',
+  'promo_notifications' => 'Promóciós értesítések',
+  'privacy' => 'Adatvédelem',
+  'profile_visible' => 'Profil nyilvánosan látható',
+  'marketing_emails' => 'Marketing e-mailek fogadása',
+  'data_sharing' => 'Adatok megosztása partnerekkel',
+
+  // Settings - Delete account
+  'delete_account_confirm' => 'Biztosan törölni szeretnéd a fiókot?',
+  'delete_account_warning' => 'Ez a művelet nem vonható vissza. Minden adatod véglegesen törlésre kerül.',
+  'enter_password' => 'Add meg a jelszavad',
+  'password' => 'Jelszó',
+  'delete_permanently' => 'Végleges törlés',
+
   // Landing Page - Header
     'landing_slogan' => 'Pontok gyűjtése. Jutalmak megszerzése.',
     

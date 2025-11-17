@@ -83,7 +83,7 @@ private static function t($key) {
     public static function ajax_upload_avatar() {
         self::ensure_user_context();
         $user_id = get_current_user_id() ?: intval($_SESSION['ppv_user_id'] ?? 0);
-        if (!$user_id) wp_send_json_error(['msg' => 'Nicht eingeloggt']);
+        if (!$user_id) wp_send_json_error(['msg' => self::t('not_logged_in')]);
 
         if (!empty($_FILES['avatar']['name'])) {
             require_once ABSPATH . 'wp-admin/includes/file.php';
@@ -93,7 +93,7 @@ private static function t($key) {
                 wp_send_json_success(['url' => $upload['url']]);
             }
         }
-        wp_send_json_error(['msg' => 'Upload fehlgeschlagen']);
+        wp_send_json_error(['msg' => self::t('upload_failed')]);
     }
 
     /** ============================================================
@@ -103,7 +103,7 @@ private static function t($key) {
         check_ajax_referer('ppv_user_settings_nonce', 'nonce');
         self::ensure_user_context();
         $user_id = get_current_user_id() ?: intval($_SESSION['ppv_user_id'] ?? 0);
-        if (!$user_id) wp_send_json_error(['msg' => 'Nicht eingeloggt']);
+        if (!$user_id) wp_send_json_error(['msg' => self::t('not_logged_in')]);
 
         // alapadatok
         if (isset($_POST['name'])) {
@@ -151,7 +151,7 @@ private static function t($key) {
             update_user_meta($user_id, 'ppv_zip', sanitize_text_field($_POST['zip']));
         }
 
-        wp_send_json_success(['msg' => 'Einstellungen gespeichert']);
+        wp_send_json_success(['msg' => self::t('settings_saved')]);
     }
 
     /** ============================================================
@@ -161,7 +161,7 @@ private static function t($key) {
         check_ajax_referer('ppv_user_settings_nonce', 'nonce');
         self::ensure_user_context();
         $user_id = get_current_user_id() ?: intval($_SESSION['ppv_user_id'] ?? 0);
-        if (!$user_id) wp_send_json_error(['msg' => 'Nicht eingeloggt']);
+        if (!$user_id) wp_send_json_error(['msg' => self::t('not_logged_in')]);
 
         // WordPress sessions törlése
         $sessions = WP_Session_Tokens::get_instance($user_id);
@@ -171,7 +171,7 @@ private static function t($key) {
         global $wpdb;
         $wpdb->delete($wpdb->prefix . 'ppv_user_sessions', ['user_id' => $user_id]);
 
-        wp_send_json_success(['msg' => 'Alle Geräte abgemeldet']);
+        wp_send_json_success(['msg' => self::t('all_devices_logged_out')]);
     }
 
     /** ============================================================
@@ -181,14 +181,14 @@ private static function t($key) {
         check_ajax_referer('ppv_user_settings_nonce', 'nonce');
         self::ensure_user_context();
         $user_id = get_current_user_id() ?: intval($_SESSION['ppv_user_id'] ?? 0);
-        if (!$user_id) wp_send_json_error(['msg' => 'Nicht eingeloggt']);
+        if (!$user_id) wp_send_json_error(['msg' => self::t('not_logged_in')]);
 
         $password = sanitize_text_field($_POST['password'] ?? '');
         $user = get_userdata($user_id);
 
         // Jelszó ellenőrzés
         if (!wp_check_password($password, $user->user_pass, $user_id)) {
-            wp_send_json_error(['msg' => 'Falsches Passwort']);
+            wp_send_json_error(['msg' => self::t('wrong_password')]);
         }
 
         // User törlése
@@ -205,7 +205,7 @@ private static function t($key) {
         // Session törlése
         session_destroy();
 
-        wp_send_json_success(['msg' => 'Konto gelöscht', 'redirect' => home_url()]);
+        wp_send_json_success(['msg' => self::t('account_deleted'), 'redirect' => home_url()]);
     }
 
     /** ============================================================
@@ -271,16 +271,16 @@ private static function t($key) {
                 <div class="ppv-section">
                     <h3><i class="ri-map-pin-line"></i> <?php echo self::t('address'); ?></h3>
                     <label><?php echo self::t('street_address'); ?></label>
-                    <input type="text" name="address" value="<?php echo esc_attr($address); ?>" placeholder="Musterstraße 123">
+                    <input type="text" name="address" value="<?php echo esc_attr($address); ?>" placeholder="<?php echo self::t('street_placeholder'); ?>">
 
                     <div class="ppv-form-row">
                         <div>
                             <label><?php echo self::t('zip'); ?></label>
-                            <input type="text" name="zip" value="<?php echo esc_attr($zip); ?>" placeholder="12345">
+                            <input type="text" name="zip" value="<?php echo esc_attr($zip); ?>" placeholder="<?php echo self::t('zip_placeholder'); ?>">
                         </div>
                         <div>
                             <label><?php echo self::t('city'); ?></label>
-                            <input type="text" name="city" value="<?php echo esc_attr($city); ?>" placeholder="Berlin">
+                            <input type="text" name="city" value="<?php echo esc_attr($city); ?>" placeholder="<?php echo self::t('city_placeholder'); ?>">
                         </div>
                     </div>
                 </div>

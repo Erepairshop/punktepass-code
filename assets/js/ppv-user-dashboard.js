@@ -465,9 +465,20 @@ document.addEventListener("DOMContentLoaded", async () => {
               }
               scanPoints = 1;
             } else {
-              // ✅ FALLBACK ha valami ismeretlen típus
-              campaignReward = `<i class="ri-lightbulb-line"></i> ${T.special_offer} (${c.campaign_type})`;
-              console.warn("⚠️ Unknown campaign type:", c.campaign_type);
+              // ✅ Check if free_product exists (even if campaign_type is empty)
+              if (c.free_product && c.free_product.trim() !== '') {
+                campaignReward = `<i class="ri-gift-fill"></i> ${escapeHtml(c.free_product)}`;
+                if (c.free_product_value > 0) {
+                  campaignReward += ` (${c.free_product_value}${currencySymbol})`;
+                }
+                scanPoints = 1;
+              } else {
+                // Real fallback for unknown types
+                const typeLabel = c.campaign_type ? ` (${c.campaign_type})` : '';
+                campaignReward = `<i class="ri-lightbulb-line"></i> ${T.special_offer}${typeLabel}`;
+                scanPoints = 1;
+                console.warn("⚠️ Unknown campaign type:", c.campaign_type);
+              }
             }
 
             return `
