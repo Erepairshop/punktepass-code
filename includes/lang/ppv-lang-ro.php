@@ -335,7 +335,34 @@ return [
   'delete_info' => 'Dacă dorești să îți ștergi contul, apasă butonul de mai jos.',
   'delete_account' => 'Șterge contul',
   'save_settings' => 'Salvează setările',
-  
+
+  // Settings - AJAX messages
+  'not_logged_in' => 'Nu ești autentificat',
+  'upload_failed' => 'Încărcare eșuată',
+  'settings_saved' => 'Setări salvate',
+  'all_devices_logged_out' => 'Deconectat de pe toate dispozitivele',
+  'wrong_password' => 'Parolă greșită',
+  'account_deleted' => 'Cont șters',
+
+  // Settings - Form fields
+  'zip' => 'Cod poștal',
+  'street_address' => 'Strada și numărul',
+  'notifications' => 'Notificări',
+  'email_notifications' => 'Notificări prin e-mail',
+  'push_notifications' => 'Notificări push',
+  'promo_notifications' => 'Notificări promoționale',
+  'privacy' => 'Confidențialitate',
+  'profile_visible' => 'Profil vizibil public',
+  'marketing_emails' => 'Primesc e-mailuri de marketing',
+  'data_sharing' => 'Partajare date cu partenerii',
+
+  // Settings - Delete account
+  'delete_account_confirm' => 'Sigur vrei să ștergi contul?',
+  'delete_account_warning' => 'Această acțiune nu poate fi anulată. Toate datele tale vor fi șterse definitiv.',
+  'enter_password' => 'Introdu parola',
+  'password' => 'Parolă',
+  'delete_permanently' => 'Șterge definitiv',
+
   // Landing Page - Header
     'landing_slogan' => 'Colectează puncte. Primește recompense.',
     

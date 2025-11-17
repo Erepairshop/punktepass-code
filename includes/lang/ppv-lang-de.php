@@ -296,7 +296,34 @@ return [
   'delete_info' => 'Wenn Sie Ihr Konto löschen möchten, klicken Sie unten.',
   'delete_account' => 'Konto löschen',
   'save_settings' => 'Einstellungen speichern',
-  
+
+  // Settings - AJAX messages
+  'not_logged_in' => 'Nicht eingeloggt',
+  'upload_failed' => 'Upload fehlgeschlagen',
+  'settings_saved' => 'Einstellungen gespeichert',
+  'all_devices_logged_out' => 'Alle Geräte abgemeldet',
+  'wrong_password' => 'Falsches Passwort',
+  'account_deleted' => 'Konto gelöscht',
+
+  // Settings - Form fields
+  'zip' => 'Postleitzahl',
+  'street_address' => 'Straße und Hausnummer',
+  'notifications' => 'Benachrichtigungen',
+  'email_notifications' => 'E-Mail Benachrichtigungen',
+  'push_notifications' => 'Push-Benachrichtigungen',
+  'promo_notifications' => 'Werbe-Benachrichtigungen',
+  'privacy' => 'Datenschutz',
+  'profile_visible' => 'Profil öffentlich sichtbar',
+  'marketing_emails' => 'Marketing E-Mails erhalten',
+  'data_sharing' => 'Daten mit Partnern teilen',
+
+  // Settings - Delete account
+  'delete_account_confirm' => 'Konto wirklich löschen?',
+  'delete_account_warning' => 'Diese Aktion kann nicht rückgängig gemacht werden. Alle Ihre Daten werden dauerhaft gelöscht.',
+  'enter_password' => 'Passwort eingeben',
+  'password' => 'Passwort',
+  'delete_permanently' => 'Dauerhaft löschen',
+
    // Landing Page - Header
     'landing_slogan' => 'Punkte sammeln. Belohnungen erhalten.',
     
