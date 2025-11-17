@@ -40,12 +40,17 @@ if (navigator.serviceWorker?.controller) {
     document.body.classList.remove("ppv-light", "ppv-dark");
     document.body.classList.add(`ppv-${theme}`);
 
-    // ⚡ CSS újratöltés
-    const link = document.getElementById("ppv-theme-css");
-    if (link) {
-      const base = link.href.split("?")[0];
-      link.href = `${base}?t=${Date.now()}`;
+    // ⚡ CSS újratöltés - töröljük a régit és hozzuk létre újra
+    const oldLink = document.getElementById("ppv-theme-css");
+    if (oldLink) {
+      oldLink.remove();
     }
+
+    const newLink = document.createElement("link");
+    newLink.id = "ppv-theme-css";
+    newLink.rel = "stylesheet";
+    newLink.href = `/wp-content/plugins/punktepass/assets/css/ppv-theme-${theme}.css?v=${Date.now()}`;
+    document.head.appendChild(newLink);
 
     // ⚡ Logo újratöltés
     const logo = document.querySelector(".ppv-header-logo-min");
@@ -107,16 +112,23 @@ document.addEventListener("DOMContentLoaded", () => {
    * ============================ */
   function applyTheme(t, logoEl) {
     document.documentElement.setAttribute("data-theme", t);
+    document.body.classList.remove("ppv-light", "ppv-dark");
+    document.body.classList.add(`ppv-${t}`);
+
     const linkId = "ppv-theme-css";
 
-    let link = document.getElementById(linkId);
-    if (!link) {
-      link = document.createElement("link");
-      link.id = linkId;
-      link.rel = "stylesheet";
-      document.head.appendChild(link);
+    // Töröljük a régit
+    const oldLink = document.getElementById(linkId);
+    if (oldLink) {
+      oldLink.remove();
     }
+
+    // Hozzuk létre az újat
+    const link = document.createElement("link");
+    link.id = linkId;
+    link.rel = "stylesheet";
     link.href = `/wp-content/plugins/punktepass/assets/css/ppv-theme-${t}.css?v=${Date.now()}`;
+    document.head.appendChild(link);
 
     if (logoEl) updateLogo(logoEl, t);
     console.log("🎨 Theme aktiv:", t);
