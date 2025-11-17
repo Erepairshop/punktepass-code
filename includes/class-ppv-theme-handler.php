@@ -73,8 +73,8 @@ class PPV_Theme_Handler {
         }
 
         // 4️⃣ Default
-        error_log("🎨 [PPV_Theme_Handler] Using default theme: dark");
-        return 'dark';
+        error_log("🎨 [PPV_Theme_Handler] Using default theme: light");
+        return 'light';
     }
 
     /** ============================================================
@@ -84,7 +84,7 @@ class PPV_Theme_Handler {
         if (headers_sent()) return;
 
         $value = sanitize_text_field($value);
-        if (!in_array($value, self::VALID_THEMES)) $value = 'dark';
+        if (!in_array($value, self::VALID_THEMES)) $value = 'light';
 
         $expire = time() + (365 * 24 * 60 * 60); // 1 year
         $path = '/';
