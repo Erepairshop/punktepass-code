@@ -1,3 +1,171 @@
+/* ============================================================
+   🌙 DARK MODE — PunktePass Belohnungen (2026 Native App Style)
+   ============================================================ */
+@media (prefers-color-scheme: dark) {
+
+    :root {
+        --ppv-bg: #0f1217;
+        --ppv-card-bg: #161b22;
+        --ppv-text: #e5e7eb;
+        --ppv-text-light: #9ca3af;
+        --ppv-primary: #3b82f6;
+        --ppv-primary-light: #60a5fa;
+        --ppv-primary-soft: rgba(59, 130, 246, 0.12);
+        --ppv-shadow: 0 4px 20px rgba(0,0,0,0.65);
+        --ppv-border: #1f2937;
+        --ppv-progress-bg: #1f2937;
+        --ppv-progress-fill: #3b82f6;
+    }
+
+    body {
+        background: var(--ppv-bg);
+        color: var(--ppv-text);
+    }
+
+    /* HEADER */
+    .ppv-rewards-header h2 {
+        color: var(--ppv-text);
+    }
+    .ppv-rewards-header p {
+        color: var(--ppv-text-light);
+    }
+
+    /* POINTS CARD */
+    .ppv-user-points-card {
+        background: var(--ppv-card-bg);
+        box-shadow: var(--ppv-shadow);
+        border: 1px solid #1c2330;
+    }
+
+    .ppv-user-points-card .points-value {
+        color: var(--ppv-primary-light);
+    }
+
+    /* SEARCH + FILTER */
+    .ppv-search-box,
+    .ppv-filter-box {
+        background: var(--ppv-card-bg);
+        box-shadow: var(--ppv-shadow);
+        border: 1px solid var(--ppv-border);
+    }
+
+    #ppv-search-input,
+    #ppv-store-filter {
+        color: var(--ppv-text);
+    }
+
+    #ppv-filter-reset {
+        background: var(--ppv-primary-soft);
+        color: var(--ppv-primary-light);
+    }
+
+    .ppv-search-box i {
+        color: var(--ppv-primary-light);
+    }
+
+    /* REWARD CARDS */
+    .ppv-reward-grid .ppv-reward-card {
+        background: var(--ppv-card-bg);
+        border-color: var(--ppv-border);
+        box-shadow: var(--ppv-shadow);
+    }
+
+    .ppv-reward-card h4 {
+        color: var(--ppv-text);
+    }
+    .ppv-reward-card small {
+        color: var(--ppv-text-light);
+    }
+    .ppv-reward-card p {
+        color: var(--ppv-text-light);
+    }
+
+    .reward-meta {
+        color: var(--ppv-primary-light);
+    }
+
+    /* PROGRESS BAR */
+    .ppv-progress-container {
+        background: var(--ppv-progress-bg);
+    }
+    .ppv-progress-bar {
+        background: var(--ppv-progress-fill);
+    }
+    .ppv-progress-text {
+        color: var(--ppv-text-light);
+    }
+
+    /* BUTTONS */
+    .ppv-reward-card button.ppv-redeem-btn {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: #fff;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+    }
+    .ppv-reward-card button.ppv-redeem-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(59, 130, 246, 0.45);
+    }
+
+    .ppv-reward-card button.disabled {
+        background: #374151;
+        color: #6b7280;
+    }
+
+    /* NO RESULTS */
+    .ppv-no-results {
+        color: var(--ppv-text-light);
+    }
+
+    /* PENDING */
+    .ppv-pending-card {
+        background: var(--ppv-card-bg);
+        border-color: var(--ppv-border);
+        box-shadow: var(--ppv-shadow);
+    }
+
+    .date-badge {
+        color: var(--ppv-text-light);
+    }
+
+    /* Status left borders */
+    .status-pending {
+        border-left-color: #fbbf24 !important;
+    }
+    .status-approved {
+        border-left-color: #4ade80 !important;
+    }
+    .status-cancelled {
+        border-left-color: #f87171 !important;
+    }
+
+    /* Status badge */
+    .status-badge {
+        color: var(--ppv-text);
+    }
+
+    /* POPUP */
+    .ppv-reward-popup-inner {
+        background: #1a1f26 !important;
+        color: var(--ppv-text);
+        border: 1px solid #242b35;
+        box-shadow: 0 25px 60px rgba(0,0,0,0.6);
+    }
+
+    .ppv-reward-popup-inner .popup-button {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: #fff;
+        box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+    }
+
+    /* POPUP STATUS COLORS */
+    .popup-success { color: #4ade80 !important; }
+    .popup-error { color: #f87171 !important; }
+    .popup-warning { color: #fcd34d !important; }
+}
+
+
+
+
 /**
  * PunktePass – User Dashboard CSS v6.2 DARK THEME
  * ✅ Dark Background
@@ -4615,779 +4783,6 @@ body.ppv-dark .ppv-qr-overlay {
     box-shadow: none;
   }
 }
-
-/**
- * PunktePass – Belohnungen (Rewards) Modern CSS v2.2 FIXED
- * ✅ Light mode DEFAULT
- * ✅ Dark mode OPTIONAL (body.ppv-dark)
- * ✅ No auto-switch issues
- * ✅ Clean & optimized
- */
-
-/* ============================================================
-   🌐 ROOT – LIGHT MODE DEFAULT (ALL VARIABLES)
-   ============================================================ */
-:root {
-  color-scheme: light;
-  
- 
-
-  /* Primary Colors */
-  --color-primary: #667eea;
-  --color-primary-dark: #764ba2;
-  --color-primary-light: rgba(102, 126, 234, 0.1);
-  
-  /* ... többi --color-* ... */
-  
-  /* ✅ ADD BELOHNUNGEN PPV VARIABLES */
-  --ppv-primary: #6366f1;
-  --ppv-primary-dark: #764ba2;
-  --ppv-primary-light: rgba(99, 102, 241, 0.1);
-  --ppv-success: #10b981;
-  --ppv-warning: #ffd43b;
-  --ppv-error: #ff6b6b;
-  --ppv-bg: #f8fafc;
-  --ppv-card: #ffffff;
-  --ppv-text: #0f172a;
-  --ppv-text-secondary: #475569;
-  --ppv-text-muted: #94a3b8;
-  --ppv-border: #e2e8f0;
-  --ppv-border-light: #f1f5f9;
-  --ppv-shadow-sm: 0 2px 4px rgba(99, 102, 241, 0.08);
-  --ppv-shadow-md: 0 2px 8px rgba(99, 102, 241, 0.1);
-  --ppv-shadow-lg: 0 4px 16px rgba(99, 102, 241, 0.12);
-  --ppv-radius: 10px;
-  --ppv-radius-lg: 14px;
-  --ppv-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-
-
-  
-  /* Colors - Modern Indigo */
-  --ppv-primary: #6366f1;
-  --ppv-primary-dark: #764ba2;
-  --ppv-primary-light: rgba(99, 102, 241, 0.1);
-  --ppv-rgb: 99, 102, 241;
-  
-  /* Status Colors */
-  --ppv-success: #10b981;
-  --ppv-warning: #ffd43b;
-  --ppv-error: #ff6b6b;
-  --ppv-info: #00b8e6;
-  
-  /* ✅ LIGHT MODE BACKGROUNDS */
-  --ppv-bg: #f8fafc;
-  --ppv-bg-light: #ffffff;
-  --ppv-card: #ffffff;
-  
-  /* ✅ LIGHT MODE TEXT */
-  --ppv-text: #0f172a;
-  --ppv-text-secondary: #475569;
-  --ppv-text-muted: #94a3b8;
-  
-  /* ✅ LIGHT MODE BORDERS */
-  --ppv-border: #e2e8f0;
-  --ppv-border-light: #f1f5f9;
-  
-  /* Shadows */
-  --ppv-shadow-sm: 0 2px 4px rgba(99, 102, 241, 0.08);
-  --ppv-shadow-md: 0 2px 8px rgba(99, 102, 241, 0.1);
-  --ppv-shadow-lg: 0 4px 16px rgba(99, 102, 241, 0.12);
-  
-  /* Spacing */
-  --ppv-sp: 6px;
-  --ppv-radius: 10px;
-  --ppv-radius-lg: 14px;
-  
-  /* Transitions */
-  --ppv-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* ============================================================
-   🌙 DARK MODE – OPTIONAL (body.ppv-dark)
-   ============================================================ */
-body.ppv-dark,
-body.ppv-dark-mode {
-  color-scheme: dark;
-  
-  --ppv-primary: #a78bfa;
-  --ppv-primary-dark: #c4b5fd;
-  --ppv-primary-light: rgba(167, 139, 250, 0.15);
-  
-  /* ✅ DARK MODE BACKGROUNDS */
-  --ppv-bg: #0f172a;
-  --ppv-bg-light: #1e293b;
-  --ppv-card: #1e293b;
-  
-  /* ✅ DARK MODE TEXT */
-  --ppv-text: #f1f5f9;
-  --ppv-text-secondary: #cbd5e1;
-  --ppv-text-muted: #64748b;
-  
-  /* ✅ DARK MODE BORDERS */
-  --ppv-border: #334155;
-  --ppv-border-light: #1e293b;
-}
-
-/* ============================================================
-   🔧 RESET
-   ============================================================ */
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-/* ✅ BODY – Use variables (NOT hardcoded) */
-body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background-color: var(--ppv-bg);
-  color: var(--ppv-text);
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-/* ============================================================
-   🎁 BELOHNUNGEN CONTAINER
-   ============================================================ */
-.ppv-belohnungen {
-  width: 100%;
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 12px;
-  padding-bottom: 100px;
-  animation: fadeIn 0.4s ease;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* ============================================================
-   📡 HEADER
-   ============================================================ */
-.ppv-rewards-header {
-  text-align: center;
-  margin-bottom: 20px;
-  padding: 20px 16px;
-  background: linear-gradient(135deg, var(--ppv-primary), var(--ppv-primary-dark));
-  color: white;
-  border-radius: var(--ppv-radius-lg);
-  box-shadow: var(--ppv-shadow-lg);
-}
-
-.ppv-rewards-header h2 {
-  font-size: 28px;
-  font-weight: 800;
-  margin-bottom: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  letter-spacing: -0.01em;
-}
-
-.ppv-rewards-header h2 i {
-  font-size: 32px;
-}
-
-.ppv-rewards-header p {
-  font-size: 14px;
-  opacity: 0.95;
-  font-weight: 500;
-}
-
-/* ============================================================
-   💰 USER POINTS CARD
-   ============================================================ */
-.ppv-user-points-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  padding: 20px 16px;
-  background: linear-gradient(135deg, var(--ppv-primary), var(--ppv-primary-dark));
-  color: white;
-  border-radius: var(--ppv-radius-lg);
-  box-shadow: var(--ppv-shadow-lg);
-  margin-bottom: 20px;
-  text-align: center;
-}
-
-.ppv-user-points-card .points-value {
-  font-size: 48px;
-  font-weight: 900;
-  line-height: 1;
-  letter-spacing: -0.02em;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-}
-
-.ppv-user-points-card .points-label {
-  font-size: 13px;
-  font-weight: 600;
-  opacity: 0.95;
-  letter-spacing: 0.5px;
-}
-
-/* ============================================================
-   🔍 SEARCH & FILTER
-   ============================================================ */
-.ppv-search-filter {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 16px;
-  background: var(--ppv-card);
-  border: 1px solid var(--ppv-border);
-  border-radius: var(--ppv-radius-lg);
-  margin-bottom: 20px;
-  box-shadow: var(--ppv-shadow-sm);
-}
-
-.ppv-search-box {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.ppv-search-box i {
-  position: absolute;
-  left: 12px;
-  color: var(--ppv-primary);
-  font-size: 18px;
-  pointer-events: none;
-}
-
-.ppv-search-box input {
-  width: 100%;
-  padding: 10px 12px 10px 40px;
-  background: var(--ppv-bg);
-  border: 1px solid var(--ppv-border);
-  border-radius: var(--ppv-radius);
-  font-size: 14px;
-  font-family: inherit;
-  color: var(--ppv-text);
-  transition: var(--ppv-transition);
-}
-
-.ppv-search-box input:focus {
-  outline: none;
-  border-color: var(--ppv-primary);
-  box-shadow: 0 0 0 3px var(--ppv-primary-light);
-}
-
-.ppv-filter-box {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
-#ppv-store-filter {
-  flex: 1;
-  padding: 10px 12px;
-  background: var(--ppv-bg);
-  border: 1px solid var(--ppv-border);
-  border-radius: var(--ppv-radius);
-  font-size: 14px;
-  font-family: inherit;
-  color: var(--ppv-text);
-  cursor: pointer;
-  transition: var(--ppv-transition);
-}
-
-#ppv-store-filter:focus {
-  outline: none;
-  border-color: var(--ppv-primary);
-  box-shadow: 0 0 0 3px var(--ppv-primary-light);
-}
-
-.ppv-filter-reset-btn {
-  padding: 10px 16px;
-  background: var(--ppv-primary);
-  color: white;
-  border: none;
-  border-radius: var(--ppv-radius);
-  font-size: 14px;
-  font-weight: 600;
-  font-family: inherit;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: var(--ppv-transition);
-  white-space: nowrap;
-}
-
-.ppv-filter-reset-btn:hover {
-  background: var(--ppv-primary-dark);
-  transform: translateY(-2px);
-}
-
-.ppv-filter-reset-btn:active {
-  transform: scale(0.98);
-}
-
-/* ============================================================
-   🎁 REWARD GRID
-   ============================================================ */
-.ppv-reward-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 12px;
-  margin-bottom: 20px;
-}
-
-/* ============================================================
-   🏆 REWARD CARD
-   ============================================================ */
-.ppv-reward-card {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 14px;
-  background: var(--ppv-card);
-  border: 1px solid var(--ppv-border);
-  border-radius: var(--ppv-radius-lg);
-  box-shadow: var(--ppv-shadow-sm);
-  transition: var(--ppv-transition);
-}
-
-.ppv-reward-card.locked {
-  opacity: 0.6;
-}
-
-.ppv-reward-card.available {
-  border-color: var(--ppv-primary);
-}
-
-.ppv-reward-card:active {
-  transform: scale(0.98);
-}
-
-.reward-header {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.reward-header h4 {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--ppv-text);
-  line-height: 1.3;
-}
-
-.reward-header small {
-  font-size: 12px;
-  color: var(--ppv-text-muted);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.reward-header small i {
-  font-size: 14px;
-  color: var(--ppv-primary);
-}
-
-.ppv-reward-card p {
-  font-size: 13px;
-  color: var(--ppv-text-secondary);
-  line-height: 1.4;
-  flex: 1;
-}
-
-.reward-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--ppv-primary);
-}
-
-.reward-meta i {
-  font-size: 16px;
-}
-
-/* ============================================================
-   🔘 REDEEM BUTTON
-   ============================================================ */
-.ppv-redeem-btn {
-  padding: 10px 14px;
-  background: linear-gradient(135deg, var(--ppv-primary), var(--ppv-primary-dark));
-  color: white;
-  border: none;
-  border-radius: var(--ppv-radius);
-  font-size: 13px;
-  font-weight: 700;
-  font-family: inherit;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  transition: var(--ppv-transition);
-}
-
-.ppv-redeem-btn i {
-  font-size: 16px;
-}
-
-.ppv-redeem-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--ppv-shadow-lg);
-}
-
-.ppv-redeem-btn:active {
-  transform: scale(0.95);
-}
-
-.ppv-redeem-btn.disabled,
-.ppv-redeem-btn:disabled {
-  background: var(--ppv-border);
-  color: var(--ppv-text-muted);
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-/* ============================================================
-   ⏳ PENDING SECTION
-   ============================================================ */
-.ppv-pending-section {
-  margin-top: 30px;
-  padding: 16px;
-  background: var(--ppv-primary-light);
-  border: 1px solid var(--ppv-primary);
-  border-radius: var(--ppv-radius-lg);
-  box-shadow: var(--ppv-shadow-sm);
-}
-
-.ppv-pending-section h3 {
-  font-size: 16px;
-  font-weight: 700;
-  margin-bottom: 12px;
-  color: var(--ppv-text);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.ppv-pending-section h3 i {
-  font-size: 20px;
-  color: var(--ppv-primary);
-}
-
-.ppv-pending-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 12px;
-}
-
-/* ============================================================
-   📋 PENDING CARD
-   ============================================================ */
-.ppv-pending-card {
-  padding: 12px;
-  background: var(--ppv-card);
-  border: 1px solid var(--ppv-border);
-  border-radius: var(--ppv-radius-lg);
-  box-shadow: var(--ppv-shadow-sm);
-}
-
-.ppv-pending-card h4 {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--ppv-text);
-  margin-bottom: 4px;
-}
-
-.ppv-pending-card small {
-  font-size: 12px;
-  color: var(--ppv-text-muted);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 8px;
-}
-
-.ppv-pending-card small i {
-  font-size: 14px;
-  color: var(--ppv-primary);
-}
-
-.ppv-pending-card p {
-  font-size: 12px;
-  color: var(--ppv-text-secondary);
-  line-height: 1.4;
-  margin-bottom: 8px;
-}
-
-.pending-meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  font-size: 11px;
-}
-
-.status-badge {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
-  background: var(--ppv-primary-light);
-  color: var(--ppv-primary);
-  border-radius: 4px;
-  font-weight: 600;
-}
-
-.status-badge i {
-  font-size: 12px;
-}
-
-.date-badge {
-  color: var(--ppv-text-muted);
-  white-space: nowrap;
-}
-
-/* ============================================================
-   🎨 STATUS COLORS
-   ============================================================ */
-.ppv-pending-card.status-pending,
-.ppv-pending-card.status-offen {
-  border-color: var(--ppv-warning);
-}
-
-.ppv-pending-card.status-approved,
-.ppv-pending-card.status-bestätigt {
-  border-color: var(--ppv-success);
-  background: rgba(16, 185, 129, 0.05);
-}
-
-.ppv-pending-card.status-cancelled,
-.ppv-pending-card.status-abgelehnt {
-  border-color: var(--ppv-error);
-  background: rgba(255, 107, 107, 0.05);
-}
-
-/* ============================================================
-   📭 EMPTY STATES
-   ============================================================ */
-.ppv-empty,
-.ppv-no-results {
-  text-align: center;
-  padding: 30px 20px;
-  color: var(--ppv-text-secondary);
-  font-size: 14px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-}
-
-.ppv-empty i,
-.ppv-no-results i {
-  font-size: 32px;
-  color: var(--ppv-primary);
-  opacity: 0.5;
-}
-
-/* ============================================================
-   🔴 ERROR NOTICE (NO INLINE STYLE!)
-   ============================================================ */
-.ppv-notice,
-.ppv-notice-error {
-  padding: 16px;
-  background: linear-gradient(135deg, rgba(255, 107, 107, 0.1), rgba(255, 107, 107, 0.05));
-  border: 1px solid rgba(255, 107, 107, 0.2);
-  border-radius: var(--ppv-radius-lg);
-  color: var(--ppv-error);
-  text-align: center;
-  font-size: 14px;
-  margin: 16px 0;
-}
-
-/* ============================================================
-   🌐 RESPONSIVE
-   ============================================================ */
-@media (max-width: 768px) {
-  .ppv-belohnungen {
-    padding: 10px;
-  }
-
-  .ppv-rewards-header h2 {
-    font-size: 24px;
-  }
-
-  .ppv-user-points-card .points-value {
-    font-size: 42px;
-  }
-
-  .ppv-search-filter {
-    flex-direction: column;
-  }
-
-  .ppv-filter-box {
-    flex-direction: column;
-  }
-
-  #ppv-store-filter,
-  .ppv-filter-reset-btn {
-    width: 100%;
-  }
-
-  .ppv-reward-grid {
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  }
-}
-
-@media (max-width: 480px) {
-  .ppv-belohnungen {
-    padding: 8px;
-    padding-bottom: 80px;
-  }
-
-  .ppv-rewards-header {
-    padding: 16px 12px;
-  }
-
-  .ppv-rewards-header h2 {
-    font-size: 20px;
-  }
-
-  .ppv-user-points-card {
-    padding: 16px 12px;
-  }
-
-  .ppv-user-points-card .points-value {
-    font-size: 36px;
-  }
-
-  .ppv-search-box input {
-    padding: 8px 10px 8px 36px;
-    font-size: 13px;
-  }
-
-  .ppv-reward-card {
-    padding: 12px;
-  }
-
-  .ppv-redeem-btn {
-    padding: 8px 12px;
-    font-size: 12px;
-  }
-
-  .ppv-pending-section {
-    padding: 12px;
-  }
-
-  .ppv-pending-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .ppv-reward-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* ============================================================
-   🖥️ DESKTOP
-   ============================================================ */
-@media (min-width: 1024px) {
-  .ppv-belohnungen {
-    padding: 20px 24px;
-  }
-
-  .ppv-reward-grid {
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  }
-
-  .ppv-pending-grid {
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  }
-
-  .ppv-search-filter {
-    flex-direction: row;
-    align-items: center;
-  }
-
-  .ppv-search-box {
-    flex: 1;
-  }
-
-  .ppv-filter-box {
-    flex-direction: row;
-    align-items: center;
-  }
-
-  #ppv-store-filter,
-  .ppv-filter-reset-btn {
-    width: auto;
-  }
-}
-
-/* ============================================================
-   ♿ ACCESSIBILITY
-   ============================================================ */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
-/* ============================================================
-   🔧 UTILITIES
-   ============================================================ */
-::selection {
-  background-color: var(--ppv-primary-light);
-  color: var(--ppv-text);
-}
-
-::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--ppv-border-light);
-}
-
-::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, var(--ppv-primary), var(--ppv-primary-dark));
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--ppv-primary-dark);
-}
-
-/* ============================================================
-   📱 PWA
-   ============================================================ */
-@media (display-mode: standalone) {
-  body {
-    padding-bottom: max(0px, env(safe-area-inset-bottom));
-  }
-
-  .ppv-belohnungen {
-    padding-bottom: max(100px, calc(80px + env(safe-area-inset-bottom)));
-  }
-}
-
-
-
 
 
 /**
