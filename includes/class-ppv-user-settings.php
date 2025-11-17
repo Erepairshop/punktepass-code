@@ -218,7 +218,7 @@ private static function t($key) {
         if (!$user_id) return '<div class="ppv-notice">'.self::t('login_required').'</div>';
 
         $user = get_userdata($user_id);
-        $avatar = get_user_meta($user_id, 'ppv_avatar', true) ?: PPV_PLUGIN_URL.'assets/img/default-avatar.png';
+        $avatar = get_user_meta($user_id, 'ppv_avatar', true) ?: PPV_PLUGIN_URL.'assets/img/default-avatar.svg';
         $lang = $GLOBALS['ppv_lang_code'] ?? 'de';
 
         // Értesítési beállítások
