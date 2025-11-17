@@ -8,6 +8,44 @@ jQuery(document).ready(function ($) {
   console.log("✅ PunktePass User Settings JS v5.0 aktiv");
 
   /** =============================
+   * 🌍 TRANSLATIONS (DE/HU/RO)
+   * ============================= */
+  const LANG = (window.ppv_user_settings && window.ppv_user_settings.lang) || 'de';
+
+  const T = {
+    de: {
+      avatar_updated: "✅ Avatar aktualisiert",
+      upload_failed: "⚠️ Upload fehlgeschlagen",
+      network_error: "❌ Netzwerkfehler",
+      settings_saved: "✅ Einstellungen gespeichert",
+      save_error: "Fehler beim Speichern",
+      logout_all_confirm: "Möchten Sie sich wirklich auf allen Geräten abmelden?",
+      password_required: "⚠️ Bitte Passwort eingeben",
+      delete_final_warning: "⚠️ LETZTE WARNUNG: Konto wirklich unwiderruflich löschen?",
+    },
+    hu: {
+      avatar_updated: "✅ Avatar frissítve",
+      upload_failed: "⚠️ Feltöltés sikertelen",
+      network_error: "❌ Hálózati hiba",
+      settings_saved: "✅ Beállítások mentve",
+      save_error: "Mentési hiba",
+      logout_all_confirm: "Biztosan kijelentkezel minden eszközön?",
+      password_required: "⚠️ Kérlek add meg a jelszót",
+      delete_final_warning: "⚠️ UTOLSÓ FIGYELMEZTETÉS: Biztosan véglegesen törlöd a fiókot?",
+    },
+    ro: {
+      avatar_updated: "✅ Avatar actualizat",
+      upload_failed: "⚠️ Încărcare eșuată",
+      network_error: "❌ Eroare de rețea",
+      settings_saved: "✅ Setări salvate",
+      save_error: "Eroare la salvare",
+      logout_all_confirm: "Sigur vrei să te deconectezi de pe toate dispozitivele?",
+      password_required: "⚠️ Te rog introdu parola",
+      delete_final_warning: "⚠️ ULTIMĂ ATENȚIONARE: Sigur ștergi definitiv contul?",
+    }
+  }[LANG] || T.de;
+
+  /** =============================
    * 🧩 TOAST RENDSZER
    * ============================= */
   const showToast = (msg, type = "info") => {
@@ -45,12 +83,12 @@ jQuery(document).ready(function ($) {
       success: (res) => {
         if (res.success && res.data.url) {
           $("#ppv-avatar-preview").attr("src", res.data.url);
-          showToast("✅ Avatar aktualisiert", "success");
+          showToast(T.avatar_updated, "success");
         } else {
-          showToast("⚠️ Upload fehlgeschlagen", "error");
+          showToast(T.upload_failed, "error");
         }
       },
-      error: () => showToast("❌ Netzwerkfehler", "error"),
+      error: () => showToast(T.network_error, "error"),
     });
   });
 
@@ -81,12 +119,12 @@ jQuery(document).ready(function ($) {
       contentType: false,
       success: (res) => {
         if (res.success) {
-          showToast("✅ Einstellungen gespeichert", "success");
+          showToast(T.settings_saved, "success");
         } else {
-          showToast("⚠️ " + (res.data?.msg || "Fehler beim Speichern"), "error");
+          showToast("⚠️ " + (res.data?.msg || T.save_error), "error");
         }
       },
-      error: () => showToast("❌ Netzwerkfehler", "error"),
+      error: () => showToast(T.network_error, "error"),
     });
   });
 
@@ -94,7 +132,7 @@ jQuery(document).ready(function ($) {
    * 📱 ÖSSZES ESZKÖZ KIJELENTKEZTETÉSE
    * ============================= */
   $("#ppv-logout-all").on("click", function () {
-    if (confirm("Möchten Sie sich wirklich auf allen Geräten abmelden?")) {
+    if (confirm(T.logout_all_confirm)) {
       $.ajax({
         url: ppv_user_settings.ajax_url,
         type: "POST",
@@ -109,7 +147,7 @@ jQuery(document).ready(function ($) {
             showToast("⚠️ " + (res.data?.msg || "Fehler"), "error");
           }
         },
-        error: () => showToast("❌ Netzwerkfehler", "error")
+        error: () => showToast(T.network_error, "error")
       });
     }
   });
@@ -142,11 +180,11 @@ jQuery(document).ready(function ($) {
     const password = $("#ppv-delete-password").val();
 
     if (!password) {
-      showToast("⚠️ Bitte Passwort eingeben", "error");
+      showToast(T.password_required, "error");
       return;
     }
 
-    if (!confirm("⚠️ LETZTE WARNUNG: Konto wirklich unwiderruflich löschen?")) {
+    if (!confirm(T.delete_final_warning)) {
       return;
     }
 
@@ -165,10 +203,10 @@ jQuery(document).ready(function ($) {
             window.location.href = res.data.redirect;
           }, 2000);
         } else {
-          showToast("⚠️ " + (res.data?.msg || "Fehler beim Löschen"), "error");
+          showToast("⚠️ " + (res.data?.msg || T.save_error), "error");
         }
       },
-      error: () => showToast("❌ Netzwerkfehler", "error")
+      error: () => showToast(T.network_error, "error")
     });
   });
 });
