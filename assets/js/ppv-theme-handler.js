@@ -26,7 +26,7 @@ if (navigator.serviceWorker?.controller) {
 }
 
     if (btn) {
-  btn.addEventListener("click", () => {
+  btn.addEventListener("click", async () => {
     // 🔹 Read current theme from DOM (not closure variable)
     const currentTheme = document.documentElement.getAttribute("data-theme") || localStorage.getItem(THEME_KEY) || "light";
     theme = currentTheme === "light" ? "dark" : "light";
@@ -55,6 +55,23 @@ if (navigator.serviceWorker?.controller) {
           ? "/wp-content/plugins/punktepass/assets/img/logo.webp"
           : "/wp-content/plugins/punktepass/assets/img/logo.webp";
       logo.src = src + "?t=" + Date.now();
+    }
+
+    // 💾 Save to server (database)
+    try {
+      const response = await fetch('/wp-json/ppv/v1/theme/set', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ theme }),
+        credentials: 'include',
+      });
+      if (response.ok) {
+        console.log("✅ Theme saved to server:", theme);
+      }
+    } catch (err) {
+      console.warn("⚠️ Could not save theme to server (offline?):", err.message);
     }
 
     // 🧹 Cache törlés
