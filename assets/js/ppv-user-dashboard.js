@@ -466,7 +466,9 @@ document.addEventListener("DOMContentLoaded", async () => {
               scanPoints = 1;
             } else {
               // ✅ FALLBACK ha valami ismeretlen típus
-              campaignReward = `<i class="ri-lightbulb-line"></i> ${T.special_offer} (${c.campaign_type})`;
+              const typeLabel = c.campaign_type ? ` (${c.campaign_type})` : '';
+              campaignReward = `<i class="ri-lightbulb-line"></i> ${T.special_offer}${typeLabel}`;
+              scanPoints = 1;
               console.warn("⚠️ Unknown campaign type:", c.campaign_type);
             }
 
