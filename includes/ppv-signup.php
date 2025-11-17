@@ -1,55 +1,49 @@
 <?php
 /**
- * PunktePass - User Signup System (FIXED - 400 Error)
+ * PunktePass - User/Händler Signup System
  * Modern Registration with Google OAuth
  * Multi-language Support (DE/HU/RO)
- * 
- * FIX: Proper AJAX hook registration
+ *
+ * NEW: Händler registration with 30-day trial
  * Author: Erik Borota / PunktePass
  */
 
 if (!defined('ABSPATH')) exit;
 
 class PPV_Signup {
-    
+
     /** ============================================================
-     * 🔹 Hooks (FIXED)
+     * 🔹 Hooks
      * ============================================================ */
     public static function hooks() {
         add_shortcode('ppv_signup', [__CLASS__, 'render_signup_page']);
         add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
-        
+
         // AJAX hooks - for logged OUT users (nopriv)
         add_action('wp_ajax_nopriv_ppv_signup', [__CLASS__, 'ajax_signup']);
         add_action('wp_ajax_nopriv_ppv_google_signup', [__CLASS__, 'ajax_google_signup']);
-        
+
         // ALSO for logged IN users (safety measure)
         add_action('wp_ajax_ppv_signup', [__CLASS__, 'ajax_signup']);
         add_action('wp_ajax_ppv_google_signup', [__CLASS__, 'ajax_google_signup']);
-        
-        // Log that hooks are registered
+
         error_log("✅ [PPV_Signup] Hooks registered successfully");
-        error_log("   - Shortcode: ppv_signup");
-        error_log("   - AJAX actions: ppv_signup, ppv_google_signup");
     }
-    
+
     /** ============================================================
-     * 🔹 Initialize (CRITICAL - Call this!)
+     * 🔹 Initialize
      * ============================================================ */
     public static function init() {
-        // Make sure session is started early
         if (!session_id() && !headers_sent()) {
             @session_start();
         }
-        
-        // Register hooks
+
         self::hooks();
-        
         error_log("✅ [PPV_Signup] Initialized");
     }
-    
+
     /** ============================================================
-     * 🔹 Get Current Language (Cookie > GET > Locale)
+     * 🔹 Get Current Language
      * ============================================================ */
     private static function get_current_lang() {
         static $lang = null;
@@ -69,7 +63,7 @@ class PPV_Signup {
 
         return $lang;
     }
-    
+
     /** ============================================================
      * 🔹 Ensure Session Started
      * ============================================================ */
@@ -77,7 +71,7 @@ class PPV_Signup {
         if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
             $domain = str_replace('www.', '', $_SERVER['HTTP_HOST'] ?? 'punktepass.de');
             session_set_cookie_params([
-                'lifetime' => 86400,
+                'lifetime' => 86400 * 180,
                 'path'     => '/',
                 'domain'   => $domain,
                 'secure'   => !empty($_SERVER['HTTPS']),
@@ -87,7 +81,7 @@ class PPV_Signup {
             @session_start();
         }
     }
-    
+
     /** ============================================================
      * 🔹 Asset Loading
      * ============================================================ */
@@ -99,7 +93,7 @@ class PPV_Signup {
                 return;
             }
         }
-        
+
         // Google Fonts - Inter
         wp_enqueue_style(
             'ppv-inter-font',
@@ -107,7 +101,7 @@ class PPV_Signup {
             [],
             null
         );
-        
+
         // Use same CSS as login
         wp_enqueue_style(
             'ppv-login',
@@ -115,7 +109,7 @@ class PPV_Signup {
             [],
             PPV_VERSION
         );
-        
+
         // Signup JS
         wp_enqueue_script(
             'ppv-signup',
@@ -124,7 +118,7 @@ class PPV_Signup {
             PPV_VERSION,
             true
         );
-        
+
         // Google OAuth Library
         wp_enqueue_script(
             'google-platform',
@@ -133,42 +127,47 @@ class PPV_Signup {
             null,
             true
         );
-        
-        $google_client_id = defined('PPV_GOOGLE_CLIENT_ID') 
-            ? PPV_GOOGLE_CLIENT_ID 
+
+        $google_client_id = defined('PPV_GOOGLE_CLIENT_ID')
+            ? PPV_GOOGLE_CLIENT_ID
             : get_option('ppv_google_client_id', '453567547051-odmqrinafba8ls8ktp9snlp7d2fpl9q0.apps.googleusercontent.com');
-        
+
         // Localize
         wp_localize_script('ppv-signup', 'ppvSignup', [
             'ajaxurl' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('ppv_signup_nonce'),
             'google_client_id' => $google_client_id,
             'redirect_url' => home_url('/user_dashboard'),
-            'debug' => true  // TEMPORARY: Enable debug mode
+            'vendor_redirect_url' => home_url('/haendler'),
+            'debug' => true
         ]);
-        
+
         error_log("✅ [PPV_Signup] Assets enqueued");
-        error_log("   AJAX URL: " . admin_url('admin-ajax.php'));
-        error_log("   Nonce created: " . wp_create_nonce('ppv_signup_nonce'));
     }
-    
+
     /** ============================================================
      * 🔹 Render Signup Page
      * ============================================================ */
     public static function render_signup_page($atts) {
         self::ensure_session();
-        
+
         // Auto-redirect if already logged in
-        if (!empty($_SESSION['ppv_user_id']) && ($_SESSION['ppv_user_type'] ?? '') === 'user') {
-            wp_redirect(home_url('/user_dashboard'));
-            exit;
+        if (!empty($_SESSION['ppv_user_id'])) {
+            $user_type = $_SESSION['ppv_user_type'] ?? 'user';
+            if ($user_type === 'user') {
+                wp_redirect(home_url('/user_dashboard'));
+                exit;
+            } elseif ($user_type === 'vendor') {
+                wp_redirect(home_url('/haendler'));
+                exit;
+            }
         }
-        
+
         $lang = self::get_current_lang();
-        
+
         ob_start();
         ?>
-        
+
         <div class="ppv-landing-container">
             <!-- Header -->
             <header class="ppv-landing-header">
@@ -178,7 +177,7 @@ class PPV_Signup {
                         <h1>PunktePass</h1>
                     </div>
                     <p class="ppv-slogan"><?php echo PPV_Lang::t('signup_slogan'); ?></p>
-                    
+
                     <!-- Language Switcher -->
                     <div class="ppv-lang-switcher">
                         <select id="ppv-lang-select" class="ppv-lang-select">
@@ -189,7 +188,7 @@ class PPV_Signup {
                     </div>
                 </div>
             </header>
-            
+
             <!-- Hero Section -->
             <div class="ppv-hero-section">
                 <!-- Animated Background -->
@@ -198,17 +197,47 @@ class PPV_Signup {
                     <div class="ppv-bg-shape ppv-shape-2"></div>
                     <div class="ppv-bg-shape ppv-shape-3"></div>
                 </div>
-                
+
                 <div class="ppv-hero-content" style="justify-content: center;">
                     <!-- Signup Card (Centered) -->
-                    <div class="ppv-login-section" style="max-width: 480px;">
+                    <div class="ppv-login-section" style="max-width: 520px;">
                         <div class="ppv-login-card">
                             <!-- Welcome Text -->
                             <div class="ppv-login-welcome">
                                 <h2><?php echo PPV_Lang::t('signup_title'); ?></h2>
                                 <p><?php echo PPV_Lang::t('signup_subtitle'); ?></p>
                             </div>
-                            
+
+                            <!-- User Type Selection (NEW!) -->
+                            <div class="ppv-user-type-selector" style="margin-bottom: 24px;">
+                                <p style="font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 12px;">Ich bin:</p>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                    <label class="ppv-type-option ppv-type-active" data-type="user">
+                                        <input type="radio" name="user_type" value="user" checked style="display: none;">
+                                        <div style="padding: 16px; border: 2px solid #E5E7EB; border-radius: 12px; cursor: pointer; text-align: center; transition: all 0.3s;">
+                                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin: 0 auto 8px; color: #6B7280;">
+                                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                                <circle cx="12" cy="7" r="4"/>
+                                            </svg>
+                                            <strong style="display: block; font-size: 15px; color: #111827; margin-bottom: 4px;">Kunde</strong>
+                                            <span style="font-size: 12px; color: #6B7280;">Punkte sammeln</span>
+                                        </div>
+                                    </label>
+
+                                    <label class="ppv-type-option" data-type="vendor">
+                                        <input type="radio" name="user_type" value="vendor" style="display: none;">
+                                        <div style="padding: 16px; border: 2px solid #E5E7EB; border-radius: 12px; cursor: pointer; text-align: center; transition: all 0.3s;">
+                                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin: 0 auto 8px; color: #6B7280;">
+                                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                                                <polyline points="9 22 9 12 15 12 15 22"/>
+                                            </svg>
+                                            <strong style="display: block; font-size: 15px; color: #111827; margin-bottom: 4px;">Händler</strong>
+                                            <span style="font-size: 12px; color: #6B7280;">30 Tage Test</span>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+
                             <!-- Google Signup Button -->
                             <button type="button" id="ppv-google-signup-btn" class="ppv-google-btn">
                                 <svg width="20" height="20" viewBox="0 0 48 48">
@@ -219,14 +248,16 @@ class PPV_Signup {
                                 </svg>
                                 <span><?php echo PPV_Lang::t('signup_google_btn'); ?></span>
                             </button>
-                            
+
                             <!-- Divider -->
                             <div class="ppv-login-divider">
                                 <span><?php echo PPV_Lang::t('signup_or_email'); ?></span>
                             </div>
-                            
+
                             <!-- Signup Form -->
                             <form id="ppv-signup-form" class="ppv-login-form" autocomplete="off">
+                                <input type="hidden" name="user_type" id="ppv-user-type" value="user">
+
                                 <div class="ppv-form-group">
                                     <label for="ppv-email">
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -235,16 +266,16 @@ class PPV_Signup {
                                         </svg>
                                         <?php echo PPV_Lang::t('signup_email_label'); ?>
                                     </label>
-                                    <input 
-                                        type="email" 
-                                        id="ppv-email" 
-                                        name="email" 
+                                    <input
+                                        type="email"
+                                        id="ppv-email"
+                                        name="email"
                                         placeholder="<?php echo PPV_Lang::t('signup_email_placeholder'); ?>"
                                         autocomplete="email"
                                         required
                                     >
                                 </div>
-                                
+
                                 <div class="ppv-form-group">
                                     <label for="ppv-password">
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -254,10 +285,10 @@ class PPV_Signup {
                                         <?php echo PPV_Lang::t('signup_password_label'); ?>
                                     </label>
                                     <div class="ppv-password-wrapper">
-                                        <input 
-                                            type="password" 
-                                            id="ppv-password" 
-                                            name="password" 
+                                        <input
+                                            type="password"
+                                            id="ppv-password"
+                                            name="password"
                                             placeholder="<?php echo PPV_Lang::t('signup_password_placeholder'); ?>"
                                             autocomplete="new-password"
                                             required
@@ -291,7 +322,7 @@ class PPV_Signup {
                                         </ul>
                                     </div>
                                 </div>
-                                
+
                                 <div class="ppv-form-group">
                                     <label for="ppv-password-confirm">
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -300,17 +331,17 @@ class PPV_Signup {
                                         <?php echo PPV_Lang::t('signup_password_confirm_label'); ?>
                                     </label>
                                     <div class="ppv-password-wrapper">
-                                        <input 
-                                            type="password" 
-                                            id="ppv-password-confirm" 
-                                            name="password_confirm" 
+                                        <input
+                                            type="password"
+                                            id="ppv-password-confirm"
+                                            name="password_confirm"
                                             placeholder="<?php echo PPV_Lang::t('signup_password_confirm_placeholder'); ?>"
                                             autocomplete="new-password"
                                             required
                                         >
                                     </div>
                                 </div>
-                                
+
                                 <div class="ppv-form-footer" style="display: block;">
                                     <label class="ppv-checkbox" style="margin-bottom: 12px;">
                                         <input type="checkbox" name="terms" id="ppv-terms" required>
@@ -321,7 +352,7 @@ class PPV_Signup {
                                         <span><?php echo PPV_Lang::t('signup_privacy_agree'); ?> <a href="/datenschutz" target="_blank"><?php echo PPV_Lang::t('signup_privacy_link'); ?></a></span>
                                     </label>
                                 </div>
-                                
+
                                 <button type="submit" class="ppv-submit-btn" id="ppv-submit-btn">
                                     <span class="ppv-btn-text"><?php echo PPV_Lang::t('signup_button'); ?></span>
                                     <span class="ppv-btn-loader" style="display:none;">
@@ -334,10 +365,10 @@ class PPV_Signup {
                                     </span>
                                 </button>
                             </form>
-                            
+
                             <!-- Alert Box -->
                             <div id="ppv-signup-alert" class="ppv-alert" style="display:none;"></div>
-                            
+
                             <!-- Login Link -->
                             <div class="ppv-register-link">
                                 <p><?php echo PPV_Lang::t('signup_have_account'); ?> <a href="/login"><?php echo PPV_Lang::t('signup_login_now'); ?></a></p>
@@ -346,7 +377,7 @@ class PPV_Signup {
                     </div>
                 </div>
             </div>
-            
+
             <!-- Footer -->
             <footer class="ppv-landing-footer">
                 <p><?php echo PPV_Lang::t('landing_footer_copyright'); ?></p>
@@ -359,134 +390,216 @@ class PPV_Signup {
                 </div>
             </footer>
         </div>
-        
+
+        <style>
+        /* User Type Selector Styling */
+        .ppv-type-option > div {
+            transition: all 0.3s ease;
+        }
+
+        .ppv-type-option:hover > div {
+            border-color: #3B82F6 !important;
+            background: #EFF6FF;
+        }
+
+        .ppv-type-option.ppv-type-active > div {
+            border-color: #3B82F6 !important;
+            background: #EFF6FF;
+        }
+
+        .ppv-type-option.ppv-type-active svg {
+            color: #3B82F6 !important;
+        }
+
+        .ppv-type-option.ppv-type-active strong {
+            color: #1E40AF !important;
+        }
+        </style>
+
+        <script>
+        // User Type Toggle
+        document.addEventListener('DOMContentLoaded', function() {
+            const typeOptions = document.querySelectorAll('.ppv-type-option');
+            const hiddenInput = document.getElementById('ppv-user-type');
+
+            typeOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    typeOptions.forEach(opt => opt.classList.remove('ppv-type-active'));
+                    this.classList.add('ppv-type-active');
+                    this.querySelector('input[type="radio"]').checked = true;
+                    hiddenInput.value = this.querySelector('input[type="radio"]').value;
+                });
+            });
+        });
+        </script>
+
         <?php
         return ob_get_clean();
     }
-    
+
     /** ============================================================
-     * 🔹 AJAX Signup Handler (FIXED - Better error handling)
+     * 🔹 AJAX Signup Handler (WITH HÄNDLER SUPPORT)
      * ============================================================ */
     public static function ajax_signup() {
         error_log("========================================");
         error_log("🔹 [PPV_Signup] AJAX signup called");
         error_log("========================================");
-        
+
         global $wpdb;
         $prefix = $wpdb->prefix;
-        
-        // Check WPDB
+
         if (!$wpdb) {
             error_log("❌ [PPV_Signup] WPDB not available");
             wp_send_json_error(['message' => 'Adatbázis hiba']);
             return;
         }
-        
+
         self::ensure_session();
-        
-        // NONCE CHECK - but with better error handling
-        if (!isset($_POST['nonce'])) {
-            error_log("❌ [PPV_Signup] No nonce provided in POST");
-            wp_send_json_error(['message' => 'Biztonsági token hiányzik. Frissítsd az oldalt!']);
-            return;
-        }
-        
-        error_log("🔹 [PPV_Signup] Nonce from POST: " . $_POST['nonce']);
-        
-        if (!wp_verify_nonce($_POST['nonce'], 'ppv_signup_nonce')) {
+
+        // NONCE CHECK
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'ppv_signup_nonce')) {
             error_log("❌ [PPV_Signup] Nonce verification failed");
-            wp_send_json_error(['message' => 'Biztonsági ellenőrzés sikertelen. Próbáld újra!']);
+            wp_send_json_error(['message' => 'Biztonsági ellenőrzés sikertelen!']);
             return;
         }
-        
-        error_log("✅ [PPV_Signup] Nonce OK");
-        
+
         $email = sanitize_email($_POST['email'] ?? '');
         $password = $_POST['password'] ?? '';
         $password_confirm = $_POST['password_confirm'] ?? '';
         $terms = isset($_POST['terms']) && $_POST['terms'] === 'true';
         $privacy = isset($_POST['privacy']) && $_POST['privacy'] === 'true';
-        
+        $user_type = sanitize_text_field($_POST['user_type'] ?? 'user'); // NEW!
+
         error_log("📧 Email: {$email}");
-        error_log("🔐 Password length: " . strlen($password));
-        
+        error_log("👤 User Type: {$user_type}");
+
         // Validation
         if (empty($email) || empty($password)) {
-            error_log("❌ [PPV_Signup] Empty fields");
             wp_send_json_error(['message' => PPV_Lang::t('signup_error_empty')]);
             return;
         }
-        
+
         if (!is_email($email)) {
-            error_log("❌ [PPV_Signup] Invalid email");
             wp_send_json_error(['message' => PPV_Lang::t('signup_error_invalid_email')]);
             return;
         }
-        
+
         if ($password !== $password_confirm) {
-            error_log("❌ [PPV_Signup] Password mismatch");
             wp_send_json_error(['message' => PPV_Lang::t('signup_error_password_mismatch')]);
             return;
         }
-        
+
         if (strlen($password) < 8) {
-            error_log("❌ [PPV_Signup] Password too short");
             wp_send_json_error(['message' => PPV_Lang::t('signup_error_password_short')]);
             return;
         }
-        
+
         if (!$terms || !$privacy) {
-            error_log("❌ [PPV_Signup] Terms not accepted");
             wp_send_json_error(['message' => PPV_Lang::t('signup_error_terms')]);
             return;
         }
-        
+
         // Check if email exists
         $exists = $wpdb->get_var($wpdb->prepare(
             "SELECT id FROM {$prefix}ppv_users WHERE email=%s LIMIT 1",
             $email
         ));
-        
+
         if ($exists) {
             error_log("❌ [PPV_Signup] Email exists: {$email}");
             wp_send_json_error(['message' => PPV_Lang::t('signup_error_email_exists')]);
             return;
         }
-        
+
         // Create user
         $qr_token = wp_generate_password(10, false, false);
         $password_hashed = password_hash($password, PASSWORD_DEFAULT);
-        
-        $insert_result = $wpdb->insert(
-            "{$prefix}ppv_users",
-            [
-                'email' => $email,
-                'password' => $password_hashed,
-                'qr_token' => $qr_token,
-                'user_type' => 'user',
-                'active' => 1,
-                'created_at' => current_time('mysql'),
-                'updated_at' => current_time('mysql')
-            ],
-            ['%s', '%s', '%s', '%s', '%d', '%s', '%s']
-        );
-        
+
+        // HÄNDLER: Calculate trial end date (30 days)
+        $trial_ends_at = null;
+        if ($user_type === 'vendor') {
+            $trial_ends_at = date('Y-m-d H:i:s', strtotime('+30 days'));
+        }
+
+        $insert_data = [
+            'email' => $email,
+            'password' => $password_hashed,
+            'qr_token' => $qr_token,
+            'user_type' => $user_type,
+            'active' => 1,
+            'created_at' => current_time('mysql'),
+            'updated_at' => current_time('mysql')
+        ];
+
+        $insert_format = ['%s', '%s', '%s', '%s', '%d', '%s', '%s'];
+
+        // Add trial_ends_at if vendor
+        if ($trial_ends_at) {
+            $insert_data['trial_ends_at'] = $trial_ends_at;
+            $insert_format[] = '%s';
+        }
+
+        $insert_result = $wpdb->insert("{$prefix}ppv_users", $insert_data, $insert_format);
+
         if ($insert_result === false) {
             error_log("❌ [PPV_Signup] Insert failed: " . $wpdb->last_error);
             wp_send_json_error(['message' => 'Regisztráció sikertelen: ' . $wpdb->last_error]);
             return;
         }
-        
+
         $user_id = $wpdb->insert_id;
-        error_log("✅ [PPV_Signup] User created: #{$user_id}");
-        
+        error_log("✅ [PPV_Signup] User created: #{$user_id} ({$user_type})");
+
+        // HÄNDLER: Create store
+        $store_id = null;
+        if ($user_type === 'vendor') {
+            $pos_token = md5(uniqid('pos_', true));
+
+            $store_result = $wpdb->insert(
+                "{$prefix}ppv_stores",
+                [
+                    'user_id' => $user_id,
+                    'email' => $email,
+                    'store_name' => 'Mein Geschäft',
+                    'pos_token' => $pos_token,
+                    'active' => 1,
+                    'created_at' => current_time('mysql'),
+                    'updated_at' => current_time('mysql')
+                ],
+                ['%d', '%s', '%s', '%s', '%d', '%s', '%s']
+            );
+
+            if ($store_result !== false) {
+                $store_id = $wpdb->insert_id;
+
+                // Link store to user
+                $wpdb->update(
+                    "{$prefix}ppv_users",
+                    ['vendor_store_id' => $store_id],
+                    ['id' => $user_id],
+                    ['%d'],
+                    ['%d']
+                );
+
+                error_log("✅ [PPV_Signup] Store created: #{$store_id} | Trial ends: {$trial_ends_at}");
+            } else {
+                error_log("❌ [PPV_Signup] Store creation failed: " . $wpdb->last_error);
+            }
+        }
+
         // Set session
         $_SESSION['ppv_user_id'] = $user_id;
-        $_SESSION['ppv_user_type'] = 'user';
+        $_SESSION['ppv_user_type'] = $user_type;
         $_SESSION['ppv_user_email'] = $email;
-        
-        $GLOBALS['ppv_role'] = 'user';
-        
+
+        if ($user_type === 'vendor' && $store_id) {
+            $_SESSION['ppv_vendor_store_id'] = $store_id;
+            $_SESSION['ppv_store_id'] = $store_id;
+            $_SESSION['ppv_active_store'] = $store_id;
+        }
+
+        $GLOBALS['ppv_role'] = $user_type;
+
         // Generate token
         $token = md5(uniqid('ppv_user_', true));
         $wpdb->update(
@@ -496,102 +609,154 @@ class PPV_Signup {
             ['%s'],
             ['%d']
         );
-        
+
         // Set cookie
         $domain = $_SERVER['HTTP_HOST'] ?? '';
         setcookie('ppv_user_token', $token, time() + (86400 * 180), '/', $domain, true, true);
-        
+
+        // Determine redirect
+        $redirect_url = $user_type === 'vendor' ? home_url('/haendler') : home_url('/user_dashboard');
+
         error_log("========================================");
-        error_log("✅ [PPV_Signup] SUCCESS - User #{$user_id}: {$email}");
+        error_log("✅ [PPV_Signup] SUCCESS - User #{$user_id}: {$email} ({$user_type})");
+        if ($user_type === 'vendor') {
+            error_log("   Store: #{$store_id} | Trial: {$trial_ends_at}");
+        }
         error_log("========================================");
-        
+
         wp_send_json_success([
             'message' => PPV_Lang::t('signup_success'),
             'user_id' => (int)$user_id,
+            'user_type' => $user_type,
             'user_token' => $token,
-            'redirect' => home_url('/user_dashboard')
+            'redirect' => $redirect_url
         ]);
     }
-    
+
     /** ============================================================
      * 🔹 AJAX Google Signup Handler
      * ============================================================ */
     public static function ajax_google_signup() {
         error_log("🔹 [PPV_Signup] Google signup called");
-        
+
         global $wpdb;
         $prefix = $wpdb->prefix;
-        
+
         self::ensure_session();
-        
+
         if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'ppv_signup_nonce')) {
             error_log("❌ [PPV_Signup] Google signup - nonce failed");
             wp_send_json_error(['message' => PPV_Lang::t('signup_google_error')]);
             return;
         }
-        
+
         $credential = sanitize_text_field($_POST['credential'] ?? '');
-        
+        $user_type = sanitize_text_field($_POST['user_type'] ?? 'user'); // NEW!
+
         if (empty($credential)) {
             wp_send_json_error(['message' => PPV_Lang::t('signup_google_error')]);
             return;
         }
-        
+
         $payload = self::verify_google_token($credential);
-        
+
         if (!$payload) {
             wp_send_json_error(['message' => PPV_Lang::t('signup_google_error')]);
             return;
         }
-        
+
         $email = sanitize_email($payload['email'] ?? '');
         $google_id = sanitize_text_field($payload['sub'] ?? '');
         $first_name = sanitize_text_field($payload['given_name'] ?? '');
         $last_name = sanitize_text_field($payload['family_name'] ?? '');
         $picture = esc_url_raw($payload['picture'] ?? '');
-        
+
         if (empty($email) || empty($google_id)) {
             wp_send_json_error(['message' => PPV_Lang::t('signup_google_error')]);
             return;
         }
-        
+
         // Check if user exists
         $user = $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM {$prefix}ppv_users WHERE email=%s LIMIT 1",
             $email
         ));
-        
+
         // Create new user if doesn't exist
         if (!$user) {
             $qr_token = wp_generate_password(10, false, false);
-            
-            $insert_result = $wpdb->insert(
-                "{$prefix}ppv_users",
-                [
-                    'email' => $email,
-                    'password' => password_hash(wp_generate_password(32), PASSWORD_DEFAULT),
-                    'first_name' => $first_name,
-                    'last_name' => $last_name,
-                    'google_id' => $google_id,
-                    'avatar' => $picture,
-                    'qr_token' => $qr_token,
-                    'user_type' => 'user',
-                    'active' => 1,
-                    'created_at' => current_time('mysql'),
-                    'updated_at' => current_time('mysql')
-                ],
-                ['%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s']
-            );
-            
+
+            // HÄNDLER: Calculate trial
+            $trial_ends_at = null;
+            if ($user_type === 'vendor') {
+                $trial_ends_at = date('Y-m-d H:i:s', strtotime('+30 days'));
+            }
+
+            $insert_data = [
+                'email' => $email,
+                'password' => password_hash(wp_generate_password(32), PASSWORD_DEFAULT),
+                'first_name' => $first_name,
+                'last_name' => $last_name,
+                'google_id' => $google_id,
+                'avatar' => $picture,
+                'qr_token' => $qr_token,
+                'user_type' => $user_type,
+                'active' => 1,
+                'created_at' => current_time('mysql'),
+                'updated_at' => current_time('mysql')
+            ];
+
+            $insert_format = ['%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s'];
+
+            if ($trial_ends_at) {
+                $insert_data['trial_ends_at'] = $trial_ends_at;
+                $insert_format[] = '%s';
+            }
+
+            $insert_result = $wpdb->insert("{$prefix}ppv_users", $insert_data, $insert_format);
+
             if ($insert_result === false) {
                 error_log("❌ [PPV_Signup] Google user insert failed: " . $wpdb->last_error);
                 wp_send_json_error(['message' => PPV_Lang::t('signup_error_create')]);
                 return;
             }
-            
+
             $user_id = $wpdb->insert_id;
-            error_log("✅ [PPV_Signup] Google user created: #{$user_id}");
-            
+            error_log("✅ [PPV_Signup] Google user created: #{$user_id} ({$user_type})");
+
+            // HÄNDLER: Create store
+            if ($user_type === 'vendor') {
+                $pos_token = md5(uniqid('pos_', true));
+
+                $store_result = $wpdb->insert(
+                    "{$prefix}ppv_stores",
+                    [
+                        'user_id' => $user_id,
+                        'email' => $email,
+                        'store_name' => trim($first_name . ' ' . $last_name) ?: 'Mein Geschäft',
+                        'pos_token' => $pos_token,
+                        'active' => 1,
+                        'created_at' => current_time('mysql'),
+                        'updated_at' => current_time('mysql')
+                    ],
+                    ['%d', '%s', '%s', '%s', '%d', '%s', '%s']
+                );
+
+                if ($store_result !== false) {
+                    $store_id = $wpdb->insert_id;
+
+                    $wpdb->update(
+                        "{$prefix}ppv_users",
+                        ['vendor_store_id' => $store_id],
+                        ['id' => $user_id],
+                        ['%d'],
+                        ['%d']
+                    );
+
+                    error_log("✅ [PPV_Signup] Store created for Google user: #{$store_id}");
+                }
+            }
+
             $user = $wpdb->get_row($wpdb->prepare(
                 "SELECT * FROM {$prefix}ppv_users WHERE id=%d LIMIT 1",
                 $user_id
@@ -607,14 +772,20 @@ class PPV_Signup {
                 );
             }
         }
-        
+
         // Set session
         $_SESSION['ppv_user_id'] = $user->id;
-        $_SESSION['ppv_user_type'] = 'user';
+        $_SESSION['ppv_user_type'] = $user->user_type;
         $_SESSION['ppv_user_email'] = $user->email;
-        
-        $GLOBALS['ppv_role'] = 'user';
-        
+
+        if ($user->user_type === 'vendor' && !empty($user->vendor_store_id)) {
+            $_SESSION['ppv_vendor_store_id'] = $user->vendor_store_id;
+            $_SESSION['ppv_store_id'] = $user->vendor_store_id;
+            $_SESSION['ppv_active_store'] = $user->vendor_store_id;
+        }
+
+        $GLOBALS['ppv_role'] = $user->user_type;
+
         // Generate token
         $token = md5(uniqid('ppv_user_google_', true));
         $wpdb->update(
@@ -624,66 +795,60 @@ class PPV_Signup {
             ['%s'],
             ['%d']
         );
-        
+
         // Set cookie
         $domain = $_SERVER['HTTP_HOST'] ?? '';
         setcookie('ppv_user_token', $token, time() + (86400 * 180), '/', $domain, true, true);
-        
-        error_log("✅ [PPV_Signup] Google signup success: #{$user->id}");
-        
+
+        // Determine redirect
+        $redirect_url = $user->user_type === 'vendor' ? home_url('/haendler') : home_url('/user_dashboard');
+
+        error_log("✅ [PPV_Signup] Google signup success: #{$user->id} ({$user->user_type})");
+
         wp_send_json_success([
             'message' => PPV_Lang::t('signup_google_success'),
             'user_id' => (int)$user->id,
+            'user_type' => $user->user_type,
             'user_token' => $token,
-            'redirect' => home_url('/user_dashboard')
+            'redirect' => $redirect_url
         ]);
     }
-    
+
     /** ============================================================
      * 🔹 Verify Google JWT Token
      * ============================================================ */
     private static function verify_google_token($credential) {
-        $client_id = defined('PPV_GOOGLE_CLIENT_ID') 
-            ? PPV_GOOGLE_CLIENT_ID 
+        $client_id = defined('PPV_GOOGLE_CLIENT_ID')
+            ? PPV_GOOGLE_CLIENT_ID
             : get_option('ppv_google_client_id', '453567547051-odmqrinafba8ls8ktp9snlp7d2fpl9q0.apps.googleusercontent.com');
-        
+
         if (empty($client_id)) {
             return false;
         }
-        
+
         $parts = explode('.', $credential);
         if (count($parts) !== 3) {
             return false;
         }
-        
+
         $payload = json_decode(base64_decode(str_replace(['-', '_'], ['+', '/'], $parts[1])), true);
-        
+
         if (!$payload) {
             return false;
         }
-        
+
         if (!isset($payload['aud']) || $payload['aud'] !== $client_id) {
             return false;
         }
-        
+
         if (!isset($payload['exp']) || $payload['exp'] < time()) {
             return false;
         }
-        
+
         return $payload;
-    }
-    
-    /** ============================================================
-     * 🔹 Handle Google OAuth Redirect
-     * ============================================================ */
-    public static function handle_google_oauth() {
-        // Reserved for future server-side OAuth flow
     }
 }
 
 // ⚠️ CRITICAL: Initialize the class!
-// This MUST be called for hooks to work!
 add_action('init', ['PPV_Signup', 'init'], 1);
-
-// Also register hooks immediately (double safety)
 PPV_Signup::hooks();
