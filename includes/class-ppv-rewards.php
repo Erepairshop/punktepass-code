@@ -338,23 +338,28 @@ window.ppv_plugin_url = '" . esc_url(PPV_PLUGIN_URL) . "';",
 
             // 2️⃣ BIZONYLAT GENERÁLÁS
             error_log("📄 [PPV_REWARDS] Bizonylat generálása: redeem #{$id}");
-            
+
             // Betöltjük az Expense Receipt class-t
             $expense_receipt_file = PPV_PLUGIN_DIR . 'includes/class-ppv-expense-receipt.php';
-            
+
             if (!file_exists($expense_receipt_file)) {
                 error_log("❌ [PPV_REWARDS] Expense receipt class nem található: {$expense_receipt_file}");
             } else {
                 require_once $expense_receipt_file;
-                
-                // Generáljuk a bizonylatot
-                $receipt_path = PPV_Expense_Receipt::generate_for_redeem($id);
-                
-                if ($receipt_path) {
-                    $receipt_url = PPV_Expense_Receipt::get_receipt_url($receipt_path);
-                    error_log("✅ [PPV_REWARDS] Bizonylat sikeres: {$receipt_path}");
+
+                // Ellenőrizzük, hogy a class betöltődött-e
+                if (!class_exists('PPV_Expense_Receipt')) {
+                    error_log("❌ [PPV_REWARDS] PPV_Expense_Receipt class nem létezik a fájl betöltése után");
                 } else {
-                    error_log("❌ [PPV_REWARDS] Bizonylat generálás sikertelen: #{$id}");
+                    // Generáljuk a bizonylatot
+                    $receipt_path = PPV_Expense_Receipt::generate_for_redeem($id);
+
+                    if ($receipt_path) {
+                        $receipt_url = PPV_Expense_Receipt::get_receipt_url($receipt_path);
+                        error_log("✅ [PPV_REWARDS] Bizonylat sikeres: {$receipt_path}");
+                    } else {
+                        error_log("❌ [PPV_REWARDS] Bizonylat generálás sikertelen: #{$id}");
+                    }
                 }
             }
         }
@@ -453,8 +458,28 @@ window.ppv_plugin_url = '" . esc_url(PPV_PLUGIN_URL) . "';",
 
         error_log("📊 [PPV_REWARDS] Havi bizonylat: store_id={$store_id}, {$year}-{$month}");
 
-        require_once PPV_PLUGIN_DIR . 'includes/class-ppv-expense-receipt.php';
-        
+        $expense_receipt_file = PPV_PLUGIN_DIR . 'includes/class-ppv-expense-receipt.php';
+
+        if (!file_exists($expense_receipt_file)) {
+            error_log("❌ [PPV_REWARDS] Expense receipt class nem található");
+            $msg = class_exists('PPV_Lang') ? PPV_Lang::t('error_system') : 'Systemfehler';
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => '❌ ' . $msg
+            ], 500);
+        }
+
+        require_once $expense_receipt_file;
+
+        if (!class_exists('PPV_Expense_Receipt')) {
+            error_log("❌ [PPV_REWARDS] PPV_Expense_Receipt class nem létezik");
+            $msg = class_exists('PPV_Lang') ? PPV_Lang::t('error_system') : 'Systemfehler';
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => '❌ ' . $msg
+            ], 500);
+        }
+
         $receipt_path = PPV_Expense_Receipt::generate_monthly_receipt($store_id, $year, $month);
 
         if ($receipt_path) {
