@@ -8178,3 +8178,237 @@ body.ppv-dark .ppv-user-qr {
     font-size: 18px;
   }
 }
+
+
+/* ============================================================
+   🚀 ULTRA-MODERN PWA DASHBOARD OVERRIDES v2.0 - LIGHT
+   ✨ Glassmorphism, Smooth Animations, Perfect Mobile
+   ============================================================ */
+
+/* QR Banner - Glassmorphism PWA Light */
+.ppv-qr-banner {
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.85) 0%,
+    rgba(240, 249, 255, 0.9) 100%) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  border: 2px solid rgba(0, 150, 255, 0.25) !important;
+  border-radius: 18px !important;
+  padding: 16px 18px !important;
+  margin: 12px 0 20px !important;
+  box-shadow: 0 6px 30px rgba(0, 100, 200, 0.15),
+              0 0 0 1px rgba(255, 255, 255, 0.8) inset,
+              0 2px 8px rgba(0, 150, 255, 0.1) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  animation: slideInBounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+@keyframes slideInBounce {
+  0% { opacity: 0; transform: translateY(-30px) scale(0.95); }
+  60% { transform: translateY(5px) scale(1.02); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.ppv-qr-banner::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: -100% !important;
+  width: 100% !important;
+  height: 100% !important;
+  background: linear-gradient(90deg, transparent, rgba(0, 150, 255, 0.08), transparent) !important;
+  transition: left 0.6s ease !important;
+}
+
+.ppv-qr-banner:hover::before {
+  left: 100% !important;
+}
+
+.ppv-qr-banner:hover {
+  transform: translateY(-4px) scale(1.01) !important;
+  box-shadow: 0 10px 40px rgba(0, 120, 200, 0.25),
+              0 0 0 1px rgba(255, 255, 255, 1) inset,
+              0 4px 16px rgba(0, 150, 255, 0.2) !important;
+  border-color: rgba(0, 150, 255, 0.4) !important;
+}
+
+.ppv-qr-text h3 {
+  color: #0066ff !important;
+  text-shadow: 0 1px 3px rgba(0, 100, 200, 0.2) !important;
+  font-size: 17px !important;
+}
+
+.ppv-qr-text p {
+  color: #475569 !important;
+  font-size: 13px !important;
+}
+
+.ppv-btn-qr {
+  background: linear-gradient(135deg, #0066ff 0%, #0052cc 100%) !important;
+  padding: 11px 22px !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 16px rgba(0, 100, 200, 0.3),
+              inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+  font-size: 14px !important;
+}
+
+.ppv-btn-qr:hover {
+  transform: translateY(-2px) scale(1.05) !important;
+  box-shadow: 0 6px 24px rgba(0, 100, 200, 0.45),
+              inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+}
+
+/* Store Cards - Modern Grid Light */
+.ppv-store-list {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)) !important;
+  gap: 16px !important;
+  padding: 0 !important;
+}
+
+.ppv-store-card-enhanced {
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(245, 250, 255, 0.85) 100%) !important;
+  backdrop-filter: blur(16px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(150%) !important;
+  border: 2px solid rgba(0, 120, 200, 0.18) !important;
+  border-radius: 16px !important;
+  padding: 16px !important;
+  box-shadow: 0 4px 20px rgba(0, 100, 200, 0.12),
+              0 0 0 1px rgba(255, 255, 255, 0.9) inset !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.ppv-store-card-enhanced:hover {
+  transform: translateY(-6px) scale(1.02) !important;
+  box-shadow: 0 8px 32px rgba(0, 100, 200, 0.2),
+              0 0 0 1px rgba(255, 255, 255, 1) inset,
+              0 4px 16px rgba(0, 150, 255, 0.15) !important;
+  border-color: rgba(0, 150, 255, 0.35) !important;
+}
+
+/* Store Card Header Light */
+.ppv-store-header {
+  margin-bottom: 14px !important;
+}
+
+.ppv-store-title h4 {
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  color: #0f172a !important;
+  text-shadow: 0 1px 2px rgba(0, 100, 200, 0.1) !important;
+  letter-spacing: 0.3px !important;
+}
+
+.ppv-store-meta-row {
+  gap: 8px !important;
+  margin-top: 10px !important;
+}
+
+.ppv-status-badge {
+  font-size: 11px !important;
+  padding: 5px 11px !important;
+  border-radius: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.4px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+.ppv-status-badge.ppv-open {
+  background: linear-gradient(135deg, #10b981, #059669) !important;
+  box-shadow: 0 2px 12px rgba(16, 185, 129, 0.3) !important;
+}
+
+.ppv-status-badge.ppv-closed {
+  background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+  box-shadow: 0 2px 12px rgba(239, 68, 68, 0.3) !important;
+}
+
+.ppv-distance-badge {
+  background: linear-gradient(135deg, #0066ff, #0052cc) !important;
+  font-size: 11px !important;
+  padding: 5px 11px !important;
+  border-radius: 10px !important;
+  box-shadow: 0 2px 12px rgba(0, 100, 200, 0.3) !important;
+  font-weight: 700 !important;
+}
+
+/* Mobile Optimization Light */
+@media (max-width: 768px) {
+  .ppv-qr-banner {
+    flex-direction: column !important;
+    padding: 14px !important;
+    gap: 12px !important;
+  }
+
+  .ppv-qr-text {
+    flex-direction: column !important;
+    text-align: center !important;
+  }
+
+  .ppv-qr-text i {
+    font-size: 36px !important;
+  }
+
+  .ppv-btn-qr {
+    width: 100% !important;
+    padding: 12px 20px !important;
+  }
+
+  .ppv-store-list {
+    gap: 12px !important;
+  }
+
+  .ppv-store-card-enhanced {
+    padding: 14px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .ppv-qr-banner {
+    margin: 8px 0 16px !important;
+    padding: 12px !important;
+  }
+
+  .ppv-qr-text h3 {
+    font-size: 15px !important;
+  }
+
+  .ppv-qr-text p {
+    font-size: 12px !important;
+  }
+
+  .ppv-store-list {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Smooth scroll behavior Light */
+.ppv-dashboard-netto {
+  scroll-behavior: smooth !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(0, 100, 200, 0.3) transparent !important;
+}
+
+.ppv-dashboard-netto::-webkit-scrollbar {
+  width: 6px !important;
+}
+
+.ppv-dashboard-netto::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+.ppv-dashboard-netto::-webkit-scrollbar-thumb {
+  background: rgba(0, 100, 200, 0.25) !important;
+  border-radius: 10px !important;
+}
+
+.ppv-dashboard-netto::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 100, 200, 0.4) !important;
+}
+
+/* END ULTRA-MODERN PWA OVERRIDES LIGHT */
+
