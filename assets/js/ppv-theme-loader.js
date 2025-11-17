@@ -80,8 +80,8 @@
     }
 
     // 4. Default
-    log('DEBUG', 'Using default theme: dark');
-    return 'dark';
+    log('DEBUG', 'Using default theme: light');
+    return 'light';
   }
 
   // ============================================================
@@ -99,11 +99,16 @@
     const expire = new Date();
     expire.setFullYear(expire.getFullYear() + 1);
     const path = '/';
+    const isSecure = window.location.protocol === 'https:';
 
-    // Set on current domain
-    document.cookie = `${THEME_KEY}=${value};path=${path};expires=${expire.toUTCString()};SameSite=Lax;Secure`;
+    // Set on current domain (only use Secure flag on HTTPS)
+    const cookieStr = isSecure
+      ? `${THEME_KEY}=${value};path=${path};expires=${expire.toUTCString()};SameSite=Lax;Secure`
+      : `${THEME_KEY}=${value};path=${path};expires=${expire.toUTCString()};SameSite=Lax`;
 
-    log('DEBUG', '🍪 Cookie set:', value);
+    document.cookie = cookieStr;
+
+    log('DEBUG', '🍪 Cookie set:', value, isSecure ? '(Secure)' : '(HTTP)');
   }
 
   // ============================================================
@@ -152,7 +157,7 @@
       e.preventDefault();
       e.stopPropagation();
 
-      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      const current = document.documentElement.getAttribute('data-theme') || 'light';
       const newTheme = current === 'dark' ? 'light' : 'dark';
 
       log('INFO', `🔄 Theme switching: ${current} → ${newTheme}`);
