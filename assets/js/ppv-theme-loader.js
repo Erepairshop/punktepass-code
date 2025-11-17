@@ -80,8 +80,8 @@
     }
 
     // 4. Default
-    log('DEBUG', 'Using default theme: dark');
-    return 'dark';
+    log('DEBUG', 'Using default theme: light');
+    return 'light';
   }
 
   // ============================================================
@@ -152,7 +152,7 @@
       e.preventDefault();
       e.stopPropagation();
 
-      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      const current = document.documentElement.getAttribute('data-theme') || 'light';
       const newTheme = current === 'dark' ? 'light' : 'dark';
 
       log('INFO', `🔄 Theme switching: ${current} → ${newTheme}`);

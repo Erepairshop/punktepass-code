@@ -71,7 +71,7 @@ setTimeout(() => {
 // 🔹 LOGO update – biztonságosan DOM után
 document.addEventListener("DOMContentLoaded", () => {
   const logoEl = document.querySelector("#ppv-logo img, .ppv-logo img");
-  const activeTheme = document.body.dataset.theme || localStorage.getItem(THEME_KEY) || "dark";
+  const activeTheme = document.body.dataset.theme || localStorage.getItem(THEME_KEY) || "light";
   if (logoEl) updateLogo(logoEl, activeTheme);
 });
 
@@ -99,7 +99,7 @@ document.addEventListener("DOMContentLoaded", () => {
   /** ============================
    * 🎨 THEME INIT
    * ============================ */
-  let theme = localStorage.getItem(THEME_KEY) || getCookie(THEME_KEY) || "dark";
+  let theme = localStorage.getItem(THEME_KEY) || getCookie(THEME_KEY) || "light";
  
 applyTheme(theme);
 updateLogo(theme);
@@ -242,7 +242,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const observer = new MutationObserver(() => {
     console.log("🎨 [PPV_THEME_DEBUG] Theme changed →", document.body.dataset.theme);
     const currentLogo = document.querySelector("#ppv-logo img, .ppv-logo img");
-    const currentTheme = document.body.dataset.theme || "dark";
+    const currentTheme = document.body.dataset.theme || "light";
     if (currentLogo) updateLogo(currentTheme);
   });
 
@@ -251,7 +251,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 /** 🔄 LOGO váltás valós időben (custom event) */
 document.addEventListener("ppv-theme-changed", () => {
-  const activeTheme = document.body.dataset.theme || "dark";
+  const activeTheme = document.body.dataset.theme || "light";
   updateLogo(activeTheme);
   console.log("🎨 [PPV_THEME_DEBUG] Logo updated for theme:", activeTheme);
 });
