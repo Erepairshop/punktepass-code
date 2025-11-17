@@ -6189,8 +6189,8 @@ select:focus-visible {
   position: fixed;
   bottom: 20px;
   right: 20px;
-  width: 180px;
-  height: 180px;
+  width: 220px;
+  height: 220px;
   border-radius: 16px;
   overflow: hidden;
   background: rgba(0, 0, 0, 0.85);
@@ -6210,7 +6210,7 @@ select:focus-visible {
 
 #ppv-mini-reader {
   width: 100%;
-  height: 140px;
+  height: 180px;
   position: relative;
   overflow: hidden;
   background: #000;

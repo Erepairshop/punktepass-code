@@ -877,20 +877,47 @@ class CameraScanner {
   async startScanner() {
     const readerElement = document.getElementById('ppv-mini-reader');
     if (!readerElement || !window.Html5Qrcode) {
-      this.updateStatus('error', '❌ Scanner elem nem található');
+      this.updateStatus('error', '❌ Scanner elem nem találhat');
       return;
     }
 
     try {
       this.scanner = new Html5Qrcode('ppv-mini-reader');
 
+      // Enhanced configuration for better QR detection from any angle/distance
       const config = {
-        fps: 10,
-        qrbox: { width: 120, height: 120 }
+        fps: 20, // Increased from 10 to 20 for faster scanning
+        qrbox: function(viewfinderWidth, viewfinderHeight) {
+          // Dynamic QR box - 90% of the smaller dimension for better detection
+          let minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
+          let qrboxSize = Math.floor(minEdgeSize * 0.9);
+          return {
+            width: qrboxSize,
+            height: qrboxSize
+          };
+        },
+        aspectRatio: 1.0, // Square aspect ratio for QR codes
+        disableFlip: false, // Read mirrored QR codes too
+        // Advanced experimental features for better detection
+        experimentalFeatures: {
+          useBarCodeDetectorIfSupported: true // Use native barcode detector if available
+        }
+      };
+
+      // Enhanced camera constraints for higher quality
+      const cameraConstraints = {
+        facingMode: 'environment', // Back camera
+        advanced: [
+          { zoom: 1.0 },
+          { focusMode: 'continuous' },
+          { exposureMode: 'continuous' }
+        ],
+        width: { ideal: 1920, min: 640 },
+        height: { ideal: 1080, min: 480 }
       };
 
       await this.scanner.start(
-        { facingMode: 'environment' },
+        cameraConstraints,
         config,
         (qrCode) => this.onScanSuccess(qrCode)
       );
@@ -899,9 +926,34 @@ class CameraScanner {
       this.state = 'scanning';
       this.updateStatus('scanning', L.scanner_active || '📷 Scanning...');
 
+      console.log('✅ Enhanced scanner started with improved detection');
+
     } catch (err) {
       this.updateStatus('error', '❌ Kamera hiba');
       console.error('Camera error:', err);
+
+      // Fallback: Try with basic config if enhanced fails
+      try {
+        console.log('⚠️ Trying fallback configuration...');
+        const basicConfig = {
+          fps: 15,
+          qrbox: 250,
+          aspectRatio: 1.0
+        };
+
+        await this.scanner.start(
+          { facingMode: 'environment' },
+          basicConfig,
+          (qrCode) => this.onScanSuccess(qrCode)
+        );
+
+        this.scanning = true;
+        this.state = 'scanning';
+        this.updateStatus('scanning', L.scanner_active || '📷 Scanning...');
+        console.log('✅ Fallback scanner started');
+      } catch (fallbackErr) {
+        console.error('Fallback also failed:', fallbackErr);
+      }
     }
   }
 
