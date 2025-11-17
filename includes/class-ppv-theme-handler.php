@@ -41,25 +41,37 @@ class PPV_Theme_Handler {
     }
 
     /** ============================================================
-     * 🔹 Get User Theme (Priority: DB > Cookie > Session > Default)
+     * 🔹 Get User Theme (Priority: Cookie > DB > Session > Default)
+     * ✅ Cookie first for instant feedback, DB syncs in background
      * ============================================================ */
     private static function get_user_theme() {
-        // 1️⃣ Logged in user → check user meta
+        // 1️⃣ Cookie check (highest priority for instant updates)
+        if (!empty($_COOKIE[self::COOKIE_KEY])) {
+            $cookie = sanitize_text_field($_COOKIE[self::COOKIE_KEY]);
+            if (in_array($cookie, self::VALID_THEMES)) {
+                error_log("🎨 [PPV_Theme_Handler] Theme from Cookie: {$cookie}");
+
+                // Sync to DB in background if logged in
+                if (is_user_logged_in()) {
+                    $uid = get_current_user_id();
+                    $db_theme = get_user_meta($uid, self::THEME_META_KEY, true);
+                    if ($db_theme !== $cookie) {
+                        update_user_meta($uid, self::THEME_META_KEY, $cookie);
+                        error_log("🔄 [PPV_Theme_Handler] Synced cookie→DB: {$cookie}");
+                    }
+                }
+
+                return $cookie;
+            }
+        }
+
+        // 2️⃣ Logged in user → check user meta
         if (is_user_logged_in()) {
             $uid = get_current_user_id();
             $saved = get_user_meta($uid, self::THEME_META_KEY, true);
             if (in_array($saved, self::VALID_THEMES)) {
                 error_log("🎨 [PPV_Theme_Handler] Theme from DB: {$saved}");
                 return $saved;
-            }
-        }
-
-        // 2️⃣ Cookie check
-        if (!empty($_COOKIE[self::COOKIE_KEY])) {
-            $cookie = sanitize_text_field($_COOKIE[self::COOKIE_KEY]);
-            if (in_array($cookie, self::VALID_THEMES)) {
-                error_log("🎨 [PPV_Theme_Handler] Theme from Cookie: {$cookie}");
-                return $cookie;
             }
         }
 

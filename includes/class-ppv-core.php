@@ -64,6 +64,7 @@ class PPV_Core {
             qr_secret VARCHAR(64),
             design_color VARCHAR(10),
             design_logo VARCHAR(255),
+            trial_ends_at DATETIME NULL DEFAULT NULL,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY (id),
             UNIQUE KEY store_key (store_key)

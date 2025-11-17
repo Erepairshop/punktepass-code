@@ -29,7 +29,7 @@ class PPV_Belohnungen {
             $lang = 'de';
         }
 
-        $file = dirname(__FILE__) . "/languages/lang-{$lang}-BELOHNUNGEN.php";
+        $file = dirname(__FILE__) . "/lang/lang-{$lang}-BELOHNUNGEN.php";
         if (file_exists($file)) {
             return include($file);
         }
@@ -301,8 +301,8 @@ class PPV_Belohnungen {
                                         data-store="<?php echo esc_attr($r->store_id); ?>"
                                         data-user="<?php echo esc_attr($user_id); ?>"
                                         data-title="<?php echo esc_attr($r->title); ?>">
-                                    <i class="ri-check-double-line"></i> 
-                                    <?php echo esc_html(self::get_label('redeem_button', $lang, 'Bevältsen')); ?>
+                                    <i class="ri-check-double-line"></i>
+                                    <?php echo esc_html(self::get_label('redeem_button', $lang, 'Einlösen')); ?>
                                 </button>
                             <?php else: ?>
                                 <button class="ppv-redeem-btn disabled" disabled>

@@ -35,7 +35,7 @@
       'filter_by_store': 'Nach Geschäft filtern',
       'all_stores': 'Alle Geschäfte',
       'filter_reset': '↻ Zurücksetzen',
-      'redeem_button': '✅ Bevältsen',
+      'redeem_button': '✅ Einlösen',
       'redeeming_status': '⏳ Wird eingelöst...',
       'redeem_success': '🎁 {title}: Anfrage gesendet!',
       'redeem_error': '❌ Fehler beim Einlösen',
@@ -547,13 +547,13 @@ $('.ppv-reward-grid').after(`<p class="ppv-no-results"><i class="ri-inbox-line">
     checkRewardStatus();
     pollCount++;
 
-    let nextInterval = 5000;
-    if (pollCount > 60) {
+    let nextInterval = 10000;
+    if (pollCount > 40) {
       nextInterval = 30000;
-    } else if (pollCount > 30) {
+    } else if (pollCount > 20) {
+      nextInterval = 20000;
+    } else if (pollCount > 5) {
       nextInterval = 15000;
-    } else if (pollCount > 10) {
-      nextInterval = 10000;
     }
 
     log('DEBUG', `Next poll in ${nextInterval / 1000}s`);

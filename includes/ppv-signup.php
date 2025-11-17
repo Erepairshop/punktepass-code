@@ -515,12 +515,6 @@ class PPV_Signup {
         $qr_token = wp_generate_password(10, false, false);
         $password_hashed = password_hash($password, PASSWORD_DEFAULT);
 
-        // HÄNDLER: Calculate trial end date (30 days)
-        $trial_ends_at = null;
-        if ($user_type === 'vendor') {
-            $trial_ends_at = date('Y-m-d H:i:s', strtotime('+30 days'));
-        }
-
         $insert_data = [
             'email' => $email,
             'password' => $password_hashed,
@@ -532,12 +526,6 @@ class PPV_Signup {
         ];
 
         $insert_format = ['%s', '%s', '%s', '%s', '%d', '%s', '%s'];
-
-        // Add trial_ends_at if vendor
-        if ($trial_ends_at) {
-            $insert_data['trial_ends_at'] = $trial_ends_at;
-            $insert_format[] = '%s';
-        }
 
         $insert_result = $wpdb->insert("{$prefix}ppv_users", $insert_data, $insert_format);
 
@@ -554,6 +542,7 @@ class PPV_Signup {
         $store_id = null;
         if ($user_type === 'vendor') {
             $pos_token = md5(uniqid('pos_', true));
+            $trial_ends_at = date('Y-m-d H:i:s', strtotime('+30 days'));
 
             $store_result = $wpdb->insert(
                 "{$prefix}ppv_stores",
@@ -562,11 +551,12 @@ class PPV_Signup {
                     'email' => $email,
                     'store_name' => 'Mein Geschäft',
                     'pos_token' => $pos_token,
+                    'trial_ends_at' => $trial_ends_at,
                     'active' => 1,
                     'created_at' => current_time('mysql'),
                     'updated_at' => current_time('mysql')
                 ],
-                ['%d', '%s', '%s', '%s', '%d', '%s', '%s']
+                ['%d', '%s', '%s', '%s', '%s', '%d', '%s', '%s']
             );
 
             if ($store_result !== false) {
@@ -686,12 +676,6 @@ class PPV_Signup {
         if (!$user) {
             $qr_token = wp_generate_password(10, false, false);
 
-            // HÄNDLER: Calculate trial
-            $trial_ends_at = null;
-            if ($user_type === 'vendor') {
-                $trial_ends_at = date('Y-m-d H:i:s', strtotime('+30 days'));
-            }
-
             $insert_data = [
                 'email' => $email,
                 'password' => password_hash(wp_generate_password(32), PASSWORD_DEFAULT),
@@ -708,11 +692,6 @@ class PPV_Signup {
 
             $insert_format = ['%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s'];
 
-            if ($trial_ends_at) {
-                $insert_data['trial_ends_at'] = $trial_ends_at;
-                $insert_format[] = '%s';
-            }
-
             $insert_result = $wpdb->insert("{$prefix}ppv_users", $insert_data, $insert_format);
 
             if ($insert_result === false) {
@@ -727,6 +706,7 @@ class PPV_Signup {
             // HÄNDLER: Create store
             if ($user_type === 'vendor') {
                 $pos_token = md5(uniqid('pos_', true));
+                $trial_ends_at = date('Y-m-d H:i:s', strtotime('+30 days'));
 
                 $store_result = $wpdb->insert(
                     "{$prefix}ppv_stores",
@@ -735,11 +715,12 @@ class PPV_Signup {
                         'email' => $email,
                         'store_name' => trim($first_name . ' ' . $last_name) ?: 'Mein Geschäft',
                         'pos_token' => $pos_token,
+                        'trial_ends_at' => $trial_ends_at,
                         'active' => 1,
                         'created_at' => current_time('mysql'),
                         'updated_at' => current_time('mysql')
                     ],
-                    ['%d', '%s', '%s', '%s', '%d', '%s', '%s']
+                    ['%d', '%s', '%s', '%s', '%s', '%d', '%s', '%s']
                 );
 
                 if ($store_result !== false) {

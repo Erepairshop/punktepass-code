@@ -270,6 +270,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
       modal.classList.add("show");
       overlay.classList.add("show");
+      document.body.classList.add("qr-modal-open");
       document.body.style.overflow = "hidden";
       if (navigator.vibrate) navigator.vibrate(30);
       modal.offsetHeight;
@@ -278,6 +279,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const closeQR = () => {
       modal.classList.remove("show");
       overlay.classList.remove("show");
+      document.body.classList.remove("qr-modal-open");
       document.body.style.overflow = "";
       if (navigator.vibrate) navigator.vibrate(10);
     };

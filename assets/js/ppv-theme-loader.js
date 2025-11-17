@@ -116,11 +116,16 @@
   // ============================================================
   async function syncThemeToServer(theme) {
     try {
+      // Get nonce from wp_localize_script or fallback to meta tag
+      const nonce = (typeof ppvTheme !== 'undefined' && ppvTheme.nonce)
+        ? ppvTheme.nonce
+        : document.querySelector('meta[name="wp-nonce"]')?.content || '';
+
       const response = await fetch(API_URL + '/set', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-WP-Nonce': document.querySelector('meta[name="wp-nonce"]')?.content || '',
+          'X-WP-Nonce': nonce,
         },
         body: JSON.stringify({ theme }),
         credentials: 'include',

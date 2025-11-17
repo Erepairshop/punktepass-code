@@ -309,7 +309,7 @@ add_action('wp_enqueue_scripts', function() {
  */
 add_action('wp_enqueue_scripts', function() {
     if (ppv_is_login_page()) return;
-    
+
     wp_enqueue_script(
         'ppv-theme-loader',
         PPV_PLUGIN_URL . 'assets/js/ppv-theme-loader.js',
@@ -317,6 +317,12 @@ add_action('wp_enqueue_scripts', function() {
         PPV_VERSION,
         true
     );
+
+    // Add WP REST nonce for theme switching
+    wp_localize_script('ppv-theme-loader', 'ppvTheme', [
+        'nonce' => wp_create_nonce('wp_rest'),
+        'rest_url' => rest_url('ppv/v1/theme/'),
+    ]);
 }, 99);
 
 add_action('wp_enqueue_scripts', function() {
