@@ -29,7 +29,8 @@ class PPV_Belohnungen {
             $lang = 'de';
         }
 
-        $file = dirname(__FILE__) . "/lang/lang-{$lang}-BELOHNUNGEN.php";
+        // ✅ Use main language files instead of separate BELOHNUNGEN files
+        $file = PPV_PLUGIN_DIR . "includes/lang/ppv-lang-{$lang}.php";
         if (file_exists($file)) {
             return include($file);
         }
@@ -39,7 +40,14 @@ class PPV_Belohnungen {
 
     private static function get_label($key, $lang = 'de', $default = '') {
         $labels = self::get_labels($lang);
-        return $labels[$key] ?? $default ?? $key;
+        $value = $labels[$key] ?? $default;
+
+        // Debug log if using default (missing translation)
+        if ($value === $default && $default !== '') {
+            error_log("⚠️ [PPV_Belohnungen] Missing translation key '{$key}' for lang '{$lang}', using default: {$default}");
+        }
+
+        return $value ?: $key;
     }
 
     public static function register_rest_routes() {
@@ -121,14 +129,32 @@ class PPV_Belohnungen {
             return;
         }
 
-        $plugin_url = defined('PPV_PLUGIN_URL') 
-            ? PPV_PLUGIN_URL 
+        // Start session for language detection
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+
+        $plugin_url = defined('PPV_PLUGIN_URL')
+            ? PPV_PLUGIN_URL
             : plugin_dir_url(dirname(__FILE__));
 
-        $lang = sanitize_text_field($_GET['lang'] ?? ($_SESSION['ppv_lang'] ?? 'de'));
-        if (!in_array($lang, ['de', 'hu', 'ro'])) {
+        // ✅ GET ACTIVE LANGUAGE (same logic as ppv-my-points)
+        $lang = sanitize_text_field($_GET['lang'] ?? '');
+        if (!in_array($lang, ['de', 'hu', 'ro'], true)) {
+            $lang = sanitize_text_field($_COOKIE['ppv_lang'] ?? '');
+        }
+        if (!in_array($lang, ['de', 'hu', 'ro'], true)) {
+            $lang = sanitize_text_field($_SESSION['ppv_lang'] ?? 'de');
+        }
+        if (!in_array($lang, ['de', 'hu', 'ro'], true)) {
             $lang = 'de';
         }
+
+        // Save to session + cookie
+        $_SESSION['ppv_lang'] = $lang;
+        setcookie('ppv_lang', $lang, time() + 31536000, '/', '', false, true);
+
+        error_log("🌍 [PPV_Belohnungen] Active language: {$lang}");
 
         wp_enqueue_script(
             'ppv-theme-loader',

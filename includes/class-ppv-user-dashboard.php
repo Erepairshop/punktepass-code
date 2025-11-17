@@ -36,15 +36,32 @@ class PPV_User_Dashboard {
         static $lang = null;
         if ($lang !== null) return $lang;
 
-        if (isset($_COOKIE['ppv_lang'])) {
-            $lang = sanitize_text_field($_COOKIE['ppv_lang']);
-        } elseif (isset($_GET['lang'])) {
-            $lang = sanitize_text_field($_GET['lang']);
-        } else {
+        self::ensure_session();
+
+        // ✅ GET ACTIVE LANGUAGE (same logic as ppv-my-points)
+        $lang = sanitize_text_field($_GET['lang'] ?? '');
+        if (!in_array($lang, ['de', 'hu', 'ro'], true)) {
+            $lang = sanitize_text_field($_COOKIE['ppv_lang'] ?? '');
+        }
+        if (!in_array($lang, ['de', 'hu', 'ro'], true)) {
+            $lang = sanitize_text_field($_SESSION['ppv_lang'] ?? '');
+        }
+        if (!in_array($lang, ['de', 'hu', 'ro'], true)) {
             $lang = substr(get_locale(), 0, 2);
         }
+        if (!in_array($lang, ['de', 'hu', 'ro'], true)) {
+            $lang = 'de';
+        }
 
-        return $lang ?: 'de';
+        // Save to session + cookie
+        $_SESSION['ppv_lang'] = $lang;
+        if (!headers_sent()) {
+            setcookie('ppv_lang', $lang, time() + 31536000, '/', '', false, true);
+        }
+
+        error_log("🌍 [PPV_User_Dashboard] Active language: {$lang}");
+
+        return $lang;
     }
 
     private static function get_safe_user_id() {

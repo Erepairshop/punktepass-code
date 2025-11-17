@@ -45,7 +45,13 @@ class PPV_User_Settings {
      *  🔹 Nyelvi rendszer integráció
      * ============================================================ */
 private static function t($key) {
-    $lang_code = $GLOBALS['ppv_lang_code'] ?? 'de';
+    // Start session if not started
+    if (session_status() === PHP_SESSION_NONE) {
+        @session_start();
+    }
+
+    // ✅ Get language from session (set by enqueue_assets)
+    $lang_code = $_SESSION['ppv_lang'] ?? 'de';
     $file = PPV_PLUGIN_DIR . "includes/lang/ppv-lang-{$lang_code}.php";
 
     // ha létezik a fájl és return-nel tér vissza
@@ -65,6 +71,29 @@ private static function t($key) {
      *  🔹 Asset betöltés
      * ============================================================ */
     public static function enqueue_assets() {
+        // Start session for language detection
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+
+        // ✅ GET ACTIVE LANGUAGE (same logic as ppv-my-points)
+        $lang = sanitize_text_field($_GET['lang'] ?? '');
+        if (!in_array($lang, ['de', 'hu', 'ro'], true)) {
+            $lang = sanitize_text_field($_COOKIE['ppv_lang'] ?? '');
+        }
+        if (!in_array($lang, ['de', 'hu', 'ro'], true)) {
+            $lang = sanitize_text_field($_SESSION['ppv_lang'] ?? 'de');
+        }
+        if (!in_array($lang, ['de', 'hu', 'ro'], true)) {
+            $lang = 'de';
+        }
+
+        // Save to session + cookie
+        $_SESSION['ppv_lang'] = $lang;
+        setcookie('ppv_lang', $lang, time() + 31536000, '/', '', false, true);
+
+        error_log("🌍 [PPV_User_Settings] Active language: {$lang}");
+
         wp_enqueue_style('remixicons', 'https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css', [], null);
         wp_enqueue_style('ppv-user-settings', PPV_PLUGIN_URL . 'assets/css/ppv-user-settings.css', [], time());
         wp_enqueue_script('ppv-user-settings', PPV_PLUGIN_URL . 'assets/js/ppv-user-settings.js', ['jquery'], time(), true);
@@ -72,7 +101,7 @@ private static function t($key) {
         $data = [
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce'    => wp_create_nonce('ppv_user_settings_nonce'),
-            'lang'     => $GLOBALS['ppv_lang_code'] ?? 'de'
+            'lang'     => $lang
         ];
         wp_add_inline_script('ppv-user-settings', 'window.ppv_user_settings=' . wp_json_encode($data) . ';', 'before');
     }
@@ -218,8 +247,12 @@ private static function t($key) {
         if (!$user_id) return '<div class="ppv-notice">'.self::t('login_required').'</div>';
 
         $user = get_userdata($user_id);
-        $avatar = get_user_meta($user_id, 'ppv_avatar', true) ?: PPV_PLUGIN_URL.'assets/img/default-avatar.png';
-        $lang = $GLOBALS['ppv_lang_code'] ?? 'de';
+        $avatar = get_user_meta($user_id, 'ppv_avatar', true) ?: PPV_PLUGIN_URL.'assets/img/default-avatar.svg';
+
+        // ✅ Get language from session (already set by enqueue_assets)
+        $lang = $_SESSION['ppv_lang'] ?? 'de';
+
+        error_log("🔍 [PPV_User_Settings::render] Using language: {$lang}");
 
         // Értesítési beállítások
         $email_notif = get_user_meta($user_id, 'ppv_email_notifications', true) !== '0';
