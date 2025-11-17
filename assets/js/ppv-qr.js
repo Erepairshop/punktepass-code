@@ -839,6 +839,9 @@ class CameraScanner {
     this.miniContainer.id = 'ppv-mini-scanner';
     this.miniContainer.className = 'ppv-mini-scanner-active';
     this.miniContainer.innerHTML = `
+      <div id="ppv-mini-drag-handle" class="ppv-mini-drag-handle">
+        <span class="ppv-drag-icon">⋮⋮</span>
+      </div>
       <div id="ppv-mini-reader"></div>
       <div id="ppv-mini-status">
         <span class="ppv-mini-icon">📷</span>
@@ -850,6 +853,106 @@ class CameraScanner {
 
     this.readerDiv = document.getElementById('ppv-mini-reader');
     this.statusDiv = document.getElementById('ppv-mini-status');
+
+    // Load saved position or use default
+    this.loadPosition();
+
+    // Make it draggable
+    this.makeDraggable();
+  }
+
+  loadPosition() {
+    try {
+      const savedPos = localStorage.getItem('ppv_scanner_position');
+      if (savedPos) {
+        const pos = JSON.parse(savedPos);
+        this.miniContainer.style.bottom = 'auto';
+        this.miniContainer.style.right = 'auto';
+        this.miniContainer.style.left = pos.x + 'px';
+        this.miniContainer.style.top = pos.y + 'px';
+      }
+    } catch (e) {
+      console.warn('Could not load scanner position:', e);
+    }
+  }
+
+  savePosition(x, y) {
+    try {
+      localStorage.setItem('ppv_scanner_position', JSON.stringify({ x, y }));
+    } catch (e) {
+      console.warn('Could not save scanner position:', e);
+    }
+  }
+
+  makeDraggable() {
+    const handle = document.getElementById('ppv-mini-drag-handle');
+    if (!handle) return;
+
+    let isDragging = false;
+    let currentX = 0;
+    let currentY = 0;
+    let initialX = 0;
+    let initialY = 0;
+
+    const dragStart = (e) => {
+      if (e.type === 'touchstart') {
+        initialX = e.touches[0].clientX - currentX;
+        initialY = e.touches[0].clientY - currentY;
+      } else {
+        initialX = e.clientX - currentX;
+        initialY = e.clientY - currentY;
+      }
+
+      if (e.target === handle || e.target.classList.contains('ppv-drag-icon')) {
+        isDragging = true;
+        this.miniContainer.style.cursor = 'grabbing';
+      }
+    };
+
+    const drag = (e) => {
+      if (!isDragging) return;
+
+      e.preventDefault();
+
+      if (e.type === 'touchmove') {
+        currentX = e.touches[0].clientX - initialX;
+        currentY = e.touches[0].clientY - initialY;
+      } else {
+        currentX = e.clientX - initialX;
+        currentY = e.clientY - initialY;
+      }
+
+      // Constrain to viewport
+      const rect = this.miniContainer.getBoundingClientRect();
+      const maxX = window.innerWidth - rect.width;
+      const maxY = window.innerHeight - rect.height;
+
+      currentX = Math.max(0, Math.min(currentX, maxX));
+      currentY = Math.max(0, Math.min(currentY, maxY));
+
+      this.miniContainer.style.bottom = 'auto';
+      this.miniContainer.style.right = 'auto';
+      this.miniContainer.style.left = currentX + 'px';
+      this.miniContainer.style.top = currentY + 'px';
+    };
+
+    const dragEnd = () => {
+      if (isDragging) {
+        isDragging = false;
+        this.miniContainer.style.cursor = 'grab';
+        this.savePosition(currentX, currentY);
+      }
+    };
+
+    // Mouse events
+    handle.addEventListener('mousedown', dragStart);
+    document.addEventListener('mousemove', drag);
+    document.addEventListener('mouseup', dragEnd);
+
+    // Touch events
+    handle.addEventListener('touchstart', dragStart, { passive: false });
+    document.addEventListener('touchmove', drag, { passive: false });
+    document.addEventListener('touchend', dragEnd);
   }
 
   async autoStart() {
