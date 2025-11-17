@@ -803,7 +803,17 @@ class PPV_QR {
                 break;
         }
 
+        // ✅ DEBUG: Log fields before insert
+        error_log("🔍 [PPV_QR] Fields to insert: " . print_r($fields, true));
+
         $wpdb->insert("{$prefix}ppv_campaigns", $fields);
+
+        // ✅ DEBUG: Check if insert succeeded
+        if ($wpdb->last_error) {
+            error_log("❌ [PPV_QR] SQL Error: " . $wpdb->last_error);
+        } else {
+            error_log("✅ [PPV_QR] Insert success, ID: " . $wpdb->insert_id);
+        }
 
         return new WP_REST_Response([
             'success' => true,
