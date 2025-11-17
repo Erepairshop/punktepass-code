@@ -307,6 +307,12 @@ class ScanProcessor {
   }
 
   async loadLogs() {
+    // Check if store key exists
+    if (!window.PPV_STORE_KEY || window.PPV_STORE_KEY.trim() === '') {
+      console.log('ℹ️ [Logs] No store key - skipping logs load');
+      return;
+    }
+
     try {
       const res = await fetch("/wp-json/punktepass/v1/pos/logs", {
         headers: { "PPV-POS-Token": window.PPV_STORE_KEY },
@@ -335,6 +341,14 @@ class CampaignManager {
 
   async load() {
     if (!this.list) return;
+
+    // Check if store key exists
+    if (!window.PPV_STORE_KEY || window.PPV_STORE_KEY.trim() === '') {
+      console.log('ℹ️ [Campaigns] No store key - skipping campaigns load');
+      this.list.innerHTML = "<p style='text-align:center;color:#999;padding:20px;'>" +
+        (L.camp_no_store || "Kein Geschäft ausgewählt") + "</p>";
+      return;
+    }
 
     this.list.innerHTML = "<div class='ppv-loading'>⏳ " +
       (L.camp_loading || "Kampányok betöltése...") + "</div>";
