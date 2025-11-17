@@ -29,7 +29,8 @@ class PPV_Belohnungen {
             $lang = 'de';
         }
 
-        $file = dirname(__FILE__) . "/lang/lang-{$lang}-BELOHNUNGEN.php";
+        // ✅ Use main language files instead of separate BELOHNUNGEN files
+        $file = PPV_PLUGIN_DIR . "includes/lang/ppv-lang-{$lang}.php";
         if (file_exists($file)) {
             return include($file);
         }
@@ -39,7 +40,14 @@ class PPV_Belohnungen {
 
     private static function get_label($key, $lang = 'de', $default = '') {
         $labels = self::get_labels($lang);
-        return $labels[$key] ?? $default ?? $key;
+        $value = $labels[$key] ?? $default;
+
+        // Debug log if using default (missing translation)
+        if ($value === $default && $default !== '') {
+            error_log("⚠️ [PPV_Belohnungen] Missing translation key '{$key}' for lang '{$lang}', using default: {$default}");
+        }
+
+        return $value ?: $key;
     }
 
     public static function register_rest_routes() {
