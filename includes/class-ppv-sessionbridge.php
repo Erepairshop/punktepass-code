@@ -12,12 +12,26 @@ class PPV_SessionBridge {
     }
     
     /** ============================================================
-     * 🧠 Session indítás biztonságosan
+     * 🧠 Session indítás biztonságosan - HOSSZÚ ÉLETTARTAM
      * ============================================================ */
     public static function start_session() {
         if (session_status() !== PHP_SESSION_ACTIVE && !headers_sent()) {
+            // ✅ Session 30 nap élettartam (2592000 sec)
+            ini_set('session.gc_maxlifetime', 2592000);  // 30 days
+            ini_set('session.cookie_lifetime', 2592000); // 30 days
+
+            // ✅ Biztonságos cookie beállítások
+            session_set_cookie_params([
+                'lifetime' => 2592000,  // 30 days
+                'path' => '/',
+                'domain' => '',
+                'secure' => true,       // HTTPS only
+                'httponly' => true,     // No JavaScript access
+                'samesite' => 'Lax'     // CSRF protection
+            ]);
+
             @session_start();
-            error_log("✅ [PPV_SessionBridge] Session started");
+            error_log("✅ [PPV_SessionBridge] Session started with 30-day lifetime");
         }
     }
     
