@@ -45,7 +45,13 @@ class PPV_User_Settings {
      *  🔹 Nyelvi rendszer integráció
      * ============================================================ */
 private static function t($key) {
-    $lang_code = $GLOBALS['ppv_lang_code'] ?? 'de';
+    // Start session if not started
+    if (session_status() === PHP_SESSION_NONE) {
+        @session_start();
+    }
+
+    // ✅ Get language from session (set by enqueue_assets)
+    $lang_code = $_SESSION['ppv_lang'] ?? 'de';
     $file = PPV_PLUGIN_DIR . "includes/lang/ppv-lang-{$lang_code}.php";
 
     // ha létezik a fájl és return-nel tér vissza
@@ -242,7 +248,11 @@ private static function t($key) {
 
         $user = get_userdata($user_id);
         $avatar = get_user_meta($user_id, 'ppv_avatar', true) ?: PPV_PLUGIN_URL.'assets/img/default-avatar.svg';
-        $lang = $GLOBALS['ppv_lang_code'] ?? 'de';
+
+        // ✅ Get language from session (already set by enqueue_assets)
+        $lang = $_SESSION['ppv_lang'] ?? 'de';
+
+        error_log("🔍 [PPV_User_Settings::render] Using language: {$lang}");
 
         // Értesítési beállítások
         $email_notif = get_user_meta($user_id, 'ppv_email_notifications', true) !== '0';
