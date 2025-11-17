@@ -1,5 +1,28 @@
 jQuery(document).ready(function($){
 
+    /** =============================
+     * 🌍 TRANSLATIONS (DE/HU/RO)
+     * ============================= */
+    const LANG = (window.ppv_ajax && window.ppv_ajax.lang) || 'de';
+
+    const T = {
+        de: {
+            saved: "Gespeichert ✅",
+            error: "Fehler:",
+            status_changed: "Abo-Status geändert:",
+        },
+        hu: {
+            saved: "Mentve ✅",
+            error: "Hiba:",
+            status_changed: "Előfizetés állapota megváltozott:",
+        },
+        ro: {
+            saved: "Salvat ✅",
+            error: "Eroare:",
+            status_changed: "Starea abonamentului s-a schimbat:",
+        }
+    }[LANG] || T.de;
+
     // 🔹 Mentés gomb – Allgemeine Einstellungen
     $(".ppv-btn-save").on("click", function(){
         $.post(ppv_ajax.ajax_url, {
@@ -11,9 +34,9 @@ jQuery(document).ready(function($){
             profile_public: $("#ppv-profile-public").is(":checked") ? 1 : 0
         }, function(resp){
             if(resp.success){
-                $(".ppv-save-message").text("Gespeichert ✅").fadeIn().delay(2000).fadeOut();
+                $(".ppv-save-message").text(T.saved).fadeIn().delay(2000).fadeOut();
             } else {
-                alert("Fehler: " + resp.data.message);
+                alert(T.error + " " + resp.data.message);
             }
         });
     });
@@ -25,10 +48,10 @@ jQuery(document).ready(function($){
             nonce: ppv_ajax.nonce
         }, function(resp){
             if(resp.success){
-                alert("Abo-Status geändert: " + resp.data.new_status);
+                alert(T.status_changed + " " + resp.data.new_status);
                 location.reload();
             } else {
-                alert("Fehler: " + resp.data.message);
+                alert(T.error + " " + resp.data.message);
             }
         });
     });
