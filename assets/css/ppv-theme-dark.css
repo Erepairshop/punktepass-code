@@ -8698,3 +8698,73 @@ body.ppv-dark .ppv-user-qr {
 }
 
 /* END NATIVE APP EXPERIENCE */
+
+
+/* ============================================================
+   🔧 CRITICAL FIXES v1.0 - DARK
+   ============================================================ */
+
+/* Fix: Body scroll lock when QR modal open */
+body.qr-modal-open {
+  overflow: hidden !important;
+  position: fixed !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Fix: QR Overlay - prevent scroll */
+.ppv-qr-overlay {
+  touch-action: none !important;
+  overscroll-behavior: contain !important;
+}
+
+/* Fix: QR Modal - prevent content scroll beneath */
+.ppv-user-qr {
+  overscroll-behavior: contain !important;
+}
+
+/* Fix: Better mobile header - hide email on very small screens */
+@media (max-width: 640px) {
+  #ppv-global-header .ppv-user-email {
+    display: none !important;
+  }
+  
+  #ppv-global-header .ppv-header-left {
+    gap: 8px !important;
+  }
+  
+  #ppv-global-header.ppv-compact-header {
+    padding: 4px 6px !important;
+    gap: 6px !important;
+  }
+  
+  #ppv-global-header .ppv-header-settings {
+    gap: 6px !important;
+  }
+}
+
+/* Fix: Ultra compact on tiny screens */
+@media (max-width: 380px) {
+  #ppv-global-header .ppv-stat-mini {
+    padding: 3px 6px !important;
+    font-size: 11px !important;
+  }
+  
+  #ppv-global-header .ppv-stat-mini i {
+    font-size: 12px !important;
+  }
+  
+  #ppv-global-header .ppv-nav-btn {
+    padding: 5px 8px !important;
+    font-size: 11px !important;
+  }
+  
+  #ppv-global-header .ppv-lang-mini,
+  #ppv-global-header .ppv-theme-btn-mini {
+    width: 30px !important;
+    height: 30px !important;
+    font-size: 11px !important;
+  }
+}
+
+/* END CRITICAL FIXES */
