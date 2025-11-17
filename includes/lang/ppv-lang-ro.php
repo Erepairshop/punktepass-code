@@ -347,6 +347,9 @@ return [
   // Settings - Form fields
   'zip' => 'Cod poștal',
   'street_address' => 'Strada și numărul',
+  'street_placeholder' => 'Strada Exemplu 123',
+  'zip_placeholder' => '123456',
+  'city_placeholder' => 'București',
   'notifications' => 'Notificări',
   'email_notifications' => 'Notificări prin e-mail',
   'push_notifications' => 'Notificări push',

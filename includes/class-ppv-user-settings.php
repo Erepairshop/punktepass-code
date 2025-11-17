@@ -271,16 +271,16 @@ private static function t($key) {
                 <div class="ppv-section">
                     <h3><i class="ri-map-pin-line"></i> <?php echo self::t('address'); ?></h3>
                     <label><?php echo self::t('street_address'); ?></label>
-                    <input type="text" name="address" value="<?php echo esc_attr($address); ?>" placeholder="Musterstraße 123">
+                    <input type="text" name="address" value="<?php echo esc_attr($address); ?>" placeholder="<?php echo self::t('street_placeholder'); ?>">
 
                     <div class="ppv-form-row">
                         <div>
                             <label><?php echo self::t('zip'); ?></label>
-                            <input type="text" name="zip" value="<?php echo esc_attr($zip); ?>" placeholder="12345">
+                            <input type="text" name="zip" value="<?php echo esc_attr($zip); ?>" placeholder="<?php echo self::t('zip_placeholder'); ?>">
                         </div>
                         <div>
                             <label><?php echo self::t('city'); ?></label>
-                            <input type="text" name="city" value="<?php echo esc_attr($city); ?>" placeholder="Berlin">
+                            <input type="text" name="city" value="<?php echo esc_attr($city); ?>" placeholder="<?php echo self::t('city_placeholder'); ?>">
                         </div>
                     </div>
                 </div>

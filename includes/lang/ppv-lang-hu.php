@@ -334,6 +334,9 @@ return [
   // Settings - Form fields
   'zip' => 'Irányítószám',
   'street_address' => 'Utca és házszám',
+  'street_placeholder' => 'Fő utca 123',
+  'zip_placeholder' => '1234',
+  'city_placeholder' => 'Budapest',
   'notifications' => 'Értesítések',
   'email_notifications' => 'E-mail értesítések',
   'push_notifications' => 'Push értesítések',

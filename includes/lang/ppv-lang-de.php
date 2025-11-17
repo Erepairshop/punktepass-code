@@ -308,6 +308,9 @@ return [
   // Settings - Form fields
   'zip' => 'Postleitzahl',
   'street_address' => 'Straße und Hausnummer',
+  'street_placeholder' => 'Musterstraße 123',
+  'zip_placeholder' => '12345',
+  'city_placeholder' => 'Berlin',
   'notifications' => 'Benachrichtigungen',
   'email_notifications' => 'E-Mail Benachrichtigungen',
   'push_notifications' => 'Push-Benachrichtigungen',
