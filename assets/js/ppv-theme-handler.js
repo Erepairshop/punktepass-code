@@ -19,77 +19,9 @@
       // ⛔ Skip entire script on POS dashboard pages
 if (document.body.classList.contains("ppv-pos-dashboard")) return;
 
-    const btn = document.getElementById("ppv-theme-toggle");
-    const logo = document.querySelector(".ppv-header-logo-min");
+// 🧹 Service worker cache ürítése (ha van)
 if (navigator.serviceWorker?.controller) {
   navigator.serviceWorker.controller.postMessage({ type: "clear-theme-cache" });
-}
-
-    if (btn) {
-  btn.addEventListener("click", async () => {
-    // 🔹 Read current theme from DOM (not closure variable)
-    const currentTheme = document.documentElement.getAttribute("data-theme") || localStorage.getItem(THEME_KEY) || "light";
-    theme = currentTheme === "light" ? "dark" : "light";
-
-    // 💾 Save to localStorage + cookie
-    localStorage.setItem(THEME_KEY, theme);
-    document.cookie = `${THEME_KEY}=${theme};path=/;max-age=${60 * 60 * 24 * 365}`;
-
-    // 🎨 Update DOM immediately
-    document.documentElement.setAttribute("data-theme", theme);
-    document.body.classList.remove("ppv-light", "ppv-dark");
-    document.body.classList.add(`ppv-${theme}`);
-
-    // ⚡ CSS újratöltés - töröljük a régit és hozzuk létre újra
-    const oldLink = document.getElementById("ppv-theme-css");
-    if (oldLink) {
-      oldLink.remove();
-    }
-
-    const newLink = document.createElement("link");
-    newLink.id = "ppv-theme-css";
-    newLink.rel = "stylesheet";
-    newLink.href = `/wp-content/plugins/punktepass/assets/css/ppv-theme-${theme}.css?v=${Date.now()}`;
-    document.head.appendChild(newLink);
-
-    // ⚡ Logo újratöltés
-    const logo = document.querySelector(".ppv-header-logo-min");
-    if (logo) {
-      const src =
-        theme === "light"
-          ? "/wp-content/plugins/punktepass/assets/img/logo.webp"
-          : "/wp-content/plugins/punktepass/assets/img/logo.webp";
-      logo.src = src + "?t=" + Date.now();
-    }
-
-    // 💾 Save to server (database)
-    try {
-      const response = await fetch('/wp-json/ppv/v1/theme/set', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ theme }),
-        credentials: 'include',
-      });
-      if (response.ok) {
-        console.log("✅ Theme saved to server:", theme);
-      }
-    } catch (err) {
-      console.warn("⚠️ Could not save theme to server (offline?):", err.message);
-    }
-
-    // 🧹 Cache törlés
-    if (navigator.serviceWorker?.controller) {
-      navigator.serviceWorker.controller.postMessage("clear-theme-cache");
-    }
-  });
-}
-
-
-       // 🧹 Service worker cache ürítése
-if (navigator.serviceWorker?.controller) {
-  navigator.serviceWorker.controller.postMessage("clear-theme-cache");
 }
 
 // 🔁 Biztonsági reflow (azonnali redraw)
@@ -135,12 +67,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   /** ============================
-   * 🎨 THEME INIT
+   * 🎨 THEME INIT (handled by ppv-theme-loader.js)
    * ============================ */
+  // Theme loading is now handled by ppv-theme-loader.js
+  // Only keep logo functionality here
   let theme = localStorage.getItem(THEME_KEY) || getCookie(THEME_KEY) || "light";
- 
-applyTheme(theme);
-updateLogo(theme);
   function updateLogo(theme) {
   // Mindig újra keresi a logót (Elementor újraépülhet)
   const logoEl = document.querySelector(".ppv-header-logo-min");
