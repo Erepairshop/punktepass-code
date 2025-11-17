@@ -1239,47 +1239,99 @@ body.ppv-user-dashboard {
   align-items: center !important;
 }
 
+/* ============================================================
+   🌐 LANG SWITCHER - LIGHT THEME (Modern PWA Style)
+   ============================================================ */
 #ppv-global-header .ppv-lang-mini {
-  padding: 7px 12px !important;
-  background: rgba(0, 168, 204, 0.12) !important;
-  border: 1px solid rgba(0, 168, 204, 0.3) !important;
-  border-radius: 8px !important;
-  color: rgba(255, 255, 255, 0.95) !important;
-  font-size: 12px !important;
-  font-weight: 600 !important;
+  padding: 8px 14px !important;
+  background: linear-gradient(135deg, rgba(0, 150, 255, 0.9) 0%, rgba(0, 120, 200, 1) 100%) !important;
+  border: 2px solid rgba(0, 100, 255, 0.6) !important;
+  border-radius: 10px !important;
+  color: #ffffff !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.5px !important;
   cursor: pointer !important;
-  transition: all 0.3s ease !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: 0 4px 12px rgba(0, 120, 200, 0.3),
+              inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
 }
 
 #ppv-global-header .ppv-lang-mini:hover {
-  background: rgba(0, 168, 204, 0.2) !important;
-  border-color: rgba(0, 168, 204, 0.5) !important;
-  color: #00d4ff !important;
+  background: linear-gradient(135deg, rgba(0, 180, 255, 1) 0%, rgba(0, 150, 230, 1) 100%) !important;
+  border-color: rgba(0, 150, 255, 0.9) !important;
+  color: #ffffff !important;
+  transform: translateY(-2px) scale(1.03) !important;
+  box-shadow: 0 8px 20px rgba(0, 150, 255, 0.45),
+              0 0 25px rgba(0, 150, 255, 0.25),
+              inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
 }
 
+#ppv-global-header .ppv-lang-mini:active {
+  transform: translateY(0) scale(0.98) !important;
+}
+
+/* ============================================================
+   🎨 THEME TOGGLE - LIGHT THEME (Vibrant Purple)
+   ============================================================ */
 #ppv-global-header .ppv-theme-btn-mini {
-  width: 38px !important;
-  height: 38px !important;
+  width: 42px !important;
+  height: 42px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  background: rgba(0, 168, 204, 0.12) !important;
-  border: 1px solid rgba(0, 168, 204, 0.3) !important;
-  border-radius: 8px !important;
-  color: rgba(255, 255, 255, 0.9) !important;
+  background: linear-gradient(135deg, rgba(147, 51, 234, 0.9) 0%, rgba(126, 34, 206, 1) 100%) !important;
+  border: 2px solid rgba(147, 51, 234, 0.7) !important;
+  border-radius: 12px !important;
+  color: #ffffff !important;
   cursor: pointer !important;
-  transition: all 0.3s ease !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: 0 4px 16px rgba(147, 51, 234, 0.35),
+              0 0 20px rgba(147, 51, 234, 0.2),
+              inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+  position: relative !important;
+}
+
+/* Animated shine effect */
+#ppv-global-header .ppv-theme-btn-mini::before {
+  content: '' !important;
+  position: absolute !important;
+  inset: -2px !important;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.2), transparent) !important;
+  border-radius: 12px !important;
+  opacity: 0 !important;
+  transition: opacity 0.3s ease !important;
 }
 
 #ppv-global-header .ppv-theme-btn-mini:hover {
-  background: rgba(0, 168, 204, 0.2) !important;
-  border-color: rgba(0, 168, 204, 0.5) !important;
-  color: #00d4ff !important;
-  transform: rotate(20deg) scale(1.05) !important;
+  background: linear-gradient(135deg, rgba(168, 85, 247, 1) 0%, rgba(147, 51, 234, 1) 100%) !important;
+  border-color: rgba(168, 85, 247, 0.9) !important;
+  color: #ffffff !important;
+  transform: translateY(-3px) rotate(15deg) scale(1.08) !important;
+  box-shadow: 0 8px 24px rgba(147, 51, 234, 0.5),
+              0 0 35px rgba(147, 51, 234, 0.35),
+              inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+}
+
+#ppv-global-header .ppv-theme-btn-mini:hover::before {
+  opacity: 1 !important;
+  animation: rotateBorder 3s linear infinite !important;
+}
+
+#ppv-global-header .ppv-theme-btn-mini:active {
+  transform: translateY(0) rotate(0) scale(0.95) !important;
 }
 
 #ppv-global-header .ppv-theme-btn-mini i {
-  font-size: 16px !important;
+  font-size: 20px !important;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2)) !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+@keyframes rotateBorder {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 /* ============================================================
