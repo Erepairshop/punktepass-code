@@ -19,8 +19,10 @@ function initLogin() {
         initPasswordToggle();
         initFormValidation();
         initGoogleLogin();
+        initFacebookLogin();
+        initTikTokLogin();
         initFormSubmit();
-        initLanguageSwitcher(); // ← ADD THIS!
+        initLanguageSwitcher();
     }
     
     /**
@@ -326,6 +328,210 @@ function initLogin() {
         document.head.appendChild(style);
     }
     
+    /**
+     * Initialize Facebook Login
+     */
+    function initFacebookLogin() {
+        // Check if ppvLogin object exists
+        if (typeof ppvLogin === 'undefined') {
+            console.error('❌ ppvLogin object not found - wp_localize_script may not have loaded');
+            $('#ppv-facebook-login-btn').prop('disabled', true).css('opacity', '0.5');
+            return;
+        }
+
+        // Debug: Show full ppvLogin object
+        console.log('🔍 ppvLogin object:', ppvLogin);
+        console.log('🔍 facebook_app_id value:', ppvLogin.facebook_app_id);
+        console.log('🔍 facebook_app_id type:', typeof ppvLogin.facebook_app_id);
+        console.log('🔍 facebook_app_id length:', ppvLogin.facebook_app_id ? ppvLogin.facebook_app_id.length : 0);
+
+        const appId = ppvLogin.facebook_app_id;
+
+        if (!appId || appId === '') {
+            console.warn('⚠️ Facebook App ID is empty');
+            console.log('🔍 Checking if defined in wp-config.php...');
+            $('#ppv-facebook-login-btn').prop('disabled', true).css('opacity', '0.5');
+            return;
+        }
+
+        console.log('✅ Facebook App ID found:', appId.substring(0, 5) + '...');
+
+        // Load Facebook SDK
+        window.fbAsyncInit = function() {
+            FB.init({
+                appId: appId,
+                cookie: true,
+                xfbml: true,
+                version: 'v18.0'
+            });
+        };
+
+        // Load SDK script
+        (function(d, s, id) {
+            var js, fjs = d.getElementsByTagName(s)[0];
+            if (d.getElementById(id)) return;
+            js = d.createElement(s); js.id = id;
+            js.src = "https://connect.facebook.net/de_DE/sdk.js";
+            fjs.parentNode.insertBefore(js, fjs);
+        }(document, 'script', 'facebook-jssdk'));
+
+        // Button click handler
+        $('#ppv-facebook-login-btn').on('click', function() {
+            const $btn = $(this);
+
+            FB.login(function(response) {
+                if (response.authResponse) {
+                    handleFacebookCallback(response.authResponse, $btn);
+                } else {
+                    showAlert('Facebook Login abgebrochen', 'error');
+                }
+            }, {scope: 'public_profile,email'});
+        });
+    }
+
+    /**
+     * Handle Facebook OAuth Callback
+     */
+    function handleFacebookCallback(authResponse, $btn) {
+        const accessToken = authResponse.accessToken;
+
+        // Show loading
+        $btn.prop('disabled', true).html('<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/></path></svg><span>Anmelden...</span>');
+
+        // Send to backend
+        $.ajax({
+            url: ppvLogin.ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'ppv_facebook_login',
+                nonce: ppvLogin.nonce,
+                access_token: accessToken
+            },
+            success: function(res) {
+                if (res.success) {
+                    showAlert(res.data.message, 'success');
+                    setTimeout(function() {
+                        window.location.href = res.data.redirect;
+                    }, 1000);
+                } else {
+                    showAlert(res.data.message, 'error');
+                    resetFacebookButton($btn);
+                }
+            },
+            error: function() {
+                showAlert('Verbindungsfehler. Bitte versuchen Sie es erneut.', 'error');
+                resetFacebookButton($btn);
+            }
+        });
+    }
+
+    /**
+     * Reset Facebook Button
+     */
+    function resetFacebookButton($btn) {
+        $btn.prop('disabled', false).html(`
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047v-2.66c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.971H15.83c-1.49 0-1.955.93-1.955 1.886v2.264h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z" fill="#1877F2"/>
+            </svg>
+            <span>Facebook</span>
+        `);
+    }
+
+    /**
+     * Initialize TikTok Login
+     */
+    function initTikTokLogin() {
+        const clientKey = ppvLogin.tiktok_client_key;
+
+        if (!clientKey) {
+            console.warn('TikTok Client Key not configured');
+            $('#ppv-tiktok-login-btn').prop('disabled', true).css('opacity', '0.5');
+            return;
+        }
+
+        // Button click handler
+        $('#ppv-tiktok-login-btn').on('click', function() {
+            const redirectUri = encodeURIComponent(window.location.origin + '/login');
+            const state = Math.random().toString(36).substring(7);
+            const scope = 'user.info.basic';
+
+            // Store state in sessionStorage for verification
+            sessionStorage.setItem('tiktok_oauth_state', state);
+
+            // Redirect to TikTok OAuth
+            const authUrl = `https://www.tiktok.com/auth/authorize/` +
+                `?client_key=${clientKey}` +
+                `&scope=${scope}` +
+                `&response_type=code` +
+                `&redirect_uri=${redirectUri}` +
+                `&state=${state}`;
+
+            window.location.href = authUrl;
+        });
+
+        // Check for TikTok OAuth callback
+        checkTikTokCallback();
+    }
+
+    /**
+     * Check for TikTok OAuth Callback
+     */
+    function checkTikTokCallback() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        const state = urlParams.get('state');
+        const storedState = sessionStorage.getItem('tiktok_oauth_state');
+
+        if (code && state && state === storedState) {
+            // Clear state
+            sessionStorage.removeItem('tiktok_oauth_state');
+
+            // Show loading
+            const $btn = $('#ppv-tiktok-login-btn');
+            $btn.prop('disabled', true).html('<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/></path></svg><span>Anmelden...</span>');
+
+            // Send to backend
+            $.ajax({
+                url: ppvLogin.ajaxurl,
+                type: 'POST',
+                data: {
+                    action: 'ppv_tiktok_login',
+                    nonce: ppvLogin.nonce,
+                    code: code
+                },
+                success: function(res) {
+                    if (res.success) {
+                        showAlert(res.data.message, 'success');
+                        setTimeout(function() {
+                            window.location.href = res.data.redirect;
+                        }, 1000);
+                    } else {
+                        showAlert(res.data.message, 'error');
+                        resetTikTokButton($btn);
+                    }
+                },
+                error: function() {
+                    showAlert('Verbindungsfehler. Bitte versuchen Sie es erneut.', 'error');
+                    resetTikTokButton($btn);
+                }
+            });
+        }
+    }
+
+    /**
+     * Reset TikTok Button
+     */
+    function resetTikTokButton($btn) {
+        $btn.prop('disabled', false).html(`
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" fill="#000000"/>
+                <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" fill="#EE1D52"/>
+                <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" fill="#69C9D0"/>
+            </svg>
+            <span>TikTok</span>
+        `);
+    }
+
    /**
      * Language Switcher (Dashboard style)
      */
@@ -333,23 +539,23 @@ function initLogin() {
         $('.ppv-lang-btn').on('click', function() {
             const $btn = $(this);
             const lang = $btn.data('lang');
-            
+
             if ($btn.hasClass('active')) return;
-            
+
             // Set cookie (1 year expiry)
             const maxAge = 60 * 60 * 24 * 365;
             document.cookie = `ppv_lang=${lang}; path=/; max-age=${maxAge}; SameSite=Lax`;
-            
+
             // Set localStorage (fallback)
             localStorage.setItem('ppv_lang', lang);
-            
+
             // Reload with URL parameter
             const url = new URL(window.location.href);
             url.searchParams.set('lang', lang);
             window.location.href = url.toString();
         });
     }
-    
-    
-    
+
+
+
 })(jQuery);
