@@ -1,11 +1,11 @@
 /**
- * PunktePass – User Settings v4.0
- * Avatar Upload • Toast System • Language Sync • PWA Compatible
+ * PunktePass – User Settings v5.0
+ * Avatar Upload • Modal System • Notifications • Privacy • Address
  * Author: Erik Borota / PunktePass
  */
 
 jQuery(document).ready(function ($) {
-  console.log("✅ PunktePass User Settings JS v4.0 aktiv");
+  console.log("✅ PunktePass User Settings JS v5.0 aktiv");
 
   /** =============================
    * 🧩 TOAST RENDSZER
@@ -60,21 +60,28 @@ jQuery(document).ready(function ($) {
   $("#ppv-settings-form").on("submit", function (e) {
     e.preventDefault();
 
-    const data = $(this).serialize();
+    const formData = new FormData(this);
+
+    // Checkbox értékek kezelése
+    formData.set('email_notifications', $('input[name="email_notifications"]').is(':checked'));
+    formData.set('push_notifications', $('input[name="push_notifications"]').is(':checked'));
+    formData.set('promo_notifications', $('input[name="promo_notifications"]').is(':checked'));
+    formData.set('profile_visible', $('input[name="profile_visible"]').is(':checked'));
+    formData.set('marketing_emails', $('input[name="marketing_emails"]').is(':checked'));
+    formData.set('data_sharing', $('input[name="data_sharing"]').is(':checked'));
+
+    formData.append('action', 'ppv_save_user_settings');
+    formData.append('nonce', ppv_user_settings.nonce);
+
     $.ajax({
       url: ppv_user_settings.ajax_url,
       type: "POST",
-      dataType: "json",
-      data: data + "&action=ppv_save_user_settings&nonce=" + ppv_user_settings.nonce,
+      data: formData,
+      processData: false,
+      contentType: false,
       success: (res) => {
         if (res.success) {
           showToast("✅ Einstellungen gespeichert", "success");
-          // ha nyelv váltott, frissítsük az oldalt, és Elementor menüt is
-          const newLang = $("#ppv-language-select").val();
-          document.cookie = `ppv_lang=${newLang}; path=/; max-age=31536000`;
-          setTimeout(() => {
-            window.location.href = window.location.href.split("?")[0] + "?lang=" + newLang;
-          }, 1000);
         } else {
           showToast("⚠️ " + (res.data?.msg || "Fehler beim Speichern"), "error");
         }
@@ -84,52 +91,84 @@ jQuery(document).ready(function ($) {
   });
 
   /** =============================
-   * 🌐 NYELVVÁLTÁS – Elementor menü sync
-   * ============================= */
-  $("#ppv-language-select").on("change", function () {
-    const lang = $(this).val();
-    document.cookie = `ppv_lang=${lang}; path=/; max-age=31536000`;
-
-    // Elementor menü feliratai frissítése valós időben
-    const labels = {
-      de: { home: "Startseite", points: "Meine Punkte", rewards: "Belohnungen", settings: "Einstellungen" },
-      hu: { home: "Kezdőlap", points: "Pontjaim", rewards: "Jutalmak", settings: "Beállítások" },
-      ro: { home: "Acasă", points: "Punctele Mele", rewards: "Recompense", settings: "Setări" },
-    };
-
-    const set = labels[lang];
-    $("#punktepass-menu [data-key]").each(function () {
-      const key = $(this).data("key");
-      if (set[key]) $(this).text(set[key]);
-    });
-  });
-
-  /** =============================
-   * 📦 ADAT EXPORT
-   * ============================= */
-  $("#ppv-export-data").on("click", function () {
-    showToast("📦 Export wird vorbereitet...", "info");
-    // később REST: /user/export
-    setTimeout(() => showToast("✅ Datenexport abgeschlossen", "success"), 1500);
-  });
-
-  /** =============================
-   * 📱 ESZKÖZ KIJELENTKEZTETÉS
+   * 📱 ÖSSZES ESZKÖZ KIJELENTKEZTETÉSE
    * ============================= */
   $("#ppv-logout-all").on("click", function () {
     if (confirm("Möchten Sie sich wirklich auf allen Geräten abmelden?")) {
-      showToast("🔐 Abmeldung überall durchgeführt", "success");
-      // később REST: /user/logout_all
+      $.ajax({
+        url: ppv_user_settings.ajax_url,
+        type: "POST",
+        data: {
+          action: 'ppv_logout_all_devices',
+          nonce: ppv_user_settings.nonce
+        },
+        success: (res) => {
+          if (res.success) {
+            showToast("✅ " + res.data.msg, "success");
+          } else {
+            showToast("⚠️ " + (res.data?.msg || "Fehler"), "error");
+          }
+        },
+        error: () => showToast("❌ Netzwerkfehler", "error")
+      });
     }
   });
 
   /** =============================
-   * 🗑️ FIÓK TÖRLÉS
+   * 🗑️ FIÓK TÖRLÉS MODAL
    * ============================= */
-  $("#ppv-delete-account").on("click", function () {
-    if (confirm("⚠️ Konto wirklich löschen? Diese Aktion ist endgültig.")) {
-      showToast("🗑️ Konto zur Löschung markiert", "error");
-      // később REST: /user/delete
+  const $modal = $("#ppv-delete-modal");
+
+  // Modal megnyitása
+  $("#ppv-delete-account-btn").on("click", function () {
+    $modal.fadeIn(300);
+    $("#ppv-delete-password").val('');
+  });
+
+  // Modal bezárása
+  $(".ppv-modal-close, #ppv-cancel-delete").on("click", function () {
+    $modal.fadeOut(300);
+  });
+
+  // Modal bezárása kattintással
+  $(window).on("click", function (e) {
+    if (e.target.id === "ppv-delete-modal") {
+      $modal.fadeOut(300);
     }
+  });
+
+  // Törlés megerősítése
+  $("#ppv-confirm-delete").on("click", function () {
+    const password = $("#ppv-delete-password").val();
+
+    if (!password) {
+      showToast("⚠️ Bitte Passwort eingeben", "error");
+      return;
+    }
+
+    if (!confirm("⚠️ LETZTE WARNUNG: Konto wirklich unwiderruflich löschen?")) {
+      return;
+    }
+
+    $.ajax({
+      url: ppv_user_settings.ajax_url,
+      type: "POST",
+      data: {
+        action: 'ppv_delete_account',
+        password: password,
+        nonce: ppv_user_settings.nonce
+      },
+      success: (res) => {
+        if (res.success) {
+          showToast("✅ " + res.data.msg, "success");
+          setTimeout(() => {
+            window.location.href = res.data.redirect;
+          }, 2000);
+        } else {
+          showToast("⚠️ " + (res.data?.msg || "Fehler beim Löschen"), "error");
+        }
+      },
+      error: () => showToast("❌ Netzwerkfehler", "error")
+    });
   });
 });
