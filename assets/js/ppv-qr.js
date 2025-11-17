@@ -804,136 +804,59 @@ class CampaignManager {
 }
 
 // ============================================================
-// 📷 CAMERA SCANNER
+// 📷 MINI ALWAYS-ON CAMERA SCANNER
 // ============================================================
 class CameraScanner {
   constructor(scanProcessor) {
-      this.beep = new Audio("/wp-content/plugins/punktepass/assets/sounds/scan-beep.wav");
-this.beep.volume = 1.0;
+    this.beep = new Audio("/wp-content/plugins/punktepass/assets/sounds/scan-beep.wav");
+    this.beep.volume = 1.0;
 
     this.scanProcessor = scanProcessor;
     this.scanner = null;
-    this.torchActive = false;
     this.scanning = false;
     this.lastRead = '';
     this.repeatCount = 0;
 
-    this.modal = null;
-    this.readerDiv = null;
-    this.resultDiv = null;
-    this.torchBtn = null;
+    // State management: 'scanning', 'processing', 'paused'
+    this.state = 'scanning';
+    this.countdown = 0;
+    this.countdownInterval = null;
+    this.pauseTimeout = null;
 
-    this.createFullscreenModal();
-    this.initButtons();
+    this.miniContainer = null;
+    this.readerDiv = null;
+    this.statusDiv = null;
+
+    this.createMiniScanner();
+    this.autoStart();
   }
 
-  createFullscreenModal() {
-    const existing = document.getElementById('ppv-fullscreen-scanner');
+  createMiniScanner() {
+    const existing = document.getElementById('ppv-mini-scanner');
     if (existing) existing.remove();
 
-    this.modal = document.createElement('div');
-    this.modal.id = 'ppv-fullscreen-scanner';
-    this.modal.innerHTML = `
-      <div id="ppv-scanner-header">
-        <div id="ppv-scanner-title">
-          <span class="ppv-cam-icon">📷</span>
-          <span>QR Scanner</span>
-        </div>
-        <button id="ppv-scanner-close" type="button">
-          <span class="ppv-close-icon">✕</span>
-          <span class="ppv-close-text">${L.scanner_close || 'Bezárás'}</span>
-        </button>
+    this.miniContainer = document.createElement('div');
+    this.miniContainer.id = 'ppv-mini-scanner';
+    this.miniContainer.className = 'ppv-mini-scanner-active';
+    this.miniContainer.innerHTML = `
+      <div id="ppv-mini-reader"></div>
+      <div id="ppv-mini-status">
+        <span class="ppv-mini-icon">📷</span>
+        <span class="ppv-mini-text">${L.scanner_active || 'Scanner aktív'}</span>
       </div>
-
-      <div id="ppv-reader-container">
-        <div id="ppv-reader-full"></div>
-        <div class="ppv-scan-frame">
-          <div class="ppv-corner ppv-corner-tl"></div>
-          <div class="ppv-corner ppv-corner-tr"></div>
-          <div class="ppv-corner ppv-corner-bl"></div>
-          <div class="ppv-corner ppv-corner-br"></div>
-        </div>
-      </div>
-
-      <div id="ppv-scan-result">
-        <span class="ppv-result-icon">📷</span>
-        <span class="ppv-result-text">${L.scanner_show_code || 'Mutasd a QR-kódot a kamera előtt'}</span>
-      </div>
-
-      <button id="ppv-torch-btn" type="button">
-        <span class="ppv-torch-icon">🔦</span>
-        <span class="ppv-torch-text">${L.torch_label || 'Lámpa'}</span>
-      </button>
     `;
 
-    document.body.appendChild(this.modal);
+    document.body.appendChild(this.miniContainer);
 
-    this.readerDiv = document.getElementById('ppv-reader-full');
-    this.resultDiv = document.getElementById('ppv-scan-result');
-    this.torchBtn = document.getElementById('ppv-torch-btn');
+    this.readerDiv = document.getElementById('ppv-mini-reader');
+    this.statusDiv = document.getElementById('ppv-mini-status');
   }
 
-  initButtons() {
-    const openBtn = document.getElementById('ppv-camera-scanner-btn');
-    const closeBtn = document.getElementById('ppv-scanner-close');
-
-    if (openBtn) {
-      openBtn.addEventListener('click', () => this.open());
-    }
-
-    if (closeBtn) {
-      closeBtn.addEventListener('click', () => this.close());
-    }
-
-    if (this.torchBtn) {
-      this.torchBtn.addEventListener('click', () => this.toggleTorch());
-    }
-  }
-
-  async open() {
-    this.modal.classList.add('active');
-
-    if (screen.orientation && screen.orientation.lock) {
-      try {
-        await screen.orientation.lock('portrait').catch(() => {});
-      } catch (e) {}
-    }
-
-    if ('wakeLock' in navigator) {
-      try {
-        this.wakeLock = await navigator.wakeLock.request('screen');
-      } catch (e) {}
-    }
-
-    await this.loadLibrary();
-  }
-
-  close() {
-    this.modal.classList.remove('active');
-
-    if (this.scanner) {
-      try {
-        this.scanner.stop();
-      } catch (e) {}
-      this.scanner = null;
-    }
-
-    this.scanning = false;
-    this.lastRead = "";
-    this.repeatCount = 0;
-
-    if (screen.orientation && screen.orientation.unlock) {
-      try {
-        screen.orientation.unlock();
-      } catch (e) {}
-    }
-
-    if (this.wakeLock) {
-      try {
-        this.wakeLock.release();
-        this.wakeLock = null;
-      } catch (e) {}
-    }
+  async autoStart() {
+    // Wait a bit for the page to fully load
+    setTimeout(async () => {
+      await this.loadLibrary();
+    }, 500);
   }
 
   async loadLibrary() {
@@ -946,25 +869,25 @@ this.beep.volume = 1.0;
     script.src = 'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';
     script.onload = () => this.startScanner();
     script.onerror = () => {
-      this.updateResult(L.scanner_lib_error || '❌ A scanner könyvtár nem tölthető be', 'error');
+      this.updateStatus('error', '❌ Scanner könyvtár nem tölthető be');
     };
     document.head.appendChild(script);
   }
 
   async startScanner() {
-    const readerElement = document.getElementById('ppv-reader-full');
+    const readerElement = document.getElementById('ppv-mini-reader');
     if (!readerElement || !window.Html5Qrcode) {
-      this.updateResult(L.scanner_element_not_found || '❌ Scanner elem nem található', 'error');
+      this.updateStatus('error', '❌ Scanner elem nem található');
       return;
     }
 
     try {
-      this.scanner = new Html5Qrcode('ppv-reader-full');
+      this.scanner = new Html5Qrcode('ppv-mini-reader');
 
-const config = {
-  fps: 10,
-  qrbox: { width: 320, height: 320 }
-};
+      const config = {
+        fps: 10,
+        qrbox: { width: 120, height: 120 }
+      };
 
       await this.scanner.start(
         { facingMode: 'environment' },
@@ -973,89 +896,61 @@ const config = {
       );
 
       this.scanning = true;
-      this.updateResult(L.scanner_active || '📷 Scanner aktív - Mutasd a QR-kódot', 'scanning');
-
-      setTimeout(async () => {
-        try {
-          const caps = await this.scanner.getRunningTrackCapabilities();
-          if (caps?.torch) {
-            this.torchBtn.style.display = 'flex';
-          }
-        } catch (e) {}
-      }, 1000);
+      this.state = 'scanning';
+      this.updateStatus('scanning', L.scanner_active || '📷 Scanning...');
 
     } catch (err) {
-      this.updateResult(L.scanner_camera_error || '❌ Kamera nem érhető el', 'error');
-      setTimeout(() => {
-        alert((L.scanner_camera_error_msg || 'Kamera hiba') + ':\n\n' + err.toString() + '\n\n' + (L.scanner_camera_permission || 'Kérlek engedélyezd a kamera hozzáférést a böngésző beállításaiban.'));
-      }, 500);
+      this.updateStatus('error', '❌ Kamera hiba');
+      console.error('Camera error:', err);
     }
   }
 
-onScanSuccess(qrCode) {
-    if (!this.scanning) return;
+  onScanSuccess(qrCode) {
+    if (!this.scanning || this.state !== 'scanning') return;
 
-    // 🔄 Duplikáció védelem
+    // Duplicate protection
     if (qrCode === this.lastRead) {
-        this.repeatCount++;
+      this.repeatCount++;
     } else {
-        this.lastRead = qrCode;
-        this.repeatCount = 1;
+      this.lastRead = qrCode;
+      this.repeatCount = 1;
     }
 
-    // ✔ Két egymást követő azonos scanre reagálunk
+    // Two consecutive identical reads required
     if (this.repeatCount >= 2) {
+      this.scanning = false;
+      this.state = 'processing';
 
-        this.scanning = false;
-
-        if (this.scanner) {
-            try { this.scanner.stop(); } catch (e) {}
-        }
-
-        // ✔ UI: sikeres olvasás
+      // Stop scanner temporarily
+      if (this.scanner) {
         try {
-            this.updateResult(
-                '✅ ' + (L.scanner_read_success || 'Olvasva') + ': ' + qrCode.substring(0, 20),
-                'success'
-            );
+          this.scanner.stop();
         } catch (e) {}
+      }
 
-        // ✔ VIBRÁCIÓ
-        try {
-            if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
-        } catch (e) {}
+      // Update UI
+      this.updateStatus('processing', '⏳ ' + (L.scanner_points_adding || 'Processing...'));
 
-        // ✔ RÉGI halk beep (ha zavar, szólhatsz, kiveszem)
-        try {
-            this.playSuccessSound();
-        } catch (e) {}
+      // Vibration
+      try {
+        if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
+      } catch (e) {}
 
-        // 🔊 ÚJ ERŐS WAV BEEP
-        try {
-            this.beep.currentTime = 0;
-            this.beep.play();
-        } catch (e) {
-            console.warn("Beep playback error:", e);
-        }
+      // Play beep sound
+      try {
+        this.beep.currentTime = 0;
+        this.beep.play();
+      } catch (e) {
+        console.warn("Beep playback error:", e);
+      }
 
-        // 🔄 További feldolgozás
-        try {
-            this.inlineProcessScan(qrCode);
-        } catch (e) {
-            alert(
-                (L.scanner_processing_error || 'Hiba a feldolgozáskor') +
-                ':\n' + e.toString()
-            );
-        }
+      // Process the scan
+      this.inlineProcessScan(qrCode);
     }
-}
+  }
 
 
   inlineProcessScan(qrCode) {
-    try {
-      this.updateResult('⏳ ' + (L.scanner_points_adding || 'Pontok hozzáadása...'), 'processing');
-    } catch (e) {}
-
     fetch('/wp-json/punktepass/v1/pos/scan', {
       method: 'POST',
       headers: {
@@ -1071,129 +966,156 @@ onScanSuccess(qrCode) {
       .then(res => res.json())
       .then(data => {
         if (data.success) {
-          try {
-            this.updateResult('🎉 ' + (data.message || L.scanner_success_msg || 'Sikeres!'), 'success');
-          } catch (e) {}
+          // Update status to success
+          this.updateStatus('success', '✅ ' + (data.message || L.scanner_success_msg || 'Sikeres!'));
 
+          // Show toast notification
           if (window.ppvToast) {
             window.ppvToast(data.message || L.scanner_point_added || '✅ Pont hozzáadva!', 'success');
           }
 
+          // Broadcast the scan event
           if (window.BroadcastManager) {
             BroadcastManager.send(data);
           }
 
-          setTimeout(() => {
-            try { this.close(); } catch (e) {}
-          }, 2000);
-
+          // Reload logs
           if (this.scanProcessor && this.scanProcessor.loadLogs) {
             setTimeout(() => {
-              try { this.scanProcessor.loadLogs(); } catch (e) {}
+              try {
+                this.scanProcessor.loadLogs();
+              } catch (e) {}
             }, 1000);
           }
+
+          // Start 10-second pause
+          this.startPauseCountdown();
+
         } else {
-          try {
-            this.updateResult('⚠️ ' + (data.message || L.error_generic || 'Hiba'), 'warning');
-          } catch (e) {}
+          // Error - show warning and restart scanner after 3 seconds
+          this.updateStatus('warning', '⚠️ ' + (data.message || L.error_generic || 'Hiba'));
 
           if (window.ppvToast) {
             window.ppvToast(data.message || L.error_generic || '⚠️ Hiba', 'warning');
           }
 
+          // Restart scanner after error
           setTimeout(() => {
-            try {
-              this.scanner = null;
-              this.scanning = false;
-              this.lastRead = "";
-              this.repeatCount = 0;
-              this.startScanner();
-            } catch (e) {}
-          }, 2500);
+            this.lastRead = "";
+            this.repeatCount = 0;
+            this.startScanner();
+          }, 3000);
         }
       })
       .catch(e => {
-        try {
-          this.updateResult('❌ ' + (L.pos_network_error || 'Hálózati hiba'), 'error');
-        } catch (e2) {}
+        // Network error - show error and restart scanner
+        this.updateStatus('error', '❌ ' + (L.pos_network_error || 'Hálózati hiba'));
 
         if (window.ppvToast) {
           window.ppvToast('❌ ' + (L.pos_network_error || 'Hálózati hiba'), 'error');
         }
+
+        // Restart scanner after network error
+        setTimeout(() => {
+          this.lastRead = "";
+          this.repeatCount = 0;
+          this.startScanner();
+        }, 3000);
       });
   }
 
-  async toggleTorch() {
-    if (!this.scanner) return;
+  startPauseCountdown() {
+    // Clear any existing intervals
+    if (this.countdownInterval) {
+      clearInterval(this.countdownInterval);
+    }
+    if (this.pauseTimeout) {
+      clearTimeout(this.pauseTimeout);
+    }
+
+    // Set state to paused
+    this.state = 'paused';
+    this.countdown = 10;
+    this.lastRead = "";
+    this.repeatCount = 0;
+
+    // Update status with countdown
+    this.updateStatus('paused', `⏸️ Pause: ${this.countdown}s`);
+
+    // Start countdown interval (update every second)
+    this.countdownInterval = setInterval(() => {
+      this.countdown--;
+
+      if (this.countdown <= 0) {
+        // Countdown finished - restart scanner
+        clearInterval(this.countdownInterval);
+        this.countdownInterval = null;
+        this.autoRestartScanner();
+      } else {
+        // Update countdown display
+        this.updateStatus('paused', `⏸️ Pause: ${this.countdown}s`);
+      }
+    }, 1000);
+  }
+
+  async autoRestartScanner() {
+    console.log('🔄 Auto-restarting scanner after pause...');
+    this.state = 'scanning';
+    this.updateStatus('scanning', '🔄 Restarting...');
 
     try {
-      if (this.torchActive) {
-        await this.scanner.applyVideoConstraints({ advanced: [{ torch: false }] });
-        this.torchBtn.classList.remove('active');
-        this.torchBtn.querySelector('.ppv-torch-text').textContent = L.torch_label || 'Lámpa';
-        this.torchActive = false;
-      } else {
-        await this.scanner.applyVideoConstraints({ advanced: [{ torch: true }] });
-        this.torchBtn.classList.add('active');
-        this.torchBtn.querySelector('.ppv-torch-text').textContent = L.torch_off || 'Ki';
-        this.torchActive = true;
-      }
-
-      if (navigator.vibrate) {
-        navigator.vibrate(30);
-      }
+      await this.startScanner();
     } catch (e) {
-      if (window.ppvToast) {
-        window.ppvToast('⚠️ ' + (L.torch_not_supported || 'Lámpa nem támogatott'), 'warning');
-      }
+      console.error('Auto-restart error:', e);
+      this.updateStatus('error', '❌ Restart failed');
+
+      // Try again after 5 seconds
+      setTimeout(() => {
+        this.autoRestartScanner();
+      }, 5000);
     }
   }
 
-  updateResult(text, type) {
-    try {
-      if (!this.resultDiv) return;
+  updateStatus(state, text) {
+    if (!this.statusDiv) return;
 
-      const iconMap = {
-        scanning: '📷',
-        processing: '⏳',
-        success: '✅',
-        warning: '⚠️',
-        error: '❌'
-      };
+    const iconMap = {
+      scanning: '📷',
+      processing: '⏳',
+      success: '✅',
+      warning: '⚠️',
+      error: '❌',
+      paused: '⏸️'
+    };
 
-      this.resultDiv.className = 'ppv-result-box ' + type;
+    const stateClassMap = {
+      scanning: 'ppv-mini-status-scanning',
+      processing: 'ppv-mini-status-processing',
+      success: 'ppv-mini-status-success',
+      warning: 'ppv-mini-status-warning',
+      error: 'ppv-mini-status-error',
+      paused: 'ppv-mini-status-paused'
+    };
 
-      const iconEl = this.resultDiv.querySelector('.ppv-result-icon');
-      if (iconEl) {
-        iconEl.textContent = iconMap[type] || '📷';
-      }
+    // Update status div classes
+    this.statusDiv.className = '';
+    if (stateClassMap[state]) {
+      this.statusDiv.classList.add(stateClassMap[state]);
+    }
 
-      const textEl = this.resultDiv.querySelector('.ppv-result-text');
-      if (textEl) {
-        textEl.innerHTML = text.replace(/^[📷⏳✅⚠️❌]\s*/, '');
-      }
-    } catch (e) {}
+    // Update icon
+    const iconEl = this.statusDiv.querySelector('.ppv-mini-icon');
+    if (iconEl) {
+      iconEl.textContent = iconMap[state] || '📷';
+    }
+
+    // Update text
+    const textEl = this.statusDiv.querySelector('.ppv-mini-text');
+    if (textEl) {
+      textEl.textContent = text.replace(/^[📷⏳✅⚠️❌⏸️]\s*/, '');
+    }
   }
 
-  playSuccessSound() {
-    try {
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-
-      oscillator.frequency.value = 800;
-      oscillator.type = 'sine';
-
-      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
-
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.2);
-    } catch (e) {}
-  }
 }
 
 // ============================================================
