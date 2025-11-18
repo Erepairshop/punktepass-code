@@ -26,12 +26,27 @@ class PPV_Permissions {
      * @return bool|WP_Error True if authenticated, WP_Error otherwise
      */
     public static function check_authenticated() {
+        // 0. Ensure session is started
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+            @session_start();
+        }
+
         // 1. Check session authentication
         if (!empty($_SESSION['ppv_user_id'])) {
             return true;
         }
 
-        // 2. Check token authentication (for PWA)
+        // 1a. Try to restore session from token (Google/Facebook/TikTok login)
+        if (class_exists('PPV_SessionBridge') && empty($_SESSION['ppv_user_id'])) {
+            PPV_SessionBridge::restore_from_token();
+
+            // Check again after restore
+            if (!empty($_SESSION['ppv_user_id'])) {
+                return true;
+            }
+        }
+
+        // 2. Check token authentication (for PWA - ppv_tokens table)
         $token_user = self::get_user_from_token();
         if ($token_user) {
             return true;
