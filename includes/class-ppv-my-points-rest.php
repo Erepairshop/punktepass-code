@@ -19,7 +19,7 @@ class PPV_My_Points_REST {
         register_rest_route('ppv/v1', '/mypoints', [
             'methods' => 'GET',
             'callback' => [__CLASS__, 'rest_get_points'],
-            'permission_callback' => '__return_true', // ideiglenes, amíg REST auth kész
+            'permission_callback' => ['PPV_Permissions', 'check_authenticated'],
         ]);
     }
 

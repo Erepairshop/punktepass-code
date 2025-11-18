@@ -123,18 +123,18 @@ wp_add_inline_script('ppv-redeem-admin', "window.ppv_redeem_admin = {$__json};",
         register_rest_route('ppv/v1', '/redeem/list', [
             'methods'  => 'GET',
             'callback' => [__CLASS__, 'rest_list_redeems'],
-            'permission_callback' => '__return_true'
+            'permission_callback' => ['PPV_Permissions', 'check_handler']
         ]);
 
         register_rest_route('ppv/v1', '/redeem/update', [
             'methods'  => 'POST',
             'callback' => [__CLASS__, 'rest_update_status'],
-            'permission_callback' => '__return_true'
+            'permission_callback' => ['PPV_Permissions', 'check_handler']
         ]);
         register_rest_route('ppv/v1', '/redeem/log', [
     'methods'  => 'GET',
     'callback' => [__CLASS__, 'rest_recent_logs'],
-    'permission_callback' => '__return_true'
+    'permission_callback' => ['PPV_Permissions', 'check_handler']
 ]);
 
 register_rest_route('ppv/v1', '/ping', [
@@ -147,7 +147,7 @@ register_rest_route('ppv/v1', '/ping', [
       'server_time' => time()
     ];
   },
-  'permission_callback' => '__return_true'
+  'permission_callback' => ['PPV_Permissions', 'check_authenticated']
 ]);
 
 

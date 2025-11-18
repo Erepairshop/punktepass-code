@@ -10,7 +10,7 @@ class PPV_User_QR {
     register_rest_route('ppv/v1', '/user/qr', [
         'methods' => 'GET',
         'callback' => [__CLASS__, 'rest_get_user_qr'],
-        'permission_callback' => '__return_true',
+        'permission_callback' => ['PPV_Permissions', 'check_authenticated'],
     ]);
 });
 

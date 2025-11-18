@@ -24,25 +24,25 @@ class PPV_Invoices {
         register_rest_route('ppv/v1', '/invoices/create', [
             'methods'  => 'POST',
             'callback' => [__CLASS__, 'rest_create_invoice'],
-            'permission_callback' => '__return_true'
+            'permission_callback' => ['PPV_Permissions', 'check_handler']
         ]);
 
         register_rest_route('ppv/v1', '/invoices/collective', [
             'methods'  => 'POST',
             'callback' => [__CLASS__, 'rest_create_collective_invoice'],
-            'permission_callback' => '__return_true'
+            'permission_callback' => ['PPV_Permissions', 'check_handler']
         ]);
 
         register_rest_route('ppv/v1', '/invoices/list', [
             'methods'  => 'GET',
             'callback' => [__CLASS__, 'rest_list_invoices'],
-            'permission_callback' => '__return_true'
+            'permission_callback' => ['PPV_Permissions', 'check_handler']
         ]);
 
         register_rest_route('ppv/v1', '/invoices/send-email', [
             'methods'  => 'POST',
             'callback' => [__CLASS__, 'rest_send_email'],
-            'permission_callback' => '__return_true'
+            'permission_callback' => ['PPV_Permissions', 'check_handler']
         ]);
     }
 

@@ -15,7 +15,7 @@ class PPV_Stripe_Checkout {
         register_rest_route('punktepass/v1', '/create-checkout-session', [
             'methods'  => ['POST', 'GET'], // GET engedélyezve teszteléshez
             'callback' => [__CLASS__, 'create_checkout_session'],
-            'permission_callback' => '__return_true',
+            'permission_callback' => ['PPV_Permissions', 'allow_anonymous'],
         ]);
     }
 

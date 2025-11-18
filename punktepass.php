@@ -27,6 +27,31 @@ add_action('init', function () {
 }, 1);
 
 // ========================================
+// 🔒 SECURITY HEADERS (PWA-compatible)
+// ========================================
+add_action('send_headers', function() {
+    if (!headers_sent()) {
+        // Prevent clickjacking attacks
+        header('X-Frame-Options: SAMEORIGIN');
+
+        // Prevent MIME-sniffing
+        header('X-Content-Type-Options: nosniff');
+
+        // Enable XSS protection
+        header('X-XSS-Protection: 1; mode=block');
+
+        // Referrer policy for privacy
+        header('Referrer-Policy: strict-origin-when-cross-origin');
+
+        // Permissions policy (restrict features)
+        header('Permissions-Policy: geolocation=(self), camera=(self), microphone=()');
+
+        // Note: CSP is not added here to avoid breaking OAuth integrations
+        // (Google, Facebook, TikTok login require external scripts)
+    }
+});
+
+// ========================================
 // 🛡️ CENTRAL HELPERS
 // ========================================
 
@@ -170,6 +195,7 @@ add_filter('rest_authentication_errors', function ($result) {
 // ========================================
 $core_modules = [
  'includes/ppv-security-guard.php',
+    'includes/class-ppv-permissions.php',
     'includes/class-ppv-session.php',
     'includes/ppv-auto-debug.php',
     'includes/class-ppv-core.php',

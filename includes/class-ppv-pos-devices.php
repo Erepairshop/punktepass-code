@@ -21,19 +21,19 @@ class PPV_POS_Devices {
         register_rest_route('ppv/v1', '/pos/devices/list', [
             'methods' => 'GET',
             'callback' => [__CLASS__, 'list_devices'],
-            'permission_callback' => '__return_true'
+            'permission_callback' => ['PPV_Permissions', 'check_handler']
         ]);
 
         register_rest_route('ppv/v1', '/pos/devices/register', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'register_device'],
-            'permission_callback' => '__return_true'
+            'permission_callback' => ['PPV_Permissions', 'check_handler']
         ]);
 
         register_rest_route('ppv/v1', '/pos/devices/update', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'update_device'],
-            'permission_callback' => '__return_true'
+            'permission_callback' => ['PPV_Permissions', 'check_handler']
         ]);
     }
 

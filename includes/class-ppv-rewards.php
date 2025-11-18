@@ -27,28 +27,28 @@ class PPV_Rewards {
         register_rest_route('ppv/v1', '/redeem/list', [
             'methods'  => 'GET',
             'callback' => [__CLASS__, 'rest_list_redeems'],
-            'permission_callback' => '__return_true'
+            'permission_callback' => ['PPV_Permissions', 'check_handler']
         ]);
 
         // Einlösung jóváhagyás/elutasítás
         register_rest_route('ppv/v1', '/redeem/update', [
             'methods'  => 'POST',
             'callback' => [__CLASS__, 'rest_update_redeem'],
-            'permission_callback' => '__return_true'
+            'permission_callback' => ['PPV_Permissions', 'check_handler']
         ]);
 
         // Recent logs
         register_rest_route('ppv/v1', '/redeem/log', [
             'methods'  => 'GET',
             'callback' => [__CLASS__, 'rest_recent_logs'],
-            'permission_callback' => '__return_true'
+            'permission_callback' => ['PPV_Permissions', 'check_handler']
         ]);
 
         // Havi bizonylat generálás
         register_rest_route('ppv/v1', '/redeem/monthly-receipt', [
             'methods'  => 'POST',
             'callback' => [__CLASS__, 'rest_generate_monthly_receipt'],
-            'permission_callback' => '__return_true'
+            'permission_callback' => ['PPV_Permissions', 'check_handler']
         ]);
     }
 

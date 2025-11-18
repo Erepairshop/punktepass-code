@@ -21,7 +21,7 @@ class PPV_Redeem {
         register_rest_route('ppv/v1', '/pos/redeem', [
             'methods'  => 'POST',
             'callback' => [__CLASS__, 'rest_pos_redeem'],
-            'permission_callback' => '__return_true'
+            'permission_callback' => ['PPV_Permissions', 'check_handler']
         ]);
     }
 

@@ -769,21 +769,21 @@ public static function render_dashboard() {
     register_rest_route('ppv/v1', '/user/points-detailed', [
         'methods' => 'GET',
         'callback' => [__CLASS__, 'rest_get_detailed_points'],
-        'permission_callback' => '__return_true',
+        'permission_callback' => ['PPV_Permissions', 'check_authenticated'],
     ]);
 
     // Simple poll (for header)
     register_rest_route('ppv/v1', '/user/points-poll', [
         'methods' => 'GET',
         'callback' => [__CLASS__, 'rest_poll_points'],
-        'permission_callback' => '__return_true',
+        'permission_callback' => ['PPV_Permissions', 'check_authenticated'],
     ]);
 
-    // Stores
+    // Stores (public endpoint - anyone can see store list)
     register_rest_route('ppv/v1', '/stores/list-optimized', [
         'methods' => 'GET',
         'callback' => [__CLASS__, 'rest_stores_optimized'],
-        'permission_callback' => '__return_true',
+        'permission_callback' => ['PPV_Permissions', 'allow_anonymous'],
     ]);
 
     error_log("✅ [PPV_Dashboard] REST routes registered (with points-detailed)");

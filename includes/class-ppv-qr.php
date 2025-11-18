@@ -527,55 +527,55 @@ class PPV_QR {
         register_rest_route('punktepass/v1', '/pos/scan', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'rest_process_scan'],
-            'permission_callback' => '__return_true',
+            'permission_callback' => ['PPV_Permissions', 'check_handler'],
         ]);
 
         register_rest_route('punktepass/v1', '/pos/logs', [
             'methods' => 'GET',
             'callback' => [__CLASS__, 'rest_get_logs'],
-            'permission_callback' => '__return_true',
+            'permission_callback' => ['PPV_Permissions', 'check_handler'],
         ]);
 
         register_rest_route('punktepass/v1', '/pos/sync_offline', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'rest_sync_offline'],
-            'permission_callback' => '__return_true',
+            'permission_callback' => ['PPV_Permissions', 'check_handler'],
         ]);
 
         register_rest_route('punktepass/v1', '/pos/campaign', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'rest_create_campaign'],
-            'permission_callback' => '__return_true',
+            'permission_callback' => ['PPV_Permissions', 'check_handler'],
         ]);
 
         register_rest_route('punktepass/v1', '/pos/campaigns', [
             'methods' => 'GET',
             'callback' => [__CLASS__, 'rest_list_campaigns'],
-            'permission_callback' => '__return_true',
+            'permission_callback' => ['PPV_Permissions', 'check_handler'],
         ]);
 
         register_rest_route('punktepass/v1', '/pos/campaign/delete', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'rest_delete_campaign'],
-            'permission_callback' => '__return_true',
+            'permission_callback' => ['PPV_Permissions', 'check_handler'],
         ]);
 
         register_rest_route('punktepass/v1', '/pos/campaign/update', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'rest_update_campaign'],
-            'permission_callback' => '__return_true',
+            'permission_callback' => ['PPV_Permissions', 'check_handler'],
         ]);
 
         register_rest_route('punktepass/v1', '/pos/campaign/archive', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'rest_archive_campaign'],
-            'permission_callback' => '__return_true',
+            'permission_callback' => ['PPV_Permissions', 'check_handler'],
         ]);
 
         register_rest_route('punktepass/v1', '/strings', [
             'methods' => 'GET',
             'callback' => [__CLASS__, 'rest_get_strings'],
-            'permission_callback' => '__return_true',
+            'permission_callback' => ['PPV_Permissions', 'allow_anonymous'],
         ]);
     }
 

@@ -19,7 +19,7 @@ class PPV_Stores_API {
         register_rest_route('ppv/v1', '/stores/list', [
             'methods'  => 'GET',
             'callback' => [__CLASS__, 'get_stores'],
-            'permission_callback' => '__return_true'
+            'permission_callback' => ['PPV_Permissions', 'allow_anonymous']
         ]);
     }
 

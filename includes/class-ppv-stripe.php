@@ -15,7 +15,7 @@ class PPV_Stripe {
         register_rest_route('punktepass/v1', '/stripe-webhook', [
             'methods'  => ['POST', 'GET'],
             'callback' => [__CLASS__, 'handle_webhook'],
-            'permission_callback' => '__return_true',
+            'permission_callback' => ['PPV_Permissions', 'allow_anonymous'],
         ]);
     }
 

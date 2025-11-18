@@ -134,12 +134,12 @@ class PPV_Auto_Debug {
      * ============================================================ */
     public static function register_rest() {
         register_rest_route('ppv/v1', '/log/js_error', [
-            'methods' => 'POST', 'permission_callback' => '__return_true',
+            'methods' => 'POST', 'permission_callback' => ['PPV_Permissions', 'allow_anonymous'],
             'callback' => [__CLASS__, 'receive_js_error']
         ]);
 
         register_rest_route('ppv/v1', '/log/ajax', [
-            'methods' => 'POST', 'permission_callback' => '__return_true',
+            'methods' => 'POST', 'permission_callback' => ['PPV_Permissions', 'allow_anonymous'],
             'callback' => [__CLASS__, 'receive_ajax_log']
         ]);
     }
