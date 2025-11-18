@@ -128,114 +128,7 @@ body.ppv-user-dashboard {
     to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ==========================================================================
-   🧭 GLOBAL HEADER – Light Compatible (Dark Header)
-   ========================================================================== */
 
-#ppv-global-header {
-    width: 100%;
-    background: var(--pp-header-bg);
-    padding: 12px 18px;
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    box-shadow: 0 4px 14px rgba(0,0,0,0.25);
-    position: sticky;
-    top: 0;
-    z-index: 9999;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
-}
-
-#ppv-global-header .ppv-header-left {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-/* Tiny logo (no effects, clean) */
-#ppv-global-header .ppv-header-logo-tiny {
-    width: 48px;
-    height: 48px;
-    border-radius: 8px;
-    object-fit: contain;
-    background: transparent;
-    border: none;
-    box-shadow: none;
-    transition: var(--pp-trans-fast);
-}
-
-#ppv-global-header .ppv-header-logo-tiny:hover {
-    transform: scale(1.07);
-}
-
-/* User info */
-#ppv-global-header .ppv-user-info {
-    display: flex;
-    flex-direction: column;
-    line-height: 1.1;
-}
-
-#ppv-global-header .ppv-user-email {
-    color: rgba(255,255,255,0.95);
-    font-size: 13px;
-    font-weight: 700;
-    max-width: 160px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-/* Stats (points, rewards) */
-#ppv-global-header .ppv-header-stats {
-    display: flex;
-    gap: 10px;
-    margin-left: auto;
-}
-
-#ppv-global-header .ppv-stat-mini {
-    background: rgba(0,168,204,0.16);
-    border: 1px solid rgba(0,168,204,0.35);
-    color: #00d4ff;
-    padding: 7px 14px;
-    border-radius: 8px;
-    font-size: 12px;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-#ppv-global-header .ppv-stat-mini i {
-    font-size: 15px;
-}
-
-/* Header Navigation Buttons */
-#ppv-global-header .ppv-header-nav {
-    display: flex;
-    gap: 10px;
-}
-
-#ppv-global-header .ppv-nav-btn {
-    padding: 8px 16px;
-    background: rgba(0,168,204,0.12);
-    border: 1px solid rgba(0,168,204,0.3);
-    border-radius: 8px;
-    color: rgba(255,255,255,0.95);
-    font-size: 13px;
-    font-weight: 600;
-    white-space: nowrap;
-    cursor: pointer;
-    transition: var(--pp-trans-fast);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-#ppv-global-header .ppv-nav-btn:hover {
-    background: rgba(0,168,204,0.22);
-    transform: translateY(-2px);
-    color: #00d4ff;
-}
 
 /* ==========================================================================
    🔧 LIGHT SCROLLBAR
@@ -1566,148 +1459,6 @@ body, h1, h2, h3, h4, h5, h6 {
 }
 
 
-/* ============================================================
-   PUNKTEPASS – GLOBAL HEADER v3 • COMPACT NEO-PWA STYLE (2026)
-   ============================================================ */
-
-/* ----- Base Header Container ----- */
-#ppv-global-header {
-    position: sticky;
-    top: 0;
-    z-index: 9999;
-    height: 54px;
-    width: 100%;
-    padding: 8px 14px;
-    background: #0b1020;
-    backdrop-filter: blur(14px) saturate(160%);
-    border-bottom: 1px solid rgba(0, 168, 204, 0.25);
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    box-shadow: 0 4px 18px rgba(0,0,0,0.35);
-}
-
-/* ----- Tiny Logo ----- */
-#ppv-global-header .ppv-header-logo-tiny {
-    width: 42px !important;
-    height: 42px !important;
-    border-radius: 10px;
-    object-fit: contain;
-    border: 1px solid rgba(0, 168, 204, 0.35);
-    background: rgba(255,255,255,0.04);
-    box-shadow: 0 0 12px rgba(0,168,204,0.25);
-    padding: 4px;
-    transition: transform .25s ease;
-}
-
-#ppv-global-header .ppv-header-logo-tiny:hover {
-    transform: scale(1.07);
-}
-
-/* ----- User Email (cleaner font/contrast) ----- */
-.ppv-user-email {
-    font-size: 13px;
-    font-weight: 600;
-    color: #f2f7ff;
-    max-width: 160px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-/* ----- Header Buttons (nav + settings unified) ----- */
-.ppv-header-nav,
-.ppv-header-settings {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-left: auto;
-}
-
-/* Shared UI */
-.ppv-nav-btn,
-.ppv-lang-mini,
-.ppv-theme-btn-mini {
-    width: 38px;
-    height: 38px;
-    border-radius: 10px;
-    border: 1px solid rgba(0,168,204,0.25);
-    background: rgba(255,255,255,0.05);
-    color: #d4f3ff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px !important;
-    cursor: pointer;
-    transition: all .25s ease;
-    backdrop-filter: blur(10px);
-    box-shadow: 0 0 12px rgba(0,168,204,0.12);
-}
-
-/* Hover effect */
-.ppv-nav-btn:hover,
-.ppv-lang-mini:hover,
-.ppv-theme-btn-mini:hover {
-    background: rgba(0,168,204,0.18);
-    border-color: rgba(0,168,204,0.45);
-    color: #00eaff;
-    transform: translateY(-2px) scale(1.05);
-}
-
-/* Icons inside */
-.ppv-nav-btn i,
-.ppv-theme-btn-mini i {
-    font-size: 18px !important;
-}
-
-/* ----- Language Dropdown Compact ----- */
-.ppv-lang-mini {
-    padding: 0 !important;
-    width: 44px;
-    height: 38px;
-    display: flex;
-    justify-content: center;
-    overflow: hidden;
-}
-
-.ppv-lang-mini select {
-    background: transparent;
-    border: none;
-    color: #dff8ff;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-}
-
-/* ----- Responsive ----- */
-
-@media(max-width: 480px) {
-    #ppv-global-header {
-        height: 50px;
-        padding: 6px 10px;
-        gap: 8px;
-    }
-
-    #ppv-global-header .ppv-header-logo-tiny {
-        width: 36px !important;
-        height: 36px !important;
-        padding: 3px;
-    }
-
-    .ppv-nav-btn,
-    .ppv-theme-btn-mini,
-    .ppv-lang-mini {
-        width: 34px;
-        height: 34px;
-        border-radius: 8px;
-        font-size: 16px !important;
-    }
-
-    .ppv-user-email {
-        max-width: 100px;
-        font-size: 12px;
-    }
-}
 /* ============================================================
    HEADER FIX PATCH — Stabil elrendezés / gombok egy sorban
    ============================================================ */
@@ -3120,193 +2871,6 @@ html, body {
 }
 
 /* ============================================================
-   📷 MINI ALWAYS-ON CAMERA SCANNER
-   ============================================================ */
-
-#ppv-mini-scanner {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  width: 220px;
-  height: 220px;
-  border-radius: 16px;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.95);
-  border: 2px solid rgba(0, 168, 204, 0.5);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15),
-              0 0 30px rgba(0, 168, 204, 0.2);
-  z-index: 9998;
-  transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  backdrop-filter: blur(8px);
-  cursor: grab;
-}
-
-#ppv-mini-scanner:active {
-  cursor: grabbing;
-}
-
-#ppv-mini-scanner:hover {
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2),
-              0 0 40px rgba(0, 168, 204, 0.3);
-}
-
-/* Drag Handle */
-.ppv-mini-drag-handle {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 24px;
-  background: rgba(0, 168, 204, 0.15);
-  border-bottom: 1px solid rgba(0, 168, 204, 0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: grab;
-  z-index: 10;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.ppv-mini-drag-handle:active {
-  cursor: grabbing;
-  background: rgba(0, 168, 204, 0.25);
-}
-
-.ppv-drag-icon {
-  color: rgba(0, 0, 0, 0.4);
-  font-size: 14px;
-  font-weight: bold;
-  letter-spacing: -2px;
-  pointer-events: none;
-}
-
-#ppv-mini-reader {
-  width: 100%;
-  height: 156px;
-  position: relative;
-  overflow: hidden;
-  background: #000;
-  margin-top: 24px;
-}
-
-#ppv-mini-reader video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-#ppv-mini-status {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  background: rgba(255, 255, 255, 0.95);
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
-  font-size: 12px;
-  font-weight: 600;
-  color: #1e293b;
-  padding: 0 8px;
-  transition: background 0.3s ease;
-}
-
-.ppv-mini-icon {
-  font-size: 16px;
-  line-height: 1;
-}
-
-.ppv-mini-text {
-  font-size: 11px;
-  text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* State-based styling */
-#ppv-mini-status.ppv-mini-status-scanning {
-  background: rgba(0, 168, 204, 0.15);
-  border-top-color: rgba(0, 168, 204, 0.5);
-}
-
-#ppv-mini-status.ppv-mini-status-processing {
-  background: rgba(255, 171, 0, 0.15);
-  border-top-color: rgba(255, 171, 0, 0.5);
-}
-
-#ppv-mini-status.ppv-mini-status-success {
-  background: rgba(16, 185, 129, 0.15);
-  border-top-color: rgba(16, 185, 129, 0.5);
-}
-
-#ppv-mini-status.ppv-mini-status-warning {
-  background: rgba(245, 158, 11, 0.15);
-  border-top-color: rgba(245, 158, 11, 0.5);
-}
-
-#ppv-mini-status.ppv-mini-status-error {
-  background: rgba(239, 68, 68, 0.15);
-  border-top-color: rgba(239, 68, 68, 0.5);
-}
-
-#ppv-mini-status.ppv-mini-status-paused {
-  background: rgba(147, 51, 234, 0.15);
-  border-top-color: rgba(147, 51, 234, 0.5);
-}
-
-/* Pulse animation for scanning state */
-@keyframes ppv-scanner-pulse {
-  0%, 100% {
-    border-color: rgba(0, 168, 204, 0.5);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15),
-                0 0 30px rgba(0, 168, 204, 0.2);
-  }
-  50% {
-    border-color: rgba(0, 168, 204, 0.8);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15),
-                0 0 40px rgba(0, 168, 204, 0.4);
-  }
-}
-
-#ppv-mini-scanner.ppv-mini-scanner-active {
-  animation: ppv-scanner-pulse 2s ease-in-out infinite;
-}
-
-/* Mobile responsive */
-@media (max-width: 640px) {
-  #ppv-mini-scanner {
-    width: 140px;
-    height: 140px;
-    bottom: 15px;
-    right: 15px;
-  }
-
-  #ppv-mini-reader {
-    height: 100px;
-  }
-
-  #ppv-mini-status {
-    height: 40px;
-  }
-
-  .ppv-mini-text {
-    font-size: 10px;
-  }
-}
-
-/* Print - hide mini scanner */
-@media print {
-  #ppv-mini-scanner {
-    display: none !important;
-  }
-}
-
-/* ============================================================
    🎭 TAB CONTENT VISIBILITY
    ============================================================ */
 
@@ -3436,4 +3000,1414 @@ body.ppv-light .ppv-theme-btn-mini i {
 /* Make theme-switch more visible */
 body.ppv-light .ppv-theme-btn-mini {
     box-shadow: 0 0 6px rgba(0,180,255,0.25);
+}
+
+
+/* =====================================================================================
+   PUNKTEPASS – MY POINTS • LIGHT THEME
+   Version: 10.0 • FINAL • Production Optimized
+   Author: Erik Borota / PunktePass
+   ===================================================================================== */
+
+/* ---------------------------------------
+   GOOGLE FONTS
+--------------------------------------- */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap');
+
+/* ---------------------------------------
+   ROOT VARIABLES – LIGHT
+--------------------------------------- */
+:root {
+    --pp-primary: #00a8cc;
+    --pp-primary-dark: #0077a8;
+    --pp-primary-light: #00d4ff;
+
+    --pp-accent: #9333ea;
+    --pp-accent-light: #d8b4fe;
+
+    --pp-bg: #f8fafc;
+    --pp-bg-2: #f1f5f9;
+    --pp-bg-3: #e2e8f0;
+
+    --pp-surface: #ffffff;
+    --pp-surface-soft: #fdfefe;
+
+    --pp-text: #0a1a25;
+    --pp-text-2: #3a4a58;
+    --pp-text-muted: #64748b;
+
+    --pp-border: rgba(0,168,204,0.18);
+    --pp-border-soft: rgba(0,168,204,0.12);
+
+    --pp-shadow-sm: 0 2px 6px rgba(0,0,0,0.05);
+    --pp-shadow: 0 4px 14px rgba(0,0,0,0.08);
+    --pp-shadow-lg: 0 10px 24px rgba(0,0,0,0.12);
+
+    --pp-radius-xs: 6px;
+    --pp-radius: 14px;
+    --pp-radius-lg: 20px;
+
+    --pp-gradient-primary: linear-gradient(135deg,#00b8de,#008bb0);
+    --pp-gradient-secondary: linear-gradient(135deg,#00c897,#009f78);
+
+    --pp-trans: all .25s ease;
+    --pp-glass: blur(12px) saturate(160%);
+}
+
+/* =====================================================================================
+   LAYOUT STRUCTURE
+===================================================================================== */
+
+#ppv-my-points-app {
+    width: 100%;
+    min-height: calc(100vh - 72px);
+    background: var(--pp-bg);
+    padding-bottom: 90px;
+}
+
+.ppv-dashboard-netto {
+    background: linear-gradient(180deg,var(--pp-bg),var(--pp-bg-2));
+}
+
+.ppv-dashboard-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* =====================================================================================
+   OFFLINE BANNER
+===================================================================================== */
+
+.ppv-offline-banner {
+    background: rgba(255,225,70,0.18);
+    border: 1px solid #facc15;
+    border-radius: var(--pp-radius);
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #b45309;
+    font-weight: 600;
+    animation: fadeIn .4s ease-out;
+    margin-bottom: 20px;
+}
+
+.ppv-offline-banner i {
+    font-size: 20px;
+}
+
+/* =====================================================================================
+   HEADER: TITLE + TOTAL POINTS
+===================================================================================== */
+
+.ppv-points-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.ppv-points-header h2 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--pp-primary-dark);
+    margin-bottom: 12px;
+}
+
+.ppv-points-summary {
+    background: var(--pp-surface);
+    border: 1px solid var(--pp-border);
+    border-radius: var(--pp-radius-lg);
+    padding: 20px;
+    width: 100%;
+    max-width: 260px;
+    margin: 0 auto 10px;
+    box-shadow: var(--pp-shadow);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.ppv-points-summary i {
+    font-size: 38px;
+    color: var(--pp-primary);
+    margin-bottom: 6px;
+}
+
+.ppv-points-summary .big {
+    font-size: 38px;
+    font-weight: 800;
+    color: var(--pp-primary-dark);
+}
+
+.ppv-points-summary .label {
+    font-size: 14px;
+    color: var(--pp-text-muted);
+    margin-top: 4px;
+}
+
+.ppv-motivation {
+    font-size: 14px;
+    color: var(--pp-text-2);
+}
+
+/* =====================================================================================
+   ANALYTICS SECTION (placeholder)
+===================================================================================== */
+#ppv-analytics-section {
+    margin: 20px 0;
+}
+
+/* =====================================================================================
+   STATS GRID (3 cards)
+===================================================================================== */
+
+.ppv-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit,minmax(110px,1fr));
+    gap: 16px;
+    margin-bottom: 26px;
+}
+
+.ppv-stat-card {
+    background: var(--pp-surface);
+    border: 1px solid var(--pp-border-soft);
+    border-radius: var(--pp-radius);
+    padding: 16px;
+    text-align: center;
+    box-shadow: var(--pp-shadow-sm);
+    transition: var(--pp-trans);
+}
+
+.ppv-stat-card i {
+    font-size: 22px;
+    color: var(--pp-primary);
+}
+
+.ppv-stat-card .label {
+    font-size: 13px;
+    color: var(--pp-text-muted);
+    margin-top: 6px;
+}
+
+.ppv-stat-card .value {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--pp-primary-dark);
+    margin-top: 4px;
+}
+
+.ppv-stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--pp-shadow);
+}
+
+/* =====================================================================================
+   REWARDS BY STORE
+===================================================================================== */
+
+.ppv-rewards-by-store h3 {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--pp-primary-dark);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ppv-reward-card {
+    background: var(--pp-surface);
+    border: 1px solid var(--pp-border);
+    border-radius: var(--pp-radius);
+    padding: 16px;
+    margin-bottom: 14px;
+    box-shadow: var(--pp-shadow-sm);
+}
+
+.ppv-reward-card .reward-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.ppv-reward-card h4 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--pp-primary-dark);
+}
+
+.reward-points {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--pp-primary);
+}
+
+/* Progress bar */
+.reward-progress {
+    margin-top: 12px;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 10px;
+    background: var(--pp-bg-3);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--pp-gradient-primary);
+    transition: width .4s ease;
+}
+
+.progress-text {
+    font-size: 12px;
+    margin-top: 6px;
+    text-align: right;
+    color: var(--pp-primary-dark);
+}
+
+/* Achieved */
+.ppv-reward-achieved {
+    border-color: var(--pp-accent);
+}
+
+.ppv-btn-claim {
+    margin-top: 12px;
+    width: 100%;
+    background: var(--pp-gradient-primary);
+    color: #fff;
+    border: none;
+    padding: 12px;
+    border-radius: var(--pp-radius);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: var(--pp-trans);
+}
+
+.ppv-btn-claim:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--pp-shadow);
+}
+
+/* =====================================================================================
+   TOP 3 STORES
+===================================================================================== */
+
+.ppv-top3 h3 {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--pp-primary-dark);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ppv-top3-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit,minmax(110px,1fr));
+    gap: 12px;
+}
+
+.ppv-top3-card {
+    background: var(--pp-surface);
+    border: 1px solid var(--pp-border-soft);
+    border-radius: var(--pp-radius);
+    padding: 16px;
+    text-align: center;
+    box-shadow: var(--pp-shadow-sm);
+}
+
+.ppv-top3-card i {
+    font-size: 22px;
+    color: var(--pp-primary-dark);
+}
+
+.ppv-top3-card .rank {
+    display: block;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--pp-primary);
+    margin-top: 4px;
+}
+
+.ppv-top3-card .name {
+    font-size: 14px;
+    color: var(--pp-text);
+}
+
+.ppv-top3-card .score {
+    font-size: 12px;
+    color: var(--pp-primary-dark);
+    margin-top: 4px;
+}
+
+/* =====================================================================================
+   RECENT ENTRIES (point list)
+===================================================================================== */
+
+.ppv-points-list h3 {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--pp-primary-dark);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ppv-point-card {
+    background: var(--pp-surface);
+    border: 1px solid var(--pp-border-soft);
+    border-radius: var(--pp-radius);
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 12px;
+    box-shadow: var(--pp-shadow-sm);
+}
+
+.ppv-point-card i {
+    font-size: 24px;
+    color: var(--pp-primary);
+}
+
+.ppv-point-card .info strong {
+    color: var(--pp-primary-dark);
+    font-size: 14px;
+}
+
+.ppv-point-card .info small {
+    color: var(--pp-text-muted);
+    display: block;
+    margin-top: 2px;
+}
+
+.ppv-point-card .ppv-points {
+    margin-left: auto;
+    color: var(--pp-primary-dark);
+    font-weight: 800;
+}
+
+/* =====================================================================================
+   ANIMATIONS
+===================================================================================== */
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* =====================================================================================
+   RESPONSIVE
+===================================================================================== */
+
+@media (max-width: 480px) {
+    .ppv-points-summary { max-width: 220px; }
+
+    .ppv-top3-grid,
+    .ppv-stats-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .ppv-point-card {
+        padding: 14px;
+        gap: 10px;
+    }
+}
+/* ==========================================================================
+   PUNKTEPASS – ANALYTICS (v10.0 LIGHT THEME)
+   Harmonized with MyPoints v10.0 / Neon Blue PWA
+   ========================================================================== */
+
+:root {
+    --ppv-ana-bg: #f5f7fa;
+    --ppv-ana-card: #ffffff;
+    --ppv-ana-text: #111827;
+    --ppv-ana-text-light: #6b7280;
+    --ppv-ana-primary: #2563eb;
+    --ppv-ana-primary-soft: rgba(37, 99, 235, 0.08);
+    --ppv-ana-border: #e5e7eb;
+    --ppv-ana-shadow: 0 4px 18px rgba(0, 0, 0, 0.06);
+    --ppv-ana-radius: 18px;
+    --ppv-ana-radius-sm: 12px;
+}
+
+/* WRAPPER --------------------------------------------------------------- */
+.ppv-analytics-wrapper {
+    padding: 1.2rem 1rem 2rem;
+    background: var(--ppv-ana-bg);
+    color: var(--ppv-ana-text);
+}
+
+/* HEADER --------------------------------------------------------------- */
+.ppv-analytics-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.2rem;
+}
+
+.ppv-analytics-header h3 {
+    font-size: 1.45rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+}
+
+.ppv-analytics-controls {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+
+.ppv-analytics-range-select {
+    padding: .45rem .7rem;
+    border-radius: var(--ppv-ana-radius-sm);
+    background: var(--ppv-ana-card);
+    border: 1px solid var(--ppv-ana-border);
+    box-shadow: var(--ppv-ana-shadow);
+    font-size: .9rem;
+}
+
+/* SUMMARY CARDS -------------------------------------------------------- */
+.ppv-analytics-summary {
+    display: grid;
+    grid-template-columns: repeat(2,1fr);
+    gap: .9rem;
+    margin-bottom: 1.5rem;
+}
+
+.ppv-summary-card {
+    background: var(--ppv-ana-card);
+    box-shadow: var(--ppv-ana-shadow);
+    padding: 1rem;
+    border-radius: var(--ppv-ana-radius);
+    display: flex;
+    align-items: center;
+    gap: .9rem;
+}
+
+.ppv-summary-card .card-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: var(--ppv-ana-primary-soft);
+    color: var(--ppv-ana-primary);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.3rem;
+}
+
+.ppv-summary-card .label {
+    font-size: .9rem;
+    color: var(--ppv-ana-text-light);
+}
+
+.ppv-summary-card .value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.ppv-summary-card .unit {
+    font-size: .75rem;
+    color: var(--ppv-ana-text-light);
+}
+
+/* SECTIONS ------------------------------------------------------------- */
+.ppv-analytics-section {
+    margin-bottom: 2rem;
+}
+
+.ppv-analytics-section h4 {
+    margin-bottom: .8rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+/* CHART CONTAINERS ----------------------------------------------------- */
+.ppv-chart-container {
+    width: 100%;
+    min-height: 220px;
+    background: var(--ppv-ana-card);
+    border-radius: var(--ppv-ana-radius);
+    box-shadow: var(--ppv-ana-shadow);
+    padding: 1rem;
+}
+
+.ppv-chart-pie {
+    min-height: 260px;
+}
+
+/* SVG STYLING ---------------------------------------------------------- */
+.ppv-trend-chart text {
+    font-family: Inter, sans-serif;
+}
+
+.ppv-pie-chart path {
+    transition: .2s ease;
+}
+.ppv-pie-chart path:hover {
+    opacity: 1;
+    transform: scale(1.02);
+    cursor: pointer;
+}
+
+/* STORES LIST ---------------------------------------------------------- */
+.ppv-stores-list {
+    margin-top: 1rem;
+    display: grid;
+    gap: .8rem;
+}
+
+.ppv-store-item {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: .8rem;
+    align-items: center;
+    background: var(--ppv-ana-card);
+    padding: .8rem 1rem;
+    border-radius: var(--ppv-ana-radius-sm);
+    border: 1px solid var(--ppv-ana-border);
+    box-shadow: var(--ppv-ana-shadow);
+}
+
+.store-color {
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+}
+
+.store-info .store-name {
+    font-weight: 600;
+    font-size: .95rem;
+}
+
+.store-stats {
+    color: var(--ppv-ana-text-light);
+    font-size: .8rem;
+}
+
+.store-points {
+    text-align: right;
+}
+
+.store-points .points {
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.store-points .percentage {
+    font-size: .75rem;
+    color: var(--ppv-ana-text-light);
+}
+
+/* BEST DAY ------------------------------------------------------------- */
+.ppv-best-day-card {
+    background: var(--ppv-ana-card);
+    padding: 1.2rem;
+    border-radius: var(--ppv-ana-radius);
+    box-shadow: var(--ppv-ana-shadow);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.best-day-icon {
+    font-size: 2rem;
+}
+
+.best-day-info .date {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.best-day-info .points {
+    font-size: .9rem;
+    color: var(--ppv-ana-text-light);
+}
+
+/* NO DATA -------------------------------------------------------------- */
+.ppv-analytics-wrapper p {
+    color: var(--ppv-ana-text-light);
+    font-size: .9rem;
+    text-align: center;
+    margin-top: .8rem;
+}
+
+/* RESPONSIVE ----------------------------------------------------------- */
+@media (max-width: 480px) {
+    .ppv-analytics-summary {
+        grid-template-columns: 1fr;
+    }
+
+    .ppv-store-item {
+        grid-template-columns: auto 1fr;
+        grid-template-rows: auto auto;
+    }
+}
+
+/* ==========================================================================
+   PUNKTEPASS – BELOHNUNGEN (REWARDS) v10.0 LIGHT THEME
+   Design: Neon Blue / PWA Compact / Modern Glass Cards
+   ========================================================================== */
+
+/* ROOT COLORS -------------------------------------------------------------- */
+:root {
+    --ppv-r-bg: #f6f8fa;
+    --ppv-r-card: #ffffff;
+    --ppv-r-text: #111827;
+    --ppv-r-text-light: #6b7280;
+    --ppv-r-primary: #2563eb;
+    --ppv-r-primary-soft: rgba(37,99,235,0.08);
+    --ppv-r-border: #e5e7eb;
+    --ppv-r-shadow: 0 4px 18px rgba(0,0,0,0.06);
+    --ppv-r-radius: 18px;
+    --ppv-r-radius-sm: 12px;
+}
+
+/* WRAPPER ------------------------------------------------------------------ */
+.ppv-belohnungen {
+    padding: 1rem 1rem 2rem;
+    background: var(--ppv-r-bg);
+    color: var(--ppv-r-text);
+    font-family: Inter, sans-serif;
+}
+
+/* HEADER ------------------------------------------------------------------- */
+.ppv-rewards-header {
+    text-align: center;
+    margin-bottom: 1.4rem;
+}
+
+.ppv-rewards-header h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+}
+
+.ppv-rewards-header p {
+    margin-top: .25rem;
+    color: var(--ppv-r-text-light);
+    font-size: .95rem;
+}
+
+/* USER POINTS CARD --------------------------------------------------------- */
+.ppv-user-points-card {
+    text-align: center;
+    background: var(--ppv-r-card);
+    padding: 1.2rem 1rem;
+    border-radius: var(--ppv-r-radius);
+    box-shadow: var(--ppv-r-shadow);
+    margin-bottom: 1.3rem;
+}
+
+.ppv-user-points-card .points-value {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--ppv-r-primary);
+}
+
+.ppv-user-points-card .points-label {
+    color: var(--ppv-r-text-light);
+    font-size: .9rem;
+}
+
+/* SEARCH + FILTER ---------------------------------------------------------- */
+.ppv-search-filter {
+    display: flex;
+    gap: .7rem;
+    margin-bottom: 1.4rem;
+}
+
+.ppv-search-box {
+    flex: 1;
+    position: relative;
+}
+
+.ppv-search-box i {
+    position: absolute;
+    top: 50%;
+    left: .7rem;
+    transform: translateY(-50%);
+    font-size: 1.1rem;
+    color: var(--ppv-r-text-light);
+}
+
+#ppv-search-input {
+    width: 100%;
+    padding: .6rem .9rem .6rem 2.2rem;
+    background: var(--ppv-r-card);
+    border: 1px solid var(--ppv-r-border);
+    border-radius: var(--ppv-r-radius-sm);
+    font-size: .9rem;
+    box-shadow: var(--ppv-r-shadow);
+}
+
+.ppv-filter-box {
+    display: flex;
+    gap: .5rem;
+}
+
+#ppv-store-filter {
+    padding: .55rem .7rem;
+    border-radius: var(--ppv-r-radius-sm);
+    background: var(--ppv-r-card);
+    border: 1px solid var(--ppv-r-border);
+    font-size: .9rem;
+}
+
+.ppv-filter-reset-btn {
+    background: var(--ppv-r-primary-soft);
+    color: var(--ppv-r-primary);
+    border: none;
+    border-radius: var(--ppv-r-radius-sm);
+    padding: .55rem .75rem;
+    font-size: .9rem;
+    display: flex;
+    align-items: center;
+    gap: .25rem;
+}
+
+/* REWARDS GRID ------------------------------------------------------------- */
+.ppv-reward-grid {
+    display: grid;
+    gap: 1rem;
+}
+
+.ppv-reward-card {
+    background: var(--ppv-r-card);
+    box-shadow: var(--ppv-r-shadow);
+    padding: 1rem;
+    border-radius: var(--ppv-r-radius);
+    border: 1px solid var(--ppv-r-border);
+    display: flex;
+    flex-direction: column;
+    gap: .7rem;
+}
+
+.ppv-reward-card.locked {
+    opacity: 0.85;
+}
+
+.ppv-reward-card.available {
+    border-color: var(--ppv-r-primary);
+}
+
+/* REWARD HEADER ------------------------------------------------------------ */
+.reward-header h4 {
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.reward-header small {
+    color: var(--ppv-r-text-light);
+    font-size: .8rem;
+    display: flex;
+    align-items: center;
+    gap: .25rem;
+}
+
+/* META --------------------------------------------------------------------- */
+.reward-meta {
+    display: flex;
+    align-items: center;
+    gap: .3rem;
+    color: var(--ppv-r-primary);
+    font-weight: 600;
+}
+
+/* PROGRESS BAR ------------------------------------------------------------- */
+.ppv-progress-container {
+    width: 100%;
+    height: 8px;
+    background: var(--ppv-r-primary-soft);
+    border-radius: 10px;
+}
+
+.ppv-progress-bar {
+    height: 100%;
+    background: var(--ppv-r-primary);
+    border-radius: 10px;
+}
+
+.ppv-progress-text {
+    margin-top: .25rem;
+    color: var(--ppv-r-text-light);
+    font-size: .85rem;
+}
+
+/* BUTTONS ------------------------------------------------------------------ */
+.ppv-redeem-btn {
+    margin-top: .4rem;
+    padding: .7rem;
+    border: none;
+    border-radius: var(--ppv-r-radius-sm);
+    font-size: .95rem;
+    font-weight: 600;
+    background: var(--ppv-r-primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .35rem;
+    transition: .2s;
+}
+
+.ppv-redeem-btn:hover {
+    background: #1d4ed8;
+}
+
+.ppv-redeem-btn.disabled {
+    background: #d1d5db;
+    color: #6b7280;
+}
+
+/* NO RESULTS --------------------------------------------------------------- */
+.ppv-no-results {
+    margin-top: 1rem;
+    text-align: center;
+    color: var(--ppv-r-text-light);
+    font-size: .9rem;
+}
+
+/* PENDING SECTION ---------------------------------------------------------- */
+.ppv-pending-section {
+    margin-top: 2rem;
+}
+
+.ppv-pending-section h3 {
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+
+.ppv-pending-grid {
+    display: grid;
+    gap: 1rem;
+}
+
+.ppv-pending-card {
+    background: var(--ppv-r-card);
+    border-radius: var(--ppv-r-radius);
+    padding: 1rem;
+    box-shadow: var(--ppv-r-shadow);
+    border: 1px solid var(--ppv-r-border);
+}
+
+.ppv-pending-card h4 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: .3rem;
+}
+
+/* STATUS BADGES ------------------------------------------------------------ */
+.status-badge {
+    padding: .35rem .6rem;
+    border-radius: 8px;
+    font-size: .8rem;
+    font-weight: 600;
+}
+
+.status-pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-approved {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.status-cancelled {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.date-badge {
+    font-size: .75rem;
+    color: var(--ppv-r-text-light);
+}
+
+/* RESPONSIVE --------------------------------------------------------------- */
+@media (max-width: 480px) {
+    .ppv-search-filter {
+        flex-direction: column;
+    }
+
+    .ppv-search-box input {
+        font-size: .95rem;
+    }
+}
+
+/* ==========================================================================
+   PunktePass – User Settings v10.0
+   Neon Light Theme • PWA Mobile UI • Avatar System • Modern Layout
+   ========================================================================== */
+
+:root {
+    --ppv-s-bg: #f6f8fa;
+    --ppv-s-card: #ffffff;
+    --ppv-s-text: #111827;
+    --ppv-s-text-light: #6b7280;
+    --ppv-s-primary: #2563eb;
+    --ppv-s-primary-soft: rgba(37, 99, 235, 0.08);
+    --ppv-s-border: #e5e7eb;
+    --ppv-s-shadow: 0 4px 18px rgba(0,0,0,0.06);
+    --ppv-s-radius: 18px;
+    --ppv-s-radius-sm: 12px;
+}
+
+/* WRAPPER --------------------------------------------------------------- */
+.ppv-settings-wrapper {
+    padding: 1rem 1rem 5rem;
+    background: var(--ppv-s-bg);
+    color: var(--ppv-s-text);
+    font-family: Inter, sans-serif;
+}
+
+/* HEADER BAR ------------------------------------------------------------ */
+.ppv-header-bar {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.ppv-header-bar h2 {
+    font-size: 1.55rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+}
+
+/* AVATAR BLOCK ---------------------------------------------------------- */
+.ppv-avatar-block {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 1.6rem;
+    position: relative;
+}
+
+#ppv-avatar-preview {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #FFF;
+    border: 3px solid var(--ppv-s-primary);
+    box-shadow: var(--ppv-s-shadow);
+}
+
+.upload-btn {
+    position: absolute;
+    right: -5px;
+    bottom: -5px;
+    width: 38px;
+    height: 38px;
+    background: var(--ppv-s-primary);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--ppv-s-shadow);
+    cursor: pointer;
+}
+
+.upload-btn:hover {
+    background: #1d4ed8;
+}
+
+/* SECTIONS -------------------------------------------------------------- */
+.ppv-section {
+    background: var(--ppv-s-card);
+    padding: 1.2rem;
+    margin-bottom: 1.2rem;
+    border-radius: var(--ppv-s-radius);
+    box-shadow: var(--ppv-s-shadow);
+    border: 1px solid var(--ppv-s-border);
+}
+
+.ppv-section.danger {
+    border-left: 4px solid #ef4444;
+}
+
+.ppv-section h3 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin-bottom: .8rem;
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+}
+
+.ppv-section p {
+    font-size: .9rem;
+    color: var(--ppv-s-text-light);
+}
+
+/* FORM INPUTS ----------------------------------------------------------- */
+.ppv-form input[type="text"],
+.ppv-form input[type="email"],
+.ppv-form input[type="password"] {
+    width: 100%;
+    padding: .7rem .9rem;
+    font-size: .95rem;
+    margin-bottom: .8rem;
+    border: 1px solid var(--ppv-s-border);
+    border-radius: var(--ppv-s-radius-sm);
+    background: #fff;
+    box-shadow: var(--ppv-s-shadow);
+}
+
+.ppv-form-row {
+    display: flex;
+    gap: .8rem;
+}
+
+.ppv-form-row > div {
+    flex: 1;
+}
+
+/* CHECKBOX -------------------------------------------------------------- */
+.ppv-checkbox {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    margin-bottom: .6rem;
+    font-size: .95rem;
+    cursor: pointer;
+}
+
+.ppv-checkbox input {
+    width: 20px;
+    height: 20px;
+}
+
+/* BUTTONS --------------------------------------------------------------- */
+
+.save-btn,
+.neutral-btn,
+.danger-btn {
+    width: 100%;
+    padding: .85rem;
+    font-size: 1rem;
+    border-radius: var(--ppv-s-radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .35rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.save-btn {
+    border: none;
+    background: var(--ppv-s-primary);
+    color: white;
+    box-shadow: var(--ppv-s-shadow);
+}
+
+.save-btn:hover {
+    background: #1d4ed8;
+}
+
+.neutral-btn {
+    background: var(--ppv-s-primary-soft);
+    color: var(--ppv-s-primary);
+    border: none;
+}
+
+.neutral-btn:hover {
+    background: rgba(37, 99, 235, 0.15);
+}
+
+.danger-btn {
+    background: #ef4444;
+    color: white;
+    border: none;
+}
+
+.danger-btn:hover {
+    background: #dc2626;
+}
+
+/* ACTIONS --------------------------------------------------------------- */
+.ppv-actions {
+    margin-top: 1rem;
+}
+
+/* TOAST --------------------------------------------------------------- */
+.ppv-toast {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    opacity: 0;
+    padding: .8rem 1.3rem;
+    background: #111827;
+    color: white;
+    border-radius: 12px;
+    z-index: 999999;
+    transition: 0.3s ease;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.25);
+}
+
+.ppv-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.ppv-toast.success {
+    background: #10b981;
+}
+
+.ppv-toast.error {
+    background: #ef4444;
+}
+
+/* MODAL --------------------------------------------------------------- */
+.ppv-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(3px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 900000;
+}
+
+.ppv-modal-content {
+    background: var(--ppv-s-card);
+    padding: 1.5rem;
+    width: 90%;
+    max-width: 380px;
+    border-radius: var(--ppv-s-radius);
+    box-shadow: var(--ppv-s-shadow);
+    position: relative;
+    animation: modalIn .25s ease;
+}
+
+@keyframes modalIn {
+    from {opacity: 0; transform: scale(.9);}
+    to {opacity: 1; transform: scale(1);}
+}
+
+.ppv-modal-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    font-size: 1.4rem;
+    cursor: pointer;
+}
+
+.ppv-modal-form input {
+    width: 100%;
+    margin-top: .8rem;
+    padding: .75rem;
+    border-radius: var(--ppv-s-radius-sm);
+    border: 1px solid var(--ppv-s-border);
+}
+
+.ppv-modal-actions {
+    margin-top: 1rem;
+    display: flex;
+    gap: .7rem;
+}
+
+/* ==========================================================================
+   PUNKTEPASS – NATIVE APP FEELING v10.0
+   Full PWA scroll engine • Smooth inertial scroll • Hidden scrollbars
+   Works on iOS Safari, Android Chrome, Desktop PWA
+   Author: Erik Borota / PunktePass
+   ========================================================================== */
+
+/* GLOBAL RESET – remove browser padding, margins, overscroll */
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden; /* No global scroll */
+    background: #f6f8fa;
+    font-family: Inter, sans-serif;
+    -webkit-text-size-adjust: 100%;
+}
+
+/* SAFE AREA FIX (iPhone notch) */
+body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+}
+
+/* APP CONTAINER – belső görgetés */
+.ppv-app-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch; /* iOS inertial scroll */
+    scroll-behavior: smooth;
+
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 90px;
+}
+
+/* FIXED GLOBAL HEADER */
+.ppv-header-fixed {
+    position: sticky;
+    top: 0;
+    left: 0;
+    z-index: 9999;
+    background: #ffffffcc;
+    backdrop-filter: blur(15px);
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+    padding: .9rem 1rem;
+}
+
+/* SCROLLBAR – hide everywhere */
+.ppv-app-container::-webkit-scrollbar,
+body::-webkit-scrollbar,
+html::-webkit-scrollbar {
+    width: 0px;
+    height: 0px;
+}
+
+.ppv-app-container {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+}
+
+/* ANDROID CHROME PERFORMANCE FIX */
+.ppv-app-container {
+    will-change: scroll-position;
+}
+
+/* ===== SMOOTH TOUCH FEEL ===== */
+* {
+    -webkit-tap-highlight-color: transparent;
+}
+
+button, input, select {
+    touch-action: manipulation;
+}
+
+/* PWA FULLSCREEN FEEL */
+@supports (-webkit-touch-callout: none) {
+    html, body {
+        height: -webkit-fill-available;
+    }
+    .ppv-app-container {
+        height: -webkit-fill-available;
+    }
+}
+
+/* GLOBAL PAGE CARD EFFECT */
+.ppv-card {
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.06);
+    padding: 1.2rem;
+    margin-bottom: 1rem;
+}
+
+/* INPUTS */
+.ppv-input {
+    width: 100%;
+    padding: .7rem .9rem;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    font-size: 1rem;
+    background: white;
+}
+
+/* BUTTONS */
+.ppv-btn {
+    width: 100%;
+    padding: .85rem;
+    border-radius: 14px;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    text-align: center;
+    border: none;
+    transition: .2s all;
+}
+
+.ppv-btn-primary {
+    background: #2563eb;
+    color: #fff;
+}
+
+.ppv-btn-primary:hover {
+    background: #1d4ed8;
+}
+
+/* NATIVE APP ANIMATIONS */
+@keyframes slideInUp {
+    from { transform: translateY(25px); opacity: 0; }
+    to   { transform: translateY(0); opacity: 1; }
+}
+
+.ppv-animate-in {
+    animation: slideInUp .35s ease both;
+}
+
+/* DISABLE DOUBLE-TAP ZOOM */
+body, button, input, select {
+    touch-action: manipulation;
+}
+
+/* iOS RUBBER-BAND FIX */
+.ppv-app-container {
+    overscroll-behavior-y: contain;
+}
+
+/* DARK MODE BASE (only structure) */
+[data-theme="dark"] .ppv-app-container {
+    background: #0c0f14;
+}
+
+[data-theme="dark"] .ppv-card {
+    background: #121720;
+    border: 1px solid #222a36;
+    color: #e5e7eb;
+}
+
+[data-theme="dark"] .ppv-header-fixed {
+    background: #0c0f14cc;
+    border-color: #1f2937;
+}
+ppv-app-root {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+.ppv-app-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 70px; /* bottom nav hely */
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
