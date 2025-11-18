@@ -100,7 +100,7 @@ class PPV_My_Points {
         $global_data = [
     'ajaxurl' => admin_url('admin-ajax.php'),
     'nonce'   => wp_create_nonce('ppv_mypoints_nonce'),
-    'api_url' => rest_url('ppv/v1/user/points-detailed'),  // ✅ DETAILED!
+    'api_url' => rest_url('ppv/v1/mypoints'),  // ✅ CORRECT ENDPOINT!
     'lang'    => $lang,
 ];
         wp_add_inline_script(
