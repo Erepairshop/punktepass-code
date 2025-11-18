@@ -125,10 +125,28 @@ add_filter('rest_authentication_errors', function ($result) {
             }
         }
     }
-    
+
     // WP user auth
     if (is_user_logged_in()) return true;
-    
+
+    // ✅ SESSION auth (Google/Facebook/TikTok login)
+    // Start session and restore from token if needed
+    if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+        @session_start();
+    }
+
+    // Restore session from ppv_user_token cookie
+    if (class_exists('PPV_SessionBridge') && empty($_SESSION['ppv_user_id'])) {
+        PPV_SessionBridge::restore_from_token();
+    }
+
+    // Check if session has valid user_id
+    if (!empty($_SESSION['ppv_user_id'])) {
+        error_log("✅ [REST_AUTH] Session user authenticated: user_id=" . $_SESSION['ppv_user_id']);
+        return true;
+    }
+
+    error_log("❌ [REST_AUTH] No authentication found");
     return new WP_Error('rest_forbidden', __('Du bist leider nicht berechtigt, diese Aktion durchzuführen.'), ['status' => 401]);
 });
 
