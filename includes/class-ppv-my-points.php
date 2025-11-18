@@ -134,6 +134,12 @@ class PPV_My_Points {
             @session_start();
         }
 
+        // ✅ FORCE SESSION RESTORE (Google/Facebook/TikTok login esetén)
+        if (class_exists('PPV_SessionBridge') && empty($_SESSION['ppv_user_id'])) {
+            PPV_SessionBridge::restore_from_token();
+            error_log("🔄 [PPV_My_Points] Forced session restore from token");
+        }
+
         // Get active lang
         $lang = sanitize_text_field($_GET['lang'] ?? '');
         if (!in_array($lang, ['de', 'hu', 'ro'], true)) {
@@ -154,6 +160,8 @@ class PPV_My_Points {
                 <strong>⚠️</strong> ' . esc_html($msg) . '
             </div>';
         }
+
+        error_log("✅ [PPV_My_Points] User authenticated: uid={$uid}, session_id=" . ($_SESSION['ppv_user_id'] ?? 'none'));
 
         // Render shell
         $html = '<div id="ppv-my-points-app" data-lang="' . esc_attr($lang) . '"></div>';
