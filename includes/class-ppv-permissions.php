@@ -187,14 +187,28 @@ class PPV_Permissions {
             return null;
         }
 
-        // Get user from token
         $prefix = $wpdb->prefix;
+
+        // 1. Try ppv_tokens table (new system - with expiry)
         $user = $wpdb->get_row($wpdb->prepare(
             "SELECT u.* FROM {$prefix}ppv_users u
              INNER JOIN {$prefix}ppv_tokens t ON t.user_id = u.id
              WHERE t.token = %s
              AND t.expires_at > NOW()
              AND u.is_active = 1
+             LIMIT 1",
+            $token
+        ), ARRAY_A);
+
+        if ($user) {
+            return $user;
+        }
+
+        // 2. Fallback to ppv_users.login_token (legacy - Google/Facebook/TikTok login)
+        $user = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$prefix}ppv_users
+             WHERE login_token = %s
+             AND is_active = 1
              LIMIT 1",
             $token
         ), ARRAY_A);
