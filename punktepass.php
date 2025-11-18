@@ -127,17 +127,32 @@ add_filter('rest_authentication_errors', function ($result) {
     }
 
     // WP user auth
-    if (is_user_logged_in()) return true;
+    if (is_user_logged_in()) {
+        error_log("✅ [REST_AUTH] WordPress user logged in: " . get_current_user_id());
+        return true;
+    }
 
     // ✅ SESSION auth (Google/Facebook/TikTok login)
+    error_log("🔍 [REST_AUTH] Starting session auth check...");
+    error_log("🔍 [REST_AUTH] URI: " . ($_SERVER['REQUEST_URI'] ?? 'none'));
+    error_log("🔍 [REST_AUTH] ppv_user_token cookie: " . (isset($_COOKIE['ppv_user_token']) ? 'EXISTS (len=' . strlen($_COOKIE['ppv_user_token']) . ')' : 'MISSING'));
+    error_log("🔍 [REST_AUTH] Session status before: " . session_status() . " (1=disabled, 2=active, 3=none)");
+
     // Start session and restore from token if needed
     if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
         @session_start();
+        error_log("🔍 [REST_AUTH] Session started, new status: " . session_status());
     }
+
+    error_log("🔍 [REST_AUTH] Session ID: " . (session_status() === PHP_SESSION_ACTIVE ? session_id() : 'NONE'));
+    error_log("🔍 [REST_AUTH] ppv_user_id in session BEFORE restore: " . ($_SESSION['ppv_user_id'] ?? 'EMPTY'));
+    error_log("🔍 [REST_AUTH] PPV_SessionBridge class exists: " . (class_exists('PPV_SessionBridge') ? 'YES' : 'NO'));
 
     // Restore session from ppv_user_token cookie
     if (class_exists('PPV_SessionBridge') && empty($_SESSION['ppv_user_id'])) {
+        error_log("🔄 [REST_AUTH] Calling PPV_SessionBridge::restore_from_token()...");
         PPV_SessionBridge::restore_from_token();
+        error_log("🔍 [REST_AUTH] ppv_user_id in session AFTER restore: " . ($_SESSION['ppv_user_id'] ?? 'STILL EMPTY'));
     }
 
     // Check if session has valid user_id
@@ -146,7 +161,7 @@ add_filter('rest_authentication_errors', function ($result) {
         return true;
     }
 
-    error_log("❌ [REST_AUTH] No authentication found");
+    error_log("❌ [REST_AUTH] No authentication found - returning 401 error");
     return new WP_Error('rest_forbidden', __('Du bist leider nicht berechtigt, diese Aktion durchzuführen.'), ['status' => 401]);
 });
 
