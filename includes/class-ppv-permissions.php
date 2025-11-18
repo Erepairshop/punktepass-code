@@ -13,6 +13,9 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// DEBUG: Log class loading
+error_log("🔵 [PPV_Permissions] CLASS FILE LOADED at " . date('Y-m-d H:i:s'));
+
 class PPV_Permissions {
 
     /**
