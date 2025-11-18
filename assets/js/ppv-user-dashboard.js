@@ -183,6 +183,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     const closeLightbox = () => {
       lb.classList.remove('active');
       lightboxActive = false;
+      const appContainer = document.querySelector(".ppv-app-container");
+      if (appContainer) appContainer.style.overflowY = "auto";
       setTimeout(() => lb.remove(), 300);
     };
 
@@ -271,7 +273,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       modal.classList.add("show");
       overlay.classList.add("show");
       document.body.classList.add("qr-modal-open");
-      document.body.style.overflow = "hidden";
+      const appContainer = document.querySelector(".ppv-app-container");
+      if (appContainer) {
+        appContainer.classList.add("qr-modal-open");
+        appContainer.style.overflowY = "hidden";
+      }
       if (navigator.vibrate) navigator.vibrate(30);
       modal.offsetHeight;
     };
@@ -280,7 +286,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       modal.classList.remove("show");
       overlay.classList.remove("show");
       document.body.classList.remove("qr-modal-open");
-      document.body.style.overflow = "";
+      const appContainer = document.querySelector(".ppv-app-container");
+      if (appContainer) {
+        appContainer.classList.remove("qr-modal-open");
+        appContainer.style.overflowY = "auto";
+      }
       if (navigator.vibrate) navigator.vibrate(10);
     };
 
@@ -914,6 +924,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   initScanEventListener();
 
   const waitForStoreList = setInterval(() => {
+    const appContainerReady = document.querySelector(".ppv-app-container");
+    if (appContainerReady) appContainerReady.style.overflowY = "auto";
+
     const el = document.getElementById("ppv-store-list");
     const qrReady = document.querySelector(".ppv-btn-qr");
     if (el && qrReady) {
