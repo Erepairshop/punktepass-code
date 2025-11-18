@@ -1144,11 +1144,19 @@ public static function render_dashboard() {
    public static function rest_get_detailed_points(WP_REST_Request $request) {
     global $wpdb;
     $prefix = $wpdb->prefix;
-    
+
     self::ensure_session();
+
+    // ✅ FORCE SESSION RESTORE (Google/Facebook/TikTok login)
+    if (class_exists('PPV_SessionBridge') && empty($_SESSION['ppv_user_id'])) {
+        PPV_SessionBridge::restore_from_token();
+        error_log("🔄 [PPV_Dashboard] Forced session restore from token");
+    }
+
     $user_id = self::get_safe_user_id();
-    
+
     if ($user_id <= 0) {
+        error_log("❌ [PPV_Dashboard] No user found (WP_user=" . get_current_user_id() . ", SESSION=" . ($_SESSION['ppv_user_id'] ?? 'none') . ")");
         return new WP_REST_Response([
             'success' => false,
             'message' => 'Not authenticated',
