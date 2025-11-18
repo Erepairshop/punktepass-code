@@ -1,0 +1,8 @@
+# PunktePass 1.4.2 – Händler Dashboard Pack
+2025-09-29 23:22:03
+
+- Händler Dashboard: új **Profil** fül (logó/borító feltöltés, cím, város, nyitvatartás, leírás).
+- Fejléc: „Cache leeren” gomb + publikus oldal linkje.
+- Prämie űrlap: kategória, „featured”, napi limit, felhasználói periódus mezők.
+- Sikerüzenetek a műveletek után (profil mentés, prämie létrehozás/törlés, cache ürítés).
+- Verzió: 1.4.2

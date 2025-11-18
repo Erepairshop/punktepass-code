@@ -1,0 +1,312 @@
+<?php
+if (!defined('ABSPATH')) exit;
+
+/**
+ * PunktePass – User Rewards & Redeem (Step 1)
+ * Felhasználói jutalmak és beváltási kérelmek kezelése (függő státusszal)
+ */
+
+class PPV_Belohnungen {
+    
+    private static function ensure_session() {
+    if (session_status() === PHP_SESSION_NONE) {
+        @session_start();
+    }
+}
+
+
+    public static function hooks() {
+        add_shortcode('ppv_rewards_page', [__CLASS__, 'render_rewards_page']);
+        add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
+        add_action('rest_api_init', [__CLASS__, 'register_rest_routes']);
+    }
+
+    /** ============================================================
+ *  🔹 REST ENDPOINTS
+ * ============================================================ */
+public static function register_rest_routes() {
+    register_rest_route('ppv/v1', '/rewards/redeem', [
+        'methods'  => 'POST',
+        'callback' => [__CLASS__, 'rest_redeem_reward'],
+        'permission_callback' => function() {
+            if (is_user_logged_in()) return true;
+            self::ensure_session();
+            return isset($_SESSION['ppv_store_id']) || isset($_SESSION['ppv_user_id']);
+        },
+    ]);
+
+    register_rest_route('ppv/v1', '/rewards/status', [
+        'methods'  => 'GET',
+        'callback' => [__CLASS__, 'rest_reward_status'],
+        'permission_callback' => '__return_true'
+    ]);
+}
+
+public static function rest_reward_status($req) {
+    global $wpdb;
+    self::ensure_session();
+
+    // 🔹 Többforrású user_id meghatározás
+    $user_id = 0;
+    if ($req->get_param('user_id')) {
+        $user_id = intval($req->get_param('user_id'));
+    } elseif (is_user_logged_in()) {
+        $user_id = get_current_user_id();
+    } elseif (!empty($_SESSION['ppv_user_id'])) {
+        $user_id = intval($_SESSION['ppv_user_id']);
+    }
+
+    if (!$user_id) {
+        return ['success' => false, 'message' => 'Kein Benutzer gefunden'];
+    }
+
+    // 🔹 REST cache kikapcsolása (különösen Hostinger környezetben)
+    header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+    header("Pragma: no-cache");
+
+    // 🔹 Lekérdezés: user_id vagy azonos email alapján
+    $rows = $wpdb->get_results($wpdb->prepare("
+        SELECT r.id, rw.title, r.status, r.redeemed_at, s.name AS store_name
+        FROM {$wpdb->prefix}ppv_rewards_redeemed r
+        LEFT JOIN {$wpdb->prefix}ppv_rewards rw ON r.reward_id = rw.id
+        LEFT JOIN {$wpdb->prefix}ppv_stores s ON r.store_id = s.id
+        LEFT JOIN {$wpdb->prefix}ppv_users u ON r.user_id = u.id
+        WHERE (r.user_id = %d OR u.email IN (
+            SELECT email FROM {$wpdb->prefix}ppv_users WHERE id = %d
+        ))
+        ORDER BY r.redeemed_at DESC
+        LIMIT 10
+    ", $user_id, $user_id));
+
+    // 🔹 Debug log (ellenőrzéshez)
+    error_log("🟢 [PPV_Belohnungen] REST /rewards/status called for user_id={$user_id}, found=" . count($rows));
+
+    return ['success' => true, 'items' => $rows];
+}
+
+    /** ============================================================
+     *  🔹 ASSETS
+     * ============================================================ */
+   public static function enqueue_assets() {
+    if (wp_script_is('ppv-belohnungen', 'enqueued')) return;
+
+    // 🔧 Fix: pontos plugin mappa elérés (mindig a fő fájlhoz viszonyítva)
+    $plugin_dir = plugin_dir_url(dirname(__FILE__));
+
+    wp_enqueue_style(
+        'ppv-belohnungen',
+        $plugin_dir . 'assets/css/ppv-belohnungen.css',
+        [],
+        time()
+    );
+
+    wp_enqueue_script(
+        'ppv-belohnungen',
+        $plugin_dir . 'assets/js/ppv-belohnungen.js',
+        ['jquery'],
+        time(),
+        true
+    );
+
+    wp_localize_script('ppv-belohnungen', 'ppv_belohnungen', [
+        'base_url' => esc_url(rest_url('ppv/v1/')),
+        'nonce'    => wp_create_nonce('wp_rest')
+    ]);
+}
+
+
+
+
+
+    /** ============================================================
+     *  🔹 FRONTEND – Jutalmak megjelenítése
+     * ============================================================ */
+  /** 🔹 Frontend render */
+public static function render_rewards_page() {
+    self::ensure_session(); // ✅ biztosítja, hogy a session mindig induljon
+
+    global $wpdb;
+
+    // ✅ user_id meghatározása: WP login VAGY session
+    $user_id = 0;
+    if (is_user_logged_in()) {
+        $user_id = get_current_user_id();
+    } elseif (isset($_SESSION['ppv_user_id']) && intval($_SESSION['ppv_user_id']) > 0) {
+        $user_id = intval($_SESSION['ppv_user_id']);
+    }
+
+    // ❌ ha nincs semmilyen user azonosítás
+    if (!$user_id) {
+        error_log("⚠️ [PPV_Belohnungen] Kein user_id gefunden. SESSION: " . json_encode($_SESSION));
+        return '<div class="ppv-notice glass-card" style="color:white;text-align:center;padding:40px;">
+            ⚠️ Bitte melde dich an, um deine Belohnungen zu sehen.<br>
+            <small>(Session oder Login fehlt)</small>
+        </div>';
+    }
+
+        // User pontjai
+        $points = (int)$wpdb->get_var($wpdb->prepare("
+            SELECT COALESCE(SUM(points),0) FROM {$wpdb->prefix}ppv_points WHERE user_id=%d
+        ", $user_id));
+
+        // Elérhető jutalmak
+        $rewards = $wpdb->get_results("
+            SELECT r.*, s.name AS store_name
+            FROM {$wpdb->prefix}ppv_rewards r
+            LEFT JOIN {$wpdb->prefix}ppv_stores s ON r.store_id = s.id
+            WHERE s.active = 1
+            ORDER BY r.required_points ASC
+        ");
+
+        ob_start(); ?>
+        <div class="ppv-belohnungen glass-section">
+            <h2>🎁 Meine Belohnungen</h2>
+
+            <div class="ppv-user-points glass-card">
+                <p>Du hast aktuell <strong><?php echo esc_html($points); ?></strong> Punkte.</p>
+            </div>
+
+            <div class="ppv-reward-grid">
+                <?php if (empty($rewards)): ?>
+                    <p class="ppv-empty">Derzeit keine Belohnungen verfügbar.</p>
+                <?php else: ?>
+                    <?php foreach ($rewards as $r):
+                        $can_redeem = $points >= $r->required_points; ?>
+                        <div class="ppv-reward-card glass-card <?php echo $can_redeem ? 'available' : 'locked'; ?>">
+                            <div class="ppv-reward-header">
+                                <h4><?php echo esc_html($r->title); ?></h4>
+                                <small>🏪 <?php echo esc_html($r->store_name ?: 'Allgemein'); ?></small>
+                            </div>
+                            <p><?php echo esc_html($r->description ?: ''); ?></p>
+                            <div class="ppv-meta">
+                                <span>Benötigt: <?php echo intval($r->required_points); ?> Punkte</span>
+                            </div>
+                            <?php if ($can_redeem): ?>
+                           <button class="ppv-redeem-btn"
+    data-id="<?php echo esc_attr($r->id); ?>"
+    data-store="<?php echo esc_attr($r->store_id); ?>"
+    data-user="<?php echo esc_attr($user_id); ?>">
+    Jetzt einlösen
+</button>
+
+                            <?php else: ?>
+                                <button class="ppv-redeem-btn disabled" disabled>Noch <?php echo $r->required_points - $points; ?> Punkte nötig</button>
+                            <?php endif; ?>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+
+            <div id="ppv-redeem-result" class="ppv-toast"></div>
+        </div>
+        <?php
+        return ob_get_clean();
+    }
+
+public static function rest_redeem_reward($request) {
+    global $wpdb;
+    self::ensure_session();
+
+    $data = $request->get_json_params();
+    $user_id   = intval($data['user_id'] ?? get_current_user_id() ?? ($_SESSION['ppv_user_id'] ?? 0));
+    $reward_id = intval($data['reward_id'] ?? 0);
+
+    // 1️⃣ Alap ellenőrzés
+    if (!$user_id || !$reward_id) {
+        return new WP_REST_Response([
+            'success' => false,
+            'message' => 'Ungültige Anfrage (fehlende Daten).'
+        ], 400);
+    }
+
+    // 2️⃣ Nonce validálás – csak ha nincs POS-session
+    $nonce_header = $request->get_header('x-wp-nonce');
+    if (!isset($_SESSION['ppv_store_id'])) {
+        if (!$nonce_header || !wp_verify_nonce($nonce_header, 'wp_rest')) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Sicherheitsprüfung fehlgeschlagen (nonce).'
+            ], 403);
+        }
+    }
+
+    // 3️⃣ Reward lekérdezése
+    $reward = $wpdb->get_row($wpdb->prepare("
+        SELECT * FROM {$wpdb->prefix}ppv_rewards WHERE id = %d
+    ", $reward_id));
+
+    if (!$reward) {
+        return new WP_REST_Response([
+            'success' => false,
+            'message' => 'Belohnung nicht gefunden.'
+        ], 404);
+    }
+
+    $store_id = intval($reward->store_id ?? 0);
+    $required_points = intval($reward->required_points ?? 0);
+
+    // 4️⃣ Már létezik-e függő kérés?
+    $pending = $wpdb->get_var($wpdb->prepare("
+        SELECT COUNT(*) FROM {$wpdb->prefix}ppv_rewards_redeemed
+        WHERE user_id = %d AND reward_id = %d AND status = 'pending'
+    ", $user_id, $reward_id));
+
+    if ($pending > 0) {
+        return new WP_REST_Response([
+            'success' => false,
+            'message' => '⚠️ Diese Belohnung wurde bereits angefragt.'
+        ], 400);
+    }
+
+    // 5️⃣ Ellenőrizzük a felhasználó pontjait
+    $user_points = intval($wpdb->get_var($wpdb->prepare("
+        SELECT SUM(points) FROM {$wpdb->prefix}ppv_points
+        WHERE user_id = %d AND store_id = %d
+    ", $user_id, $store_id)));
+
+    if ($user_points < $required_points) {
+        return new WP_REST_Response([
+            'success' => false,
+            'message' => 'Nicht genügend Punkte zum Einlösen.'
+        ], 400);
+    }
+
+    // 6️⃣ Új redeem rekord beszúrása
+    $inserted = $wpdb->insert(
+        "{$wpdb->prefix}ppv_rewards_redeemed",
+        [
+            'user_id'      => $user_id,
+            'store_id'     => $store_id,
+            'reward_id'    => $reward_id,
+            'points_spent' => $required_points,
+            'status'       => 'pending',
+            'redeemed_at'  => current_time('mysql')
+        ],
+        ['%d', '%d', '%d', '%d', '%s', '%s']
+    );
+
+    if (!$inserted) {
+        error_log('❌ [PPV_BELOHNUNGEN] Insert Fehler: ' . $wpdb->last_error);
+        return new WP_REST_Response([
+            'success' => false,
+            'message' => 'Fehler beim Erstellen der Anfrage.'
+        ], 500);
+    }
+
+    // 7️⃣ Händler értesítéshez ping frissítés
+    $now = time();
+    update_option('ppv_last_redeem_update', $now);
+    error_log("🟡 [PPV_BELOHNUNGEN] Ping-Update gesetzt (neuer Redeem): " . $now);
+
+    // 8️⃣ REST válasz visszaadása
+    return new WP_REST_Response([
+        'success' => true,
+        'message' => '🎁 Belohnung erfolgreich angefragt!',
+        'redeem_id' => $wpdb->insert_id,
+        'store_id'  => $store_id
+    ], 200);
+}
+
+}
+
+PPV_Belohnungen::hooks();

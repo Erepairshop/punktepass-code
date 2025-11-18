@@ -1,0 +1,99 @@
+<?php
+if (!defined('ABSPATH')) exit;
+
+class PPV_Bonus_Days {
+
+    public static function hooks() {
+        add_shortcode('ppv_bonus_days', [__CLASS__, 'render_bonus_page']);
+        add_action('wp_ajax_ppv_save_bonus_day', [__CLASS__, 'ajax_save_bonus_day']);
+        add_action('wp_ajax_ppv_delete_bonus_day', [__CLASS__, 'ajax_delete_bonus_day']);
+        add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
+    }
+
+    public static function enqueue_assets() {
+        wp_enqueue_style('ppv-bonus-days', PPV_PLUGIN_URL . 'assets/css/ppv-bonus-days.css', [], time());
+        wp_enqueue_script('ppv-bonus-days', PPV_PLUGIN_URL . 'assets/js/ppv-bonus-days.js', ['jquery'], time(), true);
+        wp_localize_script('ppv-bonus-days', 'ppv_bonus_ajax', [
+            'ajax_url' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('ppv_bonus_nonce')
+        ]);
+    }
+
+    public static function render_bonus_page() {
+        if (!is_user_logged_in()) {
+            return '<p>Bitte melden Sie sich an.</p>';
+        }
+
+        ob_start();
+        ?>
+        <div class="ppv-bonus-wrapper">
+            <h2>🎁 Bonus-Tage einstellen</h2>
+            <form id="ppv-bonus-form">
+                <label>📅 Datum:</label>
+                <input type="date" name="date" required>
+
+                <label>✖ Multiplikator (z.B. 2 = doppelte Punkte):</label>
+                <input type="number" step="0.1" name="multiplier" value="1.0">
+
+                <label>➕ Extra Punkte:</label>
+                <input type="number" name="extra_points" value="0">
+
+                <label>✅ Aktiv:</label>
+                <select name="active">
+                    <option value="1">Ja</option>
+                    <option value="0">Nein</option>
+                </select>
+
+                <button type="submit" class="ppv-btn-save">Speichern</button>
+            </form>
+
+            <h3>📋 Aktive Bonus-Tage</h3>
+            <div id="ppv-bonus-list"></div>
+        </div>
+        <?php
+        return ob_get_clean();
+    }
+
+    /** 🔹 AJAX – Bonus mentés */
+    public static function ajax_save_bonus_day() {
+        check_ajax_referer('ppv_bonus_nonce', 'nonce');
+        global $wpdb;
+
+        $store_id = intval(get_user_meta(get_current_user_id(), 'store_id', true));
+        $date = sanitize_text_field($_POST['date'] ?? '');
+        $multiplier = floatval($_POST['multiplier'] ?? 1);
+        $extra_points = intval($_POST['extra_points'] ?? 0);
+        $active = intval($_POST['active'] ?? 1);
+
+        if (!$store_id || !$date) {
+            wp_send_json_error(['message' => 'Fehlende Daten']);
+        }
+
+        $wpdb->insert('wp_ppv_bonus_days', [
+            'store_id' => $store_id,
+            'date' => $date,
+            'multiplier' => $multiplier,
+            'extra_points' => $extra_points,
+            'active' => $active,
+            'created_at' => current_time('mysql')
+        ]);
+
+        wp_send_json_success(['message' => 'Bonus-Tag gespeichert']);
+    }
+
+    /** 🔹 AJAX – Bonus törlés */
+    public static function ajax_delete_bonus_day() {
+        check_ajax_referer('ppv_bonus_nonce', 'nonce');
+        global $wpdb;
+
+        $id = intval($_POST['id'] ?? 0);
+        if (!$id) wp_send_json_error(['message' => 'Fehlende ID']);
+
+        $wpdb->delete('wp_ppv_bonus_days', ['id' => $id]);
+        wp_send_json_success(['message' => 'Bonus-Tag gelöscht']);
+    }
+}
+
+add_action('plugins_loaded', function() {
+    if (class_exists('PPV_Bonus_Days')) PPV_Bonus_Days::hooks();
+});

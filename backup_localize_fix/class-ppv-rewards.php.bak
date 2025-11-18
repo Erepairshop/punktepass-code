@@ -1,0 +1,277 @@
+<?php
+if (!defined('ABSPATH')) exit;
+
+/**
+ * PunktePass – Händler Reward Management + Redeem Overview
+ * Version: 3.0 – Unified REST Version (CRUD + Redeem)
+ */
+
+class PPV_Rewards {
+
+    public static function hooks() {
+        add_shortcode('ppv_rewards', [__CLASS__, 'render_rewards_page']);
+        add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
+        add_action('rest_api_init', [__CLASS__, 'register_rest_routes']);
+        
+    }
+
+    /** ============================================================
+     *  🔹 REST ENDPOINTS
+     * ============================================================ */
+    public static function register_rest_routes() {
+        register_rest_route('ppv/v1', '/rewards/list', [
+            'methods'  => 'GET',
+            'callback' => [__CLASS__, 'rest_list_rewards'],
+            'permission_callback' => '__return_true'
+        ]);
+
+        register_rest_route('ppv/v1', '/rewards/save', [
+            'methods'  => 'POST',
+            'callback' => [__CLASS__, 'rest_save_reward'],
+            'permission_callback' => '__return_true'
+        ]);
+
+        register_rest_route('ppv/v1', '/rewards/delete', [
+            'methods'  => 'POST',
+            'callback' => [__CLASS__, 'rest_delete_reward'],
+            'permission_callback' => '__return_true'
+        ]);
+
+
+        register_rest_route('ppv/v1', '/rewards/approve', [
+            'methods'  => 'POST',
+            'callback' => [__CLASS__, 'rest_approve_redeem'],
+            'permission_callback' => '__return_true'
+        ]);
+    }
+
+    /** ============================================================
+     *  🔹 ASSETS
+     * ============================================================ */
+    public static function enqueue_assets() {
+        wp_enqueue_style('ppv-rewards', PPV_PLUGIN_URL . 'assets/css/ppv-rewards.css', [], time());
+        wp_enqueue_script('ppv-rewards', PPV_PLUGIN_URL . 'assets/js/ppv-rewards.js', ['jquery'], time(), true);
+        wp_localize_script('ppv-rewards', 'ppv_rewards_rest', [
+            'base'  => esc_url(rest_url('ppv/v1/')),
+            'nonce' => wp_create_nonce('wp_rest')
+        ]);
+    }
+
+    /** ============================================================
+     *  🔹 FRONTEND RENDER
+     * ============================================================ */
+    public static function render_rewards_page() {
+        if (!is_user_logged_in()) {
+            return '<div class="ppv-warning">⚠️ Bitte zuerst anmelden.</div>';
+        }
+
+        global $wpdb;
+        $user_id = get_current_user_id();
+        $store = $wpdb->get_row($wpdb->prepare("
+            SELECT id, company_name FROM {$wpdb->prefix}ppv_stores WHERE user_id=%d
+        ", $user_id));
+
+        if (!$store) {
+            return '<div class="ppv-warning">⚠️ Kein Store gefunden.</div>';
+        }
+
+        ob_start(); ?>
+        <script>const PPV_STORE_ID = <?php echo intval($store->id); ?>;</script>
+        <script>
+  window.PPV_STORE_ID = <?php echo intval($store->id); ?>;
+  console.log("🧠 PPV_STORE_ID gesetzt:", window.PPV_STORE_ID);
+</script>
+        <div class="ppv-rewards-wrapper glass-section">
+    <h2>🎁 Prämienverwaltung – <?php echo esc_html($store->company_name); ?></h2>
+
+    <div class="ppv-subnav">
+        <a href="#" class="active" data-tab="rewards">🎁 Prämien</a>
+        <a href="#" data-tab="redeem">✅ Einlösungen</a>
+    </div>
+
+   <!-- 🔹 TAB 1: PRÄMIEN -->
+<div id="ppv-tab-rewards" class="ppv-tab-content active">
+    <form id="ppv-reward-form" class="ppv-reward-form">
+        <input type="text" name="title" placeholder="Titel der Prämie" required>
+        <input type="number" name="required_points" placeholder="Benötigte Punkte" min="1" required>
+        <textarea name="description" placeholder="Beschreibung"></textarea>
+        <select name="action_type">
+            <option value="discount_percent">Rabatt (%)</option>
+            <option value="discount_fixed">Fester Rabatt (€)</option>
+        </select>
+        <input type="text" name="action_value" placeholder="Wert (z.B. 10)" />
+        <button type="submit" class="ppv-btn-blue">Speichern</button>
+    </form>
+
+    <!-- 🔹 JUTALMAK LISTÁJA -->
+    <div id="ppv-rewards-list" class="ppv-reward-grid">
+        <?php
+        global $wpdb;
+        $store_rewards = $wpdb->get_results($wpdb->prepare("
+            SELECT * FROM {$wpdb->prefix}ppv_rewards
+            WHERE store_id = %d
+            ORDER BY id DESC
+        ", intval($store->id)));
+
+        if ($store_rewards && count($store_rewards) > 0): ?>
+            <?php foreach ($store_rewards as $r): ?>
+                <div class="ppv-reward-card" data-id="<?php echo esc_attr($r->id); ?>">
+                    <h4><?php echo esc_html($r->title); ?></h4>
+                    <p><?php echo esc_html($r->description); ?></p>
+                    <small>
+                        🪙 Benötigte Punkte: <strong><?php echo intval($r->required_points); ?></strong><br>
+                        💶 Typ: <em><?php echo esc_html($r->action_type); ?></em><br>
+                        📊 Wert: <strong><?php echo esc_html($r->action_value); ?></strong>
+                    </small>
+                    <div class="ppv-reward-actions">
+                        <button class="ppv-btn-small ppv-delete-reward" data-id="<?php echo esc_attr($r->id); ?>">🗑️ Löschen</button>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        <?php else: ?>
+            <p>ℹ️ Keine Prämien vorhanden.</p>
+        <?php endif; ?>
+    </div>
+</div>
+
+
+    <!-- 🔹 TAB 2: EINLÖSUNGEN -->
+    <div id="ppv-tab-redeem" class="ppv-tab-content">
+        <h3>✅ Letzte Einlösungen</h3>
+        <div id="ppv-redeem-list">Lade Einlösungen...</div>
+
+        <!-- 🔹 LOG – Letzte 10 Einlösungen -->
+        <div id="ppv-redeem-log" class="ppv-log-box" style="margin-top:20px;">
+            <h3>📜 Letzte 10 Einlösungen (Log)</h3>
+            <div id="ppv-log-list"><p>⏳ Lade Log...</p></div>
+        </div>
+    </div>
+</div>
+
+
+        <script>
+        document.addEventListener('click', e => {
+            if (e.target.matches('.ppv-subnav a')) {
+                e.preventDefault();
+                document.querySelectorAll('.ppv-subnav a').forEach(a => a.classList.remove('active'));
+                e.target.classList.add('active');
+                document.querySelectorAll('.ppv-tab-content').forEach(t => t.classList.remove('active'));
+                document.querySelector('#ppv-tab-' + e.target.dataset.tab).classList.add('active');
+            }
+        });
+        </script>
+        <?php
+        return ob_get_clean();
+    }
+
+    /** ============================================================
+     *  🔹 REST: CRUD
+     * ============================================================ */
+    public static function rest_save_reward($request) {
+        global $wpdb;
+        $data = $request->get_json_params();
+
+        $store_id = intval($data['store_id'] ?? 0);
+        $title = sanitize_text_field($data['title'] ?? '');
+        $points = intval($data['required_points'] ?? 0);
+        $desc = sanitize_textarea_field($data['description'] ?? '');
+        $type = sanitize_text_field($data['action_type'] ?? '');
+        $value = sanitize_text_field($data['action_value'] ?? '');
+
+        if (!$store_id || !$title || $points <= 0) {
+            return new WP_REST_Response(['status' => 'error', 'message' => 'Ungültige Eingabe.'], 400);
+        }
+
+        $wpdb->insert("{$wpdb->prefix}ppv_rewards", [
+            'store_id'        => $store_id,
+            'title'           => $title,
+            'required_points' => $points,
+            'description'     => $desc,
+            'action_type'     => $type,
+            'action_value'    => $value,
+            'created_at'      => current_time('mysql')
+        ]);
+
+        return new WP_REST_Response(['status' => 'ok', 'message' => 'Prämie gespeichert.']);
+    }
+
+    public static function rest_list_rewards($request) {
+        global $wpdb;
+        $store_id = intval($request->get_param('store_id') ?? 0);
+
+        $rows = $wpdb->get_results($wpdb->prepare("
+            SELECT * FROM {$wpdb->prefix}ppv_rewards WHERE store_id=%d ORDER BY id DESC
+        ", $store_id));
+
+        return new WP_REST_Response([
+    'success' => true,
+    'rewards' => $rows ?: [],
+    'message' => 'OK'
+], 200);
+
+    }
+
+    public static function rest_delete_reward($request) {
+        global $wpdb;
+        $data = $request->get_json_params();
+        $store_id = intval($data['store_id'] ?? 0);
+        $id = intval($data['id'] ?? 0);
+
+        $wpdb->delete("{$wpdb->prefix}ppv_rewards", [
+            'id' => $id,
+            'store_id' => $store_id
+        ]);
+
+        return new WP_REST_Response(['status' => 'ok', 'message' => 'Prämie gelöscht.']);
+    }
+
+
+public static function rest_approve_redeem($request) {
+    global $wpdb;
+    $data = $request->get_json_params();
+    $id = intval($data['id'] ?? 0);
+    $status = sanitize_text_field($data['status'] ?? 'bestätigt');
+
+    $table = "{$wpdb->prefix}ppv_rewards_redeemed";
+
+    // 🔹 Ellenőrzés, hogy létezik-e az adott redeem rekord
+    $redeem = $wpdb->get_row($wpdb->prepare("
+        SELECT * FROM $table WHERE id = %d
+    ", $id));
+
+    if (!$redeem) {
+        return new WP_REST_Response([
+            'success' => false,
+            'message' => 'Einlösung nicht gefunden.'
+        ], 404);
+    }
+
+    // 🔹 Státusz frissítése
+    $wpdb->update($table, [
+        'status' => $status,
+        'redeemed_at' => current_time('mysql')
+    ], ['id' => $id]);
+
+    // 🔹 Pontok levonása, ha bestätigt
+    if ($status === 'bestätigt') {
+        $wpdb->insert("{$wpdb->prefix}ppv_points", [
+            'user_id'   => $redeem->user_id,
+            'store_id'  => $redeem->store_id,
+            'points'    => -abs(intval($redeem->points_spent)),
+            'type'      => 'redeem',
+            'reference' => 'REDEEM-' . $redeem->id,
+            'created'   => current_time('mysql')
+        ]);
+    }
+
+    return new WP_REST_Response([
+        'success' => true,
+        'message' => '✅ Einlösung aktualisiert und Punkte verbucht.'
+    ]);
+}
+
+    
+
+}
+
+PPV_Rewards::hooks();

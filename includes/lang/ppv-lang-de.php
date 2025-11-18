@@ -1,0 +1,881 @@
+<?php
+return [
+    
+// General
+'statistics' => 'Statistiken',
+'advanced_statistics' => 'Erweiterte Statistiken',
+'trend' => 'Trend',
+'unique' => 'Einzigartige Nutzer',
+'weekly' => 'Wöchentlich',
+'loading' => 'Wird geladen...',
+'loading_data' => 'Daten werden geladen...',
+'error_loading_data' => 'Fehler beim Laden der Daten',
+'error_loading' => 'Fehler beim Laden',
+'network_error' => 'Netzwerkfehler',
+'not_authenticated' => 'Nicht berechtigt',
+'api_not_found' => 'API nicht gefunden',
+'server_error' => 'Serverfehler',
+'config_error' => 'Konfigurationsfehler',
+'chart_error' => 'Diagrammfehler',
+'export_failed' => 'Export fehlgeschlagen',
+'no_data' => 'Keine Daten',
+
+// Filters
+'today' => 'Heute',
+'this_week' => 'Diese Woche',
+'this_month' => 'Dieser Monat',
+'all_time' => 'Gesamt',
+'monthly' => 'Monatlich',
+
+// Cards
+'daily_points' => 'Heutige Punkte',
+'weekly_points' => 'Wöchentliche Punkte',
+'monthly_points' => 'Monatliche Punkte',
+'total' => 'Gesamt',
+'unique_users' => 'Einzigartige Nutzer',
+
+// Top users
+'top_5_users' => 'Top 5 Benutzer',
+'purchase' => 'Kauf',
+'purchases' => 'Käufe',
+'no_email' => 'Keine E-Mail',
+
+// Peak Hours
+'peak_hours_today' => 'Spitzenlastzeiten (Heute)',
+
+// Trend
+'vs_last_week' => 'vs. letzte Woche',
+'vs_last_month' => 'vs. letzter Monat',
+'daily_trend' => 'Täglicher Verlauf',
+
+// Spending
+'rewards_spending' => 'Rewards Ausgaben',
+'average_per_reward' => 'Durchschnitt pro Reward',
+'by_status' => 'Nach Status',
+'confirmed' => 'Bestätigt',
+'outstanding' => 'Ausstehend',
+'rejected' => 'Abgelehnt',
+'top_rewards' => 'Top Rewards',
+'reward_id' => 'Reward #%d',
+'times_redeemed' => '%dx',
+'total_points' => '%d pts',
+
+// Conversion
+'total_users' => 'Gesamt Benutzer',
+'conversion_rate' => 'Konversionsrate',
+'redeemed_users' => '%d Benutzer',
+'repeat_customers' => 'Stammkunden',
+'avg_points_per_user' => 'Ø Punkte/Benutzer',
+'avg_redemptions_per_user' => 'Ø Einlösungen',
+'user_segmentation' => 'Benutzer-Segmentierung',
+'redeemed' => 'Eingelöst (%d)',
+'not_redeemed' => 'Nicht eingelöst (%d)',
+
+// Export
+'advanced_export' => 'Erweiterter Export',
+'exporting' => 'Wird exportiert...',
+'csv_export' => 'CSV Export',
+'detailed_user_email' => 'Detailliert (User + Email)',
+'summary_daily' => 'Zusammenfassung (Täglich)',
+'download' => 'Download',
+'total_redeemed' => 'Insgesamt eingelöst',
+'approved' => 'Bestätigt',
+'pending' => 'Ausstehend',
+'points_spent' => 'Ausgegebene Punkte',
+    
+    'dashboard_theme_toggle' => 'Design wechseln',    // DE
+'dashboard_store_closed' => 'Geschlossen',        // DE
+    
+    'redeem_loading' => 'Einlösungen werden geladen...',
+'redeem_no_items' => 'Keine Einlösungen vorhanden',
+'redeem_pending_section' => '⏳ Offene Einlösungen',
+'redeem_approved_section' => '✅ Bestätigte Einlösungen',
+'redeem_points' => 'Punkte',
+'redeem_btn_approve' => 'Bestätigen',
+'redeem_btn_reject' => 'Ablehnen',
+'redeem_status_approved' => 'Bestätigt',
+'redeem_status_rejected' => 'Abgelehnt',
+'redeem_no_logs' => 'Keine Logs vorhanden',
+'redeem_error_processing' => 'Fehler bei der Verarbeitung',
+'redeem_modal_title' => 'Monatliche Quittung',
+'redeem_modal_select_period' => 'Zeitraum auswählen:',
+'redeem_modal_month' => 'Monat',
+'redeem_modal_year' => 'Jahr',
+'redeem_modal_generate' => 'Generieren',
+'redeem_modal_cancel' => 'Abbrechen',
+'redeem_modal_generating' => 'Wird generiert...',
+'redeem_modal_success' => 'Monatliche Quittung erfolgreich erstellt!',
+'redeem_modal_server_error' => 'Serverfehler',
+'redeem_receipts_search' => 'E-Mail suchen...',
+'redeem_receipts_filter' => 'Filter',
+'redeem_receipts_monthly' => 'Monatliche Quittung',
+'redeem_receipts_loading' => 'Quittungen werden geladen...',
+'month_01' => 'Januar',
+'month_02' => 'Februar',
+'month_03' => 'März',
+'month_04' => 'April',
+'month_05' => 'Mai',
+'month_06' => 'Juni',
+'month_07' => 'Juli',
+'month_08' => 'August',
+'month_09' => 'September',
+'month_10' => 'Oktober',
+'month_11' => 'November',
+'month_12' => 'Dezember',
+'redeem_sound_toggle' => 'Ton an/aus',
+'redeem_notif_toggle' => 'Benachrichtigungen an/aus',
+'redeem_new_notification' => '🎁 Neue Einlösung!',
+    
+    'redeem_management_title' => 'Einlösungen Verwaltung – ',
+'redeem_tab_redeems' => 'Einlösungen',
+'redeem_tab_receipts' => 'Quittungen',
+'redeem_list_title' => 'Einlösungen',
+'redeem_loading' => 'Wird geladen...',
+'redeem_recent_logs' => 'Letzte 10 Einlösungen',
+'redeem_receipts_loading' => 'Quittungen werden geladen...',
+'error_no_store' => 'Keine Shop-ID',
+'store_not_found' => 'Shop nicht gefunden.',
+'error_invalid_data' => 'Ungültige Daten',
+'redeem_no_change' => 'Keine Statusänderung',
+'error_update_failed' => 'Aktualisierung fehlgeschlagen',
+'redeem_approved' => 'Anfrage bestätigt',
+'redeem_rejected' => 'Anfrage abgelehnt',
+'error_invalid_params' => 'Ungültige Parameter',
+'redeem_monthly_receipt_created' => 'Monatliche Quittung erstellt',
+'redeem_no_redeems_period' => 'Keine Einlösungen für diesen Zeitraum gefunden',
+    
+    'rewards_form_none' => 'Keine Prämien.',
+'rewards_points_label' => 'Punkte',
+'rewards_points_given_label' => 'Punkte vergeben',
+'rewards_btn_edit' => 'Bearbeiten',
+'rewards_btn_delete' => 'Löschen',
+'rewards_error_loading' => 'Fehler beim Laden',
+'rewards_saved' => 'Gespeichert.',
+'rewards_error_save' => 'Speicherfehler',
+'rewards_btn_update' => 'Aktualisieren',
+'rewards_confirm_delete' => 'Prämie wirklich löschen?',
+'rewards_deleted' => 'Gelöscht.',
+'rewards_error_delete' => 'Löschfehler',
+    
+    
+    'rewards_login_required' => 'Bitte anmelden oder Shop aktivieren.',
+'rewards_title' => 'Prämienverwaltung – ',
+'rewards_form_title' => 'Titel *',
+'rewards_form_title_placeholder' => 'z. B. 10% Rabatt',
+'rewards_form_points' => 'Erforderliche Punkte *',
+'rewards_form_points_placeholder' => 'z. B. 50',
+'rewards_form_description' => 'Beschreibung (optional)',
+'rewards_form_description_placeholder' => 'Details zur Prämie',
+'rewards_form_type_label' => 'Prämien-Typ',
+'rewards_form_type_percent' => 'Rabatt (%)',
+'rewards_form_type_fixed' => 'Festrabatt',
+'rewards_form_type_free' => 'Kostenloses Produkt',
+'rewards_form_value' => 'Wert (',
+'rewards_form_value_end' => ') *',
+'rewards_form_value_placeholder' => 'z. B. 10',
+'rewards_form_points_given' => 'Punkte vergeben (bei Einlösung) *',
+'rewards_form_points_given_placeholder' => 'z. B. 5',
+'rewards_form_points_given_helper' => 'Diese Punkte belohnen den Kunden',
+'rewards_form_save' => 'Speichern',
+'rewards_form_cancel' => 'Abbrechen',
+'rewards_list_loading' => 'Wird geladen...',
+'rewards_error_no_store' => 'Keine Shop-ID',
+'rewards_error_invalid' => 'Ungültige Eingabe.',
+'rewards_saved' => 'Prämie gespeichert.',
+'rewards_updated' => 'Prämie aktualisiert.',
+'rewards_error_missing' => 'Fehlende Daten.',
+'rewards_deleted' => 'Prämie gelöscht.',
+
+
+  'dashboard' => 'Dein PunktePass Dashboard',
+  'nearby_stores' => 'Geschäfte in deiner Nähe',
+  'no_stores' => 'Keine Geschäfte gefunden',
+  'open' => 'Geöffnet',
+  'closed' => 'Geschlossen',
+  'route' => 'Route',
+  'reward' => 'Prämie',
+  'call' => 'Anrufen',
+  'website' => 'Webseite',
+  'share' => 'Teilen' ,
+  
+
+  'vendor_dashboard' => 'Händler-Dashboard',
+  'not_logged_in_vendor' => 'Sie sind nicht eingeloggt oder haben kein Händlerkonto.',
+  'account_activated_success' => 'Ihr Konto wurde erfolgreich aktiviert. Willkommen bei PunktePass!',
+  'subscription_active' => 'Abo aktiv – Bezahlt über Stripe',
+  'trial_active' => 'Testphase aktiv',
+  'trial_until' => 'endet am',
+  'no_active_subscription' => 'Kein aktives Abonnement',
+
+  'module_not_found_profile' => 'Profil-Modul nicht gefunden.',
+  'module_not_found_stats' => 'Statistik-Modul nicht gefunden.',
+  'module_not_found_qr' => 'QR-Modul nicht gefunden.',
+  'module_not_found_rewards' => 'Rewards-Modul nicht gefunden.',
+
+  'my_profile' => 'Mein Profil',
+  'edit_vendor_profile' => 'Bearbeite dein Händlerprofil.',
+  'open' => 'Öffnen',
+
+  'stats' => 'Statistik',
+  'analyze_points' => 'Analysiere deine Punkte und Kunden.',
+  'view' => 'Ansehen',
+
+  'qr_center' => 'QR-Center',
+  'generate_qr' => 'Generiere Tages-QR und Kampagnen.',
+  'start' => 'Starten',
+
+  'rewards' => 'Rewards',
+  'manage_rewards' => 'Verwalte deine Belohnungen.' , 
+
+  'please_login' => 'Bitte melde dich an.',
+  'welcome_to_punktepass' => 'Willkommen bei PunktePass',
+  'points' => 'Punkte',
+  'rewards' => 'Prämien',
+  'collect_points_here' => 'Hier Punkte sammeln',
+  'show_qr_in_store' => 'Zeig deinen persönlichen QR-Code im Geschäft',
+  'show_qr_code' => 'QR-Code anzeigen',
+  'show_this_code_to_collect' => 'Zeig diesen Code im Geschäft, um Punkte zu sammeln.',
+  'stores_near_you' => 'Geschäfte in deiner Nähe',
+  'store_list_auto_update' => 'Die Liste wird automatisch aktualisiert anhand deiner Position.' , 
+  
+  
+  'title' => 'Meine Punkte',
+  'total' => 'Gesamtpunkte',
+  'avg' => 'Ø Punkte',
+  'best_day' => 'Bester Tag',
+  'top_store' => 'Top Laden',
+  'next_reward' => 'Nächste Prämie',
+  'remaining' => 'Verbleibende Punkte',
+  'top3' => 'Top 3 Geschäfte',
+  'recent' => 'Letzte Aktivitäten',
+  'activity' => 'Aktivität heute',
+  'motivation' => 'Sammle weiter – deine nächste Prämie wartet 🎁',
+  'no_data' => 'Keine Daten empfangen.',
+  'points' => 'Punkte',
+  
+  
+  'my_rewards' => 'Meine Belohnungen',
+    'you_have_points' => 'Du hast aktuell',
+    'no_rewards' => 'Derzeit keine Belohnungen verfügbar.',
+    'general' => 'Allgemein',
+    'required_points' => 'Benötigt',
+    'btn_redeem' => 'Jetzt einlösen',
+    'need_more_points' => 'Noch {count} Punkte nötig',
+    'please_login_to_see_rewards' => 'Bitte melde dich an, um deine Belohnungen zu sehen.',
+    'pending_rewards' => 'Angefragte Belohnungen',
+    'no_pending' => 'Keine offenen Anfragen.',
+    'unknown_reward' => 'Unbekannte Belohnung',
+    'status_waiting' => '⏳ wartet auf Bestätigung',
+    'status_approved' => '✅ bestätigt',
+    'status_cancelled' => '❌ abgelehnt',
+    'invalid_request' => 'Ungültige Anfrage.',
+    'reward_not_found' => 'Belohnung nicht gefunden.',
+    'already_requested' => 'Diese Belohnung wurde bereits angefragt.',
+    'not_enough_points' => 'Nicht genügend Punkte zum Einlösen.',
+    'insert_error' => 'Fehler beim Erstellen der Anfrage.',
+    'redeem_success' => '🎁 Belohnung erfolgreich angefragt!',
+    'no_user_found' => 'Kein Benutzer gefunden.',
+    
+    
+    'login_required' => 'Bitte melden Sie sich an, um Ihre Einstellungen zu sehen.',
+  'back_dashboard' => 'Zurück zum Dashboard',
+  'my_settings' => 'Meine Einstellungen',
+  'personal_data' => 'Persönliche Daten',
+  'name' => 'Name',
+  'email' => 'E-Mail-Adresse',
+  'change_password' => 'Passwort ändern',
+  'new_password' => 'Neues Passwort',
+  'repeat_password' => 'Passwort wiederholen',
+  'language' => 'Sprache',
+  'data_export' => 'Datenexport',
+  'export_data' => 'Daten herunterladen',
+  'devices' => 'Geräte',
+  'devices_info' => 'Hier sehen Sie Ihre aktuell angemeldeten Geräte.',
+  'logout_all_devices' => 'Abmelden auf allen Geräten',
+  'account_privacy' => 'Konto & Datenschutz',
+  'delete_info' => 'Wenn Sie Ihr Konto löschen möchten, klicken Sie unten.',
+  'delete_account' => 'Konto löschen',
+  'save_settings' => 'Einstellungen speichern',
+
+  // Settings - AJAX messages
+  'not_logged_in' => 'Nicht eingeloggt',
+  'upload_failed' => 'Upload fehlgeschlagen',
+  'settings_saved' => 'Einstellungen gespeichert',
+  'all_devices_logged_out' => 'Alle Geräte abgemeldet',
+  'wrong_password' => 'Falsches Passwort',
+  'account_deleted' => 'Konto gelöscht',
+
+  // Settings - Form fields
+  'zip' => 'Postleitzahl',
+  'street_address' => 'Straße und Hausnummer',
+  'street_placeholder' => 'Musterstraße 123',
+  'zip_placeholder' => '12345',
+  'city_placeholder' => 'Berlin',
+  'notifications' => 'Benachrichtigungen',
+  'email_notifications' => 'E-Mail Benachrichtigungen',
+  'push_notifications' => 'Push-Benachrichtigungen',
+  'promo_notifications' => 'Werbe-Benachrichtigungen',
+  'privacy' => 'Datenschutz',
+  'profile_visible' => 'Profil öffentlich sichtbar',
+  'marketing_emails' => 'Marketing E-Mails erhalten',
+  'data_sharing' => 'Daten mit Partnern teilen',
+
+  // Settings - Delete account
+  'delete_account_confirm' => 'Konto wirklich löschen?',
+  'delete_account_warning' => 'Diese Aktion kann nicht rückgängig gemacht werden. Alle Ihre Daten werden dauerhaft gelöscht.',
+  'enter_password' => 'Passwort eingeben',
+  'password' => 'Passwort',
+  'delete_permanently' => 'Dauerhaft löschen',
+
+   // Landing Page - Header
+    'landing_slogan' => 'Punkte sammeln. Belohnungen erhalten.',
+    
+    // Landing Page - Features
+    'landing_feature_qr_title' => 'QR-Code zeigen',
+    'landing_feature_qr_desc' => 'Zeigen Sie Ihren QR-Code beim Einkauf',
+    
+    'landing_feature_collect_title' => 'Punkte sammeln',
+    'landing_feature_collect_desc' => 'Sammeln Sie bei jedem Einkauf Punkte',
+    
+    'landing_feature_rewards_title' => 'Belohnungen erhalten',
+    'landing_feature_rewards_desc' => 'Lösen Sie Punkte gegen tolle Prämien ein',
+    
+    'landing_feature_local_title' => 'Lokale Angebote',
+    'landing_feature_local_desc' => 'Entdecken Sie exklusive Angebote in Ihrer Nähe',
+    
+    // Login Card
+    'login_welcome' => 'Willkommen zurück',
+    'login_welcome_desc' => 'Melden Sie sich an, um Ihre Punkte zu verwalten',
+    
+    'login_google_btn' => 'Mit Google anmelden',
+    'login_or_email' => 'oder mit Email',
+    
+    'login_email_label' => 'Email',
+    'login_email_placeholder' => 'ihre@email.de',
+    
+    'login_password_label' => 'Passwort',
+    'login_password_placeholder' => '••••••••',
+    'login_show_password' => 'Passwort anzeigen',
+    
+    'login_remember_me' => 'Angemeldet bleiben',
+    'login_forgot_password' => 'Passwort vergessen?',
+    
+    'login_button' => 'Anmelden',
+    'login_no_account' => 'Noch kein Konto?',
+    'login_register_now' => 'Jetzt registrieren',
+    
+    // Footer
+    'landing_footer_copyright' => '© 2025 PunktePass. Alle Rechte vorbehalten.',
+    'landing_footer_privacy' => 'Datenschutz',
+    'landing_footer_terms' => 'AGB',
+    'landing_footer_imprint' => 'Impressum',
+    
+    // AJAX Messages
+    'login_logging_in' => 'Anmelden...',
+    'login_error_empty' => 'Bitte Email und Passwort eingeben',
+    'login_error_invalid' => 'Ungültige Anmeldedaten',
+    'login_success' => 'Erfolgreich angemeldet!',
+    'login_google_error' => 'Google Anmeldung fehlgeschlagen',
+    'login_google_success' => 'Mit Google angemeldet!',
+    'login_user_create_error' => 'Benutzer konnte nicht erstellt werden',
+    
+    
+    // ============================================
+// SIGNUP PAGE
+// ============================================
+'signup_slogan' => 'Punkte sammeln, Prämien genießen!',
+'signup_title' => 'Konto erstellen',
+'signup_subtitle' => 'Jetzt registrieren und Punkte sammeln',
+
+// BUTTONS
+'signup_google_btn' => 'Mit Google registrieren',
+'signup_or_email' => 'oder mit E-Mail',
+'signup_button' => 'Jetzt registrieren',
+
+// FORM FIELDS
+'signup_email_label' => 'E-Mail-Adresse',
+'signup_email_placeholder' => 'ihre@email.de',
+'signup_password_label' => 'Passwort',
+'signup_password_placeholder' => 'Mindestens 8 Zeichen',
+'signup_password_confirm_label' => 'Passwort bestätigen',
+'signup_password_confirm_placeholder' => 'Passwort wiederholen',
+'signup_show_password' => 'Passwort anzeigen',
+
+// PASSWORD REQUIREMENTS
+'signup_password_requirements' => 'Anforderungen:',
+'signup_req_length' => 'Mindestens 8 Zeichen',
+'signup_req_uppercase' => 'Mindestens 1 Großbuchstabe',
+'signup_req_number' => 'Mindestens 1 Zahl',
+'signup_req_special' => 'Mindestens 1 Sonderzeichen',
+
+// TERMS & PRIVACY
+'signup_terms_agree' => 'Ich akzeptiere die',
+'signup_terms_link' => 'AGB',
+'signup_privacy_agree' => 'Ich akzeptiere die',
+'signup_privacy_link' => 'Datenschutzerklärung',
+
+// LINKS
+'signup_have_account' => 'Bereits ein Konto?',
+'signup_login_now' => 'Jetzt anmelden',
+
+// ERROR MESSAGES
+'signup_error_empty' => 'Bitte füllen Sie alle Felder aus',
+'signup_error_invalid_email' => 'Bitte geben Sie eine gültige E-Mail-Adresse ein',
+'signup_error_password_mismatch' => 'Passwörter stimmen nicht überein',
+'signup_error_password_short' => 'Passwort muss mindestens 8 Zeichen lang sein',
+'signup_error_password_weak' => 'Passwort muss Großbuchstaben, Zahlen und Sonderzeichen enthalten',
+'signup_error_terms' => 'Bitte akzeptieren Sie die AGB und Datenschutzerklärung',
+'signup_error_email_exists' => 'Diese E-Mail-Adresse ist bereits registriert',
+'signup_error_create' => 'Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut.',
+
+// SUCCESS MESSAGES
+'signup_success' => 'Registrierung erfolgreich! Sie werden weitergeleitet...',
+'signup_google_error' => 'Google Registrierung fehlgeschlagen',
+'signup_google_success' => 'Google Registrierung erfolgreich!',
+
+
+// ========== GLOBAL / HEADER ==========
+    'language' => 'Sprache',
+    'deutsch' => 'Deutsch',
+    'hungarian' => 'Magyar',
+    'english' => 'English',
+    'save' => 'Speichern',
+    'saving' => 'Speichern...',
+    'saved' => 'Erfolgreich gespeichert',
+    'error' => 'Fehler',
+    'cancel' => 'Abbrechen',
+    'delete' => 'Löschen',
+    'close' => 'Schließen',
+    'loading' => 'Laden...',
+    'required_field' => 'Dieses Feld ist erforderlich',
+    'invalid_format' => 'Ungültiges Format',
+    
+    // ========== ADMIN PROFILE HEADER ==========
+    'admin_profile' => 'Admin Profil',
+    'store_profile' => 'Geschäftsprofil',
+    'profile_header_title' => 'Mein Geschäft',
+    'profile_header_subtitle' => 'Verwalte dein Geschäftsprofil und Einstellungen',
+    'store_info' => 'Geschäftsinformationen',
+    'status' => 'Status',
+    'status_active' => '🟢 Aktiv',
+    'status_inactive' => '🔴 Inaktiv',
+    'last_updated' => 'Zuletzt aktualisiert',
+    'subscribers_count' => 'Abonnenten',
+    'points_status' => 'Punkte Status',
+    
+    // ========== TABS ==========
+    'tab_general' => 'Allgemein',
+    'tab_hours' => 'Öffnungszeiten',
+    'tab_media' => 'Bilder & Medien',
+    'tab_contact' => 'Kontakt & Social',
+    'tab_preview' => 'Vorschau',
+    'tab_settings' => 'Einstellungen',
+    
+    // ========== GENERAL TAB ==========
+    'general_info' => 'Allgemeine Informationen',
+    'store_name' => 'Geschäftsname',
+    'store_name_placeholder' => 'z. B. Kézműves Kávé',
+    'slogan' => 'Slogan',
+    'slogan_placeholder' => 'z. B. Schnell. Fair. Lokal.',
+    'category' => 'Kategorie',
+    'category_select' => 'Bitte wählen...',
+    'category_handyreparatur' => 'Handyreparatur',
+    'category_cafe' => 'Café',
+    'category_friseur' => 'Friseur',
+    'category_mode' => 'Mode & Accessoires',
+    'category_fitness' => 'Fitness',
+    'category_elektronik' => 'Elektronik',
+    'category_sonstiges' => 'Sonstiges',
+    
+    'address_section' => 'Adresse',
+    'street_address' => 'Straße & Hausnummer',
+    'postal_code' => 'Postleitzahl (PLZ)',
+    'city' => 'Stadt',
+    'country' => 'Land',
+    
+    'company_section' => 'Unternehmen',
+    'company_name' => 'Firmenname',
+    'company_name_placeholder' => 'z. B. Erik Borota GmbH',
+    'contact_person' => 'Kontaktperson',
+    'contact_person_placeholder' => 'z. B. Erik Borota',
+    'description' => 'Kurze Beschreibung',
+    'description_placeholder' => 'Erzähle etwas über dein Geschäft...',
+    
+    // ========== OPENING HOURS TAB ==========
+    'opening_hours' => 'Öffnungszeiten',
+    'opening_hours_info' => 'Legen Sie Ihre Geschäftszeiten fest',
+    'monday' => 'Montag',
+    'tuesday' => 'Dienstag',
+    'wednesday' => 'Mittwoch',
+    'thursday' => 'Donnerstag',
+    'friday' => 'Freitag',
+    'saturday' => 'Samstag',
+    'sunday' => 'Sonntag',
+    'from' => 'Von',
+    'to' => 'Bis',
+    'closed' => 'Geschlossen',
+    'opening_hours_from_placeholder' => '09:00',
+    'opening_hours_to_placeholder' => '17:00',
+    
+    'use_template' => 'Vorlage verwenden',
+    'template_9_17' => '9:00 - 17:00 (Standard)',
+    'template_8_20' => '8:00 - 20:00 (Erweitert)',
+    'template_10_18' => '10:00 - 18:00 (Klassisch)',
+    'copy_to_all' => 'Auf alle Tage kopieren',
+    
+    // ========== MEDIA TAB ==========
+    'media_section' => 'Bilder & Medien',
+    'logo' => 'Logo',
+    'logo_upload' => 'Logo hochladen',
+    'logo_info' => 'Empfohlene Größe: 200x200px (max. 4MB)',
+    
+    'cover_image' => 'Titelbild',
+    'cover_upload' => 'Titelbild hochladen',
+    'cover_info' => 'Empfohlene Größe: 1200x400px (max. 4MB)',
+    
+    'gallery' => 'Galerie',
+    'gallery_add' => '+ Bilder hinzufügen',
+    'gallery_info' => 'Laden Sie bis zu 10 Bilder hoch (max. 4MB pro Bild)',
+    'gallery_empty' => 'Noch keine Bilder in der Galerie',
+    
+    'image_preview' => 'Vorschau',
+    'image_delete' => 'Löschen',
+    'image_delete_confirm' => 'Wirklich löschen?',
+    
+    'file_upload_error' => 'Fehler beim Hochladen',
+    'file_too_large' => 'Datei zu groß (max. 4MB)',
+    'invalid_file_type' => 'Ungültiger Dateityp (nur JPEG, PNG, WebP)',
+    
+    // ========== CONTACT & SOCIAL TAB ==========
+    'contact_data' => 'Kontaktdaten',
+    'phone' => 'Telefon',
+    'phone_placeholder' => '+49 (0) 123 456789',
+    'email' => 'E-Mail',
+    'email_placeholder' => 'hello@example.de',
+    'website' => 'Website',
+    'website_placeholder' => 'https://www.example.de',
+    'whatsapp' => 'WhatsApp',
+    'whatsapp_placeholder' => '+49 (0) 123 456789',
+    
+    'social_media' => 'Soziale Netzwerke',
+    'facebook_url' => 'Facebook URL',
+    'facebook_placeholder' => 'https://facebook.com/...',
+    'instagram_url' => 'Instagram URL',
+    'instagram_placeholder' => 'https://instagram.com/...',
+    'tiktok_url' => 'TikTok URL',
+    'tiktok_placeholder' => 'https://tiktok.com/@...',
+    
+    'verify_link' => 'Link verifizieren',
+    'link_valid' => '✓ Gültig',
+    'link_invalid' => '✗ Ungültig',
+    
+    // ========== SETTINGS TAB ==========
+    'profile_settings' => 'Profileinstellungen',
+    'store_active' => 'Geschäft ist aktiv',
+    'store_visible' => 'Öffentlich sichtbar',
+    'pos_enabled' => 'POS-System aktiviert',
+    
+    'store_active_help' => 'Nur aktive Geschäfte erscheinen in der App',
+    'store_visible_help' => 'Privat oder öffentlich sichtbar für Kunden',
+    'pos_enabled_help' => 'Aktiviere das POS-System zur Punktevergabe',
+    
+    // ========== ALERTS & MESSAGES ==========
+    'profile_saved_success' => 'Dein Profil wurde erfolgreich gespeichert!',
+    'profile_save_error' => 'Fehler beim Speichern. Bitte versuche es später erneut.',
+    'validation_error' => 'Bitte überprüfe deine Eingaben',
+    'unsaved_changes' => 'Du hast ungespeicherte Änderungen',
+    'unsaved_warning' => 'Möchtest du die Seite wirklich verlassen, ohne zu speichern?',
+    'leave_without_save' => 'Ohne speichern',
+    'save_and_leave' => 'Speichern und verlassen',
+    
+    'email_invalid' => 'Ungültige E-Mail-Adresse',
+    'phone_invalid' => 'Ungültige Telefonnummer',
+    'url_invalid' => 'Ungültige URL',
+    
+    // ========== USER DASHBOARD ==========
+    'my_dashboard' => 'Mein Dashboard',
+    'my_points' => 'Meine Punkte',
+    'my_favorites' => 'Meine Favoriten',
+    'all_stores' => 'Alle Geschäfte',
+    'nearby_stores' => 'Geschäfte in der Nähe',
+    'open_now' => '🟢 Offen jetzt',
+    'closed_now' => '🔴 Geschlossen',
+    'opens_at' => 'Öffnet um',
+    'closes_at' => 'Schließt um',
+    'distance_km' => 'km entfernt',
+    'no_results' => 'Keine Ergebnisse gefunden',
+    
+    // ========== SEARCH & FILTER ==========
+    'search_stores' => 'Geschäfte durchsuchen...',
+    'filter' => 'Filter',
+    'search' => 'Suche',
+    'clear_filters' => 'Filter löschen',
+    'sort_by_distance' => 'Nach Entfernung sortieren',
+    'sort_by_name' => 'Nach Name sortieren',
+    'use_my_location' => '📍 Meinen Standort verwenden',
+    'location_permission' => 'Standort erforderlich',
+    'location_denied' => 'Standortzugriff verweigert',
+    
+    // ========== POS ==========
+    'pos_login' => 'POS Login',
+    'pos_cashier' => 'Kasse',
+    'scan_qr' => 'QR-Code scannen',
+    'customer' => 'Kunde',
+    'points_awarded' => 'Punkte vergeben',
+    'transaction' => 'Transaktion',
+    'transactions' => 'Transaktionen',
+    'logout' => 'Abmelden',
+    
+    // ========== FOOTER ==========
+    'footer_about' => 'Über PunktePass',
+    'footer_privacy' => 'Datenschutz',
+    'footer_terms' => 'Bedingungen',
+    'footer_contact' => 'Kontakt',
+    'footer_legal' => '© 2025 PunktePass. Alle Rechte vorbehalten.',
+    
+    // ========== MAINTENANCE MODE ==========
+    'maintenance_mode' => 'Wartungsmodus',
+    'maintenance_mode_help' => 'Aktiviere den Wartungsmodus, um dein Geschäft vorübergehend offline zu nehmen',
+    'maintenance_message' => 'Wartungsnachricht',
+    'maintenance_message_placeholder' => 'z.B. Wir sind in Kürze zurück! Danke für deine Geduld.',
+    'maintenance_message_help' => 'Diese Nachricht wird deinen Kunden angezeigt',
+
+    // ========== TIMEZONE ==========
+    'timezone' => 'Zeitzone / Region',
+    'timezone_help' => 'Wähle deine Zeitzone für korrekte Öffnungszeiten',
+    'timezone_berlin' => 'Europe/Berlin (Deutschland)',
+    'timezone_budapest' => 'Europe/Budapest (Ungarn)',
+    'timezone_bucharest' => 'Europe/Bucharest (Rumänien)',
+    
+    // ========== FOOTER ==========
+    'footer_about' => 'Über PunktePass',
+    'footer_privacy' => 'Datenschutz',
+    'footer_terms' => 'Bedingungen',
+    'footer_contact' => 'Kontakt',
+    'footer_legal' => '© 2025 PunktePass. Alle Rechte vorbehalten.',
+    
+    'category_pharmacy' => 'Gyógyszertár',
+'category_restaurant' => 'Étterem',
+'category_beauty' => 'Szépség & Wellness',
+'category_sportshop' => 'Sportüzlet',
+'category_other' => 'Egyéb',
+
+ // ============================================================
+    // 🎫 MY POINTS PAGE
+    // ============================================================
+    'title' => 'Meine Punkte',
+    'total' => 'Gesamtpunkte',
+    'motivation' => 'Sammle weiter Punkte und erhalte tolle Belohnungen!',
+    'avg' => 'Durchschnitt',
+    'best_day' => 'Bester Tag',
+    'top_store' => 'Top Store',
+    'next_reward' => 'Nächste Belohnung',
+    'remaining' => 'verbleibend',
+    'reward_reached' => '🎉 Prämie erreicht!',
+    'top3' => 'Top 3 Filialen',
+    'recent' => 'Kürzliche Aktivität',
+    'offline_mode' => 'Offline-Modus',
+    'no_data' => 'Keine Daten verfügbar',
+    'no_entries' => 'Keine Einträge',
+    'no_stores' => 'Keine Geschäfte gefunden',
+    
+    // ============================================================
+    // ⚠️ ERROR MESSAGES
+    // ============================================================
+    'error' => 'Fehler',
+    'error_offline' => 'Offline - Bitte verbinden Sie sich mit dem Internet',
+    'error_unauthorized' => 'Nicht autorisiert',
+    'error_forbidden' => 'Zugriff verweigert',
+    'error_api_not_found' => 'API nicht gefunden',
+    'error_loading' => 'Fehler beim Laden der Daten',
+    'error_try_again' => 'Bitte versuchen Sie es später erneut',
+    
+    // ============================================================
+    // 📊 POINTS DATA LABELS
+    // ============================================================
+    'points_label' => 'Punkte',
+    'date_label' => 'Datum',
+    'store_label' => 'Geschäft',
+    'time_label' => 'Zeit',
+    'score_label' => 'Punktzahl',
+    
+    // ============================================================
+    // 🔐 AUTH
+    // ============================================================
+    'please_login' => 'Bitte einloggen, um Punkte zu sehen.',
+    
+    // ============================================================
+    // 🎁 BELOHNUNGEN PAGE
+    // ============================================================
+    'belohnungen_title' => 'Meine Belohnungen',
+    'belohnungen_subtitle' => 'Löse deine Punkte gegen tolle Belohnungen ein',
+    
+    // Header
+    'my_points' => 'Sie haben',
+    'points_available' => 'Punkte verfügbar',
+    
+    // Search & Filter (New)
+    'search_rewards' => 'Belohnungen durchsuchen...',
+    'filter_by_store' => 'Nach Geschäft filtern',
+    'all_stores' => 'Alle Geschäfte',
+    'filter_reset' => 'Zurücksetzen',
+    'no_filters_applied' => 'Keine Filter aktiv',
+    
+    // Reward Cards
+    'required_points' => 'Erforderlich:',
+    'redeem_button' => 'Einlösen',
+    'points_missing' => 'Punkte fehlen',
+    'points_short' => '{count} Punkte fehlen',
+    'store_label' => 'Geschäft:',
+    
+    // Status Messages
+    'redeeming_status' => '⏳ Wird eingelöst...',
+    'redeem_success' => '🎁 {title}: Anfrage gesendet! Händler bestätigt bald.',
+    'redeem_error' => '❌ Fehler beim Einlösen',
+    'network_error' => '❌ Netzwerkfehler. Bitte später versuchen.',
+    'invalid_data' => '⚠️ Ungültige Belohnungsdaten',
+    
+    // Pending Section
+    'pending_section' => '⏳ Offene Anfragen',
+    'no_pending' => 'Keine offenen Anfragen',
+    'pending_status' => 'Status:',
+    'status_pending' => '⏳ Ausstehend',
+    'status_approved' => '✅ Bestätigt',
+    'status_cancelled' => '❌ Abgelehnt',
+    
+    // Status Notifications
+    'reward_approved' => '✅ {title}: Belohnung wurde bestätigt!',
+    'reward_cancelled' => '❌ {title}: Anfrage wurde abgelehnt.',
+    
+    // Empty States
+    'no_rewards' => 'Keine Belohnungen verfügbar',
+    'no_login' => '⚠️ Bitte melden Sie sich an, um Belohnungen zu sehen',
+    'no_points' => 'Sie haben nicht genug Punkte für diese Belohnung',
+    
+    // Progress Bar
+    'progress_towards' => 'Fortschritt zu',
+    'points_earned' => '{current} von {total} Punkte',
+    
+    // Ország és Adó szekció
+'country_tax_section' => 'Land und Steuersettings',
+'country' => 'Land',
+'country_select' => 'Land wählen',
+'country_de' => 'Deutschland',
+'country_hu' => 'Ungarn',
+'country_ro' => 'Rumänien',
+'tax_id' => 'Steuernummer / USt-ID Nr',
+'tax_id_placeholder' => 'z.B. DE123456789 oder HU12345678',
+'tax_id_help' => 'Deutsch: DE + 9 Ziffern | Ungarisch: HU + 8 Ziffern | Rumänisch: RO + 10 Ziffern',
+'is_taxable' => 'Umsatzsteuerpflichtiges Unternehmen (Mit MwSt)',
+'is_taxable_help' => 'Markiere, wenn Sie Rechnungen mit MwSt ausstellen!',
+
+// Location szekció
+'location_section' => 'Ortskoordinaten',
+'latitude' => 'Breitengrad (Latitude)',
+'longitude' => 'Längengrad (Longitude)',
+'geocode_button' => 'Koordinaten suchen (Nach Adresse)',
+
+
+
+'err_unknown_store' => '❌ Unbekannter Shop',
+'err_rate_limited' => '⚠️ Zu viele Scans. Bitte warten.',
+'qrcamp_title' => 'Kassenscanner & Kampagnen',
+'tab_scanner' => 'Kassenscanner',
+'tab_rewards' => 'Prämien',
+'tab_campaigns' => 'Kampagnen',
+'camera_scanner_btn' => 'Kamera Scanner',
+'offline_banner' => 'Offline-Modus aktiv',
+'sync_now' => 'Sync',
+'scanner_title' => '📲 Kassenscanner',
+'scanner_desc' => 'Scanne den QR-Code des Kunden',
+'scan_placeholder' => 'Hier scannen...',
+'scan_button' => 'QR prüfen',
+'table_title' => '📋 Letzte Scans',
+'t_col_time' => 'Zeit',
+'t_col_customer' => 'Kunde',
+'t_col_status' => 'Status',
+'camera_scanner_title' => 'Kamera QR-Scanner',
+'camera_scanner_desc' => 'Halte den QR-Code des Kunden vor die Kamera. Der Scanner erkennt diesen automatisch.',
+'btn_cancel' => 'Abbrechen',
+'campaigns_title' => 'Kampagnen',
+'camp_filter_all' => 'Alle',
+'camp_filter_active' => 'Aktive',
+'camp_filter_archived' => 'Archiv',
+'camp_new' => '+ Neue Kampagne',
+'camp_edit_modal' => 'Kampagne bearbeiten',
+'label_title' => 'Titel',
+'camp_placeholder_title' => 'z. B. Doppelte Punkte-Woche',
+'label_start' => 'Startdatum',
+'label_end' => 'Enddatum',
+'label_type' => 'Kampagnen Typ',
+'type_points' => 'Extra Punkte',
+'type_discount' => 'Rabatt (%)',
+'type_fixed' => 'Fix Bonus (€)',
+'type_free_product' => '🎁 Gratis Produkt',
+'label_required_points' => 'Erforderliche Punkte',
+'camp_value_label' => 'Wert',
+'label_points_given' => 'Punkte pro Scan',
+'label_free_product' => '🎁 Produktname',
+'camp_placeholder_free_product' => 'z. B. Kaffee + Kuchen',
+'label_free_product_value' => 'Produktwert',
+'label_status' => 'Status',
+'status_active' => '🟢 Aktiv',
+'status_archived' => '📦 Archiv',
+'btn_save' => '💾 Speichern',
+'err_invalid_request' => '❌ Ungültige Anfrage',
+'err_invalid_qr' => '❌ Ungültiger QR',
+'log_point_added' => '1 Punkt hinzugefügt',
+'scan_success' => '✅ 1 Punkt hinzugefügt',
+'offline_synced' => '✅ Offline synchronisiert',
+'err_missing_data' => '❌ Fehlende Daten',
+'campaign_deleted' => '🗑️ Kampagne gelöscht!',
+'archived_success' => '📦 Archiviert',
+
+'state_active' => '🟢 Aktiv',
+'state_archived' => '📦 Archiv',
+'state_upcoming' => '🔵 Bald',
+'state_expired' => '⚫ Abgelaufen',
+'pos_duplicate' => 'Bereits gescannt (2 min)',
+'pos_sync' => 'synchronisiert',
+'pos_network_error' => 'Netzwerkfehler',
+'pos_checking' => 'Prüfe...',
+'pos_server_error' => 'Serverfehler',
+'server_error' => 'Serverfehler',
+'camp_loading' => 'Kampagnen werden geladen...',
+'camp_none' => 'Keine Kampagnen',
+'camp_load_error' => 'Fehler beim Laden',
+'camp_type' => 'Typ',
+'camp_value' => 'Wert',
+'confirm_delete' => 'Sicher löschen?',
+'camp_deleted' => 'Kampagne gelöscht',
+'camp_archived' => 'Archiviert',
+'copy' => 'Kopie',
+'camp_cloned' => 'Dupliziert!',
+'camp_fill_title_date' => 'Bitte Titel und Datum ausfüllen',
+'camp_fill_free_product_name_value' => 'Bitte Produktname und Wert eingeben!',
+'camp_extra_points' => 'Extra Punkte',
+'camp_discount' => 'Rabatt (%)',
+'camp_fixed_bonus' => 'Fix Bonus (€)',
+'scanner_close' => 'Schließen',
+'scanner_show_code' => 'Zeige den QR-Code vor die Kamera',
+'torch_label' => 'Licht',
+'torch_off' => 'Aus',
+'scanner_lib_error' => 'Scanner-Bibliothek konnte nicht geladen werden',
+'scanner_element_not_found' => 'Scanner-Element nicht gefunden',
+'scanner_active' => 'Scanner aktiv - Zeige den QR-Code',
+'scanner_camera_error' => 'Kamera nicht verfügbar',
+'scanner_camera_error_msg' => 'Kamera-Fehler',
+'scanner_camera_permission' => 'Bitte erlaube Kamera-Zugriff in den Browser-Einstellungen.',
+'scanner_read_success' => 'Gelesen',
+'scanner_processing_error' => 'Fehler beim Verarbeiten',
+'scanner_points_adding' => 'Punkte werden hinzugefügt...',
+'scanner_success_msg' => 'Erfolgreich!',
+'scanner_point_added' => 'Punkt hinzugefügt!',
+'error_generic' => 'Fehler',
+'torch_not_supported' => 'Taschenlampe nicht unterstützt',
+'lang_changed' => 'Sprache',
+'lang_change_failed' => 'Sprachänderung fehlgeschlagen',
+'ui_translations_updated' => 'UI-Übersetzungen aktualisiert',
+'app_initialized' => 'App vollständig initialisiert!',
+'app_complete' => 'KOMPLETT - Alle Codes geladen!',
+];

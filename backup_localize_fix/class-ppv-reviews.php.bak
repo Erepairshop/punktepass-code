@@ -1,0 +1,204 @@
+<?php
+if ( ! defined('ABSPATH') ) exit;
+
+class PPV_Reviews {
+
+  public static function hooks(){
+    add_action('init',[__CLASS__,'install']);
+    add_shortcode('ppv_reviews',[__CLASS__,'shortcode']);
+    add_action('wp_enqueue_scripts',[__CLASS__,'enqueue_assets']);
+
+    // AJAX
+    add_action('wp_ajax_ppv_submit_review',[__CLASS__,'ajax_submit_review']);
+    add_action('wp_ajax_nopriv_ppv_submit_review',[__CLASS__,'ajax_login_required']);
+
+    add_action('wp_ajax_ppv_reply_review',[__CLASS__,'ajax_reply_review']);
+    add_action('wp_ajax_ppv_helpful_review',[__CLASS__,'ajax_helpful_review']);
+  }
+
+  // Telepítés / táblák létrehozása
+  public static function install(){
+    global $wpdb;
+    $p = $wpdb->prefix;
+    $charset_collate = $wpdb->get_charset_collate();
+
+    require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+
+    dbDelta("CREATE TABLE {$p}pp_reviews (
+      id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+      store_id BIGINT UNSIGNED NOT NULL,
+      user_id BIGINT UNSIGNED NOT NULL,
+      rating TINYINT NOT NULL,
+      comment TEXT,
+      reply TEXT,
+      created_at DATETIME NOT NULL,
+      PRIMARY KEY (id),
+      UNIQUE KEY store_user (store_id,user_id)
+    ) $charset_collate;");
+
+    dbDelta("CREATE TABLE {$p}pp_review_votes (
+      id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+      review_id BIGINT UNSIGNED NOT NULL,
+      user_id BIGINT UNSIGNED NOT NULL,
+      created_at DATETIME NOT NULL,
+      PRIMARY KEY (id),
+      UNIQUE KEY review_user (review_id,user_id)
+    ) $charset_collate;");
+  }
+
+  // Asset betöltés
+  public static function enqueue_assets(){
+    // JS
+    wp_enqueue_script(
+        'ppv-reviews',
+        plugins_url('assets/js/ppv-reviews.js', dirname(__FILE__)),
+        ['jquery'],
+        time(),
+        true
+    );
+    wp_localize_script('ppv-reviews','ppvReviews',[
+      'ajaxurl'=>admin_url('admin-ajax.php'),
+      'nonce'=>wp_create_nonce('ppv_review_nonce')
+    ]);
+
+    // CSS
+    wp_enqueue_style(
+        'ppv-reviews-css',
+        plugins_url('assets/css/ppv-reviews.css', dirname(__FILE__)),
+        [],
+        time()
+    );
+}
+
+  // Review mentés
+  private static function save_review($store_id,$rating,$comment){
+    global $wpdb;
+    $p = $wpdb->prefix;
+    $user = get_current_user_id();
+    if ($rating<1 || $rating>5) return false;
+
+    $exists = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$p}pp_reviews WHERE store_id=%d AND user_id=%d",$store_id,$user));
+    if ($exists) return false;
+
+    $wpdb->insert("{$p}pp_reviews", [
+      'store_id'=>$store_id,
+      'user_id'=>$user,
+      'rating'=>$rating,
+      'comment'=>$comment,
+      'created_at'=>current_time('mysql')
+    ]);
+
+    return true;
+  }
+
+  // --- AJAX HANDLERS ---
+
+  public static function ajax_submit_review(){
+    check_ajax_referer('ppv_review_nonce','nonce');
+    if (!is_user_logged_in()) wp_send_json_error(['msg'=>'Bitte einloggen']);
+
+    $store_id = intval($_POST['store_id']);
+    $rating   = intval($_POST['rating']);
+    $comment  = sanitize_textarea_field($_POST['comment']);
+
+    $ok = self::save_review($store_id,$rating,$comment);
+    if (!$ok) wp_send_json_error(['msg'=>'Schon bewertet oder ungültig']);
+    wp_send_json_success(['msg'=>'Danke für deine Bewertung!']);
+  }
+
+  public static function ajax_reply_review(){
+    check_ajax_referer('ppv_review_nonce','nonce');
+    global $wpdb;
+    $p=$wpdb->prefix;
+
+    $review_id=intval($_POST['review_id']);
+    $reply=sanitize_textarea_field($_POST['reply']);
+
+    $wpdb->update("{$p}pp_reviews",['reply'=>$reply],['id'=>$review_id]);
+
+    wp_send_json_success(['msg'=>'Antwort gespeichert']);
+  }
+
+  public static function ajax_helpful_review(){
+    check_ajax_referer('ppv_review_nonce','nonce');
+    if (!is_user_logged_in()) wp_send_json_error(['msg'=>'Bitte einloggen']);
+    global $wpdb;
+    $p=$wpdb->prefix;
+    $rid=intval($_POST['review_id']);
+    $uid=get_current_user_id();
+
+    $exists=$wpdb->get_var($wpdb->prepare("SELECT id FROM {$p}pp_review_votes WHERE review_id=%d AND user_id=%d",$rid,$uid));
+    if ($exists) wp_send_json_error(['msg'=>'Schon markiert']);
+
+    $wpdb->insert("{$p}pp_review_votes",[
+      'review_id'=>$rid,
+      'user_id'=>$uid,
+      'created_at'=>current_time('mysql')
+    ]);
+
+    wp_send_json_success(['msg'=>'Danke!']);
+  }
+
+  public static function ajax_login_required(){
+    wp_send_json_error(['msg'=>'Bitte logge dich ein um eine Bewertung abzugeben.']);
+  }
+
+  // Shortcode
+  public static function shortcode($atts){
+    global $wpdb;
+    $p = $wpdb->prefix;
+    $atts = shortcode_atts(['id'=>0], $atts);
+    $store_id = intval($atts['id']);
+    if(!$store_id) return '';
+
+    $reviews = $wpdb->get_results("
+      SELECT r.*, u.display_name,
+        (SELECT COUNT(*) FROM {$p}pp_review_votes v WHERE v.review_id=r.id) as helpful_count
+      FROM {$p}pp_reviews r 
+      LEFT JOIN {$p}users u ON r.user_id=u.ID 
+      WHERE store_id=$store_id
+      ORDER BY created_at DESC
+    ");
+
+    $avg = $wpdb->get_var($wpdb->prepare("SELECT AVG(rating) FROM {$p}pp_reviews WHERE store_id=%d", $store_id));
+    $avg = $avg ? round($avg,1) : 0;
+
+    ob_start();
+    echo '<div class="ppv-reviews">';
+    echo '<h3>Bewertungen</h3>';
+    echo '<p><strong>Durchschnitt:</strong> '.$avg.' / 5</p>';
+
+    // Form
+    if ( is_user_logged_in() ){
+      echo '<form class="ppv-review-form">';
+      echo '<input type="hidden" name="store_id" value="'.$store_id.'">';
+      echo '<label>Sterne:</label><br>';
+      for($i=1;$i<=5;$i++){
+        echo '<label><input type="radio" name="rating" value="'.$i.'"> '.$i.'</label> ';
+      }
+      echo '<br><label>Kommentar:</label><br>';
+      echo '<textarea name="comment" rows="3"></textarea>';
+      echo '<br><button type="submit" class="button">Abschicken</button>';
+      echo '</form>';
+    }
+
+    // Reviews
+    if ($reviews){
+      foreach($reviews as $r){
+        echo '<div class="ppv-review-item" style="border-bottom:1px solid #ddd;margin:10px 0;padding:5px 0">';
+        echo '<strong>'.esc_html($r->display_name).'</strong> ('.$r->rating.'/5)';
+        echo '<p>'.esc_html($r->comment).'</p>';
+        if ($r->reply){
+          echo '<div class="ppv-reply" style="margin-left:20px;padding:5px;background:#f9f9f9">';
+          echo '<strong>Antwort:</strong> '.esc_html($r->reply);
+          echo '</div>';
+        }
+        echo '<button class="ppv-helpful" data-id="'.$r->id.'">Hilfreich ('.$r->helpful_count.')</button>';
+        echo '</div>';
+      }
+    }
+
+    echo '</div>';
+    return ob_get_clean();
+  }
+}

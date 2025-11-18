@@ -1,0 +1,607 @@
+<?php
+if (!defined('ABSPATH')) exit;
+
+if (!class_exists('PPV_Profile_Lite')) {
+
+class PPV_Profile_Lite {
+
+    public static function hooks() {
+        add_action('ppv_render_profile_form', [__CLASS__, 'render_form']);
+        add_action('init', [__CLASS__, 'handle_form_submit']);
+        add_shortcode('pp_store_profile', [__CLASS__, 'render_form']);
+        add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_profile_styles'], 99);
+        add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_profile_scripts']);
+        add_action('wp_ajax_ppv_save_profile', [__CLASS__, 'ajax_save_profile']);
+        add_action('wp_ajax_ppv_delete_media', [__CLASS__, 'ajax_delete_media']);
+    }
+
+    public static function enqueue_profile_scripts() {
+        wp_enqueue_script(
+            'pp-profile-lite',
+            PPV_PLUGIN_URL . 'assets/js/pp-profile-lite.js',
+            ['jquery'],
+            time(),
+            true
+        );
+
+        wp_localize_script('pp-profile-lite', 'ppv_ajax', [
+            'ajax_url' => admin_url('admin-ajax.php'),
+            'nonce'    => wp_create_nonce('ppv_profile_nonce')
+        ]);
+    }
+
+    public static function enqueue_profile_styles() {
+        wp_enqueue_style(
+            'pp-profile-lite',
+            PPV_PLUGIN_URL . 'assets/css/pp-profile-lite.css',
+            [],
+            filemtime(PPV_PLUGIN_DIR . 'assets/css/pp-profile-lite.css')
+        );
+    }
+
+    public static function render_form() {
+        error_log("👤 DEBUG render_form start: logged_in=" . (is_user_logged_in() ? 'YES' : 'NO') . ", user_id=" . get_current_user_id());
+
+       // 🔹 WordPress user vagy POS-Session ellenőrzése
+if (!is_user_logged_in()) {
+    echo '<p style="text-align:center;color:#dc3545;">' . __('Bitte logge dich zuerst ein.', 'punktepass') . '</p>';
+    return;
+}
+
+
+
+        global $wpdb;
+        $user_id = get_current_user_id();
+        $store = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}ppv_stores WHERE user_id = %d", $user_id));
+        ?>
+        <div class="ppv-back-bar">
+            <a href="/handler_dashboard" class="ppv-back-link">← Zurück zum Dashboard</a>
+        </div>
+        <?php
+$is_pos = isset($_COOKIE['ppv_pos_token']) && !empty($_COOKIE['ppv_pos_token']);
+if ($is_pos || current_user_can('manage_options')) :
+?>
+    <div class="ppv-filiale-add" style="text-align:right;margin-bottom:10px;">
+        <button type="button" id="ppv-add-filiale" class="ppv-btn neon">
+            + Neue Filiale hinzufügen
+        </button>
+        <p id="ppv-filiale-msg" style="margin-top:6px;color:#0ff;font-size:14px;"></p>
+    </div>
+<?php endif; ?>
+
+        <form method="post" enctype="multipart/form-data" class="ppv-profile-form" id="ppv-profile-form">
+            <?php wp_nonce_field('ppv_save_profile', 'ppv_nonce'); ?>
+            <input type="hidden" name="action" value="ppv_save_profile">
+
+            <div class="ppv-tabs">
+                <button type="button" class="ppv-tab active" data-tab="allgemein"><?php _e('Allgemein', 'punktepass'); ?></button>
+                <button type="button" class="ppv-tab" data-tab="zeiten"><?php _e('Öffnungszeiten', 'punktepass'); ?></button>
+                <button type="button" class="ppv-tab" data-tab="bilder"><?php _e('Bilder & Medien', 'punktepass'); ?></button>
+                <button type="button" class="ppv-tab" data-tab="vorschau"><?php _e('Vorschau', 'punktepass'); ?></button>
+                <button type="button" class="ppv-tab" data-tab="einstellungen">
+    <?php _e('Einstellungen', 'punktepass'); ?>
+</button>
+            </div>
+
+
+   <!-- Allgemein -->
+<div class="ppv-tab-content active" id="tab-allgemein">
+    <h3><?php _e('Allgemeine Informationen', 'punktepass'); ?></h3>
+
+    <p><label><?php _e('Store Name', 'punktepass'); ?></label>
+    <input type="text" name="store_name" value="<?php echo esc_attr($store->name ?? ''); ?>" required></p>
+
+    <p><label><?php _e('Slogan', 'punktepass'); ?></label>
+    <input type="text" name="store_slogan" placeholder="z. B. Schnell. Fair. Lokal." value="<?php echo esc_attr($store->slogan ?? ''); ?>"></p>
+
+    <p><label><?php _e('Kategorie', 'punktepass'); ?></label>
+    <select name="store_category">
+        <option value="">Bitte wählen...</option>
+        <option value="handy" <?php selected($store->category ?? '', 'handy'); ?>>Handyreparatur</option>
+        <option value="cafe" <?php selected($store->category ?? '', 'cafe'); ?>>Café</option>
+        <option value="friseur" <?php selected($store->category ?? '', 'friseur'); ?>>Friseur</option>
+        <option value="mode" <?php selected($store->category ?? '', 'mode'); ?>>Mode & Accessoires</option>
+        <option value="fitness" <?php selected($store->category ?? '', 'fitness'); ?>>Fitness</option>
+        <option value="elektronik" <?php selected($store->category ?? '', 'elektronik'); ?>>Elektronik</option>
+        <option value="sonstiges" <?php selected($store->category ?? '', 'sonstiges'); ?>>Sonstiges</option>
+    </select></p>
+
+    <p><label><?php _e('Adresse', 'punktepass'); ?></label>
+    <input type="text" name="store_address" value="<?php echo esc_attr($store->address ?? ''); ?>"></p>
+
+    <p class="ppv-3col">
+        <span><label><?php _e('PLZ', 'punktepass'); ?></label>
+        <input type="text" name="store_plz" value="<?php echo esc_attr($store->plz ?? ''); ?>"></span>
+
+        <span><label><?php _e('Stadt', 'punktepass'); ?></label>
+        <input type="text" name="store_city" value="<?php echo esc_attr($store->city ?? ''); ?>"></span>
+
+        <span><label><?php _e('Land', 'punktepass'); ?></label>
+        <input type="text" name="store_country" value="<?php echo esc_attr($store->country ?? ''); ?>"></span>
+    </p>
+
+    <p><label><?php _e('Telefon', 'punktepass'); ?></label>
+    <input type="text" name="store_phone" value="<?php echo esc_attr($store->phone ?? ''); ?>"></p>
+
+    <p><label><?php _e('E-Mail', 'punktepass'); ?></label>
+    <input type="email" name="store_email" value="<?php echo esc_attr($store->email ?? ''); ?>"></p>
+
+    <p><label><?php _e('Webseite', 'punktepass'); ?></label>
+    <input type="url" name="store_website" value="<?php echo esc_attr($store->website ?? ''); ?>"></p>
+
+    <p><label><?php _e('Kurze Beschreibung', 'punktepass'); ?></label>
+    <textarea name="store_description" rows="3"><?php echo esc_textarea($store->description ?? ''); ?></textarea></p>
+
+    <h3><?php _e('Unternehmensdetails', 'punktepass'); ?></h3>
+    <p><label><?php _e('Firmenname', 'punktepass'); ?></label>
+    <input type="text" name="company_name" value="<?php echo esc_attr($store->company_name ?? ''); ?>"></p>
+
+    <p><label><?php _e('Ansprechpartner', 'punktepass'); ?></label>
+    <input type="text" name="contact_person" value="<?php echo esc_attr($store->contact_person ?? ''); ?>"></p>
+
+    <h3><?php _e('Social Media Links', 'punktepass'); ?></h3>
+    <div class="ppv-social-group">
+        <input type="url" name="store_facebook" placeholder="Facebook" value="<?php echo esc_attr($store->facebook ?? ''); ?>">
+        <input type="url" name="store_instagram" placeholder="Instagram" value="<?php echo esc_attr($store->instagram ?? ''); ?>">
+        <input type="url" name="store_tiktok" placeholder="TikTok" value="<?php echo esc_attr($store->tiktok ?? ''); ?>">
+        <input type="text" name="store_whatsapp" placeholder="WhatsApp Nummer" value="<?php echo esc_attr($store->whatsapp ?? ''); ?>">
+    </div>
+
+    <h3><?php _e('Profilstatus', 'punktepass'); ?></h3>
+    <p><label><input type="checkbox" name="store_active" value="1" <?php checked($store->active ?? 1, 1); ?>> Aktiv</label></p>
+    <p><label><input type="checkbox" name="store_visible" value="1" <?php checked($store->visible ?? 1, 1); ?>> Öffentlich sichtbar</label></p>
+
+    <p class="ppv-last-update">
+        <?php if (!empty($store->last_updated)) : ?>
+            <small>🕓 <?php _e('Zuletzt aktualisiert:', 'punktepass'); ?> <?php echo esc_html($store->last_updated); ?></small>
+        <?php endif; ?>
+    </p>
+</div>
+
+
+            <!-- Öffnungszeiten -->
+            <div class="ppv-tab-content" id="tab-zeiten">
+                <h3><?php _e('Öffnungszeiten', 'punktepass'); ?></h3>
+                <table class="ppv-opening-hours">
+                    <?php
+                    $days = [
+                        'mo' => __('Montag','punktepass'),
+                        'di' => __('Dienstag','punktepass'),
+                        'mi' => __('Mittwoch','punktepass'),
+                        'do' => __('Donnerstag','punktepass'),
+                        'fr' => __('Freitag','punktepass'),
+                        'sa' => __('Samstag','punktepass'),
+                        'so' => __('Sonntag','punktepass'),
+                    ];
+                    $zeiten = (!empty($store->zeiten)) ? json_decode($store->zeiten,true) : [];
+                    foreach ($days as $key=>$label) :
+                        $von = $zeiten[$key]['von'] ?? '';
+                        $bis = $zeiten[$key]['bis'] ?? '';
+                        $closed = !empty($zeiten[$key]['closed']);
+                        ?>
+                        <tr>
+                            <td><?php echo esc_html($label); ?></td>
+                            <td>
+                                <input type="time" name="zeiten[<?php echo $key; ?>][von]" value="<?php echo esc_attr($von); ?>" <?php if($closed) echo 'disabled'; ?>> –
+                                <input type="time" name="zeiten[<?php echo $key; ?>][bis]" value="<?php echo esc_attr($bis); ?>" <?php if($closed) echo 'disabled'; ?>>
+                                <label>
+                                    <input type="checkbox" name="zeiten[<?php echo $key; ?>][closed]" value="1" <?php checked($closed,true); ?>> <?php _e('geschlossen','punktepass'); ?>
+                                </label>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </table>
+            </div>
+
+          
+          
+          
+            <!-- Bilder -->
+            <div class="ppv-tab-content" id="tab-bilder">
+                <h3><?php _e('Bilder & Medien', 'punktepass'); ?></h3>
+
+                <p><label><?php _e('Logo', 'punktepass'); ?></label><br>
+                <input type="file" name="store_logo">
+                <?php if ( ! empty( $store->logo ) ) : ?>
+                    <div class="ppv-img-wrapper">
+                        <img src="<?php echo esc_url($store->logo); ?>" class="ppv-preview-img">
+                        <button type="button" class="ppv-delete-img" data-field="logo" data-url="<?php echo esc_url($store->logo); ?>">×</button>
+                    </div>
+                <?php endif; ?></p>
+
+                <p><label><?php _e('Titelbild', 'punktepass'); ?></label><br>
+                <input type="file" name="store_cover">
+                <?php if ( ! empty( $store->cover ) ) : ?>
+                    <div class="ppv-img-wrapper">
+                        <img src="<?php echo esc_url($store->cover); ?>" class="ppv-preview-img">
+                        <button type="button" class="ppv-delete-img" data-field="cover" data-url="<?php echo esc_url($store->cover); ?>">×</button>
+                    </div>
+                <?php endif; ?></p>
+
+                <p>
+                    <label><?php _e('Galerie (max. 10)', 'punktepass'); ?></label><br>
+                    <div class="ppv-gallery-preview existing">
+                        <?php
+                        if ( ! empty( $store->gallery ) ) :
+                            $gallery = json_decode( $store->gallery, true );
+                            if (is_array($gallery)) {
+                                foreach ( $gallery as $img ) {
+                                    echo '<div class="ppv-thumb-wrapper">
+                                            <img src="'.esc_url($img).'" class="ppv-thumb">
+                                            <button type="button" class="ppv-delete-img" data-field="gallery" data-url="'.esc_url($img).'">×</button>
+                                          </div>';
+                                }
+                            }
+                        endif;
+                        ?>
+                    </div>
+
+                    <div class="ppv-gallery-preview new"></div>
+                    <input type="file" id="ppv-gallery-input" name="store_gallery[]" multiple style="display:none;">
+                    <button type="button" id="ppv-add-gallery-btn" class="ppv-btn">+ Bild hinzufügen</button>
+                </p>
+            </div>
+
+           <!-- Vorschau -->
+<div class="ppv-tab-content" id="tab-vorschau">
+    <?php
+    global $wpdb;
+    $user_id = get_current_user_id();
+    $store = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}ppv_stores WHERE user_id=%d", $user_id));
+    echo self::render_vorschau($store);
+    ?>
+</div>
+
+<div class="ppv-save-bar">
+
+    <?php if (current_user_can('manage_options') || get_user_meta(get_current_user_id(), 'is_pos_user', true)) : ?>
+    
+    <?php endif; ?>
+
+    <button type="submit" name="ppv_profile_submit" class="ppv-btn">
+        <?php _e('Speichern', 'punktepass'); ?>
+    </button>
+</div>
+<div id="ppv-profile-message" class="ppv-message-bottom"></div>
+            
+            
+            <!-- Einstellungen -->
+<div class="ppv-tab-content" id="tab-einstellungen">
+    <?php
+    // 🔹 Külön PHP fájlból töltjük be a tartalmat
+    if (file_exists(PPV_PLUGIN_DIR . 'includes/pp-profile-settings.php')) {
+        include PPV_PLUGIN_DIR . 'includes/pp-profile-settings.php';
+    } else {
+        echo '<p style="color:#999;">Einstellungen werden bald verfügbar...</p>';
+    }
+    ?>
+</div>
+
+        </form>
+        <?php
+        
+        
+    }
+
+
+    // --- AJAX save + DB update (ugyanaz, mint nálad eddig, nem piszkáltam) ---
+
+    public static function ajax_save_profile() {
+        try {
+            self::handle_form_submit(true);
+        } catch (\Throwable $e) {
+            wp_send_json_error([ 'message' => 'Fehler: '.$e->getMessage() ]);
+            wp_die();
+        }
+    }
+
+public static function handle_form_submit($ajax = false) {
+    error_log("🚀 handle_form_submit TRIGGERED via " . ($ajax ? 'AJAX' : 'FORM'));
+
+$nonce = $_POST['ppv_nonce'] ?? $_POST['nonce'] ?? '';
+if (empty($nonce) || !wp_verify_nonce($nonce, 'ppv_save_profile')) {
+    if ($ajax) { wp_send_json_error(['message' => 'Ungültiges oder fehlendes Token']); wp_die(); }
+    return;
+}
+
+
+    global $wpdb;
+    $user_id = get_current_user_id();
+    if (!$user_id) {
+        if ($ajax) { wp_send_json_error(['message' => 'Nicht eingeloggt']); wp_die(); }
+        return;
+    }
+
+    $old = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}ppv_stores WHERE user_id=%d", $user_id));
+
+    // 🔹 Datei-Uploads
+    $logo  = (!empty($_FILES['store_logo']['name']))  ? self::handle_upload($_FILES['store_logo'])  : ($old->logo ?? '');
+    $cover = (!empty($_FILES['store_cover']['name'])) ? self::handle_upload($_FILES['store_cover']) : ($old->cover ?? '');
+
+    // 🔹 Galerie (bestehend + neue Bilder)
+    $gallery = (!empty($old->gallery)) ? json_decode($old->gallery, true) : [];
+    if (!empty($_FILES['store_gallery']['name'][0])) {
+        foreach ($_FILES['store_gallery']['name'] as $i => $name) {
+            if (!$name) continue;
+            $file = [
+                'name' => $_FILES['store_gallery']['name'][$i],
+                'type' => $_FILES['store_gallery']['type'][$i],
+                'tmp_name' => $_FILES['store_gallery']['tmp_name'][$i],
+                'error' => $_FILES['store_gallery']['error'][$i],
+                'size' => $_FILES['store_gallery']['size'][$i],
+            ];
+            $uploaded_url = self::handle_upload($file);
+            if ($uploaded_url && !in_array($uploaded_url, $gallery)) $gallery[] = $uploaded_url;
+        }
+    }
+
+    // 🔹 GEO (ha később bővíted)
+    $latitude  = $old->latitude ?? null;
+    $longitude = $old->longitude ?? null;
+
+    // 🔹 Adatok mentéshez
+    $data = [
+        'user_id'        => $user_id,
+        'name'           => sanitize_text_field($_POST['store_name']),
+        'slogan'         => sanitize_text_field($_POST['store_slogan']),
+        'category'       => sanitize_text_field($_POST['store_category']),
+        'address'        => sanitize_text_field($_POST['store_address']),
+        'plz'            => sanitize_text_field($_POST['store_plz']),
+        'city'           => sanitize_text_field($_POST['store_city']),
+        'country'        => sanitize_text_field($_POST['store_country']),
+        'phone'          => sanitize_text_field($_POST['store_phone']),
+        'email'          => sanitize_email($_POST['store_email']),
+        'website'        => esc_url_raw($_POST['store_website']),
+        'description'    => sanitize_textarea_field($_POST['store_description']),
+        'company_name'   => sanitize_text_field($_POST['company_name']),
+        'contact_person' => sanitize_text_field($_POST['contact_person']),
+        'logo'           => $logo,
+        'cover'          => $cover,
+        'gallery'        => !empty($gallery) ? wp_json_encode($gallery) : null,
+        'facebook'       => esc_url_raw($_POST['store_facebook']),
+        'instagram'      => esc_url_raw($_POST['store_instagram']),
+        'tiktok'         => esc_url_raw($_POST['store_tiktok']),
+        'whatsapp'       => sanitize_text_field($_POST['store_whatsapp']),
+        'zeiten'         => !empty($_POST['zeiten']) ? wp_json_encode($_POST['zeiten']) : null,
+        'latitude'       => $latitude,
+        'longitude'      => $longitude,
+        'active'         => isset($_POST['store_active']) ? 1 : 0,
+        'visible'        => isset($_POST['store_visible']) ? 1 : 0,
+        'last_updated'   => current_time('mysql'),
+    ];
+    
+    // 🔹 Google Geocoding – Adresse → GPS Koordinaten
+    // 🔹 Google Geocoding – Adresse → GPS Koordinaten + Debug
+if (!empty($data['address']) && !empty($data['city'])) {
+    $full_address = urlencode($data['address'] . ', ' . $data['plz'] . ' ' . $data['city']);
+    $api_key = 'AIzaSyD-ALmM4ZM2cRaSiRpL1-wfCi1Vh33AOlo';
+    $geo_url = "https://maps.googleapis.com/maps/api/geocode/json?address={$full_address}&key={$api_key}";
+    
+    error_log("🌍 GEO DEBUG → URL: {$geo_url}");
+
+    $response = wp_remote_get($geo_url);
+    if (is_wp_error($response)) {
+        error_log("❌ GEO HTTP ERROR: " . $response->get_error_message());
+    } else {
+        $body_raw = wp_remote_retrieve_body($response);
+        error_log("📦 GEO RAW RESPONSE: " . substr($body_raw, 0, 400)); // csak az első 400 karakter
+        $body = json_decode($body_raw, true);
+        
+        if (!empty($body['results'][0]['geometry']['location'])) {
+            $data['latitude']  = $body['results'][0]['geometry']['location']['lat'];
+            $data['longitude'] = $body['results'][0]['geometry']['location']['lng'];
+            error_log("📍 Geo erfolgreich: {$data['latitude']}, {$data['longitude']}");
+        } else {
+            $status = $body['status'] ?? '(unbekannt)';
+            error_log("⚠️ Keine Geodaten – Status={$status} für Adresse={$full_address}");
+        }
+    }
+} else {
+    error_log("🚫 GEO SKIPPED – unvollständige Adresse");
+}
+
+
+
+    // 🔹 Store-Key generálás
+    if (!empty($old->name) && $old->name !== $_POST['store_name']) {
+        $data['store_key'] = sanitize_title($_POST['store_name']);
+    }
+    if (empty($old->store_key)) {
+        $data['store_key'] = bin2hex(random_bytes(16));
+    }
+    if (empty($data['store_key']) && !empty($data['name'])) {
+        $data['store_key'] = sanitize_title($data['name']);
+    }
+
+    // 🔹 Frissítés vagy új rekord
+    $exists = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id=%d", $user_id));
+    if ($exists) {
+        $wpdb->update("{$wpdb->prefix}ppv_stores", $data, ['user_id' => $user_id]);
+    } else {
+        $wpdb->insert("{$wpdb->prefix}ppv_stores", $data);
+    }
+
+    // 🔹 user_id biztonságos frissítése (mindig a bejelentkezett userhez tartozzon)
+    $store_id = $wpdb->get_var($wpdb->prepare("
+        SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id = %d ORDER BY id DESC LIMIT 1
+    ", $user_id));
+
+    if ($store_id) {
+        $wpdb->update(
+            "{$wpdb->prefix}ppv_stores",
+            ['user_id' => $user_id],
+            ['id' => $store_id]
+        );
+        error_log("✅ Store #{$store_id} user_id frissítve: {$user_id}");
+    }
+
+    // 🔹 QR automatikus újragenerálása
+    if (class_exists('PPV_QR_Generator')) {
+        $store = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}ppv_stores WHERE user_id=%d", $user_id));
+        if ($store) {
+            PPV_QR_Generator::generate_qr($store);
+        }
+    }
+
+    // 🔹 Hook + AJAX válasz
+    do_action('ppv_after_profile_save', $data);
+
+    if ($ajax) {
+        wp_send_json_success([
+            'message' => __('Profil erfolgreich gespeichert', 'punktepass'),
+            'store'   => $data
+        ]);
+        wp_die();
+    }
+}
+
+    // === VORSCHAU ===
+    public static function render_vorschau($store) {
+        if (!$store) return '<p>' . __('Kein Profil gefunden', 'punktepass') . '</p>';
+
+        $gallery = !empty($store->gallery) ? json_decode($store->gallery, true) : [];
+        $zeiten  = !empty($store->zeiten) ? json_decode($store->zeiten, true) : [];
+
+        ob_start(); ?>
+        <div class="ppv-profile-card" id="ppv-profile-vorschau" data-store='<?php echo wp_json_encode($store); ?>'>
+            
+            <div class="ppv-cover">
+                <?php if (!empty($store->cover)) : ?>
+                    <img src="<?php echo esc_url($store->cover); ?>" alt="Cover">
+                <?php endif; ?>
+            </div>
+
+            <div class="ppv-header">
+                <?php if (!empty($store->logo)) : ?>
+                    <div class="ppv-logo">
+                        <img src="<?php echo esc_url($store->logo); ?>" alt="<?php echo esc_attr($store->name); ?>">
+                    </div>
+                <?php endif; ?>
+
+                <div class="ppv-meta">
+                    <h2 class="ppv-name"><?php echo esc_html($store->name ?? ''); ?></h2>
+
+                    <?php if (!empty($store->slogan)) : ?>
+                        <p class="ppv-slogan">„<?php echo esc_html($store->slogan); ?>”</p>
+                    <?php endif; ?>
+
+                    <?php if (!empty($store->category)) : ?>
+                        <p class="ppv-category">🏷️ <?php echo ucfirst(esc_html($store->category)); ?></p>
+                    <?php endif; ?>
+
+                    <p class="ppv-address"><?php echo esc_html(($store->address ?? '') . ', ' . ($store->plz ?? '') . ' ' . ($store->city ?? '')); ?></p>
+
+                    <?php if (!empty($store->phone)) : ?>
+                        <p class="ppv-phone">📞 <a href="tel:<?php echo esc_attr($store->phone); ?>"><?php echo esc_html($store->phone); ?></a></p>
+                    <?php endif; ?>
+
+                    <?php if (!empty($store->email)) : ?>
+                        <p class="ppv-email">✉️ <a href="mailto:<?php echo esc_attr($store->email); ?>"><?php echo esc_html($store->email); ?></a></p>
+                    <?php endif; ?>
+
+                    <?php if (!empty($store->website)) : ?>
+                        <p class="ppv-website">🌐 <a href="<?php echo esc_url($store->website); ?>" target="_blank"><?php echo esc_html($store->website); ?></a></p>
+                    <?php endif; ?>
+
+                    <?php if (!empty($store->company_name)) : ?>
+                        <p class="ppv-company"><strong><?php echo esc_html($store->company_name); ?></strong></p>
+                    <?php endif; ?>
+
+                    <?php if (!empty($store->contact_person)) : ?>
+                        <p class="ppv-contact">👤 <?php echo esc_html($store->contact_person); ?></p>
+                    <?php endif; ?>
+
+                    <p class="ppv-status">
+                        <?php if ($store->active) : ?>
+                            ✅ <span>Aktiv</span>
+                        <?php else : ?>
+                            ❌ <span>Inaktiv</span>
+                        <?php endif; ?>
+                        <?php if (!$store->visible) : ?>
+                            <span style="color:#ff5555;">(nicht öffentlich)</span>
+                        <?php endif; ?>
+                    </p>
+
+                    <?php if (!empty($store->last_updated)) : ?>
+                        <p class="ppv-lastupdate">🕓 Zuletzt aktualisiert: <?php echo esc_html($store->last_updated); ?></p>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <?php if (!empty($store->description)) : ?>
+                <div class="ppv-description">
+                    <p><?php echo esc_html($store->description); ?></p>
+                </div>
+            <?php endif; ?>
+
+            <?php if (!empty($zeiten) && is_array($zeiten)) : ?>
+                <div class="ppv-opening">
+                    <h3><?php _e('Öffnungszeiten', 'punktepass'); ?></h3>
+                    <table>
+                        <?php foreach ($zeiten as $day => $val) : ?>
+                            <tr>
+                                <td><?php echo esc_html($day); ?></td>
+                                <td><?php echo !empty($val['closed']) ? __('geschlossen','punktepass') : esc_html($val['von']) . ' - ' . esc_html($val['bis']); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </table>
+                </div>
+            <?php endif; ?>
+
+            <?php if (!empty($gallery) && is_array($gallery)) : ?>
+                <div class="ppv-gallery">
+                    <h3><?php _e('Galerie','punktepass'); ?></h3>
+                    <div class="ppv-gallery-grid">
+                        <?php foreach ($gallery as $img) : ?>
+                            <div class="ppv-gallery-item">
+                                <img src="<?php echo esc_url($img); ?>" alt="Gallery">
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <div class="ppv-links">
+                <h3>🔗 Profil-Link</h3>
+                <input type="text" readonly value="https://punktepass.de/store/<?php echo esc_attr($store->store_key); ?>" id="ppv-profile-link">
+                <button type="button" class="ppv-btn-outline" onclick="navigator.clipboard.writeText(document.getElementById('ppv-profile-link').value); alert('Link kopiert!');">Link kopieren</button>
+                <br><br>
+                <button type="button" class="ppv-btn-outline">📱 QR-Code herunterladen</button>
+            </div>
+
+        </div>
+        <?php
+        return ob_get_clean();
+    }
+
+
+    public static function ajax_delete_media() {
+        check_ajax_referer('ppv_profile_nonce','nonce');
+        if ( ! is_user_logged_in() ) {
+            wp_send_json_error(['message' => __('Nicht eingeloggt','punktepass')]); wp_die();
+        }
+        global $wpdb;
+        $user_id = get_current_user_id();
+        $field = sanitize_text_field($_POST['field']);
+        $url   = esc_url_raw($_POST['url']);
+        $store = $wpdb->get_row( $wpdb->prepare("SELECT * FROM {$wpdb->prefix}ppv_stores WHERE user_id=%d", $user_id) );
+        if ( ! $store ) { wp_send_json_error(['message'=>'Kein Store gefunden']); wp_die(); }
+
+        if ( $field === 'logo' || $field === 'cover' ) {
+            $wpdb->update("{$wpdb->prefix}ppv_stores", [ $field => '' ], ['user_id'=>$user_id]);
+        }
+        if ( $field === 'gallery' && ! empty($url) ) {
+            $gallery = !empty($store->gallery) ? json_decode($store->gallery,true) : [];
+            $new = array_filter($gallery, function($img) use($url) { return $img !== $url; });
+            $wpdb->update("{$wpdb->prefix}ppv_stores", ['gallery'=>wp_json_encode($new)], ['user_id'=>$user_id]);
+        }
+        wp_send_json_success(['message'=>'Bild gelöscht']); wp_die();
+    }
+
+    private static function handle_upload( $file ) {
+        require_once ABSPATH . 'wp-admin/includes/file.php';
+        $upload = wp_handle_upload( $file, [ 'test_form' => false ] );
+        return ! empty( $upload['url'] ) ? $upload['url'] : '';
+    }
+}
+}

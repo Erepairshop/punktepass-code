@@ -1,0 +1,5 @@
+# CHANGELOG
+2025-09-29 22:16:13
+- Bumped version to 1.2.7 (forces fresh JS/CSS).
+- Added anti-cache include for logged-in users (dashboard refresh).
+- Added robust redirect helper (fallback JS redirect when headers already sent).

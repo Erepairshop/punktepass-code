@@ -1,0 +1,272 @@
+<?php
+if (!defined('ABSPATH')) exit;
+
+/**
+ * PunktePass – Händler Registrierung mit Stripe Checkout (7 Tage Test)
+ * Shortcode: [pp_vendor_signup]
+ */
+
+class PPV_Vendor_Signup_Stripe {
+
+    public static function hooks() {
+        add_shortcode('pp_vendor_signup', [__CLASS__, 'render_form']);
+        add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
+        add_action('wp_ajax_ppv_vendor_signup', [__CLASS__, 'ajax_register_vendor']);
+        add_action('wp_ajax_nopriv_ppv_vendor_signup', [__CLASS__, 'ajax_register_vendor']);
+    }
+
+    /** 🔹 CSS + JS */
+    public static function enqueue_assets() {
+        wp_enqueue_script('ppv-vendor-signup', PPV_PLUGIN_URL . 'assets/js/ppv-vendor-signup.js', ['jquery'], time(), true);
+        wp_localize_script('ppv-vendor-signup', 'ppv_vendor_signup', [
+            'ajax_url' => admin_url('admin-ajax.php')
+        ]);
+    }
+
+    /** 🔹 Regisztrációs űrlap */
+    public static function render_form() {
+        ob_start(); ?>
+        <form id="ppv_vendor_form">
+            <?php wp_nonce_field('ppv_vendor_signup', 'ppv_nonce'); ?>
+            <h2>🧾 Händlerregistrierung</h2>
+
+            <label>Firmenname *</label>
+            <input type="text" name="company_name" required>
+
+            <label>Store Name *</label>
+            <input type="text" name="store_name" required>
+
+            <label>Adresse</label>
+            <input type="text" name="address">
+
+            <div class="ppv-row">
+                <input type="text" name="plz" placeholder="PLZ">
+                <input type="text" name="city" placeholder="Stadt">
+                <input type="text" name="phone" placeholder="Telefon">
+            </div>
+
+            <label>E-Mail *</label>
+            <input type="email" name="email" required>
+
+            <label>Passwort *</label>
+            <div style="position:relative;">
+                <input type="password" name="password" id="password" required minlength="8"
+                    placeholder="Mind. 8 Zeichen, Großbuchstabe, Zahl, Sonderzeichen">
+                <button type="button" id="suggest_pw" style="position:absolute;right:5px;top:5px;">🔑 Vorschlag</button>
+            </div>
+
+            <label>Passwort wiederholen *</label>
+            <input type="password" name="password_repeat" id="password_repeat" required>
+
+            <label>Abo-Tarif</label>
+            <select name="subscription_plan" required>
+                <option value="PRO" selected>PRO – 30 € netto / Monat (7 Tage Test)</option>
+            </select>
+<label style="font-size:13px; line-height:1.4;">
+    <input type="checkbox" name="accept_terms" required>
+    Ich habe die <a href="<?php echo home_url('/agb'); ?>" target="_blank">Allgemeinen Geschäftsbedingungen</a> 
+    und die <a href="<?php echo home_url('/datenschutz'); ?>" target="_blank">Datenschutzerklärung</a> 
+    gelesen und akzeptiere sie.
+</label>
+<p style="font-size:12px; color:#555; margin-top:-5px; margin-bottom:15px;">
+    *Nach Ablauf der 7-tägigen Testphase wird das monatliche Abonnement automatisch fortgesetzt, 
+    sofern es nicht vorher gekündigt wird.*
+</p>
+            <p><button type="submit" class="ppv-btn">Registrieren & Zahlung starten</button></p>
+            <div id="ppv_vendor_msg"></div>
+        </form>
+
+        <style>
+        #ppv_vendor_form { max-width:480px; margin:auto; background:#fff; padding:25px; border-radius:12px; box-shadow:0 3px 10px rgba(0,0,0,0.1); }
+        #ppv_vendor_form input, select { width:100%; padding:10px; margin-bottom:12px; border:1px solid #ccc; border-radius:6px; }
+        .ppv-btn { background:#0073aa; color:#fff; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; }
+        #suggest_pw { background:#eee; border:1px solid #ccc; padding:5px 8px; border-radius:6px; cursor:pointer; font-size:13px; }
+        #ppv_vendor_msg { margin-top:10px; font-weight:500; color:#0073aa; }
+        </style>
+
+        <script>
+        jQuery(document).ready(function($) {
+            $('#suggest_pw').on('click', function() {
+                const pw = Math.random().toString(36).slice(-8) + 'A!';
+                $('#password').val(pw);
+                $('#password_repeat').val(pw);
+            });
+
+            $('#ppv_vendor_form').on('submit', function(e) {
+                e.preventDefault();
+                const pw = $('#password').val();
+                const pw2 = $('#password_repeat').val();
+                const regex = /^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*]).{8,}$/;
+                if (pw !== pw2) {
+                    $('#ppv_vendor_msg').text('❌ Die Passwörter stimmen nicht überein.');
+                    return;
+                }
+                if (!regex.test(pw)) {
+                    $('#ppv_vendor_msg').text('❌ Passwort muss Großbuchstaben, Zahl und Sonderzeichen enthalten.');
+                    return;
+                }
+
+                const formData = $(this).serialize();
+                $('#ppv_vendor_msg').text('⏳ Registrierung wird verarbeitet...');
+                $.post(ppv_vendor_signup.ajax_url, formData, function(res) {
+                    if (res.success) {
+                        $('#ppv_vendor_msg').text('✅ ' + res.data.msg);
+                        if (res.data.redirect) window.location.href = res.data.redirect;
+                    } else {
+                        $('#ppv_vendor_msg').text('❌ ' + res.data.msg);
+                    }
+                });
+            });
+        });
+        </script>
+        <?php
+        return ob_get_clean();
+    }
+
+    /** 🔹 AJAX feldolgozás + Stripe Checkout */
+  public static function ajax_register_vendor() {
+    check_ajax_referer('ppv_vendor_signup', 'ppv_nonce');
+    global $wpdb;
+
+    // 🧠 Diagnosztikai log beállítás
+    $log_file = WP_CONTENT_DIR . '/debug-punktepass.log';
+    ini_set('log_errors', 1);
+    ini_set('error_log', $log_file);
+    error_log("----------------------------------------------------");
+    error_log("🟦 PunktePass AJAX gestartet: " . date('Y-m-d H:i:s'));
+
+    try {
+        $table = $wpdb->prefix . 'ppv_stores';
+        error_log("📋 Tabelle: $table");
+
+        $email = sanitize_email($_POST['email']);
+        $password = sanitize_text_field($_POST['password']);
+        $company_name = sanitize_text_field($_POST['company_name']);
+        $store_name = sanitize_text_field($_POST['store_name']);
+        $address = sanitize_text_field($_POST['address']);
+        $plz = sanitize_text_field($_POST['plz']);
+        $city = sanitize_text_field($_POST['city']);
+        $phone = sanitize_text_field($_POST['phone']);
+        $subscription_plan = sanitize_text_field($_POST['subscription_plan'] ?? 'PRO');
+        $trial_days = 7;
+
+        error_log("📧 Registrierung gestartet für: $email");
+
+        // 🔹 Email ellenőrzés
+        $exists = $wpdb->get_var($wpdb->prepare("SELECT id FROM $table WHERE email=%s", $email));
+        error_log("🔍 Email exists check: " . ($exists ? "JA (ID $exists)" : "NEIN"));
+
+        if ($exists) {
+            error_log("⚠️ Email bereits registriert ($email)");
+            wp_send_json_success([
+                'msg' => 'E-Mail bereits registriert. Bitte Zahlung abschließen.',
+                'redirect' => home_url('/handler_dashboard?payment=pending&email=' . urlencode($email))
+            ]);
+            return;
+        }
+
+        // 🔹 Jelszó hash
+        $password_hashed = password_hash($password, PASSWORD_DEFAULT);
+
+        // 🔹 Új rekord beszúrás Stripe előtt
+        $inserted = $wpdb->insert($table, [
+            'company_name' => $company_name,
+            'name' => $store_name,
+            'address' => $address,
+            'plz' => $plz,
+            'city' => $city,
+            'phone' => $phone,
+            'email' => $email,
+            'password' => $password_hashed,
+            'active' => 0,
+            'visible' => 0,
+            'created_at' => current_time('mysql'),
+            'updated_at' => current_time('mysql')
+        ]);
+
+        if (!$inserted) {
+            error_log("❌ SQL Insert Fehler: " . $wpdb->last_error);
+            wp_send_json_error(['msg' => 'Datenbankfehler beim Anlegen des Händlers.']);
+            return;
+        }
+
+        $store_id = $wpdb->insert_id;
+        error_log("✅ Händler erstellt, ID: $store_id");
+
+       // ✅ Stripe inicializálás
+if (defined('PPV_STRIPE_SECRET') && defined('PPV_STRIPE_PRICE_ID')) {
+
+    $stripe_paths = [
+        ABSPATH . '/vendor/autoload.php',
+        WP_CONTENT_DIR . '/vendor/autoload.php',
+        PPV_PLUGIN_DIR . 'vendor/autoload.php',
+        dirname(ABSPATH) . '/vendor/autoload.php',
+        '/home/u660905446/domains/punktepass.de/public_html/vendor/autoload.php'
+    ];
+
+    $stripe_loaded = false;
+    foreach ($stripe_paths as $path) {
+        if (file_exists($path)) {
+            require_once $path;
+            error_log("✅ Stripe SDK geladen über: $path");
+            $stripe_loaded = true;
+            break;
+        }
+    }
+
+    if (!$stripe_loaded) {
+        error_log("❌ Stripe SDK nicht gefunden in den geprüften Pfaden!");
+        wp_send_json_error(['msg' => 'Stripe SDK wurde nicht gefunden. Bitte Administrator kontaktieren.']);
+        return;
+    }
+
+    try {
+        \Stripe\Stripe::setApiKey(PPV_STRIPE_SECRET);
+        error_log("💳 Stripe API Key gesetzt (Pfad korrekt)");
+
+        $session = \Stripe\Checkout\Session::create([
+            'mode' => 'subscription',
+            'payment_method_types' => ['card', 'paypal', 'klarna'],
+            'customer_email' => $email,
+            'line_items' => [[
+                'price' => PPV_STRIPE_PRICE_ID,
+                'quantity' => 1
+            ]],
+            'subscription_data' => [
+                'trial_period_days' => $trial_days
+            ],
+            'success_url' => home_url('/handler_dashboard?payment=success&store_id=' . $store_id . '&session_id={CHECKOUT_SESSION_ID}'),
+            'cancel_url' => home_url('/handler_dashboard?payment=cancel&store_id=' . $store_id)
+        ]);
+
+        error_log("✅ Stripe Session erstellt: " . $session->id);
+
+        wp_send_json_success([
+            'msg' => 'Registrierung erfolgreich. Weiterleitung zu Stripe...',
+            'redirect' => $session->url
+        ]);
+        return;
+
+    } catch (Exception $e) {
+        error_log("❌ Stripe Fehler: " . $e->getMessage());
+        wp_send_json_error(['msg' => 'Stripe Fehler: ' . $e->getMessage()]);
+        return;
+    }
+
+} else {
+    error_log("⚠️ Stripe deaktiviert oder Keys fehlen");
+    wp_send_json_error(['msg' => 'Stripe ist nicht korrekt konfiguriert (fehlende Keys).']);
+    return;
+}
+
+} catch (Throwable $e) {
+    error_log("💥 Unbehandelter Fehler: " . $e->getMessage());
+    wp_send_json_error(['msg' => 'Serverfehler: ' . $e->getMessage()]);
+    return;
+}
+}
+
+
+}
+
+PPV_Vendor_Signup_Stripe::hooks();

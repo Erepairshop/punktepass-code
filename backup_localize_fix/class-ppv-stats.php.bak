@@ -1,0 +1,144 @@
+<?php
+if (!defined('ABSPATH')) exit;
+
+class PPV_Stats {
+
+    /** 🔧 Hookok regisztrálása */
+    public static function hooks() {
+        // 🔹 Shortcode
+        add_shortcode('ppv_stats_dashboard', [__CLASS__, 'render_stats_dashboard']);
+
+        // 🔹 REST API
+        add_action('rest_api_init', [__CLASS__, 'register_rest']);
+
+        // 🔹 CSS + JS minden oldalon (frontend + admin)
+        add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets'], 1);
+        add_action('admin_enqueue_scripts', [__CLASS__, 'enqueue_assets'], 1);
+    }
+
+    /** 📊 REST API regisztrálása */
+    public static function register_rest() {
+        register_rest_route('punktepass/v1', '/stats', [
+            'methods' => 'GET',
+            'callback' => [__CLASS__, 'rest_stats'],
+            'permission_callback' => '__return_true'
+        ]);
+    }
+
+    /** 📈 CSS + JS betöltés */
+    public static function enqueue_assets() {
+        // Debug log, hogy lássuk, tényleg fut
+        error_log('✅ PPV_Stats::enqueue_assets() fut');
+
+        // Chart.js betöltés CDN-ről, hogy mindig elérhető legyen
+        wp_enqueue_script('jquery');
+        wp_enqueue_script('chart.js', 'https://cdn.jsdelivr.net/npm/chart.js', [], null, true);
+
+        // Plugin saját fájljai
+        wp_enqueue_style('ppv-stats', PPV_PLUGIN_URL . 'assets/css/ppv-stats.css', [], time());
+        wp_enqueue_script('ppv-stats', PPV_PLUGIN_URL . 'assets/js/ppv-stats.js', ['jquery', 'chart.js'], time(), true);
+
+        // REST URL és nonce átadása a JS-nek
+        wp_localize_script('ppv-stats', 'ppvStats', [
+            'ajax_url' => esc_url(rest_url('punktepass/v1/stats')),
+            'nonce'    => wp_create_nonce('wp_rest')
+        ]);
+    }
+
+    /** 🔍 Statisztikai REST válasz */
+    public static function rest_stats($req) {
+        global $wpdb;
+
+        $table = $wpdb->prefix . 'ppv_points';
+        $store_id = 1; // ideiglenesen fix (auth után dinamikus lesz)
+
+        // Időintervallumok WP-időzónával
+        $today = current_time('Y-m-d');
+        $week_start = date('Y-m-d', strtotime('monday this week', strtotime($today)));
+        $month_start = date('Y-m-01', strtotime($today));
+
+        // Lekérdezések
+        $daily = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM $table WHERE store_id=%d AND DATE(created)=%s",
+            $store_id, $today
+        ));
+        $weekly = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM $table WHERE store_id=%d AND DATE(created) >= %s",
+            $store_id, $week_start
+        ));
+        $monthly = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM $table WHERE store_id=%d AND DATE(created) >= %s",
+            $store_id, $month_start
+        ));
+        $unique = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(DISTINCT user_id) FROM $table WHERE store_id=%d",
+            $store_id
+        ));
+
+        // Napi grafikon (7 nap)
+        $chart = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $date = date('Y-m-d', strtotime("-$i days", strtotime($today)));
+            $count = (int) $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) FROM $table WHERE store_id=%d AND DATE(created)=%s",
+                $store_id, $date
+            ));
+            $chart[] = ['date' => $date, 'count' => $count];
+        }
+
+        // Adatok visszaadása JSON-ként
+        return [
+            'daily'   => $daily,
+            'weekly'  => $weekly,
+            'monthly' => $monthly,
+            'unique'  => $unique,
+            'chart'   => $chart
+        ];
+    }
+
+    /** 🧭 Frontend HTML megjelenítés */
+    public static function render_stats_dashboard() {
+        ob_start(); ?>
+        
+        <div class="ppv-stats-back">
+        <a href="/handler_dashboard" class="ppv-back-link">← Zurück zum Dashboard</a>
+    </div>
+        <div class="ppv-stats-wrapper">
+            <h2 class="ppv-stats-title">📊 Statistikübersicht</h2>
+
+            <div class="ppv-stats-filters">
+                <select id="ppv-stats-range">
+                    <option value="day">Heute</option>
+                    <option value="week">Diese Woche</option>
+                    <option value="month">Dieser Monat</option>
+                    <option value="all">Gesamt</option>
+                </select>
+            </div>
+
+            <div class="ppv-stats-cards">
+                <div class="ppv-stat-card">
+                    <span class="ppv-stat-label">Heutige Punkte</span>
+                    <span class="ppv-stat-value" id="ppv-stat-daily">0</span>
+                </div>
+                <div class="ppv-stat-card">
+                    <span class="ppv-stat-label">Wöchentliche Punkte</span>
+                    <span class="ppv-stat-value" id="ppv-stat-weekly">0</span>
+                </div>
+                <div class="ppv-stat-card">
+                    <span class="ppv-stat-label">Monatliche Punkte</span>
+                    <span class="ppv-stat-value" id="ppv-stat-monthly">0</span>
+                </div>
+                <div class="ppv-stat-card">
+                    <span class="ppv-stat-label">Einzigartige Nutzer</span>
+                    <span class="ppv-stat-value" id="ppv-stat-unique">0</span>
+                </div>
+            </div>
+
+            <div class="ppv-stats-chart">
+                <canvas id="ppv-stats-canvas"></canvas>
+            </div>
+        </div>
+        <?php
+        return ob_get_clean();
+    }
+}

@@ -1,0 +1,697 @@
+/**
+ * PunktePass - Modern Login & Landing Page
+ * Optimized & Clean CSS Architecture
+ * Author: Erik Borota / PunktePass
+ */
+
+/* ============================================
+   CSS VARIABLES
+   ============================================ */
+:root {
+    /* Colors */
+    --ppv-primary: #0066FF;
+    --ppv-primary-hover: #0052CC;
+    --ppv-primary-light: #E6F0FF;
+    --ppv-bg: #F8F9FB;
+    --ppv-card: #FFFFFF;
+    --ppv-text: #1A1A1A;
+    --ppv-text-muted: #6B7280;
+    --ppv-border: #E5E7EB;
+    --ppv-success: #10B981;
+    --ppv-error: #EF4444;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+    --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+
+    /* Spacing & Sizing */
+    --radius: 12px;
+    --radius-sm: 8px;
+    --transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* ============================================
+   BASE CONTAINER
+   ============================================ */
+.ppv-landing-container {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
+.ppv-landing-header {
+    position: relative;
+    z-index: 100;
+    background: var(--ppv-card);
+    border-bottom: 1px solid var(--ppv-border);
+    padding: 20px 0;
+}
+
+.ppv-header-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+}
+
+.ppv-logo-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.ppv-logo {
+    width: 75px;
+    height: 75px;
+    object-fit: contain;
+}
+
+.ppv-logo-section h1 {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--ppv-text);
+    margin: 0;
+    letter-spacing: -0.02em;
+}
+
+.ppv-slogan {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--ppv-text-muted);
+    margin: 0;
+}
+
+/* Language Switcher */
+.ppv-lang-switcher {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--ppv-bg);
+    border: 1px solid var(--ppv-border);
+    border-radius: 8px;
+    padding: 4px;
+}
+
+.ppv-lang-select,
+.ppv-lang-btn {
+    padding: 6px 12px;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ppv-text-muted);
+    cursor: pointer;
+    transition: var(--transition);
+    font-family: inherit;
+}
+
+.ppv-lang-btn:hover,
+.ppv-lang-select:hover {
+    color: var(--ppv-text);
+    background: rgba(0, 102, 255, 0.05);
+}
+
+.ppv-lang-btn.active {
+    background: var(--ppv-primary);
+    color: white;
+}
+
+/* ============================================
+   HERO SECTION
+   ============================================ */
+.ppv-hero-section {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: 60px 0;
+    overflow: hidden;
+}
+
+/* Animated Background */
+.ppv-hero-bg {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, #F8F9FB 0%, #E6F0FF 100%);
+    z-index: 0;
+}
+
+.ppv-bg-shape {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.25;
+    animation: float 25s infinite ease-in-out;
+}
+
+.ppv-shape-1 {
+    width: 500px;
+    height: 500px;
+    background: linear-gradient(135deg, #0066FF, #00BFFF);
+    top: -150px;
+    left: -150px;
+}
+
+.ppv-shape-2 {
+    width: 400px;
+    height: 400px;
+    background: linear-gradient(135deg, #00BFFF, #4D94FF);
+    bottom: -100px;
+    right: 10%;
+    animation-delay: 8s;
+}
+
+.ppv-shape-3 {
+    width: 350px;
+    height: 350px;
+    background: linear-gradient(135deg, #4D94FF, #0066FF);
+    top: 30%;
+    right: -100px;
+    animation-delay: 16s;
+}
+
+@keyframes float {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(40px, -40px) scale(1.15); }
+    66% { transform: translate(-30px, 30px) scale(0.85); }
+}
+
+.ppv-hero-content {
+    position: relative;
+    z-index: 10;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 60px;
+    align-items: start;
+}
+
+/* ============================================
+   FEATURES SECTION
+   ============================================ */
+.ppv-features-section {
+    animation: slideIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ppv-features-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+}
+
+.ppv-feature-card {
+    background: var(--ppv-card);
+    border: 1px solid var(--ppv-border);
+    border-radius: var(--radius);
+    padding: 28px 24px;
+    transition: var(--transition);
+}
+
+.ppv-feature-card:hover {
+    border-color: var(--ppv-primary-light);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-4px);
+}
+
+.ppv-feature-icon {
+    width: 56px;
+    height: 56px;
+    background: var(--ppv-primary-light);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    color: var(--ppv-primary);
+}
+
+.ppv-feature-card h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--ppv-text);
+    margin: 0 0 8px 0;
+}
+
+.ppv-feature-card p {
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--ppv-text-muted);
+    margin: 0;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+/* ============================================
+   LOGIN CARD
+   ============================================ */
+.ppv-login-section {
+    position: sticky;
+    top: 20px;
+    animation: slideIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ppv-login-card {
+    background: var(--ppv-card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+    padding: 36px;
+}
+
+.ppv-login-welcome {
+    text-align: center;
+    margin-bottom: 28px;
+}
+
+.ppv-login-welcome h2 {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--ppv-text);
+    margin: 0 0 8px 0;
+}
+
+.ppv-login-welcome p {
+    font-size: 14px;
+    color: var(--ppv-text-muted);
+    margin: 0;
+}
+
+/* ============================================
+   SOCIAL LOGIN BUTTONS
+   ============================================ */
+.ppv-social-login-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.ppv-social-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: var(--shadow-sm);
+    font-family: inherit;
+}
+
+.ppv-social-btn:hover:not(:disabled) {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.ppv-social-btn:active {
+    transform: translateY(0);
+}
+
+.ppv-social-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Google Button */
+.ppv-google-btn {
+    background: var(--ppv-card);
+    border: 1.5px solid var(--ppv-border);
+    color: var(--ppv-text);
+}
+
+.ppv-google-btn:hover {
+    background: #FAFAFA;
+    border-color: #D1D5DB;
+}
+
+/* Facebook Button */
+.ppv-facebook-btn {
+    background: #1877F2;
+    color: white;
+}
+
+.ppv-facebook-btn:hover {
+    background: #166FE5;
+}
+
+/* TikTok Button */
+.ppv-tiktok-btn {
+    background: linear-gradient(135deg, #000 0%, #EE1D52 50%, #69C9D0 100%);
+    color: white;
+}
+
+.ppv-tiktok-btn:hover {
+    background: linear-gradient(135deg, #1a1a1a 0%, #ff2d68 50%, #7dd9e6 100%);
+}
+
+/* ============================================
+   DIVIDER
+   ============================================ */
+.ppv-login-divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 20px 0;
+    color: var(--ppv-text-muted);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.ppv-login-divider::before,
+.ppv-login-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--ppv-border);
+}
+
+/* ============================================
+   FORM STYLES
+   ============================================ */
+.ppv-login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.ppv-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.ppv-form-group label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ppv-text);
+}
+
+.ppv-form-group label svg {
+    width: 16px;
+    height: 16px;
+    color: var(--ppv-text-muted);
+}
+
+.ppv-form-group input[type="email"],
+.ppv-form-group input[type="password"],
+.ppv-form-group input[type="text"] {
+    width: 100%;
+    padding: 11px 16px;
+    background: var(--ppv-bg);
+    border: 1.5px solid var(--ppv-border);
+    border-radius: var(--radius-sm);
+    font-size: 15px;
+    color: var(--ppv-text);
+    transition: var(--transition);
+    font-family: inherit;
+}
+
+.ppv-form-group input:focus {
+    outline: none;
+    background: var(--ppv-card);
+    border-color: var(--ppv-primary);
+    box-shadow: 0 0 0 3px var(--ppv-primary-light);
+}
+
+.ppv-form-group input::placeholder {
+    color: #9CA3AF;
+}
+
+/* Password Toggle */
+.ppv-password-wrapper {
+    position: relative;
+}
+
+.ppv-password-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    color: var(--ppv-text-muted);
+    transition: var(--transition);
+}
+
+.ppv-password-toggle:hover {
+    color: var(--ppv-text);
+}
+
+/* ============================================
+   FORM FOOTER
+   ============================================ */
+.ppv-form-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.ppv-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--ppv-text);
+    cursor: pointer;
+}
+
+.ppv-checkbox input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--ppv-primary);
+    cursor: pointer;
+}
+
+.ppv-checkbox a {
+    color: var(--ppv-primary);
+    text-decoration: none;
+}
+
+.ppv-checkbox a:hover {
+    text-decoration: underline;
+}
+
+.ppv-forgot-link {
+    font-size: 14px;
+    color: var(--ppv-primary);
+    text-decoration: none;
+    font-weight: 500;
+    transition: var(--transition);
+}
+
+.ppv-forgot-link:hover {
+    color: var(--ppv-primary-hover);
+    text-decoration: underline;
+}
+
+/* ============================================
+   SUBMIT BUTTON
+   ============================================ */
+.ppv-submit-btn {
+    width: 100%;
+    padding: 13px 24px;
+    background: var(--ppv-primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 6px;
+    font-family: inherit;
+}
+
+.ppv-submit-btn:hover:not(:disabled) {
+    background: var(--ppv-primary-hover);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+}
+
+.ppv-submit-btn:active {
+    transform: translateY(0);
+}
+
+.ppv-submit-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* ============================================
+   ALERT BOX
+   ============================================ */
+.ppv-alert {
+    padding: 12px 16px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    margin-top: 16px;
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.ppv-alert.success {
+    background: #D1FAE5;
+    color: #065F46;
+    border: 1px solid #6EE7B7;
+}
+
+.ppv-alert.error {
+    background: #FEE2E2;
+    color: #991B1B;
+    border: 1px solid #FCA5A5;
+}
+
+/* ============================================
+   REGISTER LINK
+   ============================================ */
+.ppv-register-link {
+    text-align: center;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--ppv-border);
+}
+
+.ppv-register-link p {
+    font-size: 14px;
+    color: var(--ppv-text-muted);
+    margin: 0;
+}
+
+.ppv-register-link a {
+    color: var(--ppv-primary);
+    text-decoration: none;
+    font-weight: 600;
+    transition: var(--transition);
+}
+
+.ppv-register-link a:hover {
+    color: var(--ppv-primary-hover);
+    text-decoration: underline;
+}
+
+/* ============================================
+   FOOTER
+   ============================================ */
+.ppv-landing-footer {
+    position: relative;
+    z-index: 10;
+    background: var(--ppv-card);
+    border-top: 1px solid var(--ppv-border);
+    padding: 24px;
+    text-align: center;
+    color: var(--ppv-text-muted);
+    font-size: 13px;
+}
+
+.ppv-landing-footer p {
+    margin: 0 0 8px 0;
+}
+
+.ppv-footer-links {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.ppv-footer-links a {
+    color: var(--ppv-text-muted);
+    text-decoration: none;
+    transition: var(--transition);
+}
+
+.ppv-footer-links a:hover {
+    color: var(--ppv-text);
+    text-decoration: underline;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+@media (max-width: 1024px) {
+    .ppv-hero-content {
+        grid-template-columns: 1fr;
+        gap: 40px;
+    }
+
+    .ppv-features-section { order: 2; }
+    .ppv-login-section { order: 1; position: static; }
+    .ppv-features-grid { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 640px) {
+    .ppv-header-content {
+        flex-direction: column;
+        text-align: center;
+        gap: 12px;
+    }
+
+    .ppv-slogan { font-size: 14px; }
+    .ppv-lang-switcher { margin-top: 8px; }
+    .ppv-hero-section { padding: 40px 0; }
+    .ppv-features-grid { grid-template-columns: 1fr; gap: 16px; }
+    .ppv-social-login-grid { grid-template-columns: 1fr; gap: 10px; }
+    .ppv-login-card { padding: 28px 24px; }
+    .ppv-login-welcome h2 { font-size: 18px; }
+
+    .ppv-form-group input,
+    .ppv-social-btn,
+    .ppv-submit-btn {
+        padding: 11px 16px;
+        font-size: 14px;
+    }
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+.ppv-google-btn:focus-visible,
+.ppv-submit-btn:focus-visible,
+.ppv-forgot-link:focus-visible,
+.ppv-register-link a:focus-visible {
+    outline: 2px solid var(--ppv-primary);
+    outline-offset: 2px;
+}

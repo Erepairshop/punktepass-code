@@ -1,0 +1,150 @@
+<?php
+if (!defined('ABSPATH')) exit;
+
+class PPV_User_Dashboard {
+
+    public static function hooks() {
+        add_shortcode('ppv_user_dashboard', [__CLASS__, 'render_dashboard']);
+        add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
+    }
+
+    /** 🔹 Asset betöltés */
+    public static function enqueue_assets() {
+        wp_enqueue_style('remixicons', 'https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css', [], null);
+        wp_enqueue_style('ppv-user-dashboard', PPV_PLUGIN_URL . 'assets/css/ppv-user-dashboard.css', [], time());
+        wp_enqueue_script('ppv-user-dashboard', PPV_PLUGIN_URL . 'assets/js/ppv-user-dashboard.js', ['jquery'], time(), true);
+        wp_localize_script('ppv-user-dashboard', 'ppv_userdash', [
+            'ajaxurl' => admin_url('admin-ajax.php'),
+            'nonce'   => wp_create_nonce('ppv_userdash_nonce')
+            
+        ]);
+        if (class_exists('PPV_Lang')) {
+            wp_localize_script('ppv-user-dashboard', 'ppv_lang', PPV_Lang::$strings);
+        }
+    }
+
+    /** 🔹 Dashboard render */
+    public static function render_dashboard() {
+        self::ensure_session();
+        $user_id = $_SESSION['ppv_user_id'] ?? 0;
+        $user_email = $_SESSION['ppv_user_email'] ?? '';
+        if (!$user_id) return '<p class="ppv-warning">' . PPV_Lang::t('please_login') . '</p>';
+
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+
+        $points = intval($wpdb->get_var($wpdb->prepare("
+            SELECT COALESCE(SUM(points),0)
+            FROM {$prefix}ppv_points WHERE user_id=%d
+        ", $user_id)));
+
+        $rewards = intval($wpdb->get_var("SELECT COUNT(*) FROM {$prefix}ppv_rewards"));
+
+        // QR generálás
+        $qr_dir = WP_CONTENT_DIR . '/uploads/ppv_qr/';
+        if (!file_exists($qr_dir)) wp_mkdir_p($qr_dir);
+        $qr_path = $qr_dir . "user_{$user_id}.png";
+        $qr_url  = content_url("uploads/ppv_qr/user_{$user_id}.png");
+        if (!file_exists($qr_path)) {
+            $data = "punktepass:user:{$user_id}";
+            $img = @file_get_contents("https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=" . urlencode($data));
+            if ($img) file_put_contents($qr_path, $img);
+        }
+echo '<script>document.body.classList.add("ppv-app-mode","ppv-user-dashboard");</script>';
+
+        ob_start(); ?>
+        <div id="ppv-loader"><div class="pulse"></div></div>
+
+<div class="ppv-dashboard-netto">
+  <div class="ppv-dashboard-inner">
+
+    <!-- 🔹 ÜDVÖZLŐ BLOKK (korábbi fejléc helyett) -->
+<section class="ppv-welcome-block">
+  <img src="<?php echo PPV_PLUGIN_URL . 'assets/img/punktepass-poster-logo.png?t=' . time(); ?>" 
+       alt="PunktePass" class="ppv-header-logo-min">
+
+  <div class="ppv-user-greet">
+    <p class="welcome"><?php echo PPV_Lang::t('welcome_to_punktepass'); ?></p>
+    <p class="user"><i class="ri-user-3-line"></i> <?php echo esc_html($user_email); ?></p>
+  </div>
+
+  <div class="ppv-lang-switcher">
+    <select id="ppv-lang-select" onchange="window.location.href = window.location.pathname + '?lang=' + this.value;"
+">
+      <option value="de" <?php selected(PPV_Lang::current(), 'de'); ?>>🇩🇪 DE</option>
+      <option value="hu" <?php selected(PPV_Lang::current(), 'hu'); ?>>🇭🇺 HU</option>
+      <option value="ro" <?php selected(PPV_Lang::current(), 'ro'); ?>>🇷🇴 RO</option>
+    </select>
+  </div>
+</section>
+
+
+
+        <?php 
+        
+        ?>
+    </div>
+</section>
+
+
+    <!-- 🔹 INFO BOXES -->
+    <section class="ppv-mini-cards">
+        <div class="ppv-mini-card">
+            <i class="ri-star-fill"></i>
+            <span class="value"><?php echo $points; ?></span>
+            <p><?php echo PPV_Lang::t('points'); ?></p>
+        </div>
+        <div class="ppv-mini-card">
+            <i class="ri-gift-fill"></i>
+            <span class="value"><?php echo $rewards; ?></span>
+            <p><?php echo PPV_Lang::t('rewards'); ?></p>
+        </div>
+    </section>
+
+    <!-- 🔹 QR SECTION -->
+    <section class="ppv-qr-banner" id="ppv-show-qr">
+        <div class="ppv-qr-text">
+            <i class="ri-qr-code-line"></i>
+            <div>
+                <h3><?php echo PPV_Lang::t('collect_points_here'); ?></h3>
+                <p><?php echo PPV_Lang::t('show_qr_in_store'); ?></p>
+            </div>
+        </div>
+        <button class="ppv-btn-qr"><?php echo PPV_Lang::t('show_qr_code'); ?></button>
+    </section>
+
+    <div id="ppv-user-qr" class="ppv-user-qr" style="display:none;">
+        <img src="<?php echo esc_url($qr_url); ?>" alt="Mein QR" class="ppv-qr-image">
+        <p class="qr-info"><?php echo PPV_Lang::t('show_this_code_to_collect'); ?></p>
+    </div>
+
+    <!-- 🔹 STORE LIST -->
+    <section class="ppv-store-section">
+        <h3 class="ppv-section-title"><i class="ri-store-2-fill"></i> <?php echo PPV_Lang::t('stores_near_you'); ?></h3>
+        <div id="ppv-store-list" class="ppv-store-list"></div>
+    </section>
+
+    <p style="color:#00eaff80;font-size:12px;text-align:center;margin-top:8px;">
+        <?php echo PPV_Lang::t('store_list_auto_update'); ?>
+    </p>
+
+  </div> <!-- .ppv-dashboard-inner -->
+</div> <!-- .ppv-dashboard-netto -->
+
+  </div> <!-- .ppv-dashboard-inner -->
+</div> <!-- .ppv-dashboard-netto -->
+
+<?php
+// 🔹 JS kényszerített betöltése (Elementor kompatibilitás)
+echo '<script src="' . PPV_PLUGIN_URL . 'assets/js/ppv-user-dashboard.js?v=' . time() . '"></script>';
+
+return ob_get_clean();
+
+
+
+    }
+
+    private static function ensure_session() {
+        if (session_status() === PHP_SESSION_NONE) @session_start();
+    }
+}

@@ -1,0 +1,874 @@
+
+
+   <?php
+if (!defined('ABSPATH')) exit;
+
+/**
+ * PunktePass QR Modul (POS-kompatibilis)
+ * Version: 2.2 – Stable Integration (Cron & POS Fix)
+ */
+
+class PPV_QR {
+
+    public static function hooks() {
+        add_shortcode('ppv_qr_center', [__CLASS__, 'render_qr_center']);
+        add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
+
+        /** 🕒 Cron – biztonságosan init után */
+        add_action('init', function() {
+            if (!wp_next_scheduled('ppv_daily_qr_regen')) {
+                wp_schedule_event(time() + 3600, 'daily', 'ppv_daily_qr_regen');
+            }
+        });
+
+        add_action('ppv_daily_qr_regen', [__CLASS__, 'generate_daily_qr']);
+
+        /** 🔹 REST route regisztráció biztonságosan */
+        add_action('rest_api_init', function() {
+            $routes = rest_get_server()->get_routes();
+
+            // ⛔ Ne regisztráljuk újra a POS statisztikát, ha már létezik
+            if (isset($routes['/ppv/v1/pos/stats'])) {
+                error_log('⚠️ [PPV_QR] pos/stats route already exists — skipping duplicate.');
+            } else {
+                register_rest_route('ppv/v1', '/pos/stats', [
+                    'methods'  => 'GET',
+                    'callback' => [__CLASS__, 'rest_get_stats'],
+                    'permission_callback' => '__return_true',
+                ]);
+            }
+
+            // További REST-ek mindig maradhatnak
+            register_rest_route('ppv/v1', '/pos/scan', [
+                'methods'  => 'POST',
+                'callback' => [__CLASS__, 'rest_process_scan'],
+                'permission_callback' => '__return_true',
+            ]);
+
+            register_rest_route('ppv/v1', '/pos/logs', [
+                'methods'  => 'GET',
+                'callback' => [__CLASS__, 'rest_get_logs'],
+                'permission_callback' => '__return_true',
+            ]);
+
+            register_rest_route('ppv/v1', '/pos/campaign', [
+                'methods'  => 'POST',
+                'callback' => [__CLASS__, 'rest_create_campaign'],
+                'permission_callback' => '__return_true',
+            ]);
+
+            register_rest_route('ppv/v1', '/pos/sync_offline', [
+                'methods'  => 'POST',
+                'callback' => [__CLASS__, 'rest_sync_offline'],
+                'permission_callback' => '__return_true',
+            ]);
+
+            register_rest_route('ppv/v1', '/pos/bonus', [
+                'methods' => 'GET',
+                'callback' => [__CLASS__, 'rest_get_bonus'],
+                'permission_callback' => '__return_true',
+            ]);
+        });
+
+        add_action('wp_ajax_ppv_save_design', [__CLASS__, 'ajax_save_design']);
+        add_action('wp_ajax_ppv_reset_design', [__CLASS__, 'ajax_reset_design']);
+    }
+
+    /** === Assets === */
+   public static function enqueue_assets() {
+    // 🔹 Globális dizájn (modern dark-neon UI)
+    wp_enqueue_style('ppv-global', PPV_PLUGIN_URL . 'assets/css/ppv-global.css', [], time());
+
+    // 🔹 Modul JS-ek
+    wp_enqueue_script('ppv-qr', PPV_PLUGIN_URL . 'assets/js/ppv-qr.js', ['jquery'], time(), true);
+    wp_enqueue_script('ppv-pos-sync', PPV_PLUGIN_URL . 'assets/js/ppv-pos-sync.js', ['jquery'], time(), true);
+
+    wp_localize_script('ppv-qr', 'PPV_QR', [
+        'rest_url' => esc_url(rest_url('ppv/v1/')),
+        'nonce'    => wp_create_nonce('wp_rest')
+    ]);
+}
+
+
+    /** === QR / POS Center === */
+    public static function render_qr_center() {
+        global $wpdb;
+        if (!is_user_logged_in()) {
+            echo '<p>Bitte logge dich ein.</p>';
+            return;
+        }
+
+        $user_id = get_current_user_id();
+        $store = null;
+if ($user_id) {
+// 🔹 Globális aktív store preferálása (POS vagy admin fallback)
+global $ppv_active_store, $wpdb;
+
+if (!empty($ppv_active_store)) {
+    $store = $ppv_active_store;
+} else {
+    $user_id = get_current_user_id();
+    $store = $wpdb->get_row($wpdb->prepare(
+        "SELECT * FROM {$wpdb->prefix}ppv_stores WHERE user_id=%d LIMIT 1",
+        $user_id
+    ));
+}
+
+if (!$store) {
+    echo '<p>⚠️ Kein Store gefunden (Session leer).</p>';
+    error_log('❌ [PPV_QR_CENTER] Kein aktiver Store in render_qr_center()');
+    return;
+}
+} elseif (isset($_COOKIE['ppv_pos_token'])) {
+    // POS login azonosítás cookie alapján
+    $token = sanitize_text_field($_COOKIE['ppv_pos_token']);
+    $store = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}ppv_stores WHERE pos_token=%s LIMIT 1", $token));
+}
+
+        if (!$store) {
+            echo '<p>⚠️ Kein Store gefunden.</p>';
+            return;
+        }
+        ?>
+        <div class="ppv-qr-wrapper">
+            <div class="ppv-grid-bg"></div>
+            <div class="ppv-scan-line"></div>
+
+            <a href="<?php echo esc_url(home_url('/handler_dashboard')); ?>" class="ppv-back-btn sticky">← Zurück zum Dashboard</a>
+
+            <div class="ppv-qr-center glass-card">
+                <div class="ppv-tabs">
+                    <button class="ppv-tab active" data-tab="qr-pos">POS-Scanner</button>
+                    <button class="ppv-tab" data-tab="qr-campaigns">Kampagnen</button>
+                    
+                </div>
+
+                <div class="ppv-tab-content active" id="tab-qr-pos">
+                    <?php self::render_pos_scanner($store); ?>
+                </div>
+                <div class="ppv-tab-content" id="tab-qr-campaigns">
+                    <?php self::render_campaigns($store); ?>
+                </div>
+                <div class="ppv-tab-content" id="tab-qr-design">
+                    <?php self::render_design($store); ?>
+                </div>
+            </div>
+        </div>
+        <script>
+jQuery(document).ready(function($){
+    async function loadLogs(){
+        const res = await fetch(PPV_QR.rest_url + "pos/logs?store_key=" + PPV_STORE_KEY);
+        const logs = await res.json();
+        const tbody = $("#ppv-pos-log tbody");
+        tbody.empty();
+        logs.forEach(log => {
+            tbody.append(`<tr><td>${log.created_at}</td><td>${log.user_id ?? '-'}</td><td>${log.message}</td></tr>`);
+        });
+    }
+
+    // Frissítés 10 másodpercenként
+    loadLogs();
+    setInterval(loadLogs, 10000);
+});
+</script>
+
+
+        <script>
+        window.PPV_STORE_KEY = "<?php echo esc_js($store->store_key); ?>";
+        </script>
+        
+        <?php
+    }
+
+    /** === POS Scanner === */
+    public static function render_pos_scanner($store) {
+        ?>
+        <div class="ppv-pos-center glass-section">
+            <div id="ppv-offline-banner" style="display:none;background:#ffcc00;padding:8px;margin-bottom:10px;border-radius:6px;">
+  🛰️ Offline-Modus aktiv – Scans werden lokal gespeichert
+  <button id="ppv-sync-btn" class="ppv-btn" style="margin-left:10px;">Jetzt synchronisieren</button>
+</div>
+
+            <h3>📡 POS-Scanner</h3>
+            <p>Scanne den QR-Code des Kunden mit deinem Bluetooth-Scanner oder Kassenscanner.</p>
+
+            <input type="text" id="ppv-pos-input" placeholder="Hier scannen..." autofocus>
+            <button id="ppv-pos-send" class="ppv-btn neon">QR prüfen</button>
+
+            <div id="ppv-pos-result" class="ppv-result-box"></div>
+            
+
+            <div class="ppv-log-container">
+                <h4>Letzte Scans</h4>
+                <table id="ppv-pos-log">
+                    <thead><tr><th>Zeit</th><th>Kunde</th><th>Status</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+        <?php
+    }
+
+    /** === REST Routes === */
+    public static function register_rest_routes() {
+        // 🔹 Scan von POS
+        register_rest_route('ppv/v1', '/pos/scan', [
+            'methods'  => 'POST',
+            'callback' => [__CLASS__, 'rest_process_scan'],
+            'permission_callback' => '__return_true',
+        ]);
+
+        // 🔹 Log Abfrage
+        register_rest_route('ppv/v1', '/pos/logs', [
+            'methods'  => 'GET',
+            'callback' => [__CLASS__, 'rest_get_logs'],
+            'permission_callback' => '__return_true',
+        ]);
+
+        // 🔹 Kampagnen Verwaltung (POS kompatibel)
+        register_rest_route('ppv/v1', '/pos/campaign', [
+            'methods'  => 'POST',
+            'callback' => [__CLASS__, 'rest_create_campaign'],
+            'permission_callback' => '__return_true',
+        ]);
+        // 🔹 POS statisztika lekérdezés
+register_rest_route('ppv/v1', '/pos/stats', [
+    'methods'  => 'GET',
+    'callback' => [__CLASS__, 'rest_get_stats'],
+    'permission_callback' => '__return_true',
+]);
+
+// 🔹 Aktív Bonus ellenőrzése
+register_rest_route('ppv/v1', '/pos/bonus', [
+    'methods' => 'GET',
+    'callback' => [__CLASS__, 'rest_get_bonus'],
+    'permission_callback' => '__return_true',
+]);
+
+// 🔹 Offline szinkron
+register_rest_route('ppv/v1', '/pos/sync_offline', [
+    'methods' => 'POST',
+    'callback' => [__CLASS__, 'rest_sync_offline'],
+    'permission_callback' => '__return_true',
+    
+    
+]);
+
+
+    }
+    
+    public static function rest_sync_offline(WP_REST_Request $r) {
+    global $wpdb;
+    $scans = $r->get_json_params()['scans'] ?? [];
+    $synced = 0;
+
+    foreach ($scans as $scan) {
+        $qr_code = sanitize_text_field($scan['qr'] ?? '');
+        $store_key = sanitize_text_field($scan['store_key'] ?? '');
+        $store = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}ppv_stores WHERE store_key=%s", $store_key));
+        if (!$store || !$qr_code) continue;
+
+        $user_id = self::decode_user_from_qr($qr_code);
+        if (!$user_id) continue;
+
+        // Duplikáció elkerülése (QR + időbélyeg alapján)
+        $exists = $wpdb->get_var($wpdb->prepare("
+    SELECT COUNT(*) FROM {$wpdb->prefix}ppv_points
+    WHERE user_id=%d AND store_id=%d 
+      AND created_at >= (NOW() - INTERVAL 2 MINUTE)
+", $user_id, $store->id));
+if ($exists) continue;
+
+$today_count = $wpdb->get_var($wpdb->prepare("
+    SELECT COUNT(*) FROM {$wpdb->prefix}ppv_points
+    WHERE user_id=%d AND store_id=%d AND DATE(created_at)=CURDATE()
+", $user_id, $store->id));
+
+if ($today_count > 0) continue;
+
+
+// Most jöhet az insert
+$wpdb->insert("{$wpdb->prefix}ppv_points", [
+    'user_id' => $user_id,
+    'store_id' => $store->id,
+    'points' => 1,
+    'source' => 'POS_OFFLINE',
+    'created_at' => current_time('mysql')
+]);
+        $synced++;
+    }
+
+    return new WP_REST_Response([
+        'success' => true,
+        'synced' => $synced
+    ], 200);
+    
+    
+}
+
+    
+
+    /** === POS SCAN Verarbeitung === */
+    public static function rest_process_scan(WP_REST_Request $request) {
+        global $wpdb;
+
+        $data = $request->get_json_params();
+        $qr_code   = sanitize_text_field($data['qr'] ?? '');
+        $store_key = sanitize_text_field($data['store_key'] ?? '');
+        $store = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}ppv_stores WHERE store_key=%s", $store_key));
+
+        if (!$store) return new WP_REST_Response(['success' => false, 'message' => '❌ Unbekannter Store'], 400);
+        if (!$qr_code) return new WP_REST_Response(['success' => false, 'message' => '❌ Kein QR empfangen'], 400);
+
+        $user_id = self::decode_user_from_qr($qr_code);
+        if (!$user_id) {
+            self::log("Ungültiger QR erkannt: {$qr_code}");
+            return new WP_REST_Response(['success' => false, 'message' => '❌ Ungültiger QR'], 400);
+        }
+
+        $now = current_time('mysql');
+        $wpdb->insert("{$wpdb->prefix}ppv_points", [
+    'user_id' => $user_id,
+    'store_id' => $store->id,
+    'points' => $points,
+    'source' => $campaign ? 'POS_CAMPAIGN' : 'POS',
+    'created_at' => $now
+]);
+
+      
+        
+        // 🕒 Duplikált QR védelem (2 perc)
+$recent = $wpdb->get_var($wpdb->prepare("
+    SELECT COUNT(*) FROM {$wpdb->prefix}ppv_points
+    WHERE user_id=%d AND store_id=%d
+      AND created_at >= (NOW() - INTERVAL 2 MINUTE)
+", $user_id, $store->id));
+
+if ($recent > 0) {
+    return new WP_REST_Response([
+        'success' => false,
+        'message' => '⚠️ Dieser QR wurde bereits vor kurzem gescannt.'
+    ], 400);
+}
+// 📅 Napi limit – egy pont / nap / user / bolt
+$today_count = $wpdb->get_var($wpdb->prepare("
+    SELECT COUNT(*) FROM {$wpdb->prefix}ppv_points
+    WHERE user_id=%d AND store_id=%d AND DATE(created_at)=CURDATE()
+", $user_id, $store->id));
+
+if ($today_count > 0) {
+    return new WP_REST_Response([
+        'success' => false,
+        'message' => '⚠️ Heute bereits gescannt – komm morgen wieder 😊'
+    ], 400);
+}
+
+
+        $campaign = self::get_active_campaign($store->id);
+$points = 1; // alapértelmezett
+
+if ($campaign) {
+    $multiplier = intval($campaign->multiplier) ?: 1;
+    $extra = intval($campaign->extra_points) ?: 0;
+    $limit = intval($campaign->daily_limit) ?: 0;
+    $discount = floatval($campaign->discount_percent) ?: 0;
+
+    // 🧮 Pontszámítás
+    $points = (1 * $multiplier) + $extra;
+
+    // 🔒 Napi limit ellenőrzés
+    if ($limit > 0) {
+        $today_total = $wpdb->get_var($wpdb->prepare("
+            SELECT SUM(points) FROM {$wpdb->prefix}ppv_points
+            WHERE user_id=%d AND store_id=%d 
+              AND DATE(created_at)=CURDATE()
+        ", $user_id, $store->id));
+
+        if ($today_total >= $limit) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => '⚠️ Tageslimit erreicht – komm morgen wieder 😊'
+            ], 400);
+        }
+    }
+
+    // 💸 Ha a kampány típus "discount"
+    if ($campaign->campaign_type === 'discount' && $discount > 0) {
+        $msg = "💸 {$discount}% Rabatt (Kampagne: {$campaign->title})";
+    } else {
+        $msg = "✅ {$points} Punkte (Kampagne: {$campaign->title})";
+    }
+} else {
+    $msg = "✅ 1 Punkt hinzugefügt";
+}
+
+    }
+
+    /** === Log Abfrage === */
+    public static function rest_get_logs(WP_REST_Request $r) {
+        global $wpdb;
+        $store_key = sanitize_text_field($r->get_param('store_key') ?? '');
+        $store = $wpdb->get_row($wpdb->prepare("SELECT id FROM {$wpdb->prefix}ppv_stores WHERE store_key=%s", $store_key));
+        if (!$store) return new WP_REST_Response([], 200);
+
+        $logs = $wpdb->get_results($wpdb->prepare("
+            SELECT * FROM {$wpdb->prefix}ppv_pos_log 
+            WHERE store_id=%d 
+            ORDER BY created_at DESC 
+            LIMIT 10
+        ", $store->id));
+
+        return new WP_REST_Response($logs, 200);
+    }
+/** === POS statisztika (REST) === */
+public static function rest_get_stats(WP_REST_Request $r) {
+    global $wpdb;
+
+    $store_key  = sanitize_text_field($r->get_param('store_key') ?? '');
+    $store_id   = intval($r->get_param('store_id') ?? 0);
+    $pos_token  = sanitize_text_field($r->get_param('pos_token') ?? '');
+
+    // 🔍 Többféle azonosítás támogatása
+    if ($store_key) {
+        $store = $wpdb->get_row($wpdb->prepare("SELECT id FROM {$wpdb->prefix}ppv_stores WHERE store_key=%s", $store_key));
+    } elseif ($pos_token) {
+        $store = $wpdb->get_row($wpdb->prepare("SELECT id FROM {$wpdb->prefix}ppv_stores WHERE pos_token=%s", $pos_token));
+    } elseif ($store_id) {
+        $store = $wpdb->get_row($wpdb->prepare("SELECT id FROM {$wpdb->prefix}ppv_stores WHERE id=%d", $store_id));
+    } else {
+        return new WP_REST_Response(['success' => false, 'message' => '❌ Kein Parameter'], 400);
+    }
+
+    if (!$store) {
+        return new WP_REST_Response(['success' => false, 'message' => '❌ Unbekannter Store'], 400);
+    }
+
+    $today = current_time('Y-m-d');
+    $week_start = date('Y-m-d', strtotime('monday this week', strtotime($today)));
+
+    $today_points = $wpdb->get_var($wpdb->prepare("
+        SELECT COUNT(*) FROM {$wpdb->prefix}ppv_points 
+        WHERE store_id=%d AND DATE(created_at)=%s
+    ", $store->id, $today));
+
+    $week_points = $wpdb->get_var($wpdb->prepare("
+        SELECT COUNT(*) FROM {$wpdb->prefix}ppv_points 
+        WHERE store_id=%d AND DATE(created_at) >= %s
+    ", $store->id, $week_start));
+
+    return new WP_REST_Response([
+        'success' => true,
+        'today_points' => intval($today_points),
+        'week_points' => intval($week_points),
+    ], 200);
+}
+
+    /** === Neue Kampagne erstellen (REST) === */
+    public static function rest_create_campaign(WP_REST_Request $r) {
+        global $wpdb;
+        $data = $r->get_json_params();
+        $store_key = sanitize_text_field($data['store_key'] ?? '');
+        $title = sanitize_text_field($data['title'] ?? '');
+        $start = sanitize_text_field($data['start_date'] ?? '');
+        $end = sanitize_text_field($data['end_date'] ?? '');
+
+        $store = $wpdb->get_row($wpdb->prepare("SELECT id FROM {$wpdb->prefix}ppv_stores WHERE store_key=%s", $store_key));
+        if (!$store) return new WP_REST_Response(['success' => false, 'message' => 'Unbekannter Store'], 400);
+
+        $wpdb->insert("{$wpdb->prefix}ppv_campaigns", [
+            'store_id' => $store->id,
+            'title' => $title,
+            'start_date' => $start,
+            'end_date' => $end,
+            'status' => 'active',
+            'created_at' => current_time('mysql')
+        ]);
+
+        return new WP_REST_Response(['success' => true, 'message' => 'Kampagne gespeichert!'], 200);
+    }
+    /** === QR dekódolás (felhasználói QR → user_id) === */
+    private static function decode_user_from_qr($qr) {
+        // Példa formátum: PPUSER-123-abcdef1234token
+        if (strpos($qr, 'PPUSER-') === 0) {
+            $parts = explode('-', $qr);
+            if (isset($parts[1]) && is_numeric($parts[1])) {
+                return intval($parts[1]);
+            }
+        }
+        return false;
+    }
+
+    /** === Log beszúrás === */
+    private static function insert_log($store_id, $user_id, $message) {
+        global $wpdb;
+        $wpdb->insert("{$wpdb->prefix}ppv_pos_log", [
+            'store_id'   => $store_id,
+            'user_id'    => $user_id,
+            'message'    => $message,
+            'created_at' => current_time('mysql')
+        ]);
+    }
+
+    /** === Aktív kampány lekérdezés === */
+    private static function get_active_campaign($store_id) {
+        global $wpdb;
+        $today = current_time('Y-m-d');
+        return $wpdb->get_row($wpdb->prepare("
+            SELECT * FROM {$wpdb->prefix}ppv_campaigns
+            WHERE store_id = %d
+              AND status = 'active'
+              AND start_date <= %s
+              AND end_date >= %s
+            ORDER BY start_date DESC
+            LIMIT 1
+        ", $store_id, $today, $today));
+    }
+
+/** === Kampagnen Menü (modern POS / PWA Design) === */
+public static function render_campaigns($store) {
+    ?>
+    <div class="ppv-campaigns glass-section">
+      <div class="ppv-campaign-header">
+        <h3>🎯 Aktive Kampagnen</h3>
+        <button id="ppv-new-campaign-btn" class="ppv-btn neon">+ Neue Kampagne</button>
+      </div>
+
+      <form id="ppv-campaign-form" class="ppv-campaign-inline" style="display:none;">
+        <input type="hidden" id="campaign-id" name="id">
+
+        <div class="ppv-form-grid">
+
+          <!-- Titel -->
+          <div class="ppv-form-group full">
+            <label>
+              Titel
+              <span class="ppv-tooltip" data-tip="Der Name der Kampagne, z. B. 'Doppelte Punkte-Woche'.">ℹ️</span>
+            </label>
+            <input type="text" id="campaign-title" placeholder="z. B. Doppelte Punkte-Woche">
+          </div>
+
+          <!-- Beschreibung -->
+          <div class="ppv-form-group full">
+            <label>
+              Beschreibung
+              <span class="ppv-tooltip" data-tip="Kurze Erklärung, was die Kampagne macht (z. B. doppelte Punkte auf alle Einkäufe).">ℹ️</span>
+            </label>
+            <textarea id="campaign-description" placeholder="Kurze Beschreibung..."></textarea>
+          </div>
+
+          <!-- Startdatum -->
+          <div class="ppv-form-group">
+            <label>
+              Startdatum
+              <span class="ppv-tooltip" data-tip="Ab diesem Datum ist die Kampagne aktiv.">ℹ️</span>
+            </label>
+            <input type="text" id="campaign-start" class="ppv-datepicker" placeholder="Datum wählen">
+          </div>
+
+          <!-- Enddatum -->
+          <div class="ppv-form-group">
+            <label>
+              Enddatum
+              <span class="ppv-tooltip" data-tip="Nach diesem Datum wird die Kampagne automatisch deaktiviert.">ℹ️</span>
+            </label>
+            <input type="text" id="campaign-end" class="ppv-datepicker" placeholder="Datum wählen">
+          </div>
+
+          <!-- Punkte-Faktor -->
+          <div class="ppv-form-group">
+            <label>
+              Punkte-Faktor (x)
+              <span class="ppv-tooltip" data-tip="Multipliziert die Punkte. Beispiel: x2 bedeutet doppelte Punkte pro Scan.">ℹ️</span>
+            </label>
+            <input type="number" id="campaign-multiplier" value="1" min="1">
+          </div>
+
+          <!-- Extra Punkte -->
+          <div class="ppv-form-group">
+            <label>
+              Extra Punkte
+              <span class="ppv-tooltip" data-tip="Fügt zusätzlich zu den normalen Punkten Bonuspunkte hinzu.">ℹ️</span>
+            </label>
+            <input type="number" id="campaign-extra" value="0" min="0">
+          </div>
+
+          <!-- Tageslimit -->
+          <div class="ppv-form-group">
+            <label>
+              Tageslimit
+              <span class="ppv-tooltip" data-tip="Maximale Anzahl an Punkten, die ein Kunde pro Tag sammeln kann (0 = kein Limit).">ℹ️</span>
+            </label>
+            <input type="number" id="campaign-daily-limit" value="0" min="0">
+          </div>
+
+          <!-- Rabatt -->
+          <div class="ppv-form-group">
+            <label>
+              Rabatt (%)
+              <span class="ppv-tooltip" data-tip="Wenn der Kampagnentyp 'Rabatt' ist, wird dieser Prozentsatz automatisch abgezogen.">ℹ️</span>
+            </label>
+            <input type="number" id="campaign-discount" value="0" min="0" step="0.1">
+          </div>
+
+          <!-- Typ -->
+          <div class="ppv-form-group">
+            <label>
+              Kampagnentyp
+              <span class="ppv-tooltip" data-tip="Wähle 'Punkte', um zusätzliche Punkte zu vergeben, oder 'Rabatt', um Prozente abzuziehen.">ℹ️</span>
+            </label>
+            <select id="campaign-type">
+              <option value="points">Punkte</option>
+              <option value="discount">Rabatt</option>
+            </select>
+          </div>
+
+        </div>
+
+        <div class="ppv-form-actions">
+          <button type="submit" class="ppv-btn neon">💾 Speichern</button>
+          <button type="button" id="campaign-cancel" class="ppv-btn-outline">Abbrechen</button>
+        </div>
+      </form>
+
+      <!-- Kampagnen-Liste -->
+      <div id="ppv-campaign-list"></div>
+    </div>
+    <?php
+
+  global $wpdb;
+  $campaigns = $wpdb->get_results($wpdb->prepare("
+      SELECT * FROM {$wpdb->prefix}ppv_campaigns
+      WHERE store_id=%d ORDER BY created_at DESC
+  ", $store->id));
+
+  if ($campaigns) {
+    foreach ($campaigns as $c) {
+      $active = ($c->status === 'active');
+      ?>
+      <div class="ppv-campaign-card" 
+           data-id="<?php echo esc_attr($c->id); ?>"
+           data-multiplier="<?php echo esc_attr($c->multiplier); ?>"
+           data-extra="<?php echo esc_attr($c->extra_points); ?>"
+           data-limit="<?php echo esc_attr($c->daily_limit); ?>"
+           data-discount="<?php echo esc_attr($c->discount_percent); ?>"
+           data-type="<?php echo esc_attr($c->campaign_type); ?>">
+           
+        <div class="ppv-card-header">
+          <h4><?php echo esc_html($c->title); ?></h4>
+          <span class="ppv-status <?php echo $active ? 'active' : 'inactive'; ?>">
+            <?php echo $active ? '🟢 Aktiv' : '⚪ Inaktiv'; ?>
+          </span>
+        </div>
+        <p><?php echo esc_html($c->description ?: 'Keine Beschreibung'); ?></p>
+        <div class="ppv-card-details">
+          <span>📅 <?php echo date('d.m.Y', strtotime($c->start_date)); ?> - <?php echo date('d.m.Y', strtotime($c->end_date)); ?></span>
+          <span>⭐ Faktor: <?php echo intval($c->multiplier); ?></span>
+          <?php if ($c->discount_percent > 0): ?>
+            <span>💸 Rabatt: <?php echo floatval($c->discount_percent); ?>%</span>
+          <?php endif; ?>
+        </div>
+        <div class="ppv-card-actions">
+          <button class="ppv-btn-sm edit-campaign" data-id="<?php echo esc_attr($c->id); ?>">✏️ Bearbeiten</button>
+          <button class="ppv-btn-sm delete-campaign" data-id="<?php echo esc_attr($c->id); ?>">🗑️ Löschen</button>
+          <button class="ppv-btn-sm toggle-campaign" data-id="<?php echo esc_attr($c->id); ?>">
+            <?php echo $active ? '🔕 Deaktivieren' : '🔔 Aktivieren'; ?>
+          </button>
+        </div>
+      </div>
+      <?php
+    }
+  } else {
+    echo '<p class="ppv-empty">Keine Kampagnen gefunden.</p>';
+  }
+  ?>
+</div>
+
+</div>
+
+
+    <!-- Flatpickr (modern calendar) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+    jQuery(document).ready(function($){
+
+        // === Modern calendar ===
+        flatpickr(".ppv-datepicker", {
+            dateFormat: "Y-m-d",
+            altInput: true,
+            altFormat: "d.m.Y",
+            locale: "de",
+            minDate: "today",
+            disableMobile: false
+        });
+
+        // === Modal open / close ===
+        $("#ppv-campaign-new").on("click", () => $("#ppv-campaign-modal").fadeIn(200).css("display","flex"));
+        $("#campaign-cancel, .ppv-close").on("click", () => $("#ppv-campaign-modal").fadeOut(200));
+
+        // === Save campaign ===
+        $("#campaign-save").on("click", async function(){
+            const data = {
+                store_key: "<?php echo esc_js($store->store_key); ?>",
+                title: $("#campaign-title").val().trim(),
+                description: $("#campaign-description").val().trim(),
+                start_date: $("#campaign-start").val(),
+                end_date: $("#campaign-end").val(),
+                multiplier: $("#campaign-multiplier").val(),
+                extra_points: $("#campaign-extra").val(),
+                daily_limit: $("#campaign-daily-limit").val(),
+                discount_percent: $("#campaign-discount").val(),
+                campaign_type: $("#campaign-type").val()
+            };
+
+            if(!data.title || !data.start_date || !data.end_date){
+                alert("Bitte Titel und Datum angeben.");
+                return;
+            }
+
+            const res = await fetch(PPV_QR.rest_url + "pos/campaign", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(data)
+            });
+
+            const result = await res.json();
+            alert(result.message || "✅ Kampagne gespeichert!");
+            location.reload();
+        });
+    });
+    </script>
+    <?php
+}
+
+
+
+    /** === Design fül === */
+    public static function render_design($store) {
+        global $wpdb;
+        $design_color = $store->design_color ?: '#00ffff';
+        $design_logo  = $store->design_logo ?: '';
+
+        ?>
+        <div class="ppv-design-container glass-section">
+            <h3>🎨 POS-Design Einstellungen</h3>
+            <p>Hier kannst du deine POS-Farbwelt und dein Logo festlegen.</p>
+
+            <label>Primärfarbe</label>
+            <input type="color" id="ppv-design-color" value="<?php echo esc_attr($design_color); ?>">
+
+            <label>Logo (optional)</label>
+            <input type="file" id="ppv-design-logo" accept="image/*">
+
+            <?php if ($design_logo): ?>
+                <div class="ppv-logo-preview">
+                    <img src="<?php echo esc_url($design_logo); ?>" alt="Logo" style="max-height:80px;">
+                </div>
+            <?php endif; ?>
+
+            <div class="ppv-design-actions">
+                <button id="ppv-design-save" class="ppv-btn neon">💾 Speichern</button>
+                <button id="ppv-design-reset" class="ppv-btn-outline">↩️ Zurücksetzen</button>
+            </div>
+
+            <div id="ppv-design-message" class="ppv-message-bottom"></div>
+        </div>
+        <?php
+    }
+
+    /** === Design mentés === */
+    public static function ajax_save_design() {
+        global $wpdb;
+        $user_id = get_current_user_id();
+        if (!$user_id) wp_send_json_error(['msg' => 'Nicht eingeloggt']);
+
+        $color = sanitize_hex_color($_POST['color'] ?? '#00ffff');
+        $logo_url = '';
+
+        if (!empty($_FILES['logo']['name'])) {
+            require_once(ABSPATH . 'wp-admin/includes/file.php');
+            $upload = wp_handle_upload($_FILES['logo'], ['test_form' => false]);
+            if (isset($upload['url'])) {
+                $logo_url = esc_url_raw($upload['url']);
+            }
+        }
+
+        $store = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}ppv_stores WHERE user_id=%d LIMIT 1", $user_id));
+        if (!$store) wp_send_json_error(['msg' => 'Kein Store gefunden.']);
+
+        $data = ['design_color' => $color];
+        if ($logo_url) $data['design_logo'] = $logo_url;
+
+        $wpdb->update("{$wpdb->prefix}ppv_stores", $data, ['id' => $store->id]);
+        wp_send_json_success(['msg' => 'Design gespeichert']);
+    }
+
+    /** === Design reset === */
+    public static function ajax_reset_design() {
+        global $wpdb;
+        $user_id = get_current_user_id();
+        if (!$user_id) wp_send_json_error(['msg' => 'Nicht eingeloggt']);
+
+        $store = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}ppv_stores WHERE user_id=%d LIMIT 1", $user_id));
+        if (!$store) wp_send_json_error(['msg' => 'Kein Store gefunden.']);
+
+        $wpdb->update("{$wpdb->prefix}ppv_stores", [
+            'design_color' => '#00ffff',
+            'design_logo'  => ''
+        ], ['id' => $store->id]);
+
+        wp_send_json_success(['msg' => 'Design zurückgesetzt']);
+    }
+
+    /** === Napi QR (Token) frissítés === */
+    public static function generate_daily_qr() {
+        global $wpdb;
+        $stores = $wpdb->get_results("SELECT id FROM {$wpdb->prefix}ppv_stores");
+        foreach ($stores as $store) {
+            $wpdb->update("{$wpdb->prefix}ppv_stores", [
+                'qr_secret' => wp_generate_password(32, false, false)
+            ], ['id' => $store->id]);
+        }
+        error_log('✅ [PunktePass] Daily QR refresh complete at ' . current_time('mysql'));
+    }
+
+    /** === Logging segédfüggvény === */
+    private static function log($msg) {
+        if (is_array($msg) || is_object($msg)) $msg = print_r($msg, true);
+        error_log('[PPV_POS] ' . $msg);
+    }
+    
+    /** === Aktív Bonusnap lekérdezés === */
+public static function rest_get_bonus(WP_REST_Request $r) {
+    global $wpdb;
+    $store_key = sanitize_text_field($r->get_param('store_key') ?? '');
+    $store = $wpdb->get_row($wpdb->prepare("SELECT id FROM {$wpdb->prefix}ppv_stores WHERE store_key=%s", $store_key));
+    if (!$store) return new WP_REST_Response(['active' => false]);
+
+    $today = current_time('Y-m-d');
+    $bonus = $wpdb->get_row($wpdb->prepare("
+        SELECT multiplier, extra_points FROM {$wpdb->prefix}ppv_bonus_days
+        WHERE store_id=%d AND date=%s AND active=1 LIMIT 1
+    ", $store->id, $today));
+
+    if ($bonus) {
+        return new WP_REST_Response([
+            'active' => true,
+            'multiplier' => $bonus->multiplier,
+            'extra_points' => $bonus->extra_points
+        ]);
+    }
+    return new WP_REST_Response(['active' => false]);
+}
+
+public static function generate_secure_qr_url($store_id) {
+    if (!$store_id) return '';
+    $token = md5('ppv_' . $store_id . '_secure_' . wp_salt());
+    $url = site_url("/?ppv_qr={$store_id}&token={$token}");
+    return esc_url($url);
+}
+
+
+}
+
+PPV_QR::hooks();

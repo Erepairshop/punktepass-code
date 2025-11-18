@@ -1,0 +1,150 @@
+<?php
+if (!defined('ABSPATH')) exit;
+
+class PPV_User_Settings {
+
+    public static function hooks() {
+        add_shortcode('ppv_user_settings', [__CLASS__, 'render_settings_page']);
+        add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
+        add_action('wp_ajax_ppv_save_user_settings', [__CLASS__, 'ajax_save_settings']);
+    }
+
+    /** 🔹 Stílus és JS betöltése */
+    public static function enqueue_assets() {
+        wp_enqueue_style(
+            'ppv-user-settings',
+            PPV_PLUGIN_URL . 'assets/css/ppv-user-settings.css',
+            [],
+            time()
+        );
+        wp_enqueue_script(
+            'ppv-user-settings',
+            PPV_PLUGIN_URL . 'assets/js/ppv-user-settings.js',
+            ['jquery'],
+            time(),
+            true
+        );
+        wp_localize_script('ppv-user-settings', 'ppv_user_settings', [
+            'ajax_url' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('ppv_user_settings_nonce')
+        ]);
+    }
+
+    /** 🔹 AJAX mentés */
+    public static function ajax_save_settings() {
+        check_ajax_referer('ppv_user_settings_nonce', 'nonce');
+        if (!is_user_logged_in()) wp_send_json_error(['msg' => 'Nicht eingeloggt']);
+
+        $user_id = get_current_user_id();
+
+        // Alapadatok mentése
+        if (isset($_POST['name'])) {
+            wp_update_user([
+                'ID' => $user_id,
+                'display_name' => sanitize_text_field($_POST['name']),
+            ]);
+        }
+        if (isset($_POST['email']) && is_email($_POST['email'])) {
+            wp_update_user([
+                'ID' => $user_id,
+                'user_email' => sanitize_email($_POST['email']),
+            ]);
+        }
+
+        // Jelszó módosítás
+        if (!empty($_POST['new_password']) && $_POST['new_password'] === $_POST['confirm_password']) {
+            wp_set_password($_POST['new_password'], $user_id);
+        }
+
+        // Értesítések mentése
+        update_user_meta($user_id, 'ppv_notify_rewards', isset($_POST['notify_rewards']) ? 1 : 0);
+        update_user_meta($user_id, 'ppv_notify_scans', isset($_POST['notify_scans']) ? 1 : 0);
+        update_user_meta($user_id, 'ppv_notify_newsletter', isset($_POST['notify_newsletter']) ? 1 : 0);
+
+        // Téma mód
+        if (isset($_POST['theme_mode'])) {
+            $theme = in_array($_POST['theme_mode'], ['light', 'dark']) ? $_POST['theme_mode'] : 'dark';
+            update_user_meta($user_id, 'ppv_theme_mode', $theme);
+        }
+
+        wp_send_json_success(['msg' => 'Einstellungen erfolgreich gespeichert']);
+    }
+
+    /** 🔹 Oldal renderelése */
+    public static function render_settings_page() {
+        if (!is_user_logged_in()) {
+            return '<div class="ppv-notice">Bitte melden Sie sich an, um Ihre Einstellungen zu sehen.</div>';
+        }
+
+        $user = wp_get_current_user();
+        $user_id = $user->ID;
+
+        $notify_rewards = get_user_meta($user_id, 'ppv_notify_rewards', true);
+        $notify_scans = get_user_meta($user_id, 'ppv_notify_scans', true);
+        $notify_newsletter = get_user_meta($user_id, 'ppv_notify_newsletter', true);
+        $theme_mode = get_user_meta($user_id, 'ppv_theme_mode', true) ?: 'dark';
+
+        ob_start();
+        ?>
+        <!-- 🔙 Zurück -->
+        <div class="ppv-back-btn">
+            <a href="https://punktepass.de/user-dashboard">← Zurück zum Dashboard</a>
+        </div>
+
+        <div class="ppv-user-settings">
+            <h2>Meine Einstellungen</h2>
+
+            <form id="ppv-settings-form">
+
+                <!-- Persönliche Daten -->
+                <div class="ppv-section">
+                    <h3>Persönliche Daten</h3>
+                    <label>Name</label>
+                    <input type="text" name="name" value="<?php echo esc_attr($user->display_name); ?>">
+
+                    <label>E-Mail</label>
+                    <input type="email" name="email" value="<?php echo esc_attr($user->user_email); ?>">
+                </div>
+
+                <!-- Passwort ändern -->
+                <div class="ppv-section">
+                    <h3>Passwort ändern</h3>
+                    <input type="password" name="new_password" placeholder="Neues Passwort">
+                    <input type="password" name="confirm_password" placeholder="Wiederholung">
+                </div>
+
+                <!-- Benachrichtigungen -->
+                <div class="ppv-section">
+                    <h3>Benachrichtigungen</h3>
+                    <label><input type="checkbox" name="notify_rewards" <?php checked($notify_rewards, 1); ?>> E-Mail bei neuen Prämien</label><br>
+                    <label><input type="checkbox" name="notify_scans" <?php checked($notify_scans, 1); ?>> E-Mail bei neuen Scans</label><br>
+                    <label><input type="checkbox" name="notify_newsletter" <?php checked($notify_newsletter, 1); ?>> Newsletter erhalten</label>
+                </div>
+
+                <!-- Darstellung -->
+                <div class="ppv-section">
+                    <h3>Darstellung</h3>
+                    <label><input type="radio" name="theme_mode" value="dark" <?php checked($theme_mode, 'dark'); ?>> 🌙 Dark Mode</label><br>
+                    <label><input type="radio" name="theme_mode" value="light" <?php checked($theme_mode, 'light'); ?>> ☀️ Light Mode</label>
+                </div>
+
+                <!-- Konto -->
+                <div class="ppv-section danger">
+                    <h3>Konto & Datenschutz</h3>
+                    <p>Wenn Sie Ihr Konto löschen möchten, klicken Sie unten:</p>
+                    <button type="button" id="ppv-delete-account" class="danger-btn">Konto löschen</button>
+                </div>
+
+                <!-- Speichern -->
+                <div class="ppv-actions">
+                    <button type="submit" class="save-btn">Einstellungen speichern</button>
+                </div>
+
+            </form>
+        </div>
+        <?php
+        return ob_get_clean();
+    }
+}
+
+PPV_User_Settings::hooks();

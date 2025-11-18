@@ -1,0 +1,71 @@
+=== PunktePass Localize Patch Log ===
+
+🔧 Fixing: /home/u660905446/domains/punktepass.de/public_html/wp-content/plugins/punktepass/includes/class-ppv-campaigns.php
+✅ Patched (1 occurrences)
+
+🔧 Fixing: /home/u660905446/domains/punktepass.de/public_html/wp-content/plugins/punktepass/includes/class-ppv-redeem-admin.php
+✅ Patched (1 occurrences)
+
+🔧 Fixing: /home/u660905446/domains/punktepass.de/public_html/wp-content/plugins/punktepass/includes/class-ppv-user-settings.php
+✅ Patched (1 occurrences)
+
+🔧 Fixing: /home/u660905446/domains/punktepass.de/public_html/wp-content/plugins/punktepass/includes/class-ppv-pos-rest.php
+✅ Patched (1 occurrences)
+
+🔧 Fixing: /home/u660905446/domains/punktepass.de/public_html/wp-content/plugins/punktepass/includes/class-ppv-redeem.php
+✅ Patched (1 occurrences)
+
+🔧 Fixing: /home/u660905446/domains/punktepass.de/public_html/wp-content/plugins/punktepass/includes/class-ppv-bonus-days.php
+✅ Patched (1 occurrences)
+
+🔧 Fixing: /home/u660905446/domains/punktepass.de/public_html/wp-content/plugins/punktepass/includes/class-ppv-qr.php
+✅ Patched (1 occurrences)
+
+🔧 Fixing: /home/u660905446/domains/punktepass.de/public_html/wp-content/plugins/punktepass/includes/class-ppv-rewards.php
+✅ Patched (1 occurrences)
+
+🔧 Fixing: /home/u660905446/domains/punktepass.de/public_html/wp-content/plugins/punktepass/includes/class-ppv-user-signup.php
+✅ Patched (1 occurrences)
+
+🔧 Fixing: /home/u660905446/domains/punktepass.de/public_html/wp-content/plugins/punktepass/includes/class-ppv-user-dashboard.php
+✅ Patched (2 occurrences)
+
+🔧 Fixing: /home/u660905446/domains/punktepass.de/public_html/wp-content/plugins/punktepass/includes/pp-profile-settings.php
+✅ Patched (1 occurrences)
+
+🔧 Fixing: /home/u660905446/domains/punktepass.de/public_html/wp-content/plugins/punktepass/includes/class-ppv-belohnungen.php
+✅ Patched (1 occurrences)
+
+🔧 Fixing: /home/u660905446/domains/punktepass.de/public_html/wp-content/plugins/punktepass/includes/class-ppv-reviews.php
+✅ Patched (1 occurrences)
+
+🔧 Fixing: /home/u660905446/domains/punktepass.de/public_html/wp-content/plugins/punktepass/includes/pp-profile-lite.php
+✅ Patched (1 occurrences)
+
+🔧 Fixing: /home/u660905446/domains/punktepass.de/public_html/wp-content/plugins/punktepass/includes/class-ppv-poster.php
+✅ Patched (1 occurrences)
+
+🔧 Fixing: /home/u660905446/domains/punktepass.de/public_html/wp-content/plugins/punktepass/includes/class-ppv-pages.php
+✅ Patched (1 occurrences)
+
+🔧 Fixing: /home/u660905446/domains/punktepass.de/public_html/wp-content/plugins/punktepass/includes/class-ppv-pos-admin.php
+✅ Patched (2 occurrences)
+
+🔧 Fixing: /home/u660905446/domains/punktepass.de/public_html/wp-content/plugins/punktepass/includes/ppv-auto-debug.php
+✅ Patched (1 occurrences)
+
+🔧 Fixing: /home/u660905446/domains/punktepass.de/public_html/wp-content/plugins/punktepass/includes/class-ppv-pwa-bridge.php
+✅ Patched (2 occurrences)
+
+🔧 Fixing: /home/u660905446/domains/punktepass.de/public_html/wp-content/plugins/punktepass/includes/class-ppv-scan.php
+✅ Patched (1 occurrences)
+
+🔧 Fixing: /home/u660905446/domains/punktepass.de/public_html/wp-content/plugins/punktepass/includes/class-ppv-stats.php
+✅ Patched (1 occurrences)
+
+🔧 Fixing: /home/u660905446/domains/punktepass.de/public_html/wp-content/plugins/punktepass/includes/class-ppv-admin-vendors.php
+✅ Patched (1 occurrences)
+
+🔧 Fixing: /home/u660905446/domains/punktepass.de/public_html/wp-content/plugins/punktepass/includes/pp-vendor-signup.php
+✅ Patched (1 occurrences)
+

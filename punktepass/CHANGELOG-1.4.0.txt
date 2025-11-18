@@ -1,0 +1,8 @@
+# PunktePass 1.4.0 – Phase 2 (lite)
+2025-09-29 22:42:16
+
+- Új védett útvonal: /haendler-profil – Händler profil űrlap (logo/cover WebP, cím, nyitvatartás, leírás).
+- Új publikus útvonal: /discover – boltok listája város szűrővel.
+- Redeem limit ellenőrzés (helper) a REST-ben előkészítve.
+- Verzióbump: 1.4.0
+- Aktiváláskor rewrite flush.

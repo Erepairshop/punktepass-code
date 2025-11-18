@@ -1,0 +1,322 @@
+<?php
+if (!defined('ABSPATH')) exit;
+
+class PPV_Admin_Vendors {
+
+    /** ============================================================
+     *  INIT HOOKS
+     *  ============================================================ */
+    public static function hooks() {
+        add_action('admin_menu', [__CLASS__, 'add_admin_menu']);
+        add_action('admin_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
+        add_action('wp_ajax_ppv_admin_toggle_pos', [__CLASS__, 'ajax_toggle_pos']);
+        add_action('wp_ajax_ppv_admin_new_pin', [__CLASS__, 'ajax_new_pin']);
+        add_action('wp_ajax_ppv_admin_force_activate', [__CLASS__, 'ajax_force_activate']);
+    }
+
+    /** ============================================================
+     *  ADMIN MENÜ REGISZTRÁLÁSA
+     *  ============================================================ */
+    public static function add_admin_menu() {
+        add_menu_page(
+            'PunktePass Händler',
+            'PunktePass Händler',
+            'manage_options',
+            'ppv-haendler-admin', // 🔹 új, egyedi slug
+            [__CLASS__, 'render_admin_page'],
+            'dashicons-businessperson',
+            57 // 🔹 a POS menü után
+        );
+    }
+
+    /** ============================================================
+     *  ASSETS (CSS + JS)
+     *  ============================================================ */
+    public static function enqueue_assets($hook) {
+        if ($hook !== 'toplevel_page_ppv-haendler-admin') return;
+
+        wp_enqueue_style(
+            'ppv-admin-vendors',
+            PPV_PLUGIN_URL . 'assets/css/ppv-admin-vendors.css',
+            [],
+            time()
+        );
+
+        wp_enqueue_script(
+            'ppv-admin-vendors',
+            PPV_PLUGIN_URL . 'assets/js/ppv-admin-vendors.js',
+            ['jquery'],
+            time(),
+            true
+        );
+
+        wp_localize_script('ppv-admin-vendors', 'ppvAdminVendors', [
+            'ajax_url' => admin_url('admin-ajax.php'),
+            'nonce'    => wp_create_nonce('ppv_admin_vendors_nonce'),
+        ]);
+    }
+
+    /** ============================================================
+     *  ADMIN OLDAL MEGJELENÍTÉS
+     *  ============================================================ */
+    public static function render_admin_page() {
+        if (!current_user_can('manage_options')) {
+            wp_die('Keine Rechte.');
+        }
+
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+
+        $rows = $wpdb->get_results("
+            SELECT 
+                s.id AS store_id,
+                s.name AS store_title,
+                s.email AS store_email,
+                s.pos_pin,
+                s.pos_enabled,
+                s.subscription_status,
+                s.active
+            FROM {$prefix}ppv_stores s
+            LEFT JOIN {$wpdb->users} u ON u.ID = s.user_id
+            ORDER BY s.id DESC
+            LIMIT 500
+        ");
+        ?>
+        <div class="wrap">
+            <h1>PunktePass — Händler Verwaltung</h1>
+            <p>Hier können Sie POS aktivieren, PIN generieren oder deaktivieren.</p>
+
+            <table class="widefat fixed striped">
+                <thead>
+                    <tr>
+                        <th>Store ID</th>
+                        <th>Store Name</th>
+                        <th>Owner (Email)</th>
+                        <th>Status</th>
+                        <th>POS aktiv</th>
+                        <th>PIN (Default)</th>
+                        <th>Aktionen</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if ($rows): foreach ($rows as $r): ?>
+                        <tr>
+                            <td><?php echo intval($r->store_id); ?></td>
+                            <td><?php echo esc_html($r->store_title); ?></td>
+                            <td><?php echo esc_html($r->store_email); ?></td>
+                            <td>
+                                <?php echo intval($r->active) === 1 
+                                    ? '<span style="color:#00cc66;font-weight:600;">✅ Aktiv</span>'
+                                    : '<span style="color:#cc0000;font-weight:600;">❌ Inaktiv</span>'; ?>
+                            </td>
+                            <td><?php echo $r->pos_enabled ? '✅' : '—'; ?></td>
+                            <td style="font-weight:600;color:#d63384;">
+                                <?php echo $r->pos_pin ? esc_html($r->pos_pin) : '—'; ?>
+                            </td>
+                            <td>
+                                <?php if (!$r->pos_enabled): ?>
+                                    <button class="button button-primary ppv-activate-pos" data-store="<?php echo intval($r->store_id); ?>">POS aktivieren</button>
+                                    <button class="button button-secondary ppv-admin-force-activate" data-store="<?php echo intval($r->store_id); ?>">Aktivieren (ohne Zahlung)</button>
+                                <?php else: ?>
+                                    <button class="button ppv-deactivate-pos" data-store="<?php echo intval($r->store_id); ?>">Deaktivieren</button>
+                                    <button class="button ppv-new-pin" data-store="<?php echo intval($r->store_id); ?>">Neues PIN</button>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; else: ?>
+                        <tr><td colspan="7">Keine Händler gefunden.</td></tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+        <?php
+    }
+
+   /** ============================================================
+ *  AJAX: POS AKTIVIEREN / DEAKTIVIEREN (mit Debug Logs)
+ *  ============================================================ */
+public static function ajax_toggle_pos() {
+    check_ajax_referer('ppv_admin_vendors_nonce', 'nonce');
+    if (!current_user_can('manage_options')) {
+        error_log("🚫 Keine Rechte für AJAX toggle");
+        wp_send_json_error(['message' => 'Keine Rechte']);
+    }
+
+    global $wpdb;
+    $prefix = $wpdb->prefix;
+
+    // 🔹 Debug – POST adatok
+    error_log("🔍 ajax_toggle_pos() aufgerufen");
+    error_log("📦 POST data: " . print_r($_POST, true));
+
+    $store_id = intval($_POST['store_id'] ?? 0);
+    $action   = sanitize_text_field($_POST['action_type'] ?? '');
+
+    if (!$store_id) {
+        error_log("❌ Fehler: store_id fehlt!");
+        wp_send_json_error(['message' => 'Missing store_id']);
+    }
+
+    error_log("🏪 Aktion: {$action} | Store ID: {$store_id}");
+
+    if ($action === 'activate') {
+        // POS aktivieren
+        $res1 = $wpdb->update("{$prefix}ppv_stores", ['pos_enabled' => 1], ['id' => $store_id]);
+        error_log("✅ pos_enabled=1 gesetzt (Result: " . var_export($res1, true) . ")");
+
+        $existing = $wpdb->get_var($wpdb->prepare(
+            "SELECT pin FROM {$prefix}ppv_pos_operators WHERE store_id=%d AND is_active=1 LIMIT 1",
+            $store_id
+        ));
+        error_log("🔎 Existierender aktiver PIN: " . var_export($existing, true));
+
+        if (!$existing) {
+            $pin = self::generate_unique_pin();
+            error_log("🆕 Neuer PIN generiert: {$pin}");
+
+            $res2 = $wpdb->insert("{$prefix}ppv_pos_operators", [
+                'store_id'   => $store_id,
+                'name'       => 'Default POS',
+                'pin'        => $pin,
+                'is_active'  => 1,
+                'created_at' => current_time('mysql')
+            ]);
+            error_log("💾 POS Operator eingefügt (Result: " . var_export($res2, true) . ")");
+
+            $res3 = $wpdb->update("{$prefix}ppv_stores", ['pos_pin' => $pin], ['id' => $store_id]);
+            error_log("💾 Store aktualisiert mit PIN={$pin} (Result: " . var_export($res3, true) . ")");
+        } else {
+            $pin = $existing;
+            error_log("🔁 Bestehender PIN verwendet: {$pin}");
+        }
+
+        error_log("✅ POS aktiviert erfolgreich für Store ID {$store_id}");
+        wp_send_json_success(['message' => 'POS aktiviert', 'pin' => $pin]);
+    }
+
+    if ($action === 'deactivate') {
+        // POS deaktivieren
+        $res4 = $wpdb->update("{$prefix}ppv_stores", ['pos_enabled' => 0], ['id' => $store_id]);
+        $res5 = $wpdb->update("{$prefix}ppv_pos_operators", ['is_active' => 0], ['store_id' => $store_id]);
+        error_log("🚫 POS deaktiviert für Store ID {$store_id} (Stores: {$res4}, Operators: {$res5})");
+
+        wp_send_json_success(['message' => 'POS deaktiviert']);
+    }
+
+    error_log("⚠️ Ungültige Aktion: {$action}");
+    wp_send_json_error(['message' => 'Invalid action']);
+}
+
+
+    /** ============================================================
+     *  AJAX: NEUES PIN GENERIEREN
+     *  ============================================================ */
+    public static function ajax_new_pin() {
+        check_ajax_referer('ppv_admin_vendors_nonce', 'nonce');
+        if (!current_user_can('manage_options')) wp_send_json_error(['message' => 'Keine Rechte']);
+
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+        $store_id = intval($_POST['store_id'] ?? 0);
+        if (!$store_id) wp_send_json_error(['message' => 'Missing store_id']);
+
+        $pin = self::generate_unique_pin();
+        $wpdb->update("{$prefix}ppv_pos_operators", ['is_active' => 0], ['store_id' => $store_id]);
+        $wpdb->insert("{$prefix}ppv_pos_operators", [
+            'store_id' => $store_id,
+            'name' => 'POS ' . current_time('mysql'),
+            'pin' => $pin,
+            'is_active' => 1,
+            'created_at' => current_time('mysql')
+        ]);
+        $wpdb->update("{$prefix}ppv_stores", ['pos_pin' => $pin], ['id' => $store_id]);
+        wp_send_json_success(['message' => 'Neues PIN generiert', 'pin' => $pin]);
+    }
+
+    /** ============================================================
+     *  PIN GENERATOR
+     *  ============================================================ */
+    private static function generate_unique_pin($length = 4) {
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+        $tries = 0;
+        do {
+            $pin = str_pad((string) mt_rand(0, pow(10, $length)-1), $length, '0', STR_PAD_LEFT);
+            $exists = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$prefix}ppv_pos_operators WHERE pin = %s", $pin));
+            $tries++;
+            if ($tries > 50) $length++;
+        } while ($exists);
+        return $pin;
+    }
+
+/** ============================================================
+ *  AJAX: FORCE AKTIVIERUNG (ohne Zahlung)
+ *  ============================================================ */
+public static function ajax_force_activate() {
+    check_ajax_referer('ppv_admin_vendors_nonce', 'nonce');
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(['message' => 'Keine Berechtigung']);
+    }
+
+    global $wpdb;
+    $prefix = $wpdb->prefix;
+    $store_id = intval($_POST['store_id'] ?? 0);
+    if (!$store_id) wp_send_json_error(['message' => 'Store ID fehlt']);
+
+    // 🔹 Store lekérése
+    $store = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$prefix}ppv_stores WHERE id = %d", $store_id));
+    if (!$store) wp_send_json_error(['message' => 'Store nicht gefunden']);
+
+    $user_id = 0;
+
+    // 🔹 Ha van e-mail, megpróbáljuk a WordPress felhasználót megtalálni
+    if (!empty($store->email)) {
+    $user_id = (int) $wpdb->get_var($wpdb->prepare(
+        "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE email = %s",
+        strtolower(trim($store->email))
+    ));
+
+    if ($user_id > 0) {
+        error_log("🟢 Admin-Aktivierung: Store-ID {$user_id} gefunden für {$store->email}");
+    } else {
+        error_log("⚠️ Admin-Aktivierung: Kein Store gefunden für {$store->email}");
+    }
+}
+
+
+    // 🔹 Store frissítése – user_id csak akkor, ha találtunk
+    $update_data = [
+        'subscription_status' => 'active',
+        'active'   => 1,
+        'visible'  => 1,
+        'updated_at' => current_time('mysql')
+    ];
+
+    if ($user_id > 0) {
+        $update_data['user_id'] = $user_id;
+    }
+
+    $updated = $wpdb->update("{$prefix}ppv_stores", $update_data, ['id' => $store_id]);
+
+    if ($updated !== false) {
+        $msg = $user_id > 0
+            ? "Store erfolgreich aktiviert und Benutzer-ID gesetzt (user_id={$user_id})"
+            : "Store aktiviert (ohne Benutzer-Verknüpfung)";
+        wp_send_json_success(['message' => $msg]);
+    } else {
+        wp_send_json_error(['message' => 'Aktivierung fehlgeschlagen']);
+    }
+}
+
+
+}
+
+/** ============================================================
+ *  STABIL INIT (POS LOG STRUKTÚRA SZERINT)
+ *  ============================================================ */
+add_action('plugins_loaded', function() {
+    if (class_exists('PPV_Admin_Vendors')) {
+        PPV_Admin_Vendors::hooks();
+        error_log("✅ PPV_Admin_Vendors initialized via plugins_loaded (Hostinger stable)");
+    }
+});

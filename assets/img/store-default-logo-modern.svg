@@ -1,0 +1,60 @@
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <!-- Light mode version - works in img tag -->
+  
+  <!-- Store building -->
+  <g>
+    <!-- Building main -->
+    <path d="M 48 80 L 48 200 Q 48 208 56 208 L 200 208 Q 208 208 208 200 L 208 80 Z" 
+          fill="none" stroke="#00b8e6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- Roof -->
+    <path d="M 40 80 L 128 24 L 216 80" 
+          fill="none" stroke="#0088b0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- Door -->
+    <rect x="110" y="140" width="36" height="68" rx="3"
+          fill="none" stroke="#00b8e6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="140" cy="174" r="2.5" fill="#00b8e6"/>
+    
+    <!-- Door handle line -->
+    <line x1="110" y1="174" x2="118" y2="174" stroke="#00b8e6" stroke-width="1.5" stroke-linecap="round"/>
+    
+    <!-- Windows - Top left -->
+    <rect x="60" y="100" width="28" height="28" rx="2"
+          fill="none" stroke="#00b8e6" stroke-width="2"/>
+    <line x1="60" y1="114" x2="88" y2="114" stroke="#00b8e6" stroke-width="1" opacity="0.6"/>
+    <line x1="74" y1="100" x2="74" y2="128" stroke="#00b8e6" stroke-width="1" opacity="0.6"/>
+    
+    <!-- Windows - Top center -->
+    <rect x="100" y="100" width="28" height="28" rx="2"
+          fill="none" stroke="#00b8e6" stroke-width="2"/>
+    <line x1="100" y1="114" x2="128" y2="114" stroke="#00b8e6" stroke-width="1" opacity="0.6"/>
+    <line x1="114" y1="100" x2="114" y2="128" stroke="#00b8e6" stroke-width="1" opacity="0.6"/>
+    
+    <!-- Windows - Top right -->
+    <rect x="140" y="100" width="28" height="28" rx="2"
+          fill="none" stroke="#00b8e6" stroke-width="2"/>
+    <line x1="140" y1="114" x2="168" y2="114" stroke="#00b8e6" stroke-width="1" opacity="0.6"/>
+    <line x1="154" y1="100" x2="154" y2="128" stroke="#00b8e6" stroke-width="1" opacity="0.6"/>
+    
+    <!-- Windows - Top far right -->
+    <rect x="180" y="100" width="28" height="28" rx="2"
+          fill="none" stroke="#00b8e6" stroke-width="2"/>
+    <line x1="180" y1="114" x2="208" y2="114" stroke="#00b8e6" stroke-width="1" opacity="0.6"/>
+    <line x1="194" y1="100" x2="194" y2="128" stroke="#00b8e6" stroke-width="1" opacity="0.6"/>
+    
+    <!-- Hanging sign -->
+    <g transform="translate(220, 100)">
+      <rect x="-18" y="0" width="36" height="28" rx="2"
+            fill="none" stroke="#00b8e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <line x1="-8" y1="-8" x2="-8" y2="0" stroke="#00b8e6" stroke-width="1.5"/>
+      <line x1="8" y1="-8" x2="8" y2="0" stroke="#00b8e6" stroke-width="1.5"/>
+      <!-- Sign dots -->
+      <circle cx="-6" cy="14" r="2" fill="#00b8e6" opacity="0.8"/>
+      <circle cx="6" cy="14" r="2" fill="#00b8e6" opacity="0.8"/>
+    </g>
+    
+    <!-- Floor line -->
+    <line x1="48" y1="208" x2="208" y2="208" stroke="#0088b0" stroke-width="2" opacity="0.5"/>
+  </g>
+</svg>

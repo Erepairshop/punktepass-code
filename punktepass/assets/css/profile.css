@@ -1,0 +1,9 @@
+
+.ppv-container{font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;max-width:900px;margin:24px auto;padding:12px}
+.ppv-form label{display:block;margin:10px 0}
+.ppv-form input[type=text], .ppv-form textarea{width:100%;max-width:680px}
+.ppv-thumb{display:block;margin:6px 0;max-width:140px;border:1px solid #e5e7eb;border-radius:8px;padding:6px;background:#fff}
+.ppv-thumb.wide{max-width:280px}
+.ppv-btn{background:#111;color:#fff;border:none;padding:8px 14px;border-radius:8px}
+.ppv-ok{background:#ecfdf5;border:1px solid #10b981;color:#065f46;padding:10px;border-radius:8px;margin:10px 0}
+.ppv-link{margin-left:10px}

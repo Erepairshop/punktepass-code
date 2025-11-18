@@ -1,0 +1,561 @@
+/**
+ * PunktePass - Premium Login JavaScript
+ * Google OAuth + Form Handling + Animations
+ * Author: Erik Borota / PunktePass
+ */
+
+(function($) {
+    'use strict';
+    
+    // Wait for DOM
+    $(document).ready(function() {
+        initLogin();
+    });
+    
+    /**
+     * Initialize Login System
+     */
+function initLogin() {
+        initPasswordToggle();
+        initFormValidation();
+        initGoogleLogin();
+        initFacebookLogin();
+        initTikTokLogin();
+        initFormSubmit();
+        initLanguageSwitcher();
+    }
+    
+    /**
+     * Password Toggle (Show/Hide)
+     */
+    function initPasswordToggle() {
+        $('.ppv-password-toggle').on('click', function() {
+            const $btn = $(this);
+            const $input = $('#ppv-password');
+            const $eyeOpen = $btn.find('.ppv-eye-open');
+            const $eyeClosed = $btn.find('.ppv-eye-closed');
+            
+            if ($input.attr('type') === 'password') {
+                $input.attr('type', 'text');
+                $eyeOpen.hide();
+                $eyeClosed.show();
+                $btn.attr('aria-label', 'Passwort verstecken');
+            } else {
+                $input.attr('type', 'password');
+                $eyeOpen.show();
+                $eyeClosed.hide();
+                $btn.attr('aria-label', 'Passwort anzeigen');
+            }
+        });
+    }
+    
+    /**
+     * Real-time Form Validation
+     */
+    function initFormValidation() {
+        const $email = $('#ppv-email');
+        const $password = $('#ppv-password');
+        
+        // Email validation
+        $email.on('blur', function() {
+            const email = $(this).val().trim();
+            if (email && !isValidEmail(email)) {
+                showFieldError($(this), 'Bitte geben Sie eine gültige Email-Adresse ein');
+            } else {
+                clearFieldError($(this));
+            }
+        });
+        
+        // Password validation
+        $password.on('blur', function() {
+            const password = $(this).val();
+            if (password && password.length < 6) {
+                showFieldError($(this), 'Passwort muss mindestens 6 Zeichen lang sein');
+            } else {
+                clearFieldError($(this));
+            }
+        });
+        
+        // Clear error on input
+        $email.add($password).on('input', function() {
+            clearFieldError($(this));
+            hideAlert();
+        });
+    }
+    
+    /**
+     * Email Validation
+     */
+    function isValidEmail(email) {
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return re.test(email);
+    }
+    
+    /**
+     * Show Field Error
+     */
+    function showFieldError($field, message) {
+        $field.css({
+            'border-color': '#EF4444',
+            'background': '#FEE2E2'
+        });
+        
+        // Add error message if not exists
+        if (!$field.next('.ppv-field-error').length) {
+            $field.after(`<span class="ppv-field-error" style="color:#EF4444;font-size:13px;margin-top:4px;display:block;">${message}</span>`);
+        }
+    }
+    
+    /**
+     * Clear Field Error
+     */
+    function clearFieldError($field) {
+        $field.css({
+            'border-color': '',
+            'background': ''
+        });
+        $field.next('.ppv-field-error').remove();
+    }
+    
+    /**
+     * Initialize Google Login
+     */
+    function initGoogleLogin() {
+        const clientId = ppvLogin.google_client_id;
+        
+        if (!clientId) {
+            console.warn('Google Client ID not configured');
+            return;
+        }
+        
+        // Initialize Google Identity Services
+        if (typeof google !== 'undefined' && google.accounts) {
+            google.accounts.id.initialize({
+                client_id: clientId,
+                callback: handleGoogleCallback,
+                auto_select: false,
+                cancel_on_tap_outside: true
+            });
+        }
+        
+        // Manual button click handler
+        $('#ppv-google-login-btn').on('click', function() {
+            if (typeof google !== 'undefined' && google.accounts) {
+                google.accounts.id.prompt();
+            } else {
+                showAlert('Google Login ist momentan nicht verfügbar', 'error');
+            }
+        });
+    }
+    
+    /**
+     * Handle Google OAuth Callback
+     */
+    function handleGoogleCallback(response) {
+        if (!response.credential) {
+            showAlert('Google Login fehlgeschlagen', 'error');
+            return;
+        }
+        
+        // Show loading
+        const $btn = $('#ppv-google-login-btn');
+        $btn.prop('disabled', true).html('<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/></path></svg><span>Anmelden...</span>');
+        
+        // Send to backend
+        $.ajax({
+            url: ppvLogin.ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'ppv_google_login',
+                nonce: ppvLogin.nonce,
+                credential: response.credential
+            },
+            success: function(res) {
+                if (res.success) {
+                    showAlert(res.data.message, 'success');
+                    setTimeout(function() {
+                        window.location.href = res.data.redirect;
+                    }, 1000);
+                } else {
+                    showAlert(res.data.message, 'error');
+                    resetGoogleButton($btn);
+                }
+            },
+            error: function() {
+                showAlert('Verbindungsfehler. Bitte versuchen Sie es erneut.', 'error');
+                resetGoogleButton($btn);
+            }
+        });
+    }
+    
+    /**
+     * Reset Google Button
+     */
+    function resetGoogleButton($btn) {
+        $btn.prop('disabled', false).html(`
+            <svg width="20" height="20" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M47.532 24.5528C47.532 22.9214 47.3997 21.2811 47.1175 19.6761H24.48V28.9181H37.4434C36.9055 31.8988 35.177 34.5356 32.6461 36.2111V42.2078H40.3801C44.9217 38.0278 47.532 31.8547 47.532 24.5528Z" fill="#4285F4"/>
+                <path d="M24.48 48.0016C30.9529 48.0016 36.4116 45.8764 40.3888 42.2078L32.6549 36.2111C30.5031 37.675 27.7252 38.5039 24.4888 38.5039C18.2275 38.5039 12.9187 34.2798 11.0139 28.6006H3.03296V34.7825C7.10718 42.8868 15.4056 48.0016 24.48 48.0016Z" fill="#34A853"/>
+                <path d="M11.0051 28.6006C9.99973 25.6199 9.99973 22.3922 11.0051 19.4115V13.2296H3.03298C-0.371021 20.0112 -0.371021 28.0009 3.03298 34.7825L11.0051 28.6006Z" fill="#FBBC04"/>
+                <path d="M24.48 9.49932C27.9016 9.44641 31.2086 10.7339 33.6866 13.0973L40.5387 6.24523C36.2 2.17101 30.4414 -0.068932 24.48 0.00161733C15.4055 0.00161733 7.10718 5.11644 3.03296 13.2296L11.005 19.4115C12.901 13.7235 18.2187 9.49932 24.48 9.49932Z" fill="#EA4335"/>
+            </svg>
+            <span>Mit Google anmelden</span>
+        `);
+    }
+    
+    /**
+     * Form Submit Handler
+     */
+    function initFormSubmit() {
+        $('#ppv-login-form').on('submit', function(e) {
+            e.preventDefault();
+            
+            const $form = $(this);
+            const $btn = $('#ppv-submit-btn');
+            const $btnText = $btn.find('.ppv-btn-text');
+            const $btnLoader = $btn.find('.ppv-btn-loader');
+            
+            // Get values
+            const email = $('#ppv-email').val().trim();
+            const password = $('#ppv-password').val();
+            const remember = $('#ppv-remember').is(':checked');
+            
+            // Validation
+            if (!email || !password) {
+                showAlert('Bitte füllen Sie alle Felder aus', 'error');
+                return;
+            }
+            
+            if (!isValidEmail(email)) {
+                showAlert('Bitte geben Sie eine gültige Email-Adresse ein', 'error');
+                $('#ppv-email').focus();
+                return;
+            }
+            
+            // Show loading
+            $btn.prop('disabled', true);
+            $btnText.hide();
+            $btnLoader.show();
+            hideAlert();
+            
+            // AJAX request
+            $.ajax({
+                url: ppvLogin.ajaxurl,
+                type: 'POST',
+                data: {
+                    action: 'ppv_login',
+                    nonce: ppvLogin.nonce,
+                    email: email,
+                    password: password,
+                    remember: remember
+                },
+                success: function(res) {
+                    if (res.success) {
+                        showAlert(res.data.message, 'success');
+                        
+                        // Add success animation
+                        $form.css({
+                            'opacity': '0.5',
+                            'pointer-events': 'none'
+                        });
+                        
+                        // Redirect
+                        setTimeout(function() {
+                            window.location.href = res.data.redirect;
+                        }, 1000);
+                    } else {
+                        showAlert(res.data.message, 'error');
+                        resetSubmitButton($btn, $btnText, $btnLoader);
+                        
+                        // Shake animation
+                        $form.css('animation', 'shake 0.5s');
+                        setTimeout(function() {
+                            $form.css('animation', '');
+                        }, 500);
+                    }
+                },
+                error: function() {
+                    showAlert('Verbindungsfehler. Bitte versuchen Sie es erneut.', 'error');
+                    resetSubmitButton($btn, $btnText, $btnLoader);
+                }
+            });
+        });
+    }
+    
+    /**
+     * Reset Submit Button
+     */
+    function resetSubmitButton($btn, $btnText, $btnLoader) {
+        $btn.prop('disabled', false);
+        $btnText.show();
+        $btnLoader.hide();
+    }
+    
+    /**
+     * Show Alert
+     */
+    function showAlert(message, type) {
+        const $alert = $('#ppv-login-alert');
+        $alert
+            .removeClass('success error')
+            .addClass(type)
+            .html(message)
+            .fadeIn(300);
+    }
+    
+    /**
+     * Hide Alert
+     */
+    function hideAlert() {
+        $('#ppv-login-alert').fadeOut(300);
+    }
+    
+    /**
+     * Add shake animation CSS
+     */
+    const shakeCSS = `
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+    `;
+    
+    if (!document.getElementById('ppv-shake-animation')) {
+        const style = document.createElement('style');
+        style.id = 'ppv-shake-animation';
+        style.textContent = shakeCSS;
+        document.head.appendChild(style);
+    }
+    
+    /**
+     * Initialize Facebook Login
+     */
+    function initFacebookLogin() {
+        // Check if ppvLogin object exists
+        if (typeof ppvLogin === 'undefined') {
+            console.error('❌ ppvLogin object not found - wp_localize_script may not have loaded');
+            $('#ppv-facebook-login-btn').prop('disabled', true).css('opacity', '0.5');
+            return;
+        }
+
+        // Debug: Show full ppvLogin object
+        console.log('🔍 ppvLogin object:', ppvLogin);
+        console.log('🔍 facebook_app_id value:', ppvLogin.facebook_app_id);
+        console.log('🔍 facebook_app_id type:', typeof ppvLogin.facebook_app_id);
+        console.log('🔍 facebook_app_id length:', ppvLogin.facebook_app_id ? ppvLogin.facebook_app_id.length : 0);
+
+        const appId = ppvLogin.facebook_app_id;
+
+        if (!appId || appId === '') {
+            console.warn('⚠️ Facebook App ID is empty');
+            console.log('🔍 Checking if defined in wp-config.php...');
+            $('#ppv-facebook-login-btn').prop('disabled', true).css('opacity', '0.5');
+            return;
+        }
+
+        console.log('✅ Facebook App ID found:', appId.substring(0, 5) + '...');
+
+        // Load Facebook SDK
+        window.fbAsyncInit = function() {
+            FB.init({
+                appId: appId,
+                cookie: true,
+                xfbml: true,
+                version: 'v18.0'
+            });
+        };
+
+        // Load SDK script
+        (function(d, s, id) {
+            var js, fjs = d.getElementsByTagName(s)[0];
+            if (d.getElementById(id)) return;
+            js = d.createElement(s); js.id = id;
+            js.src = "https://connect.facebook.net/de_DE/sdk.js";
+            fjs.parentNode.insertBefore(js, fjs);
+        }(document, 'script', 'facebook-jssdk'));
+
+        // Button click handler
+        $('#ppv-facebook-login-btn').on('click', function() {
+            const $btn = $(this);
+
+            FB.login(function(response) {
+                if (response.authResponse) {
+                    handleFacebookCallback(response.authResponse, $btn);
+                } else {
+                    showAlert('Facebook Login abgebrochen', 'error');
+                }
+            }, {scope: 'public_profile,email'});
+        });
+    }
+
+    /**
+     * Handle Facebook OAuth Callback
+     */
+    function handleFacebookCallback(authResponse, $btn) {
+        const accessToken = authResponse.accessToken;
+
+        // Show loading
+        $btn.prop('disabled', true).html('<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/></path></svg><span>Anmelden...</span>');
+
+        // Send to backend
+        $.ajax({
+            url: ppvLogin.ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'ppv_facebook_login',
+                nonce: ppvLogin.nonce,
+                access_token: accessToken
+            },
+            success: function(res) {
+                if (res.success) {
+                    showAlert(res.data.message, 'success');
+                    setTimeout(function() {
+                        window.location.href = res.data.redirect;
+                    }, 1000);
+                } else {
+                    showAlert(res.data.message, 'error');
+                    resetFacebookButton($btn);
+                }
+            },
+            error: function() {
+                showAlert('Verbindungsfehler. Bitte versuchen Sie es erneut.', 'error');
+                resetFacebookButton($btn);
+            }
+        });
+    }
+
+    /**
+     * Reset Facebook Button
+     */
+    function resetFacebookButton($btn) {
+        $btn.prop('disabled', false).html(`
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047v-2.66c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.971H15.83c-1.49 0-1.955.93-1.955 1.886v2.264h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z" fill="#1877F2"/>
+            </svg>
+            <span>Facebook</span>
+        `);
+    }
+
+    /**
+     * Initialize TikTok Login
+     */
+    function initTikTokLogin() {
+        const clientKey = ppvLogin.tiktok_client_key;
+
+        if (!clientKey) {
+            console.warn('TikTok Client Key not configured');
+            $('#ppv-tiktok-login-btn').prop('disabled', true).css('opacity', '0.5');
+            return;
+        }
+
+        // Button click handler
+        $('#ppv-tiktok-login-btn').on('click', function() {
+            const redirectUri = encodeURIComponent(window.location.origin + '/login');
+            const state = Math.random().toString(36).substring(7);
+            const scope = 'user.info.basic';
+
+            // Store state in sessionStorage for verification
+            sessionStorage.setItem('tiktok_oauth_state', state);
+
+            // Redirect to TikTok OAuth
+            const authUrl = `https://www.tiktok.com/auth/authorize/` +
+                `?client_key=${clientKey}` +
+                `&scope=${scope}` +
+                `&response_type=code` +
+                `&redirect_uri=${redirectUri}` +
+                `&state=${state}`;
+
+            window.location.href = authUrl;
+        });
+
+        // Check for TikTok OAuth callback
+        checkTikTokCallback();
+    }
+
+    /**
+     * Check for TikTok OAuth Callback
+     */
+    function checkTikTokCallback() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        const state = urlParams.get('state');
+        const storedState = sessionStorage.getItem('tiktok_oauth_state');
+
+        if (code && state && state === storedState) {
+            // Clear state
+            sessionStorage.removeItem('tiktok_oauth_state');
+
+            // Show loading
+            const $btn = $('#ppv-tiktok-login-btn');
+            $btn.prop('disabled', true).html('<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/></path></svg><span>Anmelden...</span>');
+
+            // Send to backend
+            $.ajax({
+                url: ppvLogin.ajaxurl,
+                type: 'POST',
+                data: {
+                    action: 'ppv_tiktok_login',
+                    nonce: ppvLogin.nonce,
+                    code: code
+                },
+                success: function(res) {
+                    if (res.success) {
+                        showAlert(res.data.message, 'success');
+                        setTimeout(function() {
+                            window.location.href = res.data.redirect;
+                        }, 1000);
+                    } else {
+                        showAlert(res.data.message, 'error');
+                        resetTikTokButton($btn);
+                    }
+                },
+                error: function() {
+                    showAlert('Verbindungsfehler. Bitte versuchen Sie es erneut.', 'error');
+                    resetTikTokButton($btn);
+                }
+            });
+        }
+    }
+
+    /**
+     * Reset TikTok Button
+     */
+    function resetTikTokButton($btn) {
+        $btn.prop('disabled', false).html(`
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" fill="#000000"/>
+                <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" fill="#EE1D52"/>
+                <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" fill="#69C9D0"/>
+            </svg>
+            <span>TikTok</span>
+        `);
+    }
+
+   /**
+     * Language Switcher (Dashboard style)
+     */
+    function initLanguageSwitcher() {
+        $('.ppv-lang-btn').on('click', function() {
+            const $btn = $(this);
+            const lang = $btn.data('lang');
+
+            if ($btn.hasClass('active')) return;
+
+            // Set cookie (1 year expiry)
+            const maxAge = 60 * 60 * 24 * 365;
+            document.cookie = `ppv_lang=${lang}; path=/; max-age=${maxAge}; SameSite=Lax`;
+
+            // Set localStorage (fallback)
+            localStorage.setItem('ppv_lang', lang);
+
+            // Reload with URL parameter
+            const url = new URL(window.location.href);
+            url.searchParams.set('lang', lang);
+            window.location.href = url.toString();
+        });
+    }
+
+
+
+})(jQuery);

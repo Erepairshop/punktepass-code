@@ -1,0 +1,255 @@
+<?php
+/**
+ * PunktePass Auto Debug v4.0 (Stable)
+ * Teljes körű hibalogoló rendszer (PHP + JS + REST + AJAX + SESSION + USER-Interaction)
+ * Log: /includes/log/ppv-debug.log
+ */
+
+if (!defined('ABSPATH')) exit;
+if (class_exists('PPV_Auto_Debug')) return;
+
+class PPV_Auto_Debug {
+
+    private static $log_dir;
+    private static $log_file;
+    private static $daily_summary = [];
+    private static $session_data = [];
+    private static $initialized = false;
+
+    /* ============================================================
+     * 🔹 ENABLE DEBUG SYSTEM
+     * ============================================================ */
+    public static function enable() {
+        if (self::$initialized || defined('PPV_DEBUG_LOADED')) return;
+        define('PPV_DEBUG_LOADED', true);
+        self::$initialized = true;
+
+        self::$log_dir  = plugin_dir_path(__FILE__) . 'log/';
+        self::$log_file = self::$log_dir . 'ppv-debug.log';
+        if (!file_exists(self::$log_dir)) @mkdir(self::$log_dir, 0755, true);
+
+        ini_set('log_errors', 1);
+        ini_set('error_log', self::$log_file);
+        error_reporting(E_ALL);
+
+        set_error_handler([__CLASS__, 'handleError']);
+        set_exception_handler([__CLASS__, 'handleException']);
+        register_shutdown_function([__CLASS__, 'handleShutdown']);
+
+        add_action('init', [__CLASS__, 'capture_session']);
+        add_action('rest_api_init', [__CLASS__, 'register_rest']);
+        // Csak admin JS logger (Dashboard hibákhoz)
+add_action('admin_enqueue_scripts', [__CLASS__, 'enqueue_js_logger']);
+
+
+        // REST API monitor, de kizárjuk a saját logokat
+        add_filter('rest_pre_dispatch', [__CLASS__, 'log_rest_request'], 10, 3);
+
+        self::log('🟢 PPV Auto Debug v4.0 aktiv (PHP + JS + REST + AJAX + SESSION tracking)');
+    }
+
+    /* ============================================================
+     * 🔸 SESSION TRACKING
+     * ============================================================ */
+    public static function capture_session() {
+ if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+    @session_start();
+}
+
+
+        self::$session_data = [
+            'user_id'  => $_SESSION['ppv_user_id']  ?? (get_current_user_id() ?: 0),
+            'store_id' => $_SESSION['ppv_store_id'] ?? 0,
+            'pos'      => $_SESSION['ppv_is_pos']   ?? false
+        ];
+
+        self::log('🧩 SESSION STATE → ' . json_encode(self::$session_data));
+    }
+
+    /* ============================================================
+     * 🔸 AUTOMATIKUS HEALTH-CHECK & DIAGNOSIS
+     * ============================================================ */
+    public static function run_health_checks() {
+        static $done = false;
+        static $last_run = 0;
+        if ($done || (time() - $last_run < 30)) return; // csak 30 mp-enként
+        $done = true;
+        $last_run = time();
+
+        global $wpdb;
+        $results = [];
+        $inference = [];
+
+        // Check 1: ppv-belohnungen.js létezik
+        $results['ppv_belohnungen_localized'] = file_exists(plugin_dir_path(__FILE__) . '../assets/js/ppv-belohnungen.js');
+        // Check 2: logger JS létezik
+        $results['logger_js'] = file_exists(plugin_dir_path(__FILE__) . '../assets/js/ppv-js-logger-v33.js');
+        // Check 3: REST endpoint regisztrálva
+        $results['rest_route'] = (function_exists('rest_get_server') && isset(rest_get_server()->get_routes()['/ppv/v1/rewards/redeem']));
+        // Check 4: log könyvtár írható
+        $dir = plugin_dir_path(__FILE__) . 'log/';
+        if (!file_exists($dir)) @mkdir($dir, 0755, true);
+        $file = $dir . 'ppv-debug.log';
+        if (!file_exists($file)) @file_put_contents($file, "");
+        $results['log_writable'] = is_writable($dir) && is_writable($file);
+        // Check 5: DB táblák
+        $needed = [$wpdb->prefix . 'ppv_rewards', $wpdb->prefix . 'ppv_rewards_redeemed', $wpdb->prefix . 'ppv_points'];
+        $results['db_tables'] = !in_array(false, array_map(fn($t) => (bool)$wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $t)), $needed), true);
+
+        if (!$results['ppv_belohnungen_localized']) $inference[] = "ppv-belohnungen.js hiányzik.";
+        if (!$results['logger_js']) $inference[] = "logger JS hiányzik (nincs fetch/interceptor).";
+        if (!$results['rest_route']) $inference[] = "REST route (/ppv/v1/rewards/redeem) nem regisztrált.";
+        if (!$results['log_writable']) $inference[] = "Log könyvtár nem írható.";
+        if (!$results['db_tables']) $inference[] = "Hiányzó adatbázis táblák.";
+        if (empty($inference)) $inference[] = "✅ Minden alap funkció rendben van.";
+
+        $summary = "🔎 AUTO HEALTH CHECK\nResults: " . json_encode($results) . "\nInferences:\n- " . implode("\n- ", $inference);
+        self::log($summary);
+        self::$daily_summary['health'][] = $summary;
+    }
+
+    /* ============================================================
+     * 🔸 PHP ERROR HANDLERS
+     * ============================================================ */
+    public static function handleError($errno, $errstr, $errfile, $errline) {
+        $msg = "⚠️ PHP Error: $errstr in $errfile:$errline";
+        self::log($msg);
+        self::$daily_summary['php_errors'][] = $msg;
+        return false;
+    }
+
+    public static function handleException($ex) {
+        $msg = "💥 Exception: {$ex->getMessage()} in {$ex->getFile()}:{$ex->getLine()}";
+        self::log($msg);
+        self::$daily_summary['exceptions'][] = $msg;
+    }
+
+    public static function handleShutdown() {
+        static $done = false;
+        if ($done) return;
+        $done = true;
+
+        $error = error_get_last();
+        if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
+            $msg = "❌ FATAL ERROR: {$error['message']} in {$error['file']}:{$error['line']}";
+            self::log($msg);
+            self::$daily_summary['fatal'][] = $msg;
+        }
+
+        self::diagnose();
+    }
+
+    /* ============================================================
+     * 🔸 REST + AJAX LOG ENDPOINTS
+     * ============================================================ */
+    public static function register_rest() {
+        register_rest_route('ppv/v1', '/log/js_error', [
+            'methods' => 'POST',
+            'permission_callback' => '__return_true',
+            'callback' => [__CLASS__, 'receive_js_error']
+        ]);
+
+        register_rest_route('ppv/v1', '/log/ajax', [
+            'methods' => 'POST',
+            'permission_callback' => '__return_true',
+            'callback' => [__CLASS__, 'receive_ajax_log']
+        ]);
+    }
+
+    public static function receive_js_error($req) {
+        $data = $req->get_json_params() ?: [];
+        $msg = "🧩 JS Error: {$data['message']} | {$data['file']} ({$data['line']})";
+        self::log($msg);
+        return ['ok' => true];
+    }
+
+    public static function receive_ajax_log($req) {
+        $data = $req->get_json_params() ?: [];
+        $session = sprintf(
+            "[user_id=%d | store_id=%d | pos=%s]",
+            self::$session_data['user_id'] ?? 0,
+            self::$session_data['store_id'] ?? 0,
+            (self::$session_data['pos'] ?? false) ? 'yes' : 'no'
+        );
+
+        $url        = $data['url']        ?? '(no url)';
+        $status     = $data['status']     ?? '-';
+        $statusText = $data['statusText'] ?? '-';
+        $duration   = $data['duration']   ?? '-';
+        $body       = isset($data['body']) ? (is_string($data['body']) ? $data['body'] : json_encode($data['body'])) : '(none)';
+        $response   = isset($data['response']) ? (is_string($data['response']) ? $data['response'] : json_encode($data['response'])) : '(empty)';
+
+        $msg = "📡 AJAX/REST Log → {$url}\n{$session}\nStatus: {$status} {$statusText}\nDuration: {$duration}\nBody: " . substr($body, 0, 500) . "\nResponse: " . substr($response, 0, 500);
+        self::log($msg);
+        return ['ok' => true];
+    }
+
+    /* ============================================================
+     * 🔸 REST REQUEST LOGGER
+     * ============================================================ */
+    public static function log_rest_request($result, $server, $request) {
+    $route = $request->get_route();
+
+    // Védelem: ne logolja saját /log/ vagy Woo REST hívásokat
+    if (strpos($route, '/ppv/v1/log/') !== false) return $result;
+    if (strpos($route, '/wc-analytics/') !== false) return $result;
+
+    $params = $request->get_json_params();
+    $user_id = get_current_user_id() ?: ($_SESSION['ppv_user_id'] ?? 0);
+
+    // 🔹 Alap REST log
+    $msg = "🧠 REST CALL → {$route}\nUser={$user_id}\nParams=" . json_encode($params);
+    self::log($msg);
+
+    // 🔸 Extra hibalog 400/404 esetekre
+    if (is_wp_error($result)) {
+        $code = $result->get_error_code();
+        $message = $result->get_error_message();
+        self::log("❌ REST ERROR [$code]: {$message}\nRoute={$route}\nParams=" . json_encode($params));
+    }
+
+    return $result;
+}
+
+
+    /* ============================================================
+     * 🔸 JS LOGGER BETÖLTÉSE
+     * ============================================================ */
+    public static function enqueue_js_logger() {
+        wp_register_script(
+            'ppv-js-logger-v33',
+            plugins_url('../assets/js/ppv-js-logger-v33.js', __FILE__),
+            ['jquery'],
+            time(),
+            true
+        );
+        wp_enqueue_script('ppv-js-logger-v33');
+        wp_localize_script('ppv-js-logger-v33', 'PPV_LOG_API', [
+            'js_url'   => rest_url('ppv/v1/log/js_error'),
+            'ajax_url' => rest_url('ppv/v1/log/ajax')
+        ]);
+    }
+
+    /* ============================================================
+     * 🔸 HELPER FUNKCIÓK
+     * ============================================================ */
+    public static function log($message) {
+        $time = date('Y-m-d H:i:s');
+        $entry = "[$time] $message\n---------------------------------------------------\n";
+        file_put_contents(self::$log_file, $entry, FILE_APPEND);
+    }
+
+    private static function diagnose() {
+        $time = date('Y-m-d H:i:s');
+        $summary = "\n📊 DAILY SUMMARY ($time)\n";
+        foreach (self::$daily_summary as $type => $arr) {
+            $summary .= "- $type: " . count($arr) . "\n";
+        }
+        $summary .= "---------------------------------------------------\n";
+        file_put_contents(self::$log_file, $summary, FILE_APPEND);
+    }
+}
+
+// Aktiválás
+add_action('plugins_loaded', ['PPV_Auto_Debug', 'enable']);
+add_action('init', ['PPV_Auto_Debug', 'run_health_checks']);
