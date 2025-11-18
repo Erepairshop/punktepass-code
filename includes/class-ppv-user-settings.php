@@ -27,17 +27,11 @@ class PPV_User_Settings {
      * ============================================================ */
     private static function ensure_user_context() {
         if (session_status() === PHP_SESSION_NONE) @session_start();
-        if (!is_user_logged_in() && isset($_SESSION['ppv_user_token'])) {
-            global $wpdb;
-            $token = sanitize_text_field($_SESSION['ppv_user_token']);
-            $user_id = $wpdb->get_var($wpdb->prepare(
-                "SELECT id FROM {$wpdb->prefix}ppv_users WHERE qr_token=%s LIMIT 1",
-                $token
-            ));
-            if ($user_id) {
-                $_SESSION['ppv_user_id'] = intval($user_id);
-                $GLOBALS['ppv_active_user'] = intval($user_id);
-            }
+
+        // ✅ USE SessionBridge for multi-device session restore
+        if (class_exists('PPV_SessionBridge') && empty($_SESSION['ppv_user_id'])) {
+            PPV_SessionBridge::restore_from_token();
+            error_log("🔄 [PPV_User_Settings] Restored session from token");
         }
     }
 

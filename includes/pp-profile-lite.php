@@ -71,6 +71,12 @@ add_action('wp_ajax_nopriv_ppv_delete_gallery_image', [__CLASS__, 'ajax_delete_g
             if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
                 @session_start();
             }
+
+            // ✅ USE SessionBridge for multi-device session restore
+            if (class_exists('PPV_SessionBridge') && empty($_SESSION['ppv_user_id'])) {
+                PPV_SessionBridge::restore_from_token();
+                error_log("🔄 [PPV_Profile_Lite] Restored session from token");
+            }
         }
 
         public static function ajax_get_strings() {

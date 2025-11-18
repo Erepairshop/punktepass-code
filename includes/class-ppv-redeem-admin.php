@@ -28,6 +28,12 @@ class PPV_Redeem_Admin {
         if (session_status() === PHP_SESSION_NONE) {
             @session_start();
         }
+
+        // ✅ USE SessionBridge for multi-device session restore
+        if (class_exists('PPV_SessionBridge') && empty($_SESSION['ppv_user_id'])) {
+            PPV_SessionBridge::restore_from_token();
+            error_log("🔄 [PPV_Redeem_Admin] Restored session from token");
+        }
     }
 
     /** ============================================================

@@ -16,6 +16,12 @@ class PPV_Belohnungen {
         if (session_status() === PHP_SESSION_NONE) {
             @session_start();
         }
+
+        // ✅ USE SessionBridge for multi-device session restore
+        if (class_exists('PPV_SessionBridge') && empty($_SESSION['ppv_user_id'])) {
+            PPV_SessionBridge::restore_from_token();
+            error_log("🔄 [PPV_Belohnungen] Restored session from token");
+        }
     }
 
     public static function hooks() {
