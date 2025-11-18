@@ -1,0 +1,85 @@
+/**
+ * PunktePass – User Dashboard CSS v6.2 DARK THEME
+ * ✅ Light Header (for dark theme)
+ * ✅ Dark Content (Sötét háttér/felület)
+ * ✅ Modern Design
+ * ✅ Perfect Contrast for Dark Mode
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap');
+
+/* ============================================================
+   🎨 DARK THEME COLOR PALETTE
+   ============================================================ */
+:root {
+  /* Primary - Vibrant Cyan */
+  --color-primary: #00a8cc;
+  --color-primary-dark: #0077a8;
+  --color-primary-light: #00d4ff;
+
+  /* Secondary - Teal Green */
+  --color-secondary: #00a878;
+  --color-secondary-dark: #007d5e;
+
+  /* Accent - Purple */
+  --color-accent: #9333ea;
+  --color-accent-light: #d8b4fe;
+
+  /* Status Colors */
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+
+  /* Dark Theme - Sötét paletta */
+  --color-bg: #0a0f1a;
+  --color-bg-secondary: #0f172a;
+  --color-bg-tertiary: #1e293b;
+
+  /* Header - VILÁGOSABB for dark theme */
+  --color-header-bg: #1e293b;
+  --color-header-dark: #0f172a;
+
+  --color-surface: #1e293b;
+  --color-surface-light: #334155;
+
+  --color-text: #e2e8f0;
+  --color-text-secondary: #cbd5e1;
+  --color-text-muted: #94a3b8;
+
+  /* Border Colors */
+  --color-border: rgba(0, 168, 204, 0.25);
+  --color-border-light: rgba(0, 168, 204, 0.15);
+  --color-border-dark: rgba(0, 168, 204, 0.35);
+
+  /* Shadows - Dark theme */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 20px rgba(0, 168, 204, 0.25);
+  --shadow-glow-strong: 0 0 40px rgba(0, 168, 204, 0.4);
+
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, #00a8cc 0%, #0077a8 100%);
+  --gradient-secondary: linear-gradient(135deg, #00a878 0%, #007d5e 100%);
+  --gradient-accent: linear-gradient(135deg, #9333ea 0%, #7e22ce 100%);
+  --gradient-card: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(51, 65, 85, 0.98));
+  --gradient-header: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+
+  /* Spacing */
+  --radius: 16px;
+  --radius-lg: 20px;
+  --radius-md: 14px;
+  --radius-sm: 10px;
+  --radius-xs: 6px;
+
+  /* Transitions */
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Font Stack */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-display: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* Backdrop Filter */
+  --backdrop: blur(12px) saturate(150%);
+}

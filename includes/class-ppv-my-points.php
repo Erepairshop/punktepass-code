@@ -44,12 +44,9 @@ class PPV_My_Points {
      *  🔹 ENQUEUE SCRIPTS + INLINE STRINGS
      * ============================================================ */
     public static function enqueue_assets() {
-
-        // Only load if shortcode is used on the page
-        global $post;
-        if (!is_a($post, 'WP_Post') || !has_shortcode($post->post_content, 'ppv_my_points')) {
-            return;
-        }
+        // ✅ REMOVED shortcode check - load on all pages like user-dashboard
+        // This fixes issues with Elementor/page builders where $post->post_content
+        // doesn't contain the shortcode
 
         // Start session
         if (session_status() === PHP_SESSION_NONE) {
@@ -103,7 +100,7 @@ class PPV_My_Points {
         $global_data = [
     'ajaxurl' => admin_url('admin-ajax.php'),
     'nonce'   => wp_create_nonce('ppv_mypoints_nonce'),
-    'api_url' => rest_url('ppv/v1/user/points-detailed'),  // ✅ DETAILED!
+    'api_url' => rest_url('ppv/v1/mypoints'),  // ✅ CORRECT ENDPOINT!
     'lang'    => $lang,
 ];
         wp_add_inline_script(
@@ -130,10 +127,6 @@ class PPV_My_Points {
      *  🔹 RENDER HTML SHELL
      * ============================================================ */
     public static function render_shell() {
-        if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
-        }
-
         // Get active lang
         $lang = sanitize_text_field($_GET['lang'] ?? '');
         if (!in_array($lang, ['de', 'hu', 'ro'], true)) {
@@ -143,23 +136,12 @@ class PPV_My_Points {
             $lang = 'de';
         }
 
-        // Load strings for error messages
-        $strings = self::load_lang_file($lang);
-
-        // Check user logged in
-        $uid = get_current_user_id() ?: ($_SESSION['ppv_user_id'] ?? 0);
-        if ($uid <= 0) {
-            $msg = $strings['please_login'] ?? 'Bitte einloggen, um Punkte zu sehen.';
-            return '<div class="ppv-notice" style="padding: 20px; text-align: center; color: #f55;">
-                <strong>⚠️</strong> ' . esc_html($msg) . '
-            </div>';
-        }
-
-        // Render shell
+        // ✅ SAME AS USER DASHBOARD - No user check here, let JS/REST API handle it!
+        // This fixes Google/Facebook/TikTok login where session might not be ready yet
         $html = '<div id="ppv-my-points-app" data-lang="' . esc_attr($lang) . '"></div>';
         $html .= do_shortcode('[ppv_bottom_nav]');
 
-        error_log("✅ [PPV_My_Points] Shell rendered, user={$uid}, lang={$lang}");
+        error_log("✅ [PPV_My_Points] Shell rendered, lang={$lang}");
 
         return $html;
     }

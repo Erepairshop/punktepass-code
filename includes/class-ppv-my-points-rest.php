@@ -48,33 +48,33 @@ if (class_exists('PPV_Lang')) {
     }
 }
 
-        error_log("🧩 User ID: " . get_current_user_id() . " | Params: " . json_encode($request->get_params()));
+        // ✅ SAME AS USER DASHBOARD - Simple user detection
+        // Start session if not started yet
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
 
-        // 🔹 Token alapú user azonosítás (PWA kompatibilis)
-$user_id = PPV_Auth::get_user_from_token($request);
-if (!$user_id) {
-    // fallback – ha token nincs, próbáljuk WP loginból
-    $user_id = get_current_user_id();
-}
+        // ✅ CRITICAL: Force session restore from token BEFORE checking user_id
+        // This is REQUIRED for Google/Facebook/TikTok login to work
+        if (class_exists('PPV_SessionBridge') && empty($_SESSION['ppv_user_id'])) {
+            PPV_SessionBridge::restore_from_token();
+            error_log("🔄 [PPV_MyPoints_REST] Forced session restore from token");
+        }
 
-if (!$user_id) {
-    error_log("❌ [PPV_MyPoints_REST] Unauthorized request – no valid user");
-    return new WP_REST_Response(['error' => 'unauthorized', 'message' => 'Kein Benutzer gefunden'], 401);
-}
+        // Try WordPress user first
+        $user_id = get_current_user_id();
 
-$days = intval($request->get_param('range')) ?: 30;
-
-
-        // ⚙️ Dev fallback (ha WP nem látja a usert)
-        if (!$user_id && isset($_SESSION['ppv_user_id'])) {
+        // Fallback to session (Google/Facebook/TikTok login)
+        if (!$user_id && !empty($_SESSION['ppv_user_id'])) {
             $user_id = intval($_SESSION['ppv_user_id']);
-            error_log("⚙️ [PPV_MYPOINTS_REST] Session fallback user aktiválva: ID=$user_id");
         }
 
-        if (!$user_id) {
-            error_log("❌ [PPV_MYPOINTS_REST] Nincs bejelentkezett user!");
-            return rest_ensure_response(['error' => 'no_user', 'message' => 'User not logged in']);
+        if ($user_id <= 0) {
+            error_log("❌ [PPV_MyPoints_REST] No user found (WP_user=" . get_current_user_id() . ", SESSION=" . ($_SESSION['ppv_user_id'] ?? 'none') . ", COOKIE=" . ($_COOKIE['ppv_user_token'] ?? 'none') . ")");
+            return new WP_REST_Response(['error' => 'unauthorized', 'message' => 'Nicht angemeldet'], 401);
         }
+
+        error_log("✅ [PPV_MyPoints_REST] User authenticated: user_id={$user_id}");
 
         $days = intval($request->get_param('range')) ?: 30;
         $points_table  = $wpdb->prefix . 'ppv_points';
