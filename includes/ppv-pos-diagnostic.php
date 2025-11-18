@@ -11,7 +11,7 @@ class PPV_POS_Diagnostic {
     public static function init() {
         add_action('init', [__CLASS__, 'maybe_start_session'], 1);
         add_action('wp_ajax_ppv_pos_diag', [__CLASS__, 'ajax_diagnostic']);
-        add_action('wp_ajax_nopriv_ppv_pos_diag', [__CLASS__, 'ajax_diagnostic']);
+        // 🔒 Removed wp_ajax_nopriv - authentication required for diagnostics
     }
 
     /** 

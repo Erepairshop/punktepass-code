@@ -145,13 +145,13 @@ class PPV_Auth {
         register_rest_route('punktepass/v1', '/auth/create', [
             'methods'             => ['GET', 'POST'],
             'callback'            => [__CLASS__, 'rest_create_token'],
-            'permission_callback' => '__return_true'
+            'permission_callback' => ['PPV_Permissions', 'allow_anonymous']
         ]);
 
         register_rest_route('punktepass/v1', '/auth/check', [
             'methods'             => ['GET'],
             'callback'            => [__CLASS__, 'rest_check_token'],
-            'permission_callback' => '__return_true'
+            'permission_callback' => ['PPV_Permissions', 'allow_anonymous']
         ]);
     }
 

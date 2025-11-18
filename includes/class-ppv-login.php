@@ -469,9 +469,14 @@ public static function render_landing_page($atts) {
         ));
         
         if ($user && password_verify($password, $user->password)) {
+            // 🔒 Security: Regenerate session ID to prevent session fixation
+            if (session_status() === PHP_SESSION_ACTIVE) {
+                session_regenerate_id(true);
+            }
+
             // Clear any store session
             unset($_SESSION['ppv_store_id'], $_SESSION['ppv_active_store'], $_SESSION['ppv_is_pos']);
-            
+
             // Set user session
             $_SESSION['ppv_user_id'] = $user->id;
             $_SESSION['ppv_user_type'] = 'user';
@@ -554,6 +559,11 @@ public static function render_landing_page($atts) {
             // ============================================================
             // 🔑 SET HANDLER SESSION
             // ============================================================
+            // 🔒 Security: Regenerate session ID to prevent session fixation
+            if (session_status() === PHP_SESSION_ACTIVE) {
+                session_regenerate_id(true);
+            }
+
             $_SESSION['ppv_user_id'] = $user_id;
             $_SESSION['ppv_user_type'] = 'store';
             $_SESSION['ppv_store_id'] = $store->id;
@@ -686,8 +696,13 @@ public static function render_landing_page($atts) {
         }
         
         // 🔐 Log user in (Session + Token)
+        // 🔒 Security: Regenerate session ID to prevent session fixation
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_regenerate_id(true);
+        }
+
         unset($_SESSION['ppv_store_id'], $_SESSION['ppv_active_store'], $_SESSION['ppv_is_pos']);
-        
+
         $_SESSION['ppv_user_id'] = $user->id;
         $_SESSION['ppv_user_type'] = 'user';
         $_SESSION['ppv_user_email'] = $user->email;
@@ -835,6 +850,11 @@ public static function render_landing_page($atts) {
         }
 
         // Log user in
+        // 🔒 Security: Regenerate session ID to prevent session fixation
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_regenerate_id(true);
+        }
+
         unset($_SESSION['ppv_store_id'], $_SESSION['ppv_active_store'], $_SESSION['ppv_is_pos']);
 
         $_SESSION['ppv_user_id'] = $user->id;
@@ -947,6 +967,11 @@ public static function render_landing_page($atts) {
         }
 
         // Log user in
+        // 🔒 Security: Regenerate session ID to prevent session fixation
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_regenerate_id(true);
+        }
+
         unset($_SESSION['ppv_store_id'], $_SESSION['ppv_active_store'], $_SESSION['ppv_is_pos']);
 
         $_SESSION['ppv_user_id'] = $user->id;

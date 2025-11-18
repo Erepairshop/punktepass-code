@@ -32,7 +32,7 @@ class PPV_Bridge {
     public static function register_routes() {
         register_rest_route('ppv/v1', '/bridge', [
             'methods' => 'GET',
-            'permission_callback' => '__return_true',
+            'permission_callback' => ['PPV_Permissions', 'allow_anonymous'],
             'callback' => function() {
                 $lang = isset($_COOKIE['ppv_lang']) ? sanitize_text_field($_COOKIE['ppv_lang']) : 'de';
                 return [

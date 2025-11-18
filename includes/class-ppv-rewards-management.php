@@ -22,25 +22,25 @@ class PPV_Rewards_Management {
         register_rest_route('ppv/v1', '/rewards/list', [
             'methods'  => 'GET',
             'callback' => [__CLASS__, 'rest_list_rewards'],
-            'permission_callback' => '__return_true'
+            'permission_callback' => ['PPV_Permissions', 'check_handler']
         ]);
 
         register_rest_route('ppv/v1', '/rewards/save', [
             'methods'  => 'POST',
             'callback' => [__CLASS__, 'rest_save_reward'],
-            'permission_callback' => '__return_true'
+            'permission_callback' => ['PPV_Permissions', 'check_handler']
         ]);
 
         register_rest_route('ppv/v1', '/rewards/delete', [
             'methods'  => 'POST',
             'callback' => [__CLASS__, 'rest_delete_reward'],
-            'permission_callback' => '__return_true'
+            'permission_callback' => ['PPV_Permissions', 'check_handler']
         ]);
 
         register_rest_route('ppv/v1', '/rewards/update', [
             'methods'  => 'POST',
             'callback' => [__CLASS__, 'rest_update_reward'],
-            'permission_callback' => '__return_true'
+            'permission_callback' => ['PPV_Permissions', 'check_handler']
         ]);
     }
 

@@ -77,7 +77,7 @@ public static function pos_permission($request) {
     register_rest_route($ns, '/pos/login', [
         'methods'  => 'POST',
         'callback' => [__CLASS__, 'handle_pos_login'],
-        'permission_callback' => '__return_true',
+        'permission_callback' => ['PPV_Permissions', 'allow_anonymous'],
     ]);
     error_log("🧩 [PPV_POS_REST] /pos/login route regisztrálva");
 

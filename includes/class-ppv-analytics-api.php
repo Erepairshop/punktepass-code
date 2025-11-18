@@ -63,7 +63,7 @@ class PPV_Analytics_API {
         register_rest_route('ppv/v1', '/analytics/debug', [
             'methods'  => 'GET',
             'callback' => [__CLASS__, 'debug_points'],
-            'permission_callback' => '__return_true',
+            'permission_callback' => ['PPV_Permissions', 'allow_anonymous'],
         ]);
         
         error_log("✅ [PPV_Analytics] REST endpoints registered");

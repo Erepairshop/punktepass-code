@@ -156,13 +156,13 @@ class PPV_Theme_Handler {
         register_rest_route('ppv/v1', '/theme/set', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'rest_set_theme'],
-            'permission_callback' => '__return_true',
+            'permission_callback' => ['PPV_Permissions', 'allow_anonymous'],
         ]);
 
         register_rest_route('ppv/v1', '/theme/get', [
             'methods' => 'GET',
             'callback' => [__CLASS__, 'rest_get_theme'],
-            'permission_callback' => '__return_true',
+            'permission_callback' => ['PPV_Permissions', 'allow_anonymous'],
         ]);
     }
 

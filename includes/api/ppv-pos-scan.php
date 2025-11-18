@@ -29,7 +29,7 @@ class PPV_POS_SCAN {
         register_rest_route('ppv/v1', '/pos/scan', [
             'methods'             => 'POST',
             'callback'            => [__CLASS__, 'handle_scan'],
-            'permission_callback' => '__return_true',
+            'permission_callback' => ['PPV_Permissions', 'check_handler'],
         ]);
     }
 

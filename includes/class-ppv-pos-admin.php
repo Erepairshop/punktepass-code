@@ -220,6 +220,19 @@ add_action('rest_api_init', function() {
         'methods'  => 'POST',
         'callback' => function($request) {
             global $wpdb;
+
+            // 🔒 Rate limiting check (5 attempts per 15 minutes)
+            if (class_exists('PPV_Permissions')) {
+                $rate_check = PPV_Permissions::check_rate_limit('pos_login', 5, 900);
+                if (is_wp_error($rate_check)) {
+                    error_log("🚫 [POS_Login] Rate limit exceeded for IP: " . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'));
+                    return new WP_REST_Response([
+                        'success' => false,
+                        'message' => $rate_check->get_error_message()
+                    ], 429);
+                }
+            }
+
             $pin = sanitize_text_field($request['pin'] ?? '');
 
             if (!$pin) {
@@ -228,12 +241,24 @@ add_action('rest_api_init', function() {
 
             // 🔹 Händler anhand PIN suchen
             $store = $wpdb->get_row($wpdb->prepare("
-                SELECT id, company_name, pos_enabled, active, subscription_status 
-                FROM {$wpdb->prefix}ppv_stores 
+                SELECT id, company_name, pos_enabled, active, subscription_status
+                FROM {$wpdb->prefix}ppv_stores
                 WHERE pos_pin = %s LIMIT 1
             ", $pin));
 
-       
+            // 🚫 Failed login - increment rate limit
+            if (!$store) {
+                if (class_exists('PPV_Permissions')) {
+                    PPV_Permissions::increment_rate_limit('pos_login', 900);
+                }
+                error_log("❌ [POS_Login] Ungültiger PIN für IP: " . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'));
+                return new WP_REST_Response(['success' => false, 'message' => 'Ungültiger PIN.'], 401);
+            }
+
+            // ✅ Success - reset rate limit
+            if (class_exists('PPV_Permissions')) {
+                PPV_Permissions::reset_rate_limit('pos_login');
+            }
 
             if (session_status() === PHP_SESSION_NONE) {
                 @session_start();
@@ -263,6 +288,6 @@ add_action('rest_api_init', function() {
                 ]
             ], 200);
         },
-        'permission_callback' => '__return_true'
+        'permission_callback' => ['PPV_Permissions', 'allow_anonymous']
     ]);
 });

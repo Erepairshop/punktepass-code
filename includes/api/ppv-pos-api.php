@@ -20,7 +20,7 @@ class PPV_POS_AUTO_API {
         register_rest_route('punktepass/v1', '/pos/auto', [
             'methods' => ['POST', 'GET'],
             'callback' => [__CLASS__, 'handle_pos_auto'],
-            'permission_callback' => '__return_true'
+            'permission_callback' => ['PPV_Permissions', 'check_handler']
         ]);
     }
 

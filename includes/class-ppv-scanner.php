@@ -44,7 +44,7 @@ class PPV_Camera_Scanner {
         register_rest_route('punktepass/v1', '/pos/scan', [
             'methods'  => 'POST',
             'callback' => [__CLASS__, 'handle_scan'],
-            'permission_callback' => '__return_true'
+            'permission_callback' => ['PPV_Permissions', 'check_handler']
         ]);
     }
 

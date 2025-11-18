@@ -27,35 +27,35 @@ class PPV_Receipts {
         register_rest_route('ppv/v1', '/receipts/list', [
             'methods'  => 'GET',
             'callback' => [__CLASS__, 'rest_list_receipts'],
-            'permission_callback' => '__return_true'
+            'permission_callback' => ['PPV_Permissions', 'check_handler']
         ]);
 
         // Szűrés
         register_rest_route('ppv/v1', '/receipts/filter', [
             'methods'  => 'GET',
             'callback' => [__CLASS__, 'rest_filter_receipts'],
-            'permission_callback' => '__return_true'
+            'permission_callback' => ['PPV_Permissions', 'check_handler']
         ]);
 
         // Download receipt
         register_rest_route('ppv/v1', '/receipts/download', [
             'methods'  => 'GET',
             'callback' => [__CLASS__, 'rest_download_receipt'],
-            'permission_callback' => '__return_true'
+            'permission_callback' => ['PPV_Permissions', 'check_handler']
         ]);
 
         // ✅ HAVI BIZONYLAT GENERÁLÁS (POST) - A JavaScript ezt hívja!
         register_rest_route('ppv/v1', '/redeem/monthly-receipt', [
             'methods'  => 'POST',
             'callback' => [__CLASS__, 'rest_generate_monthly_receipt'],
-            'permission_callback' => '__return_true'
+            'permission_callback' => ['PPV_Permissions', 'check_handler']
         ]);
-        
+
         // ✅ HAVI BIZONYLAT LETÖLTÉS (PDF)
 register_rest_route('ppv/v1', '/redeem/monthly-receipt-download', [
     'methods'  => 'GET',
     'callback' => [__CLASS__, 'rest_download_monthly_receipt'],
-    'permission_callback' => '__return_true'
+    'permission_callback' => ['PPV_Permissions', 'check_handler']
 ]);
     }
 
