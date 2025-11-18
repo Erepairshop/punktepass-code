@@ -1,0 +1,5 @@
+*.log
+includes/log/*.log
+.DS_Store
+.env
+includes/log/*.log
