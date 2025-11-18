@@ -487,9 +487,15 @@ public static function render_landing_page($atts) {
             $domain = $_SERVER['HTTP_HOST'] ?? '';
             $expire = $remember ? time() + (86400 * 180) : time() + 86400;
             setcookie('ppv_user_token', $token, $expire, '/', $domain, true, true);
-            
+
+            // ✅ SAVE SESSION DATA (multi-device support)
+            if (class_exists('PPV_SessionBridge')) {
+                $device_fingerprint = PPV_SessionBridge::get_device_fingerprint();
+                PPV_SessionBridge::save_session_data($user->id, $device_fingerprint);
+            }
+
             error_log("✅ [PPV_Login] User logged in (#{$user->id})");
-            
+
             wp_send_json_success([
                 'message' => PPV_Lang::t('login_success'),
                 'role' => 'user',
@@ -587,9 +593,15 @@ public static function render_landing_page($atts) {
             // Set cookie
             $domain = $_SERVER['HTTP_HOST'] ?? '';
             setcookie('ppv_user_token', $token, time() + (86400 * 180), '/', $domain, true, true);
-            
+
+            // ✅ SAVE SESSION DATA (multi-device support)
+            if (class_exists('PPV_SessionBridge')) {
+                $device_fingerprint = PPV_SessionBridge::get_device_fingerprint();
+                PPV_SessionBridge::save_session_data($user_id, $device_fingerprint);
+            }
+
             error_log("✅ [PPV_Login] Handler login success!");
-            
+
             wp_send_json_success([
                 'message' => PPV_Lang::t('login_success'),
                 'role' => 'handler',
@@ -707,9 +719,15 @@ public static function render_landing_page($atts) {
         // Set cookie (180 days for Google login)
         $domain = $_SERVER['HTTP_HOST'] ?? '';
         setcookie('ppv_user_token', $token, time() + (86400 * 180), '/', $domain, true, true);
-        
+
+        // ✅ SAVE SESSION DATA (multi-device support)
+        if (class_exists('PPV_SessionBridge')) {
+            $device_fingerprint = PPV_SessionBridge::get_device_fingerprint();
+            PPV_SessionBridge::save_session_data($user->id, $device_fingerprint);
+        }
+
         error_log("✅ [PPV_Login] Google login successful (#{$user->id}): {$email}");
-        
+
         wp_send_json_success([
             'message' => PPV_Lang::t('login_google_success'),
             'role' => 'user',
@@ -857,6 +875,12 @@ public static function render_landing_page($atts) {
         $domain = $_SERVER['HTTP_HOST'] ?? '';
         setcookie('ppv_user_token', $token, time() + (86400 * 180), '/', $domain, true, true);
 
+        // ✅ SAVE SESSION DATA (multi-device support)
+        if (class_exists('PPV_SessionBridge')) {
+            $device_fingerprint = PPV_SessionBridge::get_device_fingerprint();
+            PPV_SessionBridge::save_session_data($user->id, $device_fingerprint);
+        }
+
         error_log("✅ [PPV_Login] Facebook login successful (#{$user->id}): {$email}");
 
         wp_send_json_success([
@@ -968,6 +992,12 @@ public static function render_landing_page($atts) {
         // Set cookie
         $domain = $_SERVER['HTTP_HOST'] ?? '';
         setcookie('ppv_user_token', $token, time() + (86400 * 180), '/', $domain, true, true);
+
+        // ✅ SAVE SESSION DATA (multi-device support)
+        if (class_exists('PPV_SessionBridge')) {
+            $device_fingerprint = PPV_SessionBridge::get_device_fingerprint();
+            PPV_SessionBridge::save_session_data($user->id, $device_fingerprint);
+        }
 
         error_log("✅ [PPV_Login] TikTok login successful (#{$user->id}): {$tiktok_id}");
 
