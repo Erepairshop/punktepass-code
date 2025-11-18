@@ -26,37 +26,51 @@ class PPV_Permissions {
      * @return bool|WP_Error True if authenticated, WP_Error otherwise
      */
     public static function check_authenticated() {
+        error_log("🔍 [PPV_Permissions] check_authenticated() called");
+
         // 0. Ensure session is started
         if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
             @session_start();
+            error_log("🔍 [PPV_Permissions] Session started");
         }
 
         // 1. Check session authentication
         if (!empty($_SESSION['ppv_user_id'])) {
+            error_log("✅ [PPV_Permissions] Auth via SESSION: user_id=" . $_SESSION['ppv_user_id']);
             return true;
         }
 
+        error_log("🔍 [PPV_Permissions] No session user_id, checking token restore...");
+
         // 1a. Try to restore session from token (Google/Facebook/TikTok login)
         if (class_exists('PPV_SessionBridge') && empty($_SESSION['ppv_user_id'])) {
+            error_log("🔄 [PPV_Permissions] Calling PPV_SessionBridge::restore_from_token()");
             PPV_SessionBridge::restore_from_token();
 
             // Check again after restore
             if (!empty($_SESSION['ppv_user_id'])) {
+                error_log("✅ [PPV_Permissions] Auth via SESSION RESTORE: user_id=" . $_SESSION['ppv_user_id']);
                 return true;
             }
+            error_log("⚠️ [PPV_Permissions] Session restore did not populate user_id");
         }
 
         // 2. Check token authentication (for PWA - ppv_tokens table)
+        error_log("🔍 [PPV_Permissions] Checking token authentication...");
         $token_user = self::get_user_from_token();
         if ($token_user) {
+            error_log("✅ [PPV_Permissions] Auth via TOKEN: user_id=" . $token_user->id);
             return true;
         }
 
         // 3. Check WordPress authentication
         if (is_user_logged_in()) {
+            $wp_user_id = get_current_user_id();
+            error_log("✅ [PPV_Permissions] Auth via WORDPRESS: user_id=" . $wp_user_id);
             return true;
         }
 
+        error_log("❌ [PPV_Permissions] UNAUTHORIZED - no valid authentication found");
         return new WP_Error(
             'unauthorized',
             'Bejelentkezés szükséges',
