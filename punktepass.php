@@ -262,8 +262,27 @@ if (str_contains($uri, 'pos') || str_contains($uri, 'kasse') || str_contains($ur
 // Load modules
 foreach ($core_modules as $module) {
     $path = PPV_PLUGIN_DIR . ltrim($module, '/');
+
+    // Debug: Log PPV_Permissions loading attempt
+    if (strpos($module, 'class-ppv-permissions') !== false) {
+        error_log("🔍 [Module Loader] Attempting to load: " . $module);
+        error_log("🔍 [Module Loader] Full path: " . $path);
+        error_log("🔍 [Module Loader] File exists: " . (file_exists($path) ? 'YES' : 'NO'));
+    }
+
     if (file_exists($path)) {
         require_once $path;
+
+        // Debug: Confirm loading
+        if (strpos($module, 'class-ppv-permissions') !== false) {
+            error_log("✅ [Module Loader] Successfully loaded: " . $module);
+            error_log("✅ [Module Loader] Class exists: " . (class_exists('PPV_Permissions') ? 'YES' : 'NO'));
+        }
+    } else {
+        // Debug: File not found
+        if (strpos($module, 'class-ppv-permissions') !== false) {
+            error_log("❌ [Module Loader] FILE NOT FOUND: " . $path);
+        }
     }
 }
 
