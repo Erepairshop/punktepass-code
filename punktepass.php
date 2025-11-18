@@ -158,6 +158,7 @@ $core_modules = [
     'includes/class-ppv-user-settings.php',
     'includes/class-ppv-login.php',
     'includes/class-ppv-logout.php',
+    'includes/class-ppv-account-delete.php',
     'includes/class-ppv-auth.php',
     'includes/class-ppv-bridge.php',
     'includes/class-ppv-pwa-bridge.php',
@@ -392,6 +393,7 @@ if (class_exists('PPV_POS_REST')) PPV_POS_REST::hooks();
 if (class_exists('PPV_Bottom_Nav')) PPV_Bottom_Nav::hooks();
 if (class_exists('PPV_Camera_Scanner')) PPV_Camera_Scanner::hooks();
 if (class_exists('PPV_Logout')) PPV_Logout::hooks();
+if (class_exists('PPV_Account_Delete')) PPV_Account_Delete::hooks();
 if (class_exists('PPV_My_Points')) PPV_My_Points::hooks();  // ← ÚJ!
 
 if (class_exists('PPV_Theme_Handler')) PPV_Theme_Handler::hooks();
