@@ -130,16 +130,6 @@ class PPV_My_Points {
      *  🔹 RENDER HTML SHELL
      * ============================================================ */
     public static function render_shell() {
-        if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
-        }
-
-        // ✅ FORCE SESSION RESTORE (Google/Facebook/TikTok login esetén)
-        if (class_exists('PPV_SessionBridge') && empty($_SESSION['ppv_user_id'])) {
-            PPV_SessionBridge::restore_from_token();
-            error_log("🔄 [PPV_My_Points] Forced session restore from token");
-        }
-
         // Get active lang
         $lang = sanitize_text_field($_GET['lang'] ?? '');
         if (!in_array($lang, ['de', 'hu', 'ro'], true)) {
@@ -149,25 +139,12 @@ class PPV_My_Points {
             $lang = 'de';
         }
 
-        // Load strings for error messages
-        $strings = self::load_lang_file($lang);
-
-        // Check user logged in
-        $uid = get_current_user_id() ?: ($_SESSION['ppv_user_id'] ?? 0);
-        if ($uid <= 0) {
-            $msg = $strings['please_login'] ?? 'Bitte einloggen, um Punkte zu sehen.';
-            return '<div class="ppv-notice" style="padding: 20px; text-align: center; color: #f55;">
-                <strong>⚠️</strong> ' . esc_html($msg) . '
-            </div>';
-        }
-
-        error_log("✅ [PPV_My_Points] User authenticated: uid={$uid}, session_id=" . ($_SESSION['ppv_user_id'] ?? 'none'));
-
-        // Render shell
+        // ✅ SAME AS USER DASHBOARD - No user check here, let JS/REST API handle it!
+        // This fixes Google/Facebook/TikTok login where session might not be ready yet
         $html = '<div id="ppv-my-points-app" data-lang="' . esc_attr($lang) . '"></div>';
         $html .= do_shortcode('[ppv_bottom_nav]');
 
-        error_log("✅ [PPV_My_Points] Shell rendered, user={$uid}, lang={$lang}");
+        error_log("✅ [PPV_My_Points] Shell rendered, lang={$lang}");
 
         return $html;
     }
