@@ -44,12 +44,9 @@ class PPV_My_Points {
      *  🔹 ENQUEUE SCRIPTS + INLINE STRINGS
      * ============================================================ */
     public static function enqueue_assets() {
-
-        // Only load if shortcode is used on the page
-        global $post;
-        if (!is_a($post, 'WP_Post') || !has_shortcode($post->post_content, 'ppv_my_points')) {
-            return;
-        }
+        // ✅ REMOVED shortcode check - load on all pages like user-dashboard
+        // This fixes issues with Elementor/page builders where $post->post_content
+        // doesn't contain the shortcode
 
         // Start session
         if (session_status() === PHP_SESSION_NONE) {
