@@ -760,8 +760,16 @@ private static function get_today_hours($opening_hours) {
 
 public static function render_dashboard() {
     echo '<script>document.body.classList.add("ppv-user-dashboard");</script>';
-    
-    return '<div id="ppv-dashboard-root"></div>' . do_shortcode('[ppv_bottom_nav]');
+
+    return '
+    <div id="ppv-app-root" class="ppv-app-root">
+        <div class="ppv-app-container">
+            <div id="ppv-dashboard-root"></div>
+        </div>
+
+        ' . do_shortcode('[ppv_bottom_nav]') . '
+    </div>
+    ';
 }
 
     public static function register_routes() {
