@@ -114,20 +114,59 @@ document.addEventListener("DOMContentLoaded", () => {
     const resultP = document.getElementById('scanResult');
 
     // ============================================================
-    // 🚀 START SCANNER (csak gomb kattintásra)
+    // 🚀 TOGGLE SCANNER (show/hide camera on button click)
     // ============================================================
-    startBtn.addEventListener('click', async () => {
-      console.log('🎬 [Scanner] Start button clicked');
+    let scanner = null;
+    let isScanning = false;
 
-      // Hide button, show camera
-      startBtn.style.display = 'none';
+    startBtn.addEventListener('click', async () => {
+      console.log('🎬 [Scanner] Button clicked, isScanning:', isScanning);
+
+      // ===== TOGGLE OFF: Hide camera =====
+      if (isScanning) {
+        console.log('🛑 [Scanner] Stopping scanner...');
+
+        try {
+          if (scanner) {
+            await scanner.stop();
+            scanner = null;
+          }
+
+          // Hide camera, reset UI
+          readerDiv.style.display = 'none';
+          resultP.innerText = '';
+
+          // Change button back to "Start"
+          startBtn.querySelector('span').textContent = '📷 Scanner starten';
+          startBtn.style.background = 'linear-gradient(135deg, #00e676, #00c853)';
+
+          // Release wake lock
+          releaseWakeLock();
+
+          isScanning = false;
+          console.log('✅ [Scanner] Scanner stopped');
+        } catch (err) {
+          console.error('❌ [Scanner] Error stopping:', err);
+        }
+
+        return;
+      }
+
+      // ===== TOGGLE ON: Show camera =====
+      console.log('▶️ [Scanner] Starting scanner...');
+
+      // Show camera, update button
       readerDiv.style.display = 'block';
       resultP.innerText = '📷 Kamera wird gestartet...';
+
+      // Change button to "Stop"
+      startBtn.querySelector('span').textContent = '🛑 Scanner stoppen';
+      startBtn.style.background = 'linear-gradient(135deg, #ff5252, #f44336)';
 
       // Keep screen awake
       await keepScreenAwake();
 
-      const scanner = new Html5Qrcode("reader");
+      scanner = new Html5Qrcode("reader");
 
       const config = {
         fps: 15,
@@ -154,7 +193,20 @@ document.addEventListener("DOMContentLoaded", () => {
           scanning = false;
           resultP.innerText = "✅ Gelesen: " + qrCode;
           scanner.stop().then(() => {
-            releaseWakeLock(); // Release wake lock when done
+            scanner = null;
+
+            // Hide camera after successful scan
+            readerDiv.style.display = 'none';
+
+            // Reset button
+            startBtn.querySelector('span').textContent = '📷 Scanner starten';
+            startBtn.style.background = 'linear-gradient(135deg, #00e676, #00c853)';
+
+            // Release wake lock
+            releaseWakeLock();
+
+            isScanning = false;
+
             sendToServer(qrCode);
           });
         }
@@ -164,6 +216,7 @@ document.addEventListener("DOMContentLoaded", () => {
       try {
         await scanner.start({ facingMode: "environment" }, config, onScanSuccess);
         resultP.innerText = '✅ Scanner aktiv - QR-Code scannen';
+        isScanning = true;
 
         // 🔦 Torch (LED) automatikus bekapcsolás, ha elérhető
         try {
@@ -176,9 +229,14 @@ document.addEventListener("DOMContentLoaded", () => {
       } catch (err) {
         console.error("Kamera Fehler:", err);
         resultP.innerText = "❌ Keine Kamera gefunden oder Zugriff verweigert.";
-        startBtn.style.display = 'inline-flex'; // Show button again
         readerDiv.style.display = 'none';
+
+        // Reset button
+        startBtn.querySelector('span').textContent = '📷 Scanner starten';
+        startBtn.style.background = 'linear-gradient(135deg, #00e676, #00c853)';
+
         releaseWakeLock();
+        isScanning = false;
       }
     });
 
