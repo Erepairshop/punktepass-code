@@ -160,6 +160,9 @@ class PPV_Signup {
             } elseif ($user_type === 'vendor') {
                 wp_redirect(home_url('/qr-center'));
                 exit;
+            } elseif ($user_type === 'scanner') {
+                wp_redirect(home_url('/qr-center'));
+                exit;
             }
         }
 
