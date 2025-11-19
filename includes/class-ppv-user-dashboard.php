@@ -112,7 +112,7 @@ class PPV_User_Dashboard {
         ", $uid));
 
         if (empty($token)) {
-            $token = wp_generate_password(8, false);
+            $token = wp_generate_password(16, false);
             $wpdb->insert("{$prefix}ppv_tokens", [
                 'entity_type' => 'user',
                 'entity_id' => $uid,
@@ -153,8 +153,7 @@ class PPV_User_Dashboard {
             }
         }
 
-        $short = substr((string)$token, 0, 6);
-        $data = "PPU{$uid}{$short}";
+        $data = "PPU{$uid}{$token}";
         $qr_api = "https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=" . urlencode($data);
 
         $response = wp_remote_get($qr_api, ['timeout' => 5]);

@@ -185,6 +185,25 @@ class PPV_QR {
             @session_start();
         }
 
+        // ⛔ PERMISSION CHECK: Only load camera scanner JS for handlers/scanners
+        $is_handler = false;
+
+        // Check session user type
+        if (!empty($_SESSION['ppv_user_id'])) {
+            $user_type = $_SESSION['ppv_user_type'] ?? '';
+
+            // If not set in session, check database
+            if (empty($user_type)) {
+                $user_type = $wpdb->get_var($wpdb->prepare(
+                    "SELECT user_type FROM {$wpdb->prefix}ppv_users WHERE id=%d LIMIT 1",
+                    $_SESSION['ppv_user_id']
+                ));
+            }
+
+            $handler_types = ['store', 'handler', 'vendor', 'admin', 'scanner'];
+            $is_handler = in_array(strtolower(trim($user_type)), $handler_types);
+        }
+
         wp_enqueue_style(
             'remixicons',
             'https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css',
@@ -192,86 +211,89 @@ class PPV_QR {
             null
         );
 
-        wp_enqueue_script('ppv-qr', PPV_PLUGIN_URL . 'assets/js/ppv-qr.js', ['jquery'], time(), true);
+        // Only enqueue camera scanner JS for handlers/scanners
+        if ($is_handler) {
+            wp_enqueue_script('ppv-qr', PPV_PLUGIN_URL . 'assets/js/ppv-qr.js', ['jquery'], time(), true);
 
-        $lang = sanitize_text_field($_COOKIE['ppv_lang'] ?? '');
-        if (empty($lang) || !in_array($lang, ['de', 'hu', 'ro'])) {
-            $lang = defined('PPV_LANG_ACTIVE') ? PPV_LANG_ACTIVE : 'de';
-        }
-
-        if (class_exists('PPV_Lang')) {
-            $file = PPV_PLUGIN_DIR . "includes/lang/ppv-lang-{$lang}.php";
-            if (!file_exists($file)) {
-                $file = PPV_PLUGIN_DIR . "includes/lang/ppv-lang-de.php";
+            $lang = sanitize_text_field($_COOKIE['ppv_lang'] ?? '');
+            if (empty($lang) || !in_array($lang, ['de', 'hu', 'ro'])) {
+                $lang = defined('PPV_LANG_ACTIVE') ? PPV_LANG_ACTIVE : 'de';
             }
-            $strings = include $file;
-        } else {
-            $strings = [];
-        }
 
-        wp_add_inline_script('ppv-qr', 'window.ppv_lang = ' . wp_json_encode($strings) . ';', 'before');
+            if (class_exists('PPV_Lang')) {
+                $file = PPV_PLUGIN_DIR . "includes/lang/ppv-lang-{$lang}.php";
+                if (!file_exists($file)) {
+                    $file = PPV_PLUGIN_DIR . "includes/lang/ppv-lang-de.php";
+                }
+                $strings = include $file;
+            } else {
+                $strings = [];
+            }
 
-        $store_id = 0;
-        $store_key = '';
+            wp_add_inline_script('ppv-qr', 'window.ppv_lang = ' . wp_json_encode($strings) . ';', 'before');
 
-        // 1️⃣ SESSION
-        if (!empty($_SESSION['ppv_active_store'])) {
-            $store_id = intval($_SESSION['ppv_active_store']);
-            error_log("✅ [PPV_QR] Store ID from SESSION: {$store_id}");
-        }
-        // 2️⃣ GLOBAL
-        elseif (!empty($GLOBALS['ppv_active_store'])) {
-            $active = $GLOBALS['ppv_active_store'];
-            $store_id = is_object($active) ? intval($active->id) : intval($active);
-            error_log("✅ [PPV_QR] Store ID from GLOBAL: {$store_id}");
-        }
-        // 3️⃣ LOGGED IN USER
-        elseif (is_user_logged_in()) {
-            $uid = get_current_user_id();
-            $store_id = intval($wpdb->get_var($wpdb->prepare(
-                "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id=%d LIMIT 1",
-                $uid
-            )));
-            error_log("✅ [PPV_QR] Store ID from USER ({$uid}): {$store_id}");
-        }
-        // 4️⃣ ADMIN FALLBACK
-        else {
-            if (current_user_can('administrator')) {
-                $row = $wpdb->get_row("SELECT id, store_key FROM {$wpdb->prefix}ppv_stores WHERE id=1 LIMIT 1");
-                if ($row) {
-                    $store_id = $row->id;
-                    $store_key = $row->store_key;
-                    error_log("✅ [PPV_QR] Store ID from ADMIN FALLBACK: {$store_id}");
-                } else {
-                    error_log("❌ [PPV_QR] No admin store found!");
+            $store_id = 0;
+            $store_key = '';
+
+            // 1️⃣ SESSION
+            if (!empty($_SESSION['ppv_active_store'])) {
+                $store_id = intval($_SESSION['ppv_active_store']);
+                error_log("✅ [PPV_QR] Store ID from SESSION: {$store_id}");
+            }
+            // 2️⃣ GLOBAL
+            elseif (!empty($GLOBALS['ppv_active_store'])) {
+                $active = $GLOBALS['ppv_active_store'];
+                $store_id = is_object($active) ? intval($active->id) : intval($active);
+                error_log("✅ [PPV_QR] Store ID from GLOBAL: {$store_id}");
+            }
+            // 3️⃣ LOGGED IN USER
+            elseif (is_user_logged_in()) {
+                $uid = get_current_user_id();
+                $store_id = intval($wpdb->get_var($wpdb->prepare(
+                    "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id=%d LIMIT 1",
+                    $uid
+                )));
+                error_log("✅ [PPV_QR] Store ID from USER ({$uid}): {$store_id}");
+            }
+            // 4️⃣ ADMIN FALLBACK
+            else {
+                if (current_user_can('administrator')) {
+                    $row = $wpdb->get_row("SELECT id, store_key FROM {$wpdb->prefix}ppv_stores WHERE id=1 LIMIT 1");
+                    if ($row) {
+                        $store_id = $row->id;
+                        $store_key = $row->store_key;
+                        error_log("✅ [PPV_QR] Store ID from ADMIN FALLBACK: {$store_id}");
+                    } else {
+                        error_log("❌ [PPV_QR] No admin store found!");
+                    }
                 }
             }
+
+            // Fetch store_key if store_id is set
+            if ($store_id > 0 && empty($store_key)) {
+                $store_key = $wpdb->get_var($wpdb->prepare(
+                    "SELECT store_key FROM {$wpdb->prefix}ppv_stores WHERE id=%d LIMIT 1",
+                    $store_id
+                ));
+            }
+
+            error_log("🧩 [PPV_QR_ASSET] store_id={$store_id} | store_key={$store_key} | user=" . (is_user_logged_in() ? get_current_user_id() : 'none'));
+
+            wp_localize_script('ppv-qr', 'PPV_STORE_DATA', [
+                'store_id' => intval($store_id),
+                'store_key' => $store_key ?: '',
+            ]);
+
+            wp_enqueue_script('ppv-hidden-scan', PPV_PLUGIN_URL . 'assets/js/ppv-hidden-scan.js', [], time(), true);
+
+            $lang = defined('PPV_LANG_ACTIVE') ? PPV_LANG_ACTIVE : (get_locale() ?? 'de');
+            wp_localize_script('ppv-hidden-scan', 'PPV_SCAN_DATA', [
+                'rest_url' => esc_url(rest_url('punktepass/v1/pos/scan')),
+                'store_key' => $store_key ?: '',
+                'plugin_url' => PPV_PLUGIN_URL,
+                'lang' => substr($lang, 0, 2),
+            ]);
         }
-
-        // Fetch store_key if store_id is set
-        if ($store_id > 0 && empty($store_key)) {
-            $store_key = $wpdb->get_var($wpdb->prepare(
-                "SELECT store_key FROM {$wpdb->prefix}ppv_stores WHERE id=%d LIMIT 1",
-                $store_id
-            ));
-        }
-
-        error_log("🧩 [PPV_QR_ASSET] store_id={$store_id} | store_key={$store_key} | user=" . (is_user_logged_in() ? get_current_user_id() : 'none'));
-
-        wp_localize_script('ppv-qr', 'PPV_STORE_DATA', [
-            'store_id' => intval($store_id),
-            'store_key' => $store_key ?: '',
-        ]);
-
-        wp_enqueue_script('ppv-hidden-scan', PPV_PLUGIN_URL . 'assets/js/ppv-hidden-scan.js', [], time(), true);
-
-        $lang = defined('PPV_LANG_ACTIVE') ? PPV_LANG_ACTIVE : (get_locale() ?? 'de');
-        wp_localize_script('ppv-hidden-scan', 'PPV_SCAN_DATA', [
-            'rest_url' => esc_url(rest_url('punktepass/v1/pos/scan')),
-            'store_key' => $store_key ?: '',
-            'plugin_url' => PPV_PLUGIN_URL,
-            'lang' => substr($lang, 0, 2),
-        ]);
     }
 
     // ============================================================
@@ -279,12 +301,26 @@ class PPV_QR {
     // ============================================================
     public static function render_qr_center() {
         global $wpdb;
-        
+
+        // ⛔ PERMISSION CHECK: Only handlers and scanners can access
+        if (!class_exists('PPV_Permissions')) {
+            return '<div class="ppv-error" style="padding: 20px; text-align: center; color: #ff5252;">
+                ❌ Zugriff verweigert. Nur für Händler und Scanner.
+            </div>';
+        }
+
+        $auth_check = PPV_Permissions::check_handler();
+        if (is_wp_error($auth_check)) {
+            return '<div class="ppv-error" style="padding: 20px; text-align: center; color: #ff5252;">
+                ❌ Zugriff verweigert. Nur für Händler und Scanner.
+            </div>';
+        }
+
         $lang = sanitize_text_field($_COOKIE['ppv_lang'] ?? '');
         if (empty($lang) || !in_array($lang, ['de', 'hu', 'ro'])) {
             $lang = defined('PPV_LANG_ACTIVE') ? PPV_LANG_ACTIVE : 'de';
         }
-        
+
         $lang_file = PPV_PLUGIN_DIR . "includes/lang/ppv-lang-{$lang}.php";
         if (!file_exists($lang_file)) {
             $lang_file = PPV_PLUGIN_DIR . "includes/lang/ppv-lang-de.php";
