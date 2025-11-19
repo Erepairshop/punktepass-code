@@ -1,15 +1,16 @@
 // PunktePass PWA Service Worker
-// Version: 5.6 FIXED - Safari Optimized + Timeout
+// Version: 5.8 FIXED - Force CSS Refresh
 // ✅ Timeout protection
 // ✅ Safari compatible
 // ✅ No POST blocking
 // ✅ Network-first for API calls
 // ✅ Fresh CSS/JS always
 // ✅ Login pages never cached
+// ✅ Force old cache deletion
 
-const CACHE_VERSION = "v5.6";
+const CACHE_VERSION = "v5.8";
 const CACHE_NAME = "punktepass-" + CACHE_VERSION;
-const API_CACHE = "punktepass-api-v5.6";
+const API_CACHE = "punktepass-api-v5.8";
 
 // Only cache critical files
 const ASSETS = [

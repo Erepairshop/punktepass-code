@@ -310,8 +310,11 @@ add_action('wp_enqueue_scripts', function() {
 
 
 add_action('wp_enqueue_scripts', function() {
-    // 🔹 LOGIN PAGE = FORCE LIGHT MODE + JS
+    // 🔹 LOGIN PAGE = DISABLED - Using inline assets in class-ppv-login.php instead
+    // This prevents duplicate loading and cache conflicts
     if (ppv_is_login_page()) {
+        // ✅ DISABLED - CSS/JS now loaded inline in template with time() cache-busting
+        /*
         // CSS
         wp_enqueue_style(
             'ppv-login-light',
@@ -319,7 +322,7 @@ add_action('wp_enqueue_scripts', function() {
             [],
             PPV_VERSION
         );
-        
+
         // JS - Google OAuth
         wp_enqueue_script(
             'google-platform',
@@ -328,17 +331,17 @@ add_action('wp_enqueue_scripts', function() {
             null,
             true
         );
-        
+
         add_action('wp_enqueue_scripts', function() {
-    wp_enqueue_script(
-        'ppv-theme-sync',
-        PPV_PLUGIN_URL . 'assets/js/ppv-theme-sync.js',
-        ['jquery'],
-        time(),
-        true  // In footer
-    );
-}, 99);
-        
+            wp_enqueue_script(
+                'ppv-theme-sync',
+                PPV_PLUGIN_URL . 'assets/js/ppv-theme-sync.js',
+                ['jquery'],
+                time(),
+                true  // In footer
+            );
+        }, 99);
+
         // JS - Login handler
         wp_enqueue_script(
             'ppv-login-js',
@@ -347,7 +350,10 @@ add_action('wp_enqueue_scripts', function() {
             PPV_VERSION,
             true
         );
-        
+        */
+
+        // ✅ DISABLED - window.ppvLogin now set inline in template
+        /*
         // Localize
         wp_localize_script('ppv-login-js', 'ppvLogin', [
             'ajaxurl' => admin_url('admin-ajax.php'),
@@ -357,7 +363,8 @@ add_action('wp_enqueue_scripts', function() {
             'tiktok_client_key' => defined('PPV_TIKTOK_CLIENT_KEY') ? PPV_TIKTOK_CLIENT_KEY : get_option('ppv_tiktok_client_key', '9bb6aca5781d007d6c00fe3ed60d6734'),
             'redirect_url' => home_url('/user_dashboard')
         ]);
-        
+        */
+
         return; // Stop - don't load other themes
     }
     
