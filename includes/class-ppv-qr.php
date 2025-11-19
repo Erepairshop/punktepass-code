@@ -449,6 +449,18 @@ class PPV_QR {
             $border_color = 'rgba(239, 68, 68, 0.3)';
         }
 
+        // DEBUG: Check button conditions
+        $debug_info = '';
+        if (defined('WP_DEBUG') && WP_DEBUG && $subscription_status === 'trial' && $trial_days_left === 0) {
+            $debug_info = sprintf(
+                '<div style="font-size: 11px; color: #888; margin-top: 5px;">DEBUG: status=%s, days=%d, renewal=%s, store_id=%d</div>',
+                $subscription_status,
+                $trial_days_left,
+                $renewal_requested ? 'yes' : 'no',
+                $store_id
+            );
+        }
+
         ?>
         <div class="ppv-trial-info-block" style="margin-bottom: 15px; padding: 12px 16px; background: <?php echo $info_color; ?>; border-radius: 10px; border: 2px solid <?php echo $border_color; ?>;">
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
@@ -471,6 +483,7 @@ class PPV_QR {
                                 <?php echo self::t('renewal_in_progress', 'Aboverlängerung in Bearbeitung - Wir kontaktieren Sie bald per E-Mail oder Telefon'); ?>
                             </div>
                         <?php endif; ?>
+                        <?php echo $debug_info; ?>
                     </div>
                 </div>
                 <?php if ($subscription_status === 'trial' && $trial_days_left <= 7 && $trial_days_left > 0): ?>
