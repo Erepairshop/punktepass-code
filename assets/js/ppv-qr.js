@@ -1632,6 +1632,95 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
   }
+
+  // ============================================================
+  // 🆘 SUPPORT TICKET MODAL
+  // ============================================================
+  const supportBtn = document.getElementById('ppv-support-btn');
+  const supportModal = document.getElementById('ppv-support-modal');
+  const supportSubmit = document.getElementById('ppv-support-submit');
+  const supportCancel = document.getElementById('ppv-support-cancel');
+  const supportDescription = document.getElementById('ppv-support-description');
+  const supportPriority = document.getElementById('ppv-support-priority');
+  const supportContact = document.getElementById('ppv-support-contact');
+  const supportError = document.getElementById('ppv-support-error');
+  const supportSuccess = document.getElementById('ppv-support-success');
+
+  if (supportBtn && supportModal) {
+    supportBtn.addEventListener('click', () => {
+      supportModal.style.display = 'flex';
+      supportDescription.value = '';
+      supportPriority.value = 'normal';
+      supportContact.value = 'email';
+      supportError.style.display = 'none';
+      supportSuccess.style.display = 'none';
+      supportDescription.focus();
+    });
+
+    supportCancel.addEventListener('click', () => {
+      supportModal.style.display = 'none';
+    });
+
+    supportModal.addEventListener('click', (e) => {
+      if (e.target === supportModal) {
+        supportModal.style.display = 'none';
+      }
+    });
+
+    supportSubmit.addEventListener('click', async () => {
+      const description = supportDescription.value.trim();
+      const priority = supportPriority.value;
+      const contactPref = supportContact.value;
+
+      if (!description) {
+        supportError.textContent = L.description_required || 'Problembeschreibung ist erforderlich';
+        supportError.style.display = 'block';
+        return;
+      }
+
+      supportSubmit.disabled = true;
+      const originalText = supportSubmit.textContent;
+      supportSubmit.textContent = L.sending || 'Wird gesendet...';
+      supportError.style.display = 'none';
+
+      try {
+        const response = await fetch('/wp-admin/admin-ajax.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            action: 'ppv_submit_support_ticket',
+            description: description,
+            priority: priority,
+            contact_preference: contactPref,
+            page_url: window.location.href
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          supportSuccess.textContent = data.data?.message || (L.ticket_sent || 'Ticket erfolgreich gesendet! Wir melden uns bald.');
+          supportSuccess.style.display = 'block';
+          supportDescription.value = '';
+
+          setTimeout(() => {
+            supportModal.style.display = 'none';
+            supportSuccess.style.display = 'none';
+          }, 3000);
+        } else {
+          supportError.textContent = data.data?.message || (L.error_occurred || 'Ein Fehler ist aufgetreten');
+          supportError.style.display = 'block';
+        }
+      } catch (err) {
+        console.error('Support ticket error:', err);
+        supportError.textContent = L.error_occurred || 'Ein Fehler ist aufgetreten';
+        supportError.style.display = 'block';
+      } finally {
+        supportSubmit.disabled = false;
+        supportSubmit.textContent = originalText;
+      }
+    });
+  }
 });
 
 console.log(L.app_complete || "✅ COMPLETE - Összes kód betöltve!");

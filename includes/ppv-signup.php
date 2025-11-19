@@ -929,6 +929,162 @@ class PPV_Signup {
 
         wp_send_json_success(['message' => 'Anfrage erfolgreich gesendet']);
     }
+
+    /* ============================================================
+     * 🆘 AJAX Submit Support Ticket
+     * ============================================================ */
+    public static function ajax_submit_support_ticket() {
+        global $wpdb;
+
+        // Check if user is logged in
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+
+        if (empty($_SESSION['ppv_user_id'])) {
+            wp_send_json_error(['message' => 'Nicht eingeloggt']);
+            return;
+        }
+
+        $user_id = intval($_SESSION['ppv_user_id']);
+        $store_id = intval($_SESSION['ppv_store_id'] ?? 0);
+
+        // ✅ If no store_id in session, lookup via user_id
+        if ($store_id === 0) {
+            error_log("🔍 [PPV_Support] No store_id in session, looking up via user_id={$user_id}");
+
+            $store_id = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id = %d LIMIT 1",
+                $user_id
+            ));
+
+            if (!$store_id) {
+                error_log("❌ [PPV_Support] No store found for user_id={$user_id}");
+                wp_send_json_error(['message' => 'Store nicht gefunden']);
+                return;
+            }
+
+            $store_id = intval($store_id);
+            error_log("✅ [PPV_Support] Found store_id={$store_id} via user_id");
+        }
+
+        $description = sanitize_textarea_field($_POST['description'] ?? '');
+        $priority = sanitize_text_field($_POST['priority'] ?? 'normal');
+        $contact_preference = sanitize_text_field($_POST['contact_preference'] ?? 'email');
+        $page_url = esc_url_raw($_POST['page_url'] ?? '');
+
+        if (empty($description)) {
+            wp_send_json_error(['message' => 'Problembeschreibung ist erforderlich']);
+            return;
+        }
+
+        // Validate priority
+        if (!in_array($priority, ['low', 'normal', 'urgent'])) {
+            $priority = 'normal';
+        }
+
+        // Validate contact preference
+        if (!in_array($contact_preference, ['email', 'phone', 'whatsapp'])) {
+            $contact_preference = 'email';
+        }
+
+        // Get store data
+        $store = $wpdb->get_row($wpdb->prepare(
+            "SELECT email, phone, name, company_name FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
+            $store_id
+        ));
+
+        if (!$store) {
+            wp_send_json_error(['message' => 'Store nicht gefunden']);
+            return;
+        }
+
+        // Insert support ticket
+        $insert_result = $wpdb->insert(
+            "{$wpdb->prefix}ppv_support_tickets",
+            [
+                'store_id' => $store_id,
+                'handler_email' => $store->email,
+                'handler_phone' => $store->phone ?: '',
+                'store_name' => $store->company_name ?: $store->name,
+                'subject' => null, // Auto-generated from description
+                'description' => $description,
+                'priority' => $priority,
+                'status' => 'new',
+                'contact_preference' => $contact_preference,
+                'page_url' => $page_url,
+                'created_at' => current_time('mysql')
+            ],
+            ['%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s']
+        );
+
+        if (!$insert_result) {
+            error_log("❌ [PPV_Support] Failed to insert ticket: " . $wpdb->last_error);
+            wp_send_json_error(['message' => 'Fehler beim Speichern des Tickets']);
+            return;
+        }
+
+        $ticket_id = $wpdb->insert_id;
+
+        // Priority emoji and text
+        $priority_map = [
+            'low' => '🟢 Niedrig',
+            'normal' => '🟡 Normal',
+            'urgent' => '🔴 Dringend'
+        ];
+        $priority_text = $priority_map[$priority] ?? '🟡 Normal';
+
+        // Contact preference text
+        $contact_map = [
+            'email' => '📧 E-Mail',
+            'phone' => '📞 Telefon',
+            'whatsapp' => '💬 WhatsApp'
+        ];
+        $contact_text = $contact_map[$contact_preference] ?? '📧 E-Mail';
+
+        // Send email to admin
+        $to = 'info@punktepass.de';
+        $subject = '🆘 Neues Support-Ticket #' . $ticket_id . ' - ' . ($store->company_name ?: $store->name);
+
+        $message = "Ein neues Support-Ticket ist eingegangen:\n\n";
+        $message .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+        $message .= "🎫 Ticket ID: #{$ticket_id}\n";
+        $message .= "📊 Priorität: {$priority_text}\n";
+        $message .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
+        $message .= "🏪 Store Information:\n";
+        $message .= "   • Store ID: {$store_id}\n";
+        $message .= "   • Firma: " . ($store->company_name ?: $store->name) . "\n";
+        $message .= "   • E-Mail: {$store->email}\n";
+        $message .= "   • Telefon: " . ($store->phone ?: 'N/A') . "\n\n";
+        $message .= "📞 Bevorzugter Kontakt: {$contact_text}\n\n";
+        $message .= "📝 Problembeschreibung:\n";
+        $message .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+        $message .= $description . "\n";
+        $message .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
+        $message .= "🌐 Seite: {$page_url}\n";
+        $message .= "🕐 Zeitpunkt: " . current_time('Y-m-d H:i:s') . "\n\n";
+        $message .= "Bitte kontaktieren Sie den Handler schnellstmöglich.\n\n";
+        $message .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+        $message .= "PunktePass Support System\n";
+
+        $headers = [
+            'From: PunktePass Support <noreply@punktepass.de>',
+            'Reply-To: ' . $store->email,
+            'Content-Type: text/plain; charset=UTF-8'
+        ];
+
+        $mail_sent = wp_mail($to, $subject, $message, $headers);
+
+        if (!$mail_sent) {
+            error_log("❌ [PPV_Support] Failed to send email to {$to} for ticket #{$ticket_id}");
+        } else {
+            error_log("✅ [PPV_Support] Email sent to {$to} for ticket #{$ticket_id}");
+        }
+
+        error_log("✅ [PPV_Support] Ticket #{$ticket_id} created - Store #{$store_id} | Priority: {$priority}");
+
+        wp_send_json_success(['message' => '✅ Ticket erfolgreich gesendet! Wir melden uns schnellstmöglich.']);
+    }
 }
 
 // ⚠️ CRITICAL: Initialize the class!
@@ -937,4 +1093,9 @@ add_action('init', ['PPV_Signup', 'init'], 1);
 // Register AJAX handlers for renewal request
 add_action('wp_ajax_ppv_request_subscription_renewal', ['PPV_Signup', 'ajax_request_subscription_renewal']);
 add_action('wp_ajax_nopriv_ppv_request_subscription_renewal', ['PPV_Signup', 'ajax_request_subscription_renewal']);
+
+// Register AJAX handlers for support tickets
+add_action('wp_ajax_ppv_submit_support_ticket', ['PPV_Signup', 'ajax_submit_support_ticket']);
+add_action('wp_ajax_nopriv_ppv_submit_support_ticket', ['PPV_Signup', 'ajax_submit_support_ticket']);
+
 PPV_Signup::hooks();

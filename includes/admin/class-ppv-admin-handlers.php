@@ -14,6 +14,7 @@ class PPV_Admin_Handlers {
         add_action('admin_post_ppv_activate_subscription', [__CLASS__, 'handle_activate_subscription']);
         add_action('admin_post_ppv_extend_subscription', [__CLASS__, 'handle_extend_subscription']);
         add_action('admin_post_ppv_mark_renewal_done', [__CLASS__, 'handle_mark_renewal_done']);
+        add_action('admin_post_ppv_update_ticket_status', [__CLASS__, 'handle_update_ticket_status']);
     }
 
     // ============================================================
@@ -47,6 +48,20 @@ class PPV_Admin_Handlers {
             'manage_options',
             'punktepass-renewal-requests',
             [__CLASS__, 'render_renewal_requests_page']
+        );
+
+        // 🆘 Support Tickets (with counter)
+        global $wpdb;
+        $open_tickets_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ppv_support_tickets WHERE status IN ('new', 'in_progress')");
+        $counter_badge = $open_tickets_count > 0 ? " <span class='awaiting-mod'>$open_tickets_count</span>" : "";
+
+        add_submenu_page(
+            'punktepass-admin',
+            'Support Tickets',
+            'Support Tickets' . $counter_badge,
+            'manage_options',
+            'punktepass-support-tickets',
+            [__CLASS__, 'render_support_tickets_page']
         );
     }
 
@@ -673,6 +688,283 @@ class PPV_Admin_Handlers {
         error_log("✅ [PPV_Admin] Renewal request marked as done for Handler #{$handler_id}");
 
         wp_redirect(admin_url('admin.php?page=punktepass-renewal-requests&success=marked_done'));
+        exit;
+    }
+
+    // ============================================================
+    // 🆘 RENDER SUPPORT TICKETS PAGE
+    // ============================================================
+    public static function render_support_tickets_page() {
+        global $wpdb;
+
+        // Get filter status (default: all open tickets)
+        $status_filter = isset($_GET['ticket_status']) ? sanitize_text_field($_GET['ticket_status']) : 'open';
+
+        // Build query based on filter
+        $where_clause = '';
+        if ($status_filter === 'open') {
+            $where_clause = "WHERE t.status IN ('new', 'in_progress')";
+        } elseif ($status_filter === 'resolved') {
+            $where_clause = "WHERE t.status = 'resolved'";
+        } elseif ($status_filter === 'new') {
+            $where_clause = "WHERE t.status = 'new'";
+        } elseif ($status_filter === 'in_progress') {
+            $where_clause = "WHERE t.status = 'in_progress'";
+        }
+
+        // Fetch support tickets
+        $tickets = $wpdb->get_results("
+            SELECT
+                t.*,
+                s.name as store_name_db,
+                s.company_name,
+                s.city
+            FROM {$wpdb->prefix}ppv_support_tickets t
+            LEFT JOIN {$wpdb->prefix}ppv_stores s ON t.store_id = s.id
+            {$where_clause}
+            ORDER BY
+                FIELD(t.status, 'new', 'in_progress', 'resolved'),
+                FIELD(t.priority, 'urgent', 'normal', 'low'),
+                t.created_at DESC
+        ");
+
+        $ticket_count = count($tickets);
+
+        // Count by status
+        $new_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ppv_support_tickets WHERE status = 'new'");
+        $in_progress_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ppv_support_tickets WHERE status = 'in_progress'");
+        $open_count = $new_count + $in_progress_count;
+        $resolved_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ppv_support_tickets WHERE status = 'resolved'");
+
+        ?>
+        <div class="wrap">
+            <h1>🆘 Support Tickets (<?php echo $open_count; ?> offen)</h1>
+            <p>Support-Anfragen von Handlers verwalten und bearbeiten.</p>
+
+            <!-- Filter Tabs -->
+            <div class="nav-tab-wrapper" style="margin-bottom: 20px;">
+                <a href="<?php echo admin_url('admin.php?page=punktepass-support-tickets&ticket_status=open'); ?>"
+                   class="nav-tab <?php echo $status_filter === 'open' ? 'nav-tab-active' : ''; ?>">
+                    🟡 Offen (<?php echo $open_count; ?>)
+                </a>
+                <a href="<?php echo admin_url('admin.php?page=punktepass-support-tickets&ticket_status=new'); ?>"
+                   class="nav-tab <?php echo $status_filter === 'new' ? 'nav-tab-active' : ''; ?>">
+                    🆕 Neu (<?php echo $new_count; ?>)
+                </a>
+                <a href="<?php echo admin_url('admin.php?page=punktepass-support-tickets&ticket_status=in_progress'); ?>"
+                   class="nav-tab <?php echo $status_filter === 'in_progress' ? 'nav-tab-active' : ''; ?>">
+                    🔄 In Bearbeitung (<?php echo $in_progress_count; ?>)
+                </a>
+                <a href="<?php echo admin_url('admin.php?page=punktepass-support-tickets&ticket_status=resolved'); ?>"
+                   class="nav-tab <?php echo $status_filter === 'resolved' ? 'nav-tab-active' : ''; ?>">
+                    ✅ Erledigt (<?php echo $resolved_count; ?>)
+                </a>
+            </div>
+
+            <?php if ($ticket_count === 0): ?>
+                <div class="notice notice-info">
+                    <p>✅ Keine Tickets in dieser Kategorie!</p>
+                </div>
+            <?php else: ?>
+                <table class="wp-list-table widefat fixed striped">
+                    <thead>
+                        <tr>
+                            <th style="width: 50px;">ID</th>
+                            <th style="width: 80px;">Priorität</th>
+                            <th style="width: 100px;">Status</th>
+                            <th>Firma</th>
+                            <th>Kontakt</th>
+                            <th>Problem</th>
+                            <th style="width: 140px;">Erstellt am</th>
+                            <th style="width: 200px;">Aktionen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($tickets as $ticket): ?>
+                            <?php
+                            // Priority badge
+                            $priority_badges = [
+                                'low' => ['text' => '🟢 Niedrig', 'class' => 'success'],
+                                'normal' => ['text' => '🟡 Normal', 'class' => 'warning'],
+                                'urgent' => ['text' => '🔴 Dringend', 'class' => 'error']
+                            ];
+                            $priority_badge = $priority_badges[$ticket->priority] ?? $priority_badges['normal'];
+
+                            // Status badge
+                            $status_badges = [
+                                'new' => ['text' => '🆕 Neu', 'class' => 'info'],
+                                'in_progress' => ['text' => '🔄 In Bearbeitung', 'class' => 'warning'],
+                                'resolved' => ['text' => '✅ Erledigt', 'class' => 'success']
+                            ];
+                            $status_badge = $status_badges[$ticket->status] ?? $status_badges['new'];
+
+                            // Contact preference
+                            $contact_icons = [
+                                'email' => '📧',
+                                'phone' => '📞',
+                                'whatsapp' => '💬'
+                            ];
+                            $contact_icon = $contact_icons[$ticket->contact_preference] ?? '📧';
+
+                            // Format time
+                            $created_time = date('Y-m-d H:i', strtotime($ticket->created_at));
+
+                            // Truncate description
+                            $description_short = mb_strlen($ticket->description) > 80
+                                ? mb_substr($ticket->description, 0, 80) . '...'
+                                : $ticket->description;
+                            ?>
+                            <tr style="<?php echo $ticket->priority === 'urgent' ? 'background: #fff5f5;' : ''; ?>">
+                                <td><strong>#<?php echo intval($ticket->id); ?></strong></td>
+                                <td>
+                                    <span class="badge badge-<?php echo $priority_badge['class']; ?>">
+                                        <?php echo $priority_badge['text']; ?>
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge badge-<?php echo $status_badge['class']; ?>">
+                                        <?php echo $status_badge['text']; ?>
+                                    </span>
+                                </td>
+                                <td>
+                                    <strong><?php echo esc_html($ticket->company_name ?: $ticket->store_name); ?></strong>
+                                    <?php if (!empty($ticket->city)): ?>
+                                        <br><small style="color: #666;"><?php echo esc_html($ticket->city); ?></small>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <?php echo $contact_icon; ?>
+                                    <a href="mailto:<?php echo esc_attr($ticket->handler_email); ?>" style="text-decoration: none;">
+                                        <?php echo esc_html($ticket->handler_email); ?>
+                                    </a>
+                                    <?php if (!empty($ticket->handler_phone)): ?>
+                                        <br>
+                                        <a href="tel:<?php echo esc_attr($ticket->handler_phone); ?>" style="text-decoration: none;">
+                                            📞 <?php echo esc_html($ticket->handler_phone); ?>
+                                        </a>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <div style="max-width: 300px;">
+                                        <div title="<?php echo esc_attr($ticket->description); ?>">
+                                            <?php echo esc_html($description_short); ?>
+                                        </div>
+                                        <?php if (!empty($ticket->page_url)): ?>
+                                            <small style="color: #666;">
+                                                🌐 <a href="<?php echo esc_url($ticket->page_url); ?>" target="_blank">Seite</a>
+                                            </small>
+                                        <?php endif; ?>
+                                    </div>
+                                </td>
+                                <td><?php echo $created_time; ?></td>
+                                <td>
+                                    <?php if ($ticket->status === 'new'): ?>
+                                        <!-- Mark as In Progress -->
+                                        <form method="post" action="<?php echo admin_url('admin-post.php'); ?>" style="display: inline-block;">
+                                            <?php wp_nonce_field('ppv_update_ticket_status', 'ppv_ticket_status_nonce'); ?>
+                                            <input type="hidden" name="action" value="ppv_update_ticket_status">
+                                            <input type="hidden" name="ticket_id" value="<?php echo intval($ticket->id); ?>">
+                                            <input type="hidden" name="new_status" value="in_progress">
+                                            <button type="submit" class="button button-small" style="background: #ffb900; color: #fff; border: none;">
+                                                🔄 Bearbeiten
+                                            </button>
+                                        </form>
+                                    <?php endif; ?>
+
+                                    <?php if ($ticket->status !== 'resolved'): ?>
+                                        <!-- Mark as Resolved -->
+                                        <form method="post" action="<?php echo admin_url('admin-post.php'); ?>" style="display: inline-block;">
+                                            <?php wp_nonce_field('ppv_update_ticket_status', 'ppv_ticket_status_nonce'); ?>
+                                            <input type="hidden" name="action" value="ppv_update_ticket_status">
+                                            <input type="hidden" name="ticket_id" value="<?php echo intval($ticket->id); ?>">
+                                            <input type="hidden" name="new_status" value="resolved">
+                                            <button type="submit" class="button button-primary button-small" onclick="return confirm('Ticket als erledigt markieren?');">
+                                                ✅ Erledigt
+                                            </button>
+                                        </form>
+                                    <?php endif; ?>
+
+                                    <!-- Email Handler -->
+                                    <a href="mailto:<?php echo esc_attr($ticket->handler_email); ?>?subject=Support%20Ticket%20%23<?php echo intval($ticket->id); ?>"
+                                       class="button button-small">
+                                        📧 Email
+                                    </a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
+        </div>
+
+        <style>
+            .badge {
+                display: inline-block;
+                padding: 4px 8px;
+                border-radius: 4px;
+                font-size: 11px;
+                font-weight: bold;
+                white-space: nowrap;
+            }
+            .badge-success {
+                background: #d4edda;
+                color: #155724;
+            }
+            .badge-info {
+                background: #d1ecf1;
+                color: #0c5460;
+            }
+            .badge-warning {
+                background: #fff3cd;
+                color: #856404;
+            }
+            .badge-error {
+                background: #f8d7da;
+                color: #721c24;
+            }
+        </style>
+        <?php
+    }
+
+    // ============================================================
+    // 🔄 UPDATE TICKET STATUS
+    // ============================================================
+    public static function handle_update_ticket_status() {
+        if (!current_user_can('manage_options')) {
+            wp_die('Keine Berechtigung');
+        }
+
+        check_admin_referer('ppv_update_ticket_status', 'ppv_ticket_status_nonce');
+
+        global $wpdb;
+
+        $ticket_id = intval($_POST['ticket_id']);
+        $new_status = sanitize_text_field($_POST['new_status']);
+
+        // Validate status
+        if (!in_array($new_status, ['new', 'in_progress', 'resolved'])) {
+            wp_die('Ungültiger Status');
+        }
+
+        // Update ticket status
+        $update_data = ['status' => $new_status];
+
+        // If resolving, set resolved_at timestamp
+        if ($new_status === 'resolved') {
+            $update_data['resolved_at'] = current_time('mysql');
+        }
+
+        $wpdb->update(
+            "{$wpdb->prefix}ppv_support_tickets",
+            $update_data,
+            ['id' => $ticket_id],
+            $new_status === 'resolved' ? ['%s', '%s'] : ['%s'],
+            ['%d']
+        );
+
+        error_log("✅ [PPV_Support] Ticket #{$ticket_id} status updated to {$new_status}");
+
+        wp_redirect(admin_url('admin.php?page=punktepass-support-tickets&success=status_updated'));
         exit;
     }
 }
