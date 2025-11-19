@@ -366,6 +366,9 @@ class PPV_QR {
             $store_id = intval($_SESSION['ppv_store_id']);
         }
 
+        // 🐛 DEBUG: Log store_id
+        error_log("🔍 [PPV_QR] Store ID check: store_id=" . $store_id);
+
         // Fetch subscription info from database
         if ($store_id > 0) {
             $store_data = $wpdb->get_row($wpdb->prepare(
@@ -373,7 +376,9 @@ class PPV_QR {
                 $store_id
             ));
 
+            error_log("🔍 [PPV_QR] Store data query result: " . ($store_data ? 'FOUND' : 'NOT FOUND'));
             if ($store_data) {
+                error_log("🔍 [PPV_QR] Store data: " . json_encode($store_data));
                 $subscription_status = $store_data->subscription_status ?? 'trial';
                 $renewal_requested = !empty($store_data->subscription_renewal_requested);
                 $now = current_time('timestamp');
