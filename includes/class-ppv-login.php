@@ -641,6 +641,13 @@ public static function render_landing_page($atts) {
             if (in_array('ppv_scanner', (array) $wp_user->roles)) {
                 error_log("✅ [PPV_Login] Scanner user match: ID={$wp_user->ID}");
 
+                // Check if scanner is disabled (user_status = 1)
+                $user_status = get_user_meta($wp_user->ID, 'user_status', true);
+                if ($user_status == 1) {
+                    error_log("❌ [PPV_Login] Scanner user is disabled: ID={$wp_user->ID}");
+                    wp_send_json_error(['message' => 'Ihr Konto wurde deaktiviert. Bitte kontaktieren Sie Ihren Administrator.']);
+                }
+
                 // Get linked store_id
                 $store_id = get_user_meta($wp_user->ID, 'ppv_scanner_store_id', true);
 
