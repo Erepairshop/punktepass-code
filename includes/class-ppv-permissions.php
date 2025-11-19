@@ -88,30 +88,46 @@ class PPV_Permissions {
      * @return bool|WP_Error True if handler, WP_Error otherwise
      */
     public static function check_handler() {
+        error_log("🔍 [PPV_Permissions] check_handler() called");
+
         $auth_check = self::check_authenticated();
         if (is_wp_error($auth_check)) {
+            error_log("❌ [PPV_Permissions] check_handler() FAILED: auth check failed");
             return $auth_check;
         }
 
         // Check if WordPress admin
         if (current_user_can('manage_options')) {
+            error_log("✅ [PPV_Permissions] check_handler() SUCCESS: WordPress admin");
             return true;
         }
 
         // Check user type from session
         $user_type = $_SESSION['ppv_user_type'] ?? '';
+        error_log("🔍 [PPV_Permissions] check_handler() user_type from SESSION: " . ($user_type ?: 'EMPTY'));
+
         $handler_types = ['store', 'handler', 'vendor', 'admin'];
 
         if (in_array($user_type, $handler_types)) {
+            error_log("✅ [PPV_Permissions] check_handler() SUCCESS: user_type={$user_type} is in handler_types");
             return true;
         }
 
         // Check user type from database (via token auth)
+        error_log("🔍 [PPV_Permissions] check_handler() checking database for user_type...");
         $user_data = self::get_authenticated_user_data();
-        if ($user_data && in_array($user_data['user_type'], $handler_types)) {
-            return true;
+
+        if ($user_data) {
+            error_log("🔍 [PPV_Permissions] check_handler() user_data found: user_type=" . ($user_data['user_type'] ?? 'NONE'));
+            if (in_array($user_data['user_type'], $handler_types)) {
+                error_log("✅ [PPV_Permissions] check_handler() SUCCESS: DB user_type={$user_data['user_type']} is in handler_types");
+                return true;
+            }
+        } else {
+            error_log("⚠️ [PPV_Permissions] check_handler() no user_data from database");
         }
 
+        error_log("❌ [PPV_Permissions] check_handler() FAILED: Nincs jogosultság");
         return new WP_Error(
             'forbidden',
             'Nincs jogosultság. Handler szerepkör szükséges.',
@@ -227,7 +243,7 @@ class PPV_Permissions {
              INNER JOIN {$prefix}ppv_tokens t ON t.user_id = u.id
              WHERE t.token = %s
              AND t.expires_at > NOW()
-             AND u.is_active = 1
+             AND u.active = 1
              LIMIT 1",
             $token
         ), ARRAY_A);
@@ -240,7 +256,7 @@ class PPV_Permissions {
         $user = $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM {$prefix}ppv_users
              WHERE login_token = %s
-             AND is_active = 1
+             AND active = 1
              LIMIT 1",
             $token
         ), ARRAY_A);
