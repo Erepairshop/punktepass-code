@@ -42,34 +42,6 @@ class PPV_Login {
 
         <!-- Login CSS - Fresh with cache-busting -->
         <link rel="stylesheet" href="<?php echo PPV_PLUGIN_URL; ?>assets/css/ppv-login-light.css?ver=<?php echo time(); ?>" type="text/css" media="all" id="ppv-login-main-css">
-
-        <!-- Force CSS Priority - Override Theme Styles -->
-        <style id="ppv-login-override">
-        /* Reset theme interference */
-        body.page-template-default,
-        body.page {
-            background: #0a0e27 !important;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            overflow-x: hidden !important;
-        }
-
-        /* Ensure login container is visible */
-        .ppv-landing-container {
-            display: block !important;
-            visibility: visible !important;
-            opacity: 1 !important;
-        }
-
-        /* Disable theme max-width constraints */
-        .ppv-landing-container,
-        .ppv-hero-section,
-        .ppv-login-section {
-            max-width: none !important;
-            width: 100% !important;
-        }
-        </style>
         <?php
     }
     
