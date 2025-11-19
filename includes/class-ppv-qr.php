@@ -510,7 +510,10 @@ class PPV_QR {
             $border_color = 'rgba(239, 68, 68, 0.3)';
         }
 
-        ?>
+        // ✅ Check if scanner user (don't show subscription info to scanners)
+        $is_scanner = class_exists('PPV_Permissions') && PPV_Permissions::is_scanner_user();
+
+        if (!$is_scanner): ?>
         <div class="ppv-trial-info-block" style="margin-bottom: 15px; padding: 12px 16px; background: <?php echo $info_color; ?>; border-radius: 10px; border: 2px solid <?php echo $border_color; ?>;">
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
                 <div style="display: flex; align-items: center; gap: 10px;">
@@ -622,6 +625,7 @@ class PPV_QR {
                 </div>
             </div>
         </div>
+        <?php endif; // End scanner check for subscription info ?>
 
         <div class="ppv-pos-center glass-section">
             <div id="ppv-offline-banner" style="display:none;background:#ffcc00;padding:8px;border-radius:6px;margin-bottom:10px;">
