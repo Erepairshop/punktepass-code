@@ -140,12 +140,15 @@ class PPV_Analytics {
       // Get language
       const lang = window.ppv_mypoints?.lang || 'de';
 
+      // ✅ NE küldjünk WordPress nonce-t!
+      // Same fix as My Points - session-based auth, no WordPress nonce needed
+      console.log('📡 [Analytics] NOT sending X-WP-Nonce (using session-based auth)');
+
       // Fetch trend data
       const trendRes = await fetch(
         `/wp-json/ppv/v1/analytics/trend?range=${this.range}`,
         {
           headers: {
-            'X-WP-Nonce': window.ppv_mypoints?.nonce || '',
             'X-PPV-Lang': lang,
           },
           credentials: 'include',
@@ -160,7 +163,6 @@ class PPV_Analytics {
         `/wp-json/ppv/v1/analytics/stores?range=${this.range}`,
         {
           headers: {
-            'X-WP-Nonce': window.ppv_mypoints?.nonce || '',
             'X-PPV-Lang': lang,
           },
           credentials: 'include',
@@ -175,7 +177,6 @@ class PPV_Analytics {
         '/wp-json/ppv/v1/analytics/summary',
         {
           headers: {
-            'X-WP-Nonce': window.ppv_mypoints?.nonce || '',
             'X-PPV-Lang': lang,
           },
           credentials: 'include',
