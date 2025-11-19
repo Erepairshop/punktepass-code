@@ -1006,5 +1006,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     handleScanEvent(event.detail);
   });
 
+  window.addEventListener("ppv-scan-error", (event) => {
+    handleScanEvent(event.detail);
+  });
+
   console.log("✅ Dashboard initialized");
 });

@@ -132,8 +132,8 @@ class BroadcastManager {
     }
 
     try {
-      window.dispatchEvent(new CustomEvent("ppv-scan-success", { detail: payload }));
-      console.log("🛰️ CustomEvent dispatched");
+      window.dispatchEvent(new CustomEvent(payload.type, { detail: payload }));
+      console.log("🛰️ CustomEvent dispatched:", payload.type);
     } catch (e) {
       console.warn("⚠️ CustomEvent failed:", e);
     }
