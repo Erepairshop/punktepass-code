@@ -91,7 +91,11 @@ class PPV_POS_SCAN {
             WHERE ip_address=%s AND created_at >= (NOW() - INTERVAL 1 MINUTE)
         ", $ip_address));
 
+        // DEBUG: Log rate limiting check
+        error_log("🔍 [RATE LIMIT CHECK] IP: {$ip_address} | Recent scans: {$recent_scans_from_ip}/100");
+
         if ($recent_scans_from_ip >= 100) {
+            error_log("🚫 [RATE LIMIT] IP {$ip_address} blocked - {$recent_scans_from_ip} scans in last minute");
             self::log_event($store_id, 'rate_limit', "🚫 Rate limit exceeded from IP {$ip_address}", 'blocked');
             return rest_ensure_response([
                 'success' => false,
@@ -100,6 +104,8 @@ class PPV_POS_SCAN {
                 'error_type' => 'rate_limit'
             ]);
         }
+
+        error_log("✅ [RATE LIMIT] IP {$ip_address} passed - continuing scan");
 
         /** 3) QR -> User ID extraction with security
          *    IMPORTANT: Only USER tokens allowed
@@ -302,7 +308,7 @@ class PPV_POS_SCAN {
         $formatted = [];
         foreach ($scans as $scan) {
             $time = date('H:i:s', strtotime($scan->created));
-            $user_display = !empty(trim($scan->name)) ? $scan->name : $scan->email;
+            $user_display = !empty($scan->name) && trim($scan->name) !== '' ? $scan->name : $scan->email;
             $status = "✅ +{$scan->points}";
 
             $formatted[] = [
