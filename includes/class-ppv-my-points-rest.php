@@ -19,8 +19,53 @@ class PPV_My_Points_REST {
         register_rest_route('ppv/v1', '/mypoints', [
             'methods' => 'GET',
             'callback' => [__CLASS__, 'rest_get_points'],
-            'permission_callback' => ['PPV_Permissions', 'check_authenticated'],
+            'permission_callback' => [__CLASS__, 'check_mypoints_permission'],  // ✅ SAJÁT PERMISSION CALLBACK, mint Belohnungen!
         ]);
+    }
+
+    /** 🔹 Permission Check - Session alapú, NEM WordPress nonce! */
+    public static function check_mypoints_permission($request) {
+        error_log("🔍 [PPV_MyPoints_REST::check_mypoints_permission] ========== START ==========");
+
+        // Start session
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+            error_log("🔍 [check_mypoints_permission] Session started");
+        }
+
+        // WordPress user check
+        if (is_user_logged_in()) {
+            $wp_user_id = get_current_user_id();
+            error_log("✅ [check_mypoints_permission] WordPress user logged in: {$wp_user_id}");
+            return true;
+        }
+
+        // Session user check (Google/Facebook/TikTok login)
+        if (!empty($_SESSION['ppv_user_id'])) {
+            $session_user_id = intval($_SESSION['ppv_user_id']);
+            error_log("✅ [check_mypoints_permission] Session user found: {$session_user_id}");
+            return true;
+        }
+
+        // Try to restore from cookie token
+        if (class_exists('PPV_SessionBridge')) {
+            error_log("🔄 [check_mypoints_permission] No session user - trying PPV_SessionBridge::restore_from_token()");
+            PPV_SessionBridge::restore_from_token();
+
+            if (!empty($_SESSION['ppv_user_id'])) {
+                $restored_user_id = intval($_SESSION['ppv_user_id']);
+                error_log("✅ [check_mypoints_permission] Session restored from token: {$restored_user_id}");
+                return true;
+            } else {
+                error_log("❌ [check_mypoints_permission] Session restore failed - still no ppv_user_id");
+            }
+        }
+
+        error_log("❌ [check_mypoints_permission] UNAUTHORIZED - No user found");
+        error_log("    - WP user: " . (is_user_logged_in() ? get_current_user_id() : 'NOT LOGGED IN'));
+        error_log("    - SESSION ppv_user_id: " . ($_SESSION['ppv_user_id'] ?? 'NOT SET'));
+        error_log("    - COOKIE ppv_user_token: " . (isset($_COOKIE['ppv_user_token']) ? 'EXISTS' : 'NOT SET'));
+        return new WP_Error('unauthorized', 'Nicht angemeldet', ['status' => 401]);
     }
 
     /** 🔹 Adatok visszaadása JSON-ban */
