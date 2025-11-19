@@ -77,7 +77,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // ✅ Service Worker & Install Prompt
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/service-worker.js').then(reg => {
+  navigator.serviceWorker.register('/sw.js').then(reg => {
     console.log('🟢 PunktePass SW ready:', reg.scope);
   }).catch(err => console.error('❌ SW Error:', err));
 }

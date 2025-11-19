@@ -38,7 +38,7 @@ class PPV_PWA {
         <script>
         // 📱 Service Worker
         if ('serviceWorker' in navigator) {
-          navigator.serviceWorker.register('<?php echo esc_url(home_url('/service-worker.js')); ?>')
+          navigator.serviceWorker.register('<?php echo esc_url(home_url('/sw.js')); ?>')
             .then(reg => console.log('✅ PWA aktiv:', reg.scope))
             .catch(err => console.error('❌ SW Fehler:', err));
         }
