@@ -240,7 +240,8 @@ $core_modules = [
      'includes/class-ppv-rewards-management.php',
      'includes/class-ppv-invoices.php' ,
      'includes/class-ppv-receipts.php' ,
-     'includes/class-ppv-expense-receipt.php' , 
+     'includes/class-ppv-expense-receipt.php' ,
+     'includes/admin/class-ppv-admin-handlers.php',
 
 
 ];

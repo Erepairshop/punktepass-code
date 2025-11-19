@@ -1561,6 +1561,77 @@ document.addEventListener("DOMContentLoaded", function () {
   input.focus();
 
   console.log(L.app_initialized || "✅ App fully initialized!");
+
+  // ============================================================
+  // 📧 RENEWAL REQUEST MODAL
+  // ============================================================
+  const renewalBtn = document.getElementById('ppv-request-renewal-btn');
+  const renewalModal = document.getElementById('ppv-renewal-modal');
+  const renewalSubmit = document.getElementById('ppv-renewal-submit');
+  const renewalCancel = document.getElementById('ppv-renewal-cancel');
+  const renewalPhone = document.getElementById('ppv-renewal-phone');
+  const renewalError = document.getElementById('ppv-renewal-error');
+
+  if (renewalBtn && renewalModal) {
+    renewalBtn.addEventListener('click', () => {
+      renewalModal.style.display = 'flex';
+      renewalPhone.value = '';
+      renewalError.style.display = 'none';
+      renewalPhone.focus();
+    });
+
+    renewalCancel.addEventListener('click', () => {
+      renewalModal.style.display = 'none';
+    });
+
+    renewalModal.addEventListener('click', (e) => {
+      if (e.target === renewalModal) {
+        renewalModal.style.display = 'none';
+      }
+    });
+
+    renewalSubmit.addEventListener('click', async () => {
+      const phone = renewalPhone.value.trim();
+
+      if (!phone) {
+        renewalError.textContent = L.phone_required || 'Telefonnummer ist erforderlich';
+        renewalError.style.display = 'block';
+        return;
+      }
+
+      renewalSubmit.disabled = true;
+      renewalSubmit.textContent = L.sending || 'Wird gesendet...';
+
+      try {
+        const response = await fetch('/wp-admin/admin-ajax.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            action: 'ppv_request_subscription_renewal',
+            phone: phone
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          renewalModal.style.display = 'none';
+          location.reload(); // Reload to show "in progress" message
+        } else {
+          renewalError.textContent = data.data?.message || (L.error_occurred || 'Ein Fehler ist aufgetreten');
+          renewalError.style.display = 'block';
+          renewalSubmit.disabled = false;
+          renewalSubmit.textContent = '✅ ' + (L.send_request || 'Anfrage senden');
+        }
+      } catch (err) {
+        console.error('Renewal request error:', err);
+        renewalError.textContent = L.error_occurred || 'Ein Fehler ist aufgetreten';
+        renewalError.style.display = 'block';
+        renewalSubmit.disabled = false;
+        renewalSubmit.textContent = '✅ ' + (L.send_request || 'Anfrage senden');
+      }
+    });
+  }
 });
 
 console.log(L.app_complete || "✅ COMPLETE - Összes kód betöltve!");

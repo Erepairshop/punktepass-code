@@ -158,7 +158,7 @@ class PPV_Signup {
                 wp_redirect(home_url('/user_dashboard'));
                 exit;
             } elseif ($user_type === 'vendor') {
-                wp_redirect(home_url('/haendler'));
+                wp_redirect(home_url('/qr-center'));
                 exit;
             }
         }
@@ -549,14 +549,15 @@ class PPV_Signup {
                 [
                     'user_id' => $user_id,
                     'email' => $email,
-                    'store_name' => 'Mein Geschäft',
+                    'name' => 'Mein Geschäft',
                     'pos_token' => $pos_token,
                     'trial_ends_at' => $trial_ends_at,
+                    'subscription_status' => 'trial',
                     'active' => 1,
                     'created_at' => current_time('mysql'),
                     'updated_at' => current_time('mysql')
                 ],
-                ['%d', '%s', '%s', '%s', '%s', '%d', '%s', '%s']
+                ['%d', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s']
             );
 
             if ($store_result !== false) {
@@ -605,7 +606,7 @@ class PPV_Signup {
         setcookie('ppv_user_token', $token, time() + (86400 * 180), '/', $domain, true, true);
 
         // Determine redirect
-        $redirect_url = $user_type === 'vendor' ? home_url('/haendler') : home_url('/user_dashboard');
+        $redirect_url = $user_type === 'vendor' ? home_url('/qr-center') : home_url('/user_dashboard');
 
         error_log("========================================");
         error_log("✅ [PPV_Signup] SUCCESS - User #{$user_id}: {$email} ({$user_type})");
@@ -713,14 +714,15 @@ class PPV_Signup {
                     [
                         'user_id' => $user_id,
                         'email' => $email,
-                        'store_name' => trim($first_name . ' ' . $last_name) ?: 'Mein Geschäft',
+                        'name' => trim($first_name . ' ' . $last_name) ?: 'Mein Geschäft',
                         'pos_token' => $pos_token,
                         'trial_ends_at' => $trial_ends_at,
+                        'subscription_status' => 'trial',
                         'active' => 1,
                         'created_at' => current_time('mysql'),
                         'updated_at' => current_time('mysql')
                     ],
-                    ['%d', '%s', '%s', '%s', '%s', '%d', '%s', '%s']
+                    ['%d', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s']
                 );
 
                 if ($store_result !== false) {
@@ -782,7 +784,7 @@ class PPV_Signup {
         setcookie('ppv_user_token', $token, time() + (86400 * 180), '/', $domain, true, true);
 
         // Determine redirect
-        $redirect_url = $user->user_type === 'vendor' ? home_url('/haendler') : home_url('/user_dashboard');
+        $redirect_url = $user->user_type === 'vendor' ? home_url('/qr-center') : home_url('/user_dashboard');
 
         error_log("✅ [PPV_Signup] Google signup success: #{$user->id} ({$user->user_type})");
 
@@ -828,8 +830,91 @@ class PPV_Signup {
 
         return $payload;
     }
+
+    /** ============================================================
+     * 🔹 AJAX Subscription Renewal Request
+     * ============================================================ */
+    public static function ajax_request_subscription_renewal() {
+        global $wpdb;
+
+        // Check if user is logged in
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+
+        if (empty($_SESSION['ppv_user_id']) || empty($_SESSION['ppv_store_id'])) {
+            wp_send_json_error(['message' => 'Nicht eingeloggt']);
+            return;
+        }
+
+        $user_id = intval($_SESSION['ppv_user_id']);
+        $store_id = intval($_SESSION['ppv_store_id']);
+        $phone = sanitize_text_field($_POST['phone'] ?? '');
+
+        if (empty($phone)) {
+            wp_send_json_error(['message' => 'Telefonnummer ist erforderlich']);
+            return;
+        }
+
+        // Get store data
+        $store = $wpdb->get_row($wpdb->prepare(
+            "SELECT email, name, company_name FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
+            $store_id
+        ));
+
+        if (!$store) {
+            wp_send_json_error(['message' => 'Store nicht gefunden']);
+            return;
+        }
+
+        // Update store with renewal request
+        $wpdb->update(
+            "{$wpdb->prefix}ppv_stores",
+            [
+                'subscription_renewal_requested' => current_time('mysql'),
+                'renewal_phone' => $phone
+            ],
+            ['id' => $store_id],
+            ['%s', '%s'],
+            ['%d']
+        );
+
+        // Send email to admin
+        $to = 'info@punktepass.de';
+        $subject = '📧 Neue Abo-Verlängerungsanfrage - ' . ($store->company_name ?: $store->name);
+
+        $message = "Eine neue Abo-Verlängerungsanfrage ist eingegangen:\n\n";
+        $message .= "Store ID: {$store_id}\n";
+        $message .= "Firma: " . ($store->company_name ?: $store->name) . "\n";
+        $message .= "E-Mail: {$store->email}\n";
+        $message .= "Telefon: {$phone}\n";
+        $message .= "Zeitpunkt: " . current_time('Y-m-d H:i:s') . "\n\n";
+        $message .= "Bitte kontaktieren Sie den Handler schnellstmöglich.\n";
+
+        $headers = [
+            'From: PunktePass System <noreply@punktepass.de>',
+            'Reply-To: ' . $store->email,
+            'Content-Type: text/plain; charset=UTF-8'
+        ];
+
+        $mail_sent = wp_mail($to, $subject, $message, $headers);
+
+        if (!$mail_sent) {
+            error_log("❌ [PPV_Renewal] Failed to send email to {$to} for store #{$store_id}");
+        } else {
+            error_log("✅ [PPV_Renewal] Email sent to {$to} for store #{$store_id}");
+        }
+
+        error_log("✅ [PPV_Renewal] Request submitted - Store #{$store_id} | Phone: {$phone}");
+
+        wp_send_json_success(['message' => 'Anfrage erfolgreich gesendet']);
+    }
 }
 
 // ⚠️ CRITICAL: Initialize the class!
 add_action('init', ['PPV_Signup', 'init'], 1);
+
+// Register AJAX handlers for renewal request
+add_action('wp_ajax_ppv_request_subscription_renewal', ['PPV_Signup', 'ajax_request_subscription_renewal']);
+add_action('wp_ajax_nopriv_ppv_request_subscription_renewal', ['PPV_Signup', 'ajax_request_subscription_renewal']);
 PPV_Signup::hooks();

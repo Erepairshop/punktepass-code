@@ -351,7 +351,9 @@ class PPV_QR {
         // Get store trial info
         $store_id = 0;
         $trial_days_left = 0;
+        $subscription_days_left = 0;
         $subscription_status = 'unknown';
+        $renewal_requested = false;
 
         // Try to get store ID from session
         if (session_status() === PHP_SESSION_NONE) {
@@ -364,21 +366,30 @@ class PPV_QR {
             $store_id = intval($_SESSION['ppv_store_id']);
         }
 
-        // Fetch trial_ends_at from database
+        // Fetch subscription info from database
         if ($store_id > 0) {
             $store_data = $wpdb->get_row($wpdb->prepare(
-                "SELECT trial_ends_at, subscription_status FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
+                "SELECT trial_ends_at, subscription_status, subscription_expires_at, subscription_renewal_requested FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
                 $store_id
             ));
 
             if ($store_data) {
                 $subscription_status = $store_data->subscription_status ?? 'trial';
+                $renewal_requested = !empty($store_data->subscription_renewal_requested);
+                $now = current_time('timestamp');
 
+                // Calculate trial days left
                 if (!empty($store_data->trial_ends_at)) {
                     $trial_end = strtotime($store_data->trial_ends_at);
-                    $now = current_time('timestamp');
                     $diff_seconds = $trial_end - $now;
-                    $trial_days_left = max(0, ceil($diff_seconds / 86400)); // Convert to days
+                    $trial_days_left = max(0, ceil($diff_seconds / 86400));
+                }
+
+                // Calculate subscription days left (for active subscriptions)
+                if (!empty($store_data->subscription_expires_at)) {
+                    $sub_end = strtotime($store_data->subscription_expires_at);
+                    $diff_seconds = $sub_end - $now;
+                    $subscription_days_left = max(0, ceil($diff_seconds / 86400));
                 }
             }
         }
@@ -388,13 +399,39 @@ class PPV_QR {
         $info_icon = 'ℹ️';
         $info_color = 'rgba(0, 230, 255, 0.1)';
         $border_color = 'rgba(0, 230, 255, 0.3)';
+        $show_description = false;
 
         if ($subscription_status === 'active') {
-            $info_message = self::t('subscription_active', 'Aktives Abo - Unbegrenzt');
-            $info_class = 'success';
-            $info_icon = '✅';
-            $info_color = 'rgba(0, 230, 118, 0.1)';
-            $border_color = 'rgba(0, 230, 118, 0.3)';
+            // Active subscription with expiry date
+            if ($subscription_days_left > 0) {
+                if ($subscription_days_left > 30) {
+                    $info_message = sprintf(self::t('subscription_active_days', 'Aktives Abo - Noch %d Tage'), $subscription_days_left);
+                    $info_class = 'success';
+                    $info_icon = '✅';
+                    $info_color = 'rgba(0, 230, 118, 0.1)';
+                    $border_color = 'rgba(0, 230, 118, 0.3)';
+                } elseif ($subscription_days_left > 7) {
+                    $info_message = sprintf(self::t('subscription_expiring_soon', 'Abo läuft in %d Tagen ab'), $subscription_days_left);
+                    $info_class = 'info';
+                    $info_icon = '📅';
+                    $info_color = 'rgba(0, 230, 255, 0.1)';
+                    $border_color = 'rgba(0, 230, 255, 0.3)';
+                } else {
+                    $info_message = sprintf(self::t('subscription_expiring_warning', 'Abo endet bald - Nur noch %d Tage!'), $subscription_days_left);
+                    $info_class = 'warning';
+                    $info_icon = '⚠️';
+                    $info_color = 'rgba(255, 171, 0, 0.1)';
+                    $border_color = 'rgba(255, 171, 0, 0.3)';
+                }
+                $show_description = true;
+            } else {
+                // Active but expired
+                $info_message = self::t('subscription_expired', 'Abo abgelaufen');
+                $info_class = 'error';
+                $info_icon = '❌';
+                $info_color = 'rgba(239, 68, 68, 0.1)';
+                $border_color = 'rgba(239, 68, 68, 0.3)';
+            }
         } elseif ($trial_days_left > 7) {
             $info_message = sprintf(self::t('trial_days_left', 'Noch %d Tage Testversion'), $trial_days_left);
             $info_icon = '📅';
@@ -421,9 +458,17 @@ class PPV_QR {
                         <div style="font-weight: bold; font-size: 15px; margin-bottom: 2px;">
                             <?php echo $info_message; ?>
                         </div>
-                        <?php if ($subscription_status === 'trial' && $trial_days_left > 0): ?>
+                        <?php if ($show_description && $subscription_status === 'active'): ?>
+                            <div style="font-size: 12px; opacity: 0.7;">
+                                <?php echo self::t('subscription_info_desc', 'Aktive Premium-Mitgliedschaft'); ?>
+                            </div>
+                        <?php elseif ($subscription_status === 'trial' && $trial_days_left > 0): ?>
                             <div style="font-size: 12px; opacity: 0.7;">
                                 <?php echo self::t('trial_info_desc', 'Registriert mit 30 Tage Probezeit'); ?>
+                            </div>
+                        <?php elseif ($renewal_requested && $subscription_status === 'trial' && $trial_days_left === 0): ?>
+                            <div style="font-size: 12px; opacity: 0.9; color: #00e6ff;">
+                                <?php echo self::t('renewal_in_progress', 'Aboverlängerung in Bearbeitung - Wir kontaktieren Sie bald per E-Mail oder Telefon'); ?>
                             </div>
                         <?php endif; ?>
                     </div>
@@ -432,9 +477,33 @@ class PPV_QR {
                     <a href="/pricing" class="ppv-btn-outline" style="padding: 6px 12px; font-size: 13px; white-space: nowrap; text-decoration: none;">
                         <?php echo self::t('upgrade_now', 'Jetzt upgraden'); ?>
                     </a>
+                <?php elseif ($subscription_status === 'trial' && $trial_days_left === 0 && !$renewal_requested): ?>
+                    <button id="ppv-request-renewal-btn" class="ppv-btn-outline" style="padding: 6px 12px; font-size: 13px; white-space: nowrap;">
+                        📧 <?php echo self::t('request_renewal', 'Abo verlängern'); ?>
+                    </button>
                 <?php endif; ?>
             </div>
         </div>
+
+        <?php if ($subscription_status === 'trial' && $trial_days_left === 0 && !$renewal_requested): ?>
+        <!-- Renewal Request Modal -->
+        <div id="ppv-renewal-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; align-items: center; justify-content: center;">
+            <div style="background: #1a1a2e; padding: 30px; border-radius: 15px; max-width: 400px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
+                <h3 style="margin-top: 0; color: #fff;">📧 <?php echo self::t('renewal_request_title', 'Abo Verlängerung anfragen'); ?></h3>
+                <p style="color: #ccc; font-size: 14px;"><?php echo self::t('renewal_request_desc', 'Bitte geben Sie Ihre Telefonnummer ein. Wir kontaktieren Sie schnellstmöglich.'); ?></p>
+                <input type="tel" id="ppv-renewal-phone" class="ppv-input" placeholder="<?php echo self::t('phone_placeholder', 'Telefonnummer'); ?>" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #0f0f1e; color: #fff; margin-bottom: 15px;">
+                <div id="ppv-renewal-error" style="display: none; color: #ff5252; font-size: 13px; margin-bottom: 10px;"></div>
+                <div style="display: flex; gap: 10px;">
+                    <button id="ppv-renewal-submit" class="ppv-btn" style="flex: 1; padding: 12px;">
+                        ✅ <?php echo self::t('send_request', 'Anfrage senden'); ?>
+                    </button>
+                    <button id="ppv-renewal-cancel" class="ppv-btn-outline" style="flex: 1; padding: 12px;">
+                        ❌ <?php echo self::t('cancel', 'Abbrechen'); ?>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
 
         <div class="ppv-pos-center glass-section">
             <div id="ppv-offline-banner" style="display:none;background:#ffcc00;padding:8px;border-radius:6px;margin-bottom:10px;">
