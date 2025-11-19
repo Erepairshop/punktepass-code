@@ -442,10 +442,29 @@ public static function render_landing_page($atts) {
         <!-- Service Worker Registration (Login Page) -->
         <script>
         if ('serviceWorker' in navigator) {
-          window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/sw.js')
-              .then(reg => console.log('✅ [Login] SW registered:', reg.scope))
-              .catch(err => console.error('❌ [Login] SW error:', err));
+          window.addEventListener('load', async () => {
+            try {
+              // 1. UNREGISTER all old SWs
+              const regs = await navigator.serviceWorker.getRegistrations();
+              for (const reg of regs) {
+                await reg.unregister();
+              }
+              console.log('🧹 [Login] Old SW unregistered');
+
+              // 2. DELETE all caches
+              const cacheNames = await caches.keys();
+              for (const name of cacheNames) {
+                await caches.delete(name);
+              }
+              console.log('🧹 [Login] All caches cleared');
+
+              // 3. REGISTER fresh SW
+              const reg = await navigator.serviceWorker.register('/sw.js?' + Date.now());
+              console.log('✅ [Login] Fresh SW registered:', reg.scope);
+
+            } catch (err) {
+              console.error('❌ [Login] SW error:', err);
+            }
           });
         }
         </script>
