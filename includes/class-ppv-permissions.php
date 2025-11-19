@@ -467,12 +467,23 @@ class PPV_Permissions {
      * @return bool True if scanner user, false otherwise
      */
     public static function is_scanner_user() {
-        if (!is_user_logged_in()) {
-            return false;
+        // Check session first
+        if (!empty($_SESSION['ppv_user_type']) && $_SESSION['ppv_user_type'] === 'scanner') {
+            return true;
         }
 
-        $user = wp_get_current_user();
-        return in_array('ppv_scanner', (array) $user->roles);
+        // Check PPV users database
+        if (!empty($_SESSION['ppv_user_id'])) {
+            global $wpdb;
+            $user = $wpdb->get_row($wpdb->prepare(
+                "SELECT user_type FROM {$wpdb->prefix}ppv_users WHERE id = %d LIMIT 1",
+                $_SESSION['ppv_user_id']
+            ));
+
+            return $user && $user->user_type === 'scanner';
+        }
+
+        return false;
     }
 
     /**
@@ -486,9 +497,22 @@ class PPV_Permissions {
             return false;
         }
 
-        $user_id = get_current_user_id();
-        $store_id = get_user_meta($user_id, 'ppv_scanner_store_id', true);
+        // Check session first
+        if (!empty($_SESSION['ppv_store_id'])) {
+            return intval($_SESSION['ppv_store_id']);
+        }
 
-        return $store_id ? intval($store_id) : false;
+        // Get from database
+        if (!empty($_SESSION['ppv_user_id'])) {
+            global $wpdb;
+            $scanner = $wpdb->get_row($wpdb->prepare(
+                "SELECT vendor_store_id FROM {$wpdb->prefix}ppv_users WHERE id = %d AND user_type = 'scanner' LIMIT 1",
+                $_SESSION['ppv_user_id']
+            ));
+
+            return $scanner && $scanner->vendor_store_id ? intval($scanner->vendor_store_id) : false;
+        }
+
+        return false;
     }
 }

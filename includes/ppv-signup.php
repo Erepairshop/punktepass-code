@@ -1136,29 +1136,55 @@ class PPV_Signup {
             return;
         }
 
-        // Check if email already exists
-        if (email_exists($email)) {
+        // Check if email already exists in PPV users
+        $existing = $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM {$wpdb->prefix}ppv_users WHERE email = %s LIMIT 1",
+            $email
+        ));
+
+        if ($existing) {
             wp_send_json_error(['message' => 'Diese E-Mail ist bereits registriert']);
             return;
         }
 
-        // Create WordPress user
-        $user_id = wp_create_user($email, $password, $email);
+        // Generate unique QR token
+        do {
+            $qr_token = substr(md5(uniqid(mt_rand(), true)), 0, 8);
+            $check = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}ppv_users WHERE qr_token = %s LIMIT 1",
+                $qr_token
+            ));
+        } while ($check);
 
-        if (is_wp_error($user_id)) {
-            error_log("❌ [PPV_Scanner] Failed to create user: " . $user_id->get_error_message());
-            wp_send_json_error(['message' => 'Fehler beim Erstellen des Benutzers: ' . $user_id->get_error_message()]);
+        // Hash password
+        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+
+        // Insert scanner user into PPV users table
+        $insert_result = $wpdb->insert(
+            "{$wpdb->prefix}ppv_users",
+            [
+                'email' => $email,
+                'password' => $hashed_password,
+                'first_name' => '',
+                'last_name' => '',
+                'user_type' => 'scanner',
+                'vendor_store_id' => $handler_store_id,
+                'qr_token' => $qr_token,
+                'active' => 1,
+                'created_at' => current_time('mysql')
+            ],
+            ['%s', '%s', '%s', '%s', '%s', '%d', '%s', '%d', '%s']
+        );
+
+        if ($insert_result === false) {
+            error_log("❌ [PPV_Scanner] Failed to create scanner user: " . $wpdb->last_error);
+            wp_send_json_error(['message' => 'Fehler beim Erstellen des Benutzers']);
             return;
         }
 
-        // Get user object and set role
-        $user = new WP_User($user_id);
-        $user->set_role('ppv_scanner');
+        $user_id = $wpdb->insert_id;
 
-        // Link scanner to handler's store
-        update_user_meta($user_id, 'ppv_scanner_store_id', $handler_store_id);
-
-        error_log("✅ [PPV_Scanner] Scanner user created: ID={$user_id}, Email={$email}, Store={$handler_store_id}");
+        error_log("✅ [PPV_Scanner] Scanner user created: ID={$user_id}, Email={$email}, Store={$handler_store_id}, QR={$qr_token}");
 
         wp_send_json_success([
             'message' => '✅ Scanner Benutzer erfolgreich erstellt!',
@@ -1202,23 +1228,45 @@ class PPV_Signup {
             ));
         }
 
-        $scanner_store_id = get_user_meta($scanner_user_id, 'ppv_scanner_store_id', true);
+        // Get scanner user from PPV users
+        $scanner_user = $wpdb->get_row($wpdb->prepare(
+            "SELECT id, email, vendor_store_id FROM {$wpdb->prefix}ppv_users
+             WHERE id = %d AND user_type = 'scanner' LIMIT 1",
+            $scanner_user_id
+        ));
 
-        if ($scanner_store_id != $handler_store_id) {
+        if (!$scanner_user) {
+            wp_send_json_error(['message' => 'Scanner Benutzer nicht gefunden']);
+            return;
+        }
+
+        if ($scanner_user->vendor_store_id != $handler_store_id) {
             wp_send_json_error(['message' => 'Keine Berechtigung für diesen Benutzer']);
             return;
         }
 
-        // Reset password
-        wp_set_password($new_password, $scanner_user_id);
+        // Reset password in PPV users table
+        $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
 
-        $user = get_userdata($scanner_user_id);
+        $update_result = $wpdb->update(
+            "{$wpdb->prefix}ppv_users",
+            ['password' => $hashed_password],
+            ['id' => $scanner_user_id],
+            ['%s'],
+            ['%d']
+        );
 
-        error_log("✅ [PPV_Scanner] Password reset for scanner: ID={$scanner_user_id}, Email={$user->user_email}");
+        if ($update_result === false) {
+            error_log("❌ [PPV_Scanner] Password reset failed: " . $wpdb->last_error);
+            wp_send_json_error(['message' => 'Fehler beim Zurücksetzen des Passworts']);
+            return;
+        }
+
+        error_log("✅ [PPV_Scanner] Password reset for scanner: ID={$scanner_user_id}, Email={$scanner_user->email}");
 
         wp_send_json_success([
             'message' => '✅ Passwort erfolgreich zurückgesetzt!',
-            'email' => $user->user_email
+            'email' => $scanner_user->email
         ]);
     }
 
@@ -1257,28 +1305,43 @@ class PPV_Signup {
             ));
         }
 
-        $scanner_store_id = get_user_meta($scanner_user_id, 'ppv_scanner_store_id', true);
+        // Get scanner user from PPV users
+        $scanner_user = $wpdb->get_row($wpdb->prepare(
+            "SELECT id, email, vendor_store_id FROM {$wpdb->prefix}ppv_users
+             WHERE id = %d AND user_type = 'scanner' LIMIT 1",
+            $scanner_user_id
+        ));
 
-        if ($scanner_store_id != $handler_store_id) {
+        if (!$scanner_user) {
+            wp_send_json_error(['message' => 'Scanner Benutzer nicht gefunden']);
+            return;
+        }
+
+        if ($scanner_user->vendor_store_id != $handler_store_id) {
             wp_send_json_error(['message' => 'Keine Berechtigung für diesen Benutzer']);
             return;
         }
 
-        // Update user status (WordPress: 0 = active, 1 = blocked)
-        $new_status = $action === 'disable' ? 1 : 0;
+        // Update active status (PPV users: 1 = active, 0 = disabled)
+        $new_status = $action === 'enable' ? 1 : 0;
 
-        $wpdb->update(
-            $wpdb->users,
-            ['user_status' => $new_status],
-            ['ID' => $scanner_user_id],
+        $update_result = $wpdb->update(
+            "{$wpdb->prefix}ppv_users",
+            ['active' => $new_status],
+            ['id' => $scanner_user_id],
             ['%d'],
             ['%d']
         );
 
-        $user = get_userdata($scanner_user_id);
+        if ($update_result === false) {
+            error_log("❌ [PPV_Scanner] Status toggle failed: " . $wpdb->last_error);
+            wp_send_json_error(['message' => 'Fehler beim Ändern des Status']);
+            return;
+        }
+
         $status_text = $action === 'disable' ? 'deaktiviert' : 'aktiviert';
 
-        error_log("✅ [PPV_Scanner] Scanner {$status_text}: ID={$scanner_user_id}, Email={$user->user_email}");
+        error_log("✅ [PPV_Scanner] Scanner {$status_text}: ID={$scanner_user_id}, Email={$scanner_user->email}");
 
         wp_send_json_success([
             'message' => "✅ Scanner erfolgreich {$status_text}!",

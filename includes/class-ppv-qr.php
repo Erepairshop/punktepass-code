@@ -808,19 +808,15 @@ class PPV_QR {
             ));
         }
 
-        // Get all scanner users for this store
+        // Get all scanner users for this store (from PPV users table)
         $scanners = [];
         if ($store_id) {
-            $user_ids = $wpdb->get_col($wpdb->prepare(
-                "SELECT user_id FROM {$wpdb->prefix}usermeta WHERE meta_key = 'ppv_scanner_store_id' AND meta_value = %d",
+            $scanners = $wpdb->get_results($wpdb->prepare(
+                "SELECT id, email, created_at, active FROM {$wpdb->prefix}ppv_users
+                 WHERE user_type = 'scanner' AND vendor_store_id = %d
+                 ORDER BY created_at DESC",
                 $store_id
             ));
-
-            if (!empty($user_ids)) {
-                $placeholders = implode(',', array_fill(0, count($user_ids), '%d'));
-                $query = "SELECT ID, user_email, user_registered, user_status FROM {$wpdb->users} WHERE ID IN ($placeholders)";
-                $scanners = $wpdb->get_results($wpdb->prepare($query, ...$user_ids));
-            }
         }
 
         ?>
@@ -840,14 +836,14 @@ class PPV_QR {
                 <div class="scanner-users-list">
                     <?php foreach ($scanners as $scanner): ?>
                         <?php
-                        $is_active = $scanner->user_status == 0; // WordPress: 0 = active, 1+ = blocked
-                        $created_date = date('Y-m-d H:i', strtotime($scanner->user_registered));
+                        $is_active = $scanner->active == 1; // PPV users: 1 = active, 0 = disabled
+                        $created_date = date('Y-m-d H:i', strtotime($scanner->created_at));
                         ?>
                         <div class="scanner-user-card glass-card" style="padding: 15px; margin-bottom: 15px; border-left: 4px solid <?php echo $is_active ? '#4caf50' : '#999'; ?>;">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
                                 <div>
                                     <div style="font-weight: bold; font-size: 16px; margin-bottom: 5px;">
-                                        📧 <?php echo esc_html($scanner->user_email); ?>
+                                        📧 <?php echo esc_html($scanner->email); ?>
                                     </div>
                                     <div style="font-size: 12px; color: #999;">
                                         <?php echo self::t('created_at', 'Létrehozva'); ?>: <?php echo $created_date; ?>
@@ -866,17 +862,17 @@ class PPV_QR {
                                 </div>
                                 <div style="display: flex; gap: 10px;">
                                     <!-- Password Reset -->
-                                    <button class="ppv-scanner-reset-pw ppv-btn-outline" data-user-id="<?php echo $scanner->ID; ?>" data-email="<?php echo esc_attr($scanner->user_email); ?>" style="padding: 8px 12px; font-size: 13px;">
+                                    <button class="ppv-scanner-reset-pw ppv-btn-outline" data-user-id="<?php echo $scanner->id; ?>" data-email="<?php echo esc_attr($scanner->email); ?>" style="padding: 8px 12px; font-size: 13px;">
                                         🔄 <?php echo self::t('reset_password', 'Jelszó Reset'); ?>
                                     </button>
 
                                     <!-- Toggle Active/Disable -->
                                     <?php if ($is_active): ?>
-                                        <button class="ppv-scanner-toggle ppv-btn-outline" data-user-id="<?php echo $scanner->ID; ?>" data-action="disable" style="padding: 8px 12px; font-size: 13px; background: #f44336; color: white; border: none;">
+                                        <button class="ppv-scanner-toggle ppv-btn-outline" data-user-id="<?php echo $scanner->id; ?>" data-action="disable" style="padding: 8px 12px; font-size: 13px; background: #f44336; color: white; border: none;">
                                             🚫 <?php echo self::t('disable', 'Letiltás'); ?>
                                         </button>
                                     <?php else: ?>
-                                        <button class="ppv-scanner-toggle ppv-btn" data-user-id="<?php echo $scanner->ID; ?>" data-action="enable" style="padding: 8px 12px; font-size: 13px;">
+                                        <button class="ppv-scanner-toggle ppv-btn" data-user-id="<?php echo $scanner->id; ?>" data-action="enable" style="padding: 8px 12px; font-size: 13px;">
                                             ✅ <?php echo self::t('enable', 'Engedélyezés'); ?>
                                         </button>
                                     <?php endif; ?>
