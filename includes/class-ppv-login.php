@@ -433,34 +433,27 @@ public static function render_landing_page($atts) {
         };
         </script>
 
-        <!-- Service Worker Registration (Login Page) -->
+        <!-- Service Worker Cache Clear (Login Page) -->
         <script>
-        if ('serviceWorker' in navigator) {
+        // ✅ CSAK cache törlés, NEM SW re-registration!
+        // Ha újra regisztráljuk a SW-t query paraméterrel, az conflict-ot okoz a dashboard SW-vel
+        // és page refresh-t triggerel a clients.claim() miatt
+        if ('caches' in window) {
           window.addEventListener('load', async () => {
             try {
-              // 1. UNREGISTER all old SWs
-              const regs = await navigator.serviceWorker.getRegistrations();
-              for (const reg of regs) {
-                await reg.unregister();
-              }
-              console.log('🧹 [Login] Old SW unregistered');
-
-              // 2. DELETE all caches
+              // DELETE all caches to ensure fresh content after login
               const cacheNames = await caches.keys();
               for (const name of cacheNames) {
                 await caches.delete(name);
               }
               console.log('🧹 [Login] All caches cleared');
-
-              // 3. REGISTER fresh SW
-              const reg = await navigator.serviceWorker.register('/sw.js?' + Date.now());
-              console.log('✅ [Login] Fresh SW registered:', reg.scope);
-
             } catch (err) {
-              console.error('❌ [Login] SW error:', err);
+              console.error('❌ [Login] Cache clear error:', err);
             }
           });
         }
+
+        // SW registration happens in class-ppv-pwa.php (global, no conflict)
         </script>
 
         <?php
