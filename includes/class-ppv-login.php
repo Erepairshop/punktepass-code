@@ -16,7 +16,7 @@ class PPV_Login {
     public static function hooks() {
         add_shortcode('ppv_login_form', [__CLASS__, 'render_landing_page']);
         add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
-        add_action('wp_head', [__CLASS__, 'inject_head_assets']);
+        add_action('wp_head', [__CLASS__, 'inject_head_assets'], 999); // ✅ Priority 999 = LAST, overrides theme CSS!
         add_action('wp_ajax_nopriv_ppv_login', [__CLASS__, 'ajax_login']);
         add_action('wp_ajax_nopriv_ppv_google_login', [__CLASS__, 'ajax_google_login']);
         add_action('wp_ajax_nopriv_ppv_facebook_login', [__CLASS__, 'ajax_facebook_login']);
@@ -41,7 +41,35 @@ class PPV_Login {
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 
         <!-- Login CSS - Fresh with cache-busting -->
-        <link rel="stylesheet" href="<?php echo PPV_PLUGIN_URL; ?>assets/css/ppv-login-light.css?ver=<?php echo time(); ?>" type="text/css" media="all">
+        <link rel="stylesheet" href="<?php echo PPV_PLUGIN_URL; ?>assets/css/ppv-login-light.css?ver=<?php echo time(); ?>" type="text/css" media="all" id="ppv-login-main-css">
+
+        <!-- Force CSS Priority - Override Theme Styles -->
+        <style id="ppv-login-override">
+        /* Reset theme interference */
+        body.page-template-default,
+        body.page {
+            background: #0a0e27 !important;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow-x: hidden !important;
+        }
+
+        /* Ensure login container is visible */
+        .ppv-landing-container {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+
+        /* Disable theme max-width constraints */
+        .ppv-landing-container,
+        .ppv-hero-section,
+        .ppv-login-section {
+            max-width: none !important;
+            width: 100% !important;
+        }
+        </style>
         <?php
     }
     
