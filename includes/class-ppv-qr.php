@@ -498,17 +498,17 @@ class PPV_QR {
                         <div style="font-weight: bold; font-size: 15px; margin-bottom: 2px;">
                             <?php echo $info_message; ?>
                         </div>
-                        <?php if ($show_description && $subscription_status === 'active'): ?>
+                        <?php if ($renewal_requested): ?>
+                            <div style="font-size: 12px; opacity: 0.9; color: #00e6ff;">
+                                <?php echo self::t('renewal_in_progress', 'Aboverlängerung in Bearbeitung - Wir kontaktieren Sie bald per E-Mail oder Telefon'); ?>
+                            </div>
+                        <?php elseif ($show_description && $subscription_status === 'active'): ?>
                             <div style="font-size: 12px; opacity: 0.7;">
                                 <?php echo self::t('subscription_info_desc', 'Aktive Premium-Mitgliedschaft'); ?>
                             </div>
                         <?php elseif ($subscription_status === 'trial' && $trial_days_left > 0): ?>
                             <div style="font-size: 12px; opacity: 0.7;">
                                 <?php echo self::t('trial_info_desc', 'Registriert mit 30 Tage Probezeit'); ?>
-                            </div>
-                        <?php elseif ($renewal_requested): ?>
-                            <div style="font-size: 12px; opacity: 0.9; color: #00e6ff;">
-                                <?php echo self::t('renewal_in_progress', 'Aboverlängerung in Bearbeitung - Wir kontaktieren Sie bald per E-Mail oder Telefon'); ?>
                             </div>
                         <?php endif; ?>
                     </div>
