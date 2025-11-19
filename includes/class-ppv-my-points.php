@@ -44,6 +44,10 @@ class PPV_My_Points {
      *  🔹 ENQUEUE SCRIPTS + INLINE STRINGS
      * ============================================================ */
     public static function enqueue_assets() {
+        error_log("🔍 [PPV_My_Points::enqueue_assets] ========== START ==========");
+        error_log("🔍 [PPV_My_Points] Current URL: " . ($_SERVER['REQUEST_URI'] ?? 'N/A'));
+        error_log("🔍 [PPV_My_Points] User Agent: " . ($_SERVER['HTTP_USER_AGENT'] ?? 'N/A'));
+
         // ✅ REMOVED shortcode check - load on all pages like user-dashboard
         // This fixes issues with Elementor/page builders where $post->post_content
         // doesn't contain the shortcode
@@ -51,15 +55,22 @@ class PPV_My_Points {
         // Start session
         if (session_status() === PHP_SESSION_NONE) {
             @session_start();
+            error_log("🔍 [PPV_My_Points] Session started");
+        } else {
+            error_log("🔍 [PPV_My_Points] Session already active");
         }
 
         // ✅ GET ACTIVE LANGUAGE (SAFE)
         $lang = sanitize_text_field($_GET['lang'] ?? '');
+        error_log("🔍 [PPV_My_Points] Lang from GET: " . ($lang ?: 'EMPTY'));
+
         if (!in_array($lang, ['de', 'hu', 'ro'], true)) {
             $lang = sanitize_text_field($_COOKIE['ppv_lang'] ?? '');
+            error_log("🔍 [PPV_My_Points] Lang from COOKIE: " . ($lang ?: 'EMPTY'));
         }
         if (!in_array($lang, ['de', 'hu', 'ro'], true)) {
             $lang = sanitize_text_field($_SESSION['ppv_lang'] ?? 'de');
+            error_log("🔍 [PPV_My_Points] Lang from SESSION: " . ($lang ?: 'de'));
         }
         if (!in_array($lang, ['de', 'hu', 'ro'], true)) {
             $lang = 'de';
@@ -103,9 +114,15 @@ class PPV_My_Points {
     'api_url' => rest_url('ppv/v1/mypoints'),  // ✅ CORRECT ENDPOINT!
     'lang'    => $lang,
 ];
+        error_log("🔍 [PPV_My_Points] Global data prepared:");
+        error_log("    - ajaxurl: " . $global_data['ajaxurl']);
+        error_log("    - api_url: " . $global_data['api_url']);
+        error_log("    - lang: " . $global_data['lang']);
+        error_log("    - nonce: " . substr($global_data['nonce'], 0, 10) . "...");
+
         wp_add_inline_script(
             'ppv-my-points',
-            'window.ppv_mypoints = ' . wp_json_encode($global_data) . ';',
+            'window.ppv_mypoints = ' . wp_json_encode($global_data) . '; console.log("🔍 [PHP→JS] window.ppv_mypoints set:", window.ppv_mypoints);',
             'before'
         );
 
@@ -113,14 +130,16 @@ class PPV_My_Points {
         // 🌍 INLINE: LANGUAGE STRINGS
         // ============================================================
         $strings = self::load_lang_file($lang);
-        
+        error_log("🔍 [PPV_My_Points] Language strings loaded: " . count($strings) . " keys");
+
         wp_add_inline_script(
             'ppv-my-points',
-            'window.ppv_lang = ' . wp_json_encode($strings) . ';',
+            'window.ppv_lang = ' . wp_json_encode($strings) . '; console.log("🔍 [PHP→JS] window.ppv_lang set:", Object.keys(window.ppv_lang || {}).length + " keys");',
             'before'
         );
 
         error_log("✅ [PPV_My_Points] Inline scripts added, lang={$lang}, strings=" . count($strings));
+        error_log("🔍 [PPV_My_Points::enqueue_assets] ========== END ==========");
     }
 
     /** ============================================================
