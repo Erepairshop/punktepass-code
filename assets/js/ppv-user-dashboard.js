@@ -333,23 +333,36 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   function handleScanEvent(data) {
-    if (!data?.type) return;
+    console.log("📡 [handleScanEvent] Received:", data);
+
+    if (!data?.type) {
+      console.warn("⚠️ [handleScanEvent] No type in data");
+      return;
+    }
 
     // Handle success event
     if (data.type === "ppv-scan-success") {
+      console.log("✅ [handleScanEvent] Success event - points:", data.points, "store:", data.store);
       const newPoints = boot.points + (data.points || 1);
       updateGlobalPoints(newPoints);
       boot.points = newPoints;
       if (window.ppvShowPointToast) {
         window.ppvShowPointToast("success", data.points || 1, data.store || "PunktePass");
+        console.log("✅ [handleScanEvent] Toast called");
+      } else {
+        console.warn("⚠️ [handleScanEvent] ppvShowPointToast not found");
       }
     }
 
     // Handle error event
     if (data.type === "ppv-scan-error") {
+      console.log("❌ [handleScanEvent] Error event - message:", data.message, "store:", data.store);
       if (window.ppvShowPointToast) {
         // Show error toast with store name and error message
         window.ppvShowPointToast("error", 0, data.store || "PunktePass", data.message || "Scan fehlgeschlagen");
+        console.log("❌ [handleScanEvent] Error toast called");
+      } else {
+        console.warn("⚠️ [handleScanEvent] ppvShowPointToast not found");
       }
     }
   }
@@ -888,50 +901,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   `;
 
   // ============================================================
-  // 🎫 LISTEN FOR SCAN EVENTS FROM OTHER TABS/WINDOWS
-  // ============================================================
-
-  const initScanEventListener = () => {
-    window.addEventListener('storage', (event) => {
-      if (event.key === 'ppv_scan_event' && event.newValue) {
-        try {
-          const data = JSON.parse(event.newValue);
-          console.log("📡 [STORAGE] Scan event received:", data);
-
-          if (data?.type === "ppv-scan-success") {
-            // ✅ UPDATE POINTS
-            boot.points = (boot.points || 0) + (data.points || 1);
-            updateGlobalPoints(boot.points);
-
-            // ✅ SHOW TOAST
-            if (window.ppvShowPointToast) {
-              window.ppvShowPointToast("success", data.points || 1, data.store || "PunktePass");
-              console.log("✅ [STORAGE] Toast shown");
-            }
-          }
-
-          if (data?.type === "ppv-scan-error") {
-            // ❌ SHOW ERROR TOAST
-            if (window.ppvShowPointToast) {
-              window.ppvShowPointToast("error", 0, data.store || "PunktePass", data.message || "Scan fehlgeschlagen");
-              console.log("❌ [STORAGE] Error toast shown");
-            }
-          }
-        } catch (e) {
-          console.warn("⚠️ [STORAGE] Parse error:", e);
-        }
-      }
-    });
-
-    console.log("✅ [Storage Listener] Initialized");
-  };
-
-  // ============================================================
   // INITIALIZATION
   // ============================================================
   initQRToggle();
   initPointSync();
-  initScanEventListener();
 
   const waitForStoreList = setInterval(() => {
     const el = document.getElementById("ppv-store-list");
@@ -985,30 +958,49 @@ document.addEventListener("DOMContentLoaded", async () => {
     }, type === "success" ? 6500 : 4500);
   };
 
+  // ============================================================
+  // 📡 BROADCAST EVENT LISTENERS
+  // ============================================================
+
+  // 1) BroadcastChannel (cross-tab communication)
   if (typeof BroadcastChannel !== 'undefined') {
     try {
       const bc = new BroadcastChannel("punktepass_scans");
-      bc.addEventListener("message", (event) => handleScanEvent(event.data));
+      bc.addEventListener("message", (event) => {
+        console.log("📡 [BroadcastChannel] Message received:", event.data);
+        handleScanEvent(event.data);
+      });
+      console.log("✅ [BroadcastChannel] Initialized");
     } catch (e) {
-      console.warn("⚠️ BroadcastChannel:", e);
+      console.warn("⚠️ [BroadcastChannel] Failed:", e);
     }
   }
 
+  // 2) LocalStorage (cross-tab fallback)
   window.addEventListener("storage", (event) => {
     if (event.key === "ppv_scan_event" && event.newValue) {
       try {
-        handleScanEvent(JSON.parse(event.newValue));
-      } catch (e) {}
+        const data = JSON.parse(event.newValue);
+        console.log("📦 [LocalStorage] Event received:", data);
+        handleScanEvent(data);
+      } catch (e) {
+        console.warn("⚠️ [LocalStorage] Parse error:", e);
+      }
     }
   });
+  console.log("✅ [LocalStorage Listener] Initialized");
 
+  // 3) CustomEvent (same-page communication)
   window.addEventListener("ppv-scan-success", (event) => {
+    console.log("🛰️ [CustomEvent] Success event:", event.detail);
     handleScanEvent(event.detail);
   });
 
   window.addEventListener("ppv-scan-error", (event) => {
+    console.log("🛰️ [CustomEvent] Error event:", event.detail);
     handleScanEvent(event.detail);
   });
+  console.log("✅ [CustomEvent Listeners] Initialized");
 
   console.log("✅ Dashboard initialized");
 });
