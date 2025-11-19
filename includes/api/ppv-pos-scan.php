@@ -82,7 +82,7 @@ class PPV_POS_SCAN {
 
         $store_id = intval($store->id);
 
-        /** 2) IP Rate Limiting (10 scans per minute) */
+        /** 2) IP Rate Limiting (100 scans per minute for debugging) */
         $ip_address = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
         $ip_address = sanitize_text_field(explode(',', $ip_address)[0]);
 
@@ -91,11 +91,13 @@ class PPV_POS_SCAN {
             WHERE ip_address=%s AND created_at >= (NOW() - INTERVAL 1 MINUTE)
         ", $ip_address));
 
-        if ($recent_scans_from_ip >= 10) {
+        if ($recent_scans_from_ip >= 100) {
             self::log_event($store_id, 'rate_limit', "🚫 Rate limit exceeded from IP {$ip_address}", 'blocked');
             return rest_ensure_response([
                 'success' => false,
-                'message' => '🚫 Zu viele Anfragen. Bitte warten Sie.'
+                'message' => '🚫 Zu viele Anfragen. Bitte warten Sie.',
+                'store_name' => $store->name ?? 'PunktePass',
+                'error_type' => 'rate_limit'
             ]);
         }
 
