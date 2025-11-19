@@ -218,6 +218,9 @@ if ($points_add !== 0) {
             'invoice_id' => sanitize_text_field($data['invoice_id'] ?? ''),
             'message' => sanitize_textarea_field($data['message'] ?? ''),
             'status' => sanitize_text_field($data['status'] ?? 'ok'),
+            'ip_address' => sanitize_text_field($data['ip_address'] ?? ''),
+            'user_agent' => sanitize_text_field($data['user_agent'] ?? ''),
+            'metadata' => isset($data['metadata']) ? wp_json_encode($data['metadata']) : '',
             'created_at' => current_time('mysql')
         ]);
     }
@@ -249,6 +252,9 @@ if ($points_add !== 0) {
             invoice_id VARCHAR(100),
             message TEXT,
             status VARCHAR(50),
+            ip_address VARCHAR(45) NULL,
+            user_agent VARCHAR(255) NULL,
+            metadata TEXT NULL,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         ) $charset;";
 

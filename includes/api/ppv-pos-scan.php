@@ -82,43 +82,64 @@ class PPV_POS_SCAN {
 
         $store_id = intval($store->id);
 
-        /** 2) QR -> User ID extrakció
-         *    FONTOS: csak USER token engedett
+        /** 2) IP Rate Limiting (10 scans per minute) */
+        $ip_address = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
+        $ip_address = sanitize_text_field(explode(',', $ip_address)[0]);
+
+        $recent_scans_from_ip = $wpdb->get_var($wpdb->prepare("
+            SELECT COUNT(*) FROM {$wpdb->prefix}ppv_pos_log
+            WHERE ip_address=%s AND created_at >= (NOW() - INTERVAL 1 MINUTE)
+        ", $ip_address));
+
+        if ($recent_scans_from_ip >= 10) {
+            self::log_event($store_id, 'rate_limit', "🚫 Rate limit exceeded from IP {$ip_address}", 'blocked');
+            return rest_ensure_response([
+                'success' => false,
+                'message' => '🚫 Zu viele Anfragen. Bitte warten Sie.'
+            ]);
+        }
+
+        /** 3) QR -> User ID extraction with security
+         *    IMPORTANT: Only USER tokens allowed
+         *    Format: PPU{user_id}{16-char-token}
          */
         $user_id = 0;
 
         if (strpos($qr, 'PPU') === 0) {
-            $payload  = substr($qr, 3);
-            $uid_part = substr($payload, 0, -6);
-            $token6   = substr($payload, -6);
-            $uid      = intval($uid_part);
+            $payload = substr($qr, 3);
 
-            // Biztonság: valóban USER token?
-            $valid = $wpdb->get_var($wpdb->prepare("
-                SELECT COUNT(*) FROM {$wpdb->prefix}ppv_tokens
-                WHERE entity_type='user' AND entity_id=%d
-                AND token LIKE %s
-            ", $uid, $token6 . '%'));
+            // Find where user_id ends (first non-digit)
+            if (preg_match('/^(\d+)(.+)$/', $payload, $matches)) {
+                $uid = intval($matches[1]);
+                $token_from_qr = $matches[2];
 
-            if ($valid) {
-                $user_id = $uid;
+                // Security: Verify token + active status in single JOIN query
+                $user_check = $wpdb->get_row($wpdb->prepare("
+                    SELECT u.id, u.active
+                    FROM {$wpdb->prefix}ppv_users u
+                    INNER JOIN {$wpdb->prefix}ppv_tokens t
+                        ON t.entity_type='user' AND t.entity_id=u.id
+                    WHERE u.id=%d
+                        AND t.token=%s
+                        AND t.expires_at > NOW()
+                    LIMIT 1
+                ", $uid, $token_from_qr));
+
+                if ($user_check && $user_check->active == 1) {
+                    $user_id = intval($user_check->id);
+                } elseif ($user_check && $user_check->active == 0) {
+                    self::log_scan_attempt($store_id, $uid, $ip_address, 'blocked', 'User inactive');
+                    return rest_ensure_response(['success' => false, 'message' => '🚫 Benutzer gesperrt']);
+                }
             }
         }
 
         if ($user_id <= 0) {
+            self::log_scan_attempt($store_id, 0, $ip_address, 'invalid', 'Invalid QR code');
             return rest_ensure_response([
                 'success' => false,
                 'message' => '🚫 Ungültiger QR-Code (kein User)'
             ]);
-        }
-
-        /** 3) USER létezik-e */
-        $active_user = $wpdb->get_var($wpdb->prepare("
-            SELECT active FROM {$wpdb->prefix}ppv_users WHERE id=%d LIMIT 1
-        ", $user_id));
-
-        if ($active_user === '0') {
-            return rest_ensure_response(['success' => false, 'message' => '🚫 Benutzer gesperrt']);
         }
 
         /** 4) Napi limit */
@@ -175,7 +196,9 @@ class PPV_POS_SCAN {
         ", $user_id));
 
         /** 9) Log */
-        self::log_event($store_id, 'qr_scan', "✅ +{$points_add} Punkte (User {$user_id})");
+        $ip_address = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
+        $ip_address = sanitize_text_field(explode(',', $ip_address)[0]);
+        self::log_scan_attempt($store_id, $user_id, $ip_address, 'ok', "✅ +{$points_add} Punkte");
 
         /** 10) Üzenet */
         $msg = [
@@ -196,11 +219,31 @@ class PPV_POS_SCAN {
 
     private static function log_event($store_id, $action, $message, $status = 'ok') {
         global $wpdb;
+        $ip_address = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
+        $ip_address = sanitize_text_field(explode(',', $ip_address)[0]);
+        $user_agent = sanitize_text_field($_SERVER['HTTP_USER_AGENT'] ?? '');
+
         $wpdb->insert("{$wpdb->prefix}ppv_pos_log", [
             'store_id'   => intval($store_id),
-            'action'     => sanitize_text_field($action),
             'message'    => sanitize_textarea_field($message),
             'status'     => sanitize_text_field($status),
+            'ip_address' => $ip_address,
+            'user_agent' => $user_agent,
+            'created_at' => current_time('mysql'),
+        ]);
+    }
+
+    private static function log_scan_attempt($store_id, $user_id, $ip_address, $status, $reason) {
+        global $wpdb;
+        $user_agent = sanitize_text_field($_SERVER['HTTP_USER_AGENT'] ?? '');
+
+        $wpdb->insert("{$wpdb->prefix}ppv_pos_log", [
+            'store_id'   => intval($store_id),
+            'user_id'    => intval($user_id),
+            'message'    => sanitize_text_field($reason),
+            'status'     => sanitize_text_field($status),
+            'ip_address' => sanitize_text_field($ip_address),
+            'user_agent' => $user_agent,
             'created_at' => current_time('mysql'),
         ]);
     }

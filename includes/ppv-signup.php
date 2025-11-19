@@ -1149,7 +1149,7 @@ class PPV_Signup {
 
         // Generate unique QR token
         do {
-            $qr_token = substr(md5(uniqid(mt_rand(), true)), 0, 8);
+            $qr_token = substr(md5(uniqid(mt_rand(), true)), 0, 16);
             $check = $wpdb->get_var($wpdb->prepare(
                 "SELECT id FROM {$wpdb->prefix}ppv_users WHERE qr_token = %s LIMIT 1",
                 $qr_token
