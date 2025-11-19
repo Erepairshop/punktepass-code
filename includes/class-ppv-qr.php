@@ -366,6 +366,27 @@ class PPV_QR {
             $store_id = intval($_SESSION['ppv_store_id']);
         }
 
+        // ✅ If no store_id in session, try to get it via user_id
+        if ($store_id === 0 && !empty($_SESSION['ppv_user_id'])) {
+            $user_id = intval($_SESSION['ppv_user_id']);
+            error_log("🔍 [PPV_QR] No store_id in session, looking up via user_id={$user_id}");
+
+            $store_id = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id = %d LIMIT 1",
+                $user_id
+            ));
+
+            if ($store_id) {
+                $store_id = intval($store_id);
+                error_log("✅ [PPV_QR] Found store_id={$store_id} via user_id");
+            } else {
+                error_log("❌ [PPV_QR] No store found for user_id={$user_id}");
+            }
+        }
+
+        // 🐛 DEBUG: Log store_id
+        error_log("🔍 [PPV_QR] Store ID check: store_id=" . $store_id);
+
         // Fetch subscription info from database
         if ($store_id > 0) {
             $store_data = $wpdb->get_row($wpdb->prepare(
@@ -373,7 +394,9 @@ class PPV_QR {
                 $store_id
             ));
 
+            error_log("🔍 [PPV_QR] Store data query result: " . ($store_data ? 'FOUND' : 'NOT FOUND'));
             if ($store_data) {
+                error_log("🔍 [PPV_QR] Store data: " . json_encode($store_data));
                 $subscription_status = $store_data->subscription_status ?? 'trial';
                 $renewal_requested = !empty($store_data->subscription_renewal_requested);
                 $now = current_time('timestamp');
@@ -406,6 +429,17 @@ class PPV_QR {
             ($subscription_status === 'trial' && $trial_days_left === 0) ||
             ($subscription_status === 'active' && $subscription_days_left === 0)
         );
+
+        // ✅ Check if upgrade button should be shown (trial with 7 days or less)
+        $show_upgrade_button = !$renewal_requested && ($subscription_status === 'trial' && $trial_days_left <= 7 && $trial_days_left > 0);
+
+        // 🐛 DEBUG: Log button visibility
+        error_log("🔍 [PPV_QR] Renewal button check:");
+        error_log("  - subscription_status: " . $subscription_status);
+        error_log("  - trial_days_left: " . $trial_days_left);
+        error_log("  - subscription_days_left: " . $subscription_days_left);
+        error_log("  - renewal_requested: " . ($renewal_requested ? 'TRUE' : 'FALSE'));
+        error_log("  - show_renewal_button: " . ($show_renewal_button ? 'TRUE' : 'FALSE'));
 
         if ($subscription_status === 'active') {
             // Active subscription with expiry date
@@ -464,7 +498,11 @@ class PPV_QR {
                         <div style="font-weight: bold; font-size: 15px; margin-bottom: 2px;">
                             <?php echo $info_message; ?>
                         </div>
-                        <?php if ($show_description && $subscription_status === 'active'): ?>
+                        <?php if ($renewal_requested): ?>
+                            <div style="font-size: 12px; opacity: 0.9; color: #00e6ff;">
+                                <?php echo self::t('renewal_in_progress', 'Aboverlängerung in Bearbeitung - Wir kontaktieren Sie bald per E-Mail oder Telefon'); ?>
+                            </div>
+                        <?php elseif ($show_description && $subscription_status === 'active'): ?>
                             <div style="font-size: 12px; opacity: 0.7;">
                                 <?php echo self::t('subscription_info_desc', 'Aktive Premium-Mitgliedschaft'); ?>
                             </div>
@@ -472,17 +510,13 @@ class PPV_QR {
                             <div style="font-size: 12px; opacity: 0.7;">
                                 <?php echo self::t('trial_info_desc', 'Registriert mit 30 Tage Probezeit'); ?>
                             </div>
-                        <?php elseif ($renewal_requested && (($subscription_status === 'trial' && $trial_days_left === 0) || ($subscription_status === 'active' && $subscription_days_left === 0))): ?>
-                            <div style="font-size: 12px; opacity: 0.9; color: #00e6ff;">
-                                <?php echo self::t('renewal_in_progress', 'Aboverlängerung in Bearbeitung - Wir kontaktieren Sie bald per E-Mail oder Telefon'); ?>
-                            </div>
                         <?php endif; ?>
                     </div>
                 </div>
-                <?php if ($subscription_status === 'trial' && $trial_days_left <= 7 && $trial_days_left > 0): ?>
-                    <a href="/pricing" class="ppv-btn-outline" style="padding: 6px 12px; font-size: 13px; white-space: nowrap; text-decoration: none;">
-                        <?php echo self::t('upgrade_now', 'Jetzt upgraden'); ?>
-                    </a>
+                <?php if ($show_upgrade_button): ?>
+                    <button id="ppv-request-renewal-btn" class="ppv-btn-outline" style="padding: 6px 12px; font-size: 13px; white-space: nowrap;">
+                        📧 <?php echo self::t('upgrade_now', 'Jetzt upgraden'); ?>
+                    </button>
                 <?php elseif ($show_renewal_button): ?>
                     <button id="ppv-request-renewal-btn" class="ppv-btn-outline" style="padding: 6px 12px; font-size: 13px; white-space: nowrap;">
                         📧 <?php echo self::t('request_renewal', 'Abo verlängern'); ?>
@@ -491,7 +525,7 @@ class PPV_QR {
             </div>
         </div>
 
-        <?php if ($show_renewal_button): ?>
+        <?php if ($show_renewal_button || $show_upgrade_button): ?>
         <!-- Renewal Request Modal -->
         <div id="ppv-renewal-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; align-items: center; justify-content: center;">
             <div style="background: #1a1a2e; padding: 30px; border-radius: 15px; max-width: 400px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">

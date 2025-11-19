@@ -13,6 +13,7 @@ class PPV_Admin_Handlers {
         add_action('admin_post_ppv_extend_trial', [__CLASS__, 'handle_extend_trial']);
         add_action('admin_post_ppv_activate_subscription', [__CLASS__, 'handle_activate_subscription']);
         add_action('admin_post_ppv_extend_subscription', [__CLASS__, 'handle_extend_subscription']);
+        add_action('admin_post_ppv_mark_renewal_done', [__CLASS__, 'handle_mark_renewal_done']);
     }
 
     // ============================================================
@@ -36,6 +37,16 @@ class PPV_Admin_Handlers {
             'manage_options',
             'punktepass-admin',
             [__CLASS__, 'render_handlers_page']
+        );
+
+        // 📧 Renewal Anfragen
+        add_submenu_page(
+            'punktepass-admin',
+            'Renewal Anfragen',
+            'Renewal Anfragen',
+            'manage_options',
+            'punktepass-renewal-requests',
+            [__CLASS__, 'render_renewal_requests_page']
         );
     }
 
@@ -459,6 +470,209 @@ class PPV_Admin_Handlers {
         error_log("✅ [PPV_Admin] Subscription verlängert für Handler #{$handler_id} um {$months} Monate bis {$new_expires}");
 
         wp_redirect(admin_url('admin.php?page=punktepass-admin&success=subscription_extended'));
+        exit;
+    }
+
+    // ============================================================
+    // 📧 RENDER RENEWAL REQUESTS PAGE
+    // ============================================================
+    public static function render_renewal_requests_page() {
+        global $wpdb;
+
+        // Fetch handlers with renewal requests
+        $requests = $wpdb->get_results("
+            SELECT
+                s.id,
+                s.name,
+                s.company_name,
+                s.email,
+                s.phone,
+                s.renewal_phone,
+                s.city,
+                s.subscription_renewal_requested,
+                s.subscription_status,
+                s.trial_ends_at,
+                s.subscription_expires_at,
+                s.created_at
+            FROM {$wpdb->prefix}ppv_stores s
+            WHERE s.subscription_renewal_requested IS NOT NULL
+            ORDER BY s.subscription_renewal_requested DESC
+        ");
+
+        $open_count = count($requests);
+
+        ?>
+        <div class="wrap">
+            <h1>📧 Renewal Anfragen (<?php echo $open_count; ?> offen)</h1>
+            <p>Handler, die eine Abo-Verlängerung angefordert haben.</p>
+
+            <?php if ($open_count === 0): ?>
+                <div class="notice notice-info">
+                    <p>✅ Keine offenen Renewal Anfragen!</p>
+                </div>
+            <?php else: ?>
+                <table class="wp-list-table widefat fixed striped">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Firma</th>
+                            <th>E-Mail</th>
+                            <th>Telefon</th>
+                            <th>Renewal Telefon</th>
+                            <th>Stadt</th>
+                            <th>Angefordert am</th>
+                            <th>Status</th>
+                            <th>Aktionen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($requests as $request): ?>
+                            <?php
+                            // Calculate days
+                            $now = current_time('timestamp');
+                            $trial_end = !empty($request->trial_ends_at) ? strtotime($request->trial_ends_at) : 0;
+                            $sub_end = !empty($request->subscription_expires_at) ? strtotime($request->subscription_expires_at) : 0;
+
+                            $trial_days_left = $trial_end > 0 ? max(0, ceil(($trial_end - $now) / 86400)) : 0;
+                            $sub_days_left = $sub_end > 0 ? max(0, ceil(($sub_end - $now) / 86400)) : 0;
+
+                            // Status badge
+                            if ($request->subscription_status === 'active') {
+                                if ($sub_days_left > 0) {
+                                    $status_text = "✅ Active ({$sub_days_left} Tage)";
+                                    $status_class = 'success';
+                                } else {
+                                    $status_text = '❌ Abo abgelaufen';
+                                    $status_class = 'error';
+                                }
+                            } else {
+                                if ($trial_days_left > 0) {
+                                    $status_text = "📅 Trial ({$trial_days_left} Tage)";
+                                    $status_class = 'info';
+                                } else {
+                                    $status_text = '❌ Trial abgelaufen';
+                                    $status_class = 'error';
+                                }
+                            }
+
+                            // Requested time
+                            $requested_time = date('Y-m-d H:i', strtotime($request->subscription_renewal_requested));
+                            ?>
+                            <tr>
+                                <td><?php echo intval($request->id); ?></td>
+                                <td><strong><?php echo esc_html($request->company_name ?: $request->name); ?></strong></td>
+                                <td>
+                                    <a href="mailto:<?php echo esc_attr($request->email); ?>">
+                                        <?php echo esc_html($request->email); ?>
+                                    </a>
+                                </td>
+                                <td>
+                                    <?php if (!empty($request->phone)): ?>
+                                        <a href="tel:<?php echo esc_attr($request->phone); ?>">
+                                            <?php echo esc_html($request->phone); ?>
+                                        </a>
+                                    <?php else: ?>
+                                        -
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <?php if (!empty($request->renewal_phone)): ?>
+                                        <strong style="color: #00a0d2;">
+                                            <a href="tel:<?php echo esc_attr($request->renewal_phone); ?>">
+                                                📞 <?php echo esc_html($request->renewal_phone); ?>
+                                            </a>
+                                        </strong>
+                                    <?php else: ?>
+                                        -
+                                    <?php endif; ?>
+                                </td>
+                                <td><?php echo esc_html($request->city); ?></td>
+                                <td><?php echo $requested_time; ?></td>
+                                <td>
+                                    <span class="badge badge-<?php echo $status_class; ?>">
+                                        <?php echo $status_text; ?>
+                                    </span>
+                                </td>
+                                <td>
+                                    <!-- Mark as Done -->
+                                    <form method="post" action="<?php echo admin_url('admin-post.php'); ?>" style="display: inline-block;">
+                                        <?php wp_nonce_field('ppv_mark_renewal_done', 'ppv_renewal_done_nonce'); ?>
+                                        <input type="hidden" name="action" value="ppv_mark_renewal_done">
+                                        <input type="hidden" name="handler_id" value="<?php echo intval($request->id); ?>">
+                                        <button type="submit" class="button button-primary button-small" onclick="return confirm('Als erledigt markieren?');">
+                                            ✅ Erledigt
+                                        </button>
+                                    </form>
+
+                                    <!-- Quick Actions -->
+                                    <a href="mailto:<?php echo esc_attr($request->email); ?>?subject=Ihre%20Abo-Verl%C3%A4ngerung" class="button button-small">
+                                        📧 Email
+                                    </a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
+        </div>
+
+        <style>
+            .badge {
+                display: inline-block;
+                padding: 4px 8px;
+                border-radius: 4px;
+                font-size: 12px;
+                font-weight: bold;
+            }
+            .badge-success {
+                background: #d4edda;
+                color: #155724;
+            }
+            .badge-info {
+                background: #d1ecf1;
+                color: #0c5460;
+            }
+            .badge-warning {
+                background: #fff3cd;
+                color: #856404;
+            }
+            .badge-error {
+                background: #f8d7da;
+                color: #721c24;
+            }
+        </style>
+        <?php
+    }
+
+    // ============================================================
+    // ✅ MARK RENEWAL AS DONE
+    // ============================================================
+    public static function handle_mark_renewal_done() {
+        if (!current_user_can('manage_options')) {
+            wp_die('Keine Berechtigung');
+        }
+
+        check_admin_referer('ppv_mark_renewal_done', 'ppv_renewal_done_nonce');
+
+        global $wpdb;
+
+        $handler_id = intval($_POST['handler_id']);
+
+        // Clear renewal request fields
+        $wpdb->update(
+            "{$wpdb->prefix}ppv_stores",
+            [
+                'subscription_renewal_requested' => NULL,
+                'renewal_phone' => NULL
+            ],
+            ['id' => $handler_id],
+            ['%s', '%s'],
+            ['%d']
+        );
+
+        error_log("✅ [PPV_Admin] Renewal request marked as done for Handler #{$handler_id}");
+
+        wp_redirect(admin_url('admin.php?page=punktepass-renewal-requests&success=marked_done'));
         exit;
     }
 }
