@@ -95,11 +95,12 @@ class PPV_SessionBridge {
                 $_SESSION['ppv_user_type'] = $user->user_type ?? 'user';
                 $_SESSION['ppv_user_email'] = $user->email;
 
-                // Vendor user esetén restore store is
-                if ($user->user_type === 'vendor' && !empty($user->vendor_store_id)) {
+                // Vendor/Scanner user esetén restore store is
+                if (in_array($user->user_type, ['vendor', 'scanner']) && !empty($user->vendor_store_id)) {
                     $_SESSION['ppv_vendor_store_id'] = $user->vendor_store_id;
                     $_SESSION['ppv_store_id'] = $user->vendor_store_id;
                     $_SESSION['ppv_active_store'] = $user->vendor_store_id;
+                    error_log("✅ [PPV_SessionBridge] Store restored for {$user->user_type}: store_id={$user->vendor_store_id}");
                 }
 
                 error_log("✅ [PPV_SessionBridge] User restored from token: ID={$user->id}, type=" . ($user->user_type ?? 'user'));
