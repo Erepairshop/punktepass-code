@@ -351,6 +351,7 @@ class PPV_QR {
         // Get store trial info
         $store_id = 0;
         $trial_days_left = 0;
+        $subscription_days_left = 0;
         $subscription_status = 'unknown';
 
         // Try to get store ID from session
@@ -364,21 +365,29 @@ class PPV_QR {
             $store_id = intval($_SESSION['ppv_store_id']);
         }
 
-        // Fetch trial_ends_at from database
+        // Fetch subscription info from database
         if ($store_id > 0) {
             $store_data = $wpdb->get_row($wpdb->prepare(
-                "SELECT trial_ends_at, subscription_status FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
+                "SELECT trial_ends_at, subscription_status, subscription_expires_at FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
                 $store_id
             ));
 
             if ($store_data) {
                 $subscription_status = $store_data->subscription_status ?? 'trial';
+                $now = current_time('timestamp');
 
+                // Calculate trial days left
                 if (!empty($store_data->trial_ends_at)) {
                     $trial_end = strtotime($store_data->trial_ends_at);
-                    $now = current_time('timestamp');
                     $diff_seconds = $trial_end - $now;
-                    $trial_days_left = max(0, ceil($diff_seconds / 86400)); // Convert to days
+                    $trial_days_left = max(0, ceil($diff_seconds / 86400));
+                }
+
+                // Calculate subscription days left (for active subscriptions)
+                if (!empty($store_data->subscription_expires_at)) {
+                    $sub_end = strtotime($store_data->subscription_expires_at);
+                    $diff_seconds = $sub_end - $now;
+                    $subscription_days_left = max(0, ceil($diff_seconds / 86400));
                 }
             }
         }
@@ -388,13 +397,39 @@ class PPV_QR {
         $info_icon = 'ℹ️';
         $info_color = 'rgba(0, 230, 255, 0.1)';
         $border_color = 'rgba(0, 230, 255, 0.3)';
+        $show_description = false;
 
         if ($subscription_status === 'active') {
-            $info_message = self::t('subscription_active', 'Aktives Abo - Unbegrenzt');
-            $info_class = 'success';
-            $info_icon = '✅';
-            $info_color = 'rgba(0, 230, 118, 0.1)';
-            $border_color = 'rgba(0, 230, 118, 0.3)';
+            // Active subscription with expiry date
+            if ($subscription_days_left > 0) {
+                if ($subscription_days_left > 30) {
+                    $info_message = sprintf(self::t('subscription_active_days', 'Aktives Abo - Noch %d Tage'), $subscription_days_left);
+                    $info_class = 'success';
+                    $info_icon = '✅';
+                    $info_color = 'rgba(0, 230, 118, 0.1)';
+                    $border_color = 'rgba(0, 230, 118, 0.3)';
+                } elseif ($subscription_days_left > 7) {
+                    $info_message = sprintf(self::t('subscription_expiring_soon', 'Abo läuft in %d Tagen ab'), $subscription_days_left);
+                    $info_class = 'info';
+                    $info_icon = '📅';
+                    $info_color = 'rgba(0, 230, 255, 0.1)';
+                    $border_color = 'rgba(0, 230, 255, 0.3)';
+                } else {
+                    $info_message = sprintf(self::t('subscription_expiring_warning', 'Abo endet bald - Nur noch %d Tage!'), $subscription_days_left);
+                    $info_class = 'warning';
+                    $info_icon = '⚠️';
+                    $info_color = 'rgba(255, 171, 0, 0.1)';
+                    $border_color = 'rgba(255, 171, 0, 0.3)';
+                }
+                $show_description = true;
+            } else {
+                // Active but expired
+                $info_message = self::t('subscription_expired', 'Abo abgelaufen');
+                $info_class = 'error';
+                $info_icon = '❌';
+                $info_color = 'rgba(239, 68, 68, 0.1)';
+                $border_color = 'rgba(239, 68, 68, 0.3)';
+            }
         } elseif ($trial_days_left > 7) {
             $info_message = sprintf(self::t('trial_days_left', 'Noch %d Tage Testversion'), $trial_days_left);
             $info_icon = '📅';
@@ -421,7 +456,11 @@ class PPV_QR {
                         <div style="font-weight: bold; font-size: 15px; margin-bottom: 2px;">
                             <?php echo $info_message; ?>
                         </div>
-                        <?php if ($subscription_status === 'trial' && $trial_days_left > 0): ?>
+                        <?php if ($show_description && $subscription_status === 'active'): ?>
+                            <div style="font-size: 12px; opacity: 0.7;">
+                                <?php echo self::t('subscription_info_desc', 'Aktive Premium-Mitgliedschaft'); ?>
+                            </div>
+                        <?php elseif ($subscription_status === 'trial' && $trial_days_left > 0): ?>
                             <div style="font-size: 12px; opacity: 0.7;">
                                 <?php echo self::t('trial_info_desc', 'Registriert mit 30 Tage Probezeit'); ?>
                             </div>

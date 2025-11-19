@@ -12,6 +12,7 @@ class PPV_Admin_Handlers {
         add_action('admin_post_ppv_convert_to_handler', [__CLASS__, 'handle_convert_to_handler']);
         add_action('admin_post_ppv_extend_trial', [__CLASS__, 'handle_extend_trial']);
         add_action('admin_post_ppv_activate_subscription', [__CLASS__, 'handle_activate_subscription']);
+        add_action('admin_post_ppv_extend_subscription', [__CLASS__, 'handle_extend_subscription']);
     }
 
     // ============================================================
@@ -55,6 +56,7 @@ class PPV_Admin_Handlers {
                 s.city,
                 s.trial_ends_at,
                 s.subscription_status,
+                s.subscription_expires_at,
                 s.created_at,
                 s.active
             FROM {$wpdb->prefix}ppv_stores s
@@ -113,6 +115,7 @@ class PPV_Admin_Handlers {
                         <th>E-Mail</th>
                         <th>Stadt</th>
                         <th>Trial Ende</th>
+                        <th>Abo Ende</th>
                         <th>Status</th>
                         <th>Erstellt</th>
                         <th>Aktionen</th>
@@ -121,31 +124,44 @@ class PPV_Admin_Handlers {
                 <tbody>
                     <?php if (empty($handlers)): ?>
                         <tr>
-                            <td colspan="9">Keine Handler gefunden</td>
+                            <td colspan="10">Keine Handler gefunden</td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($handlers as $handler): ?>
                             <?php
                             $trial_end = !empty($handler->trial_ends_at) ? strtotime($handler->trial_ends_at) : 0;
+                            $sub_end = !empty($handler->subscription_expires_at) ? strtotime($handler->subscription_expires_at) : 0;
                             $now = current_time('timestamp');
-                            $days_left = $trial_end > 0 ? max(0, ceil(($trial_end - $now) / 86400)) : 0;
+                            $trial_days_left = $trial_end > 0 ? max(0, ceil(($trial_end - $now) / 86400)) : 0;
+                            $sub_days_left = $sub_end > 0 ? max(0, ceil(($sub_end - $now) / 86400)) : 0;
 
                             // Status badge
                             $status_class = '';
                             $status_text = '';
 
                             if ($handler->subscription_status === 'active') {
-                                $status_class = 'success';
-                                $status_text = '✅ Aktiv';
-                            } elseif ($days_left > 7) {
+                                if ($sub_days_left > 30) {
+                                    $status_class = 'success';
+                                    $status_text = "✅ Aktiv ({$sub_days_left} Tage)";
+                                } elseif ($sub_days_left > 7) {
+                                    $status_class = 'info';
+                                    $status_text = "📅 Aktiv ({$sub_days_left} Tage)";
+                                } elseif ($sub_days_left > 0) {
+                                    $status_class = 'warning';
+                                    $status_text = "⚠️ Läuft ab ({$sub_days_left} Tage)";
+                                } else {
+                                    $status_class = 'error';
+                                    $status_text = '❌ Abo abgelaufen';
+                                }
+                            } elseif ($trial_days_left > 7) {
                                 $status_class = 'info';
-                                $status_text = "📅 Trial ({$days_left} Tage)";
-                            } elseif ($days_left > 0) {
+                                $status_text = "📅 Trial ({$trial_days_left} Tage)";
+                            } elseif ($trial_days_left > 0) {
                                 $status_class = 'warning';
-                                $status_text = "⚠️ Trial ({$days_left} Tage)";
+                                $status_text = "⚠️ Trial ({$trial_days_left} Tage)";
                             } else {
                                 $status_class = 'error';
-                                $status_text = '❌ Abgelaufen';
+                                $status_text = '❌ Trial abgelaufen';
                             }
                             ?>
                             <tr>
@@ -158,6 +174,15 @@ class PPV_Admin_Handlers {
                                     <?php
                                     if ($trial_end > 0) {
                                         echo date('Y-m-d', $trial_end);
+                                    } else {
+                                        echo '-';
+                                    }
+                                    ?>
+                                </td>
+                                <td>
+                                    <?php
+                                    if ($sub_end > 0) {
+                                        echo '<strong>' . date('Y-m-d', $sub_end) . '</strong>';
                                     } else {
                                         echo '-';
                                     }
@@ -189,7 +214,15 @@ class PPV_Admin_Handlers {
                                             </button>
                                         </form>
                                     <?php else: ?>
-                                        <span style="color: #46b450;">✓ Aktives Abo</span>
+                                        <form method="post" action="<?php echo admin_url('admin-post.php'); ?>" style="display: inline-block;">
+                                            <?php wp_nonce_field('ppv_extend_subscription', 'ppv_extend_sub_nonce'); ?>
+                                            <input type="hidden" name="action" value="ppv_extend_subscription">
+                                            <input type="hidden" name="handler_id" value="<?php echo intval($handler->id); ?>">
+                                            <input type="number" name="months" value="6" min="1" max="36" style="width: 60px;" placeholder="6">
+                                            <button type="submit" class="button button-primary button-small">
+                                                📅 Verlängern
+                                            </button>
+                                        </form>
                                     <?php endif; ?>
                                 </td>
                             </tr>
@@ -356,17 +389,76 @@ class PPV_Admin_Handlers {
 
         $handler_id = intval($_POST['handler_id']);
 
+        // Set subscription status to active and set 6 months expiry
+        $subscription_expires = date('Y-m-d H:i:s', strtotime('+6 months'));
+
         $wpdb->update(
             "{$wpdb->prefix}ppv_stores",
-            ['subscription_status' => 'active'],
+            [
+                'subscription_status' => 'active',
+                'subscription_expires_at' => $subscription_expires
+            ],
+            ['id' => $handler_id],
+            ['%s', '%s'],
+            ['%d']
+        );
+
+        error_log("✅ [PPV_Admin] Subscription aktiviert für Handler #{$handler_id} bis {$subscription_expires}");
+
+        wp_redirect(admin_url('admin.php?page=punktepass-admin&success=subscription_activated'));
+        exit;
+    }
+
+    // ============================================================
+    // 📅 EXTEND SUBSCRIPTION
+    // ============================================================
+    public static function handle_extend_subscription() {
+        if (!current_user_can('manage_options')) {
+            wp_die('Keine Berechtigung');
+        }
+
+        check_admin_referer('ppv_extend_subscription', 'ppv_extend_sub_nonce');
+
+        global $wpdb;
+
+        $handler_id = intval($_POST['handler_id']);
+        $months = isset($_POST['months']) ? intval($_POST['months']) : 6;
+
+        // Get current subscription_expires_at
+        $current_expires = $wpdb->get_var($wpdb->prepare(
+            "SELECT subscription_expires_at FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+            $handler_id
+        ));
+
+        // Calculate new expiry date
+        $now = current_time('timestamp');
+
+        if (!empty($current_expires)) {
+            $current_end = strtotime($current_expires);
+            // If current expiry is in the future, extend from there
+            if ($current_end > $now) {
+                $new_expires = date('Y-m-d H:i:s', strtotime("+{$months} months", $current_end));
+            } else {
+                // If expired, extend from now
+                $new_expires = date('Y-m-d H:i:s', strtotime("+{$months} months", $now));
+            }
+        } else {
+            // No expiry set yet, extend from now
+            $new_expires = date('Y-m-d H:i:s', strtotime("+{$months} months", $now));
+        }
+
+        // Update subscription_expires_at
+        $wpdb->update(
+            "{$wpdb->prefix}ppv_stores",
+            ['subscription_expires_at' => $new_expires],
             ['id' => $handler_id],
             ['%s'],
             ['%d']
         );
 
-        error_log("✅ [PPV_Admin] Subscription aktiviert für Handler #{$handler_id}");
+        error_log("✅ [PPV_Admin] Subscription verlängert für Handler #{$handler_id} um {$months} Monate bis {$new_expires}");
 
-        wp_redirect(admin_url('admin.php?page=punktepass-admin&success=subscription_activated'));
+        wp_redirect(admin_url('admin.php?page=punktepass-admin&success=subscription_extended'));
         exit;
     }
 }
