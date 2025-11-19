@@ -163,6 +163,13 @@ public static function check_already_logged_in() {
         exit;
     }
 
+    // 👥 SCANNER already logged in
+    if (!empty($_SESSION['ppv_user_id']) && $_SESSION['ppv_user_type'] === 'scanner') {
+        error_log("🔄 [PPV_Login] Scanner redirect from login page (session check)");
+        wp_safe_redirect(home_url('/qr-center'));
+        exit;
+    }
+
     // ⚠️ If we reach here, session restore failed or no valid login
     // Don't redirect based on cookie alone - let the login page load
     error_log("🔍 [PPV_Login] No valid session - showing login page");
@@ -625,7 +632,50 @@ public static function render_landing_page($atts) {
                 'redirect' => home_url('/qr-center')
             ]);
         }
-        
+
+        // 🔹 WORDPRESS USER LOGIN (Scanner employees)
+        $wp_user = get_user_by('email', $email);
+
+        if ($wp_user && wp_check_password($password, $wp_user->user_pass, $wp_user->ID)) {
+            // Check if scanner user
+            if (in_array('ppv_scanner', (array) $wp_user->roles)) {
+                error_log("✅ [PPV_Login] Scanner user match: ID={$wp_user->ID}");
+
+                // Get linked store_id
+                $store_id = get_user_meta($wp_user->ID, 'ppv_scanner_store_id', true);
+
+                if (!$store_id) {
+                    error_log("❌ [PPV_Login] Scanner user has no store_id");
+                    wp_send_json_error(['message' => 'Scanner Konfigurationsfehler. Bitte kontaktieren Sie Ihren Administrator.']);
+                }
+
+                // 🔒 Security: Regenerate session ID
+                if (session_status() === PHP_SESSION_ACTIVE) {
+                    session_regenerate_id(true);
+                }
+
+                // Set scanner session
+                $_SESSION['ppv_user_id'] = $wp_user->ID;
+                $_SESSION['ppv_user_type'] = 'scanner';
+                $_SESSION['ppv_store_id'] = intval($store_id);
+                $_SESSION['ppv_user_email'] = $wp_user->user_email;
+
+                error_log("✅ [PPV_Login] Scanner session set: user_id={$wp_user->ID}, store_id={$store_id}");
+
+                // WordPress login
+                wp_set_current_user($wp_user->ID);
+                wp_set_auth_cookie($wp_user->ID, $remember);
+
+                wp_send_json_success([
+                    'message' => PPV_Lang::t('login_success'),
+                    'role' => 'scanner',
+                    'user_id' => (int)$wp_user->ID,
+                    'store_id' => (int)$store_id,
+                    'redirect' => home_url('/qr-center')
+                ]);
+            }
+        }
+
         // 🔹 LOGIN FAILED
         error_log("❌ [PPV_Login] Failed login attempt for: {$email}");
         wp_send_json_error(['message' => PPV_Lang::t('login_error_invalid')]);
