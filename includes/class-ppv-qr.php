@@ -279,12 +279,19 @@ class PPV_QR {
     // ============================================================
     public static function render_qr_center() {
         global $wpdb;
-        
+
+        // ⛔ PERMISSION CHECK: Only handlers and scanners can access
+        if (!class_exists('PPV_Permissions') || !PPV_Permissions::check_handler()) {
+            return '<div class="ppv-error" style="padding: 20px; text-align: center; color: #ff5252;">
+                ❌ Zugriff verweigert. Nur für Händler und Scanner.
+            </div>';
+        }
+
         $lang = sanitize_text_field($_COOKIE['ppv_lang'] ?? '');
         if (empty($lang) || !in_array($lang, ['de', 'hu', 'ro'])) {
             $lang = defined('PPV_LANG_ACTIVE') ? PPV_LANG_ACTIVE : 'de';
         }
-        
+
         $lang_file = PPV_PLUGIN_DIR . "includes/lang/ppv-lang-{$lang}.php";
         if (!file_exists($lang_file)) {
             $lang_file = PPV_PLUGIN_DIR . "includes/lang/ppv-lang-de.php";
