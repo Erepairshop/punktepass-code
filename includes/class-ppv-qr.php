@@ -281,7 +281,14 @@ class PPV_QR {
         global $wpdb;
 
         // ⛔ PERMISSION CHECK: Only handlers and scanners can access
-        if (!class_exists('PPV_Permissions') || !PPV_Permissions::check_handler()) {
+        if (!class_exists('PPV_Permissions')) {
+            return '<div class="ppv-error" style="padding: 20px; text-align: center; color: #ff5252;">
+                ❌ Zugriff verweigert. Nur für Händler und Scanner.
+            </div>';
+        }
+
+        $auth_check = PPV_Permissions::check_handler();
+        if (is_wp_error($auth_check)) {
             return '<div class="ppv-error" style="padding: 20px; text-align: center; color: #ff5252;">
                 ❌ Zugriff verweigert. Nur für Händler und Scanner.
             </div>';
