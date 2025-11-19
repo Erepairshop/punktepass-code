@@ -158,7 +158,7 @@ class PPV_Signup {
                 wp_redirect(home_url('/user_dashboard'));
                 exit;
             } elseif ($user_type === 'vendor') {
-                wp_redirect(home_url('/haendler'));
+                wp_redirect(home_url('/qr-center'));
                 exit;
             }
         }
@@ -552,11 +552,12 @@ class PPV_Signup {
                     'store_name' => 'Mein Geschäft',
                     'pos_token' => $pos_token,
                     'trial_ends_at' => $trial_ends_at,
+                    'subscription_status' => 'trial',  // ✅ FIX: Set trial status
                     'active' => 1,
                     'created_at' => current_time('mysql'),
                     'updated_at' => current_time('mysql')
                 ],
-                ['%d', '%s', '%s', '%s', '%s', '%d', '%s', '%s']
+                ['%d', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s']
             );
 
             if ($store_result !== false) {
@@ -605,7 +606,7 @@ class PPV_Signup {
         setcookie('ppv_user_token', $token, time() + (86400 * 180), '/', $domain, true, true);
 
         // Determine redirect
-        $redirect_url = $user_type === 'vendor' ? home_url('/haendler') : home_url('/user_dashboard');
+        $redirect_url = $user_type === 'vendor' ? home_url('/qr-center') : home_url('/user_dashboard');
 
         error_log("========================================");
         error_log("✅ [PPV_Signup] SUCCESS - User #{$user_id}: {$email} ({$user_type})");
@@ -716,11 +717,12 @@ class PPV_Signup {
                         'store_name' => trim($first_name . ' ' . $last_name) ?: 'Mein Geschäft',
                         'pos_token' => $pos_token,
                         'trial_ends_at' => $trial_ends_at,
+                        'subscription_status' => 'trial',  // ✅ FIX: Set trial status
                         'active' => 1,
                         'created_at' => current_time('mysql'),
                         'updated_at' => current_time('mysql')
                     ],
-                    ['%d', '%s', '%s', '%s', '%s', '%d', '%s', '%s']
+                    ['%d', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s']
                 );
 
                 if ($store_result !== false) {
@@ -782,7 +784,7 @@ class PPV_Signup {
         setcookie('ppv_user_token', $token, time() + (86400 * 180), '/', $domain, true, true);
 
         // Determine redirect
-        $redirect_url = $user->user_type === 'vendor' ? home_url('/haendler') : home_url('/user_dashboard');
+        $redirect_url = $user->user_type === 'vendor' ? home_url('/qr-center') : home_url('/user_dashboard');
 
         error_log("✅ [PPV_Signup] Google signup success: #{$user->id} ({$user->user_type})");
 
