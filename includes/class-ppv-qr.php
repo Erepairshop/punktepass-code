@@ -366,6 +366,24 @@ class PPV_QR {
             $store_id = intval($_SESSION['ppv_store_id']);
         }
 
+        // ✅ If no store_id in session, try to get it via user_id
+        if ($store_id === 0 && !empty($_SESSION['ppv_user_id'])) {
+            $user_id = intval($_SESSION['ppv_user_id']);
+            error_log("🔍 [PPV_QR] No store_id in session, looking up via user_id={$user_id}");
+
+            $store_id = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id = %d LIMIT 1",
+                $user_id
+            ));
+
+            if ($store_id) {
+                $store_id = intval($store_id);
+                error_log("✅ [PPV_QR] Found store_id={$store_id} via user_id");
+            } else {
+                error_log("❌ [PPV_QR] No store found for user_id={$user_id}");
+            }
+        }
+
         // 🐛 DEBUG: Log store_id
         error_log("🔍 [PPV_QR] Store ID check: store_id=" . $store_id);
 
