@@ -42,10 +42,14 @@ class PPV_POS_SCAN {
     public static function handle_scan(WP_REST_Request $req) {
         global $wpdb;
 
+        error_log("🚀 [SCAN START] Request received");
+
         $p = $req->get_json_params() ?: [];
         $qr        = sanitize_text_field($p['qr'] ?? '');
         $store_key = sanitize_text_field($p['store_key'] ?? '');
         $lang      = sanitize_text_field($p['lang'] ?? 'de');
+
+        error_log("📋 [SCAN DATA] QR: " . substr($qr, 0, 20) . "... | Lang: {$lang}");
 
         if ($qr === '') {
             return rest_ensure_response(['success' => false, 'message' => '❌ Kein QR-Code empfangen']);
@@ -82,7 +86,7 @@ class PPV_POS_SCAN {
 
         $store_id = intval($store->id);
 
-        /** 2) IP Rate Limiting (10 scans per minute) */
+        /** 2) IP Rate Limiting (100 scans per minute for debugging) */
         $ip_address = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
         $ip_address = sanitize_text_field(explode(',', $ip_address)[0]);
 
@@ -91,13 +95,21 @@ class PPV_POS_SCAN {
             WHERE ip_address=%s AND created_at >= (NOW() - INTERVAL 1 MINUTE)
         ", $ip_address));
 
-        if ($recent_scans_from_ip >= 10) {
+        // DEBUG: Log rate limiting check
+        error_log("🔍 [RATE LIMIT CHECK] IP: {$ip_address} | Recent scans: {$recent_scans_from_ip}/100");
+
+        if ($recent_scans_from_ip >= 100) {
+            error_log("🚫 [RATE LIMIT] IP {$ip_address} blocked - {$recent_scans_from_ip} scans in last minute");
             self::log_event($store_id, 'rate_limit', "🚫 Rate limit exceeded from IP {$ip_address}", 'blocked');
             return rest_ensure_response([
                 'success' => false,
-                'message' => '🚫 Zu viele Anfragen. Bitte warten Sie.'
+                'message' => '🚫 Zu viele Anfragen. Bitte warten Sie.',
+                'store_name' => $store->name ?? 'PunktePass',
+                'error_type' => 'rate_limit'
             ]);
         }
+
+        error_log("✅ [RATE LIMIT] IP {$ip_address} passed - continuing scan");
 
         /** 3) QR -> User ID extraction with security
          *    IMPORTANT: Only USER tokens allowed
@@ -210,8 +222,12 @@ class PPV_POS_SCAN {
         ", $user_id));
 
         /** 9) Log */
-        $ip_address = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
-        $ip_address = sanitize_text_field(explode(',', $ip_address)[0]);
+        $ip_address_raw = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
+        $ip_address = sanitize_text_field(explode(',', $ip_address_raw)[0]);
+
+        error_log("📍 [IP ADDRESS] Raw: '{$ip_address_raw}' | Cleaned: '{$ip_address}'");
+        error_log("✅ [LOGGING SCAN] User: {$user_id} | Store: {$store_id} | Points: +{$points_add}");
+
         self::log_scan_attempt($store_id, $user_id, $ip_address, 'ok', "✅ +{$points_add} Punkte");
 
         /** 10) Üzenet */
@@ -221,7 +237,7 @@ class PPV_POS_SCAN {
             'de' => "✅ +{$points_add} Punkte hinzugefügt",
         ][$lang] ?? "✅ +{$points_add} Punkte";
 
-        return rest_ensure_response([
+        $response = [
             'success'    => true,
             'message'    => $msg,
             'user_id'    => $user_id,
@@ -229,7 +245,11 @@ class PPV_POS_SCAN {
             'store_name' => $store->name ?? 'PunktePass',
             'points'     => $points_add,
             'total'      => $total_points
-        ]);
+        ];
+
+        error_log("🎉 [SCAN SUCCESS] Returning response: " . json_encode($response));
+
+        return rest_ensure_response($response);
     }
 
     private static function log_event($store_id, $action, $message, $status = 'ok') {
@@ -252,7 +272,9 @@ class PPV_POS_SCAN {
         global $wpdb;
         $user_agent = sanitize_text_field($_SERVER['HTTP_USER_AGENT'] ?? '');
 
-        $wpdb->insert("{$wpdb->prefix}ppv_pos_log", [
+        error_log("💾 [LOG_SCAN_ATTEMPT] Store: {$store_id} | User: {$user_id} | IP: '{$ip_address}' | Status: {$status} | Reason: {$reason}");
+
+        $result = $wpdb->insert("{$wpdb->prefix}ppv_pos_log", [
             'store_id'   => intval($store_id),
             'user_id'    => intval($user_id),
             'message'    => sanitize_text_field($reason),
@@ -261,6 +283,12 @@ class PPV_POS_SCAN {
             'user_agent' => $user_agent,
             'created_at' => current_time('mysql'),
         ]);
+
+        if ($result === false) {
+            error_log("❌ [LOG_SCAN_ATTEMPT] Database insert failed: " . $wpdb->last_error);
+        } else {
+            error_log("✅ [LOG_SCAN_ATTEMPT] Logged successfully. Insert ID: " . $wpdb->insert_id);
+        }
     }
 
     /** ============================================================
@@ -300,7 +328,7 @@ class PPV_POS_SCAN {
         $formatted = [];
         foreach ($scans as $scan) {
             $time = date('H:i:s', strtotime($scan->created));
-            $user_display = !empty(trim($scan->name)) ? $scan->name : $scan->email;
+            $user_display = !empty($scan->name) && trim($scan->name) !== '' ? $scan->name : $scan->email;
             $status = "✅ +{$scan->points}";
 
             $formatted[] = [
