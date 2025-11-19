@@ -1902,6 +1902,45 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
   });
+
+  // ============================================================
+  // 📋 LIVE RECENT SCANS POLLING (5s interval)
+  // ============================================================
+  if (logTable) {
+    // Initial load
+    async function loadRecentScans() {
+      try {
+        const response = await fetch('/wp-json/ppv/v1/pos/recent-scans', {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        const data = await response.json();
+
+        if (data.success && data.scans) {
+          // Clear current table
+          logTable.innerHTML = '';
+
+          // Add new rows (already sorted DESC by backend)
+          data.scans.forEach(scan => {
+            const row = document.createElement('tr');
+            row.innerHTML = `<td>${scan.time}</td><td>${scan.user}</td><td>${scan.status}</td>`;
+            logTable.appendChild(row);
+          });
+        }
+      } catch (err) {
+        console.error('Failed to load recent scans:', err);
+      }
+    }
+
+    // Load immediately
+    loadRecentScans();
+
+    // Poll every 5 seconds
+    setInterval(loadRecentScans, 5000);
+
+    console.log('✅ Letzte Scans live polling active (5s interval)');
+  }
 });
 
 console.log(L.app_complete || "✅ COMPLETE - Összes kód betöltve!");

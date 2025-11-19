@@ -635,17 +635,6 @@ class PPV_QR {
                 </button>
             </div>
 
-            <h3><?php echo self::t('scanner_title', '📲 Kassenscanner'); ?></h3>
-            <p><?php echo self::t('scanner_desc', 'Scanne den QR-Code des Kunden'); ?></p>
-
-            <input type="text" id="ppv-pos-input" placeholder="<?php echo esc_attr(self::t('scan_placeholder', 'Hier scannen...')); ?>" autofocus>
-
-            <button id="ppv-pos-send" class="ppv-btn neon" type="button">
-                <?php echo self::t('scan_button', 'QR prüfen'); ?>
-            </button>
-
-            <div id="ppv-pos-result" class="ppv-result-box"></div>
-
             <h4><?php echo self::t('table_title', '📋 Letzte Scans'); ?></h4>
 
             <table id="ppv-pos-log" class="glass-table">
