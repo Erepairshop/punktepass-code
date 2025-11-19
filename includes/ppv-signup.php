@@ -842,13 +842,33 @@ class PPV_Signup {
             @session_start();
         }
 
-        if (empty($_SESSION['ppv_user_id']) || empty($_SESSION['ppv_store_id'])) {
+        if (empty($_SESSION['ppv_user_id'])) {
             wp_send_json_error(['message' => 'Nicht eingeloggt']);
             return;
         }
 
         $user_id = intval($_SESSION['ppv_user_id']);
-        $store_id = intval($_SESSION['ppv_store_id']);
+        $store_id = intval($_SESSION['ppv_store_id'] ?? 0);
+
+        // ✅ If no store_id in session, lookup via user_id
+        if ($store_id === 0) {
+            error_log("🔍 [PPV_Renewal] No store_id in session, looking up via user_id={$user_id}");
+
+            $store_id = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id = %d LIMIT 1",
+                $user_id
+            ));
+
+            if (!$store_id) {
+                error_log("❌ [PPV_Renewal] No store found for user_id={$user_id}");
+                wp_send_json_error(['message' => 'Store nicht gefunden']);
+                return;
+            }
+
+            $store_id = intval($store_id);
+            error_log("✅ [PPV_Renewal] Found store_id={$store_id} via user_id");
+        }
+
         $phone = sanitize_text_field($_POST['phone'] ?? '');
 
         if (empty($phone)) {
