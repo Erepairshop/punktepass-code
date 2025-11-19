@@ -430,6 +430,9 @@ class PPV_QR {
             ($subscription_status === 'active' && $subscription_days_left === 0)
         );
 
+        // ✅ Check if upgrade button should be shown (trial with 7 days or less)
+        $show_upgrade_button = !$renewal_requested && ($subscription_status === 'trial' && $trial_days_left <= 7 && $trial_days_left > 0);
+
         // 🐛 DEBUG: Log button visibility
         error_log("🔍 [PPV_QR] Renewal button check:");
         error_log("  - subscription_status: " . $subscription_status);
@@ -503,17 +506,17 @@ class PPV_QR {
                             <div style="font-size: 12px; opacity: 0.7;">
                                 <?php echo self::t('trial_info_desc', 'Registriert mit 30 Tage Probezeit'); ?>
                             </div>
-                        <?php elseif ($renewal_requested && (($subscription_status === 'trial' && $trial_days_left === 0) || ($subscription_status === 'active' && $subscription_days_left === 0))): ?>
+                        <?php elseif ($renewal_requested): ?>
                             <div style="font-size: 12px; opacity: 0.9; color: #00e6ff;">
                                 <?php echo self::t('renewal_in_progress', 'Aboverlängerung in Bearbeitung - Wir kontaktieren Sie bald per E-Mail oder Telefon'); ?>
                             </div>
                         <?php endif; ?>
                     </div>
                 </div>
-                <?php if ($subscription_status === 'trial' && $trial_days_left <= 7 && $trial_days_left > 0): ?>
-                    <a href="/pricing" class="ppv-btn-outline" style="padding: 6px 12px; font-size: 13px; white-space: nowrap; text-decoration: none;">
-                        <?php echo self::t('upgrade_now', 'Jetzt upgraden'); ?>
-                    </a>
+                <?php if ($show_upgrade_button): ?>
+                    <button id="ppv-request-renewal-btn" class="ppv-btn-outline" style="padding: 6px 12px; font-size: 13px; white-space: nowrap;">
+                        📧 <?php echo self::t('upgrade_now', 'Jetzt upgraden'); ?>
+                    </button>
                 <?php elseif ($show_renewal_button): ?>
                     <button id="ppv-request-renewal-btn" class="ppv-btn-outline" style="padding: 6px 12px; font-size: 13px; white-space: nowrap;">
                         📧 <?php echo self::t('request_renewal', 'Abo verlängern'); ?>
@@ -522,7 +525,7 @@ class PPV_QR {
             </div>
         </div>
 
-        <?php if ($show_renewal_button): ?>
+        <?php if ($show_renewal_button || $show_upgrade_button): ?>
         <!-- Renewal Request Modal -->
         <div id="ppv-renewal-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; align-items: center; justify-content: center;">
             <div style="background: #1a1a2e; padding: 30px; border-radius: 15px; max-width: 400px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
