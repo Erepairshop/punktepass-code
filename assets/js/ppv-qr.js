@@ -1479,23 +1479,27 @@ document.addEventListener("DOMContentLoaded", function () {
   const campaignList = document.getElementById("ppv-campaign-list");
   const campaignModal = document.getElementById("ppv-campaign-modal");
 
-  if (!input) return;
-
+  // Initialize even without input (for scanner-only mode)
   const ui = new UIManager(resultBox, logTable, campaignList);
   const scanProcessor = new ScanProcessor(ui);
   const campaignManager = new CampaignManager(ui, campaignList, campaignModal);
   const cameraScanner = new CameraScanner(scanProcessor);
 
-  input.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      const qr = input.value.trim();
-      if (qr.length >= 4) {
-        scanProcessor.process(qr);
-        input.value = "";
+  // Only add input listeners if input exists
+  if (input) {
+    input.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        const qr = input.value.trim();
+        if (qr.length >= 4) {
+          scanProcessor.process(qr);
+          input.value = "";
+        }
       }
-    }
-  });
+    });
+
+    input.focus();
+  }
 
   if (sendBtn) {
     sendBtn.addEventListener("click", () => {
@@ -1558,7 +1562,6 @@ document.addEventListener("DOMContentLoaded", function () {
   scanProcessor.loadLogs();
   campaignManager.load();
   OfflineSyncManager.sync();
-  input.focus();
 
   console.log(L.app_initialized || "✅ App fully initialized!");
 
@@ -1720,6 +1723,226 @@ document.addEventListener("DOMContentLoaded", function () {
         supportSubmit.textContent = originalText;
       }
     });
+  }
+
+  // ============================================================
+  // 👥 SCANNER USER MANAGEMENT
+  // ============================================================
+  const scannerModal = document.getElementById('ppv-scanner-modal');
+  const newScannerBtn = document.getElementById('ppv-new-scanner-btn');
+  const scannerCreate = document.getElementById('ppv-scanner-create');
+  const scannerCancel = document.getElementById('ppv-scanner-cancel');
+  const scannerEmail = document.getElementById('ppv-scanner-email');
+  const scannerPassword = document.getElementById('ppv-scanner-password');
+  const scannerGenPw = document.getElementById('ppv-scanner-gen-pw');
+  const scannerError = document.getElementById('ppv-scanner-error');
+  const scannerSuccess = document.getElementById('ppv-scanner-success');
+
+  if (newScannerBtn && scannerModal) {
+    // Open modal
+    newScannerBtn.addEventListener('click', () => {
+      scannerModal.style.display = 'flex';
+      scannerEmail.value = '';
+      scannerPassword.value = '';
+      scannerError.style.display = 'none';
+      scannerSuccess.style.display = 'none';
+      scannerEmail.focus();
+    });
+
+    // Close modal
+    scannerCancel.addEventListener('click', () => {
+      scannerModal.style.display = 'none';
+    });
+
+    scannerModal.addEventListener('click', (e) => {
+      if (e.target === scannerModal) {
+        scannerModal.style.display = 'none';
+      }
+    });
+
+    // Generate password
+    scannerGenPw.addEventListener('click', () => {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%^&*';
+      let pw = '';
+      for (let i = 0; i < 12; i++) {
+        pw += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      scannerPassword.value = pw;
+    });
+
+    // Create scanner
+    scannerCreate.addEventListener('click', async () => {
+      const email = scannerEmail.value.trim();
+      const password = scannerPassword.value.trim();
+
+      if (!email || !password) {
+        scannerError.textContent = L.email_password_required || 'E-Mail und Passwort sind erforderlich';
+        scannerError.style.display = 'block';
+        return;
+      }
+
+      scannerCreate.disabled = true;
+      const originalText = scannerCreate.textContent;
+      scannerCreate.textContent = L.creating || 'Erstellen...';
+      scannerError.style.display = 'none';
+
+      try {
+        const response = await fetch('/wp-admin/admin-ajax.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            action: 'ppv_create_scanner_user',
+            email: email,
+            password: password
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          scannerSuccess.textContent = data.data?.message || (L.scanner_created || 'Scanner erfolgreich erstellt!');
+          scannerSuccess.style.display = 'block';
+          scannerEmail.value = '';
+          scannerPassword.value = '';
+
+          setTimeout(() => {
+            location.reload(); // Reload to show new scanner in list
+          }, 1500);
+        } else {
+          scannerError.textContent = data.data?.message || (L.error_occurred || 'Ein Fehler ist aufgetreten');
+          scannerError.style.display = 'block';
+        }
+      } catch (err) {
+        console.error('Scanner creation error:', err);
+        scannerError.textContent = L.error_occurred || 'Ein Fehler ist aufgetreten';
+        scannerError.style.display = 'block';
+      } finally {
+        scannerCreate.disabled = false;
+        scannerCreate.textContent = originalText;
+      }
+    });
+  }
+
+  // Reset password
+  document.querySelectorAll('.ppv-scanner-reset-pw').forEach(btn => {
+    btn.addEventListener('click', async function() {
+      const userId = this.getAttribute('data-user-id');
+      const email = this.getAttribute('data-email');
+
+      const newPw = prompt(L.enter_new_password || 'Neues Passwort eingeben:', '');
+      if (!newPw) return;
+
+      this.disabled = true;
+      const originalText = this.textContent;
+      this.textContent = L.resetting || 'Reset...';
+
+      try {
+        const response = await fetch('/wp-admin/admin-ajax.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            action: 'ppv_reset_scanner_password',
+            user_id: userId,
+            new_password: newPw
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          alert(data.data?.message || (L.password_reset_success || 'Passwort erfolgreich zurückgesetzt!'));
+        } else {
+          alert(data.data?.message || (L.error_occurred || 'Ein Fehler ist aufgetreten'));
+        }
+      } catch (err) {
+        console.error('Password reset error:', err);
+        alert(L.error_occurred || 'Ein Fehler ist aufgetreten');
+      } finally {
+        this.disabled = false;
+        this.textContent = originalText;
+      }
+    });
+  });
+
+  // Toggle enable/disable
+  document.querySelectorAll('.ppv-scanner-toggle').forEach(btn => {
+    btn.addEventListener('click', async function() {
+      const userId = this.getAttribute('data-user-id');
+      const action = this.getAttribute('data-action');
+
+      if (!confirm((action === 'disable' ? L.confirm_disable : L.confirm_enable) || 'Sind Sie sicher?')) {
+        return;
+      }
+
+      this.disabled = true;
+      const originalText = this.textContent;
+      this.textContent = L.processing || 'Verarbeitung...';
+
+      try {
+        const response = await fetch('/wp-admin/admin-ajax.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            action: 'ppv_toggle_scanner_status',
+            user_id: userId,
+            action_type: action
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          location.reload(); // Reload to show updated status
+        } else {
+          alert(data.data?.message || (L.error_occurred || 'Ein Fehler ist aufgetreten'));
+        }
+      } catch (err) {
+        console.error('Toggle status error:', err);
+        alert(L.error_occurred || 'Ein Fehler ist aufgetreten');
+      } finally {
+        this.disabled = false;
+        this.textContent = originalText;
+      }
+    });
+  });
+
+  // ============================================================
+  // 📋 LIVE RECENT SCANS POLLING (5s interval)
+  // ============================================================
+  if (logTable) {
+    // Initial load
+    async function loadRecentScans() {
+      try {
+        const response = await fetch('/wp-json/ppv/v1/pos/recent-scans', {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        const data = await response.json();
+
+        if (data.success && data.scans) {
+          // Clear current table
+          logTable.innerHTML = '';
+
+          // Add new rows (already sorted DESC by backend)
+          data.scans.forEach(scan => {
+            const row = document.createElement('tr');
+            row.innerHTML = `<td>${scan.time}</td><td>${scan.user}</td><td>${scan.status}</td>`;
+            logTable.appendChild(row);
+          });
+        }
+      } catch (err) {
+        console.error('Failed to load recent scans:', err);
+      }
+    }
+
+    // Load immediately
+    loadRecentScans();
+
+    // Poll every 5 seconds
+    setInterval(loadRecentScans, 5000);
+
+    console.log('✅ Letzte Scans live polling active (5s interval)');
   }
 });
 

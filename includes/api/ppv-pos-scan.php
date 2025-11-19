@@ -31,6 +31,12 @@ class PPV_POS_SCAN {
             'callback'            => [__CLASS__, 'handle_scan'],
             'permission_callback' => ['PPV_Permissions', 'check_handler'],
         ]);
+
+        register_rest_route('ppv/v1', '/pos/recent-scans', [
+            'methods'             => 'GET',
+            'callback'            => [__CLASS__, 'get_recent_scans'],
+            'permission_callback' => ['PPV_Permissions', 'check_handler'],
+        ]);
     }
 
     public static function handle_scan(WP_REST_Request $req) {
@@ -196,6 +202,59 @@ class PPV_POS_SCAN {
             'message'    => sanitize_textarea_field($message),
             'status'     => sanitize_text_field($status),
             'created_at' => current_time('mysql'),
+        ]);
+    }
+
+    /** ============================================================
+     * 📋 Get Recent Scans (for live table refresh)
+     * ============================================================ */
+    public static function get_recent_scans(WP_REST_Request $req) {
+        global $wpdb;
+
+        // Get store_id from session
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+
+        $store_id = intval($_SESSION['ppv_store_id'] ?? 0);
+
+        if ($store_id === 0) {
+            return rest_ensure_response([
+                'success' => false,
+                'message' => 'No store_id in session'
+            ]);
+        }
+
+        // Get last 12 scans for this store
+        $scans = $wpdb->get_results($wpdb->prepare("
+            SELECT
+                p.created,
+                p.points,
+                u.email,
+                CONCAT(u.first_name, ' ', u.last_name) as name
+            FROM {$wpdb->prefix}ppv_points p
+            LEFT JOIN {$wpdb->prefix}ppv_users u ON p.user_id = u.id
+            WHERE p.store_id = %d AND p.type = 'qr_scan'
+            ORDER BY p.created DESC
+            LIMIT 12
+        ", $store_id));
+
+        $formatted = [];
+        foreach ($scans as $scan) {
+            $time = date('H:i:s', strtotime($scan->created));
+            $user_display = !empty(trim($scan->name)) ? $scan->name : $scan->email;
+            $status = "✅ +{$scan->points}";
+
+            $formatted[] = [
+                'time' => $time,
+                'user' => $user_display,
+                'status' => $status
+            ];
+        }
+
+        return rest_ensure_response([
+            'success' => true,
+            'scans' => $formatted
         ]);
     }
 }

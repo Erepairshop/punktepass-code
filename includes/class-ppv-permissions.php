@@ -103,6 +103,27 @@ class PPV_Permissions {
             return true;
         }
 
+        // ✅ NEW: Check if scanner user (limited access to QR Center only)
+        if (self::is_scanner_user()) {
+            $store_id = self::get_scanner_store_id();
+            if ($store_id) {
+                error_log("✅ [PPV_Permissions] check_handler() SUCCESS: Scanner user with store_id={$store_id}");
+
+                // Set session variables for scanner user
+                $_SESSION['ppv_store_id'] = $store_id;
+                $_SESSION['ppv_user_type'] = 'scanner';
+
+                return true;
+            } else {
+                error_log("❌ [PPV_Permissions] check_handler() FAILED: Scanner user has no store_id");
+                return new WP_Error(
+                    'scanner_no_store',
+                    'Scanner Konfigurationsfehler. Bitte kontaktieren Sie Ihren Administrator.',
+                    ['status' => 403]
+                );
+            }
+        }
+
         // Check user type from session
         $user_type = $_SESSION['ppv_user_type'] ?? '';
         error_log("🔍 [PPV_Permissions] check_handler() user_type from SESSION: " . ($user_type ?: 'EMPTY'));
@@ -437,5 +458,61 @@ class PPV_Permissions {
      */
     public static function allow_anonymous() {
         return true;
+    }
+
+    /**
+     * Check if current user is a scanner employee
+     * Scanner users have limited access - only QR Center
+     *
+     * @return bool True if scanner user, false otherwise
+     */
+    public static function is_scanner_user() {
+        // Check session first
+        if (!empty($_SESSION['ppv_user_type']) && $_SESSION['ppv_user_type'] === 'scanner') {
+            return true;
+        }
+
+        // Check PPV users database
+        if (!empty($_SESSION['ppv_user_id'])) {
+            global $wpdb;
+            $user = $wpdb->get_row($wpdb->prepare(
+                "SELECT user_type FROM {$wpdb->prefix}ppv_users WHERE id = %d LIMIT 1",
+                $_SESSION['ppv_user_id']
+            ));
+
+            return $user && $user->user_type === 'scanner';
+        }
+
+        return false;
+    }
+
+    /**
+     * Get store ID for scanner user
+     * Scanner users are linked to a parent handler's store
+     *
+     * @return int|false Store ID or false if not found
+     */
+    public static function get_scanner_store_id() {
+        if (!self::is_scanner_user()) {
+            return false;
+        }
+
+        // Check session first
+        if (!empty($_SESSION['ppv_store_id'])) {
+            return intval($_SESSION['ppv_store_id']);
+        }
+
+        // Get from database
+        if (!empty($_SESSION['ppv_user_id'])) {
+            global $wpdb;
+            $scanner = $wpdb->get_row($wpdb->prepare(
+                "SELECT vendor_store_id FROM {$wpdb->prefix}ppv_users WHERE id = %d AND user_type = 'scanner' LIMIT 1",
+                $_SESSION['ppv_user_id']
+            ));
+
+            return $scanner && $scanner->vendor_store_id ? intval($scanner->vendor_store_id) : false;
+        }
+
+        return false;
     }
 }

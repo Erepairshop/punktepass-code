@@ -292,36 +292,57 @@ class PPV_QR {
         $GLOBALS['ppv_current_lang'] = include $lang_file;
 
         ?>
-        <div class="ppv-qr-wrapper glass-card">
-            <h2>📡 <?php echo self::t('qrcamp_title', 'Kassenscanner & Kampagnen'); ?></h2>
+        <?php
+        // ✅ Check if scanner user (only show scanner interface)
+        $is_scanner = class_exists('PPV_Permissions') && PPV_Permissions::is_scanner_user();
+        ?>
 
-            <div class="ppv-tabs">
-                <button class="ppv-tab active" data-tab="scanner" id="ppv-tab-scanner">
-                    <?php echo self::t('tab_scanner', 'Kassenscanner'); ?>
-                </button>
-                <button class="ppv-tab" data-tab="rewards" id="ppv-tab-rewards">
-                    🎁 <?php echo self::t('tab_rewards', 'Prämien'); ?>
-                </button>
-                <button class="ppv-tab" data-tab="campaigns" id="ppv-tab-campaigns">
-                    <?php echo self::t('tab_campaigns', 'Kampagnen'); ?>
-                </button>
-            </div>
-
-            <!-- TAB CONTENT: SCANNER -->
-            <div class="ppv-tab-content active" id="tab-scanner">
+        <?php if ($is_scanner): ?>
+            <!-- SCANNER USER: Only Scanner Interface -->
+            <div class="ppv-pos-center glass-section">
                 <?php self::render_pos_scanner(); ?>
             </div>
+        <?php else: ?>
+            <!-- HANDLER USER: Full Interface with Tabs -->
+            <div class="ppv-qr-wrapper glass-card">
+                <h2>📡 <?php echo self::t('qrcamp_title', 'Kassenscanner & Kampagnen'); ?></h2>
 
-            <!-- TAB CONTENT: PRÄMIEN -->
-            <div class="ppv-tab-content" id="tab-rewards">
-                <?php echo do_shortcode('[ppv_rewards_management]'); ?>
-            </div>
+                <div class="ppv-tabs">
+                    <button class="ppv-tab active" data-tab="scanner" id="ppv-tab-scanner">
+                        📲 <?php echo self::t('tab_scanner', 'Kassenscanner'); ?>
+                    </button>
+                    <button class="ppv-tab" data-tab="rewards" id="ppv-tab-rewards">
+                        🎁 <?php echo self::t('tab_rewards', 'Prämien'); ?>
+                    </button>
+                    <button class="ppv-tab" data-tab="campaigns" id="ppv-tab-campaigns">
+                        🎯 <?php echo self::t('tab_campaigns', 'Kampagnen'); ?>
+                    </button>
+                    <button class="ppv-tab" data-tab="scanner-users" id="ppv-tab-scanner-users">
+                        👥 <?php echo self::t('tab_scanner_users', 'Scanner Felhasználók'); ?>
+                    </button>
+                </div>
 
-            <!-- TAB CONTENT: KAMPAGNEN -->
-            <div class="ppv-tab-content" id="tab-campaigns">
-                <?php self::render_campaigns(); ?>
+                <!-- TAB CONTENT: SCANNER -->
+                <div class="ppv-tab-content active" id="tab-scanner">
+                    <?php self::render_pos_scanner(); ?>
+                </div>
+
+                <!-- TAB CONTENT: PRÄMIEN -->
+                <div class="ppv-tab-content" id="tab-rewards">
+                    <?php echo do_shortcode('[ppv_rewards_management]'); ?>
+                </div>
+
+                <!-- TAB CONTENT: KAMPAGNEN -->
+                <div class="ppv-tab-content" id="tab-campaigns">
+                    <?php self::render_campaigns(); ?>
+                </div>
+
+                <!-- TAB CONTENT: SCANNER FELHASZNÁLÓK -->
+                <div class="ppv-tab-content" id="tab-scanner-users">
+                    <?php self::render_scanner_users(); ?>
+                </div>
             </div>
-        </div>
+        <?php endif; ?>
 
         <script>
         jQuery(document).ready(function($){
@@ -489,7 +510,10 @@ class PPV_QR {
             $border_color = 'rgba(239, 68, 68, 0.3)';
         }
 
-        ?>
+        // ✅ Check if scanner user (don't show subscription info to scanners)
+        $is_scanner = class_exists('PPV_Permissions') && PPV_Permissions::is_scanner_user();
+
+        if (!$is_scanner): ?>
         <div class="ppv-trial-info-block" style="margin-bottom: 15px; padding: 12px 16px; background: <?php echo $info_color; ?>; border-radius: 10px; border: 2px solid <?php echo $border_color; ?>;">
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
                 <div style="display: flex; align-items: center; gap: 10px;">
@@ -544,15 +568,16 @@ class PPV_QR {
             </div>
         </div>
         <?php endif; ?>
+        <?php endif; // End scanner check for subscription info ?>
 
-        <!-- 🆘 Floating Support Button -->
+        <!-- 🆘 Floating Support Button (ALWAYS SHOW - including scanner users) -->
         <button id="ppv-support-btn" style="position: fixed; bottom: 90px; left: 20px; width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; color: white; font-size: 24px; cursor: pointer; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); z-index: 999; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center;"
                 onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 6px 20px rgba(102, 126, 234, 0.6)';"
                 onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 15px rgba(102, 126, 234, 0.4)';">
             🆘
         </button>
 
-        <!-- Support Ticket Modal -->
+        <!-- Support Ticket Modal (ALWAYS SHOW - including scanner users) -->
         <div id="ppv-support-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; align-items: center; justify-content: center;">
             <div style="background: #1a1a2e; padding: 30px; border-radius: 15px; max-width: 500px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.5); max-height: 90vh; overflow-y: auto;">
                 <h3 style="margin-top: 0; color: #fff; display: flex; align-items: center; gap: 10px;">
@@ -609,17 +634,6 @@ class PPV_QR {
                     <?php echo self::t('sync_now', 'Sync'); ?>
                 </button>
             </div>
-
-            <h3><?php echo self::t('scanner_title', '📲 Kassenscanner'); ?></h3>
-            <p><?php echo self::t('scanner_desc', 'Scanne den QR-Code des Kunden'); ?></p>
-
-            <input type="text" id="ppv-pos-input" placeholder="<?php echo esc_attr(self::t('scan_placeholder', 'Hier scannen...')); ?>" autofocus>
-
-            <button id="ppv-pos-send" class="ppv-btn neon" type="button">
-                <?php echo self::t('scan_button', 'QR prüfen'); ?>
-            </button>
-
-            <div id="ppv-pos-result" class="ppv-result-box"></div>
 
             <h4><?php echo self::t('table_title', '📋 Letzte Scans'); ?></h4>
 
@@ -768,6 +782,137 @@ class PPV_QR {
         </div>
         <?php
     }
+
+    // ============================================================
+    // 👥 RENDER SCANNER USERS MANAGEMENT
+    // ============================================================
+    public static function render_scanner_users() {
+        global $wpdb;
+
+        // Get current handler's store_id
+        $store_id = 0;
+        if (!empty($_SESSION['ppv_store_id'])) {
+            $store_id = intval($_SESSION['ppv_store_id']);
+        } elseif (!empty($_SESSION['ppv_user_id'])) {
+            $user_id = intval($_SESSION['ppv_user_id']);
+            $store_id = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id = %d LIMIT 1",
+                $user_id
+            ));
+        }
+
+        // Get all scanner users for this store (from PPV users table)
+        $scanners = [];
+        if ($store_id) {
+            $scanners = $wpdb->get_results($wpdb->prepare(
+                "SELECT id, email, created_at, active FROM {$wpdb->prefix}ppv_users
+                 WHERE user_type = 'scanner' AND vendor_store_id = %d
+                 ORDER BY created_at DESC",
+                $store_id
+            ));
+        }
+
+        ?>
+        <div class="ppv-scanner-users glass-section">
+            <div class="ppv-scanner-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3>👥 <?php echo self::t('scanner_users_title', 'Scanner Felhasználók'); ?></h3>
+                <button id="ppv-new-scanner-btn" class="ppv-btn neon" type="button">
+                    ➕ <?php echo self::t('add_scanner_user', 'Új Scanner Létrehozása'); ?>
+                </button>
+            </div>
+
+            <?php if (empty($scanners)): ?>
+                <div style="text-align: center; padding: 40px; color: #999;">
+                    <p>📭 <?php echo self::t('no_scanner_users', 'Még nincs scanner felhasználó létrehozva.'); ?></p>
+                </div>
+            <?php else: ?>
+                <div class="scanner-users-list">
+                    <?php foreach ($scanners as $scanner): ?>
+                        <?php
+                        $is_active = $scanner->active == 1; // PPV users: 1 = active, 0 = disabled
+                        $created_date = date('Y-m-d H:i', strtotime($scanner->created_at));
+                        ?>
+                        <div class="scanner-user-card glass-card" style="padding: 15px; margin-bottom: 15px; border-left: 4px solid <?php echo $is_active ? '#4caf50' : '#999'; ?>;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <div style="font-weight: bold; font-size: 16px; margin-bottom: 5px;">
+                                        📧 <?php echo esc_html($scanner->email); ?>
+                                    </div>
+                                    <div style="font-size: 12px; color: #999;">
+                                        <?php echo self::t('created_at', 'Létrehozva'); ?>: <?php echo $created_date; ?>
+                                    </div>
+                                    <div style="margin-top: 5px;">
+                                        <?php if ($is_active): ?>
+                                            <span style="background: #4caf50; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">
+                                                ✅ <?php echo self::t('status_active', 'Aktív'); ?>
+                                            </span>
+                                        <?php else: ?>
+                                            <span style="background: #999; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">
+                                                🚫 <?php echo self::t('status_disabled', 'Letiltva'); ?>
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 10px;">
+                                    <!-- Password Reset -->
+                                    <button class="ppv-scanner-reset-pw ppv-btn-outline" data-user-id="<?php echo $scanner->id; ?>" data-email="<?php echo esc_attr($scanner->email); ?>" style="padding: 8px 12px; font-size: 13px;">
+                                        🔄 <?php echo self::t('reset_password', 'Jelszó Reset'); ?>
+                                    </button>
+
+                                    <!-- Toggle Active/Disable -->
+                                    <?php if ($is_active): ?>
+                                        <button class="ppv-scanner-toggle ppv-btn-outline" data-user-id="<?php echo $scanner->id; ?>" data-action="disable" style="padding: 8px 12px; font-size: 13px; background: #f44336; color: white; border: none;">
+                                            🚫 <?php echo self::t('disable', 'Letiltás'); ?>
+                                        </button>
+                                    <?php else: ?>
+                                        <button class="ppv-scanner-toggle ppv-btn" data-user-id="<?php echo $scanner->id; ?>" data-action="enable" style="padding: 8px 12px; font-size: 13px;">
+                                            ✅ <?php echo self::t('enable', 'Engedélyezés'); ?>
+                                        </button>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+
+            <!-- Create Scanner Modal -->
+            <div id="ppv-scanner-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; align-items: center; justify-content: center;">
+                <div style="background: #1a1a2e; padding: 30px; border-radius: 15px; max-width: 500px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
+                    <h3 style="margin-top: 0; color: #fff;">➕ <?php echo self::t('create_scanner_title', 'Új Scanner Létrehozása'); ?></h3>
+
+                    <label style="color: #fff; font-size: 13px; display: block; margin-bottom: 5px;">
+                        <?php echo self::t('scanner_email', 'E-mail cím'); ?> <span style="color: #ff5252;">*</span>
+                    </label>
+                    <input type="email" id="ppv-scanner-email" class="ppv-input" placeholder="scanner@example.com" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #0f0f1e; color: #fff; margin-bottom: 15px;">
+
+                    <label style="color: #fff; font-size: 13px; display: block; margin-bottom: 5px;">
+                        <?php echo self::t('scanner_password', 'Jelszó'); ?> <span style="color: #ff5252;">*</span>
+                    </label>
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                        <input type="text" id="ppv-scanner-password" class="ppv-input" placeholder="<?php echo self::t('enter_password', 'Adjon meg jelszót'); ?>" style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #0f0f1e; color: #fff;">
+                        <button id="ppv-scanner-gen-pw" class="ppv-btn-outline" style="padding: 12px; white-space: nowrap;">
+                            🎲 <?php echo self::t('generate', 'Generálás'); ?>
+                        </button>
+                    </div>
+
+                    <div id="ppv-scanner-error" style="display: none; color: #ff5252; font-size: 13px; margin-bottom: 10px; padding: 10px; background: rgba(255, 82, 82, 0.1); border-radius: 6px;"></div>
+                    <div id="ppv-scanner-success" style="display: none; color: #4caf50; font-size: 13px; margin-bottom: 10px; padding: 10px; background: rgba(76, 175, 80, 0.1); border-radius: 6px;"></div>
+
+                    <div style="display: flex; gap: 10px;">
+                        <button id="ppv-scanner-create" class="ppv-btn" style="flex: 1; padding: 12px;">
+                            ✅ <?php echo self::t('create', 'Létrehozás'); ?>
+                        </button>
+                        <button id="ppv-scanner-cancel" class="ppv-btn-outline" style="flex: 1; padding: 12px;">
+                            ❌ <?php echo self::t('cancel', 'Mégse'); ?>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <?php
+    }
+
     // ============================================================
     // 📡 REST ROUTES REGISTRATION
     // ============================================================

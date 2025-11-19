@@ -405,7 +405,7 @@ private static function get_today_hours($opening_hours) {
 
         // Clean and check user type
         $user_type_clean = strtolower(trim($user_type));
-        $handler_types = ['store', 'handler', 'vendor', 'admin'];
+        $handler_types = ['store', 'handler', 'vendor', 'admin', 'scanner'];
         $is_handler = in_array($user_type_clean, $handler_types);
 
         // 🔍 DEBUG: Final result
