@@ -407,6 +407,14 @@ class PPV_QR {
             ($subscription_status === 'active' && $subscription_days_left === 0)
         );
 
+        // 🐛 DEBUG: Log button visibility
+        error_log("🔍 [PPV_QR] Renewal button check:");
+        error_log("  - subscription_status: " . $subscription_status);
+        error_log("  - trial_days_left: " . $trial_days_left);
+        error_log("  - subscription_days_left: " . $subscription_days_left);
+        error_log("  - renewal_requested: " . ($renewal_requested ? 'TRUE' : 'FALSE'));
+        error_log("  - show_renewal_button: " . ($show_renewal_button ? 'TRUE' : 'FALSE'));
+
         if ($subscription_status === 'active') {
             // Active subscription with expiry date
             if ($subscription_days_left > 0) {
