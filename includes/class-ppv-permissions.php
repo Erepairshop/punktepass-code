@@ -88,6 +88,7 @@ class PPV_Permissions {
      * @return bool|WP_Error True if handler, WP_Error otherwise
      */
     public static function check_handler() {
+        global $wpdb;
         error_log("🔍 [PPV_Permissions] check_handler() called");
 
         $auth_check = self::check_authenticated();
@@ -108,31 +109,89 @@ class PPV_Permissions {
 
         $handler_types = ['store', 'handler', 'vendor', 'admin'];
 
+        $is_handler = false;
+        $user_id_to_check = null;
+
         if (in_array($user_type, $handler_types)) {
-            error_log("✅ [PPV_Permissions] check_handler() SUCCESS: user_type={$user_type} is in handler_types");
-            return true;
+            error_log("✅ [PPV_Permissions] check_handler() user_type={$user_type} is in handler_types");
+            $is_handler = true;
+            $user_id_to_check = self::get_current_user_id();
         }
 
         // Check user type from database (via token auth)
-        error_log("🔍 [PPV_Permissions] check_handler() checking database for user_type...");
-        $user_data = self::get_authenticated_user_data();
+        if (!$is_handler) {
+            error_log("🔍 [PPV_Permissions] check_handler() checking database for user_type...");
+            $user_data = self::get_authenticated_user_data();
 
-        if ($user_data) {
-            error_log("🔍 [PPV_Permissions] check_handler() user_data found: user_type=" . ($user_data['user_type'] ?? 'NONE'));
-            if (in_array($user_data['user_type'], $handler_types)) {
-                error_log("✅ [PPV_Permissions] check_handler() SUCCESS: DB user_type={$user_data['user_type']} is in handler_types");
-                return true;
+            if ($user_data) {
+                error_log("🔍 [PPV_Permissions] check_handler() user_data found: user_type=" . ($user_data['user_type'] ?? 'NONE'));
+                if (in_array($user_data['user_type'], $handler_types)) {
+                    error_log("✅ [PPV_Permissions] check_handler() DB user_type={$user_data['user_type']} is in handler_types");
+                    $is_handler = true;
+                    $user_id_to_check = $user_data['id'] ?? null;
+                }
+            } else {
+                error_log("⚠️ [PPV_Permissions] check_handler() no user_data from database");
             }
-        } else {
-            error_log("⚠️ [PPV_Permissions] check_handler() no user_data from database");
         }
 
-        error_log("❌ [PPV_Permissions] check_handler() FAILED: Nincs jogosultság");
-        return new WP_Error(
-            'forbidden',
-            'Nincs jogosultság. Handler szerepkör szükséges.',
-            ['status' => 403]
-        );
+        if (!$is_handler) {
+            error_log("❌ [PPV_Permissions] check_handler() FAILED: Nincs jogosultság");
+            return new WP_Error(
+                'forbidden',
+                'Nincs jogosultság. Handler szerepkör szükséges.',
+                ['status' => 403]
+            );
+        }
+
+        // ✅ NEW: Check subscription expiry
+        if ($user_id_to_check) {
+            error_log("🔍 [PPV_Permissions] Checking subscription expiry for user_id={$user_id_to_check}");
+
+            $store = $wpdb->get_row($wpdb->prepare(
+                "SELECT subscription_status, trial_ends_at, subscription_expires_at
+                FROM {$wpdb->prefix}ppv_stores
+                WHERE user_id = %d
+                LIMIT 1",
+                $user_id_to_check
+            ));
+
+            if ($store) {
+                $now = current_time('timestamp');
+                $is_expired = false;
+
+                // Check trial expiry
+                if ($store->subscription_status === 'trial' && !empty($store->trial_ends_at)) {
+                    $trial_end = strtotime($store->trial_ends_at);
+                    if ($trial_end < $now) {
+                        $is_expired = true;
+                        error_log("❌ [PPV_Permissions] TRIAL EXPIRED: trial_ends_at={$store->trial_ends_at}");
+                    }
+                }
+
+                // Check active subscription expiry
+                if ($store->subscription_status === 'active' && !empty($store->subscription_expires_at)) {
+                    $sub_end = strtotime($store->subscription_expires_at);
+                    if ($sub_end < $now) {
+                        $is_expired = true;
+                        error_log("❌ [PPV_Permissions] SUBSCRIPTION EXPIRED: subscription_expires_at={$store->subscription_expires_at}");
+                    }
+                }
+
+                if ($is_expired) {
+                    return new WP_Error(
+                        'subscription_expired',
+                        'Ihr Abonnement ist abgelaufen. Bitte verlängern Sie Ihr Abo.',
+                        ['status' => 403]
+                    );
+                }
+
+                error_log("✅ [PPV_Permissions] Subscription is VALID");
+            }
+        }
+
+        error_log("✅ [PPV_Permissions] check_handler() SUCCESS");
+        return true;
     }
 
     /**
