@@ -546,7 +546,7 @@ class PPV_QR {
         <?php endif; ?>
 
         <!-- 🆘 Floating Support Button -->
-        <button id="ppv-support-btn" style="position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; color: white; font-size: 24px; cursor: pointer; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); z-index: 999; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center;"
+        <button id="ppv-support-btn" style="position: fixed; bottom: 90px; left: 20px; width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; color: white; font-size: 24px; cursor: pointer; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); z-index: 999; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center;"
                 onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 6px 20px rgba(102, 126, 234, 0.6)';"
                 onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 15px rgba(102, 126, 234, 0.4)';">
             🆘
