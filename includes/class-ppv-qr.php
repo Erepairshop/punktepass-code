@@ -568,15 +568,16 @@ class PPV_QR {
             </div>
         </div>
         <?php endif; ?>
+        <?php endif; // End scanner check for subscription info ?>
 
-        <!-- 🆘 Floating Support Button -->
+        <!-- 🆘 Floating Support Button (ALWAYS SHOW - including scanner users) -->
         <button id="ppv-support-btn" style="position: fixed; bottom: 90px; left: 20px; width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; color: white; font-size: 24px; cursor: pointer; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); z-index: 999; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center;"
                 onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 6px 20px rgba(102, 126, 234, 0.6)';"
                 onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 15px rgba(102, 126, 234, 0.4)';">
             🆘
         </button>
 
-        <!-- Support Ticket Modal -->
+        <!-- Support Ticket Modal (ALWAYS SHOW - including scanner users) -->
         <div id="ppv-support-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; align-items: center; justify-content: center;">
             <div style="background: #1a1a2e; padding: 30px; border-radius: 15px; max-width: 500px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.5); max-height: 90vh; overflow-y: auto;">
                 <h3 style="margin-top: 0; color: #fff; display: flex; align-items: center; gap: 10px;">
@@ -625,7 +626,6 @@ class PPV_QR {
                 </div>
             </div>
         </div>
-        <?php endif; // End scanner check for subscription info ?>
 
         <div class="ppv-pos-center glass-section">
             <div id="ppv-offline-banner" style="display:none;background:#ffcc00;padding:8px;border-radius:6px;margin-bottom:10px;">
