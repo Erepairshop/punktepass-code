@@ -103,6 +103,27 @@ class PPV_Permissions {
             return true;
         }
 
+        // ✅ NEW: Check if scanner user (limited access to QR Center only)
+        if (self::is_scanner_user()) {
+            $store_id = self::get_scanner_store_id();
+            if ($store_id) {
+                error_log("✅ [PPV_Permissions] check_handler() SUCCESS: Scanner user with store_id={$store_id}");
+
+                // Set session variables for scanner user
+                $_SESSION['ppv_store_id'] = $store_id;
+                $_SESSION['ppv_user_type'] = 'scanner';
+
+                return true;
+            } else {
+                error_log("❌ [PPV_Permissions] check_handler() FAILED: Scanner user has no store_id");
+                return new WP_Error(
+                    'scanner_no_store',
+                    'Scanner Konfigurationsfehler. Bitte kontaktieren Sie Ihren Administrator.',
+                    ['status' => 403]
+                );
+            }
+        }
+
         // Check user type from session
         $user_type = $_SESSION['ppv_user_type'] ?? '';
         error_log("🔍 [PPV_Permissions] check_handler() user_type from SESSION: " . ($user_type ?: 'EMPTY'));
@@ -437,5 +458,37 @@ class PPV_Permissions {
      */
     public static function allow_anonymous() {
         return true;
+    }
+
+    /**
+     * Check if current user is a scanner employee
+     * Scanner users have limited access - only QR Center
+     *
+     * @return bool True if scanner user, false otherwise
+     */
+    public static function is_scanner_user() {
+        if (!is_user_logged_in()) {
+            return false;
+        }
+
+        $user = wp_get_current_user();
+        return in_array('ppv_scanner', (array) $user->roles);
+    }
+
+    /**
+     * Get store ID for scanner user
+     * Scanner users are linked to a parent handler's store
+     *
+     * @return int|false Store ID or false if not found
+     */
+    public static function get_scanner_store_id() {
+        if (!self::is_scanner_user()) {
+            return false;
+        }
+
+        $user_id = get_current_user_id();
+        $store_id = get_user_meta($user_id, 'ppv_scanner_store_id', true);
+
+        return $store_id ? intval($store_id) : false;
     }
 }

@@ -27,6 +27,55 @@ add_action('init', function () {
 }, 1);
 
 // ========================================
+// 👥 SCANNER USER AUTO-REDIRECT
+// ========================================
+add_filter('login_redirect', function($redirect_to, $request, $user) {
+    if (isset($user->roles) && is_array($user->roles)) {
+        // Redirect scanner users to QR Center
+        if (in_array('ppv_scanner', $user->roles)) {
+            return home_url('/qr-center');
+        }
+    }
+    return $redirect_to;
+}, 10, 3);
+
+// Restrict scanner users to QR Center only in admin menu
+add_action('admin_menu', function() {
+    if (class_exists('PPV_Permissions') && PPV_Permissions::is_scanner_user()) {
+        // Remove all menu items except Dashboard and QR Center
+        global $menu;
+        $allowed_menu_slugs = ['index.php']; // Keep Dashboard
+
+        foreach ($menu as $key => $menu_item) {
+            if (!in_array($menu_item[2], $allowed_menu_slugs)) {
+                remove_menu_page($menu_item[2]);
+            }
+        }
+    }
+}, 999);
+
+// Redirect scanner users away from unauthorized pages
+add_action('admin_init', function() {
+    if (class_exists('PPV_Permissions') && PPV_Permissions::is_scanner_user()) {
+        global $pagenow;
+
+        // Allow only QR Center page
+        $allowed_pages = ['index.php', 'admin.php', 'admin-ajax.php'];
+
+        if (!in_array($pagenow, $allowed_pages)) {
+            wp_redirect(home_url('/qr-center'));
+            exit;
+        }
+
+        // If on admin.php, ensure it's QR Center
+        if ($pagenow === 'admin.php' && !isset($_GET['page'])) {
+            wp_redirect(home_url('/qr-center'));
+            exit;
+        }
+    }
+});
+
+// ========================================
 // 🔒 SECURITY HEADERS (PWA-compatible)
 // ========================================
 add_action('send_headers', function() {
@@ -615,6 +664,16 @@ add_action('init', function () {
 register_activation_hook(__FILE__, function () {
     add_rewrite_rule('^store/([^/]*)/?$', 'index.php?pagename=store&store=$matches[1]', 'top');
     flush_rewrite_rules();
+
+    // ✅ Create ppv_scanner role if it doesn't exist
+    if (!get_role('ppv_scanner')) {
+        add_role('ppv_scanner', 'Scanner Employee', [
+            'read' => true,
+            'ppv_scan_qr' => true,
+            'ppv_view_qr_center' => true
+        ]);
+        error_log('✅ [PPV] Scanner role created');
+    }
 });
 
 register_deactivation_hook(__FILE__, 'flush_rewrite_rules');

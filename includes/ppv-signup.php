@@ -1085,6 +1085,203 @@ class PPV_Signup {
 
         wp_send_json_success(['message' => '✅ Ticket erfolgreich gesendet! Wir melden uns schnellstmöglich.']);
     }
+
+    /* ============================================================
+     * 👥 AJAX Create Scanner User
+     * ============================================================ */
+    public static function ajax_create_scanner_user() {
+        global $wpdb;
+
+        // Check if handler is logged in
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+
+        if (empty($_SESSION['ppv_user_id'])) {
+            wp_send_json_error(['message' => 'Nicht eingeloggt']);
+            return;
+        }
+
+        $handler_user_id = intval($_SESSION['ppv_user_id']);
+        $handler_store_id = intval($_SESSION['ppv_store_id'] ?? 0);
+
+        // Get store_id if missing
+        if ($handler_store_id === 0) {
+            $handler_store_id = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id = %d LIMIT 1",
+                $handler_user_id
+            ));
+
+            if (!$handler_store_id) {
+                wp_send_json_error(['message' => 'Store nicht gefunden']);
+                return;
+            }
+
+            $handler_store_id = intval($handler_store_id);
+        }
+
+        $email = sanitize_email($_POST['email'] ?? '');
+        $password = $_POST['password'] ?? '';
+
+        if (empty($email) || empty($password)) {
+            wp_send_json_error(['message' => 'E-Mail und Passwort sind erforderlich']);
+            return;
+        }
+
+        if (!is_email($email)) {
+            wp_send_json_error(['message' => 'Ungültige E-Mail-Adresse']);
+            return;
+        }
+
+        // Check if email already exists
+        if (email_exists($email)) {
+            wp_send_json_error(['message' => 'Diese E-Mail ist bereits registriert']);
+            return;
+        }
+
+        // Create WordPress user
+        $user_id = wp_create_user($email, $password, $email);
+
+        if (is_wp_error($user_id)) {
+            error_log("❌ [PPV_Scanner] Failed to create user: " . $user_id->get_error_message());
+            wp_send_json_error(['message' => 'Fehler beim Erstellen des Benutzers: ' . $user_id->get_error_message()]);
+            return;
+        }
+
+        // Get user object and set role
+        $user = new WP_User($user_id);
+        $user->set_role('ppv_scanner');
+
+        // Link scanner to handler's store
+        update_user_meta($user_id, 'ppv_scanner_store_id', $handler_store_id);
+
+        error_log("✅ [PPV_Scanner] Scanner user created: ID={$user_id}, Email={$email}, Store={$handler_store_id}");
+
+        wp_send_json_success([
+            'message' => '✅ Scanner Benutzer erfolgreich erstellt!',
+            'user_id' => $user_id,
+            'email' => $email
+        ]);
+    }
+
+    /* ============================================================
+     * 🔄 AJAX Reset Scanner Password
+     * ============================================================ */
+    public static function ajax_reset_scanner_password() {
+        global $wpdb;
+
+        // Check if handler is logged in
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+
+        if (empty($_SESSION['ppv_user_id'])) {
+            wp_send_json_error(['message' => 'Nicht eingeloggt']);
+            return;
+        }
+
+        $scanner_user_id = intval($_POST['user_id'] ?? 0);
+        $new_password = $_POST['new_password'] ?? '';
+
+        if (!$scanner_user_id || empty($new_password)) {
+            wp_send_json_error(['message' => 'Benutzer-ID und neues Passwort sind erforderlich']);
+            return;
+        }
+
+        // Verify scanner belongs to this handler
+        $handler_user_id = intval($_SESSION['ppv_user_id']);
+        $handler_store_id = intval($_SESSION['ppv_store_id'] ?? 0);
+
+        if ($handler_store_id === 0) {
+            $handler_store_id = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id = %d LIMIT 1",
+                $handler_user_id
+            ));
+        }
+
+        $scanner_store_id = get_user_meta($scanner_user_id, 'ppv_scanner_store_id', true);
+
+        if ($scanner_store_id != $handler_store_id) {
+            wp_send_json_error(['message' => 'Keine Berechtigung für diesen Benutzer']);
+            return;
+        }
+
+        // Reset password
+        wp_set_password($new_password, $scanner_user_id);
+
+        $user = get_userdata($scanner_user_id);
+
+        error_log("✅ [PPV_Scanner] Password reset for scanner: ID={$scanner_user_id}, Email={$user->user_email}");
+
+        wp_send_json_success([
+            'message' => '✅ Passwort erfolgreich zurückgesetzt!',
+            'email' => $user->user_email
+        ]);
+    }
+
+    /* ============================================================
+     * 🚫 AJAX Toggle Scanner Status
+     * ============================================================ */
+    public static function ajax_toggle_scanner_status() {
+        global $wpdb;
+
+        // Check if handler is logged in
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+
+        if (empty($_SESSION['ppv_user_id'])) {
+            wp_send_json_error(['message' => 'Nicht eingeloggt']);
+            return;
+        }
+
+        $scanner_user_id = intval($_POST['user_id'] ?? 0);
+        $action = sanitize_text_field($_POST['action_type'] ?? '');
+
+        if (!$scanner_user_id || !in_array($action, ['enable', 'disable'])) {
+            wp_send_json_error(['message' => 'Ungültige Parameter']);
+            return;
+        }
+
+        // Verify scanner belongs to this handler
+        $handler_user_id = intval($_SESSION['ppv_user_id']);
+        $handler_store_id = intval($_SESSION['ppv_store_id'] ?? 0);
+
+        if ($handler_store_id === 0) {
+            $handler_store_id = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id = %d LIMIT 1",
+                $handler_user_id
+            ));
+        }
+
+        $scanner_store_id = get_user_meta($scanner_user_id, 'ppv_scanner_store_id', true);
+
+        if ($scanner_store_id != $handler_store_id) {
+            wp_send_json_error(['message' => 'Keine Berechtigung für diesen Benutzer']);
+            return;
+        }
+
+        // Update user status (WordPress: 0 = active, 1 = blocked)
+        $new_status = $action === 'disable' ? 1 : 0;
+
+        $wpdb->update(
+            $wpdb->users,
+            ['user_status' => $new_status],
+            ['ID' => $scanner_user_id],
+            ['%d'],
+            ['%d']
+        );
+
+        $user = get_userdata($scanner_user_id);
+        $status_text = $action === 'disable' ? 'deaktiviert' : 'aktiviert';
+
+        error_log("✅ [PPV_Scanner] Scanner {$status_text}: ID={$scanner_user_id}, Email={$user->user_email}");
+
+        wp_send_json_success([
+            'message' => "✅ Scanner erfolgreich {$status_text}!",
+            'new_status' => $action === 'enable' ? 'active' : 'disabled'
+        ]);
+    }
 }
 
 // ⚠️ CRITICAL: Initialize the class!
@@ -1097,5 +1294,10 @@ add_action('wp_ajax_nopriv_ppv_request_subscription_renewal', ['PPV_Signup', 'aj
 // Register AJAX handlers for support tickets
 add_action('wp_ajax_ppv_submit_support_ticket', ['PPV_Signup', 'ajax_submit_support_ticket']);
 add_action('wp_ajax_nopriv_ppv_submit_support_ticket', ['PPV_Signup', 'ajax_submit_support_ticket']);
+
+// Register AJAX handlers for scanner user management
+add_action('wp_ajax_ppv_create_scanner_user', ['PPV_Signup', 'ajax_create_scanner_user']);
+add_action('wp_ajax_ppv_reset_scanner_password', ['PPV_Signup', 'ajax_reset_scanner_password']);
+add_action('wp_ajax_ppv_toggle_scanner_status', ['PPV_Signup', 'ajax_toggle_scanner_status']);
 
 PPV_Signup::hooks();
