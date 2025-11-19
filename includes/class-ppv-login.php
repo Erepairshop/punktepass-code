@@ -438,7 +438,18 @@ public static function render_landing_page($atts) {
                 </div>
             </footer>
         </div>
-        
+
+        <!-- Service Worker Registration (Login Page) -->
+        <script>
+        if ('serviceWorker' in navigator) {
+          window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js')
+              .then(reg => console.log('✅ [Login] SW registered:', reg.scope))
+              .catch(err => console.error('❌ [Login] SW error:', err));
+          });
+        }
+        </script>
+
         <?php
         return ob_get_clean();
     }
