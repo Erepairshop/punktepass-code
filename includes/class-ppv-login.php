@@ -90,32 +90,12 @@ class PPV_Login {
                 return;
             }
         }
-        
-        // Google Fonts - Inter
-        wp_enqueue_style(
-            'ppv-inter-font',
-            'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
-            [],
-            null
-        );
-        
-        // Landing/Login CSS
-        wp_enqueue_style(
-            'ppv-login',
-            PPV_PLUGIN_URL . 'assets/css/ppv-login-light.css',
-            [],
-            PPV_VERSION . '.' . time()
-        );
-        
-        // Login JS
-        wp_enqueue_script(
-            'ppv-login',
-            PPV_PLUGIN_URL . 'assets/js/ppv-login.js',
-            ['jquery'],
-            PPV_VERSION . '.' . time(),
-            true
-        );
-        // Google OAuth Library
+
+        // ✅ DISABLED - Using inline <link> and <script> tags in template instead
+        // This prevents duplicate loading and cache issues
+        // See render_landing_page() for inline asset loading
+
+        // Google OAuth Library (still needed via enqueue)
         wp_enqueue_script(
             'google-platform',
             'https://accounts.google.com/gsi/client',
@@ -123,30 +103,6 @@ class PPV_Login {
             null,
             true
         );
-        
-        // Get OAuth credentials
-        $facebook_app_id = defined('PPV_FACEBOOK_APP_ID') ? PPV_FACEBOOK_APP_ID : get_option('ppv_facebook_app_id', '');
-        $google_client_id = defined('PPV_GOOGLE_CLIENT_ID') ? PPV_GOOGLE_CLIENT_ID : get_option('ppv_google_client_id', '453567547051-odmqrinafba8ls8ktp9snlp7d2fpl9q0.apps.googleusercontent.com');
-        $tiktok_client_key = defined('PPV_TIKTOK_CLIENT_KEY') ? PPV_TIKTOK_CLIENT_KEY : get_option('ppv_tiktok_client_key', '');
-
-        // Debug log - SHOW ACTUAL VALUES
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('PPV Login - Facebook constant defined: ' . (defined('PPV_FACEBOOK_APP_ID') ? 'YES' : 'NO'));
-            error_log('PPV Login - Facebook constant value: "' . (defined('PPV_FACEBOOK_APP_ID') ? PPV_FACEBOOK_APP_ID : 'N/A') . '"');
-            error_log('PPV Login - Facebook final value: "' . $facebook_app_id . '"');
-            error_log('PPV Login - Facebook length: ' . strlen($facebook_app_id));
-            error_log('PPV Login - Facebook empty: ' . (empty($facebook_app_id) ? 'YES' : 'NO'));
-        }
-
-        // Localize
-        wp_localize_script('ppv-login', 'ppvLogin', [
-            'ajaxurl' => admin_url('admin-ajax.php'),
-            'nonce' => wp_create_nonce('ppv_login_nonce'),
-            'google_client_id' => $google_client_id,
-            'facebook_app_id' => $facebook_app_id,
-            'tiktok_client_key' => $tiktok_client_key,
-            'redirect_url' => home_url('/user_dashboard')
-        ]);
     }
     
     /** ============================================================
@@ -196,6 +152,9 @@ public static function render_landing_page($atts) {
         
         ob_start();
         ?>
+
+        <!-- Google Fonts -->
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 
         <!-- Force Fresh CSS Load (Bypass SW Cache) -->
         <link rel="stylesheet" href="<?php echo PPV_PLUGIN_URL; ?>assets/css/ppv-login-light.css?ver=<?php echo time(); ?>" type="text/css" media="all">
