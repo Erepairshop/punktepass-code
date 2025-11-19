@@ -249,43 +249,73 @@ class PPV_Session {
         if (is_admin()) {
             return;
         }
-        
+
         $uri = $_SERVER['REQUEST_URI'] ?? '';
+
+        // ✅ IF REST API OR AJAX + vendor_store_id exists → ALWAYS HANDLER MODE!
+        if ((strpos($uri, '/wp-json/ppv/v1/') !== false ||
+             strpos($uri, '/wp-json/punktepass/v1/') !== false ||
+             strpos($uri, '/wp-admin/admin-ajax.php') !== false) &&
+            !empty($_SESSION['ppv_vendor_store_id'])) {
+
+            $_SESSION['ppv_user_type'] = 'store';
+            $_SESSION['ppv_store_id'] = intval($_SESSION['ppv_vendor_store_id']);
+            $_SESSION['ppv_active_store'] = intval($_SESSION['ppv_vendor_store_id']);
+            $_SESSION['ppv_is_pos'] = true;
+
+            error_log("🔄 [AutoMode] REST/AJAX + VENDOR → type=store, POS ON (store={$_SESSION['ppv_vendor_store_id']})");
+            return;
+        }
+
         $is_handler_page = self::is_handler_page($uri);
         $is_user_page = self::is_user_page($uri);
-        
+
         // 🎯 USER PAGE → MINDIG kikapcsol POS (ANY USER!)
         if ($is_user_page) {
             $_SESSION['ppv_user_type'] = 'user';
             $_SESSION['ppv_store_id'] = 0;
             $_SESSION['ppv_active_store'] = 0;
             $_SESSION['ppv_is_pos'] = false;
-            
+
             // ✅ FIXED: Safe user_id access
             $uid = $_SESSION['ppv_user_id'] ?? 0;
             error_log("🔄 [AutoMode] USER PAGE → type=user, NO POS (user_id={$uid})");
             return;
         }
-        
+
         // 🎯 HANDLER PAGE – csak vendor user-nek!
         if ($is_handler_page && !empty($_SESSION['ppv_vendor_store_id'])) {
             $_SESSION['ppv_user_type'] = 'store';
             $_SESSION['ppv_store_id'] = intval($_SESSION['ppv_vendor_store_id']);
             $_SESSION['ppv_active_store'] = intval($_SESSION['ppv_vendor_store_id']);
             $_SESSION['ppv_is_pos'] = true;
-            
+
             error_log("🔄 [AutoMode] HANDLER PAGE → type=store, POS ON (store={$_SESSION['ppv_vendor_store_id']})");
             return;
         }
     }
     
     private static function is_handler_page($uri) {
-        $pages = ['/qr-center', '/pos-admin', '/kasse', '/statistics', '/statistik', '/rewards-center', '/handler', '/mein-profil'];
+        // Frontend handler pages
+        $pages = ['/qr-center', '/pos-admin', '/kasse', '/statistics', '/statistik', '/rewards-center', '/handler', '/mein-profil', '/qr-scanner'];
+
         foreach ($pages as $page) {
             if (strpos($uri, $page) !== false) {
                 return true;
             }
         }
+
+        // REST API handler endpoints
+        if (strpos($uri, '/wp-json/punktepass/v1/pos/') !== false) {
+            return true;
+        }
+        if (strpos($uri, '/wp-json/ppv/v1/rewards/') !== false) {
+            return true;
+        }
+        if (strpos($uri, '/wp-json/ppv/v1/redeem/') !== false) {
+            return true;
+        }
+
         return false;
     }
     

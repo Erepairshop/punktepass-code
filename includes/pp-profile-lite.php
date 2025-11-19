@@ -26,11 +26,13 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
             add_shortcode('pp_store_profile', [__CLASS__, 'render_form']);
             add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
             add_action('wp_ajax_ppv_save_profile', [__CLASS__, 'ajax_save_profile']);
-            // 🔒 Removed wp_ajax_nopriv - authentication required for profile operations
+            add_action('wp_ajax_nopriv_ppv_save_profile', [__CLASS__, 'ajax_save_profile']); // ✅ PPV session auth
             add_action('wp_ajax_ppv_delete_media', [__CLASS__, 'ajax_delete_media']);
+            add_action('wp_ajax_nopriv_ppv_delete_media', [__CLASS__, 'ajax_delete_media']); // ✅ PPV session auth
             add_action('wp_ajax_ppv_auto_save_profile', [__CLASS__, 'ajax_auto_save_profile']);
+            add_action('wp_ajax_nopriv_ppv_auto_save_profile', [__CLASS__, 'ajax_auto_save_profile']); // ✅ PPV session auth
             add_action('wp_ajax_ppv_delete_gallery_image', [__CLASS__, 'ajax_delete_gallery_image']);
-            // 🔒 Removed wp_ajax_nopriv for gallery/autosave - authentication required
+            add_action('wp_ajax_nopriv_ppv_delete_gallery_image', [__CLASS__, 'ajax_delete_gallery_image']); // ✅ PPV session auth
         }
 
         // ==================== AUTH CHECK ====================
