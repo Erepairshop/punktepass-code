@@ -545,6 +545,63 @@ class PPV_QR {
         </div>
         <?php endif; ?>
 
+        <!-- 🆘 Floating Support Button -->
+        <button id="ppv-support-btn" style="position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; color: white; font-size: 24px; cursor: pointer; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); z-index: 999; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center;"
+                onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 6px 20px rgba(102, 126, 234, 0.6)';"
+                onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 15px rgba(102, 126, 234, 0.4)';">
+            🆘
+        </button>
+
+        <!-- Support Ticket Modal -->
+        <div id="ppv-support-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; align-items: center; justify-content: center;">
+            <div style="background: #1a1a2e; padding: 30px; border-radius: 15px; max-width: 500px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.5); max-height: 90vh; overflow-y: auto;">
+                <h3 style="margin-top: 0; color: #fff; display: flex; align-items: center; gap: 10px;">
+                    🆘 <?php echo self::t('support_ticket_title', 'Support anfragen'); ?>
+                </h3>
+                <p style="color: #ccc; font-size: 14px; margin-bottom: 20px;">
+                    <?php echo self::t('support_ticket_desc', 'Beschreiben Sie Ihr Problem. Wir melden uns schnellstmöglich bei Ihnen.'); ?>
+                </p>
+
+                <!-- Problem Description -->
+                <label style="color: #fff; font-size: 13px; display: block; margin-bottom: 5px;">
+                    <?php echo self::t('problem_description', 'Problembeschreibung'); ?> <span style="color: #ff5252;">*</span>
+                </label>
+                <textarea id="ppv-support-description" class="ppv-input" placeholder="<?php echo self::t('problem_placeholder', 'Bitte beschreiben Sie Ihr Problem...'); ?>" rows="4" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #0f0f1e; color: #fff; margin-bottom: 15px; resize: vertical; font-family: inherit;"></textarea>
+
+                <!-- Priority -->
+                <label style="color: #fff; font-size: 13px; display: block; margin-bottom: 5px;">
+                    <?php echo self::t('priority', 'Priorität'); ?>
+                </label>
+                <select id="ppv-support-priority" class="ppv-input" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #0f0f1e; color: #fff; margin-bottom: 15px;">
+                    <option value="normal"><?php echo self::t('priority_normal', 'Normal'); ?></option>
+                    <option value="urgent"><?php echo self::t('priority_urgent', 'Dringend'); ?></option>
+                    <option value="low"><?php echo self::t('priority_low', 'Niedrig'); ?></option>
+                </select>
+
+                <!-- Contact Preference -->
+                <label style="color: #fff; font-size: 13px; display: block; margin-bottom: 5px;">
+                    <?php echo self::t('contact_preference', 'Bevorzugter Kontakt'); ?>
+                </label>
+                <select id="ppv-support-contact" class="ppv-input" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #0f0f1e; color: #fff; margin-bottom: 15px;">
+                    <option value="email">📧 <?php echo self::t('contact_email', 'E-Mail'); ?></option>
+                    <option value="phone">📞 <?php echo self::t('contact_phone', 'Telefon'); ?></option>
+                    <option value="whatsapp">💬 <?php echo self::t('contact_whatsapp', 'WhatsApp'); ?></option>
+                </select>
+
+                <div id="ppv-support-error" style="display: none; color: #ff5252; font-size: 13px; margin-bottom: 10px; padding: 10px; background: rgba(255, 82, 82, 0.1); border-radius: 6px;"></div>
+                <div id="ppv-support-success" style="display: none; color: #4caf50; font-size: 13px; margin-bottom: 10px; padding: 10px; background: rgba(76, 175, 80, 0.1); border-radius: 6px;"></div>
+
+                <div style="display: flex; gap: 10px;">
+                    <button id="ppv-support-submit" class="ppv-btn" style="flex: 1; padding: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        ✅ <?php echo self::t('send_ticket', 'Ticket senden'); ?>
+                    </button>
+                    <button id="ppv-support-cancel" class="ppv-btn-outline" style="flex: 1; padding: 12px;">
+                        ❌ <?php echo self::t('cancel', 'Abbrechen'); ?>
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <div class="ppv-pos-center glass-section">
             <div id="ppv-offline-banner" style="display:none;background:#ffcc00;padding:8px;border-radius:6px;margin-bottom:10px;">
                 🛰️ <?php echo self::t('offline_banner', 'Offline-Modus aktiv'); ?>
