@@ -310,12 +310,13 @@
     headers.append("Cache-Control", "no-cache");
     headers.append("X-PPV-Lang", lang);
     if (token) headers.append("Authorization", "Bearer " + token);
-    if (window.ppv_mypoints?.nonce) {
-      headers.append("X-WP-Nonce", window.ppv_mypoints.nonce);
-      console.log('🔍 [fetchPointsFromServer] Nonce added to headers:', window.ppv_mypoints.nonce.substring(0, 10) + '...');
-    } else {
-      console.warn('⚠️ [fetchPointsFromServer] No nonce available!');
-    }
+
+    // ✅ NE küldjünk WordPress nonce-t!
+    // A WordPress REST cookie authentication middleware automatikusan fut ha van X-WP-Nonce header,
+    // és 403-at ad vissza invalid nonce esetén, MÉG A permission callback előtt!
+    // Mivel saját session-based permission callback-ünk van (check_mypoints_permission),
+    // nincs szükség WordPress nonce-ra.
+    console.log('🔍 [fetchPointsFromServer] NOT sending X-WP-Nonce (using session-based auth instead)');
 
     const apiUrl = window.ppv_mypoints?.api_url ||
                    `${location.origin}/wp-json/ppv/v1/mypoints`;
