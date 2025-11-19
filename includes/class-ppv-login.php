@@ -16,11 +16,33 @@ class PPV_Login {
     public static function hooks() {
         add_shortcode('ppv_login_form', [__CLASS__, 'render_landing_page']);
         add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
+        add_action('wp_head', [__CLASS__, 'inject_head_assets']);
         add_action('wp_ajax_nopriv_ppv_login', [__CLASS__, 'ajax_login']);
         add_action('wp_ajax_nopriv_ppv_google_login', [__CLASS__, 'ajax_google_login']);
         add_action('wp_ajax_nopriv_ppv_facebook_login', [__CLASS__, 'ajax_facebook_login']);
         add_action('wp_ajax_nopriv_ppv_tiktok_login', [__CLASS__, 'ajax_tiktok_login']);
         add_action('template_redirect', [__CLASS__, 'check_already_logged_in'], 1);
+    }
+
+    /** ============================================================
+     * 🔹 Inject CSS into <head> for login page
+     * ============================================================ */
+    public static function inject_head_assets() {
+        // Only on login page
+        if (!is_page(['login', 'bejelentkezes', 'anmelden'])) {
+            global $post;
+            if (!isset($post->post_content) || !has_shortcode($post->post_content, 'ppv_login_form')) {
+                return;
+            }
+        }
+
+        ?>
+        <!-- Google Fonts -->
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+
+        <!-- Login CSS - Fresh with cache-busting -->
+        <link rel="stylesheet" href="<?php echo PPV_PLUGIN_URL; ?>assets/css/ppv-login-light.css?ver=<?php echo time(); ?>" type="text/css" media="all">
+        <?php
     }
     
     /** ============================================================
@@ -152,12 +174,6 @@ public static function render_landing_page($atts) {
         
         ob_start();
         ?>
-
-        <!-- Google Fonts -->
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
-
-        <!-- Force Fresh CSS Load (Bypass SW Cache) -->
-        <link rel="stylesheet" href="<?php echo PPV_PLUGIN_URL; ?>assets/css/ppv-login-light.css?ver=<?php echo time(); ?>" type="text/css" media="all">
 
         <div class="ppv-landing-container">
             <!-- Header -->
@@ -410,8 +426,8 @@ public static function render_landing_page($atts) {
             ajaxurl: '<?php echo admin_url('admin-ajax.php'); ?>',
             nonce: '<?php echo wp_create_nonce('ppv_login_nonce'); ?>',
             google_client_id: '<?php echo defined('PPV_GOOGLE_CLIENT_ID') ? PPV_GOOGLE_CLIENT_ID : get_option('ppv_google_client_id', '453567547051-odmqrinafba8ls8ktp9snlp7d2fpl9q0.apps.googleusercontent.com'); ?>',
-            facebook_app_id: '<?php echo defined('PPV_FACEBOOK_APP_ID') ? PPV_FACEBOOK_APP_ID : get_option('ppv_facebook_app_id', ''); ?>',
-            tiktok_client_key: '<?php echo defined('PPV_TIKTOK_CLIENT_KEY') ? PPV_TIKTOK_CLIENT_KEY : get_option('ppv_tiktok_client_key', ''); ?>',
+            facebook_app_id: '<?php echo defined('PPV_FACEBOOK_APP_ID') ? PPV_FACEBOOK_APP_ID : get_option('ppv_facebook_app_id', '4070833883179463'); ?>',
+            tiktok_client_key: '<?php echo defined('PPV_TIKTOK_CLIENT_KEY') ? PPV_TIKTOK_CLIENT_KEY : get_option('ppv_tiktok_client_key', '9bb6aca5781d007d6c00fe3ed60d6734'); ?>',
             redirect_url: '<?php echo home_url('/user_dashboard'); ?>'
         };
         </script>
