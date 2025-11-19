@@ -346,12 +346,94 @@ class PPV_QR {
     // 📲 POS SCANNER
     // ============================================================
     public static function render_pos_scanner() {
+        global $wpdb;
+
+        // Get store trial info
+        $store_id = 0;
+        $trial_days_left = 0;
+        $subscription_status = 'unknown';
+
+        // Try to get store ID from session
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+
+        if (!empty($_SESSION['ppv_active_store'])) {
+            $store_id = intval($_SESSION['ppv_active_store']);
+        } elseif (!empty($_SESSION['ppv_store_id'])) {
+            $store_id = intval($_SESSION['ppv_store_id']);
+        }
+
+        // Fetch trial_ends_at from database
+        if ($store_id > 0) {
+            $store_data = $wpdb->get_row($wpdb->prepare(
+                "SELECT trial_ends_at, subscription_status FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
+                $store_id
+            ));
+
+            if ($store_data) {
+                $subscription_status = $store_data->subscription_status ?? 'trial';
+
+                if (!empty($store_data->trial_ends_at)) {
+                    $trial_end = strtotime($store_data->trial_ends_at);
+                    $now = current_time('timestamp');
+                    $diff_seconds = $trial_end - $now;
+                    $trial_days_left = max(0, ceil($diff_seconds / 86400)); // Convert to days
+                }
+            }
+        }
+
+        // Determine message and styling based on days left
+        $info_class = 'info';
+        $info_icon = 'ℹ️';
+        $info_color = 'rgba(0, 230, 255, 0.1)';
+        $border_color = 'rgba(0, 230, 255, 0.3)';
+
+        if ($subscription_status === 'active') {
+            $info_message = self::t('subscription_active', 'Aktives Abo - Unbegrenzt');
+            $info_class = 'success';
+            $info_icon = '✅';
+            $info_color = 'rgba(0, 230, 118, 0.1)';
+            $border_color = 'rgba(0, 230, 118, 0.3)';
+        } elseif ($trial_days_left > 7) {
+            $info_message = sprintf(self::t('trial_days_left', 'Noch %d Tage Testversion'), $trial_days_left);
+            $info_icon = '📅';
+        } elseif ($trial_days_left > 0) {
+            $info_message = sprintf(self::t('trial_days_left_warning', 'Nur noch %d Tage!'), $trial_days_left);
+            $info_class = 'warning';
+            $info_icon = '⚠️';
+            $info_color = 'rgba(255, 171, 0, 0.1)';
+            $border_color = 'rgba(255, 171, 0, 0.3)';
+        } else {
+            $info_message = self::t('trial_expired', 'Testversion abgelaufen');
+            $info_class = 'error';
+            $info_icon = '❌';
+            $info_color = 'rgba(239, 68, 68, 0.1)';
+            $border_color = 'rgba(239, 68, 68, 0.3)';
+        }
+
         ?>
-        <div style="margin-bottom: 15px; padding: 12px; background: rgba(0, 230, 255, 0.1); border-radius: 10px; border: 1px solid rgba(0, 230, 255, 0.3);">
-            <button id="ppv-camera-scanner-btn" class="ppv-btn neon" type="button" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 16px; padding: 12px;">
-                <i class="ri-camera-fill" style="font-size: 22px;"></i>
-                📷 <?php echo self::t('camera_scanner_btn', 'Kamera Scanner'); ?>
-            </button>
+        <div class="ppv-trial-info-block" style="margin-bottom: 15px; padding: 12px 16px; background: <?php echo $info_color; ?>; border-radius: 10px; border: 2px solid <?php echo $border_color; ?>;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 24px;"><?php echo $info_icon; ?></span>
+                    <div>
+                        <div style="font-weight: bold; font-size: 15px; margin-bottom: 2px;">
+                            <?php echo $info_message; ?>
+                        </div>
+                        <?php if ($subscription_status === 'trial' && $trial_days_left > 0): ?>
+                            <div style="font-size: 12px; opacity: 0.7;">
+                                <?php echo self::t('trial_info_desc', 'Registriert mit 30 Tage Probezeit'); ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <?php if ($subscription_status === 'trial' && $trial_days_left <= 7 && $trial_days_left > 0): ?>
+                    <a href="/pricing" class="ppv-btn-outline" style="padding: 6px 12px; font-size: 13px; white-space: nowrap; text-decoration: none;">
+                        <?php echo self::t('upgrade_now', 'Jetzt upgraden'); ?>
+                    </a>
+                <?php endif; ?>
+            </div>
         </div>
 
         <div class="ppv-pos-center glass-section">

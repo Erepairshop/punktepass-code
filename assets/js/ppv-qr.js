@@ -847,18 +847,30 @@ class CameraScanner {
         <span class="ppv-mini-icon">📷</span>
         <span class="ppv-mini-text">${L.scanner_active || 'Scanner aktív'}</span>
       </div>
+      <button id="ppv-mini-toggle" class="ppv-mini-toggle">
+        <span class="ppv-toggle-icon">📷</span>
+        <span class="ppv-toggle-text">Start</span>
+      </button>
     `;
 
     document.body.appendChild(this.miniContainer);
 
     this.readerDiv = document.getElementById('ppv-mini-reader');
     this.statusDiv = document.getElementById('ppv-mini-status');
+    this.toggleBtn = document.getElementById('ppv-mini-toggle');
+
+    // Hide reader initially
+    this.readerDiv.style.display = 'none';
+    this.statusDiv.style.display = 'none';
 
     // Load saved position or use default
     this.loadPosition();
 
     // Make it draggable
     this.makeDraggable();
+
+    // Setup toggle button
+    this.setupToggle();
   }
 
   loadPosition() {
@@ -964,11 +976,78 @@ class CameraScanner {
     document.addEventListener('touchend', dragEnd);
   }
 
+  setupToggle() {
+    if (!this.toggleBtn) return;
+
+    this.toggleBtn.addEventListener('click', async () => {
+      console.log('🎬 [Scanner] Toggle clicked, scanning:', this.scanning);
+
+      if (this.scanning) {
+        // Stop scanner
+        await this.stopScanner();
+      } else {
+        // Start scanner
+        await this.startScannerManual();
+      }
+    });
+  }
+
+  async stopScanner() {
+    console.log('🛑 [Scanner] Stopping...');
+
+    try {
+      if (this.scanner) {
+        await this.scanner.stop();
+        this.scanner = null;
+      }
+
+      this.scanning = false;
+      this.state = 'stopped';
+
+      // Hide reader and status
+      this.readerDiv.style.display = 'none';
+      this.statusDiv.style.display = 'none';
+
+      // Update button
+      this.toggleBtn.querySelector('.ppv-toggle-icon').textContent = '📷';
+      this.toggleBtn.querySelector('.ppv-toggle-text').textContent = 'Start';
+      this.toggleBtn.style.background = 'linear-gradient(135deg, #00e676, #00c853)';
+
+      // Clear intervals
+      if (this.countdownInterval) {
+        clearInterval(this.countdownInterval);
+        this.countdownInterval = null;
+      }
+      if (this.pauseTimeout) {
+        clearTimeout(this.pauseTimeout);
+        this.pauseTimeout = null;
+      }
+
+      console.log('✅ [Scanner] Stopped');
+    } catch (err) {
+      console.error('❌ [Scanner] Stop error:', err);
+    }
+  }
+
+  async startScannerManual() {
+    console.log('▶️ [Scanner] Starting manually...');
+
+    // Show reader and status
+    this.readerDiv.style.display = 'block';
+    this.statusDiv.style.display = 'block';
+
+    // Update button
+    this.toggleBtn.querySelector('.ppv-toggle-icon').textContent = '🛑';
+    this.toggleBtn.querySelector('.ppv-toggle-text').textContent = 'Stop';
+    this.toggleBtn.style.background = 'linear-gradient(135deg, #ff5252, #f44336)';
+
+    // Load library and start
+    await this.loadLibrary();
+  }
+
   async autoStart() {
-    // Wait a bit for the page to fully load
-    setTimeout(async () => {
-      await this.loadLibrary();
-    }, 500);
+    // ✅ REMOVED: Don't auto-start anymore, user must click button
+    console.log('ℹ️ [Scanner] Auto-start disabled - click button to start');
   }
 
   async loadLibrary() {
@@ -1246,6 +1325,12 @@ class CameraScanner {
   }
 
   async autoRestartScanner() {
+    // ✅ Check if user manually stopped during pause
+    if (this.state === 'stopped' || !this.scanning) {
+      console.log('ℹ️ [Scanner] Auto-restart cancelled - user stopped manually');
+      return;
+    }
+
     console.log('🔄 Auto-restarting scanner after pause...');
     this.state = 'scanning';
     this.updateStatus('scanning', '🔄 Restarting...');
@@ -1256,10 +1341,12 @@ class CameraScanner {
       console.error('Auto-restart error:', e);
       this.updateStatus('error', '❌ Restart failed');
 
-      // Try again after 5 seconds
-      setTimeout(() => {
-        this.autoRestartScanner();
-      }, 5000);
+      // Try again after 5 seconds (only if not manually stopped)
+      if (this.state !== 'stopped' && this.scanning) {
+        setTimeout(() => {
+          this.autoRestartScanner();
+        }, 5000);
+      }
     }
   }
 

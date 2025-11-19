@@ -138,33 +138,34 @@ public static function check_already_logged_in() {
             return;
         }
     }
-    
-    // 🔐 USER already logged in
+
+    // ✅ Start session first
+    if (session_status() === PHP_SESSION_NONE) {
+        @session_start();
+    }
+
+    // ✅ Restore session from cookie if needed
+    if (empty($_SESSION['ppv_user_id']) && !empty($_COOKIE['ppv_user_token']) && class_exists('PPV_SessionBridge')) {
+        PPV_SessionBridge::restore_from_token();
+    }
+
+    // 🔐 USER already logged in (CHECK SESSION FIRST, not cookie!)
     if (!empty($_SESSION['ppv_user_id']) && $_SESSION['ppv_user_type'] === 'user') {
-        error_log("🔄 [PPV_Login] User redirect from login page");
+        error_log("🔄 [PPV_Login] User redirect from login page (session check)");
         wp_safe_redirect(home_url('/user_dashboard'));
         exit;
     }
-    
+
     // 🏪 HANDLER/STORE already logged in
-    if (!empty($_SESSION['ppv_store_id']) && $_SESSION['ppv_user_type'] === 'store') {
-        error_log("🔄 [PPV_Login] Store redirect from login page");
+    if (!empty($_SESSION['ppv_store_id']) && in_array($_SESSION['ppv_user_type'], ['store', 'handler', 'vendor', 'admin'])) {
+        error_log("🔄 [PPV_Login] Store redirect from login page (session check)");
         wp_safe_redirect(home_url('/qr-center'));
         exit;
     }
-    
-    // Check cookies too
-    if (!empty($_COOKIE['ppv_user_token'])) {
-        error_log("🔄 [PPV_Login] User token cookie - redirect");
-        wp_safe_redirect(home_url('/user_dashboard'));
-        exit;
-    }
-    
-    if (!empty($_COOKIE['ppv_pos_token'])) {
-        error_log("🔄 [PPV_Login] POS token cookie - redirect");
-        wp_safe_redirect(home_url('/qr-center'));
-        exit;
-    }
+
+    // ⚠️ If we reach here, session restore failed or no valid login
+    // Don't redirect based on cookie alone - let the login page load
+    error_log("🔍 [PPV_Login] No valid session - showing login page");
 }
     
 public static function render_landing_page($atts) {
@@ -432,34 +433,27 @@ public static function render_landing_page($atts) {
         };
         </script>
 
-        <!-- Service Worker Registration (Login Page) -->
+        <!-- Service Worker Cache Clear (Login Page) -->
         <script>
-        if ('serviceWorker' in navigator) {
+        // ✅ CSAK cache törlés, NEM SW re-registration!
+        // Ha újra regisztráljuk a SW-t query paraméterrel, az conflict-ot okoz a dashboard SW-vel
+        // és page refresh-t triggerel a clients.claim() miatt
+        if ('caches' in window) {
           window.addEventListener('load', async () => {
             try {
-              // 1. UNREGISTER all old SWs
-              const regs = await navigator.serviceWorker.getRegistrations();
-              for (const reg of regs) {
-                await reg.unregister();
-              }
-              console.log('🧹 [Login] Old SW unregistered');
-
-              // 2. DELETE all caches
+              // DELETE all caches to ensure fresh content after login
               const cacheNames = await caches.keys();
               for (const name of cacheNames) {
                 await caches.delete(name);
               }
               console.log('🧹 [Login] All caches cleared');
-
-              // 3. REGISTER fresh SW
-              const reg = await navigator.serviceWorker.register('/sw.js?' + Date.now());
-              console.log('✅ [Login] Fresh SW registered:', reg.scope);
-
             } catch (err) {
-              console.error('❌ [Login] SW error:', err);
+              console.error('❌ [Login] Cache clear error:', err);
             }
           });
         }
+
+        // SW registration happens in class-ppv-pwa.php (global, no conflict)
         </script>
 
         <?php
