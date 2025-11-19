@@ -105,9 +105,12 @@ class UIManager {
 class BroadcastManager {
   static send(data) {
     const payload = {
-      type: "ppv-scan-success",
+      type: data.success === false ? "ppv-scan-error" : "ppv-scan-success",
+      success: data.success !== false,
       points: data.points || 1,
       store: data.store_name || data.store || "PunktePass",
+      message: data.message || '',
+      error_type: data.error_type || '',
       time: Date.now(),
     };
 
@@ -1263,6 +1266,16 @@ class CameraScanner {
 
           if (window.ppvToast) {
             window.ppvToast(data.message || L.error_generic || '⚠️ Hiba', 'warning');
+          }
+
+          // Broadcast the error event to user dashboard
+          if (window.BroadcastManager) {
+            BroadcastManager.send({
+              success: false,
+              message: data.message || L.error_generic || 'Hiba',
+              store_name: data.store_name || 'PunktePass',
+              error_type: data.error_type || 'unknown'
+            });
           }
 
           // Restart scanner after error

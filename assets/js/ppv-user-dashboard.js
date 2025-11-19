@@ -333,12 +333,24 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   function handleScanEvent(data) {
-    if (data?.type !== "ppv-scan-success") return;
-    const newPoints = boot.points + (data.points || 1);
-    updateGlobalPoints(newPoints);
-    boot.points = newPoints;
-    if (window.ppvShowPointToast) {
-      window.ppvShowPointToast("success", data.points || 1, data.store || "PunktePass");
+    if (!data?.type) return;
+
+    // Handle success event
+    if (data.type === "ppv-scan-success") {
+      const newPoints = boot.points + (data.points || 1);
+      updateGlobalPoints(newPoints);
+      boot.points = newPoints;
+      if (window.ppvShowPointToast) {
+        window.ppvShowPointToast("success", data.points || 1, data.store || "PunktePass");
+      }
+    }
+
+    // Handle error event
+    if (data.type === "ppv-scan-error") {
+      if (window.ppvShowPointToast) {
+        // Show error toast with store name and error message
+        window.ppvShowPointToast("error", 0, data.store || "PunktePass", data.message || "Scan fehlgeschlagen");
+      }
     }
   }
 
@@ -897,6 +909,14 @@ document.addEventListener("DOMContentLoaded", async () => {
               console.log("✅ [STORAGE] Toast shown");
             }
           }
+
+          if (data?.type === "ppv-scan-error") {
+            // ❌ SHOW ERROR TOAST
+            if (window.ppvShowPointToast) {
+              window.ppvShowPointToast("error", 0, data.store || "PunktePass", data.message || "Scan fehlgeschlagen");
+              console.log("❌ [STORAGE] Error toast shown");
+            }
+          }
         } catch (e) {
           console.warn("⚠️ [STORAGE] Parse error:", e);
         }
@@ -927,12 +947,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   // TOAST - MODERN ICONS ✅
   // ============================================================
 
-  window.ppvShowPointToast = function(type = "success", points = 1, store = "PunktePass") {
+  window.ppvShowPointToast = function(type = "success", points = 1, store = "PunktePass", errorMessage = "") {
     if (document.querySelector(".ppv-point-toast")) return;
     const L = {
-      de: { dup: "Heute bereits gescannt", err: "Offline", pend: "Verbindung...", add: "Punkt(e) von" },
-      hu: { dup: "Ma már", err: "Offline", pend: "Kapcsolódás...", add: "pont a" },
-      ro: { dup: "Astăzi", err: "Offline", pend: "Conectare...", add: "punct de la" }
+      de: { dup: "Heute bereits gescannt", err: "Offline", pend: "Verbindung...", add: "Punkt(e) von", from: "von" },
+      hu: { dup: "Ma már", err: "Offline", pend: "Kapcsolódás...", add: "pont a", from: "-tól/-től" },
+      ro: { dup: "Astăzi", err: "Offline", pend: "Conectare...", add: "punct de la", from: "de la" }
     }[lang] || L.de;
 
     let icon = '<i class="ri-emotion-happy-line"></i>', text = "";
@@ -942,7 +962,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
     else if (type === "error") {
       icon = '<i class="ri-close-circle-line"></i>';
-      text = L.err;
+      // Show error message with store name
+      text = errorMessage ? `${errorMessage} ${L.from} <strong>${store}</strong>` : L.err;
     }
     else if (type === "pending") {
       icon = '<i class="ri-time-line ri-spin"></i>';

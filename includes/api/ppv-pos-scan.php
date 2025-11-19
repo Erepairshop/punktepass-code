@@ -129,7 +129,12 @@ class PPV_POS_SCAN {
                     $user_id = intval($user_check->id);
                 } elseif ($user_check && $user_check->active == 0) {
                     self::log_scan_attempt($store_id, $uid, $ip_address, 'blocked', 'User inactive');
-                    return rest_ensure_response(['success' => false, 'message' => '🚫 Benutzer gesperrt']);
+                    return rest_ensure_response([
+                        'success' => false,
+                        'message' => '🚫 Benutzer gesperrt',
+                        'store_name' => $store->name ?? 'PunktePass',
+                        'error_type' => 'user_blocked'
+                    ]);
                 }
             }
         }
@@ -138,7 +143,9 @@ class PPV_POS_SCAN {
             self::log_scan_attempt($store_id, 0, $ip_address, 'invalid', 'Invalid QR code');
             return rest_ensure_response([
                 'success' => false,
-                'message' => '🚫 Ungültiger QR-Code (kein User)'
+                'message' => '🚫 Ungültiger QR-Code (kein User)',
+                'store_name' => $store->name ?? 'PunktePass',
+                'error_type' => 'invalid_qr'
             ]);
         }
 
@@ -153,7 +160,9 @@ class PPV_POS_SCAN {
         if ($already_today > 0) {
             return rest_ensure_response([
                 'success' => false,
-                'message' => '⚠️ Heute bereits gescannt'
+                'message' => '⚠️ Heute bereits gescannt',
+                'store_name' => $store->name ?? 'PunktePass',
+                'error_type' => 'already_scanned_today'
             ]);
         }
 
@@ -165,7 +174,12 @@ class PPV_POS_SCAN {
         ", $user_id, $store_id));
 
         if ($recent) {
-            return rest_ensure_response(['success' => false, 'message' => '⚠️ Bereits gescannt']);
+            return rest_ensure_response([
+                'success' => false,
+                'message' => '⚠️ Bereits gescannt',
+                'store_name' => $store->name ?? 'PunktePass',
+                'error_type' => 'duplicate_scan'
+            ]);
         }
 
         /** 6) Bónusz nap */
@@ -208,12 +222,13 @@ class PPV_POS_SCAN {
         ][$lang] ?? "✅ +{$points_add} Punkte";
 
         return rest_ensure_response([
-            'success'  => true,
-            'message'  => $msg,
-            'user_id'  => $user_id,
-            'store_id' => $store_id,
-            'points'   => $points_add,
-            'total'    => $total_points
+            'success'    => true,
+            'message'    => $msg,
+            'user_id'    => $user_id,
+            'store_id'   => $store_id,
+            'store_name' => $store->name ?? 'PunktePass',
+            'points'     => $points_add,
+            'total'      => $total_points
         ]);
     }
 
