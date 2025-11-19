@@ -549,10 +549,10 @@ class PPV_Signup {
                 [
                     'user_id' => $user_id,
                     'email' => $email,
-                    'store_name' => 'Mein Geschäft',
+                    'name' => 'Mein Geschäft',
                     'pos_token' => $pos_token,
                     'trial_ends_at' => $trial_ends_at,
-                    'subscription_status' => 'trial',  // ✅ FIX: Set trial status
+                    'subscription_status' => 'trial',
                     'active' => 1,
                     'created_at' => current_time('mysql'),
                     'updated_at' => current_time('mysql')
@@ -714,10 +714,10 @@ class PPV_Signup {
                     [
                         'user_id' => $user_id,
                         'email' => $email,
-                        'store_name' => trim($first_name . ' ' . $last_name) ?: 'Mein Geschäft',
+                        'name' => trim($first_name . ' ' . $last_name) ?: 'Mein Geschäft',
                         'pos_token' => $pos_token,
                         'trial_ends_at' => $trial_ends_at,
-                        'subscription_status' => 'trial',  // ✅ FIX: Set trial status
+                        'subscription_status' => 'trial',
                         'active' => 1,
                         'created_at' => current_time('mysql'),
                         'updated_at' => current_time('mysql')
