@@ -1479,23 +1479,27 @@ document.addEventListener("DOMContentLoaded", function () {
   const campaignList = document.getElementById("ppv-campaign-list");
   const campaignModal = document.getElementById("ppv-campaign-modal");
 
-  if (!input) return;
-
+  // Initialize even without input (for scanner-only mode)
   const ui = new UIManager(resultBox, logTable, campaignList);
   const scanProcessor = new ScanProcessor(ui);
   const campaignManager = new CampaignManager(ui, campaignList, campaignModal);
   const cameraScanner = new CameraScanner(scanProcessor);
 
-  input.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      const qr = input.value.trim();
-      if (qr.length >= 4) {
-        scanProcessor.process(qr);
-        input.value = "";
+  // Only add input listeners if input exists
+  if (input) {
+    input.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        const qr = input.value.trim();
+        if (qr.length >= 4) {
+          scanProcessor.process(qr);
+          input.value = "";
+        }
       }
-    }
-  });
+    });
+
+    input.focus();
+  }
 
   if (sendBtn) {
     sendBtn.addEventListener("click", () => {
@@ -1558,7 +1562,6 @@ document.addEventListener("DOMContentLoaded", function () {
   scanProcessor.loadLogs();
   campaignManager.load();
   OfflineSyncManager.sync();
-  input.focus();
 
   console.log(L.app_initialized || "✅ App fully initialized!");
 
