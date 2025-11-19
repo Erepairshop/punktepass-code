@@ -284,8 +284,8 @@
       headers.append("X-WP-Nonce", window.ppv_mypoints.nonce);
     }
 
-    const apiUrl = window.ppv_mypoints?.api_url || 
-                   `${location.origin}/wp-json/ppv/v1/user/points-poll`;
+    const apiUrl = window.ppv_mypoints?.api_url ||
+                   `${location.origin}/wp-json/ppv/v1/mypoints`;
 
     const res = await fetch(apiUrl, {
       method: "GET",
