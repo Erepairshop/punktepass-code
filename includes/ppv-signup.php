@@ -1300,7 +1300,10 @@ add_action('wp_ajax_nopriv_ppv_submit_support_ticket', ['PPV_Signup', 'ajax_subm
 
 // Register AJAX handlers for scanner user management
 add_action('wp_ajax_ppv_create_scanner_user', ['PPV_Signup', 'ajax_create_scanner_user']);
+add_action('wp_ajax_nopriv_ppv_create_scanner_user', ['PPV_Signup', 'ajax_create_scanner_user']);
 add_action('wp_ajax_ppv_reset_scanner_password', ['PPV_Signup', 'ajax_reset_scanner_password']);
+add_action('wp_ajax_nopriv_ppv_reset_scanner_password', ['PPV_Signup', 'ajax_reset_scanner_password']);
 add_action('wp_ajax_ppv_toggle_scanner_status', ['PPV_Signup', 'ajax_toggle_scanner_status']);
+add_action('wp_ajax_nopriv_ppv_toggle_scanner_status', ['PPV_Signup', 'ajax_toggle_scanner_status']);
 
 PPV_Signup::hooks();
