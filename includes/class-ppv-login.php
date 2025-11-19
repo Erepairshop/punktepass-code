@@ -196,7 +196,10 @@ public static function render_landing_page($atts) {
         
         ob_start();
         ?>
-        
+
+        <!-- Force Fresh CSS Load (Bypass SW Cache) -->
+        <link rel="stylesheet" href="<?php echo PPV_PLUGIN_URL; ?>assets/css/ppv-login-light.css?ver=<?php echo time(); ?>" type="text/css" media="all">
+
         <div class="ppv-landing-container">
             <!-- Header -->
             <header class="ppv-landing-header">
@@ -438,6 +441,21 @@ public static function render_landing_page($atts) {
                 </div>
             </footer>
         </div>
+
+        <!-- Force Fresh JS Load (Bypass SW Cache) -->
+        <script src="<?php echo PPV_PLUGIN_URL; ?>assets/js/ppv-login.js?ver=<?php echo time(); ?>"></script>
+
+        <!-- Login Config -->
+        <script>
+        window.ppvLogin = {
+            ajaxurl: '<?php echo admin_url('admin-ajax.php'); ?>',
+            nonce: '<?php echo wp_create_nonce('ppv_login_nonce'); ?>',
+            google_client_id: '<?php echo defined('PPV_GOOGLE_CLIENT_ID') ? PPV_GOOGLE_CLIENT_ID : get_option('ppv_google_client_id', '453567547051-odmqrinafba8ls8ktp9snlp7d2fpl9q0.apps.googleusercontent.com'); ?>',
+            facebook_app_id: '<?php echo defined('PPV_FACEBOOK_APP_ID') ? PPV_FACEBOOK_APP_ID : get_option('ppv_facebook_app_id', ''); ?>',
+            tiktok_client_key: '<?php echo defined('PPV_TIKTOK_CLIENT_KEY') ? PPV_TIKTOK_CLIENT_KEY : get_option('ppv_tiktok_client_key', ''); ?>',
+            redirect_url: '<?php echo home_url('/user_dashboard'); ?>'
+        };
+        </script>
 
         <!-- Service Worker Registration (Login Page) -->
         <script>
