@@ -998,29 +998,39 @@ class CameraScanner {
       return;
     }
 
+    // 🍎 iOS Detection - iOS Safari needs simpler config
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
     try {
       this.scanner = new Html5Qrcode('ppv-mini-reader');
 
       // ✅ OPTIMIZED CONFIG - Fast QR detection from any angle
       const config = {
-        fps: 30,  // ⬆️ Higher FPS = faster detection
-        qrbox: { width: 250, height: 250 },  // 📦 Larger scan area
-        aspectRatio: 1.0,
+        fps: isIOS ? 20 : 30,  // ⬆️ iOS: Lower FPS for stability
+        qrbox: isIOS ? 220 : { width: 250, height: 250 },  // 📦 iOS: Simple number, Android: Object
         disableFlip: false,  // 🔄 Try both orientations
-        experimentalFeatures: {
-          useBarCodeDetectorIfSupported: true  // 🚀 Use native API if available
-        },
         formatsToSupport: [0]  // 📱 Only QR codes (0 = QR_CODE)
       };
 
-      // 📷 Advanced camera constraints - autofocus + high resolution
-      const cameraConstraints = {
-        facingMode: 'environment',
-        advanced: [
-          { focusMode: 'continuous' },  // 🎯 Continuous autofocus
-          { zoom: 1.0 }
-        ]
-      };
+      // 🍎 iOS: Don't add aspectRatio or experimentalFeatures - causes issues
+      if (!isIOS) {
+        config.aspectRatio = 1.0;
+        config.experimentalFeatures = {
+          useBarCodeDetectorIfSupported: true  // 🚀 Use native API if available (Android)
+        };
+      }
+
+      // 📷 Camera constraints - iOS needs simple config only
+      const cameraConstraints = isIOS
+        ? { facingMode: 'environment' }  // 🍎 iOS: Simple config only
+        : {
+            facingMode: 'environment',
+            advanced: [
+              { focusMode: 'continuous' },  // 🎯 Continuous autofocus (Android)
+              { zoom: 1.0 }
+            ]
+          };
 
       await this.scanner.start(
         cameraConstraints,
@@ -1061,11 +1071,15 @@ class CameraScanner {
         const basicConfig = {
           fps: 20,
           qrbox: 220,
-          disableFlip: false,
-          experimentalFeatures: {
-            useBarCodeDetectorIfSupported: true
-          }
+          disableFlip: false
         };
+
+        // 🍎 iOS: Don't use experimentalFeatures
+        if (!isIOS) {
+          basicConfig.experimentalFeatures = {
+            useBarCodeDetectorIfSupported: true
+          };
+        }
 
         await this.scanner.start(
           { facingMode: 'environment' },
