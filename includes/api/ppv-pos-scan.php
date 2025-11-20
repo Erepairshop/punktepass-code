@@ -334,7 +334,22 @@ class PPV_POS_SCAN {
         $handler_lang = $_COOKIE['ppv_lang'] ?? $_SESSION['ppv_lang'] ?? 'de';
 
         // ✅ Load translations from PPV_Lang (same as used everywhere else)
+        // Check if PPV_Lang class exists
+        if (!class_exists('PPV_Lang')) {
+            error_log('❌ [GET_RECENT_SCANS] PPV_Lang class not found');
+            return rest_ensure_response([
+                'success' => false,
+                'message' => 'Translation system not loaded'
+            ]);
+        }
+
         $translations = PPV_Lang::get($handler_lang);
+
+        // Verify translations loaded correctly
+        if (!is_array($translations)) {
+            error_log('❌ [GET_RECENT_SCANS] Translations not loaded correctly');
+            $translations = []; // Fallback to empty array
+        }
 
         // ✅ Get last 40 scan attempts (successful + errors) from pos_log
         $logs = $wpdb->get_results($wpdb->prepare("
@@ -428,7 +443,19 @@ class PPV_POS_SCAN {
         $handler_lang = $_COOKIE['ppv_lang'] ?? $_SESSION['ppv_lang'] ?? 'de';
 
         // ✅ Load translations from PPV_Lang (same as used everywhere else)
+        // Check if PPV_Lang class exists
+        if (!class_exists('PPV_Lang')) {
+            error_log('❌ [EXPORT_LOGS_CSV] PPV_Lang class not found');
+            return new WP_Error('translation_error', 'Translation system not loaded', ['status' => 500]);
+        }
+
         $t = PPV_Lang::get($handler_lang);
+
+        // Verify translations loaded correctly
+        if (!is_array($t)) {
+            error_log('❌ [EXPORT_LOGS_CSV] Translations not loaded correctly');
+            return new WP_Error('translation_error', 'Translations failed to load', ['status' => 500]);
+        }
 
         // Get filter parameters
         $period = $req->get_param('period') ?? 'today'; // today, date, month

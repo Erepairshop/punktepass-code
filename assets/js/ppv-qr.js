@@ -1958,6 +1958,12 @@ document.addEventListener("DOMContentLoaded", function () {
           headers: { 'Content-Type': 'application/json' }
         });
 
+        // ✅ Check if response is OK before parsing JSON
+        if (!response.ok) {
+          console.error(`Failed to load recent scans: HTTP ${response.status}`);
+          return;
+        }
+
         const data = await response.json();
 
         if (data.success && data.scans) {
