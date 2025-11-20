@@ -4245,6 +4245,61 @@ body.ppv-light .ppv-theme-btn-mini {
     z-index: 900000;
 }
 
+.ppv-modal.show {
+    display: flex;
+}
+
+.ppv-modal-inner {
+    background: var(--ppv-bg-primary, #fff);
+    border-radius: 12px;
+    padding: 2rem;
+    max-width: 500px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    position: relative;
+    animation: modalIn .25s ease;
+}
+
+.ppv-modal-inner h4 {
+    margin: 0 0 1.5rem 0;
+    font-size: 18px;
+    color: var(--ppv-text-primary, #1f2937);
+}
+
+.ppv-modal-inner label {
+    display: block;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ppv-text-primary, #1f2937);
+}
+
+.ppv-modal-inner input,
+.ppv-modal-inner select,
+.ppv-modal-inner textarea {
+    width: 100%;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+    border: 1px solid var(--ppv-border, #e5e7eb);
+    border-radius: 6px;
+    background: var(--ppv-bg-primary, #fff);
+    color: var(--ppv-text-primary, #1f2937);
+    font-size: 13px;
+    box-sizing: border-box;
+    transition: 0.2s;
+}
+
+.ppv-modal-inner input:focus,
+.ppv-modal-inner select:focus,
+.ppv-modal-inner textarea:focus {
+    outline: none;
+    border-color: var(--ppv-primary, #6366f1);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
 .ppv-modal-content {
     background: var(--ppv-s-card);
     padding: 1.5rem;
