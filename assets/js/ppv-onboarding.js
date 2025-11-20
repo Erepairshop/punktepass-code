@@ -261,12 +261,12 @@
             content.html(html);
 
             // Koordináták keresés
-            html.on('click', '#ppv-geocode-btn', (e) => {
+            content.on('click', '#ppv-geocode-btn', (e) => {
                 e.preventDefault();
-                const address = html.find('[name="address"]').val();
-                const city = html.find('[name="city"]').val();
-                const zip = html.find('[name="zip"]').val();
-                const country = html.find('[name="country"]').val();
+                const address = content.find('[name="address"]').val();
+                const city = content.find('[name="city"]').val();
+                const zip = content.find('[name="zip"]').val();
+                const country = content.find('[name="country"]').val();
 
                 if (!address || !city) {
                     this.showToast('❌ Kérlek add meg a címet és várost először!', 'error');
@@ -286,8 +286,8 @@
                     data: JSON.stringify({ address, city, zip, country }),
                     success: (response) => {
                         if (response.success && response.lat && response.lng) {
-                            html.find('[name="latitude"]').val(response.lat.toFixed(4));
-                            html.find('[name="longitude"]').val(response.lng.toFixed(4));
+                            content.find('[name="latitude"]').val(response.lat.toFixed(4));
+                            content.find('[name="longitude"]').val(response.lng.toFixed(4));
                             this.showToast('✅ Koordináták megtalálva!', 'success');
                         } else {
                             this.showToast('❌ Nem találtunk koordinátákat', 'error');
@@ -303,9 +303,9 @@
             });
 
             // Next gomb
-            html.on('click', '[data-action="next"]', (e) => {
+            content.on('click', '[data-action="next"]', (e) => {
                 e.preventDefault();
-                const form = html.find('#ppv-profile-form')[0];
+                const form = content.find('#ppv-profile-form')[0];
 
                 if (!form.checkValidity()) {
                     form.reportValidity();
@@ -313,21 +313,21 @@
                 }
 
                 const data = {
-                    company_name: html.find('[name="company_name"]').val(),
-                    country: html.find('[name="country"]').val(),
-                    address: html.find('[name="address"]').val(),
-                    city: html.find('[name="city"]').val(),
-                    zip: html.find('[name="zip"]').val(),
-                    phone: html.find('[name="phone"]').val(),
-                    latitude: html.find('[name="latitude"]').val() || null,
-                    longitude: html.find('[name="longitude"]').val() || null
+                    company_name: content.find('[name="company_name"]').val(),
+                    country: content.find('[name="country"]').val(),
+                    address: content.find('[name="address"]').val(),
+                    city: content.find('[name="city"]').val(),
+                    zip: content.find('[name="zip"]').val(),
+                    phone: content.find('[name="phone"]').val(),
+                    latitude: content.find('[name="latitude"]').val() || null,
+                    longitude: content.find('[name="longitude"]').val() || null
                 };
 
                 this.saveWizardStep('profile_lite', data, modal);
             });
 
             // Skip gomb
-            html.on('click', '[data-action="skip"]', () => {
+            content.on('click', '[data-action="skip"]', () => {
                 this.wizardStep = 1;
                 this.renderWizardStep(modal);
             });
@@ -398,39 +398,39 @@
             content.html(html);
 
             // Finish gomb
-            html.on('click', '[data-action="finish"]', (e) => {
+            content.on('click', '[data-action="finish"]', (e) => {
                 e.preventDefault();
 
-                // Manual validation - használjuk a html.find()-ot a modal scope miatt!
-                const title = html.find('[name="title"]').val().trim();
-                const required_points = parseInt(html.find('[name="required_points"]').val());
+                // Manual validation - használjuk a content.find()-ot a modal scope miatt!
+                const title = content.find('[name="title"]').val().trim();
+                const required_points = parseInt(content.find('[name="required_points"]').val());
 
                 if (!title) {
                     this.showToast('❌ Kérlek add meg a prémium nevét!', 'error');
-                    html.find('[name="title"]').focus();
+                    content.find('[name="title"]').focus();
                     return;
                 }
 
                 if (!required_points || required_points < 1) {
                     this.showToast('❌ Kérlek adj meg legalább 1 pontot!', 'error');
-                    html.find('[name="required_points"]').focus();
+                    content.find('[name="required_points"]').focus();
                     return;
                 }
 
                 const data = {
                     title: title,
                     required_points: required_points,
-                    description: html.find('[name="description"]').val(),
-                    action_type: html.find('[name="action_type"]').val(),
-                    action_value: html.find('[name="action_value"]').val(),
-                    points_given: parseInt(html.find('[name="points_given"]').val()) || 0
+                    description: content.find('[name="description"]').val(),
+                    action_type: content.find('[name="action_type"]').val(),
+                    action_value: content.find('[name="action_value"]').val(),
+                    points_given: parseInt(content.find('[name="points_given"]').val()) || 0
                 };
 
                 this.saveWizardStep('reward', data, modal);
             });
 
             // Skip gomb
-            html.on('click', '[data-action="skip"]', () => {
+            content.on('click', '[data-action="skip"]', () => {
                 this.closeModal(modal);
             });
         }
