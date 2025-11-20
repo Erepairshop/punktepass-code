@@ -1019,17 +1019,25 @@ class CameraScanner {
     try {
       this.scanner = new Html5Qrcode('ppv-mini-reader');
 
-      // Try method 1: Compatible config for Samsung XCover 4s and similar devices
+      // ✅ OPTIMIZED CONFIG - Fast QR detection from any angle
       const config = {
-        fps: 15,
-        qrbox: 200,
+        fps: 30,  // ⬆️ Higher FPS = faster detection
+        qrbox: { width: 250, height: 250 },  // 📦 Larger scan area
         aspectRatio: 1.0,
-        disableFlip: false
+        disableFlip: false,  // 🔄 Try both orientations
+        experimentalFeatures: {
+          useBarCodeDetectorIfSupported: true  // 🚀 Use native API if available
+        },
+        formatsToSupport: [0]  // 📱 Only QR codes (0 = QR_CODE)
       };
 
-      // Simple camera constraints - compatible with older Android devices
+      // 📷 Advanced camera constraints - autofocus + high resolution
       const cameraConstraints = {
-        facingMode: 'environment'
+        facingMode: 'environment',
+        advanced: [
+          { focusMode: 'continuous' },  // 🎯 Continuous autofocus
+          { zoom: 1.0 }
+        ]
       };
 
       await this.scanner.start(
@@ -1041,17 +1049,34 @@ class CameraScanner {
       this.scanning = true;
       this.state = 'scanning';
       this.updateStatus('scanning', L.scanner_active || '📷 Scanning...');
-      console.log('✅ Scanner started (compatible mode)');
+      console.log('✅ Scanner started (optimized mode - 30 FPS, autofocus)');
+
+      // 🔦 Try to enable torch/LED for better low-light performance
+      try {
+        const capabilities = this.scanner.getRunningTrackCapabilities();
+        if (capabilities && capabilities.torch) {
+          await this.scanner.applyVideoConstraints({
+            advanced: [{ torch: true }]
+          });
+          console.log('🔦 Torch enabled');
+        }
+      } catch (torchErr) {
+        console.log('💡 Torch not available:', torchErr.message);
+      }
 
     } catch (err) {
-      console.warn('⚠️ Method 1 failed:', err);
+      console.warn('⚠️ Optimized config failed:', err);
 
-      // Try method 2: Even simpler config
+      // Fallback to basic config
       try {
-        console.log('⚠️ Trying method 2 (basic)...');
+        console.log('⚠️ Trying basic config...');
         const basicConfig = {
-          fps: 10,
-          qrbox: 180
+          fps: 20,
+          qrbox: 220,
+          disableFlip: false,
+          experimentalFeatures: {
+            useBarCodeDetectorIfSupported: true
+          }
         };
 
         await this.scanner.start(
@@ -1063,23 +1088,17 @@ class CameraScanner {
         this.scanning = true;
         this.state = 'scanning';
         this.updateStatus('scanning', L.scanner_active || '📷 Scanning...');
-        console.log('✅ Scanner started (basic mode)');
+        console.log('✅ Scanner started (basic mode - 20 FPS)');
 
       } catch (err2) {
-        console.warn('⚠️ Method 2 failed:', err2);
+        console.warn('⚠️ Basic config failed:', err2);
 
-        // Try method 3: Minimal config (last resort)
+        // Final fallback - minimal config
         try {
-          console.log('⚠️ Trying method 3 (minimal)...');
-          const minimalConfig = {
-            fps: 10,
-            qrbox: 150
-          };
-
-          // Try without specifying camera (use default)
+          console.log('⚠️ Trying minimal config...');
           await this.scanner.start(
-            { facingMode: { exact: 'environment' } },
-            minimalConfig,
+            { facingMode: 'environment' },
+            { fps: 15, qrbox: 200 },
             (qrCode) => this.onScanSuccess(qrCode)
           );
 
@@ -1090,26 +1109,7 @@ class CameraScanner {
 
         } catch (err3) {
           console.error('❌ All methods failed:', err3);
-          this.updateStatus('error', '❌ Kamera nem elérhető');
-
-          // Final attempt: Ask for any camera
-          try {
-            console.log('⚠️ Final attempt: any camera...');
-            await this.scanner.start(
-              { video: true },
-              { fps: 10, qrbox: 150 },
-              (qrCode) => this.onScanSuccess(qrCode)
-            );
-
-            this.scanning = true;
-            this.state = 'scanning';
-            this.updateStatus('scanning', L.scanner_active || '📷 Scanning...');
-            console.log('✅ Scanner started (any camera)');
-
-          } catch (finalErr) {
-            console.error('❌ Final attempt failed:', finalErr);
-            this.updateStatus('error', '❌ Kamera hiba - engedélyezd a kamera hozzáférést');
-          }
+          this.updateStatus('error', '❌ Kamera nem elérhető - engedélyezd a kamera hozzáférést');
         }
       }
     }
