@@ -159,7 +159,7 @@ class PPV_Onboarding {
 
         global $wpdb;
         $value = $wpdb->get_var($wpdb->prepare(
-            "SELECT meta_value FROM {$wpdb->prefix}ppv_user_meta WHERE user_id = %d AND meta_key = 'ppv_onboarding_completed' LIMIT 1",
+            "SELECT onboarding_completed FROM {$wpdb->prefix}ppv_users WHERE id = %d LIMIT 1",
             $user_id
         ));
         return (bool) $value;
@@ -171,7 +171,7 @@ class PPV_Onboarding {
 
         global $wpdb;
         $value = $wpdb->get_var($wpdb->prepare(
-            "SELECT meta_value FROM {$wpdb->prefix}ppv_user_meta WHERE user_id = %d AND meta_key = 'ppv_onboarding_dismissed' LIMIT 1",
+            "SELECT onboarding_dismissed FROM {$wpdb->prefix}ppv_users WHERE id = %d LIMIT 1",
             $user_id
         ));
         return (bool) $value;
@@ -183,7 +183,7 @@ class PPV_Onboarding {
 
         global $wpdb;
         $value = $wpdb->get_var($wpdb->prepare(
-            "SELECT meta_value FROM {$wpdb->prefix}ppv_user_meta WHERE user_id = %d AND meta_key = 'ppv_onboarding_sticky_hidden' LIMIT 1",
+            "SELECT onboarding_sticky_hidden FROM {$wpdb->prefix}ppv_users WHERE id = %d LIMIT 1",
             $user_id
         ));
         return (bool) $value;
@@ -195,7 +195,7 @@ class PPV_Onboarding {
 
         global $wpdb;
         $value = $wpdb->get_var($wpdb->prepare(
-            "SELECT meta_value FROM {$wpdb->prefix}ppv_user_meta WHERE user_id = %d AND meta_key = 'ppv_onboarding_welcome_shown' LIMIT 1",
+            "SELECT onboarding_welcome_shown FROM {$wpdb->prefix}ppv_users WHERE id = %d LIMIT 1",
             $user_id
         ));
         return (bool) $value;
@@ -207,41 +207,24 @@ class PPV_Onboarding {
 
         global $wpdb;
 
-        // Check if exists
-        $exists = $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_user_meta WHERE user_id = %d AND meta_key = 'ppv_onboarding_welcome_shown'",
-            $user_id
-        ));
-
-        if ($exists) {
-            $wpdb->update(
-                $wpdb->prefix . 'ppv_user_meta',
-                ['meta_value' => '1'],
-                ['user_id' => $user_id, 'meta_key' => 'ppv_onboarding_welcome_shown'],
-                ['%s'],
-                ['%d', '%s']
-            );
-        } else {
-            $wpdb->insert(
-                $wpdb->prefix . 'ppv_user_meta',
-                [
-                    'user_id' => $user_id,
-                    'meta_key' => 'ppv_onboarding_welcome_shown',
-                    'meta_value' => '1'
-                ],
-                ['%d', '%s', '%s']
-            );
-        }
+        $wpdb->update(
+            $wpdb->prefix . 'ppv_users',
+            ['onboarding_welcome_shown' => 1],
+            ['id' => $user_id],
+            ['%d'],
+            ['%d']
+        );
     }
 
     /** ============================================================
      *  🎨 ASSETS - Csak handlereknek
      * ============================================================ */
     public static function enqueue_assets() {
-        // Csak bejelentkezett handlereknek
-        if (!is_user_logged_in()) return;
+        // PPV user session ellenőrzés (nem WordPress login!)
+        $user_id = self::get_ppv_user_id();
 
-        $user_id = get_current_user_id();
+        if (!$user_id) return; // Nincs bejelentkezve
+
         $store_id = self::is_handler($user_id);
 
         if (!$store_id) return; // Nem handler = nem töltjük be
@@ -290,13 +273,14 @@ class PPV_Onboarding {
     }
 
     public static function enqueue_admin_assets() {
-        // Admin area-ban is betöltjük handlereknek
-        if (!is_user_logged_in()) return;
+        // PPV user session ellenőrzés (nem WordPress login!)
+        $user_id = self::get_ppv_user_id();
 
-        $user_id = get_current_user_id();
+        if (!$user_id) return; // Nincs bejelentkezve
+
         $store_id = self::is_handler($user_id);
 
-        if (!$store_id) return;
+        if (!$store_id) return; // Nem handler
 
         if (self::is_dismissed($user_id) || self::is_completed($user_id)) {
             return;
@@ -423,29 +407,15 @@ class PPV_Onboarding {
         $type = sanitize_text_field($data['type'] ?? 'permanent');
 
         global $wpdb;
-        $meta_key = $type === 'permanent' ? 'ppv_onboarding_dismissed' : 'ppv_onboarding_sticky_hidden';
+        $column = $type === 'permanent' ? 'onboarding_dismissed' : 'onboarding_sticky_hidden';
 
-        // Check if exists
-        $exists = $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_user_meta WHERE user_id = %d AND meta_key = %s",
-            $user_id, $meta_key
-        ));
-
-        if ($exists) {
-            $wpdb->update(
-                $wpdb->prefix . 'ppv_user_meta',
-                ['meta_value' => '1'],
-                ['user_id' => $user_id, 'meta_key' => $meta_key],
-                ['%s'],
-                ['%d', '%s']
-            );
-        } else {
-            $wpdb->insert(
-                $wpdb->prefix . 'ppv_user_meta',
-                ['user_id' => $user_id, 'meta_key' => $meta_key, 'meta_value' => '1'],
-                ['%d', '%s', '%s']
-            );
-        }
+        $wpdb->update(
+            $wpdb->prefix . 'ppv_users',
+            [$column => 1],
+            ['id' => $user_id],
+            ['%d'],
+            ['%d']
+        );
 
         return new WP_REST_Response([
             'success' => true,
@@ -517,26 +487,13 @@ class PPV_Onboarding {
 
         // Ha 100% → completed flag
         if ($progress['is_complete']) {
-            $exists = $wpdb->get_var($wpdb->prepare(
-                "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_user_meta WHERE user_id = %d AND meta_key = 'ppv_onboarding_completed'",
-                $user_id
-            ));
-
-            if ($exists) {
-                $wpdb->update(
-                    $wpdb->prefix . 'ppv_user_meta',
-                    ['meta_value' => '1'],
-                    ['user_id' => $user_id, 'meta_key' => 'ppv_onboarding_completed'],
-                    ['%s'],
-                    ['%d', '%s']
-                );
-            } else {
-                $wpdb->insert(
-                    $wpdb->prefix . 'ppv_user_meta',
-                    ['user_id' => $user_id, 'meta_key' => 'ppv_onboarding_completed', 'meta_value' => '1'],
-                    ['%d', '%s', '%s']
-                );
-            }
+            $wpdb->update(
+                $wpdb->prefix . 'ppv_users',
+                ['onboarding_completed' => 1],
+                ['id' => $user_id],
+                ['%d'],
+                ['%d']
+            );
         }
 
         return new WP_REST_Response([
@@ -574,41 +531,18 @@ class PPV_Onboarding {
 
         global $wpdb;
 
-        // Delete all onboarding meta
-        $wpdb->delete(
-            $wpdb->prefix . 'ppv_user_meta',
+        // Reset all onboarding flags
+        $wpdb->update(
+            $wpdb->prefix . 'ppv_users',
             [
-                'user_id' => $user_id,
-                'meta_key' => 'ppv_onboarding_completed'
+                'onboarding_completed' => 0,
+                'onboarding_dismissed' => 0,
+                'onboarding_sticky_hidden' => 0,
+                'onboarding_welcome_shown' => 0
             ],
-            ['%d', '%s']
-        );
-
-        $wpdb->delete(
-            $wpdb->prefix . 'ppv_user_meta',
-            [
-                'user_id' => $user_id,
-                'meta_key' => 'ppv_onboarding_dismissed'
-            ],
-            ['%d', '%s']
-        );
-
-        $wpdb->delete(
-            $wpdb->prefix . 'ppv_user_meta',
-            [
-                'user_id' => $user_id,
-                'meta_key' => 'ppv_onboarding_sticky_hidden'
-            ],
-            ['%d', '%s']
-        );
-
-        $wpdb->delete(
-            $wpdb->prefix . 'ppv_user_meta',
-            [
-                'user_id' => $user_id,
-                'meta_key' => 'ppv_onboarding_welcome_shown'
-            ],
-            ['%d', '%s']
+            ['id' => $user_id],
+            ['%d', '%d', '%d', '%d'],
+            ['%d']
         );
 
         return new WP_REST_Response([
