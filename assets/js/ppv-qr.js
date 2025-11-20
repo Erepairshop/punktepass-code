@@ -12,7 +12,6 @@ console.log("🚀 PPV Kassenscanner v5.3 aktív!");
 // 🌐 GLOBAL STATE & CONFIG
 // ============================================================
 window.PPV_LAST_SCAN = window.PPV_LAST_SCAN || 0;
-window.PPV_BROADCAST = window.PPV_BROADCAST || new BroadcastChannel("punktepass_scans");
 
 window.PPV_STORE_KEY =
   (window.PPV_STORE_DATA?.store_key || "").trim() ||
@@ -98,66 +97,6 @@ class UIManager {
     }, 600);
   }
 }
-
-// ============================================================
-// 📡 BROADCAST MANAGER
-// ============================================================
-class BroadcastManager {
-  static send(data) {
-    const payload = {
-      type: data.success === false ? "ppv-scan-error" : "ppv-scan-success",
-      success: data.success !== false,
-      points: data.points || 1,
-      store: data.store_name || data.store || "PunktePass",
-      message: data.message || '',
-      error_type: data.error_type || '',
-      time: Date.now(),
-    };
-
-    try {
-      if (window.PPV_BROADCAST) {
-        window.PPV_BROADCAST.postMessage(payload);
-        console.log("📡 Broadcast sent:", payload);
-      }
-    } catch (e) {
-      console.warn("⚠️ BroadcastChannel failed:", e);
-    }
-
-    try {
-      localStorage.setItem("ppv_scan_event", JSON.stringify(payload));
-      setTimeout(() => localStorage.removeItem("ppv_scan_event"), 5000);
-      console.log("📦 LocalStorage event:", payload);
-    } catch (e) {
-      console.warn("⚠️ LocalStorage failed:", e);
-    }
-
-    try {
-      window.dispatchEvent(new CustomEvent(payload.type, { detail: payload }));
-      console.log("🛰️ CustomEvent dispatched:", payload.type);
-    } catch (e) {
-      console.warn("⚠️ CustomEvent failed:", e);
-    }
-
-    if ("serviceWorker" in navigator) {
-      try {
-        navigator.serviceWorker.ready.then(reg => {
-          if (navigator.serviceWorker.controller) {
-            navigator.serviceWorker.controller.postMessage(payload);
-            console.log("📨 SW relay → controller");
-          } else if (reg.active) {
-            reg.active.postMessage(payload);
-            console.log("📨 SW relay → active");
-          }
-        });
-      } catch (e) {
-        console.warn("⚠️ SW relay failed:", e);
-      }
-    }
-  }
-}
-
-// Export to window for cross-file access
-window.BroadcastManager = BroadcastManager;
 
 // ============================================================
 // 💾 OFFLINE SYNC MANAGER
@@ -293,7 +232,6 @@ class ScanProcessor {
           data.user_id || "-",
           "✅"
         );
-        BroadcastManager.send(data);
       } else {
         const msg = data.message || "";
         this.ui.showMessage("⚠️ " + msg, "warning");
@@ -1260,15 +1198,6 @@ class CameraScanner {
             window.ppvToast(data.message || L.scanner_point_added || '✅ Pont hozzáadva!', 'success');
           }
 
-          // Broadcast the scan event
-          console.log("📡 [Scan] Broadcast data:", data);
-          if (window.BroadcastManager) {
-            console.log("📡 [Scan] BroadcastManager found, sending...");
-            BroadcastManager.send(data);
-          } else {
-            console.warn("⚠️ [Scan] BroadcastManager NOT found!");
-          }
-
           // Reload logs
           if (this.scanProcessor && this.scanProcessor.loadLogs) {
             setTimeout(() => {
@@ -1287,16 +1216,6 @@ class CameraScanner {
 
           if (window.ppvToast) {
             window.ppvToast(data.message || L.error_generic || '⚠️ Hiba', 'warning');
-          }
-
-          // Broadcast the error event to user dashboard
-          if (window.BroadcastManager) {
-            BroadcastManager.send({
-              success: false,
-              message: data.message || L.error_generic || 'Hiba',
-              store_name: data.store_name || 'PunktePass',
-              error_type: data.error_type || 'unknown'
-            });
           }
 
           // Restart scanner after error

@@ -303,11 +303,20 @@ document.addEventListener("DOMContentLoaded", async () => {
   // POINT POLLING & SYNC
   // ============================================================
 
+  // ============================================================
+  // 📊 ADAPTIVE POLLING - 3s active, 30s inactive
+  // ============================================================
   const initPointSync = () => {
     let lastPolledPoints = boot.points || 0;
-    let pollCount = 0;
-    const pollInterval = setInterval(async () => {
-      pollCount++;
+    let pollIntervalId = null;
+
+    // Get current polling interval based on visibility
+    const getCurrentInterval = () => {
+      return document.hidden ? 30000 : 3000; // 30s inactive, 3s active
+    };
+
+    // Poll function
+    const pollPoints = async () => {
       try {
         const res = await fetch(API + 'user/points-poll', {
           method: 'GET',
@@ -328,44 +337,29 @@ document.addEventListener("DOMContentLoaded", async () => {
       } catch (e) {
         console.warn(`⚠️ [Polling] Error:`, e.message);
       }
-    }, 10000); // 10 seconds - reduced from 3s to prevent 503 errors
-    window.addEventListener('beforeunload', () => clearInterval(pollInterval));
+    };
+
+    // Start polling with current interval
+    const startPolling = () => {
+      if (pollIntervalId) clearInterval(pollIntervalId);
+      const interval = getCurrentInterval();
+      console.log(`🔄 [Polling] Starting with ${interval/1000}s interval (tab ${document.hidden ? 'inactive' : 'active'})`);
+      pollIntervalId = setInterval(pollPoints, interval);
+    };
+
+    // Handle visibility change
+    document.addEventListener('visibilitychange', () => {
+      startPolling(); // Restart with new interval
+    });
+
+    // Start initial polling
+    startPolling();
+
+    // Cleanup
+    window.addEventListener('beforeunload', () => {
+      if (pollIntervalId) clearInterval(pollIntervalId);
+    });
   };
-
-  function handleScanEvent(data) {
-    console.log("📡 [handleScanEvent] Received:", data);
-
-    if (!data?.type) {
-      console.warn("⚠️ [handleScanEvent] No type in data");
-      return;
-    }
-
-    // Handle success event
-    if (data.type === "ppv-scan-success") {
-      console.log("✅ [handleScanEvent] Success event - points:", data.points, "store:", data.store);
-      const newPoints = boot.points + (data.points || 1);
-      updateGlobalPoints(newPoints);
-      boot.points = newPoints;
-      if (window.ppvShowPointToast) {
-        window.ppvShowPointToast("success", data.points || 1, data.store || "PunktePass");
-        console.log("✅ [handleScanEvent] Toast called");
-      } else {
-        console.warn("⚠️ [handleScanEvent] ppvShowPointToast not found");
-      }
-    }
-
-    // Handle error event
-    if (data.type === "ppv-scan-error") {
-      console.log("❌ [handleScanEvent] Error event - message:", data.message, "store:", data.store);
-      if (window.ppvShowPointToast) {
-        // Show error toast with store name and error message
-        window.ppvShowPointToast("error", 0, data.store || "PunktePass", data.message || "Scan fehlgeschlagen");
-        console.log("❌ [handleScanEvent] Error toast called");
-      } else {
-        console.warn("⚠️ [handleScanEvent] ppvShowPointToast not found");
-      }
-    }
-  }
 
   /**
    * 🏪 RENDER STORE CARD - FULLY TRANSLATED ✅
@@ -991,50 +985,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       createToast();
     }
   };
-
-  // ============================================================
-  // 📡 BROADCAST EVENT LISTENERS
-  // ============================================================
-
-  // 1) BroadcastChannel (cross-tab communication)
-  if (typeof BroadcastChannel !== 'undefined') {
-    try {
-      const bc = new BroadcastChannel("punktepass_scans");
-      bc.addEventListener("message", (event) => {
-        console.log("📡 [BroadcastChannel] Message received:", event.data);
-        handleScanEvent(event.data);
-      });
-      console.log("✅ [BroadcastChannel] Initialized");
-    } catch (e) {
-      console.warn("⚠️ [BroadcastChannel] Failed:", e);
-    }
-  }
-
-  // 2) LocalStorage (cross-tab fallback)
-  window.addEventListener("storage", (event) => {
-    if (event.key === "ppv_scan_event" && event.newValue) {
-      try {
-        const data = JSON.parse(event.newValue);
-        console.log("📦 [LocalStorage] Event received:", data);
-        handleScanEvent(data);
-      } catch (e) {
-        console.warn("⚠️ [LocalStorage] Parse error:", e);
-      }
-    }
-  });
-  console.log("✅ [LocalStorage Listener] Initialized");
-
-  // 3) CustomEvent (same-page communication)
-  window.addEventListener("ppv-scan-success", (event) => {
-    console.log("🛰️ [CustomEvent] Success event:", event.detail);
-    handleScanEvent(event.detail);
-  });
-
-  window.addEventListener("ppv-scan-error", (event) => {
-    console.log("🛰️ [CustomEvent] Error event:", event.detail);
-    handleScanEvent(event.detail);
-  });
-  console.log("✅ [CustomEvent Listeners] Initialized");
 
   console.log("✅ Dashboard initialized");
 });
