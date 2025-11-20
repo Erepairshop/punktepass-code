@@ -25,6 +25,25 @@ class PPV_POS_SCAN {
         return $result;
     }
 
+    public static function permission_with_logging() {
+        error_log('🔐 [PERMISSION] permission_with_logging() called for recent-scans');
+
+        $result = PPV_Permissions::check_handler();
+
+        if (is_wp_error($result)) {
+            error_log('❌ [PERMISSION] check_handler() returned WP_Error: ' . $result->get_error_message());
+            // Return valid JSON error instead of WP_Error
+            return new WP_Error(
+                $result->get_error_code(),
+                $result->get_error_message(),
+                ['status' => $result->get_error_data()['status'] ?? 403]
+            );
+        }
+
+        error_log('✅ [PERMISSION] check_handler() returned TRUE');
+        return true;
+    }
+
     public static function register_routes() {
         register_rest_route('ppv/v1', '/pos/scan', [
             'methods'             => 'POST',
@@ -35,7 +54,7 @@ class PPV_POS_SCAN {
         register_rest_route('ppv/v1', '/pos/recent-scans', [
             'methods'             => 'GET',
             'callback'            => [__CLASS__, 'get_recent_scans'],
-            'permission_callback' => ['PPV_Permissions', 'check_handler'],
+            'permission_callback' => [__CLASS__, 'permission_with_logging'],
         ]);
 
         register_rest_route('ppv/v1', '/pos/export-logs', [
