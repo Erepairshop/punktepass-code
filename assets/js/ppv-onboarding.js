@@ -365,17 +365,29 @@
 
                     <div class="ppv-form-group">
                         <label>Jutalmazás típusa *</label>
-                        <select name="action_type">
+                        <select name="action_type" id="onboarding-action-type">
                             <option value="discount_percent">Rabatt (%)</option>
                             <option value="discount_fixed">Fix rabatt</option>
                             <option value="free_product" selected>Ingyenes termék</option>
                         </select>
                     </div>
 
-                    <div class="ppv-form-group">
+                    <div class="ppv-form-group" id="onboarding-action-value-wrapper">
                         <label>Érték *</label>
                         <input type="text" name="action_value" placeholder="pl. 10" value="0">
                         <small style="color: #999;">💶 Érték a jutalomhoz (pl. 10% vagy 5 EUR)</small>
+                    </div>
+
+                    <!-- GRATIS TERMÉK NEVE (csak FREE_PRODUCT típusnál!) -->
+                    <div class="ppv-form-group" id="onboarding-free-product-name-wrapper" style="display: none;">
+                        <label>🎁 Produktname</label>
+                        <input type="text" name="free_product" id="onboarding-free-product-name" placeholder="pl. Kaffee + Kuchen">
+                    </div>
+
+                    <!-- GRATIS TERMÉK ÉRTÉKE -->
+                    <div class="ppv-form-group" id="onboarding-free-product-value-wrapper" style="display: none;">
+                        <label style="color: #ff9800;">💰 Produktwert <span style="color: #ff0000;">*</span></label>
+                        <input type="number" name="free_product_value" id="onboarding-free-product-value" value="0" min="0.01" step="0.01" placeholder="0.00" style="border-color: #ff9800;">
                     </div>
 
                     <div class="ppv-form-group">
@@ -397,23 +409,29 @@
 
             content.html(html);
 
-            // 🎯 DYNAMIC FORM - Hide action_value for free_product
-            const toggleValueField = () => {
+            // 🎯 DYNAMIC FORM - Show/Hide fields based on action_type
+            const toggleOnboardingFields = () => {
                 const selectedType = content.find('[name="action_type"]').val();
-                const valueGroup = content.find('[name="action_value"]').closest('.ppv-form-group');
+                const actionValueWrapper = content.find('#onboarding-action-value-wrapper');
+                const freeProductNameWrapper = content.find('#onboarding-free-product-name-wrapper');
+                const freeProductValueWrapper = content.find('#onboarding-free-product-value-wrapper');
 
                 if (selectedType === 'free_product') {
-                    // Ingyenes termék - nincs szükség érték mezőre
-                    valueGroup.hide();
+                    // 🎁 Ingyenes termék - Product mezők láthatók, action_value HIDDEN
+                    actionValueWrapper.hide();
                     content.find('[name="action_value"]').val('0');
+                    freeProductNameWrapper.show();
+                    freeProductValueWrapper.show();
                 } else {
-                    // Rabatt típusok - érték mező kell
-                    valueGroup.show();
+                    // 💶 Rabatt típusok - action_value látható, Product mezők HIDDEN
+                    actionValueWrapper.show();
+                    freeProductNameWrapper.hide();
+                    freeProductValueWrapper.hide();
                 }
             };
 
-            content.on('change', '[name="action_type"]', toggleValueField);
-            toggleValueField(); // Initial check
+            content.on('change', '[name="action_type"]', toggleOnboardingFields);
+            toggleOnboardingFields(); // Initial check
 
             // Finish gomb
             content.on('click', '[data-action="finish"]', (e) => {
@@ -441,7 +459,9 @@
                     description: content.find('[name="description"]').val(),
                     action_type: content.find('[name="action_type"]').val(),
                     action_value: content.find('[name="action_value"]').val(),
-                    points_given: parseInt(content.find('[name="points_given"]').val()) || 0
+                    points_given: parseInt(content.find('[name="points_given"]').val()) || 0,
+                    free_product: content.find('[name="free_product"]').val() || '',
+                    free_product_value: parseFloat(content.find('[name="free_product_value"]').val()) || 0
                 };
 
                 this.saveWizardStep('reward', data, modal);

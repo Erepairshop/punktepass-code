@@ -545,10 +545,12 @@ class PPV_Onboarding {
                     'action_type' => sanitize_text_field($value['action_type'] ?? 'free_product'),
                     'action_value' => sanitize_text_field($value['action_value'] ?? '0'),
                     'points_given' => intval($value['points_given'] ?? 0),
+                    'free_product' => sanitize_text_field($value['free_product'] ?? ''),
+                    'free_product_value' => floatval($value['free_product_value'] ?? 0),
                     'currency' => $currency,
                     'created_at' => current_time('mysql')
                 ],
-                ['%d', '%s', '%s', '%d', '%s', '%s', '%d', '%s', '%s']
+                ['%d', '%s', '%s', '%d', '%s', '%s', '%d', '%s', '%f', '%s', '%s']
             );
 
             error_log("✅ [PPV_Onboarding] Reward created | Result: " . ($result !== false ? 'SUCCESS' : 'ERROR'));

@@ -134,6 +134,8 @@ document.addEventListener("DOMContentLoaded", function () {
         description: form.description.value.trim(),
         action_type: form.action_type.value,
         action_value: form.action_value.value.trim(),
+        free_product: document.getElementById("reward-free-product-name")?.value.trim() || "",
+        free_product_value: parseFloat(document.getElementById("reward-free-product-value")?.value || 0)
       };
 
       console.log("💾 Save body:", body);
@@ -191,7 +193,16 @@ document.addEventListener("DOMContentLoaded", function () {
           document.getElementById("reward-description").value = reward.description || "";
           document.getElementById("reward-type").value = reward.action_type || "discount_percent";
           document.getElementById("reward-value").value = reward.action_value || "";
-          
+
+          // Free product fields
+          const freeProductNameInput = document.getElementById("reward-free-product-name");
+          const freeProductValueInput = document.getElementById("reward-free-product-value");
+          if (freeProductNameInput) freeProductNameInput.value = reward.free_product || "";
+          if (freeProductValueInput) freeProductValueInput.value = reward.free_product_value || 0;
+
+          // Trigger field visibility update
+          toggleRewardFields();
+
           saveBtn.textContent = "💾 " + (L.rewards_btn_update || 'Frissítés');
           cancelBtn.style.display = "block";
           
@@ -263,38 +274,46 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   /* ============================================================
-   * 🎯 DYNAMIC FORM - Hide action_value for free_product
+   * 🎯 DYNAMIC FORM - Show/Hide fields based on action_type
    * ============================================================ */
   const rewardTypeSelect = document.getElementById("reward-type");
   const rewardValueInput = document.getElementById("reward-value");
   const rewardValueLabel = rewardValueInput?.previousElementSibling;
   const rewardValueHelper = rewardValueInput?.nextElementSibling;
+  const freeProductNameWrapper = document.getElementById("reward-free-product-name-wrapper");
+  const freeProductValueWrapper = document.getElementById("reward-free-product-value-wrapper");
 
-  function toggleValueField() {
-    if (!rewardTypeSelect || !rewardValueInput) return;
+  function toggleRewardFields() {
+    if (!rewardTypeSelect) return;
 
     const selectedType = rewardTypeSelect.value;
 
     if (selectedType === "free_product") {
-      // Ingyenes termék - nincs szükség érték mezőre
-      rewardValueInput.style.display = "none";
+      // 🎁 Ingyenes termék - Product mezők láthatók, action_value HIDDEN
+      if (rewardValueInput) rewardValueInput.style.display = "none";
       if (rewardValueLabel) rewardValueLabel.style.display = "none";
       if (rewardValueHelper) rewardValueHelper.style.display = "none";
-      rewardValueInput.value = "0"; // Automatikusan 0
-      rewardValueInput.removeAttribute("required");
+      if (rewardValueInput) rewardValueInput.value = "0";
+      if (rewardValueInput) rewardValueInput.removeAttribute("required");
+
+      if (freeProductNameWrapper) freeProductNameWrapper.style.display = "block";
+      if (freeProductValueWrapper) freeProductValueWrapper.style.display = "block";
     } else {
-      // Rabatt típusok - érték mező kell
-      rewardValueInput.style.display = "block";
+      // 💶 Rabatt típusok - action_value látható, Product mezők HIDDEN
+      if (rewardValueInput) rewardValueInput.style.display = "block";
       if (rewardValueLabel) rewardValueLabel.style.display = "block";
       if (rewardValueHelper) rewardValueHelper.style.display = "block";
-      rewardValueInput.setAttribute("required", "required");
+      if (rewardValueInput) rewardValueInput.setAttribute("required", "required");
+
+      if (freeProductNameWrapper) freeProductNameWrapper.style.display = "none";
+      if (freeProductValueWrapper) freeProductValueWrapper.style.display = "none";
     }
   }
 
   if (rewardTypeSelect) {
-    rewardTypeSelect.addEventListener("change", toggleValueField);
+    rewardTypeSelect.addEventListener("change", toggleRewardFields);
     // Initial check
-    toggleValueField();
+    toggleRewardFields();
   }
 
   /* ============================================================

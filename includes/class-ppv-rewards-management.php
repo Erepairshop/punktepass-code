@@ -193,6 +193,18 @@ class PPV_Rewards_Management {
                 <input type="text" name="action_value" id="reward-value" placeholder="<?php echo esc_attr(PPV_Lang::t('rewards_form_value_placeholder') ?: 'pl. 10'); ?>" required>
                 <small style="color: #999;">💶 <?php echo esc_html($currency); ?></small>
 
+                <!-- GRATIS TERMÉK NEVE (csak FREE_PRODUCT típusnál!) -->
+                <div id="reward-free-product-name-wrapper" style="display: none;">
+                    <label><?php echo esc_html(PPV_Lang::t('label_free_product') ?: '🎁 Produktname'); ?></label>
+                    <input type="text" name="free_product" id="reward-free-product-name" placeholder="<?php echo esc_attr(PPV_Lang::t('camp_placeholder_free_product') ?: 'pl. Kaffee + Kuchen'); ?>">
+                </div>
+
+                <!-- GRATIS TERMÉK ÉRTÉKE (csak ha van termék név!) -->
+                <div id="reward-free-product-value-wrapper" style="display: none;">
+                    <label style="color: #ff9800;">💰 <?php echo esc_html(PPV_Lang::t('label_free_product_value') ?: 'Produktwert'); ?> <span style="color: #ff0000;">*</span></label>
+                    <input type="number" name="free_product_value" id="reward-free-product-value" value="0" min="0.01" step="0.01" placeholder="0.00" style="border-color: #ff9800;">
+                </div>
+
                 <label><?php echo esc_html(PPV_Lang::t('rewards_form_points_given') ?: 'Pontok adott (ha beváltják) *'); ?></label>
                 <input type="number" name="points_given" id="reward-points-given" placeholder="<?php echo esc_attr(PPV_Lang::t('rewards_form_points_given_placeholder') ?: 'pl. 5'); ?>" min="0" required>
                 <small style="color: #999;">⭐ <?php echo esc_html(PPV_Lang::t('rewards_form_points_given_helper') ?: 'Ezek a pontok jutalmazzák az ügyfelet'); ?></small>
@@ -256,6 +268,8 @@ class PPV_Rewards_Management {
         $desc     = sanitize_textarea_field($data['description'] ?? '');
         $type     = sanitize_text_field($data['action_type'] ?? '');
         $value    = sanitize_text_field($data['action_value'] ?? '');
+        $free_product = sanitize_text_field($data['free_product'] ?? '');
+        $free_product_value = floatval($data['free_product_value'] ?? 0);
 
         // Currency automatikus
         $store = $wpdb->get_row($wpdb->prepare(
@@ -282,6 +296,8 @@ class PPV_Rewards_Management {
             'description'     => $desc,
             'action_type'     => $type,
             'action_value'    => $value,
+            'free_product'    => $free_product,
+            'free_product_value' => $free_product_value,
             'currency'        => $currency,
             'created_at'      => current_time('mysql')
         ]);
@@ -308,6 +324,8 @@ class PPV_Rewards_Management {
         $desc     = sanitize_textarea_field($data['description'] ?? '');
         $type     = sanitize_text_field($data['action_type'] ?? '');
         $value    = sanitize_text_field($data['action_value'] ?? '');
+        $free_product = sanitize_text_field($data['free_product'] ?? '');
+        $free_product_value = floatval($data['free_product_value'] ?? 0);
 
         // Currency automatikus
         $store = $wpdb->get_row($wpdb->prepare(
@@ -335,13 +353,15 @@ class PPV_Rewards_Management {
                 'description'     => $desc,
                 'action_type'     => $type,
                 'action_value'    => $value,
+                'free_product'    => $free_product,
+                'free_product_value' => $free_product_value,
                 'currency'        => $currency
             ],
             [
                 'id'       => $id,
                 'store_id' => $store_id
             ],
-            ['%s', '%d', '%d', '%s', '%s', '%s', '%s'],
+            ['%s', '%d', '%d', '%s', '%s', '%s', '%s', '%f', '%s'],
             ['%d', '%d']
         );
 
