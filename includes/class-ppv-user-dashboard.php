@@ -850,6 +850,7 @@ public static function render_dashboard() {
                 $response['error_message'] = $recent_error->message;
                 $response['error_type'] = 'rate_limit';
                 $response['error_store'] = $recent_error->store_name ?: 'PunktePass';
+                $response['error_timestamp'] = $recent_error->created_at; // Add timestamp for tracking
                 error_log("⚠️ [PPV_Dashboard] rest_poll_points: User=$user_id has recent error: " . $recent_error->message);
             } else {
                 error_log("✅ [PPV_Dashboard] rest_poll_points: Error found but successful scan happened after, ignoring error");

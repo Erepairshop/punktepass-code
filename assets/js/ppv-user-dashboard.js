@@ -315,7 +315,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.PPV_POLLING_ACTIVE = true;
 
     let lastPolledPoints = boot.points || 0;
-    let lastShownErrorMessage = null; // Track last shown error to prevent duplicates
+    let lastShownErrorTimestamp = null; // Track last shown error timestamp to prevent duplicates
     let pollIntervalId = null;
 
     // Get current polling interval based on visibility
@@ -343,24 +343,24 @@ document.addEventListener("DOMContentLoaded", async () => {
           if (window.ppvShowPointToast) {
             window.ppvShowPointToast('success', pointDiff, data.store || 'PunktePass');
           }
-          // Clear error message when points increase (new successful scan)
-          lastShownErrorMessage = null;
+          // Clear error timestamp when points increase (new successful scan)
+          lastShownErrorTimestamp = null;
         }
 
         // Check for error message (e.g., "bereits gescannt")
-        if (data.error_message && data.error_type) {
-          // Only show if this is a NEW error (different message or first time)
-          if (data.error_message !== lastShownErrorMessage) {
+        if (data.error_message && data.error_type && data.error_timestamp) {
+          // Only show if this is a NEW error (different timestamp)
+          if (data.error_timestamp !== lastShownErrorTimestamp) {
             if (window.ppvShowPointToast) {
               const errorStore = data.error_store || data.store || 'PunktePass';
               window.ppvShowPointToast('error', 0, errorStore, data.error_message);
-              console.log(`⚠️ [Polling] Error detected: ${data.error_message} from ${errorStore}`);
+              console.log(`⚠️ [Polling] Error detected: ${data.error_message} from ${errorStore} at ${data.error_timestamp}`);
             }
-            lastShownErrorMessage = data.error_message;
+            lastShownErrorTimestamp = data.error_timestamp;
           }
         } else {
           // No error in response - clear the last shown error
-          lastShownErrorMessage = null;
+          lastShownErrorTimestamp = null;
         }
       } catch (e) {
         console.warn(`⚠️ [Polling] Error:`, e.message);
