@@ -153,64 +153,79 @@ class PPV_Onboarding {
         return !empty($_SESSION['ppv_user_id']) ? intval($_SESSION['ppv_user_id']) : 0;
     }
 
-    public static function is_completed($user_id = null) {
-        if (!$user_id) $user_id = self::get_ppv_user_id();
-        if (!$user_id) return false;
+    public static function is_completed($store_id = null) {
+        if (!$store_id) {
+            $user_id = self::get_ppv_user_id();
+            $store_id = self::is_handler($user_id);
+        }
+        if (!$store_id) return false;
 
         global $wpdb;
         $value = $wpdb->get_var($wpdb->prepare(
-            "SELECT onboarding_completed FROM {$wpdb->prefix}ppv_users WHERE id = %d LIMIT 1",
-            $user_id
+            "SELECT onboarding_completed FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
+            $store_id
         ));
         return (bool) $value;
     }
 
-    public static function is_dismissed($user_id = null) {
-        if (!$user_id) $user_id = self::get_ppv_user_id();
-        if (!$user_id) return false;
+    public static function is_dismissed($store_id = null) {
+        if (!$store_id) {
+            $user_id = self::get_ppv_user_id();
+            $store_id = self::is_handler($user_id);
+        }
+        if (!$store_id) return false;
 
         global $wpdb;
         $value = $wpdb->get_var($wpdb->prepare(
-            "SELECT onboarding_dismissed FROM {$wpdb->prefix}ppv_users WHERE id = %d LIMIT 1",
-            $user_id
+            "SELECT onboarding_dismissed FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
+            $store_id
         ));
         return (bool) $value;
     }
 
-    public static function is_sticky_hidden($user_id = null) {
-        if (!$user_id) $user_id = self::get_ppv_user_id();
-        if (!$user_id) return false;
+    public static function is_sticky_hidden($store_id = null) {
+        if (!$store_id) {
+            $user_id = self::get_ppv_user_id();
+            $store_id = self::is_handler($user_id);
+        }
+        if (!$store_id) return false;
 
         global $wpdb;
         $value = $wpdb->get_var($wpdb->prepare(
-            "SELECT onboarding_sticky_hidden FROM {$wpdb->prefix}ppv_users WHERE id = %d LIMIT 1",
-            $user_id
+            "SELECT onboarding_sticky_hidden FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
+            $store_id
         ));
         return (bool) $value;
     }
 
-    public static function is_welcome_shown($user_id = null) {
-        if (!$user_id) $user_id = self::get_ppv_user_id();
-        if (!$user_id) return false;
+    public static function is_welcome_shown($store_id = null) {
+        if (!$store_id) {
+            $user_id = self::get_ppv_user_id();
+            $store_id = self::is_handler($user_id);
+        }
+        if (!$store_id) return false;
 
         global $wpdb;
         $value = $wpdb->get_var($wpdb->prepare(
-            "SELECT onboarding_welcome_shown FROM {$wpdb->prefix}ppv_users WHERE id = %d LIMIT 1",
-            $user_id
+            "SELECT onboarding_welcome_shown FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
+            $store_id
         ));
         return (bool) $value;
     }
 
-    public static function set_welcome_shown($user_id = null) {
-        if (!$user_id) $user_id = self::get_ppv_user_id();
-        if (!$user_id) return false;
+    public static function set_welcome_shown($store_id = null) {
+        if (!$store_id) {
+            $user_id = self::get_ppv_user_id();
+            $store_id = self::is_handler($user_id);
+        }
+        if (!$store_id) return false;
 
         global $wpdb;
 
         $wpdb->update(
-            $wpdb->prefix . 'ppv_users',
+            $wpdb->prefix . 'ppv_stores',
             ['onboarding_welcome_shown' => 1],
-            ['id' => $user_id],
+            ['id' => $store_id],
             ['%d'],
             ['%d']
         );
@@ -403,6 +418,12 @@ class PPV_Onboarding {
             return new WP_REST_Response(['success' => false], 401);
         }
 
+        $store_id = self::is_handler($user_id);
+
+        if (!$store_id) {
+            return new WP_REST_Response(['success' => false], 403);
+        }
+
         $data = $request->get_json_params();
         $type = sanitize_text_field($data['type'] ?? 'permanent');
 
@@ -410,9 +431,9 @@ class PPV_Onboarding {
         $column = $type === 'permanent' ? 'onboarding_dismissed' : 'onboarding_sticky_hidden';
 
         $wpdb->update(
-            $wpdb->prefix . 'ppv_users',
+            $wpdb->prefix . 'ppv_stores',
             [$column => 1],
-            ['id' => $user_id],
+            ['id' => $store_id],
             ['%d'],
             ['%d']
         );
@@ -488,9 +509,9 @@ class PPV_Onboarding {
         // Ha 100% → completed flag
         if ($progress['is_complete']) {
             $wpdb->update(
-                $wpdb->prefix . 'ppv_users',
+                $wpdb->prefix . 'ppv_stores',
                 ['onboarding_completed' => 1],
-                ['id' => $user_id],
+                ['id' => $store_id],
                 ['%d'],
                 ['%d']
             );
@@ -512,7 +533,13 @@ class PPV_Onboarding {
             return new WP_REST_Response(['success' => false], 401);
         }
 
-        self::set_welcome_shown($user_id);
+        $store_id = self::is_handler($user_id);
+
+        if (!$store_id) {
+            return new WP_REST_Response(['success' => false], 403);
+        }
+
+        self::set_welcome_shown($store_id);
 
         return new WP_REST_Response([
             'success' => true
@@ -529,18 +556,24 @@ class PPV_Onboarding {
             return new WP_REST_Response(['success' => false], 401);
         }
 
+        $store_id = self::is_handler($user_id);
+
+        if (!$store_id) {
+            return new WP_REST_Response(['success' => false], 403);
+        }
+
         global $wpdb;
 
         // Reset all onboarding flags
         $wpdb->update(
-            $wpdb->prefix . 'ppv_users',
+            $wpdb->prefix . 'ppv_stores',
             [
                 'onboarding_completed' => 0,
                 'onboarding_dismissed' => 0,
                 'onboarding_sticky_hidden' => 0,
                 'onboarding_welcome_shown' => 0
             ],
-            ['id' => $user_id],
+            ['id' => $store_id],
             ['%d', '%d', '%d', '%d'],
             ['%d']
         );
