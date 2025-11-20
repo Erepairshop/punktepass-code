@@ -233,7 +233,7 @@ $core_modules = [
     'includes/class-ppv-sessionbridge.php',
     'includes/class-ppv-bottom-nav.php',
     'includes/class-ppv-pos-devices.php',
-    'includes/class-ppv-scanner.php',
+    // 'includes/class-ppv-scanner.php', // DISABLED: Conflicts with class-ppv-qr.php endpoint (punktepass/v1/pos/scan)
      'includes/ppv-signup.php',
      'includes/class-ppv-analytics-api.php' ,
      'includes/class-ppv-theme-handler.php',
@@ -477,7 +477,7 @@ if (class_exists('PPV_POS_Devices')) PPV_POS_Devices::hooks();
 if (class_exists('PPV_POS_Admin')) PPV_POS_Admin::hooks();
 if (class_exists('PPV_POS_REST')) PPV_POS_REST::hooks();
 if (class_exists('PPV_Bottom_Nav')) PPV_Bottom_Nav::hooks();
-if (class_exists('PPV_Camera_Scanner')) PPV_Camera_Scanner::hooks();
+// if (class_exists('PPV_Camera_Scanner')) PPV_Camera_Scanner::hooks(); // DISABLED: Conflicts with PPV_QR endpoint
 if (class_exists('PPV_Logout')) PPV_Logout::hooks();
 if (class_exists('PPV_Account_Delete')) PPV_Account_Delete::hooks();
 if (class_exists('PPV_My_Points')) PPV_My_Points::hooks();  // ← ÚJ!
