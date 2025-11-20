@@ -124,6 +124,12 @@ class PPV_QR {
 
         error_log("🔍 [RATE_LIMIT_CHECK] User: {$user_id} | Store: {$store_id}");
 
+        // Get store name for error responses
+        $store_name = $wpdb->get_var($wpdb->prepare(
+            "SELECT name FROM {$wpdb->prefix}ppv_stores WHERE id=%d LIMIT 1",
+            $store_id
+        ));
+
         // 1) Check if already scanned TODAY (daily limit: 1 scan per day per store)
         $already_today = $wpdb->get_var($wpdb->prepare("
             SELECT COUNT(*) FROM {$wpdb->prefix}ppv_points
@@ -150,7 +156,9 @@ class PPV_QR {
                 'limited' => true,
                 'response' => new WP_REST_Response([
                     'success' => false,
-                    'message' => self::t('err_already_scanned_today', '⚠️ Heute bereits gescannt')
+                    'message' => self::t('err_already_scanned_today', '⚠️ Heute bereits gescannt'),
+                    'store_name' => $store_name ?? 'PunktePass',
+                    'error_type' => 'already_scanned_today'
                 ], 429)
             ];
         }
@@ -174,7 +182,9 @@ class PPV_QR {
                 'limited' => true,
                 'response' => new WP_REST_Response([
                     'success' => false,
-                    'message' => self::t('err_duplicate_scan', '⚠️ Bereits gescannt. Bitte warten.')
+                    'message' => self::t('err_duplicate_scan', '⚠️ Bereits gescannt. Bitte warten.'),
+                    'store_name' => $store_name ?? 'PunktePass',
+                    'error_type' => 'duplicate_scan'
                 ], 429)
             ];
         }
@@ -1109,7 +1119,9 @@ class PPV_QR {
         if (!$user_id) {
             return new WP_REST_Response([
                 'success' => false,
-                'message' => self::t('err_invalid_qr', '❌ Érvénytelen QR')
+                'message' => self::t('err_invalid_qr', '❌ Érvénytelen QR'),
+                'store_name' => $store->name ?? 'PunktePass',
+                'error_type' => 'invalid_qr'
             ], 400);
         }
 
@@ -1128,11 +1140,19 @@ class PPV_QR {
 
         self::insert_log($store->id, $user_id, self::t('log_point_added', '1 pont hozzáadva'), 'qr_scan');
 
+        // Get store name for response
+        $store_name = $wpdb->get_var($wpdb->prepare(
+            "SELECT name FROM {$wpdb->prefix}ppv_stores WHERE id=%d LIMIT 1",
+            $store->id
+        ));
+
         return new WP_REST_Response([
             'success' => true,
             'message' => self::t('scan_success', '✅ 1 pont hozzáadva'),
             'user_id' => $user_id,
             'store_id' => $store->id,
+            'store_name' => $store_name ?? 'PunktePass',
+            'points' => 1,
             'time' => current_time('mysql')
         ], 200);
     }
