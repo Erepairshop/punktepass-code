@@ -125,13 +125,18 @@ class PPV_QR {
     private static function check_rate_limit($user_id, $store_id) {
         global $wpdb;
 
+        error_log("🔍 [RATE_LIMIT_CHECK] User: {$user_id} | Store: {$store_id} | Window: " . self::RATE_LIMIT_WINDOW . "s | Max: " . self::RATE_LIMIT_SCANS);
+
         $recent = $wpdb->get_var($wpdb->prepare("
             SELECT COUNT(*) FROM {$wpdb->prefix}ppv_points
-            WHERE user_id=%d AND store_id=%d 
+            WHERE user_id=%d AND store_id=%d
             AND created >= (NOW() - INTERVAL %d SECOND)
         ", $user_id, $store_id, self::RATE_LIMIT_WINDOW));
 
+        error_log("📊 [RATE_LIMIT_CHECK] Recent scans in last 24h: {$recent} (limit: " . self::RATE_LIMIT_SCANS . ")");
+
         if ($recent >= self::RATE_LIMIT_SCANS) {
+            error_log("🚫 [RATE_LIMIT] User {$user_id} BLOCKED - Already scanned {$recent} time(s) in last 24h at store {$store_id}");
             return [
                 'limited' => true,
                 'response' => new WP_REST_Response([
@@ -141,6 +146,7 @@ class PPV_QR {
             ];
         }
 
+        error_log("✅ [RATE_LIMIT] User {$user_id} PASSED - Can scan at store {$store_id}");
         return ['limited' => false];
     }
 
@@ -1031,36 +1037,49 @@ class PPV_QR {
     public static function rest_process_scan(WP_REST_Request $r) {
         global $wpdb;
 
+        error_log("🚀 [SCAN START] PPV_QR::rest_process_scan() called");
+
         $data = $r->get_json_params();
         $qr_code = sanitize_text_field($data['qr'] ?? '');
         $store_key = sanitize_text_field($data['store_key'] ?? '');
 
+        error_log("📋 [SCAN DATA] QR: " . substr($qr_code, 0, 20) . "... | Store Key: " . substr($store_key, 0, 10) . "...");
+
         if (empty($qr_code) || empty($store_key)) {
+            error_log("❌ [SCAN ERROR] Missing QR code or store key");
             return new WP_REST_Response([
                 'success' => false,
                 'message' => self::t('err_invalid_request', '❌ Érvénytelen kérés')
             ], 400);
         }
 
+        error_log("🔐 [STORE VALIDATION] Validating store key...");
         $validation = self::validate_store($store_key);
         if (!$validation['valid']) {
+            error_log("❌ [STORE VALIDATION] Invalid store key");
             return $validation['response'];
         }
         $store = $validation['store'];
+        error_log("✅ [STORE VALIDATION] Store valid - ID: {$store->id} | Name: {$store->name}");
 
+        error_log("🔓 [QR DECODE] Decoding user from QR code...");
         $user_id = self::decode_user_from_qr($qr_code);
         if (!$user_id) {
+            error_log("❌ [QR DECODE] Invalid QR code - could not decode user ID");
             return new WP_REST_Response([
                 'success' => false,
                 'message' => self::t('err_invalid_qr', '❌ Érvénytelen QR')
             ], 400);
         }
+        error_log("✅ [QR DECODE] User decoded - ID: {$user_id}");
 
         $rate_check = self::check_rate_limit($user_id, $store->id);
         if ($rate_check['limited']) {
+            error_log("⚠️ [SCAN RESULT] Returning 429 rate limit response");
             return $rate_check['response'];
         }
 
+        error_log("💾 [DB INSERT] Inserting point into ppv_points table...");
         $wpdb->insert("{$wpdb->prefix}ppv_points", [
             'user_id' => $user_id,
             'store_id' => $store->id,
@@ -1068,14 +1087,18 @@ class PPV_QR {
             'type' => 'qr_scan',
             'created' => current_time('mysql')
         ]);
+        error_log("✅ [DB INSERT] Point inserted successfully - Insert ID: " . $wpdb->insert_id);
 
+        error_log("📝 [LOG INSERT] Logging scan attempt...");
         self::insert_log($store->id, $user_id, self::t('log_point_added', '1 pont hozzáadva'), 'qr_scan');
 
+        error_log("🎉 [SCAN SUCCESS] Scan completed successfully for User {$user_id} at Store {$store->id}");
         return new WP_REST_Response([
             'success' => true,
             'message' => self::t('scan_success', '✅ 1 pont hozzáadva'),
             'user_id' => $user_id,
             'store_id' => $store->id,
+            'store_name' => $store->name,
             'time' => current_time('mysql')
         ], 200);
     }
