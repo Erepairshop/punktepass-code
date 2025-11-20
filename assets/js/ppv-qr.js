@@ -70,11 +70,7 @@ class UIManager {
   }
 
   showMessage(text, type = "info") {
-    if (!this.resultBox) return;
-    this.resultBox.className = "ppv-result-box " + type;
-    this.resultBox.innerHTML = text;
-    this.resultBox.style.opacity = "1";
-    setTimeout(() => (this.resultBox.style.opacity = "0"), 3500);
+    window.ppvToast(text, type);
   }
 
   addLogRow(time, user, status) {

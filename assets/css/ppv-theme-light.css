@@ -5634,22 +5634,21 @@ ppv-app-root {
     cursor: pointer;
     box-shadow: 0 4px 15px rgba(0, 168, 204, 0.4);
     z-index: 10000;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    transition: box-shadow 0.3s ease, opacity 0.3s ease;
     display: flex;
     align-items: center;
     justify-content: center;
-    will-change: transform;
-    backface-visibility: hidden;
-    -webkit-font-smoothing: antialiased;
+    pointer-events: auto;
 }
 
 #ppv-support-btn:hover {
-    transform: scale(1.05);
     box-shadow: 0 6px 20px rgba(0, 168, 204, 0.6);
+    opacity: 0.9;
 }
 
 #ppv-support-btn:active {
-    transform: scale(0.98);
+    opacity: 0.7;
+    box-shadow: 0 2px 10px rgba(0, 168, 204, 0.5);
 }
 
 /* ──────────────────────────────────────────────────────────────────────
@@ -5664,7 +5663,7 @@ ppv-app-root {
     bottom: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(0, 0, 0, 0.8);
+    background: rgba(0, 0, 0, 0.5);
     z-index: 10001;
     align-items: center;
     justify-content: center;
@@ -5677,23 +5676,24 @@ ppv-app-root {
 }
 
 .ppv-support-modal-content {
-    background: #1a1a2e;
+    background: var(--pp-surface);
     padding: 30px;
     border-radius: 15px;
     max-width: 500px;
     width: 100%;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    box-shadow: var(--pp-shadow-lg);
     max-height: 90vh;
     overflow-y: auto;
     animation: modalSlideIn 0.3s ease;
     margin: auto;
     position: relative;
+    border: 1px solid var(--pp-border);
 }
 
 .ppv-support-modal-title {
     margin-top: 0;
     margin-bottom: 1rem;
-    color: #fff;
+    color: var(--pp-text);
     display: flex;
     align-items: center;
     gap: 10px;
@@ -5702,7 +5702,7 @@ ppv-app-root {
 }
 
 .ppv-support-modal-description {
-    color: #ccc;
+    color: var(--pp-text-2);
     font-size: 14px;
     margin-bottom: 20px;
     line-height: 1.5;
@@ -5712,7 +5712,7 @@ ppv-app-root {
    📝 FORM ELEMENTS
    ────────────────────────────────────────────────────────────────────── */
 .ppv-support-label {
-    color: #fff;
+    color: var(--pp-text);
     font-size: 13px;
     display: block;
     margin-bottom: 5px;
@@ -5732,9 +5732,9 @@ ppv-app-root {
     width: 100%;
     padding: 12px;
     border-radius: 8px;
-    border: 1px solid #333;
-    background: #0f0f1e;
-    color: #fff;
+    border: 1px solid var(--pp-border);
+    background: var(--pp-bg-2);
+    color: var(--pp-text);
     margin-bottom: 15px;
     font-family: inherit;
     font-size: 14px;
@@ -5821,14 +5821,14 @@ select.ppv-support-input {
 
 .ppv-support-btn-cancel {
     background: transparent;
-    color: #ccc;
-    border: 1px solid #444;
+    color: var(--pp-text-2);
+    border: 1px solid var(--pp-border);
 }
 
 .ppv-support-btn-cancel:hover {
-    background: #2a2a3e;
+    background: var(--pp-bg-2);
     border-color: var(--pp-primary);
-    color: #fff;
+    color: var(--pp-text);
 }
 
 /* ──────────────────────────────────────────────────────────────────────
