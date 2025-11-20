@@ -5106,8 +5106,12 @@ ppv-app-root {
 }
 
 #ppv-support-btn:hover {
-    transform: scale(1.1) translateY(-3px);
+    transform: scale(1.05);
     box-shadow: 0 6px 25px rgba(147, 51, 234, 0.6);
+}
+
+#ppv-support-btn:active {
+    transform: scale(0.98);
 }
 
 /* ──────────────────────────────────────────────────────────────────────
@@ -5221,4 +5225,355 @@ ppv-app-root {
 
 /* ──────────────────────────────────────────────────────────────────────
    🎉 END OF QR SCANNER & CAMPAIGNS STYLING
+   ────────────────────────────────────────────────────────────────────── */
+
+/* ══════════════════════════════════════════════════════════════════════
+   🎁 REWARDS MANAGEMENT SECTION
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ──────────────────────────────────────────────────────────────────────
+   🎨 MAIN WRAPPER
+   ────────────────────────────────────────────────────────────────────── */
+.ppv-rewards-management-wrapper {
+    background: var(--pp-surface);
+    border-radius: var(--pp-r-lg);
+    padding: 2rem;
+    box-shadow: var(--pp-shadow);
+    margin: 1.5rem 0;
+}
+
+.ppv-rewards-management-wrapper.glass-section {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: var(--pp-glass);
+}
+
+.ppv-rewards-management-wrapper h2 {
+    margin: 0 0 1.5rem 0;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--pp-text);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   📝 FORM STYLING
+   ────────────────────────────────────────────────────────────────────── */
+.ppv-reward-form {
+    background: var(--pp-bg-2);
+    border: 1px solid var(--pp-border);
+    border-radius: var(--pp-r-md);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.ppv-reward-form label {
+    display: block;
+    margin-bottom: 0.5rem;
+    margin-top: 1rem;
+    color: var(--pp-text);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.ppv-reward-form label:first-of-type {
+    margin-top: 0;
+}
+
+.ppv-reward-form input[type="text"],
+.ppv-reward-form input[type="number"],
+.ppv-reward-form textarea,
+.ppv-reward-form select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--pp-border);
+    border-radius: var(--pp-r-sm);
+    background: var(--pp-surface);
+    color: var(--pp-text);
+    font-size: 0.95rem;
+    font-family: inherit;
+    transition: var(--pp-trans-fast);
+}
+
+.ppv-reward-form input[type="text"]:focus,
+.ppv-reward-form input[type="number"]:focus,
+.ppv-reward-form textarea:focus,
+.ppv-reward-form select:focus {
+    outline: none;
+    border-color: var(--pp-primary);
+    box-shadow: 0 0 0 3px rgba(0, 168, 204, 0.1);
+}
+
+.ppv-reward-form textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.ppv-reward-form small {
+    display: block;
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--pp-text-2);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🔘 FORM BUTTONS
+   ────────────────────────────────────────────────────────────────────── */
+.ppv-btn-blue {
+    background: linear-gradient(135deg, var(--pp-primary) 0%, var(--pp-primary-dark) 100%);
+    color: white;
+    border: none;
+    padding: 0.875rem 1.5rem;
+    border-radius: var(--pp-r-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--pp-trans-fast);
+    font-size: 0.95rem;
+    box-shadow: 0 4px 12px rgba(0, 168, 204, 0.3);
+}
+
+.ppv-btn-blue:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 168, 204, 0.4);
+}
+
+.ppv-btn-blue:active {
+    transform: translateY(0);
+}
+
+.ppv-btn-outline {
+    background: transparent;
+    color: var(--pp-primary);
+    border: 1px solid var(--pp-primary);
+    padding: 0.75rem 1.25rem;
+    border-radius: var(--pp-r-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--pp-trans-fast);
+    font-size: 0.9rem;
+}
+
+.ppv-btn-outline:hover {
+    background: var(--pp-primary);
+    color: white;
+}
+
+.ppv-btn-outline.ppv-delete {
+    color: #ef4444;
+    border-color: #ef4444;
+}
+
+.ppv-btn-outline.ppv-delete:hover {
+    background: #ef4444;
+    color: white;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🎁 REWARDS GRID
+   ────────────────────────────────────────────────────────────────────── */
+.ppv-reward-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.25rem;
+    margin-top: 1.5rem;
+}
+
+.ppv-reward-item {
+    background: var(--pp-surface);
+    border: 1px solid var(--pp-border);
+    border-radius: var(--pp-r-md);
+    padding: 1.5rem;
+    transition: var(--pp-trans);
+    position: relative;
+}
+
+.ppv-reward-item.glass-card {
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(10px);
+}
+
+.ppv-reward-item:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    border-color: var(--pp-primary);
+}
+
+.ppv-reward-item h4 {
+    margin: 0 0 0.75rem 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--pp-text);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.ppv-reward-item p {
+    margin: 0 0 1rem 0;
+    color: var(--pp-text-2);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    min-height: 40px;
+}
+
+.ppv-reward-item small {
+    font-size: 0.85rem;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   ⏳ LOADING STATE
+   ────────────────────────────────────────────────────────────────────── */
+.ppv-loading {
+    text-align: center;
+    padding: 2rem;
+    color: var(--pp-text-2);
+    font-size: 1rem;
+}
+
+.ppv-loading::after {
+    content: "";
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    margin-left: 10px;
+    border: 2px solid var(--pp-primary);
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   ⚠️ WARNING & INFO MESSAGES
+   ────────────────────────────────────────────────────────────────────── */
+.ppv-warning {
+    background: linear-gradient(135deg, var(--pp-warning), #f97316);
+    color: white;
+    padding: 1rem 1.25rem;
+    border-radius: var(--pp-r-sm);
+    margin: 1rem 0;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+}
+
+.ppv-reward-grid p[style*="color:#999"] {
+    text-align: center;
+    grid-column: 1 / -1;
+    padding: 2rem;
+    color: var(--pp-text-2) !important;
+}
+
+.ppv-reward-grid p[style*="color:#ef4444"] {
+    text-align: center;
+    grid-column: 1 / -1;
+    padding: 2rem;
+    color: #ef4444 !important;
+    background: rgba(239, 68, 68, 0.1);
+    border-radius: var(--pp-r-sm);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🍞 TOAST NOTIFICATIONS
+   ────────────────────────────────────────────────────────────────────── */
+.ppv-toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 1rem 1.5rem;
+    border-radius: var(--pp-r-sm);
+    z-index: 999999;
+    font-weight: 600;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    animation: slideIn 0.3s ease-out;
+}
+
+.ppv-toast.success {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+}
+
+.ppv-toast.error {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+}
+
+.ppv-toast.info {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   📱 RESPONSIVE - MOBILE OPTIMIZATION
+   ────────────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .ppv-rewards-management-wrapper {
+        padding: 1.25rem;
+    }
+
+    .ppv-rewards-management-wrapper h2 {
+        font-size: 1.4rem;
+    }
+
+    .ppv-reward-form {
+        padding: 1.25rem;
+    }
+
+    .ppv-reward-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .ppv-reward-item {
+        padding: 1.25rem;
+    }
+
+    .ppv-btn-blue,
+    .ppv-btn-outline {
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .ppv-rewards-management-wrapper {
+        padding: 1rem;
+        border-radius: var(--pp-r-sm);
+    }
+
+    .ppv-reward-form {
+        padding: 1rem;
+    }
+
+    .ppv-reward-item h4 {
+        font-size: 1rem;
+    }
+
+    .ppv-toast {
+        left: 10px;
+        right: 10px;
+        bottom: 10px;
+    }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🎉 END OF REWARDS MANAGEMENT STYLING
    ────────────────────────────────────────────────────────────────────── */
