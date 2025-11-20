@@ -175,12 +175,15 @@ class PPV_Rewards_Management {
                 
                 <label><?php echo esc_html(PPV_Lang::t('rewards_form_title') ?: 'Cím *'); ?></label>
                 <input type="text" name="title" id="reward-title" placeholder="<?php echo esc_attr(PPV_Lang::t('rewards_form_title_placeholder') ?: 'pl. 10% rabatt'); ?>" required>
+                <small style="color: #999;">📝 <?php echo esc_html(PPV_Lang::t('rewards_form_title_helper') ?: 'Der Name der Prämie, den Kunden sehen'); ?></small>
 
                 <label><?php echo esc_html(PPV_Lang::t('rewards_form_points') ?: 'Szükséges pontok *'); ?></label>
                 <input type="number" name="required_points" id="reward-points" placeholder="<?php echo esc_attr(PPV_Lang::t('rewards_form_points_placeholder') ?: 'pl. 50'); ?>" min="1" required>
+                <small style="color: #999;">🎯 <?php echo esc_html(PPV_Lang::t('rewards_form_points_helper') ?: 'Wie viele Punkte der Kunde benötigt, um diese Prämie einzulösen'); ?></small>
 
                 <label><?php echo esc_html(PPV_Lang::t('rewards_form_description') ?: 'Leírás (opcionális)'); ?></label>
                 <textarea name="description" id="reward-description" placeholder="<?php echo esc_attr(PPV_Lang::t('rewards_form_description_placeholder') ?: 'Részletek a jutalomról'); ?>"></textarea>
+                <small style="color: #999;">💬 <?php echo esc_html(PPV_Lang::t('rewards_form_description_helper') ?: 'Zusätzliche Details zur Prämie (optional)'); ?></small>
 
                 <label><?php echo esc_html(PPV_Lang::t('rewards_form_type_label') ?: 'Jutalmazás típusa'); ?></label>
                 <select name="action_type" id="reward-type">
@@ -188,21 +191,24 @@ class PPV_Rewards_Management {
                     <option value="discount_fixed"><?php echo esc_html(PPV_Lang::t('rewards_form_type_fixed') ?: 'Fix rabatt'); ?></option>
                     <option value="free_product"><?php echo esc_html(PPV_Lang::t('rewards_form_type_free') ?: 'Ingyenes termék'); ?></option>
                 </select>
+                <small style="color: #999;">🎁 <?php echo esc_html(PPV_Lang::t('rewards_form_type_helper') ?: 'Welche Art von Belohnung der Kunde erhält'); ?></small>
 
                 <label><?php echo esc_html(sprintf(PPV_Lang::t('rewards_form_value') ?: 'Érték (%s) *', $currency)); ?></label>
                 <input type="text" name="action_value" id="reward-value" placeholder="<?php echo esc_attr(PPV_Lang::t('rewards_form_value_placeholder') ?: 'pl. 10'); ?>" required>
-                <small style="color: #999;">💶 <?php echo esc_html($currency); ?></small>
+                <small style="color: #999;">💶 <?php echo esc_html(PPV_Lang::t('rewards_form_value_helper') ?: 'Rabattwert (z.B. 10 für 10% oder 5 für 5 EUR)'); ?></small>
 
                 <!-- GRATIS TERMÉK NEVE (csak FREE_PRODUCT típusnál!) -->
                 <div id="reward-free-product-name-wrapper" style="display: none;">
                     <label><?php echo esc_html(PPV_Lang::t('label_free_product') ?: '🎁 Produktname'); ?></label>
                     <input type="text" name="free_product" id="reward-free-product-name" placeholder="<?php echo esc_attr(PPV_Lang::t('camp_placeholder_free_product') ?: 'pl. Kaffee + Kuchen'); ?>">
+                    <small style="color: #999;">🎁 <?php echo esc_html(PPV_Lang::t('rewards_form_free_product_helper') ?: 'Name des kostenlosen Produkts (z.B. Kaffee + Kuchen)'); ?></small>
                 </div>
 
                 <!-- GRATIS TERMÉK ÉRTÉKE (csak ha van termék név!) -->
                 <div id="reward-free-product-value-wrapper" style="display: none;">
                     <label style="color: #ff9800;">💰 <?php echo esc_html(PPV_Lang::t('label_free_product_value') ?: 'Produktwert'); ?> <span style="color: #ff0000;">*</span></label>
                     <input type="number" name="free_product_value" id="reward-free-product-value" value="0" min="0.01" step="0.01" placeholder="0.00" style="border-color: #ff9800;">
+                    <small style="color: #ff9800;">💰 <?php echo esc_html(PPV_Lang::t('rewards_form_free_product_value_helper') ?: 'Der reguläre Preis dieses Produkts'); ?></small>
                 </div>
 
                 <label><?php echo esc_html(PPV_Lang::t('rewards_form_points_given') ?: 'Pontok adott (ha beváltják) *'); ?></label>

@@ -351,16 +351,19 @@
                     <div class="ppv-form-group">
                         <label>Prémium neve *</label>
                         <input type="text" name="title" placeholder="pl. Ingyenes Kávé">
+                        <small style="color: #999;">📝 A prémium neve, amit az ügyfelek látnak</small>
                     </div>
 
                     <div class="ppv-form-group">
                         <label>Szükséges pontok *</label>
                         <input type="number" name="required_points" placeholder="100" min="1" value="100">
+                        <small style="color: #999;">🎯 Hány pont szükséges az ügyfélnek ezen prémium beváltásához</small>
                     </div>
 
                     <div class="ppv-form-group">
                         <label>Leírás (opcionális)</label>
                         <textarea name="description" rows="3" placeholder="pl. Egy ingyenes eszpresszó vagy cappuccino választható."></textarea>
+                        <small style="color: #999;">💬 További részletek a prémiumról (opcionális)</small>
                     </div>
 
                     <div class="ppv-form-group">
@@ -370,24 +373,27 @@
                             <option value="discount_fixed">Fix rabatt</option>
                             <option value="free_product" selected>Ingyenes termék</option>
                         </select>
+                        <small style="color: #999;">🎁 Milyen típusú jutalmat kap az ügyfél</small>
                     </div>
 
                     <div class="ppv-form-group" id="onboarding-action-value-wrapper">
                         <label>Érték *</label>
                         <input type="text" name="action_value" placeholder="pl. 10" value="0">
-                        <small style="color: #999;">💶 Érték a jutalomhoz (pl. 10% vagy 5 EUR)</small>
+                        <small style="color: #999;">💶 Rabatt értéke (pl. 10 = 10% vagy 5 = 5 EUR)</small>
                     </div>
 
                     <!-- GRATIS TERMÉK NEVE (csak FREE_PRODUCT típusnál!) -->
                     <div class="ppv-form-group" id="onboarding-free-product-name-wrapper" style="display: none;">
                         <label>🎁 Produktname</label>
                         <input type="text" name="free_product" id="onboarding-free-product-name" placeholder="pl. Kaffee + Kuchen">
+                        <small style="color: #999;">🎁 Az ingyenes termék neve (pl. Kávé + Sütemény)</small>
                     </div>
 
                     <!-- GRATIS TERMÉK ÉRTÉKE -->
                     <div class="ppv-form-group" id="onboarding-free-product-value-wrapper" style="display: none;">
                         <label style="color: #ff9800;">💰 Produktwert <span style="color: #ff0000;">*</span></label>
                         <input type="number" name="free_product_value" id="onboarding-free-product-value" value="0" min="0.01" step="0.01" placeholder="0.00" style="border-color: #ff9800;">
+                        <small style="color: #ff9800;">💰 A termék rendes ára</small>
                     </div>
 
                     <div class="ppv-form-group">

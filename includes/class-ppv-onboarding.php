@@ -253,6 +253,17 @@ class PPV_Onboarding {
 
         if (!$store_id) return; // Nem handler = nem töltjük be
 
+        // ✅ CSAK TRIAL USEREKNEK - Aktív előfizetőknek már nem kell az onboarding!
+        global $wpdb;
+        $store = $wpdb->get_row($wpdb->prepare(
+            "SELECT subscription_status FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+            $store_id
+        ));
+
+        if ($store && $store->subscription_status !== 'trial') {
+            return; // Csak trial usereknek kell az onboarding
+        }
+
         // Ha már teljesen dismissed vagy completed, nem kell
         if (self::is_dismissed($user_id) || self::is_completed($user_id)) {
             return;
@@ -305,6 +316,17 @@ class PPV_Onboarding {
         $store_id = self::is_handler($user_id);
 
         if (!$store_id) return; // Nem handler
+
+        // ✅ CSAK TRIAL USEREKNEK - Aktív előfizetőknek már nem kell az onboarding!
+        global $wpdb;
+        $store = $wpdb->get_row($wpdb->prepare(
+            "SELECT subscription_status FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+            $store_id
+        ));
+
+        if ($store && $store->subscription_status !== 'trial') {
+            return; // Csak trial usereknek kell az onboarding
+        }
 
         if (self::is_dismissed($user_id) || self::is_completed($user_id)) {
             return;
