@@ -925,10 +925,23 @@ class CameraScanner {
   async stopScanner() {
 
     try {
+      // 🤖 Android: Stop html5-qrcode scanner
       if (this.scanner) {
         await this.scanner.stop();
         this.scanner = null;
       }
+
+      // 🍎 iOS: Stop video stream
+      if (this.iosStream) {
+        this.iosStream.getTracks().forEach(track => track.stop());
+        this.iosStream = null;
+      }
+      if (this.iosVideo) {
+        this.iosVideo.srcObject = null;
+        this.iosVideo = null;
+      }
+      this.iosCanvas = null;
+      this.iosCanvasCtx = null;
 
       this.scanning = false;
       this.state = 'stopped';
@@ -977,18 +990,39 @@ class CameraScanner {
   }
 
   async loadLibrary() {
-    if (window.Html5Qrcode) {
-      await this.startScanner();
-      return;
-    }
+    // 🍎 iOS Detection
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-    const script = document.createElement('script');
-    script.src = 'https://unpkg.com/html5-qrcode@latest/html5-qrcode.min.js';
-    script.onload = () => this.startScanner();
-    script.onerror = () => {
-      this.updateStatus('error', '❌ Scanner könyvtár nem tölthető be');
-    };
-    document.head.appendChild(script);
+    if (isIOS) {
+      // 🍎 iOS: Use jsQR (canvas-based, works better on Safari)
+      if (window.jsQR) {
+        await this.startIOSScanner();
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
+      script.onload = () => this.startIOSScanner();
+      script.onerror = () => {
+        this.updateStatus('error', '❌ Scanner könyvtár nem tölthető be');
+      };
+      document.head.appendChild(script);
+    } else {
+      // 🤖 Android: Use html5-qrcode
+      if (window.Html5Qrcode) {
+        await this.startScanner();
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = 'https://unpkg.com/html5-qrcode@latest/html5-qrcode.min.js';
+      script.onload = () => this.startScanner();
+      script.onerror = () => {
+        this.updateStatus('error', '❌ Scanner könyvtár nem tölthető be');
+      };
+      document.head.appendChild(script);
+    }
   }
 
   async startScanner() {
@@ -1057,6 +1091,100 @@ class CameraScanner {
         console.error('❌ All scanner configs failed:', err2);
         this.updateStatus('error', '❌ Kamera nem elérhető - engedélyezd a kamera hozzáférést');
       }
+    }
+  }
+
+  async startIOSScanner() {
+    // 🍎 iOS Canvas-based QR Scanner using jsQR
+    const readerElement = document.getElementById('ppv-mini-reader');
+    if (!readerElement || !window.jsQR) {
+      this.updateStatus('error', '❌ Scanner elem nem található');
+      return;
+    }
+
+    try {
+      // Create video element
+      const video = document.createElement('video');
+      video.style.width = '100%';
+      video.style.height = '100%';
+      video.style.objectFit = 'cover';
+      video.setAttribute('playsinline', 'true'); // Important for iOS
+
+      // Create canvas for QR detection (hidden)
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      // Clear and setup container
+      readerElement.innerHTML = '';
+      readerElement.appendChild(video);
+
+      // Get camera stream
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: 'environment',
+          width: { ideal: 1920 },
+          height: { ideal: 1080 }
+        }
+      });
+
+      video.srcObject = stream;
+      await video.play();
+
+      // Set canvas size to match video
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      this.iosStream = stream;
+      this.iosVideo = video;
+      this.iosCanvas = canvas;
+      this.iosCanvasCtx = ctx;
+
+      this.scanning = true;
+      this.state = 'scanning';
+      this.updateStatus('scanning', L.scanner_active || '📷 Scanning...');
+
+      // Start scan loop
+      this.iosScanLoop();
+
+    } catch (err) {
+      console.error('❌ iOS Scanner failed:', err);
+      this.updateStatus('error', '❌ Kamera nem elérhető - engedélyezd a kamera hozzáférést');
+    }
+  }
+
+  iosScanLoop() {
+    // 🍎 iOS QR scan loop using jsQR
+    if (!this.scanning || !this.iosVideo || !this.iosCanvas || !this.iosCanvasCtx) {
+      return;
+    }
+
+    const video = this.iosVideo;
+    const canvas = this.iosCanvas;
+    const ctx = this.iosCanvasCtx;
+
+    // Draw video frame to canvas
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // Get image data
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+      // Scan for QR code
+      const code = jsQR(imageData.data, imageData.width, imageData.height, {
+        inversionAttempts: 'dontInvert'
+      });
+
+      if (code && code.data) {
+        // QR code detected!
+        this.onScanSuccess(code.data);
+      }
+    }
+
+    // Continue loop (10 FPS for iOS)
+    if (this.scanning) {
+      setTimeout(() => this.iosScanLoop(), 100);
     }
   }
 
