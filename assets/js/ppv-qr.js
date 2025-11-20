@@ -983,7 +983,7 @@ class CameraScanner {
     }
 
     const script = document.createElement('script');
-    script.src = 'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';
+    script.src = 'https://unpkg.com/html5-qrcode@latest/html5-qrcode.min.js';
     script.onload = () => this.startScanner();
     script.onerror = () => {
       this.updateStatus('error', '❌ Scanner könyvtár nem tölthető be');
@@ -998,73 +998,41 @@ class CameraScanner {
       return;
     }
 
-    // 🍎 iOS Detection - iOS Safari needs simpler config
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-
     try {
       this.scanner = new Html5Qrcode('ppv-mini-reader');
 
-      // ✅ OPTIMIZED CONFIG - Fast QR detection from any angle
-      const config = isIOS
-        ? {
-            // 🍎 iOS: Minimal config for maximum compatibility
-            fps: 10,
-            qrbox: 250,
-            disableFlip: false
-          }
-        : {
-            // 🤖 Android: Optimized config
-            fps: 30,
-            qrbox: { width: 250, height: 250 },
-            disableFlip: false,
-            aspectRatio: 1.0,
-            formatsToSupport: [0],  // Only QR codes
-            experimentalFeatures: {
-              useBarCodeDetectorIfSupported: true
-            }
-          };
+      // ✅ UNIVERSAL CONFIG - Works on both iOS and Android
+      // Simpler is better for cross-platform compatibility
+      const config = {
+        fps: 10,                    // Lower FPS = better stability on all devices
+        qrbox: 250,                 // Large scan box = easier scanning from any angle
+        disableFlip: false,         // Try both orientations
+        videoConstraints: {
+          facingMode: 'environment',
+          width: { ideal: 1920 },   // Higher resolution = better detection
+          height: { ideal: 1080 }
+        }
+      };
 
-      // 📷 Camera constraints - iOS needs simple config only
-      const cameraConstraints = isIOS
-        ? { facingMode: 'environment' }  // 🍎 iOS: Simple config only
-        : {
-            facingMode: 'environment',
-            advanced: [
-              { focusMode: 'continuous' },  // 🎯 Continuous autofocus (Android)
-              { zoom: 1.0 }
-            ]
-          };
-
+      // 📷 Simple camera ID or constraints
       await this.scanner.start(
-        cameraConstraints,
+        { facingMode: 'environment' },
         config,
-        (qrCode) => this.onScanSuccess(qrCode)
+        (qrCode) => this.onScanSuccess(qrCode),
+        (errorMessage) => {
+          // Silent - scanning errors are normal when no QR in view
+        }
       );
 
       this.scanning = true;
       this.state = 'scanning';
       this.updateStatus('scanning', L.scanner_active || '📷 Scanning...');
 
-      // 🔦 Don't auto-enable torch on iOS - causes issues
-      if (!isIOS) {
-        try {
-          const capabilities = this.scanner.getRunningTrackCapabilities();
-          if (capabilities && capabilities.torch) {
-            await this.scanner.applyVideoConstraints({
-              advanced: [{ torch: true }]
-            });
-          }
-        } catch (torchErr) {
-        }
-      }
-
     } catch (err) {
-      console.warn('⚠️ Optimized config failed:', err);
+      console.warn('⚠️ Scanner start failed, trying fallback:', err);
 
-      // ✅ IMPORTANT: Create new scanner instance for fallback
+      // ✅ Fallback: Even simpler config
       try {
-        // Stop and clear previous instance
         if (this.scanner) {
           try {
             await this.scanner.stop();
@@ -1074,23 +1042,11 @@ class CameraScanner {
 
         this.scanner = new Html5Qrcode('ppv-mini-reader');
 
-        const basicConfig = {
-          fps: 20,
-          qrbox: 220,
-          disableFlip: false
-        };
-
-        // 🍎 iOS: Don't use experimentalFeatures
-        if (!isIOS) {
-          basicConfig.experimentalFeatures = {
-            useBarCodeDetectorIfSupported: true
-          };
-        }
-
         await this.scanner.start(
           { facingMode: 'environment' },
-          basicConfig,
-          (qrCode) => this.onScanSuccess(qrCode)
+          { fps: 5, qrbox: 300 },  // Very low FPS, very large box
+          (qrCode) => this.onScanSuccess(qrCode),
+          (errorMessage) => {}
         );
 
         this.scanning = true;
@@ -1098,34 +1054,8 @@ class CameraScanner {
         this.updateStatus('scanning', L.scanner_active || '📷 Scanning...');
 
       } catch (err2) {
-        console.warn('⚠️ Basic config failed:', err2);
-
-        // ✅ IMPORTANT: Create new scanner instance for final fallback
-        try {
-          // Stop and clear previous instance
-          if (this.scanner) {
-            try {
-              await this.scanner.stop();
-            } catch (e) {}
-            this.scanner = null;
-          }
-
-          this.scanner = new Html5Qrcode('ppv-mini-reader');
-
-          await this.scanner.start(
-            { facingMode: 'environment' },
-            { fps: 15, qrbox: 200 },
-            (qrCode) => this.onScanSuccess(qrCode)
-          );
-
-          this.scanning = true;
-          this.state = 'scanning';
-          this.updateStatus('scanning', L.scanner_active || '📷 Scanning...');
-
-        } catch (err3) {
-          console.error('❌ All methods failed:', err3);
-          this.updateStatus('error', '❌ Kamera nem elérhető - engedélyezd a kamera hozzáférést');
-        }
+        console.error('❌ All scanner configs failed:', err2);
+        this.updateStatus('error', '❌ Kamera nem elérhető - engedélyezd a kamera hozzáférést');
       }
     }
   }
