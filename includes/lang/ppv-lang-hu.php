@@ -750,6 +750,24 @@ return [
 
 'err_unknown_store' => '❌ Ismeretlen bolt',
 'err_rate_limited' => '⚠️ Túl sok scan. Kérlek várj!',
+
+// ============================================================
+// 📋 POS SCAN TRANSLATIONS (for logs)
+// ============================================================
+'scan_success' => '✅ +{points} pont hozzáadva',
+'user_blocked' => '❌ Felhasználó letiltva',
+'invalid_qr' => '❌ Érvénytelen QR-kód',
+'already_scanned_today' => '⚠️ Ma már beolvasva',
+'duplicate_scan' => '⚠️ Már beolvasva',
+'rate_limit' => '⚠️ Túl sok scanelés',
+
+// CSV Export Headers
+'csv_header_time' => 'Dátum/Idő',
+'csv_header_user' => 'Felhasználó',
+'csv_header_email' => 'E-mail',
+'csv_header_status' => 'Státusz',
+'csv_header_ip' => 'IP-cím',
+
 'qrcamp_title' => 'Kasszascanner & Kampányok',
 'tab_scanner' => 'Kasszascanner',
 'tab_rewards' => 'Jutalmak',

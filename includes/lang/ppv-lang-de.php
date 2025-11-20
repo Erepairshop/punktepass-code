@@ -775,10 +775,26 @@ return [
 'longitude' => 'Längengrad (Longitude)',
 'geocode_button' => 'Koordinaten suchen (Nach Adresse)',
 
-
-
 'err_unknown_store' => '❌ Unbekannter Shop',
 'err_rate_limited' => '⚠️ Zu viele Scans. Bitte warten.',
+
+// ============================================================
+// 📋 POS SCAN TRANSLATIONS (for logs)
+// ============================================================
+'scan_success' => '✅ +{points} Punkte hinzugefügt',
+'user_blocked' => '❌ Benutzer gesperrt',
+'invalid_qr' => '❌ Ungültiger QR-Code',
+'already_scanned_today' => '⚠️ Heute bereits gescannt',
+'duplicate_scan' => '⚠️ Bereits gescannt',
+'rate_limit' => '⚠️ Zu viele Scans',
+
+// CSV Export Headers
+'csv_header_time' => 'Datum/Zeit',
+'csv_header_user' => 'Benutzer',
+'csv_header_email' => 'E-Mail',
+'csv_header_status' => 'Status',
+'csv_header_ip' => 'IP-Adresse',
+
 'qrcamp_title' => 'Kassenscanner & Kampagnen',
 'tab_scanner' => 'Kassenscanner',
 'tab_rewards' => 'Prämien',

@@ -333,6 +333,9 @@ class PPV_POS_SCAN {
         // ✅ Get handler language from cookie or session
         $handler_lang = $_COOKIE['ppv_lang'] ?? $_SESSION['ppv_lang'] ?? 'de';
 
+        // ✅ Load translations from PPV_Lang (same as used everywhere else)
+        $translations = PPV_Lang::get($handler_lang);
+
         // ✅ Get last 40 scan attempts (successful + errors) from pos_log
         $logs = $wpdb->get_results($wpdb->prepare("
             SELECT
@@ -349,31 +352,6 @@ class PPV_POS_SCAN {
             ORDER BY l.created_at DESC
             LIMIT 40
         ", $store_id));
-
-        // Translation keys for different languages
-        $translations = [
-            'de' => [
-                'scan_success' => '✅ +{points} Punkte hinzugefügt',
-                'user_blocked' => '❌ Benutzer gesperrt',
-                'invalid_qr' => '❌ Ungültiger QR-Code',
-                'already_scanned_today' => '⚠️ Heute bereits gescannt',
-                'duplicate_scan' => '⚠️ Bereits gescannt'
-            ],
-            'hu' => [
-                'scan_success' => '✅ +{points} pont hozzáadva',
-                'user_blocked' => '❌ Felhasználó letiltva',
-                'invalid_qr' => '❌ Érvénytelen QR-kód',
-                'already_scanned_today' => '⚠️ Ma már beolvasva',
-                'duplicate_scan' => '⚠️ Már beolvasva'
-            ],
-            'ro' => [
-                'scan_success' => '✅ +{points} puncte adăugate',
-                'user_blocked' => '❌ Utilizator blocat',
-                'invalid_qr' => '❌ Cod QR invalid',
-                'already_scanned_today' => '⚠️ Deja scanat astăzi',
-                'duplicate_scan' => '⚠️ Deja scanat'
-            ]
-        ];
 
         $formatted = [];
         foreach ($logs as $log) {
@@ -397,8 +375,8 @@ class PPV_POS_SCAN {
                 $points = $metadata['points'] ?? 0;
 
                 // If we have a translation key, use it
-                if ($message_key && isset($translations[$handler_lang][$message_key])) {
-                    $status = $translations[$handler_lang][$message_key];
+                if ($message_key && isset($translations[$message_key])) {
+                    $status = $translations[$message_key];
                     // Replace {points} placeholder
                     $status = str_replace('{points}', $points, $status);
                 }
@@ -449,6 +427,9 @@ class PPV_POS_SCAN {
         // Get handler language
         $handler_lang = $_COOKIE['ppv_lang'] ?? $_SESSION['ppv_lang'] ?? 'de';
 
+        // ✅ Load translations from PPV_Lang (same as used everywhere else)
+        $t = PPV_Lang::get($handler_lang);
+
         // Get filter parameters
         $period = $req->get_param('period') ?? 'today'; // today, date, month
         $date = $req->get_param('date') ?? date('Y-m-d');
@@ -486,48 +467,6 @@ class PPV_POS_SCAN {
         ", ...$params);
 
         $logs = $wpdb->get_results($query);
-
-        // Translation keys
-        $translations = [
-            'de' => [
-                'scan_success' => '✅ +{points} Punkte hinzugefügt',
-                'user_blocked' => '❌ Benutzer gesperrt',
-                'invalid_qr' => '❌ Ungültiger QR-Code',
-                'already_scanned_today' => '⚠️ Heute bereits gescannt',
-                'duplicate_scan' => '⚠️ Bereits gescannt',
-                'csv_header_time' => 'Datum/Zeit',
-                'csv_header_user' => 'Benutzer',
-                'csv_header_email' => 'E-Mail',
-                'csv_header_status' => 'Status',
-                'csv_header_ip' => 'IP-Adresse'
-            ],
-            'hu' => [
-                'scan_success' => '✅ +{points} pont hozzáadva',
-                'user_blocked' => '❌ Felhasználó letiltva',
-                'invalid_qr' => '❌ Érvénytelen QR-kód',
-                'already_scanned_today' => '⚠️ Ma már beolvasva',
-                'duplicate_scan' => '⚠️ Már beolvasva',
-                'csv_header_time' => 'Dátum/Idő',
-                'csv_header_user' => 'Felhasználó',
-                'csv_header_email' => 'E-mail',
-                'csv_header_status' => 'Státusz',
-                'csv_header_ip' => 'IP-cím'
-            ],
-            'ro' => [
-                'scan_success' => '✅ +{points} puncte adăugate',
-                'user_blocked' => '❌ Utilizator blocat',
-                'invalid_qr' => '❌ Cod QR invalid',
-                'already_scanned_today' => '⚠️ Deja scanat astăzi',
-                'duplicate_scan' => '⚠️ Deja scanat',
-                'csv_header_time' => 'Dată/Oră',
-                'csv_header_user' => 'Utilizator',
-                'csv_header_email' => 'E-mail',
-                'csv_header_status' => 'Status',
-                'csv_header_ip' => 'Adresă IP'
-            ]
-        ];
-
-        $t = $translations[$handler_lang] ?? $translations['de'];
 
         // Generate CSV content
         $csv = [];
