@@ -1691,22 +1691,22 @@ document.addEventListener("DOMContentLoaded", function () {
 
   if (supportBtn && supportModal) {
     supportBtn.addEventListener('click', () => {
-      supportModal.style.display = 'flex';
+      supportModal.classList.add('show');
       supportDescription.value = '';
       supportPriority.value = 'normal';
       supportContact.value = 'email';
-      supportError.style.display = 'none';
-      supportSuccess.style.display = 'none';
+      supportError.classList.remove('show');
+      supportSuccess.classList.remove('show');
       supportDescription.focus();
     });
 
     supportCancel.addEventListener('click', () => {
-      supportModal.style.display = 'none';
+      supportModal.classList.remove('show');
     });
 
     supportModal.addEventListener('click', (e) => {
       if (e.target === supportModal) {
-        supportModal.style.display = 'none';
+        supportModal.classList.remove('show');
       }
     });
 
@@ -1717,14 +1717,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
       if (!description) {
         supportError.textContent = L.description_required || 'Problembeschreibung ist erforderlich';
-        supportError.style.display = 'block';
+        supportError.classList.add('show');
         return;
       }
 
       supportSubmit.disabled = true;
       const originalText = supportSubmit.textContent;
       supportSubmit.textContent = L.sending || 'Wird gesendet...';
-      supportError.style.display = 'none';
+      supportError.classList.remove('show');
 
       try {
         const response = await fetch('/wp-admin/admin-ajax.php', {
@@ -1743,21 +1743,21 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (data.success) {
           supportSuccess.textContent = data.data?.message || (L.ticket_sent || 'Ticket erfolgreich gesendet! Wir melden uns bald.');
-          supportSuccess.style.display = 'block';
+          supportSuccess.classList.add('show');
           supportDescription.value = '';
 
           setTimeout(() => {
-            supportModal.style.display = 'none';
-            supportSuccess.style.display = 'none';
+            supportModal.classList.remove('show');
+            supportSuccess.classList.remove('show');
           }, 3000);
         } else {
           supportError.textContent = data.data?.message || (L.error_occurred || 'Ein Fehler ist aufgetreten');
-          supportError.style.display = 'block';
+          supportError.classList.add('show');
         }
       } catch (err) {
         console.error('Support ticket error:', err);
         supportError.textContent = L.error_occurred || 'Ein Fehler ist aufgetreten';
-        supportError.style.display = 'block';
+        supportError.classList.add('show');
       } finally {
         supportSubmit.disabled = false;
         supportSubmit.textContent = originalText;
