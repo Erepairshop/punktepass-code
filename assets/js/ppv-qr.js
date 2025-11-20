@@ -1038,16 +1038,8 @@ class CameraScanner {
       // ✅ ANDROID OPTIMIZED CONFIG - Better distance detection
       const config = {
         fps: 30,  // High FPS for fast detection
-        qrbox: function(viewfinderWidth, viewfinderHeight) {
-          // Dynamic qrbox - 70% of smaller dimension
-          const minEdgePercentage = 0.7;
-          const minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
-          const qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
-          return {
-            width: qrboxSize,
-            height: qrboxSize
-          };
-        },
+        qrbox: { width: 280, height: 280 },  // Larger scan area (was 250)
+        aspectRatio: 1.0,
         disableFlip: false,  // Try both orientations
         experimentalFeatures: {
           useBarCodeDetectorIfSupported: true  // Use native API if available
@@ -1055,11 +1047,11 @@ class CameraScanner {
         formatsToSupport: [0]  // Only QR codes (0 = QR_CODE)
       };
 
-      // 📷 High quality camera constraints for better distance detection
+      // 📷 High resolution camera constraints for better distance detection
       const cameraConstraints = {
         facingMode: 'environment',
-        width: { min: 640, ideal: 1920, max: 4096 },
-        height: { min: 480, ideal: 1080, max: 2160 },
+        width: { ideal: 1920 },
+        height: { ideal: 1080 },
         advanced: [
           { focusMode: 'continuous' },  // Continuous autofocus
           { zoom: 1.0 }
@@ -1101,9 +1093,7 @@ class CameraScanner {
           },
           {
             fps: 10,
-            qrbox: function(w, h) {
-              return { width: Math.floor(Math.min(w, h) * 0.8), height: Math.floor(Math.min(w, h) * 0.8) };
-            }
+            qrbox: 250
           },
           (qrCode) => this.onScanSuccess(qrCode),
           (errorMessage) => {}
@@ -1127,6 +1117,18 @@ class CameraScanner {
       this.updateStatus('error', '❌ Scanner elem nem található');
       return;
     }
+
+    // ✅ CRITICAL: Stop existing stream before starting new one (for restart)
+    if (this.iosStream) {
+      this.iosStream.getTracks().forEach(track => track.stop());
+      this.iosStream = null;
+    }
+    if (this.iosVideo) {
+      this.iosVideo.srcObject = null;
+      this.iosVideo = null;
+    }
+    this.iosCanvas = null;
+    this.iosCanvasCtx = null;
 
     try {
       // Create video element
@@ -1210,12 +1212,18 @@ class CameraScanner {
       // Draw current video frame
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-      // Get image data for QR detection
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      // ✅ Scan only CENTER region (60% of frame) for better close-up detection
+      const scanRegion = 0.6;  // Scan 60% of center
+      const regionSize = Math.min(canvas.width, canvas.height) * scanRegion;
+      const startX = (canvas.width - regionSize) / 2;
+      const startY = (canvas.height - regionSize) / 2;
 
-      // Scan for QR code with optimized settings
+      // Get image data only from center region
+      const imageData = ctx.getImageData(startX, startY, regionSize, regionSize);
+
+      // Scan for QR code - faster with smaller region
       const code = jsQR(imageData.data, imageData.width, imageData.height, {
-        inversionAttempts: 'attemptBoth'  // Try both normal and inverted QR codes
+        inversionAttempts: 'dontInvert'  // Faster - only try normal QR codes
       });
 
       if (code && code.data) {
@@ -1224,9 +1232,9 @@ class CameraScanner {
       }
     }
 
-    // Continue loop (20 FPS = 50ms interval for faster detection)
+    // Continue loop (15 FPS = 66ms interval for better performance)
     if (this.scanning) {
-      setTimeout(() => this.iosScanLoop(), 50);
+      setTimeout(() => this.iosScanLoop(), 66);
     }
   }
 
