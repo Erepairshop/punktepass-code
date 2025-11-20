@@ -316,109 +316,125 @@ class PPV_POS_SCAN {
     public static function get_recent_scans(WP_REST_Request $req) {
         global $wpdb;
 
-        // Get store_id from session
-        if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
-        }
+        try {
+            error_log('🔍 [GET_RECENT_SCANS] Function called');
 
-        $store_id = intval($_SESSION['ppv_store_id'] ?? 0);
-
-        if ($store_id === 0) {
-            return rest_ensure_response([
-                'success' => false,
-                'message' => 'No store_id in session'
-            ]);
-        }
-
-        // ✅ Get handler language from cookie or session
-        $handler_lang = $_COOKIE['ppv_lang'] ?? $_SESSION['ppv_lang'] ?? 'de';
-
-        // ✅ Load translations from PPV_Lang (same as used everywhere else)
-        // Check if PPV_Lang class exists
-        if (!class_exists('PPV_Lang')) {
-            error_log('❌ [GET_RECENT_SCANS] PPV_Lang class not found');
-            return rest_ensure_response([
-                'success' => false,
-                'message' => 'Translation system not loaded'
-            ]);
-        }
-
-        $translations = PPV_Lang::get($handler_lang);
-
-        // Verify translations loaded correctly
-        if (!is_array($translations)) {
-            error_log('❌ [GET_RECENT_SCANS] Translations not loaded correctly');
-            $translations = []; // Fallback to empty array
-        }
-
-        // ✅ Get last 40 scan attempts (successful + errors) from pos_log
-        $logs = $wpdb->get_results($wpdb->prepare("
-            SELECT
-                l.created_at,
-                l.user_id,
-                l.message,
-                l.status,
-                l.metadata,
-                u.email,
-                CONCAT(u.first_name, ' ', u.last_name) as name
-            FROM {$wpdb->prefix}ppv_pos_log l
-            LEFT JOIN {$wpdb->prefix}ppv_users u ON l.user_id = u.id
-            WHERE l.store_id = %d
-            ORDER BY l.created_at DESC
-            LIMIT 40
-        ", $store_id));
-
-        $formatted = [];
-        foreach ($logs as $log) {
-            // ✅ Show DATE + TIME (not just time)
-            $time = date('Y-m-d H:i:s', strtotime($log->created_at));
-
-            // User display (name or email)
-            if ($log->user_id > 0) {
-                $user_display = !empty($log->name) && trim($log->name) !== '' ? $log->name : $log->email;
-            } else {
-                $user_display = '—'; // No user for errors like rate_limit
+            // Get store_id from session
+            if (session_status() === PHP_SESSION_NONE) {
+                @session_start();
             }
 
-            // ✅ TRANSLATE status message based on handler language
-            $status = $log->message; // Fallback to original message
+            $store_id = intval($_SESSION['ppv_store_id'] ?? 0);
+            error_log("🔍 [GET_RECENT_SCANS] store_id from session: {$store_id}");
 
-            // Try to extract message_key from metadata
-            if (!empty($log->metadata)) {
-                $metadata = json_decode($log->metadata, true);
-                $message_key = $metadata['message_key'] ?? null;
-                $points = $metadata['points'] ?? 0;
-
-                // If we have a translation key, use it
-                if ($message_key && isset($translations[$message_key])) {
-                    $status = $translations[$message_key];
-                    // Replace {points} placeholder
-                    $status = str_replace('{points}', $points, $status);
-                }
+            if ($store_id === 0) {
+                error_log('❌ [GET_RECENT_SCANS] No store_id in session');
+                return rest_ensure_response([
+                    'success' => false,
+                    'message' => 'No store_id in session'
+                ]);
             }
 
-            // If no translation found, fallback to icon prefix based on status
-            if ($status === $log->message) {
-                if ($log->status === 'ok') {
-                    $status = $log->message; // Keep original if no translation
-                } elseif ($log->status === 'blocked' || $log->status === 'invalid') {
-                    $status = '❌ ' . $log->message;
+            // ✅ Get handler language from cookie or session
+            $handler_lang = $_COOKIE['ppv_lang'] ?? $_SESSION['ppv_lang'] ?? 'de';
+            error_log("🔍 [GET_RECENT_SCANS] handler_lang: {$handler_lang}");
+
+            // ✅ Load translations from PPV_Lang (same as used everywhere else)
+            // Check if PPV_Lang class exists
+            if (!class_exists('PPV_Lang')) {
+                error_log('❌ [GET_RECENT_SCANS] PPV_Lang class not found');
+                return rest_ensure_response([
+                    'success' => false,
+                    'message' => 'Translation system not loaded'
+                ]);
+            }
+
+            $translations = PPV_Lang::get($handler_lang);
+
+            // Verify translations loaded correctly
+            if (!is_array($translations)) {
+                error_log('❌ [GET_RECENT_SCANS] Translations not loaded correctly');
+                $translations = []; // Fallback to empty array
+            }
+            // ✅ Get last 40 scan attempts (successful + errors) from pos_log
+            $logs = $wpdb->get_results($wpdb->prepare("
+                SELECT
+                    l.created_at,
+                    l.user_id,
+                    l.message,
+                    l.status,
+                    l.metadata,
+                    u.email,
+                    CONCAT(u.first_name, ' ', u.last_name) as name
+                FROM {$wpdb->prefix}ppv_pos_log l
+                LEFT JOIN {$wpdb->prefix}ppv_users u ON l.user_id = u.id
+                WHERE l.store_id = %d
+                ORDER BY l.created_at DESC
+                LIMIT 40
+            ", $store_id));
+
+            error_log("🔍 [GET_RECENT_SCANS] Found " . count($logs) . " logs");
+
+            $formatted = [];
+            foreach ($logs as $log) {
+                // ✅ Show DATE + TIME (not just time)
+                $time = date('Y-m-d H:i:s', strtotime($log->created_at));
+
+                // User display (name or email)
+                if ($log->user_id > 0) {
+                    $user_display = !empty($log->name) && trim($log->name) !== '' ? $log->name : $log->email;
                 } else {
-                    $status = '⚠️ ' . $log->message;
+                    $user_display = '—'; // No user for errors like rate_limit
                 }
+
+                // ✅ TRANSLATE status message based on handler language
+                $status = $log->message; // Fallback to original message
+
+                // Try to extract message_key from metadata
+                if (!empty($log->metadata)) {
+                    $metadata = json_decode($log->metadata, true);
+                    $message_key = $metadata['message_key'] ?? null;
+                    $points = $metadata['points'] ?? 0;
+
+                    // If we have a translation key, use it
+                    if ($message_key && isset($translations[$message_key])) {
+                        $status = $translations[$message_key];
+                        // Replace {points} placeholder
+                        $status = str_replace('{points}', $points, $status);
+                    }
+                }
+
+                // If no translation found, fallback to icon prefix based on status
+                if ($status === $log->message) {
+                    if ($log->status === 'ok') {
+                        $status = $log->message; // Keep original if no translation
+                    } elseif ($log->status === 'blocked' || $log->status === 'invalid') {
+                        $status = '❌ ' . $log->message;
+                    } else {
+                        $status = '⚠️ ' . $log->message;
+                    }
+                }
+
+                $formatted[] = [
+                    'time' => $time,
+                    'user' => $user_display,
+                    'status' => $status
+                ];
             }
 
-            $formatted[] = [
-                'time' => $time,
-                'user' => $user_display,
-                'status' => $status
-            ];
-        }
+            error_log("✅ [GET_RECENT_SCANS] Returning " . count($formatted) . " formatted scans");
 
-        return rest_ensure_response([
-            'success' => true,
-            'scans' => $formatted
-        ]);
+            return rest_ensure_response([
+                'success' => true,
+                'scans' => $formatted
+            ]);
+        } catch (Exception $e) {
+            error_log('❌ [GET_RECENT_SCANS] Exception: ' . $e->getMessage());
+            return rest_ensure_response([
+                'success' => false,
+                'message' => 'Internal error: ' . $e->getMessage()
+            ]);
+        }
     }
 
     /** ============================================================

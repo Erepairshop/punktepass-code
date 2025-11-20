@@ -2000,10 +2000,10 @@ document.addEventListener("DOMContentLoaded", function () {
     // Load immediately
     loadRecentScans();
 
-    // Poll every 5 seconds
-    setInterval(loadRecentScans, 5000);
+    // Poll every 10 seconds
+    setInterval(loadRecentScans, 10000);
 
-    console.log('✅ Letzte Scans live polling active (5s interval)');
+    console.log('✅ Letzte Scans live polling active (10s interval)');
   }
 
   // ============================================================
