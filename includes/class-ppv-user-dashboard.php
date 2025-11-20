@@ -790,26 +790,37 @@ public static function render_dashboard() {
     
     public static function rest_poll_points(WP_REST_Request $request) {
         global $wpdb;
-        
+
         $user_id = get_current_user_id();
-        
+
         if (!$user_id && !empty($_SESSION['ppv_user_id'])) {
             $user_id = intval($_SESSION['ppv_user_id']);
         }
-        
+
         if ($user_id <= 0) {
             error_log("❌ [PPV_Dashboard] rest_poll_points: No user found");
             return new WP_REST_Response(['success' => false, 'points' => 0], 401);
         }
-        
+
         $stats = self::get_user_stats($user_id);
-        
-        error_log("✅ [PPV_Dashboard] rest_poll_points: User=$user_id, Points=" . $stats['points']);
-        
+
+        // Get the most recent store name from last point transaction
+        $last_store_name = $wpdb->get_var($wpdb->prepare("
+            SELECT s.name
+            FROM {$wpdb->prefix}ppv_points p
+            LEFT JOIN {$wpdb->prefix}ppv_stores s ON p.store_id = s.id
+            WHERE p.user_id = %d
+            ORDER BY p.created DESC
+            LIMIT 1
+        ", $user_id));
+
+        error_log("✅ [PPV_Dashboard] rest_poll_points: User=$user_id, Points=" . $stats['points'] . ", Store=" . ($last_store_name ?: 'none'));
+
         return new WP_REST_Response([
             'success' => true,
             'points' => $stats['points'],
-            'rewards' => $stats['rewards']
+            'rewards' => $stats['rewards'],
+            'store' => $last_store_name ?: 'PunktePass'
         ], 200);
     }
     
