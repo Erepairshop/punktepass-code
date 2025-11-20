@@ -350,12 +350,12 @@
                 <form class="ppv-wizard-form" id="ppv-reward-form">
                     <div class="ppv-form-group">
                         <label>Prémium neve *</label>
-                        <input type="text" name="title" required placeholder="pl. Ingyenes Kávé">
+                        <input type="text" name="title" placeholder="pl. Ingyenes Kávé">
                     </div>
 
                     <div class="ppv-form-group">
                         <label>Szükséges pontok *</label>
-                        <input type="number" name="required_points" required placeholder="100" min="1" value="100">
+                        <input type="number" name="required_points" placeholder="100" min="1" value="100">
                     </div>
 
                     <div class="ppv-form-group">
@@ -365,7 +365,7 @@
 
                     <div class="ppv-form-group">
                         <label>Jutalmazás típusa *</label>
-                        <select name="action_type" required>
+                        <select name="action_type">
                             <option value="discount_percent">Rabatt (%)</option>
                             <option value="discount_fixed">Fix rabatt</option>
                             <option value="free_product" selected>Ingyenes termék</option>
@@ -374,13 +374,13 @@
 
                     <div class="ppv-form-group">
                         <label>Érték *</label>
-                        <input type="text" name="action_value" required placeholder="pl. 10" value="0">
+                        <input type="text" name="action_value" placeholder="pl. 10" value="0">
                         <small style="color: #999;">💶 Érték a jutalomhoz (pl. 10% vagy 5 EUR)</small>
                     </div>
 
                     <div class="ppv-form-group">
                         <label>Pontok adva (ha beváltják) *</label>
-                        <input type="number" name="points_given" required placeholder="5" min="0" value="0">
+                        <input type="number" name="points_given" placeholder="5" min="0" value="0">
                         <small style="color: #999;">⭐ Ezek a pontok jutalmazzák az ügyfelet beváltáskor</small>
                     </div>
 
@@ -400,20 +400,30 @@
             // Finish gomb
             html.on('click', '[data-action="finish"]', (e) => {
                 e.preventDefault();
-                const form = $('#ppv-reward-form')[0];
 
-                if (!form.checkValidity()) {
-                    form.reportValidity();
+                // Manual validation
+                const title = $('[name="title"]').val().trim();
+                const required_points = parseInt($('[name="required_points"]').val());
+
+                if (!title) {
+                    this.showToast('❌ Kérlek add meg a prémium nevét!', 'error');
+                    $('[name="title"]').focus();
+                    return;
+                }
+
+                if (!required_points || required_points < 1) {
+                    this.showToast('❌ Kérlek adj meg legalább 1 pontot!', 'error');
+                    $('[name="required_points"]').focus();
                     return;
                 }
 
                 const data = {
-                    title: $('[name="title"]').val(),
-                    required_points: parseInt($('[name="required_points"]').val()),
+                    title: title,
+                    required_points: required_points,
                     description: $('[name="description"]').val(),
                     action_type: $('[name="action_type"]').val(),
                     action_value: $('[name="action_value"]').val(),
-                    points_given: parseInt($('[name="points_given"]').val())
+                    points_given: parseInt($('[name="points_given"]').val()) || 0
                 };
 
                 this.saveWizardStep('reward', data, modal);

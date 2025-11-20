@@ -636,8 +636,8 @@ class PPV_Onboarding {
             }
 
             // Google Maps API key (használjuk a meglévő konstanst)
-            $google_api_key = defined('PPV_GOOGLE_MAPS_API_KEY')
-                ? PPV_GOOGLE_MAPS_API_KEY
+            $google_api_key = defined('PPV_GOOGLE_MAPS_KEY')
+                ? PPV_GOOGLE_MAPS_KEY
                 : get_option('ppv_google_maps_api_key', '');
 
             if (empty($google_api_key)) {
