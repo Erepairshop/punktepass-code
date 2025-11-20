@@ -2497,6 +2497,19 @@ html, body {
   color: #fff;
 }
 
+.ppv-btn.neon {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: #fff;
+  border: none;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  font-weight: 600;
+}
+
+.ppv-btn.neon:hover:not(:disabled) {
+  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+  transform: translateY(-2px);
+}
+
 .ppv-btn i {
   font-size: 16px;
 }

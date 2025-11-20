@@ -6,6 +6,9 @@
  */
 
 jQuery(document).ready(function ($) {
+  console.log("✅ ppv-campaigns.js loaded!");
+  console.log("🔧 API:", ppv_campaigns);
+
   const API = ppv_campaigns.ajaxurl;
   const nonce = ppv_campaigns.nonce;
 
