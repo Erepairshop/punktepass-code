@@ -37,6 +37,13 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
 
         // ==================== AUTH CHECK ====================
         private static function check_auth() {
+            // 🔄 Token restoration for trial users
+            if (empty($_SESSION['ppv_user_id']) && !empty($_COOKIE['ppv_user_token'])) {
+                if (class_exists('PPV_SessionBridge')) {
+                    PPV_SessionBridge::restore_from_token();
+                }
+            }
+
             if (is_user_logged_in()) {
                 return ['valid' => true, 'type' => 'wp_user', 'user_id' => get_current_user_id()];
             }

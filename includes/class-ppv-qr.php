@@ -470,6 +470,13 @@ class PPV_QR {
             @session_start();
         }
 
+        // 🔄 Token restoration for trial users
+        if (empty($_SESSION['ppv_user_id']) && !empty($_COOKIE['ppv_user_token'])) {
+            if (class_exists('PPV_SessionBridge')) {
+                PPV_SessionBridge::restore_from_token();
+            }
+        }
+
         if (!empty($_SESSION['ppv_active_store'])) {
             $store_id = intval($_SESSION['ppv_active_store']);
         } elseif (!empty($_SESSION['ppv_store_id'])) {

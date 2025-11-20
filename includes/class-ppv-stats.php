@@ -45,7 +45,20 @@ class PPV_Stats {
     // 🔍 HELPER: Get Store ID
     // ========================================
     public static function get_handler_store_id() {
+        global $wpdb;
         error_log("🔍 [Stats] get_handler_store_id() START");
+
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+
+        // 🔄 Token restoration for trial users
+        if (empty($_SESSION['ppv_user_id']) && !empty($_COOKIE['ppv_user_token'])) {
+            if (class_exists('PPV_SessionBridge')) {
+                PPV_SessionBridge::restore_from_token();
+                error_log("🔄 [Stats] Token restored");
+            }
+        }
 
         // 1️⃣ GLOBALS
         if (!empty($GLOBALS['ppv_active_store_id'])) {
@@ -75,18 +88,34 @@ class PPV_Stats {
             return $sid;
         }
 
-        // 5️⃣ DB FALLBACK
-        global $wpdb;
+        // 5️⃣ SESSION - ppv_user_id (trial vendors)
+        if (!empty($_SESSION['ppv_user_id'])) {
+            $user_id = intval($_SESSION['ppv_user_id']);
+            error_log("📊 [Stats] Checking DB for PPV user: {$user_id}");
+            $sid = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id=%d AND active=1 LIMIT 1",
+                $user_id
+            ));
+            if ($sid) {
+                $sid = intval($sid);
+                $_SESSION['ppv_store_id'] = $sid;
+                error_log("✅ [Stats] Store from DB (PPV user): {$sid}");
+                return $sid;
+            }
+        }
+
+        // 6️⃣ WordPress logged in user
         $uid = get_current_user_id();
         if ($uid > 0) {
             error_log("📊 [Stats] Checking DB for WP user: {$uid}");
             $sid = $wpdb->get_var($wpdb->prepare(
-                "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id=%d LIMIT 1",
+                "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id=%d AND active=1 LIMIT 1",
                 $uid
             ));
             if ($sid) {
                 $sid = intval($sid);
-                error_log("✅ [Stats] Store from DB: {$sid}");
+                $_SESSION['ppv_store_id'] = $sid;
+                error_log("✅ [Stats] Store from DB (WP user): {$sid}");
                 return $sid;
             }
         }
