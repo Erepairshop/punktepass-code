@@ -39,10 +39,13 @@ jQuery(document).ready(function ($) {
 
   // === Modal Open / Close ===
   $("#ppv-new-campaign-btn").on("click", function () {
+    console.log("🔘 Campaign button clicked!");
+    console.log("📦 Modal element:", $("#ppv-campaigns-admin-modal").length);
     $("#ppv-campaign-form")[0].reset();
     $("#campaign-id").val("");
     $("#ppv-modal-title").text("🧩 Neue Kampagne");
     $("#ppv-campaigns-admin-modal").fadeIn(200).css("display", "flex");
+    console.log("✅ Modal should be visible now");
   });
 
   $(".ppv-close, #campaign-cancel").on("click", () =>
