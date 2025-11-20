@@ -165,7 +165,7 @@ class PPV_POS_SCAN {
                 if ($user_check && $user_check->active == 1) {
                     $user_id = intval($user_check->id);
                 } elseif ($user_check && $user_check->active == 0) {
-                    self::log_scan_attempt($store_id, $uid, $ip_address, 'blocked', 'User inactive', 'user_blocked', 0);
+                    self::log_scan_attempt($store_id, $uid, $ip_address, 'blocked', 'User inactive', 'user_blocked', 0, $lang);
                     return rest_ensure_response([
                         'success' => false,
                         'message' => '🚫 Benutzer gesperrt',
@@ -177,7 +177,7 @@ class PPV_POS_SCAN {
         }
 
         if ($user_id <= 0) {
-            self::log_scan_attempt($store_id, 0, $ip_address, 'invalid', 'Invalid QR code', 'invalid_qr', 0);
+            self::log_scan_attempt($store_id, 0, $ip_address, 'invalid', 'Invalid QR code', 'invalid_qr', 0, $lang);
             return rest_ensure_response([
                 'success' => false,
                 'message' => '🚫 Ungültiger QR-Code (kein User)',
@@ -257,7 +257,7 @@ class PPV_POS_SCAN {
         error_log("📍 [IP ADDRESS] Raw: '{$ip_address_raw}' | Cleaned: '{$ip_address}'");
         error_log("✅ [LOGGING SCAN] User: {$user_id} | Store: {$store_id} | Points: +{$points_add}");
 
-        self::log_scan_attempt($store_id, $user_id, $ip_address, 'ok', "✅ +{$points_add} Punkte", 'scan_success', $points_add);
+        self::log_scan_attempt($store_id, $user_id, $ip_address, 'ok', "✅ +{$points_add} Punkte", 'scan_success', $points_add, $lang);
 
         /** 10) Üzenet */
         $msg = [
@@ -297,16 +297,17 @@ class PPV_POS_SCAN {
         ]);
     }
 
-    private static function log_scan_attempt($store_id, $user_id, $ip_address, $status, $reason, $message_key = null, $points = 0) {
+    private static function log_scan_attempt($store_id, $user_id, $ip_address, $status, $reason, $message_key = null, $points = 0, $user_lang = 'de') {
         global $wpdb;
         $user_agent = sanitize_text_field($_SERVER['HTTP_USER_AGENT'] ?? '');
 
-        error_log("💾 [LOG_SCAN_ATTEMPT] Store: {$store_id} | User: {$user_id} | IP: '{$ip_address}' | Status: {$status} | Reason: {$reason} | Key: {$message_key}");
+        error_log("💾 [LOG_SCAN_ATTEMPT] Store: {$store_id} | User: {$user_id} | IP: '{$ip_address}' | Status: {$status} | Reason: {$reason} | Key: {$message_key} | Lang: {$user_lang}");
 
-        // Store message_key and points in metadata for translation
+        // Store message_key, points, AND user_lang in metadata for translation
         $metadata = json_encode([
             'message_key' => $message_key,
             'points' => $points,
+            'user_lang' => $user_lang,  // ✅ Store user's language
             'timestamp' => current_time('mysql')
         ]);
 
@@ -410,20 +411,27 @@ class PPV_POS_SCAN {
                     $user_display = '—'; // No user for errors like rate_limit
                 }
 
-                // ✅ TRANSLATE status message based on handler language
+                // ✅ TRANSLATE status message based on USER's language (not handler's)
                 $status = $log->message; // Fallback to original message
 
-                // Try to extract message_key from metadata
+                // Try to extract message_key and user_lang from metadata
                 if (!empty($log->metadata)) {
                     $metadata = json_decode($log->metadata, true);
                     $message_key = $metadata['message_key'] ?? null;
                     $points = $metadata['points'] ?? 0;
+                    $user_lang = $metadata['user_lang'] ?? 'de';  // ✅ Get user's language from metadata
 
-                    // If we have a translation key, use it
-                    if ($message_key && isset($translations[$message_key])) {
-                        $status = $translations[$message_key];
-                        // Replace {points} placeholder
-                        $status = str_replace('{points}', $points, $status);
+                    // Load user's language translations
+                    if ($message_key) {
+                        PPV_Lang::load($user_lang);  // ✅ Load user's language file
+                        $user_translations = PPV_Lang::$strings;
+
+                        // If we have a translation key, use it in user's language
+                        if (isset($user_translations[$message_key])) {
+                            $status = $user_translations[$message_key];
+                            // Replace {points} placeholder
+                            $status = str_replace('{points}', $points, $status);
+                        }
                     }
                 }
 
