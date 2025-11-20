@@ -752,8 +752,12 @@ class CampaignManager {
 // ============================================================
 class CameraScanner {
   constructor(scanProcessor) {
+    // 🔊 Sound effects
     this.beep = new Audio("/wp-content/plugins/punktepass/assets/sounds/scan-beep.wav");
     this.beep.volume = 1.0;
+
+    this.errorSound = new Audio("/wp-content/plugins/punktepass/assets/sounds/error.mp3");
+    this.errorSound.volume = 0.8;
 
     this.scanProcessor = scanProcessor;
     this.scanner = null;
@@ -1152,28 +1156,31 @@ class CameraScanner {
 
     if (!this.scanning || this.state !== 'scanning') return;
 
-    // Duplicate protection
+    // 🎯 FASTER: Single read detection (was 2, now 1)
     if (qrCode === this.lastRead) {
       this.repeatCount++;
     } else {
       this.lastRead = qrCode;
       this.repeatCount = 1;
+
+      // ✅ GREEN BORDER: Show visual feedback when QR detected (not yet processed)
+      this.showDetectionFeedback();
     }
 
-    // Two consecutive identical reads required
-    if (this.repeatCount >= 2) {
+    // ⚡ One read is enough (faster scanning)
+    if (this.repeatCount >= 1) {
       // ✅ Keep scanning flag true, only change state to prevent duplicate scans
       this.state = 'processing';
 
       // Update UI
       this.updateStatus('processing', '⏳ ' + (L.scanner_points_adding || 'Processing...'));
 
-      // Vibration
+      // 📳 IMPROVED: Shorter, sharper vibration (30ms)
       try {
-        if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
+        if (navigator.vibrate) navigator.vibrate(30);
       } catch (e) {}
 
-      // Play beep sound
+      // 🔊 Play success beep sound
       try {
         this.beep.currentTime = 0;
         this.beep.play();
@@ -1224,8 +1231,24 @@ class CameraScanner {
           this.startPauseCountdown();
 
         } else {
-          // Error - show warning and restart scanner after 3 seconds
+          // ❌ ERROR - show warning and restart scanner after 3 seconds
           this.updateStatus('warning', '⚠️ ' + (data.message || L.error_generic || 'Hiba'));
+
+          // 🔴 RED FLASH: Visual error feedback
+          this.showErrorFeedback();
+
+          // 🔊 Play error sound
+          try {
+            this.errorSound.currentTime = 0;
+            this.errorSound.play();
+          } catch (e) {
+            console.warn("Error sound playback failed:", e);
+          }
+
+          // 📳 Error vibration (longer than success)
+          try {
+            if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+          } catch (e) {}
 
           if (window.ppvToast) {
             window.ppvToast(data.message || L.error_generic || '⚠️ Hiba', 'warning');
@@ -1240,8 +1263,24 @@ class CameraScanner {
         }
       })
       .catch(e => {
-        // Network error - show error and restart scanner
+        // ❌ NETWORK ERROR - show error and restart scanner
         this.updateStatus('error', '❌ ' + (L.pos_network_error || 'Hálózati hiba'));
+
+        // 🔴 RED FLASH: Visual error feedback
+        this.showErrorFeedback();
+
+        // 🔊 Play error sound
+        try {
+          this.errorSound.currentTime = 0;
+          this.errorSound.play();
+        } catch (e) {
+          console.warn("Error sound playback failed:", e);
+        }
+
+        // 📳 Error vibration
+        try {
+          if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+        } catch (e) {}
 
         if (window.ppvToast) {
           window.ppvToast('❌ ' + (L.pos_network_error || 'Hálózati hiba'), 'error');
@@ -1314,6 +1353,41 @@ class CameraScanner {
         }, 5000);
       }
     }
+  }
+
+  // ✅ GREEN BORDER: Visual feedback when QR detected
+  showDetectionFeedback() {
+    if (!this.readerDiv) return;
+
+    // Add green border animation
+    this.readerDiv.style.boxShadow = '0 0 0 4px #00ff00, 0 0 20px rgba(0, 255, 0, 0.5)';
+    this.readerDiv.style.transition = 'box-shadow 0.2s ease';
+
+    // Remove after 300ms
+    setTimeout(() => {
+      this.readerDiv.style.boxShadow = '';
+    }, 300);
+  }
+
+  // 🔴 RED FLASH: Visual feedback on error
+  showErrorFeedback() {
+    if (!this.readerDiv) return;
+
+    // Flash red 3 times
+    let count = 0;
+    const flashInterval = setInterval(() => {
+      if (count % 2 === 0) {
+        this.readerDiv.style.boxShadow = '0 0 0 4px #ff0000, 0 0 20px rgba(255, 0, 0, 0.7)';
+        this.readerDiv.style.transition = 'box-shadow 0.1s ease';
+      } else {
+        this.readerDiv.style.boxShadow = '';
+      }
+      count++;
+      if (count >= 6) {
+        clearInterval(flashInterval);
+        this.readerDiv.style.boxShadow = '';
+      }
+    }, 150);
   }
 
   updateStatus(state, text) {
