@@ -1258,8 +1258,12 @@ class CameraScanner {
           }
 
           // Broadcast the scan event
+          console.log("📡 [Scan] Broadcast data:", data);
           if (window.BroadcastManager) {
+            console.log("📡 [Scan] BroadcastManager found, sending...");
             BroadcastManager.send(data);
+          } else {
+            console.warn("⚠️ [Scan] BroadcastManager NOT found!");
           }
 
           // Reload logs
