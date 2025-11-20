@@ -2497,6 +2497,19 @@ html, body {
   color: #fff;
 }
 
+.ppv-btn.neon {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: #fff;
+  border: none;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  font-weight: 600;
+}
+
+.ppv-btn.neon:hover:not(:disabled) {
+  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+  transform: translateY(-2px);
+}
+
 .ppv-btn i {
   font-size: 16px;
 }
@@ -4232,6 +4245,61 @@ body.ppv-light .ppv-theme-btn-mini {
     z-index: 900000;
 }
 
+.ppv-modal.show {
+    display: flex;
+}
+
+.ppv-modal-inner {
+    background: var(--ppv-bg-primary, #fff);
+    border-radius: 12px;
+    padding: 2rem;
+    max-width: 500px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    position: relative;
+    animation: modalIn .25s ease;
+}
+
+.ppv-modal-inner h4 {
+    margin: 0 0 1.5rem 0;
+    font-size: 18px;
+    color: var(--ppv-text-primary, #1f2937);
+}
+
+.ppv-modal-inner label {
+    display: block;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ppv-text-primary, #1f2937);
+}
+
+.ppv-modal-inner input,
+.ppv-modal-inner select,
+.ppv-modal-inner textarea {
+    width: 100%;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+    border: 1px solid var(--ppv-border, #e5e7eb);
+    border-radius: 6px;
+    background: var(--ppv-bg-primary, #fff);
+    color: var(--ppv-text-primary, #1f2937);
+    font-size: 13px;
+    box-sizing: border-box;
+    transition: 0.2s;
+}
+
+.ppv-modal-inner input:focus,
+.ppv-modal-inner select:focus,
+.ppv-modal-inner textarea:focus {
+    outline: none;
+    border-color: var(--ppv-primary, #6366f1);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
 .ppv-modal-content {
     background: var(--ppv-s-card);
     padding: 1.5rem;
@@ -4453,3 +4521,1880 @@ ppv-app-root {
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
 }
+
+/* ==========================================================================
+   🎯 QR SCANNER & CAMPAIGNS - COMPLETE STYLING
+   PunktePass Handler Dashboard - QR Center Module
+   Following theme-light.css design system
+   ========================================================================== */
+
+/* ──────────────────────────────────────────────────────────────────────
+   🏠 QR CENTER MAIN CONTAINER
+   ────────────────────────────────────────────────────────────────────── */
+.ppv-pos-center {
+    background: var(--pp-surface);
+    border-radius: var(--pp-r-lg);
+    padding: 1.5rem;
+    box-shadow: var(--pp-shadow);
+    border: 1px solid var(--pp-border-soft);
+    margin-bottom: 1.5rem;
+}
+
+.glass-section {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: var(--pp-glass);
+    border: 1px solid var(--pp-border-soft);
+    border-radius: var(--pp-r-lg);
+    box-shadow: var(--pp-shadow);
+}
+
+.glass-card {
+    background: var(--pp-surface);
+    border: 1px solid var(--pp-border);
+    border-radius: var(--pp-r-md);
+    padding: 1.25rem;
+    box-shadow: var(--pp-shadow-sm);
+    transition: var(--pp-trans);
+}
+
+.glass-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--pp-shadow);
+    border-color: var(--pp-border-strong);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🗂️ TABS NAVIGATION
+   ────────────────────────────────────────────────────────────────────── */
+.ppv-tabs {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid var(--pp-border-soft);
+    padding-bottom: 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.ppv-tab {
+    background: transparent;
+    border: none;
+    padding: 0.875rem 1.5rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--pp-text-3);
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: var(--pp-trans);
+    white-space: nowrap;
+    position: relative;
+}
+
+.ppv-tab:hover {
+    color: var(--pp-primary);
+    background: var(--pp-bg-2);
+    border-radius: var(--pp-r-sm) var(--pp-r-sm) 0 0;
+}
+
+.ppv-tab.active {
+    color: var(--pp-primary);
+    border-bottom-color: var(--pp-primary);
+    font-weight: 700;
+}
+
+.ppv-tab-content {
+    display: none;
+    animation: fadeInUp 0.3s ease;
+}
+
+.ppv-tab-content.active {
+    display: block;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   📊 POS LOG TABLE
+   ────────────────────────────────────────────────────────────────────── */
+.glass-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: var(--pp-surface);
+    border-radius: var(--pp-r-md);
+    overflow: hidden;
+    box-shadow: var(--pp-shadow-sm);
+}
+
+.glass-table thead {
+    background: linear-gradient(135deg, var(--pp-primary) 0%, var(--pp-primary-dark) 100%);
+    color: white;
+}
+
+.glass-table thead th {
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.9rem;
+    letter-spacing: 0.3px;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.glass-table tbody tr {
+    border-bottom: 1px solid var(--pp-border-soft);
+    transition: var(--pp-trans-fast);
+}
+
+.glass-table tbody tr:hover {
+    background: var(--pp-bg-2);
+}
+
+.glass-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.glass-table tbody td {
+    padding: 0.875rem 1rem;
+    font-size: 0.9rem;
+    color: var(--pp-text-2);
+}
+
+.glass-table tbody td:first-child {
+    font-weight: 600;
+    color: var(--pp-text);
+}
+
+/* Log type badges */
+.glass-table .log-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--pp-r-xs);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.log-badge.success {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--pp-success);
+}
+
+.log-badge.error {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--pp-danger);
+}
+
+.log-badge.info {
+    background: rgba(0, 168, 204, 0.15);
+    color: var(--pp-primary);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🎯 CAMPAIGNS SECTION
+   ────────────────────────────────────────────────────────────────────── */
+.ppv-campaigns {
+    padding: 1.5rem;
+}
+
+.ppv-campaign-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.ppv-campaign-header h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--pp-text);
+    margin: 0;
+}
+
+.ppv-campaign-controls {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.ppv-filter {
+    padding: 0.625rem 1rem;
+    border: 1px solid var(--pp-border);
+    border-radius: var(--pp-r-sm);
+    background: var(--pp-surface);
+    color: var(--pp-text);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--pp-trans);
+}
+
+.ppv-filter:hover {
+    border-color: var(--pp-primary);
+    box-shadow: 0 0 0 3px rgba(0, 168, 204, 0.1);
+}
+
+.ppv-filter:focus {
+    outline: none;
+    border-color: var(--pp-primary);
+    box-shadow: 0 0 0 3px rgba(0, 168, 204, 0.15);
+}
+
+/* Campaign List Grid */
+.ppv-campaign-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.25rem;
+    margin-top: 1.5rem;
+}
+
+/* Campaign Card */
+.ppv-campaign-card {
+    background: var(--pp-surface);
+    border: 1px solid var(--pp-border);
+    border-radius: var(--pp-r-md);
+    padding: 1.5rem;
+    box-shadow: var(--pp-shadow-sm);
+    transition: var(--pp-trans);
+    position: relative;
+    overflow: hidden;
+}
+
+.ppv-campaign-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--pp-primary);
+    opacity: 0;
+    transition: var(--pp-trans);
+}
+
+.ppv-campaign-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--pp-shadow);
+    border-color: var(--pp-primary);
+}
+
+.ppv-campaign-card:hover::before {
+    opacity: 1;
+}
+
+.ppv-campaign-card h4 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--pp-text);
+    margin: 0 0 0.75rem 0;
+}
+
+.ppv-campaign-card p {
+    font-size: 0.9rem;
+    color: var(--pp-text-2);
+    margin: 0.5rem 0;
+    line-height: 1.5;
+}
+
+.ppv-campaign-card .campaign-value {
+    display: inline-block;
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--pp-primary);
+    margin: 0.75rem 0;
+}
+
+.ppv-campaign-dates {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--pp-text-3);
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--pp-border-soft);
+}
+
+.ppv-campaign-status {
+    display: inline-block;
+    padding: 0.375rem 0.875rem;
+    border-radius: var(--pp-r-xs);
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 1rem;
+}
+
+.ppv-campaign-card.active .ppv-campaign-status {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--pp-success);
+}
+
+.ppv-campaign-card.inactive .ppv-campaign-status {
+    background: rgba(245, 158, 11, 0.15);
+    color: var(--pp-warning);
+}
+
+.ppv-campaign-card.expired .ppv-campaign-status {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--pp-danger);
+}
+
+.ppv-campaign-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   👥 SCANNER USERS SECTION
+   ────────────────────────────────────────────────────────────────────── */
+.ppv-scanner-users {
+    padding: 1.5rem;
+}
+
+.ppv-scanner-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.ppv-scanner-header h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--pp-text);
+    margin: 0;
+}
+
+.scanner-users-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.scanner-user-card {
+    background: var(--pp-surface);
+    border: 1px solid var(--pp-border);
+    border-left: 4px solid var(--pp-text-3);
+    border-radius: var(--pp-r-md);
+    padding: 1.25rem;
+    box-shadow: var(--pp-shadow-sm);
+    transition: var(--pp-trans);
+}
+
+.scanner-user-card:hover {
+    transform: translateX(4px);
+    box-shadow: var(--pp-shadow);
+}
+
+.scanner-user-card.active {
+    border-left-color: var(--pp-success);
+}
+
+.scanner-user-card.inactive {
+    border-left-color: var(--pp-text-3);
+    opacity: 0.7;
+}
+
+.scanner-user-card h4 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--pp-text);
+    margin: 0 0 0.5rem 0;
+}
+
+.scanner-user-card p {
+    font-size: 0.9rem;
+    color: var(--pp-text-2);
+    margin: 0.25rem 0;
+}
+
+.scanner-user-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🎨 BUTTONS (Following theme-light style)
+   ────────────────────────────────────────────────────────────────────── */
+.ppv-btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: var(--pp-r-sm);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--pp-trans);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: 'Inter', sans-serif;
+    box-shadow: var(--pp-shadow-sm);
+}
+
+.ppv-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--pp-shadow);
+}
+
+.ppv-btn:active {
+    transform: translateY(0);
+}
+
+.ppv-btn.neon {
+    background: linear-gradient(135deg, var(--pp-primary) 0%, var(--pp-primary-dark) 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 168, 204, 0.3);
+    font-weight: 700;
+}
+
+.ppv-btn.neon:hover {
+    box-shadow: 0 6px 20px rgba(0, 168, 204, 0.45);
+    transform: translateY(-3px);
+}
+
+.ppv-btn-outline {
+    background: transparent;
+    border: 2px solid var(--pp-border);
+    color: var(--pp-text);
+    padding: 0.625rem 1.25rem;
+}
+
+.ppv-btn-outline:hover {
+    background: var(--pp-bg-2);
+    border-color: var(--pp-primary);
+    color: var(--pp-primary);
+}
+
+.ppv-btn.small {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+}
+
+.ppv-btn.danger {
+    background: var(--pp-danger);
+    color: white;
+}
+
+.ppv-btn.danger:hover {
+    background: #dc2626;
+}
+
+.ppv-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   📱 CAMERA MODAL
+   ────────────────────────────────────────────────────────────────────── */
+#ppv-camera-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+#ppv-camera-modal .ppv-modal-inner {
+    background: var(--pp-surface);
+    border-radius: var(--pp-r-lg);
+    max-width: 600px;
+    width: 100%;
+    padding: 2rem;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+#ppv-reader {
+    border: 3px solid var(--pp-primary) !important;
+    border-radius: var(--pp-r-md) !important;
+    overflow: hidden;
+    box-shadow: 0 0 30px rgba(0, 168, 204, 0.3);
+}
+
+#ppv-scan-result {
+    background: linear-gradient(135deg, rgba(0, 168, 204, 0.1), rgba(0, 168, 204, 0.05));
+    border: 2px solid rgba(0, 168, 204, 0.3);
+    border-radius: var(--pp-r-sm);
+    padding: 1rem;
+    text-align: center;
+    font-weight: 600;
+    color: var(--pp-primary);
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🎁 TRIAL INFO BLOCK
+   ────────────────────────────────────────────────────────────────────── */
+.ppv-trial-info-block {
+    background: linear-gradient(135deg, rgba(0, 168, 204, 0.1), rgba(0, 168, 204, 0.05));
+    border: 2px solid var(--pp-primary);
+    border-radius: var(--pp-r-md);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--pp-shadow-sm);
+}
+
+.ppv-trial-info-block h4 {
+    margin: 0 0 0.5rem 0;
+    color: var(--pp-primary);
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.ppv-trial-info-block p {
+    margin: 0;
+    color: var(--pp-text-2);
+    font-size: 0.9rem;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   📱 RESPONSIVE
+   ────────────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+    /* Mobile: Full width for POS center */
+    .ppv-pos-center,
+    .ppv-campaigns,
+    .ppv-scanner-users {
+        padding: 1rem;
+        margin-left: 0;
+        margin-right: 0;
+        border-radius: var(--pp-r-sm);
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .ppv-tabs {
+        gap: 0.5rem;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .ppv-tab {
+        padding: 0.75rem 1rem;
+        font-size: 0.85rem;
+        white-space: nowrap;
+    }
+
+    /* Mobile: Stack POS header vertically */
+    .ppv-pos-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+
+    .ppv-pos-title {
+        font-size: 1.1rem;
+        text-align: center;
+    }
+
+    .ppv-csv-wrapper {
+        width: 100%;
+    }
+
+    .ppv-csv-btn {
+        width: 100%;
+        padding: 10px;
+        font-size: 13px;
+    }
+
+    .ppv-campaign-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .ppv-campaign-controls {
+        flex-direction: column;
+    }
+
+    .ppv-campaign-list {
+        grid-template-columns: 1fr;
+    }
+
+    .glass-table {
+        font-size: 0.85rem;
+    }
+
+    .glass-table thead th,
+    .glass-table tbody td {
+        padding: 0.75rem 0.5rem;
+    }
+
+    #ppv-support-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 20px;
+        bottom: 80px;
+        left: 15px;
+    }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🎨 OFFLINE BANNER
+   ────────────────────────────────────────────────────────────────────── */
+#ppv-offline-banner {
+    background: linear-gradient(135deg, var(--pp-warning), #f97316);
+    color: white;
+    padding: 1rem;
+    border-radius: var(--pp-r-sm);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: var(--pp-shadow);
+    font-weight: 600;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   📊 POS LOG HEADER (Letzte Scans)
+   ────────────────────────────────────────────────────────────────────── */
+.ppv-pos-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    gap: 1rem;
+}
+
+.ppv-pos-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--pp-text);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🎯 CSV EXPORT MENU
+   ────────────────────────────────────────────────────────────────────── */
+.ppv-csv-wrapper {
+    position: relative;
+}
+
+.ppv-csv-btn {
+    padding: 8px 16px;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+#ppv-csv-export-menu,
+.ppv-csv-dropdown {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    margin-top: 5px;
+    min-width: 200px;
+    z-index: 1000;
+    background: var(--pp-surface);
+    border: 1px solid var(--pp-border);
+    border-radius: var(--pp-r-sm);
+    box-shadow: var(--pp-shadow-lg);
+    overflow: hidden;
+    animation: dropdownIn 0.2s ease;
+}
+
+@keyframes dropdownIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.ppv-csv-export-option {
+    display: block;
+    padding: 0.875rem 1.25rem;
+    color: var(--pp-text);
+    text-decoration: none;
+    border-bottom: 1px solid var(--pp-border-soft);
+    transition: var(--pp-trans-fast);
+    font-size: 0.9rem;
+}
+
+.ppv-csv-export-option:last-child {
+    border-bottom: none;
+}
+
+.ppv-csv-export-option:hover {
+    background: var(--pp-bg-2);
+    color: var(--pp-primary);
+    padding-left: 1.5rem;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🎉 END OF QR SCANNER & CAMPAIGNS STYLING
+   ────────────────────────────────────────────────────────────────────── */
+
+/* ══════════════════════════════════════════════════════════════════════
+   🎁 REWARDS MANAGEMENT SECTION
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ──────────────────────────────────────────────────────────────────────
+   🎨 MAIN WRAPPER
+   ────────────────────────────────────────────────────────────────────── */
+.ppv-rewards-management-wrapper {
+    background: var(--pp-surface);
+    border-radius: var(--pp-r-lg);
+    padding: 2rem;
+    box-shadow: var(--pp-shadow);
+    margin: 1.5rem 0;
+}
+
+.ppv-rewards-management-wrapper.glass-section {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: var(--pp-glass);
+}
+
+.ppv-rewards-management-wrapper h2 {
+    margin: 0 0 1.5rem 0;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--pp-text);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   📝 FORM STYLING
+   ────────────────────────────────────────────────────────────────────── */
+.ppv-reward-form {
+    background: var(--pp-bg-2);
+    border: 1px solid var(--pp-border);
+    border-radius: var(--pp-r-md);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.ppv-reward-form label {
+    display: block;
+    margin-bottom: 0.5rem;
+    margin-top: 1rem;
+    color: var(--pp-text);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.ppv-reward-form label:first-of-type {
+    margin-top: 0;
+}
+
+.ppv-reward-form input[type="text"],
+.ppv-reward-form input[type="number"],
+.ppv-reward-form textarea,
+.ppv-reward-form select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--pp-border);
+    border-radius: var(--pp-r-sm);
+    background: var(--pp-surface);
+    color: var(--pp-text);
+    font-size: 0.95rem;
+    font-family: inherit;
+    transition: var(--pp-trans-fast);
+}
+
+.ppv-reward-form input[type="text"]:focus,
+.ppv-reward-form input[type="number"]:focus,
+.ppv-reward-form textarea:focus,
+.ppv-reward-form select:focus {
+    outline: none;
+    border-color: var(--pp-primary);
+    box-shadow: 0 0 0 3px rgba(0, 168, 204, 0.1);
+}
+
+.ppv-reward-form textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.ppv-reward-form small {
+    display: block;
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--pp-text-2);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🔘 FORM BUTTONS
+   ────────────────────────────────────────────────────────────────────── */
+.ppv-btn-blue {
+    background: linear-gradient(135deg, var(--pp-primary) 0%, var(--pp-primary-dark) 100%);
+    color: white;
+    border: none;
+    padding: 0.875rem 1.5rem;
+    border-radius: var(--pp-r-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--pp-trans-fast);
+    font-size: 0.95rem;
+    box-shadow: 0 4px 12px rgba(0, 168, 204, 0.3);
+}
+
+.ppv-btn-blue:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 168, 204, 0.4);
+}
+
+.ppv-btn-blue:active {
+    transform: translateY(0);
+}
+
+.ppv-btn-outline {
+    background: transparent;
+    color: var(--pp-primary);
+    border: 1px solid var(--pp-primary);
+    padding: 0.75rem 1.25rem;
+    border-radius: var(--pp-r-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--pp-trans-fast);
+    font-size: 0.9rem;
+}
+
+.ppv-btn-outline:hover {
+    background: var(--pp-primary);
+    color: white;
+}
+
+.ppv-btn-outline.ppv-delete {
+    color: #ef4444;
+    border-color: #ef4444;
+}
+
+.ppv-btn-outline.ppv-delete:hover {
+    background: #ef4444;
+    color: white;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🎁 REWARDS GRID
+   ────────────────────────────────────────────────────────────────────── */
+.ppv-reward-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.25rem;
+    margin-top: 1.5rem;
+}
+
+.ppv-reward-item {
+    background: var(--pp-surface);
+    border: 1px solid var(--pp-border);
+    border-radius: var(--pp-r-md);
+    padding: 1.5rem;
+    transition: var(--pp-trans);
+    position: relative;
+}
+
+.ppv-reward-item.glass-card {
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(10px);
+}
+
+.ppv-reward-item:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    border-color: var(--pp-primary);
+}
+
+.ppv-reward-item h4 {
+    margin: 0 0 0.75rem 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--pp-text);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.ppv-reward-item p {
+    margin: 0 0 1rem 0;
+    color: var(--pp-text-2);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    min-height: 40px;
+}
+
+.ppv-reward-item small {
+    font-size: 0.85rem;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   ⏳ LOADING STATE
+   ────────────────────────────────────────────────────────────────────── */
+.ppv-loading {
+    text-align: center;
+    padding: 2rem;
+    color: var(--pp-text-2);
+    font-size: 1rem;
+}
+
+.ppv-loading::after {
+    content: "";
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    margin-left: 10px;
+    border: 2px solid var(--pp-primary);
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   ⚠️ WARNING & INFO MESSAGES
+   ────────────────────────────────────────────────────────────────────── */
+.ppv-warning {
+    background: linear-gradient(135deg, var(--pp-warning), #f97316);
+    color: white;
+    padding: 1rem 1.25rem;
+    border-radius: var(--pp-r-sm);
+    margin: 1rem 0;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+}
+
+.ppv-reward-grid p[style*="color:#999"] {
+    text-align: center;
+    grid-column: 1 / -1;
+    padding: 2rem;
+    color: var(--pp-text-2) !important;
+}
+
+.ppv-reward-grid p[style*="color:#ef4444"] {
+    text-align: center;
+    grid-column: 1 / -1;
+    padding: 2rem;
+    color: #ef4444 !important;
+    background: rgba(239, 68, 68, 0.1);
+    border-radius: var(--pp-r-sm);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🍞 TOAST NOTIFICATIONS
+   ────────────────────────────────────────────────────────────────────── */
+.ppv-toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 1rem 1.5rem;
+    border-radius: var(--pp-r-sm);
+    z-index: 999999;
+    font-weight: 600;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    animation: slideIn 0.3s ease-out;
+}
+
+.ppv-toast.success {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+}
+
+.ppv-toast.error {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+}
+
+.ppv-toast.info {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   📱 RESPONSIVE - MOBILE OPTIMIZATION
+   ────────────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .ppv-rewards-management-wrapper {
+        padding: 1.25rem;
+    }
+
+    .ppv-rewards-management-wrapper h2 {
+        font-size: 1.4rem;
+    }
+
+    .ppv-reward-form {
+        padding: 1.25rem;
+    }
+
+    .ppv-reward-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .ppv-reward-item {
+        padding: 1.25rem;
+    }
+
+    .ppv-btn-blue,
+    .ppv-btn-outline {
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .ppv-rewards-management-wrapper {
+        padding: 1rem;
+        border-radius: var(--pp-r-sm);
+    }
+
+    .ppv-reward-form {
+        padding: 1rem;
+    }
+
+    .ppv-reward-item h4 {
+        font-size: 1rem;
+    }
+
+    .ppv-toast {
+        left: 10px;
+        right: 10px;
+        bottom: 10px;
+    }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🎉 END OF REWARDS MANAGEMENT STYLING
+   ────────────────────────────────────────────────────────────────────── */
+
+/* ══════════════════════════════════════════════════════════════════════
+   🆘 SUPPORT BUTTON & TICKET MODAL
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ──────────────────────────────────────────────────────────────────────
+   🆘 FLOATING SUPPORT BUTTON
+   ────────────────────────────────────────────────────────────────────── */
+#ppv-support-btn {
+    position: fixed;
+    bottom: 90px;
+    left: 20px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--pp-primary) 0%, var(--pp-primary-dark) 100%);
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0, 168, 204, 0.4);
+    z-index: 10000;
+    transition: box-shadow 0.3s ease, opacity 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: auto;
+}
+
+#ppv-support-btn:hover {
+    box-shadow: 0 6px 20px rgba(0, 168, 204, 0.6);
+    opacity: 0.9;
+}
+
+#ppv-support-btn:active {
+    opacity: 0.7;
+    box-shadow: 0 2px 10px rgba(0, 168, 204, 0.5);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   📋 SUPPORT MODAL
+   ────────────────────────────────────────────────────────────────────── */
+.ppv-support-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 10001;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.ppv-support-modal.show {
+    display: flex !important;
+}
+
+.ppv-support-modal-content {
+    background: var(--pp-surface);
+    padding: 30px;
+    border-radius: 15px;
+    max-width: 500px;
+    width: 100%;
+    box-shadow: var(--pp-shadow-lg);
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: modalSlideIn 0.3s ease;
+    margin: auto;
+    position: relative;
+    border: 1px solid var(--pp-border);
+}
+
+.ppv-support-modal-title {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    color: var(--pp-text);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.ppv-support-modal-description {
+    color: var(--pp-text-2);
+    font-size: 14px;
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   📝 FORM ELEMENTS
+   ────────────────────────────────────────────────────────────────────── */
+.ppv-support-label {
+    color: var(--pp-text);
+    font-size: 13px;
+    display: block;
+    margin-bottom: 5px;
+    margin-top: 15px;
+    font-weight: 600;
+}
+
+.ppv-support-label:first-of-type {
+    margin-top: 0;
+}
+
+.ppv-required {
+    color: #ff5252;
+}
+
+.ppv-support-input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--pp-border);
+    background: var(--pp-bg-2);
+    color: var(--pp-text);
+    margin-bottom: 15px;
+    font-family: inherit;
+    font-size: 14px;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.ppv-support-input:focus {
+    outline: none;
+    border-color: var(--pp-primary);
+    box-shadow: 0 0 0 3px rgba(0, 168, 204, 0.2);
+}
+
+textarea.ppv-support-input {
+    resize: vertical;
+    min-height: 100px;
+}
+
+select.ppv-support-input {
+    cursor: pointer;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   📢 MESSAGE ALERTS
+   ────────────────────────────────────────────────────────────────────── */
+.ppv-support-message {
+    display: none;
+    font-size: 13px;
+    margin-bottom: 10px;
+    padding: 10px;
+    border-radius: 6px;
+}
+
+.ppv-support-message.show {
+    display: block;
+}
+
+.ppv-support-error {
+    color: #ff5252;
+    background: rgba(255, 82, 82, 0.1);
+    border: 1px solid rgba(255, 82, 82, 0.3);
+}
+
+.ppv-support-success {
+    color: #4caf50;
+    background: rgba(76, 175, 80, 0.1);
+    border: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🔘 MODAL BUTTONS
+   ────────────────────────────────────────────────────────────────────── */
+.ppv-support-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.ppv-support-btn-submit,
+.ppv-support-btn-cancel {
+    flex: 1;
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 14px;
+    border: none;
+}
+
+.ppv-support-btn-submit {
+    background: linear-gradient(135deg, var(--pp-primary) 0%, var(--pp-primary-dark) 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 168, 204, 0.3);
+}
+
+.ppv-support-btn-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 168, 204, 0.4);
+}
+
+.ppv-support-btn-submit:active {
+    transform: translateY(0);
+}
+
+.ppv-support-btn-cancel {
+    background: transparent;
+    color: var(--pp-text-2);
+    border: 1px solid var(--pp-border);
+}
+
+.ppv-support-btn-cancel:hover {
+    background: var(--pp-bg-2);
+    border-color: var(--pp-primary);
+    color: var(--pp-text);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   📱 RESPONSIVE - MOBILE OPTIMIZATION
+   ────────────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+    #ppv-support-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 20px;
+        bottom: 80px;
+        left: 15px;
+    }
+
+    .ppv-support-modal-content {
+        padding: 20px;
+        width: 95%;
+    }
+
+    .ppv-support-modal-title {
+        font-size: 1.25rem;
+    }
+
+    .ppv-support-buttons {
+        flex-direction: column;
+    }
+
+    .ppv-support-btn-submit,
+    .ppv-support-btn-cancel {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .ppv-support-modal-content {
+        padding: 15px;
+        border-radius: 10px;
+    }
+
+    .ppv-support-input {
+        padding: 10px;
+        font-size: 13px;
+    }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🎉 END OF SUPPORT SECTION STYLING
+   ────────────────────────────────────────────────────────────────────── */
+
+/* ══════════════════════════════════════════════════════════════════════
+   ✅ EINLÖSUNGEN & QUITTUNGEN VERWALTUNG (Redemptions & Receipts)
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ──────────────────────────────────────────────────────────────────────
+   📦 MAIN WRAPPER
+   ────────────────────────────────────────────────────────────────────── */
+
+.ppv-rewards-wrapper {
+    background: var(--pp-surface);
+    border-radius: var(--pp-radius-lg);
+    padding: var(--pp-spacing-xl);
+    margin-bottom: var(--pp-spacing-xl);
+    box-shadow: var(--pp-shadow-md);
+}
+
+.ppv-rewards-wrapper h2 {
+    margin: 0 0 var(--pp-spacing-lg) 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--pp-text);
+    display: flex;
+    align-items: center;
+    gap: var(--pp-spacing-sm);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🔖 TAB MENU
+   ────────────────────────────────────────────────────────────────────── */
+
+.ppv-rewards-tabs {
+    display: flex;
+    gap: var(--pp-spacing-sm);
+    margin-bottom: var(--pp-spacing-lg);
+    border-bottom: 2px solid var(--pp-border);
+}
+
+.ppv-tab-btn {
+    padding: 12px 20px;
+    background: none;
+    border: none;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    color: var(--pp-text-2);
+    transition: all 0.3s ease;
+}
+
+.ppv-tab-btn:hover {
+    color: var(--pp-primary);
+    background: var(--pp-bg-2);
+}
+
+.ppv-tab-btn.ppv-tab-active {
+    border-bottom-color: var(--pp-primary);
+    color: var(--pp-primary);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   📋 TAB CONTENT
+   ────────────────────────────────────────────────────────────────────── */
+
+.ppv-tab-content {
+    display: none;
+}
+
+.ppv-tab-content[style*="display: block"],
+.ppv-tab-content[style*="display:block"] {
+    display: block !important;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   ✅ EINLÖSUNGEN SECTION (Redemptions)
+   ────────────────────────────────────────────────────────────────────── */
+
+.ppv-redeem-section {
+    margin-bottom: var(--pp-spacing-xl);
+}
+
+.ppv-redeem-section h3 {
+    margin: 0 0 var(--pp-spacing-lg) 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--pp-text);
+    display: flex;
+    align-items: center;
+    gap: var(--pp-spacing-sm);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🎴 REDEEM GRID LAYOUT
+   ────────────────────────────────────────────────────────────────────── */
+
+.ppv-redeem-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: var(--pp-spacing-lg);
+    margin-bottom: var(--pp-spacing-xl);
+}
+
+@media (max-width: 768px) {
+    .ppv-redeem-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🎁 REDEEM ITEM CARD
+   ────────────────────────────────────────────────────────────────────── */
+
+.ppv-redeem-item {
+    background: var(--pp-bg);
+    border: 1px solid var(--pp-border);
+    border-radius: var(--pp-radius-md);
+    padding: var(--pp-spacing-lg);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: var(--pp-shadow-sm);
+}
+
+.ppv-redeem-item:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--pp-shadow-lg);
+    border-color: var(--pp-primary);
+}
+
+/* Status Stripe */
+.ppv-redeem-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--pp-warning);
+    transition: all 0.3s ease;
+}
+
+.ppv-redeem-item.status-approved::before {
+    background: var(--pp-success);
+}
+
+.ppv-redeem-item.status-cancelled::before {
+    background: var(--pp-danger);
+}
+
+.ppv-redeem-item.status-pending::before {
+    background: var(--pp-warning);
+    animation: ppv-pulse-glow 2s infinite;
+}
+
+@keyframes ppv-pulse-glow {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   📝 REDEEM ITEM CONTENT
+   ────────────────────────────────────────────────────────────────────── */
+
+.ppv-redeem-item strong {
+    display: block;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--pp-text);
+    margin-bottom: var(--pp-spacing-sm);
+    line-height: 1.3;
+}
+
+.ppv-redeem-item small {
+    display: block;
+    font-size: 13px;
+    color: var(--pp-text-2);
+    margin-bottom: var(--pp-spacing-xs);
+    line-height: 1.5;
+}
+
+.ppv-redeem-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--pp-spacing-md);
+    margin: var(--pp-spacing-md) 0;
+    padding-top: var(--pp-spacing-md);
+    border-top: 1px solid var(--pp-border);
+}
+
+.ppv-redeem-meta-item {
+    display: flex;
+    align-items: center;
+    gap: var(--pp-spacing-xs);
+    font-size: 13px;
+    color: var(--pp-text-2);
+}
+
+.ppv-redeem-meta-item i {
+    font-size: 16px;
+    color: var(--pp-primary);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🔘 REDEEM ACTION BUTTONS
+   ────────────────────────────────────────────────────────────────────── */
+
+.ppv-redeem-actions {
+    display: flex;
+    gap: var(--pp-spacing-sm);
+    margin-top: var(--pp-spacing-lg);
+}
+
+.ppv-approve,
+.ppv-reject {
+    flex: 1;
+    padding: 10px 16px;
+    border: none;
+    border-radius: var(--pp-radius-sm);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--pp-spacing-xs);
+}
+
+.ppv-approve {
+    background: linear-gradient(135deg, var(--pp-success) 0%, #059669 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.ppv-approve:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.ppv-approve:active {
+    transform: translateY(0);
+}
+
+.ppv-reject {
+    background: var(--pp-bg-2);
+    color: var(--pp-text);
+    border: 1px solid var(--pp-border);
+}
+
+.ppv-reject:hover {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: var(--pp-danger);
+    color: var(--pp-danger);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   📜 LOG BOX (Letzte 10 Einlösungen)
+   ────────────────────────────────────────────────────────────────────── */
+
+.ppv-log-box {
+    background: var(--pp-bg);
+    border: 1px solid var(--pp-border);
+    border-radius: var(--pp-radius-md);
+    padding: var(--pp-spacing-lg);
+    box-shadow: var(--pp-shadow-sm);
+}
+
+.ppv-log-box h3 {
+    margin: 0 0 var(--pp-spacing-md) 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--pp-text);
+    display: flex;
+    align-items: center;
+    gap: var(--pp-spacing-sm);
+}
+
+#ppv-log-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--pp-spacing-md);
+}
+
+.ppv-log-item {
+    padding: var(--pp-spacing-md);
+    background: var(--pp-bg-2);
+    border-left: 3px solid var(--pp-primary);
+    border-radius: var(--pp-radius-sm);
+    transition: all 0.3s ease;
+}
+
+.ppv-log-item:hover {
+    background: var(--pp-surface);
+    transform: translateX(4px);
+}
+
+.ppv-log-item strong {
+    font-size: 14px;
+    color: var(--pp-primary);
+    font-weight: 600;
+}
+
+.ppv-log-item small {
+    font-size: 12px;
+    color: var(--pp-text-2);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   📄 QUITTUNGEN/BIZONYLATOK SECTION (Receipts)
+   ────────────────────────────────────────────────────────────────────── */
+
+.ppv-receipts-filter {
+    margin-bottom: var(--pp-spacing-lg);
+    display: flex;
+    gap: var(--pp-spacing-sm);
+    flex-wrap: wrap;
+}
+
+.ppv-receipts-filter input[type="text"],
+.ppv-receipts-filter input[type="date"] {
+    padding: 10px;
+    border: 1px solid var(--pp-border);
+    border-radius: var(--pp-radius-sm);
+    font-size: 14px;
+    color: var(--pp-text);
+    background: var(--pp-surface);
+    transition: all 0.3s ease;
+}
+
+.ppv-receipts-filter input[type="text"] {
+    flex: 1;
+    min-width: 200px;
+}
+
+.ppv-receipts-filter input[type="text"]:focus,
+.ppv-receipts-filter input[type="date"]:focus {
+    outline: none;
+    border-color: var(--pp-primary);
+    box-shadow: 0 0 0 3px rgba(var(--pp-primary-rgb), 0.1);
+}
+
+.ppv-receipts-filter input::placeholder {
+    color: var(--pp-text-2);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   📋 RECEIPTS GRID
+   ────────────────────────────────────────────────────────────────────── */
+
+.ppv-receipts-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--pp-spacing-sm);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🎫 RECEIPT CARD
+   ────────────────────────────────────────────────────────────────────── */
+
+.ppv-receipt-card {
+    padding: var(--pp-spacing-md);
+    margin-bottom: var(--pp-spacing-sm);
+    background: var(--pp-surface);
+    border: 1px solid var(--pp-border);
+    border-radius: var(--pp-radius-sm);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--pp-spacing-md);
+    transition: all 0.3s ease;
+    box-shadow: var(--pp-shadow-sm);
+}
+
+.ppv-receipt-card:hover {
+    border-color: var(--pp-primary);
+    box-shadow: var(--pp-shadow-md);
+    transform: translateX(4px);
+}
+
+.ppv-receipt-card strong {
+    font-size: 14px;
+    color: var(--pp-text);
+}
+
+.ppv-receipt-card small {
+    color: var(--pp-text-2);
+    font-size: 12px;
+}
+
+.ppv-receipt-download-btn {
+    padding: 10px 16px;
+    background: var(--pp-primary);
+    color: white;
+    border: none;
+    border-radius: var(--pp-radius-sm);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: var(--pp-spacing-xs);
+    white-space: nowrap;
+    transition: all 0.3s ease;
+}
+
+.ppv-receipt-download-btn:hover {
+    background: var(--pp-primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(var(--pp-primary-rgb), 0.3);
+}
+
+.ppv-receipt-download-btn:active {
+    transform: translateY(0);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🔄 LOADING & EMPTY STATES
+   ────────────────────────────────────────────────────────────────────── */
+
+.ppv-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--pp-spacing-md);
+    padding: var(--pp-spacing-xl);
+    color: var(--pp-text-2);
+    font-size: 14px;
+    animation: ppv-pulse-fade 1.5s infinite;
+}
+
+@keyframes ppv-pulse-fade {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.ppv-redeem-empty,
+.ppv-receipts-empty {
+    padding: var(--pp-spacing-xl);
+    text-align: center;
+    background: var(--pp-bg-2);
+    border-radius: var(--pp-radius-sm);
+    color: var(--pp-text-2);
+    font-size: 14px;
+}
+
+.ppv-redeem-empty::before,
+.ppv-receipts-empty::before {
+    content: '📭';
+    display: block;
+    font-size: 48px;
+    margin-bottom: var(--pp-spacing-sm);
+}
+
+.ppv-error {
+    padding: var(--pp-spacing-md);
+    background: #fee;
+    border-radius: var(--pp-radius-sm);
+    color: #c33;
+    border: 1px solid #fcc;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   📱 RESPONSIVE DESIGN
+   ────────────────────────────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+    .ppv-rewards-wrapper {
+        padding: var(--pp-spacing-md);
+    }
+
+    .ppv-rewards-wrapper h2 {
+        font-size: 20px;
+    }
+
+    .ppv-rewards-tabs {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .ppv-tab-btn {
+        white-space: nowrap;
+        padding: 10px 16px;
+    }
+
+    .ppv-redeem-actions {
+        flex-direction: column;
+    }
+
+    .ppv-redeem-actions button {
+        width: 100%;
+    }
+
+    .ppv-redeem-meta {
+        flex-direction: column;
+        gap: var(--pp-spacing-xs);
+    }
+
+    .ppv-receipt-card {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .ppv-receipt-download-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .ppv-receipts-filter {
+        flex-direction: column;
+    }
+
+    .ppv-receipts-filter input[type="text"],
+    .ppv-receipts-filter input[type="date"],
+    .ppv-receipts-filter button {
+        width: 100%;
+    }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🎉 END OF EINLÖSUNGEN & QUITTUNGEN STYLING
+   ────────────────────────────────────────────────────────────────────── */

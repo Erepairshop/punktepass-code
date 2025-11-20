@@ -6,7 +6,6 @@
  * Author: Erik Borota / PunktePass
  */
 
-console.log("🚀 PPV Kassenscanner v5.3 aktív!");
 
 // ============================================================
 // 🌐 GLOBAL STATE & CONFIG
@@ -25,7 +24,6 @@ window.PPV_STORE_ID =
 sessionStorage.setItem("ppv_store_key", window.PPV_STORE_KEY);
 sessionStorage.setItem("ppv_store_id", window.PPV_STORE_ID);
 
-console.log("✅ Store ID:", window.PPV_STORE_ID, "| KEY:", window.PPV_STORE_KEY);
 
 const L = window.ppv_lang || {};
 
@@ -72,11 +70,7 @@ class UIManager {
   }
 
   showMessage(text, type = "info") {
-    if (!this.resultBox) return;
-    this.resultBox.className = "ppv-result-box " + type;
-    this.resultBox.innerHTML = text;
-    this.resultBox.style.opacity = "1";
-    setTimeout(() => (this.resultBox.style.opacity = "0"), 3500);
+    window.ppvToast(text, type);
   }
 
   addLogRow(time, user, status) {
@@ -84,7 +78,7 @@ class UIManager {
     const row = document.createElement("tr");
     row.innerHTML = `<td>${time}</td><td>${user}</td><td>${status}</td>`;
     this.logTable.prepend(row);
-    while (this.logTable.rows.length > 12) this.logTable.deleteRow(12);
+    while (this.logTable.rows.length > 15) this.logTable.deleteRow(15);
   }
 
   flashCampaignList() {
@@ -130,7 +124,6 @@ class OfflineSyncManager {
       });
 
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(items));
-      console.log("✅ [OFFLINE] Saved:", qrCode);
       return true;
     } catch (e) {
       console.error("❌ [OFFLINE] Save failed:", e);
@@ -145,11 +138,9 @@ class OfflineSyncManager {
 
       const unsynced = items.filter(i => !i.synced);
       if (!unsynced.length) {
-        console.log("✅ [OFFLINE] All synced");
         return;
       }
 
-      console.log(`⏳ [OFFLINE] Syncing ${unsynced.length} items...`);
 
       const res = await fetch("/wp-json/punktepass/v1/pos/sync_offline", {
         method: "POST",
@@ -167,7 +158,6 @@ class OfflineSyncManager {
         let remaining = items.filter(i => !synced.includes(i.id));
         localStorage.setItem(this.STORAGE_KEY, JSON.stringify(remaining));
 
-        console.log(`✅ [OFFLINE] ${result.synced} synced, ${remaining.length} remaining`);
         window.ppvToast(`✅ ${result.synced} ${L.pos_sync || "szinkronizálva"}`, "success");
       } else if (result.message?.includes("Duplikátum") || result.message?.includes("már")) {
         console.warn("⚠️ [OFFLINE] Duplicates on server:", result.message);
@@ -253,7 +243,6 @@ class ScanProcessor {
   async loadLogs() {
     // Check if store key exists
     if (!window.PPV_STORE_KEY || window.PPV_STORE_KEY.trim() === '') {
-      console.log('ℹ️ [Logs] No store key - skipping logs load');
       return;
     }
 
@@ -288,7 +277,6 @@ class CampaignManager {
 
     // Check if store key exists
     if (!window.PPV_STORE_KEY || window.PPV_STORE_KEY.trim() === '') {
-      console.log('ℹ️ [Campaigns] No store key - skipping campaigns load');
       this.list.innerHTML = "<p style='text-align:center;color:#999;padding:20px;'>" +
         (L.camp_no_store || "Kein Geschäft ausgewählt") + "</p>";
       return;
@@ -564,7 +552,6 @@ class CampaignManager {
     const status = safe("camp-status");
     // 🩵 Fix: valós campaign_type lekérése DOM-ból
     const realType = document.getElementById("camp-type")?.value || type;
-    console.log("🎯 Campaign type detected:", realType);
 
     const requiredPoints = safeNum("camp-required-points");
     const pointsGiven = safeNum("camp-points-given");
@@ -580,7 +567,6 @@ class CampaignManager {
 
    // ✅ VALIDÁCIÓ: Gratis termék + érték
     if (realType === "free_product") {
-      console.log("🧩 Validating free_product:", freeProductName, freeProductValue);
       if (!freeProductName || freeProductValue <= 0) {
         const msg = L.camp_fill_free_product_name_value || "⚠️ Kérlek add meg a termék nevét és értékét!";
         this.ui.showMessage(msg, "warning");
@@ -669,7 +655,6 @@ class CampaignManager {
       const type = e.target.value;
       this.updateVisibilityByType(type);
       this.updateValueLabel(type); // ✅ ÚJ: Értékcímke frissítése
-      console.log("✅ [Type Change] Type:", type);
     };
 
     typeSelect.addEventListener("change", this._typeChangeHandler);
@@ -688,12 +673,10 @@ class CampaignManager {
       if (productName.length > 0) {
         valueWrapper.style.display = "block";
         // valueInput.required = true; // ❌ KIVET!
-        console.log("✅ [FreeProduct] Megjelent az érték mező");
       } else {
         valueWrapper.style.display = "none";
         // valueInput.required = false; // ❌ KIVET!
         valueInput.value = 0;
-        console.log("❌ [FreeProduct] Elrejtettük az érték mezőt");
       }
     });
   }
@@ -928,7 +911,6 @@ class CameraScanner {
     if (!this.toggleBtn) return;
 
     this.toggleBtn.addEventListener('click', async () => {
-      console.log('🎬 [Scanner] Toggle clicked, scanning:', this.scanning);
 
       if (this.scanning) {
         // Stop scanner
@@ -941,13 +923,25 @@ class CameraScanner {
   }
 
   async stopScanner() {
-    console.log('🛑 [Scanner] Stopping...');
 
     try {
+      // 🤖 Android: Stop html5-qrcode scanner
       if (this.scanner) {
         await this.scanner.stop();
         this.scanner = null;
       }
+
+      // 🍎 iOS: Stop video stream
+      if (this.iosStream) {
+        this.iosStream.getTracks().forEach(track => track.stop());
+        this.iosStream = null;
+      }
+      if (this.iosVideo) {
+        this.iosVideo.srcObject = null;
+        this.iosVideo = null;
+      }
+      this.iosCanvas = null;
+      this.iosCanvasCtx = null;
 
       this.scanning = false;
       this.state = 'stopped';
@@ -971,14 +965,12 @@ class CameraScanner {
         this.pauseTimeout = null;
       }
 
-      console.log('✅ [Scanner] Stopped');
     } catch (err) {
       console.error('❌ [Scanner] Stop error:', err);
     }
   }
 
   async startScannerManual() {
-    console.log('▶️ [Scanner] Starting manually...');
 
     // Show reader and status
     this.readerDiv.style.display = 'block';
@@ -995,22 +987,42 @@ class CameraScanner {
 
   async autoStart() {
     // ✅ REMOVED: Don't auto-start anymore, user must click button
-    console.log('ℹ️ [Scanner] Auto-start disabled - click button to start');
   }
 
   async loadLibrary() {
-    if (window.Html5Qrcode) {
-      await this.startScanner();
-      return;
-    }
+    // 🍎 iOS Detection
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-    const script = document.createElement('script');
-    script.src = 'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';
-    script.onload = () => this.startScanner();
-    script.onerror = () => {
-      this.updateStatus('error', '❌ Scanner könyvtár nem tölthető be');
-    };
-    document.head.appendChild(script);
+    if (isIOS) {
+      // 🍎 iOS: Use jsQR (canvas-based, works better on Safari)
+      if (window.jsQR) {
+        await this.startIOSScanner();
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
+      script.onload = () => this.startIOSScanner();
+      script.onerror = () => {
+        this.updateStatus('error', '❌ Scanner könyvtár nem tölthető be');
+      };
+      document.head.appendChild(script);
+    } else {
+      // 🤖 Android: Use html5-qrcode
+      if (window.Html5Qrcode) {
+        await this.startScanner();
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = 'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';
+      script.onload = () => this.startScanner();
+      script.onerror = () => {
+        this.updateStatus('error', '❌ Scanner könyvtár nem tölthető be');
+      };
+      document.head.appendChild(script);
+    }
   }
 
   async startScanner() {
@@ -1053,20 +1065,6 @@ class CameraScanner {
       this.scanning = true;
       this.state = 'scanning';
       this.updateStatus('scanning', L.scanner_active || '📷 Scanning...');
-      console.log('✅ Scanner started (optimized mode - 30 FPS, autofocus)');
-
-      // 🔦 Try to enable torch/LED for better low-light performance
-      try {
-        const capabilities = this.scanner.getRunningTrackCapabilities();
-        if (capabilities && capabilities.torch) {
-          await this.scanner.applyVideoConstraints({
-            advanced: [{ torch: true }]
-          });
-          console.log('🔦 Torch enabled');
-        }
-      } catch (torchErr) {
-        console.log('💡 Torch not available:', torchErr.message);
-      }
 
     } catch (err) {
       console.warn('⚠️ Optimized config failed:', err);
@@ -1081,7 +1079,6 @@ class CameraScanner {
           this.scanner = null;
         }
 
-        console.log('⚠️ Trying basic config...');
         this.scanner = new Html5Qrcode('ppv-mini-reader');
 
         const basicConfig = {
@@ -1102,7 +1099,6 @@ class CameraScanner {
         this.scanning = true;
         this.state = 'scanning';
         this.updateStatus('scanning', L.scanner_active || '📷 Scanning...');
-        console.log('✅ Scanner started (basic mode - 20 FPS)');
 
       } catch (err2) {
         console.warn('⚠️ Basic config failed:', err2);
@@ -1117,7 +1113,6 @@ class CameraScanner {
             this.scanner = null;
           }
 
-          console.log('⚠️ Trying minimal config...');
           this.scanner = new Html5Qrcode('ppv-mini-reader');
 
           await this.scanner.start(
@@ -1129,13 +1124,140 @@ class CameraScanner {
           this.scanning = true;
           this.state = 'scanning';
           this.updateStatus('scanning', L.scanner_active || '📷 Scanning...');
-          console.log('✅ Scanner started (minimal mode)');
 
         } catch (err3) {
           console.error('❌ All methods failed:', err3);
           this.updateStatus('error', '❌ Kamera nem elérhető - engedélyezd a kamera hozzáférést');
         }
       }
+    }
+  }
+
+  async startIOSScanner() {
+    // 🍎 iOS Canvas-based QR Scanner using jsQR
+    const readerElement = document.getElementById('ppv-mini-reader');
+    if (!readerElement || !window.jsQR) {
+      this.updateStatus('error', '❌ Scanner elem nem található');
+      return;
+    }
+
+    // ✅ CRITICAL: Stop existing stream before starting new one (for restart)
+    if (this.iosStream) {
+      this.iosStream.getTracks().forEach(track => track.stop());
+      this.iosStream = null;
+    }
+    if (this.iosVideo) {
+      this.iosVideo.srcObject = null;
+      this.iosVideo = null;
+    }
+    this.iosCanvas = null;
+    this.iosCanvasCtx = null;
+
+    try {
+      // Create video element
+      const video = document.createElement('video');
+      video.style.width = '100%';
+      video.style.height = '100%';
+      video.style.objectFit = 'cover';
+      video.setAttribute('playsinline', 'true'); // Important for iOS
+
+      // Create canvas for QR detection (hidden)
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      // Clear and setup container
+      readerElement.innerHTML = '';
+      readerElement.appendChild(video);
+
+      // Get camera stream with high quality settings
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { exact: 'environment' },
+          width: { min: 1280, ideal: 1920, max: 3840 },    // Higher resolution
+          height: { min: 720, ideal: 1080, max: 2160 },
+          aspectRatio: { ideal: 16/9 },
+          frameRate: { ideal: 30 }                          // Higher FPS for smoother detection
+        }
+      });
+
+      video.srcObject = stream;
+      await video.play();
+
+      // Wait for video metadata to load
+      await new Promise(resolve => {
+        if (video.videoWidth > 0) {
+          resolve();
+        } else {
+          video.addEventListener('loadedmetadata', resolve, { once: true });
+        }
+      });
+
+      // Set canvas size to match actual video resolution
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      this.iosStream = stream;
+      this.iosVideo = video;
+      this.iosCanvas = canvas;
+      this.iosCanvasCtx = ctx;
+
+      this.scanning = true;
+      this.state = 'scanning';
+      this.updateStatus('scanning', L.scanner_active || '📷 Scanning...');
+
+      // Start scan loop
+      this.iosScanLoop();
+
+    } catch (err) {
+      console.error('❌ iOS Scanner failed:', err);
+      this.updateStatus('error', '❌ Kamera nem elérhető - engedélyezd a kamera hozzáférést');
+    }
+  }
+
+  iosScanLoop() {
+    // 🍎 iOS QR scan loop using jsQR
+    if (!this.scanning || !this.iosVideo || !this.iosCanvas || !this.iosCanvasCtx) {
+      return;
+    }
+
+    const video = this.iosVideo;
+    const canvas = this.iosCanvas;
+    const ctx = this.iosCanvasCtx;
+
+    // Draw video frame to canvas
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+      // Ensure canvas matches video size (in case it changed)
+      if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+      }
+
+      // Draw current video frame
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // ✅ Scan only CENTER region (60% of frame) for better close-up detection
+      const scanRegion = 0.6;  // Scan 60% of center
+      const regionSize = Math.min(canvas.width, canvas.height) * scanRegion;
+      const startX = (canvas.width - regionSize) / 2;
+      const startY = (canvas.height - regionSize) / 2;
+
+      // Get image data only from center region
+      const imageData = ctx.getImageData(startX, startY, regionSize, regionSize);
+
+      // Scan for QR code - faster with smaller region
+      const code = jsQR(imageData.data, imageData.width, imageData.height, {
+        inversionAttempts: 'dontInvert'  // Faster - only try normal QR codes
+      });
+
+      if (code && code.data) {
+        // QR code detected!
+        this.onScanSuccess(code.data);
+      }
+    }
+
+    // Continue loop (15 FPS = 66ms interval for better performance)
+    if (this.scanning) {
+      setTimeout(() => this.iosScanLoop(), 66);
     }
   }
 
@@ -1150,7 +1272,6 @@ class CameraScanner {
       if (window.ppvToast) {
         window.ppvToast(`⏸️ ${pauseMsg}: ${this.countdown}s - ${waitMsg}`, 'warning');
       }
-      console.log(`⏸️ [Scanner] Paused - ${this.countdown}s remaining`);
       return;
     }
 
@@ -1332,16 +1453,22 @@ class CameraScanner {
   async autoRestartScanner() {
     // ✅ Check if user manually stopped during pause
     if (this.state === 'stopped' || !this.scanning) {
-      console.log('ℹ️ [Scanner] Auto-restart cancelled - user stopped manually');
       return;
     }
 
-    console.log('🔄 Auto-restarting scanner after pause...');
     this.state = 'scanning';
     this.updateStatus('scanning', '🔄 Restarting...');
 
     try {
-      await this.startScanner();
+      // 🍎 iOS Detection - call correct scanner method
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+      if (isIOS) {
+        await this.startIOSScanner();
+      } else {
+        await this.startScanner();
+      }
     } catch (e) {
       console.error('Auto-restart error:', e);
       this.updateStatus('error', '❌ Restart failed');
@@ -1483,7 +1610,6 @@ class SettingsManager {
       }
     });
 
-    console.log(L.ui_translations_updated || '✅ UI fordítások frissítve');
   }
 
   static initTheme() {
@@ -1603,7 +1729,6 @@ document.addEventListener("DOMContentLoaded", function () {
   campaignManager.load();
   OfflineSyncManager.sync();
 
-  console.log(L.app_initialized || "✅ App fully initialized!");
 
   // ============================================================
   // 📧 RENEWAL REQUEST MODAL
@@ -1691,22 +1816,22 @@ document.addEventListener("DOMContentLoaded", function () {
 
   if (supportBtn && supportModal) {
     supportBtn.addEventListener('click', () => {
-      supportModal.style.display = 'flex';
+      supportModal.classList.add('show');
       supportDescription.value = '';
       supportPriority.value = 'normal';
       supportContact.value = 'email';
-      supportError.style.display = 'none';
-      supportSuccess.style.display = 'none';
+      supportError.classList.remove('show');
+      supportSuccess.classList.remove('show');
       supportDescription.focus();
     });
 
     supportCancel.addEventListener('click', () => {
-      supportModal.style.display = 'none';
+      supportModal.classList.remove('show');
     });
 
     supportModal.addEventListener('click', (e) => {
       if (e.target === supportModal) {
-        supportModal.style.display = 'none';
+        supportModal.classList.remove('show');
       }
     });
 
@@ -1717,14 +1842,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
       if (!description) {
         supportError.textContent = L.description_required || 'Problembeschreibung ist erforderlich';
-        supportError.style.display = 'block';
+        supportError.classList.add('show');
         return;
       }
 
       supportSubmit.disabled = true;
       const originalText = supportSubmit.textContent;
       supportSubmit.textContent = L.sending || 'Wird gesendet...';
-      supportError.style.display = 'none';
+      supportError.classList.remove('show');
 
       try {
         const response = await fetch('/wp-admin/admin-ajax.php', {
@@ -1743,21 +1868,21 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (data.success) {
           supportSuccess.textContent = data.data?.message || (L.ticket_sent || 'Ticket erfolgreich gesendet! Wir melden uns bald.');
-          supportSuccess.style.display = 'block';
+          supportSuccess.classList.add('show');
           supportDescription.value = '';
 
           setTimeout(() => {
-            supportModal.style.display = 'none';
-            supportSuccess.style.display = 'none';
+            supportModal.classList.remove('show');
+            supportSuccess.classList.remove('show');
           }, 3000);
         } else {
           supportError.textContent = data.data?.message || (L.error_occurred || 'Ein Fehler ist aufgetreten');
-          supportError.style.display = 'block';
+          supportError.classList.add('show');
         }
       } catch (err) {
         console.error('Support ticket error:', err);
         supportError.textContent = L.error_occurred || 'Ein Fehler ist aufgetreten';
-        supportError.style.display = 'block';
+        supportError.classList.add('show');
       } finally {
         supportSubmit.disabled = false;
         supportSubmit.textContent = originalText;
@@ -2003,7 +2128,6 @@ document.addEventListener("DOMContentLoaded", function () {
     // Poll every 10 seconds
     setInterval(loadRecentScans, 10000);
 
-    console.log('✅ Letzte Scans live polling active (10s interval)');
   }
 
   // ============================================================
@@ -2051,7 +2175,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
         // Download CSV
         try {
-          console.log(`📥 [CSV Export] Downloading: period=${period}, date=${date}`);
 
           const url = `/wp-json/ppv/v1/pos/export-logs?period=${period}&date=${date}`;
           const response = await fetch(url, {
@@ -2083,7 +2206,6 @@ document.addEventListener("DOMContentLoaded", function () {
           window.URL.revokeObjectURL(downloadUrl);
           document.body.removeChild(a);
 
-          console.log('✅ [CSV Export] Download completed');
 
           if (window.ppvToast) {
             window.ppvToast('✅ CSV erfolgreich heruntergeladen', 'success');
@@ -2105,8 +2227,6 @@ document.addEventListener("DOMContentLoaded", function () {
       });
     });
 
-    console.log('✅ CSV Export functionality initialized');
   }
 });
 
-console.log(L.app_complete || "✅ COMPLETE - Összes kód betöltve!");

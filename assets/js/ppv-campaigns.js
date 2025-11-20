@@ -6,6 +6,9 @@
  */
 
 jQuery(document).ready(function ($) {
+  console.log("✅ ppv-campaigns.js loaded!");
+  console.log("🔧 API:", ppv_campaigns);
+
   const API = ppv_campaigns.ajaxurl;
   const nonce = ppv_campaigns.nonce;
 
@@ -39,20 +42,21 @@ jQuery(document).ready(function ($) {
 
   // === Modal Open / Close ===
   $("#ppv-new-campaign-btn").on("click", function () {
+    console.log("🔘 Campaign button clicked!");
+    console.log("📦 Modal element:", $("#ppv-campaigns-admin-modal").length);
     $("#ppv-campaign-form")[0].reset();
     $("#campaign-id").val("");
     $("#ppv-modal-title").text("🧩 Neue Kampagne");
-    $("#ppv-campaign-form").slideDown(200);
-
+    $("#ppv-campaigns-admin-modal").fadeIn(200).css("display", "flex");
+    console.log("✅ Modal should be visible now");
   });
 
   $(".ppv-close, #campaign-cancel").on("click", () =>
-    $("#ppv-campaign-modal").fadeOut(200)
+    $("#ppv-campaigns-admin-modal").fadeOut(200)
   );
 
   $(document).on("keydown", function (e) {
-    if (e.key === "Escape") $("#ppv-campaign-form").slideUp(200);
-
+    if (e.key === "Escape") $("#ppv-campaigns-admin-modal").fadeOut(200);
   });
 
   // === Kampagne speichern (Neu / Update) ===
@@ -117,7 +121,7 @@ jQuery(document).ready(function ($) {
     $("#campaign-discount").val(card.data("discount") || 0);
     $("#campaign-type").val(card.data("type") || "points");
 
-    $("#ppv-campaign-modal").fadeIn(200).css("display", "flex");
+    $("#ppv-campaigns-admin-modal").fadeIn(200).css("display", "flex");
   });
 
   // === Kampagne löschen ===

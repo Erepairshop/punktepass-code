@@ -16,7 +16,7 @@ class PPV_Campaigns {
 
     /** === CSS + JS betöltése === */
     public static function enqueue_assets() {
-        wp_enqueue_style('ppv-campaigns', PPV_PLUGIN_URL . 'assets/css/ppv-campaigns.css', [], time());
+        // CSS: global theme-light.css használata (nincs külön campaigns CSS)
         wp_enqueue_script('ppv-campaigns', PPV_PLUGIN_URL . 'assets/js/ppv-campaigns.js', ['jquery'], time(), true);
         $__data = is_array([
             'ajaxurl' => admin_url('admin-ajax.php'),
@@ -91,7 +91,7 @@ wp_add_inline_script('ppv-campaigns', "window.ppv_campaigns = {$__json};", 'befo
             </div>
 
             <!-- Kampagne Modal -->
-            <div id="ppv-campaign-modal" class="ppv-modal">
+            <div id="ppv-campaigns-admin-modal" class="ppv-modal">
                 <div class="ppv-modal-content">
                     <span class="ppv-close">&times;</span>
                     <h3 id="ppv-modal-title">+ Neue Kampagne</h3>

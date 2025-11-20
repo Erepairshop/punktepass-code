@@ -26,12 +26,10 @@ class PPV_POS_SCAN {
     }
 
     public static function permission_with_logging() {
-        error_log('🔐 [PERMISSION] permission_with_logging() called for recent-scans');
 
         $result = PPV_Permissions::check_handler();
 
         if (is_wp_error($result)) {
-            error_log('❌ [PERMISSION] check_handler() returned WP_Error: ' . $result->get_error_message());
             // Return valid JSON error instead of WP_Error
             return new WP_Error(
                 $result->get_error_code(),
@@ -40,7 +38,6 @@ class PPV_POS_SCAN {
             );
         }
 
-        error_log('✅ [PERMISSION] check_handler() returned TRUE');
         return true;
     }
 
@@ -67,14 +64,12 @@ class PPV_POS_SCAN {
     public static function handle_scan(WP_REST_Request $req) {
         global $wpdb;
 
-        error_log("🚀 [SCAN START] Request received");
 
         $p = $req->get_json_params() ?: [];
         $qr        = sanitize_text_field($p['qr'] ?? '');
         $store_key = sanitize_text_field($p['store_key'] ?? '');
         $lang      = sanitize_text_field($p['lang'] ?? 'de');
 
-        error_log("📋 [SCAN DATA] QR: " . substr($qr, 0, 20) . "... | Lang: {$lang}");
 
         if ($qr === '') {
             return rest_ensure_response(['success' => false, 'message' => '❌ Kein QR-Code empfangen']);
@@ -121,10 +116,8 @@ class PPV_POS_SCAN {
         ", $ip_address));
 
         // DEBUG: Log rate limiting check
-        error_log("🔍 [RATE LIMIT CHECK] IP: {$ip_address} | Recent scans: {$recent_scans_from_ip}/100");
 
         if ($recent_scans_from_ip >= 100) {
-            error_log("🚫 [RATE LIMIT] IP {$ip_address} blocked - {$recent_scans_from_ip} scans in last minute");
             self::log_event($store_id, 'rate_limit', "🚫 Rate limit exceeded from IP {$ip_address}", 'blocked');
             return rest_ensure_response([
                 'success' => false,
@@ -134,7 +127,6 @@ class PPV_POS_SCAN {
             ]);
         }
 
-        error_log("✅ [RATE LIMIT] IP {$ip_address} passed - continuing scan");
 
         /** 3) QR -> User ID extraction with security
          *    IMPORTANT: Only USER tokens allowed
@@ -214,7 +206,6 @@ class PPV_POS_SCAN {
         ", $user_id, $store_id));
 
         if ($recent) {
-            error_log("🚫 [DUPLICATE_SCAN] User {$user_id} already has a successful scan in last 2 minutes");
             return rest_ensure_response([
                 'success' => false,
                 'message' => '⚠️ Bereits gescannt',
@@ -254,8 +245,6 @@ class PPV_POS_SCAN {
         $ip_address_raw = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
         $ip_address = sanitize_text_field(explode(',', $ip_address_raw)[0]);
 
-        error_log("📍 [IP ADDRESS] Raw: '{$ip_address_raw}' | Cleaned: '{$ip_address}'");
-        error_log("✅ [LOGGING SCAN] User: {$user_id} | Store: {$store_id} | Points: +{$points_add}");
 
         self::log_scan_attempt($store_id, $user_id, $ip_address, 'ok', "✅ +{$points_add} Punkte", 'scan_success', $points_add, $lang);
 
@@ -276,7 +265,6 @@ class PPV_POS_SCAN {
             'total'      => $total_points
         ];
 
-        error_log("🎉 [SCAN SUCCESS] Returning response: " . json_encode($response));
 
         return rest_ensure_response($response);
     }
@@ -301,7 +289,6 @@ class PPV_POS_SCAN {
         global $wpdb;
         $user_agent = sanitize_text_field($_SERVER['HTTP_USER_AGENT'] ?? '');
 
-        error_log("💾 [LOG_SCAN_ATTEMPT] Store: {$store_id} | User: {$user_id} | IP: '{$ip_address}' | Status: {$status} | Reason: {$reason} | Key: {$message_key} | Lang: {$user_lang}");
 
         // Store message_key, points, AND user_lang in metadata for translation
         $metadata = json_encode([
@@ -323,9 +310,7 @@ class PPV_POS_SCAN {
         ]);
 
         if ($result === false) {
-            error_log("❌ [LOG_SCAN_ATTEMPT] Database insert failed: " . $wpdb->last_error);
         } else {
-            error_log("✅ [LOG_SCAN_ATTEMPT] Logged successfully. Insert ID: " . $wpdb->insert_id);
         }
     }
 
@@ -337,7 +322,6 @@ class PPV_POS_SCAN {
         global $wpdb;
 
         try {
-            error_log('🔍 [GET_RECENT_SCANS] Function called');
 
             // Get store_id from session
             if (session_status() === PHP_SESSION_NONE) {
@@ -345,10 +329,8 @@ class PPV_POS_SCAN {
             }
 
             $store_id = intval($_SESSION['ppv_store_id'] ?? 0);
-            error_log("🔍 [GET_RECENT_SCANS] store_id from session: {$store_id}");
 
             if ($store_id === 0) {
-                error_log('❌ [GET_RECENT_SCANS] No store_id in session');
                 return rest_ensure_response([
                     'success' => false,
                     'message' => 'No store_id in session'
@@ -357,12 +339,10 @@ class PPV_POS_SCAN {
 
             // ✅ Get handler language from cookie or session
             $handler_lang = $_COOKIE['ppv_lang'] ?? $_SESSION['ppv_lang'] ?? 'de';
-            error_log("🔍 [GET_RECENT_SCANS] handler_lang: {$handler_lang}");
 
             // ✅ Load translations from PPV_Lang (same as used everywhere else)
             // Check if PPV_Lang class exists
             if (!class_exists('PPV_Lang')) {
-                error_log('❌ [GET_RECENT_SCANS] PPV_Lang class not found');
                 return rest_ensure_response([
                     'success' => false,
                     'message' => 'Translation system not loaded'
@@ -375,12 +355,10 @@ class PPV_POS_SCAN {
 
             // Verify translations loaded correctly
             if (!is_array($translations)) {
-                error_log('❌ [GET_RECENT_SCANS] Translations not loaded correctly');
                 $translations = []; // Fallback to empty array
             }
 
-            error_log("🔍 [GET_RECENT_SCANS] Loaded " . count($translations) . " translation keys");
-            // ✅ Get last 40 scan attempts (successful + errors) from pos_log
+            // ✅ Get last 15 scan attempts (successful + errors) from pos_log
             $logs = $wpdb->get_results($wpdb->prepare("
                 SELECT
                     l.created_at,
@@ -394,10 +372,9 @@ class PPV_POS_SCAN {
                 LEFT JOIN {$wpdb->prefix}ppv_users u ON l.user_id = u.id
                 WHERE l.store_id = %d
                 ORDER BY l.created_at DESC
-                LIMIT 40
+                LIMIT 15
             ", $store_id));
 
-            error_log("🔍 [GET_RECENT_SCANS] Found " . count($logs) . " logs");
 
             $formatted = [];
             foreach ($logs as $log) {
@@ -446,14 +423,12 @@ class PPV_POS_SCAN {
                 ];
             }
 
-            error_log("✅ [GET_RECENT_SCANS] Returning " . count($formatted) . " formatted scans");
 
             return rest_ensure_response([
                 'success' => true,
                 'scans' => $formatted
             ]);
         } catch (Exception $e) {
-            error_log('❌ [GET_RECENT_SCANS] Exception: ' . $e->getMessage());
             return rest_ensure_response([
                 'success' => false,
                 'message' => 'Internal error: ' . $e->getMessage()
@@ -485,7 +460,6 @@ class PPV_POS_SCAN {
         // ✅ Load translations from PPV_Lang (same as used everywhere else)
         // Check if PPV_Lang class exists
         if (!class_exists('PPV_Lang')) {
-            error_log('❌ [EXPORT_LOGS_CSV] PPV_Lang class not found');
             return new WP_Error('translation_error', 'Translation system not loaded', ['status' => 500]);
         }
 
@@ -495,7 +469,6 @@ class PPV_POS_SCAN {
 
         // Verify translations loaded correctly
         if (!is_array($t)) {
-            error_log('❌ [EXPORT_LOGS_CSV] Translations not loaded correctly');
             return new WP_Error('translation_error', 'Translations failed to load', ['status' => 500]);
         }
 

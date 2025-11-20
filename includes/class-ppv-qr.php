@@ -122,8 +122,6 @@ class PPV_QR {
     private static function check_rate_limit($user_id, $store_id) {
         global $wpdb;
 
-        error_log("🔍 [RATE_LIMIT_CHECK] User: {$user_id} | Store: {$store_id}");
-
         // Get store name for error responses
         $store_name = $wpdb->get_var($wpdb->prepare(
             "SELECT name FROM {$wpdb->prefix}ppv_stores WHERE id=%d LIMIT 1",
@@ -138,8 +136,6 @@ class PPV_QR {
             AND type='qr_scan'
         ", $user_id, $store_id));
 
-        error_log("🔍 [DAILY_CHECK] Found {$already_today} scans today | CURDATE()=" . $wpdb->get_var("SELECT CURDATE()"));
-
         if ($already_today > 0) {
             // Log the existing scan details
             $existing_scan = $wpdb->get_row($wpdb->prepare("
@@ -149,8 +145,6 @@ class PPV_QR {
                 AND type='qr_scan'
                 ORDER BY created DESC LIMIT 1
             ", $user_id, $store_id));
-
-            error_log("🚫 [DAILY_LIMIT] User {$user_id} already scanned today at: " . ($existing_scan->created ?? 'unknown'));
 
             return [
                 'limited' => true,
@@ -173,11 +167,7 @@ class PPV_QR {
             AND type='qr_scan'
         ", $user_id, $store_id));
 
-        error_log("🔍 [DUPLICATE_CHECK] Found successful scans in last 2 min: " . ($recent ? 'YES' : 'NO'));
-
         if ($recent) {
-            error_log("🚫 [DUPLICATE_SCAN] User {$user_id} already has a successful scan in last 2 minutes");
-
             return [
                 'limited' => true,
                 'response' => new WP_REST_Response([
@@ -189,7 +179,6 @@ class PPV_QR {
             ];
         }
 
-        error_log("✅ [RATE_LIMIT_PASS] User {$user_id} passed all checks");
         return ['limited' => false];
     }
 
@@ -226,8 +215,6 @@ class PPV_QR {
             'metadata' => $metadata,
             'created_at' => current_time('mysql')
         ]);
-
-        error_log("💾 [INSERT_LOG] Store: {$store_id} | User: {$user_id} | IP: '{$ip_address}' | Type: {$type}");
     }
 
     private static function decode_user_from_qr($qr) {
@@ -312,13 +299,11 @@ class PPV_QR {
             // 1️⃣ SESSION
             if (!empty($_SESSION['ppv_active_store'])) {
                 $store_id = intval($_SESSION['ppv_active_store']);
-                error_log("✅ [PPV_QR] Store ID from SESSION: {$store_id}");
             }
             // 2️⃣ GLOBAL
             elseif (!empty($GLOBALS['ppv_active_store'])) {
                 $active = $GLOBALS['ppv_active_store'];
                 $store_id = is_object($active) ? intval($active->id) : intval($active);
-                error_log("✅ [PPV_QR] Store ID from GLOBAL: {$store_id}");
             }
             // 3️⃣ LOGGED IN USER
             elseif (is_user_logged_in()) {
@@ -327,7 +312,6 @@ class PPV_QR {
                     "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id=%d LIMIT 1",
                     $uid
                 )));
-                error_log("✅ [PPV_QR] Store ID from USER ({$uid}): {$store_id}");
             }
             // 4️⃣ ADMIN FALLBACK
             else {
@@ -336,9 +320,6 @@ class PPV_QR {
                     if ($row) {
                         $store_id = $row->id;
                         $store_key = $row->store_key;
-                        error_log("✅ [PPV_QR] Store ID from ADMIN FALLBACK: {$store_id}");
-                    } else {
-                        error_log("❌ [PPV_QR] No admin store found!");
                     }
                 }
             }
@@ -350,8 +331,6 @@ class PPV_QR {
                     $store_id
                 ));
             }
-
-            error_log("🧩 [PPV_QR_ASSET] store_id={$store_id} | store_key={$store_key} | user=" . (is_user_logged_in() ? get_current_user_id() : 'none'));
 
             wp_localize_script('ppv-qr', 'PPV_STORE_DATA', [
                 'store_id' => intval($store_id),
@@ -500,7 +479,6 @@ class PPV_QR {
         // ✅ If no store_id in session, try to get it via user_id
         if ($store_id === 0 && !empty($_SESSION['ppv_user_id'])) {
             $user_id = intval($_SESSION['ppv_user_id']);
-            error_log("🔍 [PPV_QR] No store_id in session, looking up via user_id={$user_id}");
 
             $store_id = $wpdb->get_var($wpdb->prepare(
                 "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id = %d LIMIT 1",
@@ -509,14 +487,11 @@ class PPV_QR {
 
             if ($store_id) {
                 $store_id = intval($store_id);
-                error_log("✅ [PPV_QR] Found store_id={$store_id} via user_id");
             } else {
-                error_log("❌ [PPV_QR] No store found for user_id={$user_id}");
             }
         }
 
         // 🐛 DEBUG: Log store_id
-        error_log("🔍 [PPV_QR] Store ID check: store_id=" . $store_id);
 
         // Fetch subscription info from database
         if ($store_id > 0) {
@@ -525,9 +500,7 @@ class PPV_QR {
                 $store_id
             ));
 
-            error_log("🔍 [PPV_QR] Store data query result: " . ($store_data ? 'FOUND' : 'NOT FOUND'));
             if ($store_data) {
-                error_log("🔍 [PPV_QR] Store data: " . json_encode($store_data));
                 $subscription_status = $store_data->subscription_status ?? 'trial';
                 $renewal_requested = !empty($store_data->subscription_renewal_requested);
                 $now = current_time('timestamp');
@@ -565,12 +538,6 @@ class PPV_QR {
         $show_upgrade_button = !$renewal_requested && ($subscription_status === 'trial' && $trial_days_left <= 7 && $trial_days_left > 0);
 
         // 🐛 DEBUG: Log button visibility
-        error_log("🔍 [PPV_QR] Renewal button check:");
-        error_log("  - subscription_status: " . $subscription_status);
-        error_log("  - trial_days_left: " . $trial_days_left);
-        error_log("  - subscription_days_left: " . $subscription_days_left);
-        error_log("  - renewal_requested: " . ($renewal_requested ? 'TRUE' : 'FALSE'));
-        error_log("  - show_renewal_button: " . ($show_renewal_button ? 'TRUE' : 'FALSE'));
 
         if ($subscription_status === 'active') {
             // Active subscription with expiry date
@@ -681,56 +648,54 @@ class PPV_QR {
         <?php endif; // End scanner check for subscription info ?>
 
         <!-- 🆘 Floating Support Button (ALWAYS SHOW - including scanner users) -->
-        <button id="ppv-support-btn" style="position: fixed; bottom: 90px; left: 20px; width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; color: white; font-size: 24px; cursor: pointer; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); z-index: 999; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center;"
-                onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 6px 20px rgba(102, 126, 234, 0.6)';"
-                onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 15px rgba(102, 126, 234, 0.4)';">
+        <button id="ppv-support-btn">
             🆘
         </button>
 
         <!-- Support Ticket Modal (ALWAYS SHOW - including scanner users) -->
-        <div id="ppv-support-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; align-items: center; justify-content: center;">
-            <div style="background: #1a1a2e; padding: 30px; border-radius: 15px; max-width: 500px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.5); max-height: 90vh; overflow-y: auto;">
-                <h3 style="margin-top: 0; color: #fff; display: flex; align-items: center; gap: 10px;">
+        <div id="ppv-support-modal" class="ppv-support-modal">
+            <div class="ppv-support-modal-content">
+                <h3 class="ppv-support-modal-title">
                     🆘 <?php echo self::t('support_ticket_title', 'Support anfragen'); ?>
                 </h3>
-                <p style="color: #ccc; font-size: 14px; margin-bottom: 20px;">
+                <p class="ppv-support-modal-description">
                     <?php echo self::t('support_ticket_desc', 'Beschreiben Sie Ihr Problem. Wir melden uns schnellstmöglich bei Ihnen.'); ?>
                 </p>
 
                 <!-- Problem Description -->
-                <label style="color: #fff; font-size: 13px; display: block; margin-bottom: 5px;">
-                    <?php echo self::t('problem_description', 'Problembeschreibung'); ?> <span style="color: #ff5252;">*</span>
+                <label class="ppv-support-label">
+                    <?php echo self::t('problem_description', 'Problembeschreibung'); ?> <span class="ppv-required">*</span>
                 </label>
-                <textarea id="ppv-support-description" class="ppv-input" placeholder="<?php echo self::t('problem_placeholder', 'Bitte beschreiben Sie Ihr Problem...'); ?>" rows="4" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #0f0f1e; color: #fff; margin-bottom: 15px; resize: vertical; font-family: inherit;"></textarea>
+                <textarea id="ppv-support-description" class="ppv-support-input" placeholder="<?php echo self::t('problem_placeholder', 'Bitte beschreiben Sie Ihr Problem...'); ?>" rows="4"></textarea>
 
                 <!-- Priority -->
-                <label style="color: #fff; font-size: 13px; display: block; margin-bottom: 5px;">
+                <label class="ppv-support-label">
                     <?php echo self::t('priority', 'Priorität'); ?>
                 </label>
-                <select id="ppv-support-priority" class="ppv-input" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #0f0f1e; color: #fff; margin-bottom: 15px;">
+                <select id="ppv-support-priority" class="ppv-support-input">
                     <option value="normal"><?php echo self::t('priority_normal', 'Normal'); ?></option>
                     <option value="urgent"><?php echo self::t('priority_urgent', 'Dringend'); ?></option>
                     <option value="low"><?php echo self::t('priority_low', 'Niedrig'); ?></option>
                 </select>
 
                 <!-- Contact Preference -->
-                <label style="color: #fff; font-size: 13px; display: block; margin-bottom: 5px;">
+                <label class="ppv-support-label">
                     <?php echo self::t('contact_preference', 'Bevorzugter Kontakt'); ?>
                 </label>
-                <select id="ppv-support-contact" class="ppv-input" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #0f0f1e; color: #fff; margin-bottom: 15px;">
+                <select id="ppv-support-contact" class="ppv-support-input">
                     <option value="email">📧 <?php echo self::t('contact_email', 'E-Mail'); ?></option>
                     <option value="phone">📞 <?php echo self::t('contact_phone', 'Telefon'); ?></option>
                     <option value="whatsapp">💬 <?php echo self::t('contact_whatsapp', 'WhatsApp'); ?></option>
                 </select>
 
-                <div id="ppv-support-error" style="display: none; color: #ff5252; font-size: 13px; margin-bottom: 10px; padding: 10px; background: rgba(255, 82, 82, 0.1); border-radius: 6px;"></div>
-                <div id="ppv-support-success" style="display: none; color: #4caf50; font-size: 13px; margin-bottom: 10px; padding: 10px; background: rgba(76, 175, 80, 0.1); border-radius: 6px;"></div>
+                <div id="ppv-support-error" class="ppv-support-message ppv-support-error"></div>
+                <div id="ppv-support-success" class="ppv-support-message ppv-support-success"></div>
 
-                <div style="display: flex; gap: 10px;">
-                    <button id="ppv-support-submit" class="ppv-btn" style="flex: 1; padding: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="ppv-support-buttons">
+                    <button id="ppv-support-submit" class="ppv-support-btn-submit">
                         ✅ <?php echo self::t('send_ticket', 'Ticket senden'); ?>
                     </button>
-                    <button id="ppv-support-cancel" class="ppv-btn-outline" style="flex: 1; padding: 12px;">
+                    <button id="ppv-support-cancel" class="ppv-support-btn-cancel">
                         ❌ <?php echo self::t('cancel', 'Abbrechen'); ?>
                     </button>
                 </div>
@@ -745,22 +710,22 @@ class PPV_QR {
                 </button>
             </div>
 
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h4 style="margin: 0;"><?php echo self::t('table_title', '📋 Letzte Scans'); ?></h4>
+            <div class="ppv-pos-header">
+                <h4 class="ppv-pos-title"><?php echo self::t('table_title', '📋 Letzte Scans'); ?></h4>
 
                 <!-- 📥 CSV EXPORT DROPDOWN -->
-                <div style="position: relative;">
-                    <button id="ppv-csv-export-btn" class="ppv-btn" style="padding: 8px 16px; font-size: 14px;">
+                <div class="ppv-csv-wrapper">
+                    <button id="ppv-csv-export-btn" class="ppv-btn ppv-csv-btn">
                         📥 <?php echo self::t('csv_export', 'CSV Export'); ?>
                     </button>
-                    <div id="ppv-csv-export-menu" style="display: none; position: absolute; right: 0; top: 100%; margin-top: 5px; background: #1a1a2e; border: 1px solid #333; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); min-width: 200px; z-index: 1000;">
-                        <a href="#" class="ppv-csv-export-option" data-period="today" style="display: block; padding: 12px 16px; color: #fff; text-decoration: none; border-bottom: 1px solid #333; transition: background 0.2s;">
+                    <div id="ppv-csv-export-menu" class="ppv-csv-dropdown">
+                        <a href="#" class="ppv-csv-export-option" data-period="today">
                             📅 <?php echo self::t('csv_today', 'Heute'); ?>
                         </a>
-                        <a href="#" class="ppv-csv-export-option" data-period="date" style="display: block; padding: 12px 16px; color: #fff; text-decoration: none; border-bottom: 1px solid #333; transition: background 0.2s;">
+                        <a href="#" class="ppv-csv-export-option" data-period="date">
                             📆 <?php echo self::t('csv_date', 'Datum wählen'); ?>
                         </a>
-                        <a href="#" class="ppv-csv-export-option" data-period="month" style="display: block; padding: 12px 16px; color: #fff; text-decoration: none; transition: background 0.2s;">
+                        <a href="#" class="ppv-csv-export-option" data-period="month">
                             📊 <?php echo self::t('csv_month', 'Diesen Monat'); ?>
                         </a>
                     </div>
@@ -1242,7 +1207,6 @@ class PPV_QR {
             ", $user, $store->id, current_time('mysql')));
 
             if ($recent > 0) {
-                error_log("⚠️ [OFFLINE_SYNC] Duplikátum detektálva: QR=$qr, User=$user");
                 $duplicates[] = $qr;
                 continue;
             }
@@ -1290,10 +1254,7 @@ class PPV_QR {
         if (empty($data)) $data = $_POST;
 
         // 🔍 LOG – ellenőrzéshez
-        error_log("🧩 [PPV_CREATE_RAW_BODY] " . substr($raw, 0, 300));
-        error_log("🧩 [PPV_CREATE_PARSED] " . print_r($data, true));
 
-        error_log('🧩 [PPV_CREATE_CAMPAIGN_DATA] ' . print_r($data, true));
 
         $store_key = sanitize_text_field($data['store_key'] ?? '');
         $validation = self::validate_store($store_key);
@@ -1304,7 +1265,6 @@ class PPV_QR {
         // ✅ FIX: Don't accept empty campaign_type
         $campaign_type = sanitize_text_field($data['campaign_type'] ?? '');
         if (empty($campaign_type)) {
-            error_log("⚠️ [PPV_QR] Empty campaign_type received, defaulting to 'points'");
             $campaign_type = 'points';
         }
 
@@ -1336,20 +1296,16 @@ class PPV_QR {
                 $fields['free_product_value'] = (float)($data['free_product_value'] ?? 0);
                 break;
             default:
-                error_log("⚠️ [PPV_QR] Ismeretlen kampány típus: " . ($fields['campaign_type'] ?? 'null'));
                 break;
         }
 
         // ✅ DEBUG: Log fields before insert
-        error_log("🔍 [PPV_QR] Fields to insert: " . print_r($fields, true));
 
         $wpdb->insert("{$prefix}ppv_campaigns", $fields);
 
         // ✅ DEBUG: Check if insert succeeded
         if ($wpdb->last_error) {
-            error_log("❌ [PPV_QR] SQL Error: " . $wpdb->last_error);
         } else {
-            error_log("✅ [PPV_QR] Insert success, ID: " . $wpdb->insert_id);
         }
 
         return new WP_REST_Response([
@@ -1489,10 +1445,7 @@ class PPV_QR {
         if (empty($d)) $d = $r->get_json_params();
         if (empty($d)) $d = $_POST;
 
-        error_log("🧩 [PPV_UPDATE_RAW_BODY] " . substr($raw, 0, 300));
-        error_log("🧩 [PPV_UPDATE_PARSED] " . print_r($d, true));
 
-        error_log('🧩 [PPV_UPDATE_CAMPAIGN_DATA] ' . print_r($d, true));
 
         $id = intval($d['id'] ?? 0);
         $store_key = sanitize_text_field($d['store_key'] ?? '');
@@ -1514,7 +1467,6 @@ class PPV_QR {
         // ✅ FIX: Don't accept empty campaign_type
         $campaign_type = sanitize_text_field($d['campaign_type'] ?? '');
         if (empty($campaign_type)) {
-            error_log("⚠️ [PPV_QR] Empty campaign_type in update, defaulting to 'points'");
             $campaign_type = 'points';
         }
 
@@ -1545,7 +1497,6 @@ class PPV_QR {
                 $fields['free_product_value'] = (float)($d['free_product_value'] ?? 0);
                 break;
             default:
-                error_log("⚠️ [PPV_QR] Ismeretlen kampány típus frissítésnél: " . ($fields['campaign_type'] ?? 'null'));
                 break;
         }
 
@@ -1553,7 +1504,6 @@ class PPV_QR {
             'id'        => $id,
             'store_id'  => $store->id,
         ]);
-        error_log("🧩 [PPV_DEBUG_SQL] UPDATE result=" . $wpdb->rows_affected . " | last_error=" . $wpdb->last_error);
 
         self::insert_log($store->id, 0, "Kampány frissítve: ID {$id}", 'campaign_update');
 
