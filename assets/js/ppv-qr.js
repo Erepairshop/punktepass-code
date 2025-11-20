@@ -1035,25 +1035,23 @@ class CameraScanner {
     try {
       this.scanner = new Html5Qrcode('ppv-mini-reader');
 
-      // ✅ ANDROID OPTIMIZED CONFIG - Better distance detection
+      // ✅ OPTIMIZED CONFIG - Fast QR detection from any angle
       const config = {
-        fps: 30,  // High FPS for fast detection
-        qrbox: { width: 280, height: 280 },  // Larger scan area (was 250)
+        fps: 30,  // ⬆️ Higher FPS = faster detection
+        qrbox: { width: 250, height: 250 },  // 📦 Larger scan area
         aspectRatio: 1.0,
-        disableFlip: false,  // Try both orientations
+        disableFlip: false,  // 🔄 Try both orientations
         experimentalFeatures: {
-          useBarCodeDetectorIfSupported: true  // Use native API if available
+          useBarCodeDetectorIfSupported: true  // 🚀 Use native API if available
         },
-        formatsToSupport: [0]  // Only QR codes (0 = QR_CODE)
+        formatsToSupport: [0]  // 📱 Only QR codes (0 = QR_CODE)
       };
 
-      // 📷 High resolution camera constraints for better distance detection
+      // 📷 Advanced camera constraints - autofocus + high resolution
       const cameraConstraints = {
         facingMode: 'environment',
-        width: { ideal: 1920 },
-        height: { ideal: 1080 },
         advanced: [
-          { focusMode: 'continuous' },  // Continuous autofocus
+          { focusMode: 'continuous' },  // 🎯 Continuous autofocus
           { zoom: 1.0 }
         ]
       };
@@ -1061,10 +1059,7 @@ class CameraScanner {
       await this.scanner.start(
         cameraConstraints,
         config,
-        (qrCode) => this.onScanSuccess(qrCode),
-        (errorMessage) => {
-          // Silent - scanning errors are normal when no QR in view
-        }
+        (qrCode) => this.onScanSuccess(qrCode)
       );
 
       this.scanning = true;
@@ -1072,10 +1067,11 @@ class CameraScanner {
       this.updateStatus('scanning', L.scanner_active || '📷 Scanning...');
 
     } catch (err) {
-      console.warn('⚠️ Scanner start failed, trying fallback:', err);
+      console.warn('⚠️ Optimized config failed:', err);
 
-      // ✅ Fallback: Even simpler config
+      // ✅ IMPORTANT: Create new scanner instance for fallback
       try {
+        // Stop and clear previous instance
         if (this.scanner) {
           try {
             await this.scanner.stop();
@@ -1085,18 +1081,19 @@ class CameraScanner {
 
         this.scanner = new Html5Qrcode('ppv-mini-reader');
 
+        const basicConfig = {
+          fps: 20,
+          qrbox: 220,
+          disableFlip: false,
+          experimentalFeatures: {
+            useBarCodeDetectorIfSupported: true
+          }
+        };
+
         await this.scanner.start(
-          {
-            facingMode: 'environment',
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-          },
-          {
-            fps: 10,
-            qrbox: 250
-          },
-          (qrCode) => this.onScanSuccess(qrCode),
-          (errorMessage) => {}
+          { facingMode: 'environment' },
+          basicConfig,
+          (qrCode) => this.onScanSuccess(qrCode)
         );
 
         this.scanning = true;
@@ -1104,8 +1101,34 @@ class CameraScanner {
         this.updateStatus('scanning', L.scanner_active || '📷 Scanning...');
 
       } catch (err2) {
-        console.error('❌ All scanner configs failed:', err2);
-        this.updateStatus('error', '❌ Kamera nem elérhető - engedélyezd a kamera hozzáférést');
+        console.warn('⚠️ Basic config failed:', err2);
+
+        // ✅ IMPORTANT: Create new scanner instance for final fallback
+        try {
+          // Stop and clear previous instance
+          if (this.scanner) {
+            try {
+              await this.scanner.stop();
+            } catch (e) {}
+            this.scanner = null;
+          }
+
+          this.scanner = new Html5Qrcode('ppv-mini-reader');
+
+          await this.scanner.start(
+            { facingMode: 'environment' },
+            { fps: 15, qrbox: 200 },
+            (qrCode) => this.onScanSuccess(qrCode)
+          );
+
+          this.scanning = true;
+          this.state = 'scanning';
+          this.updateStatus('scanning', L.scanner_active || '📷 Scanning...');
+
+        } catch (err3) {
+          console.error('❌ All methods failed:', err3);
+          this.updateStatus('error', '❌ Kamera nem elérhető - engedélyezd a kamera hozzáférést');
+        }
       }
     }
   }
