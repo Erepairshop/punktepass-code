@@ -921,15 +921,20 @@ document.addEventListener("DOMContentLoaded", async () => {
   // ============================================================
 
   window.ppvShowPointToast = function(type = "success", points = 1, store = "PunktePass", errorMessage = "") {
+    console.log("🔔 [ppvShowPointToast] Called with:", { type, points, store, errorMessage });
+
     // Remove existing toast if present
     const existingToast = document.querySelector(".ppv-point-toast");
     if (existingToast) {
+      console.log("🗑️ [ppvShowPointToast] Removing existing toast");
       existingToast.classList.remove("show");
       setTimeout(() => existingToast.remove(), 200);
     }
 
     // Function to create new toast
     const createToast = () => {
+      console.log("✨ [ppvShowPointToast] Creating new toast");
+
       const L = {
         de: { dup: "Heute bereits gescannt", err: "Offline", pend: "Verbindung...", add: "Punkt(e) von", from: "von" },
         hu: { dup: "Ma már", err: "Offline", pend: "Kapcsolódás...", add: "pont a", from: "-tól/-től" },
@@ -954,20 +959,33 @@ document.addEventListener("DOMContentLoaded", async () => {
         text = `+${points} ${L.add} <strong>${store}</strong>`;
       }
 
+      console.log("📝 [ppvShowPointToast] Toast text:", text);
+
       const toast = document.createElement("div");
       toast.className = "ppv-point-toast " + type;
       toast.innerHTML = `<div class="ppv-point-toast-inner"><div class="ppv-toast-icon">${icon}</div><div class="ppv-toast-text">${text}</div></div>`;
       document.body.appendChild(toast);
-      setTimeout(() => toast.classList.add("show"), 30);
+      console.log("➕ [ppvShowPointToast] Toast appended to body");
+
+      setTimeout(() => {
+        toast.classList.add("show");
+        console.log("👁️ [ppvShowPointToast] Toast shown");
+      }, 30);
+
       if (type === "success" && navigator.vibrate) navigator.vibrate(40);
+
       setTimeout(() => {
         toast.classList.remove("show");
-        setTimeout(() => toast.remove(), 400);
+        setTimeout(() => {
+          toast.remove();
+          console.log("🗑️ [ppvShowPointToast] Toast removed after timeout");
+        }, 400);
       }, type === "success" ? 6500 : 4500);
     };
 
     // Wait for old toast to be removed before creating new one
     if (existingToast) {
+      console.log("⏳ [ppvShowPointToast] Waiting 250ms for old toast removal");
       setTimeout(createToast, 250);
     } else {
       createToast();
