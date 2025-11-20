@@ -11,9 +11,6 @@ if (!defined('ABSPATH')) exit;
 
 class PPV_QR {
 
-    const RATE_LIMIT_SCANS = 1;
-    const RATE_LIMIT_WINDOW = 86400;
-
     // ============================================================
     // 🔹 INITIALIZATION
     // ============================================================
@@ -125,18 +122,37 @@ class PPV_QR {
     private static function check_rate_limit($user_id, $store_id) {
         global $wpdb;
 
-        $recent = $wpdb->get_var($wpdb->prepare("
+        // 1) Check if already scanned TODAY (daily limit: 1 scan per day per store)
+        $already_today = $wpdb->get_var($wpdb->prepare("
             SELECT COUNT(*) FROM {$wpdb->prefix}ppv_points
-            WHERE user_id=%d AND store_id=%d 
-            AND created >= (NOW() - INTERVAL %d SECOND)
-        ", $user_id, $store_id, self::RATE_LIMIT_WINDOW));
+            WHERE user_id=%d AND store_id=%d
+            AND DATE(created)=CURDATE()
+            AND type='qr_scan'
+        ", $user_id, $store_id));
 
-        if ($recent >= self::RATE_LIMIT_SCANS) {
+        if ($already_today > 0) {
             return [
                 'limited' => true,
                 'response' => new WP_REST_Response([
                     'success' => false,
-                    'message' => self::t('err_rate_limited', '⚠️ Túl sok scan. Kérlek várj!')
+                    'message' => self::t('err_already_scanned_today', '⚠️ Heute bereits gescannt')
+                ], 429)
+            ];
+        }
+
+        // 2) Check for duplicate scan (within 2 minutes - prevents retry spam)
+        $recent = $wpdb->get_var($wpdb->prepare("
+            SELECT id FROM {$wpdb->prefix}ppv_pos_log
+            WHERE user_id=%d AND store_id=%d
+            AND created_at >= (NOW() - INTERVAL 2 MINUTE)
+        ", $user_id, $store_id));
+
+        if ($recent) {
+            return [
+                'limited' => true,
+                'response' => new WP_REST_Response([
+                    'success' => false,
+                    'message' => self::t('err_duplicate_scan', '⚠️ Bereits gescannt. Bitte warten.')
                 ], 429)
             ];
         }
