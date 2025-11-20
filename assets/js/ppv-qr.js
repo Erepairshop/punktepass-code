@@ -1142,15 +1142,8 @@ class CameraScanner {
 
     // Two consecutive identical reads required
     if (this.repeatCount >= 2) {
-      this.scanning = false;
+      // ✅ Keep scanning flag true, only change state to prevent duplicate scans
       this.state = 'processing';
-
-      // Stop scanner temporarily
-      if (this.scanner) {
-        try {
-          this.scanner.stop();
-        } catch (e) {}
-      }
 
       // Update UI
       this.updateStatus('processing', '⏳ ' + (L.scanner_points_adding || 'Processing...'));
@@ -1207,7 +1200,7 @@ class CameraScanner {
             }, 1000);
           }
 
-          // Start 10-second pause
+          // Start 5-second pause
           this.startPauseCountdown();
 
         } else {
@@ -1252,9 +1245,9 @@ class CameraScanner {
       clearTimeout(this.pauseTimeout);
     }
 
-    // Set state to paused
+    // Set state to paused (5 seconds)
     this.state = 'paused';
-    this.countdown = 10;
+    this.countdown = 5;
     this.lastRead = "";
     this.repeatCount = 0;
 
