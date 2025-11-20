@@ -27,16 +27,30 @@ class PPV_Onboarding {
     public static function is_handler($user_id = null) {
         global $wpdb;
 
+        // Ha nincs megadott user_id, keressük a SESSION-ből (PPV custom user system)
         if (!$user_id) {
-            if (!is_user_logged_in()) {
+            // Session indítása ha kell
+            if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+                @session_start();
+            }
+
+            // Restore session from token if needed
+            if (empty($_SESSION['ppv_user_id']) && !empty($_COOKIE['ppv_user_token']) && class_exists('PPV_SessionBridge')) {
+                PPV_SessionBridge::restore_from_token();
+            }
+
+            // PPV user ID a SESSION-ből
+            if (!empty($_SESSION['ppv_user_id'])) {
+                $user_id = intval($_SESSION['ppv_user_id']);
+            } else {
+                // Nincs bejelentkezve
                 return false;
             }
-            $user_id = get_current_user_id();
         }
 
-        // Ellenőrizzük van-e store a usernek
+        // Ellenőrizzük van-e store a PPV usernek
         $store_id = $wpdb->get_var($wpdb->prepare(
-            "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id = %d LIMIT 1",
+            "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id = %d AND active = 1 LIMIT 1",
             $user_id
         ));
 
@@ -125,31 +139,99 @@ class PPV_Onboarding {
     }
 
     /** ============================================================
-     *  🔐 User Meta Getters/Setters
+     *  🔐 User Meta Getters/Setters - PPV custom user meta
      * ============================================================ */
+    private static function get_ppv_user_id() {
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+            @session_start();
+        }
+
+        if (empty($_SESSION['ppv_user_id']) && !empty($_COOKIE['ppv_user_token']) && class_exists('PPV_SessionBridge')) {
+            PPV_SessionBridge::restore_from_token();
+        }
+
+        return !empty($_SESSION['ppv_user_id']) ? intval($_SESSION['ppv_user_id']) : 0;
+    }
+
     public static function is_completed($user_id = null) {
-        if (!$user_id) $user_id = get_current_user_id();
-        return (bool) get_user_meta($user_id, 'ppv_onboarding_completed', true);
+        if (!$user_id) $user_id = self::get_ppv_user_id();
+        if (!$user_id) return false;
+
+        global $wpdb;
+        $value = $wpdb->get_var($wpdb->prepare(
+            "SELECT meta_value FROM {$wpdb->prefix}ppv_user_meta WHERE user_id = %d AND meta_key = 'ppv_onboarding_completed' LIMIT 1",
+            $user_id
+        ));
+        return (bool) $value;
     }
 
     public static function is_dismissed($user_id = null) {
-        if (!$user_id) $user_id = get_current_user_id();
-        return (bool) get_user_meta($user_id, 'ppv_onboarding_dismissed', true);
+        if (!$user_id) $user_id = self::get_ppv_user_id();
+        if (!$user_id) return false;
+
+        global $wpdb;
+        $value = $wpdb->get_var($wpdb->prepare(
+            "SELECT meta_value FROM {$wpdb->prefix}ppv_user_meta WHERE user_id = %d AND meta_key = 'ppv_onboarding_dismissed' LIMIT 1",
+            $user_id
+        ));
+        return (bool) $value;
     }
 
     public static function is_sticky_hidden($user_id = null) {
-        if (!$user_id) $user_id = get_current_user_id();
-        return (bool) get_user_meta($user_id, 'ppv_onboarding_sticky_hidden', true);
+        if (!$user_id) $user_id = self::get_ppv_user_id();
+        if (!$user_id) return false;
+
+        global $wpdb;
+        $value = $wpdb->get_var($wpdb->prepare(
+            "SELECT meta_value FROM {$wpdb->prefix}ppv_user_meta WHERE user_id = %d AND meta_key = 'ppv_onboarding_sticky_hidden' LIMIT 1",
+            $user_id
+        ));
+        return (bool) $value;
     }
 
     public static function is_welcome_shown($user_id = null) {
-        if (!$user_id) $user_id = get_current_user_id();
-        return (bool) get_user_meta($user_id, 'ppv_onboarding_welcome_shown', true);
+        if (!$user_id) $user_id = self::get_ppv_user_id();
+        if (!$user_id) return false;
+
+        global $wpdb;
+        $value = $wpdb->get_var($wpdb->prepare(
+            "SELECT meta_value FROM {$wpdb->prefix}ppv_user_meta WHERE user_id = %d AND meta_key = 'ppv_onboarding_welcome_shown' LIMIT 1",
+            $user_id
+        ));
+        return (bool) $value;
     }
 
     public static function set_welcome_shown($user_id = null) {
-        if (!$user_id) $user_id = get_current_user_id();
-        update_user_meta($user_id, 'ppv_onboarding_welcome_shown', true);
+        if (!$user_id) $user_id = self::get_ppv_user_id();
+        if (!$user_id) return false;
+
+        global $wpdb;
+
+        // Check if exists
+        $exists = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_user_meta WHERE user_id = %d AND meta_key = 'ppv_onboarding_welcome_shown'",
+            $user_id
+        ));
+
+        if ($exists) {
+            $wpdb->update(
+                $wpdb->prefix . 'ppv_user_meta',
+                ['meta_value' => '1'],
+                ['user_id' => $user_id, 'meta_key' => 'ppv_onboarding_welcome_shown'],
+                ['%s'],
+                ['%d', '%s']
+            );
+        } else {
+            $wpdb->insert(
+                $wpdb->prefix . 'ppv_user_meta',
+                [
+                    'user_id' => $user_id,
+                    'meta_key' => 'ppv_onboarding_welcome_shown',
+                    'meta_value' => '1'
+                ],
+                ['%d', '%s', '%s']
+            );
+        }
     }
 
     /** ============================================================
@@ -298,14 +380,15 @@ class PPV_Onboarding {
      *  📊 REST – Get Progress
      * ============================================================ */
     public static function rest_get_progress($request) {
-        if (!is_user_logged_in()) {
+        $user_id = self::get_ppv_user_id();
+
+        if (!$user_id) {
             return new WP_REST_Response([
                 'success' => false,
                 'message' => 'Not logged in'
             ], 401);
         }
 
-        $user_id = get_current_user_id();
         $store_id = self::is_handler($user_id);
 
         if (!$store_id) {
@@ -330,19 +413,38 @@ class PPV_Onboarding {
      *  ❌ REST – Dismiss
      * ============================================================ */
     public static function rest_dismiss($request) {
-        if (!is_user_logged_in()) {
+        $user_id = self::get_ppv_user_id();
+
+        if (!$user_id) {
             return new WP_REST_Response(['success' => false], 401);
         }
 
         $data = $request->get_json_params();
         $type = sanitize_text_field($data['type'] ?? 'permanent');
 
-        $user_id = get_current_user_id();
+        global $wpdb;
+        $meta_key = $type === 'permanent' ? 'ppv_onboarding_dismissed' : 'ppv_onboarding_sticky_hidden';
 
-        if ($type === 'permanent') {
-            update_user_meta($user_id, 'ppv_onboarding_dismissed', true);
-        } elseif ($type === 'sticky') {
-            update_user_meta($user_id, 'ppv_onboarding_sticky_hidden', true);
+        // Check if exists
+        $exists = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_user_meta WHERE user_id = %d AND meta_key = %s",
+            $user_id, $meta_key
+        ));
+
+        if ($exists) {
+            $wpdb->update(
+                $wpdb->prefix . 'ppv_user_meta',
+                ['meta_value' => '1'],
+                ['user_id' => $user_id, 'meta_key' => $meta_key],
+                ['%s'],
+                ['%d', '%s']
+            );
+        } else {
+            $wpdb->insert(
+                $wpdb->prefix . 'ppv_user_meta',
+                ['user_id' => $user_id, 'meta_key' => $meta_key, 'meta_value' => '1'],
+                ['%d', '%s', '%s']
+            );
         }
 
         return new WP_REST_Response([
@@ -355,7 +457,9 @@ class PPV_Onboarding {
      *  ✅ REST – Complete Step (Wizard-ból)
      * ============================================================ */
     public static function rest_complete_step($request) {
-        if (!is_user_logged_in()) {
+        $user_id = self::get_ppv_user_id();
+
+        if (!$user_id) {
             return new WP_REST_Response(['success' => false], 401);
         }
 
@@ -363,7 +467,6 @@ class PPV_Onboarding {
         $step = sanitize_text_field($data['step'] ?? '');
         $value = $data['value'] ?? null;
 
-        $user_id = get_current_user_id();
         $store_id = self::is_handler($user_id);
 
         if (!$store_id) {
@@ -414,7 +517,26 @@ class PPV_Onboarding {
 
         // Ha 100% → completed flag
         if ($progress['is_complete']) {
-            update_user_meta($user_id, 'ppv_onboarding_completed', true);
+            $exists = $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_user_meta WHERE user_id = %d AND meta_key = 'ppv_onboarding_completed'",
+                $user_id
+            ));
+
+            if ($exists) {
+                $wpdb->update(
+                    $wpdb->prefix . 'ppv_user_meta',
+                    ['meta_value' => '1'],
+                    ['user_id' => $user_id, 'meta_key' => 'ppv_onboarding_completed'],
+                    ['%s'],
+                    ['%d', '%s']
+                );
+            } else {
+                $wpdb->insert(
+                    $wpdb->prefix . 'ppv_user_meta',
+                    ['user_id' => $user_id, 'meta_key' => 'ppv_onboarding_completed', 'meta_value' => '1'],
+                    ['%d', '%s', '%s']
+                );
+            }
         }
 
         return new WP_REST_Response([
@@ -427,11 +549,13 @@ class PPV_Onboarding {
      *  👋 REST – Mark Welcome Shown
      * ============================================================ */
     public static function rest_mark_welcome_shown($request) {
-        if (!is_user_logged_in()) {
+        $user_id = self::get_ppv_user_id();
+
+        if (!$user_id) {
             return new WP_REST_Response(['success' => false], 401);
         }
 
-        self::set_welcome_shown();
+        self::set_welcome_shown($user_id);
 
         return new WP_REST_Response([
             'success' => true
@@ -442,16 +566,50 @@ class PPV_Onboarding {
      *  🔄 REST – Reset Onboarding
      * ============================================================ */
     public static function rest_reset($request) {
-        if (!is_user_logged_in()) {
+        $user_id = self::get_ppv_user_id();
+
+        if (!$user_id) {
             return new WP_REST_Response(['success' => false], 401);
         }
 
-        $user_id = get_current_user_id();
+        global $wpdb;
 
-        delete_user_meta($user_id, 'ppv_onboarding_completed');
-        delete_user_meta($user_id, 'ppv_onboarding_dismissed');
-        delete_user_meta($user_id, 'ppv_onboarding_sticky_hidden');
-        delete_user_meta($user_id, 'ppv_onboarding_welcome_shown');
+        // Delete all onboarding meta
+        $wpdb->delete(
+            $wpdb->prefix . 'ppv_user_meta',
+            [
+                'user_id' => $user_id,
+                'meta_key' => 'ppv_onboarding_completed'
+            ],
+            ['%d', '%s']
+        );
+
+        $wpdb->delete(
+            $wpdb->prefix . 'ppv_user_meta',
+            [
+                'user_id' => $user_id,
+                'meta_key' => 'ppv_onboarding_dismissed'
+            ],
+            ['%d', '%s']
+        );
+
+        $wpdb->delete(
+            $wpdb->prefix . 'ppv_user_meta',
+            [
+                'user_id' => $user_id,
+                'meta_key' => 'ppv_onboarding_sticky_hidden'
+            ],
+            ['%d', '%s']
+        );
+
+        $wpdb->delete(
+            $wpdb->prefix . 'ppv_user_meta',
+            [
+                'user_id' => $user_id,
+                'meta_key' => 'ppv_onboarding_welcome_shown'
+            ],
+            ['%d', '%s']
+        );
 
         return new WP_REST_Response([
             'success' => true,
