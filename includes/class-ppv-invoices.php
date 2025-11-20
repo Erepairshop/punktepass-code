@@ -266,9 +266,10 @@ error_log("📄 [PDF URL] {$pdf_url}");
         ", $store_id, $period_start, $period_end));
 
         if (empty($redeems)) {
+            $msg = class_exists('PPV_Lang') ? PPV_Lang::t('redeem_no_redeems_period') : 'Keine Einlösungen im Zeitraum gefunden';
             return new WP_REST_Response([
                 'success' => false,
-                'message' => 'Keine Einlösungen im Zeitraum gefunden'
+                'message' => $msg
             ], 404);
         }
 
