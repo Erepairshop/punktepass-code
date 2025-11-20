@@ -122,6 +122,8 @@ class PPV_QR {
     private static function check_rate_limit($user_id, $store_id) {
         global $wpdb;
 
+        error_log("🔍 [RATE_LIMIT_CHECK] User: {$user_id} | Store: {$store_id}");
+
         // 1) Check if already scanned TODAY (daily limit: 1 scan per day per store)
         $already_today = $wpdb->get_var($wpdb->prepare("
             SELECT COUNT(*) FROM {$wpdb->prefix}ppv_points
@@ -130,7 +132,20 @@ class PPV_QR {
             AND type='qr_scan'
         ", $user_id, $store_id));
 
+        error_log("🔍 [DAILY_CHECK] Found {$already_today} scans today | CURDATE()=" . $wpdb->get_var("SELECT CURDATE()"));
+
         if ($already_today > 0) {
+            // Log the existing scan details
+            $existing_scan = $wpdb->get_row($wpdb->prepare("
+                SELECT created, points FROM {$wpdb->prefix}ppv_points
+                WHERE user_id=%d AND store_id=%d
+                AND DATE(created)=CURDATE()
+                AND type='qr_scan'
+                ORDER BY created DESC LIMIT 1
+            ", $user_id, $store_id));
+
+            error_log("🚫 [DAILY_LIMIT] User {$user_id} already scanned today at: " . ($existing_scan->created ?? 'unknown'));
+
             return [
                 'limited' => true,
                 'response' => new WP_REST_Response([
@@ -147,7 +162,11 @@ class PPV_QR {
             AND created_at >= (NOW() - INTERVAL 2 MINUTE)
         ", $user_id, $store_id));
 
+        error_log("🔍 [DUPLICATE_CHECK] Found log entries in last 2 min: " . ($recent ? 'YES' : 'NO'));
+
         if ($recent) {
+            error_log("🚫 [DUPLICATE_SCAN] User {$user_id} scan detected in last 2 minutes");
+
             return [
                 'limited' => true,
                 'response' => new WP_REST_Response([
@@ -157,6 +176,7 @@ class PPV_QR {
             ];
         }
 
+        error_log("✅ [RATE_LIMIT_PASS] User {$user_id} passed all checks");
         return ['limited' => false];
     }
 
