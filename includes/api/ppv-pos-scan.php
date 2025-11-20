@@ -140,7 +140,7 @@ class PPV_POS_SCAN {
                 if ($user_check && $user_check->active == 1) {
                     $user_id = intval($user_check->id);
                 } elseif ($user_check && $user_check->active == 0) {
-                    self::log_scan_attempt($store_id, $uid, $ip_address, 'blocked', 'User inactive');
+                    self::log_scan_attempt($store_id, $uid, $ip_address, 'blocked', 'User inactive', 'user_blocked', 0);
                     return rest_ensure_response([
                         'success' => false,
                         'message' => '🚫 Benutzer gesperrt',
@@ -152,7 +152,7 @@ class PPV_POS_SCAN {
         }
 
         if ($user_id <= 0) {
-            self::log_scan_attempt($store_id, 0, $ip_address, 'invalid', 'Invalid QR code');
+            self::log_scan_attempt($store_id, 0, $ip_address, 'invalid', 'Invalid QR code', 'invalid_qr', 0);
             return rest_ensure_response([
                 'success' => false,
                 'message' => '🚫 Ungültiger QR-Code (kein User)',
@@ -232,7 +232,7 @@ class PPV_POS_SCAN {
         error_log("📍 [IP ADDRESS] Raw: '{$ip_address_raw}' | Cleaned: '{$ip_address}'");
         error_log("✅ [LOGGING SCAN] User: {$user_id} | Store: {$store_id} | Points: +{$points_add}");
 
-        self::log_scan_attempt($store_id, $user_id, $ip_address, 'ok', "✅ +{$points_add} Punkte");
+        self::log_scan_attempt($store_id, $user_id, $ip_address, 'ok', "✅ +{$points_add} Punkte", 'scan_success', $points_add);
 
         /** 10) Üzenet */
         $msg = [
@@ -272,11 +272,18 @@ class PPV_POS_SCAN {
         ]);
     }
 
-    private static function log_scan_attempt($store_id, $user_id, $ip_address, $status, $reason) {
+    private static function log_scan_attempt($store_id, $user_id, $ip_address, $status, $reason, $message_key = null, $points = 0) {
         global $wpdb;
         $user_agent = sanitize_text_field($_SERVER['HTTP_USER_AGENT'] ?? '');
 
-        error_log("💾 [LOG_SCAN_ATTEMPT] Store: {$store_id} | User: {$user_id} | IP: '{$ip_address}' | Status: {$status} | Reason: {$reason}");
+        error_log("💾 [LOG_SCAN_ATTEMPT] Store: {$store_id} | User: {$user_id} | IP: '{$ip_address}' | Status: {$status} | Reason: {$reason} | Key: {$message_key}");
+
+        // Store message_key and points in metadata for translation
+        $metadata = json_encode([
+            'message_key' => $message_key,
+            'points' => $points,
+            'timestamp' => current_time('mysql')
+        ]);
 
         $result = $wpdb->insert("{$wpdb->prefix}ppv_pos_log", [
             'store_id'   => intval($store_id),
@@ -285,6 +292,7 @@ class PPV_POS_SCAN {
             'status'     => sanitize_text_field($status),
             'ip_address' => sanitize_text_field($ip_address),
             'user_agent' => $user_agent,
+            'metadata'   => $metadata,
             'created_at' => current_time('mysql'),
         ]);
 
@@ -316,6 +324,9 @@ class PPV_POS_SCAN {
             ]);
         }
 
+        // ✅ Get handler language from cookie or session
+        $handler_lang = $_COOKIE['ppv_lang'] ?? $_SESSION['ppv_lang'] ?? 'de';
+
         // ✅ Get last 12 scan attempts (successful + errors) from pos_log
         $logs = $wpdb->get_results($wpdb->prepare("
             SELECT
@@ -323,6 +334,7 @@ class PPV_POS_SCAN {
                 l.user_id,
                 l.message,
                 l.status,
+                l.metadata,
                 u.email,
                 CONCAT(u.first_name, ' ', u.last_name) as name
             FROM {$wpdb->prefix}ppv_pos_log l
@@ -331,6 +343,31 @@ class PPV_POS_SCAN {
             ORDER BY l.created_at DESC
             LIMIT 12
         ", $store_id));
+
+        // Translation keys for different languages
+        $translations = [
+            'de' => [
+                'scan_success' => '✅ +{points} Punkte hinzugefügt',
+                'user_blocked' => '❌ Benutzer gesperrt',
+                'invalid_qr' => '❌ Ungültiger QR-Code',
+                'already_scanned_today' => '⚠️ Heute bereits gescannt',
+                'duplicate_scan' => '⚠️ Bereits gescannt'
+            ],
+            'hu' => [
+                'scan_success' => '✅ +{points} pont hozzáadva',
+                'user_blocked' => '❌ Felhasználó letiltva',
+                'invalid_qr' => '❌ Érvénytelen QR-kód',
+                'already_scanned_today' => '⚠️ Ma már beolvasva',
+                'duplicate_scan' => '⚠️ Már beolvasva'
+            ],
+            'ro' => [
+                'scan_success' => '✅ +{points} puncte adăugate',
+                'user_blocked' => '❌ Utilizator blocat',
+                'invalid_qr' => '❌ Cod QR invalid',
+                'already_scanned_today' => '⚠️ Deja scanat astăzi',
+                'duplicate_scan' => '⚠️ Deja scanat'
+            ]
+        ];
 
         $formatted = [];
         foreach ($logs as $log) {
@@ -344,13 +381,32 @@ class PPV_POS_SCAN {
                 $user_display = '—'; // No user for errors like rate_limit
             }
 
-            // Status icon based on log status
-            if ($log->status === 'ok') {
-                $status = $log->message; // "✅ +1 Punkte"
-            } elseif ($log->status === 'blocked' || $log->status === 'invalid') {
-                $status = '❌ ' . $log->message;
-            } else {
-                $status = '⚠️ ' . $log->message;
+            // ✅ TRANSLATE status message based on handler language
+            $status = $log->message; // Fallback to original message
+
+            // Try to extract message_key from metadata
+            if (!empty($log->metadata)) {
+                $metadata = json_decode($log->metadata, true);
+                $message_key = $metadata['message_key'] ?? null;
+                $points = $metadata['points'] ?? 0;
+
+                // If we have a translation key, use it
+                if ($message_key && isset($translations[$handler_lang][$message_key])) {
+                    $status = $translations[$handler_lang][$message_key];
+                    // Replace {points} placeholder
+                    $status = str_replace('{points}', $points, $status);
+                }
+            }
+
+            // If no translation found, fallback to icon prefix based on status
+            if ($status === $log->message) {
+                if ($log->status === 'ok') {
+                    $status = $log->message; // Keep original if no translation
+                } elseif ($log->status === 'blocked' || $log->status === 'invalid') {
+                    $status = '❌ ' . $log->message;
+                } else {
+                    $status = '⚠️ ' . $log->message;
+                }
             }
 
             $formatted[] = [
