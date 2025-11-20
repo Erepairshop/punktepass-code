@@ -471,6 +471,7 @@ if (class_exists('PPV_Rewards')) PPV_Rewards::hooks();
 if (class_exists('PPV_Redeem')) PPV_Redeem::hooks();
 if (class_exists('PPV_Redeem_Admin')) PPV_Redeem_Admin::hooks();
 if (class_exists('PPV_Stats')) PPV_Stats::hooks();
+if (class_exists('PPV_Campaigns')) PPV_Campaigns::hooks();
 if (class_exists('PPV_User_Dashboard')) PPV_User_Dashboard::hooks();
 if (class_exists('PPV_Profile_Lite')) PPV_Profile_Lite::hooks();
 if (class_exists('PPV_POS_Devices')) PPV_POS_Devices::hooks();
