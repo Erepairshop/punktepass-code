@@ -1984,6 +1984,108 @@ document.addEventListener("DOMContentLoaded", function () {
 
     console.log('✅ Letzte Scans live polling active (5s interval)');
   }
+
+  // ============================================================
+  // 📥 CSV EXPORT FUNCTIONALITY
+  // ============================================================
+  const csvExportBtn = document.getElementById('ppv-csv-export-btn');
+  const csvExportMenu = document.getElementById('ppv-csv-export-menu');
+
+  if (csvExportBtn && csvExportMenu) {
+    // Toggle dropdown menu
+    csvExportBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isVisible = csvExportMenu.style.display === 'block';
+      csvExportMenu.style.display = isVisible ? 'none' : 'block';
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', () => {
+      csvExportMenu.style.display = 'none';
+    });
+
+    // Handle CSV export options
+    document.querySelectorAll('.ppv-csv-export-option').forEach(option => {
+      option.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const period = e.target.getAttribute('data-period');
+        let date = new Date().toISOString().split('T')[0]; // Today's date
+
+        // If "date" period, prompt for date
+        if (period === 'date') {
+          const userDate = prompt(L.csv_prompt_date || 'Datum eingeben (YYYY-MM-DD):', date);
+          if (!userDate) return; // Cancelled
+          date = userDate;
+        }
+
+        // If "month" period, use current month
+        if (period === 'month') {
+          date = new Date().toISOString().substr(0, 7) + '-01'; // First day of month
+        }
+
+        // Close dropdown
+        csvExportMenu.style.display = 'none';
+
+        // Download CSV
+        try {
+          console.log(`📥 [CSV Export] Downloading: period=${period}, date=${date}`);
+
+          const url = `/wp-json/ppv/v1/pos/export-logs?period=${period}&date=${date}`;
+          const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+
+          if (!response.ok) {
+            throw new Error('Export failed');
+          }
+
+          // Get CSV content
+          const blob = await response.blob();
+          const downloadUrl = window.URL.createObjectURL(blob);
+
+          // Create download link
+          const a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = downloadUrl;
+          a.download = `pos_logs_${period}_${date}.csv`;
+
+          // Trigger download
+          document.body.appendChild(a);
+          a.click();
+
+          // Cleanup
+          window.URL.revokeObjectURL(downloadUrl);
+          document.body.removeChild(a);
+
+          console.log('✅ [CSV Export] Download completed');
+
+          if (window.ppvToast) {
+            window.ppvToast('✅ CSV erfolgreich heruntergeladen', 'success');
+          }
+        } catch (err) {
+          console.error('❌ [CSV Export] Failed:', err);
+          if (window.ppvToast) {
+            window.ppvToast('❌ CSV Export fehlgeschlagen', 'error');
+          }
+        }
+      });
+
+      // Hover effect
+      option.addEventListener('mouseenter', (e) => {
+        e.target.style.background = 'rgba(255,255,255,0.1)';
+      });
+      option.addEventListener('mouseleave', (e) => {
+        e.target.style.background = 'transparent';
+      });
+    });
+
+    console.log('✅ CSV Export functionality initialized');
+  }
 });
 
 console.log(L.app_complete || "✅ COMPLETE - Összes kód betöltve!");

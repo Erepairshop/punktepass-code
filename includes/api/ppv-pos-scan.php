@@ -37,6 +37,12 @@ class PPV_POS_SCAN {
             'callback'            => [__CLASS__, 'get_recent_scans'],
             'permission_callback' => ['PPV_Permissions', 'check_handler'],
         ]);
+
+        register_rest_route('ppv/v1', '/pos/export-logs', [
+            'methods'             => 'GET',
+            'callback'            => [__CLASS__, 'export_logs_csv'],
+            'permission_callback' => ['PPV_Permissions', 'check_handler'],
+        ]);
     }
 
     public static function handle_scan(WP_REST_Request $req) {
@@ -327,7 +333,7 @@ class PPV_POS_SCAN {
         // ✅ Get handler language from cookie or session
         $handler_lang = $_COOKIE['ppv_lang'] ?? $_SESSION['ppv_lang'] ?? 'de';
 
-        // ✅ Get last 12 scan attempts (successful + errors) from pos_log
+        // ✅ Get last 40 scan attempts (successful + errors) from pos_log
         $logs = $wpdb->get_results($wpdb->prepare("
             SELECT
                 l.created_at,
@@ -341,7 +347,7 @@ class PPV_POS_SCAN {
             LEFT JOIN {$wpdb->prefix}ppv_users u ON l.user_id = u.id
             WHERE l.store_id = %d
             ORDER BY l.created_at DESC
-            LIMIT 12
+            LIMIT 40
         ", $store_id));
 
         // Translation keys for different languages
@@ -419,6 +425,166 @@ class PPV_POS_SCAN {
         return rest_ensure_response([
             'success' => true,
             'scans' => $formatted
+        ]);
+    }
+
+    /** ============================================================
+     * 📥 Export Logs as CSV
+     * Query params: ?period=today|date|month&date=2025-01-20
+     * ============================================================ */
+    public static function export_logs_csv(WP_REST_Request $req) {
+        global $wpdb;
+
+        // Get store_id from session
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+
+        $store_id = intval($_SESSION['ppv_store_id'] ?? 0);
+
+        if ($store_id === 0) {
+            return new WP_Error('no_store', 'No store_id in session', ['status' => 403]);
+        }
+
+        // Get handler language
+        $handler_lang = $_COOKIE['ppv_lang'] ?? $_SESSION['ppv_lang'] ?? 'de';
+
+        // Get filter parameters
+        $period = $req->get_param('period') ?? 'today'; // today, date, month
+        $date = $req->get_param('date') ?? date('Y-m-d');
+
+        // Build WHERE clause based on period
+        $where_clause = "l.store_id = %d";
+        $params = [$store_id];
+
+        if ($period === 'today') {
+            $where_clause .= " AND DATE(l.created_at) = CURDATE()";
+        } elseif ($period === 'date') {
+            $where_clause .= " AND DATE(l.created_at) = %s";
+            $params[] = $date;
+        } elseif ($period === 'month') {
+            $month = substr($date, 0, 7); // 2025-01
+            $where_clause .= " AND DATE_FORMAT(l.created_at, '%Y-%m') = %s";
+            $params[] = $month;
+        }
+
+        // Query logs
+        $query = $wpdb->prepare("
+            SELECT
+                l.created_at,
+                l.user_id,
+                l.message,
+                l.status,
+                l.metadata,
+                l.ip_address,
+                u.email,
+                CONCAT(u.first_name, ' ', u.last_name) as name
+            FROM {$wpdb->prefix}ppv_pos_log l
+            LEFT JOIN {$wpdb->prefix}ppv_users u ON l.user_id = u.id
+            WHERE {$where_clause}
+            ORDER BY l.created_at DESC
+        ", ...$params);
+
+        $logs = $wpdb->get_results($query);
+
+        // Translation keys
+        $translations = [
+            'de' => [
+                'scan_success' => '✅ +{points} Punkte hinzugefügt',
+                'user_blocked' => '❌ Benutzer gesperrt',
+                'invalid_qr' => '❌ Ungültiger QR-Code',
+                'already_scanned_today' => '⚠️ Heute bereits gescannt',
+                'duplicate_scan' => '⚠️ Bereits gescannt',
+                'csv_header_time' => 'Datum/Zeit',
+                'csv_header_user' => 'Benutzer',
+                'csv_header_email' => 'E-Mail',
+                'csv_header_status' => 'Status',
+                'csv_header_ip' => 'IP-Adresse'
+            ],
+            'hu' => [
+                'scan_success' => '✅ +{points} pont hozzáadva',
+                'user_blocked' => '❌ Felhasználó letiltva',
+                'invalid_qr' => '❌ Érvénytelen QR-kód',
+                'already_scanned_today' => '⚠️ Ma már beolvasva',
+                'duplicate_scan' => '⚠️ Már beolvasva',
+                'csv_header_time' => 'Dátum/Idő',
+                'csv_header_user' => 'Felhasználó',
+                'csv_header_email' => 'E-mail',
+                'csv_header_status' => 'Státusz',
+                'csv_header_ip' => 'IP-cím'
+            ],
+            'ro' => [
+                'scan_success' => '✅ +{points} puncte adăugate',
+                'user_blocked' => '❌ Utilizator blocat',
+                'invalid_qr' => '❌ Cod QR invalid',
+                'already_scanned_today' => '⚠️ Deja scanat astăzi',
+                'duplicate_scan' => '⚠️ Deja scanat',
+                'csv_header_time' => 'Dată/Oră',
+                'csv_header_user' => 'Utilizator',
+                'csv_header_email' => 'E-mail',
+                'csv_header_status' => 'Status',
+                'csv_header_ip' => 'Adresă IP'
+            ]
+        ];
+
+        $t = $translations[$handler_lang] ?? $translations['de'];
+
+        // Generate CSV content
+        $csv = [];
+
+        // CSV Header
+        $csv[] = [
+            $t['csv_header_time'],
+            $t['csv_header_user'],
+            $t['csv_header_email'],
+            $t['csv_header_status'],
+            $t['csv_header_ip']
+        ];
+
+        // CSV Rows
+        foreach ($logs as $log) {
+            $user_display = !empty($log->name) && trim($log->name) !== '' ? $log->name : '—';
+            $email = $log->email ?? '—';
+
+            // Translate status
+            $status = $log->message;
+            if (!empty($log->metadata)) {
+                $metadata = json_decode($log->metadata, true);
+                $message_key = $metadata['message_key'] ?? null;
+                $points = $metadata['points'] ?? 0;
+
+                if ($message_key && isset($t[$message_key])) {
+                    $status = str_replace('{points}', $points, $t[$message_key]);
+                }
+            }
+
+            $csv[] = [
+                $log->created_at,
+                $user_display,
+                $email,
+                $status,
+                $log->ip_address ?? '—'
+            ];
+        }
+
+        // Convert to CSV format
+        $output = fopen('php://temp', 'w');
+        foreach ($csv as $row) {
+            fputcsv($output, $row, ',', '"');
+        }
+        rewind($output);
+        $csv_content = stream_get_contents($output);
+        fclose($output);
+
+        // Filename
+        $filename = "pos_logs_{$period}_{$date}.csv";
+
+        // Return CSV response
+        return new WP_REST_Response($csv_content, 200, [
+            'Content-Type' => 'text/csv; charset=utf-8',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+            'Cache-Control' => 'no-cache, must-revalidate',
+            'Expires' => '0'
         ]);
     }
 }

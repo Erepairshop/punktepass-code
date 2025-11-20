@@ -745,7 +745,27 @@ class PPV_QR {
                 </button>
             </div>
 
-            <h4><?php echo self::t('table_title', '📋 Letzte Scans'); ?></h4>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h4 style="margin: 0;"><?php echo self::t('table_title', '📋 Letzte Scans'); ?></h4>
+
+                <!-- 📥 CSV EXPORT DROPDOWN -->
+                <div style="position: relative;">
+                    <button id="ppv-csv-export-btn" class="ppv-btn" style="padding: 8px 16px; font-size: 14px;">
+                        📥 <?php echo self::t('csv_export', 'CSV Export'); ?>
+                    </button>
+                    <div id="ppv-csv-export-menu" style="display: none; position: absolute; right: 0; top: 100%; margin-top: 5px; background: #1a1a2e; border: 1px solid #333; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); min-width: 200px; z-index: 1000;">
+                        <a href="#" class="ppv-csv-export-option" data-period="today" style="display: block; padding: 12px 16px; color: #fff; text-decoration: none; border-bottom: 1px solid #333; transition: background 0.2s;">
+                            📅 <?php echo self::t('csv_today', 'Heute'); ?>
+                        </a>
+                        <a href="#" class="ppv-csv-export-option" data-period="date" style="display: block; padding: 12px 16px; color: #fff; text-decoration: none; border-bottom: 1px solid #333; transition: background 0.2s;">
+                            📆 <?php echo self::t('csv_date', 'Datum wählen'); ?>
+                        </a>
+                        <a href="#" class="ppv-csv-export-option" data-period="month" style="display: block; padding: 12px 16px; color: #fff; text-decoration: none; transition: background 0.2s;">
+                            📊 <?php echo self::t('csv_month', 'Diesen Monat'); ?>
+                        </a>
+                    </div>
+                </div>
+            </div>
 
             <table id="ppv-pos-log" class="glass-table">
                 <thead>
