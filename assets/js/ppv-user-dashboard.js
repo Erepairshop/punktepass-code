@@ -921,41 +921,57 @@ document.addEventListener("DOMContentLoaded", async () => {
   // ============================================================
 
   window.ppvShowPointToast = function(type = "success", points = 1, store = "PunktePass", errorMessage = "") {
-    if (document.querySelector(".ppv-point-toast")) return;
-    const L = {
-      de: { dup: "Heute bereits gescannt", err: "Offline", pend: "Verbindung...", add: "Punkt(e) von", from: "von" },
-      hu: { dup: "Ma már", err: "Offline", pend: "Kapcsolódás...", add: "pont a", from: "-tól/-től" },
-      ro: { dup: "Astăzi", err: "Offline", pend: "Conectare...", add: "punct de la", from: "de la" }
-    }[lang] || L.de;
-
-    let icon = '<i class="ri-emotion-happy-line"></i>', text = "";
-    if (type === "duplicate") {
-      icon = '<i class="ri-error-warning-line"></i>';
-      text = L.dup;
-    }
-    else if (type === "error") {
-      icon = '<i class="ri-close-circle-line"></i>';
-      // Show error message with store name
-      text = errorMessage ? `${errorMessage} ${L.from} <strong>${store}</strong>` : L.err;
-    }
-    else if (type === "pending") {
-      icon = '<i class="ri-time-line ri-spin"></i>';
-      text = L.pend;
-    }
-    else {
-      text = `+${points} ${L.add} <strong>${store}</strong>`;
+    // Remove existing toast if present
+    const existingToast = document.querySelector(".ppv-point-toast");
+    if (existingToast) {
+      existingToast.classList.remove("show");
+      setTimeout(() => existingToast.remove(), 200);
     }
 
-    const toast = document.createElement("div");
-    toast.className = "ppv-point-toast " + type;
-    toast.innerHTML = `<div class="ppv-point-toast-inner"><div class="ppv-toast-icon">${icon}</div><div class="ppv-toast-text">${text}</div></div>`;
-    document.body.appendChild(toast);
-    setTimeout(() => toast.classList.add("show"), 30);
-    if (type === "success" && navigator.vibrate) navigator.vibrate(40);
-    setTimeout(() => {
-      toast.classList.remove("show");
-      setTimeout(() => toast.remove(), 400);
-    }, type === "success" ? 6500 : 4500);
+    // Function to create new toast
+    const createToast = () => {
+      const L = {
+        de: { dup: "Heute bereits gescannt", err: "Offline", pend: "Verbindung...", add: "Punkt(e) von", from: "von" },
+        hu: { dup: "Ma már", err: "Offline", pend: "Kapcsolódás...", add: "pont a", from: "-tól/-től" },
+        ro: { dup: "Astăzi", err: "Offline", pend: "Conectare...", add: "punct de la", from: "de la" }
+      }[lang] || L.de;
+
+      let icon = '<i class="ri-emotion-happy-line"></i>', text = "";
+      if (type === "duplicate") {
+        icon = '<i class="ri-error-warning-line"></i>';
+        text = L.dup;
+      }
+      else if (type === "error") {
+        icon = '<i class="ri-close-circle-line"></i>';
+        // Show error message with store name
+        text = errorMessage ? `${errorMessage} ${L.from} <strong>${store}</strong>` : L.err;
+      }
+      else if (type === "pending") {
+        icon = '<i class="ri-time-line ri-spin"></i>';
+        text = L.pend;
+      }
+      else {
+        text = `+${points} ${L.add} <strong>${store}</strong>`;
+      }
+
+      const toast = document.createElement("div");
+      toast.className = "ppv-point-toast " + type;
+      toast.innerHTML = `<div class="ppv-point-toast-inner"><div class="ppv-toast-icon">${icon}</div><div class="ppv-toast-text">${text}</div></div>`;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.classList.add("show"), 30);
+      if (type === "success" && navigator.vibrate) navigator.vibrate(40);
+      setTimeout(() => {
+        toast.classList.remove("show");
+        setTimeout(() => toast.remove(), 400);
+      }, type === "success" ? 6500 : 4500);
+    };
+
+    // Wait for old toast to be removed before creating new one
+    if (existingToast) {
+      setTimeout(createToast, 250);
+    } else {
+      createToast();
+    }
   };
 
   // ============================================================
