@@ -42,8 +42,7 @@ jQuery(document).ready(function ($) {
     $("#ppv-campaign-form")[0].reset();
     $("#campaign-id").val("");
     $("#ppv-modal-title").text("🧩 Neue Kampagne");
-    $("#ppv-campaign-form").slideDown(200);
-
+    $("#ppv-campaign-modal").fadeIn(200).css("display", "flex");
   });
 
   $(".ppv-close, #campaign-cancel").on("click", () =>
@@ -51,8 +50,7 @@ jQuery(document).ready(function ($) {
   );
 
   $(document).on("keydown", function (e) {
-    if (e.key === "Escape") $("#ppv-campaign-form").slideUp(200);
-
+    if (e.key === "Escape") $("#ppv-campaign-modal").fadeOut(200);
   });
 
   // === Kampagne speichern (Neu / Update) ===
