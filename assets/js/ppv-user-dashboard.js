@@ -328,7 +328,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       } catch (e) {
         console.warn(`⚠️ [Polling] Error:`, e.message);
       }
-    }, 3000);
+    }, 10000); // 10 seconds - reduced from 3s to prevent 503 errors
     window.addEventListener('beforeunload', () => clearInterval(pollInterval));
   };
 
