@@ -147,13 +147,31 @@ class PPV_QR {
     private static function insert_log($store_id, $user_id, $msg, $type = 'scan') {
         global $wpdb;
 
+        // Get IP address
+        $ip_address = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
+        $ip_address = sanitize_text_field(explode(',', $ip_address)[0]);
+
+        // Get user agent
+        $user_agent = sanitize_text_field($_SERVER['HTTP_USER_AGENT'] ?? '');
+
+        // Prepare metadata (can be extended with additional info)
+        $metadata = json_encode([
+            'timestamp' => current_time('mysql'),
+            'type' => $type
+        ]);
+
         $wpdb->insert("{$wpdb->prefix}ppv_pos_log", [
             'store_id' => $store_id,
             'user_id' => $user_id,
             'message' => sanitize_text_field($msg),
             'type' => $type,
+            'ip_address' => $ip_address,
+            'user_agent' => $user_agent,
+            'metadata' => $metadata,
             'created_at' => current_time('mysql')
         ]);
+
+        error_log("💾 [INSERT_LOG] Store: {$store_id} | User: {$user_id} | IP: '{$ip_address}' | Type: {$type}");
     }
 
     private static function decode_user_from_qr($qr) {

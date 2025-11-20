@@ -345,11 +345,27 @@ class PPV_POS_DOCK {
      * ============================================================ */
     private static function log_transaction($data) {
         global $wpdb;
+
+        // Auto-detect IP address if not provided
+        if (empty($data['ip_address'])) {
+            $ip_raw = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
+            $data['ip_address'] = sanitize_text_field(explode(',', $ip_raw)[0]);
+        }
+
+        // Auto-detect user agent if not provided
+        if (empty($data['user_agent'])) {
+            $data['user_agent'] = sanitize_text_field($_SERVER['HTTP_USER_AGENT'] ?? '');
+        }
+
         $wpdb->insert("{$wpdb->prefix}ppv_pos_log", [
             'store_id'   => intval($data['store_id'] ?? 0),
+            'user_id'    => intval($data['user_id'] ?? 0),
             'email'      => sanitize_email($data['email'] ?? ''),
             'message'    => sanitize_textarea_field($data['message'] ?? ''),
             'status'     => sanitize_text_field($data['status'] ?? 'ok'),
+            'ip_address' => sanitize_text_field($data['ip_address'] ?? ''),
+            'user_agent' => sanitize_text_field($data['user_agent'] ?? ''),
+            'metadata'   => isset($data['metadata']) ? wp_json_encode($data['metadata']) : '',
             'created_at' => current_time('mysql')
         ]);
     }

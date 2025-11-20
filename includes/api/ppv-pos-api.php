@@ -209,6 +209,18 @@ if ($points_add !== 0) {
     /** 🔹 Tranzakció log mentése */
     public static function log_transaction($data) {
         global $wpdb;
+
+        // Auto-detect IP address if not provided
+        if (empty($data['ip_address'])) {
+            $ip_raw = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
+            $data['ip_address'] = sanitize_text_field(explode(',', $ip_raw)[0]);
+        }
+
+        // Auto-detect user agent if not provided
+        if (empty($data['user_agent'])) {
+            $data['user_agent'] = sanitize_text_field($_SERVER['HTTP_USER_AGENT'] ?? '');
+        }
+
         $wpdb->insert("wp_ppv_pos_log", [
             'user_id' => intval($data['user_id'] ?? 0),
             'store_id' => intval($data['store_id'] ?? 0),
