@@ -105,7 +105,7 @@ class PPV_Onboarding {
         global $wpdb;
 
         $store = $wpdb->get_row($wpdb->prepare(
-            "SELECT company_name, country, address, city, zip, phone
+            "SELECT company_name, country, address, city, plz, phone
              FROM {$wpdb->prefix}ppv_stores
              WHERE id = %d",
             $store_id
@@ -121,7 +121,7 @@ class PPV_Onboarding {
                !empty($store['country']) &&
                !empty($store['address']) &&
                !empty($store['city']) &&
-               !empty($store['zip']) &&
+               !empty($store['plz']) &&
                !empty($store['phone']);
 
         error_log("🔍 [PPV_Onboarding] check_profile_lite: " . ($is_complete ? 'COMPLETE ✅' : 'INCOMPLETE ❌') . " | Data: " . json_encode($store));
@@ -138,7 +138,7 @@ class PPV_Onboarding {
         $count = $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(*)
              FROM {$wpdb->prefix}ppv_rewards
-             WHERE store_id = %d AND active = 1",
+             WHERE store_id = %d",
             $store_id
         ));
 
@@ -498,7 +498,7 @@ class PPV_Onboarding {
                 'country' => sanitize_text_field($value['country'] ?? ''),
                 'address' => sanitize_text_field($value['address'] ?? ''),
                 'city' => sanitize_text_field($value['city'] ?? ''),
-                'zip' => sanitize_text_field($value['zip'] ?? ''),
+                'plz' => sanitize_text_field($value['zip'] ?? ''),  // ZIP from frontend → PLZ in DB
                 'phone' => sanitize_text_field($value['phone'] ?? '')
             ];
 
@@ -546,10 +546,9 @@ class PPV_Onboarding {
                     'action_value' => sanitize_text_field($value['action_value'] ?? '0'),
                     'points_given' => intval($value['points_given'] ?? 0),
                     'currency' => $currency,
-                    'active' => 1,
                     'created_at' => current_time('mysql')
                 ],
-                ['%d', '%s', '%s', '%d', '%s', '%s', '%d', '%s', '%d', '%s']
+                ['%d', '%s', '%s', '%d', '%s', '%s', '%d', '%s', '%s']
             );
 
             error_log("✅ [PPV_Onboarding] Reward created | Result: " . ($result !== false ? 'SUCCESS' : 'ERROR'));
