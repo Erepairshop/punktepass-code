@@ -190,25 +190,27 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         if (repeatCount >= 2) {
+          // ✅ PAUSE scanning for 5 seconds, then auto-resume
           scanning = false;
-          resultP.innerText = "✅ Gelesen: " + qrCode;
-          scanner.stop().then(() => {
-            scanner = null;
+          resultP.innerText = "✅ Gelesen: " + qrCode + " - Warte 5 Sekunden...";
 
-            // Hide camera after successful scan
-            readerDiv.style.display = 'none';
+          sendToServer(qrCode);
 
-            // Reset button
-            startBtn.querySelector('span').textContent = '📷 Scanner starten';
-            startBtn.style.background = 'linear-gradient(135deg, #00e676, #00c853)';
+          // ⏰ Auto-resume after 5 seconds
+          let countdown = 5;
+          const countdownInterval = setInterval(() => {
+            countdown--;
+            resultP.innerText = `✅ Gelesen - Weiter in ${countdown}s...`;
 
-            // Release wake lock
-            releaseWakeLock();
-
-            isScanning = false;
-
-            sendToServer(qrCode);
-          });
+            if (countdown <= 0) {
+              clearInterval(countdownInterval);
+              scanning = true;
+              lastRead = "";
+              repeatCount = 0;
+              resultP.innerText = "✅ Scanner aktiv - QR-Code scannen";
+              console.log("🔄 [Scanner] Auto-resumed after 5 seconds");
+            }
+          }, 1000);
         }
       };
 
