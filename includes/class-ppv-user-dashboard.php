@@ -790,27 +790,80 @@ public static function render_dashboard() {
     
     public static function rest_poll_points(WP_REST_Request $request) {
         global $wpdb;
-        
+
         $user_id = get_current_user_id();
-        
+
         if (!$user_id && !empty($_SESSION['ppv_user_id'])) {
             $user_id = intval($_SESSION['ppv_user_id']);
         }
-        
+
         if ($user_id <= 0) {
             error_log("❌ [PPV_Dashboard] rest_poll_points: No user found");
             return new WP_REST_Response(['success' => false, 'points' => 0], 401);
         }
-        
+
         $stats = self::get_user_stats($user_id);
-        
-        error_log("✅ [PPV_Dashboard] rest_poll_points: User=$user_id, Points=" . $stats['points']);
-        
-        return new WP_REST_Response([
+
+        // Get the most recent store name from last point transaction
+        $last_store_name = $wpdb->get_var($wpdb->prepare("
+            SELECT s.name
+            FROM {$wpdb->prefix}ppv_points p
+            LEFT JOIN {$wpdb->prefix}ppv_stores s ON p.store_id = s.id
+            WHERE p.user_id = %d
+            ORDER BY p.created DESC
+            LIMIT 1
+        ", $user_id));
+
+        // Check for recent errors (last 15 seconds) in pos_log
+        // BUT only if there's NO successful scan AFTER the error
+        $recent_error = $wpdb->get_row($wpdb->prepare("
+            SELECT l.message, l.type, s.name as store_name, l.created_at, l.store_id, l.metadata
+            FROM {$wpdb->prefix}ppv_pos_log l
+            LEFT JOIN {$wpdb->prefix}ppv_stores s ON l.store_id = s.id
+            WHERE l.user_id = %d
+            AND l.type = 'error'
+            AND l.created_at >= DATE_SUB(NOW(), INTERVAL 15 SECOND)
+            ORDER BY l.created_at DESC
+            LIMIT 1
+        ", $user_id));
+
+        $response = [
             'success' => true,
             'points' => $stats['points'],
-            'rewards' => $stats['rewards']
-        ], 200);
+            'rewards' => $stats['rewards'],
+            'store' => $last_store_name ?: 'PunktePass'
+        ];
+
+        // Add error info if found AND no successful scan happened after the error
+        if ($recent_error && !empty($recent_error->message)) {
+            // Check if there's a successful point transaction AFTER this error
+            $success_after_error = $wpdb->get_var($wpdb->prepare("
+                SELECT COUNT(*) FROM {$wpdb->prefix}ppv_points
+                WHERE user_id = %d
+                AND store_id = %d
+                AND created > %s
+                AND type = 'qr_scan'
+            ", $user_id, $recent_error->store_id, $recent_error->created_at));
+
+            // Only show error if NO successful scan happened after it
+            if ($success_after_error == 0) {
+                // Extract error_type from metadata for client-side translation
+                $metadata = json_decode($recent_error->metadata ?? '{}', true);
+                $error_type = $metadata['error_type'] ?? 'rate_limit';
+
+                $response['error_message'] = $recent_error->message; // Fallback for old errors
+                $response['error_type'] = $error_type; // Send error_type for client-side translation
+                $response['error_store'] = $recent_error->store_name ?: 'PunktePass';
+                $response['error_timestamp'] = $recent_error->created_at; // Add timestamp for tracking
+                error_log("⚠️ [PPV_Dashboard] rest_poll_points: User=$user_id has recent error: " . $recent_error->message . " (type: $error_type)");
+            } else {
+                error_log("✅ [PPV_Dashboard] rest_poll_points: Error found but successful scan happened after, ignoring error");
+            }
+        }
+
+        error_log("✅ [PPV_Dashboard] rest_poll_points: User=$user_id, Points=" . $stats['points'] . ", Store=" . ($last_store_name ?: 'none'));
+
+        return new WP_REST_Response($response, 200);
     }
     
    public static function rest_get_detailed_points(WP_REST_Request $request) {

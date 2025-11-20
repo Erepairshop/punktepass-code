@@ -59,6 +59,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       fixed_text: "€ Bonus",
       free_product_text: "Kostenloses Produkt",
       special_offer: "Speziales Angebot",
+      // ✅ ERROR MESSAGES - Client-side translation
+      err_already_scanned_today: "⚠️ Heute bereits gescannt",
+      err_duplicate_scan: "⚠️ Bereits gescannt. Bitte warten.",
     },
     hu: {
       welcome: "Üdv a PunktePassban",
@@ -100,6 +103,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       fixed_text: "€ Bonus",
       free_product_text: "Ingyenes termék",
       special_offer: "Különleges ajánlat",
+      // ✅ ERROR MESSAGES - Client-side translation
+      err_already_scanned_today: "⚠️ Ma már beolvasva",
+      err_duplicate_scan: "⚠️ Már beolvasva. Kérlek várj.",
     },
     ro: {
       welcome: "Bun venit la PunktePass",
@@ -141,6 +147,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       fixed_text: "€ Bonus",
       free_product_text: "Produs gratuit",
       special_offer: "Ofertă specială",
+      // ✅ ERROR MESSAGES - Client-side translation
+      err_already_scanned_today: "⚠️ Deja scanat astăzi",
+      err_duplicate_scan: "⚠️ Deja scanat. Vă rugăm așteptați.",
     }
   }[lang] || T.de;
 
@@ -303,11 +312,29 @@ document.addEventListener("DOMContentLoaded", async () => {
   // POINT POLLING & SYNC
   // ============================================================
 
+  // ============================================================
+  // 📊 ADAPTIVE POLLING - 3s active, 30s inactive
+  // ============================================================
   const initPointSync = () => {
+    // Prevent multiple initializations
+    if (window.PPV_POLLING_ACTIVE) {
+      console.warn('⚠️ [Polling] Already initialized, skipping');
+      return;
+    }
+    window.PPV_POLLING_ACTIVE = true;
+
     let lastPolledPoints = boot.points || 0;
-    let pollCount = 0;
-    const pollInterval = setInterval(async () => {
-      pollCount++;
+    let lastShownErrorTimestamp = null; // Track last shown error timestamp to prevent duplicates
+    let pollIntervalId = null;
+    let isFirstPoll = true; // Skip showing errors on first poll (page load)
+
+    // Get current polling interval based on visibility
+    const getCurrentInterval = () => {
+      return document.hidden ? 30000 : 3000; // 30s inactive, 3s active
+    };
+
+    // Poll function
+    const pollPoints = async () => {
       try {
         const res = await fetch(API + 'user/points-poll', {
           method: 'GET',
@@ -315,57 +342,82 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
         if (!res.ok) return;
         const data = await res.json();
-        if (!data.success || !data.points) return;
-        if (data.points > lastPolledPoints) {
+        if (!data.success) return;
+
+        // Always update lastPolledPoints to track current state
+        if (data.points !== undefined && data.points !== lastPolledPoints) {
           const pointDiff = data.points - lastPolledPoints;
+
+          // Only show toast if points INCREASED (successful scan)
+          if (pointDiff > 0) {
+            if (window.ppvShowPointToast) {
+              window.ppvShowPointToast('success', pointDiff, data.store || 'PunktePass');
+            }
+            // Clear error timestamp when points increase (new successful scan)
+            lastShownErrorTimestamp = null;
+          }
+
+          // Always update tracked values (even if points decreased)
           lastPolledPoints = data.points;
           boot.points = data.points;
           updateGlobalPoints(data.points);
-          if (window.ppvShowPointToast) {
-            window.ppvShowPointToast('success', pointDiff, data.store || 'PunktePass');
+        }
+
+        // Check for error message (e.g., "bereits gescannt")
+        if (data.error_type && data.error_timestamp) {
+          // First poll: Initialize tracking but don't show toast (ignore old errors from before page load)
+          if (isFirstPoll) {
+            lastShownErrorTimestamp = data.error_timestamp;
+            console.log(`⏭️ [Polling] First poll: Initializing error tracking, skipping toast for old error at ${data.error_timestamp}`);
           }
+          // Subsequent polls: Show toast only if this is a NEW error (different timestamp)
+          else if (data.error_timestamp !== lastShownErrorTimestamp) {
+            if (window.ppvShowPointToast) {
+              const errorStore = data.error_store || data.store || 'PunktePass';
+              // ✅ CLIENT-SIDE TRANSLATION: Translate error_type based on user's language
+              const errorKey = 'err_' + data.error_type;
+              const translatedError = T[errorKey] || data.error_message || T.err_duplicate_scan;
+              window.ppvShowPointToast('error', 0, errorStore, translatedError);
+              console.log(`⚠️ [Polling] Error detected: ${translatedError} from ${errorStore} at ${data.error_timestamp}`);
+            }
+            lastShownErrorTimestamp = data.error_timestamp;
+          }
+        } else {
+          // No error in response - clear the last shown error
+          lastShownErrorTimestamp = null;
+        }
+
+        // Mark first poll as complete
+        if (isFirstPoll) {
+          isFirstPoll = false;
         }
       } catch (e) {
         console.warn(`⚠️ [Polling] Error:`, e.message);
       }
-    }, 3000);
-    window.addEventListener('beforeunload', () => clearInterval(pollInterval));
+    };
+
+    // Start polling with current interval
+    const startPolling = () => {
+      if (pollIntervalId) clearInterval(pollIntervalId);
+      const interval = getCurrentInterval();
+      console.log(`🔄 [Polling] Starting with ${interval/1000}s interval (tab ${document.hidden ? 'inactive' : 'active'})`);
+      pollIntervalId = setInterval(pollPoints, interval);
+    };
+
+    // Handle visibility change
+    document.addEventListener('visibilitychange', () => {
+      startPolling(); // Restart with new interval
+    });
+
+    // Start initial polling
+    startPolling();
+
+    // Cleanup
+    window.addEventListener('beforeunload', () => {
+      if (pollIntervalId) clearInterval(pollIntervalId);
+      window.PPV_POLLING_ACTIVE = false;
+    });
   };
-
-  function handleScanEvent(data) {
-    console.log("📡 [handleScanEvent] Received:", data);
-
-    if (!data?.type) {
-      console.warn("⚠️ [handleScanEvent] No type in data");
-      return;
-    }
-
-    // Handle success event
-    if (data.type === "ppv-scan-success") {
-      console.log("✅ [handleScanEvent] Success event - points:", data.points, "store:", data.store);
-      const newPoints = boot.points + (data.points || 1);
-      updateGlobalPoints(newPoints);
-      boot.points = newPoints;
-      if (window.ppvShowPointToast) {
-        window.ppvShowPointToast("success", data.points || 1, data.store || "PunktePass");
-        console.log("✅ [handleScanEvent] Toast called");
-      } else {
-        console.warn("⚠️ [handleScanEvent] ppvShowPointToast not found");
-      }
-    }
-
-    // Handle error event
-    if (data.type === "ppv-scan-error") {
-      console.log("❌ [handleScanEvent] Error event - message:", data.message, "store:", data.store);
-      if (window.ppvShowPointToast) {
-        // Show error toast with store name and error message
-        window.ppvShowPointToast("error", 0, data.store || "PunktePass", data.message || "Scan fehlgeschlagen");
-        console.log("❌ [handleScanEvent] Error toast called");
-      } else {
-        console.warn("⚠️ [handleScanEvent] ppvShowPointToast not found");
-      }
-    }
-  }
 
   /**
    * 🏪 RENDER STORE CARD - FULLY TRANSLATED ✅
@@ -921,86 +973,76 @@ document.addEventListener("DOMContentLoaded", async () => {
   // ============================================================
 
   window.ppvShowPointToast = function(type = "success", points = 1, store = "PunktePass", errorMessage = "") {
-    if (document.querySelector(".ppv-point-toast")) return;
-    const L = {
-      de: { dup: "Heute bereits gescannt", err: "Offline", pend: "Verbindung...", add: "Punkt(e) von", from: "von" },
-      hu: { dup: "Ma már", err: "Offline", pend: "Kapcsolódás...", add: "pont a", from: "-tól/-től" },
-      ro: { dup: "Astăzi", err: "Offline", pend: "Conectare...", add: "punct de la", from: "de la" }
-    }[lang] || L.de;
+    console.log("🔔 [ppvShowPointToast] Called with:", { type, points, store, errorMessage });
 
-    let icon = '<i class="ri-emotion-happy-line"></i>', text = "";
-    if (type === "duplicate") {
-      icon = '<i class="ri-error-warning-line"></i>';
-      text = L.dup;
-    }
-    else if (type === "error") {
-      icon = '<i class="ri-close-circle-line"></i>';
-      // Show error message with store name
-      text = errorMessage ? `${errorMessage} ${L.from} <strong>${store}</strong>` : L.err;
-    }
-    else if (type === "pending") {
-      icon = '<i class="ri-time-line ri-spin"></i>';
-      text = L.pend;
-    }
-    else {
-      text = `+${points} ${L.add} <strong>${store}</strong>`;
+    // Remove existing toast if present
+    const existingToast = document.querySelector(".ppv-point-toast");
+    if (existingToast) {
+      console.log("🗑️ [ppvShowPointToast] Removing existing toast");
+      existingToast.classList.remove("show");
+      setTimeout(() => existingToast.remove(), 200);
     }
 
-    const toast = document.createElement("div");
-    toast.className = "ppv-point-toast " + type;
-    toast.innerHTML = `<div class="ppv-point-toast-inner"><div class="ppv-toast-icon">${icon}</div><div class="ppv-toast-text">${text}</div></div>`;
-    document.body.appendChild(toast);
-    setTimeout(() => toast.classList.add("show"), 30);
-    if (type === "success" && navigator.vibrate) navigator.vibrate(40);
-    setTimeout(() => {
-      toast.classList.remove("show");
-      setTimeout(() => toast.remove(), 400);
-    }, type === "success" ? 6500 : 4500);
-  };
+    // Function to create new toast
+    const createToast = () => {
+      console.log("✨ [ppvShowPointToast] Creating new toast");
 
-  // ============================================================
-  // 📡 BROADCAST EVENT LISTENERS
-  // ============================================================
+      const L = {
+        de: { dup: "Heute bereits gescannt", err: "Offline", pend: "Verbindung...", add: "Punkt(e) von", from: "von" },
+        hu: { dup: "Ma már", err: "Offline", pend: "Kapcsolódás...", add: "pont a", from: "-tól/-től" },
+        ro: { dup: "Astăzi", err: "Offline", pend: "Conectare...", add: "punct de la", from: "de la" }
+      }[lang] || L.de;
 
-  // 1) BroadcastChannel (cross-tab communication)
-  if (typeof BroadcastChannel !== 'undefined') {
-    try {
-      const bc = new BroadcastChannel("punktepass_scans");
-      bc.addEventListener("message", (event) => {
-        console.log("📡 [BroadcastChannel] Message received:", event.data);
-        handleScanEvent(event.data);
-      });
-      console.log("✅ [BroadcastChannel] Initialized");
-    } catch (e) {
-      console.warn("⚠️ [BroadcastChannel] Failed:", e);
-    }
-  }
-
-  // 2) LocalStorage (cross-tab fallback)
-  window.addEventListener("storage", (event) => {
-    if (event.key === "ppv_scan_event" && event.newValue) {
-      try {
-        const data = JSON.parse(event.newValue);
-        console.log("📦 [LocalStorage] Event received:", data);
-        handleScanEvent(data);
-      } catch (e) {
-        console.warn("⚠️ [LocalStorage] Parse error:", e);
+      let icon = '<i class="ri-emotion-happy-line"></i>', text = "";
+      if (type === "duplicate") {
+        icon = '<i class="ri-error-warning-line"></i>';
+        text = L.dup;
       }
+      else if (type === "error") {
+        icon = '<i class="ri-close-circle-line"></i>';
+        // Show error message with store name
+        text = errorMessage ? `${errorMessage} ${L.from} <strong>${store}</strong>` : L.err;
+      }
+      else if (type === "pending") {
+        icon = '<i class="ri-time-line ri-spin"></i>';
+        text = L.pend;
+      }
+      else {
+        text = `+${points} ${L.add} <strong>${store}</strong>`;
+      }
+
+      console.log("📝 [ppvShowPointToast] Toast text:", text);
+
+      const toast = document.createElement("div");
+      toast.className = "ppv-point-toast " + type;
+      toast.innerHTML = `<div class="ppv-point-toast-inner"><div class="ppv-toast-icon">${icon}</div><div class="ppv-toast-text">${text}</div></div>`;
+      document.body.appendChild(toast);
+      console.log("➕ [ppvShowPointToast] Toast appended to body");
+
+      setTimeout(() => {
+        toast.classList.add("show");
+        console.log("👁️ [ppvShowPointToast] Toast shown");
+      }, 30);
+
+      if (type === "success" && navigator.vibrate) navigator.vibrate(40);
+
+      setTimeout(() => {
+        toast.classList.remove("show");
+        setTimeout(() => {
+          toast.remove();
+          console.log("🗑️ [ppvShowPointToast] Toast removed after timeout");
+        }, 400);
+      }, type === "success" ? 6500 : 4500);
+    };
+
+    // Wait for old toast to be removed before creating new one
+    if (existingToast) {
+      console.log("⏳ [ppvShowPointToast] Waiting 250ms for old toast removal");
+      setTimeout(createToast, 250);
+    } else {
+      createToast();
     }
-  });
-  console.log("✅ [LocalStorage Listener] Initialized");
-
-  // 3) CustomEvent (same-page communication)
-  window.addEventListener("ppv-scan-success", (event) => {
-    console.log("🛰️ [CustomEvent] Success event:", event.detail);
-    handleScanEvent(event.detail);
-  });
-
-  window.addEventListener("ppv-scan-error", (event) => {
-    console.log("🛰️ [CustomEvent] Error event:", event.detail);
-    handleScanEvent(event.detail);
-  });
-  console.log("✅ [CustomEvent Listeners] Initialized");
+  };
 
   console.log("✅ Dashboard initialized");
 });

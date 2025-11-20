@@ -11,9 +11,6 @@ if (!defined('ABSPATH')) exit;
 
 class PPV_QR {
 
-    const RATE_LIMIT_SCANS = 1;
-    const RATE_LIMIT_WINDOW = 86400;
-
     // ============================================================
     // 🔹 INITIALIZATION
     // ============================================================
@@ -125,35 +122,112 @@ class PPV_QR {
     private static function check_rate_limit($user_id, $store_id) {
         global $wpdb;
 
-        $recent = $wpdb->get_var($wpdb->prepare("
-            SELECT COUNT(*) FROM {$wpdb->prefix}ppv_points
-            WHERE user_id=%d AND store_id=%d 
-            AND created >= (NOW() - INTERVAL %d SECOND)
-        ", $user_id, $store_id, self::RATE_LIMIT_WINDOW));
+        error_log("🔍 [RATE_LIMIT_CHECK] User: {$user_id} | Store: {$store_id}");
 
-        if ($recent >= self::RATE_LIMIT_SCANS) {
+        // Get store name for error responses
+        $store_name = $wpdb->get_var($wpdb->prepare(
+            "SELECT name FROM {$wpdb->prefix}ppv_stores WHERE id=%d LIMIT 1",
+            $store_id
+        ));
+
+        // 1) Check if already scanned TODAY (daily limit: 1 scan per day per store)
+        $already_today = $wpdb->get_var($wpdb->prepare("
+            SELECT COUNT(*) FROM {$wpdb->prefix}ppv_points
+            WHERE user_id=%d AND store_id=%d
+            AND DATE(created)=CURDATE()
+            AND type='qr_scan'
+        ", $user_id, $store_id));
+
+        error_log("🔍 [DAILY_CHECK] Found {$already_today} scans today | CURDATE()=" . $wpdb->get_var("SELECT CURDATE()"));
+
+        if ($already_today > 0) {
+            // Log the existing scan details
+            $existing_scan = $wpdb->get_row($wpdb->prepare("
+                SELECT created, points FROM {$wpdb->prefix}ppv_points
+                WHERE user_id=%d AND store_id=%d
+                AND DATE(created)=CURDATE()
+                AND type='qr_scan'
+                ORDER BY created DESC LIMIT 1
+            ", $user_id, $store_id));
+
+            error_log("🚫 [DAILY_LIMIT] User {$user_id} already scanned today at: " . ($existing_scan->created ?? 'unknown'));
+
             return [
                 'limited' => true,
                 'response' => new WP_REST_Response([
                     'success' => false,
-                    'message' => self::t('err_rate_limited', '⚠️ Túl sok scan. Kérlek várj!')
+                    'message' => self::t('err_already_scanned_today', '⚠️ Heute bereits gescannt'),
+                    'store_name' => $store_name ?? 'PunktePass',
+                    'error_type' => 'already_scanned_today'
                 ], 429)
             ];
         }
 
+        // 2) Check for duplicate scan (within 2 minutes - prevents retry spam)
+        // FIXED: Check wp_ppv_points instead of wp_ppv_pos_log
+        // Log table contains ALL attempts (successful and failed), causing false positives
+        $recent = $wpdb->get_var($wpdb->prepare("
+            SELECT id FROM {$wpdb->prefix}ppv_points
+            WHERE user_id=%d AND store_id=%d
+            AND created >= (NOW() - INTERVAL 2 MINUTE)
+            AND type='qr_scan'
+        ", $user_id, $store_id));
+
+        error_log("🔍 [DUPLICATE_CHECK] Found successful scans in last 2 min: " . ($recent ? 'YES' : 'NO'));
+
+        if ($recent) {
+            error_log("🚫 [DUPLICATE_SCAN] User {$user_id} already has a successful scan in last 2 minutes");
+
+            return [
+                'limited' => true,
+                'response' => new WP_REST_Response([
+                    'success' => false,
+                    'message' => self::t('err_duplicate_scan', '⚠️ Bereits gescannt. Bitte warten.'),
+                    'store_name' => $store_name ?? 'PunktePass',
+                    'error_type' => 'duplicate_scan'
+                ], 429)
+            ];
+        }
+
+        error_log("✅ [RATE_LIMIT_PASS] User {$user_id} passed all checks");
         return ['limited' => false];
     }
 
-    private static function insert_log($store_id, $user_id, $msg, $type = 'scan') {
+    private static function insert_log($store_id, $user_id, $msg, $type = 'scan', $error_type = null) {
         global $wpdb;
+
+        // Get IP address
+        $ip_address = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
+        $ip_address = sanitize_text_field(explode(',', $ip_address)[0]);
+
+        // Get user agent
+        $user_agent = sanitize_text_field($_SERVER['HTTP_USER_AGENT'] ?? '');
+
+        // Prepare metadata (can be extended with additional info)
+        $metadata_array = [
+            'timestamp' => current_time('mysql'),
+            'type' => $type
+        ];
+
+        // Add error_type to metadata if provided (for client-side translation)
+        if ($error_type !== null) {
+            $metadata_array['error_type'] = $error_type;
+        }
+
+        $metadata = json_encode($metadata_array);
 
         $wpdb->insert("{$wpdb->prefix}ppv_pos_log", [
             'store_id' => $store_id,
             'user_id' => $user_id,
             'message' => sanitize_text_field($msg),
             'type' => $type,
+            'ip_address' => $ip_address,
+            'user_agent' => $user_agent,
+            'metadata' => $metadata,
             'created_at' => current_time('mysql')
         ]);
+
+        error_log("💾 [INSERT_LOG] Store: {$store_id} | User: {$user_id} | IP: '{$ip_address}' | Type: {$type}");
     }
 
     private static function decode_user_from_qr($qr) {
@@ -1052,12 +1126,18 @@ class PPV_QR {
         if (!$user_id) {
             return new WP_REST_Response([
                 'success' => false,
-                'message' => self::t('err_invalid_qr', '❌ Érvénytelen QR')
+                'message' => self::t('err_invalid_qr', '❌ Érvénytelen QR'),
+                'store_name' => $store->name ?? 'PunktePass',
+                'error_type' => 'invalid_qr'
             ], 400);
         }
 
         $rate_check = self::check_rate_limit($user_id, $store->id);
         if ($rate_check['limited']) {
+            // Log the rate limit error with error_type for client-side translation
+            $response_data = $rate_check['response']->get_data();
+            $error_type = $response_data['error_type'] ?? null;
+            self::insert_log($store->id, $user_id, $response_data['message'] ?? '⚠️ Rate limit', 'error', $error_type);
             return $rate_check['response'];
         }
 
@@ -1071,11 +1151,19 @@ class PPV_QR {
 
         self::insert_log($store->id, $user_id, self::t('log_point_added', '1 pont hozzáadva'), 'qr_scan');
 
+        // Get store name for response
+        $store_name = $wpdb->get_var($wpdb->prepare(
+            "SELECT name FROM {$wpdb->prefix}ppv_stores WHERE id=%d LIMIT 1",
+            $store->id
+        ));
+
         return new WP_REST_Response([
             'success' => true,
             'message' => self::t('scan_success', '✅ 1 pont hozzáadva'),
             'user_id' => $user_id,
             'store_id' => $store->id,
+            'store_name' => $store_name ?? 'PunktePass',
+            'points' => 1,
             'time' => current_time('mysql')
         ], 200);
     }
