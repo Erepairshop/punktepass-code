@@ -814,14 +814,37 @@ public static function render_dashboard() {
             LIMIT 1
         ", $user_id));
 
-        error_log("✅ [PPV_Dashboard] rest_poll_points: User=$user_id, Points=" . $stats['points'] . ", Store=" . ($last_store_name ?: 'none'));
+        // Check for recent errors (last 5 seconds) in pos_log
+        $recent_error = $wpdb->get_row($wpdb->prepare("
+            SELECT l.message, l.type, s.name as store_name, l.created_at
+            FROM {$wpdb->prefix}ppv_pos_log l
+            LEFT JOIN {$wpdb->prefix}ppv_stores s ON l.store_id = s.id
+            WHERE l.user_id = %d
+            AND l.type IN ('error', 'scan')
+            AND l.message LIKE '%%bereits%%'
+            AND l.created_at >= DATE_SUB(NOW(), INTERVAL 5 SECOND)
+            ORDER BY l.created_at DESC
+            LIMIT 1
+        ", $user_id));
 
-        return new WP_REST_Response([
+        $response = [
             'success' => true,
             'points' => $stats['points'],
             'rewards' => $stats['rewards'],
             'store' => $last_store_name ?: 'PunktePass'
-        ], 200);
+        ];
+
+        // Add error info if found
+        if ($recent_error && !empty($recent_error->message)) {
+            $response['error_message'] = $recent_error->message;
+            $response['error_type'] = 'rate_limit';
+            $response['error_store'] = $recent_error->store_name ?: 'PunktePass';
+            error_log("⚠️ [PPV_Dashboard] rest_poll_points: User=$user_id has recent error: " . $recent_error->message);
+        }
+
+        error_log("✅ [PPV_Dashboard] rest_poll_points: User=$user_id, Points=" . $stats['points'] . ", Store=" . ($last_store_name ?: 'none'));
+
+        return new WP_REST_Response($response, 200);
     }
     
    public static function rest_get_detailed_points(WP_REST_Request $request) {

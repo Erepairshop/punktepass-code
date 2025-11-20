@@ -347,7 +347,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         // Check for error message (e.g., "bereits gescannt")
         if (data.error_message && data.error_type) {
           if (window.ppvShowPointToast) {
-            window.ppvShowPointToast('error', 0, data.store || 'PunktePass', data.error_message);
+            const errorStore = data.error_store || data.store || 'PunktePass';
+            window.ppvShowPointToast('error', 0, errorStore, data.error_message);
+            console.log(`⚠️ [Polling] Error detected: ${data.error_message} from ${errorStore}`);
           }
         }
       } catch (e) {
