@@ -815,9 +815,9 @@ public static function render_dashboard() {
         ", $user_id));
 
         // Check for recent errors (last 15 seconds) in pos_log
-        // Longer window needed because polling is every 3s, might miss 5s window
+        // BUT only if there's NO successful scan AFTER the error
         $recent_error = $wpdb->get_row($wpdb->prepare("
-            SELECT l.message, l.type, s.name as store_name, l.created_at
+            SELECT l.message, l.type, s.name as store_name, l.created_at, l.store_id
             FROM {$wpdb->prefix}ppv_pos_log l
             LEFT JOIN {$wpdb->prefix}ppv_stores s ON l.store_id = s.id
             WHERE l.user_id = %d
@@ -834,12 +834,26 @@ public static function render_dashboard() {
             'store' => $last_store_name ?: 'PunktePass'
         ];
 
-        // Add error info if found
+        // Add error info if found AND no successful scan happened after the error
         if ($recent_error && !empty($recent_error->message)) {
-            $response['error_message'] = $recent_error->message;
-            $response['error_type'] = 'rate_limit';
-            $response['error_store'] = $recent_error->store_name ?: 'PunktePass';
-            error_log("⚠️ [PPV_Dashboard] rest_poll_points: User=$user_id has recent error: " . $recent_error->message);
+            // Check if there's a successful point transaction AFTER this error
+            $success_after_error = $wpdb->get_var($wpdb->prepare("
+                SELECT COUNT(*) FROM {$wpdb->prefix}ppv_points
+                WHERE user_id = %d
+                AND store_id = %d
+                AND created > %s
+                AND type = 'qr_scan'
+            ", $user_id, $recent_error->store_id, $recent_error->created_at));
+
+            // Only show error if NO successful scan happened after it
+            if ($success_after_error == 0) {
+                $response['error_message'] = $recent_error->message;
+                $response['error_type'] = 'rate_limit';
+                $response['error_store'] = $recent_error->store_name ?: 'PunktePass';
+                error_log("⚠️ [PPV_Dashboard] rest_poll_points: User=$user_id has recent error: " . $recent_error->message);
+            } else {
+                error_log("✅ [PPV_Dashboard] rest_poll_points: Error found but successful scan happened after, ignoring error");
+            }
         }
 
         error_log("✅ [PPV_Dashboard] rest_poll_points: User=$user_id, Points=" . $stats['points'] . ", Store=" . ($last_store_name ?: 'none'));
