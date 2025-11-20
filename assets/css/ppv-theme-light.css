@@ -5101,6 +5101,28 @@ ppv-app-root {
         font-size: 0.85rem;
     }
 
+    /* Mobile: Stack POS header vertically */
+    .ppv-pos-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+
+    .ppv-pos-title {
+        font-size: 1.1rem;
+        text-align: center;
+    }
+
+    .ppv-csv-wrapper {
+        width: 100%;
+    }
+
+    .ppv-csv-btn {
+        width: 100%;
+        padding: 10px;
+        font-size: 13px;
+    }
+
     .ppv-campaign-header {
         flex-direction: column;
         align-items: stretch;
@@ -5149,9 +5171,45 @@ ppv-app-root {
 }
 
 /* ──────────────────────────────────────────────────────────────────────
+   📊 POS LOG HEADER (Letzte Scans)
+   ────────────────────────────────────────────────────────────────────── */
+.ppv-pos-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    gap: 1rem;
+}
+
+.ppv-pos-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--pp-text);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
    🎯 CSV EXPORT MENU
    ────────────────────────────────────────────────────────────────────── */
-#ppv-csv-export-menu {
+.ppv-csv-wrapper {
+    position: relative;
+}
+
+.ppv-csv-btn {
+    padding: 8px 16px;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+#ppv-csv-export-menu,
+.ppv-csv-dropdown {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    margin-top: 5px;
+    min-width: 200px;
+    z-index: 1000;
     background: var(--pp-surface);
     border: 1px solid var(--pp-border);
     border-radius: var(--pp-r-sm);
