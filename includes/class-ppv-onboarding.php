@@ -111,15 +111,22 @@ class PPV_Onboarding {
             $store_id
         ), ARRAY_A);
 
-        if (!$store) return false;
+        if (!$store) {
+            error_log("❌ [PPV_Onboarding] check_profile_lite: Store not found");
+            return false;
+        }
 
         // Minden kötelező mező ki van töltve?
-        return !empty($store['company_name']) &&
+        $is_complete = !empty($store['company_name']) &&
                !empty($store['country']) &&
                !empty($store['address']) &&
                !empty($store['city']) &&
                !empty($store['zip']) &&
                !empty($store['phone']);
+
+        error_log("🔍 [PPV_Onboarding] check_profile_lite: " . ($is_complete ? 'COMPLETE ✅' : 'INCOMPLETE ❌') . " | Data: " . json_encode($store));
+
+        return $is_complete;
     }
 
     /** ============================================================
@@ -134,6 +141,8 @@ class PPV_Onboarding {
              WHERE store_id = %d AND active = 1",
             $store_id
         ));
+
+        error_log("🔍 [PPV_Onboarding] check_has_reward: Count = $count");
 
         return $count > 0;
     }
@@ -457,19 +466,27 @@ class PPV_Onboarding {
     public static function rest_complete_step($request) {
         $user_id = self::get_ppv_user_id();
 
+        error_log("🧙 [PPV_Onboarding] rest_complete_step START | user_id: $user_id");
+
         if (!$user_id) {
-            return new WP_REST_Response(['success' => false], 401);
+            error_log("❌ [PPV_Onboarding] No user_id");
+            return new WP_REST_Response(['success' => false, 'message' => 'Not logged in'], 401);
         }
 
         $data = $request->get_json_params();
         $step = sanitize_text_field($data['step'] ?? '');
         $value = $data['value'] ?? null;
 
+        error_log("📝 [PPV_Onboarding] Step: $step | Data: " . json_encode($value));
+
         $store_id = self::is_handler($user_id);
 
         if (!$store_id) {
-            return new WP_REST_Response(['success' => false], 403);
+            error_log("❌ [PPV_Onboarding] User is not a handler");
+            return new WP_REST_Response(['success' => false, 'message' => 'Not a handler'], 403);
         }
+
+        error_log("🏪 [PPV_Onboarding] Store ID: $store_id");
 
         global $wpdb;
         $table = $wpdb->prefix . 'ppv_stores';
@@ -493,11 +510,16 @@ class PPV_Onboarding {
                 $update_data['longitude'] = floatval($value['longitude']);
             }
 
-            $wpdb->update(
+            $result = $wpdb->update(
                 $table,
                 $update_data,
                 ['id' => $store_id]
             );
+
+            error_log("✅ [PPV_Onboarding] Profile updated | Rows affected: " . ($result !== false ? $result : 'ERROR'));
+            if ($result === false) {
+                error_log("❌ [PPV_Onboarding] DB Error: " . $wpdb->last_error);
+            }
         }
 
         // Reward lépés
@@ -513,7 +535,7 @@ class PPV_Onboarding {
             $currency_map = ['DE' => 'EUR', 'HU' => 'HUF', 'RO' => 'RON'];
             $currency = $currency_map[$country] ?? 'EUR';
 
-            $wpdb->insert(
+            $result = $wpdb->insert(
                 $rewards_table,
                 [
                     'store_id' => $store_id,
@@ -529,21 +551,32 @@ class PPV_Onboarding {
                 ],
                 ['%d', '%s', '%s', '%d', '%s', '%s', '%d', '%s', '%d', '%s']
             );
+
+            error_log("✅ [PPV_Onboarding] Reward created | Result: " . ($result !== false ? 'SUCCESS' : 'ERROR'));
+            if ($result === false) {
+                error_log("❌ [PPV_Onboarding] DB Error: " . $wpdb->last_error);
+            }
         }
 
         // Progress újraszámolás
         $progress = self::get_progress($store_id);
 
+        error_log("📊 [PPV_Onboarding] Progress: " . json_encode($progress));
+
         // Ha 100% → completed flag
         if ($progress['is_complete']) {
-            $wpdb->update(
+            error_log("🎉 [PPV_Onboarding] Onboarding COMPLETE! Setting flag...");
+            $result = $wpdb->update(
                 $wpdb->prefix . 'ppv_stores',
                 ['onboarding_completed' => 1],
                 ['id' => $store_id],
                 ['%d'],
                 ['%d']
             );
+            error_log("✅ [PPV_Onboarding] Completed flag set | Rows affected: " . ($result !== false ? $result : 'ERROR'));
         }
+
+        error_log("✅ [PPV_Onboarding] rest_complete_step SUCCESS");
 
         return new WP_REST_Response([
             'success' => true,
