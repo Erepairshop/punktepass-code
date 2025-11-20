@@ -358,7 +358,7 @@ class PPV_POS_SCAN {
                 $translations = []; // Fallback to empty array
             }
 
-            // ✅ Get last 40 scan attempts (successful + errors) from pos_log
+            // ✅ Get last 15 scan attempts (successful + errors) from pos_log
             $logs = $wpdb->get_results($wpdb->prepare("
                 SELECT
                     l.created_at,
@@ -372,7 +372,7 @@ class PPV_POS_SCAN {
                 LEFT JOIN {$wpdb->prefix}ppv_users u ON l.user_id = u.id
                 WHERE l.store_id = %d
                 ORDER BY l.created_at DESC
-                LIMIT 40
+                LIMIT 15
             ", $store_id));
 
 
