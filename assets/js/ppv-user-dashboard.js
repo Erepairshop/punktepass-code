@@ -307,6 +307,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   // 📊 ADAPTIVE POLLING - 3s active, 30s inactive
   // ============================================================
   const initPointSync = () => {
+    // Prevent multiple initializations
+    if (window.PPV_POLLING_ACTIVE) {
+      console.warn('⚠️ [Polling] Already initialized, skipping');
+      return;
+    }
+    window.PPV_POLLING_ACTIVE = true;
+
     let lastPolledPoints = boot.points || 0;
     let pollIntervalId = null;
 
@@ -324,14 +331,23 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
         if (!res.ok) return;
         const data = await res.json();
-        if (!data.success || !data.points) return;
-        if (data.points > lastPolledPoints) {
+        if (!data.success) return;
+
+        // Check for points increase
+        if (data.points && data.points > lastPolledPoints) {
           const pointDiff = data.points - lastPolledPoints;
           lastPolledPoints = data.points;
           boot.points = data.points;
           updateGlobalPoints(data.points);
           if (window.ppvShowPointToast) {
             window.ppvShowPointToast('success', pointDiff, data.store || 'PunktePass');
+          }
+        }
+
+        // Check for error message (e.g., "bereits gescannt")
+        if (data.error_message && data.error_type) {
+          if (window.ppvShowPointToast) {
+            window.ppvShowPointToast('error', 0, data.store || 'PunktePass', data.error_message);
           }
         }
       } catch (e) {
@@ -358,6 +374,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Cleanup
     window.addEventListener('beforeunload', () => {
       if (pollIntervalId) clearInterval(pollIntervalId);
+      window.PPV_POLLING_ACTIVE = false;
     });
   };
 
