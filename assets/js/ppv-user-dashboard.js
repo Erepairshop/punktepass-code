@@ -334,17 +334,23 @@ document.addEventListener("DOMContentLoaded", async () => {
         const data = await res.json();
         if (!data.success) return;
 
-        // Check for points increase
-        if (data.points && data.points > lastPolledPoints) {
+        // Always update lastPolledPoints to track current state
+        if (data.points !== undefined && data.points !== lastPolledPoints) {
           const pointDiff = data.points - lastPolledPoints;
+
+          // Only show toast if points INCREASED (successful scan)
+          if (pointDiff > 0) {
+            if (window.ppvShowPointToast) {
+              window.ppvShowPointToast('success', pointDiff, data.store || 'PunktePass');
+            }
+            // Clear error timestamp when points increase (new successful scan)
+            lastShownErrorTimestamp = null;
+          }
+
+          // Always update tracked values (even if points decreased)
           lastPolledPoints = data.points;
           boot.points = data.points;
           updateGlobalPoints(data.points);
-          if (window.ppvShowPointToast) {
-            window.ppvShowPointToast('success', pointDiff, data.store || 'PunktePass');
-          }
-          // Clear error timestamp when points increase (new successful scan)
-          lastShownErrorTimestamp = null;
         }
 
         // Check for error message (e.g., "bereits gescannt")
