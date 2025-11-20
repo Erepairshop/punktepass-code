@@ -752,8 +752,12 @@ class CampaignManager {
 // ============================================================
 class CameraScanner {
   constructor(scanProcessor) {
+    // 🔊 Sound effects
     this.beep = new Audio("/wp-content/plugins/punktepass/assets/sounds/scan-beep.wav");
     this.beep.volume = 1.0;
+
+    this.errorSound = new Audio("/wp-content/plugins/punktepass/assets/sounds/error.mp3");
+    this.errorSound.volume = 0.8;
 
     this.scanProcessor = scanProcessor;
     this.scanner = null;
@@ -1019,17 +1023,25 @@ class CameraScanner {
     try {
       this.scanner = new Html5Qrcode('ppv-mini-reader');
 
-      // Try method 1: Compatible config for Samsung XCover 4s and similar devices
+      // ✅ OPTIMIZED CONFIG - Fast QR detection from any angle
       const config = {
-        fps: 15,
-        qrbox: 200,
+        fps: 30,  // ⬆️ Higher FPS = faster detection
+        qrbox: { width: 250, height: 250 },  // 📦 Larger scan area
         aspectRatio: 1.0,
-        disableFlip: false
+        disableFlip: false,  // 🔄 Try both orientations
+        experimentalFeatures: {
+          useBarCodeDetectorIfSupported: true  // 🚀 Use native API if available
+        },
+        formatsToSupport: [0]  // 📱 Only QR codes (0 = QR_CODE)
       };
 
-      // Simple camera constraints - compatible with older Android devices
+      // 📷 Advanced camera constraints - autofocus + high resolution
       const cameraConstraints = {
-        facingMode: 'environment'
+        facingMode: 'environment',
+        advanced: [
+          { focusMode: 'continuous' },  // 🎯 Continuous autofocus
+          { zoom: 1.0 }
+        ]
       };
 
       await this.scanner.start(
@@ -1041,17 +1053,44 @@ class CameraScanner {
       this.scanning = true;
       this.state = 'scanning';
       this.updateStatus('scanning', L.scanner_active || '📷 Scanning...');
-      console.log('✅ Scanner started (compatible mode)');
+      console.log('✅ Scanner started (optimized mode - 30 FPS, autofocus)');
+
+      // 🔦 Try to enable torch/LED for better low-light performance
+      try {
+        const capabilities = this.scanner.getRunningTrackCapabilities();
+        if (capabilities && capabilities.torch) {
+          await this.scanner.applyVideoConstraints({
+            advanced: [{ torch: true }]
+          });
+          console.log('🔦 Torch enabled');
+        }
+      } catch (torchErr) {
+        console.log('💡 Torch not available:', torchErr.message);
+      }
 
     } catch (err) {
-      console.warn('⚠️ Method 1 failed:', err);
+      console.warn('⚠️ Optimized config failed:', err);
 
-      // Try method 2: Even simpler config
+      // ✅ IMPORTANT: Create new scanner instance for fallback
       try {
-        console.log('⚠️ Trying method 2 (basic)...');
+        // Stop and clear previous instance
+        if (this.scanner) {
+          try {
+            await this.scanner.stop();
+          } catch (e) {}
+          this.scanner = null;
+        }
+
+        console.log('⚠️ Trying basic config...');
+        this.scanner = new Html5Qrcode('ppv-mini-reader');
+
         const basicConfig = {
-          fps: 10,
-          qrbox: 180
+          fps: 20,
+          qrbox: 220,
+          disableFlip: false,
+          experimentalFeatures: {
+            useBarCodeDetectorIfSupported: true
+          }
         };
 
         await this.scanner.start(
@@ -1063,23 +1102,27 @@ class CameraScanner {
         this.scanning = true;
         this.state = 'scanning';
         this.updateStatus('scanning', L.scanner_active || '📷 Scanning...');
-        console.log('✅ Scanner started (basic mode)');
+        console.log('✅ Scanner started (basic mode - 20 FPS)');
 
       } catch (err2) {
-        console.warn('⚠️ Method 2 failed:', err2);
+        console.warn('⚠️ Basic config failed:', err2);
 
-        // Try method 3: Minimal config (last resort)
+        // ✅ IMPORTANT: Create new scanner instance for final fallback
         try {
-          console.log('⚠️ Trying method 3 (minimal)...');
-          const minimalConfig = {
-            fps: 10,
-            qrbox: 150
-          };
+          // Stop and clear previous instance
+          if (this.scanner) {
+            try {
+              await this.scanner.stop();
+            } catch (e) {}
+            this.scanner = null;
+          }
 
-          // Try without specifying camera (use default)
+          console.log('⚠️ Trying minimal config...');
+          this.scanner = new Html5Qrcode('ppv-mini-reader');
+
           await this.scanner.start(
-            { facingMode: { exact: 'environment' } },
-            minimalConfig,
+            { facingMode: 'environment' },
+            { fps: 15, qrbox: 200 },
             (qrCode) => this.onScanSuccess(qrCode)
           );
 
@@ -1090,26 +1133,7 @@ class CameraScanner {
 
         } catch (err3) {
           console.error('❌ All methods failed:', err3);
-          this.updateStatus('error', '❌ Kamera nem elérhető');
-
-          // Final attempt: Ask for any camera
-          try {
-            console.log('⚠️ Final attempt: any camera...');
-            await this.scanner.start(
-              { video: true },
-              { fps: 10, qrbox: 150 },
-              (qrCode) => this.onScanSuccess(qrCode)
-            );
-
-            this.scanning = true;
-            this.state = 'scanning';
-            this.updateStatus('scanning', L.scanner_active || '📷 Scanning...');
-            console.log('✅ Scanner started (any camera)');
-
-          } catch (finalErr) {
-            console.error('❌ Final attempt failed:', finalErr);
-            this.updateStatus('error', '❌ Kamera hiba - engedélyezd a kamera hozzáférést');
-          }
+          this.updateStatus('error', '❌ Kamera nem elérhető - engedélyezd a kamera hozzáférést');
         }
       }
     }
@@ -1132,35 +1156,31 @@ class CameraScanner {
 
     if (!this.scanning || this.state !== 'scanning') return;
 
-    // Duplicate protection
+    // 🎯 FASTER: Single read detection (was 2, now 1)
     if (qrCode === this.lastRead) {
       this.repeatCount++;
     } else {
       this.lastRead = qrCode;
       this.repeatCount = 1;
+
+      // ✅ GREEN BORDER: Show visual feedback when QR detected (not yet processed)
+      this.showDetectionFeedback();
     }
 
-    // Two consecutive identical reads required
-    if (this.repeatCount >= 2) {
-      this.scanning = false;
+    // ⚡ One read is enough (faster scanning)
+    if (this.repeatCount >= 1) {
+      // ✅ Keep scanning flag true, only change state to prevent duplicate scans
       this.state = 'processing';
-
-      // Stop scanner temporarily
-      if (this.scanner) {
-        try {
-          this.scanner.stop();
-        } catch (e) {}
-      }
 
       // Update UI
       this.updateStatus('processing', '⏳ ' + (L.scanner_points_adding || 'Processing...'));
 
-      // Vibration
+      // 📳 IMPROVED: Shorter, sharper vibration (30ms)
       try {
-        if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
+        if (navigator.vibrate) navigator.vibrate(30);
       } catch (e) {}
 
-      // Play beep sound
+      // 🔊 Play success beep sound
       try {
         this.beep.currentTime = 0;
         this.beep.play();
@@ -1207,12 +1227,28 @@ class CameraScanner {
             }, 1000);
           }
 
-          // Start 10-second pause
+          // Start 5-second pause
           this.startPauseCountdown();
 
         } else {
-          // Error - show warning and restart scanner after 3 seconds
+          // ❌ ERROR - show warning and restart scanner after 3 seconds
           this.updateStatus('warning', '⚠️ ' + (data.message || L.error_generic || 'Hiba'));
+
+          // 🔴 RED FLASH: Visual error feedback
+          this.showErrorFeedback();
+
+          // 🔊 Play error sound
+          try {
+            this.errorSound.currentTime = 0;
+            this.errorSound.play();
+          } catch (e) {
+            console.warn("Error sound playback failed:", e);
+          }
+
+          // 📳 Error vibration (longer than success)
+          try {
+            if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+          } catch (e) {}
 
           if (window.ppvToast) {
             window.ppvToast(data.message || L.error_generic || '⚠️ Hiba', 'warning');
@@ -1227,8 +1263,24 @@ class CameraScanner {
         }
       })
       .catch(e => {
-        // Network error - show error and restart scanner
+        // ❌ NETWORK ERROR - show error and restart scanner
         this.updateStatus('error', '❌ ' + (L.pos_network_error || 'Hálózati hiba'));
+
+        // 🔴 RED FLASH: Visual error feedback
+        this.showErrorFeedback();
+
+        // 🔊 Play error sound
+        try {
+          this.errorSound.currentTime = 0;
+          this.errorSound.play();
+        } catch (e) {
+          console.warn("Error sound playback failed:", e);
+        }
+
+        // 📳 Error vibration
+        try {
+          if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+        } catch (e) {}
 
         if (window.ppvToast) {
           window.ppvToast('❌ ' + (L.pos_network_error || 'Hálózati hiba'), 'error');
@@ -1252,9 +1304,9 @@ class CameraScanner {
       clearTimeout(this.pauseTimeout);
     }
 
-    // Set state to paused
+    // Set state to paused (5 seconds)
     this.state = 'paused';
-    this.countdown = 10;
+    this.countdown = 5;
     this.lastRead = "";
     this.repeatCount = 0;
 
@@ -1301,6 +1353,41 @@ class CameraScanner {
         }, 5000);
       }
     }
+  }
+
+  // ✅ GREEN BORDER: Visual feedback when QR detected
+  showDetectionFeedback() {
+    if (!this.readerDiv) return;
+
+    // Add green border animation
+    this.readerDiv.style.boxShadow = '0 0 0 4px #00ff00, 0 0 20px rgba(0, 255, 0, 0.5)';
+    this.readerDiv.style.transition = 'box-shadow 0.2s ease';
+
+    // Remove after 300ms
+    setTimeout(() => {
+      this.readerDiv.style.boxShadow = '';
+    }, 300);
+  }
+
+  // 🔴 RED FLASH: Visual feedback on error
+  showErrorFeedback() {
+    if (!this.readerDiv) return;
+
+    // Flash red 3 times
+    let count = 0;
+    const flashInterval = setInterval(() => {
+      if (count % 2 === 0) {
+        this.readerDiv.style.boxShadow = '0 0 0 4px #ff0000, 0 0 20px rgba(255, 0, 0, 0.7)';
+        this.readerDiv.style.transition = 'box-shadow 0.1s ease';
+      } else {
+        this.readerDiv.style.boxShadow = '';
+      }
+      count++;
+      if (count >= 6) {
+        clearInterval(flashInterval);
+        this.readerDiv.style.boxShadow = '';
+      }
+    }, 150);
   }
 
   updateStatus(state, text) {
@@ -1871,7 +1958,26 @@ document.addEventListener("DOMContentLoaded", function () {
           headers: { 'Content-Type': 'application/json' }
         });
 
-        const data = await response.json();
+        // ✅ Check if response is OK before parsing JSON
+        if (!response.ok) {
+          console.error(`❌ [loadRecentScans] HTTP error: ${response.status}`);
+          return;
+        }
+
+        // ✅ Clone response BEFORE consuming it (for error debugging)
+        const responseClone = response.clone();
+
+        // ✅ Try to parse JSON with better error handling
+        let data;
+        try {
+          data = await response.json();
+        } catch (jsonErr) {
+          // If JSON parsing fails, get the raw response body for debugging
+          const text = await responseClone.text();
+          console.error('❌ [loadRecentScans] JSON parse failed. Response body:', text);
+          console.error('❌ [loadRecentScans] JSON error:', jsonErr);
+          return;
+        }
 
         if (data.success && data.scans) {
           // Clear current table
@@ -1883,19 +1989,123 @@ document.addEventListener("DOMContentLoaded", function () {
             row.innerHTML = `<td>${scan.time}</td><td>${scan.user}</td><td>${scan.status}</td>`;
             logTable.appendChild(row);
           });
+        } else if (data.success === false) {
+          console.warn('⚠️ [loadRecentScans] Backend returned success=false:', data.message);
         }
       } catch (err) {
-        console.error('Failed to load recent scans:', err);
+        console.error('❌ [loadRecentScans] Fetch error:', err);
       }
     }
 
     // Load immediately
     loadRecentScans();
 
-    // Poll every 5 seconds
-    setInterval(loadRecentScans, 5000);
+    // Poll every 10 seconds
+    setInterval(loadRecentScans, 10000);
 
-    console.log('✅ Letzte Scans live polling active (5s interval)');
+    console.log('✅ Letzte Scans live polling active (10s interval)');
+  }
+
+  // ============================================================
+  // 📥 CSV EXPORT FUNCTIONALITY
+  // ============================================================
+  const csvExportBtn = document.getElementById('ppv-csv-export-btn');
+  const csvExportMenu = document.getElementById('ppv-csv-export-menu');
+
+  if (csvExportBtn && csvExportMenu) {
+    // Toggle dropdown menu
+    csvExportBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isVisible = csvExportMenu.style.display === 'block';
+      csvExportMenu.style.display = isVisible ? 'none' : 'block';
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', () => {
+      csvExportMenu.style.display = 'none';
+    });
+
+    // Handle CSV export options
+    document.querySelectorAll('.ppv-csv-export-option').forEach(option => {
+      option.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const period = e.target.getAttribute('data-period');
+        let date = new Date().toISOString().split('T')[0]; // Today's date
+
+        // If "date" period, prompt for date
+        if (period === 'date') {
+          const userDate = prompt(L.csv_prompt_date || 'Datum eingeben (YYYY-MM-DD):', date);
+          if (!userDate) return; // Cancelled
+          date = userDate;
+        }
+
+        // If "month" period, use current month
+        if (period === 'month') {
+          date = new Date().toISOString().substr(0, 7) + '-01'; // First day of month
+        }
+
+        // Close dropdown
+        csvExportMenu.style.display = 'none';
+
+        // Download CSV
+        try {
+          console.log(`📥 [CSV Export] Downloading: period=${period}, date=${date}`);
+
+          const url = `/wp-json/ppv/v1/pos/export-logs?period=${period}&date=${date}`;
+          const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+
+          if (!response.ok) {
+            throw new Error('Export failed');
+          }
+
+          // Get CSV content
+          const blob = await response.blob();
+          const downloadUrl = window.URL.createObjectURL(blob);
+
+          // Create download link
+          const a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = downloadUrl;
+          a.download = `pos_logs_${period}_${date}.csv`;
+
+          // Trigger download
+          document.body.appendChild(a);
+          a.click();
+
+          // Cleanup
+          window.URL.revokeObjectURL(downloadUrl);
+          document.body.removeChild(a);
+
+          console.log('✅ [CSV Export] Download completed');
+
+          if (window.ppvToast) {
+            window.ppvToast('✅ CSV erfolgreich heruntergeladen', 'success');
+          }
+        } catch (err) {
+          console.error('❌ [CSV Export] Failed:', err);
+          if (window.ppvToast) {
+            window.ppvToast('❌ CSV Export fehlgeschlagen', 'error');
+          }
+        }
+      });
+
+      // Hover effect
+      option.addEventListener('mouseenter', (e) => {
+        e.target.style.background = 'rgba(255,255,255,0.1)';
+      });
+      option.addEventListener('mouseleave', (e) => {
+        e.target.style.background = 'transparent';
+      });
+    });
+
+    console.log('✅ CSV Export functionality initialized');
   }
 });
 

@@ -764,6 +764,24 @@ return [
 
 'err_unknown_store' => '❌ Magazin necunoscut',
 'err_rate_limited' => '⚠️ Prea multe scanari. Te rog asteapta!',
+
+// ============================================================
+// 📋 POS SCAN TRANSLATIONS (for logs)
+// ============================================================
+'scan_success' => '✅ +{points} puncte adăugate',
+'user_blocked' => '❌ Utilizator blocat',
+'invalid_qr' => '❌ Cod QR invalid',
+'already_scanned_today' => '⚠️ Deja scanat astăzi',
+'duplicate_scan' => '⚠️ Deja scanat',
+'rate_limit' => '⚠️ Prea multe scanări',
+
+// CSV Export Headers
+'csv_header_time' => 'Dată/Oră',
+'csv_header_user' => 'Utilizator',
+'csv_header_email' => 'E-mail',
+'csv_header_status' => 'Status',
+'csv_header_ip' => 'Adresă IP',
+
 'qrcamp_title' => 'Scanner de Casă & Campanii',
 'tab_scanner' => 'Scanner de Casă',
 'tab_rewards' => 'Recompense',
