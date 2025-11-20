@@ -297,6 +297,7 @@ class PPV_POS_SCAN {
 
     /** ============================================================
      * 📋 Get Recent Scans (for live table refresh)
+     * ✅ Shows BOTH successful scans AND errors
      * ============================================================ */
     public static function get_recent_scans(WP_REST_Request $req) {
         global $wpdb;
@@ -315,25 +316,42 @@ class PPV_POS_SCAN {
             ]);
         }
 
-        // Get last 12 scans for this store
-        $scans = $wpdb->get_results($wpdb->prepare("
+        // ✅ Get last 12 scan attempts (successful + errors) from pos_log
+        $logs = $wpdb->get_results($wpdb->prepare("
             SELECT
-                p.created,
-                p.points,
+                l.created_at,
+                l.user_id,
+                l.message,
+                l.status,
                 u.email,
                 CONCAT(u.first_name, ' ', u.last_name) as name
-            FROM {$wpdb->prefix}ppv_points p
-            LEFT JOIN {$wpdb->prefix}ppv_users u ON p.user_id = u.id
-            WHERE p.store_id = %d AND p.type = 'qr_scan'
-            ORDER BY p.created DESC
+            FROM {$wpdb->prefix}ppv_pos_log l
+            LEFT JOIN {$wpdb->prefix}ppv_users u ON l.user_id = u.id
+            WHERE l.store_id = %d
+            ORDER BY l.created_at DESC
             LIMIT 12
         ", $store_id));
 
         $formatted = [];
-        foreach ($scans as $scan) {
-            $time = date('H:i:s', strtotime($scan->created));
-            $user_display = !empty($scan->name) && trim($scan->name) !== '' ? $scan->name : $scan->email;
-            $status = "✅ +{$scan->points}";
+        foreach ($logs as $log) {
+            // ✅ Show DATE + TIME (not just time)
+            $time = date('Y-m-d H:i:s', strtotime($log->created_at));
+
+            // User display (name or email)
+            if ($log->user_id > 0) {
+                $user_display = !empty($log->name) && trim($log->name) !== '' ? $log->name : $log->email;
+            } else {
+                $user_display = '—'; // No user for errors like rate_limit
+            }
+
+            // Status icon based on log status
+            if ($log->status === 'ok') {
+                $status = $log->message; // "✅ +1 Punkte"
+            } elseif ($log->status === 'blocked' || $log->status === 'invalid') {
+                $status = '❌ ' . $log->message;
+            } else {
+                $status = '⚠️ ' . $log->message;
+            }
 
             $formatted[] = [
                 'time' => $time,
