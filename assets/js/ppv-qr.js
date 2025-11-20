@@ -1175,6 +1175,20 @@ class CameraScanner {
   }
 
   onScanSuccess(qrCode) {
+    // Check if scanner is paused - show feedback
+    if (this.state === 'paused') {
+      const L = window.PPV_LANG || {};
+      const pauseMsg = L.scanner_paused || 'Scanner pausiert';
+      const waitMsg = L.please_wait || 'Bitte warten';
+
+      // Show toast with remaining countdown
+      if (window.ppvToast) {
+        window.ppvToast(`⏸️ ${pauseMsg}: ${this.countdown}s - ${waitMsg}`, 'warning');
+      }
+      console.log(`⏸️ [Scanner] Paused - ${this.countdown}s remaining`);
+      return;
+    }
+
     if (!this.scanning || this.state !== 'scanning') return;
 
     // Duplicate protection
