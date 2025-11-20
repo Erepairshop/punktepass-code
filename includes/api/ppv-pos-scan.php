@@ -368,13 +368,17 @@ class PPV_POS_SCAN {
                 ]);
             }
 
-            $translations = PPV_Lang::get($handler_lang);
+            // Load the correct language file
+            PPV_Lang::load($handler_lang);
+            $translations = PPV_Lang::$strings;
 
             // Verify translations loaded correctly
             if (!is_array($translations)) {
                 error_log('❌ [GET_RECENT_SCANS] Translations not loaded correctly');
                 $translations = []; // Fallback to empty array
             }
+
+            error_log("🔍 [GET_RECENT_SCANS] Loaded " . count($translations) . " translation keys");
             // ✅ Get last 40 scan attempts (successful + errors) from pos_log
             $logs = $wpdb->get_results($wpdb->prepare("
                 SELECT
@@ -484,7 +488,9 @@ class PPV_POS_SCAN {
             return new WP_Error('translation_error', 'Translation system not loaded', ['status' => 500]);
         }
 
-        $t = PPV_Lang::get($handler_lang);
+        // Load the correct language file
+        PPV_Lang::load($handler_lang);
+        $t = PPV_Lang::$strings;
 
         // Verify translations loaded correctly
         if (!is_array($t)) {
