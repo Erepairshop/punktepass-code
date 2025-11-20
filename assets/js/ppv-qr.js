@@ -1067,9 +1067,19 @@ class CameraScanner {
     } catch (err) {
       console.warn('⚠️ Optimized config failed:', err);
 
-      // Fallback to basic config
+      // ✅ IMPORTANT: Create new scanner instance for fallback
       try {
+        // Stop and clear previous instance
+        if (this.scanner) {
+          try {
+            await this.scanner.stop();
+          } catch (e) {}
+          this.scanner = null;
+        }
+
         console.log('⚠️ Trying basic config...');
+        this.scanner = new Html5Qrcode('ppv-mini-reader');
+
         const basicConfig = {
           fps: 20,
           qrbox: 220,
@@ -1093,9 +1103,19 @@ class CameraScanner {
       } catch (err2) {
         console.warn('⚠️ Basic config failed:', err2);
 
-        // Final fallback - minimal config
+        // ✅ IMPORTANT: Create new scanner instance for final fallback
         try {
+          // Stop and clear previous instance
+          if (this.scanner) {
+            try {
+              await this.scanner.stop();
+            } catch (e) {}
+            this.scanner = null;
+          }
+
           console.log('⚠️ Trying minimal config...');
+          this.scanner = new Html5Qrcode('ppv-mini-reader');
+
           await this.scanner.start(
             { facingMode: 'environment' },
             { fps: 15, qrbox: 200 },
