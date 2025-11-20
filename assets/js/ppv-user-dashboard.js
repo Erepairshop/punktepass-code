@@ -59,6 +59,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       fixed_text: "€ Bonus",
       free_product_text: "Kostenloses Produkt",
       special_offer: "Speziales Angebot",
+      // ✅ ERROR MESSAGES - Client-side translation
+      err_already_scanned_today: "⚠️ Heute bereits gescannt",
+      err_duplicate_scan: "⚠️ Bereits gescannt. Bitte warten.",
     },
     hu: {
       welcome: "Üdv a PunktePassban",
@@ -100,6 +103,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       fixed_text: "€ Bonus",
       free_product_text: "Ingyenes termék",
       special_offer: "Különleges ajánlat",
+      // ✅ ERROR MESSAGES - Client-side translation
+      err_already_scanned_today: "⚠️ Ma már beolvasva",
+      err_duplicate_scan: "⚠️ Már beolvasva. Kérlek várj.",
     },
     ro: {
       welcome: "Bun venit la PunktePass",
@@ -141,6 +147,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       fixed_text: "€ Bonus",
       free_product_text: "Produs gratuit",
       special_offer: "Ofertă specială",
+      // ✅ ERROR MESSAGES - Client-side translation
+      err_already_scanned_today: "⚠️ Deja scanat astăzi",
+      err_duplicate_scan: "⚠️ Deja scanat. Vă rugăm așteptați.",
     }
   }[lang] || T.de;
 
@@ -355,7 +364,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         // Check for error message (e.g., "bereits gescannt")
-        if (data.error_message && data.error_type && data.error_timestamp) {
+        if (data.error_type && data.error_timestamp) {
           // First poll: Initialize tracking but don't show toast (ignore old errors from before page load)
           if (isFirstPoll) {
             lastShownErrorTimestamp = data.error_timestamp;
@@ -365,8 +374,11 @@ document.addEventListener("DOMContentLoaded", async () => {
           else if (data.error_timestamp !== lastShownErrorTimestamp) {
             if (window.ppvShowPointToast) {
               const errorStore = data.error_store || data.store || 'PunktePass';
-              window.ppvShowPointToast('error', 0, errorStore, data.error_message);
-              console.log(`⚠️ [Polling] Error detected: ${data.error_message} from ${errorStore} at ${data.error_timestamp}`);
+              // ✅ CLIENT-SIDE TRANSLATION: Translate error_type based on user's language
+              const errorKey = 'err_' + data.error_type;
+              const translatedError = T[errorKey] || data.error_message || T.err_duplicate_scan;
+              window.ppvShowPointToast('error', 0, errorStore, translatedError);
+              console.log(`⚠️ [Polling] Error detected: ${translatedError} from ${errorStore} at ${data.error_timestamp}`);
             }
             lastShownErrorTimestamp = data.error_timestamp;
           }
