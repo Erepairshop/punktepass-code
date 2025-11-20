@@ -814,15 +814,15 @@ public static function render_dashboard() {
             LIMIT 1
         ", $user_id));
 
-        // Check for recent errors (last 5 seconds) in pos_log
+        // Check for recent errors (last 15 seconds) in pos_log
+        // Longer window needed because polling is every 3s, might miss 5s window
         $recent_error = $wpdb->get_row($wpdb->prepare("
             SELECT l.message, l.type, s.name as store_name, l.created_at
             FROM {$wpdb->prefix}ppv_pos_log l
             LEFT JOIN {$wpdb->prefix}ppv_stores s ON l.store_id = s.id
             WHERE l.user_id = %d
-            AND l.type IN ('error', 'scan')
-            AND l.message LIKE '%%bereits%%'
-            AND l.created_at >= DATE_SUB(NOW(), INTERVAL 5 SECOND)
+            AND l.type = 'error'
+            AND l.created_at >= DATE_SUB(NOW(), INTERVAL 15 SECOND)
             ORDER BY l.created_at DESC
             LIMIT 1
         ", $user_id));

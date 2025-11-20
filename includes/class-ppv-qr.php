@@ -1127,6 +1127,9 @@ class PPV_QR {
 
         $rate_check = self::check_rate_limit($user_id, $store->id);
         if ($rate_check['limited']) {
+            // Log the rate limit error
+            $response_data = $rate_check['response']->get_data();
+            self::insert_log($store->id, $user_id, $response_data['message'] ?? '⚠️ Rate limit', 'error');
             return $rate_check['response'];
         }
 
