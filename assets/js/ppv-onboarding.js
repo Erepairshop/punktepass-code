@@ -263,13 +263,13 @@
             // Koordináták keresés
             html.on('click', '#ppv-geocode-btn', (e) => {
                 e.preventDefault();
-                const address = $('[name="address"]').val();
-                const city = $('[name="city"]').val();
-                const zip = $('[name="zip"]').val();
-                const country = $('[name="country"]').val();
+                const address = html.find('[name="address"]').val();
+                const city = html.find('[name="city"]').val();
+                const zip = html.find('[name="zip"]').val();
+                const country = html.find('[name="country"]').val();
 
                 if (!address || !city) {
-                    alert('Kérlek add meg a címet és várost először!');
+                    this.showToast('❌ Kérlek add meg a címet és várost először!', 'error');
                     return;
                 }
 
@@ -286,8 +286,8 @@
                     data: JSON.stringify({ address, city, zip, country }),
                     success: (response) => {
                         if (response.success && response.lat && response.lng) {
-                            $('[name="latitude"]').val(response.lat.toFixed(4));
-                            $('[name="longitude"]').val(response.lng.toFixed(4));
+                            html.find('[name="latitude"]').val(response.lat.toFixed(4));
+                            html.find('[name="longitude"]').val(response.lng.toFixed(4));
                             this.showToast('✅ Koordináták megtalálva!', 'success');
                         } else {
                             this.showToast('❌ Nem találtunk koordinátákat', 'error');
@@ -305,7 +305,7 @@
             // Next gomb
             html.on('click', '[data-action="next"]', (e) => {
                 e.preventDefault();
-                const form = $('#ppv-profile-form')[0];
+                const form = html.find('#ppv-profile-form')[0];
 
                 if (!form.checkValidity()) {
                     form.reportValidity();
@@ -313,14 +313,14 @@
                 }
 
                 const data = {
-                    company_name: $('[name="company_name"]').val(),
-                    country: $('[name="country"]').val(),
-                    address: $('[name="address"]').val(),
-                    city: $('[name="city"]').val(),
-                    zip: $('[name="zip"]').val(),
-                    phone: $('[name="phone"]').val(),
-                    latitude: $('[name="latitude"]').val() || null,
-                    longitude: $('[name="longitude"]').val() || null
+                    company_name: html.find('[name="company_name"]').val(),
+                    country: html.find('[name="country"]').val(),
+                    address: html.find('[name="address"]').val(),
+                    city: html.find('[name="city"]').val(),
+                    zip: html.find('[name="zip"]').val(),
+                    phone: html.find('[name="phone"]').val(),
+                    latitude: html.find('[name="latitude"]').val() || null,
+                    longitude: html.find('[name="longitude"]').val() || null
                 };
 
                 this.saveWizardStep('profile_lite', data, modal);
@@ -401,29 +401,29 @@
             html.on('click', '[data-action="finish"]', (e) => {
                 e.preventDefault();
 
-                // Manual validation
-                const title = $('[name="title"]').val().trim();
-                const required_points = parseInt($('[name="required_points"]').val());
+                // Manual validation - használjuk a html.find()-ot a modal scope miatt!
+                const title = html.find('[name="title"]').val().trim();
+                const required_points = parseInt(html.find('[name="required_points"]').val());
 
                 if (!title) {
                     this.showToast('❌ Kérlek add meg a prémium nevét!', 'error');
-                    $('[name="title"]').focus();
+                    html.find('[name="title"]').focus();
                     return;
                 }
 
                 if (!required_points || required_points < 1) {
                     this.showToast('❌ Kérlek adj meg legalább 1 pontot!', 'error');
-                    $('[name="required_points"]').focus();
+                    html.find('[name="required_points"]').focus();
                     return;
                 }
 
                 const data = {
                     title: title,
                     required_points: required_points,
-                    description: $('[name="description"]').val(),
-                    action_type: $('[name="action_type"]').val(),
-                    action_value: $('[name="action_value"]').val(),
-                    points_given: parseInt($('[name="points_given"]').val()) || 0
+                    description: html.find('[name="description"]').val(),
+                    action_type: html.find('[name="action_type"]').val(),
+                    action_value: html.find('[name="action_value"]').val(),
+                    points_given: parseInt(html.find('[name="points_given"]').val()) || 0
                 };
 
                 this.saveWizardStep('reward', data, modal);
