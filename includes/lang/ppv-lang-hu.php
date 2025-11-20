@@ -861,6 +861,8 @@ return [
 'btn_save' => '💾 Mentés',
 'err_invalid_request' => '❌ Érvénytelen kérés',
 'err_invalid_qr' => '❌ Érvénytelen QR',
+'err_already_scanned_today' => '⚠️ Ma már beolvasva',
+'err_duplicate_scan' => '⚠️ Már beolvasva. Kérlek várj.',
 'log_point_added' => '1 pont hozzáadva',
 'scan_success' => '✅ 1 pont hozzáadva',
 'offline_synced' => '✅ Offline szinkronizálva',
