@@ -179,13 +179,17 @@ class PPV_POS_SCAN {
         }
 
         /** 5) Duplikált scan (2 perc) */
+        // FIXED: Check wp_ppv_points instead of wp_ppv_pos_log
+        // Log table contains ALL attempts (successful and failed), causing false positives
         $recent = $wpdb->get_var($wpdb->prepare("
-            SELECT id FROM {$wpdb->prefix}ppv_pos_log
+            SELECT id FROM {$wpdb->prefix}ppv_points
             WHERE user_id=%d AND store_id=%d
-            AND created_at >= (NOW() - INTERVAL 2 MINUTE)
+            AND created >= (NOW() - INTERVAL 2 MINUTE)
+            AND type='qr_scan'
         ", $user_id, $store_id));
 
         if ($recent) {
+            error_log("🚫 [DUPLICATE_SCAN] User {$user_id} already has a successful scan in last 2 minutes");
             return rest_ensure_response([
                 'success' => false,
                 'message' => '⚠️ Bereits gescannt',
