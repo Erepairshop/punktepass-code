@@ -1035,11 +1035,19 @@ class CameraScanner {
     try {
       this.scanner = new Html5Qrcode('ppv-mini-reader');
 
-      // ✅ ANDROID OPTIMIZED CONFIG - Fast QR detection from any angle
+      // ✅ ANDROID OPTIMIZED CONFIG - Better distance detection
       const config = {
         fps: 30,  // High FPS for fast detection
-        qrbox: { width: 250, height: 250 },  // Large scan area
-        aspectRatio: 1.0,
+        qrbox: function(viewfinderWidth, viewfinderHeight) {
+          // Dynamic qrbox - 70% of smaller dimension
+          const minEdgePercentage = 0.7;
+          const minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
+          const qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
+          return {
+            width: qrboxSize,
+            height: qrboxSize
+          };
+        },
         disableFlip: false,  // Try both orientations
         experimentalFeatures: {
           useBarCodeDetectorIfSupported: true  // Use native API if available
@@ -1047,9 +1055,11 @@ class CameraScanner {
         formatsToSupport: [0]  // Only QR codes (0 = QR_CODE)
       };
 
-      // 📷 Advanced camera constraints - autofocus + high resolution
+      // 📷 High quality camera constraints for better distance detection
       const cameraConstraints = {
         facingMode: 'environment',
+        width: { min: 640, ideal: 1920, max: 4096 },
+        height: { min: 480, ideal: 1080, max: 2160 },
         advanced: [
           { focusMode: 'continuous' },  // Continuous autofocus
           { zoom: 1.0 }
@@ -1084,8 +1094,17 @@ class CameraScanner {
         this.scanner = new Html5Qrcode('ppv-mini-reader');
 
         await this.scanner.start(
-          { facingMode: 'environment' },
-          { fps: 5, qrbox: 300 },  // Very low FPS, very large box
+          {
+            facingMode: 'environment',
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
+          {
+            fps: 10,
+            qrbox: function(w, h) {
+              return { width: Math.floor(Math.min(w, h) * 0.8), height: Math.floor(Math.min(w, h) * 0.8) };
+            }
+          },
           (qrCode) => this.onScanSuccess(qrCode),
           (errorMessage) => {}
         );
@@ -1410,7 +1429,15 @@ class CameraScanner {
     this.updateStatus('scanning', '🔄 Restarting...');
 
     try {
-      await this.startScanner();
+      // 🍎 iOS Detection - call correct scanner method
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+      if (isIOS) {
+        await this.startIOSScanner();
+      } else {
+        await this.startScanner();
+      }
     } catch (e) {
       console.error('Auto-restart error:', e);
       this.updateStatus('error', '❌ Restart failed');
