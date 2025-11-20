@@ -230,6 +230,26 @@
                         <label>Telefon *</label>
                         <input type="tel" name="phone" required placeholder="pl. +36 30 123 4567">
                     </div>
+
+                    <div class="ppv-form-group">
+                        <label>Ortskoordinaten</label>
+                        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                            <div style="flex: 1;">
+                                <label style="font-size: 12px; color: #999;">Breitengrad (Latitude)</label>
+                                <input type="text" name="latitude" placeholder="pl. 47.5000" pattern="-?[0-9]+\\.?[0-9]*">
+                            </div>
+                            <div style="flex: 1;">
+                                <label style="font-size: 12px; color: #999;">Längengrad (Longitude)</label>
+                                <input type="text" name="longitude" placeholder="pl. 19.0400" pattern="-?[0-9]+\\.?[0-9]*">
+                            </div>
+                        </div>
+                        <button type="button" class="ppv-btn ppv-btn-secondary" id="ppv-geocode-btn" style="width: 100%;">
+                            🔍 Koordinaten suchen
+                        </button>
+                        <small style="color: #999; margin-top: 5px; display: block;">
+                            💡 Opcionális: GPS koordinátákat automatikusan kereshetünk a cím alapján
+                        </small>
+                    </div>
                 </form>
 
                 <div class="ppv-modal-actions">
@@ -239,6 +259,48 @@
             `);
 
             content.html(html);
+
+            // Koordináták keresés
+            html.on('click', '#ppv-geocode-btn', (e) => {
+                e.preventDefault();
+                const address = $('[name="address"]').val();
+                const city = $('[name="city"]').val();
+                const zip = $('[name="zip"]').val();
+                const country = $('[name="country"]').val();
+
+                if (!address || !city) {
+                    alert('Kérlek add meg a címet és várost először!');
+                    return;
+                }
+
+                const btn = $(e.target);
+                btn.prop('disabled', true).text('🔍 Keresés...');
+
+                $.ajax({
+                    url: this.config.rest_url + 'geocode',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    headers: {
+                        'X-WP-Nonce': this.config.nonce
+                    },
+                    data: JSON.stringify({ address, city, zip, country }),
+                    success: (response) => {
+                        if (response.success && response.lat && response.lng) {
+                            $('[name="latitude"]').val(response.lat.toFixed(4));
+                            $('[name="longitude"]').val(response.lng.toFixed(4));
+                            this.showToast('✅ Koordináták megtalálva!', 'success');
+                        } else {
+                            this.showToast('❌ Nem találtunk koordinátákat', 'error');
+                        }
+                    },
+                    error: () => {
+                        this.showToast('❌ Geocoding hiba', 'error');
+                    },
+                    complete: () => {
+                        btn.prop('disabled', false).text('🔍 Koordinaten suchen');
+                    }
+                });
+            });
 
             // Next gomb
             html.on('click', '[data-action="next"]', (e) => {
@@ -256,7 +318,9 @@
                     address: $('[name="address"]').val(),
                     city: $('[name="city"]').val(),
                     zip: $('[name="zip"]').val(),
-                    phone: $('[name="phone"]').val()
+                    phone: $('[name="phone"]').val(),
+                    latitude: $('[name="latitude"]').val() || null,
+                    longitude: $('[name="longitude"]').val() || null
                 };
 
                 this.saveWizardStep('profile_lite', data, modal);
@@ -290,13 +354,34 @@
                     </div>
 
                     <div class="ppv-form-group">
-                        <label>Pontérték *</label>
-                        <input type="number" name="points" required placeholder="100" min="1" value="100">
+                        <label>Szükséges pontok *</label>
+                        <input type="number" name="required_points" required placeholder="100" min="1" value="100">
                     </div>
 
                     <div class="ppv-form-group">
                         <label>Leírás (opcionális)</label>
                         <textarea name="description" rows="3" placeholder="pl. Egy ingyenes eszpresszó vagy cappuccino választható."></textarea>
+                    </div>
+
+                    <div class="ppv-form-group">
+                        <label>Jutalmazás típusa *</label>
+                        <select name="action_type" required>
+                            <option value="discount_percent">Rabatt (%)</option>
+                            <option value="discount_fixed">Fix rabatt</option>
+                            <option value="free_product" selected>Ingyenes termék</option>
+                        </select>
+                    </div>
+
+                    <div class="ppv-form-group">
+                        <label>Érték *</label>
+                        <input type="text" name="action_value" required placeholder="pl. 10" value="0">
+                        <small style="color: #999;">💶 Érték a jutalomhoz (pl. 10% vagy 5 EUR)</small>
+                    </div>
+
+                    <div class="ppv-form-group">
+                        <label>Pontok adva (ha beváltják) *</label>
+                        <input type="number" name="points_given" required placeholder="5" min="0" value="0">
+                        <small style="color: #999;">⭐ Ezek a pontok jutalmazzák az ügyfelet beváltáskor</small>
                     </div>
 
                     <div class="ppv-wizard-tip">
@@ -324,8 +409,11 @@
 
                 const data = {
                     title: $('[name="title"]').val(),
-                    points: parseInt($('[name="points"]').val()),
-                    description: $('[name="description"]').val()
+                    required_points: parseInt($('[name="required_points"]').val()),
+                    description: $('[name="description"]').val(),
+                    action_type: $('[name="action_type"]').val(),
+                    action_value: $('[name="action_value"]').val(),
+                    points_given: parseInt($('[name="points_given"]').val())
                 };
 
                 this.saveWizardStep('reward', data, modal);

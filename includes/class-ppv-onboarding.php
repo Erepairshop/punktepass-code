@@ -373,6 +373,13 @@ class PPV_Onboarding {
             'callback' => [__CLASS__, 'rest_reset'],
             'permission_callback' => '__return_true'
         ]);
+
+        // POST /ppv/v1/onboarding/geocode
+        register_rest_route('ppv/v1', '/onboarding/geocode', [
+            'methods'  => 'POST',
+            'callback' => [__CLASS__, 'rest_geocode'],
+            'permission_callback' => '__return_true'
+        ]);
     }
 
     /** ============================================================
@@ -469,19 +476,27 @@ class PPV_Onboarding {
 
         // Profile Lite lépés
         if ($step === 'profile_lite') {
+            $update_data = [
+                'company_name' => sanitize_text_field($value['company_name'] ?? ''),
+                'country' => sanitize_text_field($value['country'] ?? ''),
+                'address' => sanitize_text_field($value['address'] ?? ''),
+                'city' => sanitize_text_field($value['city'] ?? ''),
+                'zip' => sanitize_text_field($value['zip'] ?? ''),
+                'phone' => sanitize_text_field($value['phone'] ?? '')
+            ];
+
+            // Latitude & Longitude (opcionális)
+            if (!empty($value['latitude'])) {
+                $update_data['latitude'] = floatval($value['latitude']);
+            }
+            if (!empty($value['longitude'])) {
+                $update_data['longitude'] = floatval($value['longitude']);
+            }
+
             $wpdb->update(
                 $table,
-                [
-                    'company_name' => sanitize_text_field($value['company_name'] ?? ''),
-                    'country' => sanitize_text_field($value['country'] ?? ''),
-                    'address' => sanitize_text_field($value['address'] ?? ''),
-                    'city' => sanitize_text_field($value['city'] ?? ''),
-                    'zip' => sanitize_text_field($value['zip'] ?? ''),
-                    'phone' => sanitize_text_field($value['phone'] ?? '')
-                ],
-                ['id' => $store_id],
-                ['%s', '%s', '%s', '%s', '%s', '%s'],
-                ['%d']
+                $update_data,
+                ['id' => $store_id]
             );
         }
 
@@ -489,17 +504,30 @@ class PPV_Onboarding {
         if ($step === 'reward') {
             $rewards_table = $wpdb->prefix . 'ppv_rewards';
 
+            // Get store country for currency
+            $store = $wpdb->get_row($wpdb->prepare(
+                "SELECT country FROM {$wpdb->prefix}ppv_stores WHERE id=%d",
+                $store_id
+            ));
+            $country = $store->country ?? 'DE';
+            $currency_map = ['DE' => 'EUR', 'HU' => 'HUF', 'RO' => 'RON'];
+            $currency = $currency_map[$country] ?? 'EUR';
+
             $wpdb->insert(
                 $rewards_table,
                 [
                     'store_id' => $store_id,
                     'title' => sanitize_text_field($value['title'] ?? 'Első Prémium'),
                     'description' => sanitize_textarea_field($value['description'] ?? ''),
-                    'points_required' => intval($value['points'] ?? 100),
+                    'required_points' => intval($value['required_points'] ?? 100),
+                    'action_type' => sanitize_text_field($value['action_type'] ?? 'free_product'),
+                    'action_value' => sanitize_text_field($value['action_value'] ?? '0'),
+                    'points_given' => intval($value['points_given'] ?? 0),
+                    'currency' => $currency,
                     'active' => 1,
                     'created_at' => current_time('mysql')
                 ],
-                ['%d', '%s', '%s', '%d', '%d', '%s']
+                ['%d', '%s', '%s', '%d', '%s', '%s', '%d', '%s', '%d', '%s']
             );
         }
 
@@ -582,6 +610,77 @@ class PPV_Onboarding {
             'success' => true,
             'message' => 'Onboarding reset'
         ], 200);
+    }
+
+    /** ============================================================
+     *  🗺️ REST – Geocode Address
+     * ============================================================ */
+    public static function rest_geocode($request) {
+        $data = $request->get_json_params();
+
+        $address = sanitize_text_field($data['address'] ?? '');
+        $city = sanitize_text_field($data['city'] ?? '');
+        $zip = sanitize_text_field($data['zip'] ?? '');
+        $country = sanitize_text_field($data['country'] ?? 'DE');
+
+        if (empty($address) || empty($city)) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Address and city required'
+            ], 400);
+        }
+
+        // Google Maps API key (használjuk a meglévő konstanst)
+        $google_api_key = defined('PPV_GOOGLE_MAPS_API_KEY')
+            ? PPV_GOOGLE_MAPS_API_KEY
+            : get_option('ppv_google_maps_api_key', '');
+
+        if (empty($google_api_key)) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Google Maps API key not configured'
+            ], 500);
+        }
+
+        // Geocode keresés
+        $search_query = trim("$address, $zip $city, $country");
+        $url = 'https://maps.googleapis.com/maps/api/geocode/json';
+
+        $response = wp_remote_get(
+            add_query_arg([
+                'address' => $search_query,
+                'components' => 'country:' . strtolower($country),
+                'key' => $google_api_key,
+                'language' => 'en'
+            ], $url),
+            ['timeout' => 10]
+        );
+
+        if (is_wp_error($response)) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Geocoding API error'
+            ], 500);
+        }
+
+        $body = wp_remote_retrieve_body($response);
+        $geo_data = json_decode($body, true);
+
+        if (isset($geo_data['results'][0]['geometry']['location'])) {
+            $location = $geo_data['results'][0]['geometry']['location'];
+
+            return new WP_REST_Response([
+                'success' => true,
+                'lat' => $location['lat'],
+                'lng' => $location['lng'],
+                'formatted_address' => $geo_data['results'][0]['formatted_address'] ?? ''
+            ], 200);
+        }
+
+        return new WP_REST_Response([
+            'success' => false,
+            'message' => 'Location not found'
+        ], 404);
     }
 }
 
