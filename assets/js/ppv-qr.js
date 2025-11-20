@@ -1960,11 +1960,24 @@ document.addEventListener("DOMContentLoaded", function () {
 
         // ✅ Check if response is OK before parsing JSON
         if (!response.ok) {
-          console.error(`Failed to load recent scans: HTTP ${response.status}`);
+          console.error(`❌ [loadRecentScans] HTTP error: ${response.status}`);
           return;
         }
 
-        const data = await response.json();
+        // ✅ Clone response BEFORE consuming it (for error debugging)
+        const responseClone = response.clone();
+
+        // ✅ Try to parse JSON with better error handling
+        let data;
+        try {
+          data = await response.json();
+        } catch (jsonErr) {
+          // If JSON parsing fails, get the raw response body for debugging
+          const text = await responseClone.text();
+          console.error('❌ [loadRecentScans] JSON parse failed. Response body:', text);
+          console.error('❌ [loadRecentScans] JSON error:', jsonErr);
+          return;
+        }
 
         if (data.success && data.scans) {
           // Clear current table
@@ -1976,9 +1989,11 @@ document.addEventListener("DOMContentLoaded", function () {
             row.innerHTML = `<td>${scan.time}</td><td>${scan.user}</td><td>${scan.status}</td>`;
             logTable.appendChild(row);
           });
+        } else if (data.success === false) {
+          console.warn('⚠️ [loadRecentScans] Backend returned success=false:', data.message);
         }
       } catch (err) {
-        console.error('Failed to load recent scans:', err);
+        console.error('❌ [loadRecentScans] Fetch error:', err);
       }
     }
 
