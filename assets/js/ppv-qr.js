@@ -1016,7 +1016,7 @@ class CameraScanner {
       }
 
       const script = document.createElement('script');
-      script.src = 'https://unpkg.com/html5-qrcode@latest/html5-qrcode.min.js';
+      script.src = 'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';
       script.onload = () => this.startScanner();
       script.onerror = () => {
         this.updateStatus('error', '❌ Scanner könyvtár nem tölthető be');
@@ -1035,22 +1035,29 @@ class CameraScanner {
     try {
       this.scanner = new Html5Qrcode('ppv-mini-reader');
 
-      // ✅ UNIVERSAL CONFIG - Works on both iOS and Android
-      // Simpler is better for cross-platform compatibility
+      // ✅ ANDROID OPTIMIZED CONFIG - Fast QR detection from any angle
       const config = {
-        fps: 10,                    // Lower FPS = better stability on all devices
-        qrbox: 250,                 // Large scan box = easier scanning from any angle
-        disableFlip: false,         // Try both orientations
-        videoConstraints: {
-          facingMode: 'environment',
-          width: { ideal: 1920 },   // Higher resolution = better detection
-          height: { ideal: 1080 }
-        }
+        fps: 30,  // High FPS for fast detection
+        qrbox: { width: 250, height: 250 },  // Large scan area
+        aspectRatio: 1.0,
+        disableFlip: false,  // Try both orientations
+        experimentalFeatures: {
+          useBarCodeDetectorIfSupported: true  // Use native API if available
+        },
+        formatsToSupport: [0]  // Only QR codes (0 = QR_CODE)
       };
 
-      // 📷 Simple camera ID or constraints
+      // 📷 Advanced camera constraints - autofocus + high resolution
+      const cameraConstraints = {
+        facingMode: 'environment',
+        advanced: [
+          { focusMode: 'continuous' },  // Continuous autofocus
+          { zoom: 1.0 }
+        ]
+      };
+
       await this.scanner.start(
-        { facingMode: 'environment' },
+        cameraConstraints,
         config,
         (qrCode) => this.onScanSuccess(qrCode),
         (errorMessage) => {
@@ -1118,19 +1125,30 @@ class CameraScanner {
       readerElement.innerHTML = '';
       readerElement.appendChild(video);
 
-      // Get camera stream
+      // Get camera stream with high quality settings
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
-          facingMode: 'environment',
-          width: { ideal: 1920 },
-          height: { ideal: 1080 }
+          facingMode: { exact: 'environment' },
+          width: { min: 1280, ideal: 1920, max: 3840 },    // Higher resolution
+          height: { min: 720, ideal: 1080, max: 2160 },
+          aspectRatio: { ideal: 16/9 },
+          frameRate: { ideal: 30 }                          // Higher FPS for smoother detection
         }
       });
 
       video.srcObject = stream;
       await video.play();
 
-      // Set canvas size to match video
+      // Wait for video metadata to load
+      await new Promise(resolve => {
+        if (video.videoWidth > 0) {
+          resolve();
+        } else {
+          video.addEventListener('loadedmetadata', resolve, { once: true });
+        }
+      });
+
+      // Set canvas size to match actual video resolution
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
 
@@ -1164,16 +1182,21 @@ class CameraScanner {
 
     // Draw video frame to canvas
     if (video.readyState === video.HAVE_ENOUGH_DATA) {
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+      // Ensure canvas matches video size (in case it changed)
+      if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+      }
+
+      // Draw current video frame
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-      // Get image data
+      // Get image data for QR detection
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-      // Scan for QR code
+      // Scan for QR code with optimized settings
       const code = jsQR(imageData.data, imageData.width, imageData.height, {
-        inversionAttempts: 'dontInvert'
+        inversionAttempts: 'attemptBoth'  // Try both normal and inverted QR codes
       });
 
       if (code && code.data) {
@@ -1182,9 +1205,9 @@ class CameraScanner {
       }
     }
 
-    // Continue loop (10 FPS for iOS)
+    // Continue loop (20 FPS = 50ms interval for faster detection)
     if (this.scanning) {
-      setTimeout(() => this.iosScanLoop(), 100);
+      setTimeout(() => this.iosScanLoop(), 50);
     }
   }
 
