@@ -68,28 +68,28 @@
 
                         <div class="ppv-modal-icon">🎉</div>
 
-                        <h2>Üdvözlünk a PunktePass-ban!</h2>
+                        <h2>${L.onb_welcome_title || 'Üdvözlünk a PunktePass-ban!'}</h2>
 
-                        <p>Segítünk beállítani a 2 alapvető dolgot, hogy a vendégek pontokat gyűjthessenek!</p>
+                        <p>${L.onb_welcome_subtitle || 'Segítünk beállítani a 2 alapvető dolgot, hogy a vendégek pontokat gyűjthessenek!'}</p>
 
                         <div class="ppv-welcome-steps">
                             <div class="ppv-welcome-step">
                                 <span class="step-number">1</span>
-                                <span>Töltsd ki az üzlet alapadatait</span>
+                                <span>${L.onb_welcome_step1 || 'Töltsd ki az üzlet alapadatait'}</span>
                             </div>
                             <div class="ppv-welcome-step">
                                 <span class="step-number">2</span>
-                                <span>Hozd létre az első prémiumot</span>
+                                <span>${L.onb_welcome_step2 || 'Hozd létre az első prémiumot'}</span>
                             </div>
                         </div>
 
                         <div class="ppv-welcome-time">
-                            ⏱️ Körülbelül 3 perc
+                            ${L.onb_welcome_time || '⏱️ Körülbelül 3 perc'}
                         </div>
 
                         <div class="ppv-modal-actions">
-                            <button class="ppv-btn ppv-btn-secondary" data-action="later">⏭️ Később</button>
-                            <button class="ppv-btn ppv-btn-primary" data-action="start">🚀 Kezdjük!</button>
+                            <button class="ppv-btn ppv-btn-secondary" data-action="later">${L.onb_btn_later || '⏭️ Később'}</button>
+                            <button class="ppv-btn ppv-btn-primary" data-action="start">${L.onb_btn_start || '🚀 Kezdjük!'}</button>
                         </div>
                     </div>
                 </div>
@@ -187,18 +187,18 @@
                     <div class="ppv-progress-text">50% (1/2)</div>
                 </div>
 
-                <h3>1️⃣ Üzlet Alapadatok</h3>
+                <h3>${L.onb_profile_step_title || '1️⃣ Üzlet Alapadatok'}</h3>
 
                 <form class="ppv-wizard-form" id="ppv-profile-form">
                     <div class="ppv-form-group">
-                        <label>Shop név *</label>
-                        <input type="text" name="company_name" required placeholder="pl. Teszt Kávézó">
+                        <label>${L.onb_profile_company_name || 'Shop név'} *</label>
+                        <input type="text" name="company_name" required placeholder="${L.onb_profile_company_name_placeholder || 'pl. Teszt Kávézó'}">
                     </div>
 
                     <div class="ppv-form-group">
-                        <label>Ország *</label>
+                        <label>${L.onb_profile_country || 'Ország'} *</label>
                         <select name="country" required>
-                            <option value="">Válassz országot...</option>
+                            <option value="">${L.onb_profile_country_placeholder || 'Válassz országot...'}</option>
                             <option value="HU">Magyarország</option>
                             <option value="AT">Ausztria</option>
                             <option value="DE">Németország</option>
@@ -210,51 +210,51 @@
                     </div>
 
                     <div class="ppv-form-group">
-                        <label>Cím *</label>
-                        <input type="text" name="address" required placeholder="pl. Fő utca 12.">
+                        <label>${L.onb_profile_address || 'Cím'} *</label>
+                        <input type="text" name="address" required placeholder="${L.onb_profile_address_placeholder || 'pl. Fő utca 12.'}">
                     </div>
 
                     <div class="ppv-form-row">
                         <div class="ppv-form-group">
-                            <label>Város *</label>
-                            <input type="text" name="city" required placeholder="pl. Budapest">
+                            <label>${L.onb_profile_city || 'Város'} *</label>
+                            <input type="text" name="city" required placeholder="${L.onb_profile_city_placeholder || 'pl. Budapest'}">
                         </div>
 
                         <div class="ppv-form-group">
-                            <label>Irányítószám *</label>
-                            <input type="text" name="zip" required placeholder="pl. 1011">
+                            <label>${L.onb_profile_zip || 'Irányítószám'} *</label>
+                            <input type="text" name="zip" required placeholder="${L.onb_profile_zip_placeholder || 'pl. 1011'}">
                         </div>
                     </div>
 
                     <div class="ppv-form-group">
-                        <label>Telefon *</label>
-                        <input type="tel" name="phone" required placeholder="pl. +36 30 123 4567">
+                        <label>${L.onb_profile_phone || 'Telefon'} *</label>
+                        <input type="tel" name="phone" required placeholder="${L.onb_profile_phone_placeholder || 'pl. +36 30 123 4567'}">
                     </div>
 
                     <div class="ppv-form-group">
                         <label>Ortskoordinaten</label>
                         <div style="display: flex; gap: 10px; margin-bottom: 10px;">
                             <div style="flex: 1;">
-                                <label style="font-size: 12px; color: #999;">Breitengrad (Latitude)</label>
+                                <label style="font-size: 12px; color: #999;">${L.onb_profile_latitude || 'Breitengrad (Latitude)'}</label>
                                 <input type="text" name="latitude" placeholder="pl. 47.5000" pattern="-?[0-9]+\\.?[0-9]*">
                             </div>
                             <div style="flex: 1;">
-                                <label style="font-size: 12px; color: #999;">Längengrad (Longitude)</label>
+                                <label style="font-size: 12px; color: #999;">${L.onb_profile_longitude || 'Längengrad (Longitude)'}</label>
                                 <input type="text" name="longitude" placeholder="pl. 19.0400" pattern="-?[0-9]+\\.?[0-9]*">
                             </div>
                         </div>
                         <button type="button" class="ppv-btn ppv-btn-secondary" id="ppv-geocode-btn" style="width: 100%;">
-                            🔍 Koordinaten suchen
+                            ${L.onb_profile_geocode_btn || '🔍 Koordinaten suchen'}
                         </button>
                         <small style="color: #999; margin-top: 5px; display: block;">
-                            💡 Opcionális: GPS koordinátákat automatikusan kereshetünk a cím alapján
+                            ${L.onb_profile_geocode_tip || '💡 Opcionális: GPS koordinátákat automatikusan kereshetünk a cím alapján'}
                         </small>
                     </div>
                 </form>
 
                 <div class="ppv-modal-actions">
-                    <button type="button" class="ppv-btn ppv-btn-secondary" data-action="skip">⏭️ Kihagyom</button>
-                    <button type="button" class="ppv-btn ppv-btn-primary" data-action="next">➡️ Következő</button>
+                    <button type="button" class="ppv-btn ppv-btn-secondary" data-action="skip">${L.onb_btn_skip || '⏭️ Kihagyom'}</button>
+                    <button type="button" class="ppv-btn ppv-btn-primary" data-action="next">${L.onb_btn_next || '➡️ Következő'}</button>
                 </div>
             `);
 
@@ -269,12 +269,12 @@
                 const country = content.find('[name="country"]').val();
 
                 if (!address || !city) {
-                    this.showToast('❌ Kérlek add meg a címet és várost először!', 'error');
+                    this.showToast(L.onb_error_address || '❌ Kérlek add meg a címet és várost először!', 'error');
                     return;
                 }
 
                 const btn = $(e.target);
-                btn.prop('disabled', true).text('🔍 Keresés...');
+                btn.prop('disabled', true).text(L.onb_state_searching || '🔍 Keresés...');
 
                 $.ajax({
                     url: this.config.rest_url + 'geocode',
@@ -288,16 +288,16 @@
                         if (response.success && response.lat && response.lng) {
                             content.find('[name="latitude"]').val(response.lat.toFixed(4));
                             content.find('[name="longitude"]').val(response.lng.toFixed(4));
-                            this.showToast('✅ Koordináták megtalálva!', 'success');
+                            this.showToast(L.onb_success_geocode || '✅ Koordináták megtalálva!', 'success');
                         } else {
-                            this.showToast('❌ Nem találtunk koordinátákat', 'error');
+                            this.showToast(L.onb_error_not_found || '❌ Nem találtunk koordinátákat', 'error');
                         }
                     },
                     error: () => {
-                        this.showToast('❌ Geocoding hiba', 'error');
+                        this.showToast(L.onb_error_geocoding || '❌ Geocoding hiba', 'error');
                     },
                     complete: () => {
-                        btn.prop('disabled', false).text('🔍 Koordinaten suchen');
+                        btn.prop('disabled', false).text(L.onb_profile_geocode_btn || '🔍 Koordinaten suchen');
                     }
                 });
             });
@@ -345,71 +345,71 @@
                     <div class="ppv-progress-text">100% (2/2)</div>
                 </div>
 
-                <h3>2️⃣ Első Prémium Létrehozása</h3>
+                <h3>${L.onb_reward_step_title || '2️⃣ Első Prémium Létrehozása'}</h3>
 
                 <form class="ppv-wizard-form" id="ppv-reward-form">
                     <div class="ppv-form-group">
-                        <label>Prémium neve *</label>
-                        <input type="text" name="title" placeholder="pl. Ingyenes Kávé">
-                        <small style="color: #999;">📝 A prémium neve, amit az ügyfelek látnak</small>
+                        <label>${L.onb_reward_name || 'Prémium neve'} *</label>
+                        <input type="text" name="title" placeholder="${L.onb_reward_name_placeholder || 'pl. Ingyenes Kávé'}">
+                        <small style="color: #999;">${L.onb_reward_name_helper || '📝 A prémium neve, amit az ügyfelek látnak'}</small>
                     </div>
 
                     <div class="ppv-form-group">
-                        <label>Szükséges pontok *</label>
+                        <label>${L.onb_reward_points || 'Szükséges pontok'} *</label>
                         <input type="number" name="required_points" placeholder="100" min="1" value="100">
-                        <small style="color: #999;">🎯 Hány pont szükséges az ügyfélnek ezen prémium beváltásához</small>
+                        <small style="color: #999;">${L.onb_reward_points_helper || '🎯 Hány pont szükséges az ügyfélnek ezen prémium beváltásához'}</small>
                     </div>
 
                     <div class="ppv-form-group">
-                        <label>Leírás (opcionális)</label>
-                        <textarea name="description" rows="3" placeholder="pl. Egy ingyenes eszpresszó vagy cappuccino választható."></textarea>
-                        <small style="color: #999;">💬 További részletek a prémiumról (opcionális)</small>
+                        <label>${L.onb_reward_description || 'Leírás (opcionális)'}</label>
+                        <textarea name="description" rows="3" placeholder="${L.onb_reward_description_placeholder || 'pl. Egy ingyenes eszpresszó vagy cappuccino választható.'}"></textarea>
+                        <small style="color: #999;">${L.onb_reward_description_helper || '💬 További részletek a prémiumról (opcionális)'}</small>
                     </div>
 
                     <div class="ppv-form-group">
-                        <label>Jutalmazás típusa *</label>
+                        <label>${L.onb_reward_type || 'Jutalmazás típusa'} *</label>
                         <select name="action_type" id="onboarding-action-type">
                             <option value="discount_percent">Rabatt (%)</option>
                             <option value="discount_fixed">Fix rabatt</option>
                             <option value="free_product" selected>Ingyenes termék</option>
                         </select>
-                        <small style="color: #999;">🎁 Milyen típusú jutalmat kap az ügyfél</small>
+                        <small style="color: #999;">${L.onb_reward_type_helper || '🎁 Milyen típusú jutalmat kap az ügyfél'}</small>
                     </div>
 
                     <div class="ppv-form-group" id="onboarding-action-value-wrapper">
-                        <label>Érték *</label>
+                        <label>${L.onb_reward_value || 'Érték'} *</label>
                         <input type="text" name="action_value" placeholder="pl. 10" value="0">
-                        <small style="color: #999;">💶 Rabatt értéke (pl. 10 = 10% vagy 5 = 5 EUR)</small>
+                        <small style="color: #999;">${L.onb_reward_value_helper || '💶 Rabatt értéke (pl. 10 = 10% vagy 5 = 5 EUR)'}</small>
                     </div>
 
                     <!-- GRATIS TERMÉK NEVE (csak FREE_PRODUCT típusnál!) -->
                     <div class="ppv-form-group" id="onboarding-free-product-name-wrapper" style="display: none;">
                         <label>🎁 Produktname</label>
                         <input type="text" name="free_product" id="onboarding-free-product-name" placeholder="pl. Kaffee + Kuchen">
-                        <small style="color: #999;">🎁 Az ingyenes termék neve (pl. Kávé + Sütemény)</small>
+                        <small style="color: #999;">${L.onb_reward_free_product_helper || '🎁 Az ingyenes termék neve (pl. Kávé + Sütemény)'}</small>
                     </div>
 
                     <!-- GRATIS TERMÉK ÉRTÉKE -->
                     <div class="ppv-form-group" id="onboarding-free-product-value-wrapper" style="display: none;">
                         <label style="color: #ff9800;">💰 Produktwert <span style="color: #ff0000;">*</span></label>
                         <input type="number" name="free_product_value" id="onboarding-free-product-value" value="0" min="0.01" step="0.01" placeholder="0.00" style="border-color: #ff9800;">
-                        <small style="color: #ff9800;">💰 A termék rendes ára</small>
+                        <small style="color: #ff9800;">${L.onb_reward_free_product_value_helper || '💰 A termék rendes ára'}</small>
                     </div>
 
                     <div class="ppv-form-group">
-                        <label>Pontok adva (ha beváltják) *</label>
+                        <label>${L.onb_reward_points_given || 'Pontok adva (ha beváltják)'} *</label>
                         <input type="number" name="points_given" placeholder="5" min="0" value="0">
-                        <small style="color: #999;">⭐ Ezek a pontok jutalmazzák az ügyfelet beváltáskor</small>
+                        <small style="color: #999;">${L.onb_reward_points_given_helper || '⭐ Ezek a pontok jutalmazzák az ügyfelet beváltáskor'}</small>
                     </div>
 
                     <div class="ppv-wizard-tip">
-                        💡 Később adhatsz hozzá képet és további prémiumokat!
+                        ${L.onb_reward_tip || '💡 Később adhatsz hozzá képet és további prémiumokat!'}
                     </div>
                 </form>
 
                 <div class="ppv-modal-actions">
-                    <button type="button" class="ppv-btn ppv-btn-secondary" data-action="skip">⏭️ Kihagyom</button>
-                    <button type="button" class="ppv-btn ppv-btn-primary" data-action="finish">🎉 Befejezés</button>
+                    <button type="button" class="ppv-btn ppv-btn-secondary" data-action="skip">${L.onb_btn_skip || '⏭️ Kihagyom'}</button>
+                    <button type="button" class="ppv-btn ppv-btn-primary" data-action="finish">${L.onb_btn_finish || '🎉 Befejezés'}</button>
                 </div>
             `);
 
@@ -448,13 +448,13 @@
                 const required_points = parseInt(content.find('[name="required_points"]').val());
 
                 if (!title) {
-                    this.showToast('❌ Kérlek add meg a prémium nevét!', 'error');
+                    this.showToast(L.onb_error_reward_name || '❌ Kérlek add meg a prémium nevét!', 'error');
                     content.find('[name="title"]').focus();
                     return;
                 }
 
                 if (!required_points || required_points < 1) {
-                    this.showToast('❌ Kérlek adj meg legalább 1 pontot!', 'error');
+                    this.showToast(L.onb_error_reward_points || '❌ Kérlek adj meg legalább 1 pontot!', 'error');
                     content.find('[name="required_points"]').focus();
                     return;
                 }
@@ -484,7 +484,7 @@
          * ============================================================ */
         saveWizardStep(step, data, modal) {
             const btn = modal.find('[data-action="next"], [data-action="finish"]');
-            btn.prop('disabled', true).text('⏳ Mentés...');
+            btn.prop('disabled', true).text(L.onb_state_saving || '⏳ Mentés...');
 
             $.ajax({
                 url: this.config.rest_url + 'complete-step',
@@ -516,8 +516,8 @@
                     }
                 },
                 error: () => {
-                    alert('❌ Hiba történt a mentés során');
-                    btn.prop('disabled', false).text(step === 'reward' ? '🎉 Befejezés' : '➡️ Következő');
+                    alert(L.onb_error_save || '❌ Hiba történt a mentés során');
+                    btn.prop('disabled', false).text(step === 'reward' ? (L.onb_btn_finish || '🎉 Befejezés') : (L.onb_btn_next || '➡️ Következő'));
                 }
             });
         }
@@ -533,19 +533,19 @@
 
                         <div class="ppv-modal-icon ppv-celebration-icon">🎉</div>
 
-                        <h2>Gratulálunk!</h2>
+                        <h2>${L.onb_celebration_title || 'Gratulálunk!'}</h2>
 
-                        <p>A PunktePass használatra kész! 🚀</p>
+                        <p>${L.onb_celebration_subtitle || 'A PunktePass használatra kész! 🚀'}</p>
 
-                        <p>A vendégek most már gyűjthetnek pontokat és beválthatják a prémiumokat!</p>
+                        <p>${L.onb_celebration_message || 'A vendégek most már gyűjthetnek pontokat és beválthatják a prémiumokat!'}</p>
 
                         <div class="ppv-celebration-tip">
-                            💡 <strong>Tipp:</strong> Hozz létre egy kampányt hogy gyorsabban gyűjtsenek pontokat a vendégeid!
+                            ${L.onb_celebration_tip || '💡 <strong>Tipp:</strong> Hozz létre egy kampányt hogy gyorsabban gyűjtsenek pontokat a vendégeid!'}
                         </div>
 
-                        <button class="ppv-btn ppv-btn-primary ppv-btn-large" data-action="close">✅ Rendben</button>
+                        <button class="ppv-btn ppv-btn-primary ppv-btn-large" data-action="close">${L.onb_btn_done || '✅ Rendben'}</button>
 
-                        <div class="ppv-auto-close">Auto-bezár 5 mp múlva</div>
+                        <div class="ppv-auto-close">${L.onb_celebration_autoclose || 'Auto-bezár 5 mp múlva'}</div>
                     </div>
                 </div>
             `);
@@ -560,7 +560,8 @@
             let countdown = 5;
             const timer = setInterval(() => {
                 countdown--;
-                modal.find('.ppv-auto-close').text(`Auto-bezár ${countdown} mp múlva`);
+                const autoCloseText = L.onb_celebration_autoclose || 'Auto-bezár 5 mp múlva';
+                modal.find('.ppv-auto-close').text(autoCloseText.replace('5', countdown));
 
                 if (countdown <= 0) {
                     clearInterval(timer);
@@ -621,7 +622,7 @@
             const card = $(`
                 <div class="ppv-onboarding-progress-card">
                     <div class="ppv-progress-header">
-                        <h3>🎯 Kezdeti Beállítások</h3>
+                        <h3>${L.onb_progress_title || '🎯 Kezdeti Beállítások'}</h3>
                         <button class="ppv-card-close" data-action="dismiss">&times;</button>
                     </div>
 
@@ -633,13 +634,13 @@
                     </div>
 
                     <div class="ppv-progress-steps">
-                        ${this.renderProgressStep('profile_lite', 'Profil adatok kitöltve', this.progress.steps.profile_lite)}
-                        ${this.renderProgressStep('reward', 'Első prémium', this.progress.steps.reward)}
+                        ${this.renderProgressStep('profile_lite', L.onb_progress_step_profile || 'Profil adatok kitöltve', this.progress.steps.profile_lite)}
+                        ${this.renderProgressStep('reward', L.onb_progress_step_reward || 'Első prémium', this.progress.steps.reward)}
                     </div>
 
                     <div class="ppv-progress-actions">
-                        <button class="ppv-btn ppv-btn-secondary ppv-btn-sm" data-action="later">⏭️ Később</button>
-                        <button class="ppv-btn ppv-btn-primary ppv-btn-sm" data-action="continue">🚀 Folytatás</button>
+                        <button class="ppv-btn ppv-btn-secondary ppv-btn-sm" data-action="later">${L.onb_btn_later || '⏭️ Később'}</button>
+                        <button class="ppv-btn ppv-btn-primary ppv-btn-sm" data-action="continue">${L.onb_btn_continue || '🚀 Folytatás'}</button>
                     </div>
                 </div>
             `);
@@ -666,7 +667,7 @@
             });
 
             card.on('click', '[data-action="dismiss"]', () => {
-                if (confirm('Biztosan bezárod? Később visszahozhatod a beállításokból.')) {
+                if (confirm(L.onb_confirm_dismiss || 'Biztosan bezárod? Később visszahozhatod a beállításokból.')) {
                     this.dismissOnboarding('permanent');
                     card.removeClass('show');
                     setTimeout(() => card.remove(), 300);
@@ -681,11 +682,12 @@
         }
 
         renderProgressStep(key, label, completed) {
+            const L = window.ppv_lang || {};
             return `
                 <div class="ppv-progress-step ${completed ? 'completed' : ''}" data-step="${key}">
                     <div class="ppv-step-icon">${completed ? '✅' : '⏳'}</div>
                     <div class="ppv-step-label">${label}</div>
-                    ${!completed ? '<button class="ppv-step-action">➡️ Beállítás</button>' : ''}
+                    ${!completed ? `<button class="ppv-step-action">➡️ ${L.onb_btn_next || 'Beállítás'}</button>` : ''}
                 </div>
             `;
         }
@@ -712,12 +714,12 @@
 
             const completed = this.progress.completed;
             const total = this.progress.total;
-            let text = '🚀 Kezdd el a beállítást!';
+            let text = L.onb_sticky_start || '🚀 Kezdd el a beállítást!';
 
             if (completed === 1) {
-                text = '🎯 Fejezd be a beállítást (1/2)';
+                text = L.onb_sticky_finish_1_of_2 || '🎯 Fejezd be a beállítást (1/2)';
             } else if (completed >= 4) {
-                text = '🔥 Már majdnem kész! (4/5)';
+                text = L.onb_sticky_almost_done_4_of_5 || '🔥 Már majdnem kész! (4/5)';
             }
 
             const sticky = $(`
@@ -747,7 +749,7 @@
             });
 
             sticky.on('click', '[data-action="hide"]', () => {
-                if (confirm('Biztosan elrejted? Később visszahozhatod a beállításokból.')) {
+                if (confirm(L.onb_confirm_hide || 'Biztosan elrejted? Később visszahozhatod a beállításokból.')) {
                     this.dismissOnboarding('sticky');
                     sticky.removeClass('show');
                     setTimeout(() => sticky.remove(), 300);
