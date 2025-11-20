@@ -156,6 +156,9 @@ class BroadcastManager {
   }
 }
 
+// Export to window for cross-file access
+window.BroadcastManager = BroadcastManager;
+
 // ============================================================
 // 💾 OFFLINE SYNC MANAGER
 // ============================================================
