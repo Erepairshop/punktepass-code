@@ -5083,38 +5083,6 @@ ppv-app-root {
 }
 
 /* ──────────────────────────────────────────────────────────────────────
-   🆘 SUPPORT BUTTON
-   ────────────────────────────────────────────────────────────────────── */
-#ppv-support-btn {
-    position: fixed;
-    bottom: 90px;
-    left: 20px;
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--pp-accent) 0%, #7e22ce 100%);
-    border: none;
-    color: white;
-    font-size: 24px;
-    cursor: pointer;
-    box-shadow: 0 4px 20px rgba(147, 51, 234, 0.4);
-    z-index: 999;
-    transition: var(--pp-trans);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-#ppv-support-btn:hover {
-    transform: scale(1.05);
-    box-shadow: 0 6px 25px rgba(147, 51, 234, 0.6);
-}
-
-#ppv-support-btn:active {
-    transform: scale(0.98);
-}
-
-/* ──────────────────────────────────────────────────────────────────────
    📱 RESPONSIVE
    ────────────────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
@@ -5576,4 +5544,260 @@ ppv-app-root {
 
 /* ──────────────────────────────────────────────────────────────────────
    🎉 END OF REWARDS MANAGEMENT STYLING
+   ────────────────────────────────────────────────────────────────────── */
+
+/* ══════════════════════════════════════════════════════════════════════
+   🆘 SUPPORT BUTTON & TICKET MODAL
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ──────────────────────────────────────────────────────────────────────
+   🆘 FLOATING SUPPORT BUTTON
+   ────────────────────────────────────────────────────────────────────── */
+#ppv-support-btn {
+    position: fixed;
+    bottom: 90px;
+    left: 20px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    z-index: 999;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#ppv-support-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+}
+
+#ppv-support-btn:active {
+    transform: scale(0.98);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   📋 SUPPORT MODAL
+   ────────────────────────────────────────────────────────────────────── */
+.ppv-support-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+}
+
+.ppv-support-modal.show {
+    display: flex;
+}
+
+.ppv-support-modal-content {
+    background: #1a1a2e;
+    padding: 30px;
+    border-radius: 15px;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: modalSlideIn 0.3s ease;
+}
+
+.ppv-support-modal-title {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.ppv-support-modal-description {
+    color: #ccc;
+    font-size: 14px;
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   📝 FORM ELEMENTS
+   ────────────────────────────────────────────────────────────────────── */
+.ppv-support-label {
+    color: #fff;
+    font-size: 13px;
+    display: block;
+    margin-bottom: 5px;
+    margin-top: 15px;
+    font-weight: 600;
+}
+
+.ppv-support-label:first-of-type {
+    margin-top: 0;
+}
+
+.ppv-required {
+    color: #ff5252;
+}
+
+.ppv-support-input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #333;
+    background: #0f0f1e;
+    color: #fff;
+    margin-bottom: 15px;
+    font-family: inherit;
+    font-size: 14px;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.ppv-support-input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+textarea.ppv-support-input {
+    resize: vertical;
+    min-height: 100px;
+}
+
+select.ppv-support-input {
+    cursor: pointer;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   📢 MESSAGE ALERTS
+   ────────────────────────────────────────────────────────────────────── */
+.ppv-support-message {
+    display: none;
+    font-size: 13px;
+    margin-bottom: 10px;
+    padding: 10px;
+    border-radius: 6px;
+}
+
+.ppv-support-message.show {
+    display: block;
+}
+
+.ppv-support-error {
+    color: #ff5252;
+    background: rgba(255, 82, 82, 0.1);
+    border: 1px solid rgba(255, 82, 82, 0.3);
+}
+
+.ppv-support-success {
+    color: #4caf50;
+    background: rgba(76, 175, 80, 0.1);
+    border: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🔘 MODAL BUTTONS
+   ────────────────────────────────────────────────────────────────────── */
+.ppv-support-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.ppv-support-btn-submit,
+.ppv-support-btn-cancel {
+    flex: 1;
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 14px;
+    border: none;
+}
+
+.ppv-support-btn-submit {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.ppv-support-btn-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+}
+
+.ppv-support-btn-submit:active {
+    transform: translateY(0);
+}
+
+.ppv-support-btn-cancel {
+    background: transparent;
+    color: #ccc;
+    border: 1px solid #444;
+}
+
+.ppv-support-btn-cancel:hover {
+    background: #2a2a3e;
+    border-color: #667eea;
+    color: #fff;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   📱 RESPONSIVE - MOBILE OPTIMIZATION
+   ────────────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+    #ppv-support-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 20px;
+        bottom: 80px;
+        left: 15px;
+    }
+
+    .ppv-support-modal-content {
+        padding: 20px;
+        width: 95%;
+    }
+
+    .ppv-support-modal-title {
+        font-size: 1.25rem;
+    }
+
+    .ppv-support-buttons {
+        flex-direction: column;
+    }
+
+    .ppv-support-btn-submit,
+    .ppv-support-btn-cancel {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .ppv-support-modal-content {
+        padding: 15px;
+        border-radius: 10px;
+    }
+
+    .ppv-support-input {
+        padding: 10px;
+        font-size: 13px;
+    }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🎉 END OF SUPPORT SECTION STYLING
    ────────────────────────────────────────────────────────────────────── */
