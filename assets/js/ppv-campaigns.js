@@ -42,15 +42,15 @@ jQuery(document).ready(function ($) {
     $("#ppv-campaign-form")[0].reset();
     $("#campaign-id").val("");
     $("#ppv-modal-title").text("🧩 Neue Kampagne");
-    $("#ppv-campaign-modal").fadeIn(200).css("display", "flex");
+    $("#ppv-campaigns-admin-modal").fadeIn(200).css("display", "flex");
   });
 
   $(".ppv-close, #campaign-cancel").on("click", () =>
-    $("#ppv-campaign-modal").fadeOut(200)
+    $("#ppv-campaigns-admin-modal").fadeOut(200)
   );
 
   $(document).on("keydown", function (e) {
-    if (e.key === "Escape") $("#ppv-campaign-modal").fadeOut(200);
+    if (e.key === "Escape") $("#ppv-campaigns-admin-modal").fadeOut(200);
   });
 
   // === Kampagne speichern (Neu / Update) ===
@@ -115,7 +115,7 @@ jQuery(document).ready(function ($) {
     $("#campaign-discount").val(card.data("discount") || 0);
     $("#campaign-type").val(card.data("type") || "points");
 
-    $("#ppv-campaign-modal").fadeIn(200).css("display", "flex");
+    $("#ppv-campaigns-admin-modal").fadeIn(200).css("display", "flex");
   });
 
   // === Kampagne löschen ===

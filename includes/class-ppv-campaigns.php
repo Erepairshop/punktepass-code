@@ -91,7 +91,7 @@ wp_add_inline_script('ppv-campaigns', "window.ppv_campaigns = {$__json};", 'befo
             </div>
 
             <!-- Kampagne Modal -->
-            <div id="ppv-campaign-modal" class="ppv-modal">
+            <div id="ppv-campaigns-admin-modal" class="ppv-modal">
                 <div class="ppv-modal-content">
                     <span class="ppv-close">&times;</span>
                     <h3 id="ppv-modal-title">+ Neue Kampagne</h3>
