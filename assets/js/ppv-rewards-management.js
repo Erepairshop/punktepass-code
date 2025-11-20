@@ -263,6 +263,41 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   /* ============================================================
+   * 🎯 DYNAMIC FORM - Hide action_value for free_product
+   * ============================================================ */
+  const rewardTypeSelect = document.getElementById("reward-type");
+  const rewardValueInput = document.getElementById("reward-value");
+  const rewardValueLabel = rewardValueInput?.previousElementSibling;
+  const rewardValueHelper = rewardValueInput?.nextElementSibling;
+
+  function toggleValueField() {
+    if (!rewardTypeSelect || !rewardValueInput) return;
+
+    const selectedType = rewardTypeSelect.value;
+
+    if (selectedType === "free_product") {
+      // Ingyenes termék - nincs szükség érték mezőre
+      rewardValueInput.style.display = "none";
+      if (rewardValueLabel) rewardValueLabel.style.display = "none";
+      if (rewardValueHelper) rewardValueHelper.style.display = "none";
+      rewardValueInput.value = "0"; // Automatikusan 0
+      rewardValueInput.removeAttribute("required");
+    } else {
+      // Rabatt típusok - érték mező kell
+      rewardValueInput.style.display = "block";
+      if (rewardValueLabel) rewardValueLabel.style.display = "block";
+      if (rewardValueHelper) rewardValueHelper.style.display = "block";
+      rewardValueInput.setAttribute("required", "required");
+    }
+  }
+
+  if (rewardTypeSelect) {
+    rewardTypeSelect.addEventListener("change", toggleValueField);
+    // Initial check
+    toggleValueField();
+  }
+
+  /* ============================================================
    * 🚀 INIT
    * ============================================================ */
   console.log("🚀 Initializing rewards management...");

@@ -397,6 +397,24 @@
 
             content.html(html);
 
+            // 🎯 DYNAMIC FORM - Hide action_value for free_product
+            const toggleValueField = () => {
+                const selectedType = content.find('[name="action_type"]').val();
+                const valueGroup = content.find('[name="action_value"]').closest('.ppv-form-group');
+
+                if (selectedType === 'free_product') {
+                    // Ingyenes termék - nincs szükség érték mezőre
+                    valueGroup.hide();
+                    content.find('[name="action_value"]').val('0');
+                } else {
+                    // Rabatt típusok - érték mező kell
+                    valueGroup.show();
+                }
+            };
+
+            content.on('change', '[name="action_type"]', toggleValueField);
+            toggleValueField(); // Initial check
+
             // Finish gomb
             content.on('click', '[data-action="finish"]', (e) => {
                 e.preventDefault();
