@@ -411,27 +411,20 @@ class PPV_POS_SCAN {
                     $user_display = '—'; // No user for errors like rate_limit
                 }
 
-                // ✅ TRANSLATE status message based on USER's language (not handler's)
+                // ✅ TRANSLATE status message based on HANDLER's language (consistent UI)
                 $status = $log->message; // Fallback to original message
 
-                // Try to extract message_key and user_lang from metadata
+                // Try to extract message_key from metadata
                 if (!empty($log->metadata)) {
                     $metadata = json_decode($log->metadata, true);
                     $message_key = $metadata['message_key'] ?? null;
                     $points = $metadata['points'] ?? 0;
-                    $user_lang = $metadata['user_lang'] ?? 'de';  // ✅ Get user's language from metadata
 
-                    // Load user's language translations
-                    if ($message_key) {
-                        PPV_Lang::load($user_lang);  // ✅ Load user's language file
-                        $user_translations = PPV_Lang::$strings;
-
-                        // If we have a translation key, use it in user's language
-                        if (isset($user_translations[$message_key])) {
-                            $status = $user_translations[$message_key];
-                            // Replace {points} placeholder
-                            $status = str_replace('{points}', $points, $status);
-                        }
+                    // Use HANDLER's language translations (already loaded above)
+                    if ($message_key && isset($translations[$message_key])) {
+                        $status = $translations[$message_key];
+                        // Replace {points} placeholder
+                        $status = str_replace('{points}', $points, $status);
                     }
                 }
 
