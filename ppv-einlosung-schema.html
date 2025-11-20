@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PunktePass - Einlösungen & Quittungen Schema</title>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        /* ============================================================
+         * 🎨 ALAPVETŐ VÁLTOZÓK - PONTOSAN MINT A THEME-LIGHT.CSS
+         * ============================================================ */
+        :root {
+            /* Színek */
+            --pp-primary: #0066cc;
+            --pp-primary-dark: #0052a3;
+            --pp-success: #10b981;
+            --pp-warning: #f59e0b;
+            --pp-danger: #ef4444;
+            --pp-info: #3b82f6;
+
+            /* Felületek */
+            --pp-surface: #ffffff;
+            --pp-surface-2: #f8fafc;
+            --pp-surface-3: #f1f5f9;
+
+            /* Szövegek */
+            --pp-text: #1e293b;
+            --pp-text-2: #64748b;
+            --pp-text-3: #94a3b8;
+
+            /* Szegélyek */
+            --pp-border: #e2e8f0;
+            --pp-border-2: #cbd5e1;
+
+            /* Távolságok */
+            --pp-spacing-xs: 4px;
+            --pp-spacing-sm: 8px;
+            --pp-spacing-md: 16px;
+            --pp-spacing-lg: 24px;
+            --pp-spacing-xl: 32px;
+
+            /* Lekerekítések */
+            --pp-radius-sm: 6px;
+            --pp-radius-md: 8px;
+            --pp-radius-lg: 12px;
+
+            /* Árnyékok */
+            --pp-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+            --pp-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
+            --pp-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        /* ============================================================
+         * 📄 OLDAL ALAP
+         * ============================================================ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: var(--pp-surface-3);
+            color: var(--pp-text);
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        /* ============================================================
+         * 🎯 MAIN WRAPPER - IDE ÉPÜL A CSS!
+         * ============================================================ */
+        .ppv-rewards-wrapper {
+            background: var(--pp-surface);
+            border-radius: var(--pp-radius-lg);
+            padding: var(--pp-spacing-xl);
+            margin: 0 auto;
+            max-width: 1200px;
+            box-shadow: var(--pp-shadow-md);
+        }
+
+        .ppv-rewards-wrapper h2 {
+            margin-bottom: var(--pp-spacing-lg);
+            color: var(--pp-text);
+            font-size: 24px;
+        }
+
+        /* ============================================================
+         * 📑 TAB RENDSZER
+         * ============================================================ */
+        .ppv-rewards-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--pp-border);
+        }
+
+        .ppv-tab-btn {
+            padding: 12px 20px;
+            background: none;
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            color: var(--pp-text-2);
+            transition: all 0.3s ease;
+        }
+
+        .ppv-tab-btn:hover {
+            color: var(--pp-primary);
+            background: rgba(0, 102, 204, 0.05);
+        }
+
+        .ppv-tab-btn.ppv-tab-active {
+            border-bottom-color: var(--pp-primary);
+            color: var(--pp-primary);
+        }
+
+        /* ============================================================
+         * 📋 EINLÖSUNGEN (BEVÁLTÁSOK) - GRID KÁRTYÁK
+         * ============================================================ */
+        .ppv-redeem-section h3,
+        .ppv-log-box h3,
+        .ppv-receipts-section h3 {
+            font-size: 18px;
+            margin-bottom: var(--pp-spacing-md);
+            color: var(--pp-text);
+        }
+
+        .ppv-redeem-grid {
+            display: grid;
+            gap: var(--pp-spacing-md);
+        }
+
+        .ppv-redeem-item {
+            position: relative;
+            padding: var(--pp-spacing-md);
+            background: var(--pp-surface);
+            border: 1px solid var(--pp-border);
+            border-radius: var(--pp-radius-sm);
+            transition: all 0.3s ease;
+        }
+
+        .ppv-redeem-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--pp-warning);
+            border-radius: var(--pp-radius-sm) 0 0 var(--pp-radius-sm);
+        }
+
+        .ppv-redeem-item.status-pending::before {
+            background: var(--pp-warning);
+            animation: ppv-pulse-glow 2s infinite;
+        }
+
+        .ppv-redeem-item.status-approved::before {
+            background: var(--pp-success);
+        }
+
+        .ppv-redeem-item strong {
+            display: block;
+            font-size: 16px;
+            margin-bottom: 4px;
+            color: var(--pp-text);
+        }
+
+        .ppv-redeem-item small {
+            display: block;
+            color: var(--pp-text-2);
+            font-size: 13px;
+            margin-bottom: var(--pp-spacing-sm);
+        }
+
+        .ppv-redeem-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--pp-spacing-sm);
+            margin: var(--pp-spacing-md) 0;
+        }
+
+        .ppv-redeem-meta-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 13px;
+            color: var(--pp-text-2);
+            background: var(--pp-surface-2);
+            padding: 4px 10px;
+            border-radius: var(--pp-radius-sm);
+        }
+
+        .ppv-redeem-meta-item i {
+            font-size: 14px;
+        }
+
+        .ppv-redeem-actions {
+            display: flex;
+            gap: var(--pp-spacing-sm);
+            margin-top: var(--pp-spacing-md);
+        }
+
+        .ppv-redeem-actions button {
+            flex: 1;
+            padding: 8px 16px;
+            border: none;
+            border-radius: var(--pp-radius-sm);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .ppv-approve {
+            background: var(--pp-success);
+            color: white;
+        }
+
+        .ppv-approve:hover {
+            background: #059669;
+            transform: translateY(-1px);
+            box-shadow: var(--pp-shadow-md);
+        }
+
+        .ppv-reject {
+            background: var(--pp-danger);
+            color: white;
+        }
+
+        .ppv-reject:hover {
+            background: #dc2626;
+            transform: translateY(-1px);
+            box-shadow: var(--pp-shadow-md);
+        }
+
+        /* ============================================================
+         * 📜 LOG BOX (UTOLSÓ 10 BEVÁLTÁS)
+         * ============================================================ */
+        .ppv-log-box {
+            margin-top: 30px;
+        }
+
+        .ppv-log-item {
+            padding: var(--pp-spacing-sm);
+            border-bottom: 1px solid var(--pp-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+        }
+
+        .ppv-log-item:last-child {
+            border-bottom: none;
+        }
+
+        .ppv-log-item .log-user {
+            font-weight: 600;
+            color: var(--pp-text);
+        }
+
+        .ppv-log-item .log-points {
+            color: var(--pp-primary);
+            font-weight: 600;
+        }
+
+        .ppv-log-item .log-status {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .ppv-log-item .log-status.approved {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--pp-success);
+        }
+
+        .ppv-log-item .log-status.cancelled {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--pp-danger);
+        }
+
+        /* ============================================================
+         * 📄 QUITTUNGEN (BIZONYLATOK) - KÁRTYA LISTA
+         * ============================================================ */
+        .ppv-receipts-section {
+            margin-top: 20px;
+        }
+
+        .ppv-receipts-filters {
+            display: flex;
+            gap: var(--pp-spacing-sm);
+            margin-bottom: var(--pp-spacing-lg);
+            flex-wrap: wrap;
+        }
+
+        .ppv-filter-btn {
+            padding: 8px 16px;
+            border: 1px solid var(--pp-border);
+            background: var(--pp-surface);
+            border-radius: var(--pp-radius-sm);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            color: var(--pp-text-2);
+            transition: all 0.2s ease;
+        }
+
+        .ppv-filter-btn:hover {
+            border-color: var(--pp-primary);
+            color: var(--pp-primary);
+        }
+
+        .ppv-filter-btn.active {
+            background: var(--pp-primary);
+            color: white;
+            border-color: var(--pp-primary);
+        }
+
+        .ppv-receipts-list {
+            display: grid;
+            gap: var(--pp-spacing-sm);
+        }
+
+        .ppv-receipt-card {
+            padding: var(--pp-spacing-md);
+            background: var(--pp-surface);
+            border: 1px solid var(--pp-border);
+            border-radius: var(--pp-radius-sm);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .ppv-receipt-card:hover {
+            border-color: var(--pp-primary);
+            box-shadow: var(--pp-shadow-md);
+        }
+
+        .ppv-receipt-info {
+            flex: 1;
+        }
+
+        .ppv-receipt-title {
+            font-weight: 600;
+            color: var(--pp-text);
+            margin-bottom: 4px;
+        }
+
+        .ppv-receipt-meta {
+            font-size: 13px;
+            color: var(--pp-text-2);
+        }
+
+        .ppv-receipt-amount {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--pp-primary);
+            margin: 0 var(--pp-spacing-md);
+        }
+
+        .ppv-receipt-download {
+            padding: 8px 16px;
+            background: var(--pp-primary);
+            color: white;
+            border: none;
+            border-radius: var(--pp-radius-sm);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .ppv-receipt-download:hover {
+            background: var(--pp-primary-dark);
+            transform: translateY(-1px);
+            box-shadow: var(--pp-shadow-md);
+        }
+
+        /* ============================================================
+         * 🔔 LOADING & EMPTY STATES
+         * ============================================================ */
+        .ppv-loading,
+        .ppv-empty {
+            padding: var(--pp-spacing-xl);
+            text-align: center;
+            color: var(--pp-text-2);
+            font-size: 14px;
+        }
+
+        /* ============================================================
+         * 📱 RESPONSIVE
+         * ============================================================ */
+        @media (max-width: 768px) {
+            .ppv-rewards-wrapper {
+                padding: var(--pp-spacing-md);
+            }
+
+            .ppv-receipt-card {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: var(--pp-spacing-sm);
+            }
+
+            .ppv-receipt-amount {
+                margin: 0;
+            }
+
+            .ppv-receipt-download {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        /* ============================================================
+         * 🌟 ANIMÁCIÓK
+         * ============================================================ */
+        @keyframes ppv-pulse-glow {
+            0%, 100% {
+                box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+            }
+            50% {
+                box-shadow: 0 0 0 10px rgba(245, 158, 11, 0);
+            }
+        }
+
+        /* Tab tartalom elrejtése */
+        .ppv-tab-content {
+            display: none;
+        }
+
+        .ppv-tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ============================================================
+     * 🎯 MAIN WRAPPER - TELJES SZERKEZET
+     * ============================================================ -->
+    <div class="ppv-rewards-wrapper">
+        <h2>✅ Einlösungen Verwaltung – Teszt Üzlet KFT</h2>
+
+        <!-- ============================================================
+         * 📑 TAB MENU
+         * ============================================================ -->
+        <div class="ppv-rewards-tabs">
+            <button class="ppv-tab-btn ppv-tab-active" data-tab="redeem">
+                ✅ Einlösungen
+            </button>
+            <button class="ppv-tab-btn" data-tab="receipts">
+                📄 Bizonylatok
+            </button>
+        </div>
+
+        <!-- ============================================================
+         * TAB 1: EINLÖSUNGEN (BEVÁLTÁSOK)
+         * ============================================================ -->
+        <div id="ppv-tab-redeem" class="ppv-tab-content active">
+
+            <!-- PENDING SECTION -->
+            <div class="ppv-redeem-section">
+                <h3>📋 Beváltások</h3>
+
+                <h4 style="margin: 20px 0 15px; font-size: 16px;">⏳ Függőben levő beváltások</h4>
+
+                <div class="ppv-redeem-grid">
+                    <!-- Pending Item #1 -->
+                    <div class="ppv-redeem-item status-pending" data-status="pending" data-id="101">
+                        <strong>50% Kedvezmény minden termékre</strong>
+                        <small>👤 teszt.user@example.com</small>
+
+                        <div class="ppv-redeem-meta">
+                            <span class="ppv-redeem-meta-item">
+                                <i class="ri-star-fill"></i>
+                                500 Punkte
+                            </span>
+                            <span class="ppv-redeem-meta-item">
+                                <i class="ri-time-line"></i>
+                                2025-11-20 14:30
+                            </span>
+                        </div>
+
+                        <div class="ppv-redeem-actions">
+                            <button class="ppv-approve" data-id="101">
+                                ✅ Jóváhagyás
+                            </button>
+                            <button class="ppv-reject" data-id="101">
+                                ❌ Elutasítás
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Pending Item #2 -->
+                    <div class="ppv-redeem-item status-pending" data-status="pending" data-id="102">
+                        <strong>Ingyenes Kávé</strong>
+                        <small>👤 nagy.peter@example.com</small>
+
+                        <div class="ppv-redeem-meta">
+                            <span class="ppv-redeem-meta-item">
+                                <i class="ri-star-fill"></i>
+                                100 Punkte
+                            </span>
+                            <span class="ppv-redeem-meta-item">
+                                <i class="ri-time-line"></i>
+                                2025-11-20 15:45
+                            </span>
+                        </div>
+
+                        <div class="ppv-redeem-actions">
+                            <button class="ppv-approve" data-id="102">
+                                ✅ Jóváhagyás
+                            </button>
+                            <button class="ppv-reject" data-id="102">
+                                ❌ Elutasítás
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- APPROVED SECTION -->
+                <h4 style="margin: 30px 0 15px; font-size: 16px;">✅ Jóváhagyott beváltások</h4>
+
+                <div class="ppv-redeem-grid">
+                    <!-- Approved Item #1 -->
+                    <div class="ppv-redeem-item status-approved" data-status="approved" data-id="103">
+                        <strong>20 EUR Utalvány</strong>
+                        <small>👤 kovacs.anna@example.com</small>
+
+                        <div class="ppv-redeem-meta">
+                            <span class="ppv-redeem-meta-item">
+                                <i class="ri-star-fill"></i>
+                                1000 Punkte
+                            </span>
+                            <span class="ppv-redeem-meta-item">
+                                <i class="ri-euro-line"></i>
+                                20.00 EUR
+                            </span>
+                            <span class="ppv-redeem-meta-item">
+                                <i class="ri-checkbox-circle-line"></i>
+                                Jóváhagyva
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Approved Item #2 -->
+                    <div class="ppv-redeem-item status-approved" data-status="approved" data-id="104">
+                        <strong>Ingyenes Házhozszállítás</strong>
+                        <small>👤 szabo.jozsef@example.com</small>
+
+                        <div class="ppv-redeem-meta">
+                            <span class="ppv-redeem-meta-item">
+                                <i class="ri-star-fill"></i>
+                                250 Punkte
+                            </span>
+                            <span class="ppv-redeem-meta-item">
+                                <i class="ri-euro-line"></i>
+                                5.00 EUR
+                            </span>
+                            <span class="ppv-redeem-meta-item">
+                                <i class="ri-checkbox-circle-line"></i>
+                                Jóváhagyva
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================================
+             * 📜 RECENT LOGS (UTOLSÓ 10 BEVÁLTÁS)
+             * ============================================================ -->
+            <div class="ppv-log-box">
+                <h3>📜 Utolsó 10 beváltás</h3>
+
+                <div id="ppv-log-list">
+                    <div class="ppv-log-item">
+                        <span class="log-user">teszt.user@example.com</span>
+                        <span class="log-points">500 pont</span>
+                        <span class="log-status approved">✅ Jóváhagyva</span>
+                        <span class="log-date">2025-11-20 14:30</span>
+                    </div>
+
+                    <div class="ppv-log-item">
+                        <span class="log-user">nagy.peter@example.com</span>
+                        <span class="log-points">100 pont</span>
+                        <span class="log-status cancelled">❌ Elutasítva</span>
+                        <span class="log-date">2025-11-20 13:15</span>
+                    </div>
+
+                    <div class="ppv-log-item">
+                        <span class="log-user">kovacs.anna@example.com</span>
+                        <span class="log-points">1000 pont</span>
+                        <span class="log-status approved">✅ Jóváhagyva</span>
+                        <span class="log-date">2025-11-20 11:45</span>
+                    </div>
+
+                    <div class="ppv-log-item">
+                        <span class="log-user">szabo.jozsef@example.com</span>
+                        <span class="log-points">250 pont</span>
+                        <span class="log-status approved">✅ Jóváhagyva</span>
+                        <span class="log-date">2025-11-20 10:20</span>
+                    </div>
+
+                    <div class="ppv-log-item">
+                        <span class="log-user">toth.maria@example.com</span>
+                        <span class="log-points">750 pont</span>
+                        <span class="log-status approved">✅ Jóváhagyva</span>
+                        <span class="log-date">2025-11-19 16:30</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================================
+         * TAB 2: QUITTUNGEN (BIZONYLATOK)
+         * ============================================================ -->
+        <div id="ppv-tab-receipts" class="ppv-tab-content">
+            <div class="ppv-receipts-section">
+                <h3>📄 Bizonylatok</h3>
+
+                <!-- FILTERS -->
+                <div class="ppv-receipts-filters">
+                    <button class="ppv-filter-btn active">Összes</button>
+                    <button class="ppv-filter-btn">2025 November</button>
+                    <button class="ppv-filter-btn">2025 Október</button>
+                    <button class="ppv-filter-btn">2025 Szeptember</button>
+                </div>
+
+                <!-- RECEIPTS LIST -->
+                <div class="ppv-receipts-list">
+                    <!-- Receipt #1 -->
+                    <div class="ppv-receipt-card">
+                        <div class="ppv-receipt-info">
+                            <div class="ppv-receipt-title">Bizonylat #102</div>
+                            <div class="ppv-receipt-meta">
+                                <i class="ri-calendar-line"></i>
+                                2025-11-20 · Beváltás: 50% Kedvezmény
+                            </div>
+                        </div>
+                        <div class="ppv-receipt-amount">20.00 EUR</div>
+                        <button class="ppv-receipt-download">
+                            <i class="ri-download-line"></i>
+                            Letöltés
+                        </button>
+                    </div>
+
+                    <!-- Receipt #2 -->
+                    <div class="ppv-receipt-card">
+                        <div class="ppv-receipt-info">
+                            <div class="ppv-receipt-title">Bizonylat #101</div>
+                            <div class="ppv-receipt-meta">
+                                <i class="ri-calendar-line"></i>
+                                2025-11-19 · Beváltás: Ingyenes Kávé
+                            </div>
+                        </div>
+                        <div class="ppv-receipt-amount">5.00 EUR</div>
+                        <button class="ppv-receipt-download">
+                            <i class="ri-download-line"></i>
+                            Letöltés
+                        </button>
+                    </div>
+
+                    <!-- Receipt #3 -->
+                    <div class="ppv-receipt-card">
+                        <div class="ppv-receipt-info">
+                            <div class="ppv-receipt-title">Havi összesítő - 2025 November</div>
+                            <div class="ppv-receipt-meta">
+                                <i class="ri-calendar-line"></i>
+                                2025-11-01 - 2025-11-30 · 12 beváltás
+                            </div>
+                        </div>
+                        <div class="ppv-receipt-amount">245.50 EUR</div>
+                        <button class="ppv-receipt-download">
+                            <i class="ri-download-line"></i>
+                            Letöltés
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ============================================================
+     * ⚡ TAB SWITCHING SCRIPT
+     * ============================================================ -->
+    <script>
+        // Tab váltás
+        document.querySelectorAll('.ppv-tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabName = btn.dataset.tab;
+
+                // Tab gombok frissítése
+                document.querySelectorAll('.ppv-tab-btn').forEach(b => b.classList.remove('ppv-tab-active'));
+                btn.classList.add('ppv-tab-active');
+
+                // Tab tartalom frissítése
+                document.querySelectorAll('.ppv-tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                document.getElementById('ppv-tab-' + tabName).classList.add('active');
+            });
+        });
+
+        // Filter gombok
+        document.querySelectorAll('.ppv-filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.ppv-filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+    </script>
+
+</body>
+</html>
