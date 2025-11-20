@@ -817,7 +817,7 @@ public static function render_dashboard() {
         // Check for recent errors (last 15 seconds) in pos_log
         // BUT only if there's NO successful scan AFTER the error
         $recent_error = $wpdb->get_row($wpdb->prepare("
-            SELECT l.message, l.type, s.name as store_name, l.created_at, l.store_id
+            SELECT l.message, l.type, s.name as store_name, l.created_at, l.store_id, l.metadata
             FROM {$wpdb->prefix}ppv_pos_log l
             LEFT JOIN {$wpdb->prefix}ppv_stores s ON l.store_id = s.id
             WHERE l.user_id = %d
@@ -847,11 +847,15 @@ public static function render_dashboard() {
 
             // Only show error if NO successful scan happened after it
             if ($success_after_error == 0) {
-                $response['error_message'] = $recent_error->message;
-                $response['error_type'] = 'rate_limit';
+                // Extract error_type from metadata for client-side translation
+                $metadata = json_decode($recent_error->metadata ?? '{}', true);
+                $error_type = $metadata['error_type'] ?? 'rate_limit';
+
+                $response['error_message'] = $recent_error->message; // Fallback for old errors
+                $response['error_type'] = $error_type; // Send error_type for client-side translation
                 $response['error_store'] = $recent_error->store_name ?: 'PunktePass';
                 $response['error_timestamp'] = $recent_error->created_at; // Add timestamp for tracking
-                error_log("⚠️ [PPV_Dashboard] rest_poll_points: User=$user_id has recent error: " . $recent_error->message);
+                error_log("⚠️ [PPV_Dashboard] rest_poll_points: User=$user_id has recent error: " . $recent_error->message . " (type: $error_type)");
             } else {
                 error_log("✅ [PPV_Dashboard] rest_poll_points: Error found but successful scan happened after, ignoring error");
             }

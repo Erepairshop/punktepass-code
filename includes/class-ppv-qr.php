@@ -193,7 +193,7 @@ class PPV_QR {
         return ['limited' => false];
     }
 
-    private static function insert_log($store_id, $user_id, $msg, $type = 'scan') {
+    private static function insert_log($store_id, $user_id, $msg, $type = 'scan', $error_type = null) {
         global $wpdb;
 
         // Get IP address
@@ -204,10 +204,17 @@ class PPV_QR {
         $user_agent = sanitize_text_field($_SERVER['HTTP_USER_AGENT'] ?? '');
 
         // Prepare metadata (can be extended with additional info)
-        $metadata = json_encode([
+        $metadata_array = [
             'timestamp' => current_time('mysql'),
             'type' => $type
-        ]);
+        ];
+
+        // Add error_type to metadata if provided (for client-side translation)
+        if ($error_type !== null) {
+            $metadata_array['error_type'] = $error_type;
+        }
+
+        $metadata = json_encode($metadata_array);
 
         $wpdb->insert("{$wpdb->prefix}ppv_pos_log", [
             'store_id' => $store_id,
@@ -1127,9 +1134,10 @@ class PPV_QR {
 
         $rate_check = self::check_rate_limit($user_id, $store->id);
         if ($rate_check['limited']) {
-            // Log the rate limit error
+            // Log the rate limit error with error_type for client-side translation
             $response_data = $rate_check['response']->get_data();
-            self::insert_log($store->id, $user_id, $response_data['message'] ?? '⚠️ Rate limit', 'error');
+            $error_type = $response_data['error_type'] ?? null;
+            self::insert_log($store->id, $user_id, $response_data['message'] ?? '⚠️ Rate limit', 'error', $error_type);
             return $rate_check['response'];
         }
 
