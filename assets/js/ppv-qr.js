@@ -6,7 +6,6 @@
  * Author: Erik Borota / PunktePass
  */
 
-console.log("🚀 PPV Kassenscanner v5.3 aktív!");
 
 // ============================================================
 // 🌐 GLOBAL STATE & CONFIG
@@ -25,7 +24,6 @@ window.PPV_STORE_ID =
 sessionStorage.setItem("ppv_store_key", window.PPV_STORE_KEY);
 sessionStorage.setItem("ppv_store_id", window.PPV_STORE_ID);
 
-console.log("✅ Store ID:", window.PPV_STORE_ID, "| KEY:", window.PPV_STORE_KEY);
 
 const L = window.ppv_lang || {};
 
@@ -84,7 +82,7 @@ class UIManager {
     const row = document.createElement("tr");
     row.innerHTML = `<td>${time}</td><td>${user}</td><td>${status}</td>`;
     this.logTable.prepend(row);
-    while (this.logTable.rows.length > 12) this.logTable.deleteRow(12);
+    while (this.logTable.rows.length > 15) this.logTable.deleteRow(15);
   }
 
   flashCampaignList() {
@@ -130,7 +128,6 @@ class OfflineSyncManager {
       });
 
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(items));
-      console.log("✅ [OFFLINE] Saved:", qrCode);
       return true;
     } catch (e) {
       console.error("❌ [OFFLINE] Save failed:", e);
@@ -145,11 +142,9 @@ class OfflineSyncManager {
 
       const unsynced = items.filter(i => !i.synced);
       if (!unsynced.length) {
-        console.log("✅ [OFFLINE] All synced");
         return;
       }
 
-      console.log(`⏳ [OFFLINE] Syncing ${unsynced.length} items...`);
 
       const res = await fetch("/wp-json/punktepass/v1/pos/sync_offline", {
         method: "POST",
@@ -167,7 +162,6 @@ class OfflineSyncManager {
         let remaining = items.filter(i => !synced.includes(i.id));
         localStorage.setItem(this.STORAGE_KEY, JSON.stringify(remaining));
 
-        console.log(`✅ [OFFLINE] ${result.synced} synced, ${remaining.length} remaining`);
         window.ppvToast(`✅ ${result.synced} ${L.pos_sync || "szinkronizálva"}`, "success");
       } else if (result.message?.includes("Duplikátum") || result.message?.includes("már")) {
         console.warn("⚠️ [OFFLINE] Duplicates on server:", result.message);
@@ -253,7 +247,6 @@ class ScanProcessor {
   async loadLogs() {
     // Check if store key exists
     if (!window.PPV_STORE_KEY || window.PPV_STORE_KEY.trim() === '') {
-      console.log('ℹ️ [Logs] No store key - skipping logs load');
       return;
     }
 
@@ -288,7 +281,6 @@ class CampaignManager {
 
     // Check if store key exists
     if (!window.PPV_STORE_KEY || window.PPV_STORE_KEY.trim() === '') {
-      console.log('ℹ️ [Campaigns] No store key - skipping campaigns load');
       this.list.innerHTML = "<p style='text-align:center;color:#999;padding:20px;'>" +
         (L.camp_no_store || "Kein Geschäft ausgewählt") + "</p>";
       return;
@@ -564,7 +556,6 @@ class CampaignManager {
     const status = safe("camp-status");
     // 🩵 Fix: valós campaign_type lekérése DOM-ból
     const realType = document.getElementById("camp-type")?.value || type;
-    console.log("🎯 Campaign type detected:", realType);
 
     const requiredPoints = safeNum("camp-required-points");
     const pointsGiven = safeNum("camp-points-given");
@@ -580,7 +571,6 @@ class CampaignManager {
 
    // ✅ VALIDÁCIÓ: Gratis termék + érték
     if (realType === "free_product") {
-      console.log("🧩 Validating free_product:", freeProductName, freeProductValue);
       if (!freeProductName || freeProductValue <= 0) {
         const msg = L.camp_fill_free_product_name_value || "⚠️ Kérlek add meg a termék nevét és értékét!";
         this.ui.showMessage(msg, "warning");
@@ -669,7 +659,6 @@ class CampaignManager {
       const type = e.target.value;
       this.updateVisibilityByType(type);
       this.updateValueLabel(type); // ✅ ÚJ: Értékcímke frissítése
-      console.log("✅ [Type Change] Type:", type);
     };
 
     typeSelect.addEventListener("change", this._typeChangeHandler);
@@ -688,12 +677,10 @@ class CampaignManager {
       if (productName.length > 0) {
         valueWrapper.style.display = "block";
         // valueInput.required = true; // ❌ KIVET!
-        console.log("✅ [FreeProduct] Megjelent az érték mező");
       } else {
         valueWrapper.style.display = "none";
         // valueInput.required = false; // ❌ KIVET!
         valueInput.value = 0;
-        console.log("❌ [FreeProduct] Elrejtettük az érték mezőt");
       }
     });
   }
@@ -928,7 +915,6 @@ class CameraScanner {
     if (!this.toggleBtn) return;
 
     this.toggleBtn.addEventListener('click', async () => {
-      console.log('🎬 [Scanner] Toggle clicked, scanning:', this.scanning);
 
       if (this.scanning) {
         // Stop scanner
@@ -941,7 +927,6 @@ class CameraScanner {
   }
 
   async stopScanner() {
-    console.log('🛑 [Scanner] Stopping...');
 
     try {
       if (this.scanner) {
@@ -971,14 +956,12 @@ class CameraScanner {
         this.pauseTimeout = null;
       }
 
-      console.log('✅ [Scanner] Stopped');
     } catch (err) {
       console.error('❌ [Scanner] Stop error:', err);
     }
   }
 
   async startScannerManual() {
-    console.log('▶️ [Scanner] Starting manually...');
 
     // Show reader and status
     this.readerDiv.style.display = 'block';
@@ -995,7 +978,6 @@ class CameraScanner {
 
   async autoStart() {
     // ✅ REMOVED: Don't auto-start anymore, user must click button
-    console.log('ℹ️ [Scanner] Auto-start disabled - click button to start');
   }
 
   async loadLibrary() {
@@ -1053,7 +1035,6 @@ class CameraScanner {
       this.scanning = true;
       this.state = 'scanning';
       this.updateStatus('scanning', L.scanner_active || '📷 Scanning...');
-      console.log('✅ Scanner started (optimized mode - 30 FPS, autofocus)');
 
       // 🔦 Try to enable torch/LED for better low-light performance
       try {
@@ -1062,10 +1043,8 @@ class CameraScanner {
           await this.scanner.applyVideoConstraints({
             advanced: [{ torch: true }]
           });
-          console.log('🔦 Torch enabled');
         }
       } catch (torchErr) {
-        console.log('💡 Torch not available:', torchErr.message);
       }
 
     } catch (err) {
@@ -1081,7 +1060,6 @@ class CameraScanner {
           this.scanner = null;
         }
 
-        console.log('⚠️ Trying basic config...');
         this.scanner = new Html5Qrcode('ppv-mini-reader');
 
         const basicConfig = {
@@ -1102,7 +1080,6 @@ class CameraScanner {
         this.scanning = true;
         this.state = 'scanning';
         this.updateStatus('scanning', L.scanner_active || '📷 Scanning...');
-        console.log('✅ Scanner started (basic mode - 20 FPS)');
 
       } catch (err2) {
         console.warn('⚠️ Basic config failed:', err2);
@@ -1117,7 +1094,6 @@ class CameraScanner {
             this.scanner = null;
           }
 
-          console.log('⚠️ Trying minimal config...');
           this.scanner = new Html5Qrcode('ppv-mini-reader');
 
           await this.scanner.start(
@@ -1129,7 +1105,6 @@ class CameraScanner {
           this.scanning = true;
           this.state = 'scanning';
           this.updateStatus('scanning', L.scanner_active || '📷 Scanning...');
-          console.log('✅ Scanner started (minimal mode)');
 
         } catch (err3) {
           console.error('❌ All methods failed:', err3);
@@ -1150,7 +1125,6 @@ class CameraScanner {
       if (window.ppvToast) {
         window.ppvToast(`⏸️ ${pauseMsg}: ${this.countdown}s - ${waitMsg}`, 'warning');
       }
-      console.log(`⏸️ [Scanner] Paused - ${this.countdown}s remaining`);
       return;
     }
 
@@ -1332,11 +1306,9 @@ class CameraScanner {
   async autoRestartScanner() {
     // ✅ Check if user manually stopped during pause
     if (this.state === 'stopped' || !this.scanning) {
-      console.log('ℹ️ [Scanner] Auto-restart cancelled - user stopped manually');
       return;
     }
 
-    console.log('🔄 Auto-restarting scanner after pause...');
     this.state = 'scanning';
     this.updateStatus('scanning', '🔄 Restarting...');
 
@@ -1483,7 +1455,6 @@ class SettingsManager {
       }
     });
 
-    console.log(L.ui_translations_updated || '✅ UI fordítások frissítve');
   }
 
   static initTheme() {
@@ -1603,7 +1574,6 @@ document.addEventListener("DOMContentLoaded", function () {
   campaignManager.load();
   OfflineSyncManager.sync();
 
-  console.log(L.app_initialized || "✅ App fully initialized!");
 
   // ============================================================
   // 📧 RENEWAL REQUEST MODAL
@@ -2003,7 +1973,6 @@ document.addEventListener("DOMContentLoaded", function () {
     // Poll every 10 seconds
     setInterval(loadRecentScans, 10000);
 
-    console.log('✅ Letzte Scans live polling active (10s interval)');
   }
 
   // ============================================================
@@ -2051,7 +2020,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
         // Download CSV
         try {
-          console.log(`📥 [CSV Export] Downloading: period=${period}, date=${date}`);
 
           const url = `/wp-json/ppv/v1/pos/export-logs?period=${period}&date=${date}`;
           const response = await fetch(url, {
@@ -2083,7 +2051,6 @@ document.addEventListener("DOMContentLoaded", function () {
           window.URL.revokeObjectURL(downloadUrl);
           document.body.removeChild(a);
 
-          console.log('✅ [CSV Export] Download completed');
 
           if (window.ppvToast) {
             window.ppvToast('✅ CSV erfolgreich heruntergeladen', 'success');
@@ -2105,8 +2072,6 @@ document.addEventListener("DOMContentLoaded", function () {
       });
     });
 
-    console.log('✅ CSV Export functionality initialized');
   }
 });
 
-console.log(L.app_complete || "✅ COMPLETE - Összes kód betöltve!");
