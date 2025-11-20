@@ -1006,20 +1006,24 @@ class CameraScanner {
       this.scanner = new Html5Qrcode('ppv-mini-reader');
 
       // ✅ OPTIMIZED CONFIG - Fast QR detection from any angle
-      const config = {
-        fps: isIOS ? 20 : 30,  // ⬆️ iOS: Lower FPS for stability
-        qrbox: isIOS ? 220 : { width: 250, height: 250 },  // 📦 iOS: Simple number, Android: Object
-        disableFlip: false,  // 🔄 Try both orientations
-        formatsToSupport: [0]  // 📱 Only QR codes (0 = QR_CODE)
-      };
-
-      // 🍎 iOS: Don't add aspectRatio or experimentalFeatures - causes issues
-      if (!isIOS) {
-        config.aspectRatio = 1.0;
-        config.experimentalFeatures = {
-          useBarCodeDetectorIfSupported: true  // 🚀 Use native API if available (Android)
-        };
-      }
+      const config = isIOS
+        ? {
+            // 🍎 iOS: Minimal config for maximum compatibility
+            fps: 10,
+            qrbox: 250,
+            disableFlip: false
+          }
+        : {
+            // 🤖 Android: Optimized config
+            fps: 30,
+            qrbox: { width: 250, height: 250 },
+            disableFlip: false,
+            aspectRatio: 1.0,
+            formatsToSupport: [0],  // Only QR codes
+            experimentalFeatures: {
+              useBarCodeDetectorIfSupported: true
+            }
+          };
 
       // 📷 Camera constraints - iOS needs simple config only
       const cameraConstraints = isIOS
@@ -1042,15 +1046,17 @@ class CameraScanner {
       this.state = 'scanning';
       this.updateStatus('scanning', L.scanner_active || '📷 Scanning...');
 
-      // 🔦 Try to enable torch/LED for better low-light performance
-      try {
-        const capabilities = this.scanner.getRunningTrackCapabilities();
-        if (capabilities && capabilities.torch) {
-          await this.scanner.applyVideoConstraints({
-            advanced: [{ torch: true }]
-          });
+      // 🔦 Don't auto-enable torch on iOS - causes issues
+      if (!isIOS) {
+        try {
+          const capabilities = this.scanner.getRunningTrackCapabilities();
+          if (capabilities && capabilities.torch) {
+            await this.scanner.applyVideoConstraints({
+              advanced: [{ torch: true }]
+            });
+          }
+        } catch (torchErr) {
         }
-      } catch (torchErr) {
       }
 
     } catch (err) {
