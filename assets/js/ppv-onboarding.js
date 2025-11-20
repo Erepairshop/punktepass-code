@@ -253,8 +253,8 @@
                 </form>
 
                 <div class="ppv-modal-actions">
-                    <button class="ppv-btn ppv-btn-secondary" data-action="skip">⏭️ Kihagyom</button>
-                    <button class="ppv-btn ppv-btn-primary" data-action="next">➡️ Következő</button>
+                    <button type="button" class="ppv-btn ppv-btn-secondary" data-action="skip">⏭️ Kihagyom</button>
+                    <button type="button" class="ppv-btn ppv-btn-primary" data-action="next">➡️ Következő</button>
                 </div>
             `);
 
@@ -390,8 +390,8 @@
                 </form>
 
                 <div class="ppv-modal-actions">
-                    <button class="ppv-btn ppv-btn-secondary" data-action="skip">⏭️ Kihagyom</button>
-                    <button class="ppv-btn ppv-btn-primary" data-action="finish">🎉 Befejezés</button>
+                    <button type="button" class="ppv-btn ppv-btn-secondary" data-action="skip">⏭️ Kihagyom</button>
+                    <button type="button" class="ppv-btn ppv-btn-primary" data-action="finish">🎉 Befejezés</button>
                 </div>
             `);
 
@@ -740,6 +740,46 @@
         hideAllOnboarding() {
             $('.ppv-onboarding-progress-card').fadeOut(300, function() { $(this).remove(); });
             $('.ppv-onboarding-sticky').fadeOut(300, function() { $(this).remove(); });
+        }
+
+        /** ============================================================
+         *  🍞 TOAST NOTIFICATION
+         * ============================================================ */
+        showToast(message, type = 'info') {
+            const bgColors = {
+                success: '#10b981',
+                error: '#ef4444',
+                info: '#3b82f6'
+            };
+
+            const toast = $(`
+                <div class="ppv-onboarding-toast" style="
+                    position: fixed;
+                    bottom: 20px;
+                    right: 20px;
+                    padding: 12px 20px;
+                    background: ${bgColors[type] || bgColors.info};
+                    color: white;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                    z-index: 999999;
+                    font-size: 14px;
+                    font-weight: 500;
+                    opacity: 0;
+                    transition: opacity 0.3s;
+                ">
+                    ${message}
+                </div>
+            `);
+
+            $('body').append(toast);
+
+            setTimeout(() => toast.css('opacity', '1'), 10);
+
+            setTimeout(() => {
+                toast.css('opacity', '0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
         }
 
         /** ============================================================

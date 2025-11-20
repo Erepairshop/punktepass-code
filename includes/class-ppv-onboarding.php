@@ -616,71 +616,86 @@ class PPV_Onboarding {
      *  🗺️ REST – Geocode Address
      * ============================================================ */
     public static function rest_geocode($request) {
-        $data = $request->get_json_params();
+        try {
+            $data = $request->get_json_params();
 
-        $address = sanitize_text_field($data['address'] ?? '');
-        $city = sanitize_text_field($data['city'] ?? '');
-        $zip = sanitize_text_field($data['zip'] ?? '');
-        $country = sanitize_text_field($data['country'] ?? 'DE');
+            if (!$data) {
+                $data = $request->get_params(); // Fallback to GET params
+            }
 
-        if (empty($address) || empty($city)) {
+            $address = sanitize_text_field($data['address'] ?? '');
+            $city = sanitize_text_field($data['city'] ?? '');
+            $zip = sanitize_text_field($data['zip'] ?? '');
+            $country = sanitize_text_field($data['country'] ?? 'DE');
+
+            if (empty($address) || empty($city)) {
+                return new WP_REST_Response([
+                    'success' => false,
+                    'message' => 'Address and city required'
+                ], 200); // 200 instead of 400 to avoid CORS issues
+            }
+
+            // Google Maps API key (használjuk a meglévő konstanst)
+            $google_api_key = defined('PPV_GOOGLE_MAPS_API_KEY')
+                ? PPV_GOOGLE_MAPS_API_KEY
+                : get_option('ppv_google_maps_api_key', '');
+
+            if (empty($google_api_key)) {
+                error_log('❌ [PPV_Onboarding] Google Maps API key missing');
+                return new WP_REST_Response([
+                    'success' => false,
+                    'message' => 'Geocoding not available (API key missing)'
+                ], 200); // 200 instead of 500
+            }
+
+            // Geocode keresés
+            $search_query = trim("$address, $zip $city, $country");
+            $url = 'https://maps.googleapis.com/maps/api/geocode/json';
+
+            $response = wp_remote_get(
+                add_query_arg([
+                    'address' => $search_query,
+                    'components' => 'country:' . strtolower($country),
+                    'key' => $google_api_key,
+                    'language' => 'en'
+                ], $url),
+                ['timeout' => 10]
+            );
+
+            if (is_wp_error($response)) {
+                error_log('❌ [PPV_Onboarding] Geocoding API error: ' . $response->get_error_message());
+                return new WP_REST_Response([
+                    'success' => false,
+                    'message' => 'Geocoding API error'
+                ], 200); // 200 instead of 500
+            }
+
+            $body = wp_remote_retrieve_body($response);
+            $geo_data = json_decode($body, true);
+
+            if (isset($geo_data['results'][0]['geometry']['location'])) {
+                $location = $geo_data['results'][0]['geometry']['location'];
+
+                return new WP_REST_Response([
+                    'success' => true,
+                    'lat' => $location['lat'],
+                    'lng' => $location['lng'],
+                    'formatted_address' => $geo_data['results'][0]['formatted_address'] ?? ''
+                ], 200);
+            }
+
             return new WP_REST_Response([
                 'success' => false,
-                'message' => 'Address and city required'
-            ], 400);
-        }
+                'message' => 'Location not found'
+            ], 200); // 200 instead of 404
 
-        // Google Maps API key (használjuk a meglévő konstanst)
-        $google_api_key = defined('PPV_GOOGLE_MAPS_API_KEY')
-            ? PPV_GOOGLE_MAPS_API_KEY
-            : get_option('ppv_google_maps_api_key', '');
-
-        if (empty($google_api_key)) {
+        } catch (Exception $e) {
+            error_log('❌ [PPV_Onboarding] Geocode exception: ' . $e->getMessage());
             return new WP_REST_Response([
                 'success' => false,
-                'message' => 'Google Maps API key not configured'
-            ], 500);
-        }
-
-        // Geocode keresés
-        $search_query = trim("$address, $zip $city, $country");
-        $url = 'https://maps.googleapis.com/maps/api/geocode/json';
-
-        $response = wp_remote_get(
-            add_query_arg([
-                'address' => $search_query,
-                'components' => 'country:' . strtolower($country),
-                'key' => $google_api_key,
-                'language' => 'en'
-            ], $url),
-            ['timeout' => 10]
-        );
-
-        if (is_wp_error($response)) {
-            return new WP_REST_Response([
-                'success' => false,
-                'message' => 'Geocoding API error'
-            ], 500);
-        }
-
-        $body = wp_remote_retrieve_body($response);
-        $geo_data = json_decode($body, true);
-
-        if (isset($geo_data['results'][0]['geometry']['location'])) {
-            $location = $geo_data['results'][0]['geometry']['location'];
-
-            return new WP_REST_Response([
-                'success' => true,
-                'lat' => $location['lat'],
-                'lng' => $location['lng'],
-                'formatted_address' => $geo_data['results'][0]['formatted_address'] ?? ''
+                'message' => 'Geocoding failed'
             ], 200);
         }
-
-        return new WP_REST_Response([
-            'success' => false,
-            'message' => 'Location not found'
-        ], 404);
     }
 }
 
