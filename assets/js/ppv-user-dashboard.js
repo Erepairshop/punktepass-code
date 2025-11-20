@@ -317,7 +317,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     let lastPolledPoints = boot.points || 0;
     let lastShownErrorTimestamp = null; // Track last shown error timestamp to prevent duplicates
     let pollIntervalId = null;
-    const pageLoadTime = new Date().toISOString(); // Track page load time to ignore old errors
+    let isFirstPoll = true; // Skip showing errors on first poll (page load)
 
     // Get current polling interval based on visibility
     const getCurrentInterval = () => {
@@ -356,22 +356,28 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         // Check for error message (e.g., "bereits gescannt")
         if (data.error_message && data.error_type && data.error_timestamp) {
-          // Only show if:
-          // 1. This is a NEW error (different timestamp)
-          // 2. Error happened AFTER page load (ignore old errors on refresh)
-          if (data.error_timestamp !== lastShownErrorTimestamp && data.error_timestamp > pageLoadTime) {
+          // First poll: Initialize tracking but don't show toast (ignore old errors from before page load)
+          if (isFirstPoll) {
+            lastShownErrorTimestamp = data.error_timestamp;
+            console.log(`⏭️ [Polling] First poll: Initializing error tracking, skipping toast for old error at ${data.error_timestamp}`);
+          }
+          // Subsequent polls: Show toast only if this is a NEW error (different timestamp)
+          else if (data.error_timestamp !== lastShownErrorTimestamp) {
             if (window.ppvShowPointToast) {
               const errorStore = data.error_store || data.store || 'PunktePass';
               window.ppvShowPointToast('error', 0, errorStore, data.error_message);
               console.log(`⚠️ [Polling] Error detected: ${data.error_message} from ${errorStore} at ${data.error_timestamp}`);
             }
             lastShownErrorTimestamp = data.error_timestamp;
-          } else if (data.error_timestamp <= pageLoadTime) {
-            console.log(`⏭️ [Polling] Ignoring old error from before page load: ${data.error_timestamp}`);
           }
         } else {
           // No error in response - clear the last shown error
           lastShownErrorTimestamp = null;
+        }
+
+        // Mark first poll as complete
+        if (isFirstPoll) {
+          isFirstPoll = false;
         }
       } catch (e) {
         console.warn(`⚠️ [Polling] Error:`, e.message);
