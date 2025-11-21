@@ -71,9 +71,16 @@ public static function ajax_auto_add_point() {
     }
 
     // --- STORE AZONOSÍTÁS ---
-    $store_id = intval($_SESSION['ppv_store_id'] ?? ($_POST['store_id'] ?? 0));
-    if (!$store_id) {
-        $store_id = intval($GLOBALS['ppv_active_store'] ?? 0);
+    // 🏪 FILIALE SUPPORT: Check ppv_current_filiale_id FIRST
+    $store_id = 0;
+    if (!empty($_SESSION['ppv_current_filiale_id'])) {
+        $store_id = intval($_SESSION['ppv_current_filiale_id']);
+    } elseif (!empty($_SESSION['ppv_store_id'])) {
+        $store_id = intval($_SESSION['ppv_store_id']);
+    } elseif (!empty($_POST['store_id'])) {
+        $store_id = intval($_POST['store_id']);
+    } elseif (!empty($GLOBALS['ppv_active_store'])) {
+        $store_id = intval($GLOBALS['ppv_active_store']);
     }
 
     if (!$store_id) {
