@@ -33,6 +33,8 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
             add_action('wp_ajax_nopriv_ppv_auto_save_profile', [__CLASS__, 'ajax_auto_save_profile']); // ✅ PPV session auth
             add_action('wp_ajax_ppv_delete_gallery_image', [__CLASS__, 'ajax_delete_gallery_image']);
             add_action('wp_ajax_nopriv_ppv_delete_gallery_image', [__CLASS__, 'ajax_delete_gallery_image']); // ✅ PPV session auth
+            add_action('wp_ajax_ppv_reset_onboarding', [__CLASS__, 'ajax_reset_onboarding']); // 🚀 Onboarding reset
+            add_action('wp_ajax_nopriv_ppv_reset_onboarding', [__CLASS__, 'ajax_reset_onboarding']); // ✅ PPV session auth
         }
 
         // ==================== AUTH CHECK ====================
@@ -533,6 +535,64 @@ if (!empty($store->gallery)) {
                         </option>
                     </select>
                 </div>
+
+                <hr>
+
+                <h3>🚀 Onboarding / Beállítási Varázsló</h3>
+
+                <div class="ppv-form-group">
+                    <p class="ppv-help" style="margin-bottom: 12px;">
+                        <?php echo esc_html(PPV_Lang::t('onboarding_reset_help') ?: 'Ha újra szeretnéd látni a kezdeti beállítási varázslót, kattints az alábbi gombra.'); ?>
+                    </p>
+                    <button type="button" id="ppv-reset-onboarding-btn" class="ppv-btn ppv-btn-secondary" style="width: 100%;">
+                        🔄 <?php echo esc_html(PPV_Lang::t('onboarding_reset_btn') ?: 'Onboarding újraindítása'); ?>
+                    </button>
+                </div>
+
+                <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    const resetBtn = document.getElementById('ppv-reset-onboarding-btn');
+                    if (resetBtn) {
+                        resetBtn.addEventListener('click', function() {
+                            if (!confirm('<?php echo esc_js(PPV_Lang::t('onboarding_reset_confirm') ?: 'Biztosan újraindítod az onboarding-ot?'); ?>')) {
+                                return;
+                            }
+
+                            resetBtn.disabled = true;
+                            resetBtn.textContent = '⏳ ' + '<?php echo esc_js(PPV_Lang::t('onboarding_resetting') ?: 'Újraindítás...'); ?>';
+
+                            // AJAX hívás az onboarding reset-hez
+                            fetch('<?php echo admin_url('admin-ajax.php'); ?>', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/x-www-form-urlencoded',
+                                },
+                                body: new URLSearchParams({
+                                    action: 'ppv_reset_onboarding',
+                                    store_id: <?php echo intval($store->id); ?>,
+                                    <?php echo self::NONCE_NAME; ?>: '<?php echo wp_create_nonce(self::NONCE_ACTION); ?>'
+                                })
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    alert('<?php echo esc_js(PPV_Lang::t('onboarding_reset_success') ?: 'Onboarding sikeresen újraindítva! Frissítsd az oldalt.'); ?>');
+                                    window.location.reload();
+                                } else {
+                                    alert('<?php echo esc_js(PPV_Lang::t('onboarding_reset_error') ?: 'Hiba történt!'); ?>');
+                                    resetBtn.disabled = false;
+                                    resetBtn.textContent = '🔄 <?php echo esc_js(PPV_Lang::t('onboarding_reset_btn') ?: 'Onboarding újraindítása'); ?>';
+                                }
+                            })
+                            .catch(() => {
+                                alert('<?php echo esc_js(PPV_Lang::t('onboarding_reset_error') ?: 'Hiba történt!'); ?>');
+                                resetBtn.disabled = false;
+                                resetBtn.textContent = '🔄 <?php echo esc_js(PPV_Lang::t('onboarding_reset_btn') ?: 'Onboarding újraindítása'); ?>';
+                            });
+                        });
+                    }
+                });
+                </script>
             </div>
             <?php
             return ob_get_clean();
@@ -1114,9 +1174,63 @@ foreach ($search_variants as $idx => $search_query) {
 error_log("❌ [PPV_GEOCODE] Egyik variáns sem találta meg: {$full_address}");
 wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan írni (pl. teljes utcanévvel).']);
 }
+
+        /**
+         * 🚀 AJAX: Onboarding újraindítása (reset)
+         */
+        public static function ajax_reset_onboarding() {
+            if (!isset($_POST[self::NONCE_NAME])) {
+                wp_send_json_error(['msg' => 'Nonce missing']);
+                return;
+            }
+
+            if (!wp_verify_nonce($_POST[self::NONCE_NAME], self::NONCE_ACTION)) {
+                wp_send_json_error(['msg' => 'Invalid nonce']);
+                return;
+            }
+
+            self::ensure_session();
+            $auth = self::check_auth();
+
+            if (!$auth['valid']) {
+                wp_send_json_error(['msg' => 'Not authenticated']);
+                return;
+            }
+
+            $store_id = intval($_POST['store_id'] ?? 0);
+
+            if ($auth['type'] === 'ppv_stores' && $store_id != $auth['store_id']) {
+                wp_send_json_error(['msg' => 'Unauthorized']);
+                return;
+            }
+
+            global $wpdb;
+
+            // Reset onboarding fields (feltételezve hogy ezek léteznek a stores táblában)
+            // Ha nincs még onboarding tábla/mezők, akkor ez placeholder
+            $result = $wpdb->update(
+                $wpdb->prefix . 'ppv_stores',
+                [
+                    'onboarding_dismissed' => 0,
+                    'onboarding_welcome_shown' => 0,
+                    'onboarding_completed' => 0
+                ],
+                ['id' => $store_id],
+                ['%d', '%d', '%d'],
+                ['%d']
+            );
+
+            error_log("🔄 [PPV_ONBOARDING] Reset store #{$store_id}: result=" . ($result !== false ? 'OK' : 'FAILED'));
+
+            if ($result !== false) {
+                wp_send_json_success(['msg' => PPV_Lang::t('onboarding_reset_success') ?: 'Onboarding újraindítva!']);
+            } else {
+                wp_send_json_error(['msg' => PPV_Lang::t('onboarding_reset_error') ?: 'Hiba történt!']);
+            }
+        }
     }
-    
-    
+
+
 
     PPV_Profile_Lite_i18n::hooks();
 }

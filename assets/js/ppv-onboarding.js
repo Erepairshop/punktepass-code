@@ -48,10 +48,7 @@
                 // Progress Card - mindig
                 this.renderProgressCard();
 
-                // Sticky Reminder - ha < 100%
-                if (this.progress.percentage < 100 && !this.config.sticky_hidden) {
-                    this.renderStickyReminder();
-                }
+                // ❌ Sticky Reminder eltávolítva - nem kell
 
                 // Progress polling - 15 másodpercenként
                 setInterval(() => this.refreshProgress(), 15000);
@@ -668,11 +665,14 @@
                 setTimeout(() => card.remove(), 300);
             });
 
+            // X gomb - dismiss
             card.on('click', '[data-action="dismiss"]', () => {
                 if (confirm(L.onb_confirm_dismiss || 'Biztosan bezárod? Később visszahozhatod a beállításokból.')) {
+                    // ✅ Set dismissed flag BEFORE calling backend
+                    this.config.dismissed = true;
+
                     this.dismissOnboarding('permanent');
-                    card.removeClass('show');
-                    setTimeout(() => card.remove(), 300);
+                    this.hideAllOnboarding();
                 }
             });
 
