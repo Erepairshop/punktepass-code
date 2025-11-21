@@ -124,7 +124,10 @@ class PPV_Legal {
             <p>
                 <strong>PunktePass</strong><br>
                 Erik Borota<br>
-                E-Mail: info@punktepass.de
+                Siedlungsring 51<br>
+                89415 Lauingen<br>
+                Deutschland<br><br>
+                E-Mail: <a href="mailto:info@punktepass.de">info@punktepass.de</a>
             </p>
         </section>
 
@@ -283,7 +286,10 @@ class PPV_Legal {
             <p>
                 <strong>PunktePass</strong><br>
                 Erik Borota<br>
-                <!-- Adresse hier eintragen -->
+                Siedlungsring 51<br>
+                89415 Lauingen<br>
+                Deutschland<br><br>
+                <strong>USt.-ID:</strong> DE308874569<br>
                 E-Mail: <a href="mailto:info@punktepass.de">info@punktepass.de</a>
             </p>
         </section>
