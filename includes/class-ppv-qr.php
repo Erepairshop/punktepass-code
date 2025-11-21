@@ -424,12 +424,23 @@ class PPV_QR {
             </div>';
         }
 
+        // 🔍 DEBUG: Log session before permission check
+        error_log("🔍 [QR_CENTER] SESSION CHECK: " . json_encode([
+            'ppv_user_id' => $_SESSION['ppv_user_id'] ?? 'NOT_SET',
+            'ppv_user_type' => $_SESSION['ppv_user_type'] ?? 'NOT_SET',
+            'ppv_store_id' => $_SESSION['ppv_store_id'] ?? 'NOT_SET',
+            'ppv_vendor_store_id' => $_SESSION['ppv_vendor_store_id'] ?? 'NOT_SET',
+            'ppv_current_filiale_id' => $_SESSION['ppv_current_filiale_id'] ?? 'NOT_SET',
+        ]));
+
         $auth_check = PPV_Permissions::check_handler();
         if (is_wp_error($auth_check)) {
+            error_log("❌ [QR_CENTER] check_handler() FAILED: " . $auth_check->get_error_message());
             return '<div class="ppv-error" style="padding: 20px; text-align: center; color: #ff5252;">
                 ❌ Zugriff verweigert. Nur für Händler und Scanner.
             </div>';
         }
+        error_log("✅ [QR_CENTER] check_handler() PASSED");
 
         $lang = sanitize_text_field($_COOKIE['ppv_lang'] ?? '');
         if (empty($lang) || !in_array($lang, ['de', 'hu', 'ro'])) {
