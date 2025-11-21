@@ -365,10 +365,22 @@ if (window.PPV_REWARDS_LOADED) {
     let storeID = 0;
 
     try {
-      storeID =
-        parseInt(window.PPV_STORE_ID) ||
-        parseInt(sessionStorage.getItem("ppv_store_id")) ||
-        1;
+      // 🏪 FILIALE SUPPORT: ALWAYS prioritize window.PPV_STORE_ID over sessionStorage
+      // If window.PPV_STORE_ID exists, use it and clear old sessionStorage
+      if (window.PPV_STORE_ID && parseInt(window.PPV_STORE_ID) > 0) {
+        storeID = parseInt(window.PPV_STORE_ID);
+        console.log(`✅ [REWARDS] Using window.PPV_STORE_ID: ${storeID}`);
+        // Clear sessionStorage if it differs from current window.PPV_STORE_ID
+        const cachedStoreId = sessionStorage.getItem("ppv_store_id");
+        if (cachedStoreId && parseInt(cachedStoreId) !== storeID) {
+          console.log(`🔄 [REWARDS] Store ID changed: ${cachedStoreId} -> ${storeID}`);
+          sessionStorage.removeItem("ppv_store_id");
+        }
+      } else {
+        // Fallback only if window.PPV_STORE_ID is not set
+        storeID = parseInt(sessionStorage.getItem("ppv_store_id")) || 1;
+        console.warn(`⚠️ [REWARDS] window.PPV_STORE_ID not set, using sessionStorage: ${storeID}`);
+      }
     } catch (_) { storeID = 1; }
 
     sessionStorage.setItem("ppv_store_id", String(storeID));
