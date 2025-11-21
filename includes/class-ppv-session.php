@@ -118,6 +118,31 @@ class PPV_Session {
             }
         }
 
+        // 3️⃣ Handler session (ppv_store_id vagy ppv_active_store - trial + active handlers)
+        if (!empty($_SESSION['ppv_store_id'])) {
+            $store_id = intval($_SESSION['ppv_store_id']);
+            $store = $wpdb->get_row($wpdb->prepare("
+                SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id=%d LIMIT 1", $store_id));
+            if ($store) {
+                $GLOBALS['ppv_active_store'] = $store;
+                $GLOBALS['ppv_active_store_id'] = $store->id;
+                $GLOBALS['ppv_is_pos'] = false;
+                return $store;
+            }
+        }
+
+        if (!empty($_SESSION['ppv_active_store'])) {
+            $store_id = intval($_SESSION['ppv_active_store']);
+            $store = $wpdb->get_row($wpdb->prepare("
+                SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id=%d LIMIT 1", $store_id));
+            if ($store) {
+                $GLOBALS['ppv_active_store'] = $store;
+                $GLOBALS['ppv_active_store_id'] = $store->id;
+                $GLOBALS['ppv_is_pos'] = false;
+                return $store;
+            }
+        }
+
         // 4️⃣ REST-Auth token → user → store
         if (class_exists('PPV_Auth')) {
             $req = new WP_REST_Request('GET', '/punktepass/v1/auth/check');
