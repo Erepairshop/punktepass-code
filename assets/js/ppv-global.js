@@ -1,36 +1,31 @@
 /**
- * 🌍 PunktePass – Global PWA Controller (v1.0)
+ * PunktePass – Global PWA Controller (v2.0)
+ * Turbo.js compatible
  * Minden oldalra betöltődik (Dashboard, Points, Rewards, stb.)
  */
 
-console.log("✅ [PPV_GLOBAL] active");
+console.log("✅ [PPV_GLOBAL] v2.0 active (Turbo-compatible)");
 
-// 🔹 Page fade-in / fade-out animáció
-window.addEventListener("beforeunload", () => {
-  document.body.style.opacity = "0";
-  document.body.style.transition = "opacity 0.2s ease-out";
-});
-window.addEventListener("pageshow", () => {
-  document.body.style.opacity = "1";
-});
+// 🚀 Turbo handles transitions now - removed beforeunload/pageshow opacity code
+// OLD CODE REMOVED:
+// window.addEventListener("beforeunload", () => { ... });
+// window.addEventListener("pageshow", () => { ... });
 
-// 🔹 Instant navigáció – cache előtöltés
+// 🔹 Instant navigáció – cache előtöltés (only for non-Turbo links)
 document.addEventListener("DOMContentLoaded", () => {
-  document.querySelectorAll("a[href^='/']").forEach((link) => {
+  document.querySelectorAll("a[href^='/']:not([data-turbo='false'])").forEach((link) => {
     link.addEventListener("mouseenter", () => {
       const url = link.getAttribute("href");
-      if (url && !url.startsWith("#")) fetch(url, { cache: "force-cache" });
+      if (url && !url.startsWith("#")) {
+        // Turbo handles prefetching, but we can hint
+        if (window.Turbo) {
+          // Turbo will handle this
+        } else {
+          fetch(url, { cache: "force-cache" });
+        }
+      }
     });
   });
-});
-
-// 🔹 Egyszerű loader overlay (betöltéskor)
-document.addEventListener("DOMContentLoaded", () => {
-  const loader = document.createElement("div");
-  loader.id = "ppv-loader";
-  loader.innerHTML = '<div class="pulse"></div>';
-  document.body.appendChild(loader);
-  setTimeout(() => loader.remove(), 350);
 });
 
 // 🔹 Service Worker státusz

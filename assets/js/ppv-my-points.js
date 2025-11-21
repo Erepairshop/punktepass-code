@@ -136,17 +136,8 @@
     document.body.classList.add("ppv-offline-mode");
   });
 
-  window.addEventListener("beforeunload", () => {
-    if (!window.ppv_skip_fade) {
-      document.body.style.opacity = "0";
-      document.body.style.transition = "opacity 0.15s ease-out";
-    }
-  });
-
-  window.addEventListener("pageshow", () => {
-    document.body.style.opacity = "1";
-    window.ppv_skip_fade = false;
-  });
+  // 🚀 Turbo handles transitions now - removed beforeunload/pageshow opacity code
+  // These don't work well with Turbo.js SPA navigation
 
   // 🌍 LISTEN FOR LANGUAGE CHANGE FROM DASHBOARD
   window.addEventListener('ppv_lang_changed', (e) => {
@@ -164,6 +155,13 @@
 
   // 🚀 Main initialization function
   function initAll() {
+    // ✅ FIRST: Check if we're on the my-points page
+    const container = document.getElementById("ppv-my-points-app");
+    if (!container) {
+      console.log('⏭️ [PPV_MYPOINTS] Not a my-points page, skipping');
+      return;
+    }
+
     console.log('📄 [PPV_MYPOINTS] Initializing...');
     initLayout();
     initToken();
