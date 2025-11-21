@@ -579,6 +579,7 @@ return [
     
     'gallery' => 'Galerie',
     'gallery_add' => '+ Adaugă Imagini',
+    'gallery_choose_files' => 'Alege fișiere',
     'gallery_info' => 'Încarcă până la 10 imagini (max. 4MB per imagine)',
     'gallery_empty' => 'Nicio imagine în galerie yet',
     

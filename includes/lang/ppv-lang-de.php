@@ -488,10 +488,15 @@ return [
     'category_select' => 'Bitte wählen...',
     'category_handyreparatur' => 'Handyreparatur',
     'category_cafe' => 'Café',
+    'category_restaurant' => 'Restaurant',
     'category_friseur' => 'Friseur',
+    'category_beauty' => 'Schönheit & Wellness',
     'category_mode' => 'Mode & Accessoires',
     'category_fitness' => 'Fitness',
+    'category_pharmacy' => 'Apotheke',
+    'category_sportshop' => 'Sportgeschäft',
     'category_elektronik' => 'Elektronik',
+    'category_other' => 'Sonstiges',
     'category_sonstiges' => 'Sonstiges',
     
     'address_section' => 'Adresse',
@@ -542,6 +547,7 @@ return [
     
     'gallery' => 'Galerie',
     'gallery_add' => '+ Bilder hinzufügen',
+    'gallery_choose_files' => 'Dateien auswählen',
     'gallery_info' => 'Laden Sie bis zu 10 Bilder hoch (max. 4MB pro Bild)',
     'gallery_empty' => 'Noch keine Bilder in der Galerie',
     
@@ -660,12 +666,6 @@ return [
     'footer_terms' => 'Bedingungen',
     'footer_contact' => 'Kontakt',
     'footer_legal' => '© 2025 PunktePass. Alle Rechte vorbehalten.',
-    
-    'category_pharmacy' => 'Gyógyszertár',
-'category_restaurant' => 'Étterem',
-'category_beauty' => 'Szépség & Wellness',
-'category_sportshop' => 'Sportüzlet',
-'category_other' => 'Egyéb',
 
  // ============================================================
     // 🎫 MY POINTS PAGE

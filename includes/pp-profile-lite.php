@@ -394,7 +394,10 @@ private static function render_tab_general($store) {
                 <div class="ppv-media-group">
                     <label data-i18n="gallery"><?php echo esc_html(PPV_Lang::t('gallery')); ?></label>
                     <p class="ppv-help" data-i18n="gallery_info"><?php echo esc_html(PPV_Lang::t('gallery_info')); ?></p>
-                    <input type="file" name="gallery[]" multiple accept="image/jpeg,image/png,image/webp" class="ppv-file-input">
+                    <input type="file" name="gallery[]" multiple accept="image/jpeg,image/png,image/webp" class="ppv-file-input" id="ppv-gallery-input" style="display: none;">
+                    <button type="button" class="ppv-btn ppv-btn-secondary" onclick="document.getElementById('ppv-gallery-input').click()" data-i18n="gallery_choose_files" style="width: 100%; margin-bottom: 10px;">
+                        📁 <?php echo esc_html(PPV_Lang::t('gallery_choose_files')); ?>
+                    </button>
 <div id="ppv-gallery-preview" class="ppv-gallery-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; margin-top: 10px;">
 <?php 
 

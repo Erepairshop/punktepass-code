@@ -566,6 +566,7 @@ return [
     
     'gallery' => 'Galéria',
     'gallery_add' => '+ Képek Hozzáadása',
+    'gallery_choose_files' => 'Fájlok kiválasztása',
     'gallery_info' => 'Tölts fel legfeljebb 10 képet (max. 4MB/kép)',
     'gallery_empty' => 'Még nincs kép a galériában',
     
