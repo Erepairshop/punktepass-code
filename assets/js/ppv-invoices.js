@@ -11,7 +11,30 @@ console.log("✅ PPV Invoices JS v1.0 loaded");
 document.addEventListener("DOMContentLoaded", function () {
 
   const base = ppv_invoices?.rest_url || "/wp-json/ppv/v1/";
-  const storeID = window.PPV_STORE_ID || parseInt(sessionStorage.getItem("ppv_store_id")) || 1;
+
+  // ============================================================
+  // 🏪 FILIALE SUPPORT: Store ID Detection
+  // ============================================================
+  let storeID = 0;
+
+  // ALWAYS prioritize window.PPV_STORE_ID over sessionStorage
+  if (window.PPV_STORE_ID && Number(window.PPV_STORE_ID) > 0) {
+    storeID = Number(window.PPV_STORE_ID);
+    console.log(`✅ [INVOICES] Using window.PPV_STORE_ID: ${storeID}`);
+    // Clear sessionStorage if it differs
+    const cachedStoreId = sessionStorage.getItem("ppv_store_id");
+    if (cachedStoreId && Number(cachedStoreId) !== storeID) {
+      console.log(`🔄 [INVOICES] Store ID changed: ${cachedStoreId} -> ${storeID}`);
+      sessionStorage.removeItem("ppv_store_id");
+    }
+  } else {
+    storeID = Number(sessionStorage.getItem("ppv_store_id") || 0) || 1;
+    console.warn(`⚠️ [INVOICES] window.PPV_STORE_ID not set, using sessionStorage: ${storeID}`);
+  }
+
+  if (storeID > 0) {
+    sessionStorage.setItem("ppv_store_id", storeID);
+  }
 
   /* ============================================================
    * 🧩 TOAST HELPER
