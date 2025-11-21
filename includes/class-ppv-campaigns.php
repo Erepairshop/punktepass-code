@@ -80,16 +80,24 @@ wp_add_inline_script('ppv-campaigns', "window.ppv_campaigns = {$__json};", 'befo
         global $wpdb;
         $today = current_time('Y-m-d');
 
+        // 🏪 FILIALE SUPPORT: Get actual store ID from session (not passed parameter!)
+        $store_id = self::get_store_id();
+        if (!$store_id) {
+            echo "<p>⚠️ Kein Store gefunden (Session).</p>";
+            return;
+        }
+
         // lejárt kampányok automatikus inaktiválása
         $wpdb->query($wpdb->prepare("
             UPDATE {$wpdb->prefix}ppv_campaigns
             SET status='expired'
             WHERE store_id=%d AND end_date < %s AND status != 'expired'
-        ", $store->id, $today));
+        ", $store_id, $today));
 
+        // 🏪 FILIALE SUPPORT: Only show campaigns for current filiale/store
         $campaigns = $wpdb->get_results($wpdb->prepare("
             SELECT * FROM {$wpdb->prefix}ppv_campaigns WHERE store_id=%d ORDER BY created_at DESC
-        ", $store->id));
+        ", $store_id));
 
         ?>
         <div class="ppv-campaigns">
