@@ -31,6 +31,22 @@ class PPV_Bottom_Nav {
             null
         );
 
+        // 🚀 Turbo.js for instant page transitions
+        wp_enqueue_script(
+            'turbo',
+            'https://cdn.jsdelivr.net/npm/@hotwired/turbo@8.0.4/dist/turbo.es2017-esm.js',
+            [],
+            null,
+            false
+        );
+        // Add module type to Turbo script
+        add_filter('script_loader_tag', function($tag, $handle) {
+            if ($handle === 'turbo') {
+                return str_replace('<script ', '<script type="module" ', $tag);
+            }
+            return $tag;
+        }, 10, 2);
+
         wp_register_style('ppv-bottom-nav', false);
         wp_add_inline_style('ppv-bottom-nav', self::inline_css());
         wp_enqueue_style('ppv-bottom-nav');
@@ -248,151 +264,194 @@ class PPV_Bottom_Nav {
             .ppv-bottom-nav {
                 padding-bottom: max(12px, env(safe-area-inset-bottom));
             }
+        }
+
+        /* 🚀 Turbo Loading Indicator */
+        .turbo-progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea, #764ba2, #00eaff);
+            z-index: 99999;
+            transition: width 0.3s ease;
+        }
+
+        body.turbo-loading::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea, #764ba2, #00eaff);
+            background-size: 200% 100%;
+            animation: turbo-loading 1s ease-in-out infinite;
+            z-index: 99999;
+        }
+
+        @keyframes turbo-loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
         }";
     }
 
     /** ============================================================
-     * JS – Aktív ikon kijelölés + Link navigation
+     * JS – Aktív ikon kijelölés + Turbo Navigation
      * ============================================================ */
     private static function inline_js() {
         $ajax_url = admin_url('admin-ajax.php');
         $nonce = wp_create_nonce('ppv_support_nonce');
 
         return "
-        jQuery(document).ready(function(\$) {
-            console.log('✅ Bottom Nav aktiv');
-            const currentPath = window.location.pathname.replace(/\/+\$/, '');
+        (function() {
+            // 🚀 Initialize everything
+            function initAll() {
+                const \$ = jQuery;
+                console.log('✅ Bottom Nav aktiv (Turbo)');
+                const currentPath = window.location.pathname.replace(/\/+\$/, '');
 
-            // Aktív ikon megjelölése
-            \$('.ppv-bottom-nav .nav-item').each(function() {
-                const href = \$(this).attr('href');
-                if (href && href !== '#') {
-                    const cleanHref = href.replace(/\/+\$/, '');
-                    if (currentPath === cleanHref || currentPath.startsWith(cleanHref)) {
-                        \$(this).addClass('active');
-                    }
-                }
-            });
-
-            // ✅ NORMÁLIS LINKEK MŰKÖDJENEK! (NE INTERCEPTÁLÓDJON)
-            \$('.ppv-bottom-nav .nav-item[data-navlink]').on('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                const href = \$(this).attr('href');
-                console.log('🔗 Bottom Nav Navigate to:', href);
-                setTimeout(function() {
-                    window.location.href = href;
-                }, 50);
-                return false;
-            });
-
-            // Smooth icon hover feedback
-            \$('.ppv-bottom-nav .nav-item').on('touchstart mousedown', function() {
-                \$(this).addClass('touch');
-            }).on('touchend mouseup', function() {
-                \$(this).removeClass('touch');
-            });
-
-            // ============ SUPPORT MODAL ============
-            const \$modal = \$('#ppv-support-modal');
-            const \$msg = \$('#ppv-support-msg');
-
-            // Open modal
-            \$('#ppv-support-nav-btn').on('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                \$modal.css('display', 'flex').hide().fadeIn(200);
-                \$('#ppv-support-email').val('');
-                \$('#ppv-support-phone').val('');
-                \$('#ppv-support-desc').val('');
-                \$('#ppv-support-email').focus();
-                \$msg.hide();
-            });
-
-            // Close modal
-            \$('#ppv-support-close').on('click', function() {
-                \$modal.fadeOut(200);
-            });
-
-            // Close on backdrop click
-            \$modal.on('click', function(e) {
-                if (e.target === this) {
-                    \$modal.fadeOut(200);
-                }
-            });
-
-            // Send ticket
-            \$('#ppv-support-send').on('click', function() {
-                const email = \$('#ppv-support-email').val().trim();
-                const phone = \$('#ppv-support-phone').val().trim();
-                const desc = \$('#ppv-support-desc').val().trim();
-                const priority = \$('#ppv-support-priority').val();
-                const \$btn = \$(this);
-
-                // Validate email
-                if (!email) {
-                    \$msg.css({background:'rgba(255,82,82,0.2)', color:'#ff5252'}).text('Bitte geben Sie Ihre E-Mail Adresse ein.').show();
-                    \$('#ppv-support-email').focus();
-                    return;
-                }
-
-                // Simple email validation
-                const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+\$/;
-                if (!emailRegex.test(email)) {
-                    \$msg.css({background:'rgba(255,82,82,0.2)', color:'#ff5252'}).text('Bitte geben Sie eine gültige E-Mail Adresse ein.').show();
-                    \$('#ppv-support-email').focus();
-                    return;
-                }
-
-                // Validate phone
-                if (!phone) {
-                    \$msg.css({background:'rgba(255,82,82,0.2)', color:'#ff5252'}).text('Bitte geben Sie Ihre Telefonnummer ein.').show();
-                    \$('#ppv-support-phone').focus();
-                    return;
-                }
-
-                // Validate description
-                if (!desc) {
-                    \$msg.css({background:'rgba(255,82,82,0.2)', color:'#ff5252'}).text('Bitte beschreiben Sie Ihr Problem.').show();
-                    \$('#ppv-support-desc').focus();
-                    return;
-                }
-
-                \$btn.prop('disabled', true).html('<i class=\"ri-loader-4-line\"></i> Senden...');
-                \$msg.hide();
-
-                \$.ajax({
-                    url: '{$ajax_url}',
-                    type: 'POST',
-                    data: {
-                        action: 'ppv_submit_support_ticket',
-                        email: email,
-                        phone: phone,
-                        description: desc,
-                        priority: priority,
-                        contact_method: 'email',
-                        nonce: '{$nonce}'
-                    },
-                    success: function(res) {
-                        if (res.success) {
-                            \$msg.css({background:'rgba(76,175,80,0.2)', color:'#4caf50'}).html('<i class=\"ri-checkbox-circle-line\"></i> Ticket gesendet!').show();
-                            \$('#ppv-support-email').val('');
-                            \$('#ppv-support-phone').val('');
-                            \$('#ppv-support-desc').val('');
-                            setTimeout(function() { \$modal.fadeOut(200); }, 1500);
-                        } else {
-                            \$msg.css({background:'rgba(255,82,82,0.2)', color:'#ff5252'}).text(res.data?.message || 'Fehler').show();
+                // Aktív ikon megjelölése
+                \$('.ppv-bottom-nav .nav-item').removeClass('active');
+                \$('.ppv-bottom-nav .nav-item').each(function() {
+                    const href = \$(this).attr('href');
+                    if (href && href !== '#') {
+                        const cleanHref = href.replace(/\/+\$/, '');
+                        if (currentPath === cleanHref || currentPath.startsWith(cleanHref)) {
+                            \$(this).addClass('active');
                         }
-                    },
-                    error: function() {
-                        \$msg.css({background:'rgba(255,82,82,0.2)', color:'#ff5252'}).text('Netzwerkfehler').show();
-                    },
-                    complete: function() {
-                        \$btn.prop('disabled', false).html('<i class=\"ri-send-plane-line\"></i> Senden');
                     }
                 });
+
+                // Smooth icon hover feedback
+                \$('.ppv-bottom-nav .nav-item').off('touchstart mousedown touchend mouseup');
+                \$('.ppv-bottom-nav .nav-item').on('touchstart mousedown', function() {
+                    \$(this).addClass('touch');
+                }).on('touchend mouseup', function() {
+                    \$(this).removeClass('touch');
+                });
+
+                // ============ SUPPORT MODAL ============
+                const \$modal = \$('#ppv-support-modal');
+                const \$msg = \$('#ppv-support-msg');
+
+                // Unbind previous handlers to prevent duplicates
+                \$('#ppv-support-nav-btn').off('click');
+                \$('#ppv-support-close').off('click');
+                \$modal.off('click');
+                \$('#ppv-support-send').off('click');
+
+                // Open modal
+                \$('#ppv-support-nav-btn').on('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    \$modal.css('display', 'flex').hide().fadeIn(200);
+                    \$('#ppv-support-email').val('');
+                    \$('#ppv-support-phone').val('');
+                    \$('#ppv-support-desc').val('');
+                    \$('#ppv-support-email').focus();
+                    \$msg.hide();
+                });
+
+                // Close modal
+                \$('#ppv-support-close').on('click', function() {
+                    \$modal.fadeOut(200);
+                });
+
+                // Close on backdrop click
+                \$modal.on('click', function(e) {
+                    if (e.target === this) {
+                        \$modal.fadeOut(200);
+                    }
+                });
+
+                // Send ticket
+                \$('#ppv-support-send').on('click', function() {
+                    const email = \$('#ppv-support-email').val().trim();
+                    const phone = \$('#ppv-support-phone').val().trim();
+                    const desc = \$('#ppv-support-desc').val().trim();
+                    const priority = \$('#ppv-support-priority').val();
+                    const \$btn = \$(this);
+
+                    if (!email) {
+                        \$msg.css({background:'rgba(255,82,82,0.2)', color:'#ff5252'}).text('Bitte geben Sie Ihre E-Mail Adresse ein.').show();
+                        \$('#ppv-support-email').focus();
+                        return;
+                    }
+
+                    const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+\$/;
+                    if (!emailRegex.test(email)) {
+                        \$msg.css({background:'rgba(255,82,82,0.2)', color:'#ff5252'}).text('Bitte geben Sie eine gültige E-Mail Adresse ein.').show();
+                        \$('#ppv-support-email').focus();
+                        return;
+                    }
+
+                    if (!phone) {
+                        \$msg.css({background:'rgba(255,82,82,0.2)', color:'#ff5252'}).text('Bitte geben Sie Ihre Telefonnummer ein.').show();
+                        \$('#ppv-support-phone').focus();
+                        return;
+                    }
+
+                    if (!desc) {
+                        \$msg.css({background:'rgba(255,82,82,0.2)', color:'#ff5252'}).text('Bitte beschreiben Sie Ihr Problem.').show();
+                        \$('#ppv-support-desc').focus();
+                        return;
+                    }
+
+                    \$btn.prop('disabled', true).html('<i class=\"ri-loader-4-line\"></i> Senden...');
+                    \$msg.hide();
+
+                    \$.ajax({
+                        url: '{$ajax_url}',
+                        type: 'POST',
+                        data: {
+                            action: 'ppv_submit_support_ticket',
+                            email: email,
+                            phone: phone,
+                            description: desc,
+                            priority: priority,
+                            contact_method: 'email',
+                            nonce: '{$nonce}'
+                        },
+                        success: function(res) {
+                            if (res.success) {
+                                \$msg.css({background:'rgba(76,175,80,0.2)', color:'#4caf50'}).html('<i class=\"ri-checkbox-circle-line\"></i> Ticket gesendet!').show();
+                                \$('#ppv-support-email').val('');
+                                \$('#ppv-support-phone').val('');
+                                \$('#ppv-support-desc').val('');
+                                setTimeout(function() { \$modal.fadeOut(200); }, 1500);
+                            } else {
+                                \$msg.css({background:'rgba(255,82,82,0.2)', color:'#ff5252'}).text(res.data?.message || 'Fehler').show();
+                            }
+                        },
+                        error: function() {
+                            \$msg.css({background:'rgba(255,82,82,0.2)', color:'#ff5252'}).text('Netzwerkfehler').show();
+                        },
+                        complete: function() {
+                            \$btn.prop('disabled', false).html('<i class=\"ri-send-plane-line\"></i> Senden');
+                        }
+                    });
+                });
+            }
+
+            // Initialize on DOM ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initAll);
+            } else {
+                initAll();
+            }
+
+            // 🚀 Reinitialize after Turbo navigation
+            document.addEventListener('turbo:load', initAll);
+
+            // 🚀 Show loading indicator
+            document.addEventListener('turbo:before-fetch-request', function() {
+                document.body.classList.add('turbo-loading');
             });
-        });
+            document.addEventListener('turbo:render', function() {
+                document.body.classList.remove('turbo-loading');
+            });
+        })();
         ";
     }
 }
