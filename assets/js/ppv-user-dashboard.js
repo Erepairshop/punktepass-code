@@ -892,13 +892,16 @@ async function initUserDashboard() {
   };
 
   // ============================================================
-  // LOAD STORES - OPTIMIZED FOR SPEED 🚀
+  // LOAD STORES - SIMPLE & RELIABLE 🚀
   // ============================================================
   const initStores = async () => {
     const box = document.getElementById('ppv-store-list');
-    if (!box) return;
+    if (!box) {
+      console.log('⏭️ [Stores] No store list element found');
+      return;
+    }
 
-    // Prevent duplicate loading (uses global flag for Turbo compatibility)
+    // Prevent duplicate loading
     if (window.PPV_STORES_LOADING) {
       console.log('⏭️ [Stores] Already loading, skipping');
       return;
@@ -906,74 +909,52 @@ async function initUserDashboard() {
     window.PPV_STORES_LOADING = true;
 
     const startTime = performance.now();
+    console.log('🏪 [Stores] Starting store load...');
+
+    // Show loading state
+    box.innerHTML = `<p class="ppv-loading"><i class="ri-loader-4-line ri-spin"></i> ${T.loading}</p>`;
+
     let userLat = null;
     let userLng = null;
 
-    // Show loading state immediately
-    box.innerHTML = `<p class="ppv-loading"><i class="ri-loader-4-line ri-spin"></i> ${T.loading}</p>`;
-
-    // 🚀 STRATEGY: Load stores in parallel with geolocation
-    // 1. Start geo request (non-blocking)
-    // 2. Check sessionStorage cache first
-    // 3. Fetch stores (with or without geo)
-
-    // Try to get cached stores for instant display
-    const cacheKey = 'ppv_stores_cache';
-    const cacheTimeKey = 'ppv_stores_cache_time';
-    const cachedStores = sessionStorage.getItem(cacheKey);
-    const cacheTime = sessionStorage.getItem(cacheTimeKey);
-    const cacheMaxAge = 60000; // 1 minute cache
-
-    // 1️⃣ Quick geo check (2 second max, non-blocking)
-    const geoPromise = new Promise((resolve) => {
-      if (!navigator.geolocation) {
-        resolve(null);
-        return;
-      }
-      const geoTimeout = setTimeout(() => resolve(null), 2000);
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          clearTimeout(geoTimeout);
-          resolve(pos);
-        },
-        () => {
-          clearTimeout(geoTimeout);
-          resolve(null);
-        },
-        { timeout: 2000, maximumAge: 300000 } // Accept 5 min old position
-      );
-    });
-
-    // 2️⃣ Show cached data immediately if available and fresh
-    if (cachedStores && cacheTime && (Date.now() - parseInt(cacheTime)) < cacheMaxAge) {
-      try {
-        const stores = JSON.parse(cachedStores);
-        if (Array.isArray(stores) && stores.length > 0) {
-          console.log('⚡ [Stores] Showing cached data instantly');
-          renderStoreList(box, stores, null, null);
-        }
-      } catch (e) {
-        console.warn('⚠️ [Stores] Cache parse error');
-      }
-    }
-
-    // 3️⃣ Wait for geo (max 2s) then fetch fresh data
+    // 1️⃣ Try to get geo position (1.5s max - fast!)
     try {
-      const pos = await geoPromise;
+      const pos = await new Promise((resolve) => {
+        if (!navigator.geolocation) {
+          resolve(null);
+          return;
+        }
+        const timeout = setTimeout(() => {
+          console.log('⏱️ [Geo] Timeout after 1.5s');
+          resolve(null);
+        }, 1500);
+
+        navigator.geolocation.getCurrentPosition(
+          (p) => { clearTimeout(timeout); resolve(p); },
+          () => { clearTimeout(timeout); resolve(null); },
+          { timeout: 1500, maximumAge: 600000 } // Accept 10 min old position
+        );
+      });
+
       if (pos?.coords) {
         userLat = pos.coords.latitude;
         userLng = pos.coords.longitude;
-        console.log('📍 [Geo] Got position in', (performance.now() - startTime).toFixed(0), 'ms');
+        console.log('📍 [Geo] Position:', userLat.toFixed(4), userLng.toFixed(4));
       }
+    } catch (e) {
+      console.warn('⚠️ [Geo] Error:', e.message);
+    }
 
-      // Build URL
+    // 2️⃣ Fetch stores from API
+    try {
       let url = API + 'stores/list-optimized';
       if (userLat && userLng) {
         url += `?lat=${userLat}&lng=${userLng}&max_distance=10`;
       }
 
-      // Fetch stores
+      console.log('🌐 [Stores] Fetching:', url);
       const res = await fetch(url, { cache: "no-store" });
+
       if (!res.ok) {
         throw new Error(`HTTP ${res.status}`);
       }
@@ -981,27 +962,20 @@ async function initUserDashboard() {
       const stores = await res.json();
       console.log('✅ [Stores] Loaded', stores?.length || 0, 'stores in', (performance.now() - startTime).toFixed(0), 'ms');
 
-      // Cache for next time
-      if (Array.isArray(stores)) {
-        sessionStorage.setItem(cacheKey, JSON.stringify(stores));
-        sessionStorage.setItem(cacheTimeKey, Date.now().toString());
-      }
-
-      // Render
+      // 3️⃣ Render stores
       if (!Array.isArray(stores) || stores.length === 0) {
         box.innerHTML = `<p class="ppv-no-stores"><i class="ri-store-3-line"></i> ${T.no_stores}</p>`;
-        window.PPV_STORES_LOADING = false;
-        return;
+      } else {
+        renderStoreList(box, stores, userLat, userLng);
       }
 
-      renderStoreList(box, stores, userLat, userLng);
-
     } catch (e) {
-      console.error("❌ [Stores] Load failed:", e.message);
+      console.error('❌ [Stores] Load failed:', e.message);
       box.innerHTML = `<p class="ppv-error"><i class="ri-error-warning-line"></i> ${T.no_stores}</p>`;
     }
 
     window.PPV_STORES_LOADING = false;
+    console.log('🏁 [Stores] Done in', (performance.now() - startTime).toFixed(0), 'ms');
   };
 
   // Helper function to render store list (avoids duplicate code)
