@@ -1385,6 +1385,12 @@ class PPV_QR {
         }
         $store = $validation['store'];
 
+        // 🏪 FILIALE SUPPORT: Use session-aware store ID for points
+        $store_id = self::get_session_aware_store_id($r);
+        if (!$store_id) {
+            $store_id = $store->id; // Fallback to validated store
+        }
+
         $user_id = self::decode_user_from_qr($qr_code);
         if (!$user_id) {
             return new WP_REST_Response([
@@ -1395,36 +1401,36 @@ class PPV_QR {
             ], 400);
         }
 
-        $rate_check = self::check_rate_limit($user_id, $store->id);
+        $rate_check = self::check_rate_limit($user_id, $store_id);
         if ($rate_check['limited']) {
             // Log the rate limit error with error_type for client-side translation
             $response_data = $rate_check['response']->get_data();
             $error_type = $response_data['error_type'] ?? null;
-            self::insert_log($store->id, $user_id, $response_data['message'] ?? '⚠️ Rate limit', 'error', $error_type);
+            self::insert_log($store_id, $user_id, $response_data['message'] ?? '⚠️ Rate limit', 'error', $error_type);
             return $rate_check['response'];
         }
 
         $wpdb->insert("{$wpdb->prefix}ppv_points", [
             'user_id' => $user_id,
-            'store_id' => $store->id,
+            'store_id' => $store_id,
             'points' => 1,
             'type' => 'qr_scan',
             'created' => current_time('mysql')
         ]);
 
-        self::insert_log($store->id, $user_id, self::t('log_point_added', '1 pont hozzáadva'), 'qr_scan');
+        self::insert_log($store_id, $user_id, self::t('log_point_added', '1 pont hozzáadva'), 'qr_scan');
 
         // Get store name for response
         $store_name = $wpdb->get_var($wpdb->prepare(
             "SELECT name FROM {$wpdb->prefix}ppv_stores WHERE id=%d LIMIT 1",
-            $store->id
+            $store_id
         ));
 
         return new WP_REST_Response([
             'success' => true,
             'message' => self::t('scan_success', '✅ 1 pont hozzáadva'),
             'user_id' => $user_id,
-            'store_id' => $store->id,
+            'store_id' => $store_id,
             'store_name' => $store_name ?? 'PunktePass',
             'points' => 1,
             'time' => current_time('mysql')
