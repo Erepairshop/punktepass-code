@@ -307,11 +307,17 @@ class PPV_Session {
             !empty($_SESSION['ppv_vendor_store_id'])) {
 
             $_SESSION['ppv_user_type'] = 'store';
-            $_SESSION['ppv_store_id'] = intval($_SESSION['ppv_vendor_store_id']);
-            $_SESSION['ppv_active_store'] = intval($_SESSION['ppv_vendor_store_id']);
-            $_SESSION['ppv_is_pos'] = true;
 
-            error_log("🔄 [AutoMode] REST/AJAX + VENDOR → type=store, POS ON (store={$_SESSION['ppv_vendor_store_id']})");
+            // 🏪 FILIALE SUPPORT: Don't overwrite if active filiale exists!
+            if (empty($_SESSION['ppv_current_filiale_id'])) {
+                $_SESSION['ppv_store_id'] = intval($_SESSION['ppv_vendor_store_id']);
+                $_SESSION['ppv_active_store'] = intval($_SESSION['ppv_vendor_store_id']);
+                error_log("🔄 [AutoMode] REST/AJAX + VENDOR → type=store, POS ON (store={$_SESSION['ppv_vendor_store_id']})");
+            } else {
+                error_log("🔄 [AutoMode] REST/AJAX + VENDOR → type=store, POS ON (FILIALE ACTIVE: {$_SESSION['ppv_current_filiale_id']})");
+            }
+
+            $_SESSION['ppv_is_pos'] = true;
             return;
         }
 
@@ -334,11 +340,17 @@ class PPV_Session {
         // 🎯 HANDLER PAGE – csak vendor user-nek!
         if ($is_handler_page && !empty($_SESSION['ppv_vendor_store_id'])) {
             $_SESSION['ppv_user_type'] = 'store';
-            $_SESSION['ppv_store_id'] = intval($_SESSION['ppv_vendor_store_id']);
-            $_SESSION['ppv_active_store'] = intval($_SESSION['ppv_vendor_store_id']);
-            $_SESSION['ppv_is_pos'] = true;
 
-            error_log("🔄 [AutoMode] HANDLER PAGE → type=store, POS ON (store={$_SESSION['ppv_vendor_store_id']})");
+            // 🏪 FILIALE SUPPORT: Don't overwrite if active filiale exists!
+            if (empty($_SESSION['ppv_current_filiale_id'])) {
+                $_SESSION['ppv_store_id'] = intval($_SESSION['ppv_vendor_store_id']);
+                $_SESSION['ppv_active_store'] = intval($_SESSION['ppv_vendor_store_id']);
+                error_log("🔄 [AutoMode] HANDLER PAGE → type=store, POS ON (store={$_SESSION['ppv_vendor_store_id']})");
+            } else {
+                error_log("🔄 [AutoMode] HANDLER PAGE → type=store, POS ON (FILIALE ACTIVE: {$_SESSION['ppv_current_filiale_id']})");
+            }
+
+            $_SESSION['ppv_is_pos'] = true;
             return;
         }
     }
