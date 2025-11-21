@@ -142,8 +142,8 @@ wp_add_inline_script('ppv-campaigns', "window.ppv_campaigns = {$__json};", 'befo
         check_ajax_referer('ppv_campaigns_nonce', 'nonce');
         global $wpdb;
 
-        $user_id = get_current_user_id();
-        $store = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}ppv_stores WHERE user_id=%d", $user_id));
+        // 🏪 FILIALE SUPPORT: Use ppv_current_store() instead of user_id lookup
+        $store = function_exists('ppv_current_store') ? ppv_current_store() : null;
         if (!$store) wp_send_json_error(['msg' => 'Kein Store gefunden.']);
 
         // ✅ FIX: Validate campaign_type, reject empty

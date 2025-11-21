@@ -47,6 +47,13 @@ class PPV_Stats {
     public static function get_handler_store_id() {
         error_log("🔍 [Stats] get_handler_store_id() START");
 
+        // 🏪 FILIALE SUPPORT: Check active filiale FIRST
+        if (!empty($_SESSION['ppv_current_filiale_id'])) {
+            $sid = intval($_SESSION['ppv_current_filiale_id']);
+            error_log("✅ [Stats] Store from SESSION (filiale): {$sid}");
+            return $sid;
+        }
+
         // 1️⃣ GLOBALS
         if (!empty($GLOBALS['ppv_active_store_id'])) {
             $sid = intval($GLOBALS['ppv_active_store_id']);
