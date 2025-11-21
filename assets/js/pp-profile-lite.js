@@ -2,7 +2,6 @@
  * PunktePass – Admin Profil Frontend (v2.0 i18n - Fixed)
  * ✅ DE, HU, RO Language Support
  * ✅ Dynamic String Translation
- * ✅ Auto-save Draft
  * ✅ Real-time Validation
  * ✅ Nonce Fix
  * ✅ Geocoding FIX
@@ -18,10 +17,9 @@
             this.currentLang = window.ppv_profile?.lang || 'de';
             this.nonce = window.ppv_profile?.nonce || '';
             this.ajaxUrl = window.ppv_profile?.ajaxUrl || '';
-            
+
             this.hasChanges = false;
-            this.autoSaveTimer = null;
-            
+
             this.init();
         }
 
@@ -107,7 +105,6 @@
         bindFormInputs() {
             this.$form.addEventListener('change', () => {
                 this.hasChanges = true;
-                this.autoSave();
             });
 
             this.$form.addEventListener('input', () => {
@@ -196,39 +193,6 @@
                 };
                 reader.readAsDataURL(file);
             }
-        }
-
-        // ==================== AUTO-SAVE ====================
-        autoSave() {
-            clearTimeout(this.autoSaveTimer);
-
-            this.autoSaveTimer = setTimeout(() => {
-                const formData = new FormData(this.$form);
-                
-                console.log('💾 Auto-saving...');
-                
-                fetch(`${this.ajaxUrl}?action=ppv_auto_save_profile`, {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(r => {
-                    console.log('📨 Response status:', r.status, r.statusText);
-                    return r.json();
-                })
-                .then(data => {
-                    if (data.success) {
-                        console.log('✅ Auto-saved:', data.data);
-                        this.updateStatus(this.t('saved'));
-                        // ✅ Reset hasChanges so no warning on refresh
-                        this.hasChanges = false;
-                    } else {
-                        console.error('❌ Auto-save failed:', data.data?.msg);
-                    }
-                })
-                .catch(err => {
-                    console.error('❌ Auto-save error:', err);
-                });
-            }, 2000);
         }
 
         // ==================== FORM SUBMIT ====================

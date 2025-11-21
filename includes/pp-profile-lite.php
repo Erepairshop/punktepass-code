@@ -29,8 +29,6 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
             add_action('wp_ajax_nopriv_ppv_save_profile', [__CLASS__, 'ajax_save_profile']); // ✅ PPV session auth
             add_action('wp_ajax_ppv_delete_media', [__CLASS__, 'ajax_delete_media']);
             add_action('wp_ajax_nopriv_ppv_delete_media', [__CLASS__, 'ajax_delete_media']); // ✅ PPV session auth
-            add_action('wp_ajax_ppv_auto_save_profile', [__CLASS__, 'ajax_auto_save_profile']);
-            add_action('wp_ajax_nopriv_ppv_auto_save_profile', [__CLASS__, 'ajax_auto_save_profile']); // ✅ PPV session auth
             add_action('wp_ajax_ppv_delete_gallery_image', [__CLASS__, 'ajax_delete_gallery_image']);
             add_action('wp_ajax_nopriv_ppv_delete_gallery_image', [__CLASS__, 'ajax_delete_gallery_image']); // ✅ PPV session auth
             add_action('wp_ajax_ppv_reset_onboarding', [__CLASS__, 'ajax_reset_onboarding']); // 🚀 Onboarding reset
@@ -121,20 +119,6 @@ wp_localize_script('pp-profile-lite-i18n', 'ppv_profile', [
             if (!$store) {
                 echo '<div class="ppv-alert ppv-alert-error">' . esc_html(PPV_Lang::t('error')) . '</div>';
                 return;
-            }
-
-            // ✅ Restore autosave draft if exists
-            if (!empty($store->draft_data)) {
-                $draft = json_decode($store->draft_data, true);
-                if (is_array($draft)) {
-                    // Merge draft data into store object
-                    foreach ($draft as $key => $value) {
-                        if ($value !== null && $value !== '') {
-                            $store->$key = $value;
-                        }
-                    }
-                    error_log("✅ [AUTOSAVE] Restored draft for store #{$store->id}");
-                }
             }
 
             ob_start();
@@ -762,8 +746,7 @@ public static function ajax_save_profile() {
         'updated_at' => current_time('mysql'),
         'logo' => sanitize_text_field($_POST['logo'] ?? ''),
         'gallery' => !empty($gallery_files) ? json_encode($gallery_files) : ($_POST['gallery'] ?? ''),
-        'opening_hours' => json_encode($opening_hours),
-        'draft_data' => null  // ✅ Clear draft after successful save
+        'opening_hours' => json_encode($opening_hours)
     ];
 
 
@@ -801,7 +784,6 @@ $format_specs = [
     '%s',  // logo
     '%s',  // gallery
     '%s',  // opening_hours
-    '%s',  // draft_data (cleared on save)
 ];
 
 error_log("💾 [DEBUG] Saving store ID: {$store_id}");
@@ -845,35 +827,6 @@ error_log("💾 [DEBUG] Update result: " . ($result !== false ? 'OK' : 'FAILED')
     }
 }
 
-        public static function ajax_auto_save_profile() {
-            if (!isset($_POST[self::NONCE_NAME])) {
-                wp_send_json_error(['msg' => 'Nonce missing']);
-            }
-
-            if (!wp_verify_nonce($_POST[self::NONCE_NAME], self::NONCE_ACTION)) {
-                wp_send_json_error(['msg' => 'Invalid nonce']);
-            }
-
-            self::ensure_session();
-            $auth = self::check_auth();
-
-            if (!$auth['valid']) {
-                wp_send_json_error(['msg' => 'Not authenticated']);
-            }
-
-            $draft_data = $_POST['draft'] ?? [];
-            $store_id = intval($_POST['store_id'] ?? 0);
-
-            if ($auth['type'] === 'ppv_stores' && $store_id != $auth['store_id']) {
-                wp_send_json_error(['msg' => 'Unauthorized']);
-            }
-
-            global $wpdb;
-            $wpdb->update($wpdb->prefix . 'ppv_stores', ['draft_data' => json_encode($draft_data)], ['id' => $store_id], ['%s'], ['%d']);
-
-            wp_send_json_success(['msg' => 'Draft saved', 'timestamp' => current_time('mysql')]);
-        }
-        
         public static function ajax_delete_gallery_image() {
             if (!isset($_POST[self::NONCE_NAME])) {
                 wp_send_json_error(['msg' => 'Nonce missing']);
