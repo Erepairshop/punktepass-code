@@ -475,16 +475,19 @@ class PPV_QR {
         // Get all filialen for this parent
         $filialen = PPV_Filiale::get_filialen($parent_id);
 
+        // If no filialen found, add current store as fallback
+        if (empty($filialen)) {
+            $filialen = [$store];
+        }
+
         // Get current active filiale from session
         $current_filiale_id = PPV_Filiale::get_current_filiale();
         if (!$current_filiale_id) {
             $current_filiale_id = $store->id;
         }
 
-        // Only show switcher if there are multiple locations
-        if (count($filialen) < 1) {
-            return;
-        }
+        // Always show switcher (even for trial handlers, even if no branches yet)
+        // This allows adding new filialen
 
         ?>
         <div class="ppv-filiale-switcher glass-section" style="margin-bottom: 20px; padding: 15px;">
@@ -498,7 +501,8 @@ class PPV_QR {
                         <option value="<?php echo esc_attr($filiale->id); ?>" <?php selected($filiale->id, $current_filiale_id); ?>>
                             <?php
                             echo esc_html($filiale->name);
-                            if ($filiale->id == $parent_id && $filiale->parent_store_id === null) {
+                            // Show "Main Location" label for parent store
+                            if ($filiale->id == $parent_id && (empty($filiale->parent_store_id) || $filiale->parent_store_id === null)) {
                                 echo ' (' . self::t('main_location', 'Hauptstandort') . ')';
                             }
                             if (!empty($filiale->city)) {

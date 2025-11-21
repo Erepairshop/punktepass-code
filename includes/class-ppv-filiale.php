@@ -71,7 +71,7 @@ class PPV_Filiale {
         global $wpdb;
 
         return $wpdb->get_results($wpdb->prepare(
-            "SELECT id, name, address, city, plz, active
+            "SELECT id, name, address, city, plz, active, parent_store_id
              FROM {$wpdb->prefix}ppv_stores
              WHERE parent_store_id = %d OR id = %d
              ORDER BY id ASC",
