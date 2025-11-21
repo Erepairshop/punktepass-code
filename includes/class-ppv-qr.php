@@ -49,6 +49,50 @@ class PPV_QR {
         return $store ?: null;
     }
 
+    /** ============================================================
+     *  🏪 GET STORE ID (Session-aware with FILIALE support)
+     *  Priority: ppv_current_filiale_id > ppv_store_id > store_key
+     * ============================================================ */
+    private static function get_session_aware_store_id($store_key = '') {
+        global $wpdb;
+
+        // 🔐 Ensure session is started
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+
+        // 🏪 FILIALE SUPPORT: Check ppv_current_filiale_id FIRST (if session exists)
+        if (!empty($_SESSION['ppv_current_filiale_id'])) {
+            $filiale_id = intval($_SESSION['ppv_current_filiale_id']);
+            $store = $wpdb->get_row($wpdb->prepare(
+                "SELECT id, email FROM {$wpdb->prefix}ppv_stores WHERE id=%d LIMIT 1",
+                $filiale_id
+            ));
+            if ($store) {
+                return $store;
+            }
+        }
+
+        // Session - base store
+        if (!empty($_SESSION['ppv_store_id'])) {
+            $store_id = intval($_SESSION['ppv_store_id']);
+            $store = $wpdb->get_row($wpdb->prepare(
+                "SELECT id, email FROM {$wpdb->prefix}ppv_stores WHERE id=%d LIMIT 1",
+                $store_id
+            ));
+            if ($store) {
+                return $store;
+            }
+        }
+
+        // Fallback: store_key (for POS devices without session)
+        if (!empty($store_key)) {
+            return self::get_store_by_key($store_key);
+        }
+
+        return null;
+    }
+
     private static function validate_store($store_key) {
         $store = self::get_store_by_key($store_key);
 
@@ -1257,9 +1301,15 @@ class PPV_QR {
 
 
         $store_key = sanitize_text_field($data['store_key'] ?? '');
-        $validation = self::validate_store($store_key);
-        if (!$validation['valid']) return $validation['response'];
-        $store = $validation['store'];
+
+        // 🏪 FILIALE SUPPORT: Use session-aware store ID lookup
+        $store = self::get_session_aware_store_id($store_key);
+        if (!$store) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Token hiányzik vagy ismeretlen bolt'
+            ], 400);
+        }
 
         // 🎯 Kampány adatok előkészítése
         // ✅ FIX: Don't accept empty campaign_type
@@ -1325,18 +1375,13 @@ class PPV_QR {
             $r->get_header('ppv-pos-token') ?? $r->get_param('store_key') ?? ''
         );
 
-        if (empty($store_key)) {
-            return new WP_REST_Response([
-                'success' => false,
-                'message' => 'Token hiányzik'
-            ], 400);
-        }
+        // 🏪 FILIALE SUPPORT: Use session-aware store ID lookup
+        $store = self::get_session_aware_store_id($store_key);
 
-        $store = self::get_store_by_key($store_key);
         if (!$store) {
             return new WP_REST_Response([
                 'success' => false,
-                'message' => 'Ismeretlen bolt'
+                'message' => 'Token hiányzik vagy ismeretlen bolt'
             ], 400);
         }
 
@@ -1401,18 +1446,21 @@ class PPV_QR {
         $store_key = sanitize_text_field($d['store_key'] ?? '');
         $id = intval($d['id'] ?? 0);
 
-        if (empty($id) || empty($store_key)) {
+        if (empty($id)) {
             return new WP_REST_Response([
                 'success' => false,
                 'message' => self::t('err_missing_data', '❌ Hiányzó adat')
             ], 400);
         }
 
-        $validation = self::validate_store($store_key);
-        if (!$validation['valid']) {
-            return $validation['response'];
+        // 🏪 FILIALE SUPPORT: Use session-aware store ID lookup
+        $store = self::get_session_aware_store_id($store_key);
+        if (!$store) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Token hiányzik vagy ismeretlen bolt'
+            ], 400);
         }
-        $store = $validation['store'];
 
         $wpdb->delete("{$wpdb->prefix}ppv_campaigns", [
             'id' => $id,
@@ -1450,18 +1498,21 @@ class PPV_QR {
         $id = intval($d['id'] ?? 0);
         $store_key = sanitize_text_field($d['store_key'] ?? '');
 
-        if (empty($id) || empty($store_key)) {
+        if (empty($id)) {
             return new WP_REST_Response([
                 'success' => false,
-                'message' => '❌ Kampány ID vagy bolt kulcs hiányzik'
+                'message' => '❌ Kampány ID hiányzik'
             ], 400);
         }
 
-        $validation = self::validate_store($store_key);
-        if (!$validation['valid']) {
-            return $validation['response'];
+        // 🏪 FILIALE SUPPORT: Use session-aware store ID lookup
+        $store = self::get_session_aware_store_id($store_key);
+        if (!$store) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Token hiányzik vagy ismeretlen bolt'
+            ], 400);
         }
-        $store = $validation['store'];
 
         // 🎯 Frissítési mezők
         // ✅ FIX: Don't accept empty campaign_type
@@ -1524,18 +1575,21 @@ class PPV_QR {
         $id = intval($d['id'] ?? 0);
         $store_key = sanitize_text_field($d['store_key'] ?? '');
 
-        if (empty($id) || empty($store_key)) {
+        if (empty($id)) {
             return new WP_REST_Response([
                 'success' => false,
                 'message' => self::t('err_missing_data', '❌ Hiányzó adat')
             ], 400);
         }
 
-        $validation = self::validate_store($store_key);
-        if (!$validation['valid']) {
-            return $validation['response'];
+        // 🏪 FILIALE SUPPORT: Use session-aware store ID lookup
+        $store = self::get_session_aware_store_id($store_key);
+        if (!$store) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Token hiányzik vagy ismeretlen bolt'
+            ], 400);
         }
-        $store = $validation['store'];
 
         $wpdb->update("{$wpdb->prefix}ppv_campaigns", [
             'status' => 'archived',
