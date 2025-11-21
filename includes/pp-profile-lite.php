@@ -74,6 +74,44 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
             }
         }
 
+        /** ============================================================
+         *  🔐 GET STORE ID (with FILIALE support)
+         * ============================================================ */
+        private static function get_store_id() {
+            global $wpdb;
+
+            self::ensure_session();
+
+            // 🏪 FILIALE SUPPORT: Check ppv_current_filiale_id FIRST
+            if (!empty($_SESSION['ppv_current_filiale_id'])) {
+                return intval($_SESSION['ppv_current_filiale_id']);
+            }
+
+            // Session - base store
+            if (!empty($_SESSION['ppv_store_id'])) {
+                return intval($_SESSION['ppv_store_id']);
+            }
+
+            // Fallback: vendor store
+            if (!empty($_SESSION['ppv_vendor_store_id'])) {
+                return intval($_SESSION['ppv_vendor_store_id']);
+            }
+
+            // Fallback: WordPress user (rare case)
+            if (is_user_logged_in()) {
+                $uid = get_current_user_id();
+                $store_id = $wpdb->get_var($wpdb->prepare(
+                    "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id=%d LIMIT 1",
+                    $uid
+                ));
+                if ($store_id) {
+                    return intval($store_id);
+                }
+            }
+
+            return 0;
+        }
+
         public static function ajax_get_strings() {
             $lang = sanitize_text_field($_GET['lang'] ?? PPV_Lang::current());
             $file = PPV_PLUGIN_DIR . "includes/lang/ppv-lang-{$lang}.php";
@@ -541,12 +579,15 @@ if (!empty($store->gallery)) {
         private static function get_current_store() {
             global $wpdb;
 
-            if (!empty($_GET['store_id'])) {
-                return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1", intval($_GET['store_id'])));
+            // 🏪 FILIALE SUPPORT: Use session-aware store ID
+            $store_id = self::get_store_id();
+            if ($store_id) {
+                return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1", $store_id));
             }
 
-            if (!empty($_SESSION['ppv_store_id'])) {
-                return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1", intval($_SESSION['ppv_store_id'])));
+            // Fallback: GET parameter (admin use)
+            if (!empty($_GET['store_id'])) {
+                return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1", intval($_GET['store_id'])));
             }
 
             if (!empty($_COOKIE['ppv_pos_token'])) {
@@ -576,7 +617,8 @@ public static function ajax_save_profile() {
         wp_send_json_error(['msg' => PPV_Lang::t('error')]);
     }
 
-    $store_id = intval($_POST['store_id'] ?? 0);
+    // 🏪 FILIALE SUPPORT: ALWAYS use session-aware store ID, ignore POST parameter
+    $store_id = self::get_store_id();
 
     if ($auth['type'] === 'ppv_stores' && $store_id != $auth['store_id']) {
         wp_send_json_error(['msg' => 'Unauthorized']);
@@ -739,7 +781,9 @@ error_log("💾 [DEBUG] Update result: " . ($result !== false ? 'OK' : 'FAILED')
             }
 
             $draft_data = $_POST['draft'] ?? [];
-            $store_id = intval($_POST['store_id'] ?? 0);
+
+            // 🏪 FILIALE SUPPORT: ALWAYS use session-aware store ID, ignore POST parameter
+            $store_id = self::get_store_id();
 
             if ($auth['type'] === 'ppv_stores' && $store_id != $auth['store_id']) {
                 wp_send_json_error(['msg' => 'Unauthorized']);
@@ -767,7 +811,8 @@ error_log("💾 [DEBUG] Update result: " . ($result !== false ? 'OK' : 'FAILED')
                 wp_send_json_error(['msg' => 'Not authenticated']);
             }
 
-            $store_id = intval($_POST['store_id'] ?? 0);
+            // 🏪 FILIALE SUPPORT: ALWAYS use session-aware store ID, ignore POST parameter
+            $store_id = self::get_store_id();
             $image_url = sanitize_text_field($_POST['image_url'] ?? '');
 
             if ($auth['type'] === 'ppv_stores' && $store_id != $auth['store_id']) {
