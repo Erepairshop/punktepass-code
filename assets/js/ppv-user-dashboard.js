@@ -14,12 +14,12 @@
  * 🚀 TURBO-COMPATIBLE: Re-initializes on navigation
  */
 
-// 🚀 Global polling cleanup for Turbo navigation
+// 🚀 Global state for Turbo navigation cleanup
 window.PPV_POLL_INTERVAL_ID = null;
 window.PPV_VISIBILITY_HANDLER = null;
-window.PPV_STORE_LIST_INTERVAL = null;
 window.PPV_SLIDER_HANDLER = null;
 window.PPV_SLIDER_INITIALIZED = false;
+window.PPV_STORES_LOADING = false;
 
 // 🧹 Cleanup function - call before navigation or re-init
 function cleanupPolling() {
@@ -33,11 +33,6 @@ function cleanupPolling() {
     window.PPV_VISIBILITY_HANDLER = null;
     console.log('🧹 [Polling] Visibility listener removed');
   }
-  if (window.PPV_STORE_LIST_INTERVAL) {
-    clearInterval(window.PPV_STORE_LIST_INTERVAL);
-    window.PPV_STORE_LIST_INTERVAL = null;
-    console.log('🧹 [Stores] Wait interval cleared');
-  }
   if (window.PPV_SLIDER_HANDLER) {
     document.removeEventListener('input', window.PPV_SLIDER_HANDLER);
     window.PPV_SLIDER_HANDLER = null;
@@ -45,6 +40,7 @@ function cleanupPolling() {
   }
   window.PPV_POLLING_ACTIVE = false;
   window.PPV_SLIDER_INITIALIZED = false;
+  window.PPV_STORES_LOADING = false;
 }
 
 // 🚀 Turbo-compatible initialization
@@ -896,79 +892,130 @@ async function initUserDashboard() {
   };
 
   // ============================================================
-  // LOAD STORES
+  // LOAD STORES - OPTIMIZED FOR SPEED 🚀
   // ============================================================
   const initStores = async () => {
     const box = document.getElementById('ppv-store-list');
     if (!box) return;
 
-    let url = API + 'stores/list-optimized';
+    // Prevent duplicate loading (uses global flag for Turbo compatibility)
+    if (window.PPV_STORES_LOADING) {
+      console.log('⏭️ [Stores] Already loading, skipping');
+      return;
+    }
+    window.PPV_STORES_LOADING = true;
+
+    const startTime = performance.now();
     let userLat = null;
     let userLng = null;
 
-    // Elsőként alap loading state
+    // Show loading state immediately
     box.innerHTML = `<p class="ppv-loading"><i class="ri-loader-4-line ri-spin"></i> ${T.loading}</p>`;
 
-    // 1️⃣ Próbáljunk pontos helyet kérni, de fallback is legyen
-    try {
-      const pos = await Promise.race([
-        new Promise((resolve) => {
-          navigator.geolocation.getCurrentPosition(resolve, () => resolve(null), { timeout: 4000 });
-        }),
-        new Promise((resolve) => setTimeout(() => resolve(null), 5000))
-      ]);
+    // 🚀 STRATEGY: Load stores in parallel with geolocation
+    // 1. Start geo request (non-blocking)
+    // 2. Check sessionStorage cache first
+    // 3. Fetch stores (with or without geo)
 
+    // Try to get cached stores for instant display
+    const cacheKey = 'ppv_stores_cache';
+    const cacheTimeKey = 'ppv_stores_cache_time';
+    const cachedStores = sessionStorage.getItem(cacheKey);
+    const cacheTime = sessionStorage.getItem(cacheTimeKey);
+    const cacheMaxAge = 60000; // 1 minute cache
+
+    // 1️⃣ Quick geo check (2 second max, non-blocking)
+    const geoPromise = new Promise((resolve) => {
+      if (!navigator.geolocation) {
+        resolve(null);
+        return;
+      }
+      const geoTimeout = setTimeout(() => resolve(null), 2000);
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          clearTimeout(geoTimeout);
+          resolve(pos);
+        },
+        () => {
+          clearTimeout(geoTimeout);
+          resolve(null);
+        },
+        { timeout: 2000, maximumAge: 300000 } // Accept 5 min old position
+      );
+    });
+
+    // 2️⃣ Show cached data immediately if available and fresh
+    if (cachedStores && cacheTime && (Date.now() - parseInt(cacheTime)) < cacheMaxAge) {
+      try {
+        const stores = JSON.parse(cachedStores);
+        if (Array.isArray(stores) && stores.length > 0) {
+          console.log('⚡ [Stores] Showing cached data instantly');
+          renderStoreList(box, stores, null, null);
+        }
+      } catch (e) {
+        console.warn('⚠️ [Stores] Cache parse error');
+      }
+    }
+
+    // 3️⃣ Wait for geo (max 2s) then fetch fresh data
+    try {
+      const pos = await geoPromise;
       if (pos?.coords) {
         userLat = pos.coords.latitude;
         userLng = pos.coords.longitude;
-        url += `?lat=${userLat}&lng=${userLng}&max_distance=10`;
-      } else {
-        console.warn("⚠️ [Geo] No position, using fallback");
+        console.log('📍 [Geo] Got position in', (performance.now() - startTime).toFixed(0), 'ms');
       }
-    } catch (geoErr) {
-      console.warn("⚠️ [Geo] Error:", geoErr);
-    }
 
-    // 2️⃣ Most töltsük az üzleteket
-    try {
-      console.log("🌍 [PPV] Fetching stores from:", url);
-      const startTime = performance.now();
+      // Build URL
+      let url = API + 'stores/list-optimized';
+      if (userLat && userLng) {
+        url += `?lat=${userLat}&lng=${userLng}&max_distance=10`;
+      }
 
+      // Fetch stores
       const res = await fetch(url, { cache: "no-store" });
-      console.log("✅ [PPV] Response received:", res.status, res.statusText);
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
 
       const stores = await res.json();
-      console.log("📦 [PPV] JSON parsed in", (performance.now() - startTime).toFixed(1), "ms", stores?.length || 0, "items");
-      console.log("🧠 [DEBUG] Stores data:", stores);
+      console.log('✅ [Stores] Loaded', stores?.length || 0, 'stores in', (performance.now() - startTime).toFixed(0), 'ms');
 
-      try {
-        const html = stores.map(renderStoreCard).join('');
-        console.log("🧩 [DEBUG] Rendered HTML length:", html.length);
-      } catch (err) {
-        console.error("❌ [DEBUG] Render error:", err.message, err.stack);
+      // Cache for next time
+      if (Array.isArray(stores)) {
+        sessionStorage.setItem(cacheKey, JSON.stringify(stores));
+        sessionStorage.setItem(cacheTimeKey, Date.now().toString());
       }
 
+      // Render
       if (!Array.isArray(stores) || stores.length === 0) {
         box.innerHTML = `<p class="ppv-no-stores"><i class="ri-store-3-line"></i> ${T.no_stores}</p>`;
+        window.PPV_STORES_LOADING = false;
         return;
       }
 
-      const sliderHTML = `
-        <div class="ppv-distance-filter">
-          <label><i class="ri-ruler-line"></i> ${T.distance_label}: <span id="ppv-distance-value">10</span> km</label>
-          <input type="range" id="ppv-distance-slider" min="10" max="1000" value="10" step="10">
-          <div class="ppv-distance-labels"><span>10 km</span><span>1000 km</span></div>
-        </div>
-      `;
-
-      box.innerHTML = sliderHTML + stores.map(renderStoreCard).join('');
-      initDistanceSlider(sliderHTML, userLat, userLng);
-      attachStoreListeners();
+      renderStoreList(box, stores, userLat, userLng);
 
     } catch (e) {
-      console.error("❌ [PPV] Store load failed:", e);
+      console.error("❌ [Stores] Load failed:", e.message);
       box.innerHTML = `<p class="ppv-error"><i class="ri-error-warning-line"></i> ${T.no_stores}</p>`;
     }
+
+    window.PPV_STORES_LOADING = false;
+  };
+
+  // Helper function to render store list (avoids duplicate code)
+  const renderStoreList = (box, stores, userLat, userLng) => {
+    const sliderHTML = `
+      <div class="ppv-distance-filter">
+        <label><i class="ri-ruler-line"></i> ${T.distance_label}: <span id="ppv-distance-value">10</span> km</label>
+        <input type="range" id="ppv-distance-slider" min="10" max="1000" value="10" step="10">
+        <div class="ppv-distance-labels"><span>10 km</span><span>1000 km</span></div>
+      </div>
+    `;
+    box.innerHTML = sliderHTML + stores.map(renderStoreCard).join('');
+    initDistanceSlider(sliderHTML, userLat, userLng);
+    attachStoreListeners();
   };
 
   // ============================================================
@@ -1019,26 +1066,16 @@ async function initUserDashboard() {
   `;
 
   // ============================================================
-  // INITIALIZATION
+  // INITIALIZATION - Direct call, no interval needed 🚀
   // ============================================================
   initQRToggle();
   initPointSync();
 
-  // Clear any existing store list interval before creating new one
-  if (window.PPV_STORE_LIST_INTERVAL) {
-    clearInterval(window.PPV_STORE_LIST_INTERVAL);
-  }
-
-  window.PPV_STORE_LIST_INTERVAL = setInterval(() => {
-    const el = document.getElementById("ppv-store-list");
-    const qrReady = document.querySelector(".ppv-btn-qr");
-    if (el && qrReady) {
-      clearInterval(window.PPV_STORE_LIST_INTERVAL);
-      window.PPV_STORE_LIST_INTERVAL = null;
-      console.log("✅ [SAFE INIT] QR ready, store list element found → initStores()");
-      initStores();
-    }
-  }, 400);
+  // DOM is already rendered above, call initStores directly
+  // Using requestAnimationFrame to ensure DOM is painted
+  requestAnimationFrame(() => {
+    initStores();
+  });
 
   // ============================================================
   // TOAST - MODERN ICONS ✅
