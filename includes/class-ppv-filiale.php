@@ -181,6 +181,8 @@ class PPV_Filiale {
 
         $parent_store_id = intval($_POST['parent_store_id'] ?? 0);
         $filiale_name = sanitize_text_field($_POST['filiale_name'] ?? '');
+        $filiale_city = sanitize_text_field($_POST['city'] ?? '');
+        $filiale_plz = sanitize_text_field($_POST['plz'] ?? '');
 
         if (!$parent_store_id || !$filiale_name) {
             wp_send_json_error(['msg' => 'Missing required fields']);
@@ -236,10 +238,10 @@ class PPV_Filiale {
             'visible' => 1,
             'subscription_status' => $parent_store['subscription_status'],
             'trial_ends_at' => $parent_store['trial_ends_at'],
-            // Location fields are empty - user must fill them
+            // Location fields from form input
             'address' => '',
-            'plz' => '',
-            'city' => '',
+            'plz' => $filiale_plz,
+            'city' => $filiale_city,
             'latitude' => null,
             'longitude' => null,
             'store_slug' => sanitize_title($filiale_name),

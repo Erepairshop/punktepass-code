@@ -1018,23 +1018,21 @@ class PPV_QR {
                 $btn.prop('disabled', true).text('<?php echo esc_js(self::t('saving', 'Speichern...')); ?>');
 
                 $.ajax({
-                    url: '<?php echo rest_url('ppv/v1/store/clone'); ?>',
+                    url: '<?php echo admin_url('admin-ajax.php'); ?>',
                     type: 'POST',
-                    contentType: 'application/json',
-                    beforeSend: function(xhr) {
-                        xhr.setRequestHeader('X-WP-Nonce', '<?php echo wp_create_nonce('wp_rest'); ?>');
-                    },
-                    data: JSON.stringify({
-                        source_id: <?php echo intval($parent_id); ?>,
-                        name: name,
+                    data: {
+                        action: 'ppv_create_filiale',
+                        parent_store_id: <?php echo intval($parent_id); ?>,
+                        filiale_name: name,
                         city: city,
-                        plz: plz
-                    }),
+                        plz: plz,
+                        nonce: '<?php echo wp_create_nonce('ppv_filiale_nonce'); ?>'
+                    },
                     success: function(response) {
                         if (response.success) {
                             location.reload();
                         } else {
-                            $error.text(response.message || '<?php echo esc_js(self::t('save_error', 'Fehler beim Speichern')); ?>').show();
+                            $error.text(response.data?.msg || '<?php echo esc_js(self::t('save_error', 'Fehler beim Speichern')); ?>').show();
                             $btn.prop('disabled', false).html('✅ <?php echo esc_js(self::t('save', 'Speichern')); ?>');
                         }
                     },
