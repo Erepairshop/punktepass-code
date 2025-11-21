@@ -421,11 +421,36 @@
         }
     }
 
-    // ==================== INIT ====================
-    document.addEventListener('DOMContentLoaded', () => {
-        window.ppvProfileForm = new PPVProfileForm();
-    });
-    
+    // ==================== INIT (Turbo-compatible) ====================
+    function initProfileForm() {
+        // Destroy old instance if exists to prevent duplicate handlers
+        if (window.ppvProfileForm && window.ppvProfileForm.$form) {
+            // Already initialized on this page, skip
+            const existingForm = document.getElementById('ppv-profile-form');
+            if (!existingForm) {
+                window.ppvProfileForm = null;
+            } else {
+                return; // Form exists and already initialized
+            }
+        }
+
+        const form = document.getElementById('ppv-profile-form');
+        if (form) {
+            window.ppvProfileForm = new PPVProfileForm();
+        }
+    }
+
+    // Init on DOMContentLoaded
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initProfileForm);
+    } else {
+        initProfileForm();
+    }
+
+    // 🚀 Turbo: Re-init after navigation
+    document.addEventListener('turbo:load', initProfileForm);
+    document.addEventListener('turbo:render', initProfileForm);
+
 })();
 
 // ==================== EXPORT ====================
@@ -719,10 +744,10 @@ window.confirmInteractiveMap = function() {
 }
 
 // Geocoding button - add fallback button
-document.addEventListener('DOMContentLoaded', () => {
-  // Add manual button next to geocode button
+function initManualMapButton() {
   const geocodeBtn = document.getElementById('ppv-geocode-btn');
-  if (geocodeBtn) {
+  if (geocodeBtn && !geocodeBtn.dataset.manualBtnAdded) {
+    geocodeBtn.dataset.manualBtnAdded = 'true';
     const manualBtn = document.createElement('button');
     manualBtn.type = 'button';
     manualBtn.textContent = '🗺️ Manuálisan a térképen';
@@ -747,5 +772,12 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     geocodeBtn.parentElement.insertAdjacentElement('afterend', manualBtn);
   }
-});
+}
+
+// Init on DOMContentLoaded
+document.addEventListener('DOMContentLoaded', initManualMapButton);
+
+// 🚀 Turbo: Re-init after navigation
+document.addEventListener('turbo:load', initManualMapButton);
+document.addEventListener('turbo:render', initManualMapButton);
 });
