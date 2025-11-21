@@ -107,20 +107,36 @@ class PPV_Session {
         }
 
         // 2️⃣ POS session (ha már aktív)
-        if (!empty($_SESSION['ppv_is_pos']) && !empty($_SESSION['ppv_active_store'])) {
-            $store_id = intval($_SESSION['ppv_active_store']);
-            $store = $wpdb->get_row($wpdb->prepare("
-                SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id=%d LIMIT 1", $store_id));
-            if ($store) {
-                $GLOBALS['ppv_active_store'] = $store;
-                $GLOBALS['ppv_is_pos'] = true;
-                return $store;
+        // 🔹 FILIALE SUPPORT: Check ppv_current_filiale_id FIRST (overrides ppv_active_store)
+        if (!empty($_SESSION['ppv_is_pos'])) {
+            $store_id = null;
+            if (!empty($_SESSION['ppv_current_filiale_id'])) {
+                $store_id = intval($_SESSION['ppv_current_filiale_id']);
+            } elseif (!empty($_SESSION['ppv_active_store'])) {
+                $store_id = intval($_SESSION['ppv_active_store']);
+            }
+
+            if ($store_id) {
+                $store = $wpdb->get_row($wpdb->prepare("
+                    SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id=%d LIMIT 1", $store_id));
+                if ($store) {
+                    $GLOBALS['ppv_active_store'] = $store;
+                    $GLOBALS['ppv_is_pos'] = true;
+                    return $store;
+                }
             }
         }
 
         // 3️⃣ Handler session (ppv_store_id vagy ppv_active_store - trial + active handlers)
-        if (!empty($_SESSION['ppv_store_id'])) {
+        // 🔹 FILIALE SUPPORT: Check ppv_current_filiale_id FIRST (overrides ppv_store_id)
+        $store_id = null;
+        if (!empty($_SESSION['ppv_current_filiale_id'])) {
+            $store_id = intval($_SESSION['ppv_current_filiale_id']);
+        } elseif (!empty($_SESSION['ppv_store_id'])) {
             $store_id = intval($_SESSION['ppv_store_id']);
+        }
+
+        if ($store_id) {
             $store = $wpdb->get_row($wpdb->prepare("
                 SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id=%d LIMIT 1", $store_id));
             if ($store) {
@@ -131,8 +147,15 @@ class PPV_Session {
             }
         }
 
-        if (!empty($_SESSION['ppv_active_store'])) {
+        // 🔹 FILIALE SUPPORT: ppv_active_store fallback (also checks ppv_current_filiale_id first)
+        $store_id = null;
+        if (!empty($_SESSION['ppv_current_filiale_id'])) {
+            $store_id = intval($_SESSION['ppv_current_filiale_id']);
+        } elseif (!empty($_SESSION['ppv_active_store'])) {
             $store_id = intval($_SESSION['ppv_active_store']);
+        }
+
+        if ($store_id) {
             $store = $wpdb->get_row($wpdb->prepare("
                 SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id=%d LIMIT 1", $store_id));
             if ($store) {
