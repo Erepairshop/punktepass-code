@@ -199,13 +199,13 @@
                         <label>${L.onb_profile_country || 'Ország'} *</label>
                         <select name="country" required>
                             <option value="">${L.onb_profile_country_placeholder || 'Válassz országot...'}</option>
-                            <option value="HU">Magyarország</option>
-                            <option value="AT">Ausztria</option>
-                            <option value="DE">Németország</option>
-                            <option value="SK">Szlovákia</option>
-                            <option value="RO">Románia</option>
-                            <option value="HR">Horvátország</option>
-                            <option value="SI">Szlovénia</option>
+                            <option value="HU">${L.country_hu || 'Magyarország'}</option>
+                            <option value="AT">${L.country_at || 'Ausztria'}</option>
+                            <option value="DE">${L.country_de || 'Németország'}</option>
+                            <option value="SK">${L.country_sk || 'Szlovákia'}</option>
+                            <option value="RO">${L.country_ro || 'Románia'}</option>
+                            <option value="HR">${L.country_hr || 'Horvátország'}</option>
+                            <option value="SI">${L.country_si || 'Szlovénia'}</option>
                         </select>
                     </div>
 
@@ -232,7 +232,7 @@
                     </div>
 
                     <div class="ppv-form-group">
-                        <label>Ortskoordinaten</label>
+                        <label>${L.onb_profile_coordinates || 'Ortskoordinaten'}</label>
                         <div style="display: flex; gap: 10px; margin-bottom: 10px;">
                             <div style="flex: 1;">
                                 <label style="font-size: 12px; color: #999;">${L.onb_profile_latitude || 'Breitengrad (Latitude)'}</label>
@@ -369,9 +369,9 @@
                     <div class="ppv-form-group">
                         <label>${L.onb_reward_type || 'Jutalmazás típusa'} *</label>
                         <select name="action_type" id="onboarding-action-type">
-                            <option value="discount_percent">Rabatt (%)</option>
-                            <option value="discount_fixed">Fix rabatt</option>
-                            <option value="free_product" selected>Ingyenes termék</option>
+                            <option value="discount_percent">${L.onb_reward_type_percent || 'Rabatt (%)'}</option>
+                            <option value="discount_fixed">${L.onb_reward_type_fixed || 'Fix rabatt'}</option>
+                            <option value="free_product" selected>${L.onb_reward_type_free || 'Ingyenes termék'}</option>
                         </select>
                         <small style="color: #999;">${L.onb_reward_type_helper || '🎁 Milyen típusú jutalmat kap az ügyfél'}</small>
                     </div>
@@ -384,14 +384,14 @@
 
                     <!-- GRATIS TERMÉK NEVE (csak FREE_PRODUCT típusnál!) -->
                     <div class="ppv-form-group" id="onboarding-free-product-name-wrapper" style="display: none;">
-                        <label>🎁 Produktname</label>
-                        <input type="text" name="free_product" id="onboarding-free-product-name" placeholder="pl. Kaffee + Kuchen">
+                        <label>${L.onb_reward_free_product || '🎁 Produktname'}</label>
+                        <input type="text" name="free_product" id="onboarding-free-product-name" placeholder="${L.onb_reward_free_product_placeholder || 'pl. Kaffee + Kuchen'}">
                         <small style="color: #999;">${L.onb_reward_free_product_helper || '🎁 Az ingyenes termék neve (pl. Kávé + Sütemény)'}</small>
                     </div>
 
                     <!-- GRATIS TERMÉK ÉRTÉKE -->
                     <div class="ppv-form-group" id="onboarding-free-product-value-wrapper" style="display: none;">
-                        <label style="color: #ff9800;">💰 Produktwert <span style="color: #ff0000;">*</span></label>
+                        <label style="color: #ff9800;">${L.onb_reward_free_product_value || '💰 Produktwert'} <span style="color: #ff0000;">*</span></label>
                         <input type="number" name="free_product_value" id="onboarding-free-product-value" value="0" min="0.01" step="0.01" placeholder="0.00" style="border-color: #ff9800;">
                         <small style="color: #ff9800;">${L.onb_reward_free_product_value_helper || '💰 A termék rendes ára'}</small>
                     </div>

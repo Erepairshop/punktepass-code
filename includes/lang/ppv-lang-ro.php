@@ -1023,4 +1023,22 @@ return [
     'onb_error_reward_points' => '❌ Te rog introdu cel putin 1 punct!',
     'onb_saving' => '⏳ Se salveaza...',
 
+    // Hiányzó fordítások (Missing translations)
+    'onb_profile_coordinates' => 'Coordonate GPS',
+    'onb_reward_type_percent' => 'Reducere (%)',
+    'onb_reward_type_fixed' => 'Reducere fixă',
+    'onb_reward_type_free' => 'Produs gratuit',
+    'onb_reward_free_product' => '🎁 Numele produsului',
+    'onb_reward_free_product_placeholder' => 'de ex. Cafea + Prăjitură',
+    'onb_reward_free_product_value' => '💰 Valoarea produsului',
+
+    // Ország nevek (Country names)
+    'country_hu' => 'Ungaria',
+    'country_at' => 'Austria',
+    'country_de' => 'Germania',
+    'country_sk' => 'Slovacia',
+    'country_ro' => 'România',
+    'country_hr' => 'Croația',
+    'country_si' => 'Slovenia',
+
 ];

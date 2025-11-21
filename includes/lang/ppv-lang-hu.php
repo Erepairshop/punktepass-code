@@ -1011,4 +1011,22 @@ return [
     'onb_error_reward_points' => '❌ Kérlek adj meg legalább 1 pontot!',
     'onb_saving' => '⏳ Mentés...',
 
+    // Hiányzó fordítások
+    'onb_profile_coordinates' => 'GPS koordináták',
+    'onb_reward_type_percent' => 'Rabatt (%)',
+    'onb_reward_type_fixed' => 'Fix rabatt',
+    'onb_reward_type_free' => 'Ingyenes termék',
+    'onb_reward_free_product' => '🎁 Termék neve',
+    'onb_reward_free_product_placeholder' => 'pl. Kávé + Sütemény',
+    'onb_reward_free_product_value' => '💰 Termék értéke',
+
+    // Ország nevek
+    'country_hu' => 'Magyarország',
+    'country_at' => 'Ausztria',
+    'country_de' => 'Németország',
+    'country_sk' => 'Szlovákia',
+    'country_ro' => 'Románia',
+    'country_hr' => 'Horvátország',
+    'country_si' => 'Szlovénia',
+
 ];

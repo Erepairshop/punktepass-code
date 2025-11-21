@@ -1035,5 +1035,23 @@ return [
     'onb_error_reward_name' => '❌ Bitte gib den Prämiemnamen an!',
     'onb_error_reward_points' => '❌ Bitte gib mindestens 1 Punkt an!',
     'onb_saving' => '⏳ Wird gespeichert...',
+
+    // Hiányzó fordítások
+    'onb_profile_coordinates' => 'Ortskoordinaten',
+    'onb_reward_type_percent' => 'Rabatt (%)',
+    'onb_reward_type_fixed' => 'Fester Rabatt',
+    'onb_reward_type_free' => 'Kostenloses Produkt',
+    'onb_reward_free_product' => '🎁 Produktname',
+    'onb_reward_free_product_placeholder' => 'z.B. Kaffee + Kuchen',
+    'onb_reward_free_product_value' => '💰 Produktwert',
+
+    // Ország nevek
+    'country_hu' => 'Ungarn',
+    'country_at' => 'Österreich',
+    'country_de' => 'Deutschland',
+    'country_sk' => 'Slowakei',
+    'country_ro' => 'Rumänien',
+    'country_hr' => 'Kroatien',
+    'country_si' => 'Slowenien',
 ];
 
