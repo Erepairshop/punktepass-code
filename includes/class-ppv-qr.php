@@ -341,16 +341,24 @@ class PPV_QR {
             $store_id = 0;
             $store_key = '';
 
-            // 1️⃣ SESSION
-            if (!empty($_SESSION['ppv_active_store'])) {
+            // 1️⃣ FILIALE SUPPORT: Check ppv_current_filiale_id FIRST
+            if (!empty($_SESSION['ppv_current_filiale_id'])) {
+                $store_id = intval($_SESSION['ppv_current_filiale_id']);
+            }
+            // 2️⃣ SESSION store_id
+            elseif (!empty($_SESSION['ppv_store_id'])) {
+                $store_id = intval($_SESSION['ppv_store_id']);
+            }
+            // 3️⃣ SESSION active_store
+            elseif (!empty($_SESSION['ppv_active_store'])) {
                 $store_id = intval($_SESSION['ppv_active_store']);
             }
-            // 2️⃣ GLOBAL
+            // 4️⃣ GLOBAL
             elseif (!empty($GLOBALS['ppv_active_store'])) {
                 $active = $GLOBALS['ppv_active_store'];
                 $store_id = is_object($active) ? intval($active->id) : intval($active);
             }
-            // 3️⃣ LOGGED IN USER
+            // 5️⃣ LOGGED IN USER (fallback - may return wrong store if multiple!)
             elseif (is_user_logged_in()) {
                 $uid = get_current_user_id();
                 $store_id = intval($wpdb->get_var($wpdb->prepare(
@@ -515,13 +523,18 @@ class PPV_QR {
             @session_start();
         }
 
-        if (!empty($_SESSION['ppv_active_store'])) {
-            $store_id = intval($_SESSION['ppv_active_store']);
+        // 🏪 FILIALE SUPPORT: Check ppv_current_filiale_id FIRST
+        if (!empty($_SESSION['ppv_current_filiale_id'])) {
+            $store_id = intval($_SESSION['ppv_current_filiale_id']);
         } elseif (!empty($_SESSION['ppv_store_id'])) {
             $store_id = intval($_SESSION['ppv_store_id']);
+        } elseif (!empty($_SESSION['ppv_active_store'])) {
+            $store_id = intval($_SESSION['ppv_active_store']);
+        } elseif (!empty($_SESSION['ppv_vendor_store_id'])) {
+            $store_id = intval($_SESSION['ppv_vendor_store_id']);
         }
 
-        // ✅ If no store_id in session, try to get it via user_id
+        // ✅ If no store_id in session, try to get it via user_id (fallback)
         if ($store_id === 0 && !empty($_SESSION['ppv_user_id'])) {
             $user_id = intval($_SESSION['ppv_user_id']);
 
