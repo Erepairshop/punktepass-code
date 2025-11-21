@@ -596,12 +596,19 @@ if (!empty($store->gallery)) {
         private static function get_current_store() {
             global $wpdb;
 
+            // ✅ Disable WordPress cache for fresh data
+            $wpdb->flush();
+
             if (!empty($_GET['store_id'])) {
-                return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1", intval($_GET['store_id'])));
+                $store_id = intval($_GET['store_id']);
+                wp_cache_delete($store_id, 'ppv_stores');
+                return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1", $store_id));
             }
 
             if (!empty($_SESSION['ppv_store_id'])) {
-                return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1", intval($_SESSION['ppv_store_id'])));
+                $store_id = intval($_SESSION['ppv_store_id']);
+                wp_cache_delete($store_id, 'ppv_stores');
+                return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1", $store_id));
             }
 
             if (!empty($_COOKIE['ppv_pos_token'])) {
@@ -777,11 +784,17 @@ $result = $wpdb->update(
 error_log("💾 [DEBUG] Update result: " . ($result !== false ? 'OK' : 'FAILED'));
 
     if ($result !== false) {
-        // ✅ Visszaolvassuk a friss adatokat hogy ne kelljen reload
+        // ✅ Clear cache for this store
+        wp_cache_delete($store_id, 'ppv_stores');
+        $wpdb->flush();
+
+        // ✅ Force fresh read from DB
         $updated_store = $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
             $store_id
-        ));
+        ), OBJECT, 0); // Force no cache
+
+        error_log("✅ [DEBUG] Reloaded store: " . json_encode($updated_store));
 
         wp_send_json_success([
             'msg' => PPV_Lang::t('profile_saved_success'),

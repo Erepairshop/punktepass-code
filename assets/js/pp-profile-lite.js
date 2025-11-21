@@ -272,8 +272,16 @@
 
                     // ✅ Frissítjük a form mezőket a backend válasz alapján (nem kell reload!)
                     if (data.data?.store) {
+                        console.log('📦 Store data received:', data.data.store);
+                        console.log('🔍 Company name from backend:', data.data.store.company_name);
                         this.updateFormFields(data.data.store);
                         console.log('🔄 Form fields updated from backend');
+
+                        // Double check hogy a mező tényleg frissült
+                        const companyField = this.$form.querySelector('[name="company_name"]');
+                        console.log('✅ Company field value after update:', companyField?.value);
+                    } else {
+                        console.warn('⚠️ No store data in response!');
                     }
                 } else {
                     this.showAlert(data.data?.msg || this.t('profile_save_error'), 'error');
