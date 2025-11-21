@@ -14,12 +14,33 @@
  * 🚀 TURBO-COMPATIBLE: Re-initializes on navigation
  */
 
+// 🚀 Global polling cleanup for Turbo navigation
+window.PPV_POLL_INTERVAL_ID = null;
+window.PPV_VISIBILITY_HANDLER = null;
+
+// 🧹 Cleanup function - call before navigation or re-init
+function cleanupPolling() {
+  if (window.PPV_POLL_INTERVAL_ID) {
+    clearInterval(window.PPV_POLL_INTERVAL_ID);
+    window.PPV_POLL_INTERVAL_ID = null;
+    console.log('🧹 [Polling] Interval cleared');
+  }
+  if (window.PPV_VISIBILITY_HANDLER) {
+    document.removeEventListener('visibilitychange', window.PPV_VISIBILITY_HANDLER);
+    window.PPV_VISIBILITY_HANDLER = null;
+    console.log('🧹 [Polling] Visibility listener removed');
+  }
+  window.PPV_POLLING_ACTIVE = false;
+}
+
 // 🚀 Turbo-compatible initialization
 async function initUserDashboard() {
   // Check if dashboard root exists (only run on user dashboard pages)
   const dashboardRoot = document.getElementById('ppv-dashboard-root');
   if (!dashboardRoot) {
     console.log("⏭️ [Dashboard] Not a dashboard page, skipping init");
+    // 🧹 Clean up polling if we're NOT on dashboard page anymore
+    cleanupPolling();
     return;
   }
 
@@ -328,34 +349,47 @@ async function initUserDashboard() {
   // ============================================================
 
   // ============================================================
-  // 📊 ADAPTIVE POLLING - 3s active, 30s inactive
+  // 📊 ADAPTIVE POLLING - 5s active, 30s inactive (increased from 3s to reduce 503 errors)
   // ============================================================
   const initPointSync = () => {
-    // Prevent multiple initializations
-    if (window.PPV_POLLING_ACTIVE) {
-      console.warn('⚠️ [Polling] Already initialized, skipping');
-      return;
-    }
+    // 🧹 Always cleanup first to prevent multiple polling instances
+    cleanupPolling();
+
     window.PPV_POLLING_ACTIVE = true;
+    console.log('🔄 [Polling] Initializing point sync...');
 
     let lastPolledPoints = boot.points || 0;
     let lastShownErrorTimestamp = null; // Track last shown error timestamp to prevent duplicates
-    let pollIntervalId = null;
     let isFirstPoll = true; // Skip showing errors on first poll (page load)
 
     // Get current polling interval based on visibility
     const getCurrentInterval = () => {
-      return document.hidden ? 30000 : 3000; // 30s inactive, 3s active
+      return document.hidden ? 30000 : 5000; // 30s inactive, 5s active (increased from 3s)
     };
 
     // Poll function
     const pollPoints = async () => {
+      // Skip if not on dashboard page anymore
+      if (!document.getElementById('ppv-dashboard-root')) {
+        console.log('⏭️ [Polling] Dashboard not found, cleaning up');
+        cleanupPolling();
+        return;
+      }
+
       try {
         const res = await fetch(API + 'user/points-poll', {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' }
         });
-        if (!res.ok) return;
+
+        // Handle HTTP errors gracefully
+        if (!res.ok) {
+          if (res.status === 503) {
+            console.warn('⚠️ [Polling] Server busy (503), will retry next interval');
+          }
+          return;
+        }
+
         const data = await res.json();
         if (!data.success) return;
 
@@ -413,25 +447,23 @@ async function initUserDashboard() {
 
     // Start polling with current interval
     const startPolling = () => {
-      if (pollIntervalId) clearInterval(pollIntervalId);
+      if (window.PPV_POLL_INTERVAL_ID) clearInterval(window.PPV_POLL_INTERVAL_ID);
       const interval = getCurrentInterval();
       console.log(`🔄 [Polling] Starting with ${interval/1000}s interval (tab ${document.hidden ? 'inactive' : 'active'})`);
-      pollIntervalId = setInterval(pollPoints, interval);
+      window.PPV_POLL_INTERVAL_ID = setInterval(pollPoints, interval);
     };
 
-    // Handle visibility change
-    document.addEventListener('visibilitychange', () => {
+    // Handle visibility change - store handler globally for cleanup
+    window.PPV_VISIBILITY_HANDLER = () => {
       startPolling(); // Restart with new interval
-    });
+    };
+    document.addEventListener('visibilitychange', window.PPV_VISIBILITY_HANDLER);
 
     // Start initial polling
     startPolling();
 
-    // Cleanup
-    window.addEventListener('beforeunload', () => {
-      if (pollIntervalId) clearInterval(pollIntervalId);
-      window.PPV_POLLING_ACTIVE = false;
-    });
+    // Cleanup on beforeunload (hard refresh/close)
+    window.addEventListener('beforeunload', cleanupPolling);
   };
 
   /**
@@ -1068,6 +1100,12 @@ if (document.readyState === 'loading') {
 } else {
   initUserDashboard();
 }
+
+// 🧹 Turbo: Clean up BEFORE navigating away (prevents multiple polling instances)
+document.addEventListener('turbo:before-visit', function() {
+  console.log('🧹 [Turbo] Before visit - cleaning up polling');
+  cleanupPolling();
+});
 
 // 🚀 Turbo: Re-initialize after navigation
 document.addEventListener('turbo:load', function() {
