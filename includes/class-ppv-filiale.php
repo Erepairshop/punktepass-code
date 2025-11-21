@@ -122,15 +122,17 @@ class PPV_Filiale {
 
         error_log("🏪 [FILIALE] set_current_filiale({$store_id}) START");
         error_log("🏪 [FILIALE] BEFORE: ppv_store_id=" . ($_SESSION['ppv_store_id'] ?? 'EMPTY'));
+        error_log("🏪 [FILIALE] BEFORE: ppv_vendor_store_id=" . ($_SESSION['ppv_vendor_store_id'] ?? 'EMPTY'));
         error_log("🏪 [FILIALE] BEFORE: ppv_current_filiale_id=" . ($_SESSION['ppv_current_filiale_id'] ?? 'EMPTY'));
 
-        // Set all relevant session variables
+        // ✅ CORRECT: Only set ppv_current_filiale_id, DON'T overwrite base store!
+        // ppv_store_id and ppv_vendor_store_id should ALWAYS stay as original handler store
+        // ppv_current_store() will prioritize ppv_current_filiale_id anyway!
         $_SESSION['ppv_current_filiale_id'] = $store_id;
-        $_SESSION['ppv_store_id'] = $store_id;
-        $_SESSION['ppv_active_store'] = $store_id;
 
-        error_log("🏪 [FILIALE] AFTER SET: ppv_store_id=" . $_SESSION['ppv_store_id']);
         error_log("🏪 [FILIALE] AFTER SET: ppv_current_filiale_id=" . $_SESSION['ppv_current_filiale_id']);
+        error_log("🏪 [FILIALE] ppv_store_id UNCHANGED: " . ($_SESSION['ppv_store_id'] ?? 'EMPTY'));
+        error_log("🏪 [FILIALE] ppv_vendor_store_id UNCHANGED: " . ($_SESSION['ppv_vendor_store_id'] ?? 'EMPTY'));
 
         // Force session write
         error_log("🏪 [FILIALE] Calling session_write_close()...");
