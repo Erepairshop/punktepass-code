@@ -126,10 +126,24 @@ class PPV_Filiale {
      * Copies data from parent store
      */
     public static function ajax_create_filiale() {
-        // Auth check
-        if (!is_user_logged_in() && empty($_SESSION['ppv_store_id'])) {
-            wp_send_json_error(['msg' => 'Not authenticated']);
-            return;
+        // Start session if needed
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+
+        // Auth check using PPV_Permissions (same as QR-Center)
+        if (class_exists('PPV_Permissions')) {
+            $auth_check = PPV_Permissions::check_handler();
+            if (is_wp_error($auth_check)) {
+                wp_send_json_error(['msg' => 'Not authenticated']);
+                return;
+            }
+        } else {
+            // Fallback if PPV_Permissions not available
+            if (!is_user_logged_in() && empty($_SESSION['ppv_store_id'])) {
+                wp_send_json_error(['msg' => 'Not authenticated']);
+                return;
+            }
         }
 
         $parent_store_id = intval($_POST['parent_store_id'] ?? 0);
@@ -227,6 +241,26 @@ class PPV_Filiale {
      * AJAX: Switch active filiale
      */
     public static function ajax_switch_filiale() {
+        // Start session if needed
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+
+        // Auth check using PPV_Permissions (same as QR-Center)
+        if (class_exists('PPV_Permissions')) {
+            $auth_check = PPV_Permissions::check_handler();
+            if (is_wp_error($auth_check)) {
+                wp_send_json_error(['msg' => 'Not authenticated']);
+                return;
+            }
+        } else {
+            // Fallback if PPV_Permissions not available
+            if (!is_user_logged_in() && empty($_SESSION['ppv_store_id'])) {
+                wp_send_json_error(['msg' => 'Not authenticated']);
+                return;
+            }
+        }
+
         $filiale_id = intval($_POST['filiale_id'] ?? 0);
 
         if (!$filiale_id) {
@@ -265,6 +299,26 @@ class PPV_Filiale {
      * AJAX: Get list of filialen for dropdown
      */
     public static function ajax_get_filialen() {
+        // Start session if needed
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+
+        // Auth check using PPV_Permissions (same as QR-Center)
+        if (class_exists('PPV_Permissions')) {
+            $auth_check = PPV_Permissions::check_handler();
+            if (is_wp_error($auth_check)) {
+                wp_send_json_error(['msg' => 'Not authenticated']);
+                return;
+            }
+        } else {
+            // Fallback if PPV_Permissions not available
+            if (!is_user_logged_in() && empty($_SESSION['ppv_store_id'])) {
+                wp_send_json_error(['msg' => 'Not authenticated']);
+                return;
+            }
+        }
+
         $parent_store_id = intval($_POST['parent_store_id'] ?? 0);
 
         if (!$parent_store_id) {
