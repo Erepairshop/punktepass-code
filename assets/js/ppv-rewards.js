@@ -952,12 +952,41 @@ showToast("📄 Monatsbeleg wird heruntergeladen!", "success");
       });
     }
 
-    // ✅ Auto-refresh minden 10 másodpercben
-    setInterval(() => {
+    // ✅ Auto-refresh minden 10 másodpercben (only set once)
+    if (!window.PPV_REWARDS_INTERVAL) {
+      window.PPV_REWARDS_INTERVAL = setInterval(() => {
+        loadRedeemRequests();
+        loadRecentLogs();
+      }, 10000);
+    }
+
+    console.log("✅ [REWARDS] Initialization complete!");
+
+    // 🚀 Export init function for Turbo re-initialization
+    window.ppv_rewards_reinit = function() {
+      console.log('🔄 [REWARDS] Turbo re-initialization');
       loadRedeemRequests();
       loadRecentLogs();
-    }, 10000);
-    
-    console.log("✅ [REWARDS] Initialization complete!");
+    };
+  });
+
+  // 🚀 Turbo: Re-initialize after navigation
+  document.addEventListener('turbo:load', function() {
+    console.log('🔄 [REWARDS] turbo:load event');
+    // Small delay to ensure DOM is ready
+    setTimeout(() => {
+      if (typeof window.ppv_rewards_reinit === 'function') {
+        window.ppv_rewards_reinit();
+      }
+    }, 100);
+  });
+
+  document.addEventListener('turbo:render', function() {
+    console.log('🔄 [REWARDS] turbo:render event');
+    setTimeout(() => {
+      if (typeof window.ppv_rewards_reinit === 'function') {
+        window.ppv_rewards_reinit();
+      }
+    }, 100);
   });
 }
