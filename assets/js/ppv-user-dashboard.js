@@ -917,35 +917,44 @@ async function initUserDashboard() {
     let userLat = null;
     let userLng = null;
 
-    // 1️⃣ Try to get geo position (1.5s max - fast!)
-    try {
-      const pos = await new Promise((resolve) => {
-        if (!navigator.geolocation) {
-          resolve(null);
-          return;
-        }
-        const timeout = setTimeout(() => {
-          console.log('⏱️ [Geo] Timeout after 1.5s');
-          resolve(null);
-        }, 1500);
-
-        navigator.geolocation.getCurrentPosition(
-          (p) => { clearTimeout(timeout); resolve(p); },
-          () => { clearTimeout(timeout); resolve(null); },
-          { timeout: 1500, maximumAge: 600000 } // Accept 10 min old position
-        );
-      });
-
-      if (pos?.coords) {
-        userLat = pos.coords.latitude;
-        userLng = pos.coords.longitude;
-        console.log('📍 [Geo] Position:', userLat.toFixed(4), userLng.toFixed(4));
-      }
-    } catch (e) {
-      console.warn('⚠️ [Geo] Error:', e.message);
+    // 🚀 Try cached location first (instant!)
+    const cachedLat = localStorage.getItem('ppv_user_lat');
+    const cachedLng = localStorage.getItem('ppv_user_lng');
+    if (cachedLat && cachedLng) {
+      userLat = parseFloat(cachedLat);
+      userLng = parseFloat(cachedLng);
+      console.log('⚡ [Geo] Using cached position:', userLat.toFixed(4), userLng.toFixed(4));
     }
 
-    // 2️⃣ Fetch stores from API
+    // 1️⃣ Start geo request in background (non-blocking)
+    const geoPromise = new Promise((resolve) => {
+      if (!navigator.geolocation) {
+        resolve(null);
+        return;
+      }
+      const timeout = setTimeout(() => {
+        console.log('⏱️ [Geo] Timeout after 2s');
+        resolve(null);
+      }, 2000);
+
+      navigator.geolocation.getCurrentPosition(
+        (p) => {
+          clearTimeout(timeout);
+          // Cache for next time
+          localStorage.setItem('ppv_user_lat', p.coords.latitude.toString());
+          localStorage.setItem('ppv_user_lng', p.coords.longitude.toString());
+          console.log('📍 [Geo] Fresh position cached:', p.coords.latitude.toFixed(4), p.coords.longitude.toFixed(4));
+          resolve(p);
+        },
+        () => {
+          clearTimeout(timeout);
+          resolve(null);
+        },
+        { timeout: 2000, maximumAge: 600000 }
+      );
+    });
+
+    // 2️⃣ Fetch stores immediately with cached location (or without)
     try {
       let url = API + 'stores/list-optimized';
       if (userLat && userLng) {
@@ -962,11 +971,31 @@ async function initUserDashboard() {
       const stores = await res.json();
       console.log('✅ [Stores] Loaded', stores?.length || 0, 'stores in', (performance.now() - startTime).toFixed(0), 'ms');
 
-      // 3️⃣ Render stores
+      // Render stores
       if (!Array.isArray(stores) || stores.length === 0) {
         box.innerHTML = `<p class="ppv-no-stores"><i class="ri-store-3-line"></i> ${T.no_stores}</p>`;
       } else {
         renderStoreList(box, stores, userLat, userLng);
+      }
+
+      // 3️⃣ If we didn't have cached location, wait for geo and re-fetch
+      if (!cachedLat && !cachedLng) {
+        const freshPos = await geoPromise;
+        if (freshPos?.coords) {
+          const newLat = freshPos.coords.latitude;
+          const newLng = freshPos.coords.longitude;
+          console.log('🔄 [Stores] Re-fetching with fresh geo...');
+
+          const newUrl = API + `stores/list-optimized?lat=${newLat}&lng=${newLng}&max_distance=10`;
+          const newRes = await fetch(newUrl, { cache: "no-store" });
+          if (newRes.ok) {
+            const newStores = await newRes.json();
+            if (Array.isArray(newStores) && newStores.length > 0) {
+              renderStoreList(box, newStores, newLat, newLng);
+              console.log('✅ [Stores] Re-rendered with distance sorting');
+            }
+          }
+        }
       }
 
     } catch (e) {
