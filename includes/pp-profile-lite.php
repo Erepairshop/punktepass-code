@@ -1015,12 +1015,17 @@ if ($google_api_key) {
 
                 error_log("✅ [PPV_GEOCODE] Google Maps MEGTALÁLTA: {$lat}, {$lon} ({$detected_country})");
 
+                // ✅ Check if precise (street_address or premise)
+                $types = $first['types'] ?? [];
+                $is_precise = in_array('street_address', $types) || in_array('premise', $types);
+
                 wp_send_json_success([
                     'lat' => round($lat, 4),
                     'lon' => round($lon, 4),
                     'country' => $detected_country,
                     'display_name' => $first['formatted_address'] ?? $search_query,
-                    'source' => 'google_maps'
+                    'source' => 'google_maps',
+                    'open_manual_map' => !$is_precise  // ← Auto-open if not precise
                 ]);
                 return;
             }
@@ -1171,12 +1176,17 @@ foreach ($search_variants as $idx => $search_query) {
                 error_log("✅ [PPV_GEOCODE] Nominatim MEGTALÁLVA (variáns #" . ($idx + 1) . "): {$lat}, {$lon} ({$detected_country})");
                 error_log("   Display: " . ($best['display_name'] ?? 'N/A'));
 
+                // ✅ Check if we should open manual map (not house/building = imprecise)
+                $addresstype = $best['addresstype'] ?? '';
+                $is_precise = in_array($addresstype, ['house', 'building'], true);
+
                 wp_send_json_success([
                     'lat' => round($lat, 4),
                     'lon' => round($lon, 4),
                     'country' => $detected_country,
                     'display_name' => $best['display_name'] ?? $search_query,
-                    'source' => 'nominatim_variant_' . ($idx + 1)
+                    'source' => 'nominatim_variant_' . ($idx + 1),
+                    'open_manual_map' => !$is_precise  // ← Auto-open map if not precise
                 ]);
                 return;
             }
