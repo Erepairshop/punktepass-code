@@ -224,7 +224,7 @@ $core_modules = [
     'includes/class-ppv-pwa-bridge.php',
     'includes/class-ppv-lang.php',
     'includes/class-ppv-lang-switcher.php',
-    'includes/class-ppv-campaigns.php',
+    // 'includes/class-ppv-campaigns.php', // REMOVED: Campaigns now handled by class-ppv-qr.php
     'includes/class-ppv-poster.php',
     'includes/class-ppv-bonus-days.php',
     'includes/class-ppv-filiale.php',
@@ -474,7 +474,7 @@ if (class_exists('PPV_Rewards')) PPV_Rewards::hooks();
 if (class_exists('PPV_Redeem')) PPV_Redeem::hooks();
 if (class_exists('PPV_Redeem_Admin')) PPV_Redeem_Admin::hooks();
 if (class_exists('PPV_Stats')) PPV_Stats::hooks();
-if (class_exists('PPV_Campaigns')) PPV_Campaigns::hooks();
+// if (class_exists('PPV_Campaigns')) PPV_Campaigns::hooks(); // REMOVED: Campaigns now handled by class-ppv-qr.php
 if (class_exists('PPV_User_Dashboard')) PPV_User_Dashboard::hooks();
 if (class_exists('PPV_Profile_Lite')) PPV_Profile_Lite::hooks();
 if (class_exists('PPV_POS_Devices')) PPV_POS_Devices::hooks();
