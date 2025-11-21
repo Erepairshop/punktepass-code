@@ -234,17 +234,29 @@ window.ppv_plugin_url = '" . esc_url(PPV_PLUGIN_URL) . "';",
         }
 
         // 🏪 FILIALE SUPPORT: Use session-aware store ID with proper priority
-        $store_id = intval($request->get_param('store_id') ?: 0);
+        $store_id_from_request = intval($request->get_param('store_id') ?: 0);
+        $store_id = $store_id_from_request;
         if (!$store_id) {
             $store_id = self::get_store_id();
         }
+
+        // 🔍 DEBUG INFO for troubleshooting FILIALE issues
+        $debug_info = [
+            'request_store_id' => $store_id_from_request,
+            'final_store_id' => $store_id,
+            'session_ppv_current_filiale_id' => $_SESSION['ppv_current_filiale_id'] ?? 'NOT_SET',
+            'session_ppv_store_id' => $_SESSION['ppv_store_id'] ?? 'NOT_SET',
+            'session_ppv_vendor_store_id' => $_SESSION['ppv_vendor_store_id'] ?? 'NOT_SET',
+        ];
+        error_log("🔍 [rest_list_redeems] " . json_encode($debug_info));
 
         if (!$store_id) {
             $msg = class_exists('PPV_Lang') ? PPV_Lang::t('error_no_store') : 'Nincs Store ID';
             return new WP_REST_Response([
                 'success' => false,
                 'items' => [],
-                'message' => '❌ ' . $msg
+                'message' => '❌ ' . $msg,
+                'debug' => $debug_info
             ], 400);
         }
         
@@ -278,7 +290,8 @@ window.ppv_plugin_url = '" . esc_url(PPV_PLUGIN_URL) . "';",
         return new WP_REST_Response([
             'success' => true,
             'items' => $items ?: [],
-            'count' => count($items)
+            'count' => count($items),
+            'debug' => $debug_info
         ], 200);
     }
 
