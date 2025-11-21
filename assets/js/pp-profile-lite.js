@@ -2,7 +2,6 @@
  * PunktePass – Admin Profil Frontend (v2.0 i18n - Fixed)
  * ✅ DE, HU, RO Language Support
  * ✅ Dynamic String Translation
- * ✅ Auto-save Draft
  * ✅ Real-time Validation
  * ✅ Nonce Fix
  * ✅ Geocoding FIX
@@ -18,16 +17,14 @@
             this.currentLang = window.ppv_profile?.lang || 'de';
             this.nonce = window.ppv_profile?.nonce || '';
             this.ajaxUrl = window.ppv_profile?.ajaxUrl || '';
-            
+
             this.hasChanges = false;
-            this.autoSaveTimer = null;
-            
+
             this.init();
         }
 
         init() {
             if (!this.$form) {
-                console.warn('⚠️ PPV Profile Form not found');
                 return;
             }
 
@@ -37,9 +34,6 @@
             this.bindGalleryDelete();
 
             this.updateUI();
-            
-            console.log('✅ PPV Profile Form initialized');
-            console.log('🔐 Nonce:', this.nonce);
         }
 
         // ==================== GALLERY DELETE ====================
@@ -76,7 +70,6 @@
                 }
             })
             .catch(err => {
-                console.error('Delete error:', err);
                 this.showAlert('Hiba a törléskor', 'error');
             });
         }
@@ -107,7 +100,6 @@
         bindFormInputs() {
             this.$form.addEventListener('change', () => {
                 this.hasChanges = true;
-                this.autoSave();
             });
 
             this.$form.addEventListener('input', () => {
@@ -198,37 +190,6 @@
             }
         }
 
-        // ==================== AUTO-SAVE ====================
-        autoSave() {
-            clearTimeout(this.autoSaveTimer);
-
-            this.autoSaveTimer = setTimeout(() => {
-                const formData = new FormData(this.$form);
-                
-                console.log('💾 Auto-saving...');
-                
-                fetch(`${this.ajaxUrl}?action=ppv_auto_save_profile`, {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(r => {
-                    console.log('📨 Response status:', r.status, r.statusText);
-                    return r.json();
-                })
-                .then(data => {
-                    if (data.success) {
-                        console.log('✅ Auto-saved:', data.data);
-                        this.updateStatus(this.t('saved'));
-                    } else {
-                        console.error('❌ Auto-save failed:', data.data?.msg);
-                    }
-                })
-                .catch(err => {
-                    console.error('❌ Auto-save error:', err);
-                });
-            }, 2000);
-        }
-
         // ==================== FORM SUBMIT ====================
         bindFormSubmit() {
             this.$form.addEventListener('submit', (e) => {
@@ -246,37 +207,33 @@
 
         saveForm() {
             const formData = new FormData(this.$form);
-            
-            this.updateStatus(this.t('saving'));
 
-            console.log('💾 Saving form...');
+            this.updateStatus(this.t('saving'));
 
             fetch(`${this.ajaxUrl}?action=ppv_save_profile`, {
                 method: 'POST',
                 body: formData
             })
-            .then(r => {
-                console.log('📨 Response status:', r.status, r.statusText);
-                return r.json();
-            })
+            .then(r => r.json())
             .then(data => {
                 if (data.success) {
                     this.showAlert(this.t('profile_saved_success'), 'success');
                     this.updateStatus(this.t('saved'));
                     this.hasChanges = false;
-                    
-                    document.getElementById('ppv-last-updated').textContent = 
+
+                    document.getElementById('ppv-last-updated').textContent =
                         `${this.t('last_updated')}: ${new Date().toLocaleString()}`;
-                    
-                    console.log('✅ Profile saved:', data.data);
+
+                    // ✅ Frissítjük a form mezőket a backend válasz alapján (nem kell reload!)
+                    if (data.data?.store) {
+                        this.updateFormFields(data.data.store);
+                    }
                 } else {
                     this.showAlert(data.data?.msg || this.t('profile_save_error'), 'error');
                     this.updateStatus(this.t('error'));
-                    console.error('❌ Save failed:', data.data?.msg);
                 }
             })
             .catch(err => {
-                console.error('❌ Save error:', err);
                 this.showAlert(this.t('profile_save_error'), 'error');
                 this.updateStatus(this.t('error'));
             });
@@ -288,9 +245,60 @@
             if (indicator) {
                 indicator.textContent = text;
                 indicator.classList.add('ppv-visible');
-                
+
                 if (text === this.t('saved')) {
                     setTimeout(() => indicator.classList.remove('ppv-visible'), 2500);
+                }
+            }
+        }
+
+        updateFormFields(store) {
+            // Frissítjük a form mezőket a backend válasz alapján
+            const fieldMap = {
+                'store_name': store.name,
+                'slogan': store.slogan,
+                'category': store.category,
+                'country': store.country,
+                'address': store.address,
+                'plz': store.plz,
+                'city': store.city,
+                'company_name': store.company_name,
+                'contact_person': store.contact_person,
+                'tax_id': store.tax_id,
+                'phone': store.phone,
+                'email': store.email,
+                'website': store.website,
+                'whatsapp': store.whatsapp,
+                'facebook': store.facebook,
+                'instagram': store.instagram,
+                'tiktok': store.tiktok,
+                'description': store.description,
+                'latitude': store.latitude,
+                'longitude': store.longitude,
+                'timezone': store.timezone,
+                'maintenance_message': store.maintenance_message
+            };
+
+            // Text/number/select mezők
+            for (const [fieldName, value] of Object.entries(fieldMap)) {
+                const field = this.$form.querySelector(`[name="${fieldName}"]`);
+                if (field && value !== null && value !== undefined) {
+                    field.value = value;
+                }
+            }
+
+            // Checkbox mezők
+            const checkboxMap = {
+                'is_taxable': store.is_taxable,
+                'active': store.active,
+                'visible': store.visible,
+                'maintenance_mode': store.maintenance_mode
+            };
+
+            for (const [fieldName, value] of Object.entries(checkboxMap)) {
+                const field = this.$form.querySelector(`[name="${fieldName}"]`);
+                if (field) {
+                    field.checked = !!value;
                 }
             }
         }
@@ -407,8 +415,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const latInput = document.getElementById('store_latitude');
     const lngInput = document.getElementById('store_longitude');
 
-    console.log('📍 Geocode inputs:', { address, plz, city, country });
-
     // ✅ ELLENŐRZÉS
     if (!address || !city || !country) {
       alert('Kérlek, add meg az utcát, a várost ÉS az országot!');
@@ -427,29 +433,22 @@ document.addEventListener('DOMContentLoaded', () => {
       formData.append('city', city);
       formData.append('country', country);
 
-      console.log('📤 Sending to server:', { address, plz, city, country });
-
       const response = await fetch(ppv_profile.ajaxUrl, {
         method: 'POST',
         body: formData,
       });
 
       const responseText = await response.text();
-      console.log('📡 Raw response:', responseText);
 
       let data;
       try {
         data = JSON.parse(responseText);
       } catch (e) {
-        console.error('❌ JSON parse error:', e);
-        console.error('Response body:', responseText);
         alert('❌ PHP hiba történt!\n\n' + responseText);
         geocodeBtn.disabled = false;
         geocodeBtn.textContent = '🗺️ Koordináták keresése (Cím alapján)';
         return;
       }
-
-      console.log('📦 Parsed data:', data);
 
 if (!data.success) {
   const errorMsg = data.data?.msg || 'Ismeretlen hiba történt';
@@ -468,8 +467,6 @@ if (countryInput) {
   countryInput.value = detectedCountry;
 }
 
-console.log(`✅ Koordináták: ${lat}, ${lon}`);
-
 latInput.style.borderColor = '#10b981';
 lngInput.style.borderColor = '#10b981';
 
@@ -486,8 +483,6 @@ if (open_manual_map) {
 }
 
     } catch (error) {
-      console.error('❌ Geocoding error:', error);
-      console.error('Error message:', error.message);
       alert('❌ Hiba a koordináták keresésekor!\n\n' + error.message);
     }
 
@@ -545,7 +540,7 @@ function openInteractiveMap(defaultLat, defaultLng) {
           align-items: center;
         ">
           <h2 style="margin: 0; font-size: 1.3rem;">🗺️ Jelöld meg a helyet a térképen</h2>
-          <button onclick="closeInteractiveMap()" style="
+          <button onclick="window.closeInteractiveMap()" style="
             background: none;
             border: none;
             font-size: 1.5rem;
@@ -576,7 +571,7 @@ function openInteractiveMap(defaultLat, defaultLng) {
             📍 <strong id="ppv-coord-display">Kattints a térképre</strong>
           </p>
           <div style="display: flex; gap: 0.75rem;">
-            <button onclick="closeInteractiveMap()" style="
+            <button onclick="window.closeInteractiveMap()" style="
               padding: 0.75rem 1.5rem;
               border: 1px solid #ddd;
               background: #f0f0f0;
@@ -584,7 +579,7 @@ function openInteractiveMap(defaultLat, defaultLng) {
               cursor: pointer;
               font-weight: 600;
             ">Mégse</button>
-            <button onclick="confirmInteractiveMap()" style="
+            <button onclick="window.confirmInteractiveMap()" style="
               padding: 0.75rem 1.5rem;
               border: none;
               background: linear-gradient(135deg, #6366f1, #4f46e5);
@@ -606,7 +601,7 @@ function openInteractiveMap(defaultLat, defaultLng) {
     interactiveMap = new google.maps.Map(
       document.getElementById('ppv-interactive-map'),
       {
-        zoom: 12,
+        zoom: 15,  // ✅ Increased zoom for city-level focus (was 12)
         center: { lat: defaultLat || 47.5, lng: defaultLng || 22.5 },
         mapTypeControl: true,
         fullscreenControl: true,
@@ -618,8 +613,6 @@ function openInteractiveMap(defaultLat, defaultLng) {
     interactiveMap.addListener('click', (e) => {
       const lat = e.latLng.lat();
       const lng = e.latLng.lng();
-
-      console.log(`📍 Map clicked: ${lat}, ${lng}`);
 
       // Remove old marker
       if (interactiveMapMarker) {
@@ -634,7 +627,7 @@ function openInteractiveMap(defaultLat, defaultLng) {
       });
 
       // Update display
-      document.getElementById('ppv-coord-display').innerHTML = 
+      document.getElementById('ppv-coord-display').innerHTML =
         `<strong>${lat.toFixed(4)}, ${lng.toFixed(4)}</strong>`;
 
       // Store coordinates
@@ -644,26 +637,41 @@ function openInteractiveMap(defaultLat, defaultLng) {
   }, 100);
 }
 
-function closeInteractiveMap() {
+// ✅ Expose functions globally for inline onclick handlers
+window.closeInteractiveMap = function() {
   const modal = document.getElementById('ppv-map-modal');
   if (modal) modal.remove();
   interactiveMap = null;
   interactiveMapMarker = null;
-}
+};
 
-function confirmInteractiveMap() {
+window.confirmInteractiveMap = function() {
   if (!window.ppvSelectedCoords) {
     alert('Kérlek, kattints a térképre!');
     return;
   }
 
   const { lat, lng } = window.ppvSelectedCoords;
-  
+
   document.getElementById('store_latitude').value = lat.toFixed(4);
   document.getElementById('store_longitude').value = lng.toFixed(4);
 
-  closeInteractiveMap();
-  
+  // ✅ Update map preview
+  const showMapPreview = window.showMapPreview || function(lat, lon) {
+    const mapDiv = document.getElementById('ppv-location-map');
+    if (!mapDiv) return;
+
+    mapDiv.innerHTML = `
+      <div style="position: relative; width: 100%; height: 100%; border-radius: 8px; overflow: hidden; background: #f0f0f0; display: flex; align-items: center; justify-content: center;">
+        <iframe style="width: 100%; height: 100%; border: none; border-radius: 8px;" src="https://www.openstreetmap.org/export/embed.html?bbox=${lon - 0.01},${lat - 0.01},${lon + 0.01},${lat + 0.01}&layer=mapnik&marker=${lat},${lon}"></iframe>
+      </div>
+    `;
+  };
+
+  showMapPreview(lat, lng);
+
+  window.closeInteractiveMap();
+
   alert(`✅ Koordináták beállítva!\n\nLat: ${lat.toFixed(4)}\nLng: ${lng.toFixed(4)}`);
 }
 

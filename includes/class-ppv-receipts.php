@@ -101,16 +101,36 @@ window.ppv_plugin_url = '" . esc_url(PPV_PLUGIN_URL) . "';",
             @session_start();
         }
 
-        // 1️⃣ Session
+        // 🔄 Token restoration for trial users
+        if (empty($_SESSION['ppv_user_id']) && !empty($_COOKIE['ppv_user_token'])) {
+            if (class_exists('PPV_SessionBridge')) {
+                PPV_SessionBridge::restore_from_token();
+            }
+        }
+
+        // 1️⃣ Session - ppv_store_id
         if (!empty($_SESSION['ppv_store_id'])) {
             return intval($_SESSION['ppv_store_id']);
         }
 
-        // 2️⃣ Logged in user
+        // 2️⃣ Session - ppv_user_id (trial vendors)
+        if (!empty($_SESSION['ppv_user_id'])) {
+            $user_id = intval($_SESSION['ppv_user_id']);
+            $store_id = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id=%d AND active=1 LIMIT 1",
+                $user_id
+            ));
+            if ($store_id) {
+                $_SESSION['ppv_store_id'] = $store_id;
+                return intval($store_id);
+            }
+        }
+
+        // 3️⃣ WordPress logged in user
         if (is_user_logged_in()) {
             $uid = get_current_user_id();
             $store_id = $wpdb->get_var($wpdb->prepare(
-                "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id=%d LIMIT 1",
+                "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id=%d AND active=1 LIMIT 1",
                 $uid
             ));
             if ($store_id) {
@@ -119,7 +139,7 @@ window.ppv_plugin_url = '" . esc_url(PPV_PLUGIN_URL) . "';",
             }
         }
 
-        // 3️⃣ Global fallback
+        // 4️⃣ Global fallback
         if (!empty($GLOBALS['ppv_active_store'])) {
             $active = $GLOBALS['ppv_active_store'];
             return is_object($active) ? intval($active->id) : intval($active);

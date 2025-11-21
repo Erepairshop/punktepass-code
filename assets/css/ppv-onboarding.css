@@ -1,0 +1,655 @@
+/**
+ * PunktePass – Onboarding System CSS
+ * Version: 1.0
+ * ✅ Minimal & Professional design
+ * ✅ CSS változók kompatibilis (theme-light.css)
+ *
+ * HASZNÁLAT: Ezt a fájlt manuálisan illeszd be a globális CSS-be!
+ */
+
+/* ============================================================
+ * 🎯 MODAL BACKDROP & BASE
+ * ============================================================ */
+.ppv-onboarding-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 999999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    padding: 20px;
+}
+
+.ppv-onboarding-modal-backdrop.show {
+    opacity: 1;
+}
+
+.ppv-onboarding-modal {
+    background: var(--pp-surface, #ffffff);
+    border-radius: var(--pp-radius-lg, 12px);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    max-width: 600px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: var(--pp-spacing-xl, 32px);
+    position: relative;
+    transform: translateY(20px);
+    transition: transform 0.3s ease;
+}
+
+.ppv-onboarding-modal-backdrop.show .ppv-onboarding-modal {
+    transform: translateY(0);
+}
+
+.ppv-modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: none;
+    border: none;
+    font-size: 28px;
+    color: var(--pp-text-2, #64748b);
+    cursor: pointer;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.ppv-modal-close:hover {
+    background: var(--pp-surface-2, #f8fafc);
+    color: var(--pp-text, #1e293b);
+}
+
+/* ============================================================
+ * 👋 WELCOME MODAL
+ * ============================================================ */
+.ppv-welcome-modal {
+    text-align: center;
+}
+
+.ppv-modal-icon {
+    font-size: 64px;
+    margin-bottom: 20px;
+    animation: ppv-bounce 0.6s ease;
+}
+
+@keyframes ppv-bounce {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.ppv-welcome-modal h2 {
+    font-size: 28px;
+    color: var(--pp-text, #1e293b);
+    margin-bottom: 16px;
+}
+
+.ppv-welcome-modal p {
+    font-size: 16px;
+    color: var(--pp-text-2, #64748b);
+    margin-bottom: 24px;
+    line-height: 1.6;
+}
+
+.ppv-welcome-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 24px;
+    text-align: left;
+}
+
+.ppv-welcome-step {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: var(--pp-surface-2, #f8fafc);
+    border-radius: var(--pp-radius-sm, 6px);
+}
+
+.ppv-welcome-step .step-number {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--pp-primary, #0066cc);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.ppv-welcome-step span:last-child {
+    font-size: 14px;
+    color: var(--pp-text, #1e293b);
+    font-weight: 600;
+}
+
+.ppv-welcome-time {
+    font-size: 14px;
+    color: var(--pp-text-2, #64748b);
+    margin-bottom: 24px;
+    padding: 8px 12px;
+    background: var(--pp-surface-2, #f8fafc);
+    border-radius: var(--pp-radius-sm, 6px);
+    display: inline-block;
+}
+
+/* ============================================================
+ * 🧙 WIZARD MODAL
+ * ============================================================ */
+.ppv-wizard-modal h3 {
+    font-size: 22px;
+    color: var(--pp-text, #1e293b);
+    margin-bottom: 24px;
+}
+
+.ppv-wizard-progress {
+    margin-bottom: 24px;
+}
+
+.ppv-progress-bar-container {
+    position: relative;
+}
+
+.ppv-progress-bar {
+    height: 8px;
+    background: var(--pp-surface-2, #f8fafc);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.ppv-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--pp-primary, #0066cc), var(--pp-success, #10b981));
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 4px;
+}
+
+.ppv-progress-text {
+    font-size: 13px;
+    color: var(--pp-text-2, #64748b);
+    text-align: right;
+}
+
+.ppv-wizard-form {
+    margin-bottom: 24px;
+}
+
+.ppv-form-group {
+    margin-bottom: 16px;
+}
+
+.ppv-form-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--pp-text, #1e293b);
+    margin-bottom: 6px;
+}
+
+.ppv-form-group input,
+.ppv-form-group select,
+.ppv-form-group textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--pp-border, #e2e8f0);
+    border-radius: var(--pp-radius-sm, 6px);
+    font-size: 14px;
+    color: var(--pp-text, #1e293b);
+    background: var(--pp-surface, #ffffff);
+    transition: all 0.2s ease;
+}
+
+.ppv-form-group input:focus,
+.ppv-form-group select:focus,
+.ppv-form-group textarea:focus {
+    outline: none;
+    border-color: var(--pp-primary, #0066cc);
+    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+}
+
+.ppv-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.ppv-wizard-tip {
+    padding: 12px;
+    background: rgba(245, 158, 11, 0.1);
+    border-left: 4px solid var(--pp-warning, #f59e0b);
+    border-radius: var(--pp-radius-sm, 6px);
+    font-size: 13px;
+    color: var(--pp-text-2, #64748b);
+    margin-top: 16px;
+}
+
+/* ============================================================
+ * 🎉 CELEBRATION MODAL
+ * ============================================================ */
+.ppv-celebration-modal {
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.ppv-celebration-icon {
+    font-size: 80px;
+    animation: ppv-celebration-spin 0.8s ease;
+}
+
+@keyframes ppv-celebration-spin {
+    0% { transform: rotate(0deg) scale(0); }
+    50% { transform: rotate(180deg) scale(1.2); }
+    100% { transform: rotate(360deg) scale(1); }
+}
+
+.ppv-celebration-modal h2 {
+    font-size: 32px;
+    color: var(--pp-text, #1e293b);
+    margin-bottom: 16px;
+}
+
+.ppv-celebration-modal p {
+    font-size: 16px;
+    color: var(--pp-text-2, #64748b);
+    margin-bottom: 12px;
+    line-height: 1.6;
+}
+
+.ppv-celebration-tip {
+    padding: 16px;
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(251, 146, 60, 0.1));
+    border-left: 4px solid var(--pp-warning, #f59e0b);
+    border-radius: var(--pp-radius-sm, 6px);
+    font-size: 14px;
+    color: var(--pp-text, #1e293b);
+    margin: 24px 0;
+    text-align: left;
+}
+
+.ppv-auto-close {
+    margin-top: 16px;
+    font-size: 13px;
+    color: var(--pp-text-3, #94a3b8);
+}
+
+/* ============================================================
+ * 🎊 CONFETTI ANIMATION
+ * ============================================================ */
+.ppv-confetti-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: -1;
+}
+
+.ppv-confetti {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    top: -20px;
+    animation: ppv-confetti-fall linear forwards;
+}
+
+@keyframes ppv-confetti-fall {
+    to {
+        transform: translateY(110vh) rotate(360deg);
+        opacity: 0;
+    }
+}
+
+/* ============================================================
+ * 📊 PROGRESS CARD
+ * ============================================================ */
+.ppv-onboarding-progress-card {
+    background: var(--pp-surface, #ffffff);
+    border: 1px solid var(--pp-border, #e2e8f0);
+    border-radius: var(--pp-radius-lg, 12px);
+    padding: var(--pp-spacing-lg, 24px);
+    margin-bottom: var(--pp-spacing-xl, 32px);
+    box-shadow: var(--pp-shadow-md, 0 4px 6px rgba(0, 0, 0, 0.07));
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+}
+
+.ppv-onboarding-progress-card.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.ppv-onboarding-progress-card.highlight {
+    border-color: var(--pp-primary, #0066cc);
+    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+}
+
+.ppv-progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.ppv-progress-header h3 {
+    font-size: 18px;
+    color: var(--pp-text, #1e293b);
+    margin: 0;
+}
+
+.ppv-card-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: var(--pp-text-2, #64748b);
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.ppv-card-close:hover {
+    background: var(--pp-surface-2, #f8fafc);
+    color: var(--pp-text, #1e293b);
+}
+
+.ppv-progress-bar-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.ppv-progress-bar-container .ppv-progress-bar {
+    flex: 1;
+}
+
+.ppv-progress-label {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--pp-primary, #0066cc);
+    min-width: 45px;
+    text-align: right;
+}
+
+.ppv-progress-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.ppv-progress-step {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    background: var(--pp-surface-2, #f8fafc);
+    border-radius: var(--pp-radius-sm, 6px);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.ppv-progress-step.completed {
+    cursor: default;
+    opacity: 0.7;
+}
+
+.ppv-progress-step:not(.completed):hover {
+    background: var(--pp-surface-3, #f1f5f9);
+    border-left: 3px solid var(--pp-primary, #0066cc);
+}
+
+.ppv-step-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.ppv-step-label {
+    flex: 1;
+    font-size: 14px;
+    color: var(--pp-text, #1e293b);
+    font-weight: 600;
+}
+
+.ppv-step-action {
+    background: var(--pp-primary, #0066cc);
+    color: white;
+    border: none;
+    padding: 4px 12px;
+    border-radius: var(--pp-radius-sm, 6px);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.ppv-step-action:hover {
+    background: var(--pp-primary-dark, #0052a3);
+}
+
+.ppv-progress-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+/* ============================================================
+ * 📌 STICKY REMINDER
+ * ============================================================ */
+.ppv-onboarding-sticky {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.3s ease;
+}
+
+.ppv-onboarding-sticky.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.ppv-sticky-btn {
+    padding: 12px 20px;
+    background: linear-gradient(135deg, var(--pp-primary, #0066cc), var(--pp-info, #3b82f6));
+    color: white;
+    border: none;
+    border-radius: 50px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(0, 102, 204, 0.3);
+    transition: all 0.2s ease;
+    animation: ppv-sticky-pulse 2s infinite;
+}
+
+@keyframes ppv-sticky-pulse {
+    0%, 100% {
+        box-shadow: 0 6px 20px rgba(0, 102, 204, 0.3);
+    }
+    50% {
+        box-shadow: 0 6px 30px rgba(0, 102, 204, 0.5);
+    }
+}
+
+.ppv-sticky-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 102, 204, 0.4);
+}
+
+.ppv-sticky-close {
+    width: 28px;
+    height: 28px;
+    background: var(--pp-surface, #ffffff);
+    border: 1px solid var(--pp-border, #e2e8f0);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+    color: var(--pp-text-2, #64748b);
+    transition: all 0.2s ease;
+}
+
+.ppv-sticky-close:hover {
+    background: var(--pp-surface-2, #f8fafc);
+    color: var(--pp-text, #1e293b);
+}
+
+/* ============================================================
+ * 🔘 BUTTONS
+ * ============================================================ */
+.ppv-modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 24px;
+}
+
+.ppv-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: var(--pp-radius-sm, 6px);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.ppv-btn-primary {
+    background: var(--pp-primary, #0066cc);
+    color: white;
+}
+
+.ppv-btn-primary:hover {
+    background: var(--pp-primary-dark, #0052a3);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
+}
+
+.ppv-btn-secondary {
+    background: var(--pp-surface-2, #f8fafc);
+    color: var(--pp-text-2, #64748b);
+    border: 1px solid var(--pp-border, #e2e8f0);
+}
+
+.ppv-btn-secondary:hover {
+    background: var(--pp-surface-3, #f1f5f9);
+    color: var(--pp-text, #1e293b);
+}
+
+.ppv-btn-large {
+    padding: 14px 32px;
+    font-size: 16px;
+}
+
+.ppv-btn-sm {
+    padding: 6px 14px;
+    font-size: 13px;
+}
+
+.ppv-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ============================================================
+ * 📱 RESPONSIVE
+ * ============================================================ */
+@media (max-width: 768px) {
+    .ppv-onboarding-modal {
+        padding: var(--pp-spacing-lg, 24px);
+        max-width: 100%;
+    }
+
+    .ppv-welcome-modal h2 {
+        font-size: 24px;
+    }
+
+    .ppv-wizard-modal h3 {
+        font-size: 20px;
+    }
+
+    .ppv-form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .ppv-modal-actions {
+        flex-direction: column;
+    }
+
+    .ppv-modal-actions .ppv-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .ppv-onboarding-sticky {
+        bottom: 10px;
+        right: 10px;
+        left: 10px;
+        justify-content: center;
+    }
+
+    .ppv-sticky-btn {
+        flex: 1;
+    }
+
+    .ppv-progress-actions {
+        flex-direction: column;
+    }
+
+    .ppv-progress-actions .ppv-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .ppv-modal-icon {
+        font-size: 48px;
+    }
+
+    .ppv-celebration-icon {
+        font-size: 60px;
+    }
+
+    .ppv-welcome-modal h2,
+    .ppv-celebration-modal h2 {
+        font-size: 22px;
+    }
+}

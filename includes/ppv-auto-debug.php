@@ -121,9 +121,15 @@ class PPV_Auto_Debug {
      * ============================================================ */
     public static function capture_session() {
         if (session_status() === PHP_SESSION_NONE && !headers_sent()) @session_start();
+
+        // 🏪 FILIALE SUPPORT: Show active filiale if set, otherwise show base store_id
+        $active_store_id = $_SESSION['ppv_current_filiale_id'] ?? $_SESSION['ppv_store_id'] ?? 0;
+
         self::$session_data = [
             'user_id'  => $_SESSION['ppv_user_id']  ?? (get_current_user_id() ?: 0),
-            'store_id' => $_SESSION['ppv_store_id'] ?? 0,
+            'store_id' => $active_store_id,
+            'filiale_id' => $_SESSION['ppv_current_filiale_id'] ?? null,
+            'base_store' => $_SESSION['ppv_vendor_store_id'] ?? 0,  // ← ALWAYS shows original handler store
             'pos'      => $_SESSION['ppv_is_pos']   ?? false
         ];
         self::log('🧩 SESSION STATE → ' . json_encode(self::$session_data));
