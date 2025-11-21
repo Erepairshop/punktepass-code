@@ -11,9 +11,24 @@
  * ✅ KEPT: All other functionality
  * ✅ FULLY TRANSLATED: DE/HU/RO
  * ✅ MODERN ICONS: No emojis, pure icon fonts
+ * 🚀 TURBO-COMPATIBLE: Re-initializes on navigation
  */
 
-document.addEventListener("DOMContentLoaded", async () => {
+// 🚀 Turbo-compatible initialization
+async function initUserDashboard() {
+  // Check if dashboard root exists (only run on user dashboard pages)
+  const dashboardRoot = document.getElementById('ppv-dashboard-root');
+  if (!dashboardRoot) {
+    console.log("⏭️ [Dashboard] Not a dashboard page, skipping init");
+    return;
+  }
+
+  // Prevent double initialization
+  if (dashboardRoot.dataset.initialized === 'true') {
+    console.log("⏭️ [Dashboard] Already initialized, skipping");
+    return;
+  }
+  dashboardRoot.dataset.initialized = 'true';
   const boot = window.ppv_boot || {};
   const API = (boot.api || "/wp-json/ppv/v1/").replace(/\/+$/, '/');
   const lang = boot.lang || 'de';
@@ -1045,4 +1060,29 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   console.log("✅ Dashboard initialized");
+}
+
+// 🚀 Initialize on DOMContentLoaded
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initUserDashboard);
+} else {
+  initUserDashboard();
+}
+
+// 🚀 Turbo: Re-initialize after navigation
+document.addEventListener('turbo:load', function() {
+  // Reset initialization flag on navigation so it can re-init
+  const root = document.getElementById('ppv-dashboard-root');
+  if (root) {
+    root.dataset.initialized = 'false';
+  }
+  initUserDashboard();
+});
+
+document.addEventListener('turbo:render', function() {
+  const root = document.getElementById('ppv-dashboard-root');
+  if (root) {
+    root.dataset.initialized = 'false';
+  }
+  initUserDashboard();
 });
