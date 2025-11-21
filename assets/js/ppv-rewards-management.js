@@ -126,6 +126,10 @@ document.addEventListener("DOMContentLoaded", function () {
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
 
+      // 🏢 Get filiale selection (if available)
+      const targetStoreSelect = document.getElementById("reward-target-store");
+      const applyAllCheckbox = document.getElementById("reward-apply-all");
+
       const body = {
         store_id: storeID,
         title: form.title.value.trim(),
@@ -135,7 +139,10 @@ document.addEventListener("DOMContentLoaded", function () {
         action_type: form.action_type.value,
         action_value: form.action_value.value.trim(),
         free_product: document.getElementById("reward-free-product-name")?.value.trim() || "",
-        free_product_value: parseFloat(document.getElementById("reward-free-product-value")?.value || 0)
+        free_product_value: parseFloat(document.getElementById("reward-free-product-value")?.value || 0),
+        // 🏢 Filiale options
+        target_store_id: targetStoreSelect?.value || "current",
+        apply_to_all: applyAllCheckbox?.checked || false
       };
 
       console.log("💾 Save body:", body);
@@ -262,6 +269,12 @@ document.addEventListener("DOMContentLoaded", function () {
     form.reset();
     saveBtn.textContent = "💾 " + (L.rewards_form_save || 'Mentés');
     cancelBtn.style.display = "none";
+
+    // 🏢 Reset filiale selector
+    const targetStoreSelect = document.getElementById("reward-target-store");
+    const applyAllCheckbox = document.getElementById("reward-apply-all");
+    if (targetStoreSelect) targetStoreSelect.value = "current";
+    if (applyAllCheckbox) applyAllCheckbox.checked = false;
   }
 
   /* ============================================================

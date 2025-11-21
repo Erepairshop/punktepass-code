@@ -120,6 +120,41 @@ class PPV_Rewards_Management {
     }
 
     /** ============================================================
+     *  🏪 GET VENDOR STORE ID (parent/main store)
+     * ============================================================ */
+    private static function get_vendor_store_id() {
+        if (!empty($_SESSION['ppv_vendor_store_id'])) {
+            return intval($_SESSION['ppv_vendor_store_id']);
+        }
+        if (!empty($_SESSION['ppv_store_id'])) {
+            return intval($_SESSION['ppv_store_id']);
+        }
+        return 0;
+    }
+
+    /** ============================================================
+     *  🏢 GET ALL FILIALEN FOR VENDOR
+     * ============================================================ */
+    private static function get_filialen_for_vendor() {
+        global $wpdb;
+        $vendor_store_id = self::get_vendor_store_id();
+
+        if (!$vendor_store_id) {
+            return [];
+        }
+
+        // Get all stores: parent + children
+        $filialen = $wpdb->get_results($wpdb->prepare("
+            SELECT id, name, company_name, address, city, plz
+            FROM {$wpdb->prefix}ppv_stores
+            WHERE id = %d OR parent_store_id = %d
+            ORDER BY (id = %d) DESC, name ASC
+        ", $vendor_store_id, $vendor_store_id, $vendor_store_id));
+
+        return $filialen ?: [];
+    }
+
+    /** ============================================================
      *  🎨 FRONTEND RENDER
      * ============================================================ */
     public static function render_management_page() {
@@ -145,9 +180,17 @@ class PPV_Rewards_Management {
         $currency_map = ['DE' => 'EUR', 'HU' => 'HUF', 'RO' => 'RON'];
         $currency = $currency_map[$country] ?? 'EUR';
 
+        // 🏢 Get all filialen for this vendor
+        $filialen = self::get_filialen_for_vendor();
+        $has_multiple_filialen = count($filialen) > 1;
+
         ob_start();
         ?>
-        <script>window.PPV_STORE_ID = <?php echo intval($store_id); ?>;</script>
+        <script>
+            window.PPV_STORE_ID = <?php echo intval($store_id); ?>;
+            window.PPV_FILIALEN = <?php echo wp_json_encode($filialen); ?>;
+            window.PPV_HAS_MULTIPLE_FILIALEN = <?php echo $has_multiple_filialen ? 'true' : 'false'; ?>;
+        </script>
 
         <div class="ppv-rewards-management-wrapper glass-section">
             <h2>🎁 <?php echo esc_html(PPV_Lang::t('rewards_title') ?: 'Jutalmak kezelése – '); ?><?php echo esc_html($store->company_name ?? 'Store'); ?></h2>
@@ -180,7 +223,39 @@ class PPV_Rewards_Management {
                 <input type="number" name="points_given" id="reward-points-given" placeholder="<?php echo esc_attr(PPV_Lang::t('rewards_form_points_given_placeholder') ?: 'pl. 5'); ?>" min="0" required>
                 <small style="color: #999;">⭐ <?php echo esc_html(PPV_Lang::t('rewards_form_points_given_helper') ?: 'Ezek a pontok jutalmazzák az ügyfelet'); ?></small>
 
-                <div style="display: flex; gap: 10px;">
+                <?php if ($has_multiple_filialen): ?>
+                <!-- 🏢 FILIALE SELECTOR -->
+                <div class="ppv-filiale-selector" style="margin-top: 15px; padding: 15px; background: rgba(0,230,255,0.1); border-radius: 8px;">
+                    <label style="font-weight: 600; color: #00e6ff;">
+                        <i class="ri-store-2-line"></i> <?php echo esc_html(PPV_Lang::t('rewards_form_filiale') ?: 'Melyik filiálé(k)nak?'); ?>
+                    </label>
+
+                    <select name="target_store_id" id="reward-target-store" style="margin-top: 8px;">
+                        <option value="current"><?php echo esc_html(PPV_Lang::t('rewards_form_filiale_current') ?: 'Csak ez a filiálé'); ?> (<?php echo esc_html($store->company_name ?? ''); ?>)</option>
+                        <?php foreach ($filialen as $fil): ?>
+                            <?php if (intval($fil->id) !== $store_id): ?>
+                            <option value="<?php echo intval($fil->id); ?>">
+                                <?php echo esc_html($fil->company_name ?: $fil->name); ?>
+                                <?php if ($fil->city): ?>(<?php echo esc_html($fil->city); ?>)<?php endif; ?>
+                            </option>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    </select>
+
+                    <div style="margin-top: 10px;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" name="apply_to_all" id="reward-apply-all" value="1" style="width: 18px; height: 18px;">
+                            <span style="color: #34d399; font-weight: 500;">
+                                <i class="ri-checkbox-multiple-line"></i>
+                                <?php echo esc_html(PPV_Lang::t('rewards_form_apply_all') ?: 'Alkalmazás az összes filiáléra'); ?>
+                            </span>
+                        </label>
+                        <small style="color: #999; margin-left: 26px;"><?php echo esc_html(PPV_Lang::t('rewards_form_apply_all_hint') ?: 'Ugyanez a jutalom létrejön minden filiálénál'); ?></small>
+                    </div>
+                </div>
+                <?php endif; ?>
+
+                <div style="display: flex; gap: 10px; margin-top: 15px;">
                     <button type="submit" class="ppv-btn-blue" id="save-btn">💾 <?php echo esc_html(PPV_Lang::t('rewards_form_save') ?: 'Mentés'); ?></button>
                     <button type="button" class="ppv-btn-outline" id="cancel-btn" style="display:none;"><?php echo esc_html(PPV_Lang::t('rewards_form_cancel') ?: 'Mégse'); ?></button>
                 </div>
@@ -240,14 +315,9 @@ class PPV_Rewards_Management {
         $type     = sanitize_text_field($data['action_type'] ?? '');
         $value    = sanitize_text_field($data['action_value'] ?? '');
 
-        // Currency automatikus
-        $store = $wpdb->get_row($wpdb->prepare(
-            "SELECT country FROM {$wpdb->prefix}ppv_stores WHERE id=%d",
-            $store_id
-        ));
-        $country = $store->country ?? 'DE';
-        $currency_map = ['DE' => 'EUR', 'HU' => 'HUF', 'RO' => 'RON'];
-        $currency = $currency_map[$country] ?? 'EUR';
+        // 🏢 Filiale options
+        $target_store_id = sanitize_text_field($data['target_store_id'] ?? 'current');
+        $apply_to_all = !empty($data['apply_to_all']);
 
         if (!$store_id || !$title || $points <= 0) {
             $msg = class_exists('PPV_Lang') ? PPV_Lang::t('rewards_error_invalid') : 'Érvénytelen bevitel.';
@@ -257,22 +327,62 @@ class PPV_Rewards_Management {
             ], 400);
         }
 
-        $wpdb->insert("{$wpdb->prefix}ppv_rewards", [
-            'store_id'        => $store_id,
-            'title'           => $title,
-            'required_points' => $points,
-            'points_given'    => $points_given,
-            'description'     => $desc,
-            'action_type'     => $type,
-            'action_value'    => $value,
-            'currency'        => $currency,
-            'created_at'      => current_time('mysql')
-        ]);
+        // 🏢 Determine which stores to create reward for
+        $target_stores = [];
 
-        $msg = class_exists('PPV_Lang') ? PPV_Lang::t('rewards_saved') : 'Jutalmazás mentve.';
+        if ($apply_to_all) {
+            // Get all filialen for this vendor
+            $filialen = self::get_filialen_for_vendor();
+            foreach ($filialen as $fil) {
+                $target_stores[] = intval($fil->id);
+            }
+        } elseif ($target_store_id !== 'current' && is_numeric($target_store_id)) {
+            // Specific filiale selected
+            $target_stores[] = intval($target_store_id);
+        } else {
+            // Current store only
+            $target_stores[] = $store_id;
+        }
+
+        // Create reward for each target store
+        $created_count = 0;
+        foreach ($target_stores as $target_id) {
+            // Get currency for this store
+            $store = $wpdb->get_row($wpdb->prepare(
+                "SELECT country FROM {$wpdb->prefix}ppv_stores WHERE id=%d",
+                $target_id
+            ));
+            $country = $store->country ?? 'DE';
+            $currency_map = ['DE' => 'EUR', 'HU' => 'HUF', 'RO' => 'RON'];
+            $currency = $currency_map[$country] ?? 'EUR';
+
+            $wpdb->insert("{$wpdb->prefix}ppv_rewards", [
+                'store_id'        => $target_id,
+                'title'           => $title,
+                'required_points' => $points,
+                'points_given'    => $points_given,
+                'description'     => $desc,
+                'action_type'     => $type,
+                'action_value'    => $value,
+                'currency'        => $currency,
+                'created_at'      => current_time('mysql')
+            ]);
+            $created_count++;
+        }
+
+        if ($created_count > 1) {
+            $msg = sprintf(
+                class_exists('PPV_Lang') ? PPV_Lang::t('rewards_saved_multiple') : 'Jutalom létrehozva %d filiálénál.',
+                $created_count
+            );
+        } else {
+            $msg = class_exists('PPV_Lang') ? PPV_Lang::t('rewards_saved') : 'Jutalmazás mentve.';
+        }
+
         return new WP_REST_Response([
             'success' => true,
-            'message' => '✅ ' . $msg
+            'message' => '✅ ' . $msg,
+            'created_count' => $created_count
         ], 200);
     }
 
