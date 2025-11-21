@@ -130,6 +130,29 @@ class PPV_Permissions {
             }
         }
 
+        // 🔧 AUTO-FIX: If we have user_id but no store_id, lookup from database
+        if (!empty($_SESSION['ppv_user_id']) && empty($_SESSION['ppv_vendor_store_id']) && empty($_SESSION['ppv_store_id'])) {
+            $ppv_user_id = intval($_SESSION['ppv_user_id']);
+            error_log("🔧 [PPV_Permissions] AUTO-FIX: Looking up store for user_id={$ppv_user_id}");
+
+            $user_data = $wpdb->get_row($wpdb->prepare(
+                "SELECT user_type, vendor_store_id FROM {$wpdb->prefix}ppv_users WHERE id = %d LIMIT 1",
+                $ppv_user_id
+            ));
+
+            if ($user_data) {
+                $_SESSION['ppv_user_type'] = $user_data->user_type;
+                error_log("🔧 [PPV_Permissions] AUTO-FIX: Found user_type={$user_data->user_type}");
+
+                if (!empty($user_data->vendor_store_id)) {
+                    $_SESSION['ppv_vendor_store_id'] = $user_data->vendor_store_id;
+                    $_SESSION['ppv_store_id'] = $user_data->vendor_store_id;
+                    $_SESSION['ppv_active_store'] = $user_data->vendor_store_id;
+                    error_log("🔧 [PPV_Permissions] AUTO-FIX: Set store_id={$user_data->vendor_store_id}");
+                }
+            }
+        }
+
         // Check user type from session
         $user_type = $_SESSION['ppv_user_type'] ?? '';
         error_log("🔍 [PPV_Permissions] check_handler() user_type from SESSION: " . ($user_type ?: 'EMPTY'));
