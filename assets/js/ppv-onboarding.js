@@ -614,6 +614,12 @@
                 return;
             }
 
+            // ✅ Ha dismissed, ne mutassuk
+            if (this.config.dismissed) {
+                console.log('⏭️ Progress card not shown - dismissed');
+                return;
+            }
+
             const percentage = this.progress.percentage;
             const completed = this.progress.completed;
             const total = this.progress.total;
@@ -668,11 +674,11 @@
             // X gomb - dismiss
             card.on('click', '[data-action="dismiss"]', () => {
                 if (confirm(L.onb_confirm_dismiss || 'Biztosan bezárod? Később visszahozhatod a beállításokból.')) {
-                    // ✅ Set dismissed flag BEFORE calling backend
-                    this.config.dismissed = true;
-
-                    this.dismissOnboarding('permanent');
-                    this.hideAllOnboarding();
+                    // ✅ Set dismissed flag and wait for backend confirmation
+                    this.dismissOnboarding('permanent', () => {
+                        this.config.dismissed = true;
+                        this.hideAllOnboarding();
+                    });
                 }
             });
 
@@ -763,6 +769,12 @@
          *  🔄 REFRESH PROGRESS
          * ============================================================ */
         refreshProgress() {
+            // ✅ Skip refresh if dismissed
+            if (this.config.dismissed) {
+                console.log('⏭️ Onboarding dismissed, skipping refresh');
+                return;
+            }
+
             $.get(this.config.rest_url + 'progress', (response) => {
                 if (response.success) {
                     this.progress = response.progress;
@@ -780,7 +792,7 @@
         /** ============================================================
          *  ❌ DISMISS
          * ============================================================ */
-        dismissOnboarding(type) {
+        dismissOnboarding(type, callback) {
             $.ajax({
                 url: this.config.rest_url + 'dismiss',
                 method: 'POST',
@@ -788,7 +800,16 @@
                 headers: {
                     'X-WP-Nonce': this.config.nonce
                 },
-                data: JSON.stringify({ type: type })
+                data: JSON.stringify({ type: type }),
+                success: (response) => {
+                    console.log('✅ Onboarding dismissed successfully');
+                    if (callback) callback();
+                },
+                error: () => {
+                    console.error('❌ Failed to dismiss onboarding');
+                    // Still call callback even on error to hide UI
+                    if (callback) callback();
+                }
             });
         }
 
