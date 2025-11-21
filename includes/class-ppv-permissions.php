@@ -165,16 +165,26 @@ class PPV_Permissions {
             );
         }
 
-        // ✅ NEW: Check subscription expiry
-        if ($user_id_to_check) {
-            error_log("🔍 [PPV_Permissions] Checking subscription expiry for user_id={$user_id_to_check}");
+        // ✅ FIXED: Check subscription expiry using store_id from session (not user_id!)
+        // This prevents issues with multiple stores (filialen) having the same user_id
+        $store_id_to_check = 0;
+        if (!empty($_SESSION['ppv_current_filiale_id'])) {
+            $store_id_to_check = intval($_SESSION['ppv_current_filiale_id']);
+        } elseif (!empty($_SESSION['ppv_store_id'])) {
+            $store_id_to_check = intval($_SESSION['ppv_store_id']);
+        } elseif (!empty($_SESSION['ppv_vendor_store_id'])) {
+            $store_id_to_check = intval($_SESSION['ppv_vendor_store_id']);
+        }
+
+        if ($store_id_to_check) {
+            error_log("🔍 [PPV_Permissions] Checking subscription expiry for store_id={$store_id_to_check}");
 
             $store = $wpdb->get_row($wpdb->prepare(
                 "SELECT subscription_status, trial_ends_at, subscription_expires_at
                 FROM {$wpdb->prefix}ppv_stores
-                WHERE user_id = %d
+                WHERE id = %d
                 LIMIT 1",
-                $user_id_to_check
+                $store_id_to_check
             ));
 
             if ($store) {
