@@ -578,7 +578,7 @@ function openInteractiveMap(defaultLat, defaultLng) {
           align-items: center;
         ">
           <h2 style="margin: 0; font-size: 1.3rem;">🗺️ Jelöld meg a helyet a térképen</h2>
-          <button onclick="closeInteractiveMap()" style="
+          <button onclick="window.closeInteractiveMap()" style="
             background: none;
             border: none;
             font-size: 1.5rem;
@@ -609,7 +609,7 @@ function openInteractiveMap(defaultLat, defaultLng) {
             📍 <strong id="ppv-coord-display">Kattints a térképre</strong>
           </p>
           <div style="display: flex; gap: 0.75rem;">
-            <button onclick="closeInteractiveMap()" style="
+            <button onclick="window.closeInteractiveMap()" style="
               padding: 0.75rem 1.5rem;
               border: 1px solid #ddd;
               background: #f0f0f0;
@@ -617,7 +617,7 @@ function openInteractiveMap(defaultLat, defaultLng) {
               cursor: pointer;
               font-weight: 600;
             ">Mégse</button>
-            <button onclick="confirmInteractiveMap()" style="
+            <button onclick="window.confirmInteractiveMap()" style="
               padding: 0.75rem 1.5rem;
               border: none;
               background: linear-gradient(135deg, #6366f1, #4f46e5);
@@ -639,7 +639,7 @@ function openInteractiveMap(defaultLat, defaultLng) {
     interactiveMap = new google.maps.Map(
       document.getElementById('ppv-interactive-map'),
       {
-        zoom: 12,
+        zoom: 15,  // ✅ Increased zoom for city-level focus (was 12)
         center: { lat: defaultLat || 47.5, lng: defaultLng || 22.5 },
         mapTypeControl: true,
         fullscreenControl: true,
@@ -667,7 +667,7 @@ function openInteractiveMap(defaultLat, defaultLng) {
       });
 
       // Update display
-      document.getElementById('ppv-coord-display').innerHTML = 
+      document.getElementById('ppv-coord-display').innerHTML =
         `<strong>${lat.toFixed(4)}, ${lng.toFixed(4)}</strong>`;
 
       // Store coordinates
@@ -677,26 +677,41 @@ function openInteractiveMap(defaultLat, defaultLng) {
   }, 100);
 }
 
-function closeInteractiveMap() {
+// ✅ Expose functions globally for inline onclick handlers
+window.closeInteractiveMap = function() {
   const modal = document.getElementById('ppv-map-modal');
   if (modal) modal.remove();
   interactiveMap = null;
   interactiveMapMarker = null;
-}
+};
 
-function confirmInteractiveMap() {
+window.confirmInteractiveMap = function() {
   if (!window.ppvSelectedCoords) {
     alert('Kérlek, kattints a térképre!');
     return;
   }
 
   const { lat, lng } = window.ppvSelectedCoords;
-  
+
   document.getElementById('store_latitude').value = lat.toFixed(4);
   document.getElementById('store_longitude').value = lng.toFixed(4);
 
-  closeInteractiveMap();
-  
+  // ✅ Update map preview
+  const showMapPreview = window.showMapPreview || function(lat, lon) {
+    const mapDiv = document.getElementById('ppv-location-map');
+    if (!mapDiv) return;
+
+    mapDiv.innerHTML = `
+      <div style="position: relative; width: 100%; height: 100%; border-radius: 8px; overflow: hidden; background: #f0f0f0; display: flex; align-items: center; justify-content: center;">
+        <iframe style="width: 100%; height: 100%; border: none; border-radius: 8px;" src="https://www.openstreetmap.org/export/embed.html?bbox=${lon - 0.01},${lat - 0.01},${lon + 0.01},${lat + 0.01}&layer=mapnik&marker=${lat},${lon}"></iframe>
+      </div>
+    `;
+  };
+
+  showMapPreview(lat, lng);
+
+  window.closeInteractiveMap();
+
   alert(`✅ Koordináták beállítva!\n\nLat: ${lat.toFixed(4)}\nLng: ${lng.toFixed(4)}`);
 }
 
