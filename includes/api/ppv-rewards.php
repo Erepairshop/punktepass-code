@@ -38,6 +38,47 @@ class PPV_Rewards_API {
     }
 
     /** ============================================================
+     *  🔐 GET STORE ID (with FILIALE support)
+     * ============================================================ */
+    private static function get_store_id() {
+        global $wpdb;
+
+        // 🔐 Ensure session is started
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+
+        // 🏪 FILIALE SUPPORT: Check ppv_current_filiale_id FIRST
+        if (!empty($_SESSION['ppv_current_filiale_id'])) {
+            return intval($_SESSION['ppv_current_filiale_id']);
+        }
+
+        // Session - base store
+        if (!empty($_SESSION['ppv_store_id'])) {
+            return intval($_SESSION['ppv_store_id']);
+        }
+
+        // Fallback: vendor store
+        if (!empty($_SESSION['ppv_vendor_store_id'])) {
+            return intval($_SESSION['ppv_vendor_store_id']);
+        }
+
+        // Fallback: WordPress user (rare case)
+        if (is_user_logged_in()) {
+            $uid = get_current_user_id();
+            $store_id = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id=%d LIMIT 1",
+                $uid
+            ));
+            if ($store_id) {
+                return intval($store_id);
+            }
+        }
+
+        return 0;
+    }
+
+    /** ============================================================
      *  🔹 Route regisztráció
      * ============================================================ */
     public static function register_routes() {
@@ -118,8 +159,13 @@ class PPV_Rewards_API {
         $params = array_merge($req->get_json_params() ?: [], $req->get_query_params() ?: []);
         $email  = sanitize_text_field($params['email'] ?? '');
         $reward_code = sanitize_text_field($params['reward_code'] ?? '');
-        $store_id = intval($params['store_id'] ?? 0);
         $user_id  = intval($params['user_id'] ?? 0);
+
+        // 🏪 FILIALE SUPPORT: Use session-aware store ID with proper priority
+        $store_id = intval($params['store_id'] ?? 0);
+        if (!$store_id) {
+            $store_id = self::get_store_id();
+        }
 
         // 🔹 Fallback – emailből user ID
         if (!$user_id && $email) {
@@ -208,7 +254,12 @@ class PPV_Rewards_API {
         global $wpdb;
         $params = $req->get_json_params();
 
+        // 🏪 FILIALE SUPPORT: Use session-aware store ID with proper priority
         $store_id = intval($params['store_id'] ?? 0);
+        if (!$store_id) {
+            $store_id = self::get_store_id();
+        }
+
         $title = sanitize_text_field($params['title'] ?? '');
         $required_points = intval($params['required_points'] ?? 0);
         $description = sanitize_textarea_field($params['description'] ?? '');
@@ -247,7 +298,12 @@ class PPV_Rewards_API {
      * ============================================================ */
     public static function list_rewards($req) {
         global $wpdb;
+
+        // 🏪 FILIALE SUPPORT: Use session-aware store ID with proper priority
         $store_id = intval($req->get_param('store_id') ?? 0);
+        if (!$store_id) {
+            $store_id = self::get_store_id();
+        }
 
         if (!$store_id) {
             return rest_ensure_response(['success' => false, 'message' => 'Store ID missing']);

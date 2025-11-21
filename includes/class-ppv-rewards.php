@@ -228,9 +228,17 @@ window.ppv_plugin_url = '" . esc_url(PPV_PLUGIN_URL) . "';",
      * ============================================================ */
     public static function rest_list_redeems($request) {
         global $wpdb;
-        
+
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+
+        // 🏪 FILIALE SUPPORT: Use session-aware store ID with proper priority
         $store_id = intval($request->get_param('store_id') ?: 0);
-        
+        if (!$store_id) {
+            $store_id = self::get_store_id();
+        }
+
         if (!$store_id) {
             $msg = class_exists('PPV_Lang') ? PPV_Lang::t('error_no_store') : 'Nincs Store ID';
             return new WP_REST_Response([
@@ -287,9 +295,14 @@ window.ppv_plugin_url = '" . esc_url(PPV_PLUGIN_URL) . "';",
         $data = $request->get_json_params();
         $id = intval($data['id'] ?? 0);
         $status = sanitize_text_field($data['status'] ?? '');
-        $store_id = intval($data['store_id'] ?? $_SESSION['ppv_store_id'] ?? 0);
 
-        error_log("📝 [PPV_REWARDS] Update redeem #{$id} to status: {$status}");
+        // 🏪 FILIALE SUPPORT: Use session-aware store ID with proper priority
+        $store_id = intval($data['store_id'] ?? 0);
+        if (!$store_id) {
+            $store_id = self::get_store_id();
+        }
+
+        error_log("📝 [PPV_REWARDS] Update redeem #{$id} to status: {$status}, store_id: {$store_id}");
 
         if (!$id || !$status) {
             $msg = class_exists('PPV_Lang') ? PPV_Lang::t('error_invalid_data') : 'Ungültige Daten';
@@ -397,9 +410,10 @@ window.ppv_plugin_url = '" . esc_url(PPV_PLUGIN_URL) . "';",
             @session_start();
         }
 
-        $store_id = intval($request->get_param('store_id'));
-        if (!$store_id && !empty($_SESSION['ppv_store_id'])) {
-            $store_id = intval($_SESSION['ppv_store_id']);
+        // 🏪 FILIALE SUPPORT: Use session-aware store ID with proper priority
+        $store_id = intval($request->get_param('store_id') ?: 0);
+        if (!$store_id) {
+            $store_id = self::get_store_id();
         }
 
         error_log("📝 [PPV_REWARDS] rest_recent_logs for store_id: {$store_id}");
@@ -453,8 +467,18 @@ window.ppv_plugin_url = '" . esc_url(PPV_PLUGIN_URL) . "';",
     public static function rest_generate_monthly_receipt($request) {
         global $wpdb;
 
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+
         $data = $request->get_json_params();
+
+        // 🏪 FILIALE SUPPORT: Use session-aware store ID with proper priority
         $store_id = intval($data['store_id'] ?? 0);
+        if (!$store_id) {
+            $store_id = self::get_store_id();
+        }
+
         $year = intval($data['year'] ?? date('Y'));
         $month = intval($data['month'] ?? date('m'));
 
