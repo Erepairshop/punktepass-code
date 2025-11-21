@@ -120,12 +120,20 @@ class PPV_Filiale {
 
         $store_id = intval($store_id);
 
+        error_log("🏪 [FILIALE] set_current_filiale({$store_id}) START");
+        error_log("🏪 [FILIALE] BEFORE: ppv_store_id=" . ($_SESSION['ppv_store_id'] ?? 'EMPTY'));
+        error_log("🏪 [FILIALE] BEFORE: ppv_current_filiale_id=" . ($_SESSION['ppv_current_filiale_id'] ?? 'EMPTY'));
+
         // Set all relevant session variables
         $_SESSION['ppv_current_filiale_id'] = $store_id;
         $_SESSION['ppv_store_id'] = $store_id;
         $_SESSION['ppv_active_store'] = $store_id;
 
+        error_log("🏪 [FILIALE] AFTER SET: ppv_store_id=" . $_SESSION['ppv_store_id']);
+        error_log("🏪 [FILIALE] AFTER SET: ppv_current_filiale_id=" . $_SESSION['ppv_current_filiale_id']);
+
         // Force session write
+        error_log("🏪 [FILIALE] Calling session_write_close()...");
         @session_write_close();
 
         // Flush WordPress cache
@@ -138,7 +146,10 @@ class PPV_Filiale {
         // Restart session for continued use
         if (session_status() === PHP_SESSION_NONE) {
             @session_start();
+            error_log("🏪 [FILIALE] Session restarted. VERIFY: ppv_store_id=" . ($_SESSION['ppv_store_id'] ?? 'EMPTY'));
         }
+
+        error_log("🏪 [FILIALE] set_current_filiale({$store_id}) COMPLETE");
     }
 
     /**
