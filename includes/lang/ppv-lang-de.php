@@ -192,6 +192,11 @@ return [
 'rewards_updated' => 'Prämie aktualisiert.',
 'rewards_error_missing' => 'Fehlende Daten.',
 'rewards_deleted' => 'Prämie gelöscht.',
+'rewards_saved_multiple' => 'Prämie bei %d Filialen erstellt.',
+'rewards_form_filiale' => 'Für welche Filiale(n)?',
+'rewards_form_filiale_current' => 'Nur diese Filiale',
+'rewards_form_apply_all' => 'Auf alle Filialen anwenden',
+'rewards_form_apply_all_hint' => 'Diese Prämie wird bei allen Filialen erstellt',
 
 
   'dashboard' => 'Dein PunktePass Dashboard',

@@ -222,6 +222,11 @@ return [
 'rewards_updated' => 'Jutalmazás frissítve.',
 'rewards_error_missing' => 'Hiányzó adat.',
 'rewards_deleted' => 'Jutalmazás törölve.',
+'rewards_saved_multiple' => 'Jutalom létrehozva %d filiálénál.',
+'rewards_form_filiale' => 'Melyik filiálé(k)nak?',
+'rewards_form_filiale_current' => 'Csak ez a filiálé',
+'rewards_form_apply_all' => 'Alkalmazás az összes filiáléra',
+'rewards_form_apply_all_hint' => 'Ugyanez a jutalom létrejön minden filiálénál',
 
 
 

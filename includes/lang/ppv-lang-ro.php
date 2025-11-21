@@ -230,6 +230,11 @@ return [
 'rewards_updated' => 'Recompensa actualizata.',
 'rewards_error_missing' => 'Date lipsă.',
 'rewards_deleted' => 'Recompensa stearsa.',
+'rewards_saved_multiple' => 'Recompensa creată la %d filiale.',
+'rewards_form_filiale' => 'Pentru care filială(e)?',
+'rewards_form_filiale_current' => 'Doar această filială',
+'rewards_form_apply_all' => 'Aplică la toate filialele',
+'rewards_form_apply_all_hint' => 'Aceeași recompensă va fi creată la toate filialele',
   // ==============================
   // 🔹 Általános
   // ==============================
