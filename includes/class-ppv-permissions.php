@@ -43,6 +43,12 @@ class PPV_Permissions {
             return true;
         }
 
+        // 1b. 🏪 TRIAL HANDLER SUPPORT: Check ppv_vendor_store_id (händler trial has this set)
+        if (!empty($_SESSION['ppv_vendor_store_id'])) {
+            error_log("✅ [PPV_Permissions] Auth via SESSION: vendor_store_id=" . $_SESSION['ppv_vendor_store_id']);
+            return true;
+        }
+
         error_log("🔍 [PPV_Permissions] No session user_id, checking token restore...");
 
         // 1a. Try to restore session from token (Google/Facebook/TikTok login)
@@ -137,6 +143,13 @@ class PPV_Permissions {
             error_log("✅ [PPV_Permissions] check_handler() user_type={$user_type} is in handler_types");
             $is_handler = true;
             $user_id_to_check = self::get_current_user_id();
+        }
+
+        // 🏪 TRIAL HANDLER SUPPORT: If ppv_vendor_store_id is set, treat as handler
+        if (!$is_handler && !empty($_SESSION['ppv_vendor_store_id'])) {
+            error_log("✅ [PPV_Permissions] check_handler() TRIAL HANDLER: ppv_vendor_store_id=" . $_SESSION['ppv_vendor_store_id']);
+            $is_handler = true;
+            $_SESSION['ppv_user_type'] = 'vendor'; // Set default user_type for trial handlers
         }
 
         // Check user type from database (via token auth)
