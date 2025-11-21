@@ -1029,4 +1029,53 @@ return [
     'country_hr' => 'Horvátország',
     'country_si' => 'Szlovénia',
 
+    // ============================================
+    // PROFILE LITE - SETTINGS TAB - SECURITY
+    // ============================================
+    'security_section' => 'Biztonság',
+    'email_change_section' => 'Email cím módosítása',
+    'current_email' => 'Jelenlegi email',
+    'new_email' => 'Új email',
+    'confirm_new_email' => 'Email megerősítés',
+    'change_email_btn' => 'Email módosítás',
+    'password_change_section' => 'Jelszó módosítás',
+    'password_change_help' => 'Változtasd meg jelszavad a nagyobb biztonság érdekében.',
+    'current_password' => 'Jelenlegi jelszó',
+    'new_password' => 'Új jelszó',
+    'confirm_new_password' => 'Jelszó megerősítés',
+    'change_password_btn' => 'Jelszó módosítás',
+
+    // Email/Password change - validation
+    'fill_both_email_fields' => 'Töltsd ki mindkét email mezőt!',
+    'emails_dont_match' => 'Az email címek nem egyeznek!',
+    'confirm_email_change' => 'Biztosan módosítod az email címed?',
+    'changing' => 'Módosítás...',
+    'fill_all_fields' => 'Töltsd ki az összes mezőt!',
+    'passwords_dont_match' => 'Az új jelszavak nem egyeznek!',
+    'password_min_length' => 'A jelszónak legalább 6 karakter hosszúnak kell lennie!',
+    'confirm_password_change' => 'Biztosan módosítod a jelszavad?',
+    'network_error_msg' => 'Hálózati hiba!',
+
+    // Email/Password change - backend messages
+    'email_change_success' => 'Email sikeresen módosítva!',
+    'email_change_error' => 'Hiba az email módosítása során!',
+    'password_change_success' => 'Jelszó sikeresen módosítva!',
+    'password_change_error' => 'Hiba a jelszó módosítása során!',
+    'both_email_fields_required' => 'Mindkét email mező kötelező!',
+    'email_fields_dont_match' => 'Az email címek nem egyeznek!',
+    'invalid_email_address' => 'Érvénytelen email cím!',
+    'email_already_in_use' => 'Ez az email cím már használatban van!',
+    'all_fields_required' => 'Minden mező kötelező!',
+    'new_passwords_dont_match' => 'Az új jelszavak nem egyeznek!',
+    'password_too_short' => 'A jelszónak legalább 6 karakter hosszúnak kell lennie!',
+    'store_not_found' => 'Üzlet nem található!',
+    'current_password_incorrect' => 'A jelenlegi jelszó helytelen!',
+
+    // Onboarding reset
+    'onboarding_reset_help' => 'Ha újra szeretnéd látni a kezdeti beállítási varázslót, kattints az alábbi gombra.',
+    'onboarding_reset_btn' => 'Onboarding újraindítása',
+    'onboarding_reset_confirm' => 'Biztosan újraindítod az onboarding-ot?',
+    'onboarding_resetting' => 'Újraindítás...',
+    'onboarding_reset_success' => 'Onboarding újraindítva!',
+    'onboarding_reset_error' => 'Hiba történt!',
 ];

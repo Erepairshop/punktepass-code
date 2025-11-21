@@ -1041,4 +1041,53 @@ return [
     'country_hr' => 'Croația',
     'country_si' => 'Slovenia',
 
+    // ============================================
+    // PROFILE LITE - SETTINGS TAB - SECURITY
+    // ============================================
+    'security_section' => 'Securitate',
+    'email_change_section' => 'Schimbă Email',
+    'current_email' => 'Email curent',
+    'new_email' => 'Email nou',
+    'confirm_new_email' => 'Confirmă email',
+    'change_email_btn' => 'Schimbă Email',
+    'password_change_section' => 'Schimbă Parola',
+    'password_change_help' => 'Schimbă parola pentru o securitate mai bună.',
+    'current_password' => 'Parola curentă',
+    'new_password' => 'Parola nouă',
+    'confirm_new_password' => 'Confirmă parola',
+    'change_password_btn' => 'Schimbă Parola',
+
+    // Email/Password change - validation
+    'fill_both_email_fields' => 'Completează ambele câmpuri de email!',
+    'emails_dont_match' => 'Adresele de email nu se potrivesc!',
+    'confirm_email_change' => 'Sigur vrei să schimbi adresa de email?',
+    'changing' => 'Se schimbă...',
+    'fill_all_fields' => 'Completează toate câmpurile!',
+    'passwords_dont_match' => 'Parolele noi nu se potrivesc!',
+    'password_min_length' => 'Parola trebuie să aibă cel puțin 6 caractere!',
+    'confirm_password_change' => 'Sigur vrei să schimbi parola?',
+    'network_error_msg' => 'Eroare de rețea!',
+
+    // Email/Password change - backend messages
+    'email_change_success' => 'Email schimbat cu succes!',
+    'email_change_error' => 'Eroare la schimbarea email-ului!',
+    'password_change_success' => 'Parola schimbată cu succes!',
+    'password_change_error' => 'Eroare la schimbarea parolei!',
+    'both_email_fields_required' => 'Ambele câmpuri de email sunt obligatorii!',
+    'email_fields_dont_match' => 'Adresele de email nu se potrivesc!',
+    'invalid_email_address' => 'Adresă de email invalidă!',
+    'email_already_in_use' => 'Această adresă de email este deja utilizată!',
+    'all_fields_required' => 'Toate câmpurile sunt obligatorii!',
+    'new_passwords_dont_match' => 'Parolele noi nu se potrivesc!',
+    'password_too_short' => 'Parola trebuie să aibă cel puțin 6 caractere!',
+    'store_not_found' => 'Magazinul nu a fost găsit!',
+    'current_password_incorrect' => 'Parola curentă este incorectă!',
+
+    // Onboarding reset
+    'onboarding_reset_help' => 'Dacă dorești să vezi din nou asistentul de configurare inițială, apasă butonul de mai jos.',
+    'onboarding_reset_btn' => 'Repornire Onboarding',
+    'onboarding_reset_confirm' => 'Sigur vrei să repornești onboarding-ul?',
+    'onboarding_resetting' => 'Se repornește...',
+    'onboarding_reset_success' => 'Onboarding repornit!',
+    'onboarding_reset_error' => 'A apărut o eroare!',
 ];

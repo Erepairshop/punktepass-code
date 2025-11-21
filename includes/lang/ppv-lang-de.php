@@ -1053,5 +1053,55 @@ return [
     'country_ro' => 'Rumänien',
     'country_hr' => 'Kroatien',
     'country_si' => 'Slowenien',
+
+    // ============================================
+    // PROFILE LITE - SETTINGS TAB - SECURITY
+    // ============================================
+    'security_section' => 'Sicherheit',
+    'email_change_section' => 'E-Mail Adresse ändern',
+    'current_email' => 'Aktuelle Email',
+    'new_email' => 'Neue E-Mail',
+    'confirm_new_email' => 'E-Mail bestätigen',
+    'change_email_btn' => 'E-Mail ändern',
+    'password_change_section' => 'Passwort ändern',
+    'password_change_help' => 'Ändere dein Passwort für mehr Sicherheit.',
+    'current_password' => 'Aktuelles Passwort',
+    'new_password' => 'Neues Passwort',
+    'confirm_new_password' => 'Passwort bestätigen',
+    'change_password_btn' => 'Passwort ändern',
+
+    // Email/Password change - validation
+    'fill_both_email_fields' => 'Bitte fülle beide E-Mail-Felder aus!',
+    'emails_dont_match' => 'E-Mail-Adressen stimmen nicht überein!',
+    'confirm_email_change' => 'Möchtest du deine E-Mail-Adresse wirklich ändern?',
+    'changing' => 'Wird geändert...',
+    'fill_all_fields' => 'Bitte fülle alle Felder aus!',
+    'passwords_dont_match' => 'Neue Passwörter stimmen nicht überein!',
+    'password_min_length' => 'Das Passwort muss mindestens 6 Zeichen lang sein!',
+    'confirm_password_change' => 'Möchtest du dein Passwort wirklich ändern?',
+    'network_error_msg' => 'Netzwerkfehler!',
+
+    // Email/Password change - backend messages
+    'email_change_success' => 'E-Mail erfolgreich geändert!',
+    'email_change_error' => 'Fehler beim Ändern der E-Mail!',
+    'password_change_success' => 'Passwort erfolgreich geändert!',
+    'password_change_error' => 'Fehler beim Ändern des Passworts!',
+    'both_email_fields_required' => 'Beide E-Mail-Felder sind erforderlich!',
+    'email_fields_dont_match' => 'E-Mail-Adressen stimmen nicht überein!',
+    'invalid_email_address' => 'Ungültige E-Mail-Adresse!',
+    'email_already_in_use' => 'Diese E-Mail wird bereits verwendet!',
+    'all_fields_required' => 'Alle Felder sind erforderlich!',
+    'new_passwords_dont_match' => 'Neue Passwörter stimmen nicht überein!',
+    'password_too_short' => 'Das Passwort muss mindestens 6 Zeichen lang sein!',
+    'store_not_found' => 'Store nicht gefunden!',
+    'current_password_incorrect' => 'Aktuelles Passwort ist falsch!',
+
+    // Onboarding reset
+    'onboarding_reset_help' => 'Ha újra szeretnéd látni a kezdeti beállítási varázslót, kattints az alábbi gombra.',
+    'onboarding_reset_btn' => 'Onboarding újraindítása',
+    'onboarding_reset_confirm' => 'Biztosan újraindítod az onboarding-ot?',
+    'onboarding_resetting' => 'Újraindítás...',
+    'onboarding_reset_success' => 'Onboarding újraindítva!',
+    'onboarding_reset_error' => 'Hiba történt!',
 ];
 
