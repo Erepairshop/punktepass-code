@@ -118,7 +118,27 @@ class PPV_Filiale {
             @session_start();
         }
 
-        $_SESSION['ppv_current_filiale_id'] = intval($store_id);
+        $store_id = intval($store_id);
+
+        // Set all relevant session variables
+        $_SESSION['ppv_current_filiale_id'] = $store_id;
+        $_SESSION['ppv_store_id'] = $store_id;
+        $_SESSION['ppv_active_store'] = $store_id;
+
+        // Force session write
+        @session_write_close();
+
+        // Flush WordPress cache
+        wp_cache_flush();
+
+        // Flush database cache
+        global $wpdb;
+        $wpdb->flush();
+
+        // Restart session for continued use
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
     }
 
     /**
@@ -280,14 +300,8 @@ class PPV_Filiale {
             return;
         }
 
-        // Set as current
+        // Set as current (this handles all session vars + cache flush)
         self::set_current_filiale($filiale_id);
-
-        // Also update session store_id for backward compatibility
-        if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
-        }
-        $_SESSION['ppv_store_id'] = $filiale_id;
 
         wp_send_json_success([
             'msg' => 'Filiale switched!',
