@@ -17,6 +17,9 @@
 // 🚀 Global polling cleanup for Turbo navigation
 window.PPV_POLL_INTERVAL_ID = null;
 window.PPV_VISIBILITY_HANDLER = null;
+window.PPV_STORE_LIST_INTERVAL = null;
+window.PPV_SLIDER_HANDLER = null;
+window.PPV_SLIDER_INITIALIZED = false;
 
 // 🧹 Cleanup function - call before navigation or re-init
 function cleanupPolling() {
@@ -30,7 +33,18 @@ function cleanupPolling() {
     window.PPV_VISIBILITY_HANDLER = null;
     console.log('🧹 [Polling] Visibility listener removed');
   }
+  if (window.PPV_STORE_LIST_INTERVAL) {
+    clearInterval(window.PPV_STORE_LIST_INTERVAL);
+    window.PPV_STORE_LIST_INTERVAL = null;
+    console.log('🧹 [Stores] Wait interval cleared');
+  }
+  if (window.PPV_SLIDER_HANDLER) {
+    document.removeEventListener('input', window.PPV_SLIDER_HANDLER);
+    window.PPV_SLIDER_HANDLER = null;
+    console.log('🧹 [Slider] Handler removed');
+  }
   window.PPV_POLLING_ACTIVE = false;
+  window.PPV_SLIDER_INITIALIZED = false;
 }
 
 // 🚀 Turbo-compatible initialization
@@ -707,18 +721,24 @@ async function initUserDashboard() {
   };
 
   // ============================================================
-  // SLIDER
+  // SLIDER - Uses global PPV_SLIDER_INITIALIZED and PPV_SLIDER_HANDLER
   // ============================================================
-  let sliderInitialized = false;
+  let sliderTimeout = null;
+
   const initDistanceSlider = (sliderHTML, userLat, userLng, currentDistance = 10) => {
-    if (sliderInitialized) {
+    if (window.PPV_SLIDER_INITIALIZED) {
       console.log("⏸️ [Slider] Already initialized");
       return;
     }
-    sliderInitialized = true;
+    window.PPV_SLIDER_INITIALIZED = true;
 
-    let sliderTimeout = null;
-    const sliderHandler = async (e) => {
+    // Remove old handler if exists
+    if (window.PPV_SLIDER_HANDLER) {
+      document.removeEventListener('input', window.PPV_SLIDER_HANDLER);
+    }
+
+    // Create new handler and store globally
+    window.PPV_SLIDER_HANDLER = async (e) => {
       if (e.target.id !== 'ppv-distance-slider') return;
 
       const newDistance = e.target.value;
@@ -759,8 +779,7 @@ async function initUserDashboard() {
       }, 500);
     };
 
-    document.removeEventListener('input', sliderHandler);
-    document.addEventListener('input', sliderHandler);
+    document.addEventListener('input', window.PPV_SLIDER_HANDLER);
     console.log("✅ [Slider] Initialized");
   };
 
@@ -1005,11 +1024,17 @@ async function initUserDashboard() {
   initQRToggle();
   initPointSync();
 
-  const waitForStoreList = setInterval(() => {
+  // Clear any existing store list interval before creating new one
+  if (window.PPV_STORE_LIST_INTERVAL) {
+    clearInterval(window.PPV_STORE_LIST_INTERVAL);
+  }
+
+  window.PPV_STORE_LIST_INTERVAL = setInterval(() => {
     const el = document.getElementById("ppv-store-list");
     const qrReady = document.querySelector(".ppv-btn-qr");
     if (el && qrReady) {
-      clearInterval(waitForStoreList);
+      clearInterval(window.PPV_STORE_LIST_INTERVAL);
+      window.PPV_STORE_LIST_INTERVAL = null;
       console.log("✅ [SAFE INIT] QR ready, store list element found → initStores()");
       initStores();
     }
