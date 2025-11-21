@@ -982,6 +982,10 @@ class PPV_Signup {
         $contact_preference = sanitize_text_field($_POST['contact_preference'] ?? 'email');
         $page_url = esc_url_raw($_POST['page_url'] ?? '');
 
+        // User-provided contact info from support form
+        $user_email = sanitize_email($_POST['email'] ?? '');
+        $user_phone = sanitize_text_field($_POST['phone'] ?? '');
+
         if (empty($description)) {
             wp_send_json_error(['message' => 'Problembeschreibung ist erforderlich']);
             return;
@@ -1065,6 +1069,19 @@ class PPV_Signup {
         $message .= "   • Firma: " . ($store->company_name ?: $store->name) . "\n";
         $message .= "   • E-Mail: {$store->email}\n";
         $message .= "   • Telefon: " . ($store->phone ?: 'N/A') . "\n\n";
+
+        // User-provided contact info (from support form)
+        if (!empty($user_email) || !empty($user_phone)) {
+            $message .= "📱 Kontaktdaten aus Formular:\n";
+            if (!empty($user_email)) {
+                $message .= "   • E-Mail: {$user_email}\n";
+            }
+            if (!empty($user_phone)) {
+                $message .= "   • Telefon: {$user_phone}\n";
+            }
+            $message .= "\n";
+        }
+
         $message .= "📞 Bevorzugter Kontakt: {$contact_text}\n\n";
         $message .= "📝 Problembeschreibung:\n";
         $message .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
@@ -1076,9 +1093,12 @@ class PPV_Signup {
         $message .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
         $message .= "PunktePass Support System\n";
 
+        // Use user-provided email for Reply-To if available
+        $reply_to_email = !empty($user_email) ? $user_email : $store->email;
+
         $headers = [
             'From: PunktePass Support <noreply@punktepass.de>',
-            'Reply-To: ' . $store->email,
+            'Reply-To: ' . $reply_to_email,
             'Content-Type: text/plain; charset=UTF-8'
         ];
 
