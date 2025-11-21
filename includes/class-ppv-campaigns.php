@@ -15,6 +15,41 @@ class PPV_Campaigns {
     }
 
     /** ============================================================
+     *  🏪 GET VENDOR STORE ID (parent store for multi-filiale)
+     * ============================================================ */
+    private static function get_vendor_store_id() {
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+
+        if (!empty($_SESSION['ppv_vendor_store_id'])) {
+            return intval($_SESSION['ppv_vendor_store_id']);
+        }
+        if (!empty($_SESSION['ppv_store_id'])) {
+            return intval($_SESSION['ppv_store_id']);
+        }
+        return 0;
+    }
+
+    /** ============================================================
+     *  🏪 GET ALL FILIALEN FOR VENDOR
+     * ============================================================ */
+    private static function get_filialen_for_vendor() {
+        global $wpdb;
+        $vendor_store_id = self::get_vendor_store_id();
+        if (!$vendor_store_id) return [];
+
+        $filialen = $wpdb->get_results($wpdb->prepare("
+            SELECT id, name, company_name, address, city, plz
+            FROM {$wpdb->prefix}ppv_stores
+            WHERE id = %d OR parent_store_id = %d
+            ORDER BY (id = %d) DESC, name ASC
+        ", $vendor_store_id, $vendor_store_id, $vendor_store_id));
+
+        return $filialen ?: [];
+    }
+
+    /** ============================================================
      *  🔐 GET STORE ID (with FILIALE support)
      * ============================================================ */
     private static function get_store_id() {
@@ -79,6 +114,10 @@ wp_add_inline_script('ppv-campaigns', "window.ppv_campaigns = {$__json};", 'befo
 
         global $wpdb;
         $today = current_time('Y-m-d');
+
+        // 🏪 FILIALE SUPPORT: Get all filialen for selector
+        $filialen = self::get_filialen_for_vendor();
+        $has_multiple_filialen = count($filialen) > 1;
 
         // 🏪 FILIALE SUPPORT: Get actual store ID from session (not passed parameter!)
         $store_id = self::get_store_id();
@@ -171,6 +210,28 @@ wp_add_inline_script('ppv-campaigns', "window.ppv_campaigns = {$__json};", 'befo
                             <option value="discount">Rabatt</option>
                         </select>
 
+                        <?php if ($has_multiple_filialen): ?>
+                        <!-- 🏪 FILIALE SELECTOR -->
+                        <div class="ppv-filiale-selector" style="margin-top: 16px; padding: 12px; background: rgba(0,230,255,0.05); border-radius: 8px; border: 1px solid rgba(0,230,255,0.2);">
+                            <label style="color: #00e6ff; font-weight: 500;"><?php echo class_exists('PPV_Lang') ? PPV_Lang::t('campaigns_form_filiale') : 'Für welche Filiale(n)?'; ?></label>
+                            <select name="target_store_id" id="campaign-target-store" style="margin-top: 8px;">
+                                <option value="current"><?php echo class_exists('PPV_Lang') ? PPV_Lang::t('campaigns_form_filiale_current') : 'Nur diese Filiale'; ?></option>
+                                <?php foreach ($filialen as $fil): ?>
+                                    <option value="<?php echo intval($fil->id); ?>">
+                                        <?php echo esc_html($fil->company_name ?: $fil->name); ?>
+                                        <?php if ($fil->city): ?>(<?php echo esc_html($fil->city); ?>)<?php endif; ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+
+                            <label style="display: flex; align-items: center; gap: 8px; margin-top: 12px; cursor: pointer;">
+                                <input type="checkbox" name="apply_to_all" id="campaign-apply-all" value="1" style="width: 18px; height: 18px;">
+                                <span><?php echo class_exists('PPV_Lang') ? PPV_Lang::t('campaigns_form_apply_all') : 'Auf alle Filialen anwenden'; ?></span>
+                            </label>
+                            <small style="color: #999; display: block; margin-top: 4px;"><?php echo class_exists('PPV_Lang') ? PPV_Lang::t('campaigns_form_apply_all_hint') : 'Diese Kampagne wird bei allen Filialen erstellt'; ?></small>
+                        </div>
+                        <?php endif; ?>
+
                         <label>Startdatum</label>
                         <input type="date" name="start" id="campaign-start">
 
@@ -213,23 +274,66 @@ wp_add_inline_script('ppv-campaigns', "window.ppv_campaigns = {$__json};", 'befo
             $campaign_type = 'points';
         }
 
-        $data = [
-            'store_id'        => $store_id,
-            'title'           => sanitize_text_field($_POST['title']),
-            'description'     => sanitize_textarea_field($_POST['description']),
-            'multiplier'      => intval($_POST['multiplier']),
-            'extra_points'    => intval($_POST['extra_points']),
-            'daily_limit'     => intval($_POST['daily_limit']),
-            'discount_percent'=> floatval($_POST['discount_percent']),
-            'campaign_type'   => $campaign_type,
-            'start_date'      => sanitize_text_field($_POST['start']),
-            'end_date'        => sanitize_text_field($_POST['end']),
-            'status'          => 'active',
-            'created_at'      => current_time('mysql')
-        ];
+        // 🏪 FILIALE SUPPORT: Check if apply to all or specific store
+        $apply_to_all = !empty($_POST['apply_to_all']) && $_POST['apply_to_all'] === '1';
+        $target_store_id = sanitize_text_field($_POST['target_store_id'] ?? 'current');
 
-        $wpdb->insert($wpdb->prefix . 'ppv_campaigns', $data);
-        wp_send_json_success(['msg' => 'Kampagne gespeichert']);
+        // Determine which stores to create campaign for
+        $target_stores = [];
+        if ($apply_to_all) {
+            // Get all filialen for this vendor
+            $filialen = self::get_filialen_for_vendor();
+            foreach ($filialen as $fil) {
+                $target_stores[] = intval($fil->id);
+            }
+        } elseif ($target_store_id !== 'current' && is_numeric($target_store_id)) {
+            // Specific filiale selected - verify vendor owns it
+            $filialen = self::get_filialen_for_vendor();
+            $allowed_ids = array_map(function($f) { return intval($f->id); }, $filialen);
+            if (in_array(intval($target_store_id), $allowed_ids)) {
+                $target_stores[] = intval($target_store_id);
+            } else {
+                $target_stores[] = $store_id; // Fallback to current store
+            }
+        } else {
+            // Current store only
+            $target_stores[] = $store_id;
+        }
+
+        // Create campaign for each target store
+        $created_count = 0;
+        foreach ($target_stores as $target_id) {
+            $data = [
+                'store_id'        => $target_id,
+                'title'           => sanitize_text_field($_POST['title']),
+                'description'     => sanitize_textarea_field($_POST['description']),
+                'multiplier'      => intval($_POST['multiplier']),
+                'extra_points'    => intval($_POST['extra_points']),
+                'daily_limit'     => intval($_POST['daily_limit']),
+                'discount_percent'=> floatval($_POST['discount_percent']),
+                'campaign_type'   => $campaign_type,
+                'start_date'      => sanitize_text_field($_POST['start']),
+                'end_date'        => sanitize_text_field($_POST['end']),
+                'status'          => 'active',
+                'created_at'      => current_time('mysql')
+            ];
+
+            $wpdb->insert($wpdb->prefix . 'ppv_campaigns', $data);
+            if ($wpdb->insert_id) {
+                $created_count++;
+            }
+        }
+
+        // Return appropriate message
+        if ($created_count > 1) {
+            $msg = class_exists('PPV_Lang')
+                ? sprintf(PPV_Lang::t('campaigns_saved_multiple'), $created_count)
+                : sprintf('Kampagne bei %d Filialen erstellt.', $created_count);
+        } else {
+            $msg = 'Kampagne gespeichert';
+        }
+
+        wp_send_json_success(['msg' => $msg]);
     }
 
     /** === Frissítés === */

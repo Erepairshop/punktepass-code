@@ -47,6 +47,9 @@ jQuery(document).ready(function ($) {
     $("#ppv-campaign-form")[0].reset();
     $("#campaign-id").val("");
     $("#ppv-modal-title").text("🧩 Neue Kampagne");
+    // 🏪 FILIALE SUPPORT: Reset filiale selector
+    $("#campaign-target-store").val("current");
+    $("#campaign-apply-all").prop("checked", false);
     $("#ppv-campaigns-admin-modal").fadeIn(200).css("display", "flex");
     console.log("✅ Modal should be visible now");
   });
@@ -81,6 +84,9 @@ jQuery(document).ready(function ($) {
       campaign_type: $("#campaign-type").val(),
       start: $("#campaign-start").val(),
       end: $("#campaign-end").val(),
+      // 🏪 FILIALE SUPPORT
+      target_store_id: $("#campaign-target-store").val() || "current",
+      apply_to_all: $("#campaign-apply-all").is(":checked") ? "1" : "0",
     };
 
     if (!data.title || !data.start || !data.end) {
