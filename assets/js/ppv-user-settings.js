@@ -1,11 +1,27 @@
 /**
- * PunktePass – User Settings v5.0
+ * PunktePass – User Settings v5.1
  * Avatar Upload • Modal System • Notifications • Privacy • Address
+ * 🚀 Turbo-compatible
  * Author: Erik Borota / PunktePass
  */
 
-jQuery(document).ready(function ($) {
-  console.log("✅ PunktePass User Settings JS v5.0 aktiv");
+// 🚀 Main initialization function
+function initUserSettings() {
+  const $ = jQuery;
+
+  // Prevent double initialization
+  const wrapper = document.querySelector('.ppv-settings-wrapper');
+  if (!wrapper) {
+    console.log("⏭️ [Settings] Not a settings page, skipping");
+    return;
+  }
+  if (wrapper.dataset.initialized === 'true') {
+    console.log("⏭️ [Settings] Already initialized, skipping");
+    return;
+  }
+  wrapper.dataset.initialized = 'true';
+
+  console.log("✅ PunktePass User Settings JS v5.1 aktiv (Turbo)");
 
   /** =============================
    * 🌍 TRANSLATIONS (DE/HU/RO)
@@ -43,7 +59,16 @@ jQuery(document).ready(function ($) {
       password_required: "⚠️ Te rog introdu parola",
       delete_final_warning: "⚠️ ULTIMĂ ATENȚIONARE: Sigur ștergi definitiv contul?",
     }
-  }[LANG] || T.de;
+  }[LANG] || {
+    avatar_updated: "✅ Avatar aktualisiert",
+    upload_failed: "⚠️ Upload fehlgeschlagen",
+    network_error: "❌ Netzwerkfehler",
+    settings_saved: "✅ Einstellungen gespeichert",
+    save_error: "Fehler beim Speichern",
+    logout_all_confirm: "Möchten Sie sich wirklich auf allen Geräten abmelden?",
+    password_required: "⚠️ Bitte Passwort eingeben",
+    delete_final_warning: "⚠️ LETZTE WARNUNG: Konto wirklich unwiderruflich löschen?",
+  };
 
   /** =============================
    * 🧩 TOAST RENDSZER
@@ -66,7 +91,7 @@ jQuery(document).ready(function ($) {
   /** =============================
    * 📸 AVATAR FELTÖLTÉS
    * ============================= */
-  $("#ppv-avatar-upload").on("change", function () {
+  $("#ppv-avatar-upload").off("change").on("change", function () {
     const file = this.files[0];
     if (!file) return;
     const formData = new FormData();
@@ -95,7 +120,7 @@ jQuery(document).ready(function ($) {
   /** =============================
    * 💾 BEÁLLÍTÁSOK MENTÉSE
    * ============================= */
-  $("#ppv-settings-form").on("submit", function (e) {
+  $("#ppv-settings-form").off("submit").on("submit", function (e) {
     e.preventDefault();
 
     const formData = new FormData(this);
@@ -131,7 +156,7 @@ jQuery(document).ready(function ($) {
   /** =============================
    * 📱 ÖSSZES ESZKÖZ KIJELENTKEZTETÉSE
    * ============================= */
-  $("#ppv-logout-all").on("click", function () {
+  $("#ppv-logout-all").off("click").on("click", function () {
     if (confirm(T.logout_all_confirm)) {
       $.ajax({
         url: ppv_user_settings.ajax_url,
@@ -158,25 +183,25 @@ jQuery(document).ready(function ($) {
   const $modal = $("#ppv-delete-modal");
 
   // Modal megnyitása
-  $("#ppv-delete-account-btn").on("click", function () {
+  $("#ppv-delete-account-btn").off("click").on("click", function () {
     $modal.fadeIn(300);
     $("#ppv-delete-password").val('');
   });
 
   // Modal bezárása
-  $(".ppv-modal-close, #ppv-cancel-delete").on("click", function () {
+  $(".ppv-modal-close, #ppv-cancel-delete").off("click").on("click", function () {
     $modal.fadeOut(300);
   });
 
   // Modal bezárása kattintással
-  $(window).on("click", function (e) {
+  $(window).off("click.ppvModal").on("click.ppvModal", function (e) {
     if (e.target.id === "ppv-delete-modal") {
       $modal.fadeOut(300);
     }
   });
 
   // Törlés megerősítése
-  $("#ppv-confirm-delete").on("click", function () {
+  $("#ppv-confirm-delete").off("click").on("click", function () {
     const password = $("#ppv-delete-password").val();
 
     if (!password) {
@@ -209,4 +234,24 @@ jQuery(document).ready(function ($) {
       error: () => showToast(T.network_error, "error")
     });
   });
+}
+
+// Initialize on jQuery ready
+jQuery(document).ready(initUserSettings);
+
+// 🚀 Turbo-compatible: Re-initialize after navigation
+document.addEventListener("turbo:load", function() {
+  const wrapper = document.querySelector('.ppv-settings-wrapper');
+  if (wrapper) {
+    wrapper.dataset.initialized = 'false';
+  }
+  initUserSettings();
+});
+
+document.addEventListener("turbo:render", function() {
+  const wrapper = document.querySelector('.ppv-settings-wrapper');
+  if (wrapper) {
+    wrapper.dataset.initialized = 'false';
+  }
+  initUserSettings();
 });

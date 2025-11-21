@@ -162,14 +162,22 @@
     }
   });
 
-  document.addEventListener("DOMContentLoaded", () => {
-    console.log('📄 [PPV_MYPOINTS] DOMContentLoaded fired');
+  // 🚀 Main initialization function
+  function initAll() {
+    console.log('📄 [PPV_MYPOINTS] Initializing...');
     initLayout();
     initToken();
     initMyPoints();
     protectBottomNav();
     if (DEBUG) initDebug();
-  });
+  }
+
+  // Initialize on DOMContentLoaded
+  document.addEventListener("DOMContentLoaded", initAll);
+
+  // 🚀 Turbo-compatible: Re-initialize after navigation
+  document.addEventListener("turbo:load", initAll);
+  document.addEventListener("turbo:render", initAll);
 
   /** ============================
    * 🧩 LAYOUT INIT
