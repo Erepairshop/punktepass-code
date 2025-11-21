@@ -735,61 +735,6 @@ class PPV_QR {
         <?php endif; ?>
         <?php endif; // End scanner check for subscription info ?>
 
-        <!-- 🆘 Floating Support Button (ALWAYS SHOW - including scanner users) -->
-        <button id="ppv-support-btn">
-            🆘
-        </button>
-
-        <!-- Support Ticket Modal (ALWAYS SHOW - including scanner users) -->
-        <div id="ppv-support-modal" class="ppv-support-modal">
-            <div class="ppv-support-modal-content">
-                <h3 class="ppv-support-modal-title">
-                    🆘 <?php echo self::t('support_ticket_title', 'Support anfragen'); ?>
-                </h3>
-                <p class="ppv-support-modal-description">
-                    <?php echo self::t('support_ticket_desc', 'Beschreiben Sie Ihr Problem. Wir melden uns schnellstmöglich bei Ihnen.'); ?>
-                </p>
-
-                <!-- Problem Description -->
-                <label class="ppv-support-label">
-                    <?php echo self::t('problem_description', 'Problembeschreibung'); ?> <span class="ppv-required">*</span>
-                </label>
-                <textarea id="ppv-support-description" class="ppv-support-input" placeholder="<?php echo self::t('problem_placeholder', 'Bitte beschreiben Sie Ihr Problem...'); ?>" rows="4"></textarea>
-
-                <!-- Priority -->
-                <label class="ppv-support-label">
-                    <?php echo self::t('priority', 'Priorität'); ?>
-                </label>
-                <select id="ppv-support-priority" class="ppv-support-input">
-                    <option value="normal"><?php echo self::t('priority_normal', 'Normal'); ?></option>
-                    <option value="urgent"><?php echo self::t('priority_urgent', 'Dringend'); ?></option>
-                    <option value="low"><?php echo self::t('priority_low', 'Niedrig'); ?></option>
-                </select>
-
-                <!-- Contact Preference -->
-                <label class="ppv-support-label">
-                    <?php echo self::t('contact_preference', 'Bevorzugter Kontakt'); ?>
-                </label>
-                <select id="ppv-support-contact" class="ppv-support-input">
-                    <option value="email">📧 <?php echo self::t('contact_email', 'E-Mail'); ?></option>
-                    <option value="phone">📞 <?php echo self::t('contact_phone', 'Telefon'); ?></option>
-                    <option value="whatsapp">💬 <?php echo self::t('contact_whatsapp', 'WhatsApp'); ?></option>
-                </select>
-
-                <div id="ppv-support-error" class="ppv-support-message ppv-support-error"></div>
-                <div id="ppv-support-success" class="ppv-support-message ppv-support-success"></div>
-
-                <div class="ppv-support-buttons">
-                    <button id="ppv-support-submit" class="ppv-support-btn-submit">
-                        ✅ <?php echo self::t('send_ticket', 'Ticket senden'); ?>
-                    </button>
-                    <button id="ppv-support-cancel" class="ppv-support-btn-cancel">
-                        ❌ <?php echo self::t('cancel', 'Abbrechen'); ?>
-                    </button>
-                </div>
-            </div>
-        </div>
-
         <?php self::render_filiale_switcher(); ?>
 
         <div class="ppv-pos-center glass-section">

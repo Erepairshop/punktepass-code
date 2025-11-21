@@ -83,7 +83,12 @@ class PPV_Bottom_Nav {
         }
 
         // 2. PPV SESSION check - KRITIKUS a trial usereknek!
-        if (!$is_vendor && !empty($_SESSION['ppv_user_type']) && $_SESSION['ppv_user_type'] === 'vendor') {
+        if (!$is_vendor && !empty($_SESSION['ppv_user_type']) && in_array($_SESSION['ppv_user_type'], ['vendor', 'store', 'handler', 'admin'])) {
+            $is_vendor = true;
+        }
+
+        // 2b. Trial handler check - ppv_vendor_store_id
+        if (!$is_vendor && !empty($_SESSION['ppv_vendor_store_id'])) {
             $is_vendor = true;
         }
 
@@ -128,7 +133,7 @@ class PPV_Bottom_Nav {
                 <a href="/rewards" class="nav-item" data-navlink="true" title="Rewards"><i class="ri-coupon-3-line"></i></a>
                 <a href="/mein-profil" class="nav-item" data-navlink="true" title="Profil"><i class="ri-user-3-line"></i></a>
                 <a href="/statistik" class="nav-item" data-navlink="true" title="Statistik"><i class="ri-bar-chart-line"></i></a>
-                <a href="/pos-admin" class="nav-item" data-navlink="true" title="POS"><i class="ri-scan-2-line"></i></a>
+                <a href="/support" class="nav-item" data-navlink="true" title="Support"><i class="ri-customer-service-2-line"></i></a>
             </nav>
         <?php
         // --- Alap user nav ---
