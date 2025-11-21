@@ -222,6 +222,11 @@ return [
 'rewards_updated' => 'Jutalmazás frissítve.',
 'rewards_error_missing' => 'Hiányzó adat.',
 'rewards_deleted' => 'Jutalmazás törölve.',
+'rewards_saved_multiple' => 'Jutalom létrehozva %d filiálénál.',
+'rewards_form_filiale' => 'Melyik filiálé(k)nak?',
+'rewards_form_filiale_current' => 'Csak ez a filiálé',
+'rewards_form_apply_all' => 'Alkalmazás az összes filiáléra',
+'rewards_form_apply_all_hint' => 'Ugyanez a jutalom létrejön minden filiálénál',
 
 
 
@@ -861,6 +866,11 @@ return [
 'camera_scanner_desc' => 'Tartsd az ügyfél QR-kódját a kamera elé. A scanner automatikusan felismeri.',
 'btn_cancel' => 'Mégse',
 'campaigns_title' => 'Kampányok',
+'campaigns_saved_multiple' => 'Kampány létrehozva %d filiálénál.',
+'campaigns_form_filiale' => 'Melyik filiálé(k)nak?',
+'campaigns_form_filiale_current' => 'Csak ez a filiálé',
+'campaigns_form_apply_all' => 'Alkalmazás az összes filiáléra',
+'campaigns_form_apply_all_hint' => 'Ez a kampány minden filiáléban létrejön',
 'camp_filter_all' => 'Összes',
 'camp_filter_active' => 'Aktív',
 'camp_filter_archived' => 'Archivált',
@@ -884,6 +894,13 @@ return [
 'label_status' => 'Állapot',
 'status_active' => '🟢 Aktív',
 'status_archived' => '📦 Archivált',
+
+// 🏪 KAMPÁNY FILIÁLÉ VÁLASZTÓ
+'camp_target_filiale' => 'Célfiliale',
+'camp_current_filiale' => '📍 Jelenlegi filiale',
+'camp_filiale_hint' => 'Válassza ki a filiálét ehhez a kampányhoz',
+'camp_apply_all' => 'Minden filiálára alkalmaz',
+
 'btn_save' => '💾 Mentés',
 'err_invalid_request' => '❌ Érvénytelen kérés',
 'err_invalid_qr' => '❌ Érvénytelen QR',

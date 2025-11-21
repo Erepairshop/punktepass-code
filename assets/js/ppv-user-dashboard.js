@@ -14,12 +14,12 @@
  * 🚀 TURBO-COMPATIBLE: Re-initializes on navigation
  */
 
-// 🚀 Global polling cleanup for Turbo navigation
+// 🚀 Global state for Turbo navigation cleanup
 window.PPV_POLL_INTERVAL_ID = null;
 window.PPV_VISIBILITY_HANDLER = null;
-window.PPV_STORE_LIST_INTERVAL = null;
 window.PPV_SLIDER_HANDLER = null;
 window.PPV_SLIDER_INITIALIZED = false;
+window.PPV_STORES_LOADING = false;
 
 // 🧹 Cleanup function - call before navigation or re-init
 function cleanupPolling() {
@@ -33,11 +33,6 @@ function cleanupPolling() {
     window.PPV_VISIBILITY_HANDLER = null;
     console.log('🧹 [Polling] Visibility listener removed');
   }
-  if (window.PPV_STORE_LIST_INTERVAL) {
-    clearInterval(window.PPV_STORE_LIST_INTERVAL);
-    window.PPV_STORE_LIST_INTERVAL = null;
-    console.log('🧹 [Stores] Wait interval cleared');
-  }
   if (window.PPV_SLIDER_HANDLER) {
     document.removeEventListener('input', window.PPV_SLIDER_HANDLER);
     window.PPV_SLIDER_HANDLER = null;
@@ -45,6 +40,7 @@ function cleanupPolling() {
   }
   window.PPV_POLLING_ACTIVE = false;
   window.PPV_SLIDER_INITIALIZED = false;
+  window.PPV_STORES_LOADING = false;
 }
 
 // 🚀 Turbo-compatible initialization
@@ -896,79 +892,133 @@ async function initUserDashboard() {
   };
 
   // ============================================================
-  // LOAD STORES
+  // LOAD STORES - SIMPLE & RELIABLE 🚀
   // ============================================================
   const initStores = async () => {
     const box = document.getElementById('ppv-store-list');
-    if (!box) return;
+    if (!box) {
+      console.log('⏭️ [Stores] No store list element found');
+      return;
+    }
 
-    let url = API + 'stores/list-optimized';
+    // Prevent duplicate loading
+    if (window.PPV_STORES_LOADING) {
+      console.log('⏭️ [Stores] Already loading, skipping');
+      return;
+    }
+    window.PPV_STORES_LOADING = true;
+
+    const startTime = performance.now();
+    console.log('🏪 [Stores] Starting store load...');
+
+    // Show loading state
+    box.innerHTML = `<p class="ppv-loading"><i class="ri-loader-4-line ri-spin"></i> ${T.loading}</p>`;
+
     let userLat = null;
     let userLng = null;
 
-    // Elsőként alap loading state
-    box.innerHTML = `<p class="ppv-loading"><i class="ri-loader-4-line ri-spin"></i> ${T.loading}</p>`;
-
-    // 1️⃣ Próbáljunk pontos helyet kérni, de fallback is legyen
-    try {
-      const pos = await Promise.race([
-        new Promise((resolve) => {
-          navigator.geolocation.getCurrentPosition(resolve, () => resolve(null), { timeout: 4000 });
-        }),
-        new Promise((resolve) => setTimeout(() => resolve(null), 5000))
-      ]);
-
-      if (pos?.coords) {
-        userLat = pos.coords.latitude;
-        userLng = pos.coords.longitude;
-        url += `?lat=${userLat}&lng=${userLng}&max_distance=10`;
-      } else {
-        console.warn("⚠️ [Geo] No position, using fallback");
-      }
-    } catch (geoErr) {
-      console.warn("⚠️ [Geo] Error:", geoErr);
+    // 🚀 Try cached location first (instant!)
+    const cachedLat = localStorage.getItem('ppv_user_lat');
+    const cachedLng = localStorage.getItem('ppv_user_lng');
+    if (cachedLat && cachedLng) {
+      userLat = parseFloat(cachedLat);
+      userLng = parseFloat(cachedLng);
+      console.log('⚡ [Geo] Using cached position:', userLat.toFixed(4), userLng.toFixed(4));
     }
 
-    // 2️⃣ Most töltsük az üzleteket
-    try {
-      console.log("🌍 [PPV] Fetching stores from:", url);
-      const startTime = performance.now();
-
-      const res = await fetch(url, { cache: "no-store" });
-      console.log("✅ [PPV] Response received:", res.status, res.statusText);
-
-      const stores = await res.json();
-      console.log("📦 [PPV] JSON parsed in", (performance.now() - startTime).toFixed(1), "ms", stores?.length || 0, "items");
-      console.log("🧠 [DEBUG] Stores data:", stores);
-
-      try {
-        const html = stores.map(renderStoreCard).join('');
-        console.log("🧩 [DEBUG] Rendered HTML length:", html.length);
-      } catch (err) {
-        console.error("❌ [DEBUG] Render error:", err.message, err.stack);
-      }
-
-      if (!Array.isArray(stores) || stores.length === 0) {
-        box.innerHTML = `<p class="ppv-no-stores"><i class="ri-store-3-line"></i> ${T.no_stores}</p>`;
+    // 1️⃣ Start geo request in background (non-blocking)
+    const geoPromise = new Promise((resolve) => {
+      if (!navigator.geolocation) {
+        resolve(null);
         return;
       }
+      const timeout = setTimeout(() => {
+        console.log('⏱️ [Geo] Timeout after 2s');
+        resolve(null);
+      }, 2000);
 
-      const sliderHTML = `
-        <div class="ppv-distance-filter">
-          <label><i class="ri-ruler-line"></i> ${T.distance_label}: <span id="ppv-distance-value">10</span> km</label>
-          <input type="range" id="ppv-distance-slider" min="10" max="1000" value="10" step="10">
-          <div class="ppv-distance-labels"><span>10 km</span><span>1000 km</span></div>
-        </div>
-      `;
+      navigator.geolocation.getCurrentPosition(
+        (p) => {
+          clearTimeout(timeout);
+          // Cache for next time
+          localStorage.setItem('ppv_user_lat', p.coords.latitude.toString());
+          localStorage.setItem('ppv_user_lng', p.coords.longitude.toString());
+          console.log('📍 [Geo] Fresh position cached:', p.coords.latitude.toFixed(4), p.coords.longitude.toFixed(4));
+          resolve(p);
+        },
+        () => {
+          clearTimeout(timeout);
+          resolve(null);
+        },
+        { timeout: 2000, maximumAge: 600000 }
+      );
+    });
 
-      box.innerHTML = sliderHTML + stores.map(renderStoreCard).join('');
-      initDistanceSlider(sliderHTML, userLat, userLng);
-      attachStoreListeners();
+    // 2️⃣ Fetch stores immediately with cached location (or without)
+    try {
+      let url = API + 'stores/list-optimized';
+      if (userLat && userLng) {
+        url += `?lat=${userLat}&lng=${userLng}&max_distance=10`;
+      }
+
+      console.log('🌐 [Stores] Fetching:', url);
+      const res = await fetch(url, { cache: "no-store" });
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+
+      const stores = await res.json();
+      console.log('✅ [Stores] Loaded', stores?.length || 0, 'stores in', (performance.now() - startTime).toFixed(0), 'ms');
+
+      // Render stores
+      if (!Array.isArray(stores) || stores.length === 0) {
+        box.innerHTML = `<p class="ppv-no-stores"><i class="ri-store-3-line"></i> ${T.no_stores}</p>`;
+      } else {
+        renderStoreList(box, stores, userLat, userLng);
+      }
+
+      // 3️⃣ If we didn't have cached location, wait for geo and re-fetch
+      if (!cachedLat && !cachedLng) {
+        const freshPos = await geoPromise;
+        if (freshPos?.coords) {
+          const newLat = freshPos.coords.latitude;
+          const newLng = freshPos.coords.longitude;
+          console.log('🔄 [Stores] Re-fetching with fresh geo...');
+
+          const newUrl = API + `stores/list-optimized?lat=${newLat}&lng=${newLng}&max_distance=10`;
+          const newRes = await fetch(newUrl, { cache: "no-store" });
+          if (newRes.ok) {
+            const newStores = await newRes.json();
+            if (Array.isArray(newStores) && newStores.length > 0) {
+              renderStoreList(box, newStores, newLat, newLng);
+              console.log('✅ [Stores] Re-rendered with distance sorting');
+            }
+          }
+        }
+      }
 
     } catch (e) {
-      console.error("❌ [PPV] Store load failed:", e);
+      console.error('❌ [Stores] Load failed:', e.message);
       box.innerHTML = `<p class="ppv-error"><i class="ri-error-warning-line"></i> ${T.no_stores}</p>`;
     }
+
+    window.PPV_STORES_LOADING = false;
+    console.log('🏁 [Stores] Done in', (performance.now() - startTime).toFixed(0), 'ms');
+  };
+
+  // Helper function to render store list (avoids duplicate code)
+  const renderStoreList = (box, stores, userLat, userLng) => {
+    const sliderHTML = `
+      <div class="ppv-distance-filter">
+        <label><i class="ri-ruler-line"></i> ${T.distance_label}: <span id="ppv-distance-value">10</span> km</label>
+        <input type="range" id="ppv-distance-slider" min="10" max="1000" value="10" step="10">
+        <div class="ppv-distance-labels"><span>10 km</span><span>1000 km</span></div>
+      </div>
+    `;
+    box.innerHTML = sliderHTML + stores.map(renderStoreCard).join('');
+    initDistanceSlider(sliderHTML, userLat, userLng);
+    attachStoreListeners();
   };
 
   // ============================================================
@@ -1019,26 +1069,16 @@ async function initUserDashboard() {
   `;
 
   // ============================================================
-  // INITIALIZATION
+  // INITIALIZATION - Direct call, no interval needed 🚀
   // ============================================================
   initQRToggle();
   initPointSync();
 
-  // Clear any existing store list interval before creating new one
-  if (window.PPV_STORE_LIST_INTERVAL) {
-    clearInterval(window.PPV_STORE_LIST_INTERVAL);
-  }
-
-  window.PPV_STORE_LIST_INTERVAL = setInterval(() => {
-    const el = document.getElementById("ppv-store-list");
-    const qrReady = document.querySelector(".ppv-btn-qr");
-    if (el && qrReady) {
-      clearInterval(window.PPV_STORE_LIST_INTERVAL);
-      window.PPV_STORE_LIST_INTERVAL = null;
-      console.log("✅ [SAFE INIT] QR ready, store list element found → initStores()");
-      initStores();
-    }
-  }, 400);
+  // DOM is already rendered above, call initStores directly
+  // Using requestAnimationFrame to ensure DOM is painted
+  requestAnimationFrame(() => {
+    initStores();
+  });
 
   // ============================================================
   // TOAST - MODERN ICONS ✅

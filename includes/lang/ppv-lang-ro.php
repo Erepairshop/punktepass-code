@@ -230,6 +230,11 @@ return [
 'rewards_updated' => 'Recompensa actualizata.',
 'rewards_error_missing' => 'Date lipsă.',
 'rewards_deleted' => 'Recompensa stearsa.',
+'rewards_saved_multiple' => 'Recompensa creată la %d filiale.',
+'rewards_form_filiale' => 'Pentru care filială(e)?',
+'rewards_form_filiale_current' => 'Doar această filială',
+'rewards_form_apply_all' => 'Aplică la toate filialele',
+'rewards_form_apply_all_hint' => 'Aceeași recompensă va fi creată la toate filialele',
   // ==============================
   // 🔹 Általános
   // ==============================
@@ -875,6 +880,11 @@ return [
 'camera_scanner_desc' => 'Ține codul QR al clientului în fața camerei. Scannerul va recunoaște automat.',
 'btn_cancel' => 'Anulare',
 'campaigns_title' => 'Campanii',
+'campaigns_saved_multiple' => 'Campanie creată la %d filiale.',
+'campaigns_form_filiale' => 'Pentru care filial(e)?',
+'campaigns_form_filiale_current' => 'Doar această filială',
+'campaigns_form_apply_all' => 'Aplică la toate filialele',
+'campaigns_form_apply_all_hint' => 'Această campanie va fi creată la toate filialele',
 'camp_filter_all' => 'Toate',
 'camp_filter_active' => 'Active',
 'camp_filter_archived' => 'Arhivate',
@@ -898,6 +908,13 @@ return [
 'label_status' => 'Stare',
 'status_active' => '🟢 Activ',
 'status_archived' => '📦 Arhivat',
+
+// 🏪 SELECTOR FILIALĂ CAMPANIE
+'camp_target_filiale' => 'Filială țintă',
+'camp_current_filiale' => '📍 Filiala curentă',
+'camp_filiale_hint' => 'Selectați filiala pentru această campanie',
+'camp_apply_all' => 'Aplică la toate filialele',
+
 'btn_save' => '💾 Salvare',
 'err_invalid_request' => '❌ Cerere invalida',
 'err_invalid_qr' => '❌ QR invalid',

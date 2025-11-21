@@ -192,6 +192,11 @@ return [
 'rewards_updated' => 'Prämie aktualisiert.',
 'rewards_error_missing' => 'Fehlende Daten.',
 'rewards_deleted' => 'Prämie gelöscht.',
+'rewards_saved_multiple' => 'Prämie bei %d Filialen erstellt.',
+'rewards_form_filiale' => 'Für welche Filiale(n)?',
+'rewards_form_filiale_current' => 'Nur diese Filiale',
+'rewards_form_apply_all' => 'Auf alle Filialen anwenden',
+'rewards_form_apply_all_hint' => 'Diese Prämie wird bei allen Filialen erstellt',
 
 
   'dashboard' => 'Dein PunktePass Dashboard',
@@ -887,6 +892,11 @@ return [
 'camera_scanner_desc' => 'Halte den QR-Code des Kunden vor die Kamera. Der Scanner erkennt diesen automatisch.',
 'btn_cancel' => 'Abbrechen',
 'campaigns_title' => 'Kampagnen',
+'campaigns_saved_multiple' => 'Kampagne bei %d Filialen erstellt.',
+'campaigns_form_filiale' => 'Für welche Filiale(n)?',
+'campaigns_form_filiale_current' => 'Nur diese Filiale',
+'campaigns_form_apply_all' => 'Auf alle Filialen anwenden',
+'campaigns_form_apply_all_hint' => 'Diese Kampagne wird bei allen Filialen erstellt',
 'camp_filter_all' => 'Alle',
 'camp_filter_active' => 'Aktive',
 'camp_filter_archived' => 'Archiv',
@@ -910,6 +920,13 @@ return [
 'label_status' => 'Status',
 'status_active' => '🟢 Aktiv',
 'status_archived' => '📦 Archiv',
+
+// 🏪 KAMPAGNE FILIALE SELECTOR
+'camp_target_filiale' => 'Zielfiliale',
+'camp_current_filiale' => '📍 Aktuelle Filiale',
+'camp_filiale_hint' => 'Wählen Sie die Filiale für diese Kampagne',
+'camp_apply_all' => 'Auf alle Filialen anwenden',
+
 'btn_save' => '💾 Speichern',
 'err_invalid_request' => '❌ Ungültige Anfrage',
 'err_invalid_qr' => '❌ Ungültiger QR',

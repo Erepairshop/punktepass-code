@@ -603,6 +603,9 @@ class CampaignManager {
           free_product_value: freeProductValue,
           points_given: pointsGiven,
           status,
+          // 🏪 FILIALE SUPPORT
+          target_store_id: document.getElementById("camp-target-store")?.value || "current",
+          apply_to_all: document.getElementById("camp-apply-all")?.checked || false,
         }),
       });
 
@@ -713,6 +716,10 @@ class CampaignManager {
     if (safe("camp-points-given")) safe("camp-points-given").value = 1;
     if (safe("camp-free-product-name")) safe("camp-free-product-name").value = "";
     if (safe("camp-free-product-value")) safe("camp-free-product-value").value = 0;
+
+    // 🏪 FILIALE SUPPORT: Reset filiale selector
+    if (safe("camp-target-store")) safe("camp-target-store").value = "current";
+    if (safe("camp-apply-all")) safe("camp-apply-all").checked = false;
 
     if (safe("camp-required-points-wrapper")) safe("camp-required-points-wrapper").style.display = "none";
     if (safe("camp-points-given-wrapper")) safe("camp-points-given-wrapper").style.display = "none";
