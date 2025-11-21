@@ -506,7 +506,7 @@ class PPV_QR {
 
         <?php if ($is_scanner): ?>
             <!-- SCANNER USER: Only Scanner Interface -->
-            <div class="ppv-pos-center glass-section">
+            <div class="ppv-scanner-standalone glass-card">
                 <?php self::render_pos_scanner(); ?>
             </div>
         <?php else: ?>
@@ -824,7 +824,7 @@ class PPV_QR {
 
         <?php self::render_filiale_switcher(); ?>
 
-        <div class="ppv-pos-center glass-section">
+        <div class="ppv-pos-center">
             <div id="ppv-offline-banner" style="display:none;background:#ffcc00;padding:8px;border-radius:6px;margin-bottom:10px;">
                 🛰️ <?php echo self::t('offline_banner', 'Offline-Modus aktiv'); ?>
                 <button id="ppv-sync-btn" class="ppv-btn small" type="button">
@@ -958,7 +958,7 @@ class PPV_QR {
 
         // Always show switcher (even if only 1 location, to allow adding new)
         ?>
-        <div class="ppv-filiale-switcher glass-section" style="margin-bottom: 20px; padding: 15px;">
+        <div class="ppv-filiale-switcher" style="margin-bottom: 20px; padding: 15px;">
             <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                 <label for="ppv-filiale-select" style="font-weight: 600; margin: 0;">
                     🏪 <?php echo self::t('current_filiale', 'Aktuelle Filiale'); ?>:
@@ -1127,7 +1127,7 @@ class PPV_QR {
     // ============================================================
     public static function render_campaigns() {
         ?>
-        <div class="ppv-campaigns glass-section">
+        <div class="ppv-campaigns">
             <div class="ppv-campaign-header">
                 <h3>🎯 <?php echo self::t('campaigns_title', 'Kampagnen'); ?></h3>
                 <div class="ppv-campaign-controls">
@@ -1295,7 +1295,7 @@ class PPV_QR {
         }
 
         ?>
-        <div class="ppv-scanner-users glass-section">
+        <div class="ppv-scanner-users">
             <div class="ppv-scanner-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h3>👥 <?php echo self::t('scanner_users_title', 'Scanner Felhasználók'); ?></h3>
                 <button id="ppv-new-scanner-btn" class="ppv-btn neon" type="button">

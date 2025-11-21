@@ -192,7 +192,7 @@ class PPV_Rewards_Management {
             window.PPV_HAS_MULTIPLE_FILIALEN = <?php echo $has_multiple_filialen ? 'true' : 'false'; ?>;
         </script>
 
-        <div class="ppv-rewards-management-wrapper glass-section">
+        <div class="ppv-rewards-management-wrapper">
             <h2>🎁 <?php echo esc_html(PPV_Lang::t('rewards_title') ?: 'Jutalmak kezelése – '); ?><?php echo esc_html($store->company_name ?? 'Store'); ?></h2>
 
             <!-- CREATE/EDIT FORM -->
