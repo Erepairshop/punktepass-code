@@ -535,18 +535,18 @@ if (!empty($store->gallery)) {
 
                 <hr>
 
-                <h3>🔐 Sicherheit / Biztonság / Securitate</h3>
+                <h3 data-i18n="security_section">🔐 <?php echo esc_html(PPV_Lang::t('security_section')); ?></h3>
 
                 <!-- Email Change Section -->
                 <div class="ppv-form-group">
-                    <label>📧 E-Mail Adresse ändern / Email cím módosítása / Schimbă Email</label>
+                    <label data-i18n="email_change_section">📧 <?php echo esc_html(PPV_Lang::t('email_change_section')); ?></label>
                     <p class="ppv-help" style="margin-bottom: 12px;">
-                        Aktuelle Email: <strong><?php echo esc_html($store->email ?? 'N/A'); ?></strong>
+                        <span data-i18n="current_email"><?php echo esc_html(PPV_Lang::t('current_email')); ?>:</span> <strong><?php echo esc_html($store->email ?? 'N/A'); ?></strong>
                     </p>
-                    <input type="email" id="new_email" placeholder="Neue E-Mail / Új email" style="margin-bottom: 8px;">
-                    <input type="email" id="new_email_confirm" placeholder="E-Mail bestätigen / Email megerősítés" style="margin-bottom: 12px;">
-                    <button type="button" id="ppv-change-email-btn" class="ppv-btn ppv-btn-secondary" style="width: 100%;">
-                        📧 E-Mail ändern / Email módosítás
+                    <input type="email" id="new_email" placeholder="<?php echo esc_attr(PPV_Lang::t('new_email')); ?>" data-placeholder-i18n="new_email" style="margin-bottom: 8px;">
+                    <input type="email" id="new_email_confirm" placeholder="<?php echo esc_attr(PPV_Lang::t('confirm_new_email')); ?>" data-placeholder-i18n="confirm_new_email" style="margin-bottom: 12px;">
+                    <button type="button" id="ppv-change-email-btn" class="ppv-btn ppv-btn-secondary" data-i18n="change_email_btn" style="width: 100%;">
+                        📧 <?php echo esc_html(PPV_Lang::t('change_email_btn')); ?>
                     </button>
                 </div>
 
@@ -554,15 +554,15 @@ if (!empty($store->gallery)) {
 
                 <!-- Password Change Section -->
                 <div class="ppv-form-group">
-                    <label>🔑 Passwort ändern / Jelszó módosítás / Schimbă Parola</label>
-                    <p class="ppv-help" style="margin-bottom: 12px;">
-                        Ändere dein Passwort für mehr Sicherheit. / Változtasd meg jelszavad a nagyobb biztonság érdekében.
+                    <label data-i18n="password_change_section">🔑 <?php echo esc_html(PPV_Lang::t('password_change_section')); ?></label>
+                    <p class="ppv-help" data-i18n="password_change_help" style="margin-bottom: 12px;">
+                        <?php echo esc_html(PPV_Lang::t('password_change_help')); ?>
                     </p>
-                    <input type="password" id="current_password" placeholder="Aktuelles Passwort / Jelenlegi jelszó" style="margin-bottom: 8px;">
-                    <input type="password" id="new_password" placeholder="Neues Passwort / Új jelszó" style="margin-bottom: 8px;">
-                    <input type="password" id="new_password_confirm" placeholder="Passwort bestätigen / Jelszó megerősítés" style="margin-bottom: 12px;">
-                    <button type="button" id="ppv-change-password-btn" class="ppv-btn ppv-btn-secondary" style="width: 100%;">
-                        🔑 Passwort ändern / Jelszó módosítás
+                    <input type="password" id="current_password" placeholder="<?php echo esc_attr(PPV_Lang::t('current_password')); ?>" data-placeholder-i18n="current_password" style="margin-bottom: 8px;">
+                    <input type="password" id="new_password" placeholder="<?php echo esc_attr(PPV_Lang::t('new_password')); ?>" data-placeholder-i18n="new_password" style="margin-bottom: 8px;">
+                    <input type="password" id="new_password_confirm" placeholder="<?php echo esc_attr(PPV_Lang::t('confirm_new_password')); ?>" data-placeholder-i18n="confirm_new_password" style="margin-bottom: 12px;">
+                    <button type="button" id="ppv-change-password-btn" class="ppv-btn ppv-btn-secondary" data-i18n="change_password_btn" style="width: 100%;">
+                        🔑 <?php echo esc_html(PPV_Lang::t('change_password_btn')); ?>
                     </button>
                 </div>
 
@@ -632,21 +632,21 @@ if (!empty($store->gallery)) {
                             const newEmailConfirm = document.getElementById('new_email_confirm').value.trim();
 
                             if (!newEmail || !newEmailConfirm) {
-                                alert('Bitte fülle beide E-Mail-Felder aus! / Töltsd ki mindkét email mezőt!');
+                                alert('<?php echo esc_js(PPV_Lang::t('fill_both_email_fields')); ?>');
                                 return;
                             }
 
                             if (newEmail !== newEmailConfirm) {
-                                alert('E-Mail-Adressen stimmen nicht überein! / Az email címek nem egyeznek!');
+                                alert('<?php echo esc_js(PPV_Lang::t('emails_dont_match')); ?>');
                                 return;
                             }
 
-                            if (!confirm('Möchtest du deine E-Mail-Adresse wirklich ändern? / Biztosan módosítod az email címed?\n\nNeue E-Mail / Új email: ' + newEmail)) {
+                            if (!confirm('<?php echo esc_js(PPV_Lang::t('confirm_email_change')); ?>\n\n<?php echo esc_js(PPV_Lang::t('new_email')); ?>: ' + newEmail)) {
                                 return;
                             }
 
                             emailBtn.disabled = true;
-                            emailBtn.textContent = '⏳ Wird geändert... / Módosítás...';
+                            emailBtn.textContent = '⏳ <?php echo esc_js(PPV_Lang::t('changing')); ?>';
 
                             fetch('<?php echo admin_url('admin-ajax.php'); ?>', {
                                 method: 'POST',
@@ -676,12 +676,12 @@ if (!empty($store->gallery)) {
                                     alert('❌ ' + (data.data?.msg || 'Fehler!'));
                                 }
                                 emailBtn.disabled = false;
-                                emailBtn.textContent = '📧 E-Mail ändern / Email módosítás';
+                                emailBtn.textContent = '📧 <?php echo esc_js(PPV_Lang::t('change_email_btn')); ?>';
                             })
                             .catch(() => {
-                                alert('❌ Netzwerkfehler! / Hálózati hiba!');
+                                alert('❌ <?php echo esc_js(PPV_Lang::t('network_error_msg')); ?>');
                                 emailBtn.disabled = false;
-                                emailBtn.textContent = '📧 E-Mail ändern / Email módosítás';
+                                emailBtn.textContent = '📧 <?php echo esc_js(PPV_Lang::t('change_email_btn')); ?>';
                             });
                         });
                     }
@@ -697,26 +697,26 @@ if (!empty($store->gallery)) {
                             const newPasswordConfirm = document.getElementById('new_password_confirm').value;
 
                             if (!currentPassword || !newPassword || !newPasswordConfirm) {
-                                alert('Bitte fülle alle Felder aus! / Töltsd ki az összes mezőt!');
+                                alert('<?php echo esc_js(PPV_Lang::t('fill_all_fields')); ?>');
                                 return;
                             }
 
                             if (newPassword !== newPasswordConfirm) {
-                                alert('Neue Passwörter stimmen nicht überein! / Az új jelszavak nem egyeznek!');
+                                alert('<?php echo esc_js(PPV_Lang::t('passwords_dont_match')); ?>');
                                 return;
                             }
 
                             if (newPassword.length < 6) {
-                                alert('Das Passwort muss mindestens 6 Zeichen lang sein! / A jelszónak legalább 6 karakter hosszúnak kell lennie!');
+                                alert('<?php echo esc_js(PPV_Lang::t('password_min_length')); ?>');
                                 return;
                             }
 
-                            if (!confirm('Möchtest du dein Passwort wirklich ändern? / Biztosan módosítod a jelszavad?')) {
+                            if (!confirm('<?php echo esc_js(PPV_Lang::t('confirm_password_change')); ?>')) {
                                 return;
                             }
 
                             passwordBtn.disabled = true;
-                            passwordBtn.textContent = '⏳ Wird geändert... / Módosítás...';
+                            passwordBtn.textContent = '⏳ <?php echo esc_js(PPV_Lang::t('changing')); ?>';
 
                             fetch('<?php echo admin_url('admin-ajax.php'); ?>', {
                                 method: 'POST',
@@ -743,12 +743,12 @@ if (!empty($store->gallery)) {
                                     alert('❌ ' + (data.data?.msg || 'Fehler!'));
                                 }
                                 passwordBtn.disabled = false;
-                                passwordBtn.textContent = '🔑 Passwort ändern / Jelszó módosítás';
+                                passwordBtn.textContent = '🔑 <?php echo esc_js(PPV_Lang::t('change_password_btn')); ?>';
                             })
                             .catch(() => {
-                                alert('❌ Netzwerkfehler! / Hálózati hiba!');
+                                alert('❌ <?php echo esc_js(PPV_Lang::t('network_error_msg')); ?>');
                                 passwordBtn.disabled = false;
-                                passwordBtn.textContent = '🔑 Passwort ändern / Jelszó módosítás';
+                                passwordBtn.textContent = '🔑 <?php echo esc_js(PPV_Lang::t('change_password_btn')); ?>';
                             });
                         });
                     }
@@ -1433,17 +1433,17 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
 
             // Validation
             if (empty($new_email) || empty($new_email_confirm)) {
-                wp_send_json_error(['msg' => 'Beide E-Mail-Felder sind erforderlich! / Mindkét email mező kötelező!']);
+                wp_send_json_error(['msg' => PPV_Lang::t('both_email_fields_required')]);
                 return;
             }
 
             if ($new_email !== $new_email_confirm) {
-                wp_send_json_error(['msg' => 'E-Mail-Adressen stimmen nicht überein! / Az email címek nem egyeznek!']);
+                wp_send_json_error(['msg' => PPV_Lang::t('email_fields_dont_match')]);
                 return;
             }
 
             if (!is_email($new_email)) {
-                wp_send_json_error(['msg' => 'Ungültige E-Mail-Adresse! / Érvénytelen email cím!']);
+                wp_send_json_error(['msg' => PPV_Lang::t('invalid_email_address')]);
                 return;
             }
 
@@ -1457,7 +1457,7 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
             ));
 
             if ($exists > 0) {
-                wp_send_json_error(['msg' => 'Diese E-Mail wird bereits verwendet! / Ez az email cím már használatban van!']);
+                wp_send_json_error(['msg' => PPV_Lang::t('email_already_in_use')]);
                 return;
             }
 
@@ -1476,9 +1476,9 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
             $wpdb->flush();
 
             if ($result !== false) {
-                wp_send_json_success(['msg' => 'E-Mail erfolgreich geändert! / Email sikeresen módosítva!', 'new_email' => $new_email]);
+                wp_send_json_success(['msg' => PPV_Lang::t('email_change_success'), 'new_email' => $new_email]);
             } else {
-                wp_send_json_error(['msg' => 'Fehler beim Ändern der E-Mail! / Hiba az email módosítása során!']);
+                wp_send_json_error(['msg' => PPV_Lang::t('email_change_error')]);
             }
         }
 
@@ -1517,17 +1517,17 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
 
             // Validation
             if (empty($current_password) || empty($new_password) || empty($new_password_confirm)) {
-                wp_send_json_error(['msg' => 'Alle Felder sind erforderlich! / Minden mező kötelező!']);
+                wp_send_json_error(['msg' => PPV_Lang::t('all_fields_required')]);
                 return;
             }
 
             if ($new_password !== $new_password_confirm) {
-                wp_send_json_error(['msg' => 'Neue Passwörter stimmen nicht überein! / Az új jelszavak nem egyeznek!']);
+                wp_send_json_error(['msg' => PPV_Lang::t('new_passwords_dont_match')]);
                 return;
             }
 
             if (strlen($new_password) < 6) {
-                wp_send_json_error(['msg' => 'Das Passwort muss mindestens 6 Zeichen lang sein! / A jelszónak legalább 6 karakter hosszúnak kell lennie!']);
+                wp_send_json_error(['msg' => PPV_Lang::t('password_too_short')]);
                 return;
             }
 
@@ -1540,13 +1540,13 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
             ));
 
             if (!$store) {
-                wp_send_json_error(['msg' => 'Store nicht gefunden! / Üzlet nem található!']);
+                wp_send_json_error(['msg' => PPV_Lang::t('store_not_found')]);
                 return;
             }
 
             // Verify current password
             if (!wp_check_password($current_password, $store->password)) {
-                wp_send_json_error(['msg' => 'Aktuelles Passwort ist falsch! / A jelenlegi jelszó helytelen!']);
+                wp_send_json_error(['msg' => PPV_Lang::t('current_password_incorrect')]);
                 return;
             }
 
@@ -1568,9 +1568,9 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
             $wpdb->flush();
 
             if ($result !== false) {
-                wp_send_json_success(['msg' => 'Passwort erfolgreich geändert! / Jelszó sikeresen módosítva!']);
+                wp_send_json_success(['msg' => PPV_Lang::t('password_change_success')]);
             } else {
-                wp_send_json_error(['msg' => 'Fehler beim Ändern des Passworts! / Hiba a jelszó módosítása során!']);
+                wp_send_json_error(['msg' => PPV_Lang::t('password_change_error')]);
             }
         }
     }
