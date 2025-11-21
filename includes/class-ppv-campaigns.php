@@ -14,6 +14,47 @@ class PPV_Campaigns {
         add_action('wp_ajax_ppv_duplicate_campaign', [__CLASS__, 'ajax_duplicate_campaign']);
     }
 
+    /** ============================================================
+     *  🔐 GET STORE ID (with FILIALE support)
+     * ============================================================ */
+    private static function get_store_id() {
+        global $wpdb;
+
+        // 🔐 Ensure session is started
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+
+        // 🏪 FILIALE SUPPORT: Check ppv_current_filiale_id FIRST
+        if (!empty($_SESSION['ppv_current_filiale_id'])) {
+            return intval($_SESSION['ppv_current_filiale_id']);
+        }
+
+        // Session - base store
+        if (!empty($_SESSION['ppv_store_id'])) {
+            return intval($_SESSION['ppv_store_id']);
+        }
+
+        // Fallback: vendor store
+        if (!empty($_SESSION['ppv_vendor_store_id'])) {
+            return intval($_SESSION['ppv_vendor_store_id']);
+        }
+
+        // Fallback: WordPress user (rare case)
+        if (is_user_logged_in()) {
+            $uid = get_current_user_id();
+            $store_id = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id=%d LIMIT 1",
+                $uid
+            ));
+            if ($store_id) {
+                return intval($store_id);
+            }
+        }
+
+        return 0;
+    }
+
     /** === CSS + JS betöltése === */
     public static function enqueue_assets() {
         // CSS: global theme-light.css használata (nincs külön campaigns CSS)
@@ -39,16 +80,24 @@ wp_add_inline_script('ppv-campaigns', "window.ppv_campaigns = {$__json};", 'befo
         global $wpdb;
         $today = current_time('Y-m-d');
 
+        // 🏪 FILIALE SUPPORT: Get actual store ID from session (not passed parameter!)
+        $store_id = self::get_store_id();
+        if (!$store_id) {
+            echo "<p>⚠️ Kein Store gefunden (Session).</p>";
+            return;
+        }
+
         // lejárt kampányok automatikus inaktiválása
         $wpdb->query($wpdb->prepare("
             UPDATE {$wpdb->prefix}ppv_campaigns
             SET status='expired'
             WHERE store_id=%d AND end_date < %s AND status != 'expired'
-        ", $store->id, $today));
+        ", $store_id, $today));
 
+        // 🏪 FILIALE SUPPORT: Only show campaigns for current filiale/store
         $campaigns = $wpdb->get_results($wpdb->prepare("
             SELECT * FROM {$wpdb->prefix}ppv_campaigns WHERE store_id=%d ORDER BY created_at DESC
-        ", $store->id));
+        ", $store_id));
 
         ?>
         <div class="ppv-campaigns">
@@ -142,9 +191,20 @@ wp_add_inline_script('ppv-campaigns', "window.ppv_campaigns = {$__json};", 'befo
         check_ajax_referer('ppv_campaigns_nonce', 'nonce');
         global $wpdb;
 
-        $user_id = get_current_user_id();
-        $store = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}ppv_stores WHERE user_id=%d", $user_id));
-        if (!$store) wp_send_json_error(['msg' => 'Kein Store gefunden.']);
+        // 🏪 FILIALE SUPPORT: Get store ID from session
+        $store_id = self::get_store_id();
+        if (!$store_id) {
+            wp_send_json_error(['msg' => 'Kein Store gefunden.']);
+        }
+
+        // Verify store exists and is active
+        $store = $wpdb->get_row($wpdb->prepare(
+            "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE id=%d LIMIT 1",
+            $store_id
+        ));
+        if (!$store) {
+            wp_send_json_error(['msg' => 'Store nicht gefunden.']);
+        }
 
         // ✅ FIX: Validate campaign_type, reject empty
         $campaign_type = sanitize_text_field($_POST['campaign_type'] ?? '');
@@ -154,7 +214,7 @@ wp_add_inline_script('ppv-campaigns', "window.ppv_campaigns = {$__json};", 'befo
         }
 
         $data = [
-            'store_id'        => $store->id,
+            'store_id'        => $store_id,
             'title'           => sanitize_text_field($_POST['title']),
             'description'     => sanitize_textarea_field($_POST['description']),
             'multiplier'      => intval($_POST['multiplier']),
@@ -178,6 +238,21 @@ wp_add_inline_script('ppv-campaigns', "window.ppv_campaigns = {$__json};", 'befo
         global $wpdb;
 
         $id = intval($_POST['id']);
+
+        // 🏪 FILIALE SUPPORT: Get store ID from session
+        $store_id = self::get_store_id();
+        if (!$store_id) {
+            wp_send_json_error(['msg' => 'Kein Store gefunden.']);
+        }
+
+        // 🔒 SECURITY: Verify campaign belongs to handler's store/filiale
+        $campaign = $wpdb->get_row($wpdb->prepare(
+            "SELECT id, store_id FROM {$wpdb->prefix}ppv_campaigns WHERE id=%d LIMIT 1",
+            $id
+        ));
+        if (!$campaign || $campaign->store_id != $store_id) {
+            wp_send_json_error(['msg' => 'Keine Berechtigung für diese Kampagne.']);
+        }
 
         // ✅ FIX: Validate campaign_type, reject empty
         $campaign_type = sanitize_text_field($_POST['campaign_type'] ?? '');
@@ -206,8 +281,25 @@ wp_add_inline_script('ppv-campaigns', "window.ppv_campaigns = {$__json};", 'befo
         check_ajax_referer('ppv_campaigns_nonce', 'nonce');
         global $wpdb;
         $id = intval($_POST['id']);
-        $c = $wpdb->get_row($wpdb->prepare("SELECT status FROM {$wpdb->prefix}ppv_campaigns WHERE id=%d", $id));
-        if (!$c) wp_send_json_error(['msg' => 'Nicht gefunden']);
+
+        // 🏪 FILIALE SUPPORT: Get store ID from session
+        $store_id = self::get_store_id();
+        if (!$store_id) {
+            wp_send_json_error(['msg' => 'Kein Store gefunden.']);
+        }
+
+        // 🔒 SECURITY: Verify campaign belongs to handler's store/filiale
+        $c = $wpdb->get_row($wpdb->prepare(
+            "SELECT id, status, store_id FROM {$wpdb->prefix}ppv_campaigns WHERE id=%d LIMIT 1",
+            $id
+        ));
+        if (!$c) {
+            wp_send_json_error(['msg' => 'Nicht gefunden']);
+        }
+        if ($c->store_id != $store_id) {
+            wp_send_json_error(['msg' => 'Keine Berechtigung für diese Kampagne.']);
+        }
+
         $new_status = $c->status === 'active' ? 'inactive' : 'active';
         $wpdb->update($wpdb->prefix . 'ppv_campaigns', ['status' => $new_status], ['id' => $id]);
         wp_send_json_success(['msg' => 'Status geändert']);
@@ -217,7 +309,24 @@ wp_add_inline_script('ppv-campaigns', "window.ppv_campaigns = {$__json};", 'befo
     public static function ajax_delete_campaign() {
         check_ajax_referer('ppv_campaigns_nonce', 'nonce');
         global $wpdb;
-        $wpdb->delete($wpdb->prefix . 'ppv_campaigns', ['id' => intval($_POST['id'])]);
+        $id = intval($_POST['id']);
+
+        // 🏪 FILIALE SUPPORT: Get store ID from session
+        $store_id = self::get_store_id();
+        if (!$store_id) {
+            wp_send_json_error(['msg' => 'Kein Store gefunden.']);
+        }
+
+        // 🔒 SECURITY: Verify campaign belongs to handler's store/filiale
+        $campaign = $wpdb->get_row($wpdb->prepare(
+            "SELECT id, store_id FROM {$wpdb->prefix}ppv_campaigns WHERE id=%d LIMIT 1",
+            $id
+        ));
+        if (!$campaign || $campaign->store_id != $store_id) {
+            wp_send_json_error(['msg' => 'Keine Berechtigung für diese Kampagne.']);
+        }
+
+        $wpdb->delete($wpdb->prefix . 'ppv_campaigns', ['id' => $id]);
         wp_send_json_success(['msg' => 'Kampagne gelöscht']);
     }
 
@@ -226,8 +335,24 @@ wp_add_inline_script('ppv-campaigns', "window.ppv_campaigns = {$__json};", 'befo
         check_ajax_referer('ppv_campaigns_nonce', 'nonce');
         global $wpdb;
         $id = intval($_POST['id']);
-        $c = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}ppv_campaigns WHERE id=%d", $id));
-        if (!$c) wp_send_json_error(['msg' => 'Nicht gefunden']);
+
+        // 🏪 FILIALE SUPPORT: Get store ID from session
+        $store_id = self::get_store_id();
+        if (!$store_id) {
+            wp_send_json_error(['msg' => 'Kein Store gefunden.']);
+        }
+
+        // 🔒 SECURITY: Verify campaign belongs to handler's store/filiale
+        $c = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}ppv_campaigns WHERE id=%d LIMIT 1",
+            $id
+        ));
+        if (!$c) {
+            wp_send_json_error(['msg' => 'Nicht gefunden']);
+        }
+        if ($c->store_id != $store_id) {
+            wp_send_json_error(['msg' => 'Keine Berechtigung für diese Kampagne.']);
+        }
 
         $wpdb->insert($wpdb->prefix . 'ppv_campaigns', [
             'store_id'        => $c->store_id,

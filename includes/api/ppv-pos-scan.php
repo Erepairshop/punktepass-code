@@ -104,7 +104,35 @@ class PPV_POS_SCAN {
             ]);
         }
 
-        $store_id = intval($store->id);
+        // 🏪 FILIALE SUPPORT: Check session for FILIALE override
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+
+        // 🔍 DEBUG: Log session and store status
+        error_log("🔍 [POS_SCAN] Debug info: " . json_encode([
+            'session_ppv_current_filiale_id' => $_SESSION['ppv_current_filiale_id'] ?? 'NOT_SET',
+            'session_ppv_store_id' => $_SESSION['ppv_store_id'] ?? 'NOT_SET',
+            'validated_store_id' => $store->id ?? 'NULL',
+            'validated_store_name' => $store->name ?? 'NULL',
+        ]));
+
+        // 🏪 FILIALE SUPPORT: Check ppv_current_filiale_id FIRST
+        if (!empty($_SESSION['ppv_current_filiale_id'])) {
+            $store_id = intval($_SESSION['ppv_current_filiale_id']);
+            error_log("✅ [POS_SCAN] Using FILIALE store_id: {$store_id}");
+        } else {
+            $store_id = intval($store->id);
+            error_log("⚠️ [POS_SCAN] No FILIALE in session, using validated store_id: {$store_id}");
+        }
+
+        if ($store_id === 0) {
+            error_log("❌ [POS_SCAN] CRITICAL: store_id is 0! This should not happen!");
+            return rest_ensure_response([
+                'success' => false,
+                'message' => '❌ Invalid store_id (0)'
+            ]);
+        }
 
         /** 2) IP Rate Limiting (100 scans per minute for debugging) */
         $ip_address = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
@@ -328,7 +356,15 @@ class PPV_POS_SCAN {
                 @session_start();
             }
 
-            $store_id = intval($_SESSION['ppv_store_id'] ?? 0);
+            // 🏪 FILIALE SUPPORT: Check ppv_current_filiale_id FIRST
+            $store_id = 0;
+            if (!empty($_SESSION['ppv_current_filiale_id'])) {
+                $store_id = intval($_SESSION['ppv_current_filiale_id']);
+            } elseif (!empty($_SESSION['ppv_store_id'])) {
+                $store_id = intval($_SESSION['ppv_store_id']);
+            } elseif (!empty($_SESSION['ppv_vendor_store_id'])) {
+                $store_id = intval($_SESSION['ppv_vendor_store_id']);
+            }
 
             if ($store_id === 0) {
                 return rest_ensure_response([
@@ -448,7 +484,15 @@ class PPV_POS_SCAN {
             @session_start();
         }
 
-        $store_id = intval($_SESSION['ppv_store_id'] ?? 0);
+        // 🏪 FILIALE SUPPORT: Check ppv_current_filiale_id FIRST
+        $store_id = 0;
+        if (!empty($_SESSION['ppv_current_filiale_id'])) {
+            $store_id = intval($_SESSION['ppv_current_filiale_id']);
+        } elseif (!empty($_SESSION['ppv_store_id'])) {
+            $store_id = intval($_SESSION['ppv_store_id']);
+        } elseif (!empty($_SESSION['ppv_vendor_store_id'])) {
+            $store_id = intval($_SESSION['ppv_vendor_store_id']);
+        }
 
         if ($store_id === 0) {
             return new WP_Error('no_store', 'No store_id in session', ['status' => 403]);

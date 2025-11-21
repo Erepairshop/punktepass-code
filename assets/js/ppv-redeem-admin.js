@@ -16,12 +16,24 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   /* ============================================================
-   *  Store Detection
+   *  Store Detection - 🏪 FILIALE SUPPORT
    * ============================================================ */
-  const storeId =
-    Number(window.PPV_STORE_ID || 0) ||
-    Number(sessionStorage.getItem("ppv_store_id") || 0) ||
-    1;
+  let storeId = 0;
+
+  // ALWAYS prioritize window.PPV_STORE_ID over sessionStorage
+  if (window.PPV_STORE_ID && Number(window.PPV_STORE_ID) > 0) {
+    storeId = Number(window.PPV_STORE_ID);
+    console.log(`✅ [REDEEM] Using window.PPV_STORE_ID: ${storeId}`);
+    // Clear sessionStorage if it differs
+    const cachedStoreId = sessionStorage.getItem("ppv_store_id");
+    if (cachedStoreId && Number(cachedStoreId) !== storeId) {
+      console.log(`🔄 [REDEEM] Store ID changed: ${cachedStoreId} -> ${storeId}`);
+      sessionStorage.removeItem("ppv_store_id");
+    }
+  } else {
+    storeId = Number(sessionStorage.getItem("ppv_store_id") || 0) || 1;
+    console.warn(`⚠️ [REDEEM] window.PPV_STORE_ID not set, using sessionStorage: ${storeId}`);
+  }
 
   sessionStorage.setItem("ppv_store_id", storeId);
 

@@ -41,8 +41,10 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
                 return ['valid' => true, 'type' => 'wp_user', 'user_id' => get_current_user_id()];
             }
 
-            if (!empty($_SESSION['ppv_store_id'])) {
-                return ['valid' => true, 'type' => 'ppv_stores', 'store_id' => intval($_SESSION['ppv_store_id']), 'is_pos' => !empty($_SESSION['ppv_is_pos'])];
+            // 🏪 FILIALE SUPPORT: Use session-aware store ID
+            if (!empty($_SESSION['ppv_store_id']) || !empty($_SESSION['ppv_current_filiale_id'])) {
+                $store_id = self::get_store_id();
+                return ['valid' => true, 'type' => 'ppv_stores', 'store_id' => $store_id, 'is_pos' => !empty($_SESSION['ppv_is_pos'])];
             }
 
             if (!empty($_SESSION['ppv_user_id'])) {
@@ -72,6 +74,44 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
             if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
                 @session_start();
             }
+        }
+
+        /** ============================================================
+         *  🔐 GET STORE ID (with FILIALE support)
+         * ============================================================ */
+        private static function get_store_id() {
+            global $wpdb;
+
+            self::ensure_session();
+
+            // 🏪 FILIALE SUPPORT: Check ppv_current_filiale_id FIRST
+            if (!empty($_SESSION['ppv_current_filiale_id'])) {
+                return intval($_SESSION['ppv_current_filiale_id']);
+            }
+
+            // Session - base store
+            if (!empty($_SESSION['ppv_store_id'])) {
+                return intval($_SESSION['ppv_store_id']);
+            }
+
+            // Fallback: vendor store
+            if (!empty($_SESSION['ppv_vendor_store_id'])) {
+                return intval($_SESSION['ppv_vendor_store_id']);
+            }
+
+            // Fallback: WordPress user (rare case)
+            if (is_user_logged_in()) {
+                $uid = get_current_user_id();
+                $store_id = $wpdb->get_var($wpdb->prepare(
+                    "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id=%d LIMIT 1",
+                    $uid
+                ));
+                if ($store_id) {
+                    return intval($store_id);
+                }
+            }
+
+            return 0;
         }
 
         public static function ajax_get_strings() {
@@ -114,6 +154,15 @@ wp_localize_script('pp-profile-lite-i18n', 'ppv_profile', [
 
         public static function render_form() {
             self::ensure_session();
+
+            // ✅ SCANNER USERS: Don't show profile/onboarding page
+            if (class_exists('PPV_Permissions') && PPV_Permissions::is_scanner_user()) {
+                echo '<div class="ppv-alert ppv-alert-info" style="padding: 20px; text-align: center;">
+                    ℹ️ Diese Seite ist nur für Händler verfügbar.
+                </div>';
+                return;
+            }
+
             $store = self::get_current_store();
 
             if (!$store) {
@@ -541,12 +590,15 @@ if (!empty($store->gallery)) {
         private static function get_current_store() {
             global $wpdb;
 
-            if (!empty($_GET['store_id'])) {
-                return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1", intval($_GET['store_id'])));
+            // 🏪 FILIALE SUPPORT: Use session-aware store ID
+            $store_id = self::get_store_id();
+            if ($store_id) {
+                return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1", $store_id));
             }
 
-            if (!empty($_SESSION['ppv_store_id'])) {
-                return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1", intval($_SESSION['ppv_store_id'])));
+            // Fallback: GET parameter (admin use)
+            if (!empty($_GET['store_id'])) {
+                return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1", intval($_GET['store_id'])));
             }
 
             if (!empty($_COOKIE['ppv_pos_token'])) {
@@ -576,7 +628,8 @@ public static function ajax_save_profile() {
         wp_send_json_error(['msg' => PPV_Lang::t('error')]);
     }
 
-    $store_id = intval($_POST['store_id'] ?? 0);
+    // 🏪 FILIALE SUPPORT: ALWAYS use session-aware store ID, ignore POST parameter
+    $store_id = self::get_store_id();
 
     if ($auth['type'] === 'ppv_stores' && $store_id != $auth['store_id']) {
         wp_send_json_error(['msg' => 'Unauthorized']);
@@ -739,7 +792,9 @@ error_log("💾 [DEBUG] Update result: " . ($result !== false ? 'OK' : 'FAILED')
             }
 
             $draft_data = $_POST['draft'] ?? [];
-            $store_id = intval($_POST['store_id'] ?? 0);
+
+            // 🏪 FILIALE SUPPORT: ALWAYS use session-aware store ID, ignore POST parameter
+            $store_id = self::get_store_id();
 
             if ($auth['type'] === 'ppv_stores' && $store_id != $auth['store_id']) {
                 wp_send_json_error(['msg' => 'Unauthorized']);
@@ -767,7 +822,8 @@ error_log("💾 [DEBUG] Update result: " . ($result !== false ? 'OK' : 'FAILED')
                 wp_send_json_error(['msg' => 'Not authenticated']);
             }
 
-            $store_id = intval($_POST['store_id'] ?? 0);
+            // 🏪 FILIALE SUPPORT: ALWAYS use session-aware store ID, ignore POST parameter
+            $store_id = self::get_store_id();
             $image_url = sanitize_text_field($_POST['image_url'] ?? '');
 
             if ($auth['type'] === 'ppv_stores' && $store_id != $auth['store_id']) {

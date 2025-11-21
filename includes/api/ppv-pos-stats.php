@@ -57,7 +57,23 @@ class PPV_POS_STATS_API {
     public static function get_stats($req) {
         global $wpdb;
         $prefix = $wpdb->prefix;
-        $store_id = intval($req['store_id'] ?? 0);
+
+        // 🏪 FILIALE SUPPORT: Use session-aware store ID, ignore request parameter
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+
+        // Check ppv_current_filiale_id FIRST
+        if (!empty($_SESSION['ppv_current_filiale_id'])) {
+            $store_id = intval($_SESSION['ppv_current_filiale_id']);
+        } elseif (!empty($_SESSION['ppv_store_id'])) {
+            $store_id = intval($_SESSION['ppv_store_id']);
+        } elseif (!empty($_SESSION['ppv_vendor_store_id'])) {
+            $store_id = intval($_SESSION['ppv_vendor_store_id']);
+        } else {
+            // Fallback to request parameter only if no session
+            $store_id = intval($req['store_id'] ?? 0);
+        }
 
         if (!$store_id) {
             return rest_ensure_response(['success' => false, 'message' => 'Missing store_id']);

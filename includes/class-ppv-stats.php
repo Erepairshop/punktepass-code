@@ -42,10 +42,17 @@ class PPV_Stats {
     }
 
     // ========================================
-    // 🔍 HELPER: Get Store ID
+    // 🔍 HELPER: Get Store ID (with FILIALE support)
     // ========================================
     public static function get_handler_store_id() {
         error_log("🔍 [Stats] get_handler_store_id() START");
+
+        // 🏪 FILIALE SUPPORT: Check ppv_current_filiale_id FIRST
+        if (!empty($_SESSION['ppv_current_filiale_id'])) {
+            $sid = intval($_SESSION['ppv_current_filiale_id']);
+            error_log("✅ [Stats] Store from SESSION (FILIALE): {$sid}");
+            return $sid;
+        }
 
         // 1️⃣ GLOBALS
         if (!empty($GLOBALS['ppv_active_store_id'])) {
@@ -54,17 +61,17 @@ class PPV_Stats {
             return $sid;
         }
 
-        // 2️⃣ SESSION - Vendor
-        if (!empty($_SESSION['ppv_vendor_store_id'])) {
-            $sid = intval($_SESSION['ppv_vendor_store_id']);
-            error_log("✅ [Stats] Store from SESSION (vendor): {$sid}");
-            return $sid;
-        }
-
-        // 3️⃣ SESSION - Direct
+        // 2️⃣ SESSION - Direct (base store)
         if (!empty($_SESSION['ppv_store_id'])) {
             $sid = intval($_SESSION['ppv_store_id']);
             error_log("✅ [Stats] Store from SESSION (store): {$sid}");
+            return $sid;
+        }
+
+        // 3️⃣ SESSION - Vendor
+        if (!empty($_SESSION['ppv_vendor_store_id'])) {
+            $sid = intval($_SESSION['ppv_vendor_store_id']);
+            error_log("✅ [Stats] Store from SESSION (vendor): {$sid}");
             return $sid;
         }
 

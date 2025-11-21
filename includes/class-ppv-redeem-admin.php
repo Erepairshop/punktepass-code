@@ -31,6 +31,46 @@ class PPV_Redeem_Admin {
     }
 
     /** ============================================================
+     *  🔐 GET STORE ID (with FILIALE support)
+     * ============================================================ */
+    private static function get_store_id() {
+        global $wpdb;
+
+        self::ensure_session();
+
+        // 🏪 FILIALE SUPPORT: Check ppv_current_filiale_id FIRST
+        if (!empty($_SESSION['ppv_current_filiale_id'])) {
+            return intval($_SESSION['ppv_current_filiale_id']);
+        }
+
+        // Session - base store
+        if (!empty($_SESSION['ppv_store_id'])) {
+            return intval($_SESSION['ppv_store_id']);
+        }
+
+        // Fallback: vendor store
+        if (!empty($_SESSION['ppv_vendor_store_id'])) {
+            return intval($_SESSION['ppv_vendor_store_id']);
+        }
+
+        // Fallback: WordPress user (rare case)
+        $current_user_id = get_current_user_id();
+        if ($current_user_id) {
+            $store_id = intval($wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id = %d LIMIT 1",
+                $current_user_id
+            )));
+            if ($store_id) {
+                // Save to session for future use
+                $_SESSION['ppv_store_id'] = $store_id;
+                return $store_id;
+            }
+        }
+
+        return 0;
+    }
+
+    /** ============================================================
      *  🔹 Assetek (JS + Session AutoFix)
      * ============================================================ */
      
@@ -60,20 +100,8 @@ public static function enqueue_assets() {
 
 
 
-    // 🔹 Store ID biztosítása
-    $store_id = 0;
-    if (!empty($_SESSION['ppv_store_id'])) {
-        $store_id = intval($_SESSION['ppv_store_id']);
-    } else {
-        $current_user_id = get_current_user_id();
-        if ($current_user_id) {
-            $store_id = intval($wpdb->get_var($wpdb->prepare(
-                "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id = %d LIMIT 1",
-                $current_user_id
-            )));
-            if ($store_id) $_SESSION['ppv_store_id'] = $store_id;
-        }
-    }
+    // 🔹 Store ID biztosítása - 🏪 FILIALE SUPPORT
+    $store_id = self::get_store_id();
 
     // 🔹 Script és CSS betöltése fixen
 
@@ -93,7 +121,7 @@ public static function enqueue_assets() {
         'debug'    => true
     ] : [];
 $__json = wp_json_encode($__data);
-wp_add_inline_script('ppv-redeem-admin', "window.ppv_redeem_admin = {$__json};", 'before');
+wp_add_inline_script('ppv-redeem-admin', "window.ppv_redeem_admin = {$__json}; window.PPV_STORE_ID = {$store_id};", 'before');
 
     error_log("🟢 [PPV_Redeem_Admin] Assets loaded, store_id={$store_id}");
 }
@@ -156,12 +184,10 @@ register_rest_route('ppv/v1', '/ping', [
     
     public static function rest_recent_logs($request) {
     global $wpdb;
-    
-    // ✅ Store ID lekérése
-    $store_id = intval($request->get_param('store_id'));
-    if (!$store_id && !empty($_SESSION['ppv_store_id'])) {
-        $store_id = intval($_SESSION['ppv_store_id']);
-    }
+    self::ensure_session();
+
+    // 🏪 FILIALE SUPPORT: ALWAYS use session-aware store ID, ignore request parameter
+    $store_id = self::get_store_id();
 
     $table = $wpdb->prefix . 'ppv_rewards_redeemed';
     
@@ -207,14 +233,8 @@ public static function rest_list_redeems($req) {
     global $wpdb;
     self::ensure_session();
 
-    // 🔹 Store-ID Ermittlung (Request → Session → Global)
-    $store_id = intval($req->get_param('store_id'));
-    if (!$store_id && !empty($_SESSION['ppv_store_id'])) {
-        $store_id = intval($_SESSION['ppv_store_id']);
-    }
-    if (!$store_id && !empty($GLOBALS['ppv_active_store'])) {
-        $store_id = intval($GLOBALS['ppv_active_store']);
-    }
+    // 🏪 FILIALE SUPPORT: ALWAYS use session-aware store ID, ignore request parameter
+    $store_id = self::get_store_id();
 
     // 🧠 Debug log
     error_log("🧠 [PPV_REDEEM_ADMIN] REST store_id: " . $store_id);
@@ -285,7 +305,9 @@ public static function rest_update_status($req) {
 
     $id     = intval($req['id']);
     $status = sanitize_text_field($req['status']);
-    $store  = $_SESSION['ppv_store_id'] ?? 0;
+
+    // 🏪 FILIALE SUPPORT: Use session-aware store ID
+    $store  = self::get_store_id();
 
     if (!$id || !$status) {
         return ['success' => false, 'message' => 'Ungültige Daten'];

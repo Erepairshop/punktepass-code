@@ -8,7 +8,30 @@ console.log("✅ PunktePass Rewards+Redeem JS v5.0 aktiv");
 
 document.addEventListener("DOMContentLoaded", function () {
   const base = ppv_rewards_rest.base;
-  const storeID = window.PPV_STORE_ID || 0;
+
+  // ============================================================
+  // 🏪 FILIALE SUPPORT: Store ID Detection
+  // ============================================================
+  let storeID = 0;
+
+  // ALWAYS prioritize window.PPV_STORE_ID over sessionStorage
+  if (window.PPV_STORE_ID && Number(window.PPV_STORE_ID) > 0) {
+    storeID = Number(window.PPV_STORE_ID);
+    console.log(`✅ [REWARDS-ADMIN] Using window.PPV_STORE_ID: ${storeID}`);
+    // Clear sessionStorage if it differs
+    const cachedStoreId = sessionStorage.getItem("ppv_store_id");
+    if (cachedStoreId && Number(cachedStoreId) !== storeID) {
+      console.log(`🔄 [REWARDS-ADMIN] Store ID changed: ${cachedStoreId} -> ${storeID}`);
+      sessionStorage.removeItem("ppv_store_id");
+    }
+  } else {
+    storeID = Number(sessionStorage.getItem("ppv_store_id") || 0) || 0;
+    console.warn(`⚠️ [REWARDS-ADMIN] window.PPV_STORE_ID not set, using sessionStorage: ${storeID}`);
+  }
+
+  if (storeID > 0) {
+    sessionStorage.setItem("ppv_store_id", storeID);
+  }
 
   // ============================================================
 // 🔹 TAB VÁLTÁS (Fix v5.1)

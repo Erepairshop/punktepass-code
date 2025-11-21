@@ -187,8 +187,11 @@ jQuery(document).ready(function($){
 
 
 /* === Neon Toast Styles (globális CSS-be tehető, de ide is rakható ideiglenesen) === */
-const style = document.createElement("style");
-style.innerHTML = `
+// ✅ FIX: Only create style element once (avoid duplicate declaration error)
+if (!document.getElementById('ppv-toast-styles')) {
+  const toastStyle = document.createElement("style");
+  toastStyle.id = 'ppv-toast-styles';
+  toastStyle.innerHTML = `
 #ppv-toast {
   position: fixed;
   bottom: 20px;
@@ -209,4 +212,5 @@ style.innerHTML = `
 #ppv-toast.error { border-color: #ff4b4b; color: #ff4b4b; }
 #ppv-toast.warn { border-color: #ffaa00; color: #ffaa00; }
 `;
-document.head.appendChild(style);
+  document.head.appendChild(toastStyle);
+}

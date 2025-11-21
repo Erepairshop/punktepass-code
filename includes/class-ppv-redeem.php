@@ -15,6 +15,33 @@ class PPV_Redeem {
     }
 
     /** ============================================================
+     *  🔐 GET STORE ID (with FILIALE support)
+     * ============================================================ */
+    private static function get_store_id() {
+        // 🔐 Ensure session is started
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+
+        // 🏪 FILIALE SUPPORT: Check ppv_current_filiale_id FIRST
+        if (!empty($_SESSION['ppv_current_filiale_id'])) {
+            return intval($_SESSION['ppv_current_filiale_id']);
+        }
+
+        // Session - base store
+        if (!empty($_SESSION['ppv_store_id'])) {
+            return intval($_SESSION['ppv_store_id']);
+        }
+
+        // Fallback: vendor store
+        if (!empty($_SESSION['ppv_vendor_store_id'])) {
+            return intval($_SESSION['ppv_vendor_store_id']);
+        }
+
+        return 0;
+    }
+
+    /** ============================================================
      *  🔹 REGISTER REST ROUTES
      * ============================================================ */
     public static function register_rest_routes() {
@@ -49,10 +76,11 @@ wp_add_inline_script('ppv-redeem', "window.ppv_redeem = {$__json};", 'before');
         global $wpdb;
 
         $params = $request->get_json_params();
-        $store_id  = intval($params['store_id'] ?? ($_SESSION['ppv_store_id'] ?? 0));
-$user_id   = intval($params['user_id'] ?? ($_SESSION['ppv_user_id'] ?? get_current_user_id()));
-$reward_id = intval($params['reward_id'] ?? 0);
 
+        // 🏪 FILIALE SUPPORT: Use session-aware store ID
+        $store_id = !empty($params['store_id']) ? intval($params['store_id']) : self::get_store_id();
+        $user_id = intval($params['user_id'] ?? ($_SESSION['ppv_user_id'] ?? get_current_user_id()));
+        $reward_id = intval($params['reward_id'] ?? 0);
 
         if (!$store_id || !$user_id || !$reward_id) {
             return new WP_REST_Response(['success' => false, 'message' => 'Ungültige Anfrage.'], 400);
@@ -143,7 +171,8 @@ $wpdb->insert($requests_table, [
         if (session_status() === PHP_SESSION_NONE) @session_start();
         global $wpdb;
 
-        $store_id = $_SESSION['ppv_store_id'] ?? 0;
+        // 🏪 FILIALE SUPPORT: Use session-aware store ID
+        $store_id = self::get_store_id();
         if (!$store_id) {
             return '<p style="color:white;text-align:center;padding:40px;">
                 ⚠️ Kein aktiver Store gefunden. Bitte anmelden.
