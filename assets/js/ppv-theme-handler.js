@@ -276,30 +276,31 @@ window.ppvToast = (msg,type="info")=>{
 
 // ============================
 // ⚙️ PunktePass Scroll Fix v2
+// DISABLED - This was blocking scroll at top/bottom
 // ============================
-(() => {
-  const scrollArea = document.querySelector(".ppv-dashboard-netto");
-  if (!scrollArea) return;
-
-  let startY = 0;
-
-  scrollArea.addEventListener("touchstart", e => {
-    startY = e.touches[0].clientY;
-  }, { passive: true });
-
-  scrollArea.addEventListener("touchmove", e => {
-    const el = e.currentTarget;
-    const top = el.scrollTop;
-    const total = el.scrollHeight;
-    const visible = el.offsetHeight;
-    const currentY = e.touches[0].clientY;
-
-    // ha a tetején vagy alján vagy → nem engedjük a "megfagyást"
-    if ((top <= 0 && currentY > startY) || (top + visible >= total && currentY < startY)) {
-      e.preventDefault();
-    }
-  }, { passive: false });
-})();
+// (() => {
+//   const scrollArea = document.querySelector(".ppv-dashboard-netto");
+//   if (!scrollArea) return;
+//
+//   let startY = 0;
+//
+//   scrollArea.addEventListener("touchstart", e => {
+//     startY = e.touches[0].clientY;
+//   }, { passive: true });
+//
+//   scrollArea.addEventListener("touchmove", e => {
+//     const el = e.currentTarget;
+//     const top = el.scrollTop;
+//     const total = el.scrollHeight;
+//     const visible = el.offsetHeight;
+//     const currentY = e.touches[0].clientY;
+//
+//     // ha a tetején vagy alján vagy → nem engedjük a "megfagyást"
+//     if ((top <= 0 && currentY > startY) || (top + visible >= total && currentY < startY)) {
+//       e.preventDefault();
+//     }
+//   }, { passive: false });
+// })();
 // ============================
 // 📌 PunktePass Header Stability Fix
 // ============================
