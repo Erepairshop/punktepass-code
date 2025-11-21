@@ -596,27 +596,45 @@ if (!empty($store->gallery)) {
         private static function get_current_store() {
             global $wpdb;
 
-            // ✅ Disable WordPress cache for fresh data
+            // ✅ Force fresh database connection (bypass persistent cache)
             $wpdb->flush();
+            wp_cache_flush(); // Clear all WordPress cache
 
             if (!empty($_GET['store_id'])) {
                 $store_id = intval($_GET['store_id']);
                 wp_cache_delete($store_id, 'ppv_stores');
-                return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1", $store_id));
+
+                // ✅ Add timestamp to force cache bypass in MySQL
+                $timestamp = microtime(true);
+                return $wpdb->get_row($wpdb->prepare(
+                    "SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id = %d AND id > 0 LIMIT 1",
+                    $store_id
+                ));
             }
 
             if (!empty($_SESSION['ppv_store_id'])) {
                 $store_id = intval($_SESSION['ppv_store_id']);
                 wp_cache_delete($store_id, 'ppv_stores');
-                return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1", $store_id));
+
+                // ✅ Force no cache
+                return $wpdb->get_row($wpdb->prepare(
+                    "SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id = %d AND id > 0 LIMIT 1",
+                    $store_id
+                ));
             }
 
             if (!empty($_COOKIE['ppv_pos_token'])) {
-                return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}ppv_stores WHERE pos_token = %s LIMIT 1", sanitize_text_field($_COOKIE['ppv_pos_token'])));
+                return $wpdb->get_row($wpdb->prepare(
+                    "SELECT * FROM {$wpdb->prefix}ppv_stores WHERE pos_token = %s LIMIT 1",
+                    sanitize_text_field($_COOKIE['ppv_pos_token'])
+                ));
             }
 
             if (is_user_logged_in()) {
-                return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}ppv_stores WHERE user_id = %d LIMIT 1", get_current_user_id()));
+                return $wpdb->get_row($wpdb->prepare(
+                    "SELECT * FROM {$wpdb->prefix}ppv_stores WHERE user_id = %d LIMIT 1",
+                    get_current_user_id()
+                ));
             }
 
             return null;
@@ -784,17 +802,22 @@ $result = $wpdb->update(
 error_log("💾 [DEBUG] Update result: " . ($result !== false ? 'OK' : 'FAILED'));
 
     if ($result !== false) {
-        // ✅ Clear cache for this store
+        // ✅ AGGRESSIVE cache clearing
         wp_cache_delete($store_id, 'ppv_stores');
+        wp_cache_flush(); // Clear ALL cache
         $wpdb->flush();
+        clean_post_cache($store_id); // Clear post cache
 
-        // ✅ Force fresh read from DB
+        // ✅ Wait 100ms to ensure DB commit
+        usleep(100000);
+
+        // ✅ Force fresh read from DB with cache-busting query
         $updated_store = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
+            "SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id = %d AND id > 0 LIMIT 1",
             $store_id
         ), OBJECT, 0); // Force no cache
 
-        error_log("✅ [DEBUG] Reloaded store: " . json_encode($updated_store));
+        error_log("✅ [DEBUG] Reloaded store company_name: " . ($updated_store->company_name ?? 'NULL'));
 
         wp_send_json_success([
             'msg' => PPV_Lang::t('profile_saved_success'),
