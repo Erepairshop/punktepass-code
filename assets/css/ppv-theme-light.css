@@ -6398,3 +6398,742 @@ select.ppv-support-input {
 /* ──────────────────────────────────────────────────────────────────────
    🎉 END OF EINLÖSUNGEN & QUITTUNGEN STYLING
    ────────────────────────────────────────────────────────────────────── */
+
+/* ==========================================================================
+   🔐 SIGNUP / LOGIN PAGE STYLES
+   Version: 1.1 - Enhanced contrast
+   ========================================================================== */
+
+/* ============================================================
+   SIGNUP VARIABLES - BETTER CONTRAST
+   ============================================================ */
+.ppv-landing-container {
+    --ppv-login-primary: #0066FF;
+    --ppv-login-primary-hover: #0052CC;
+    --ppv-login-primary-light: #E6F0FF;
+    --ppv-login-bg: #F8F9FB;
+    --ppv-login-card: #FFFFFF;
+    --ppv-login-text: #111827;
+    --ppv-login-text-secondary: #374151;
+    --ppv-login-text-muted: #4B5563;
+    --ppv-login-border: #D1D5DB;
+    --ppv-login-success: #059669;
+    --ppv-login-error: #DC2626;
+    --ppv-login-radius: 12px;
+    --ppv-login-radius-sm: 8px;
+    --ppv-login-shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+    --ppv-login-shadow-md: 0 4px 6px -1px rgba(0,0,0,0.12);
+    --ppv-login-shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.15);
+    --ppv-login-transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* ============================================================
+   BASE CONTAINER
+   ============================================================ */
+.ppv-landing-container {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--ppv-login-bg);
+}
+
+/* ============================================================
+   SIGNUP HEADER
+   ============================================================ */
+.ppv-landing-header {
+    position: relative;
+    z-index: 100;
+    background: var(--ppv-login-card);
+    border-bottom: 1px solid var(--ppv-login-border);
+    padding: 20px 0;
+}
+
+.ppv-header-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+}
+
+.ppv-logo-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.ppv-logo {
+    width: 75px;
+    height: 75px;
+    object-fit: contain;
+}
+
+.ppv-logo-section h1 {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--ppv-login-text);
+    margin: 0;
+    letter-spacing: -0.02em;
+}
+
+.ppv-slogan {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--ppv-login-text-secondary);
+    margin: 0;
+}
+
+/* Language Switcher */
+.ppv-lang-switcher {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--ppv-login-bg);
+    border: 1px solid var(--ppv-login-border);
+    border-radius: 8px;
+    padding: 4px;
+}
+
+.ppv-lang-select,
+.ppv-lang-btn {
+    padding: 6px 12px;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ppv-login-text-secondary);
+    cursor: pointer;
+    transition: var(--ppv-login-transition);
+    font-family: inherit;
+}
+
+.ppv-lang-btn:hover,
+.ppv-lang-select:hover {
+    color: var(--ppv-login-text);
+    background: rgba(0, 102, 255, 0.08);
+}
+
+.ppv-lang-btn.active {
+    background: var(--ppv-login-primary);
+    color: white;
+}
+
+/* ============================================================
+   HERO SECTION
+   ============================================================ */
+.ppv-hero-section {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: 60px 0;
+    overflow: hidden;
+}
+
+/* Animated Background */
+.ppv-hero-bg {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, #F8F9FB 0%, #E6F0FF 100%);
+    z-index: 0;
+}
+
+.ppv-bg-shape {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.3;
+    animation: ppv-float 25s infinite ease-in-out;
+}
+
+.ppv-shape-1 {
+    width: 500px;
+    height: 500px;
+    background: linear-gradient(135deg, #0066FF, #00BFFF);
+    top: -150px;
+    left: -150px;
+}
+
+.ppv-shape-2 {
+    width: 400px;
+    height: 400px;
+    background: linear-gradient(135deg, #00BFFF, #4D94FF);
+    bottom: -100px;
+    right: 10%;
+    animation-delay: 8s;
+}
+
+.ppv-shape-3 {
+    width: 350px;
+    height: 350px;
+    background: linear-gradient(135deg, #4D94FF, #0066FF);
+    top: 30%;
+    right: -100px;
+    animation-delay: 16s;
+}
+
+@keyframes ppv-float {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(40px, -40px) scale(1.15); }
+    66% { transform: translate(-30px, 30px) scale(0.85); }
+}
+
+.ppv-hero-content {
+    position: relative;
+    z-index: 10;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 60px;
+    align-items: start;
+}
+
+/* ============================================================
+   LOGIN/SIGNUP CARD
+   ============================================================ */
+.ppv-login-section {
+    position: sticky;
+    top: 20px;
+    animation: ppv-slideIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ppv-login-card {
+    background: var(--ppv-login-card);
+    border-radius: var(--ppv-login-radius);
+    box-shadow: var(--ppv-login-shadow-lg);
+    padding: 36px;
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+.ppv-login-welcome {
+    text-align: center;
+    margin-bottom: 28px;
+}
+
+.ppv-login-welcome h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--ppv-login-text);
+    margin: 0 0 8px 0;
+}
+
+.ppv-login-welcome p {
+    font-size: 15px;
+    color: var(--ppv-login-text-secondary);
+    margin: 0;
+}
+
+@keyframes ppv-slideIn {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+/* ============================================================
+   USER TYPE SELECTOR (Signup)
+   ============================================================ */
+.ppv-user-type-selector {
+    margin-bottom: 24px;
+}
+
+.ppv-user-type-selector > p {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ppv-login-text);
+    margin-bottom: 12px;
+}
+
+.ppv-type-option > div {
+    padding: 16px;
+    border: 2px solid var(--ppv-login-border);
+    border-radius: var(--ppv-login-radius);
+    cursor: pointer;
+    text-align: center;
+    transition: var(--ppv-login-transition);
+    background: var(--ppv-login-card);
+}
+
+.ppv-type-option > div strong {
+    display: block;
+    font-size: 15px;
+    color: var(--ppv-login-text);
+    margin-bottom: 4px;
+}
+
+.ppv-type-option > div span {
+    font-size: 13px;
+    color: var(--ppv-login-text-muted);
+}
+
+.ppv-type-option > div svg {
+    color: var(--ppv-login-text-muted);
+}
+
+.ppv-type-option:hover > div {
+    border-color: var(--ppv-login-primary) !important;
+    background: var(--ppv-login-primary-light);
+}
+
+.ppv-type-option.ppv-type-active > div {
+    border-color: var(--ppv-login-primary) !important;
+    background: var(--ppv-login-primary-light);
+}
+
+.ppv-type-option.ppv-type-active > div svg {
+    color: var(--ppv-login-primary) !important;
+}
+
+.ppv-type-option.ppv-type-active > div strong {
+    color: #1E40AF !important;
+}
+
+/* ============================================================
+   GOOGLE BUTTON
+   ============================================================ */
+.ppv-google-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: var(--ppv-login-card);
+    border: 1.5px solid var(--ppv-login-border);
+    border-radius: var(--ppv-login-radius-sm);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ppv-login-text);
+    cursor: pointer;
+    transition: var(--ppv-login-transition);
+    box-shadow: var(--ppv-login-shadow-sm);
+    font-family: inherit;
+}
+
+.ppv-google-btn:hover:not(:disabled) {
+    background: #FAFAFA;
+    border-color: #9CA3AF;
+    box-shadow: var(--ppv-login-shadow-md);
+    transform: translateY(-2px);
+}
+
+.ppv-google-btn:active {
+    transform: translateY(0);
+}
+
+.ppv-google-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ============================================================
+   DIVIDER
+   ============================================================ */
+.ppv-login-divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 20px 0;
+    color: var(--ppv-login-text-muted);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.ppv-login-divider::before,
+.ppv-login-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--ppv-login-border);
+}
+
+/* ============================================================
+   FORM STYLES
+   ============================================================ */
+.ppv-login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.ppv-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.ppv-form-group label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ppv-login-text);
+}
+
+.ppv-form-group label svg {
+    width: 16px;
+    height: 16px;
+    color: var(--ppv-login-text-muted);
+}
+
+.ppv-form-group input[type="email"],
+.ppv-form-group input[type="password"],
+.ppv-form-group input[type="text"] {
+    width: 100%;
+    padding: 12px 16px;
+    background: var(--ppv-login-bg);
+    border: 1.5px solid var(--ppv-login-border);
+    border-radius: var(--ppv-login-radius-sm);
+    font-size: 15px;
+    color: var(--ppv-login-text);
+    transition: var(--ppv-login-transition);
+    font-family: inherit;
+}
+
+.ppv-form-group input:focus {
+    outline: none;
+    background: var(--ppv-login-card);
+    border-color: var(--ppv-login-primary);
+    box-shadow: 0 0 0 3px var(--ppv-login-primary-light);
+}
+
+.ppv-form-group input::placeholder {
+    color: #6B7280;
+}
+
+/* Password Toggle */
+.ppv-password-wrapper {
+    position: relative;
+}
+
+.ppv-password-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    color: var(--ppv-login-text-muted);
+    transition: var(--ppv-login-transition);
+}
+
+.ppv-password-toggle:hover {
+    color: var(--ppv-login-text);
+}
+
+/* Password Strength Indicator */
+.ppv-password-strength {
+    margin-top: 8px;
+}
+
+.ppv-strength-bar {
+    height: 4px;
+    background: var(--ppv-login-border);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 4px;
+}
+
+.ppv-strength-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.3s ease, background 0.3s ease;
+}
+
+.ppv-strength-text {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ppv-login-text-muted);
+    margin: 0;
+}
+
+/* Password Requirements */
+.ppv-password-requirements {
+    margin-top: 8px;
+}
+
+.ppv-password-requirements p {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ppv-login-text-secondary);
+    margin: 0 0 6px 0;
+}
+
+.ppv-password-requirements ul {
+    font-size: 13px;
+    color: var(--ppv-login-text-muted);
+    margin: 0;
+    padding-left: 20px;
+}
+
+.ppv-password-requirements li {
+    margin-bottom: 3px;
+    transition: color 0.2s ease;
+}
+
+.ppv-password-requirements li.valid {
+    color: var(--ppv-login-success);
+    font-weight: 500;
+}
+
+/* ============================================================
+   FORM FOOTER (Checkboxes)
+   ============================================================ */
+.ppv-form-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.ppv-checkbox {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 14px;
+    color: var(--ppv-login-text-secondary);
+    cursor: pointer;
+}
+
+.ppv-checkbox input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--ppv-login-primary);
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.ppv-checkbox span {
+    line-height: 1.5;
+    color: var(--ppv-login-text-secondary);
+}
+
+.ppv-checkbox a {
+    color: var(--ppv-login-primary);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.ppv-checkbox a:hover {
+    text-decoration: underline;
+}
+
+.ppv-forgot-link {
+    font-size: 14px;
+    color: var(--ppv-login-primary);
+    text-decoration: none;
+    font-weight: 600;
+    transition: var(--ppv-login-transition);
+}
+
+.ppv-forgot-link:hover {
+    color: var(--ppv-login-primary-hover);
+    text-decoration: underline;
+}
+
+/* ============================================================
+   SUBMIT BUTTON
+   ============================================================ */
+.ppv-submit-btn {
+    width: 100%;
+    padding: 14px 24px;
+    background: var(--ppv-login-primary);
+    color: white;
+    border: none;
+    border-radius: var(--ppv-login-radius-sm);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--ppv-login-transition);
+    box-shadow: var(--ppv-login-shadow-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 6px;
+    font-family: inherit;
+}
+
+.ppv-submit-btn:hover:not(:disabled) {
+    background: var(--ppv-login-primary-hover);
+    box-shadow: var(--ppv-login-shadow-md);
+    transform: translateY(-1px);
+}
+
+.ppv-submit-btn:active {
+    transform: translateY(0);
+}
+
+.ppv-submit-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.ppv-btn-loader {
+    animation: ppv-spin 1s linear infinite;
+}
+
+@keyframes ppv-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ============================================================
+   ALERT BOX
+   ============================================================ */
+.ppv-alert {
+    padding: 12px 16px;
+    border-radius: var(--ppv-login-radius-sm);
+    font-size: 14px;
+    font-weight: 500;
+    margin-top: 16px;
+    animation: ppv-slideDown 0.3s ease;
+}
+
+@keyframes ppv-slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.ppv-alert.success {
+    background: #D1FAE5;
+    color: #065F46;
+    border: 1px solid #6EE7B7;
+}
+
+.ppv-alert.error {
+    background: #FEE2E2;
+    color: #991B1B;
+    border: 1px solid #FCA5A5;
+}
+
+/* ============================================================
+   REGISTER/LOGIN LINK
+   ============================================================ */
+.ppv-register-link {
+    text-align: center;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--ppv-login-border);
+}
+
+.ppv-register-link p {
+    font-size: 14px;
+    color: var(--ppv-login-text-secondary);
+    margin: 0;
+}
+
+.ppv-register-link a {
+    color: var(--ppv-login-primary);
+    text-decoration: none;
+    font-weight: 600;
+    transition: var(--ppv-login-transition);
+}
+
+.ppv-register-link a:hover {
+    color: var(--ppv-login-primary-hover);
+    text-decoration: underline;
+}
+
+/* ============================================================
+   LANDING FOOTER
+   ============================================================ */
+.ppv-landing-footer {
+    background: var(--ppv-login-card);
+    border-top: 1px solid var(--ppv-login-border);
+    padding: 20px 24px;
+    text-align: center;
+}
+
+.ppv-landing-footer p {
+    font-size: 13px;
+    color: var(--ppv-login-text-muted);
+    margin: 0 0 8px 0;
+}
+
+.ppv-footer-links {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    font-size: 13px;
+}
+
+.ppv-footer-links a {
+    color: var(--ppv-login-text-muted);
+    text-decoration: none;
+    font-weight: 500;
+    transition: var(--ppv-login-transition);
+}
+
+.ppv-footer-links a:hover {
+    color: var(--ppv-login-primary);
+}
+
+.ppv-footer-links span {
+    color: var(--ppv-login-border);
+}
+
+/* ============================================================
+   SIGNUP RESPONSIVE
+   ============================================================ */
+@media (max-width: 968px) {
+    .ppv-hero-content {
+        grid-template-columns: 1fr;
+        gap: 40px;
+    }
+
+    .ppv-login-section {
+        position: relative;
+        top: 0;
+        max-width: 480px;
+        margin: 0 auto;
+    }
+
+    .ppv-header-content {
+        flex-wrap: wrap;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .ppv-slogan {
+        width: 100%;
+        order: 3;
+        margin-top: 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    .ppv-hero-section {
+        padding: 30px 0;
+    }
+
+    .ppv-hero-content {
+        padding: 0 16px;
+    }
+
+    .ppv-login-card {
+        padding: 24px;
+    }
+
+    .ppv-logo {
+        width: 60px;
+        height: 60px;
+    }
+
+    .ppv-logo-section h1 {
+        font-size: 20px;
+    }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🎉 END OF SIGNUP/LOGIN STYLING
+   ────────────────────────────────────────────────────────────────────── */
