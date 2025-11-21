@@ -845,13 +845,23 @@ class PPV_QR {
             @session_start();
         }
 
-        $current_filiale_id = !empty($_SESSION['ppv_current_filiale_id'])
-            ? intval($_SESSION['ppv_current_filiale_id'])
-            : (!empty($_SESSION['ppv_store_id']) ? intval($_SESSION['ppv_store_id']) : 0);
+        // 🏪 FILIALE SUPPORT: Check all possible store ID sources
+        $current_filiale_id = 0;
+        if (!empty($_SESSION['ppv_current_filiale_id'])) {
+            $current_filiale_id = intval($_SESSION['ppv_current_filiale_id']);
+        } elseif (!empty($_SESSION['ppv_store_id'])) {
+            $current_filiale_id = intval($_SESSION['ppv_store_id']);
+        } elseif (!empty($_SESSION['ppv_vendor_store_id'])) {
+            // Trial handlers may only have vendor_store_id set
+            $current_filiale_id = intval($_SESSION['ppv_vendor_store_id']);
+        }
 
         if (!$current_filiale_id) {
+            error_log("⚠️ [PPV_QR] render_filiale_switcher: No store_id found in session");
             return; // No store in session
         }
+
+        error_log("🏪 [PPV_QR] render_filiale_switcher: current_filiale_id={$current_filiale_id}");
 
         // Get parent store ID (if current is a filiale, get its parent; otherwise it's the parent)
         $parent_id = $wpdb->get_var($wpdb->prepare(
