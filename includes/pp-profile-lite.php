@@ -1068,12 +1068,22 @@ if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 2
 
         error_log("✅ [PPV_GEOCODE] Város MEGTALÁLVA: {$lat}, {$lon}");
 
+        // ✅ Better display name - use city if formatted_address is just country
+        $formatted = $first['formatted_address'] ?? '';
+        $display_name = $formatted;
+
+        // If Google Maps only returned country name, use our city search instead
+        if (empty($formatted) || $formatted === $country_name || stripos($formatted, $city) === false) {
+            $display_name = $city_search; // "Capleni, Romania"
+            error_log("⚠️ [PPV_GEOCODE] Google Maps csak országot talált, használom: {$city_search}");
+        }
+
         // 🔴 FONTOS: flag hogy manuálisra kell váltani
         wp_send_json_success([
             'lat' => round($lat, 4),
             'lon' => round($lon, 4),
             'country' => $detected_country,
-            'display_name' => $first['formatted_address'] ?? $city_search,
+            'display_name' => $display_name,
             'source' => 'google_maps_city',
             'open_manual_map' => true  // ← FONTOS!
         ]);
