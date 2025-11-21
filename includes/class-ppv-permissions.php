@@ -131,6 +131,7 @@ class PPV_Permissions {
         }
 
         // 🔧 AUTO-FIX: If we have user_id but no store_id, lookup from database
+        // ⚠️ ONLY for handler types (vendor, store, handler, admin) - NOT regular users!
         if (!empty($_SESSION['ppv_user_id']) && empty($_SESSION['ppv_vendor_store_id']) && empty($_SESSION['ppv_store_id'])) {
             $ppv_user_id = intval($_SESSION['ppv_user_id']);
             error_log("🔧 [PPV_Permissions] AUTO-FIX: Looking up store for user_id={$ppv_user_id}");
@@ -144,11 +145,15 @@ class PPV_Permissions {
                 $_SESSION['ppv_user_type'] = $user_data->user_type;
                 error_log("🔧 [PPV_Permissions] AUTO-FIX: Found user_type={$user_data->user_type}");
 
-                if (!empty($user_data->vendor_store_id)) {
+                // ⚠️ Only set store for HANDLER types - not regular users!
+                $handler_types_for_fix = ['vendor', 'store', 'handler', 'admin'];
+                if (in_array($user_data->user_type, $handler_types_for_fix) && !empty($user_data->vendor_store_id)) {
                     $_SESSION['ppv_vendor_store_id'] = $user_data->vendor_store_id;
                     $_SESSION['ppv_store_id'] = $user_data->vendor_store_id;
                     $_SESSION['ppv_active_store'] = $user_data->vendor_store_id;
                     error_log("🔧 [PPV_Permissions] AUTO-FIX: Set store_id={$user_data->vendor_store_id}");
+                } else {
+                    error_log("🔧 [PPV_Permissions] AUTO-FIX: Skipped - user_type={$user_data->user_type} is not a handler");
                 }
             }
         }
