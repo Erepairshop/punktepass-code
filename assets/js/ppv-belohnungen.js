@@ -561,11 +561,23 @@ $('.ppv-reward-grid').after(`<p class="ppv-no-results"><i class="ri-inbox-line">
   }
 
   /* ==========================================================
-   * 🚀 INIT
+   * 🚀 INIT (Turbo-compatible)
    * ========================================================== */
-  
-  $(document).ready(function() {
-    log('INFO', 'Document ready');
+
+  function initBelohnungen() {
+    // Prevent double initialization
+    const container = document.querySelector('.ppv-belohnungen');
+    if (!container) {
+      log('DEBUG', 'Not a belohnungen page, skipping');
+      return;
+    }
+    if (container.dataset.initialized === 'true') {
+      log('DEBUG', 'Already initialized, skipping');
+      return;
+    }
+    container.dataset.initialized = 'true';
+
+    log('INFO', 'Initializing (Turbo-compatible)');
 
     // Init search/filter
     initSearchFilter();
@@ -580,6 +592,32 @@ $('.ppv-reward-grid').after(`<p class="ppv-no-results"><i class="ri-inbox-line">
     }
 
     log('INFO', 'Initialization complete');
+  }
+
+  // Initialize on document ready
+  $(document).ready(initBelohnungen);
+
+  // 🚀 Turbo-compatible: Re-initialize after navigation
+  document.addEventListener('turbo:load', function() {
+    const container = document.querySelector('.ppv-belohnungen');
+    if (container) {
+      container.dataset.initialized = 'false';
+    }
+    // Reset polling
+    pollCount = 0;
+    lastStatuses = {};
+    initBelohnungen();
+  });
+
+  document.addEventListener('turbo:render', function() {
+    const container = document.querySelector('.ppv-belohnungen');
+    if (container) {
+      container.dataset.initialized = 'false';
+    }
+    // Reset polling
+    pollCount = 0;
+    lastStatuses = {};
+    initBelohnungen();
   });
 
 })(jQuery);

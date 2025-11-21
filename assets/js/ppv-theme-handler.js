@@ -185,20 +185,21 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+// 🚀 OLD SERVICE WORKER NAVIGATION - DISABLED (Turbo.js handles navigation now)
 // Intercept internal link clicks → send NAVIGATE to SW
-document.addEventListener("click", (e) => {
-  const link = e.target.closest("a");
-  if (!link || !link.href.startsWith(location.origin)) return;
-  const href = link.getAttribute("href");
-  if (!href || href.startsWith("#")) return;
-  e.preventDefault();
-
-  if (navigator.serviceWorker.controller) {
-    navigator.serviceWorker.controller.postMessage({ type: "NAVIGATE", url: href });
-  } else {
-    window.location.href = href;
-  }
-});
+// document.addEventListener("click", (e) => {
+//   const link = e.target.closest("a");
+//   if (!link || !link.href.startsWith(location.origin)) return;
+//   const href = link.getAttribute("href");
+//   if (!href || href.startsWith("#")) return;
+//   e.preventDefault();
+//
+//   if (navigator.serviceWorker.controller) {
+//     navigator.serviceWorker.controller.postMessage({ type: "NAVIGATE", url: href });
+//   } else {
+//     window.location.href = href;
+//   }
+// });
 
 /** ============================
  * 🧩 LOGO DEBUG + REALTIME SWITCH
@@ -229,48 +230,49 @@ document.addEventListener("ppv-theme-changed", () => {
   });
   
   /** ============================
- * ⚡ PUNKTEPASS SPA v3.0
+ * ⚡ PUNKTEPASS SPA v3.0 - DISABLED (Turbo.js handles navigation now)
  * ============================ */
-(function(){
-  // instant link intercept
-  document.addEventListener("click", async (e)=>{
-    const link = e.target.closest("a.ppv-link, .ppv-bottom-nav a");
-    if(!link || link.target === "_blank") return;
-    const href = link.href;
-    if(!href.startsWith(location.origin)) return;
-    e.preventDefault();
+// 🚀 OLD SPA NAVIGATION - DISABLED (conflicts with Turbo.js)
+// (function(){
+//   // instant link intercept
+//   document.addEventListener("click", async (e)=>{
+//     const link = e.target.closest("a.ppv-link, .ppv-bottom-nav a");
+//     if(!link || link.target === "_blank") return;
+//     const href = link.href;
+//     if(!href.startsWith(location.origin)) return;
+//     e.preventDefault();
+//
+//     document.body.classList.add("ppv-loading");
+//     document.body.style.opacity="0.8";
+//
+//     const res = await fetch(href, { headers: {"X-PPV-SPA":"1"} });
+//     const html = await res.text();
+//     const dom = new DOMParser().parseFromString(html,"text/html");
+//     const newRoot = dom.querySelector("#ppv-app-root");
+//     if(newRoot){
+//       document.querySelector("#ppv-app-root").innerHTML = newRoot.innerHTML;
+//       history.pushState({}, "", href);
+//       window.scrollTo(0,0);
+//     }
+//
+//     setTimeout(()=>{
+//       document.body.style.opacity="1";
+//       document.body.classList.remove("ppv-loading");
+//     },150);
+//   });
+//
+//   window.addEventListener("popstate",()=>location.reload());
+// })();
 
-    document.body.classList.add("ppv-loading");
-    document.body.style.opacity="0.8";
-
-    const res = await fetch(href, { headers: {"X-PPV-SPA":"1"} });
-    const html = await res.text();
-    const dom = new DOMParser().parseFromString(html,"text/html");
-    const newRoot = dom.querySelector("#ppv-app-root");
-    if(newRoot){
-      document.querySelector("#ppv-app-root").innerHTML = newRoot.innerHTML;
-      history.pushState({}, "", href);
-      window.scrollTo(0,0);
-    }
-
-    setTimeout(()=>{
-      document.body.style.opacity="1";
-      document.body.classList.remove("ppv-loading");
-    },150);
-  });
-
-  window.addEventListener("popstate",()=>location.reload());
-
-  // universal toast (re-use for points)
-  window.ppvToast = (msg,type="info")=>{
-    const el=document.createElement("div");
-    el.className=`ppv-toast ${type}`;
-    el.innerHTML=`<div class="inner">${msg}</div>`;
-    document.body.appendChild(el);
-    setTimeout(()=>el.classList.add("show"),20);
-    setTimeout(()=>el.remove(),3500);
-  };
-})();
+// 🚀 Keep only the toast function (still useful)
+window.ppvToast = (msg,type="info")=>{
+  const el=document.createElement("div");
+  el.className=`ppv-toast ${type}`;
+  el.innerHTML=`<div class="inner">${msg}</div>`;
+  document.body.appendChild(el);
+  setTimeout(()=>el.classList.add("show"),20);
+  setTimeout(()=>el.remove(),3500);
+};
 
 // ============================
 // ⚙️ PunktePass Scroll Fix v2

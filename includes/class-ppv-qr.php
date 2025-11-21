@@ -310,6 +310,11 @@ class PPV_QR {
             $is_handler = in_array(strtolower(trim($user_type)), $handler_types);
         }
 
+        // 🏪 TRIAL HANDLER SUPPORT: Also check ppv_vendor_store_id
+        if (!$is_handler && !empty($_SESSION['ppv_vendor_store_id'])) {
+            $is_handler = true;
+        }
+
         wp_enqueue_style(
             'remixicons',
             'https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css',
@@ -341,16 +346,28 @@ class PPV_QR {
             $store_id = 0;
             $store_key = '';
 
-            // 1️⃣ SESSION
-            if (!empty($_SESSION['ppv_active_store'])) {
+            // 1️⃣ FILIALE SUPPORT: Check ppv_current_filiale_id FIRST
+            if (!empty($_SESSION['ppv_current_filiale_id'])) {
+                $store_id = intval($_SESSION['ppv_current_filiale_id']);
+            }
+            // 2️⃣ SESSION store_id
+            elseif (!empty($_SESSION['ppv_store_id'])) {
+                $store_id = intval($_SESSION['ppv_store_id']);
+            }
+            // 3️⃣ SESSION active_store
+            elseif (!empty($_SESSION['ppv_active_store'])) {
                 $store_id = intval($_SESSION['ppv_active_store']);
             }
-            // 2️⃣ GLOBAL
+            // 4️⃣ TRIAL HANDLER: ppv_vendor_store_id
+            elseif (!empty($_SESSION['ppv_vendor_store_id'])) {
+                $store_id = intval($_SESSION['ppv_vendor_store_id']);
+            }
+            // 5️⃣ GLOBAL
             elseif (!empty($GLOBALS['ppv_active_store'])) {
                 $active = $GLOBALS['ppv_active_store'];
                 $store_id = is_object($active) ? intval($active->id) : intval($active);
             }
-            // 3️⃣ LOGGED IN USER
+            // 6️⃣ LOGGED IN USER (fallback - may return wrong store if multiple!)
             elseif (is_user_logged_in()) {
                 $uid = get_current_user_id();
                 $store_id = intval($wpdb->get_var($wpdb->prepare(
@@ -407,12 +424,23 @@ class PPV_QR {
             </div>';
         }
 
+        // 🔍 DEBUG: Log session before permission check
+        error_log("🔍 [QR_CENTER] SESSION CHECK: " . json_encode([
+            'ppv_user_id' => $_SESSION['ppv_user_id'] ?? 'NOT_SET',
+            'ppv_user_type' => $_SESSION['ppv_user_type'] ?? 'NOT_SET',
+            'ppv_store_id' => $_SESSION['ppv_store_id'] ?? 'NOT_SET',
+            'ppv_vendor_store_id' => $_SESSION['ppv_vendor_store_id'] ?? 'NOT_SET',
+            'ppv_current_filiale_id' => $_SESSION['ppv_current_filiale_id'] ?? 'NOT_SET',
+        ]));
+
         $auth_check = PPV_Permissions::check_handler();
         if (is_wp_error($auth_check)) {
+            error_log("❌ [QR_CENTER] check_handler() FAILED: " . $auth_check->get_error_message());
             return '<div class="ppv-error" style="padding: 20px; text-align: center; color: #ff5252;">
                 ❌ Zugriff verweigert. Nur für Händler und Scanner.
             </div>';
         }
+        error_log("✅ [QR_CENTER] check_handler() PASSED");
 
         $lang = sanitize_text_field($_COOKIE['ppv_lang'] ?? '');
         if (empty($lang) || !in_array($lang, ['de', 'hu', 'ro'])) {
@@ -515,13 +543,18 @@ class PPV_QR {
             @session_start();
         }
 
-        if (!empty($_SESSION['ppv_active_store'])) {
-            $store_id = intval($_SESSION['ppv_active_store']);
+        // 🏪 FILIALE SUPPORT: Check ppv_current_filiale_id FIRST
+        if (!empty($_SESSION['ppv_current_filiale_id'])) {
+            $store_id = intval($_SESSION['ppv_current_filiale_id']);
         } elseif (!empty($_SESSION['ppv_store_id'])) {
             $store_id = intval($_SESSION['ppv_store_id']);
+        } elseif (!empty($_SESSION['ppv_active_store'])) {
+            $store_id = intval($_SESSION['ppv_active_store']);
+        } elseif (!empty($_SESSION['ppv_vendor_store_id'])) {
+            $store_id = intval($_SESSION['ppv_vendor_store_id']);
         }
 
-        // ✅ If no store_id in session, try to get it via user_id
+        // ✅ If no store_id in session, try to get it via user_id (fallback)
         if ($store_id === 0 && !empty($_SESSION['ppv_user_id'])) {
             $user_id = intval($_SESSION['ppv_user_id']);
 
@@ -539,10 +572,20 @@ class PPV_QR {
         // 🐛 DEBUG: Log store_id
 
         // Fetch subscription info from database
+        // 🏪 FILIALE SUPPORT: Use parent store's subscription for filialen
         if ($store_id > 0) {
+            // First check if this is a filiale with a parent
+            $parent_check = $wpdb->get_var($wpdb->prepare(
+                "SELECT parent_store_id FROM {$wpdb->prefix}ppv_stores WHERE id = %d AND parent_store_id IS NOT NULL AND parent_store_id > 0 LIMIT 1",
+                $store_id
+            ));
+
+            // Use parent store ID for subscription check if this is a filiale
+            $subscription_store_id = $parent_check ? intval($parent_check) : $store_id;
+
             $store_data = $wpdb->get_row($wpdb->prepare(
                 "SELECT trial_ends_at, subscription_status, subscription_expires_at, subscription_renewal_requested FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
-                $store_id
+                $subscription_store_id
             ));
 
             if ($store_data) {
@@ -692,61 +735,6 @@ class PPV_QR {
         <?php endif; ?>
         <?php endif; // End scanner check for subscription info ?>
 
-        <!-- 🆘 Floating Support Button (ALWAYS SHOW - including scanner users) -->
-        <button id="ppv-support-btn">
-            🆘
-        </button>
-
-        <!-- Support Ticket Modal (ALWAYS SHOW - including scanner users) -->
-        <div id="ppv-support-modal" class="ppv-support-modal">
-            <div class="ppv-support-modal-content">
-                <h3 class="ppv-support-modal-title">
-                    🆘 <?php echo self::t('support_ticket_title', 'Support anfragen'); ?>
-                </h3>
-                <p class="ppv-support-modal-description">
-                    <?php echo self::t('support_ticket_desc', 'Beschreiben Sie Ihr Problem. Wir melden uns schnellstmöglich bei Ihnen.'); ?>
-                </p>
-
-                <!-- Problem Description -->
-                <label class="ppv-support-label">
-                    <?php echo self::t('problem_description', 'Problembeschreibung'); ?> <span class="ppv-required">*</span>
-                </label>
-                <textarea id="ppv-support-description" class="ppv-support-input" placeholder="<?php echo self::t('problem_placeholder', 'Bitte beschreiben Sie Ihr Problem...'); ?>" rows="4"></textarea>
-
-                <!-- Priority -->
-                <label class="ppv-support-label">
-                    <?php echo self::t('priority', 'Priorität'); ?>
-                </label>
-                <select id="ppv-support-priority" class="ppv-support-input">
-                    <option value="normal"><?php echo self::t('priority_normal', 'Normal'); ?></option>
-                    <option value="urgent"><?php echo self::t('priority_urgent', 'Dringend'); ?></option>
-                    <option value="low"><?php echo self::t('priority_low', 'Niedrig'); ?></option>
-                </select>
-
-                <!-- Contact Preference -->
-                <label class="ppv-support-label">
-                    <?php echo self::t('contact_preference', 'Bevorzugter Kontakt'); ?>
-                </label>
-                <select id="ppv-support-contact" class="ppv-support-input">
-                    <option value="email">📧 <?php echo self::t('contact_email', 'E-Mail'); ?></option>
-                    <option value="phone">📞 <?php echo self::t('contact_phone', 'Telefon'); ?></option>
-                    <option value="whatsapp">💬 <?php echo self::t('contact_whatsapp', 'WhatsApp'); ?></option>
-                </select>
-
-                <div id="ppv-support-error" class="ppv-support-message ppv-support-error"></div>
-                <div id="ppv-support-success" class="ppv-support-message ppv-support-success"></div>
-
-                <div class="ppv-support-buttons">
-                    <button id="ppv-support-submit" class="ppv-support-btn-submit">
-                        ✅ <?php echo self::t('send_ticket', 'Ticket senden'); ?>
-                    </button>
-                    <button id="ppv-support-cancel" class="ppv-support-btn-cancel">
-                        ❌ <?php echo self::t('cancel', 'Abbrechen'); ?>
-                    </button>
-                </div>
-            </div>
-        </div>
-
         <?php self::render_filiale_switcher(); ?>
 
         <div class="ppv-pos-center glass-section">
@@ -845,13 +833,23 @@ class PPV_QR {
             @session_start();
         }
 
-        $current_filiale_id = !empty($_SESSION['ppv_current_filiale_id'])
-            ? intval($_SESSION['ppv_current_filiale_id'])
-            : (!empty($_SESSION['ppv_store_id']) ? intval($_SESSION['ppv_store_id']) : 0);
+        // 🏪 FILIALE SUPPORT: Check all possible store ID sources
+        $current_filiale_id = 0;
+        if (!empty($_SESSION['ppv_current_filiale_id'])) {
+            $current_filiale_id = intval($_SESSION['ppv_current_filiale_id']);
+        } elseif (!empty($_SESSION['ppv_store_id'])) {
+            $current_filiale_id = intval($_SESSION['ppv_store_id']);
+        } elseif (!empty($_SESSION['ppv_vendor_store_id'])) {
+            // Trial handlers may only have vendor_store_id set
+            $current_filiale_id = intval($_SESSION['ppv_vendor_store_id']);
+        }
 
         if (!$current_filiale_id) {
+            error_log("⚠️ [PPV_QR] render_filiale_switcher: No store_id found in session");
             return; // No store in session
         }
+
+        error_log("🏪 [PPV_QR] render_filiale_switcher: current_filiale_id={$current_filiale_id}");
 
         // Get parent store ID (if current is a filiale, get its parent; otherwise it's the parent)
         $parent_id = $wpdb->get_var($wpdb->prepare(
@@ -1008,23 +1006,21 @@ class PPV_QR {
                 $btn.prop('disabled', true).text('<?php echo esc_js(self::t('saving', 'Speichern...')); ?>');
 
                 $.ajax({
-                    url: '<?php echo rest_url('ppv/v1/store/clone'); ?>',
+                    url: '<?php echo admin_url('admin-ajax.php'); ?>',
                     type: 'POST',
-                    contentType: 'application/json',
-                    beforeSend: function(xhr) {
-                        xhr.setRequestHeader('X-WP-Nonce', '<?php echo wp_create_nonce('wp_rest'); ?>');
-                    },
-                    data: JSON.stringify({
-                        source_id: <?php echo intval($parent_id); ?>,
-                        name: name,
+                    data: {
+                        action: 'ppv_create_filiale',
+                        parent_store_id: <?php echo intval($parent_id); ?>,
+                        filiale_name: name,
                         city: city,
-                        plz: plz
-                    }),
+                        plz: plz,
+                        nonce: '<?php echo wp_create_nonce('ppv_filiale_nonce'); ?>'
+                    },
                     success: function(response) {
                         if (response.success) {
                             location.reload();
                         } else {
-                            $error.text(response.message || '<?php echo esc_js(self::t('save_error', 'Fehler beim Speichern')); ?>').show();
+                            $error.text(response.data?.msg || '<?php echo esc_js(self::t('save_error', 'Fehler beim Speichern')); ?>').show();
                             $btn.prop('disabled', false).html('✅ <?php echo esc_js(self::t('save', 'Speichern')); ?>');
                         }
                     },

@@ -11,9 +11,59 @@
  * ✅ KEPT: All other functionality
  * ✅ FULLY TRANSLATED: DE/HU/RO
  * ✅ MODERN ICONS: No emojis, pure icon fonts
+ * 🚀 TURBO-COMPATIBLE: Re-initializes on navigation
  */
 
-document.addEventListener("DOMContentLoaded", async () => {
+// 🚀 Global polling cleanup for Turbo navigation
+window.PPV_POLL_INTERVAL_ID = null;
+window.PPV_VISIBILITY_HANDLER = null;
+window.PPV_STORE_LIST_INTERVAL = null;
+window.PPV_SLIDER_HANDLER = null;
+window.PPV_SLIDER_INITIALIZED = false;
+
+// 🧹 Cleanup function - call before navigation or re-init
+function cleanupPolling() {
+  if (window.PPV_POLL_INTERVAL_ID) {
+    clearInterval(window.PPV_POLL_INTERVAL_ID);
+    window.PPV_POLL_INTERVAL_ID = null;
+    console.log('🧹 [Polling] Interval cleared');
+  }
+  if (window.PPV_VISIBILITY_HANDLER) {
+    document.removeEventListener('visibilitychange', window.PPV_VISIBILITY_HANDLER);
+    window.PPV_VISIBILITY_HANDLER = null;
+    console.log('🧹 [Polling] Visibility listener removed');
+  }
+  if (window.PPV_STORE_LIST_INTERVAL) {
+    clearInterval(window.PPV_STORE_LIST_INTERVAL);
+    window.PPV_STORE_LIST_INTERVAL = null;
+    console.log('🧹 [Stores] Wait interval cleared');
+  }
+  if (window.PPV_SLIDER_HANDLER) {
+    document.removeEventListener('input', window.PPV_SLIDER_HANDLER);
+    window.PPV_SLIDER_HANDLER = null;
+    console.log('🧹 [Slider] Handler removed');
+  }
+  window.PPV_POLLING_ACTIVE = false;
+  window.PPV_SLIDER_INITIALIZED = false;
+}
+
+// 🚀 Turbo-compatible initialization
+async function initUserDashboard() {
+  // Check if dashboard root exists (only run on user dashboard pages)
+  const dashboardRoot = document.getElementById('ppv-dashboard-root');
+  if (!dashboardRoot) {
+    console.log("⏭️ [Dashboard] Not a dashboard page, skipping init");
+    // 🧹 Clean up polling if we're NOT on dashboard page anymore
+    cleanupPolling();
+    return;
+  }
+
+  // Prevent double initialization
+  if (dashboardRoot.dataset.initialized === 'true') {
+    console.log("⏭️ [Dashboard] Already initialized, skipping");
+    return;
+  }
+  dashboardRoot.dataset.initialized = 'true';
   const boot = window.ppv_boot || {};
   const API = (boot.api || "/wp-json/ppv/v1/").replace(/\/+$/, '/');
   const lang = boot.lang || 'de';
@@ -313,34 +363,47 @@ document.addEventListener("DOMContentLoaded", async () => {
   // ============================================================
 
   // ============================================================
-  // 📊 ADAPTIVE POLLING - 3s active, 30s inactive
+  // 📊 ADAPTIVE POLLING - 5s active, 30s inactive (increased from 3s to reduce 503 errors)
   // ============================================================
   const initPointSync = () => {
-    // Prevent multiple initializations
-    if (window.PPV_POLLING_ACTIVE) {
-      console.warn('⚠️ [Polling] Already initialized, skipping');
-      return;
-    }
+    // 🧹 Always cleanup first to prevent multiple polling instances
+    cleanupPolling();
+
     window.PPV_POLLING_ACTIVE = true;
+    console.log('🔄 [Polling] Initializing point sync...');
 
     let lastPolledPoints = boot.points || 0;
     let lastShownErrorTimestamp = null; // Track last shown error timestamp to prevent duplicates
-    let pollIntervalId = null;
     let isFirstPoll = true; // Skip showing errors on first poll (page load)
 
     // Get current polling interval based on visibility
     const getCurrentInterval = () => {
-      return document.hidden ? 30000 : 3000; // 30s inactive, 3s active
+      return document.hidden ? 30000 : 5000; // 30s inactive, 5s active (increased from 3s)
     };
 
     // Poll function
     const pollPoints = async () => {
+      // Skip if not on dashboard page anymore
+      if (!document.getElementById('ppv-dashboard-root')) {
+        console.log('⏭️ [Polling] Dashboard not found, cleaning up');
+        cleanupPolling();
+        return;
+      }
+
       try {
         const res = await fetch(API + 'user/points-poll', {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' }
         });
-        if (!res.ok) return;
+
+        // Handle HTTP errors gracefully
+        if (!res.ok) {
+          if (res.status === 503) {
+            console.warn('⚠️ [Polling] Server busy (503), will retry next interval');
+          }
+          return;
+        }
+
         const data = await res.json();
         if (!data.success) return;
 
@@ -398,25 +461,23 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // Start polling with current interval
     const startPolling = () => {
-      if (pollIntervalId) clearInterval(pollIntervalId);
+      if (window.PPV_POLL_INTERVAL_ID) clearInterval(window.PPV_POLL_INTERVAL_ID);
       const interval = getCurrentInterval();
       console.log(`🔄 [Polling] Starting with ${interval/1000}s interval (tab ${document.hidden ? 'inactive' : 'active'})`);
-      pollIntervalId = setInterval(pollPoints, interval);
+      window.PPV_POLL_INTERVAL_ID = setInterval(pollPoints, interval);
     };
 
-    // Handle visibility change
-    document.addEventListener('visibilitychange', () => {
+    // Handle visibility change - store handler globally for cleanup
+    window.PPV_VISIBILITY_HANDLER = () => {
       startPolling(); // Restart with new interval
-    });
+    };
+    document.addEventListener('visibilitychange', window.PPV_VISIBILITY_HANDLER);
 
     // Start initial polling
     startPolling();
 
-    // Cleanup
-    window.addEventListener('beforeunload', () => {
-      if (pollIntervalId) clearInterval(pollIntervalId);
-      window.PPV_POLLING_ACTIVE = false;
-    });
+    // Cleanup on beforeunload (hard refresh/close)
+    window.addEventListener('beforeunload', cleanupPolling);
   };
 
   /**
@@ -660,18 +721,24 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   // ============================================================
-  // SLIDER
+  // SLIDER - Uses global PPV_SLIDER_INITIALIZED and PPV_SLIDER_HANDLER
   // ============================================================
-  let sliderInitialized = false;
+  let sliderTimeout = null;
+
   const initDistanceSlider = (sliderHTML, userLat, userLng, currentDistance = 10) => {
-    if (sliderInitialized) {
+    if (window.PPV_SLIDER_INITIALIZED) {
       console.log("⏸️ [Slider] Already initialized");
       return;
     }
-    sliderInitialized = true;
+    window.PPV_SLIDER_INITIALIZED = true;
 
-    let sliderTimeout = null;
-    const sliderHandler = async (e) => {
+    // Remove old handler if exists
+    if (window.PPV_SLIDER_HANDLER) {
+      document.removeEventListener('input', window.PPV_SLIDER_HANDLER);
+    }
+
+    // Create new handler and store globally
+    window.PPV_SLIDER_HANDLER = async (e) => {
       if (e.target.id !== 'ppv-distance-slider') return;
 
       const newDistance = e.target.value;
@@ -712,8 +779,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       }, 500);
     };
 
-    document.removeEventListener('input', sliderHandler);
-    document.addEventListener('input', sliderHandler);
+    document.addEventListener('input', window.PPV_SLIDER_HANDLER);
     console.log("✅ [Slider] Initialized");
   };
 
@@ -958,11 +1024,17 @@ document.addEventListener("DOMContentLoaded", async () => {
   initQRToggle();
   initPointSync();
 
-  const waitForStoreList = setInterval(() => {
+  // Clear any existing store list interval before creating new one
+  if (window.PPV_STORE_LIST_INTERVAL) {
+    clearInterval(window.PPV_STORE_LIST_INTERVAL);
+  }
+
+  window.PPV_STORE_LIST_INTERVAL = setInterval(() => {
     const el = document.getElementById("ppv-store-list");
     const qrReady = document.querySelector(".ppv-btn-qr");
     if (el && qrReady) {
-      clearInterval(waitForStoreList);
+      clearInterval(window.PPV_STORE_LIST_INTERVAL);
+      window.PPV_STORE_LIST_INTERVAL = null;
       console.log("✅ [SAFE INIT] QR ready, store list element found → initStores()");
       initStores();
     }
@@ -1045,4 +1117,28 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   console.log("✅ Dashboard initialized");
+}
+
+// 🚀 Initialize on DOMContentLoaded
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initUserDashboard);
+} else {
+  initUserDashboard();
+}
+
+// 🧹 Turbo: Clean up BEFORE navigating away (prevents multiple polling instances)
+document.addEventListener('turbo:before-visit', function() {
+  console.log('🧹 [Turbo] Before visit - cleaning up polling');
+  cleanupPolling();
 });
+
+// 🚀 Turbo: Reset flag before rendering new page
+document.addEventListener('turbo:before-render', function() {
+  const root = document.getElementById('ppv-dashboard-root');
+  if (root) {
+    root.dataset.initialized = 'false';
+  }
+});
+
+// 🚀 Turbo: Re-initialize after navigation (only turbo:load, not render to avoid double-init)
+document.addEventListener('turbo:load', initUserDashboard);

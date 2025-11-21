@@ -134,6 +134,13 @@ if (!class_exists('PPV_Onboarding')) {
                 'permission_callback' => [__CLASS__, 'rest_permission_check']
             ]);
 
+            // Reset onboarding
+            register_rest_route('ppv/v1', '/onboarding/reset', [
+                'methods' => 'POST',
+                'callback' => [__CLASS__, 'rest_reset_onboarding'],
+                'permission_callback' => [__CLASS__, 'rest_permission_check']
+            ]);
+
             // Geocode address
             register_rest_route('ppv/v1', '/onboarding/geocode', [
                 'methods' => 'POST',
@@ -285,6 +292,37 @@ if (!class_exists('PPV_Onboarding')) {
         }
 
         /**
+         * REST: Reset onboarding (start fresh)
+         */
+        public static function rest_reset_onboarding($request) {
+            $auth = self::check_auth();
+            global $wpdb;
+
+            $result = $wpdb->update(
+                $wpdb->prefix . 'ppv_stores',
+                [
+                    'onboarding_dismissed' => 0,
+                    'onboarding_welcome_shown' => 0,
+                    'onboarding_completed' => 0
+                ],
+                ['id' => $auth['store_id']],
+                ['%d', '%d', '%d'],
+                ['%d']
+            );
+
+            error_log("🔄 [PPV_ONBOARDING] Reset store #{$auth['store_id']}: result=" . ($result !== false ? 'OK' : 'FAILED'));
+
+            // Get fresh progress
+            $store = self::get_store($auth['store_id']);
+            $progress = self::calculate_progress($store);
+
+            return rest_ensure_response([
+                'success' => $result !== false,
+                'progress' => $progress
+            ]);
+        }
+
+        /**
          * REST: Geocode address
          */
         public static function rest_geocode_address($request) {
@@ -379,8 +417,18 @@ if (!class_exists('PPV_Onboarding')) {
                 @session_start();
             }
 
+            // 🏪 FILIALE SUPPORT: Check ppv_current_filiale_id FIRST
+            if (!empty($_SESSION['ppv_current_filiale_id'])) {
+                return ['valid' => true, 'type' => 'ppv_stores', 'store_id' => intval($_SESSION['ppv_current_filiale_id'])];
+            }
+
             if (!empty($_SESSION['ppv_store_id'])) {
                 return ['valid' => true, 'type' => 'ppv_stores', 'store_id' => intval($_SESSION['ppv_store_id'])];
+            }
+
+            // Fallback: vendor store
+            if (!empty($_SESSION['ppv_vendor_store_id'])) {
+                return ['valid' => true, 'type' => 'ppv_stores', 'store_id' => intval($_SESSION['ppv_vendor_store_id'])];
             }
 
             if (!empty($_COOKIE['ppv_pos_token'])) {

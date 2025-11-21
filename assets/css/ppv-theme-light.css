@@ -5878,7 +5878,6 @@ select.ppv-support-input {
    🎉 END OF SUPPORT SECTION STYLING
    ────────────────────────────────────────────────────────────────────── */
 
-<<<<<<< HEAD
 /* ══════════════════════════════════════════════════════════════════════
    ✅ EINLÖSUNGEN & QUITTUNGEN VERWALTUNG (Redemptions & Receipts)
    ══════════════════════════════════════════════════════════════════════ */
@@ -5887,64 +5886,15 @@ select.ppv-support-input {
    📦 MAIN WRAPPER
    ────────────────────────────────────────────────────────────────────── */
 
-=======
-/* ============================================================
- * 🎨 PUNKTEPASS LIGHT THEME – GLOBAL VARIABLES
- * ============================================================ */
-:root {
-    --pp-primary: #0066cc;
-    --pp-primary-dark: #0052a3;
-    --pp-success: #10b981;
-    --pp-warning: #f59e0b;
-    --pp-danger: #ef4444;
-    --pp-info: #3b82f6;
-
-    --pp-surface: #ffffff;
-    --pp-surface-2: #f8fafc;
-    --pp-surface-3: #f1f5f9;
-
-    --pp-text: #1e293b;
-    --pp-text-2: #64748b;
-    --pp-text-3: #94a3b8;
-
-    --pp-border: #e2e8f0;
-    --pp-border-2: #cbd5e1;
-
-    --pp-spacing-xs: 4px;
-    --pp-spacing-sm: 8px;
-    --pp-spacing-md: 16px;
-    --pp-spacing-lg: 24px;
-    --pp-spacing-xl: 32px;
-
-    --pp-radius-sm: 6px;
-    --pp-radius-md: 8px;
-    --pp-radius-lg: 12px;
-
-    --pp-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-    --pp-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
-    --pp-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.10);
-}
-
-
-/* ============================================================
- * 📦 LAYOUT – MAIN WRAPPER
- * ============================================================ */
->>>>>>> ff41127 (Complete local version with all recent changes - ready for sync)
 .ppv-rewards-wrapper {
     background: var(--pp-surface);
     border-radius: var(--pp-radius-lg);
     padding: var(--pp-spacing-xl);
-<<<<<<< HEAD
     margin-bottom: var(--pp-spacing-xl);
-=======
-    margin: 0 auto;
-    max-width: 1200px;
->>>>>>> ff41127 (Complete local version with all recent changes - ready for sync)
     box-shadow: var(--pp-shadow-md);
 }
 
 .ppv-rewards-wrapper h2 {
-<<<<<<< HEAD
     margin: 0 0 var(--pp-spacing-lg) 0;
     font-size: 24px;
     font-weight: 700;
@@ -5962,21 +5912,6 @@ select.ppv-support-input {
     display: flex;
     gap: var(--pp-spacing-sm);
     margin-bottom: var(--pp-spacing-lg);
-=======
-    margin-bottom: var(--pp-spacing-lg);
-    color: var(--pp-text);
-    font-size: 24px;
-}
-
-
-/* ============================================================
- * 📑 TAB NAVIGATION
- * ============================================================ */
-.ppv-rewards-tabs {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
->>>>>>> ff41127 (Complete local version with all recent changes - ready for sync)
     border-bottom: 2px solid var(--pp-border);
 }
 
@@ -5994,11 +5929,7 @@ select.ppv-support-input {
 
 .ppv-tab-btn:hover {
     color: var(--pp-primary);
-<<<<<<< HEAD
     background: var(--pp-bg-2);
-=======
-    background: rgba(0, 102, 204, 0.05);
->>>>>>> ff41127 (Complete local version with all recent changes - ready for sync)
 }
 
 .ppv-tab-btn.ppv-tab-active {
@@ -6006,18 +5937,14 @@ select.ppv-support-input {
     color: var(--pp-primary);
 }
 
-<<<<<<< HEAD
 /* ──────────────────────────────────────────────────────────────────────
    📋 TAB CONTENT
    ────────────────────────────────────────────────────────────────────── */
 
-=======
->>>>>>> ff41127 (Complete local version with all recent changes - ready for sync)
 .ppv-tab-content {
     display: none;
 }
 
-<<<<<<< HEAD
 .ppv-tab-content[style*="display: block"],
 .ppv-tab-content[style*="display:block"] {
     display: block !important;
@@ -6069,58 +5996,17 @@ select.ppv-support-input {
     padding: var(--pp-spacing-lg);
     position: relative;
     overflow: hidden;
-=======
-.ppv-tab-content.active {
-    display: block;
-}
-
-
-/* ============================================================
- * 🟦 EINLÖSUNGEN – SECTIONS + GRID
- * ============================================================ */
-.ppv-redeem-section h3,
-.ppv-log-box h3,
-.ppv-receipts-section h3 {
-    font-size: 18px;
-    margin-bottom: var(--pp-spacing-md);
-    color: var(--pp-text);
-}
-
-.ppv-redeem-grid {
-    display: grid;
-    gap: var(--pp-spacing-md);
-}
-
-
-/* ============================================================
- * 🟨 EINLÖSUNGEN – CARD ITEMS
- * ============================================================ */
-.ppv-redeem-item {
-    position: relative;
-    padding: var(--pp-spacing-md);
-    background: var(--pp-surface);
-    border: 1px solid var(--pp-border);
-    border-radius: var(--pp-radius-sm);
->>>>>>> ff41127 (Complete local version with all recent changes - ready for sync)
     transition: all 0.3s ease;
     box-shadow: var(--pp-shadow-sm);
 }
 
 .ppv-redeem-item:hover {
-<<<<<<< HEAD
     transform: translateY(-4px);
     box-shadow: var(--pp-shadow-lg);
     border-color: var(--pp-primary);
 }
 
 /* Status Stripe */
-=======
-    box-shadow: var(--pp-shadow-md);
-    transform: translateY(-2px);
-}
-
-/* Status stripe */
->>>>>>> ff41127 (Complete local version with all recent changes - ready for sync)
 .ppv-redeem-item::before {
     content: '';
     position: absolute;
@@ -6129,16 +6015,7 @@ select.ppv-support-input {
     width: 4px;
     height: 100%;
     background: var(--pp-warning);
-<<<<<<< HEAD
     transition: all 0.3s ease;
-=======
-    border-radius: var(--pp-radius-sm) 0 0 var(--pp-radius-sm);
-}
-
-.ppv-redeem-item.status-pending::before {
-    background: var(--pp-warning);
-    animation: ppv-pulse-glow 2s infinite;
->>>>>>> ff41127 (Complete local version with all recent changes - ready for sync)
 }
 
 .ppv-redeem-item.status-approved::before {
@@ -6149,7 +6026,6 @@ select.ppv-support-input {
     background: var(--pp-danger);
 }
 
-<<<<<<< HEAD
 .ppv-redeem-item.status-pending::before {
     background: var(--pp-warning);
     animation: ppv-pulse-glow 2s infinite;
@@ -6171,17 +6047,10 @@ select.ppv-support-input {
     color: var(--pp-text);
     margin-bottom: var(--pp-spacing-sm);
     line-height: 1.3;
-=======
-.ppv-redeem-item strong {
-    display: block;
-    font-size: 16px;
-    margin-bottom: 4px;
->>>>>>> ff41127 (Complete local version with all recent changes - ready for sync)
 }
 
 .ppv-redeem-item small {
     display: block;
-<<<<<<< HEAD
     font-size: 13px;
     color: var(--pp-text-2);
     margin-bottom: var(--pp-spacing-xs);
@@ -6306,116 +6175,10 @@ select.ppv-support-input {
 
 .ppv-log-item strong {
     font-size: 14px;
-=======
-    color: var(--pp-text-2);
-    font-size: 13px;
-    margin-bottom: var(--pp-spacing-sm);
-}
-
-
-/* ============================================================
- * 💬 META BADGES
- * ============================================================ */
-.ppv-redeem-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--pp-spacing-sm);
-    margin: var(--pp-spacing-md) 0;
-}
-
-.ppv-redeem-meta-item {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 13px;
-    color: var(--pp-text-2);
-    background: var(--pp-surface-2);
-    padding: 4px 10px;
-    border-radius: var(--pp-radius-sm);
-}
-
-.ppv-redeem-meta-item i {
-    font-size: 14px;
-}
-
-
-/* ============================================================
- * 🟢 / 🔴 ACTION BUTTONS
- * ============================================================ */
-.ppv-redeem-actions {
-    display: flex;
-    gap: var(--pp-spacing-sm);
-    margin-top: var(--pp-spacing-md);
-}
-
-.ppv-redeem-actions button {
-    flex: 1;
-    padding: 8px 16px;
-    border: none;
-    border-radius: var(--pp-radius-sm);
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-/* Approve */
-.ppv-approve {
-    background: var(--pp-success);
-    color: white;
-}
-
-.ppv-approve:hover {
-    background: #059669;
-    transform: translateY(-1px);
-    box-shadow: var(--pp-shadow-md);
-}
-
-/* Reject */
-.ppv-reject {
-    background: var(--pp-danger);
-    color: white;
-}
-
-.ppv-reject:hover {
-    background: #dc2626;
-    transform: translateY(-1px);
-    box-shadow: var(--pp-shadow-md);
-}
-
-
-/* ============================================================
- * 📜 LOG BOX – LAST 10 REDEMPTIONS
- * ============================================================ */
-.ppv-log-box {
-    margin-top: 30px;
-}
-
-.ppv-log-item {
-    padding: var(--pp-spacing-sm);
-    border-bottom: 1px solid var(--pp-border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 13px;
-}
-
-.ppv-log-item:last-child {
-    border-bottom: none;
-}
-
-.ppv-log-item .log-user {
-    font-weight: 600;
-    color: var(--pp-text);
-}
-
-.ppv-log-item .log-points {
->>>>>>> ff41127 (Complete local version with all recent changes - ready for sync)
     color: var(--pp-primary);
     font-weight: 600;
 }
 
-<<<<<<< HEAD
 .ppv-log-item small {
     font-size: 12px;
     color: var(--pp-text-2);
@@ -6476,89 +6239,20 @@ select.ppv-support-input {
 .ppv-receipt-card {
     padding: var(--pp-spacing-md);
     margin-bottom: var(--pp-spacing-sm);
-=======
-.ppv-log-item .log-status {
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 11px;
-    font-weight: 600;
-}
-
-.log-status.approved {
-    background: rgba(16, 185, 129, 0.1);
-    color: var(--pp-success);
-}
-
-.log-status.cancelled {
-    background: rgba(239, 68, 68, 0.1);
-    color: var(--pp-danger);
-}
-
-
-/* ============================================================
- * 📄 RECEIPTS – LIST + CARD
- * ============================================================ */
-.ppv-receipts-section {
-    margin-top: 20px;
-}
-
-.ppv-receipts-filters {
-    display: flex;
-    gap: var(--pp-spacing-sm);
-    margin-bottom: var(--pp-spacing-lg);
-    flex-wrap: wrap;
-}
-
-.ppv-filter-btn {
-    padding: 8px 16px;
-    border: 1px solid var(--pp-border);
-    background: var(--pp-surface);
-    border-radius: var(--pp-radius-sm);
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    color: var(--pp-text-2);
-    transition: all 0.2s ease;
-}
-
-.ppv-filter-btn:hover {
-    border-color: var(--pp-primary);
-    color: var(--pp-primary);
-}
-
-.ppv-filter-btn.active {
-    background: var(--pp-primary);
-    color: white;
-    border-color: var(--pp-primary);
-}
-
-.ppv-receipts-list {
-    display: grid;
-    gap: var(--pp-spacing-sm);
-}
-
-.ppv-receipt-card {
-    padding: var(--pp-spacing-md);
->>>>>>> ff41127 (Complete local version with all recent changes - ready for sync)
     background: var(--pp-surface);
     border: 1px solid var(--pp-border);
     border-radius: var(--pp-radius-sm);
     display: flex;
     justify-content: space-between;
     align-items: center;
-<<<<<<< HEAD
     gap: var(--pp-spacing-md);
     transition: all 0.3s ease;
     box-shadow: var(--pp-shadow-sm);
-=======
-    transition: all 0.3s ease;
->>>>>>> ff41127 (Complete local version with all recent changes - ready for sync)
 }
 
 .ppv-receipt-card:hover {
     border-color: var(--pp-primary);
     box-shadow: var(--pp-shadow-md);
-<<<<<<< HEAD
     transform: translateX(4px);
 }
 
@@ -6574,41 +6268,10 @@ select.ppv-support-input {
 
 .ppv-receipt-download-btn {
     padding: 10px 16px;
-=======
-}
-
-.ppv-receipt-info {
-    flex: 1;
-}
-
-.ppv-receipt-title {
-    font-weight: 600;
-    margin-bottom: 4px;
-}
-
-.ppv-receipt-meta {
-    font-size: 13px;
-    color: var(--pp-text-2);
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.ppv-receipt-amount {
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--pp-primary);
-    margin: 0 var(--pp-spacing-md);
-}
-
-.ppv-receipt-download {
-    padding: 8px 16px;
->>>>>>> ff41127 (Complete local version with all recent changes - ready for sync)
     background: var(--pp-primary);
     color: white;
     border: none;
     border-radius: var(--pp-radius-sm);
-<<<<<<< HEAD
     cursor: pointer;
     font-size: 12px;
     font-weight: 600;
@@ -6655,36 +6318,10 @@ select.ppv-support-input {
     text-align: center;
     background: var(--pp-bg-2);
     border-radius: var(--pp-radius-sm);
-=======
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.ppv-receipt-download:hover {
-    background: var(--pp-primary-dark);
-    transform: translateY(-1px);
-    box-shadow: var(--pp-shadow-md);
-}
-
-
-/* ============================================================
- * 🔔 LOADING / EMPTY
- * ============================================================ */
-.ppv-loading,
-.ppv-empty {
-    padding: var(--pp-spacing-xl);
-    text-align: center;
->>>>>>> ff41127 (Complete local version with all recent changes - ready for sync)
     color: var(--pp-text-2);
     font-size: 14px;
 }
 
-<<<<<<< HEAD
 .ppv-redeem-empty::before,
 .ppv-receipts-empty::before {
     content: '📭';
@@ -6706,18 +6343,10 @@ select.ppv-support-input {
    ────────────────────────────────────────────────────────────────────── */
 
 @media (max-width: 640px) {
-=======
-
-/* ============================================================
- * 🌐 RESPONSIVE
- * ============================================================ */
-@media (max-width: 768px) {
->>>>>>> ff41127 (Complete local version with all recent changes - ready for sync)
     .ppv-rewards-wrapper {
         padding: var(--pp-spacing-md);
     }
 
-<<<<<<< HEAD
     .ppv-rewards-wrapper h2 {
         font-size: 20px;
     }
@@ -6751,654 +6380,10 @@ select.ppv-support-input {
     }
 
     .ppv-receipt-download-btn {
-=======
-    .ppv-receipt-card {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: var(--pp-spacing-sm);
-    }
-
-    .ppv-receipt-amount {
-        margin: 0;
-    }
-
-    .ppv-receipt-download {
-        width: 100%;
-        justify-content: center;
-    }
-}
-
-
-/* ============================================================
- * ✨ ANIMATION
- * ============================================================ */
-@keyframes ppv-pulse-glow {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
-    50% { box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
-}
-
-/**
- * PunktePass – Onboarding System CSS
- * Version: 1.0
- * ✅ Minimal & Professional design
- * ✅ CSS változók kompatibilis (theme-light.css)
- *
- * HASZNÁLAT: Ezt a fájlt manuálisan illeszd be a globális CSS-be!
- */
-
-/* ============================================================
- * 🎯 MODAL BACKDROP & BASE
- * ============================================================ */
-.ppv-onboarding-modal-backdrop {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.6);
-    z-index: 999999;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    padding: 20px;
-}
-
-.ppv-onboarding-modal-backdrop.show {
-    opacity: 1;
-}
-
-.ppv-onboarding-modal {
-    background: var(--pp-surface, #ffffff);
-    border-radius: var(--pp-radius-lg, 12px);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    max-width: 600px;
-    width: 100%;
-    max-height: 90vh;
-    overflow-y: auto;
-    padding: var(--pp-spacing-xl, 32px);
-    position: relative;
-    transform: translateY(20px);
-    transition: transform 0.3s ease;
-}
-
-.ppv-onboarding-modal-backdrop.show .ppv-onboarding-modal {
-    transform: translateY(0);
-}
-
-.ppv-modal-close {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    background: none;
-    border: none;
-    font-size: 28px;
-    color: var(--pp-text-2, #64748b);
-    cursor: pointer;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    transition: all 0.2s ease;
-}
-
-.ppv-modal-close:hover {
-    background: var(--pp-surface-2, #f8fafc);
-    color: var(--pp-text, #1e293b);
-}
-
-/* ============================================================
- * 👋 WELCOME MODAL
- * ============================================================ */
-.ppv-welcome-modal {
-    text-align: center;
-}
-
-.ppv-modal-icon {
-    font-size: 64px;
-    margin-bottom: 20px;
-    animation: ppv-bounce 0.6s ease;
-}
-
-@keyframes ppv-bounce {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-}
-
-.ppv-welcome-modal h2 {
-    font-size: 28px;
-    color: var(--pp-text, #1e293b);
-    margin-bottom: 16px;
-}
-
-.ppv-welcome-modal p {
-    font-size: 16px;
-    color: var(--pp-text-2, #64748b);
-    margin-bottom: 24px;
-    line-height: 1.6;
-}
-
-.ppv-welcome-steps {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-bottom: 24px;
-    text-align: left;
-}
-
-.ppv-welcome-step {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px;
-    background: var(--pp-surface-2, #f8fafc);
-    border-radius: var(--pp-radius-sm, 6px);
-}
-
-.ppv-welcome-step .step-number {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: var(--pp-primary, #0066cc);
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    font-size: 14px;
-    flex-shrink: 0;
-}
-
-.ppv-welcome-step span:last-child {
-    font-size: 14px;
-    color: var(--pp-text, #1e293b);
-    font-weight: 600;
-}
-
-.ppv-welcome-time {
-    font-size: 14px;
-    color: var(--pp-text-2, #64748b);
-    margin-bottom: 24px;
-    padding: 8px 12px;
-    background: var(--pp-surface-2, #f8fafc);
-    border-radius: var(--pp-radius-sm, 6px);
-    display: inline-block;
-}
-
-/* ============================================================
- * 🧙 WIZARD MODAL
- * ============================================================ */
-.ppv-wizard-modal h3 {
-    font-size: 22px;
-    color: var(--pp-text, #1e293b);
-    margin-bottom: 24px;
-}
-
-.ppv-wizard-progress {
-    margin-bottom: 24px;
-}
-
-.ppv-progress-bar-container {
-    position: relative;
-}
-
-.ppv-progress-bar {
-    height: 8px;
-    background: var(--pp-surface-2, #f8fafc);
-    border-radius: 4px;
-    overflow: hidden;
-    margin-bottom: 8px;
-}
-
-.ppv-progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--pp-primary, #0066cc), var(--pp-success, #10b981));
-    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-    border-radius: 4px;
-}
-
-.ppv-progress-text {
-    font-size: 13px;
-    color: var(--pp-text-2, #64748b);
-    text-align: right;
-}
-
-.ppv-wizard-form {
-    margin-bottom: 24px;
-}
-
-.ppv-form-group {
-    margin-bottom: 16px;
-}
-
-.ppv-form-group label {
-    display: block;
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--pp-text, #1e293b);
-    margin-bottom: 6px;
-}
-
-.ppv-form-group input,
-.ppv-form-group select,
-.ppv-form-group textarea {
-    width: 100%;
-    padding: 10px 12px;
-    border: 1px solid var(--pp-border, #e2e8f0);
-    border-radius: var(--pp-radius-sm, 6px);
-    font-size: 14px;
-    color: var(--pp-text, #1e293b);
-    background: var(--pp-surface, #ffffff);
-    transition: all 0.2s ease;
-}
-
-.ppv-form-group input:focus,
-.ppv-form-group select:focus,
-.ppv-form-group textarea:focus {
-    outline: none;
-    border-color: var(--pp-primary, #0066cc);
-    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
-}
-
-.ppv-form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-}
-
-.ppv-wizard-tip {
-    padding: 12px;
-    background: rgba(245, 158, 11, 0.1);
-    border-left: 4px solid var(--pp-warning, #f59e0b);
-    border-radius: var(--pp-radius-sm, 6px);
-    font-size: 13px;
-    color: var(--pp-text-2, #64748b);
-    margin-top: 16px;
-}
-
-/* ============================================================
- * 🎉 CELEBRATION MODAL
- * ============================================================ */
-.ppv-celebration-modal {
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-}
-
-.ppv-celebration-icon {
-    font-size: 80px;
-    animation: ppv-celebration-spin 0.8s ease;
-}
-
-@keyframes ppv-celebration-spin {
-    0% { transform: rotate(0deg) scale(0); }
-    50% { transform: rotate(180deg) scale(1.2); }
-    100% { transform: rotate(360deg) scale(1); }
-}
-
-.ppv-celebration-modal h2 {
-    font-size: 32px;
-    color: var(--pp-text, #1e293b);
-    margin-bottom: 16px;
-}
-
-.ppv-celebration-modal p {
-    font-size: 16px;
-    color: var(--pp-text-2, #64748b);
-    margin-bottom: 12px;
-    line-height: 1.6;
-}
-
-.ppv-celebration-tip {
-    padding: 16px;
-    background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(251, 146, 60, 0.1));
-    border-left: 4px solid var(--pp-warning, #f59e0b);
-    border-radius: var(--pp-radius-sm, 6px);
-    font-size: 14px;
-    color: var(--pp-text, #1e293b);
-    margin: 24px 0;
-    text-align: left;
-}
-
-.ppv-auto-close {
-    margin-top: 16px;
-    font-size: 13px;
-    color: var(--pp-text-3, #94a3b8);
-}
-
-/* ============================================================
- * 🎊 CONFETTI ANIMATION
- * ============================================================ */
-.ppv-confetti-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 100%;
-    overflow: hidden;
-    pointer-events: none;
-    z-index: -1;
-}
-
-.ppv-confetti {
-    position: absolute;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    top: -20px;
-    animation: ppv-confetti-fall linear forwards;
-}
-
-@keyframes ppv-confetti-fall {
-    to {
-        transform: translateY(110vh) rotate(360deg);
-        opacity: 0;
-    }
-}
-
-/* ============================================================
- * 📊 PROGRESS CARD
- * ============================================================ */
-.ppv-onboarding-progress-card {
-    background: var(--pp-surface, #ffffff);
-    border: 1px solid var(--pp-border, #e2e8f0);
-    border-radius: var(--pp-radius-lg, 12px);
-    padding: var(--pp-spacing-lg, 24px);
-    margin-bottom: var(--pp-spacing-xl, 32px);
-    box-shadow: var(--pp-shadow-md, 0 4px 6px rgba(0, 0, 0, 0.07));
-    opacity: 0;
-    transform: translateY(-10px);
-    transition: all 0.3s ease;
-}
-
-.ppv-onboarding-progress-card.show {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-.ppv-onboarding-progress-card.highlight {
-    border-color: var(--pp-primary, #0066cc);
-    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
-}
-
-.ppv-progress-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
-}
-
-.ppv-progress-header h3 {
-    font-size: 18px;
-    color: var(--pp-text, #1e293b);
-    margin: 0;
-}
-
-.ppv-card-close {
-    background: none;
-    border: none;
-    font-size: 24px;
-    color: var(--pp-text-2, #64748b);
-    cursor: pointer;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    transition: all 0.2s ease;
-}
-
-.ppv-card-close:hover {
-    background: var(--pp-surface-2, #f8fafc);
-    color: var(--pp-text, #1e293b);
-}
-
-.ppv-progress-bar-container {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 20px;
-}
-
-.ppv-progress-bar-container .ppv-progress-bar {
-    flex: 1;
-}
-
-.ppv-progress-label {
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--pp-primary, #0066cc);
-    min-width: 45px;
-    text-align: right;
-}
-
-.ppv-progress-steps {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-bottom: 16px;
-}
-
-.ppv-progress-step {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 12px;
-    background: var(--pp-surface-2, #f8fafc);
-    border-radius: var(--pp-radius-sm, 6px);
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.ppv-progress-step.completed {
-    cursor: default;
-    opacity: 0.7;
-}
-
-.ppv-progress-step:not(.completed):hover {
-    background: var(--pp-surface-3, #f1f5f9);
-    border-left: 3px solid var(--pp-primary, #0066cc);
-}
-
-.ppv-step-icon {
-    font-size: 18px;
-    flex-shrink: 0;
-}
-
-.ppv-step-label {
-    flex: 1;
-    font-size: 14px;
-    color: var(--pp-text, #1e293b);
-    font-weight: 600;
-}
-
-.ppv-step-action {
-    background: var(--pp-primary, #0066cc);
-    color: white;
-    border: none;
-    padding: 4px 12px;
-    border-radius: var(--pp-radius-sm, 6px);
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.ppv-step-action:hover {
-    background: var(--pp-primary-dark, #0052a3);
-}
-
-.ppv-progress-actions {
-    display: flex;
-    gap: 8px;
-    justify-content: flex-end;
-}
-
-/* ============================================================
- * 📌 STICKY REMINDER
- * ============================================================ */
-.ppv-onboarding-sticky {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 99999;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    opacity: 0;
-    transform: translateY(20px);
-    transition: all 0.3s ease;
-}
-
-.ppv-onboarding-sticky.show {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-.ppv-sticky-btn {
-    padding: 12px 20px;
-    background: linear-gradient(135deg, var(--pp-primary, #0066cc), var(--pp-info, #3b82f6));
-    color: white;
-    border: none;
-    border-radius: 50px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    box-shadow: 0 6px 20px rgba(0, 102, 204, 0.3);
-    transition: all 0.2s ease;
-    animation: ppv-sticky-pulse 2s infinite;
-}
-
-@keyframes ppv-sticky-pulse {
-    0%, 100% {
-        box-shadow: 0 6px 20px rgba(0, 102, 204, 0.3);
-    }
-    50% {
-        box-shadow: 0 6px 30px rgba(0, 102, 204, 0.5);
-    }
-}
-
-.ppv-sticky-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 102, 204, 0.4);
-}
-
-.ppv-sticky-close {
-    width: 28px;
-    height: 28px;
-    background: var(--pp-surface, #ffffff);
-    border: 1px solid var(--pp-border, #e2e8f0);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-size: 16px;
-    color: var(--pp-text-2, #64748b);
-    transition: all 0.2s ease;
-}
-
-.ppv-sticky-close:hover {
-    background: var(--pp-surface-2, #f8fafc);
-    color: var(--pp-text, #1e293b);
-}
-
-/* ============================================================
- * 🔘 BUTTONS
- * ============================================================ */
-.ppv-modal-actions {
-    display: flex;
-    gap: 12px;
-    justify-content: flex-end;
-    margin-top: 24px;
-}
-
-.ppv-btn {
-    padding: 10px 20px;
-    border: none;
-    border-radius: var(--pp-radius-sm, 6px);
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.ppv-btn-primary {
-    background: var(--pp-primary, #0066cc);
-    color: white;
-}
-
-.ppv-btn-primary:hover {
-    background: var(--pp-primary-dark, #0052a3);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
-}
-
-.ppv-btn-secondary {
-    background: var(--pp-surface-2, #f8fafc);
-    color: var(--pp-text-2, #64748b);
-    border: 1px solid var(--pp-border, #e2e8f0);
-}
-
-.ppv-btn-secondary:hover {
-    background: var(--pp-surface-3, #f1f5f9);
-    color: var(--pp-text, #1e293b);
-}
-
-.ppv-btn-large {
-    padding: 14px 32px;
-    font-size: 16px;
-}
-
-.ppv-btn-sm {
-    padding: 6px 14px;
-    font-size: 13px;
-}
-
-.ppv-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-/* ============================================================
- * 📱 RESPONSIVE
- * ============================================================ */
-@media (max-width: 768px) {
-    .ppv-onboarding-modal {
-        padding: var(--pp-spacing-lg, 24px);
-        max-width: 100%;
-    }
-
-    .ppv-welcome-modal h2 {
-        font-size: 24px;
-    }
-
-    .ppv-wizard-modal h3 {
-        font-size: 20px;
-    }
-
-    .ppv-form-row {
-        grid-template-columns: 1fr;
-    }
-
-    .ppv-modal-actions {
-        flex-direction: column;
-    }
-
-    .ppv-modal-actions .ppv-btn {
->>>>>>> ff41127 (Complete local version with all recent changes - ready for sync)
         width: 100%;
         justify-content: center;
     }
 
-<<<<<<< HEAD
     .ppv-receipts-filter {
         flex-direction: column;
     }
@@ -7413,41 +6398,3 @@ select.ppv-support-input {
 /* ──────────────────────────────────────────────────────────────────────
    🎉 END OF EINLÖSUNGEN & QUITTUNGEN STYLING
    ────────────────────────────────────────────────────────────────────── */
-=======
-    .ppv-onboarding-sticky {
-        bottom: 10px;
-        right: 10px;
-        left: 10px;
-        justify-content: center;
-    }
-
-    .ppv-sticky-btn {
-        flex: 1;
-    }
-
-    .ppv-progress-actions {
-        flex-direction: column;
-    }
-
-    .ppv-progress-actions .ppv-btn {
-        width: 100%;
-        justify-content: center;
-    }
-}
-
-@media (max-width: 480px) {
-    .ppv-modal-icon {
-        font-size: 48px;
-    }
-
-    .ppv-celebration-icon {
-        font-size: 60px;
-    }
-
-    .ppv-welcome-modal h2,
-    .ppv-celebration-modal h2 {
-        font-size: 22px;
-    }
-}
-
->>>>>>> ff41127 (Complete local version with all recent changes - ready for sync)

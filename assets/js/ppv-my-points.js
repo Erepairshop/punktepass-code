@@ -136,17 +136,8 @@
     document.body.classList.add("ppv-offline-mode");
   });
 
-  window.addEventListener("beforeunload", () => {
-    if (!window.ppv_skip_fade) {
-      document.body.style.opacity = "0";
-      document.body.style.transition = "opacity 0.15s ease-out";
-    }
-  });
-
-  window.addEventListener("pageshow", () => {
-    document.body.style.opacity = "1";
-    window.ppv_skip_fade = false;
-  });
+  // 🚀 Turbo handles transitions now - removed beforeunload/pageshow opacity code
+  // These don't work well with Turbo.js SPA navigation
 
   // 🌍 LISTEN FOR LANGUAGE CHANGE FROM DASHBOARD
   window.addEventListener('ppv_lang_changed', (e) => {
@@ -162,14 +153,44 @@
     }
   });
 
-  document.addEventListener("DOMContentLoaded", () => {
-    console.log('📄 [PPV_MYPOINTS] DOMContentLoaded fired');
+  // 🚀 Main initialization function
+  function initAll() {
+    // ✅ FIRST: Check if we're on the my-points page
+    const container = document.getElementById("ppv-my-points-app");
+    if (!container) {
+      console.log('⏭️ [PPV_MYPOINTS] Not a my-points page, skipping');
+      return;
+    }
+
+    // ✅ Prevent duplicate initialization (causes HTTP 503 on rapid re-init)
+    if (container.dataset.initialized === 'true') {
+      console.log('⏭️ [PPV_MYPOINTS] Already initialized, skipping');
+      return;
+    }
+    container.dataset.initialized = 'true';
+
+    console.log('📄 [PPV_MYPOINTS] Initializing...');
     initLayout();
     initToken();
     initMyPoints();
     protectBottomNav();
     if (DEBUG) initDebug();
+  }
+
+  // Initialize on DOMContentLoaded
+  document.addEventListener("DOMContentLoaded", initAll);
+
+  // 🚀 Turbo-compatible: Reset flag before rendering new page
+  document.addEventListener("turbo:before-render", function() {
+    // Reset initialization flag before new content renders
+    const container = document.getElementById("ppv-my-points-app");
+    if (container) {
+      container.dataset.initialized = 'false';
+    }
   });
+
+  // 🚀 Re-initialize after navigation (only turbo:load, not render to avoid double-init)
+  document.addEventListener("turbo:load", initAll);
 
   /** ============================
    * 🧩 LAYOUT INIT

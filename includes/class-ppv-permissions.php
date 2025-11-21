@@ -43,6 +43,12 @@ class PPV_Permissions {
             return true;
         }
 
+        // 1b. 🏪 TRIAL HANDLER SUPPORT: Check ppv_vendor_store_id (händler trial has this set)
+        if (!empty($_SESSION['ppv_vendor_store_id'])) {
+            error_log("✅ [PPV_Permissions] Auth via SESSION: vendor_store_id=" . $_SESSION['ppv_vendor_store_id']);
+            return true;
+        }
+
         error_log("🔍 [PPV_Permissions] No session user_id, checking token restore...");
 
         // 1a. Try to restore session from token (Google/Facebook/TikTok login)
@@ -124,6 +130,34 @@ class PPV_Permissions {
             }
         }
 
+        // 🔧 AUTO-FIX: If we have user_id but no store_id, lookup from database
+        // ⚠️ ONLY for handler types (vendor, store, handler, admin) - NOT regular users!
+        if (!empty($_SESSION['ppv_user_id']) && empty($_SESSION['ppv_vendor_store_id']) && empty($_SESSION['ppv_store_id'])) {
+            $ppv_user_id = intval($_SESSION['ppv_user_id']);
+            error_log("🔧 [PPV_Permissions] AUTO-FIX: Looking up store for user_id={$ppv_user_id}");
+
+            $user_data = $wpdb->get_row($wpdb->prepare(
+                "SELECT user_type, vendor_store_id FROM {$wpdb->prefix}ppv_users WHERE id = %d LIMIT 1",
+                $ppv_user_id
+            ));
+
+            if ($user_data) {
+                $_SESSION['ppv_user_type'] = $user_data->user_type;
+                error_log("🔧 [PPV_Permissions] AUTO-FIX: Found user_type={$user_data->user_type}");
+
+                // ⚠️ Only set store for HANDLER types - not regular users!
+                $handler_types_for_fix = ['vendor', 'store', 'handler', 'admin'];
+                if (in_array($user_data->user_type, $handler_types_for_fix) && !empty($user_data->vendor_store_id)) {
+                    $_SESSION['ppv_vendor_store_id'] = $user_data->vendor_store_id;
+                    $_SESSION['ppv_store_id'] = $user_data->vendor_store_id;
+                    $_SESSION['ppv_active_store'] = $user_data->vendor_store_id;
+                    error_log("🔧 [PPV_Permissions] AUTO-FIX: Set store_id={$user_data->vendor_store_id}");
+                } else {
+                    error_log("🔧 [PPV_Permissions] AUTO-FIX: Skipped - user_type={$user_data->user_type} is not a handler");
+                }
+            }
+        }
+
         // Check user type from session
         $user_type = $_SESSION['ppv_user_type'] ?? '';
         error_log("🔍 [PPV_Permissions] check_handler() user_type from SESSION: " . ($user_type ?: 'EMPTY'));
@@ -137,6 +171,13 @@ class PPV_Permissions {
             error_log("✅ [PPV_Permissions] check_handler() user_type={$user_type} is in handler_types");
             $is_handler = true;
             $user_id_to_check = self::get_current_user_id();
+        }
+
+        // 🏪 TRIAL HANDLER SUPPORT: If ppv_vendor_store_id is set, treat as handler
+        if (!$is_handler && !empty($_SESSION['ppv_vendor_store_id'])) {
+            error_log("✅ [PPV_Permissions] check_handler() TRIAL HANDLER: ppv_vendor_store_id=" . $_SESSION['ppv_vendor_store_id']);
+            $is_handler = true;
+            $_SESSION['ppv_user_type'] = 'vendor'; // Set default user_type for trial handlers
         }
 
         // Check user type from database (via token auth)
@@ -165,16 +206,26 @@ class PPV_Permissions {
             );
         }
 
-        // ✅ NEW: Check subscription expiry
-        if ($user_id_to_check) {
-            error_log("🔍 [PPV_Permissions] Checking subscription expiry for user_id={$user_id_to_check}");
+        // ✅ FIXED: Check subscription expiry using store_id from session (not user_id!)
+        // This prevents issues with multiple stores (filialen) having the same user_id
+        $store_id_to_check = 0;
+        if (!empty($_SESSION['ppv_current_filiale_id'])) {
+            $store_id_to_check = intval($_SESSION['ppv_current_filiale_id']);
+        } elseif (!empty($_SESSION['ppv_store_id'])) {
+            $store_id_to_check = intval($_SESSION['ppv_store_id']);
+        } elseif (!empty($_SESSION['ppv_vendor_store_id'])) {
+            $store_id_to_check = intval($_SESSION['ppv_vendor_store_id']);
+        }
+
+        if ($store_id_to_check) {
+            error_log("🔍 [PPV_Permissions] Checking subscription expiry for store_id={$store_id_to_check}");
 
             $store = $wpdb->get_row($wpdb->prepare(
                 "SELECT subscription_status, trial_ends_at, subscription_expires_at
                 FROM {$wpdb->prefix}ppv_stores
-                WHERE user_id = %d
+                WHERE id = %d
                 LIMIT 1",
-                $user_id_to_check
+                $store_id_to_check
             ));
 
             if ($store) {

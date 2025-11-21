@@ -32,8 +32,51 @@
             this.bindFormInputs();
             this.bindFormSubmit();
             this.bindGalleryDelete();
+            this.bindOnboardingReset();
 
             this.updateUI();
+        }
+
+        // ==================== ONBOARDING RESET ====================
+        bindOnboardingReset() {
+            const resetBtn = document.getElementById('ppv-reset-onboarding-btn');
+            if (!resetBtn) return;
+
+            resetBtn.addEventListener('click', () => {
+                const L = this.strings;
+                if (!confirm(L.onboarding_reset_confirm || 'Biztosan újraindítod az onboarding-ot?')) {
+                    return;
+                }
+
+                resetBtn.disabled = true;
+                resetBtn.innerHTML = '⏳ ' + (L.onboarding_resetting || 'Újraindítás...');
+
+                fetch(window.ppv_onboarding?.rest_url + 'reset' || '/wp-json/ppv/v1/onboarding/reset', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-WP-Nonce': window.ppv_onboarding?.nonce || ''
+                    },
+                    body: JSON.stringify({})
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        this.showAlert(L.onboarding_reset_success || '✅ Onboarding újraindítva! Az oldal frissül...', 'success');
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        this.showAlert(L.onboarding_reset_error || '❌ Hiba történt!', 'error');
+                        resetBtn.disabled = false;
+                        resetBtn.innerHTML = '🔄 ' + (L.onboarding_reset_btn || 'Onboarding újraindítása');
+                    }
+                })
+                .catch(err => {
+                    console.error('Onboarding reset error:', err);
+                    this.showAlert(L.onboarding_reset_error || '❌ Hiba történt!', 'error');
+                    resetBtn.disabled = false;
+                    resetBtn.innerHTML = '🔄 ' + (L.onboarding_reset_btn || 'Onboarding újraindítása');
+                });
+            });
         }
 
         // ==================== GALLERY DELETE ====================
@@ -378,11 +421,36 @@
         }
     }
 
-    // ==================== INIT ====================
-    document.addEventListener('DOMContentLoaded', () => {
-        window.ppvProfileForm = new PPVProfileForm();
-    });
-    
+    // ==================== INIT (Turbo-compatible) ====================
+    function initProfileForm() {
+        // Destroy old instance if exists to prevent duplicate handlers
+        if (window.ppvProfileForm && window.ppvProfileForm.$form) {
+            // Already initialized on this page, skip
+            const existingForm = document.getElementById('ppv-profile-form');
+            if (!existingForm) {
+                window.ppvProfileForm = null;
+            } else {
+                return; // Form exists and already initialized
+            }
+        }
+
+        const form = document.getElementById('ppv-profile-form');
+        if (form) {
+            window.ppvProfileForm = new PPVProfileForm();
+        }
+    }
+
+    // Init on DOMContentLoaded
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initProfileForm);
+    } else {
+        initProfileForm();
+    }
+
+    // 🚀 Turbo: Re-init after navigation
+    document.addEventListener('turbo:load', initProfileForm);
+    document.addEventListener('turbo:render', initProfileForm);
+
 })();
 
 // ==================== EXPORT ====================
@@ -676,10 +744,10 @@ window.confirmInteractiveMap = function() {
 }
 
 // Geocoding button - add fallback button
-document.addEventListener('DOMContentLoaded', () => {
-  // Add manual button next to geocode button
+function initManualMapButton() {
   const geocodeBtn = document.getElementById('ppv-geocode-btn');
-  if (geocodeBtn) {
+  if (geocodeBtn && !geocodeBtn.dataset.manualBtnAdded) {
+    geocodeBtn.dataset.manualBtnAdded = 'true';
     const manualBtn = document.createElement('button');
     manualBtn.type = 'button';
     manualBtn.textContent = '🗺️ Manuálisan a térképen';
@@ -704,5 +772,12 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     geocodeBtn.parentElement.insertAdjacentElement('afterend', manualBtn);
   }
-});
+}
+
+// Init on DOMContentLoaded
+document.addEventListener('DOMContentLoaded', initManualMapButton);
+
+// 🚀 Turbo: Re-init after navigation
+document.addEventListener('turbo:load', initManualMapButton);
+document.addEventListener('turbo:render', initManualMapButton);
 });
