@@ -270,10 +270,11 @@
 
                     console.log('✅ Profile saved:', data.data);
 
-                    // ✅ Reload after 1.5s to show fresh data
-                    setTimeout(() => {
-                        location.reload();
-                    }, 1500);
+                    // ✅ Frissítjük a form mezőket a backend válasz alapján (nem kell reload!)
+                    if (data.data?.store) {
+                        this.updateFormFields(data.data.store);
+                        console.log('🔄 Form fields updated from backend');
+                    }
                 } else {
                     this.showAlert(data.data?.msg || this.t('profile_save_error'), 'error');
                     this.updateStatus(this.t('error'));
@@ -293,11 +294,64 @@
             if (indicator) {
                 indicator.textContent = text;
                 indicator.classList.add('ppv-visible');
-                
+
                 if (text === this.t('saved')) {
                     setTimeout(() => indicator.classList.remove('ppv-visible'), 2500);
                 }
             }
+        }
+
+        updateFormFields(store) {
+            // Frissítjük a form mezőket a backend válasz alapján
+            const fieldMap = {
+                'store_name': store.name,
+                'slogan': store.slogan,
+                'category': store.category,
+                'country': store.country,
+                'address': store.address,
+                'plz': store.plz,
+                'city': store.city,
+                'company_name': store.company_name,
+                'contact_person': store.contact_person,
+                'tax_id': store.tax_id,
+                'phone': store.phone,
+                'email': store.email,
+                'website': store.website,
+                'whatsapp': store.whatsapp,
+                'facebook': store.facebook,
+                'instagram': store.instagram,
+                'tiktok': store.tiktok,
+                'description': store.description,
+                'latitude': store.latitude,
+                'longitude': store.longitude,
+                'timezone': store.timezone,
+                'maintenance_message': store.maintenance_message
+            };
+
+            // Text/number/select mezők
+            for (const [fieldName, value] of Object.entries(fieldMap)) {
+                const field = this.$form.querySelector(`[name="${fieldName}"]`);
+                if (field && value !== null && value !== undefined) {
+                    field.value = value;
+                }
+            }
+
+            // Checkbox mezők
+            const checkboxMap = {
+                'is_taxable': store.is_taxable,
+                'active': store.active,
+                'visible': store.visible,
+                'maintenance_mode': store.maintenance_mode
+            };
+
+            for (const [fieldName, value] of Object.entries(checkboxMap)) {
+                const field = this.$form.querySelector(`[name="${fieldName}"]`);
+                if (field) {
+                    field.checked = !!value;
+                }
+            }
+
+            console.log('✅ Form fields synchronized with backend');
         }
 
         updateAllText() {

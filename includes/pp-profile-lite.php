@@ -777,7 +777,17 @@ $result = $wpdb->update(
 error_log("💾 [DEBUG] Update result: " . ($result !== false ? 'OK' : 'FAILED'));
 
     if ($result !== false) {
-        wp_send_json_success(['msg' => PPV_Lang::t('profile_saved_success'), 'store_id' => $store_id]);
+        // ✅ Visszaolvassuk a friss adatokat hogy ne kelljen reload
+        $updated_store = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
+            $store_id
+        ));
+
+        wp_send_json_success([
+            'msg' => PPV_Lang::t('profile_saved_success'),
+            'store_id' => $store_id,
+            'store' => $updated_store
+        ]);
     } else {
         wp_send_json_error(['msg' => PPV_Lang::t('profile_save_error')]);
     }
