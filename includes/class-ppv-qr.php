@@ -1437,21 +1437,18 @@ class PPV_QR {
     public static function rest_get_logs(WP_REST_Request $r) {
         global $wpdb;
 
-        $store_key = sanitize_text_field(
-            $r->get_header('ppv-pos-token') ?? $r->get_param('store_key') ?? ''
-        );
-
-        if (empty($store_key)) return new WP_REST_Response([], 400);
-
-        $store = self::get_store_by_key($store_key);
-        if (!$store) return new WP_REST_Response([], 400);
+        // 🏪 FILIALE SUPPORT: Use session-aware store ID
+        $store_id = self::get_session_aware_store_id($r);
+        if (!$store_id) {
+            return new WP_REST_Response(['error' => 'Invalid store'], 400);
+        }
 
         return new WP_REST_Response($wpdb->get_results($wpdb->prepare("
             SELECT created_at, user_id, message
             FROM {$wpdb->prefix}ppv_pos_log
             WHERE store_id=%d
             ORDER BY id DESC LIMIT 15
-        ", $store->id)), 200);
+        ", $store_id)), 200);
     }
 
     // ============================================================
