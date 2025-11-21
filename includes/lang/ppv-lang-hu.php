@@ -1079,4 +1079,23 @@ return [
     'onboarding_resetting' => 'Újraindítás...',
     'onboarding_reset_success' => 'Onboarding újraindítva!',
     'onboarding_reset_error' => 'Hiba történt!',
+
+    // Filiale (Fiókok)
+    'filiale_switcher' => 'Fiók kiválasztása',
+    'add_filiale' => 'Új fiók',
+    'main_location' => 'Fő telephely',
+    'branch' => 'Fiók',
+    'filiale_name' => 'Fiók neve',
+    'create_filiale' => 'Fiók létrehozása',
+    'switch_filiale' => 'Váltás',
+    'filiale_created' => 'Fiók sikeresen létrehozva!',
+    'filiale_switched' => 'Fiók váltva!',
+    'filiale_section' => 'Fiókok',
+    'current_filiale' => 'Aktuális fiók',
+    'manage_filialen' => 'Fiókok kezelése',
+    'enter_filiale_name' => 'Add meg a fiók nevét',
+    'creating_filiale' => 'Fiók létrehozása...',
+    'switching_filiale' => 'Váltás...',
+    'filiale_error' => 'Hiba a fiók létrehozása közben',
+    'no_filialen' => 'Nincsenek elérhető fiókok',
 ];

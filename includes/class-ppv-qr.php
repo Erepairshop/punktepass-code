@@ -396,6 +396,9 @@ class PPV_QR {
             <div class="ppv-qr-wrapper glass-card">
                 <h2>📡 <?php echo self::t('qrcamp_title', 'Kassenscanner & Kampagnen'); ?></h2>
 
+                <!-- FILIALE SWITCHER -->
+                <?php self::render_filiale_switcher(); ?>
+
                 <div class="ppv-tabs">
                     <button class="ppv-tab active" data-tab="scanner" id="ppv-tab-scanner">
                         📲 <?php echo self::t('tab_scanner', 'Kassenscanner'); ?>
@@ -450,6 +453,225 @@ class PPV_QR {
         } else {
             echo do_shortcode('[ppv_bottom_nav]');
         }
+    }
+
+    // ============================================================
+    // 🏪 FILIALE SWITCHER
+    // ============================================================
+    public static function render_filiale_switcher() {
+        if (!class_exists('PPV_Filiale')) {
+            return;
+        }
+
+        global $wpdb;
+        $store = ppv_current_store();
+        if (!$store) {
+            return;
+        }
+
+        // Get parent store ID
+        $parent_id = PPV_Filiale::get_parent_id($store->id);
+
+        // Get all filialen for this parent
+        $filialen = PPV_Filiale::get_filialen($parent_id);
+
+        // Get current active filiale from session
+        $current_filiale_id = PPV_Filiale::get_current_filiale();
+        if (!$current_filiale_id) {
+            $current_filiale_id = $store->id;
+        }
+
+        // Only show switcher if there are multiple locations
+        if (count($filialen) < 1) {
+            return;
+        }
+
+        ?>
+        <div class="ppv-filiale-switcher glass-section" style="margin-bottom: 20px; padding: 15px;">
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <label for="ppv-filiale-select" style="font-weight: 600; margin: 0;">
+                    🏪 <?php echo self::t('current_filiale', 'Aktuelle Filiale'); ?>:
+                </label>
+
+                <select id="ppv-filiale-select" style="flex: 1; min-width: 200px; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-color, #e0e0e0); background: var(--bg-secondary, #fff); color: var(--text-primary, #333);">
+                    <?php foreach ($filialen as $filiale): ?>
+                        <option value="<?php echo esc_attr($filiale->id); ?>" <?php selected($filiale->id, $current_filiale_id); ?>>
+                            <?php
+                            echo esc_html($filiale->name);
+                            if ($filiale->id == $parent_id && $filiale->parent_store_id === null) {
+                                echo ' (' . self::t('main_location', 'Hauptstandort') . ')';
+                            }
+                            if (!empty($filiale->city)) {
+                                echo ' - ' . esc_html($filiale->city);
+                            }
+                            ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+
+                <button type="button" id="ppv-add-filiale-btn" class="ppv-btn ppv-btn-primary" style="padding: 8px 16px; white-space: nowrap;">
+                    ➕ <?php echo self::t('add_filiale', 'Neue Filiale'); ?>
+                </button>
+            </div>
+        </div>
+
+        <!-- ADD FILIALE MODAL -->
+        <div id="ppv-add-filiale-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 10000; padding: 20px; overflow-y: auto;">
+            <div class="glass-card" style="max-width: 500px; margin: 50px auto; padding: 30px;">
+                <h3 style="margin-top: 0;">➕ <?php echo self::t('add_filiale', 'Neue Filiale'); ?></h3>
+
+                <div style="margin-bottom: 20px;">
+                    <label for="ppv-new-filiale-name" style="display: block; margin-bottom: 8px; font-weight: 600;">
+                        <?php echo self::t('filiale_name', 'Filialname'); ?>:
+                    </label>
+                    <input type="text" id="ppv-new-filiale-name" placeholder="<?php echo esc_attr(self::t('enter_filiale_name', 'Geben Sie den Filialnamen ein')); ?>" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color, #e0e0e0); background: var(--bg-secondary, #fff); color: var(--text-primary, #333);">
+                </div>
+
+                <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" id="ppv-cancel-filiale-btn" class="ppv-btn ppv-btn-secondary" style="padding: 10px 20px;">
+                        ❌ <?php echo self::t('cancel', 'Abbrechen'); ?>
+                    </button>
+                    <button type="button" id="ppv-save-filiale-btn" class="ppv-btn ppv-btn-primary" style="padding: 10px 20px;">
+                        ✅ <?php echo self::t('create_filiale', 'Filiale erstellen'); ?>
+                    </button>
+                </div>
+
+                <div id="ppv-filiale-message" style="margin-top: 15px; padding: 10px; border-radius: 8px; display: none;"></div>
+            </div>
+        </div>
+
+        <script>
+        jQuery(document).ready(function($){
+            // Switch filiale on dropdown change
+            $('#ppv-filiale-select').on('change', function(){
+                const filialeId = $(this).val();
+                const $select = $(this);
+                const originalValue = $select.data('original-value') || $select.val();
+
+                $select.prop('disabled', true);
+
+                $.ajax({
+                    url: '<?php echo admin_url('admin-ajax.php'); ?>',
+                    type: 'POST',
+                    data: {
+                        action: 'ppv_switch_filiale',
+                        filiale_id: filialeId
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            // Reload page to refresh all data
+                            window.location.reload();
+                        } else {
+                            alert(response.data.msg || '<?php echo esc_js(self::t('filiale_error', 'Fehler beim Erstellen der Filiale')); ?>');
+                            $select.val(originalValue);
+                            $select.prop('disabled', false);
+                        }
+                    },
+                    error: function() {
+                        alert('<?php echo esc_js(self::t('network_error', 'Netzwerkfehler')); ?>');
+                        $select.val(originalValue);
+                        $select.prop('disabled', false);
+                    }
+                });
+            });
+
+            // Store original value for rollback
+            $('#ppv-filiale-select').data('original-value', $('#ppv-filiale-select').val());
+
+            // Show add filiale modal
+            $('#ppv-add-filiale-btn').on('click', function(){
+                $('#ppv-add-filiale-modal').fadeIn(200);
+                $('#ppv-new-filiale-name').val('').focus();
+                $('#ppv-filiale-message').hide();
+            });
+
+            // Hide modal
+            $('#ppv-cancel-filiale-btn').on('click', function(){
+                $('#ppv-add-filiale-modal').fadeOut(200);
+            });
+
+            // Close modal on background click
+            $('#ppv-add-filiale-modal').on('click', function(e){
+                if (e.target.id === 'ppv-add-filiale-modal') {
+                    $(this).fadeOut(200);
+                }
+            });
+
+            // Create new filiale
+            $('#ppv-save-filiale-btn').on('click', function(){
+                const filialeName = $('#ppv-new-filiale-name').val().trim();
+
+                if (!filialeName) {
+                    $('#ppv-filiale-message')
+                        .removeClass('success').addClass('error')
+                        .html('<?php echo esc_js(self::t('enter_filiale_name', 'Geben Sie den Filialnamen ein')); ?>')
+                        .fadeIn();
+                    return;
+                }
+
+                const $btn = $(this);
+                const originalText = $btn.html();
+                $btn.prop('disabled', true).html('⏳ <?php echo esc_js(self::t('creating_filiale', 'Filiale wird erstellt...')); ?>');
+                $('#ppv-filiale-message').hide();
+
+                $.ajax({
+                    url: '<?php echo admin_url('admin-ajax.php'); ?>',
+                    type: 'POST',
+                    data: {
+                        action: 'ppv_create_filiale',
+                        parent_store_id: <?php echo intval($parent_id); ?>,
+                        filiale_name: filialeName
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            $('#ppv-filiale-message')
+                                .removeClass('error').addClass('success')
+                                .html('✅ ' + (response.data.msg || '<?php echo esc_js(self::t('filiale_created', 'Filiale erfolgreich erstellt!')); ?>'))
+                                .fadeIn();
+
+                            // Reload page after 1 second to show new filiale
+                            setTimeout(function(){
+                                window.location.reload();
+                            }, 1000);
+                        } else {
+                            $('#ppv-filiale-message')
+                                .removeClass('success').addClass('error')
+                                .html('❌ ' + (response.data.msg || '<?php echo esc_js(self::t('filiale_error', 'Fehler beim Erstellen der Filiale')); ?>'))
+                                .fadeIn();
+                            $btn.prop('disabled', false).html(originalText);
+                        }
+                    },
+                    error: function() {
+                        $('#ppv-filiale-message')
+                            .removeClass('success').addClass('error')
+                            .html('❌ <?php echo esc_js(self::t('network_error', 'Netzwerkfehler')); ?>')
+                            .fadeIn();
+                        $btn.prop('disabled', false).html(originalText);
+                    }
+                });
+            });
+
+            // Submit on Enter key
+            $('#ppv-new-filiale-name').on('keypress', function(e){
+                if (e.which === 13) {
+                    e.preventDefault();
+                    $('#ppv-save-filiale-btn').click();
+                }
+            });
+        });
+        </script>
+
+        <style>
+        .ppv-filiale-switcher .success {
+            background-color: #4caf50;
+            color: white;
+        }
+        .ppv-filiale-switcher .error {
+            background-color: #ff5252;
+            color: white;
+        }
+        </style>
+        <?php
     }
 
     // ============================================================

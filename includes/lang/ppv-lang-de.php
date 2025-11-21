@@ -1103,5 +1103,24 @@ return [
     'onboarding_resetting' => 'Újraindítás...',
     'onboarding_reset_success' => 'Onboarding újraindítva!',
     'onboarding_reset_error' => 'Hiba történt!',
+
+    // Filiale (Branch stores)
+    'filiale_switcher' => 'Filiale wählen',
+    'add_filiale' => 'Neue Filiale',
+    'main_location' => 'Hauptstandort',
+    'branch' => 'Filiale',
+    'filiale_name' => 'Filialname',
+    'create_filiale' => 'Filiale erstellen',
+    'switch_filiale' => 'Wechseln',
+    'filiale_created' => 'Filiale erfolgreich erstellt!',
+    'filiale_switched' => 'Filiale gewechselt!',
+    'filiale_section' => 'Filialen',
+    'current_filiale' => 'Aktuelle Filiale',
+    'manage_filialen' => 'Filialen verwalten',
+    'enter_filiale_name' => 'Geben Sie den Filialnamen ein',
+    'creating_filiale' => 'Filiale wird erstellt...',
+    'switching_filiale' => 'Wechselt...',
+    'filiale_error' => 'Fehler beim Erstellen der Filiale',
+    'no_filialen' => 'Keine Filialen verfügbar',
 ];
 

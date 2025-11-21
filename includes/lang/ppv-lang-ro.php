@@ -1091,4 +1091,23 @@ return [
     'onboarding_resetting' => 'Se repornește...',
     'onboarding_reset_success' => 'Onboarding repornit!',
     'onboarding_reset_error' => 'A apărut o eroare!',
+
+    // Filiale (Filiale)
+    'filiale_switcher' => 'Selectați filiala',
+    'add_filiale' => 'Filială nouă',
+    'main_location' => 'Locație principală',
+    'branch' => 'Filială',
+    'filiale_name' => 'Nume filială',
+    'create_filiale' => 'Creați filiala',
+    'switch_filiale' => 'Comutare',
+    'filiale_created' => 'Filială creată cu succes!',
+    'filiale_switched' => 'Filială comutată!',
+    'filiale_section' => 'Filiale',
+    'current_filiale' => 'Filială curentă',
+    'manage_filialen' => 'Gestionați filialele',
+    'enter_filiale_name' => 'Introduceți numele filialei',
+    'creating_filiale' => 'Se creează filiala...',
+    'switching_filiale' => 'Comutare...',
+    'filiale_error' => 'Eroare la crearea filialei',
+    'no_filialen' => 'Nicio filială disponibilă',
 ];
