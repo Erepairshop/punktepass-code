@@ -1107,20 +1107,13 @@ document.addEventListener('turbo:before-visit', function() {
   cleanupPolling();
 });
 
-// 🚀 Turbo: Re-initialize after navigation
-document.addEventListener('turbo:load', function() {
-  // Reset initialization flag on navigation so it can re-init
+// 🚀 Turbo: Reset flag before rendering new page
+document.addEventListener('turbo:before-render', function() {
   const root = document.getElementById('ppv-dashboard-root');
   if (root) {
     root.dataset.initialized = 'false';
   }
-  initUserDashboard();
 });
 
-document.addEventListener('turbo:render', function() {
-  const root = document.getElementById('ppv-dashboard-root');
-  if (root) {
-    root.dataset.initialized = 'false';
-  }
-  initUserDashboard();
-});
+// 🚀 Turbo: Re-initialize after navigation (only turbo:load, not render to avoid double-init)
+document.addEventListener('turbo:load', initUserDashboard);

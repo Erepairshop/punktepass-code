@@ -162,6 +162,13 @@
       return;
     }
 
+    // ✅ Prevent duplicate initialization (causes HTTP 503 on rapid re-init)
+    if (container.dataset.initialized === 'true') {
+      console.log('⏭️ [PPV_MYPOINTS] Already initialized, skipping');
+      return;
+    }
+    container.dataset.initialized = 'true';
+
     console.log('📄 [PPV_MYPOINTS] Initializing...');
     initLayout();
     initToken();
@@ -173,9 +180,17 @@
   // Initialize on DOMContentLoaded
   document.addEventListener("DOMContentLoaded", initAll);
 
-  // 🚀 Turbo-compatible: Re-initialize after navigation
+  // 🚀 Turbo-compatible: Reset flag before rendering new page
+  document.addEventListener("turbo:before-render", function() {
+    // Reset initialization flag before new content renders
+    const container = document.getElementById("ppv-my-points-app");
+    if (container) {
+      container.dataset.initialized = 'false';
+    }
+  });
+
+  // 🚀 Re-initialize after navigation (only turbo:load, not render to avoid double-init)
   document.addEventListener("turbo:load", initAll);
-  document.addEventListener("turbo:render", initAll);
 
   /** ============================
    * 🧩 LAYOUT INIT
