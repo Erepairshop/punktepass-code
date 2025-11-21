@@ -113,6 +113,51 @@ class PPV_QR {
         ];
     }
 
+    /**
+     * 🏪 Get all filialen for the current vendor
+     * Returns array of store objects (parent + all child filialen)
+     */
+    private static function get_vendor_filialen() {
+        global $wpdb;
+
+        // Start session if needed
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+
+        // Get vendor store ID from session
+        $store_id = 0;
+        if (!empty($_SESSION['ppv_vendor_store_id'])) {
+            $store_id = intval($_SESSION['ppv_vendor_store_id']);
+        } elseif (!empty($_SESSION['ppv_store_id'])) {
+            $store_id = intval($_SESSION['ppv_store_id']);
+        }
+
+        if (!$store_id) {
+            return [];
+        }
+
+        // Get parent store ID
+        $parent_id = $wpdb->get_var($wpdb->prepare(
+            "SELECT COALESCE(parent_store_id, id) FROM {$wpdb->prefix}ppv_stores WHERE id=%d LIMIT 1",
+            $store_id
+        ));
+
+        if (!$parent_id) {
+            return [];
+        }
+
+        // Get all filialen (parent + children)
+        $filialen = $wpdb->get_results($wpdb->prepare("
+            SELECT id, name, city, parent_store_id
+            FROM {$wpdb->prefix}ppv_stores
+            WHERE id=%d OR parent_store_id=%d
+            ORDER BY CASE WHEN id=%d THEN 0 ELSE 1 END, name ASC
+        ", $parent_id, $parent_id, $parent_id));
+
+        return $filialen ?: [];
+    }
+
     private function prepare_campaign_fields($data, $store_id) {
     $fields = [];
 
@@ -1158,6 +1203,33 @@ class PPV_QR {
                         <option value="archived"><?php echo self::t('status_archived', '📦 Archiv'); ?></option>
                     </select>
 
+                    <!-- 🏪 FILIALE AUSWAHL (nur für Händler mit mehreren Filialen) -->
+                    <?php
+                    $filialen = self::get_vendor_filialen();
+                    if (count($filialen) > 1):
+                    ?>
+                    <div class="ppv-filiale-selector" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(0,230,255,0.2);">
+                        <label><?php echo self::t('camp_target_filiale', 'Zielfiliale'); ?></label>
+                        <select id="camp-target-store">
+                            <option value="current"><?php echo self::t('camp_current_filiale', '📍 Aktuelle Filiale'); ?></option>
+                            <?php foreach ($filialen as $fil): ?>
+                                <option value="<?php echo esc_attr($fil->id); ?>">
+                                    🏪 <?php echo esc_html($fil->name); ?>
+                                    <?php if ($fil->city): ?>(<?php echo esc_html($fil->city); ?>)<?php endif; ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <small style="color: #888; display: block; margin-top: 5px;">
+                            <?php echo self::t('camp_filiale_hint', 'Wählen Sie die Filiale für diese Kampagne'); ?>
+                        </small>
+
+                        <label style="margin-top: 10px; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" id="camp-apply-all" style="width: auto;">
+                            <span><?php echo self::t('camp_apply_all', 'Auf alle Filialen anwenden'); ?></span>
+                        </label>
+                    </div>
+                    <?php endif; ?>
+
                     <!-- GOMBÓK -->
                     <div class="ppv-modal-actions">
                         <button id="camp-save" class="ppv-btn neon" type="button">
@@ -1751,19 +1823,53 @@ class PPV_QR {
                 break;
         }
 
-        // ✅ DEBUG: Log fields before insert
+        // 🏪 FILIALE SUPPORT: Handle multi-filiale campaign creation
+        $target_store_id = sanitize_text_field($data['target_store_id'] ?? 'current');
+        $apply_to_all = filter_var($data['apply_to_all'] ?? false, FILTER_VALIDATE_BOOLEAN);
 
-        $wpdb->insert("{$prefix}ppv_campaigns", $fields);
+        $created_count = 0;
+        $target_stores = [];
 
-        // ✅ DEBUG: Check if insert succeeded
-        if ($wpdb->last_error) {
+        if ($apply_to_all) {
+            // 🏪 Create campaign for ALL filialen
+            $filialen = self::get_vendor_filialen();
+            if (!empty($filialen)) {
+                foreach ($filialen as $fil) {
+                    $target_stores[] = intval($fil->id);
+                }
+            } else {
+                // Fallback to current store if no filialen found
+                $target_stores[] = intval($store->id);
+            }
+        } elseif ($target_store_id !== 'current' && is_numeric($target_store_id)) {
+            // 🏪 Create campaign for specific filiale
+            $target_stores[] = intval($target_store_id);
         } else {
+            // Default: current store
+            $target_stores[] = intval($store->id);
         }
+
+        // Create campaign for each target store
+        foreach ($target_stores as $target_id) {
+            $fields['store_id'] = $target_id;
+            $fields['created_at'] = current_time('mysql'); // Reset timestamp for each
+
+            $wpdb->insert("{$prefix}ppv_campaigns", $fields);
+
+            if (!$wpdb->last_error) {
+                $created_count++;
+            }
+        }
+
+        $message = $created_count > 1
+            ? sprintf('✅ Kampány %d filiálban létrehozva', $created_count)
+            : '✅ Kampány sikeresen létrehozva';
 
         return new WP_REST_Response([
             'success' => true,
-            'message' => '✅ Kampány sikeresen létrehozva',
+            'message' => $message,
             'fields'  => $fields,
+            'created_count' => $created_count,
         ], 200);
     }
 

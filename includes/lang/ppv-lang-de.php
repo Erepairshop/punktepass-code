@@ -920,6 +920,13 @@ return [
 'label_status' => 'Status',
 'status_active' => '🟢 Aktiv',
 'status_archived' => '📦 Archiv',
+
+// 🏪 KAMPAGNE FILIALE SELECTOR
+'camp_target_filiale' => 'Zielfiliale',
+'camp_current_filiale' => '📍 Aktuelle Filiale',
+'camp_filiale_hint' => 'Wählen Sie die Filiale für diese Kampagne',
+'camp_apply_all' => 'Auf alle Filialen anwenden',
+
 'btn_save' => '💾 Speichern',
 'err_invalid_request' => '❌ Ungültige Anfrage',
 'err_invalid_qr' => '❌ Ungültiger QR',

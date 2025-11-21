@@ -894,6 +894,13 @@ return [
 'label_status' => 'Állapot',
 'status_active' => '🟢 Aktív',
 'status_archived' => '📦 Archivált',
+
+// 🏪 KAMPÁNY FILIÁLÉ VÁLASZTÓ
+'camp_target_filiale' => 'Célfiliale',
+'camp_current_filiale' => '📍 Jelenlegi filiale',
+'camp_filiale_hint' => 'Válassza ki a filiálét ehhez a kampányhoz',
+'camp_apply_all' => 'Minden filiálára alkalmaz',
+
 'btn_save' => '💾 Mentés',
 'err_invalid_request' => '❌ Érvénytelen kérés',
 'err_invalid_qr' => '❌ Érvénytelen QR',

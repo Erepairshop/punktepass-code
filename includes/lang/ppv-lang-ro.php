@@ -908,6 +908,13 @@ return [
 'label_status' => 'Stare',
 'status_active' => '🟢 Activ',
 'status_archived' => '📦 Arhivat',
+
+// 🏪 SELECTOR FILIALĂ CAMPANIE
+'camp_target_filiale' => 'Filială țintă',
+'camp_current_filiale' => '📍 Filiala curentă',
+'camp_filiale_hint' => 'Selectați filiala pentru această campanie',
+'camp_apply_all' => 'Aplică la toate filialele',
+
 'btn_save' => '💾 Salvare',
 'err_invalid_request' => '❌ Cerere invalida',
 'err_invalid_qr' => '❌ QR invalid',
