@@ -233,16 +233,13 @@ window.ppv_plugin_url = '" . esc_url(PPV_PLUGIN_URL) . "';",
             @session_start();
         }
 
-        // 🏪 FILIALE SUPPORT: Use session-aware store ID with proper priority
-        $store_id_from_request = intval($request->get_param('store_id') ?: 0);
-        $store_id = $store_id_from_request;
-        if (!$store_id) {
-            $store_id = self::get_store_id();
-        }
+        // 🏪 FILIALE SUPPORT: ALWAYS use session-aware store ID, ignore request parameter
+        // The request parameter is cached by JavaScript and not reliable for FILIALE switching
+        $store_id = self::get_store_id();
 
         // 🔍 DEBUG INFO for troubleshooting FILIALE issues
         $debug_info = [
-            'request_store_id' => $store_id_from_request,
+            'request_store_id' => intval($request->get_param('store_id') ?: 0),
             'final_store_id' => $store_id,
             'session_ppv_current_filiale_id' => $_SESSION['ppv_current_filiale_id'] ?? 'NOT_SET',
             'session_ppv_store_id' => $_SESSION['ppv_store_id'] ?? 'NOT_SET',
@@ -309,11 +306,8 @@ window.ppv_plugin_url = '" . esc_url(PPV_PLUGIN_URL) . "';",
         $id = intval($data['id'] ?? 0);
         $status = sanitize_text_field($data['status'] ?? '');
 
-        // 🏪 FILIALE SUPPORT: Use session-aware store ID with proper priority
-        $store_id = intval($data['store_id'] ?? 0);
-        if (!$store_id) {
-            $store_id = self::get_store_id();
-        }
+        // 🏪 FILIALE SUPPORT: ALWAYS use session-aware store ID, ignore request parameter
+        $store_id = self::get_store_id();
 
         error_log("📝 [PPV_REWARDS] Update redeem #{$id} to status: {$status}, store_id: {$store_id}");
 
@@ -423,11 +417,8 @@ window.ppv_plugin_url = '" . esc_url(PPV_PLUGIN_URL) . "';",
             @session_start();
         }
 
-        // 🏪 FILIALE SUPPORT: Use session-aware store ID with proper priority
-        $store_id = intval($request->get_param('store_id') ?: 0);
-        if (!$store_id) {
-            $store_id = self::get_store_id();
-        }
+        // 🏪 FILIALE SUPPORT: ALWAYS use session-aware store ID, ignore request parameter
+        $store_id = self::get_store_id();
 
         error_log("📝 [PPV_REWARDS] rest_recent_logs for store_id: {$store_id}");
 
@@ -486,11 +477,8 @@ window.ppv_plugin_url = '" . esc_url(PPV_PLUGIN_URL) . "';",
 
         $data = $request->get_json_params();
 
-        // 🏪 FILIALE SUPPORT: Use session-aware store ID with proper priority
-        $store_id = intval($data['store_id'] ?? 0);
-        if (!$store_id) {
-            $store_id = self::get_store_id();
-        }
+        // 🏪 FILIALE SUPPORT: ALWAYS use session-aware store ID, ignore request parameter
+        $store_id = self::get_store_id();
 
         $year = intval($data['year'] ?? date('Y'));
         $month = intval($data['month'] ?? date('m'));

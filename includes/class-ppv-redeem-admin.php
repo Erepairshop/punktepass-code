@@ -186,11 +186,8 @@ register_rest_route('ppv/v1', '/ping', [
     global $wpdb;
     self::ensure_session();
 
-    // 🏪 FILIALE SUPPORT: Use session-aware store ID
-    $store_id = intval($request->get_param('store_id'));
-    if (!$store_id) {
-        $store_id = self::get_store_id();
-    }
+    // 🏪 FILIALE SUPPORT: ALWAYS use session-aware store ID, ignore request parameter
+    $store_id = self::get_store_id();
 
     $table = $wpdb->prefix . 'ppv_rewards_redeemed';
     
@@ -236,11 +233,8 @@ public static function rest_list_redeems($req) {
     global $wpdb;
     self::ensure_session();
 
-    // 🏪 FILIALE SUPPORT: Use session-aware store ID with proper priority
-    $store_id = intval($req->get_param('store_id'));
-    if (!$store_id) {
-        $store_id = self::get_store_id();
-    }
+    // 🏪 FILIALE SUPPORT: ALWAYS use session-aware store ID, ignore request parameter
+    $store_id = self::get_store_id();
 
     // 🧠 Debug log
     error_log("🧠 [PPV_REDEEM_ADMIN] REST store_id: " . $store_id);
