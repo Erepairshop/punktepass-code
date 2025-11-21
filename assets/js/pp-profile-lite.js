@@ -25,7 +25,6 @@
 
         init() {
             if (!this.$form) {
-                console.warn('⚠️ PPV Profile Form not found');
                 return;
             }
 
@@ -35,9 +34,6 @@
             this.bindGalleryDelete();
 
             this.updateUI();
-            
-            console.log('✅ PPV Profile Form initialized');
-            console.log('🔐 Nonce:', this.nonce);
         }
 
         // ==================== GALLERY DELETE ====================
@@ -74,7 +70,6 @@
                 }
             })
             .catch(err => {
-                console.error('Delete error:', err);
                 this.showAlert('Hiba a törléskor', 'error');
             });
         }
@@ -212,19 +207,14 @@
 
         saveForm() {
             const formData = new FormData(this.$form);
-            
-            this.updateStatus(this.t('saving'));
 
-            console.log('💾 Saving form...');
+            this.updateStatus(this.t('saving'));
 
             fetch(`${this.ajaxUrl}?action=ppv_save_profile`, {
                 method: 'POST',
                 body: formData
             })
-            .then(r => {
-                console.log('📨 Response status:', r.status, r.statusText);
-                return r.json();
-            })
+            .then(r => r.json())
             .then(data => {
                 if (data.success) {
                     this.showAlert(this.t('profile_saved_success'), 'success');
@@ -234,29 +224,16 @@
                     document.getElementById('ppv-last-updated').textContent =
                         `${this.t('last_updated')}: ${new Date().toLocaleString()}`;
 
-                    console.log('✅ Profile saved:', data.data);
-
                     // ✅ Frissítjük a form mezőket a backend válasz alapján (nem kell reload!)
                     if (data.data?.store) {
-                        console.log('📦 Store data received:', data.data.store);
-                        console.log('🔍 Company name from backend:', data.data.store.company_name);
                         this.updateFormFields(data.data.store);
-                        console.log('🔄 Form fields updated from backend');
-
-                        // Double check hogy a mező tényleg frissült
-                        const companyField = this.$form.querySelector('[name="company_name"]');
-                        console.log('✅ Company field value after update:', companyField?.value);
-                    } else {
-                        console.warn('⚠️ No store data in response!');
                     }
                 } else {
                     this.showAlert(data.data?.msg || this.t('profile_save_error'), 'error');
                     this.updateStatus(this.t('error'));
-                    console.error('❌ Save failed:', data.data?.msg);
                 }
             })
             .catch(err => {
-                console.error('❌ Save error:', err);
                 this.showAlert(this.t('profile_save_error'), 'error');
                 this.updateStatus(this.t('error'));
             });
@@ -324,8 +301,6 @@
                     field.checked = !!value;
                 }
             }
-
-            console.log('✅ Form fields synchronized with backend');
         }
 
         updateAllText() {
@@ -440,8 +415,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const latInput = document.getElementById('store_latitude');
     const lngInput = document.getElementById('store_longitude');
 
-    console.log('📍 Geocode inputs:', { address, plz, city, country });
-
     // ✅ ELLENŐRZÉS
     if (!address || !city || !country) {
       alert('Kérlek, add meg az utcát, a várost ÉS az országot!');
@@ -460,29 +433,22 @@ document.addEventListener('DOMContentLoaded', () => {
       formData.append('city', city);
       formData.append('country', country);
 
-      console.log('📤 Sending to server:', { address, plz, city, country });
-
       const response = await fetch(ppv_profile.ajaxUrl, {
         method: 'POST',
         body: formData,
       });
 
       const responseText = await response.text();
-      console.log('📡 Raw response:', responseText);
 
       let data;
       try {
         data = JSON.parse(responseText);
       } catch (e) {
-        console.error('❌ JSON parse error:', e);
-        console.error('Response body:', responseText);
         alert('❌ PHP hiba történt!\n\n' + responseText);
         geocodeBtn.disabled = false;
         geocodeBtn.textContent = '🗺️ Koordináták keresése (Cím alapján)';
         return;
       }
-
-      console.log('📦 Parsed data:', data);
 
 if (!data.success) {
   const errorMsg = data.data?.msg || 'Ismeretlen hiba történt';
@@ -501,8 +467,6 @@ if (countryInput) {
   countryInput.value = detectedCountry;
 }
 
-console.log(`✅ Koordináták: ${lat}, ${lon}`);
-
 latInput.style.borderColor = '#10b981';
 lngInput.style.borderColor = '#10b981';
 
@@ -519,8 +483,6 @@ if (open_manual_map) {
 }
 
     } catch (error) {
-      console.error('❌ Geocoding error:', error);
-      console.error('Error message:', error.message);
       alert('❌ Hiba a koordináták keresésekor!\n\n' + error.message);
     }
 
@@ -651,8 +613,6 @@ function openInteractiveMap(defaultLat, defaultLng) {
     interactiveMap.addListener('click', (e) => {
       const lat = e.latLng.lat();
       const lng = e.latLng.lng();
-
-      console.log(`📍 Map clicked: ${lat}, ${lng}`);
 
       // Remove old marker
       if (interactiveMapMarker) {

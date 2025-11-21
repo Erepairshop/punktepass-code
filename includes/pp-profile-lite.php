@@ -954,9 +954,6 @@ $format_specs = [
     '%s',  // opening_hours
 ];
 
-error_log("💾 [DEBUG] Saving store ID: {$store_id}");
-error_log("💾 [DEBUG] Country: " . ($update_data['country'] ?? 'NULL'));
-
 $result = $wpdb->update(
     $wpdb->prefix . 'ppv_stores',
     $update_data,
@@ -964,8 +961,6 @@ $result = $wpdb->update(
     $format_specs,
     ['%d']
 );
-
-error_log("💾 [DEBUG] Update result: " . ($result !== false ? 'OK' : 'FAILED'));
 
     if ($result !== false) {
         // ✅ AGGRESSIVE cache clearing
@@ -982,8 +977,6 @@ error_log("💾 [DEBUG] Update result: " . ($result !== false ? 'OK' : 'FAILED')
             "SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id = %d AND id > 0 LIMIT 1",
             $store_id
         ), OBJECT, 0); // Force no cache
-
-        error_log("✅ [DEBUG] Reloaded store company_name: " . ($updated_store->company_name ?? 'NULL'));
 
         wp_send_json_success([
             'msg' => PPV_Lang::t('profile_saved_success'),
@@ -1127,8 +1120,6 @@ if (empty($address) || empty($city) || empty($country)) {
 
     // ✅ JOBB FORMÁTUM (vessző, ország)
     $full_address = "{$address}, {$plz} {$city}, {$country_name}";
-    
-    error_log("🔍 [PPV_GEOCODE] Keresés: {$full_address}");
 
     $google_api_key = defined('PPV_GOOGLE_MAPS_KEY') ? PPV_GOOGLE_MAPS_KEY : '';
 
@@ -1137,7 +1128,6 @@ if (empty($address) || empty($city) || empty($country)) {
 // 1️⃣ GOOGLE MAPS GEOCODING (Erőteljes keresés)
 // ============================================================
 if ($google_api_key) {
-    error_log("🔍 [PPV_GEOCODE] Google Maps API keresés iniciálva");
     
     // Több keresési variáns
     $search_variants = [
@@ -1148,8 +1138,6 @@ if ($google_api_key) {
     ];
 
     foreach ($search_variants as $search_query) {
-        error_log("  → Variáns: {$search_query}");
-        
         $url = 'https://maps.googleapis.com/maps/api/geocode/json';
         $response = wp_remote_get(
             add_query_arg([
@@ -1163,8 +1151,6 @@ if ($google_api_key) {
 
         if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
             $data = json_decode(wp_remote_retrieve_body($response), true);
-            
-            error_log("  ✓ Status: " . ($data['status'] ?? 'unknown'));
 
             if ($data['status'] === 'OK' && !empty($data['results'])) {
                 $first = $data['results'][0];
@@ -1180,8 +1166,6 @@ if ($google_api_key) {
                         }
                     }
                 }
-
-                error_log("✅ [PPV_GEOCODE] Google Maps MEGTALÁLTA: {$lat}, {$lon} ({$detected_country})");
 
                 // ✅ Check if precise (street_address or premise)
                 $types = $first['types'] ?? [];
@@ -1199,12 +1183,9 @@ if ($google_api_key) {
             }
         }
     }
-    
-error_log("⚠️ [PPV_GEOCODE] Google Maps utca: NINCS TALÁLAT - fallback városra");
 
 // FALLBACK: Csak város keresése
 $city_search = "{$city}, {$country_name}";
-error_log("🔍 [PPV_GEOCODE] Fallback keresés: {$city_search}");
 
 $url = 'https://maps.googleapis.com/maps/api/geocode/json';
 $response = wp_remote_get(
@@ -1234,8 +1215,6 @@ if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 2
             }
         }
 
-        error_log("✅ [PPV_GEOCODE] Város MEGTALÁLVA: {$lat}, {$lon}");
-
         // ✅ Better display name - use city if formatted_address is just country
         $formatted = $first['formatted_address'] ?? '';
         $display_name = $formatted;
@@ -1243,7 +1222,6 @@ if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 2
         // If Google Maps only returned country name, use our city search instead
         if (empty($formatted) || $formatted === $country_name || stripos($formatted, $city) === false) {
             $display_name = $city_search; // "Capleni, Romania"
-            error_log("⚠️ [PPV_GEOCODE] Google Maps csak országot talált, használom: {$city_search}");
         }
 
         // 🔴 FONTOS: flag hogy manuálisra kell váltani
@@ -1258,8 +1236,6 @@ if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 2
         return;
     }
 }
-
-error_log("❌ [PPV_GEOCODE] Város sem találva!");
 }
 
 
@@ -1282,8 +1258,6 @@ $search_variants = [
 ];
 
 foreach ($search_variants as $idx => $search_query) {
-    error_log("🔍 [PPV_GEOCODE] Keresési variáns #" . ($idx + 1) . ": {$search_query}");
-    
     $url = 'https://nominatim.openstreetmap.org/search';
     $response = wp_remote_get(
         add_query_arg([
@@ -1305,9 +1279,7 @@ foreach ($search_variants as $idx => $search_query) {
 
     if (!is_wp_error($response)) {
         $results = json_decode(wp_remote_retrieve_body($response), true);
-        
-        error_log("📍 [PPV_GEOCODE] Variáns #" . ($idx + 1) . " találatok: " . count($results ?? []) . "");
-        
+
         if (!empty($results)) {
             // Legjobb találat: házszámos street vagy épület
             $best = null;
@@ -1351,9 +1323,6 @@ foreach ($search_variants as $idx => $search_query) {
                     }
                 }
 
-                error_log("✅ [PPV_GEOCODE] Nominatim MEGTALÁLVA (variáns #" . ($idx + 1) . "): {$lat}, {$lon} ({$detected_country})");
-                error_log("   Display: " . ($best['display_name'] ?? 'N/A'));
-
                 // ✅ Check if we should open manual map (not house/building = imprecise)
                 $addresstype = $best['addresstype'] ?? '';
                 $is_precise = in_array($addresstype, ['house', 'building'], true);
@@ -1375,7 +1344,6 @@ foreach ($search_variants as $idx => $search_query) {
     usleep(500000);
 }
 
-error_log("❌ [PPV_GEOCODE] Egyik variáns sem találta meg: {$full_address}");
 wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan írni (pl. teljes utcanévvel).']);
 }
 
@@ -1423,8 +1391,6 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
                 ['%d', '%d', '%d'],
                 ['%d']
             );
-
-            error_log("🔄 [PPV_ONBOARDING] Reset store #{$store_id}: result=" . ($result !== false ? 'OK' : 'FAILED'));
 
             if ($result !== false) {
                 wp_send_json_success(['msg' => PPV_Lang::t('onboarding_reset_success') ?: 'Onboarding újraindítva!']);
@@ -1508,8 +1474,6 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
             wp_cache_delete($store_id, 'ppv_stores');
             wp_cache_flush();
             $wpdb->flush();
-
-            error_log("📧 [PPV_EMAIL_CHANGE] Store #{$store_id}: result=" . ($result !== false ? 'OK' : 'FAILED'));
 
             if ($result !== false) {
                 wp_send_json_success(['msg' => 'E-Mail erfolgreich geändert! / Email sikeresen módosítva!', 'new_email' => $new_email]);
@@ -1602,8 +1566,6 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
             wp_cache_delete($store_id, 'ppv_stores');
             wp_cache_flush();
             $wpdb->flush();
-
-            error_log("🔑 [PPV_PASSWORD_CHANGE] Store #{$store_id}: result=" . ($result !== false ? 'OK' : 'FAILED'));
 
             if ($result !== false) {
                 wp_send_json_success(['msg' => 'Passwort erfolgreich geändert! / Jelszó sikeresen módosítva!']);
