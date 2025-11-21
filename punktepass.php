@@ -414,17 +414,18 @@ add_action('wp_enqueue_scripts', function() {
     ]);
 }, 99);
 
-add_action('wp_enqueue_scripts', function() {
-    if (ppv_is_login_page()) return;
-    
-    wp_enqueue_script(
-        'ppv-spa-loader',
-        PPV_PLUGIN_URL . 'assets/js/ppv-spa-loader.js',
-        ['jquery'],
-        PPV_VERSION,
-        true
-    );
-}, 100);
+// 🚀 DISABLED: Using Turbo.js instead (faster, more reliable)
+// add_action('wp_enqueue_scripts', function() {
+//     if (ppv_is_login_page()) return;
+//
+//     wp_enqueue_script(
+//         'ppv-spa-loader',
+//         PPV_PLUGIN_URL . 'assets/js/ppv-spa-loader.js',
+//         ['jquery'],
+//         PPV_VERSION,
+//         true
+//     );
+// }, 100);
 
 /**
 
@@ -550,23 +551,48 @@ add_action('wp_footer', function() {
 
 
 // ========================================
-// ⚡ PWA SPLASH LOADER
+// ⚡ PWA SPLASH LOADER (Turbo-compatible)
 // ========================================
 add_action('wp_head', function() {
     if (ppv_is_login_page()) return; // Skip on login
     ?>
     <style>
-      html,body{margin:0;padding:0;background:#0b0f17;height:100%;overflow:hidden;}
-      #ppv-loader{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#0b0f17;z-index:999999;transition:opacity .6s ease;}
+      html,body{margin:0;padding:0;background:#0b0f17;height:100%;}
+      #ppv-loader{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#0b0f17;z-index:999999;transition:opacity .4s ease;}
       #ppv-loader.fadeout{opacity:0;pointer-events:none;}
+      #ppv-loader.hidden{display:none;}
       .ppv-spinner{width:60px;height:60px;border:5px solid rgba(0,191,255,0.25);border-top-color:#00bfff;border-radius:50%;animation:ppvspin 1s linear infinite;}
       @keyframes ppvspin{to{transform:rotate(360deg)}}
     </style>
-    <div id="ppv-loader"><div class="ppv-spinner"></div></div>
+    <div id="ppv-loader" data-turbo-permanent><div class="ppv-spinner"></div></div>
     <script>
-      window.addEventListener("load",()=>{
-        setTimeout(()=>document.getElementById("ppv-loader")?.classList.add("fadeout"),700);
-      });
+      (function(){
+        var loader = document.getElementById("ppv-loader");
+        if (!loader) return;
+
+        // Check if this is a Turbo navigation (loader should already be hidden)
+        if (window.ppvLoaderInitialized) {
+          loader.classList.add("fadeout", "hidden");
+          return;
+        }
+
+        // Initial page load - show loader briefly then hide
+        window.addEventListener("load", function() {
+          setTimeout(function() {
+            loader.classList.add("fadeout");
+            setTimeout(function() { loader.classList.add("hidden"); }, 400);
+          }, 300);
+          window.ppvLoaderInitialized = true;
+        });
+
+        // 🚀 Turbo: Hide loader on navigation
+        document.addEventListener("turbo:before-fetch-request", function() {
+          // Don't show big loader for Turbo - bottom nav has its own indicator
+        });
+        document.addEventListener("turbo:load", function() {
+          loader.classList.add("fadeout", "hidden");
+        });
+      })();
     </script>
     <?php
 }, 2);
