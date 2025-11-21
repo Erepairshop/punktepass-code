@@ -1,49 +1,7068 @@
+/* ==========================================================================
+   PunktePass – USER DASHBOARD • FINAL LIGHT THEME
+   Version: 1.0
+   Part: 1/5 — Global / Root / Base / Layout / Header / Scrollbar
+   ========================================================================== */
+
+/* GOOGLE FONTS */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap');
+
+/* ==========================================================================
+   🎨 LIGHT THEME ROOT VARIABLES
+   ========================================================================== */
+:root {
+    /* Brand Colors */
+    --pp-primary: #00a8cc;
+    --pp-primary-dark: #0077a8;
+    --pp-primary-light: #00d4ff;
+
+    --pp-secondary: #00a878;
+    --pp-secondary-dark: #007d5e;
+    --pp-secondary-light: #70e8c4;
+
+    --pp-accent: #9333ea;
+    --pp-accent-light: #d8b4fe;
+
+    /* States */
+    --pp-success: #10b981;
+    --pp-warning: #f59e0b;
+    --pp-danger: #ef4444;
+
+    /* Light Surfaces */
+    --pp-bg: #f8fafc;
+    --pp-bg-2: #f1f5f9;
+    --pp-bg-3: #e2e8f0;
+
+    --pp-surface: #ffffff;
+    --pp-surface-soft: #fafbfc;
+
+    /* Text */
+    --pp-text: #1e293b;
+    --pp-text-2: #475569;
+    --pp-text-3: #64748b;
+
+    /* Header */
+    --pp-header-bg: #0f172a;
+    --pp-header-dark: #0a0f1a;
+
+    /* Borders */
+    --pp-border: rgba(0, 168, 204, 0.18);
+    --pp-border-soft: rgba(0, 168, 204, 0.10);
+    --pp-border-strong: rgba(0, 168, 204, 0.30);
+
+    /* Shadows */
+    --pp-shadow-sm: 0 2px 6px rgba(0,0,0,0.06);
+    --pp-shadow: 0 4px 14px rgba(0,0,0,0.08);
+    --pp-shadow-lg: 0 10px 24px rgba(0,0,0,0.11);
+    --pp-shadow-glow: 0 0 22px rgba(0,168,204,0.18);
+
+    /* Radiuses */
+    --pp-r-xs: 6px;
+    --pp-r-sm: 10px;
+    --pp-r-md: 14px;
+    --pp-r-lg: 18px;
+    --pp-r-xl: 24px;
+
+    /* Transitions */
+    --pp-trans: all .28s cubic-bezier(0.4, 0, 0.2, 1);
+    --pp-trans-fast: all .18s ease-out;
+
+    /* Backdrop */
+    --pp-glass: blur(12px) saturate(160%);
+}
+
+/* ==========================================================================
+   🌍 GLOBAL RESET
+   ========================================================================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+    width: 100%;
+    font-family: 'Inter', sans-serif;
+    background: var(--pp-bg);
+    color: var(--pp-text);
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ==========================================================================
+   📱 MAIN APP LAYOUT
+   ========================================================================== */
+body.ppv-user-dashboard {
+    overflow: hidden;
+}
+
+#ppv-dashboard-root {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: var(--pp-bg);
+}
+
+.ppv-dashboard-netto {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+    padding-bottom: 100px;
+    background: linear-gradient(180deg, var(--pp-bg) 0%, var(--pp-bg-2) 100%);
+    -webkit-overflow-scrolling: touch;
+}
+
+.ppv-dashboard-inner {
+    max-width: 900px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 18px;
+    animation: fadeIn .5s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+
+
+/* ==========================================================================
+   🔧 LIGHT SCROLLBAR
+   ========================================================================== */
+
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(0,168,204,0.06);
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, var(--pp-primary), var(--pp-accent));
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, var(--pp-primary-dark), var(--pp-accent));
+}
+/* ==========================================================================
+   🟦 PART 2/5 — QR BANNER + QR MODAL + NEW SHIMMER EFFECT
+   ========================================================================== */
+
+/* ==========================================================================
+   🎫 QR BANNER (User Dashboard Top Section)
+   ========================================================================== */
+
+.ppv-qr-banner {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: var(--pp-surface);
+    border: 1px solid var(--pp-border);
+    border-radius: var(--pp-r-lg);
+    padding: 20px;
+    margin: 18px 0 26px;
+    box-shadow: var(--pp-shadow);
+    backdrop-filter: var(--pp-glass);
+    transition: var(--pp-trans);
+    cursor: pointer;
+    animation: slideInQR .45s ease-out;
+}
+
+@keyframes slideInQR {
+    from { opacity: 0; transform: translateY(-10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.ppv-qr-banner:hover {
+    transform: translateY(-3px);
+    border-color: var(--pp-border-strong);
+    box-shadow: var(--pp-shadow-lg);
+}
+
+/* Left text block */
+.ppv-qr-text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.ppv-qr-text i {
+    font-size: 40px;
+    color: var(--pp-primary);
+    text-shadow: 0 0 10px rgba(0,168,204,0.25);
+    flex-shrink: 0;
+}
+
+.ppv-qr-text h3 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--pp-primary-dark);
+    margin: 0 0 4px;
+}
+
+.ppv-qr-text p {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--pp-text-2);
+}
+
+/* ==========================================================================
+   🔘 QR BUTTON (Shimmer + Soft Glow)
+   ========================================================================== */
+
+.ppv-btn-qr {
+    background: var(--gradient-primary);
+    color: #fff;
+    padding: 12px 24px;
+    border-radius: var(--pp-r-md);
+    font-size: 15px;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    cursor: pointer;
+    border: none;
+    white-space: nowrap;
+    box-shadow: var(--pp-shadow-glow), var(--pp-shadow);
+    position: relative;
+    overflow: hidden;
+    transition: var(--pp-trans);
+}
+
+.ppv-btn-qr:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--pp-shadow-lg), 0 0 22px rgba(0,168,204,0.45);
+}
+
+/* Shimmer overlay */
+.ppv-btn-qr::before {
+    content: '';
+    position: absolute;
+    inset: -60%;
+    background: linear-gradient(
+        45deg,
+        transparent,
+        rgba(255,255,255,0.35),
+        transparent
+    );
+    transform: rotate(45deg);
+    animation: shimmerButton 3s infinite;
+}
+
+@keyframes shimmerButton {
+    from { transform: translate(-120%, -120%) rotate(45deg); }
+    to   { transform: translate(120%, 120%) rotate(45deg); }
+}
+
+/* ==========================================================================
+   🎫 QR MODAL OVERLAY
+   ========================================================================== */
+
+.ppv-qr-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(10px);
+    opacity: 0;
+    visibility: hidden;
+    z-index: 9998;
+    transition: var(--pp-trans);
+}
+
+.ppv-qr-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* ==========================================================================
+   📱 QR MODAL WINDOW
+   ========================================================================== */
+
+.ppv-user-qr {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 92vw;
+    max-width: 420px;
+    padding: 28px;
+    transform: translate(-50%, -50%) scale(0.9);
+    background: var(--gradient-card);
+    border: 1px solid var(--pp-border);
+    border-radius: var(--pp-r-lg);
+    box-shadow: var(--pp-shadow-lg);
+    text-align: center;
+    opacity: 0;
+    visibility: hidden;
+    z-index: 9999;
+    transition: var(--pp-trans);
+    backdrop-filter: var(--pp-glass);
+}
+
+.ppv-user-qr.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+/* QR image */
+.ppv-user-qr img {
+    width: 260px;
+    height: 260px;
+    object-fit: contain;
+    border: 2px solid var(--pp-primary);
+    background: #fff;
+    padding: 10px;
+    border-radius: var(--pp-r-md);
+    margin-bottom: 18px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.15);
+    image-rendering: crisp-edges;
+}
+
+/* Info text */
+.ppv-user-qr .qr-info {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--pp-text);
+    margin-bottom: 16px;
+}
+
+/* ==========================================================================
+   ❌ MODAL CLOSE BUTTON
+   ========================================================================== */
+.ppv-qr-close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: rgba(0,168,204,0.12);
+    border: 2px solid var(--pp-primary);
+    color: var(--pp-primary);
+    font-size: 22px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--pp-trans);
+}
+
+.ppv-qr-close:hover {
+    background: rgba(0,168,204,0.18);
+    transform: scale(1.15) rotate(90deg);
+}
+
+/* ==========================================================================
+   📘 QR INSTRUCTIONS BOX
+   ========================================================================== */
+.ppv-qr-instructions {
+    background: rgba(0,168,204,0.06);
+    border: 1px solid var(--pp-border-soft);
+    padding: 16px;
+    border-radius: var(--pp-r-sm);
+    text-align: left;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--pp-text-2);
+}
+
+.ppv-qr-instructions strong {
+    color: var(--pp-primary-dark);
+    display: block;
+    margin-bottom: 8px;
+}
+/* ==========================================================================
+   🟩 PART 3/5 — STORE LIST + CARDS + DETAILS + GALLERY
+   ========================================================================== */
+
+/* ==========================================================================
+   🏪 STORES – SECTION TITLE
+   ========================================================================== */
+
+.ppv-section-title {
+    font-family: 'Poppins', sans-serif;
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--pp-primary-dark);
+    margin: 26px 0 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    letter-spacing: 1px;
+    gap: 10px;
+    text-transform: uppercase;
+}
+
+.ppv-section-title i {
+    font-size: 26px;
+    color: var(--pp-primary);
+    text-shadow: 0 0 10px rgba(0,168,204,0.15);
+}
+
+/* ==========================================================================
+   🏪 STORE LIST (vertical)
+   ========================================================================== */
+.ppv-store-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: 100%;
+}
+
+/* ==========================================================================
+   🃏 STORE CARD (primary container)
+   ========================================================================== */
+.ppv-store-card-enhanced {
+    background: var(--pp-surface);
+    border: 1px solid var(--pp-border-soft);
+    border-radius: var(--pp-r-md);
+    padding: 16px;
+    box-shadow: var(--pp-shadow-sm);
+    backdrop-filter: var(--pp-glass);
+    transition: var(--pp-trans);
+    animation: cardEnter .5s ease-out;
+}
+
+@keyframes cardEnter {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.ppv-store-card-enhanced:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--pp-shadow);
+    border-color: var(--pp-border-strong);
+}
+
+/* ==========================================================================
+   🧩 STORE CARD HEADER (logo + name + badges)
+   ========================================================================== */
+.ppv-store-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    cursor: pointer;
+    transition: var(--pp-trans);
+}
+
+.ppv-store-logo {
+    width: 56px;
+    height: 56px;
+    border-radius: var(--pp-r-sm);
+    object-fit: cover;
+    border: 2px solid var(--pp-primary);
+    flex-shrink: 0;
+    background: var(--pp-bg-3);
+    box-shadow: 0 0 10px rgba(0,168,204,0.18);
+    transition: var(--pp-trans);
+}
+
+.ppv-store-card-enhanced:hover .ppv-store-logo {
+    transform: scale(1.09);
+    box-shadow: 0 0 14px rgba(0,168,204,0.3);
+}
+
+.ppv-store-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.ppv-store-info h4 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--pp-primary-dark);
+    margin-bottom: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ==========================================================================
+   🎖 STATUS & DISTANCE BADGES
+   ========================================================================== */
+
+.ppv-store-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.ppv-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 12px;
+    letter-spacing: 0.3px;
+    box-shadow: 0 0 8px rgba(0,168,204,0.15);
+    color: #fff;
+}
+
+.ppv-status-badge.ppv-open {
+    background: var(--gradient-secondary);
+}
+
+.ppv-status-badge.ppv-closed {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+.ppv-distance-badge {
+    background: var(--gradient-primary);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 12px;
+    letter-spacing: 0.3px;
+    box-shadow: 0 0 10px rgba(0,168,204,0.22);
+}
+
+/* ==========================================================================
+   ⬇️ EXPAND TOGGLE (arrow button)
+   ========================================================================== */
+.ppv-toggle-btn {
+    background: rgba(0,168,204,0.08);
+    border: 1px solid var(--pp-border);
+    color: var(--pp-primary);
+    width: 32px;
+    height: 32px;
+    border-radius: var(--pp-r-xs);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    font-size: 18px;
+    transition: var(--pp-trans);
+}
+
+.ppv-toggle-btn:hover {
+    background: rgba(0,168,204,0.16);
+    transform: scale(1.1);
+}
+
+.ppv-toggle-btn.active i {
+    transform: rotate(180deg);
+}
+
+/* ==========================================================================
+   🧩 STORE DETAILS (expandable section)
+   ========================================================================== */
+.ppv-store-details {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    padding-top: 0;
+    margin-top: 0;
+    transition: max-height .45s ease-in-out, opacity .45s ease-in-out;
+}
+
+.ppv-store-details.expanded {
+    max-height: 2000px;
+    opacity: 1;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--pp-border-soft);
+}
+
+/* ==========================================================================
+   🖼️ GALLERY (small thumbs)
+   ========================================================================== */
+.ppv-gallery-thumbs {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.ppv-gallery-thumb {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: var(--pp-r-xs);
+    object-fit: cover;
+    cursor: pointer;
+    border: 2px solid transparent;
+    box-shadow: 0 0 6px rgba(0,0,0,0.08);
+    transition: var(--pp-trans);
+}
+
+.ppv-gallery-thumb:hover {
+    transform: scale(1.07);
+    border-color: var(--pp-primary);
+    box-shadow: 0 0 12px rgba(0,168,204,0.22);
+}
+
+/* ==========================================================================
+   🕒 STORE META (hours, address)
+   ========================================================================== */
+.ppv-store-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--pp-border-soft);
+    margin-bottom: 12px;
+}
+
+.ppv-hours,
+.ppv-address {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--pp-text-2);
+}
+
+.ppv-hours i,
+.ppv-address i {
+    font-size: 14px;
+    color: var(--pp-primary);
+}
+/* ==========================================================================
+   🟦 PART 4/5 — REWARDS + CAMPAIGNS + ACTION BUTTONS + SLIDER
+   ========================================================================== */
+
+/* ==========================================================================
+   🎁 REWARDS & CAMPAIGNS WRAPPER
+   ========================================================================== */
+
+.ppv-store-rewards,
+.ppv-store-campaigns {
+    margin-bottom: 16px;
+}
+
+.ppv-rewards-header h5,
+.ppv-store-campaigns h5 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--pp-secondary-dark);
+    margin-bottom: 8px;
+    letter-spacing: 0.3px;
+}
+
+/* ==========================================================================
+   🎁 MINI REWARD / MINI CAMPAIGN CARD
+   ========================================================================== */
+
+.ppv-reward-mini,
+.ppv-campaign-mini {
+    background: rgba(0,168,204,0.06);
+    border: 1px solid var(--pp-border-soft);
+    border-radius: var(--pp-r-xs);
+    padding: 12px;
+    margin-bottom: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition: var(--pp-trans);
+}
+
+.ppv-reward-mini:hover,
+.ppv-campaign-mini:hover {
+    background: rgba(0,168,204,0.12);
+    border-color: var(--pp-border-strong);
+}
+
+/* Title */
+.ppv-reward-header strong,
+.ppv-campaign-header strong {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--pp-text);
+}
+
+/* ==========================================================================
+   📊 REWARD ROW (label + value)
+   ========================================================================== */
+
+.ppv-reward-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    align-items: center;
+}
+
+.ppv-reward-label {
+    color: var(--pp-text-muted);
+    font-weight: 500;
+}
+
+.ppv-reward-value {
+    color: var(--pp-primary-dark);
+    font-weight: 700;
+}
+
+/* ==========================================================================
+   🟣 REWARD BADGE
+   ========================================================================== */
+
+.ppv-reward-badge {
+    background: var(--gradient-accent);
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 11px;
+    width: fit-content;
+    box-shadow: 0 0 12px rgba(147,51,234,0.28);
+}
+
+/* ==========================================================================
+   🟩 ACTION BUTTONS (call / route / web / share)
+   ========================================================================== */
+
+.ppv-store-actions {
+    margin-top: 12px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+    gap: 12px;
+}
+
+.ppv-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: var(--gradient-primary);
+    color: #fff;
+    padding: 10px 12px;
+    border-radius: var(--pp-r-xs);
+    border: none;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    box-shadow: 0 0 8px rgba(0,168,204,0.18);
+    transition: var(--pp-trans);
+}
+
+.ppv-action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 18px rgba(0,168,204,0.28);
+}
+
+.ppv-action-btn i {
+    font-size: 14px;
+}
+
+.ppv-action-btn.ppv-call {
+    background: var(--gradient-secondary);
+}
+
+.ppv-action-btn.ppv-web {
+    background: var(--gradient-accent);
+}
+
+/* ==========================================================================
+   🎚 DISTANCE SLIDER (iOS style)
+   ========================================================================== */
+
+.ppv-distance-filter {
+    background: var(--pp-surface);
+    border: 1px solid var(--pp-border-soft);
+    border-radius: var(--pp-r-md);
+    padding: 20px;
+    box-shadow: var(--pp-shadow-sm);
+    margin-bottom: 24px;
+}
+
+.ppv-distance-filter label {
+    display: block;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: 'Poppins';
+    margin-bottom: 12px;
+    color: var(--pp-primary-dark);
+    letter-spacing: 0.3px;
+}
+
+/* Slider bar */
+#ppv-distance-slider {
+    width: 100%;
+    height: 8px;
+    border-radius: 6px;
+    background: rgba(0,168,204,0.12);
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+    box-shadow: inset 0 0 4px rgba(0,0,0,0.06);
+}
+
+/* Thumb */
+#ppv-distance-slider::-webkit-slider-thumb {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    background: var(--gradient-primary);
+    box-shadow: 0 0 12px rgba(0,168,204,0.35);
+    transition: var(--pp-trans);
+}
+
+#ppv-distance-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+    box-shadow: 0 0 18px rgba(0,168,204,0.5);
+}
+
+/* Firefox */
+#ppv-distance-slider::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    background: var(--gradient-primary);
+    box-shadow: 0 0 12px rgba(0,168,204,0.35);
+}
+
+/* Small labels (min/max) */
+.ppv-distance-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--pp-text-muted);
+}
+/* ==========================================================================
+   🟦 PART 5/5 — TOAST • LIGHTBOX • NAVBAR • EMPTY/STATES • SCROLLBAR
+   ========================================================================== */
+
+/* ==========================================================================
+   🔵 TOAST NOTIFICATION — “+1 Punkt!” popup
+   ========================================================================== */
+
+.ppv-point-toast {
+    position: fixed;
+    top: 52%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.85);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 99999;
+    transition: all 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.ppv-point-toast.show {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.ppv-point-toast-inner {
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid rgba(0, 168, 204, 0.35);
+    border-radius: 18px;
+    padding: 22px 30px;
+    text-align: center;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 8px 32px rgba(0, 168, 204, 0.22);
+    animation: toastPop 0.6s cubic-bezier(0.3, 1.5, 0.5, 1);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 320px;
+}
+
+.ppv-toast-icon {
+    font-size: 48px;
+    filter: drop-shadow(0 0 8px rgba(0,168,204,0.25));
+}
+
+.ppv-toast-text {
+    font-size: 16px;
+    font-weight: 700;
+    color: #083344;
+}
+
+.ppv-toast-text strong {
+    color: var(--pp-primary-dark);
+}
+
+@keyframes toastPop {
+    0%   { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+    70%  { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+
+/* ==========================================================================
+   🟦 BOTTOM NAVIGATION – PWA App Bar (iOS / Android)
+   ========================================================================== */
+
+.ppv-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 72px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    background: var(--pp-surface);
+    backdrop-filter: blur(12px) saturate(160%);
+    border-top: 1px solid var(--pp-border-soft);
+    box-shadow: 0 -4px 14px rgba(0,0,0,0.08);
+    z-index: 999;
+}
+
+.ppv-bottom-nav .nav-item {
+    flex: 1;
+    text-align: center;
+    color: var(--pp-text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    cursor: pointer;
+    transition: var(--pp-trans);
+}
+
+.ppv-bottom-nav .nav-item i {
+    font-size: 24px;
+    transition: var(--pp-trans);
+}
+
+.ppv-bottom-nav .nav-item.active {
+    color: var(--pp-primary);
+}
+
+.ppv-bottom-nav .nav-item.active i {
+    transform: scale(1.18);
+    text-shadow: 0 0 8px rgba(0,168,204,0.26);
+}
+
+/* ==========================================================================
+   🔎 LIGHTBOX – GALLERY fullscreen
+   ========================================================================== */
+
+.ppv-lightbox {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.92);
+    backdrop-filter: blur(20px);
+    opacity: 0;
+    visibility: hidden;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--pp-trans);
+}
+
+.ppv-lightbox.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.ppv-lightbox-container {
+    width: 90vw;
+    height: 82vh;
+    max-width: 780px;
+    max-height: 620px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.ppv-lightbox-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: var(--pp-r-md);
+    border: 2px solid var(--pp-primary);
+    box-shadow: 0 0 26px rgba(0,168,204,0.35);
+}
+
+/* Close button */
+.ppv-lightbox-close {
+    position: absolute;
+    top: -50px;
+    right: 0;
+    width: 44px;
+    height: 44px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.45);
+    color: #fff;
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--pp-trans);
+}
+
+.ppv-lightbox-close:hover {
+    transform: scale(1.12) rotate(90deg);
+    background: rgba(255,255,255,0.2);
+}
+
+/* Arrows */
+.ppv-lightbox-prev,
+.ppv-lightbox-next {
+    position: absolute;
+    top: 50%;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.45);
+    color: #fff;
+    font-size: 20px;
+    background: rgba(255,255,255,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transform: translateY(-50%);
+    transition: var(--pp-trans);
+}
+
+.ppv-lightbox-prev { left: 20px; }
+.ppv-lightbox-next { right: 20px; }
+
+.ppv-lightbox-prev:hover,
+.ppv-lightbox-next:hover {
+    transform: translateY(-50%) scale(1.12);
+    background: rgba(255,255,255,0.2);
+}
+
+/* Counter */
+.ppv-lightbox-counter {
+    position: absolute;
+    bottom: -50px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(255,255,255,0.9);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* ==========================================================================
+   ⚠️ LOADING / EMPTY / ERROR
+   ========================================================================== */
+
+.ppv-loading,
+.ppv-no-stores,
+.ppv-error {
+    text-align: center;
+    padding: 60px 20px;
+    font-size: 15px;
+}
+
+.ppv-loading {
+    color: var(--pp-primary);
+    font-weight: 700;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}
+
+.ppv-no-stores {
+    color: var(--pp-text-secondary);
+}
+
+.ppv-error {
+    color: var(--pp-danger);
+    font-weight: 700;
+}
+
+/* ==========================================================================
+   ♿ ACCESSIBILITY
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* ==========================================================================
+   🔧 SCROLLBAR (Light)
+   ========================================================================== */
+
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(0,168,204,0.05);
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, var(--pp-primary), var(--pp-accent));
+    border-radius: 4px;
+    box-shadow: 0 0 6px rgba(0,168,204,0.2);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, var(--pp-primary-dark), var(--pp-accent));
+    box-shadow: 0 0 10px rgba(0,168,204,0.3);
+}
+
+/* ==========================================================================
+   🔧 FIX PACK v1.0 — PunktePass USER DASHBOARD Bugfixes
+   Fixes: mobile layout, floating tools, QR banner spacing, safe areas
+   ========================================================================== */
+
+
+/* ==========================================================================
+   1) GLOBAL SAFE TOP SPACING (QR banner ne essen a header alá)
+   ========================================================================== */
+
+.ppv-dashboard-inner {
+    padding-top: 48px !important; /* header alatt extra hely */
+}
+
+@media (max-width: 480px) {
+    .ppv-dashboard-inner {
+        padding-top: 64px !important; /* mobilon még több hely */
+    }
+}
+
+
+/* ==========================================================================
+   2) FLOATING TOOLS (menu / theme / lang switcher) — FIXED CONTAINER
+   ========================================================================== */
+
+#ppv-header-tools {
+    position: fixed !important;
+    right: 16px !important;
+    top: 84px !important;  /* a header alatt jelenjen meg */
+    z-index: 999999 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+}
+
+#ppv-header-tools .ppv-tool-btn {
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: #0f172a !important;
+    color: #fff !important;
+    font-size: 20px !important;
+    border: 2px solid rgba(255,255,255,0.2) !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+}
+
+#ppv-header-tools .ppv-tool-btn:hover {
+    background: #1e293b !important;
+    transform: scale(1.08) !important;
+}
+
+
+/* ==========================================================================
+   3) QR BANNER — MOBILE FIX (flex törés, ikon méret, gomb eltolódás)
+   ========================================================================== */
+
+@media (max-width: 480px) {
+
+    .ppv-qr-banner {
+        flex-direction: column !important;
+        text-align: center !important;
+        padding: 18px 16px !important;
+        gap: 10px !important;
+    }
+
+    .ppv-qr-text {
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 6px !important;
+        text-align: center !important;
+    }
+
+    .ppv-qr-text i {
+        font-size: 32px !important;
+    }
+
+    .ppv-qr-text h3 {
+        font-size: 16px !important;
+    }
+
+    .ppv-btn-qr {
+        width: 100% !important;
+        padding: 12px 0 !important;
+        font-size: 15px !important;
+        border-radius: 12px !important;
+    }
+}
+
+
+/* ==========================================================================
+   4) QR BUTTON – Prevent overflow in German texts
+   ========================================================================== */
+
+.ppv-btn-qr {
+    white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+    .ppv-btn-qr {
+        white-space: normal !important; /* mobilon törhet a sor */
+        text-align: center !important;
+    }
+}
+
+
+/* ==========================================================================
+   5) BANNER TEXT WRAP FIX — No breaking into two columns
+   ========================================================================== */
+
+.ppv-qr-text div,
+.ppv-qr-text {
+    min-width: 0 !important;  /* fix a long text overflow */
+    width: 100% !important;
+}
+
+
+/* ==========================================================================
+   6) STORE CARD MOBILE FIX — prevent shifting
+   ========================================================================== */
+
+@media (max-width: 480px) {
+    .ppv-store-header {
+        flex-direction: row !important;
+        align-items: center !important;
+    }
+
+    .ppv-store-logo {
+        width: 48px !important;
+        height: 48px !important;
+    }
+
+    .ppv-store-info h4 {
+        font-size: 15px !important;
+    }
+}
+
+
+/* ==========================================================================
+   7) SAFETY FIX — prevent header overlap entirely
+   ========================================================================== */
+
+#ppv-global-header {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 99999 !important;
+}
+/* ==========================================================
+   PUNKTEPASS – LIGHT THEME • EMERGENCY FIX PATCH 2026
+   ========================================================== */
+
+/* 1) Modal X button – modern, jól látható */
+.ppv-qr-close {
+    background: rgba(255,255,255,0.9) !important;
+    border: 1px solid #00a8cc !important;
+    color: #00a8cc !important;
+    width: 46px !important;
+    height: 46px !important;
+    font-size: 22px !important;
+    box-shadow: 0 4px 14px rgba(0,168,204,0.25) !important;
+}
+
+.ppv-qr-close:hover {
+    background: #00a8cc !important;
+    color: #fff !important;
+    transform: scale(1.1) rotate(90deg);
+}
+
+/* 2) Fekete ikonok → PWA Light szín */
+i, .ri {
+    color: #00a8cc !important;
+}
+
+/* 3) Távolság (km) + pont érték mindig jól látszódjon */
+.ppv-distance-badge,
+.ppv-reward-value,
+.ppv-reward-mini strong,
+.ppv-campaign-mini strong {
+    color: #0077a8 !important;
+    font-weight: 700 !important;
+}
+
+/* 4) QR modal overlay világosabb */
+.ppv-qr-overlay {
+    background: rgba(0,0,0,0.35) !important;
+}
+
+/* 5) Betűszínek fix – fontos infó mindig kontrasztos */
+.ppv-store-info h4,
+.ppv-store-meta,
+.ppv-store-meta i,
+.ppv-reward-row,
+.ppv-campaign-mini,
+.ppv-reward-mini,
+.ppv-store-address,
+.ppv-hours {
+    color: #0f2c3e !important;
+}
+
+/* 6) Badge-ek új élénk szín */
+.ppv-status-badge.ppv-open {
+    background: linear-gradient(135deg,#00c897,#009f78) !important;
+    color: #fff !important;
+}
+
+.ppv-status-badge.ppv-closed {
+    background: linear-gradient(135deg,#ee4b2b,#c62828) !important;
+    color: #fff !important;
+}
+
+/* 7) Store-card border + shadow fix kívülről */
+.ppv-store-card-enhanced {
+    border: 1px solid rgba(0,168,204,0.25) !important;
+    box-shadow: 0 4px 14px rgba(0,168,204,0.12) !important;
+}
+
+/* 8) QR banner text láthatóság */
+.ppv-qr-text h3,
+.ppv-qr-text p {
+    color: #003749 !important;
+}
+
+/* 9) Font-weight fix mobilon */
+body, h1, h2, h3, h4, h5, h6 {
+    font-weight: 500 !important;
+}
+
+/* 10) Distance slider labels */
+.ppv-distance-labels {
+    color: #0077a8 !important;
+    font-weight: 600 !important;
+}
+
+/* 11) Bottom nav aktív ikon / szöveg */
+.ppv-bottom-nav .nav-item.active,
+.ppv-bottom-nav .nav-item.active i {
+    color: #00a8cc !important;
+}
+
+/* 12) Modal QR háttér fehérebb */
+.ppv-user-qr {
+    background: #ffffff !important;
+}
+/* ==========================================================
+   PATCH 2 — Pont értékek + Action gombok + Ikon fix
+   ========================================================== */
+
+/* 1) PONT ÉRTÉKEK – nagyobb kontraszt, modernebb */
+.ppv-reward-value,
+.ppv-reward-mini strong,
+.ppv-campaign-mini strong,
+.ppv-reward-row strong,
+.ppv-reward-header strong,
+.ppv-campaign-header strong {
+    color: #0083b5 !important;
+    font-weight: 800 !important;
+    font-size: 13.5px !important;
+    letter-spacing: 0.3px;
+}
+
+/* "+1 pont" mellékérték */
+.ppv-reward-value small,
+.ppv-campaign-value small {
+    color: #00a8cc !important;
+    font-weight: 700 !important;
+}
+
+/* 2) Ikonok — neon-kék egységes szín */
+.ppv-action-btn i,
+.ppv-reward-row i,
+.ppv-store-meta i,
+.ppv-store-badges i,
+.ppv-qr-text i {
+    color: #009ecc !important;
+    text-shadow: 0 0 6px rgba(0,168,204,0.20);
+}
+
+/* 3) Action gombok — modern PWA kinézet (Route / Call / Web) */
+.ppv-action-btn {
+    border-radius: 12px !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    padding: 12px !important;
+    box-shadow: 0 4px 12px rgba(0,168,204,0.18) !important;
+    background: #ffffff !important;
+    border: 2px solid rgba(0,168,204,0.30) !important;
+    color: #0077a8 !important;
+}
+
+.ppv-action-btn:hover {
+    background: #00a8cc !important;
+    color: #ffffff !important;
+    border-color: #00a8cc !important;
+    transform: translateY(-3px) !important;
+}
+
+/* ROUTE BUTTON — külön erősebb border (mert ez a fő gomb) */
+.ppv-action-btn.ppv-route {
+    border-color: #e30085 !important;
+    color: #e30085 !important;
+    font-weight: 800 !important;
+}
+
+.ppv-action-btn.ppv-route:hover {
+    background: #e30085 !important;
+    color: #fff !important;
+    box-shadow: 0 4px 16px rgba(227,0,133,0.35) !important;
+}
+
+/* 4) Prämien kártya — fehérebb szöveg, tisztább */
+.ppv-reward-mini,
+.ppv-campaign-mini {
+    background: #f3fcff !important;
+    border-color: rgba(0,168,204,0.20) !important;
+}
+
+/* 5) Kevesebb szürkés szín — minden információ jobban olvasható */
+.ppv-reward-label,
+.ppv-campaign-mini small,
+.ppv-store-meta {
+    color: #0d3a4e !important;
+    font-weight: 500;
+}
+/* FIX: Mini pont badge olvashatóvá tétele */
+.ppv-reward-badge,
+.ppv-reward-mini .ppv-reward-value-badge {
+    background: rgba(0, 168, 204, 0.15) !important;
+    color: #0077a8 !important;
+    border: 1px solid rgba(0, 168, 204, 0.35) !important;
+    backdrop-filter: blur(6px);
+    padding: 2px 8px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+
+/* ============================================================
+   HEADER FIX PATCH — Stabil elrendezés / gombok egy sorban
+   ============================================================ */
+
+/* Force header to stay one-line */
+#ppv-global-header {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow: hidden !important;
+    align-items: center !important;
+}
+
+/* Email too long — limit width */
+#ppv-global-header .ppv-user-email {
+    max-width: 120px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+/* Force nav buttons to stay right side */
+.ppv-header-nav,
+.ppv-header-settings {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: 6px !important;
+    margin-left: auto !important;
+}
+
+/* Each button is a fixed square */
+#ppv-global-header .ppv-nav-btn,
+#ppv-global-header .ppv-theme-btn-mini,
+#ppv-global-header .ppv-lang-mini {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
+    padding: 0 !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+}
+
+/* Icon alignment */
+#ppv-global-header .ppv-nav-btn i,
+#ppv-global-header .ppv-theme-btn-mini i {
+    font-size: 18px !important;
+    margin: 0 !important;
+}
+
+/* Language dropdown fix */
+.ppv-lang-mini select {
+    width: 100% !important;
+    height: 100% !important;
+    padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    color: white !important;
+    font-weight: 600 !important;
+    font-size: 14px !important;
+    outline: none !important;
+    cursor: pointer !important;
+}
+
+/* Remove weird large padding on container */
+.ppv-header-settings {
+    padding: 0 !important;
+}
+
+/* ============================================================================
+   FINAL PUNKTEPASS GLOBAL HEADER FIX (v3) 
+   - All buttons one line
+   - No wrapping
+   - Compact icons
+   - Select + Theme aligned
+   - Email shortened
+   - PWA neon style
+   ============================================================================ */
+
+/* GLOBAL DISPLAY FIX */
+#ppv-global-header.ppv-compact-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    flex-wrap: nowrap !important;
+    height: 64px !important;
+    padding: 8px 14px !important;
+    overflow: hidden !important;
+}
+
+/* LEFT SIDE (logo + email + stats) */
+.ppv-header-left,
+.ppv-header-stats {
+    display: flex !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+    gap: 8px !important;
+}
+
+/* Email — prevent breaking layout */
+.ppv-user-email {
+    max-width: 140px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: #fff !important;
+}
+
+/* MINI STATS */
+.ppv-stat-mini {
+    padding: 4px 8px !important;
+    font-size: 12px !important;
+    border-radius: 6px !important;
+}
+
+/* RIGHT SIDE NAV */
+.ppv-header-nav,
+.ppv-header-settings {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: 8px !important;
+}
+
+/* ICON BUTTON UNIFICATION */
+.ppv-nav-btn,
+.ppv-theme-btn-mini,
+.ppv-lang-mini {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    padding: 0 !important;
+
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+
+    border-radius: 12px !important;
+    background: rgba(255,255,255,0.05) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    color: #fff !important;
+
+    transition: all 0.2s ease !important;
+}
+
+/* Icons inside buttons */
+.ppv-nav-btn i,
+.ppv-theme-btn-mini i {
+    font-size: 18px !important;
+    margin: 0 !important;
+    line-height: 1 !important;
+}
+
+/* Remove text on mobile, keep on desktop */
+.ppv-nav-text {
+    display: none !important;
+}
+
+/* Language dropdown alignment fix */
+.ppv-lang-mini {
+    padding: 0 !important;
+}
+
+/* Language select interior */
+.ppv-lang-mini select,
+#ppv-lang-select-global {
+    width: 100% !important;
+    height: 100% !important;
+
+    padding: 0 !important;
+    margin: 0 !important;
+
+    background: transparent !important;
+    color: #fff !important;
+    border: none !important;
+
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    text-align: center !important;
+    cursor: pointer !important;
+
+    appearance: none !important;
+}
+
+/* THEME SWITCH BUTTON */
+.ppv-theme-btn-mini:hover,
+.ppv-nav-btn:hover,
+.ppv-lang-mini:hover {
+    background: rgba(0, 230, 255, 0.12) !important;
+    border-color: rgba(0, 230, 255, 0.3) !important;
+    transform: translateY(-2px) !important;
+    color: #00eaff !important;
+}
+
+/* RESPONSIVE (MOBILE) */
+@media (max-width: 480px) {
+    #ppv-global-header.ppv-compact-header {
+        height: 58px !important;
+        padding: 6px 10px !important;
+    }
+
+    .ppv-user-email {
+        max-width: 90px !important;
+        font-size: 12px !important;
+    }
+
+    .ppv-stat-mini {
+        display: none !important;
+    }
+
+    .ppv-nav-btn,
+    .ppv-theme-btn-mini,
+    .ppv-lang-mini {
+        width: 36px !important;
+        height: 36px !important;
+        border-radius: 10px !important;
+    }
+
+    .ppv-nav-btn i,
+    .ppv-theme-btn-mini i {
+        font-size: 16px !important;
+    }
+}
+/* REMOVE LOGO FROM GLOBAL HEADER */
+#ppv-global-header .ppv-header-logo-tiny {
+    display: none !important;
+}
+
+/* Remove empty space where logo was */
+.ppv-header-left {
+    gap: 6px !important;
+}
+/* FIX THEME SWITCH ICON VISIBILITY */
+.ppv-theme-btn-mini i {
+    font-size: 20px !important;
+    color: #00e6ff !important;
+    opacity: 0.9 !important;
+    pointer-events: none;
+}
+
+.ppv-theme-btn-mini:hover i {
+    color: #00ffff !important;
+    opacity: 1 !important;
+}
+/* THEME SWITCH – neon glow, jól látható */
+.ppv-theme-btn-mini {
+    width: 38px !important;
+    height: 38px !important;
+    border-radius: 10px !important;
+    background: rgba(0, 230, 255, 0.08) !important;
+    border: 1px solid rgba(0, 230, 255, 0.25) !important;
+}
+
+.ppv-theme-btn-mini i {
+    font-size: 20px !important;
+    color: #00e6ff !important;
+    transition: 0.2s ease;
+}
+
+.ppv-theme-btn-mini:hover {
+    background: rgba(0, 230, 255, 0.2) !important;
+    border-color: #00e6ff !important;
+}
+
+.ppv-theme-btn-mini:hover i {
+    color: #00ffff !important;
+}
+
+/**
+ * PunktePass – Admin Profile / Händler Management CSS (v5.0)
+ * Light Theme • Clean • Modern • Minimal
+ * Author: Erik Borota / PunktePass
+ * 
+ * Features:
+ * ✅ Tab system (General, Hours, Media, Social)
+ * ✅ Form controls
+ * ✅ Gallery management
+ * ✅ Opening hours editor
+ * ✅ Social media settings
+ * ✅ PWA optimized
+ */
+
+/* ============================================================
+   🌐 ROOT VARIABLES
+   ============================================================ */
+:root {
+  --color-primary: #00b8e6;
+  --color-primary-dark: #0088b0;
+  --color-primary-light: rgba(0, 184, 230, 0.1);
+  --color-success: #10b981;
+  --color-error: #ef4444;
+  --color-warning: #f59e0b;
+  
+  --color-bg: #f9fbff;
+  --color-bg-light: #faffff;
+  --color-card: #ffffff;
+  
+  --color-text: #0a0f1a;
+  --color-text-secondary: #4a5c6e;
+  --color-text-muted: #8b92a7;
+  
+  --color-border: rgba(0, 184, 230, 0.15);
+  --color-border-light: rgba(0, 184, 230, 0.08);
+  
+  --shadow-sm: 0 2px 8px rgba(0, 184, 230, 0.08);
+  --shadow-md: 0 4px 16px rgba(0, 184, 230, 0.12);
+  --shadow-lg: 0 8px 24px rgba(0, 184, 230, 0.15);
+  
+  --radius: 16px;
+  --radius-sm: 12px;
+  --radius-xs: 8px;
+  
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ============================================================
+   🌐 GLOBAL STYLES
+   ============================================================ */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  font-family: "Inter", "Poppins", -apple-system, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================================
+   📦 MAIN CONTAINER
+   ============================================================ */
+.ppv-admin-profile {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* ============================================================
+   📌 HEADER
+   ============================================================ */
+.ppv-profile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  margin-bottom: 32px;
+  padding: 24px;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+.ppv-header-left h1 {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  color: var(--color-text);
+  letter-spacing: -0.01em;
+}
+
+.ppv-header-left p {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.ppv-header-right {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: right;
+}
+
+.ppv-store-status {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ppv-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, #34d399, #10b981);
+  color: #fff;
+  border-radius: var(--radius-xs);
+  width: fit-content;
+  justify-content: flex-end;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
+}
+
+.ppv-last-updated {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+/* ============================================================
+   🌍 LANGUAGE SWITCHER
+   ============================================================ */
+.ppv-lang-switcher-inline {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  padding: 0 24px;
+}
+
+.ppv-lang-btn {
+  padding: 8px 16px;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xs);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: var(--transition);
+  font-family: inherit;
+}
+
+.ppv-lang-btn:hover {
+  background: var(--color-bg-light);
+  border-color: var(--color-primary);
+  color: var(--color-text);
+}
+
+.ppv-lang-btn.active {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 12px rgba(0, 184, 230, 0.3);
+}
+
+/* ============================================================
+   📑 TABS NAVIGATION
+   ============================================================ */
+.ppv-tabs-nav {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  padding: 12px 24px;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  box-shadow: var(--shadow-sm);
+}
+
+.ppv-tab-btn {
+  padding: 10px 16px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-xs);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ppv-tab-btn:hover {
+  background: var(--color-bg-light);
+  color: var(--color-text);
+}
+
+.ppv-tab-btn.active {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.ppv-tab-btn i {
+  font-size: 16px;
+}
+
+/* ============================================================
+   ⚠️ ALERTS
+   ============================================================ */
+#ppv-alert-zone {
+  margin-bottom: 24px;
+}
+
+.ppv-alert {
+  padding: 16px;
+  border-radius: var(--radius-xs);
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ppv-alert-success {
+  background: #D1FAE5;
+  color: #065F46;
+  border: 1px solid #6EE7B7;
+}
+
+.ppv-alert-error {
+  background: #FEE2E2;
+  color: #991B1B;
+  border: 1px solid #FCA5A5;
+}
+
+.ppv-alert-warning {
+  background: #FEF3C7;
+  color: #92400E;
+  border: 1px solid #FCD34D;
+}
+
+.ppv-alert-info {
+  background: #DBEAFE;
+  color: #0C2340;
+  border: 1px solid #93C5FD;
+}
+
+.ppv-alert-close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: currentColor;
+  cursor: pointer;
+  padding: 0;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.ppv-alert-close:hover {
+  opacity: 1;
+}
+
+/* ============================================================
+   📄 TAB CONTENT
+   ============================================================ */
+.ppv-tab-content {
+  display: none;
+  padding: 24px;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  animation: fadeIn 0.3s ease;
+}
+
+.ppv-tab-content.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.ppv-tab-content h2 {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 20px 0;
+  color: var(--color-text);
+}
+
+.ppv-tab-content h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 24px 0 16px 0;
+  color: var(--color-text);
+}
+
+.ppv-tab-content hr {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: 24px 0;
+}
+
+.ppv-tab-content p {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin: 0 0 16px 0;
+}
+
+/* ============================================================
+   📋 FORM GROUPS
+   ============================================================ */
+.ppv-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.ppv-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ppv-form-group label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.ppv-form-group input[type="text"],
+.ppv-form-group input[type="email"],
+.ppv-form-group input[type="tel"],
+.ppv-form-group input[type="url"],
+.ppv-form-group input[type="time"],
+.ppv-form-group textarea,
+.ppv-form-group select {
+  padding: 11px 14px;
+  background: var(--color-bg-light);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xs);
+  font-size: 14px;
+  color: var(--color-text);
+  transition: var(--transition);
+  font-family: inherit;
+}
+
+.ppv-form-group input[type="text"]:focus,
+.ppv-form-group input[type="email"]:focus,
+.ppv-form-group input[type="tel"]:focus,
+.ppv-form-group input[type="url"]:focus,
+.ppv-form-group input[type="time"]:focus,
+.ppv-form-group textarea:focus,
+.ppv-form-group select:focus {
+  outline: none;
+  background: var(--color-card);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+.ppv-form-group input::placeholder,
+.ppv-form-group textarea::placeholder {
+  color: #D1D5DB;
+}
+
+.ppv-form-group textarea {
+  resize: vertical;
+  min-height: 100px;
+  font-family: inherit;
+}
+
+.ppv-form-group input.ppv-invalid,
+.ppv-form-group textarea.ppv-invalid {
+  border-color: var(--color-error);
+  background-color: #FEF2F2;
+}
+
+.ppv-help {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+/* ============================================================
+   🔄 FORM ROW (2 Columns)
+   ============================================================ */
+.ppv-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* ============================================================
+   🕒 OPENING HOURS
+   ============================================================ */
+.ppv-opening-hours-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  background: var(--color-bg-light);
+  border-radius: var(--radius-xs);
+}
+
+.ppv-hour-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.ppv-hour-row label {
+  min-width: 100px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.ppv-hour-inputs {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.ppv-hour-inputs input[type="time"] {
+  width: 120px;
+  padding: 8px 10px;
+  font-size: 13px;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+}
+
+.ppv-hour-inputs input[type="time"]:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+.ppv-hour-inputs span {
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.ppv-hour-inputs input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--color-primary);
+}
+
+/* ============================================================
+   🖼️ MEDIA / GALLERY
+   ============================================================ */
+.ppv-media-group {
+  padding: 16px;
+  background: var(--color-bg-light);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-xs);
+  margin-bottom: 20px;
+}
+
+.ppv-media-group label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+  display: block;
+  margin-bottom: 8px;
+}
+
+.ppv-file-input {
+  display: block;
+  padding: 12px;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  font-size: 13px;
+  transition: var(--transition);
+  font-weight: 500;
+}
+
+.ppv-file-input:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+  box-shadow: var(--shadow-sm);
+}
+
+.ppv-media-preview {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ppv-media-preview img {
+  max-width: 100px;
+  max-height: 100px;
+  border-radius: var(--radius-xs);
+  object-fit: cover;
+  border: 1px solid var(--color-border);
+}
+
+.ppv-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.ppv-gallery-grid-item {
+  position: relative;
+  border-radius: var(--radius-xs);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition);
+}
+
+.ppv-gallery-grid-item:hover {
+  transform: scale(1.05);
+  box-shadow: var(--shadow-md);
+}
+
+.ppv-gallery-grid img {
+  width: 100%;
+  height: 100px;
+  object-fit: cover;
+  display: block;
+}
+
+.ppv-gallery-delete {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 28px;
+  height: 28px;
+  background: rgba(239, 68, 68, 0.9);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.ppv-gallery-grid-item:hover .ppv-gallery-delete {
+  opacity: 1;
+}
+
+.ppv-gallery-delete:hover {
+  background: rgba(239, 68, 68, 1);
+}
+
+/* ============================================================
+   🔗 SOCIAL MEDIA
+   ============================================================ */
+.ppv-social-group {
+  padding: 16px;
+  background: var(--color-bg-light);
+  border-radius: var(--radius-xs);
+  margin-bottom: 20px;
+}
+
+.ppv-social-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ppv-social-input-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.ppv-social-input-row .ppv-form-group {
+  flex: 1;
+  gap: 4px;
+}
+
+.ppv-social-input-row label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.ppv-social-input-row input {
+  padding: 8px 10px;
+  font-size: 13px;
+}
+
+.ppv-social-icons {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.ppv-social-preview {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.ppv-social-preview:hover {
+  transform: scale(1.1);
+  background: var(--color-primary-light);
+  border-color: var(--color-primary);
+}
+
+/* ============================================================
+   ☑️ CHECKBOXES & TOGGLES
+   ============================================================ */
+.ppv-checkbox-group {
+  padding: 16px;
+  background: var(--color-bg-light);
+  border-radius: var(--radius-xs);
+  margin-bottom: 20px;
+}
+
+.ppv-checkbox-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.ppv-checkbox-item:last-child {
+  margin-bottom: 0;
+}
+
+.ppv-checkbox-item input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  cursor: pointer;
+  accent-color: var(--color-primary);
+}
+
+.ppv-checkbox-item label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text);
+  cursor: pointer;
+  flex: 1;
+}
+
+.ppv-checkbox-item small {
+  display: block;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-top: 4px;
+}
+
+/* ============================================================
+   🔘 BUTTONS
+   ============================================================ */
+.ppv-form-footer {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 24px;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  margin-top: 24px;
+}
+
+.ppv-btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: var(--radius-xs);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: inherit;
+}
+
+.ppv-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ppv-btn-primary {
+  background: linear-gradient(135deg, var(--color-primary), #0088b0);
+  color: white;
+  box-shadow: 0 0 12px rgba(0, 184, 230, 0.3);
+}
+
+.ppv-btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 0 20px rgba(0, 184, 230, 0.5);
+}
+
+.ppv-btn-secondary {
+  background: var(--color-bg-light);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+
+.ppv-btn-secondary:hover:not(:disabled) {
+  background: var(--color-border);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.ppv-btn-danger {
+  background: #FEE2E2;
+  color: #991B1B;
+  border: 1px solid #FCA5A5;
+}
+
+.ppv-btn-danger:hover:not(:disabled) {
+  background: #FCA5A5;
+  color: #fff;
+}
+
+.ppv-btn.neon {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: #fff;
+  border: none;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  font-weight: 600;
+}
+
+.ppv-btn.neon:hover:not(:disabled) {
+  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+  transform: translateY(-2px);
+}
+
+.ppv-btn i {
+  font-size: 16px;
+}
+
+/* ============================================================
+   💾 SAVE INDICATOR
+   ============================================================ */
+#ppv-save-indicator {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+#ppv-save-indicator.ppv-visible {
+  opacity: 1;
+}
+
+#ppv-save-indicator.ppv-success {
+  color: var(--color-success);
+}
+
+#ppv-save-indicator.ppv-error {
+  color: var(--color-error);
+}
+
+/* ============================================================
+   📱 RESPONSIVE
+   ============================================================ */
+@media (max-width: 768px) {
+  .ppv-admin-profile {
+    padding: 16px;
+  }
+
+  .ppv-profile-header {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .ppv-header-right {
+    text-align: left;
+  }
+
+  .ppv-tabs-nav {
+    padding: 8px 12px;
+    gap: 4px;
+  }
+
+  .ppv-tab-btn {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .ppv-form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .ppv-hour-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .ppv-hour-inputs {
+    width: 100%;
+  }
+
+  .ppv-form-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ppv-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .ppv-gallery-grid {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  }
+
+  .ppv-social-input-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .ppv-profile-header h1 {
+    font-size: 22px;
+  }
+
+  .ppv-header-left p {
+    font-size: 12px;
+  }
+
+  .ppv-tab-content {
+    padding: 16px;
+  }
+
+  .ppv-tab-btn {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  .ppv-lang-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .ppv-hour-inputs input[type="time"] {
+    width: 100px;
+  }
+}
+
+/* ============================================================
+   ♿ ACCESSIBILITY
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+.ppv-btn:focus-visible,
+.ppv-lang-btn:focus-visible,
+.ppv-tab-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* ============================================================
+   ✨ UTILITIES
+   ============================================================ */
+::selection {
+  background: var(--color-primary-light);
+  color: var(--color-text);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-primary-light);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, var(--color-primary), #0088b0);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #0088b0, var(--color-primary));
+}
+
+.ppv-distance-filter label {
+  display: block;
+  margin-bottom: 12px !important;
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--color-text);
+  letter-spacing: 0.3px;
+}
+
+.ppv-distance-filter #ppv-distance-slider {
+  width: 100% !important;
+  height: 8px;
+  border-radius: 5px;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+.ppv-distance-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  margin-top: 10px !important;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+}
+
+
+/* ============================================================
+   📷 MINI ALWAYS-ON CAMERA SCANNER
+   ============================================================ */
+
+#ppv-mini-scanner {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 220px;
+  height: 220px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.95);
+  border: 2px solid rgba(0, 168, 204, 0.5);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15),
+              0 0 30px rgba(0, 168, 204, 0.2);
+  z-index: 9998;
+  transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(8px);
+  cursor: grab;
+}
+
+#ppv-mini-scanner:active {
+  cursor: grabbing;
+}
+
+#ppv-mini-scanner:hover {
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2),
+              0 0 40px rgba(0, 168, 204, 0.3);
+}
+
+/* Drag Handle */
+.ppv-mini-drag-handle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 24px;
+  background: rgba(0, 168, 204, 0.15);
+  border-bottom: 1px solid rgba(0, 168, 204, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  z-index: 10;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.ppv-mini-drag-handle:active {
+  cursor: grabbing;
+  background: rgba(0, 168, 204, 0.25);
+}
+
+.ppv-drag-icon {
+  color: rgba(0, 0, 0, 0.4);
+  font-size: 14px;
+  font-weight: bold;
+  letter-spacing: -2px;
+  pointer-events: none;
+}
+
+#ppv-mini-reader {
+  width: 100%;
+  height: 156px;
+  position: relative;
+  overflow: hidden;
+  background: #000;
+  margin-top: 24px;
+}
+
+#ppv-mini-reader video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+#ppv-mini-status {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.95);
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  font-size: 12px;
+  font-weight: 600;
+  color: #1e293b;
+  padding: 0 8px;
+  transition: background 0.3s ease;
+}
+
+.ppv-mini-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.ppv-mini-text {
+  font-size: 11px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* State-based styling */
+#ppv-mini-status.ppv-mini-status-scanning {
+  background: rgba(0, 168, 204, 0.15);
+  border-top-color: rgba(0, 168, 204, 0.5);
+}
+
+#ppv-mini-status.ppv-mini-status-processing {
+  background: rgba(255, 171, 0, 0.15);
+  border-top-color: rgba(255, 171, 0, 0.5);
+}
+
+#ppv-mini-status.ppv-mini-status-success {
+  background: rgba(16, 185, 129, 0.15);
+  border-top-color: rgba(16, 185, 129, 0.5);
+}
+
+#ppv-mini-status.ppv-mini-status-warning {
+  background: rgba(245, 158, 11, 0.15);
+  border-top-color: rgba(245, 158, 11, 0.5);
+}
+
+#ppv-mini-status.ppv-mini-status-error {
+  background: rgba(239, 68, 68, 0.15);
+  border-top-color: rgba(239, 68, 68, 0.5);
+}
+
+#ppv-mini-status.ppv-mini-status-paused {
+  background: rgba(147, 51, 234, 0.15);
+  border-top-color: rgba(147, 51, 234, 0.5);
+}
+
+/* Toggle Button */
+.ppv-mini-toggle {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #00e676, #00c853);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 230, 118, 0.3);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 11;
+}
+
+.ppv-mini-toggle:hover {
+  transform: translateX(-50%) translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 230, 118, 0.4);
+}
+
+.ppv-mini-toggle:active {
+  transform: translateX(-50%) translateY(0);
+  box-shadow: 0 1px 4px rgba(0, 230, 118, 0.2);
+}
+
+.ppv-toggle-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.ppv-toggle-text {
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+/* Pulse animation for scanning state */
+@keyframes ppv-scanner-pulse {
+  0%, 100% {
+    border-color: rgba(0, 168, 204, 0.5);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15),
+                0 0 30px rgba(0, 168, 204, 0.2);
+  }
+  50% {
+    border-color: rgba(0, 168, 204, 0.8);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15),
+                0 0 40px rgba(0, 168, 204, 0.4);
+  }
+}
+
+#ppv-mini-scanner.ppv-mini-scanner-active {
+  animation: ppv-scanner-pulse 2s ease-in-out infinite;
+}
+
+/* Mobile responsive */
+@media (max-width: 640px) {
+  #ppv-mini-scanner {
+    width: 140px;
+    height: 140px;
+    bottom: 15px;
+    right: 15px;
+  }
+
+  #ppv-mini-reader {
+    height: 100px;
+  }
+
+  #ppv-mini-status {
+    height: 40px;
+  }
+
+  .ppv-mini-text {
+    font-size: 10px;
+  }
+}
+
+/* Print - hide mini scanner */
+@media print {
+  #ppv-mini-scanner {
+    display: none !important;
+  }
+}
+
+/* ============================================================
+   🎭 TAB CONTENT VISIBILITY
+   ============================================================ */
+
+.ppv-tab-content {
+  display: none;
+  animation: fadeIn 0.3s ease-in;
+}
+
+.ppv-tab-content.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================================
+   🌞 LIGHT MODE – HÄNDLER GLOBAL HEADER (ULTRA CLEAN)
+   ============================================================ */
+
+body.ppv-light #ppv-global-header.ppv-handler-mode {
+    background: rgba(255, 255, 255, 0.92) !important;
+    backdrop-filter: blur(14px) !important;
+    border-bottom: 1px solid rgba(0, 150, 255, 0.25) !important;
+    box-shadow: 0 2px 12px rgba(0, 150, 255, 0.08) !important;
+    color: #001825 !important;
+}
+
+/* Top glow stripe */
+body.ppv-light #ppv-global-header.ppv-handler-mode::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #3b82f6, #00bfff, transparent) !important;
+    opacity: 0.65;
+}
+
+/* LOGO – optional highlight */
+body.ppv-light #ppv-global-header .ppv-header-logo-tiny {
+    background: rgba(0, 180, 255, 0.05) !important;
+    padding: 6px;
+    border-radius: 10px;
+    box-shadow: 0 2px 6px rgba(0,150,255,0.08);
+}
+
+/* Email text – good contrast */
+body.ppv-light .ppv-user-email {
+    color: #003049 !important;
+    font-weight: 600;
+}
+
+/* MINI STATS */
+body.ppv-light .ppv-stat-mini {
+    background: rgba(0, 180, 255, 0.07);
+    border-color: rgba(0, 150, 255, 0.2);
+    color: #0077aa;
+}
+
+body.ppv-light .ppv-stat-mini span {
+    color: #001825;
+}
+
+/* NAV BUTTONS */
+body.ppv-light .ppv-nav-btn {
+    background: rgba(0, 0, 0, 0.04) !important;
+    border-color: rgba(0,0,0,0.1) !important;
+    color: #003049 !important;
+    font-weight: 600;
+}
+
+body.ppv-light .ppv-nav-btn:hover {
+    background: rgba(0, 150, 255, 0.12) !important;
+    border-color: #00bfff !important;
+    color: #0088cc !important;
+    transform: translateY(-1px);
+}
+
+/* ICON SIZE FIX */
+body.ppv-light .ppv-nav-btn i {
+    font-size: 17px !important;
+}
+
+/* LANGUAGE SWITCH + THEME SWITCH */
+body.ppv-light .ppv-lang-mini,
+body.ppv-light .ppv-theme-btn-mini {
+    background: rgba(0,0,0,0.05) !important;
+    border: 1px solid rgba(0,0,0,0.1) !important;
+    color: #003049 !important;
+}
+
+body.ppv-light .ppv-lang-mini:hover,
+body.ppv-light .ppv-theme-btn-mini:hover {
+    background: rgba(0,150,255,0.10) !important;
+    border-color: #00bfff !important;
+    color: #0077aa !important;
+}
+
+/* THEME BUTTON ICON */
+body.ppv-light .ppv-theme-btn-mini i {
+    color: #0077aa !important;
+    font-size: 20px !important;
+}
+
+/* RESPONSIVE FIXES */
+@media (max-width: 768px) {
+    body.ppv-light #ppv-global-header.ppv-handler-mode {
+        padding: 6px 10px !important;
+    }
+    body.ppv-light .ppv-nav-btn {
+        padding: 6px !important;
+        width: 34px !important;
+        height: 34px !important;
+    }
+    body.ppv-light .ppv-nav-btn i {
+        font-size: 15px !important;
+    }
+}
+
+/* Make theme-switch more visible */
+body.ppv-light .ppv-theme-btn-mini {
+    box-shadow: 0 0 6px rgba(0,180,255,0.25);
+}
+
+
+/* =====================================================================================
+   PUNKTEPASS – MY POINTS • LIGHT THEME
+   Version: 10.0 • FINAL • Production Optimized
+   Author: Erik Borota / PunktePass
+   ===================================================================================== */
+
+/* ---------------------------------------
+   GOOGLE FONTS
+--------------------------------------- */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap');
+
+/* ---------------------------------------
+   ROOT VARIABLES – LIGHT
+--------------------------------------- */
+:root {
+    --pp-primary: #00a8cc;
+    --pp-primary-dark: #0077a8;
+    --pp-primary-light: #00d4ff;
+
+    --pp-accent: #9333ea;
+    --pp-accent-light: #d8b4fe;
+
+    --pp-bg: #f8fafc;
+    --pp-bg-2: #f1f5f9;
+    --pp-bg-3: #e2e8f0;
+
+    --pp-surface: #ffffff;
+    --pp-surface-soft: #fdfefe;
+
+    --pp-text: #0a1a25;
+    --pp-text-2: #3a4a58;
+    --pp-text-muted: #64748b;
+
+    --pp-border: rgba(0,168,204,0.18);
+    --pp-border-soft: rgba(0,168,204,0.12);
+
+    --pp-shadow-sm: 0 2px 6px rgba(0,0,0,0.05);
+    --pp-shadow: 0 4px 14px rgba(0,0,0,0.08);
+    --pp-shadow-lg: 0 10px 24px rgba(0,0,0,0.12);
+
+    --pp-radius-xs: 6px;
+    --pp-radius: 14px;
+    --pp-radius-lg: 20px;
+
+    --pp-gradient-primary: linear-gradient(135deg,#00b8de,#008bb0);
+    --pp-gradient-secondary: linear-gradient(135deg,#00c897,#009f78);
+
+    --pp-trans: all .25s ease;
+    --pp-glass: blur(12px) saturate(160%);
+}
+
+/* =====================================================================================
+   LAYOUT STRUCTURE
+===================================================================================== */
+
+#ppv-my-points-app {
+    width: 100%;
+    min-height: calc(100vh - 72px);
+    background: var(--pp-bg);
+    padding-bottom: 90px;
+}
+
+.ppv-dashboard-netto {
+    background: linear-gradient(180deg,var(--pp-bg),var(--pp-bg-2));
+}
+
+.ppv-dashboard-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* =====================================================================================
+   OFFLINE BANNER
+===================================================================================== */
+
+.ppv-offline-banner {
+    background: rgba(255,225,70,0.18);
+    border: 1px solid #facc15;
+    border-radius: var(--pp-radius);
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #b45309;
+    font-weight: 600;
+    animation: fadeIn .4s ease-out;
+    margin-bottom: 20px;
+}
+
+.ppv-offline-banner i {
+    font-size: 20px;
+}
+
+/* =====================================================================================
+   HEADER: TITLE + TOTAL POINTS
+===================================================================================== */
+
+.ppv-points-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.ppv-points-header h2 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--pp-primary-dark);
+    margin-bottom: 12px;
+}
+
+.ppv-points-summary {
+    background: var(--pp-surface);
+    border: 1px solid var(--pp-border);
+    border-radius: var(--pp-radius-lg);
+    padding: 20px;
+    width: 100%;
+    max-width: 260px;
+    margin: 0 auto 10px;
+    box-shadow: var(--pp-shadow);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.ppv-points-summary i {
+    font-size: 38px;
+    color: var(--pp-primary);
+    margin-bottom: 6px;
+}
+
+.ppv-points-summary .big {
+    font-size: 38px;
+    font-weight: 800;
+    color: var(--pp-primary-dark);
+}
+
+.ppv-points-summary .label {
+    font-size: 14px;
+    color: var(--pp-text-muted);
+    margin-top: 4px;
+}
+
+.ppv-motivation {
+    font-size: 14px;
+    color: var(--pp-text-2);
+}
+
+/* =====================================================================================
+   ANALYTICS SECTION (placeholder)
+===================================================================================== */
+#ppv-analytics-section {
+    margin: 20px 0;
+}
+
+/* =====================================================================================
+   STATS GRID (3 cards)
+===================================================================================== */
+
+.ppv-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit,minmax(110px,1fr));
+    gap: 16px;
+    margin-bottom: 26px;
+}
+
+.ppv-stat-card {
+    background: var(--pp-surface);
+    border: 1px solid var(--pp-border-soft);
+    border-radius: var(--pp-radius);
+    padding: 16px;
+    text-align: center;
+    box-shadow: var(--pp-shadow-sm);
+    transition: var(--pp-trans);
+}
+
+.ppv-stat-card i {
+    font-size: 22px;
+    color: var(--pp-primary);
+}
+
+.ppv-stat-card .label {
+    font-size: 13px;
+    color: var(--pp-text-muted);
+    margin-top: 6px;
+}
+
+.ppv-stat-card .value {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--pp-primary-dark);
+    margin-top: 4px;
+}
+
+.ppv-stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--pp-shadow);
+}
+
+/* =====================================================================================
+   REWARDS BY STORE
+===================================================================================== */
+
+.ppv-rewards-by-store h3 {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--pp-primary-dark);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ppv-reward-card {
+    background: var(--pp-surface);
+    border: 1px solid var(--pp-border);
+    border-radius: var(--pp-radius);
+    padding: 16px;
+    margin-bottom: 14px;
+    box-shadow: var(--pp-shadow-sm);
+}
+
+.ppv-reward-card .reward-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.ppv-reward-card h4 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--pp-primary-dark);
+}
+
+.reward-points {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--pp-primary);
+}
+
+/* Progress bar */
+.reward-progress {
+    margin-top: 12px;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 10px;
+    background: var(--pp-bg-3);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--pp-gradient-primary);
+    transition: width .4s ease;
+}
+
+.progress-text {
+    font-size: 12px;
+    margin-top: 6px;
+    text-align: right;
+    color: var(--pp-primary-dark);
+}
+
+/* Achieved */
+.ppv-reward-achieved {
+    border-color: var(--pp-accent);
+}
+
+.ppv-btn-claim {
+    margin-top: 12px;
+    width: 100%;
+    background: var(--pp-gradient-primary);
+    color: #fff;
+    border: none;
+    padding: 12px;
+    border-radius: var(--pp-radius);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: var(--pp-trans);
+}
+
+.ppv-btn-claim:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--pp-shadow);
+}
+
+/* =====================================================================================
+   TOP 3 STORES
+===================================================================================== */
+
+.ppv-top3 h3 {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--pp-primary-dark);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ppv-top3-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit,minmax(110px,1fr));
+    gap: 12px;
+}
+
+.ppv-top3-card {
+    background: var(--pp-surface);
+    border: 1px solid var(--pp-border-soft);
+    border-radius: var(--pp-radius);
+    padding: 16px;
+    text-align: center;
+    box-shadow: var(--pp-shadow-sm);
+}
+
+.ppv-top3-card i {
+    font-size: 22px;
+    color: var(--pp-primary-dark);
+}
+
+.ppv-top3-card .rank {
+    display: block;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--pp-primary);
+    margin-top: 4px;
+}
+
+.ppv-top3-card .name {
+    font-size: 14px;
+    color: var(--pp-text);
+}
+
+.ppv-top3-card .score {
+    font-size: 12px;
+    color: var(--pp-primary-dark);
+    margin-top: 4px;
+}
+
+/* =====================================================================================
+   RECENT ENTRIES (point list)
+===================================================================================== */
+
+.ppv-points-list h3 {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--pp-primary-dark);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ppv-point-card {
+    background: var(--pp-surface);
+    border: 1px solid var(--pp-border-soft);
+    border-radius: var(--pp-radius);
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 12px;
+    box-shadow: var(--pp-shadow-sm);
+}
+
+.ppv-point-card i {
+    font-size: 24px;
+    color: var(--pp-primary);
+}
+
+.ppv-point-card .info strong {
+    color: var(--pp-primary-dark);
+    font-size: 14px;
+}
+
+.ppv-point-card .info small {
+    color: var(--pp-text-muted);
+    display: block;
+    margin-top: 2px;
+}
+
+.ppv-point-card .ppv-points {
+    margin-left: auto;
+    color: var(--pp-primary-dark);
+    font-weight: 800;
+}
+
+/* =====================================================================================
+   ANIMATIONS
+===================================================================================== */
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* =====================================================================================
+   RESPONSIVE
+===================================================================================== */
+
+@media (max-width: 480px) {
+    .ppv-points-summary { max-width: 220px; }
+
+    .ppv-top3-grid,
+    .ppv-stats-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .ppv-point-card {
+        padding: 14px;
+        gap: 10px;
+    }
+}
+/* ==========================================================================
+   PUNKTEPASS – ANALYTICS (v10.0 LIGHT THEME)
+   Harmonized with MyPoints v10.0 / Neon Blue PWA
+   ========================================================================== */
+
+:root {
+    --ppv-ana-bg: #f5f7fa;
+    --ppv-ana-card: #ffffff;
+    --ppv-ana-text: #111827;
+    --ppv-ana-text-light: #6b7280;
+    --ppv-ana-primary: #2563eb;
+    --ppv-ana-primary-soft: rgba(37, 99, 235, 0.08);
+    --ppv-ana-border: #e5e7eb;
+    --ppv-ana-shadow: 0 4px 18px rgba(0, 0, 0, 0.06);
+    --ppv-ana-radius: 18px;
+    --ppv-ana-radius-sm: 12px;
+}
+
+/* WRAPPER --------------------------------------------------------------- */
+.ppv-analytics-wrapper {
+    padding: 1.2rem 1rem 2rem;
+    background: var(--ppv-ana-bg);
+    color: var(--ppv-ana-text);
+}
+
+/* HEADER --------------------------------------------------------------- */
+.ppv-analytics-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.2rem;
+}
+
+.ppv-analytics-header h3 {
+    font-size: 1.45rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+}
+
+.ppv-analytics-controls {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+
+.ppv-analytics-range-select {
+    padding: .45rem .7rem;
+    border-radius: var(--ppv-ana-radius-sm);
+    background: var(--ppv-ana-card);
+    border: 1px solid var(--ppv-ana-border);
+    box-shadow: var(--ppv-ana-shadow);
+    font-size: .9rem;
+}
+
+/* SUMMARY CARDS -------------------------------------------------------- */
+.ppv-analytics-summary {
+    display: grid;
+    grid-template-columns: repeat(2,1fr);
+    gap: .9rem;
+    margin-bottom: 1.5rem;
+}
+
+.ppv-summary-card {
+    background: var(--ppv-ana-card);
+    box-shadow: var(--ppv-ana-shadow);
+    padding: 1rem;
+    border-radius: var(--ppv-ana-radius);
+    display: flex;
+    align-items: center;
+    gap: .9rem;
+}
+
+.ppv-summary-card .card-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: var(--ppv-ana-primary-soft);
+    color: var(--ppv-ana-primary);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.3rem;
+}
+
+.ppv-summary-card .label {
+    font-size: .9rem;
+    color: var(--ppv-ana-text-light);
+}
+
+.ppv-summary-card .value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.ppv-summary-card .unit {
+    font-size: .75rem;
+    color: var(--ppv-ana-text-light);
+}
+
+/* SECTIONS ------------------------------------------------------------- */
+.ppv-analytics-section {
+    margin-bottom: 2rem;
+}
+
+.ppv-analytics-section h4 {
+    margin-bottom: .8rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+/* CHART CONTAINERS ----------------------------------------------------- */
+.ppv-chart-container {
+    width: 100%;
+    min-height: 220px;
+    background: var(--ppv-ana-card);
+    border-radius: var(--ppv-ana-radius);
+    box-shadow: var(--ppv-ana-shadow);
+    padding: 1rem;
+}
+
+.ppv-chart-pie {
+    min-height: 260px;
+}
+
+/* SVG STYLING ---------------------------------------------------------- */
+.ppv-trend-chart text {
+    font-family: Inter, sans-serif;
+}
+
+.ppv-pie-chart path {
+    transition: .2s ease;
+}
+.ppv-pie-chart path:hover {
+    opacity: 1;
+    transform: scale(1.02);
+    cursor: pointer;
+}
+
+/* STORES LIST ---------------------------------------------------------- */
+.ppv-stores-list {
+    margin-top: 1rem;
+    display: grid;
+    gap: .8rem;
+}
+
+.ppv-store-item {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: .8rem;
+    align-items: center;
+    background: var(--ppv-ana-card);
+    padding: .8rem 1rem;
+    border-radius: var(--ppv-ana-radius-sm);
+    border: 1px solid var(--ppv-ana-border);
+    box-shadow: var(--ppv-ana-shadow);
+}
+
+.store-color {
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+}
+
+.store-info .store-name {
+    font-weight: 600;
+    font-size: .95rem;
+}
+
+.store-stats {
+    color: var(--ppv-ana-text-light);
+    font-size: .8rem;
+}
+
+.store-points {
+    text-align: right;
+}
+
+.store-points .points {
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.store-points .percentage {
+    font-size: .75rem;
+    color: var(--ppv-ana-text-light);
+}
+
+/* BEST DAY ------------------------------------------------------------- */
+.ppv-best-day-card {
+    background: var(--ppv-ana-card);
+    padding: 1.2rem;
+    border-radius: var(--ppv-ana-radius);
+    box-shadow: var(--ppv-ana-shadow);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.best-day-icon {
+    font-size: 2rem;
+}
+
+.best-day-info .date {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.best-day-info .points {
+    font-size: .9rem;
+    color: var(--ppv-ana-text-light);
+}
+
+/* NO DATA -------------------------------------------------------------- */
+.ppv-analytics-wrapper p {
+    color: var(--ppv-ana-text-light);
+    font-size: .9rem;
+    text-align: center;
+    margin-top: .8rem;
+}
+
+/* RESPONSIVE ----------------------------------------------------------- */
+@media (max-width: 480px) {
+    .ppv-analytics-summary {
+        grid-template-columns: 1fr;
+    }
+
+    .ppv-store-item {
+        grid-template-columns: auto 1fr;
+        grid-template-rows: auto auto;
+    }
+}
+
+/* ==========================================================================
+   PUNKTEPASS – BELOHNUNGEN (REWARDS) v10.0 LIGHT THEME
+   Design: Neon Blue / PWA Compact / Modern Glass Cards
+   ========================================================================== */
+
+/* ROOT COLORS -------------------------------------------------------------- */
+:root {
+    --ppv-r-bg: #f6f8fa;
+    --ppv-r-card: #ffffff;
+    --ppv-r-text: #111827;
+    --ppv-r-text-light: #6b7280;
+    --ppv-r-primary: #2563eb;
+    --ppv-r-primary-soft: rgba(37,99,235,0.08);
+    --ppv-r-border: #e5e7eb;
+    --ppv-r-shadow: 0 4px 18px rgba(0,0,0,0.06);
+    --ppv-r-radius: 18px;
+    --ppv-r-radius-sm: 12px;
+}
+
+/* WRAPPER ------------------------------------------------------------------ */
+.ppv-belohnungen {
+    padding: 1rem 1rem 2rem;
+    background: var(--ppv-r-bg);
+    color: var(--ppv-r-text);
+    font-family: Inter, sans-serif;
+}
+
+/* HEADER ------------------------------------------------------------------- */
+.ppv-rewards-header {
+    text-align: center;
+    margin-bottom: 1.4rem;
+}
+
+.ppv-rewards-header h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+}
+
+.ppv-rewards-header p {
+    margin-top: .25rem;
+    color: var(--ppv-r-text-light);
+    font-size: .95rem;
+}
+
+/* USER POINTS CARD --------------------------------------------------------- */
+.ppv-user-points-card {
+    text-align: center;
+    background: var(--ppv-r-card);
+    padding: 1.2rem 1rem;
+    border-radius: var(--ppv-r-radius);
+    box-shadow: var(--ppv-r-shadow);
+    margin-bottom: 1.3rem;
+}
+
+.ppv-user-points-card .points-value {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--ppv-r-primary);
+}
+
+.ppv-user-points-card .points-label {
+    color: var(--ppv-r-text-light);
+    font-size: .9rem;
+}
+
+/* SEARCH + FILTER ---------------------------------------------------------- */
+.ppv-search-filter {
+    display: flex;
+    gap: .7rem;
+    margin-bottom: 1.4rem;
+}
+
+.ppv-search-box {
+    flex: 1;
+    position: relative;
+}
+
+.ppv-search-box i {
+    position: absolute;
+    top: 50%;
+    left: .7rem;
+    transform: translateY(-50%);
+    font-size: 1.1rem;
+    color: var(--ppv-r-text-light);
+}
+
+#ppv-search-input {
+    width: 100%;
+    padding: .6rem .9rem .6rem 2.2rem;
+    background: var(--ppv-r-card);
+    border: 1px solid var(--ppv-r-border);
+    border-radius: var(--ppv-r-radius-sm);
+    font-size: .9rem;
+    box-shadow: var(--ppv-r-shadow);
+}
+
+.ppv-filter-box {
+    display: flex;
+    gap: .5rem;
+}
+
+#ppv-store-filter {
+    padding: .55rem .7rem;
+    border-radius: var(--ppv-r-radius-sm);
+    background: var(--ppv-r-card);
+    border: 1px solid var(--ppv-r-border);
+    font-size: .9rem;
+}
+
+.ppv-filter-reset-btn {
+    background: var(--ppv-r-primary-soft);
+    color: var(--ppv-r-primary);
+    border: none;
+    border-radius: var(--ppv-r-radius-sm);
+    padding: .55rem .75rem;
+    font-size: .9rem;
+    display: flex;
+    align-items: center;
+    gap: .25rem;
+}
+
+/* REWARDS GRID ------------------------------------------------------------- */
+.ppv-reward-grid {
+    display: grid;
+    gap: 1rem;
+}
+
+.ppv-reward-card {
+    background: var(--ppv-r-card);
+    box-shadow: var(--ppv-r-shadow);
+    padding: 1rem;
+    border-radius: var(--ppv-r-radius);
+    border: 1px solid var(--ppv-r-border);
+    display: flex;
+    flex-direction: column;
+    gap: .7rem;
+}
+
+.ppv-reward-card.locked {
+    opacity: 0.85;
+}
+
+.ppv-reward-card.available {
+    border-color: var(--ppv-r-primary);
+}
+
+/* REWARD HEADER ------------------------------------------------------------ */
+.reward-header h4 {
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.reward-header small {
+    color: var(--ppv-r-text-light);
+    font-size: .8rem;
+    display: flex;
+    align-items: center;
+    gap: .25rem;
+}
+
+/* META --------------------------------------------------------------------- */
+.reward-meta {
+    display: flex;
+    align-items: center;
+    gap: .3rem;
+    color: var(--ppv-r-primary);
+    font-weight: 600;
+}
+
+/* PROGRESS BAR ------------------------------------------------------------- */
+.ppv-progress-container {
+    width: 100%;
+    height: 8px;
+    background: var(--ppv-r-primary-soft);
+    border-radius: 10px;
+}
+
+.ppv-progress-bar {
+    height: 100%;
+    background: var(--ppv-r-primary);
+    border-radius: 10px;
+}
+
+.ppv-progress-text {
+    margin-top: .25rem;
+    color: var(--ppv-r-text-light);
+    font-size: .85rem;
+}
+
+/* BUTTONS ------------------------------------------------------------------ */
+.ppv-redeem-btn {
+    margin-top: .4rem;
+    padding: .7rem;
+    border: none;
+    border-radius: var(--ppv-r-radius-sm);
+    font-size: .95rem;
+    font-weight: 600;
+    background: var(--ppv-r-primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .35rem;
+    transition: .2s;
+}
+
+.ppv-redeem-btn:hover {
+    background: #1d4ed8;
+}
+
+.ppv-redeem-btn.disabled {
+    background: #d1d5db;
+    color: #6b7280;
+}
+
+/* NO RESULTS --------------------------------------------------------------- */
+.ppv-no-results {
+    margin-top: 1rem;
+    text-align: center;
+    color: var(--ppv-r-text-light);
+    font-size: .9rem;
+}
+
+/* PENDING SECTION ---------------------------------------------------------- */
+.ppv-pending-section {
+    margin-top: 2rem;
+}
+
+.ppv-pending-section h3 {
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+
+.ppv-pending-grid {
+    display: grid;
+    gap: 1rem;
+}
+
+.ppv-pending-card {
+    background: var(--ppv-r-card);
+    border-radius: var(--ppv-r-radius);
+    padding: 1rem;
+    box-shadow: var(--ppv-r-shadow);
+    border: 1px solid var(--ppv-r-border);
+}
+
+.ppv-pending-card h4 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: .3rem;
+}
+
+/* STATUS BADGES ------------------------------------------------------------ */
+.status-badge {
+    padding: .35rem .6rem;
+    border-radius: 8px;
+    font-size: .8rem;
+    font-weight: 600;
+}
+
+.status-pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-approved {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.status-cancelled {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.date-badge {
+    font-size: .75rem;
+    color: var(--ppv-r-text-light);
+}
+
+/* RESPONSIVE --------------------------------------------------------------- */
+@media (max-width: 480px) {
+    .ppv-search-filter {
+        flex-direction: column;
+    }
+
+    .ppv-search-box input {
+        font-size: .95rem;
+    }
+}
+
+/* ==========================================================================
+   PunktePass – User Settings v10.0
+   Neon Light Theme • PWA Mobile UI • Avatar System • Modern Layout
+   ========================================================================== */
+
+:root {
+    --ppv-s-bg: #f6f8fa;
+    --ppv-s-card: #ffffff;
+    --ppv-s-text: #111827;
+    --ppv-s-text-light: #6b7280;
+    --ppv-s-primary: #2563eb;
+    --ppv-s-primary-soft: rgba(37, 99, 235, 0.08);
+    --ppv-s-border: #e5e7eb;
+    --ppv-s-shadow: 0 4px 18px rgba(0,0,0,0.06);
+    --ppv-s-radius: 18px;
+    --ppv-s-radius-sm: 12px;
+}
+
+/* WRAPPER --------------------------------------------------------------- */
+.ppv-settings-wrapper {
+    padding: 1rem 1rem 5rem;
+    background: var(--ppv-s-bg);
+    color: var(--ppv-s-text);
+    font-family: Inter, sans-serif;
+}
+
+/* HEADER BAR ------------------------------------------------------------ */
+.ppv-header-bar {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.ppv-header-bar h2 {
+    font-size: 1.55rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+}
+
+/* AVATAR BLOCK ---------------------------------------------------------- */
+.ppv-avatar-block {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 1.6rem;
+    position: relative;
+}
+
+#ppv-avatar-preview {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #FFF;
+    border: 3px solid var(--ppv-s-primary);
+    box-shadow: var(--ppv-s-shadow);
+}
+
+.upload-btn {
+    position: absolute;
+    right: -5px;
+    bottom: -5px;
+    width: 38px;
+    height: 38px;
+    background: var(--ppv-s-primary);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--ppv-s-shadow);
+    cursor: pointer;
+}
+
+.upload-btn:hover {
+    background: #1d4ed8;
+}
+
+/* SECTIONS -------------------------------------------------------------- */
+.ppv-section {
+    background: var(--ppv-s-card);
+    padding: 1.2rem;
+    margin-bottom: 1.2rem;
+    border-radius: var(--ppv-s-radius);
+    box-shadow: var(--ppv-s-shadow);
+    border: 1px solid var(--ppv-s-border);
+}
+
+.ppv-section.danger {
+    border-left: 4px solid #ef4444;
+}
+
+.ppv-section h3 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin-bottom: .8rem;
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+}
+
+.ppv-section p {
+    font-size: .9rem;
+    color: var(--ppv-s-text-light);
+}
+
+/* FORM INPUTS ----------------------------------------------------------- */
+.ppv-form input[type="text"],
+.ppv-form input[type="email"],
+.ppv-form input[type="password"] {
+    width: 100%;
+    padding: .7rem .9rem;
+    font-size: .95rem;
+    margin-bottom: .8rem;
+    border: 1px solid var(--ppv-s-border);
+    border-radius: var(--ppv-s-radius-sm);
+    background: #fff;
+    box-shadow: var(--ppv-s-shadow);
+}
+
+.ppv-form-row {
+    display: flex;
+    gap: .8rem;
+}
+
+.ppv-form-row > div {
+    flex: 1;
+}
+
+/* CHECKBOX -------------------------------------------------------------- */
+.ppv-checkbox {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    margin-bottom: .6rem;
+    font-size: .95rem;
+    cursor: pointer;
+}
+
+.ppv-checkbox input {
+    width: 20px;
+    height: 20px;
+}
+
+/* BUTTONS --------------------------------------------------------------- */
+
+.save-btn,
+.neutral-btn,
+.danger-btn {
+    width: 100%;
+    padding: .85rem;
+    font-size: 1rem;
+    border-radius: var(--ppv-s-radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .35rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.save-btn {
+    border: none;
+    background: var(--ppv-s-primary);
+    color: white;
+    box-shadow: var(--ppv-s-shadow);
+}
+
+.save-btn:hover {
+    background: #1d4ed8;
+}
+
+.neutral-btn {
+    background: var(--ppv-s-primary-soft);
+    color: var(--ppv-s-primary);
+    border: none;
+}
+
+.neutral-btn:hover {
+    background: rgba(37, 99, 235, 0.15);
+}
+
+.danger-btn {
+    background: #ef4444;
+    color: white;
+    border: none;
+}
+
+.danger-btn:hover {
+    background: #dc2626;
+}
+
+/* ACTIONS --------------------------------------------------------------- */
+.ppv-actions {
+    margin-top: 1rem;
+}
+
+/* TOAST --------------------------------------------------------------- */
+.ppv-toast {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    opacity: 0;
+    padding: .8rem 1.3rem;
+    background: #111827;
+    color: white;
+    border-radius: 12px;
+    z-index: 999999;
+    transition: 0.3s ease;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.25);
+}
+
+.ppv-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.ppv-toast.success {
+    background: #10b981;
+}
+
+.ppv-toast.error {
+    background: #ef4444;
+}
+
+/* MODAL --------------------------------------------------------------- */
+.ppv-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(3px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 900000;
+}
+
+.ppv-modal.show {
+    display: flex;
+}
+
+.ppv-modal-inner {
+    background: var(--ppv-bg-primary, #fff);
+    border-radius: 12px;
+    padding: 2rem;
+    max-width: 500px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    position: relative;
+    animation: modalIn .25s ease;
+}
+
+.ppv-modal-inner h4 {
+    margin: 0 0 1.5rem 0;
+    font-size: 18px;
+    color: var(--ppv-text-primary, #1f2937);
+}
+
+.ppv-modal-inner label {
+    display: block;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ppv-text-primary, #1f2937);
+}
+
+.ppv-modal-inner input,
+.ppv-modal-inner select,
+.ppv-modal-inner textarea {
+    width: 100%;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+    border: 1px solid var(--ppv-border, #e5e7eb);
+    border-radius: 6px;
+    background: var(--ppv-bg-primary, #fff);
+    color: var(--ppv-text-primary, #1f2937);
+    font-size: 13px;
+    box-sizing: border-box;
+    transition: 0.2s;
+}
+
+.ppv-modal-inner input:focus,
+.ppv-modal-inner select:focus,
+.ppv-modal-inner textarea:focus {
+    outline: none;
+    border-color: var(--ppv-primary, #6366f1);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.ppv-modal-content {
+    background: var(--ppv-s-card);
+    padding: 1.5rem;
+    width: 90%;
+    max-width: 380px;
+    border-radius: var(--ppv-s-radius);
+    box-shadow: var(--ppv-s-shadow);
+    position: relative;
+    animation: modalIn .25s ease;
+}
+
+@keyframes modalIn {
+    from {opacity: 0; transform: scale(.9);}
+    to {opacity: 1; transform: scale(1);}
+}
+
+.ppv-modal-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    font-size: 1.4rem;
+    cursor: pointer;
+}
+
+.ppv-modal-form input {
+    width: 100%;
+    margin-top: .8rem;
+    padding: .75rem;
+    border-radius: var(--ppv-s-radius-sm);
+    border: 1px solid var(--ppv-s-border);
+}
+
+.ppv-modal-actions {
+    margin-top: 1rem;
+    display: flex;
+    gap: .7rem;
+}
+
+/* ==========================================================================
+   PUNKTEPASS – NATIVE APP FEELING v10.0
+   Full PWA scroll engine • Smooth inertial scroll • Hidden scrollbars
+   Works on iOS Safari, Android Chrome, Desktop PWA
+   Author: Erik Borota / PunktePass
+   ========================================================================== */
+
+/* GLOBAL RESET – remove browser padding, margins, overscroll */
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden; /* No global scroll */
+    background: #f6f8fa;
+    font-family: Inter, sans-serif;
+    -webkit-text-size-adjust: 100%;
+}
+
+/* SAFE AREA FIX (iPhone notch) */
+body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+}
+
+/* APP CONTAINER – belső görgetés */
+.ppv-app-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch; /* iOS inertial scroll */
+    scroll-behavior: smooth;
+
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 90px;
+}
+
+/* FIXED GLOBAL HEADER */
+.ppv-header-fixed {
+    position: sticky;
+    top: 0;
+    left: 0;
+    z-index: 9999;
+    background: #ffffffcc;
+    backdrop-filter: blur(15px);
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+    padding: .9rem 1rem;
+}
+
+/* SCROLLBAR – hide everywhere */
+.ppv-app-container::-webkit-scrollbar,
+body::-webkit-scrollbar,
+html::-webkit-scrollbar {
+    width: 0px;
+    height: 0px;
+}
+
+.ppv-app-container {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+}
+
+/* ANDROID CHROME PERFORMANCE FIX */
+.ppv-app-container {
+    will-change: scroll-position;
+}
+
+/* ===== SMOOTH TOUCH FEEL ===== */
+* {
+    -webkit-tap-highlight-color: transparent;
+}
+
+button, input, select {
+    touch-action: manipulation;
+}
+
+/* PWA FULLSCREEN FEEL */
+@supports (-webkit-touch-callout: none) {
+    html, body {
+        height: -webkit-fill-available;
+    }
+    .ppv-app-container {
+        height: -webkit-fill-available;
+    }
+}
+
+/* GLOBAL PAGE CARD EFFECT */
+.ppv-card {
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.06);
+    padding: 1.2rem;
+    margin-bottom: 1rem;
+}
+
+/* INPUTS */
+.ppv-input {
+    width: 100%;
+    padding: .7rem .9rem;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    font-size: 1rem;
+    background: white;
+}
+
+/* BUTTONS */
+.ppv-btn {
+    width: 100%;
+    padding: .85rem;
+    border-radius: 14px;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    text-align: center;
+    border: none;
+    transition: .2s all;
+}
+
+.ppv-btn-primary {
+    background: #2563eb;
+    color: #fff;
+}
+
+.ppv-btn-primary:hover {
+    background: #1d4ed8;
+}
+
+/* NATIVE APP ANIMATIONS */
+@keyframes slideInUp {
+    from { transform: translateY(25px); opacity: 0; }
+    to   { transform: translateY(0); opacity: 1; }
+}
+
+.ppv-animate-in {
+    animation: slideInUp .35s ease both;
+}
+
+/* DISABLE DOUBLE-TAP ZOOM */
+body, button, input, select {
+    touch-action: manipulation;
+}
+
+/* iOS RUBBER-BAND FIX */
+.ppv-app-container {
+    overscroll-behavior-y: contain;
+}
+
+/* DARK MODE BASE (only structure) */
+[data-theme="dark"] .ppv-app-container {
+    background: #0c0f14;
+}
+
+[data-theme="dark"] .ppv-card {
+    background: #121720;
+    border: 1px solid #222a36;
+    color: #e5e7eb;
+}
+
+[data-theme="dark"] .ppv-header-fixed {
+    background: #0c0f14cc;
+    border-color: #1f2937;
+}
+ppv-app-root {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+.ppv-app-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 70px; /* bottom nav hely */
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* ==========================================================================
+   🎯 QR SCANNER & CAMPAIGNS - COMPLETE STYLING
+   PunktePass Handler Dashboard - QR Center Module
+   Following theme-light.css design system
+   ========================================================================== */
+
+/* ──────────────────────────────────────────────────────────────────────
+   🏠 QR CENTER MAIN CONTAINER
+   ────────────────────────────────────────────────────────────────────── */
+/* 🔧 Removed frame styling - now inside glass-card tab wrapper */
+.ppv-pos-center {
+    padding: 0;
+    margin: 0;
+}
+
+.glass-section {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: var(--pp-glass);
+    border: 1px solid var(--pp-border-soft);
+    border-radius: var(--pp-r-lg);
+    box-shadow: var(--pp-shadow);
+}
+
+.glass-card {
+    background: var(--pp-surface);
+    border: 1px solid var(--pp-border);
+    border-radius: var(--pp-r-md);
+    padding: 1.25rem;
+    box-shadow: var(--pp-shadow-sm);
+    transition: var(--pp-trans);
+}
+
+.glass-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--pp-shadow);
+    border-color: var(--pp-border-strong);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🗂️ TABS NAVIGATION
+   ────────────────────────────────────────────────────────────────────── */
+.ppv-tabs {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid var(--pp-border-soft);
+    padding-bottom: 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.ppv-tab {
+    background: transparent;
+    border: none;
+    padding: 0.875rem 1.5rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--pp-text-3);
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: var(--pp-trans);
+    white-space: nowrap;
+    position: relative;
+}
+
+.ppv-tab:hover {
+    color: var(--pp-primary);
+    background: var(--pp-bg-2);
+    border-radius: var(--pp-r-sm) var(--pp-r-sm) 0 0;
+}
+
+.ppv-tab.active {
+    color: var(--pp-primary);
+    border-bottom-color: var(--pp-primary);
+    font-weight: 700;
+}
+
+.ppv-tab-content {
+    display: none;
+    animation: fadeInUp 0.3s ease;
+}
+
+.ppv-tab-content.active {
+    display: block;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   📊 POS LOG TABLE
+   ────────────────────────────────────────────────────────────────────── */
+.glass-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: var(--pp-surface);
+    border-radius: var(--pp-r-md);
+    overflow: hidden;
+    box-shadow: var(--pp-shadow-sm);
+}
+
+.glass-table thead {
+    background: linear-gradient(135deg, var(--pp-primary) 0%, var(--pp-primary-dark) 100%);
+    color: white;
+}
+
+.glass-table thead th {
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.9rem;
+    letter-spacing: 0.3px;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.glass-table tbody tr {
+    border-bottom: 1px solid var(--pp-border-soft);
+    transition: var(--pp-trans-fast);
+}
+
+.glass-table tbody tr:hover {
+    background: var(--pp-bg-2);
+}
+
+.glass-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.glass-table tbody td {
+    padding: 0.875rem 1rem;
+    font-size: 0.9rem;
+    color: var(--pp-text-2);
+}
+
+.glass-table tbody td:first-child {
+    font-weight: 600;
+    color: var(--pp-text);
+}
+
+/* Log type badges */
+.glass-table .log-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--pp-r-xs);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.log-badge.success {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--pp-success);
+}
+
+.log-badge.error {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--pp-danger);
+}
+
+.log-badge.info {
+    background: rgba(0, 168, 204, 0.15);
+    color: var(--pp-primary);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🎯 CAMPAIGNS SECTION
+   ────────────────────────────────────────────────────────────────────── */
+/* 🔧 Removed padding - inside glass-card tab */
+.ppv-campaigns {
+    padding: 0;
+}
+
+.ppv-campaign-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.ppv-campaign-header h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--pp-text);
+    margin: 0;
+}
+
+.ppv-campaign-controls {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.ppv-filter {
+    padding: 0.625rem 1rem;
+    border: 1px solid var(--pp-border);
+    border-radius: var(--pp-r-sm);
+    background: var(--pp-surface);
+    color: var(--pp-text);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--pp-trans);
+}
+
+.ppv-filter:hover {
+    border-color: var(--pp-primary);
+    box-shadow: 0 0 0 3px rgba(0, 168, 204, 0.1);
+}
+
+.ppv-filter:focus {
+    outline: none;
+    border-color: var(--pp-primary);
+    box-shadow: 0 0 0 3px rgba(0, 168, 204, 0.15);
+}
+
+/* Campaign List Grid */
+.ppv-campaign-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.25rem;
+    margin-top: 1.5rem;
+}
+
+/* Campaign Card */
+.ppv-campaign-card {
+    background: var(--pp-surface);
+    border: 1px solid var(--pp-border);
+    border-radius: var(--pp-r-md);
+    padding: 1.5rem;
+    box-shadow: var(--pp-shadow-sm);
+    transition: var(--pp-trans);
+    position: relative;
+    overflow: hidden;
+}
+
+.ppv-campaign-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--pp-primary);
+    opacity: 0;
+    transition: var(--pp-trans);
+}
+
+.ppv-campaign-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--pp-shadow);
+    border-color: var(--pp-primary);
+}
+
+.ppv-campaign-card:hover::before {
+    opacity: 1;
+}
+
+.ppv-campaign-card h4 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--pp-text);
+    margin: 0 0 0.75rem 0;
+}
+
+.ppv-campaign-card p {
+    font-size: 0.9rem;
+    color: var(--pp-text-2);
+    margin: 0.5rem 0;
+    line-height: 1.5;
+}
+
+.ppv-campaign-card .campaign-value {
+    display: inline-block;
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--pp-primary);
+    margin: 0.75rem 0;
+}
+
+.ppv-campaign-dates {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--pp-text-3);
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--pp-border-soft);
+}
+
+.ppv-campaign-status {
+    display: inline-block;
+    padding: 0.375rem 0.875rem;
+    border-radius: var(--pp-r-xs);
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 1rem;
+}
+
+.ppv-campaign-card.active .ppv-campaign-status {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--pp-success);
+}
+
+.ppv-campaign-card.inactive .ppv-campaign-status {
+    background: rgba(245, 158, 11, 0.15);
+    color: var(--pp-warning);
+}
+
+.ppv-campaign-card.expired .ppv-campaign-status {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--pp-danger);
+}
+
+.ppv-campaign-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   👥 SCANNER USERS SECTION
+   ────────────────────────────────────────────────────────────────────── */
+/* 🔧 Removed padding - inside glass-card tab */
+.ppv-scanner-users {
+    padding: 0;
+}
+
+.ppv-scanner-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.ppv-scanner-header h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--pp-text);
+    margin: 0;
+}
+
+.scanner-users-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.scanner-user-card {
+    background: var(--pp-surface);
+    border: 1px solid var(--pp-border);
+    border-left: 4px solid var(--pp-text-3);
+    border-radius: var(--pp-r-md);
+    padding: 1.25rem;
+    box-shadow: var(--pp-shadow-sm);
+    transition: var(--pp-trans);
+}
+
+.scanner-user-card:hover {
+    transform: translateX(4px);
+    box-shadow: var(--pp-shadow);
+}
+
+.scanner-user-card.active {
+    border-left-color: var(--pp-success);
+}
+
+.scanner-user-card.inactive {
+    border-left-color: var(--pp-text-3);
+    opacity: 0.7;
+}
+
+.scanner-user-card h4 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--pp-text);
+    margin: 0 0 0.5rem 0;
+}
+
+.scanner-user-card p {
+    font-size: 0.9rem;
+    color: var(--pp-text-2);
+    margin: 0.25rem 0;
+}
+
+.scanner-user-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🎨 BUTTONS (Following theme-light style)
+   ────────────────────────────────────────────────────────────────────── */
+.ppv-btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: var(--pp-r-sm);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--pp-trans);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: 'Inter', sans-serif;
+    box-shadow: var(--pp-shadow-sm);
+}
+
+.ppv-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--pp-shadow);
+}
+
+.ppv-btn:active {
+    transform: translateY(0);
+}
+
+.ppv-btn.neon {
+    background: linear-gradient(135deg, var(--pp-primary) 0%, var(--pp-primary-dark) 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 168, 204, 0.3);
+    font-weight: 700;
+}
+
+.ppv-btn.neon:hover {
+    box-shadow: 0 6px 20px rgba(0, 168, 204, 0.45);
+    transform: translateY(-3px);
+}
+
+.ppv-btn-outline {
+    background: transparent;
+    border: 2px solid var(--pp-border);
+    color: var(--pp-text);
+    padding: 0.625rem 1.25rem;
+}
+
+.ppv-btn-outline:hover {
+    background: var(--pp-bg-2);
+    border-color: var(--pp-primary);
+    color: var(--pp-primary);
+}
+
+.ppv-btn.small {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+}
+
+.ppv-btn.danger {
+    background: var(--pp-danger);
+    color: white;
+}
+
+.ppv-btn.danger:hover {
+    background: #dc2626;
+}
+
+.ppv-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   📱 CAMERA MODAL
+   ────────────────────────────────────────────────────────────────────── */
+#ppv-camera-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+#ppv-camera-modal .ppv-modal-inner {
+    background: var(--pp-surface);
+    border-radius: var(--pp-r-lg);
+    max-width: 600px;
+    width: 100%;
+    padding: 2rem;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+#ppv-reader {
+    border: 3px solid var(--pp-primary) !important;
+    border-radius: var(--pp-r-md) !important;
+    overflow: hidden;
+    box-shadow: 0 0 30px rgba(0, 168, 204, 0.3);
+}
+
+#ppv-scan-result {
+    background: linear-gradient(135deg, rgba(0, 168, 204, 0.1), rgba(0, 168, 204, 0.05));
+    border: 2px solid rgba(0, 168, 204, 0.3);
+    border-radius: var(--pp-r-sm);
+    padding: 1rem;
+    text-align: center;
+    font-weight: 600;
+    color: var(--pp-primary);
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🎁 TRIAL INFO BLOCK
+   ────────────────────────────────────────────────────────────────────── */
+.ppv-trial-info-block {
+    background: linear-gradient(135deg, rgba(0, 168, 204, 0.1), rgba(0, 168, 204, 0.05));
+    border: 2px solid var(--pp-primary);
+    border-radius: var(--pp-r-md);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--pp-shadow-sm);
+}
+
+.ppv-trial-info-block h4 {
+    margin: 0 0 0.5rem 0;
+    color: var(--pp-primary);
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.ppv-trial-info-block p {
+    margin: 0;
+    color: var(--pp-text-2);
+    font-size: 0.9rem;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   📱 RESPONSIVE
+   ────────────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+    /* Mobile: Full width for POS center */
+    .ppv-pos-center,
+    .ppv-campaigns,
+    .ppv-scanner-users {
+        padding: 1rem;
+        margin-left: 0;
+        margin-right: 0;
+        border-radius: var(--pp-r-sm);
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .ppv-tabs {
+        gap: 0.5rem;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .ppv-tab {
+        padding: 0.75rem 1rem;
+        font-size: 0.85rem;
+        white-space: nowrap;
+    }
+
+    /* Mobile: Stack POS header vertically */
+    .ppv-pos-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+
+    .ppv-pos-title {
+        font-size: 1.1rem;
+        text-align: center;
+    }
+
+    .ppv-csv-wrapper {
+        width: 100%;
+    }
+
+    .ppv-csv-btn {
+        width: 100%;
+        padding: 10px;
+        font-size: 13px;
+    }
+
+    .ppv-campaign-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .ppv-campaign-controls {
+        flex-direction: column;
+    }
+
+    .ppv-campaign-list {
+        grid-template-columns: 1fr;
+    }
+
+    .glass-table {
+        font-size: 0.85rem;
+    }
+
+    .glass-table thead th,
+    .glass-table tbody td {
+        padding: 0.75rem 0.5rem;
+    }
+
+    #ppv-support-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 20px;
+        bottom: 80px;
+        left: 15px;
+    }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🎨 OFFLINE BANNER
+   ────────────────────────────────────────────────────────────────────── */
+#ppv-offline-banner {
+    background: linear-gradient(135deg, var(--pp-warning), #f97316);
+    color: white;
+    padding: 1rem;
+    border-radius: var(--pp-r-sm);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: var(--pp-shadow);
+    font-weight: 600;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   📊 POS LOG HEADER (Letzte Scans)
+   ────────────────────────────────────────────────────────────────────── */
+.ppv-pos-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    gap: 1rem;
+}
+
+.ppv-pos-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--pp-text);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🎯 CSV EXPORT MENU
+   ────────────────────────────────────────────────────────────────────── */
+.ppv-csv-wrapper {
+    position: relative;
+}
+
+.ppv-csv-btn {
+    padding: 8px 16px;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+#ppv-csv-export-menu,
+.ppv-csv-dropdown {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    margin-top: 5px;
+    min-width: 200px;
+    z-index: 1000;
+    background: var(--pp-surface);
+    border: 1px solid var(--pp-border);
+    border-radius: var(--pp-r-sm);
+    box-shadow: var(--pp-shadow-lg);
+    overflow: hidden;
+    animation: dropdownIn 0.2s ease;
+}
+
+@keyframes dropdownIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.ppv-csv-export-option {
+    display: block;
+    padding: 0.875rem 1.25rem;
+    color: var(--pp-text);
+    text-decoration: none;
+    border-bottom: 1px solid var(--pp-border-soft);
+    transition: var(--pp-trans-fast);
+    font-size: 0.9rem;
+}
+
+.ppv-csv-export-option:last-child {
+    border-bottom: none;
+}
+
+.ppv-csv-export-option:hover {
+    background: var(--pp-bg-2);
+    color: var(--pp-primary);
+    padding-left: 1.5rem;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🎉 END OF QR SCANNER & CAMPAIGNS STYLING
+   ────────────────────────────────────────────────────────────────────── */
+
+/* ══════════════════════════════════════════════════════════════════════
+   🎁 REWARDS MANAGEMENT SECTION
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ──────────────────────────────────────────────────────────────────────
+   🎨 MAIN WRAPPER
+   ────────────────────────────────────────────────────────────────────── */
+/* 🔧 Removed frame styling - wrapper is now inside glass-card tab */
+.ppv-rewards-management-wrapper {
+    padding: 0;
+    margin: 0;
+}
+
+/* Only apply frame when used standalone (not in tabs) */
+.ppv-rewards-management-wrapper.standalone {
+    background: var(--pp-surface);
+    border-radius: var(--pp-r-lg);
+    padding: 2rem;
+    box-shadow: var(--pp-shadow);
+    margin: 1.5rem 0;
+}
+
+.ppv-rewards-management-wrapper h2 {
+    margin: 0 0 1.5rem 0;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--pp-text);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   📝 FORM STYLING
+   ────────────────────────────────────────────────────────────────────── */
+/* 🔧 Simplified form - removed frame styling for cleaner look in tabs */
+.ppv-reward-form {
+    padding: 0;
+    margin-bottom: 1.5rem;
+}
+
+.ppv-reward-form label {
+    display: block;
+    margin-bottom: 0.5rem;
+    margin-top: 1rem;
+    color: var(--pp-text);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.ppv-reward-form label:first-of-type {
+    margin-top: 0;
+}
+
+.ppv-reward-form input[type="text"],
+.ppv-reward-form input[type="number"],
+.ppv-reward-form textarea,
+.ppv-reward-form select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--pp-border);
+    border-radius: var(--pp-r-sm);
+    background: var(--pp-surface);
+    color: var(--pp-text);
+    font-size: 0.95rem;
+    font-family: inherit;
+    transition: var(--pp-trans-fast);
+}
+
+.ppv-reward-form input[type="text"]:focus,
+.ppv-reward-form input[type="number"]:focus,
+.ppv-reward-form textarea:focus,
+.ppv-reward-form select:focus {
+    outline: none;
+    border-color: var(--pp-primary);
+    box-shadow: 0 0 0 3px rgba(0, 168, 204, 0.1);
+}
+
+.ppv-reward-form textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.ppv-reward-form small {
+    display: block;
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--pp-text-2);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🔘 FORM BUTTONS
+   ────────────────────────────────────────────────────────────────────── */
+.ppv-btn-blue {
+    background: linear-gradient(135deg, var(--pp-primary) 0%, var(--pp-primary-dark) 100%);
+    color: white;
+    border: none;
+    padding: 0.875rem 1.5rem;
+    border-radius: var(--pp-r-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--pp-trans-fast);
+    font-size: 0.95rem;
+    box-shadow: 0 4px 12px rgba(0, 168, 204, 0.3);
+}
+
+.ppv-btn-blue:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 168, 204, 0.4);
+}
+
+.ppv-btn-blue:active {
+    transform: translateY(0);
+}
+
+.ppv-btn-outline {
+    background: transparent;
+    color: var(--pp-primary);
+    border: 1px solid var(--pp-primary);
+    padding: 0.75rem 1.25rem;
+    border-radius: var(--pp-r-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--pp-trans-fast);
+    font-size: 0.9rem;
+}
+
+.ppv-btn-outline:hover {
+    background: var(--pp-primary);
+    color: white;
+}
+
+.ppv-btn-outline.ppv-delete {
+    color: #ef4444;
+    border-color: #ef4444;
+}
+
+.ppv-btn-outline.ppv-delete:hover {
+    background: #ef4444;
+    color: white;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🎁 REWARDS GRID
+   ────────────────────────────────────────────────────────────────────── */
+.ppv-reward-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.25rem;
+    margin-top: 1.5rem;
+}
+
+.ppv-reward-item {
+    background: var(--pp-surface);
+    border: 1px solid var(--pp-border);
+    border-radius: var(--pp-r-md);
+    padding: 1.5rem;
+    transition: var(--pp-trans);
+    position: relative;
+}
+
+.ppv-reward-item.glass-card {
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(10px);
+}
+
+.ppv-reward-item:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    border-color: var(--pp-primary);
+}
+
+.ppv-reward-item h4 {
+    margin: 0 0 0.75rem 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--pp-text);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.ppv-reward-item p {
+    margin: 0 0 1rem 0;
+    color: var(--pp-text-2);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    min-height: 40px;
+}
+
+.ppv-reward-item small {
+    font-size: 0.85rem;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   ⏳ LOADING STATE
+   ────────────────────────────────────────────────────────────────────── */
+.ppv-loading {
+    text-align: center;
+    padding: 2rem;
+    color: var(--pp-text-2);
+    font-size: 1rem;
+}
+
+.ppv-loading::after {
+    content: "";
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    margin-left: 10px;
+    border: 2px solid var(--pp-primary);
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   ⚠️ WARNING & INFO MESSAGES
+   ────────────────────────────────────────────────────────────────────── */
+.ppv-warning {
+    background: linear-gradient(135deg, var(--pp-warning), #f97316);
+    color: white;
+    padding: 1rem 1.25rem;
+    border-radius: var(--pp-r-sm);
+    margin: 1rem 0;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+}
+
+.ppv-reward-grid p[style*="color:#999"] {
+    text-align: center;
+    grid-column: 1 / -1;
+    padding: 2rem;
+    color: var(--pp-text-2) !important;
+}
+
+.ppv-reward-grid p[style*="color:#ef4444"] {
+    text-align: center;
+    grid-column: 1 / -1;
+    padding: 2rem;
+    color: #ef4444 !important;
+    background: rgba(239, 68, 68, 0.1);
+    border-radius: var(--pp-r-sm);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🍞 TOAST NOTIFICATIONS
+   ────────────────────────────────────────────────────────────────────── */
+.ppv-toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 1rem 1.5rem;
+    border-radius: var(--pp-r-sm);
+    z-index: 999999;
+    font-weight: 600;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    animation: slideIn 0.3s ease-out;
+}
+
+.ppv-toast.success {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+}
+
+.ppv-toast.error {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+}
+
+.ppv-toast.info {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   📱 RESPONSIVE - MOBILE OPTIMIZATION
+   ────────────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .ppv-rewards-management-wrapper {
+        padding: 1.25rem;
+    }
+
+    .ppv-rewards-management-wrapper h2 {
+        font-size: 1.4rem;
+    }
+
+    .ppv-reward-form {
+        padding: 1.25rem;
+    }
+
+    .ppv-reward-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .ppv-reward-item {
+        padding: 1.25rem;
+    }
+
+    .ppv-btn-blue,
+    .ppv-btn-outline {
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .ppv-rewards-management-wrapper {
+        padding: 1rem;
+        border-radius: var(--pp-r-sm);
+    }
+
+    .ppv-reward-form {
+        padding: 1rem;
+    }
+
+    .ppv-reward-item h4 {
+        font-size: 1rem;
+    }
+
+    .ppv-toast {
+        left: 10px;
+        right: 10px;
+        bottom: 10px;
+    }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🎉 END OF REWARDS MANAGEMENT STYLING
+   ────────────────────────────────────────────────────────────────────── */
+
+/* ══════════════════════════════════════════════════════════════════════
+   🆘 SUPPORT BUTTON & TICKET MODAL
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ──────────────────────────────────────────────────────────────────────
+   🆘 FLOATING SUPPORT BUTTON
+   ────────────────────────────────────────────────────────────────────── */
+#ppv-support-btn {
+    position: fixed;
+    bottom: 90px;
+    left: 20px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--pp-primary) 0%, var(--pp-primary-dark) 100%);
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0, 168, 204, 0.4);
+    z-index: 10000;
+    transition: box-shadow 0.3s ease, opacity 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: auto;
+}
+
+#ppv-support-btn:hover {
+    box-shadow: 0 6px 20px rgba(0, 168, 204, 0.6);
+    opacity: 0.9;
+}
+
+#ppv-support-btn:active {
+    opacity: 0.7;
+    box-shadow: 0 2px 10px rgba(0, 168, 204, 0.5);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   📋 SUPPORT MODAL
+   ────────────────────────────────────────────────────────────────────── */
+.ppv-support-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 10001;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.ppv-support-modal.show {
+    display: flex !important;
+}
+
+.ppv-support-modal-content {
+    background: var(--pp-surface);
+    padding: 30px;
+    border-radius: 15px;
+    max-width: 500px;
+    width: 100%;
+    box-shadow: var(--pp-shadow-lg);
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: modalSlideIn 0.3s ease;
+    margin: auto;
+    position: relative;
+    border: 1px solid var(--pp-border);
+}
+
+.ppv-support-modal-title {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    color: var(--pp-text);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.ppv-support-modal-description {
+    color: var(--pp-text-2);
+    font-size: 14px;
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   📝 FORM ELEMENTS
+   ────────────────────────────────────────────────────────────────────── */
+.ppv-support-label {
+    color: var(--pp-text);
+    font-size: 13px;
+    display: block;
+    margin-bottom: 5px;
+    margin-top: 15px;
+    font-weight: 600;
+}
+
+.ppv-support-label:first-of-type {
+    margin-top: 0;
+}
+
+.ppv-required {
+    color: #ff5252;
+}
+
+.ppv-support-input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--pp-border);
+    background: var(--pp-bg-2);
+    color: var(--pp-text);
+    margin-bottom: 15px;
+    font-family: inherit;
+    font-size: 14px;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.ppv-support-input:focus {
+    outline: none;
+    border-color: var(--pp-primary);
+    box-shadow: 0 0 0 3px rgba(0, 168, 204, 0.2);
+}
+
+textarea.ppv-support-input {
+    resize: vertical;
+    min-height: 100px;
+}
+
+select.ppv-support-input {
+    cursor: pointer;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   📢 MESSAGE ALERTS
+   ────────────────────────────────────────────────────────────────────── */
+.ppv-support-message {
+    display: none;
+    font-size: 13px;
+    margin-bottom: 10px;
+    padding: 10px;
+    border-radius: 6px;
+}
+
+.ppv-support-message.show {
+    display: block;
+}
+
+.ppv-support-error {
+    color: #ff5252;
+    background: rgba(255, 82, 82, 0.1);
+    border: 1px solid rgba(255, 82, 82, 0.3);
+}
+
+.ppv-support-success {
+    color: #4caf50;
+    background: rgba(76, 175, 80, 0.1);
+    border: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🔘 MODAL BUTTONS
+   ────────────────────────────────────────────────────────────────────── */
+.ppv-support-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.ppv-support-btn-submit,
+.ppv-support-btn-cancel {
+    flex: 1;
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 14px;
+    border: none;
+}
+
+.ppv-support-btn-submit {
+    background: linear-gradient(135deg, var(--pp-primary) 0%, var(--pp-primary-dark) 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 168, 204, 0.3);
+}
+
+.ppv-support-btn-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 168, 204, 0.4);
+}
+
+.ppv-support-btn-submit:active {
+    transform: translateY(0);
+}
+
+.ppv-support-btn-cancel {
+    background: transparent;
+    color: var(--pp-text-2);
+    border: 1px solid var(--pp-border);
+}
+
+.ppv-support-btn-cancel:hover {
+    background: var(--pp-bg-2);
+    border-color: var(--pp-primary);
+    color: var(--pp-text);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   📱 RESPONSIVE - MOBILE OPTIMIZATION
+   ────────────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+    #ppv-support-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 20px;
+        bottom: 80px;
+        left: 15px;
+    }
+
+    .ppv-support-modal-content {
+        padding: 20px;
+        width: 95%;
+    }
+
+    .ppv-support-modal-title {
+        font-size: 1.25rem;
+    }
+
+    .ppv-support-buttons {
+        flex-direction: column;
+    }
+
+    .ppv-support-btn-submit,
+    .ppv-support-btn-cancel {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .ppv-support-modal-content {
+        padding: 15px;
+        border-radius: 10px;
+    }
+
+    .ppv-support-input {
+        padding: 10px;
+        font-size: 13px;
+    }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🎉 END OF SUPPORT SECTION STYLING
+   ────────────────────────────────────────────────────────────────────── */
+
+/* ══════════════════════════════════════════════════════════════════════
+   ✅ EINLÖSUNGEN & QUITTUNGEN VERWALTUNG (Redemptions & Receipts)
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ──────────────────────────────────────────────────────────────────────
+   📦 MAIN WRAPPER
+   ────────────────────────────────────────────────────────────────────── */
+
+.ppv-rewards-wrapper {
+    background: var(--pp-surface);
+    border-radius: var(--pp-radius-lg);
+    padding: var(--pp-spacing-xl);
+    margin-bottom: var(--pp-spacing-xl);
+    box-shadow: var(--pp-shadow-md);
+}
+
+.ppv-rewards-wrapper h2 {
+    margin: 0 0 var(--pp-spacing-lg) 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--pp-text);
+    display: flex;
+    align-items: center;
+    gap: var(--pp-spacing-sm);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🔖 TAB MENU
+   ────────────────────────────────────────────────────────────────────── */
+
+.ppv-rewards-tabs {
+    display: flex;
+    gap: var(--pp-spacing-sm);
+    margin-bottom: var(--pp-spacing-lg);
+    border-bottom: 2px solid var(--pp-border);
+}
+
+.ppv-tab-btn {
+    padding: 12px 20px;
+    background: none;
+    border: none;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    color: var(--pp-text-2);
+    transition: all 0.3s ease;
+}
+
+.ppv-tab-btn:hover {
+    color: var(--pp-primary);
+    background: var(--pp-bg-2);
+}
+
+.ppv-tab-btn.ppv-tab-active {
+    border-bottom-color: var(--pp-primary);
+    color: var(--pp-primary);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   📋 TAB CONTENT
+   ────────────────────────────────────────────────────────────────────── */
+
+.ppv-tab-content {
+    display: none;
+}
+
+.ppv-tab-content[style*="display: block"],
+.ppv-tab-content[style*="display:block"] {
+    display: block !important;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   ✅ EINLÖSUNGEN SECTION (Redemptions)
+   ────────────────────────────────────────────────────────────────────── */
+
+.ppv-redeem-section {
+    margin-bottom: var(--pp-spacing-xl);
+}
+
+.ppv-redeem-section h3 {
+    margin: 0 0 var(--pp-spacing-lg) 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--pp-text);
+    display: flex;
+    align-items: center;
+    gap: var(--pp-spacing-sm);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🎴 REDEEM GRID LAYOUT
+   ────────────────────────────────────────────────────────────────────── */
+
+.ppv-redeem-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: var(--pp-spacing-lg);
+    margin-bottom: var(--pp-spacing-xl);
+}
+
+@media (max-width: 768px) {
+    .ppv-redeem-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🎁 REDEEM ITEM CARD
+   ────────────────────────────────────────────────────────────────────── */
+
+.ppv-redeem-item {
+    background: var(--pp-bg);
+    border: 1px solid var(--pp-border);
+    border-radius: var(--pp-radius-md);
+    padding: var(--pp-spacing-lg);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: var(--pp-shadow-sm);
+}
+
+.ppv-redeem-item:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--pp-shadow-lg);
+    border-color: var(--pp-primary);
+}
+
+/* Status Stripe */
+.ppv-redeem-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--pp-warning);
+    transition: all 0.3s ease;
+}
+
+.ppv-redeem-item.status-approved::before {
+    background: var(--pp-success);
+}
+
+.ppv-redeem-item.status-cancelled::before {
+    background: var(--pp-danger);
+}
+
+.ppv-redeem-item.status-pending::before {
+    background: var(--pp-warning);
+    animation: ppv-pulse-glow 2s infinite;
+}
+
+@keyframes ppv-pulse-glow {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   📝 REDEEM ITEM CONTENT
+   ────────────────────────────────────────────────────────────────────── */
+
+.ppv-redeem-item strong {
+    display: block;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--pp-text);
+    margin-bottom: var(--pp-spacing-sm);
+    line-height: 1.3;
+}
+
+.ppv-redeem-item small {
+    display: block;
+    font-size: 13px;
+    color: var(--pp-text-2);
+    margin-bottom: var(--pp-spacing-xs);
+    line-height: 1.5;
+}
+
+.ppv-redeem-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--pp-spacing-md);
+    margin: var(--pp-spacing-md) 0;
+    padding-top: var(--pp-spacing-md);
+    border-top: 1px solid var(--pp-border);
+}
+
+.ppv-redeem-meta-item {
+    display: flex;
+    align-items: center;
+    gap: var(--pp-spacing-xs);
+    font-size: 13px;
+    color: var(--pp-text-2);
+}
+
+.ppv-redeem-meta-item i {
+    font-size: 16px;
+    color: var(--pp-primary);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🔘 REDEEM ACTION BUTTONS
+   ────────────────────────────────────────────────────────────────────── */
+
+.ppv-redeem-actions {
+    display: flex;
+    gap: var(--pp-spacing-sm);
+    margin-top: var(--pp-spacing-lg);
+}
+
+.ppv-approve,
+.ppv-reject {
+    flex: 1;
+    padding: 10px 16px;
+    border: none;
+    border-radius: var(--pp-radius-sm);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--pp-spacing-xs);
+}
+
+.ppv-approve {
+    background: linear-gradient(135deg, var(--pp-success) 0%, #059669 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.ppv-approve:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.ppv-approve:active {
+    transform: translateY(0);
+}
+
+.ppv-reject {
+    background: var(--pp-bg-2);
+    color: var(--pp-text);
+    border: 1px solid var(--pp-border);
+}
+
+.ppv-reject:hover {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: var(--pp-danger);
+    color: var(--pp-danger);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   📜 LOG BOX (Letzte 10 Einlösungen)
+   ────────────────────────────────────────────────────────────────────── */
+
+.ppv-log-box {
+    background: var(--pp-bg);
+    border: 1px solid var(--pp-border);
+    border-radius: var(--pp-radius-md);
+    padding: var(--pp-spacing-lg);
+    box-shadow: var(--pp-shadow-sm);
+}
+
+.ppv-log-box h3 {
+    margin: 0 0 var(--pp-spacing-md) 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--pp-text);
+    display: flex;
+    align-items: center;
+    gap: var(--pp-spacing-sm);
+}
+
+#ppv-log-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--pp-spacing-md);
+}
+
+.ppv-log-item {
+    padding: var(--pp-spacing-md);
+    background: var(--pp-bg-2);
+    border-left: 3px solid var(--pp-primary);
+    border-radius: var(--pp-radius-sm);
+    transition: all 0.3s ease;
+}
+
+.ppv-log-item:hover {
+    background: var(--pp-surface);
+    transform: translateX(4px);
+}
+
+.ppv-log-item strong {
+    font-size: 14px;
+    color: var(--pp-primary);
+    font-weight: 600;
+}
+
+.ppv-log-item small {
+    font-size: 12px;
+    color: var(--pp-text-2);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   📄 QUITTUNGEN/BIZONYLATOK SECTION (Receipts)
+   ────────────────────────────────────────────────────────────────────── */
+
+.ppv-receipts-filter {
+    margin-bottom: var(--pp-spacing-lg);
+    display: flex;
+    gap: var(--pp-spacing-sm);
+    flex-wrap: wrap;
+}
+
+.ppv-receipts-filter input[type="text"],
+.ppv-receipts-filter input[type="date"] {
+    padding: 10px;
+    border: 1px solid var(--pp-border);
+    border-radius: var(--pp-radius-sm);
+    font-size: 14px;
+    color: var(--pp-text);
+    background: var(--pp-surface);
+    transition: all 0.3s ease;
+}
+
+.ppv-receipts-filter input[type="text"] {
+    flex: 1;
+    min-width: 200px;
+}
+
+.ppv-receipts-filter input[type="text"]:focus,
+.ppv-receipts-filter input[type="date"]:focus {
+    outline: none;
+    border-color: var(--pp-primary);
+    box-shadow: 0 0 0 3px rgba(var(--pp-primary-rgb), 0.1);
+}
+
+.ppv-receipts-filter input::placeholder {
+    color: var(--pp-text-2);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   📋 RECEIPTS GRID
+   ────────────────────────────────────────────────────────────────────── */
+
+.ppv-receipts-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--pp-spacing-sm);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🎫 RECEIPT CARD
+   ────────────────────────────────────────────────────────────────────── */
+
+.ppv-receipt-card {
+    padding: var(--pp-spacing-md);
+    margin-bottom: var(--pp-spacing-sm);
+    background: var(--pp-surface);
+    border: 1px solid var(--pp-border);
+    border-radius: var(--pp-radius-sm);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--pp-spacing-md);
+    transition: all 0.3s ease;
+    box-shadow: var(--pp-shadow-sm);
+}
+
+.ppv-receipt-card:hover {
+    border-color: var(--pp-primary);
+    box-shadow: var(--pp-shadow-md);
+    transform: translateX(4px);
+}
+
+.ppv-receipt-card strong {
+    font-size: 14px;
+    color: var(--pp-text);
+}
+
+.ppv-receipt-card small {
+    color: var(--pp-text-2);
+    font-size: 12px;
+}
+
+.ppv-receipt-download-btn {
+    padding: 10px 16px;
+    background: var(--pp-primary);
+    color: white;
+    border: none;
+    border-radius: var(--pp-radius-sm);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: var(--pp-spacing-xs);
+    white-space: nowrap;
+    transition: all 0.3s ease;
+}
+
+.ppv-receipt-download-btn:hover {
+    background: var(--pp-primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(var(--pp-primary-rgb), 0.3);
+}
+
+.ppv-receipt-download-btn:active {
+    transform: translateY(0);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🔄 LOADING & EMPTY STATES
+   ────────────────────────────────────────────────────────────────────── */
+
+.ppv-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--pp-spacing-md);
+    padding: var(--pp-spacing-xl);
+    color: var(--pp-text-2);
+    font-size: 14px;
+    animation: ppv-pulse-fade 1.5s infinite;
+}
+
+@keyframes ppv-pulse-fade {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.ppv-redeem-empty,
+.ppv-receipts-empty {
+    padding: var(--pp-spacing-xl);
+    text-align: center;
+    background: var(--pp-bg-2);
+    border-radius: var(--pp-radius-sm);
+    color: var(--pp-text-2);
+    font-size: 14px;
+}
+
+.ppv-redeem-empty::before,
+.ppv-receipts-empty::before {
+    content: '📭';
+    display: block;
+    font-size: 48px;
+    margin-bottom: var(--pp-spacing-sm);
+}
+
+.ppv-error {
+    padding: var(--pp-spacing-md);
+    background: #fee;
+    border-radius: var(--pp-radius-sm);
+    color: #c33;
+    border: 1px solid #fcc;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   📱 RESPONSIVE DESIGN
+   ────────────────────────────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+    .ppv-rewards-wrapper {
+        padding: var(--pp-spacing-md);
+    }
+
+    .ppv-rewards-wrapper h2 {
+        font-size: 20px;
+    }
+
+    .ppv-rewards-tabs {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .ppv-tab-btn {
+        white-space: nowrap;
+        padding: 10px 16px;
+    }
+
+    .ppv-redeem-actions {
+        flex-direction: column;
+    }
+
+    .ppv-redeem-actions button {
+        width: 100%;
+    }
+
+    .ppv-redeem-meta {
+        flex-direction: column;
+        gap: var(--pp-spacing-xs);
+    }
+
+    .ppv-receipt-card {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .ppv-receipt-download-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .ppv-receipts-filter {
+        flex-direction: column;
+    }
+
+    .ppv-receipts-filter input[type="text"],
+    .ppv-receipts-filter input[type="date"],
+    .ppv-receipts-filter button {
+        width: 100%;
+    }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🎉 END OF EINLÖSUNGEN & QUITTUNGEN STYLING
+   ────────────────────────────────────────────────────────────────────── */
+   
+   /**
+ * PunktePass – Onboarding System CSS
+ * Version: 1.0
+ * ✅ Minimal & Professional design
+ * ✅ CSS változók kompatibilis (theme-light.css)
+ *
+ * HASZNÁLAT: Ezt a fájlt manuálisan illeszd be a globális CSS-be!
+ */
+
+/* ============================================================
+ * 🎯 MODAL BACKDROP & BASE
+ * ============================================================ */
+.ppv-onboarding-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 999999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    padding: 20px;
+}
+
+.ppv-onboarding-modal-backdrop.show {
+    opacity: 1;
+}
+
+.ppv-onboarding-modal {
+    background: var(--pp-surface, #ffffff);
+    border-radius: var(--pp-radius-lg, 12px);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    max-width: 600px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: var(--pp-spacing-xl, 32px);
+    position: relative;
+    transform: translateY(20px);
+    transition: transform 0.3s ease;
+}
+
+.ppv-onboarding-modal-backdrop.show .ppv-onboarding-modal {
+    transform: translateY(0);
+}
+
+.ppv-modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: none;
+    border: none;
+    font-size: 28px;
+    color: var(--pp-text-2, #64748b);
+    cursor: pointer;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.ppv-modal-close:hover {
+    background: var(--pp-surface-2, #f8fafc);
+    color: var(--pp-text, #1e293b);
+}
+
+/* ============================================================
+ * 👋 WELCOME MODAL
+ * ============================================================ */
+.ppv-welcome-modal {
+    text-align: center;
+}
+
+.ppv-modal-icon {
+    font-size: 64px;
+    margin-bottom: 20px;
+    animation: ppv-bounce 0.6s ease;
+}
+
+@keyframes ppv-bounce {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.ppv-welcome-modal h2 {
+    font-size: 28px;
+    color: var(--pp-text, #1e293b);
+    margin-bottom: 16px;
+}
+
+.ppv-welcome-modal p {
+    font-size: 16px;
+    color: var(--pp-text-2, #64748b);
+    margin-bottom: 24px;
+    line-height: 1.6;
+}
+
+.ppv-welcome-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 24px;
+    text-align: left;
+}
+
+.ppv-welcome-step {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: var(--pp-surface-2, #f8fafc);
+    border-radius: var(--pp-radius-sm, 6px);
+}
+
+.ppv-welcome-step .step-number {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--pp-primary, #0066cc);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.ppv-welcome-step span:last-child {
+    font-size: 14px;
+    color: var(--pp-text, #1e293b);
+    font-weight: 600;
+}
+
+.ppv-welcome-time {
+    font-size: 14px;
+    color: var(--pp-text-2, #64748b);
+    margin-bottom: 24px;
+    padding: 8px 12px;
+    background: var(--pp-surface-2, #f8fafc);
+    border-radius: var(--pp-radius-sm, 6px);
+    display: inline-block;
+}
+
+/* ============================================================
+ * 🧙 WIZARD MODAL
+ * ============================================================ */
+.ppv-wizard-modal h3 {
+    font-size: 22px;
+    color: var(--pp-text, #1e293b);
+    margin-bottom: 24px;
+}
+
+.ppv-wizard-progress {
+    margin-bottom: 24px;
+}
+
+.ppv-progress-bar-container {
+    position: relative;
+}
+
+.ppv-progress-bar {
+    height: 8px;
+    background: var(--pp-surface-2, #f8fafc);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.ppv-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--pp-primary, #0066cc), var(--pp-success, #10b981));
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 4px;
+}
+
+.ppv-progress-text {
+    font-size: 13px;
+    color: var(--pp-text-2, #64748b);
+    text-align: right;
+}
+
+.ppv-wizard-form {
+    margin-bottom: 24px;
+}
+
+.ppv-form-group {
+    margin-bottom: 16px;
+}
+
+.ppv-form-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--pp-text, #1e293b);
+    margin-bottom: 6px;
+}
+
+.ppv-form-group input,
+.ppv-form-group select,
+.ppv-form-group textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--pp-border, #e2e8f0);
+    border-radius: var(--pp-radius-sm, 6px);
+    font-size: 14px;
+    color: var(--pp-text, #1e293b);
+    background: var(--pp-surface, #ffffff);
+    transition: all 0.2s ease;
+}
+
+.ppv-form-group input:focus,
+.ppv-form-group select:focus,
+.ppv-form-group textarea:focus {
+    outline: none;
+    border-color: var(--pp-primary, #0066cc);
+    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+}
+
+.ppv-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.ppv-wizard-tip {
+    padding: 12px;
+    background: rgba(245, 158, 11, 0.1);
+    border-left: 4px solid var(--pp-warning, #f59e0b);
+    border-radius: var(--pp-radius-sm, 6px);
+    font-size: 13px;
+    color: var(--pp-text-2, #64748b);
+    margin-top: 16px;
+}
+
+/* ============================================================
+ * 🎉 CELEBRATION MODAL
+ * ============================================================ */
+.ppv-celebration-modal {
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.ppv-celebration-icon {
+    font-size: 80px;
+    animation: ppv-celebration-spin 0.8s ease;
+}
+
+@keyframes ppv-celebration-spin {
+    0% { transform: rotate(0deg) scale(0); }
+    50% { transform: rotate(180deg) scale(1.2); }
+    100% { transform: rotate(360deg) scale(1); }
+}
+
+.ppv-celebration-modal h2 {
+    font-size: 32px;
+    color: var(--pp-text, #1e293b);
+    margin-bottom: 16px;
+}
+
+.ppv-celebration-modal p {
+    font-size: 16px;
+    color: var(--pp-text-2, #64748b);
+    margin-bottom: 12px;
+    line-height: 1.6;
+}
+
+.ppv-celebration-tip {
+    padding: 16px;
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(251, 146, 60, 0.1));
+    border-left: 4px solid var(--pp-warning, #f59e0b);
+    border-radius: var(--pp-radius-sm, 6px);
+    font-size: 14px;
+    color: var(--pp-text, #1e293b);
+    margin: 24px 0;
+    text-align: left;
+}
+
+.ppv-auto-close {
+    margin-top: 16px;
+    font-size: 13px;
+    color: var(--pp-text-3, #94a3b8);
+}
+
+/* ============================================================
+ * 🎊 CONFETTI ANIMATION
+ * ============================================================ */
+.ppv-confetti-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: -1;
+}
+
+.ppv-confetti {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    top: -20px;
+    animation: ppv-confetti-fall linear forwards;
+}
+
+@keyframes ppv-confetti-fall {
+    to {
+        transform: translateY(110vh) rotate(360deg);
+        opacity: 0;
+    }
+}
+
+/* ============================================================
+ * 📊 PROGRESS CARD
+ * ============================================================ */
+.ppv-onboarding-progress-card {
+    background: var(--pp-surface, #ffffff);
+    border: 1px solid var(--pp-border, #e2e8f0);
+    border-radius: var(--pp-radius-lg, 12px);
+    padding: var(--pp-spacing-lg, 24px);
+    margin-bottom: var(--pp-spacing-xl, 32px);
+    box-shadow: var(--pp-shadow-md, 0 4px 6px rgba(0, 0, 0, 0.07));
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+}
+
+.ppv-onboarding-progress-card.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.ppv-onboarding-progress-card.highlight {
+    border-color: var(--pp-primary, #0066cc);
+    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+}
+
+.ppv-progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.ppv-progress-header h3 {
+    font-size: 18px;
+    color: var(--pp-text, #1e293b);
+    margin: 0;
+}
+
+.ppv-card-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: var(--pp-text-2, #64748b);
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.ppv-card-close:hover {
+    background: var(--pp-surface-2, #f8fafc);
+    color: var(--pp-text, #1e293b);
+}
+
+.ppv-progress-bar-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.ppv-progress-bar-container .ppv-progress-bar {
+    flex: 1;
+}
+
+.ppv-progress-label {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--pp-primary, #0066cc);
+    min-width: 45px;
+    text-align: right;
+}
+
+.ppv-progress-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.ppv-progress-step {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    background: var(--pp-surface-2, #f8fafc);
+    border-radius: var(--pp-radius-sm, 6px);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.ppv-progress-step.completed {
+    cursor: default;
+    opacity: 0.7;
+}
+
+.ppv-progress-step:not(.completed):hover {
+    background: var(--pp-surface-3, #f1f5f9);
+    border-left: 3px solid var(--pp-primary, #0066cc);
+}
+
+.ppv-step-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.ppv-step-label {
+    flex: 1;
+    font-size: 14px;
+    color: var(--pp-text, #1e293b);
+    font-weight: 600;
+}
+
+.ppv-step-action {
+    background: var(--pp-primary, #0066cc);
+    color: white;
+    border: none;
+    padding: 4px 12px;
+    border-radius: var(--pp-radius-sm, 6px);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.ppv-step-action:hover {
+    background: var(--pp-primary-dark, #0052a3);
+}
+
+.ppv-progress-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+/* ============================================================
+ * 📌 STICKY REMINDER
+ * ============================================================ */
+.ppv-onboarding-sticky {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.3s ease;
+}
+
+.ppv-onboarding-sticky.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.ppv-sticky-btn {
+    padding: 12px 20px;
+    background: linear-gradient(135deg, var(--pp-primary, #0066cc), var(--pp-info, #3b82f6));
+    color: white;
+    border: none;
+    border-radius: 50px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(0, 102, 204, 0.3);
+    transition: all 0.2s ease;
+    animation: ppv-sticky-pulse 2s infinite;
+}
+
+@keyframes ppv-sticky-pulse {
+    0%, 100% {
+        box-shadow: 0 6px 20px rgba(0, 102, 204, 0.3);
+    }
+    50% {
+        box-shadow: 0 6px 30px rgba(0, 102, 204, 0.5);
+    }
+}
+
+.ppv-sticky-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 102, 204, 0.4);
+}
+
+.ppv-sticky-close {
+    width: 28px;
+    height: 28px;
+    background: var(--pp-surface, #ffffff);
+    border: 1px solid var(--pp-border, #e2e8f0);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+    color: var(--pp-text-2, #64748b);
+    transition: all 0.2s ease;
+}
+
+.ppv-sticky-close:hover {
+    background: var(--pp-surface-2, #f8fafc);
+    color: var(--pp-text, #1e293b);
+}
+
+/* ============================================================
+ * 🔘 BUTTONS
+ * ============================================================ */
+.ppv-modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 24px;
+}
+
+.ppv-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: var(--pp-radius-sm, 6px);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.ppv-btn-primary {
+    background: var(--pp-primary, #0066cc);
+    color: white;
+}
+
+.ppv-btn-primary:hover {
+    background: var(--pp-primary-dark, #0052a3);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
+}
+
+.ppv-btn-secondary {
+    background: var(--pp-surface-2, #f8fafc);
+    color: var(--pp-text-2, #64748b);
+    border: 1px solid var(--pp-border, #e2e8f0);
+}
+
+.ppv-btn-secondary:hover {
+    background: var(--pp-surface-3, #f1f5f9);
+    color: var(--pp-text, #1e293b);
+}
+
+.ppv-btn-large {
+    padding: 14px 32px;
+    font-size: 16px;
+}
+
+.ppv-btn-sm {
+    padding: 6px 14px;
+    font-size: 13px;
+}
+
+.ppv-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ============================================================
+ * 📱 RESPONSIVE
+ * ============================================================ */
+@media (max-width: 768px) {
+    .ppv-onboarding-modal {
+        padding: var(--pp-spacing-lg, 24px);
+        max-width: 100%;
+    }
+
+    .ppv-welcome-modal h2 {
+        font-size: 24px;
+    }
+
+    .ppv-wizard-modal h3 {
+        font-size: 20px;
+    }
+
+    .ppv-form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .ppv-modal-actions {
+        flex-direction: column;
+    }
+
+    .ppv-modal-actions .ppv-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .ppv-onboarding-sticky {
+        bottom: 10px;
+        right: 10px;
+        left: 10px;
+        justify-content: center;
+    }
+
+    .ppv-sticky-btn {
+        flex: 1;
+    }
+
+    .ppv-progress-actions {
+        flex-direction: column;
+    }
+
+    .ppv-progress-actions .ppv-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .ppv-modal-icon {
+        font-size: 48px;
+    }
+
+    .ppv-celebration-icon {
+        font-size: 60px;
+    }
+
+    .ppv-welcome-modal h2,
+    .ppv-celebration-modal h2 {
+        font-size: 22px;
+    }
+}
+
 /**
  * PunktePass – Handler Light CSS (v7.0 CLEAN)
  * FIX: Scroll issue - teljes fel/le gorgethetoseg
  * Author: Erik Borota / PunktePass
  */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap');
 
 /* ============================================================
    ROOT VARIABLES
    ============================================================ */
-:root {
-  --color-primary: #00a8cc;
-  --color-primary-dark: #0077a8;
-  --color-primary-light: #00d4ff;
-  --color-secondary: #00a878;
-  --color-accent: #9333ea;
-  --color-success: #10b981;
-  --color-warning: #f59e0b;
-  --color-error: #ef4444;
-
-  --color-bg: #f8fafc;
-  --color-bg-secondary: #f1f5f9;
-  --color-surface: #ffffff;
-
-  --color-text: #1e293b;
-  --color-text-secondary: #475569;
-  --color-text-muted: #64748b;
-
-  --color-border: rgba(0, 168, 204, 0.15);
-  --color-header-bg: #0f172a;
-
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.1);
-
-  --radius: 16px;
-  --radius-md: 14px;
-  --radius-sm: 10px;
-
-  --transition: all 0.3s ease;
-  --font-sans: 'Inter', -apple-system, sans-serif;
-  --font-display: 'Poppins', sans-serif;
-
-  --header-height: 64px;
-  --bottom-nav-height: 72px;
-}
 
 /* ============================================================
    GLOBAL RESET + SCROLL FIX
@@ -606,3 +7625,5 @@ body {
     padding-top: calc(var(--header-height) + env(safe-area-inset-top) + 16px);
   }
 }
+
+
