@@ -327,11 +327,6 @@ private static function render_tab_general($store) {
             <label data-i18n="description"><?php echo esc_html(PPV_Lang::t('description')); ?></label>
             <textarea name="description"><?php echo esc_textarea($store->description ?? ''); ?></textarea>
         </div>
-
-        <!-- LOGOUT LINK -->
-        <div class="ppv-form-group">
-            <?php echo do_shortcode('[ppv_logout_link]'); ?>
-        </div>
     </div>
     <?php
     return ob_get_clean();
@@ -689,7 +684,7 @@ public static function ajax_save_profile() {
         ];
     }
     // ============================================================
-    // ✅ ÖSSZES MEZŐ - TAX_ID ÉS IS_TAXABLE BENNE!
+    // ✅ ÖSSZES MEZŐ - TAX_ID, IS_TAXABLE, COMPANY_NAME BENNE!
     // ============================================================
     $update_data = [
         'name' => sanitize_text_field($_POST['store_name'] ?? ''),
@@ -697,19 +692,21 @@ public static function ajax_save_profile() {
 
         'latitude' => floatval($_POST['latitude'] ?? 0),
         'longitude' => floatval($_POST['longitude'] ?? 0),
-        
+
         'slogan' => sanitize_text_field($_POST['slogan'] ?? ''),
         'category' => sanitize_text_field($_POST['category'] ?? ''),
         'address' => sanitize_text_field($_POST['address'] ?? ''),
         'plz' => sanitize_text_field($_POST['plz'] ?? ''),
         'city' => sanitize_text_field($_POST['city'] ?? ''),
-        
-        
-        
-        // ✅ ÚJ MEZŐK:
+
+        // ✅ COMPANY INFO
+        'company_name' => sanitize_text_field($_POST['company_name'] ?? ''),
+        'contact_person' => sanitize_text_field($_POST['contact_person'] ?? ''),
+
+        // ✅ TAX MEZŐK:
         'tax_id' => sanitize_text_field($_POST['tax_id'] ?? ''),
         'is_taxable' => !empty($_POST['is_taxable']) ? 1 : 0,
-        
+
         'phone' => sanitize_text_field($_POST['phone'] ?? ''),
         'email' => sanitize_email($_POST['email'] ?? ''),
         'website' => esc_url_raw($_POST['website'] ?? ''),
@@ -725,9 +722,9 @@ public static function ajax_save_profile() {
         'timezone' => sanitize_text_field($_POST['timezone'] ?? 'Europe/Berlin'),
         'updated_at' => current_time('mysql'),
         'logo' => sanitize_text_field($_POST['logo'] ?? ''),
-'gallery' => !empty($gallery_files) ? json_encode($gallery_files) : ($_POST['gallery'] ?? ''),
-    'opening_hours' => json_encode($opening_hours),  // ← ADD THIS!
-];
+        'gallery' => !empty($gallery_files) ? json_encode($gallery_files) : ($_POST['gallery'] ?? ''),
+        'opening_hours' => json_encode($opening_hours)
+    ];
 
 
     global $wpdb;
@@ -743,6 +740,8 @@ $format_specs = [
     '%s',  // address
     '%s',  // plz
     '%s',  // city
+    '%s',  // company_name
+    '%s',  // contact_person
     '%s',  // tax_id
     '%d',  // is_taxable
     '%s',  // phone
@@ -758,8 +757,10 @@ $format_specs = [
     '%d',  // maintenance_mode
     '%s',  // maintenance_message
     '%s',  // timezone
+    '%s',  // updated_at
     '%s',  // logo
     '%s',  // gallery
+    '%s',  // opening_hours
 ];
 
 error_log("💾 [DEBUG] Saving store ID: {$store_id}");

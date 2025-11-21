@@ -264,11 +264,16 @@
                     this.showAlert(this.t('profile_saved_success'), 'success');
                     this.updateStatus(this.t('saved'));
                     this.hasChanges = false;
-                    
-                    document.getElementById('ppv-last-updated').textContent = 
+
+                    document.getElementById('ppv-last-updated').textContent =
                         `${this.t('last_updated')}: ${new Date().toLocaleString()}`;
-                    
+
                     console.log('✅ Profile saved:', data.data);
+
+                    // ✅ Reload after 1.5s to show fresh data
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
                 } else {
                     this.showAlert(data.data?.msg || this.t('profile_save_error'), 'error');
                     this.updateStatus(this.t('error'));
