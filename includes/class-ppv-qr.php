@@ -552,10 +552,20 @@ class PPV_QR {
         // 🐛 DEBUG: Log store_id
 
         // Fetch subscription info from database
+        // 🏪 FILIALE SUPPORT: Use parent store's subscription for filialen
         if ($store_id > 0) {
+            // First check if this is a filiale with a parent
+            $parent_check = $wpdb->get_var($wpdb->prepare(
+                "SELECT parent_store_id FROM {$wpdb->prefix}ppv_stores WHERE id = %d AND parent_store_id IS NOT NULL AND parent_store_id > 0 LIMIT 1",
+                $store_id
+            ));
+
+            // Use parent store ID for subscription check if this is a filiale
+            $subscription_store_id = $parent_check ? intval($parent_check) : $store_id;
+
             $store_data = $wpdb->get_row($wpdb->prepare(
                 "SELECT trial_ends_at, subscription_status, subscription_expires_at, subscription_renewal_requested FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
-                $store_id
+                $subscription_store_id
             ));
 
             if ($store_data) {
