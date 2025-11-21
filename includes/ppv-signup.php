@@ -851,7 +851,10 @@ class PPV_Signup {
         }
 
         $user_id = intval($_SESSION['ppv_user_id']);
-        $store_id = intval($_SESSION['ppv_store_id'] ?? 0);
+
+        // 🏪 FILIALE SUPPORT: Always use BASE store for renewal requests
+        // Renewals are for the handler subscription, not individual filialen
+        $store_id = intval($_SESSION['ppv_vendor_store_id'] ?? $_SESSION['ppv_store_id'] ?? 0);
 
         // ✅ If no store_id in session, lookup via user_id
         if ($store_id === 0) {
@@ -950,7 +953,10 @@ class PPV_Signup {
         }
 
         $user_id = intval($_SESSION['ppv_user_id']);
-        $store_id = intval($_SESSION['ppv_store_id'] ?? 0);
+
+        // 🏪 FILIALE SUPPORT: Always use BASE store for support tickets
+        // Support tickets are for the handler, not individual filialen
+        $store_id = intval($_SESSION['ppv_vendor_store_id'] ?? $_SESSION['ppv_store_id'] ?? 0);
 
         // ✅ If no store_id in session, lookup via user_id
         if ($store_id === 0) {
@@ -1106,7 +1112,10 @@ class PPV_Signup {
         }
 
         $handler_user_id = intval($_SESSION['ppv_user_id']);
-        $handler_store_id = intval($_SESSION['ppv_store_id'] ?? 0);
+
+        // 🏪 FILIALE SUPPORT: Always use BASE store for scanner management
+        // Scanners belong to the handler, not to individual filialen
+        $handler_store_id = intval($_SESSION['ppv_vendor_store_id'] ?? $_SESSION['ppv_store_id'] ?? 0);
 
         // Get store_id if missing
         if ($handler_store_id === 0) {
@@ -1219,7 +1228,9 @@ class PPV_Signup {
 
         // Verify scanner belongs to this handler
         $handler_user_id = intval($_SESSION['ppv_user_id']);
-        $handler_store_id = intval($_SESSION['ppv_store_id'] ?? 0);
+
+        // 🏪 FILIALE SUPPORT: Always use BASE store for scanner management
+        $handler_store_id = intval($_SESSION['ppv_vendor_store_id'] ?? $_SESSION['ppv_store_id'] ?? 0);
 
         if ($handler_store_id === 0) {
             $handler_store_id = $wpdb->get_var($wpdb->prepare(
@@ -1296,7 +1307,9 @@ class PPV_Signup {
 
         // Verify scanner belongs to this handler
         $handler_user_id = intval($_SESSION['ppv_user_id']);
-        $handler_store_id = intval($_SESSION['ppv_store_id'] ?? 0);
+
+        // 🏪 FILIALE SUPPORT: Always use BASE store for scanner management
+        $handler_store_id = intval($_SESSION['ppv_vendor_store_id'] ?? $_SESSION['ppv_store_id'] ?? 0);
 
         if ($handler_store_id === 0) {
             $handler_store_id = $wpdb->get_var($wpdb->prepare(

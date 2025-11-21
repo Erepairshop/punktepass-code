@@ -328,7 +328,15 @@ class PPV_POS_SCAN {
                 @session_start();
             }
 
-            $store_id = intval($_SESSION['ppv_store_id'] ?? 0);
+            // 🏪 FILIALE SUPPORT: Check ppv_current_filiale_id FIRST
+            $store_id = 0;
+            if (!empty($_SESSION['ppv_current_filiale_id'])) {
+                $store_id = intval($_SESSION['ppv_current_filiale_id']);
+            } elseif (!empty($_SESSION['ppv_store_id'])) {
+                $store_id = intval($_SESSION['ppv_store_id']);
+            } elseif (!empty($_SESSION['ppv_vendor_store_id'])) {
+                $store_id = intval($_SESSION['ppv_vendor_store_id']);
+            }
 
             if ($store_id === 0) {
                 return rest_ensure_response([
@@ -448,7 +456,15 @@ class PPV_POS_SCAN {
             @session_start();
         }
 
-        $store_id = intval($_SESSION['ppv_store_id'] ?? 0);
+        // 🏪 FILIALE SUPPORT: Check ppv_current_filiale_id FIRST
+        $store_id = 0;
+        if (!empty($_SESSION['ppv_current_filiale_id'])) {
+            $store_id = intval($_SESSION['ppv_current_filiale_id']);
+        } elseif (!empty($_SESSION['ppv_store_id'])) {
+            $store_id = intval($_SESSION['ppv_store_id']);
+        } elseif (!empty($_SESSION['ppv_vendor_store_id'])) {
+            $store_id = intval($_SESSION['ppv_vendor_store_id']);
+        }
 
         if ($store_id === 0) {
             return new WP_Error('no_store', 'No store_id in session', ['status' => 403]);

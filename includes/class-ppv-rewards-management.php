@@ -48,6 +48,10 @@ class PPV_Rewards_Management {
      *  🎨 ASSETS
      * ============================================================ */
     public static function enqueue_assets() {
+        // 🔐 Ensure session is started
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
 
         wp_enqueue_script(
             'ppv-rewards-management',
@@ -62,13 +66,13 @@ class PPV_Rewards_Management {
             'nonce'  => wp_create_nonce('wp_rest'),
             'store_id' => self::get_store_id()
         ];
-        
+
         wp_add_inline_script(
             'ppv-rewards-management',
             "window.ppv_rewards_mgmt = " . wp_json_encode($payload) . ";",
             'before'
         );
-        
+
         // 🌍 FORDÍTÁSOK - ÚJ KÓDSOR!
         if (class_exists('PPV_Lang')) {
             wp_add_inline_script(
@@ -85,12 +89,22 @@ class PPV_Rewards_Management {
     private static function get_store_id() {
         global $wpdb;
 
-        // Session
+        // 🏪 FILIALE SUPPORT: Check ppv_current_filiale_id FIRST
+        if (!empty($_SESSION['ppv_current_filiale_id'])) {
+            return intval($_SESSION['ppv_current_filiale_id']);
+        }
+
+        // Session - base store
         if (!empty($_SESSION['ppv_store_id'])) {
             return intval($_SESSION['ppv_store_id']);
         }
 
-        // Logged in user
+        // Fallback: vendor store
+        if (!empty($_SESSION['ppv_vendor_store_id'])) {
+            return intval($_SESSION['ppv_vendor_store_id']);
+        }
+
+        // Logged in user (WordPress user - rare case)
         if (is_user_logged_in()) {
             $uid = get_current_user_id();
             $store_id = $wpdb->get_var($wpdb->prepare(
@@ -98,7 +112,6 @@ class PPV_Rewards_Management {
                 $uid
             ));
             if ($store_id) {
-                $_SESSION['ppv_store_id'] = $store_id;
                 return intval($store_id);
             }
         }
