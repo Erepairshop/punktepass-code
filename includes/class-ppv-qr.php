@@ -835,6 +835,11 @@ class PPV_QR {
     private static function render_filiale_switcher() {
         global $wpdb;
 
+        // ✅ SCANNER USERS: Don't show filiale switcher
+        if (class_exists('PPV_Permissions') && PPV_Permissions::is_scanner_user()) {
+            return;
+        }
+
         // Get current store ID from session
         if (session_status() === PHP_SESSION_NONE) {
             @session_start();
