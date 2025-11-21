@@ -134,12 +134,14 @@ class PPV_Bottom_Nav {
         ob_start();
 
         // --- User navigáció (prioritás!) ---
+        // 🚀 data-turbo="false" for vendors visiting user pages - forces full reload
+        $turbo_attr = $is_vendor ? 'data-turbo="false"' : '';
         if ($is_user_page): ?>
             <nav class="ppv-bottom-nav">
-                <a href="/user_dashboard" class="nav-item" data-navlink="true" title="Dashboard"><i class="ri-home-smile-2-line"></i></a>
-                <a href="/meine-punkte" class="nav-item" data-navlink="true" title="Meine Punkte"><i class="ri-donut-chart-line"></i></a>
-                <a href="/belohnungen" class="nav-item" data-navlink="true" title="Belohnungen"><i class="ri-coupon-3-line"></i></a>
-                <a href="/einstellungen" class="nav-item" data-navlink="true" title="Einstellungen"><i class="ri-equalizer-line"></i></a>
+                <a href="/user_dashboard" class="nav-item" <?php echo $turbo_attr; ?> data-navlink="true" title="Dashboard"><i class="ri-home-smile-2-line"></i></a>
+                <a href="/meine-punkte" class="nav-item" <?php echo $turbo_attr; ?> data-navlink="true" title="Meine Punkte"><i class="ri-donut-chart-line"></i></a>
+                <a href="/belohnungen" class="nav-item" <?php echo $turbo_attr; ?> data-navlink="true" title="Belohnungen"><i class="ri-coupon-3-line"></i></a>
+                <a href="/einstellungen" class="nav-item" <?php echo $turbo_attr; ?> data-navlink="true" title="Einstellungen"><i class="ri-equalizer-line"></i></a>
             </nav>
         <?php
         // --- Händler / POS navigáció ---
@@ -187,7 +189,7 @@ class PPV_Bottom_Nav {
                 </div>
             </div>
         <?php
-        // --- Alap user nav ---
+        // --- Alap user nav (basic users - Turbo enabled) ---
         else: ?>
             <nav class="ppv-bottom-nav">
                 <a href="/user_dashboard" class="nav-item" data-navlink="true" title="Dashboard"><i class="ri-home-smile-2-line"></i></a>
