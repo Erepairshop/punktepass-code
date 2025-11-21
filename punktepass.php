@@ -91,10 +91,11 @@ function ppv_is_login_page() {
 }
 /**
  * Check if user is handler/store
+ * Handler types: store, handler, vendor, admin (NOT scanner - they have limited access)
  */
 function ppv_is_handler_session() {
-    return !empty($_SESSION['ppv_user_type']) && 
-           in_array($_SESSION['ppv_user_type'], ['store', 'handler']);
+    return !empty($_SESSION['ppv_user_type']) &&
+           in_array($_SESSION['ppv_user_type'], ['store', 'handler', 'vendor', 'admin']);
 }
 
 // ========================================
