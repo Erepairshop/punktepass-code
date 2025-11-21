@@ -104,7 +104,17 @@ class PPV_POS_SCAN {
             ]);
         }
 
-        $store_id = intval($store->id);
+        // 🏪 FILIALE SUPPORT: Check session for FILIALE override
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+
+        // 🏪 FILIALE SUPPORT: Check ppv_current_filiale_id FIRST
+        if (!empty($_SESSION['ppv_current_filiale_id'])) {
+            $store_id = intval($_SESSION['ppv_current_filiale_id']);
+        } else {
+            $store_id = intval($store->id);
+        }
 
         /** 2) IP Rate Limiting (100 scans per minute for debugging) */
         $ip_address = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
