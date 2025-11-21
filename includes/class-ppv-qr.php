@@ -554,6 +554,9 @@ class PPV_QR {
 
                 $select.prop('disabled', true);
 
+                // Show loading message
+                $('<div class="ppv-loading-overlay" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:bold;">⏳ <?php echo esc_js(self::t('switching_filiale', 'Wechselt...')); ?></div>').appendTo('body');
+
                 $.ajax({
                     url: '<?php echo admin_url('admin-ajax.php'); ?>',
                     type: 'POST',
@@ -563,8 +566,12 @@ class PPV_QR {
                     },
                     success: function(response) {
                         if (response.success) {
-                            // Reload page to refresh all data
-                            window.location.reload();
+                            // Wait 300ms for session/cache to flush on server
+                            setTimeout(function() {
+                                // Force fresh page load (bypass all caches)
+                                var url = window.location.href.split('?')[0];
+                                window.location.href = url + '?_refresh=' + Date.now();
+                            }, 300);
                         } else {
                             alert(response.data.msg || '<?php echo esc_js(self::t('filiale_error', 'Fehler beim Erstellen der Filiale')); ?>');
                             $select.val(originalValue);
