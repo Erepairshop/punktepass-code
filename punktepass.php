@@ -229,6 +229,7 @@ $core_modules = [
     'includes/class-ppv-filiale.php',
     'includes/api/ppv-stores.php',
     'includes/pp-profile-lite.php',
+    'includes/class-ppv-onboarding.php', // ✅ Onboarding system backend
     'includes/tools/generate-pos-keys.php',
     'includes/class-ppv-sessionbridge.php',
     'includes/class-ppv-bottom-nav.php',
