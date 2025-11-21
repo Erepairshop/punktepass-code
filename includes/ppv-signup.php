@@ -1113,23 +1113,39 @@ class PPV_Signup {
 
         $handler_user_id = intval($_SESSION['ppv_user_id']);
 
-        // 🏪 FILIALE SUPPORT: Always use BASE store for scanner management
-        // Scanners belong to the handler, not to individual filialen
-        $handler_store_id = intval($_SESSION['ppv_vendor_store_id'] ?? $_SESSION['ppv_store_id'] ?? 0);
+        // 🏪 FILIALE SUPPORT: Accept filiale_id from frontend
+        $filiale_id = intval($_POST['filiale_id'] ?? 0);
 
-        // Get store_id if missing
-        if ($handler_store_id === 0) {
-            $handler_store_id = $wpdb->get_var($wpdb->prepare(
+        // If no filiale_id provided, default to handler's base store
+        if ($filiale_id === 0) {
+            $filiale_id = intval($_SESSION['ppv_vendor_store_id'] ?? $_SESSION['ppv_store_id'] ?? 0);
+        }
+
+        // Get store_id if still missing
+        if ($filiale_id === 0) {
+            $filiale_id = $wpdb->get_var($wpdb->prepare(
                 "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id = %d LIMIT 1",
                 $handler_user_id
             ));
 
-            if (!$handler_store_id) {
+            if (!$filiale_id) {
                 wp_send_json_error(['message' => 'Store nicht gefunden']);
                 return;
             }
 
-            $handler_store_id = intval($handler_store_id);
+            $filiale_id = intval($filiale_id);
+        }
+
+        // Verify that the filiale belongs to this handler (security check)
+        $parent_id = $wpdb->get_var($wpdb->prepare(
+            "SELECT COALESCE(parent_store_id, id) FROM {$wpdb->prefix}ppv_stores WHERE id=%d LIMIT 1",
+            $filiale_id
+        ));
+
+        $base_handler_id = intval($_SESSION['ppv_vendor_store_id'] ?? $_SESSION['ppv_store_id'] ?? 0);
+        if ($parent_id != $base_handler_id && $filiale_id != $base_handler_id) {
+            wp_send_json_error(['message' => 'Ungültige Filiale']);
+            return;
         }
 
         $email = sanitize_email($_POST['email'] ?? '');
@@ -1168,7 +1184,7 @@ class PPV_Signup {
         // Hash password
         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
-        // Insert scanner user into PPV users table
+        // Insert scanner user into PPV users table (with selected filiale)
         $insert_result = $wpdb->insert(
             "{$wpdb->prefix}ppv_users",
             [
@@ -1177,7 +1193,7 @@ class PPV_Signup {
                 'first_name' => '',
                 'last_name' => '',
                 'user_type' => 'scanner',
-                'vendor_store_id' => $handler_store_id,
+                'vendor_store_id' => $filiale_id,
                 'qr_token' => $qr_token,
                 'active' => 1,
                 'created_at' => current_time('mysql')
@@ -1361,6 +1377,108 @@ class PPV_Signup {
             'new_status' => $action === 'enable' ? 'active' : 'disabled'
         ]);
     }
+
+    /* ============================================================
+     * 🏪 AJAX Update Scanner Filiale
+     * ============================================================ */
+    public static function ajax_update_scanner_filiale() {
+        global $wpdb;
+
+        // Check if handler is logged in
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+
+        if (empty($_SESSION['ppv_user_id'])) {
+            wp_send_json_error(['message' => 'Nicht eingeloggt']);
+            return;
+        }
+
+        $handler_user_id = intval($_SESSION['ppv_user_id']);
+        $scanner_user_id = intval($_POST['user_id'] ?? 0);
+        $new_filiale_id = intval($_POST['filiale_id'] ?? 0);
+
+        if (!$scanner_user_id || !$new_filiale_id) {
+            wp_send_json_error(['message' => 'Ungültige Parameter']);
+            return;
+        }
+
+        // Get handler's base store
+        $base_handler_id = intval($_SESSION['ppv_vendor_store_id'] ?? $_SESSION['ppv_store_id'] ?? 0);
+        if ($base_handler_id === 0) {
+            $base_handler_id = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id = %d LIMIT 1",
+                $handler_user_id
+            ));
+        }
+
+        // Verify that the new filiale belongs to this handler (security check)
+        $parent_id = $wpdb->get_var($wpdb->prepare(
+            "SELECT COALESCE(parent_store_id, id) FROM {$wpdb->prefix}ppv_stores WHERE id=%d LIMIT 1",
+            $new_filiale_id
+        ));
+
+        if ($parent_id != $base_handler_id && $new_filiale_id != $base_handler_id) {
+            wp_send_json_error(['message' => 'Ungültige Filiale']);
+            return;
+        }
+
+        // Verify scanner belongs to this handler
+        $scanner_user = $wpdb->get_row($wpdb->prepare(
+            "SELECT id, email, vendor_store_id FROM {$wpdb->prefix}ppv_users
+             WHERE id = %d AND user_type = 'scanner' LIMIT 1",
+            $scanner_user_id
+        ));
+
+        if (!$scanner_user) {
+            wp_send_json_error(['message' => 'Scanner Benutzer nicht gefunden']);
+            return;
+        }
+
+        // Verify current filiale belongs to handler (additional security)
+        $current_parent_id = $wpdb->get_var($wpdb->prepare(
+            "SELECT COALESCE(parent_store_id, id) FROM {$wpdb->prefix}ppv_stores WHERE id=%d LIMIT 1",
+            $scanner_user->vendor_store_id
+        ));
+
+        if ($current_parent_id != $base_handler_id && $scanner_user->vendor_store_id != $base_handler_id) {
+            wp_send_json_error(['message' => 'Keine Berechtigung für diesen Benutzer']);
+            return;
+        }
+
+        // Update filiale assignment
+        $update_result = $wpdb->update(
+            "{$wpdb->prefix}ppv_users",
+            ['vendor_store_id' => $new_filiale_id],
+            ['id' => $scanner_user_id],
+            ['%d'],
+            ['%d']
+        );
+
+        if ($update_result === false) {
+            error_log("❌ [PPV_Scanner] Filiale update failed: " . $wpdb->last_error);
+            wp_send_json_error(['message' => 'Fehler beim Ändern der Filiale']);
+            return;
+        }
+
+        // Get new filiale name for response
+        $new_filiale = $wpdb->get_row($wpdb->prepare(
+            "SELECT name, city FROM {$wpdb->prefix}ppv_stores WHERE id=%d LIMIT 1",
+            $new_filiale_id
+        ));
+
+        $filiale_display = $new_filiale->name ?? 'N/A';
+        if (!empty($new_filiale->city)) {
+            $filiale_display .= ' - ' . $new_filiale->city;
+        }
+
+        error_log("✅ [PPV_Scanner] Filiale updated: Scanner ID={$scanner_user_id}, Email={$scanner_user->email}, New Filiale={$filiale_display}");
+
+        wp_send_json_success([
+            'message' => "✅ Filiale erfolgreich geändert!",
+            'new_filiale' => $filiale_display
+        ]);
+    }
 }
 
 // ⚠️ CRITICAL: Initialize the class!
@@ -1381,5 +1499,7 @@ add_action('wp_ajax_ppv_reset_scanner_password', ['PPV_Signup', 'ajax_reset_scan
 add_action('wp_ajax_nopriv_ppv_reset_scanner_password', ['PPV_Signup', 'ajax_reset_scanner_password']);
 add_action('wp_ajax_ppv_toggle_scanner_status', ['PPV_Signup', 'ajax_toggle_scanner_status']);
 add_action('wp_ajax_nopriv_ppv_toggle_scanner_status', ['PPV_Signup', 'ajax_toggle_scanner_status']);
+add_action('wp_ajax_ppv_update_scanner_filiale', ['PPV_Signup', 'ajax_update_scanner_filiale']);
+add_action('wp_ajax_nopriv_ppv_update_scanner_filiale', ['PPV_Signup', 'ajax_update_scanner_filiale']);
 
 PPV_Signup::hooks();

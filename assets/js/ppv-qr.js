@@ -1939,9 +1939,17 @@ document.addEventListener("DOMContentLoaded", function () {
     scannerCreate.addEventListener('click', async () => {
       const email = scannerEmail.value.trim();
       const password = scannerPassword.value.trim();
+      const filialeSelect = document.getElementById('ppv-scanner-filiale');
+      const filialeId = filialeSelect ? filialeSelect.value : '';
 
       if (!email || !password) {
         scannerError.textContent = L.email_password_required || 'E-Mail und Passwort sind erforderlich';
+        scannerError.style.display = 'block';
+        return;
+      }
+
+      if (!filialeId) {
+        scannerError.textContent = L.filiale_required || 'Bitte wählen Sie eine Filiale aus';
         scannerError.style.display = 'block';
         return;
       }
@@ -1958,7 +1966,8 @@ document.addEventListener("DOMContentLoaded", function () {
           body: new URLSearchParams({
             action: 'ppv_create_scanner_user',
             email: email,
-            password: password
+            password: password,
+            filiale_id: filialeId
           })
         });
 
@@ -2070,6 +2079,101 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
   });
+
+  // ============================================================
+  // 🏪 CHANGE FILIALE FOR SCANNER USER
+  // ============================================================
+  const changeFilialeModal = document.getElementById('ppv-change-filiale-modal');
+  const changeFilialeSelect = document.getElementById('ppv-change-filiale-select');
+  const changeFilialeSave = document.getElementById('ppv-change-filiale-save');
+  const changeFilialeCancel = document.getElementById('ppv-change-filiale-cancel');
+  const changeFilialeEmail = document.getElementById('ppv-change-filiale-email');
+  const changeFilialeUserId = document.getElementById('ppv-change-filiale-user-id');
+  const changeFilialeError = document.getElementById('ppv-change-filiale-error');
+  const changeFilialeSuccess = document.getElementById('ppv-change-filiale-success');
+
+  // Open change filiale modal
+  document.querySelectorAll('.ppv-scanner-change-filiale').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const userId = this.getAttribute('data-user-id');
+      const email = this.getAttribute('data-email');
+      const currentStore = this.getAttribute('data-current-store');
+
+      changeFilialeEmail.textContent = email;
+      changeFilialeUserId.value = userId;
+      changeFilialeSelect.value = currentStore;
+      changeFilialeError.style.display = 'none';
+      changeFilialeSuccess.style.display = 'none';
+      changeFilialeModal.style.display = 'flex';
+    });
+  });
+
+  // Close change filiale modal
+  if (changeFilialeCancel) {
+    changeFilialeCancel.addEventListener('click', () => {
+      changeFilialeModal.style.display = 'none';
+    });
+  }
+
+  if (changeFilialeModal) {
+    changeFilialeModal.addEventListener('click', (e) => {
+      if (e.target === changeFilialeModal) {
+        changeFilialeModal.style.display = 'none';
+      }
+    });
+  }
+
+  // Save filiale change
+  if (changeFilialeSave) {
+    changeFilialeSave.addEventListener('click', async () => {
+      const userId = changeFilialeUserId.value;
+      const filialeId = changeFilialeSelect.value;
+
+      if (!userId || !filialeId) {
+        changeFilialeError.textContent = L.invalid_data || 'Ungültige Daten';
+        changeFilialeError.style.display = 'block';
+        return;
+      }
+
+      changeFilialeSave.disabled = true;
+      const originalText = changeFilialeSave.textContent;
+      changeFilialeSave.textContent = L.saving || 'Speichern...';
+      changeFilialeError.style.display = 'none';
+
+      try {
+        const response = await fetch('/wp-admin/admin-ajax.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            action: 'ppv_update_scanner_filiale',
+            user_id: userId,
+            filiale_id: filialeId
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          changeFilialeSuccess.textContent = data.data?.message || (L.filiale_updated || 'Filiale erfolgreich geändert!');
+          changeFilialeSuccess.style.display = 'block';
+
+          setTimeout(() => {
+            location.reload(); // Reload to show updated filiale
+          }, 1500);
+        } else {
+          changeFilialeError.textContent = data.data?.message || (L.error_occurred || 'Ein Fehler ist aufgetreten');
+          changeFilialeError.style.display = 'block';
+        }
+      } catch (err) {
+        console.error('Change filiale error:', err);
+        changeFilialeError.textContent = L.error_occurred || 'Ein Fehler ist aufgetreten';
+        changeFilialeError.style.display = 'block';
+      } finally {
+        changeFilialeSave.disabled = false;
+        changeFilialeSave.textContent = originalText;
+      }
+    });
+  }
 
   // ============================================================
   // 📋 LIVE RECENT SCANS POLLING (5s interval)

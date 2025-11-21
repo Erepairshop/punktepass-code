@@ -1136,9 +1136,11 @@ class PPV_QR {
     public static function render_scanner_users() {
         global $wpdb;
 
-        // Get current handler's store_id
+        // Get current handler's store_id (BASE store, not filiale)
         $store_id = 0;
-        if (!empty($_SESSION['ppv_store_id'])) {
+        if (!empty($_SESSION['ppv_vendor_store_id'])) {
+            $store_id = intval($_SESSION['ppv_vendor_store_id']);
+        } elseif (!empty($_SESSION['ppv_store_id'])) {
             $store_id = intval($_SESSION['ppv_store_id']);
         } elseif (!empty($_SESSION['ppv_user_id'])) {
             $user_id = intval($_SESSION['ppv_user_id']);
@@ -1148,14 +1150,32 @@ class PPV_QR {
             ));
         }
 
-        // Get all scanner users for this store (from PPV users table)
+        // 🏪 Get parent store ID to fetch all filialen
+        $parent_id = $wpdb->get_var($wpdb->prepare(
+            "SELECT COALESCE(parent_store_id, id) FROM {$wpdb->prefix}ppv_stores WHERE id=%d LIMIT 1",
+            $store_id
+        ));
+
+        // Get all filialen belonging to this parent (including parent itself)
+        $filialen = $wpdb->get_results($wpdb->prepare("
+            SELECT id, name, city, parent_store_id
+            FROM {$wpdb->prefix}ppv_stores
+            WHERE id=%d OR parent_store_id=%d
+            ORDER BY CASE WHEN id=%d THEN 0 ELSE 1 END, name ASC
+        ", $parent_id, $parent_id, $parent_id));
+
+        // Get all scanner users for this handler (BASE store + all filialen)
         $scanners = [];
         if ($store_id) {
             $scanners = $wpdb->get_results($wpdb->prepare(
-                "SELECT id, email, created_at, active FROM {$wpdb->prefix}ppv_users
-                 WHERE user_type = 'scanner' AND vendor_store_id = %d
-                 ORDER BY created_at DESC",
-                $store_id
+                "SELECT u.id, u.email, u.created_at, u.active, u.vendor_store_id,
+                        s.name as store_name, s.city as store_city, s.parent_store_id
+                 FROM {$wpdb->prefix}ppv_users u
+                 LEFT JOIN {$wpdb->prefix}ppv_stores s ON u.vendor_store_id = s.id
+                 WHERE u.user_type = 'scanner'
+                 AND (u.vendor_store_id = %d OR s.parent_store_id = %d)
+                 ORDER BY u.created_at DESC",
+                $parent_id, $parent_id
             ));
         }
 
@@ -1188,6 +1208,18 @@ class PPV_QR {
                                     <div style="font-size: 12px; color: #999;">
                                         <?php echo self::t('created_at', 'Létrehozva'); ?>: <?php echo $created_date; ?>
                                     </div>
+                                    <div style="font-size: 12px; color: #00e6ff; margin-top: 3px;">
+                                        🏪 <?php
+                                        echo esc_html($scanner->store_name ?: 'N/A');
+                                        if (!empty($scanner->store_city)) {
+                                            echo ' - ' . esc_html($scanner->store_city);
+                                        }
+                                        // Show if it's main location
+                                        if ($scanner->vendor_store_id == $parent_id && (empty($scanner->parent_store_id) || $scanner->parent_store_id === null)) {
+                                            echo ' (' . self::t('main_location', 'Hauptstandort') . ')';
+                                        }
+                                        ?>
+                                    </div>
                                     <div style="margin-top: 5px;">
                                         <?php if ($is_active): ?>
                                             <span style="background: #4caf50; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">
@@ -1200,7 +1232,12 @@ class PPV_QR {
                                         <?php endif; ?>
                                     </div>
                                 </div>
-                                <div style="display: flex; gap: 10px;">
+                                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                    <!-- Change Filiale -->
+                                    <button class="ppv-scanner-change-filiale ppv-btn-outline" data-user-id="<?php echo $scanner->id; ?>" data-email="<?php echo esc_attr($scanner->email); ?>" data-current-store="<?php echo $scanner->vendor_store_id; ?>" style="padding: 8px 12px; font-size: 13px;">
+                                        🏪 <?php echo self::t('change_filiale', 'Filiale ändern'); ?>
+                                    </button>
+
                                     <!-- Password Reset -->
                                     <button class="ppv-scanner-reset-pw ppv-btn-outline" data-user-id="<?php echo $scanner->id; ?>" data-email="<?php echo esc_attr($scanner->email); ?>" style="padding: 8px 12px; font-size: 13px;">
                                         🔄 <?php echo self::t('reset_password', 'Jelszó Reset'); ?>
@@ -1243,6 +1280,26 @@ class PPV_QR {
                         </button>
                     </div>
 
+                    <label style="color: #fff; font-size: 13px; display: block; margin-bottom: 5px;">
+                        🏪 <?php echo self::t('scanner_filiale', 'Filiale zuweisen'); ?> <span style="color: #ff5252;">*</span>
+                    </label>
+                    <select id="ppv-scanner-filiale" class="ppv-input" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #0f0f1e; color: #fff; margin-bottom: 15px;">
+                        <?php foreach ($filialen as $filiale): ?>
+                            <option value="<?php echo $filiale->id; ?>">
+                                <?php
+                                echo esc_html($filiale->name);
+                                if (!empty($filiale->city)) {
+                                    echo ' - ' . esc_html($filiale->city);
+                                }
+                                // Show if it's main location
+                                if ($filiale->id == $parent_id && (empty($filiale->parent_store_id) || $filiale->parent_store_id === null)) {
+                                    echo ' (' . self::t('main_location', 'Hauptstandort') . ')';
+                                }
+                                ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+
                     <div id="ppv-scanner-error" style="display: none; color: #ff5252; font-size: 13px; margin-bottom: 10px; padding: 10px; background: rgba(255, 82, 82, 0.1); border-radius: 6px;"></div>
                     <div id="ppv-scanner-success" style="display: none; color: #4caf50; font-size: 13px; margin-bottom: 10px; padding: 10px; background: rgba(76, 175, 80, 0.1); border-radius: 6px;"></div>
 
@@ -1252,6 +1309,51 @@ class PPV_QR {
                         </button>
                         <button id="ppv-scanner-cancel" class="ppv-btn-outline" style="flex: 1; padding: 12px;">
                             ❌ <?php echo self::t('cancel', 'Mégse'); ?>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Change Filiale Modal -->
+            <div id="ppv-change-filiale-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; align-items: center; justify-content: center;">
+                <div style="background: #1a1a2e; padding: 30px; border-radius: 15px; max-width: 500px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
+                    <h3 style="margin-top: 0; color: #fff;">🏪 <?php echo self::t('change_filiale_title', 'Filiale ändern'); ?></h3>
+
+                    <p style="color: #999; font-size: 14px; margin-bottom: 15px;">
+                        <strong style="color: #fff;">📧 <span id="ppv-change-filiale-email"></span></strong>
+                    </p>
+
+                    <label style="color: #fff; font-size: 13px; display: block; margin-bottom: 5px;">
+                        <?php echo self::t('select_new_filiale', 'Neue Filiale auswählen'); ?> <span style="color: #ff5252;">*</span>
+                    </label>
+                    <select id="ppv-change-filiale-select" class="ppv-input" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #0f0f1e; color: #fff; margin-bottom: 15px;">
+                        <?php foreach ($filialen as $filiale): ?>
+                            <option value="<?php echo $filiale->id; ?>">
+                                <?php
+                                echo esc_html($filiale->name);
+                                if (!empty($filiale->city)) {
+                                    echo ' - ' . esc_html($filiale->city);
+                                }
+                                // Show if it's main location
+                                if ($filiale->id == $parent_id && (empty($filiale->parent_store_id) || $filiale->parent_store_id === null)) {
+                                    echo ' (' . self::t('main_location', 'Hauptstandort') . ')';
+                                }
+                                ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+
+                    <input type="hidden" id="ppv-change-filiale-user-id" value="">
+
+                    <div id="ppv-change-filiale-error" style="display: none; color: #ff5252; font-size: 13px; margin-bottom: 10px; padding: 10px; background: rgba(255, 82, 82, 0.1); border-radius: 6px;"></div>
+                    <div id="ppv-change-filiale-success" style="display: none; color: #4caf50; font-size: 13px; margin-bottom: 10px; padding: 10px; background: rgba(76, 175, 80, 0.1); border-radius: 6px;"></div>
+
+                    <div style="display: flex; gap: 10px;">
+                        <button id="ppv-change-filiale-save" class="ppv-btn" style="flex: 1; padding: 12px;">
+                            ✅ <?php echo self::t('save', 'Speichern'); ?>
+                        </button>
+                        <button id="ppv-change-filiale-cancel" class="ppv-btn-outline" style="flex: 1; padding: 12px;">
+                            ❌ <?php echo self::t('cancel', 'Abbrechen'); ?>
                         </button>
                     </div>
                 </div>
