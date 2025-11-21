@@ -77,6 +77,13 @@ if (!class_exists('PPV_Onboarding')) {
                 return;
             }
 
+            // ✅ ONLY SHOW FOR TRIAL STORES - Active stores don't need onboarding
+            $subscription_status = $store->subscription_status ?? 'trial';
+            if ($subscription_status !== 'trial') {
+                // Active or other status - skip onboarding
+                return;
+            }
+
             // Enqueue JS
             wp_enqueue_script(
                 'ppv-onboarding',
