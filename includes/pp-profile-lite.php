@@ -582,6 +582,22 @@ if (!empty($store->gallery)) {
                         </option>
                     </select>
                 </div>
+
+                <hr>
+
+                <!-- ============================================================
+                     ONBOARDING RESET
+                     ============================================================ -->
+                <h3>Onboarding</h3>
+
+                <div class="ppv-form-group">
+                    <p class="ppv-help" data-i18n="onboarding_reset_help" style="margin-bottom: 12px;">
+                        <?php echo esc_html(PPV_Lang::t('onboarding_reset_help')); ?>
+                    </p>
+                    <button type="button" id="ppv-reset-onboarding-btn" class="ppv-btn ppv-btn-secondary" style="width: 100%;">
+                        🔄 <span data-i18n="onboarding_reset_btn"><?php echo esc_html(PPV_Lang::t('onboarding_reset_btn')); ?></span>
+                    </button>
+                </div>
             </div>
             <?php
             return ob_get_clean();

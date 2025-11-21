@@ -32,8 +32,51 @@
             this.bindFormInputs();
             this.bindFormSubmit();
             this.bindGalleryDelete();
+            this.bindOnboardingReset();
 
             this.updateUI();
+        }
+
+        // ==================== ONBOARDING RESET ====================
+        bindOnboardingReset() {
+            const resetBtn = document.getElementById('ppv-reset-onboarding-btn');
+            if (!resetBtn) return;
+
+            resetBtn.addEventListener('click', () => {
+                const L = this.strings;
+                if (!confirm(L.onboarding_reset_confirm || 'Biztosan újraindítod az onboarding-ot?')) {
+                    return;
+                }
+
+                resetBtn.disabled = true;
+                resetBtn.innerHTML = '⏳ ' + (L.onboarding_resetting || 'Újraindítás...');
+
+                fetch(window.ppv_onboarding?.rest_url + 'reset' || '/wp-json/ppv/v1/onboarding/reset', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-WP-Nonce': window.ppv_onboarding?.nonce || ''
+                    },
+                    body: JSON.stringify({})
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        this.showAlert(L.onboarding_reset_success || '✅ Onboarding újraindítva! Az oldal frissül...', 'success');
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        this.showAlert(L.onboarding_reset_error || '❌ Hiba történt!', 'error');
+                        resetBtn.disabled = false;
+                        resetBtn.innerHTML = '🔄 ' + (L.onboarding_reset_btn || 'Onboarding újraindítása');
+                    }
+                })
+                .catch(err => {
+                    console.error('Onboarding reset error:', err);
+                    this.showAlert(L.onboarding_reset_error || '❌ Hiba történt!', 'error');
+                    resetBtn.disabled = false;
+                    resetBtn.innerHTML = '🔄 ' + (L.onboarding_reset_btn || 'Onboarding újraindítása');
+                });
+            });
         }
 
         // ==================== GALLERY DELETE ====================
