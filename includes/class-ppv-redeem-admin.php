@@ -121,7 +121,7 @@ public static function enqueue_assets() {
         'debug'    => true
     ] : [];
 $__json = wp_json_encode($__data);
-wp_add_inline_script('ppv-redeem-admin', "window.ppv_redeem_admin = {$__json};", 'before');
+wp_add_inline_script('ppv-redeem-admin', "window.ppv_redeem_admin = {$__json}; window.PPV_STORE_ID = {$store_id};", 'before');
 
     error_log("🟢 [PPV_Redeem_Admin] Assets loaded, store_id={$store_id}");
 }
