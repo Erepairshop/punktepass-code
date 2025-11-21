@@ -1386,9 +1386,27 @@ class PPV_QR {
         $store = $validation['store'];
 
         // 🏪 FILIALE SUPPORT: Use session-aware store ID for points
-        $store_id = self::get_session_aware_store_id($r);
-        if (!$store_id) {
-            $store_id = $store->id; // Fallback to validated store
+        $session_store = self::get_session_aware_store_id($r);
+        if ($session_store && isset($session_store->id)) {
+            $store_id = intval($session_store->id);
+        } else {
+            $store_id = intval($store->id); // Fallback to validated store
+        }
+
+        // 🔍 DEBUG: Log store_id resolution
+        error_log("🔍 [PPV_QR rest_process_scan] Store ID resolution: " . json_encode([
+            'session_store_object' => $session_store ? 'EXISTS' : 'NULL',
+            'session_store_id' => $session_store->id ?? 'NULL',
+            'validated_store_id' => $store->id ?? 'NULL',
+            'final_store_id' => $store_id,
+        ]));
+
+        if ($store_id === 0) {
+            error_log("❌ [PPV_QR] CRITICAL: store_id is 0! This should not happen!");
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => '❌ Invalid store_id (0)'
+            ], 400);
         }
 
         $user_id = self::decode_user_from_qr($qr_code);
@@ -1444,10 +1462,12 @@ class PPV_QR {
         global $wpdb;
 
         // 🏪 FILIALE SUPPORT: Use session-aware store ID
-        $store_id = self::get_session_aware_store_id($r);
-        if (!$store_id) {
+        $session_store = self::get_session_aware_store_id($r);
+        if (!$session_store || !isset($session_store->id)) {
             return new WP_REST_Response(['error' => 'Invalid store'], 400);
         }
+
+        $store_id = intval($session_store->id);
 
         return new WP_REST_Response($wpdb->get_results($wpdb->prepare("
             SELECT created_at, user_id, message
