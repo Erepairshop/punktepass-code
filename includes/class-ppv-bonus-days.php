@@ -10,6 +10,47 @@ class PPV_Bonus_Days {
         add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
     }
 
+    /** ============================================================
+     *  🔐 GET STORE ID (with FILIALE support)
+     * ============================================================ */
+    private static function get_store_id() {
+        global $wpdb;
+
+        // 🔐 Ensure session is started
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+
+        // 🏪 FILIALE SUPPORT: Check ppv_current_filiale_id FIRST
+        if (!empty($_SESSION['ppv_current_filiale_id'])) {
+            return intval($_SESSION['ppv_current_filiale_id']);
+        }
+
+        // Session - base store
+        if (!empty($_SESSION['ppv_store_id'])) {
+            return intval($_SESSION['ppv_store_id']);
+        }
+
+        // Fallback: vendor store
+        if (!empty($_SESSION['ppv_vendor_store_id'])) {
+            return intval($_SESSION['ppv_vendor_store_id']);
+        }
+
+        // Fallback: WordPress user (rare case)
+        if (is_user_logged_in()) {
+            $uid = get_current_user_id();
+            $store_id = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id=%d LIMIT 1",
+                $uid
+            ));
+            if ($store_id) {
+                return intval($store_id);
+            }
+        }
+
+        return 0;
+    }
+
     public static function enqueue_assets() {
         wp_enqueue_style('ppv-bonus-days', PPV_PLUGIN_URL . 'assets/css/ppv-bonus-days.css', [], time());
         wp_enqueue_script('ppv-bonus-days', PPV_PLUGIN_URL . 'assets/js/ppv-bonus-days.js', ['jquery'], time(), true);
@@ -64,13 +105,18 @@ wp_add_inline_script('ppv-bonus-days', "window.ppv_bonus_ajax = {$__json};", 'be
         check_ajax_referer('ppv_bonus_nonce', 'nonce');
         global $wpdb;
 
-        $store_id = intval(get_user_meta(get_current_user_id(), 'store_id', true));
+        // 🏪 FILIALE SUPPORT: Get store ID from session
+        $store_id = self::get_store_id();
+        if (!$store_id) {
+            wp_send_json_error(['message' => 'Kein Store gefunden.']);
+        }
+
         $date = sanitize_text_field($_POST['date'] ?? '');
         $multiplier = floatval($_POST['multiplier'] ?? 1);
         $extra_points = intval($_POST['extra_points'] ?? 0);
         $active = intval($_POST['active'] ?? 1);
 
-        if (!$store_id || !$date) {
+        if (!$date) {
             wp_send_json_error(['message' => 'Fehlende Daten']);
         }
 
@@ -92,9 +138,26 @@ wp_add_inline_script('ppv-bonus-days', "window.ppv_bonus_ajax = {$__json};", 'be
         global $wpdb;
 
         $id = intval($_POST['id'] ?? 0);
-        if (!$id) wp_send_json_error(['message' => 'Fehlende ID']);
+        if (!$id) {
+            wp_send_json_error(['message' => 'Fehlende ID']);
+        }
 
-        $wpdb->delete('wp_ppv_bonus_days', ['id' => $id]);
+        // 🏪 FILIALE SUPPORT: Get store ID from session
+        $store_id = self::get_store_id();
+        if (!$store_id) {
+            wp_send_json_error(['message' => 'Kein Store gefunden.']);
+        }
+
+        // 🔒 SECURITY: Verify bonus day belongs to handler's store/filiale
+        $bonus = $wpdb->get_row($wpdb->prepare(
+            "SELECT id, store_id FROM {$wpdb->prefix}ppv_bonus_days WHERE id=%d LIMIT 1",
+            $id
+        ));
+        if (!$bonus || $bonus->store_id != $store_id) {
+            wp_send_json_error(['message' => 'Keine Berechtigung für diesen Bonus-Tag.']);
+        }
+
+        $wpdb->delete($wpdb->prefix . 'ppv_bonus_days', ['id' => $id]);
         wp_send_json_success(['message' => 'Bonus-Tag gelöscht']);
     }
 }
