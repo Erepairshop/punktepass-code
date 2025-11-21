@@ -379,8 +379,18 @@ if (!class_exists('PPV_Onboarding')) {
                 @session_start();
             }
 
+            // 🏪 FILIALE SUPPORT: Check ppv_current_filiale_id FIRST
+            if (!empty($_SESSION['ppv_current_filiale_id'])) {
+                return ['valid' => true, 'type' => 'ppv_stores', 'store_id' => intval($_SESSION['ppv_current_filiale_id'])];
+            }
+
             if (!empty($_SESSION['ppv_store_id'])) {
                 return ['valid' => true, 'type' => 'ppv_stores', 'store_id' => intval($_SESSION['ppv_store_id'])];
+            }
+
+            // Fallback: vendor store
+            if (!empty($_SESSION['ppv_vendor_store_id'])) {
+                return ['valid' => true, 'type' => 'ppv_stores', 'store_id' => intval($_SESSION['ppv_vendor_store_id'])];
             }
 
             if (!empty($_COOKIE['ppv_pos_token'])) {
