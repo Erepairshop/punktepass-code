@@ -507,14 +507,56 @@ class PPV_QR {
         <?php endif; ?>
 
         <script>
-        jQuery(document).ready(function($){
-            $(".ppv-tab").on("click", function(){
-                $(".ppv-tab").removeClass("active");
-                $(this).addClass("active");
-                $(".ppv-tab-content").removeClass("active");
-                $("#tab-" + $(this).data("tab")).addClass("active");
+        (function() {
+            function initQRCenterTabs() {
+                const $ = jQuery;
+
+                // Skip if already initialized
+                const wrapper = document.querySelector('.ppv-qr-wrapper');
+                if (!wrapper || wrapper.dataset.tabsInitialized === 'true') return;
+                wrapper.dataset.tabsInitialized = 'true';
+
+                // 🔄 TAB PERSISTENCE: Restore last active tab from localStorage
+                const savedTab = localStorage.getItem('ppv_qr_center_active_tab');
+                if (savedTab) {
+                    const $savedTabBtn = $(".ppv-tab[data-tab='" + savedTab + "']");
+                    if ($savedTabBtn.length) {
+                        $(".ppv-tab").removeClass("active");
+                        $savedTabBtn.addClass("active");
+                        $(".ppv-tab-content").removeClass("active");
+                        $("#tab-" + savedTab).addClass("active");
+                        console.log("🔄 [Tabs] Restored tab:", savedTab);
+                    }
+                }
+
+                // Tab click handler with localStorage save
+                $(".ppv-tab").off("click").on("click", function(){
+                    const tabName = $(this).data("tab");
+                    $(".ppv-tab").removeClass("active");
+                    $(this).addClass("active");
+                    $(".ppv-tab-content").removeClass("active");
+                    $("#tab-" + tabName).addClass("active");
+
+                    // 💾 Save to localStorage for persistence across refresh
+                    localStorage.setItem('ppv_qr_center_active_tab', tabName);
+                    console.log("💾 [Tabs] Saved tab:", tabName);
+                });
+            }
+
+            // Initialize on DOM ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initQRCenterTabs);
+            } else {
+                initQRCenterTabs();
+            }
+
+            // 🚀 Turbo: Reset flag before render and reinitialize after navigation
+            document.addEventListener('turbo:before-render', function() {
+                const wrapper = document.querySelector('.ppv-qr-wrapper');
+                if (wrapper) wrapper.dataset.tabsInitialized = 'false';
             });
-        });
+            document.addEventListener('turbo:load', initQRCenterTabs);
+        })();
         </script>
 
         <?php
