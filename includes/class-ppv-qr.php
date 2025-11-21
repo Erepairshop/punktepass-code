@@ -310,6 +310,11 @@ class PPV_QR {
             $is_handler = in_array(strtolower(trim($user_type)), $handler_types);
         }
 
+        // 🏪 TRIAL HANDLER SUPPORT: Also check ppv_vendor_store_id
+        if (!$is_handler && !empty($_SESSION['ppv_vendor_store_id'])) {
+            $is_handler = true;
+        }
+
         wp_enqueue_style(
             'remixicons',
             'https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css',
@@ -353,12 +358,16 @@ class PPV_QR {
             elseif (!empty($_SESSION['ppv_active_store'])) {
                 $store_id = intval($_SESSION['ppv_active_store']);
             }
-            // 4️⃣ GLOBAL
+            // 4️⃣ TRIAL HANDLER: ppv_vendor_store_id
+            elseif (!empty($_SESSION['ppv_vendor_store_id'])) {
+                $store_id = intval($_SESSION['ppv_vendor_store_id']);
+            }
+            // 5️⃣ GLOBAL
             elseif (!empty($GLOBALS['ppv_active_store'])) {
                 $active = $GLOBALS['ppv_active_store'];
                 $store_id = is_object($active) ? intval($active->id) : intval($active);
             }
-            // 5️⃣ LOGGED IN USER (fallback - may return wrong store if multiple!)
+            // 6️⃣ LOGGED IN USER (fallback - may return wrong store if multiple!)
             elseif (is_user_logged_in()) {
                 $uid = get_current_user_id();
                 $store_id = intval($wpdb->get_var($wpdb->prepare(
