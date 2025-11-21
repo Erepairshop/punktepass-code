@@ -219,6 +219,8 @@
                     if (data.success) {
                         console.log('✅ Auto-saved:', data.data);
                         this.updateStatus(this.t('saved'));
+                        // ✅ Reset hasChanges so no warning on refresh
+                        this.hasChanges = false;
                     } else {
                         console.error('❌ Auto-save failed:', data.data?.msg);
                     }

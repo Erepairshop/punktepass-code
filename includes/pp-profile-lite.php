@@ -123,6 +123,20 @@ wp_localize_script('pp-profile-lite-i18n', 'ppv_profile', [
                 return;
             }
 
+            // ✅ Restore autosave draft if exists
+            if (!empty($store->draft_data)) {
+                $draft = json_decode($store->draft_data, true);
+                if (is_array($draft)) {
+                    // Merge draft data into store object
+                    foreach ($draft as $key => $value) {
+                        if ($value !== null && $value !== '') {
+                            $store->$key = $value;
+                        }
+                    }
+                    error_log("✅ [AUTOSAVE] Restored draft for store #{$store->id}");
+                }
+            }
+
             ob_start();
             ?>
             <div class="ppv-profile-container">
@@ -748,7 +762,8 @@ public static function ajax_save_profile() {
         'updated_at' => current_time('mysql'),
         'logo' => sanitize_text_field($_POST['logo'] ?? ''),
         'gallery' => !empty($gallery_files) ? json_encode($gallery_files) : ($_POST['gallery'] ?? ''),
-        'opening_hours' => json_encode($opening_hours)
+        'opening_hours' => json_encode($opening_hours),
+        'draft_data' => null  // ✅ Clear draft after successful save
     ];
 
 
@@ -786,6 +801,7 @@ $format_specs = [
     '%s',  // logo
     '%s',  // gallery
     '%s',  // opening_hours
+    '%s',  // draft_data (cleared on save)
 ];
 
 error_log("💾 [DEBUG] Saving store ID: {$store_id}");
