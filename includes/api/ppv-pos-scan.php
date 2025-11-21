@@ -592,10 +592,15 @@ class PPV_POS_SCAN {
             ];
         }
 
-        // Convert to CSV format
+        // Convert to CSV format with proper encoding
         $output = fopen('php://temp', 'w');
+
+        // Add BOM for Excel UTF-8 compatibility
+        fwrite($output, "\xEF\xBB\xBF");
+
+        // Use semicolon as delimiter for better Excel compatibility (European)
         foreach ($csv as $row) {
-            fputcsv($output, $row, ',', '"');
+            fputcsv($output, $row, ';', '"');
         }
         rewind($output);
         $csv_content = stream_get_contents($output);
@@ -604,13 +609,15 @@ class PPV_POS_SCAN {
         // Filename
         $filename = "pos_logs_{$period}_{$date}.csv";
 
-        // Return CSV response
-        return new WP_REST_Response($csv_content, 200, [
-            'Content-Type' => 'text/csv; charset=utf-8',
-            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
-            'Cache-Control' => 'no-cache, must-revalidate',
-            'Expires' => '0'
-        ]);
+        // Send headers directly and output CSV
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Cache-Control: no-cache, must-revalidate');
+        header('Expires: 0');
+        header('Pragma: public');
+
+        echo $csv_content;
+        exit;
     }
 }
 
