@@ -12,11 +12,47 @@ if (!class_exists('PPV_Onboarding')) {
     class PPV_Onboarding {
 
         public static function hooks() {
+            // DB migration - ensure columns exist
+            add_action('init', [__CLASS__, 'ensure_db_columns'], 5);
+
             // Enqueue scripts & styles
             add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
 
             // REST API endpoints
             add_action('rest_api_init', [__CLASS__, 'register_rest_routes']);
+        }
+
+        /**
+         * Ensure onboarding columns exist in ppv_stores table
+         */
+        public static function ensure_db_columns() {
+            global $wpdb;
+            $table = $wpdb->prefix . 'ppv_stores';
+
+            // Check if migration already done
+            if (get_option('ppv_onboarding_db_migrated')) {
+                return;
+            }
+
+            // Add columns if they don't exist
+            $columns = [
+                'onboarding_dismissed' => 'TINYINT(1) DEFAULT 0',
+                'onboarding_welcome_shown' => 'TINYINT(1) DEFAULT 0',
+                'onboarding_completed' => 'TINYINT(1) DEFAULT 0'
+            ];
+
+            foreach ($columns as $col_name => $col_definition) {
+                $exists = $wpdb->get_var("SHOW COLUMNS FROM `{$table}` LIKE '{$col_name}'");
+
+                if (!$exists) {
+                    $wpdb->query("ALTER TABLE `{$table}` ADD COLUMN `{$col_name}` {$col_definition}");
+                    error_log("✅ [PPV_ONBOARDING] Added column: {$col_name}");
+                }
+            }
+
+            // Mark as migrated
+            update_option('ppv_onboarding_db_migrated', true);
+            error_log("✅ [PPV_ONBOARDING] DB migration completed");
         }
 
         /**
