@@ -98,9 +98,16 @@ class PPV_SessionBridge {
                 // Vendor/Scanner user esetén restore store is
                 if (in_array($user->user_type, ['vendor', 'scanner']) && !empty($user->vendor_store_id)) {
                     $_SESSION['ppv_vendor_store_id'] = $user->vendor_store_id;
-                    $_SESSION['ppv_store_id'] = $user->vendor_store_id;
-                    $_SESSION['ppv_active_store'] = $user->vendor_store_id;
-                    error_log("✅ [PPV_SessionBridge] Store restored for {$user->user_type}: store_id={$user->vendor_store_id}");
+
+                    // 🔹 FILIALE SUPPORT: Only restore if ppv_current_filiale_id is NOT set
+                    // (don't overwrite active filiale selection!)
+                    if (empty($_SESSION['ppv_current_filiale_id'])) {
+                        $_SESSION['ppv_store_id'] = $user->vendor_store_id;
+                        $_SESSION['ppv_active_store'] = $user->vendor_store_id;
+                        error_log("✅ [PPV_SessionBridge] Store restored for {$user->user_type}: store_id={$user->vendor_store_id}");
+                    } else {
+                        error_log("🔹 [PPV_SessionBridge] Filiale active (ID=" . $_SESSION['ppv_current_filiale_id'] . "), skipping store_id restore");
+                    }
                 }
 
                 error_log("✅ [PPV_SessionBridge] User restored from token: ID={$user->id}, type=" . ($user->user_type ?? 'user'));

@@ -65,6 +65,11 @@ class PPV_Bottom_Nav {
      * Render Navigation (User vagy Händler)
      * ============================================================ */
     public static function render_nav() {
+        // Session indítása ha kell
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+            @session_start();
+        }
+
         $user  = wp_get_current_user();
         $roles = (array)$user->roles;
 
@@ -72,14 +77,22 @@ class PPV_Bottom_Nav {
         $is_vendor = false;
         $is_pos    = function_exists('ppv_is_pos') && ppv_is_pos();
 
+        // 1. WordPress role check
         if (in_array('vendor', $roles) || in_array('pp_vendor', $roles) || current_user_can('manage_options')) {
             $is_vendor = true;
         }
 
+        // 2. PPV SESSION check - KRITIKUS a trial usereknek!
+        if (!$is_vendor && !empty($_SESSION['ppv_user_type']) && $_SESSION['ppv_user_type'] === 'vendor') {
+            $is_vendor = true;
+        }
+
+        // 3. Global store check
         if (!$is_vendor && isset($GLOBALS['ppv_active_store']) && !empty($GLOBALS['ppv_active_store']->id)) {
             $is_vendor = true;
         }
 
+        // 4. PPV_Session check
         if (!$is_vendor && class_exists('PPV_Session')) {
             $store = PPV_Session::current_store();
             if (!empty($store) && !empty($store->id)) {
