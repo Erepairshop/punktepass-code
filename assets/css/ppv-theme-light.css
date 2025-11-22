@@ -3418,6 +3418,75 @@ body.ppv-light .ppv-stat-mini i {
     color: #0088bb !important;
 }
 
+/* ==========================================================================
+   🏆 USER LEVEL BADGES (LIGHT THEME)
+   ========================================================================== */
+
+/* Compact Badge (Header) */
+body.ppv-light .ppv-level-badge-compact {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    font-size: 18px;
+    box-shadow: 0 2px 8px var(--glow-color, rgba(0,136,187,0.3));
+    transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: default;
+}
+
+body.ppv-light .ppv-level-badge-compact:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 16px var(--glow-color, rgba(0,136,187,0.5));
+}
+
+/* Full Badge */
+body.ppv-light .ppv-level-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    box-shadow: 0 2px 8px var(--glow-color, rgba(0,136,187,0.25));
+    transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body.ppv-light .ppv-level-badge i {
+    font-size: 16px;
+}
+
+body.ppv-light .ppv-level-badge-lg {
+    padding: 10px 18px;
+    font-size: 14px;
+    border-radius: 24px;
+}
+
+body.ppv-light .ppv-level-badge-lg i {
+    font-size: 20px;
+}
+
+/* Level-specific animations */
+body.ppv-light .ppv-level-platinum {
+    animation: platinumShimmerLight 3s ease-in-out infinite;
+}
+
+@keyframes platinumShimmerLight {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.15); }
+}
+
+body.ppv-light .ppv-level-gold {
+    animation: goldGlowLight 2s ease-in-out infinite;
+}
+
+@keyframes goldGlowLight {
+    0%, 100% { box-shadow: 0 2px 8px rgba(255, 193, 7, 0.4); }
+    50% { box-shadow: 0 4px 16px rgba(255, 193, 7, 0.6); }
+}
+
 /* NAV BUTTONS */
 body.ppv-light .ppv-nav-btn {
     background: rgba(0, 0, 0, 0.04) !important;

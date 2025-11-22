@@ -445,6 +445,12 @@ private static function get_today_hours($opening_hours) {
         $avatar_url = get_user_meta($uid, 'ppv_avatar', true);
         $settings_url = home_url('/einstellungen');
 
+        // 5.2️⃣ Get user level badge (if class exists)
+        $level_badge = '';
+        if (class_exists('PPV_User_Level')) {
+            $level_badge = PPV_User_Level::render_compact_badge($uid, $lang);
+        }
+
         // 6️⃣ Translations
         $translations = [
             'de' => [
@@ -502,6 +508,10 @@ private static function get_today_hours($opening_hours) {
             <!-- Stats (USER only) -->
             <?php if (!$is_handler): ?>
             <div class="ppv-header-stats">
+                <?php if (!empty($level_badge)): ?>
+                <!-- User Level Badge -->
+                <?php echo $level_badge; ?>
+                <?php endif; ?>
                 <div class="ppv-stat-mini">
                     <i class="ri-star-fill"></i>
                     <span id="ppv-global-points"><?php echo esc_html($stats['points']); ?></span>

@@ -245,6 +245,7 @@ $core_modules = [
      'includes/class-ppv-onboarding.php',
      'includes/admin/class-ppv-admin-handlers.php',
      'includes/class-ppv-legal.php',
+     'includes/class-ppv-user-level.php',
 
 ];
 

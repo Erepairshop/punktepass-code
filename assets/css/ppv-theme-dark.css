@@ -209,6 +209,75 @@ body.ppv-user-dashboard {
     font-size: 15px;
 }
 
+/* ==========================================================================
+   🏆 USER LEVEL BADGES
+   ========================================================================== */
+
+/* Compact Badge (Header) */
+.ppv-level-badge-compact {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    font-size: 18px;
+    box-shadow: 0 0 12px var(--glow-color, rgba(0,168,204,0.4));
+    transition: var(--pp-trans);
+    cursor: default;
+}
+
+.ppv-level-badge-compact:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 20px var(--glow-color, rgba(0,168,204,0.6));
+}
+
+/* Full Badge */
+.ppv-level-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    box-shadow: 0 2px 8px var(--glow-color, rgba(0,168,204,0.3));
+    transition: var(--pp-trans);
+}
+
+.ppv-level-badge i {
+    font-size: 16px;
+}
+
+.ppv-level-badge-lg {
+    padding: 10px 18px;
+    font-size: 14px;
+    border-radius: 24px;
+}
+
+.ppv-level-badge-lg i {
+    font-size: 20px;
+}
+
+/* Level-specific animations */
+.ppv-level-platinum {
+    animation: platinumShimmer 3s ease-in-out infinite;
+}
+
+@keyframes platinumShimmer {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.2); }
+}
+
+.ppv-level-gold {
+    animation: goldGlow 2s ease-in-out infinite;
+}
+
+@keyframes goldGlow {
+    0%, 100% { box-shadow: 0 0 12px rgba(255, 215, 0, 0.4); }
+    50% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.7); }
+}
+
 /* Header Navigation Buttons */
 #ppv-global-header .ppv-header-nav {
     display: flex;
