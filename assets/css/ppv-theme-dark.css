@@ -3292,3 +3292,180 @@ body.ppv-light .ppv-theme-btn-mini i {
 body.ppv-light .ppv-theme-btn-mini {
     box-shadow: 0 0 6px rgba(0,180,255,0.25);
 }
+
+/* ==========================================================================
+   📊 MEINE PUNKTE - ANALYTICS DARK MODE STYLES
+   Added to fix light mode analytics on dark mode pages
+   ========================================================================== */
+
+/* Analytics CSS Variables - Dark Mode Override */
+#ppv-analytics-section,
+.ppv-analytics-wrapper {
+    --ppv-ana-bg: #0f172a;
+    --ppv-ana-card: linear-gradient(145deg, rgba(26, 34, 45, 0.95), rgba(21, 27, 35, 0.95));
+    --ppv-ana-text: #f0f6fc;
+    --ppv-ana-text-light: #8b949e;
+    --ppv-ana-primary: #00d4ff;
+    --ppv-ana-primary-soft: rgba(0, 212, 255, 0.15);
+    --ppv-ana-border: rgba(0, 212, 255, 0.15);
+    --ppv-ana-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
+}
+
+/* Analytics Wrapper */
+.ppv-analytics-wrapper {
+    background: var(--pp-bg, #0f172a) !important;
+    color: #f0f6fc !important;
+}
+
+/* Analytics Header */
+.ppv-analytics-header h3 {
+    color: #00d4ff !important;
+}
+
+.ppv-analytics-header h3 i {
+    color: #00d4ff !important;
+}
+
+.ppv-analytics-controls label {
+    color: #8b949e !important;
+}
+
+/* Range Select Dropdown */
+.ppv-analytics-range-select {
+    background: rgba(21, 27, 35, 0.9) !important;
+    border: 1px solid rgba(0, 212, 255, 0.20) !important;
+    color: #f0f6fc !important;
+}
+
+.ppv-analytics-range-select option {
+    background: #1e293b !important;
+    color: #f0f6fc !important;
+}
+
+/* Summary Cards (Diese Woche, Dieser Monat, etc.) */
+.ppv-summary-card {
+    background: linear-gradient(145deg, rgba(26, 34, 45, 0.95), rgba(21, 27, 35, 0.95)) !important;
+    border: 1px solid rgba(0, 212, 255, 0.15) !important;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4) !important;
+}
+
+.ppv-summary-card .card-icon {
+    background: rgba(0, 212, 255, 0.15) !important;
+    color: #00d4ff !important;
+}
+
+.ppv-summary-card .card-icon i {
+    color: #00d4ff !important;
+}
+
+.ppv-summary-card .label {
+    color: #8b949e !important;
+}
+
+.ppv-summary-card .value {
+    color: #f0f6fc !important;
+}
+
+.ppv-summary-card .unit {
+    color: #8b949e !important;
+}
+
+/* Analytics Section Headers */
+.ppv-analytics-section h4 {
+    color: #f0f6fc !important;
+}
+
+/* Chart Containers */
+.ppv-chart-container {
+    background: linear-gradient(145deg, rgba(26, 34, 45, 0.95), rgba(21, 27, 35, 0.95)) !important;
+    border: 1px solid rgba(0, 212, 255, 0.15) !important;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* SVG Chart Text */
+.ppv-trend-chart text {
+    fill: #8b949e !important;
+}
+
+.ppv-trend-chart line {
+    stroke: rgba(0, 212, 255, 0.15) !important;
+}
+
+/* Chart gradient for dark mode */
+.ppv-trend-chart defs linearGradient stop:first-child {
+    stop-color: #00d4ff !important;
+}
+
+.ppv-trend-chart path[fill="url(#grad1)"] {
+    fill: url(#grad1) !important;
+}
+
+.ppv-trend-chart path[stroke="#667eea"] {
+    stroke: #00d4ff !important;
+}
+
+.ppv-trend-chart circle {
+    fill: #00d4ff !important;
+}
+
+/* Stores Breakdown */
+.ppv-stores-breakdown {
+    background: transparent !important;
+}
+
+/* Stores List */
+.ppv-stores-list {
+    background: transparent !important;
+}
+
+.ppv-store-item {
+    background: linear-gradient(145deg, rgba(26, 34, 45, 0.95), rgba(21, 27, 35, 0.95)) !important;
+    border: 1px solid rgba(0, 212, 255, 0.15) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+}
+
+.ppv-store-item .store-name {
+    color: #f0f6fc !important;
+}
+
+.ppv-store-item .store-stats {
+    color: #8b949e !important;
+}
+
+.ppv-store-item .store-points .points {
+    color: #00d4ff !important;
+}
+
+.ppv-store-item .store-points .percentage {
+    color: #8b949e !important;
+}
+
+/* Best Day Card */
+.ppv-best-day-card {
+    background: linear-gradient(145deg, rgba(26, 34, 45, 0.95), rgba(21, 27, 35, 0.95)) !important;
+    border: 1px solid rgba(0, 212, 255, 0.15) !important;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4) !important;
+}
+
+.ppv-best-day-card .date,
+.best-day-info .date {
+    color: #f0f6fc !important;
+}
+
+.ppv-best-day-card .points,
+.best-day-info .points {
+    color: #00d4ff !important;
+}
+
+/* No Data Text */
+.ppv-analytics-wrapper p,
+.ppv-chart-container p {
+    color: #8b949e !important;
+}
+
+/* Error State */
+.ppv-analytics-wrapper .ppv-error {
+    background: rgba(239, 68, 68, 0.15) !important;
+    color: #f87171 !important;
+    border: 1px solid rgba(239, 68, 68, 0.25) !important;
+}
