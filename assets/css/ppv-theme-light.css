@@ -3337,10 +3337,11 @@ html, body {
 }
 
 /* ============================================================
-   🌞 LIGHT MODE – HÄNDLER GLOBAL HEADER (ULTRA CLEAN)
+   🌞 LIGHT MODE – GLOBAL HEADER (USER + HANDLER - UNIFIED)
    ============================================================ */
 
-body.ppv-light #ppv-global-header.ppv-handler-mode {
+/* Both user and handler headers get the same light style */
+body.ppv-light #ppv-global-header.ppv-compact-header {
     background: rgba(255, 255, 255, 0.92) !important;
     backdrop-filter: blur(14px) !important;
     border-bottom: 1px solid rgba(0, 150, 255, 0.25) !important;
@@ -3348,8 +3349,8 @@ body.ppv-light #ppv-global-header.ppv-handler-mode {
     color: #001825 !important;
 }
 
-/* Top glow stripe */
-body.ppv-light #ppv-global-header.ppv-handler-mode::before {
+/* Top glow stripe - for all headers */
+body.ppv-light #ppv-global-header.ppv-compact-header::before {
     content: '';
     position: absolute;
     top: 0; left: 0; right: 0;
@@ -3426,7 +3427,7 @@ body.ppv-light .ppv-theme-btn-mini i {
 
 /* RESPONSIVE FIXES */
 @media (max-width: 768px) {
-    body.ppv-light #ppv-global-header.ppv-handler-mode {
+    body.ppv-light #ppv-global-header.ppv-compact-header {
         padding: 6px 10px !important;
     }
     body.ppv-light .ppv-nav-btn {
