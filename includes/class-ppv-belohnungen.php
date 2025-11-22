@@ -246,13 +246,23 @@ class PPV_Belohnungen {
             WHERE user_id = %d
         ", $user_id));
 
-        $rewards = $wpdb->get_results("
-            SELECT r.id, r.title, r.description, r.required_points, r.store_id, s.name AS store_name
+        // ✅ FIX: Only show rewards from stores where user has at least 1 point
+        $rewards = $wpdb->get_results($wpdb->prepare("
+            SELECT r.id, r.title, r.description, r.required_points, r.store_id,
+                   s.company_name AS store_name,
+                   COALESCE(user_store_points.store_points, 0) AS user_store_points
             FROM {$wpdb->prefix}ppv_rewards r
             LEFT JOIN {$wpdb->prefix}ppv_stores s ON r.store_id = s.id
+            INNER JOIN (
+                SELECT store_id, SUM(points) AS store_points
+                FROM {$wpdb->prefix}ppv_points
+                WHERE user_id = %d
+                GROUP BY store_id
+                HAVING SUM(points) >= 1
+            ) AS user_store_points ON r.store_id = user_store_points.store_id
             WHERE s.active = 1
             ORDER BY r.required_points ASC
-        ");
+        ", $user_id));
 
         $pending = $wpdb->get_results($wpdb->prepare("
             SELECT r.id, rw.title, rw.description, s.name AS store_name, r.redeemed_at, r.status, r.points_spent
