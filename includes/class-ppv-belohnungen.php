@@ -160,7 +160,7 @@ class PPV_Belohnungen {
             'ppv-theme-loader',
             $plugin_url . 'assets/js/ppv-theme-loader.js',
             [],
-            '2.0.0',
+            '2.3.0',
             false
         );
 
