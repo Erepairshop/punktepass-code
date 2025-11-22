@@ -8617,3 +8617,522 @@ select.ppv-support-input {
 /* ──────────────────────────────────────────────────────────────────────
    🎉 END OF STATISTICS STYLING
    ────────────────────────────────────────────────────────────────────── */
+
+/* ██████████████████████████████████████████████████████████████████████████
+   🌙 DARK NEON THEME - Complete Dark Mode Override
+   ██████████████████████████████████████████████████████████████████████████ */
+
+/* ==========================================================================
+   🎨 DARK THEME ROOT VARIABLES
+   ========================================================================== */
+body.ppv-dark {
+    /* 🌊 Neon Brand Colors */
+    --pp-primary: #00d4ff;
+    --pp-primary-dark: #00b8e6;
+    --pp-primary-darker: #0099cc;
+    --pp-primary-light: #33ddff;
+    --pp-primary-lighter: #66e6ff;
+    --pp-primary-glow: rgba(0, 212, 255, 0.45);
+
+    /* 🌿 Neon Secondary - Cyan/Teal */
+    --pp-secondary: #00ffc8;
+    --pp-secondary-dark: #00e6b4;
+    --pp-secondary-light: #33ffd4;
+    --pp-secondary-glow: rgba(0, 255, 200, 0.35);
+
+    /* 💜 Neon Accent - Electric Purple */
+    --pp-accent: #bf5af2;
+    --pp-accent-dark: #a347d1;
+    --pp-accent-light: #d17ff5;
+    --pp-accent-glow: rgba(191, 90, 242, 0.40);
+
+    /* ✨ Status Colors - Neon */
+    --pp-success: #30d158;
+    --pp-success-light: #4ade80;
+    --pp-warning: #ffd60a;
+    --pp-warning-light: #ffe066;
+    --pp-danger: #ff453a;
+    --pp-danger-light: #ff6b6b;
+    --pp-info: #0a84ff;
+
+    /* 🎨 Dark Surface Colors */
+    --pp-bg: #0a0e14;
+    --pp-bg-2: #0f1419;
+    --pp-bg-3: #151b23;
+    --pp-bg-warm: linear-gradient(135deg, #0a0e14 0%, #0f1419 50%, #101820 100%);
+
+    --pp-surface: #151b23;
+    --pp-surface-soft: rgba(21, 27, 35, 0.92);
+    --pp-surface-glass: rgba(15, 20, 25, 0.85);
+    --pp-surface-elevated: #1a222d;
+
+    /* 📝 Text Hierarchy - Bright for dark bg */
+    --pp-text: #f0f6fc;
+    --pp-text-2: #c9d1d9;
+    --pp-text-3: #8b949e;
+    --pp-text-muted: #6e7681;
+    --pp-text-inverse: #0a0e14;
+
+    /* 🌙 Header Dark Neon */
+    --pp-header-bg: linear-gradient(135deg, #0a0e14 0%, #151b23 100%);
+    --pp-header-dark: #050709;
+
+    /* 🔲 Neon Borders */
+    --pp-border: rgba(0, 212, 255, 0.20);
+    --pp-border-soft: rgba(0, 212, 255, 0.10);
+    --pp-border-strong: rgba(0, 212, 255, 0.35);
+    --pp-border-glass: rgba(0, 212, 255, 0.15);
+
+    /* ✨ Dark Shadows with Glow */
+    --pp-shadow-xs: 0 1px 2px rgba(0,0,0,0.3);
+    --pp-shadow-sm: 0 2px 8px rgba(0,0,0,0.4), 0 0 4px rgba(0, 212, 255, 0.05);
+    --pp-shadow: 0 4px 16px rgba(0,0,0,0.5), 0 0 8px rgba(0, 212, 255, 0.08);
+    --pp-shadow-md: 0 8px 24px rgba(0,0,0,0.5), 0 0 12px rgba(0, 212, 255, 0.10);
+    --pp-shadow-lg: 0 12px 32px rgba(0,0,0,0.6), 0 0 20px rgba(0, 212, 255, 0.12);
+    --pp-shadow-xl: 0 20px 48px rgba(0,0,0,0.7), 0 0 30px rgba(0, 212, 255, 0.15);
+    --pp-shadow-glow: 0 0 30px var(--pp-primary-glow);
+    --pp-shadow-glow-lg: 0 0 50px var(--pp-primary-glow);
+
+    /* 🌈 Dark Neon Gradients */
+    --gradient-primary: linear-gradient(135deg, #00d4ff 0%, #00b8e6 100%);
+    --gradient-secondary: linear-gradient(135deg, #00ffc8 0%, #00e6b4 100%);
+    --gradient-accent: linear-gradient(135deg, #bf5af2 0%, #a347d1 100%);
+    --gradient-premium: linear-gradient(135deg, #00d4ff 0%, #bf5af2 50%, #ff2d55 100%);
+    --gradient-card: linear-gradient(145deg, #1a222d 0%, #151b23 100%);
+    --gradient-shimmer: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.15), transparent);
+}
+
+/* ==========================================================================
+   🌍 DARK BODY & BACKGROUND
+   ========================================================================== */
+body.ppv-dark {
+    background: var(--pp-bg) !important;
+    color: var(--pp-text) !important;
+}
+
+body.ppv-dark.ppv-user-dashboard {
+    background: var(--pp-bg-warm) !important;
+}
+
+body.ppv-dark #ppv-dashboard-root {
+    background: var(--pp-bg-warm) !important;
+}
+
+/* ==========================================================================
+   🌙 DARK HEADER - Neon Glow Style
+   ========================================================================== */
+body.ppv-dark #ppv-global-header.ppv-compact-header {
+    background: linear-gradient(135deg, rgba(10, 14, 20, 0.95), rgba(21, 27, 35, 0.95)) !important;
+    backdrop-filter: blur(16px) saturate(180%) !important;
+    border-bottom: 1px solid rgba(0, 212, 255, 0.25) !important;
+    box-shadow:
+        0 4px 20px rgba(0, 0, 0, 0.5),
+        0 0 30px rgba(0, 212, 255, 0.10),
+        inset 0 1px 0 rgba(0, 212, 255, 0.10) !important;
+}
+
+body.ppv-dark #ppv-global-header.ppv-compact-header::before {
+    background: linear-gradient(90deg, transparent, #00d4ff, #bf5af2, #00d4ff, transparent) !important;
+    opacity: 0.8;
+}
+
+body.ppv-dark .ppv-user-email {
+    color: rgba(240, 246, 252, 0.9) !important;
+}
+
+body.ppv-dark .ppv-stat-mini {
+    background: rgba(0, 212, 255, 0.12) !important;
+    border: 1px solid rgba(0, 212, 255, 0.25) !important;
+    color: #00d4ff !important;
+}
+
+body.ppv-dark .ppv-stat-mini span {
+    color: #f0f6fc !important;
+}
+
+body.ppv-dark .ppv-stat-mini i {
+    color: #00d4ff !important;
+    text-shadow: 0 0 8px rgba(0, 212, 255, 0.5);
+}
+
+/* ==========================================================================
+   🎴 DARK CARDS & SURFACES
+   ========================================================================== */
+body.ppv-dark .ppv-store-card-enhanced {
+    background: linear-gradient(145deg, rgba(26, 34, 45, 0.95), rgba(21, 27, 35, 0.95)) !important;
+    border: 1px solid rgba(0, 212, 255, 0.15) !important;
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.4),
+        0 0 20px rgba(0, 212, 255, 0.05),
+        inset 0 1px 0 rgba(255, 255, 255, 0.03) !important;
+}
+
+body.ppv-dark .ppv-store-card-enhanced:hover {
+    border-color: rgba(0, 212, 255, 0.30) !important;
+    box-shadow:
+        0 12px 40px rgba(0, 0, 0, 0.5),
+        0 0 30px rgba(0, 212, 255, 0.12) !important;
+}
+
+body.ppv-dark .ppv-store-info h4 {
+    color: #f0f6fc !important;
+}
+
+body.ppv-dark .ppv-store-info p,
+body.ppv-dark .ppv-store-meta span {
+    color: #8b949e !important;
+}
+
+body.ppv-dark .ppv-store-meta i {
+    color: #00d4ff !important;
+}
+
+/* ==========================================================================
+   🎯 DARK TOGGLE BUTTON
+   ========================================================================== */
+body.ppv-dark .ppv-toggle-btn {
+    background: linear-gradient(145deg, rgba(0, 212, 255, 0.12), rgba(0, 212, 255, 0.06)) !important;
+    border-color: rgba(0, 212, 255, 0.25) !important;
+    color: #00d4ff !important;
+    box-shadow:
+        0 2px 8px rgba(0, 0, 0, 0.3),
+        0 0 12px rgba(0, 212, 255, 0.15) !important;
+}
+
+body.ppv-dark .ppv-toggle-btn:hover {
+    background: linear-gradient(145deg, rgba(0, 212, 255, 0.20), rgba(0, 212, 255, 0.10)) !important;
+    box-shadow:
+        0 4px 16px rgba(0, 0, 0, 0.4),
+        0 0 20px rgba(0, 212, 255, 0.25) !important;
+}
+
+body.ppv-dark .ppv-toggle-btn.active {
+    background: linear-gradient(145deg, #00d4ff, #00b8e6) !important;
+    color: #0a0e14 !important;
+    box-shadow:
+        0 4px 20px rgba(0, 212, 255, 0.5),
+        0 0 30px rgba(0, 212, 255, 0.3) !important;
+}
+
+/* ==========================================================================
+   📦 DARK STORE DETAILS
+   ========================================================================== */
+body.ppv-dark .ppv-store-details {
+    border-top-color: rgba(0, 212, 255, 0.15) !important;
+}
+
+body.ppv-dark .ppv-gallery-thumb {
+    border-color: transparent !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+}
+
+body.ppv-dark .ppv-gallery-thumb:hover {
+    border-color: #00d4ff !important;
+    box-shadow: 0 0 15px rgba(0, 212, 255, 0.4) !important;
+}
+
+/* ==========================================================================
+   🎁 DARK REWARDS & CAMPAIGNS
+   ========================================================================== */
+body.ppv-dark .ppv-reward-mini,
+body.ppv-dark .ppv-campaign-mini {
+    background: rgba(0, 212, 255, 0.08) !important;
+    border: 1px solid rgba(0, 212, 255, 0.15) !important;
+}
+
+body.ppv-dark .ppv-reward-mini strong,
+body.ppv-dark .ppv-campaign-mini strong {
+    color: #00d4ff !important;
+    text-shadow: 0 0 8px rgba(0, 212, 255, 0.3);
+}
+
+body.ppv-dark .ppv-reward-mini span,
+body.ppv-dark .ppv-campaign-mini span {
+    color: #c9d1d9 !important;
+}
+
+/* ==========================================================================
+   🔘 DARK BUTTONS
+   ========================================================================== */
+body.ppv-dark .ppv-nav-btn {
+    background: rgba(0, 212, 255, 0.10) !important;
+    border: 1px solid rgba(0, 212, 255, 0.20) !important;
+    color: #f0f6fc !important;
+}
+
+body.ppv-dark .ppv-nav-btn:hover {
+    background: rgba(0, 212, 255, 0.20) !important;
+    border-color: rgba(0, 212, 255, 0.40) !important;
+    color: #00d4ff !important;
+    box-shadow: 0 0 15px rgba(0, 212, 255, 0.25) !important;
+}
+
+body.ppv-dark .ppv-nav-btn i {
+    color: #00d4ff !important;
+}
+
+body.ppv-dark .ppv-theme-btn-mini {
+    background: rgba(191, 90, 242, 0.12) !important;
+    border: 1px solid rgba(191, 90, 242, 0.25) !important;
+}
+
+body.ppv-dark .ppv-theme-btn-mini:hover {
+    background: rgba(191, 90, 242, 0.22) !important;
+    box-shadow: 0 0 15px rgba(191, 90, 242, 0.3) !important;
+}
+
+body.ppv-dark .ppv-theme-btn-mini i {
+    color: #bf5af2 !important;
+    text-shadow: 0 0 8px rgba(191, 90, 242, 0.5);
+}
+
+body.ppv-dark .ppv-lang-mini {
+    background: rgba(0, 212, 255, 0.08) !important;
+    border: 1px solid rgba(0, 212, 255, 0.15) !important;
+    color: #f0f6fc !important;
+}
+
+/* ==========================================================================
+   📱 DARK QR MODAL
+   ========================================================================== */
+body.ppv-dark .ppv-qr-overlay {
+    background: rgba(0, 0, 0, 0.85) !important;
+}
+
+body.ppv-dark .ppv-user-qr {
+    background: linear-gradient(145deg, #1a222d, #151b23) !important;
+    border: 1px solid rgba(0, 212, 255, 0.20) !important;
+    box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.7),
+        0 0 40px rgba(0, 212, 255, 0.15) !important;
+}
+
+body.ppv-dark .ppv-user-qr h3,
+body.ppv-dark .ppv-user-qr .qr-title {
+    color: #f0f6fc !important;
+}
+
+body.ppv-dark .ppv-user-qr h3 i,
+body.ppv-dark .ppv-user-qr .qr-title i {
+    color: #00d4ff !important;
+    text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+}
+
+body.ppv-dark .ppv-user-qr img {
+    border-color: #00d4ff !important;
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.3) !important;
+    background: #ffffff !important;
+}
+
+body.ppv-dark .ppv-user-qr .qr-info {
+    background: rgba(0, 212, 255, 0.08) !important;
+    border-color: rgba(0, 212, 255, 0.15) !important;
+    color: #c9d1d9 !important;
+}
+
+body.ppv-dark .ppv-qr-close {
+    background: rgba(26, 34, 45, 0.95) !important;
+    border-color: rgba(0, 212, 255, 0.30) !important;
+    color: #00d4ff !important;
+}
+
+body.ppv-dark .ppv-qr-close:hover {
+    background: #00d4ff !important;
+    color: #0a0e14 !important;
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.5) !important;
+}
+
+/* ==========================================================================
+   📊 DARK BADGES & TAGS
+   ========================================================================== */
+body.ppv-dark .ppv-distance-badge {
+    background: rgba(0, 255, 200, 0.12) !important;
+    border-color: rgba(0, 255, 200, 0.25) !important;
+    color: #00ffc8 !important;
+}
+
+body.ppv-dark .ppv-status-badge.open {
+    background: rgba(48, 209, 88, 0.15) !important;
+    color: #30d158 !important;
+    border-color: rgba(48, 209, 88, 0.30) !important;
+}
+
+body.ppv-dark .ppv-status-badge.closed {
+    background: rgba(255, 69, 58, 0.15) !important;
+    color: #ff453a !important;
+    border-color: rgba(255, 69, 58, 0.30) !important;
+}
+
+/* ==========================================================================
+   🔗 DARK ACTION BUTTONS
+   ========================================================================== */
+body.ppv-dark .ppv-action-btn {
+    background: rgba(0, 212, 255, 0.10) !important;
+    border: 1px solid rgba(0, 212, 255, 0.20) !important;
+    color: #c9d1d9 !important;
+}
+
+body.ppv-dark .ppv-action-btn:hover {
+    background: rgba(0, 212, 255, 0.18) !important;
+    border-color: rgba(0, 212, 255, 0.35) !important;
+    color: #00d4ff !important;
+    box-shadow: 0 0 15px rgba(0, 212, 255, 0.2) !important;
+}
+
+body.ppv-dark .ppv-action-btn i {
+    color: #00d4ff !important;
+}
+
+body.ppv-dark .ppv-route {
+    background: linear-gradient(135deg, rgba(0, 212, 255, 0.15), rgba(0, 184, 230, 0.10)) !important;
+    border-color: rgba(0, 212, 255, 0.30) !important;
+}
+
+body.ppv-dark .ppv-route:hover {
+    background: linear-gradient(135deg, rgba(0, 212, 255, 0.25), rgba(0, 184, 230, 0.18)) !important;
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.3) !important;
+}
+
+/* ==========================================================================
+   📱 DARK BOTTOM NAVIGATION
+   ========================================================================== */
+body.ppv-dark .ppv-bottom-nav {
+    background: linear-gradient(180deg, rgba(10, 14, 20, 0.95), rgba(5, 7, 9, 0.98)) !important;
+    border-top: 1px solid rgba(0, 212, 255, 0.15) !important;
+    box-shadow:
+        0 -4px 20px rgba(0, 0, 0, 0.5),
+        0 0 30px rgba(0, 212, 255, 0.08) !important;
+}
+
+body.ppv-dark .ppv-nav-item {
+    color: #6e7681 !important;
+}
+
+body.ppv-dark .ppv-nav-item:hover {
+    color: #c9d1d9 !important;
+}
+
+body.ppv-dark .ppv-nav-item.active {
+    color: #00d4ff !important;
+}
+
+body.ppv-dark .ppv-nav-item.active::before {
+    background: linear-gradient(180deg, rgba(0, 212, 255, 0.25), transparent) !important;
+}
+
+body.ppv-dark .ppv-nav-item.active i {
+    text-shadow: 0 0 12px rgba(0, 212, 255, 0.6);
+}
+
+/* ==========================================================================
+   🎨 DARK QR BUTTON (Show QR)
+   ========================================================================== */
+body.ppv-dark .ppv-btn-qr {
+    background: linear-gradient(135deg, #00d4ff, #00b8e6) !important;
+    color: #0a0e14 !important;
+    box-shadow:
+        0 4px 20px rgba(0, 212, 255, 0.4),
+        0 0 30px rgba(0, 212, 255, 0.25) !important;
+}
+
+body.ppv-dark .ppv-btn-qr:hover {
+    box-shadow:
+        0 6px 25px rgba(0, 212, 255, 0.5),
+        0 0 40px rgba(0, 212, 255, 0.35) !important;
+}
+
+/* ==========================================================================
+   📝 DARK TEXT & ICONS GLOBAL
+   ========================================================================== */
+body.ppv-dark h1, body.ppv-dark h2, body.ppv-dark h3,
+body.ppv-dark h4, body.ppv-dark h5, body.ppv-dark h6 {
+    color: #f0f6fc !important;
+}
+
+body.ppv-dark p {
+    color: #c9d1d9 !important;
+}
+
+body.ppv-dark i:not(.ppv-stat-mini i):not(.ppv-nav-btn i):not(.ppv-toggle-btn i) {
+    color: #00d4ff !important;
+}
+
+/* ==========================================================================
+   🔲 DARK INPUTS & FORMS
+   ========================================================================== */
+body.ppv-dark input,
+body.ppv-dark textarea,
+body.ppv-dark select {
+    background: rgba(21, 27, 35, 0.9) !important;
+    border: 1px solid rgba(0, 212, 255, 0.20) !important;
+    color: #f0f6fc !important;
+}
+
+body.ppv-dark input:focus,
+body.ppv-dark textarea:focus,
+body.ppv-dark select:focus {
+    border-color: rgba(0, 212, 255, 0.50) !important;
+    box-shadow: 0 0 15px rgba(0, 212, 255, 0.20) !important;
+}
+
+body.ppv-dark input::placeholder,
+body.ppv-dark textarea::placeholder {
+    color: #6e7681 !important;
+}
+
+/* ==========================================================================
+   🎭 DARK LIGHTBOX
+   ========================================================================== */
+body.ppv-dark .ppv-lightbox-overlay {
+    background: rgba(0, 0, 0, 0.92) !important;
+}
+
+body.ppv-dark .ppv-lightbox-close {
+    background: rgba(26, 34, 45, 0.9) !important;
+    border-color: rgba(0, 212, 255, 0.30) !important;
+    color: #00d4ff !important;
+}
+
+/* ==========================================================================
+   📊 DARK STATISTICS (Handler)
+   ========================================================================== */
+body.ppv-dark .ppv-stats-card,
+body.ppv-dark .glass-section {
+    background: linear-gradient(145deg, rgba(26, 34, 45, 0.95), rgba(21, 27, 35, 0.90)) !important;
+    border: 1px solid rgba(0, 212, 255, 0.12) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+}
+
+body.ppv-dark .ppv-stats-value {
+    color: #00d4ff !important;
+    text-shadow: 0 0 10px rgba(0, 212, 255, 0.4);
+}
+
+body.ppv-dark .ppv-stats-label {
+    color: #8b949e !important;
+}
+
+/* ==========================================================================
+   🌙 DARK SCROLLBAR (if visible)
+   ========================================================================== */
+body.ppv-dark ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+body.ppv-dark ::-webkit-scrollbar-track {
+    background: #0a0e14;
+}
+
+body.ppv-dark ::-webkit-scrollbar-thumb {
+    background: rgba(0, 212, 255, 0.3);
+    border-radius: 4px;
+}
+
+body.ppv-dark ::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 212, 255, 0.5);
+}
+
+/* ██████████████████████████████████████████████████████████████████████████
+   🌙 END OF DARK THEME
+   ██████████████████████████████████████████████████████████████████████████ */
