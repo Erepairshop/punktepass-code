@@ -141,10 +141,16 @@ class PPV_User_Level {
      * Used by POS scan to determine bonus amounts
      */
     public static function get_vip_level_for_bonus($user_id) {
-        if (!self::has_vip($user_id)) {
+        $lifetime = self::get_total_points($user_id);
+        $level = self::get_level($user_id);
+        $has_vip = self::has_vip($user_id);
+
+        error_log("🔍 [PPV_User_Level] VIP check: user_id={$user_id}, lifetime_points={$lifetime}, level={$level}, has_vip=" . ($has_vip ? 'YES' : 'NO'));
+
+        if (!$has_vip) {
             return null; // No VIP bonus for Starter
         }
-        return self::get_level($user_id);
+        return $level;
     }
 
     /**
