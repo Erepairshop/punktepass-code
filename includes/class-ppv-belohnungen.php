@@ -294,6 +294,32 @@ class PPV_Belohnungen {
             <!-- SEARCH & FILTER -->
             <div id="ppv-search-filter-container"></div>
 
+            <?php
+            // ✅ Count rewards with/without points for info banner
+            $rewards_with_points = array_filter($rewards, fn($r) => !empty($r->has_points) && $r->has_points == 1);
+            $rewards_without_points = array_filter($rewards, fn($r) => empty($r->has_points) || $r->has_points != 1);
+            $has_any_points = count($rewards_with_points) > 0;
+            $has_hidden_rewards = count($rewards_without_points) > 0;
+            ?>
+
+            <!-- INFO BANNER -->
+            <?php if (!$has_any_points && !empty($rewards)): ?>
+                <!-- No points collected yet - show welcome message -->
+                <div class="ppv-info-banner ppv-info-welcome">
+                    <i class="ri-lightbulb-line"></i>
+                    <div>
+                        <strong><?php echo esc_html(self::get_label('rewards_info_title', $lang, 'So funktioniert es')); ?></strong>
+                        <p><?php echo esc_html(self::get_label('rewards_info_no_points', $lang, 'Sammle Punkte bei einem Geschäft, um dessen Prämien hier zu sehen. Nutze die Suche, um alle verfügbaren Prämien zu entdecken!')); ?></p>
+                    </div>
+                </div>
+            <?php elseif ($has_hidden_rewards): ?>
+                <!-- Has some points, but there are more rewards available -->
+                <div class="ppv-info-banner ppv-info-hint">
+                    <i class="ri-search-line"></i>
+                    <p><?php echo esc_html(self::get_label('rewards_info_search_hint', $lang, 'Tipp: Nutze die Suche, um alle verfügbaren Prämien zu entdecken – auch von Geschäften, bei denen du noch keine Punkte gesammelt hast!')); ?></p>
+                </div>
+            <?php endif; ?>
+
             <!-- REWARDS GRID -->
             <div class="ppv-reward-grid">
                 <?php if (empty($rewards)): ?>

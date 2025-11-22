@@ -721,7 +721,12 @@ return [
     // ============================================================
     'belohnungen_title' => 'Meine Belohnungen',
     'belohnungen_subtitle' => 'Löse deine Punkte gegen tolle Belohnungen ein',
-    
+
+    // ✅ Info Banner (NEW)
+    'rewards_info_title' => 'So funktioniert es',
+    'rewards_info_no_points' => 'Sammle Punkte bei einem Geschäft, um dessen Prämien hier zu sehen. Nutze die Suche, um alle verfügbaren Prämien zu entdecken!',
+    'rewards_info_search_hint' => 'Tipp: Nutze die Suche, um alle verfügbaren Prämien zu entdecken – auch von Geschäften, bei denen du noch keine Punkte gesammelt hast!',
+
     // Header
     'my_points' => 'Sie haben',
     'points_available' => 'Punkte verfügbar',

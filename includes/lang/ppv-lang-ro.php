@@ -709,7 +709,12 @@ return [
     // ============================================================
     'belohnungen_title' => 'Recompensele mele',
     'belohnungen_subtitle' => 'Schimbă punctele în recompense minunate',
-    
+
+    // ✅ Info Banner (NEW)
+    'rewards_info_title' => 'Cum funcționează',
+    'rewards_info_no_points' => 'Colectează puncte la un magazin pentru a vedea recompensele acestuia aici. Folosește căutarea pentru a descoperi toate recompensele disponibile!',
+    'rewards_info_search_hint' => 'Sfat: Folosește căutarea pentru a descoperi toate recompensele disponibile – inclusiv de la magazine unde nu ai colectat încă puncte!',
+
     // Header
     'my_points' => 'Ai',
     'points_available' => 'puncte disponibile',

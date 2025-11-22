@@ -283,6 +283,78 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
+   ℹ️ INFO BANNER - User guidance
+   ═══════════════════════════════════════════════════════════════ */
+.ppv-info-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 20px;
+  border-radius: var(--ppv-radius-md, 10px);
+  margin-bottom: 20px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.ppv-info-banner > i {
+  font-size: 24px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.ppv-info-banner strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 15px;
+}
+
+.ppv-info-banner p {
+  margin: 0;
+  color: inherit;
+  opacity: 0.9;
+}
+
+/* Welcome banner - when no points collected yet */
+.ppv-info-welcome {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.15));
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  color: var(--ppv-text-primary, #f1f5f9);
+}
+
+.ppv-info-welcome > i {
+  color: #a78bfa;
+}
+
+/* Hint banner - when there are hidden rewards */
+.ppv-info-hint {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  color: var(--ppv-text-primary, #f1f5f9);
+}
+
+.ppv-info-hint > i {
+  color: #34d399;
+}
+
+/* Light theme adjustments */
+[data-theme="light"] .ppv-info-welcome,
+[data-theme="light"] .ppv-info-hint {
+  color: #1e293b;
+}
+
+@media (max-width: 480px) {
+  .ppv-info-banner {
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px 16px;
+  }
+
+  .ppv-info-banner > i {
+    font-size: 20px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
    📋 REWARD CARD CONTENT - Compact
    ═══════════════════════════════════════════════════════════════ */
 .reward-header {
