@@ -1827,8 +1827,8 @@ body, h1, h2, h3, h4, h5, h6 {
 }
 
 .ppv-header-avatar {
-    width: 32px !important;
-    height: 32px !important;
+    width: 48px !important;
+    height: 48px !important;
     border-radius: 50% !important;
     object-fit: cover !important;
     border: 2px solid rgba(0, 230, 255, 0.6) !important;

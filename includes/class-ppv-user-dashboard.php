@@ -443,7 +443,7 @@ private static function get_today_hours($opening_hours) {
 
         // 5.1️⃣ Get avatar (if exists)
         $avatar_url = get_user_meta($uid, 'ppv_avatar', true);
-        $settings_url = home_url('/user-settings');
+        $settings_url = home_url('/einstellungen');
 
         // 6️⃣ Translations
         $translations = [
