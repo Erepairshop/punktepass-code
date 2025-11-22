@@ -277,6 +277,11 @@
   background: var(--ppv-bg-card);
 }
 
+/* ✅ FIX: Hide rewards where user has no points (shown when searching) */
+.ppv-reward-card.ppv-no-points-hidden {
+  display: none;
+}
+
 /* ═══════════════════════════════════════════════════════════════
    📋 REWARD CARD CONTENT - Compact
    ═══════════════════════════════════════════════════════════════ */

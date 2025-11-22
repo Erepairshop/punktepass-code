@@ -349,16 +349,27 @@
     const $cards = $('.ppv-reward-card');
     let visibleCount = 0;
 
+    // ✅ FIX: When searching/filtering, show ALL rewards (including those without points)
+    // When NOT searching, only show rewards where user has points
+    const isSearching = query.length > 0 || storeId.length > 0;
+
     $cards.each(function() {
       const $card = $(this);
       const title = $card.find('h4').text().toLowerCase();
       const desc = $card.find('p').text().toLowerCase();
       const cardStore = $card.data('store') || '';
+      const hasPoints = $card.data('has-points') == 1;
 
       const matchesQuery = !query || title.includes(query) || desc.includes(query);
       const matchesStore = !storeId || String(cardStore) === String(storeId);
 
-      if (matchesQuery && matchesStore) {
+      // ✅ If searching: show all matching rewards
+      // ✅ If NOT searching: only show rewards where user has points
+      const shouldShow = isSearching
+        ? (matchesQuery && matchesStore)
+        : (hasPoints && matchesQuery && matchesStore);
+
+      if (shouldShow) {
         $card.fadeIn(200);
         visibleCount++;
       } else {
@@ -368,7 +379,7 @@
 
     if (visibleCount === 0) {
       if ($('.ppv-no-results').length === 0) {
-$('.ppv-reward-grid').after(`<p class="ppv-no-results"><i class="ri-inbox-line"></i> ${getLabel('no_results')}</p>`);
+        $('.ppv-reward-grid').after(`<p class="ppv-no-results"><i class="ri-inbox-line"></i> ${getLabel('no_results')}</p>`);
       }
       $('.ppv-no-results').fadeIn(200);
     } else {

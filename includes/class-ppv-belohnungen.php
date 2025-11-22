@@ -246,22 +246,23 @@ class PPV_Belohnungen {
             WHERE user_id = %d
         ", $user_id));
 
-        // ✅ FIX: Only show rewards from stores where user has at least 1 point
+        // ✅ FIX: Load ALL rewards but mark which ones user has points for
+        // Show only rewards with points by default, but all when searching
         $rewards = $wpdb->get_results($wpdb->prepare("
             SELECT r.id, r.title, r.description, r.required_points, r.store_id,
                    s.company_name AS store_name,
-                   COALESCE(user_store_points.store_points, 0) AS user_store_points
+                   COALESCE(user_store_points.store_points, 0) AS user_store_points,
+                   CASE WHEN user_store_points.store_points >= 1 THEN 1 ELSE 0 END AS has_points
             FROM {$wpdb->prefix}ppv_rewards r
             LEFT JOIN {$wpdb->prefix}ppv_stores s ON r.store_id = s.id
-            INNER JOIN (
+            LEFT JOIN (
                 SELECT store_id, SUM(points) AS store_points
                 FROM {$wpdb->prefix}ppv_points
                 WHERE user_id = %d
                 GROUP BY store_id
-                HAVING SUM(points) >= 1
             ) AS user_store_points ON r.store_id = user_store_points.store_id
             WHERE s.active = 1
-            ORDER BY r.required_points ASC
+            ORDER BY has_points DESC, r.required_points ASC
         ", $user_id));
 
         $pending = $wpdb->get_results($wpdb->prepare("
@@ -302,8 +303,12 @@ class PPV_Belohnungen {
                         $can_redeem = $points >= $r->required_points;
                         $missing = $r->required_points - $points;
                         $progress = $points > 0 ? min(($points / $r->required_points) * 100, 100) : 0;
+                        $has_points = !empty($r->has_points) && $r->has_points == 1;
+                        $hidden_class = $has_points ? '' : 'ppv-no-points-hidden';
                     ?>
-                        <div class="ppv-reward-card <?php echo $can_redeem ? 'available' : 'locked'; ?>" data-store="<?php echo esc_attr($r->store_id); ?>">
+                        <div class="ppv-reward-card <?php echo $can_redeem ? 'available' : 'locked'; ?> <?php echo $hidden_class; ?>"
+                             data-store="<?php echo esc_attr($r->store_id); ?>"
+                             data-has-points="<?php echo $has_points ? '1' : '0'; ?>">
                             <div class="reward-header">
                                 <h4><?php echo esc_html($r->title); ?></h4>
                                 <small><i class="ri-store-2-line"></i> <?php echo esc_html($r->store_name ?: self::get_label('general', $lang, 'Allgemein')); ?></small>
