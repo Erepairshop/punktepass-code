@@ -9302,6 +9302,151 @@ body.ppv-dark .ppv-export-advanced-controls select:focus {
     box-shadow: 0 0 15px rgba(0, 212, 255, 0.20) !important;
 }
 
+/* ==========================================================================
+   🎫 DARK QR BANNER (User Dashboard)
+   ========================================================================== */
+body.ppv-dark .ppv-qr-banner {
+    background: linear-gradient(135deg, rgba(26, 34, 45, 0.95) 0%, rgba(21, 27, 35, 0.95) 100%) !important;
+    border: 1px solid rgba(0, 212, 255, 0.20) !important;
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.4),
+        0 0 20px rgba(0, 212, 255, 0.08) !important;
+}
+
+body.ppv-dark .ppv-qr-banner:hover {
+    border-color: rgba(0, 212, 255, 0.40) !important;
+    box-shadow:
+        0 12px 40px rgba(0, 0, 0, 0.5),
+        0 0 30px rgba(0, 212, 255, 0.15) !important;
+}
+
+body.ppv-dark .ppv-qr-banner::before {
+    background: linear-gradient(90deg, #00d4ff, #bf5af2, #00ffc8, #00d4ff) !important;
+}
+
+body.ppv-dark .ppv-qr-text h3 {
+    color: #f0f6fc !important;
+}
+
+body.ppv-dark .ppv-qr-text p {
+    color: #8b949e !important;
+}
+
+body.ppv-dark .ppv-qr-text i {
+    background: linear-gradient(135deg, #00d4ff 0%, #00b8e6 100%) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+    filter: drop-shadow(0 4px 12px rgba(0, 212, 255, 0.5)) !important;
+}
+
+/* ==========================================================================
+   📘 DARK QR INSTRUCTIONS
+   ========================================================================== */
+body.ppv-dark .ppv-qr-instructions {
+    background: linear-gradient(135deg, rgba(21, 27, 35, 0.9) 0%, rgba(0, 212, 255, 0.06) 100%) !important;
+    border: 1px solid rgba(0, 212, 255, 0.15) !important;
+    color: #c9d1d9 !important;
+}
+
+body.ppv-dark .ppv-qr-instructions strong {
+    color: #00d4ff !important;
+}
+
+/* ==========================================================================
+   🏪 DARK SECTION TITLES (Dashboard)
+   ========================================================================== */
+body.ppv-dark .ppv-section-title {
+    color: #f0f6fc !important;
+    border-bottom-color: rgba(0, 212, 255, 0.20) !important;
+}
+
+body.ppv-dark .ppv-section-title i {
+    color: #00d4ff !important;
+    text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+}
+
+/* ==========================================================================
+   📦 DARK DASHBOARD WRAPPER
+   ========================================================================== */
+body.ppv-dark .ppv-dashboard-netto {
+    background: transparent !important;
+}
+
+body.ppv-dark .ppv-dashboard-inner {
+    background: transparent !important;
+}
+
+/* ==========================================================================
+   🎴 DARK CARDS & GENERIC UI ELEMENTS
+   ========================================================================== */
+body.ppv-dark .ppv-card {
+    background: linear-gradient(145deg, rgba(26, 34, 45, 0.95), rgba(21, 27, 35, 0.95)) !important;
+    border: 1px solid rgba(0, 212, 255, 0.12) !important;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4) !important;
+}
+
+body.ppv-dark .ppv-input {
+    background: rgba(21, 27, 35, 0.9) !important;
+    border: 1px solid rgba(0, 212, 255, 0.20) !important;
+    color: #f0f6fc !important;
+}
+
+body.ppv-dark .ppv-input:focus {
+    border-color: #00d4ff !important;
+    box-shadow: 0 0 15px rgba(0, 212, 255, 0.20) !important;
+}
+
+body.ppv-dark .ppv-input::placeholder {
+    color: #6e7681 !important;
+}
+
+body.ppv-dark .ppv-btn {
+    border: 1px solid rgba(0, 212, 255, 0.20) !important;
+}
+
+body.ppv-dark .ppv-btn-primary {
+    background: linear-gradient(135deg, #00d4ff 0%, #00b8e6 100%) !important;
+    color: #0a0e14 !important;
+    border: none !important;
+}
+
+body.ppv-dark .ppv-btn-primary:hover {
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.4) !important;
+}
+
+/* ==========================================================================
+   📋 DARK MODAL (Generic)
+   ========================================================================== */
+body.ppv-dark .ppv-modal-inner {
+    background: linear-gradient(145deg, rgba(26, 34, 45, 0.98), rgba(21, 27, 35, 0.98)) !important;
+    border: 1px solid rgba(0, 212, 255, 0.20) !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6) !important;
+}
+
+body.ppv-dark .ppv-modal-inner h4 {
+    color: #f0f6fc !important;
+}
+
+body.ppv-dark .ppv-modal-inner label {
+    color: #c9d1d9 !important;
+}
+
+body.ppv-dark .ppv-modal-inner input,
+body.ppv-dark .ppv-modal-inner select,
+body.ppv-dark .ppv-modal-inner textarea {
+    background: rgba(21, 27, 35, 0.9) !important;
+    border: 1px solid rgba(0, 212, 255, 0.20) !important;
+    color: #f0f6fc !important;
+}
+
+body.ppv-dark .ppv-modal-inner input:focus,
+body.ppv-dark .ppv-modal-inner select:focus,
+body.ppv-dark .ppv-modal-inner textarea:focus {
+    border-color: #00d4ff !important;
+    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.15) !important;
+}
+
 /* ██████████████████████████████████████████████████████████████████████████
    🌙 END OF DARK THEME
    ██████████████████████████████████████████████████████████████████████████ */
