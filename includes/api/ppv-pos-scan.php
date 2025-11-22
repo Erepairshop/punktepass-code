@@ -242,9 +242,42 @@ class PPV_POS_SCAN {
             ]);
         }
 
-        /** 6) Bónusz nap */
-        $points_add = 1;
+        /** 6) BASE POINTS: Reward (Prämien) points_given */
+        $points_add = 0;
 
+        // 🏪 FILIALE FIX: Get rewards from PARENT store if this is a filiale
+        $reward_store_id = $store_id;
+        if (class_exists('PPV_Filiale')) {
+            $reward_store_id = PPV_Filiale::get_parent_id($store_id);
+            if ($reward_store_id !== $store_id) {
+                error_log("🏪 [POS_SCAN] Reward lookup: Using PARENT store {$reward_store_id} instead of filiale {$store_id}");
+            }
+        }
+
+        // Get base points from reward (Prämien)
+        $reward_points = $wpdb->get_var($wpdb->prepare("
+            SELECT points_given FROM {$wpdb->prefix}ppv_rewards
+            WHERE store_id=%d AND points_given > 0
+            ORDER BY id ASC LIMIT 1
+        ", $reward_store_id));
+
+        if ($reward_points && intval($reward_points) > 0) {
+            $points_add = intval($reward_points);
+            error_log("🎁 [POS_SCAN] Reward base points applied: reward_store_id={$reward_store_id}, points_given={$points_add}");
+        }
+
+        // If no reward configured, notify merchant
+        if ($points_add === 0) {
+            error_log("⚠️ [POS_SCAN] No points configured: store_id={$store_id}");
+            return rest_ensure_response([
+                'success' => false,
+                'message' => '⚠️ Keine Punkte konfiguriert. Bitte Prämie einrichten.',
+                'store_name' => $store->name ?? 'PunktePass',
+                'error_type' => 'no_points_configured'
+            ]);
+        }
+
+        // Bonus day multiplier
         $bonus = $wpdb->get_row($wpdb->prepare("
             SELECT multiplier, extra_points FROM {$wpdb->prefix}ppv_bonus_days
             WHERE store_id=%d AND date=%s AND active=1

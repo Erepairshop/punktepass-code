@@ -110,17 +110,53 @@ public static function ajax_auto_add_point() {
         wp_send_json_error(['msg' => '⚠️ Du hast heute bereits einen Punkt gesammelt.']);
     }
 
-    // --- Pontok kiszámítása ---
-    $points_to_add = 1;
+    // --- Pontok kiszámítása (Campaign OR Reward points_given) ---
+    $points_to_add = 0;
+
+    // 1. Check for campaign points FIRST (if campaign_id provided)
     if ($campaign_id) {
-        $points_to_add = intval($wpdb->get_var($wpdb->prepare("
+        $campaign_points = $wpdb->get_var($wpdb->prepare("
             SELECT points FROM {$wpdb->prefix}ppv_campaigns
-            WHERE id=%d AND store_id=%d
-        ", $campaign_id, $store_id))) ?: 1;
+            WHERE id=%d AND store_id=%d AND status='active'
+        ", $campaign_id, $store_id));
+
+        if ($campaign_points) {
+            $points_to_add = intval($campaign_points);
+            error_log("🎯 [PPV_Scan] Campaign points applied: campaign_id={$campaign_id}, points={$points_to_add}");
+        }
+    }
+
+    // 2. If no campaign, use Prämien (reward) points_given as base
+    if ($points_to_add === 0) {
+        // 🏪 FILIALE FIX: Get rewards from PARENT store if this is a filiale
+        $reward_store_id = $store_id;
+        if (class_exists('PPV_Filiale')) {
+            $reward_store_id = PPV_Filiale::get_parent_id($store_id);
+            if ($reward_store_id !== $store_id) {
+                error_log("🏪 [PPV_Scan] Reward lookup: Using PARENT store {$reward_store_id} instead of filiale {$store_id}");
+            }
+        }
+
+        $reward_points = $wpdb->get_var($wpdb->prepare("
+            SELECT points_given FROM {$wpdb->prefix}ppv_rewards
+            WHERE store_id=%d AND points_given > 0
+            ORDER BY id ASC LIMIT 1
+        ", $reward_store_id));
+
+        if ($reward_points && intval($reward_points) > 0) {
+            $points_to_add = intval($reward_points);
+            error_log("🎁 [PPV_Scan] Reward base points applied: reward_store_id={$reward_store_id}, points_given={$points_to_add}");
+        }
+    }
+
+    // 3. If neither exists, notify merchant to configure
+    if ($points_to_add === 0) {
+        error_log("⚠️ [PPV_Scan] No points configured: store_id={$store_id}, campaign_id={$campaign_id}");
+        wp_send_json_error(['msg' => '⚠️ Keine Punkte konfiguriert. Bitte Prämie oder Kampagne einrichten.']);
     }
 
     // 🔍 DEBUG: Log scan source
-    error_log("🔍 [PPV_Scan] AJAX scan: user_id={$user_id}, store_id={$store_id}");
+    error_log("🔍 [PPV_Scan] AJAX scan: user_id={$user_id}, store_id={$store_id}, points={$points_to_add}");
 
     /** 🌟 VIP Level Bonuses */
     $vip_bonus_applied = 0;
