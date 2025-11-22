@@ -16,7 +16,7 @@
 
   const THEME_KEY = 'ppv_theme';
   const API_URL = '/wp-json/ppv/v1/theme';
-  const DEBUG = false;
+  const DEBUG = true;
 
   // ============================================================
   // 🔹 LOG HELPER
@@ -60,9 +60,11 @@
   function updateThemeIcon(theme) {
     const icon = document.getElementById('ppv-theme-icon');
     if (icon) {
-      // dark mode = moon icon, light mode = sun icon
-      icon.className = theme === 'dark' ? 'ri-moon-line' : 'ri-sun-line';
-      log('INFO', '🌙☀️ Icon updated:', theme === 'dark' ? 'moon' : 'sun');
+      // Icon shows what you'll switch TO:
+      // light mode = moon icon (click to go dark)
+      // dark mode = sun icon (click to go light)
+      icon.className = theme === 'light' ? 'ri-moon-line' : 'ri-sun-line';
+      log('INFO', '🌙☀️ Icon updated:', theme === 'light' ? 'moon (click for dark)' : 'sun (click for light)');
     }
   }
 

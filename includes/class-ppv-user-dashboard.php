@@ -658,10 +658,11 @@ private static function get_today_hours($opening_hours) {
                     document.body.classList.add(`ppv-${next}`);
                     document.documentElement.setAttribute('data-theme', next);
 
-                    // Update icon
+                    // Update icon (shows what you'll switch TO next)
                     const icon = document.getElementById('ppv-theme-icon');
                     if (icon) {
-                        icon.className = next === 'dark' ? 'ri-moon-line' : 'ri-sun-line';
+                        // light mode = moon (click for dark), dark mode = sun (click for light)
+                        icon.className = next === 'light' ? 'ri-moon-line' : 'ri-sun-line';
                     }
 
                     console.log('✅ [Theme] Switched to:', next);
