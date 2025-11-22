@@ -414,7 +414,10 @@ if (window.PPV_REWARDS_LOADED) {
      * ============================================================ */
     async function loadRedeemRequests() {
       console.log('📦 [REWARDS] loadRedeemRequests() called');
-      
+
+      // 🔄 Re-query DOM element on each call (Turbo compatibility)
+      const redeemList = document.getElementById("ppv-redeem-list");
+
       if (!redeemList) {
         console.error('❌ [REWARDS] redeemList element not found!');
         return;
@@ -572,7 +575,10 @@ if (window.PPV_REWARDS_LOADED) {
      * ============================================================ */
     async function loadRecentLogs() {
       console.log('📦 [REWARDS] loadRecentLogs() called');
-      
+
+      // 🔄 Re-query DOM element on each call (Turbo compatibility)
+      const logList = document.getElementById("ppv-log-list");
+
       if (!logList) {
         return;
       }
