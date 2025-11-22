@@ -43,6 +43,23 @@ class PPV_VIP_Settings {
             return;
         }
 
+        // CSS
+        wp_enqueue_style(
+            'ppv-handler-light',
+            PPV_PLUGIN_URL . 'assets/css/handler-light.css',
+            [],
+            time()
+        );
+
+        // Remix Icons
+        wp_enqueue_style(
+            'remix-icons',
+            'https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css',
+            [],
+            '3.5.0'
+        );
+
+        // JS
         wp_enqueue_script(
             'ppv-vip-settings',
             PPV_PLUGIN_URL . 'assets/js/ppv-vip-settings.js',
