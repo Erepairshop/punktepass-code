@@ -5885,61 +5885,134 @@ select.ppv-support-input {
 
 /* ══════════════════════════════════════════════════════════════════════
    ✅ EINLÖSUNGEN & QUITTUNGEN VERWALTUNG (Redemptions & Receipts)
+   🎨 MODERN PREMIUM DESIGN v2.0
    ══════════════════════════════════════════════════════════════════════ */
 
 /* ──────────────────────────────────────────────────────────────────────
-   📦 MAIN WRAPPER
+   📦 MAIN WRAPPER - Glassmorphism Design
    ────────────────────────────────────────────────────────────────────── */
 
 .ppv-rewards-wrapper {
-    background: var(--pp-surface);
-    border-radius: var(--pp-radius-lg);
-    padding: var(--pp-spacing-xl);
-    margin-bottom: var(--pp-spacing-xl);
-    box-shadow: var(--pp-shadow-md);
+    background: linear-gradient(135deg,
+        rgba(255, 255, 255, 0.95) 0%,
+        rgba(249, 250, 251, 0.98) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 24px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow:
+        0 4px 6px -1px rgba(0, 0, 0, 0.05),
+        0 10px 15px -3px rgba(0, 0, 0, 0.08),
+        0 20px 25px -5px rgba(0, 0, 0, 0.05),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    position: relative;
+    overflow: hidden;
+}
+
+.ppv-rewards-wrapper::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg,
+        #667eea 0%,
+        #764ba2 25%,
+        #f59e0b 50%,
+        #10b981 75%,
+        #667eea 100%);
+    background-size: 200% 100%;
+    animation: ppv-gradient-flow 8s ease infinite;
+}
+
+@keyframes ppv-gradient-flow {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
 }
 
 .ppv-rewards-wrapper h2 {
-    margin: 0 0 var(--pp-spacing-lg) 0;
-    font-size: 24px;
-    font-weight: 700;
-    color: var(--pp-text);
+    margin: 0 0 1.5rem 0;
+    font-size: 1.75rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     display: flex;
     align-items: center;
-    gap: var(--pp-spacing-sm);
+    gap: 0.75rem;
+    letter-spacing: -0.025em;
+}
+
+.ppv-rewards-wrapper h2 i {
+    font-size: 1.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 /* ──────────────────────────────────────────────────────────────────────
-   🔖 TAB MENU
+   🔖 TAB MENU - Modern Pill Design
    ────────────────────────────────────────────────────────────────────── */
 
 .ppv-rewards-tabs {
     display: flex;
-    gap: var(--pp-spacing-sm);
-    margin-bottom: var(--pp-spacing-lg);
-    border-bottom: 2px solid var(--pp-border);
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    padding: 0.375rem;
+    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+    border-radius: 16px;
+    border: none;
+    width: fit-content;
 }
 
 .ppv-tab-btn {
-    padding: 12px 20px;
-    background: none;
+    padding: 0.75rem 1.5rem;
+    background: transparent;
     border: none;
-    font-size: 14px;
+    font-size: 0.875rem;
     font-weight: 600;
     cursor: pointer;
-    border-bottom: 3px solid transparent;
-    color: var(--pp-text-2);
-    transition: all 0.3s ease;
+    border-radius: 12px;
+    color: #6b7280;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    border-bottom: none !important;
+}
+
+.ppv-tab-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    border-radius: 12px;
 }
 
 .ppv-tab-btn:hover {
-    color: var(--pp-primary);
-    background: var(--pp-bg-2);
+    color: #4f46e5;
+    background: rgba(255, 255, 255, 0.5);
+    transform: translateY(-1px);
 }
 
 .ppv-tab-btn.ppv-tab-active {
-    border-bottom-color: var(--pp-primary);
-    color: var(--pp-primary);
+    background: white;
+    color: #1f2937;
+    box-shadow:
+        0 1px 3px rgba(0, 0, 0, 0.1),
+        0 4px 6px rgba(0, 0, 0, 0.05);
+    border-bottom: none !important;
+}
+
+.ppv-tab-btn.ppv-tab-active i {
+    color: #667eea;
 }
 
 /* ──────────────────────────────────────────────────────────────────────
@@ -5948,6 +6021,7 @@ select.ppv-support-input {
 
 .ppv-tab-content {
     display: none;
+    animation: ppv-fade-in 0.4s ease;
 }
 
 .ppv-tab-content[style*="display: block"],
@@ -5955,22 +6029,37 @@ select.ppv-support-input {
     display: block !important;
 }
 
+@keyframes ppv-fade-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 /* ──────────────────────────────────────────────────────────────────────
    ✅ EINLÖSUNGEN SECTION (Redemptions)
    ────────────────────────────────────────────────────────────────────── */
 
 .ppv-redeem-section {
-    margin-bottom: var(--pp-spacing-xl);
+    margin-bottom: 2rem;
 }
 
-.ppv-redeem-section h3 {
-    margin: 0 0 var(--pp-spacing-lg) 0;
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--pp-text);
+.ppv-redeem-section h3,
+.ppv-redeem-section h4 {
+    margin: 0 0 1.25rem 0;
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #1f2937;
     display: flex;
     align-items: center;
-    gap: var(--pp-spacing-sm);
+    gap: 0.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.ppv-redeem-section h4 {
+    font-size: 1rem;
+    color: #f59e0b;
+    border-bottom: none;
+    padding-bottom: 0;
 }
 
 /* ──────────────────────────────────────────────────────────────────────
@@ -5979,66 +6068,96 @@ select.ppv-support-input {
 
 .ppv-redeem-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: var(--pp-spacing-lg);
-    margin-bottom: var(--pp-spacing-xl);
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 2rem;
 }
 
 @media (max-width: 768px) {
     .ppv-redeem-grid {
         grid-template-columns: 1fr;
+        gap: 1rem;
     }
 }
 
 /* ──────────────────────────────────────────────────────────────────────
-   🎁 REDEEM ITEM CARD
+   🎁 REDEEM ITEM CARD - Premium Glass Card
    ────────────────────────────────────────────────────────────────────── */
 
 .ppv-redeem-item {
-    background: var(--pp-bg);
-    border: 1px solid var(--pp-border);
-    border-radius: var(--pp-radius-md);
-    padding: var(--pp-spacing-lg);
+    background: linear-gradient(145deg,
+        rgba(255, 255, 255, 0.9) 0%,
+        rgba(255, 255, 255, 0.7) 100%);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 20px;
+    padding: 1.5rem;
     position: relative;
     overflow: hidden;
-    transition: all 0.3s ease;
-    box-shadow: var(--pp-shadow-sm);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow:
+        0 4px 6px -1px rgba(0, 0, 0, 0.05),
+        0 10px 15px -3px rgba(0, 0, 0, 0.08);
 }
 
 .ppv-redeem-item:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--pp-shadow-lg);
-    border-color: var(--pp-primary);
+    transform: translateY(-8px) scale(1.02);
+    box-shadow:
+        0 20px 25px -5px rgba(0, 0, 0, 0.1),
+        0 10px 10px -5px rgba(0, 0, 0, 0.04),
+        0 0 0 1px rgba(102, 126, 234, 0.1);
 }
 
-/* Status Stripe */
+/* Status Stripe - Glowing Effect */
 .ppv-redeem-item::before {
     content: '';
     position: absolute;
     top: 0;
     left: 0;
-    width: 4px;
+    width: 5px;
     height: 100%;
-    background: var(--pp-warning);
-    transition: all 0.3s ease;
+    background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
+    transition: all 0.4s ease;
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
+}
+
+.ppv-redeem-item::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100px;
+    height: 100px;
+    background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
+    transform: translate(30%, -30%);
+    pointer-events: none;
 }
 
 .ppv-redeem-item.status-approved::before {
-    background: var(--pp-success);
+    background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
 }
 
 .ppv-redeem-item.status-cancelled::before {
-    background: var(--pp-danger);
+    background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%);
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.3);
 }
 
 .ppv-redeem-item.status-pending::before {
-    background: var(--pp-warning);
-    animation: ppv-pulse-glow 2s infinite;
+    background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
+    animation: ppv-pending-glow 2s ease-in-out infinite;
 }
 
-@keyframes ppv-pulse-glow {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+@keyframes ppv-pending-glow {
+    0%, 100% {
+        box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+        opacity: 1;
+    }
+    50% {
+        box-shadow: 0 0 30px rgba(245, 158, 11, 0.7);
+        opacity: 0.8;
+    }
 }
 
 /* ──────────────────────────────────────────────────────────────────────
@@ -6047,135 +6166,222 @@ select.ppv-support-input {
 
 .ppv-redeem-item strong {
     display: block;
-    font-size: 16px;
+    font-size: 1.125rem;
     font-weight: 700;
-    color: var(--pp-text);
-    margin-bottom: var(--pp-spacing-sm);
-    line-height: 1.3;
+    color: #1f2937;
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+    letter-spacing: -0.01em;
 }
 
 .ppv-redeem-item small {
-    display: block;
-    font-size: 13px;
-    color: var(--pp-text-2);
-    margin-bottom: var(--pp-spacing-xs);
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-bottom: 0.375rem;
     line-height: 1.5;
+}
+
+.ppv-redeem-item small:first-of-type {
+    color: #4b5563;
+    font-weight: 500;
 }
 
 .ppv-redeem-meta {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--pp-spacing-md);
-    margin: var(--pp-spacing-md) 0;
-    padding-top: var(--pp-spacing-md);
-    border-top: 1px solid var(--pp-border);
+    gap: 1rem;
+    margin: 1rem 0;
+    padding: 1rem 0;
+    border-top: 1px dashed rgba(0, 0, 0, 0.08);
+    border-bottom: 1px dashed rgba(0, 0, 0, 0.08);
 }
 
 .ppv-redeem-meta-item {
     display: flex;
     align-items: center;
-    gap: var(--pp-spacing-xs);
-    font-size: 13px;
-    color: var(--pp-text-2);
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: #4b5563;
+    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+    padding: 0.5rem 0.875rem;
+    border-radius: 10px;
+    font-weight: 500;
 }
 
 .ppv-redeem-meta-item i {
-    font-size: 16px;
-    color: var(--pp-primary);
+    font-size: 1rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 /* ──────────────────────────────────────────────────────────────────────
-   🔘 REDEEM ACTION BUTTONS
+   🔘 REDEEM ACTION BUTTONS - Premium Buttons
    ────────────────────────────────────────────────────────────────────── */
 
 .ppv-redeem-actions {
     display: flex;
-    gap: var(--pp-spacing-sm);
-    margin-top: var(--pp-spacing-lg);
+    gap: 0.75rem;
+    margin-top: 1.25rem;
 }
 
 .ppv-approve,
 .ppv-reject {
     flex: 1;
-    padding: 10px 16px;
+    padding: 0.875rem 1.25rem;
     border: none;
-    border-radius: var(--pp-radius-sm);
-    font-size: 14px;
-    font-weight: 600;
+    border-radius: 14px;
+    font-size: 0.9375rem;
+    font-weight: 700;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: var(--pp-spacing-xs);
+    gap: 0.5rem;
+    position: relative;
+    overflow: hidden;
+    letter-spacing: 0.01em;
 }
 
 .ppv-approve {
-    background: linear-gradient(135deg, var(--pp-success) 0%, #059669 100%);
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     color: white;
-    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+    box-shadow:
+        0 4px 14px rgba(16, 185, 129, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.ppv-approve::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
 
 .ppv-approve:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+    transform: translateY(-3px) scale(1.02);
+    box-shadow:
+        0 8px 20px rgba(16, 185, 129, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.ppv-approve:hover::before {
+    opacity: 1;
 }
 
 .ppv-approve:active {
-    transform: translateY(0);
+    transform: translateY(-1px) scale(1);
 }
 
 .ppv-reject {
-    background: var(--pp-bg-2);
-    color: var(--pp-text);
-    border: 1px solid var(--pp-border);
+    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+    color: #4b5563;
+    border: 2px solid #e5e7eb;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .ppv-reject:hover {
-    background: rgba(239, 68, 68, 0.1);
-    border-color: var(--pp-danger);
-    color: var(--pp-danger);
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    border-color: #fca5a5;
+    color: #dc2626;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
 }
 
 /* ──────────────────────────────────────────────────────────────────────
-   📜 LOG BOX (Letzte 10 Einlösungen)
+   📜 LOG BOX (Letzte 10 Einlösungen) - Modern Timeline
    ────────────────────────────────────────────────────────────────────── */
 
 .ppv-log-box {
-    background: var(--pp-bg);
-    border: 1px solid var(--pp-border);
-    border-radius: var(--pp-radius-md);
-    padding: var(--pp-spacing-lg);
-    box-shadow: var(--pp-shadow-sm);
+    background: linear-gradient(145deg,
+        rgba(255, 255, 255, 0.9) 0%,
+        rgba(249, 250, 251, 0.95) 100%);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(229, 231, 235, 0.5);
+    border-radius: 20px;
+    padding: 1.5rem;
+    box-shadow:
+        0 4px 6px -1px rgba(0, 0, 0, 0.05),
+        0 10px 15px -3px rgba(0, 0, 0, 0.05);
 }
 
 .ppv-log-box h3 {
-    margin: 0 0 var(--pp-spacing-md) 0;
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--pp-text);
+    margin: 0 0 1.25rem 0;
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #1f2937;
     display: flex;
     align-items: center;
-    gap: var(--pp-spacing-sm);
+    gap: 0.625rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.ppv-log-box h3 i {
+    color: #667eea;
+    font-size: 1.25rem;
 }
 
 #ppv-log-list {
     display: flex;
     flex-direction: column;
-    gap: var(--pp-spacing-md);
+    gap: 0.75rem;
+    position: relative;
+}
+
+#ppv-log-list::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(180deg, #667eea 0%, #764ba2 50%, #10b981 100%);
+    border-radius: 2px;
+    opacity: 0.3;
 }
 
 .ppv-log-item {
-    padding: var(--pp-spacing-md);
-    background: var(--pp-bg-2);
-    border-left: 3px solid var(--pp-primary);
-    border-radius: var(--pp-radius-sm);
-    transition: all 0.3s ease;
+    padding: 1rem 1rem 1rem 2rem;
+    background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+    border-radius: 14px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid rgba(229, 231, 235, 0.5);
+    position: relative;
+    margin-left: 0.5rem;
+}
+
+.ppv-log-item::before {
+    content: '';
+    position: absolute;
+    left: -0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 10px;
+    height: 10px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2);
 }
 
 .ppv-log-item:hover {
-    background: var(--pp-surface);
-    transform: translateX(4px);
+    background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%);
+    transform: translateX(8px);
+    box-shadow:
+        0 4px 12px rgba(102, 126, 234, 0.15),
+        0 0 0 1px rgba(102, 126, 234, 0.1);
+}
+
+.ppv-log-item:hover::before {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2);
 }
 
 .ppv-log-item strong {
