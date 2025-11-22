@@ -587,16 +587,22 @@ public static function render_landing_page($atts) {
             $_SESSION['ppv_user_email'] = $user->email;
             
             $GLOBALS['ppv_role'] = 'user';
-            
-            // Generate token
-            $token = md5(uniqid('ppv_user_', true));
-            $wpdb->update("{$prefix}ppv_users", ['login_token' => $token], ['id' => $user->id]);
-            
+
+            // ✅ Multi-device: Reuse existing token if available (don't kick out other devices)
+            $token = $user->login_token;
+            if (empty($token)) {
+                $token = md5(uniqid('ppv_user_', true));
+                $wpdb->update("{$prefix}ppv_users", ['login_token' => $token], ['id' => $user->id]);
+                error_log("🔑 [PPV_Login] New token generated for user #{$user->id}");
+            } else {
+                error_log("🔑 [PPV_Login] Reusing existing token for user #{$user->id} (multi-device)");
+            }
+
             // Set cookie
             $domain = $_SERVER['HTTP_HOST'] ?? '';
             $expire = $remember ? time() + (86400 * 180) : time() + 86400;
             setcookie('ppv_user_token', $token, $expire, '/', $domain, true, true);
-            
+
             error_log("✅ [PPV_Login] User logged in (#{$user->id})");
             
             wp_send_json_success([
@@ -694,14 +700,23 @@ public static function render_landing_page($atts) {
                 error_log("💾 [PPV_Login] POS enabled for store #{$store->id}");
             }
             
-            // Generate token
-            $token = md5(uniqid('ppv_handler_', true));
-            $wpdb->update("{$prefix}ppv_users", ['login_token' => $token], ['id' => $user_id]);
-            
+            // ✅ Multi-device: Reuse existing token if available
+            $existing_token = $wpdb->get_var($wpdb->prepare(
+                "SELECT login_token FROM {$prefix}ppv_users WHERE id=%d", $user_id
+            ));
+            if (!empty($existing_token)) {
+                $token = $existing_token;
+                error_log("🔑 [PPV_Login] Reusing existing handler token (multi-device)");
+            } else {
+                $token = md5(uniqid('ppv_handler_', true));
+                $wpdb->update("{$prefix}ppv_users", ['login_token' => $token], ['id' => $user_id]);
+                error_log("🔑 [PPV_Login] New handler token generated");
+            }
+
             // Set cookie
             $domain = $_SERVER['HTTP_HOST'] ?? '';
             setcookie('ppv_user_token', $token, time() + (86400 * 180), '/', $domain, true, true);
-            
+
             error_log("✅ [PPV_Login] Handler login success!");
             
             wp_send_json_success([
@@ -767,9 +782,15 @@ public static function render_landing_page($atts) {
 
             $GLOBALS['ppv_role'] = 'scanner';
 
-            // Generate token
-            $token = md5(uniqid('ppv_scanner_', true));
-            $wpdb->update("{$prefix}ppv_users", ['login_token' => $token], ['id' => $scanner_user->id]);
+            // ✅ Multi-device: Reuse existing token if available
+            $token = $scanner_user->login_token;
+            if (empty($token)) {
+                $token = md5(uniqid('ppv_scanner_', true));
+                $wpdb->update("{$prefix}ppv_users", ['login_token' => $token], ['id' => $scanner_user->id]);
+                error_log("🔑 [PPV_Login] New scanner token generated");
+            } else {
+                error_log("🔑 [PPV_Login] Reusing existing scanner token (multi-device)");
+            }
 
             // Set cookie
             $domain = $_SERVER['HTTP_HOST'] ?? '';
@@ -885,21 +906,27 @@ public static function render_landing_page($atts) {
         $_SESSION['ppv_user_email'] = $user->email;
         
         $GLOBALS['ppv_role'] = 'user';
-        
-        // Generate token
-        $token = md5(uniqid('ppv_user_google_', true));
-        $wpdb->update(
-            "{$prefix}ppv_users",
-            ['login_token' => $token],
-            ['id' => $user->id],
-            ['%s'],
-            ['%d']
-        );
-        
+
+        // ✅ Multi-device: Reuse existing token if available
+        $token = $user->login_token;
+        if (empty($token)) {
+            $token = md5(uniqid('ppv_user_google_', true));
+            $wpdb->update(
+                "{$prefix}ppv_users",
+                ['login_token' => $token],
+                ['id' => $user->id],
+                ['%s'],
+                ['%d']
+            );
+            error_log("🔑 [PPV_Login] New Google token generated");
+        } else {
+            error_log("🔑 [PPV_Login] Reusing existing token for Google login (multi-device)");
+        }
+
         // Set cookie (180 days for Google login)
         $domain = $_SERVER['HTTP_HOST'] ?? '';
         setcookie('ppv_user_token', $token, time() + (86400 * 180), '/', $domain, true, true);
-        
+
         error_log("✅ [PPV_Login] Google login successful (#{$user->id}): {$email}");
         
         wp_send_json_success([
@@ -1040,15 +1067,21 @@ public static function render_landing_page($atts) {
 
         $GLOBALS['ppv_role'] = 'user';
 
-        // Generate token
-        $token = md5(uniqid('ppv_user_fb_', true));
-        $wpdb->update(
-            "{$prefix}ppv_users",
-            ['login_token' => $token],
-            ['id' => $user->id],
-            ['%s'],
-            ['%d']
-        );
+        // ✅ Multi-device: Reuse existing token if available
+        $token = $user->login_token;
+        if (empty($token)) {
+            $token = md5(uniqid('ppv_user_fb_', true));
+            $wpdb->update(
+                "{$prefix}ppv_users",
+                ['login_token' => $token],
+                ['id' => $user->id],
+                ['%s'],
+                ['%d']
+            );
+            error_log("🔑 [PPV_Login] New Facebook token generated");
+        } else {
+            error_log("🔑 [PPV_Login] Reusing existing token for Facebook login (multi-device)");
+        }
 
         // Set cookie
         $domain = $_SERVER['HTTP_HOST'] ?? '';
@@ -1157,15 +1190,21 @@ public static function render_landing_page($atts) {
 
         $GLOBALS['ppv_role'] = 'user';
 
-        // Generate token
-        $token = md5(uniqid('ppv_user_tt_', true));
-        $wpdb->update(
-            "{$prefix}ppv_users",
-            ['login_token' => $token],
-            ['id' => $user->id],
-            ['%s'],
-            ['%d']
-        );
+        // ✅ Multi-device: Reuse existing token if available
+        $token = $user->login_token;
+        if (empty($token)) {
+            $token = md5(uniqid('ppv_user_tt_', true));
+            $wpdb->update(
+                "{$prefix}ppv_users",
+                ['login_token' => $token],
+                ['id' => $user->id],
+                ['%s'],
+                ['%d']
+            );
+            error_log("🔑 [PPV_Login] New TikTok token generated");
+        } else {
+            error_log("🔑 [PPV_Login] Reusing existing token for TikTok login (multi-device)");
+        }
 
         // Set cookie
         $domain = $_SERVER['HTTP_HOST'] ?? '';
