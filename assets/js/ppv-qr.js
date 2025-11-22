@@ -1,10 +1,11 @@
 /**
- * PunktePass – Kassenscanner & Kampagnen v5.5 TURBO COMPATIBLE
+ * PunktePass – Kassenscanner & Kampagnen v5.6 TURBO COMPATIBLE
  * ✅ Save függvény integrálva
  * ✅ Összes dinamikus mező működik
  * ✅ Camera Scanner + Settings + Init
  * ✅ TURBO.JS COMPATIBLE - Full event delegation
  * ✅ All modals use event delegation (works after Turbo navigation)
+ * ✅ Request queue & 503 error handling to prevent server overload
  * Author: Erik Borota / PunktePass
  */
 
@@ -18,6 +19,61 @@ if (window.PPV_QR_LOADED) {
 // 🌐 GLOBAL STATE & CONFIG
 // ============================================================
 window.PPV_LAST_SCAN = window.PPV_LAST_SCAN || 0;
+
+// ============================================================
+// 🚦 REQUEST QUEUE - Prevent 503 errors from too many requests
+// ============================================================
+window.PPV_REQUEST_QUEUE = window.PPV_REQUEST_QUEUE || {
+  pending: 0,
+  maxConcurrent: 2,  // Max 2 simultaneous requests
+  queue: [],
+
+  async add(fetchFn, priority = 0) {
+    return new Promise((resolve, reject) => {
+      this.queue.push({ fetchFn, resolve, reject, priority });
+      this.queue.sort((a, b) => b.priority - a.priority);
+      this.process();
+    });
+  },
+
+  async process() {
+    if (this.pending >= this.maxConcurrent || this.queue.length === 0) return;
+
+    const { fetchFn, resolve, reject } = this.queue.shift();
+    this.pending++;
+
+    try {
+      const result = await fetchFn();
+      resolve(result);
+    } catch (e) {
+      reject(e);
+    } finally {
+      this.pending--;
+      // Small delay between requests
+      setTimeout(() => this.process(), 100);
+    }
+  }
+};
+
+// 🔄 Fetch wrapper with 503 retry logic
+async function ppvFetch(url, options = {}, retries = 2) {
+  const doFetch = async () => {
+    const res = await fetch(url, options);
+
+    if (res.status === 503) {
+      if (retries > 0) {
+        console.warn(`⚠️ [ppvFetch] 503 error, retrying in 1s... (${retries} left)`);
+        await new Promise(r => setTimeout(r, 1000));
+        return ppvFetch(url, options, retries - 1);
+      }
+      throw new Error('503 Service Unavailable');
+    }
+
+    return res;
+  };
+
+  return window.PPV_REQUEST_QUEUE.add(doFetch);
+}
 
 window.PPV_STORE_KEY =
   (window.PPV_STORE_DATA?.store_key || "").trim() ||
@@ -253,8 +309,13 @@ class ScanProcessor {
       return;
     }
 
+    // Skip if loadRecentScans is already handling this
+    if (window.PPV_RECENT_SCANS_INTERVAL) {
+      return;
+    }
+
     try {
-      const res = await fetch("/wp-json/punktepass/v1/pos/logs", {
+      const res = await ppvFetch("/wp-json/punktepass/v1/pos/logs", {
         headers: { "PPV-POS-Token": window.PPV_STORE_KEY },
       });
       const logs = await res.json();
@@ -295,7 +356,7 @@ class CampaignManager {
     const filter = document.getElementById("ppv-campaign-filter")?.value || "active";
 
     try {
-      const res = await fetch("/wp-json/punktepass/v1/pos/campaigns", {
+      const res = await ppvFetch("/wp-json/punktepass/v1/pos/campaigns", {
         headers: { "PPV-POS-Token": window.PPV_STORE_KEY },
       });
       const data = await res.json();
@@ -1740,13 +1801,24 @@ document.addEventListener("DOMContentLoaded", function () {
   // Moved to event delegation for Turbo.js compatibility
 
   // ============================================================
-  // 📋 LIVE RECENT SCANS POLLING (5s interval)
+  // 📋 LIVE RECENT SCANS POLLING (15s interval - reduced to prevent 503)
   // ============================================================
   if (logTable) {
+    // Track if a request is in progress to prevent overlapping
+    let loadingScans = false;
+
     // Initial load
     async function loadRecentScans() {
+      // Prevent overlapping requests
+      if (loadingScans) {
+        console.log('⏭️ [loadRecentScans] Already loading, skipping');
+        return;
+      }
+
+      loadingScans = true;
+
       try {
-        const response = await fetch('/wp-json/ppv/v1/pos/recent-scans', {
+        const response = await ppvFetch('/wp-json/ppv/v1/pos/recent-scans', {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' }
         });
@@ -1757,18 +1829,12 @@ document.addEventListener("DOMContentLoaded", function () {
           return;
         }
 
-        // ✅ Clone response BEFORE consuming it (for error debugging)
-        const responseClone = response.clone();
-
         // ✅ Try to parse JSON with better error handling
         let data;
         try {
           data = await response.json();
         } catch (jsonErr) {
-          // If JSON parsing fails, get the raw response body for debugging
-          const text = await responseClone.text();
-          console.error('❌ [loadRecentScans] JSON parse failed. Response body:', text);
-          console.error('❌ [loadRecentScans] JSON error:', jsonErr);
+          console.error('❌ [loadRecentScans] JSON parse failed:', jsonErr);
           return;
         }
 
@@ -1787,15 +1853,17 @@ document.addEventListener("DOMContentLoaded", function () {
         }
       } catch (err) {
         console.error('❌ [loadRecentScans] Fetch error:', err);
+      } finally {
+        loadingScans = false;
       }
     }
 
-    // Load immediately
-    loadRecentScans();
+    // Load after short delay (not immediately, to reduce parallel requests)
+    setTimeout(loadRecentScans, 500);
 
-    // Poll every 10 seconds (only create interval ONCE)
+    // Poll every 15 seconds (increased from 10s to reduce server load)
     if (!window.PPV_RECENT_SCANS_INTERVAL) {
-      window.PPV_RECENT_SCANS_INTERVAL = setInterval(loadRecentScans, 10000);
+      window.PPV_RECENT_SCANS_INTERVAL = setInterval(loadRecentScans, 15000);
     }
 
   }
@@ -1805,8 +1873,16 @@ document.addEventListener("DOMContentLoaded", function () {
   // ============================================================
   // CSV export buttons handled via event delegation for Turbo compatibility
 
-  // 🚀 Export reinit function for Turbo
+  // 🚀 Export reinit function for Turbo (with debouncing)
   window.ppv_qr_reinit = function() {
+    // Debounce: prevent multiple rapid reinits
+    const now = Date.now();
+    if (window.PPV_QR_REINIT_LAST && (now - window.PPV_QR_REINIT_LAST) < 1000) {
+      console.log('⏭️ [QR] Skipping reinit - debounced');
+      return;
+    }
+    window.PPV_QR_REINIT_LAST = now;
+
     console.log('🔄 [QR] Turbo re-initialization');
 
     // Re-query DOM elements
@@ -1819,18 +1895,15 @@ document.addEventListener("DOMContentLoaded", function () {
       // Reinitialize campaign manager with new DOM
       const ui = new UIManager(resultBox, logTable, campaignList);
       const newCampaignManager = new CampaignManager(ui, campaignList, campaignModal);
-      newCampaignManager.load();
+
+      // Delay campaign load to stagger requests
+      setTimeout(() => newCampaignManager.load(), 200);
 
       // Store globally for access
       window.ppvCampaignManager = newCampaignManager;
     }
 
-    // Reload logs if table exists
-    if (logTable && window.PPV_STORE_KEY) {
-      const ui = new UIManager(resultBox, logTable, campaignList);
-      const scanProcessor = new ScanProcessor(ui);
-      scanProcessor.loadLogs();
-    }
+    // Note: Don't reload logs here - loadRecentScans handles it via interval
   };
 });
 
