@@ -1,10 +1,12 @@
 /**
- * PunktePass – Theme Loader v2.0 (UNIVERSAL)
+ * PunktePass – Theme Loader v2.2 (UNIVERSAL)
  * ✅ Auto-detects all pages
  * ✅ Multi-domain cookie
  * ✅ MutationObserver for button detection
  * ✅ Service Worker messaging
  * ✅ Refresh memory
+ * ✅ Icon sync on page load (sun/moon)
+ * ✅ Works with both ppv-theme-toggle and ppv-theme-toggle-global
  * Author: Erik Borota / PunktePass
  */
 
@@ -49,6 +51,18 @@
     };
 
     document.head.appendChild(link);
+  }
+
+  // ============================================================
+  // 🔹 UPDATE THEME ICON (sun/moon)
+  // ============================================================
+  function updateThemeIcon(theme) {
+    const icon = document.getElementById('ppv-theme-icon');
+    if (icon) {
+      // dark mode = moon icon, light mode = sun icon
+      icon.className = theme === 'dark' ? 'ri-moon-line' : 'ri-sun-line';
+      log('INFO', '🌙☀️ Icon updated:', theme === 'dark' ? 'moon' : 'sun');
+    }
   }
 
   // ============================================================
@@ -150,11 +164,19 @@
   // 🔹 ATTACH BUTTON LISTENER (MutationObserver)
   // ============================================================
   function attachButtonListener() {
-    const btn = document.getElementById('ppv-theme-toggle');
+    // Try both button IDs (legacy and new global)
+    const btn = document.getElementById('ppv-theme-toggle') || document.getElementById('ppv-theme-toggle-global');
     if (!btn) {
       log('DEBUG', 'Button not found yet, will keep watching');
       return false;
     }
+
+    // Skip if already attached (prevents double listeners on Turbo navigation)
+    if (btn.dataset.themeListenerAttached) {
+      log('DEBUG', 'Button listener already attached, skipping');
+      return true;
+    }
+    btn.dataset.themeListenerAttached = 'true';
 
     log('INFO', '✅ Theme toggle button found, attaching listener');
 
@@ -172,10 +194,13 @@
       localStorage.setItem(THEME_KEY, newTheme);
       setMultiDomainCookie(newTheme);
 
-      // 2. Sync to server (async)
+      // 2. Update theme icon immediately
+      updateThemeIcon(newTheme);
+
+      // 3. Sync to server (async)
       await syncThemeToServer(newTheme);
 
-      // 3. Message Service Worker to clear cache
+      // 4. Message Service Worker to clear cache
       if (navigator.serviceWorker?.controller) {
         navigator.serviceWorker.controller.postMessage({
           type: 'clear-theme-cache',
@@ -184,7 +209,7 @@
         log('INFO', '✉️ SW message sent: clear-theme-cache');
       }
 
-      // 4. Broadcast to other tabs
+      // 5. Broadcast to other tabs
       if (typeof BroadcastChannel !== 'undefined') {
         try {
           const bc = new BroadcastChannel('ppv-theme-sync');
@@ -195,7 +220,7 @@
         }
       }
 
-      // 5. Haptic feedback
+      // 6. Haptic feedback
       if (navigator.vibrate) navigator.vibrate(20);
     });
 
@@ -207,9 +232,13 @@
   // ============================================================
   function startMutationObserver() {
     const observer = new MutationObserver(() => {
-      if (!document.getElementById('ppv-theme-toggle')) return;
+      // Check for either button ID
+      const btn = document.getElementById('ppv-theme-toggle') || document.getElementById('ppv-theme-toggle-global');
+      if (!btn) return;
 
       if (attachButtonListener()) {
+        // Also update icon when button is found
+        updateThemeIcon(getTheme());
         observer.disconnect();
         log('INFO', '✅ MutationObserver: Button found and attached');
       }
@@ -252,7 +281,7 @@
   // 🔹 MAIN INIT FUNCTION (Turbo-compatible)
   // ============================================================
   function initThemeLoader() {
-    log('INFO', '🚀 Theme Loader v2.1 initialized (Turbo-compatible)');
+    log('INFO', '🚀 Theme Loader v2.2 initialized (Turbo-compatible + icon sync)');
 
     // 1. Get current theme
     const theme = getTheme();
@@ -266,13 +295,16 @@
     document.body.classList.remove('ppv-light', 'ppv-dark');
     document.body.classList.add(`ppv-${theme}`);
 
-    // 4. Try to attach button (might already exist)
+    // 4. Update theme icon (sun/moon) - MUST happen on every init!
+    updateThemeIcon(theme);
+
+    // 5. Try to attach button (might already exist)
     if (!attachButtonListener()) {
       // Button doesn't exist yet, start watching
       startMutationObserver();
     }
 
-    // 5. Listen for cross-tab broadcasts (only once)
+    // 6. Listen for cross-tab broadcasts (only once)
     if (!window.PPV_BROADCAST_LISTENER) {
       window.PPV_BROADCAST_LISTENER = true;
       listenForBroadcasts();
