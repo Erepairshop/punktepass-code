@@ -5516,18 +5516,29 @@ ppv-app-root {
 }
 
 /* ──────────────────────────────────────────────────────────────────────
-   🍞 TOAST NOTIFICATIONS
+   🍞 TOAST NOTIFICATIONS (Unified styling - overrides earlier definition)
    ────────────────────────────────────────────────────────────────────── */
 .ppv-toast {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    padding: 1rem 1.5rem;
-    border-radius: var(--pp-r-sm);
+    position: fixed !important;
+    bottom: 20px !important;
+    right: 20px !important;
+    left: auto !important;
+    top: auto !important;
+    transform: translateX(0) !important;
+    opacity: 0;
+    padding: 0.8rem 1.3rem;
+    border-radius: 12px;
     z-index: 999999;
     font-weight: 600;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-    animation: slideIn 0.3s ease-out;
+    font-size: 14px;
+    max-width: 320px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.ppv-toast.show {
+    opacity: 1;
+    transform: translateX(0);
 }
 
 .ppv-toast.success {
@@ -5545,15 +5556,9 @@ ppv-app-root {
     color: white;
 }
 
-@keyframes slideIn {
-    from {
-        transform: translateX(400px);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
+.ppv-toast.warning {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
 }
 
 /* ──────────────────────────────────────────────────────────────────────
