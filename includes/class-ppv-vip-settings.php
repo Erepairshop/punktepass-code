@@ -43,7 +43,13 @@ class PPV_VIP_Settings {
      *  🎨 ASSETS
      * ============================================================ */
     public static function enqueue_assets() {
-        if (!is_page() || !has_shortcode(get_the_content(), 'ppv_vip_settings')) {
+        if (!is_page()) {
+            return;
+        }
+
+        $content = get_the_content();
+        // Load if page has VIP settings shortcode OR QR center (which includes VIP tab)
+        if (!has_shortcode($content, 'ppv_vip_settings') && !has_shortcode($content, 'ppv_qr_center')) {
             return;
         }
 
