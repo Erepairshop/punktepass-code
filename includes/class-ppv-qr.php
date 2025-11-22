@@ -1482,6 +1482,7 @@ class PPV_QR {
         $data = $r->get_json_params();
         $qr_code = sanitize_text_field($data['qr'] ?? '');
         $store_key = sanitize_text_field($data['store_key'] ?? '');
+        $campaign_id = intval($data['campaign_id'] ?? 0);
 
         if (empty($qr_code) || empty($store_key)) {
             return new WP_REST_Response([
@@ -1540,11 +1541,24 @@ class PPV_QR {
         }
 
         // ═══════════════════════════════════════════════════════════
-        // BASE POINTS + BONUS DAY CALCULATION
+        // BASE POINTS + CAMPAIGN CALCULATION
         // ═══════════════════════════════════════════════════════════
         $points_add = 1;
 
-        // Check for bonus day
+        // Check for campaign points
+        if ($campaign_id > 0) {
+            $campaign_points = $wpdb->get_var($wpdb->prepare("
+                SELECT points FROM {$wpdb->prefix}ppv_campaigns
+                WHERE id=%d AND store_id=%d AND status='active'
+            ", $campaign_id, $store_id));
+
+            if ($campaign_points) {
+                $points_add = intval($campaign_points);
+                error_log("🎯 [PPV_QR] Campaign points applied: campaign_id={$campaign_id}, points={$points_add}");
+            }
+        }
+
+        // Check for bonus day (multiplies base/campaign points)
         $bonus = $wpdb->get_row($wpdb->prepare("
             SELECT multiplier, extra_points FROM {$wpdb->prefix}ppv_bonus_days
             WHERE store_id=%d AND date=%s AND active=1
@@ -1708,6 +1722,7 @@ class PPV_QR {
             'user_id' => $user_id,
             'store_id' => $store_id,
             'points' => $points_add,
+            'campaign_id' => $campaign_id ?: null,
             'type' => 'qr_scan',
             'created' => current_time('mysql')
         ]);
@@ -1740,6 +1755,7 @@ class PPV_QR {
             'store_id' => $store_id,
             'store_name' => $store_name ?? 'PunktePass',
             'points' => $points_add,
+            'campaign_id' => $campaign_id ?: null,
             'vip_bonus' => $vip_bonus_applied,
             'vip_bonus_details' => $vip_bonus_details,
             'time' => current_time('mysql')
