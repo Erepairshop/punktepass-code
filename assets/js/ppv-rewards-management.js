@@ -13,12 +13,44 @@ console.log("✅ PPV Rewards Management JS v1.2 loaded (Turbo-compatible)");
   let editID = 0;
   let base = "";
   let storeID = 0;
+  let nonce = "";
   let form = null;
   let listContainer = null;
   let saveBtn = null;
   let cancelBtn = null;
   let L = {};
   let eventListenersAttached = false;
+
+  // 🔧 Helper for authenticated fetch
+  async function apiFetch(url, options = {}) {
+    const defaultOptions = {
+      credentials: 'same-origin',
+      headers: {
+        'X-WP-Nonce': nonce,
+        ...options.headers
+      }
+    };
+
+    const mergedOptions = { ...defaultOptions, ...options };
+    if (options.headers) {
+      mergedOptions.headers = { ...defaultOptions.headers, ...options.headers };
+    }
+
+    const response = await fetch(url, mergedOptions);
+
+    // Handle 503 errors specifically
+    if (response.status === 503) {
+      throw new Error('API vorübergehend nicht verfügbar. Bitte Seite neu laden.');
+    }
+
+    if (!response.ok && response.status !== 200) {
+      const errorText = await response.text();
+      console.error('API Error:', response.status, errorText);
+      throw new Error(`API Fehler: ${response.status}`);
+    }
+
+    return response;
+  }
 
   /* ============================================================
    * 🧩 TOAST HELPER
@@ -72,7 +104,7 @@ console.log("✅ PPV Rewards Management JS v1.2 loaded (Turbo-compatible)");
     listContainer.innerHTML = "<div class='ppv-loading'>⏳ " + (L.rewards_list_loading || "Betöltés...") + "</div>";
 
     try {
-      const res = await fetch(url);
+      const res = await apiFetch(url);
       console.log("📨 Response status:", res.status, res.statusText);
 
       const json = await res.json();
@@ -216,7 +248,7 @@ console.log("✅ PPV Rewards Management JS v1.2 loaded (Turbo-compatible)");
       if (editMode) body.id = editID;
 
       try {
-        const res = await fetch(`${base}${endpoint}`, {
+        const res = await apiFetch(`${base}${endpoint}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body)
@@ -261,7 +293,7 @@ console.log("✅ PPV Rewards Management JS v1.2 loaded (Turbo-compatible)");
       console.log("✏️ Edit ID:", id);
 
       try {
-        const res = await fetch(`${base}rewards/list?store_id=${storeID}`);
+        const res = await apiFetch(`${base}rewards/list?store_id=${storeID}`);
         const json = await res.json();
         console.log("📦 Edit fetch response:", json);
 
@@ -313,7 +345,7 @@ console.log("✅ PPV Rewards Management JS v1.2 loaded (Turbo-compatible)");
       console.log("🗑️ Delete ID:", id);
 
       try {
-        const res = await fetch(`${base}rewards/delete`, {
+        const res = await apiFetch(`${base}rewards/delete`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ store_id: storeID, id })
@@ -356,6 +388,7 @@ console.log("✅ PPV Rewards Management JS v1.2 loaded (Turbo-compatible)");
     // Update module-level variables
     base = window.ppv_rewards_mgmt?.base || "/wp-json/ppv/v1/";
     storeID = window.ppv_rewards_mgmt?.store_id || window.PPV_STORE_ID || 0;
+    nonce = window.ppv_rewards_mgmt?.nonce || "";
 
     form = document.getElementById("ppv-reward-form");
     listContainer = document.getElementById("ppv-rewards-list");
