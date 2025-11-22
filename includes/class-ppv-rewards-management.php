@@ -150,7 +150,7 @@ class PPV_Rewards_Management {
         <script>window.PPV_STORE_ID = <?php echo intval($store_id); ?>;</script>
 
         <div class="ppv-rewards-management-wrapper glass-section">
-            <h2>🎁 <?php echo esc_html(PPV_Lang::t('rewards_title') ?: 'Jutalmak kezelése – '); ?><?php echo esc_html($store->company_name ?? 'Store'); ?></h2>
+            <h2 style="font-size: 18px; margin-bottom: 16px;"><i class="ri-gift-line"></i> <?php echo esc_html(PPV_Lang::t('rewards_title') ?: 'Jutalmak kezelése – '); ?><?php echo esc_html($store->company_name ?? 'Store'); ?></h2>
 
             <!-- CREATE/EDIT FORM -->
             <form id="ppv-reward-form" class="ppv-reward-form">

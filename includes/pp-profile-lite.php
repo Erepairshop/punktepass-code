@@ -180,18 +180,18 @@ wp_localize_script('pp-profile-lite-i18n', 'ppv_profile', [
                     </div>
                     <div class="ppv-header-right">
                         <div class="ppv-store-status">
-                            <span class="ppv-status-badge" id="ppv-status">🟢 <?php echo esc_html(PPV_Lang::t('status_active')); ?></span>
+                            <span class="ppv-status-badge" id="ppv-status"><i class="ri-checkbox-blank-circle-fill" style="color: #22c55e;"></i> <?php echo esc_html(PPV_Lang::t('status_active')); ?></span>
                             <span class="ppv-last-updated" id="ppv-last-updated">—</span>
                         </div>
                     </div>
                 </div>
 
                 <div class="ppv-tabs-nav">
-                    <button class="ppv-tab-btn active" data-tab="general" data-i18n="tab_general">📋 <?php echo esc_html(PPV_Lang::t('tab_general')); ?></button>
-                    <button class="ppv-tab-btn" data-tab="hours" data-i18n="tab_hours">🕒 <?php echo esc_html(PPV_Lang::t('tab_hours')); ?></button>
-                    <button class="ppv-tab-btn" data-tab="media" data-i18n="tab_media">🖼️ <?php echo esc_html(PPV_Lang::t('tab_media')); ?></button>
-                    <button class="ppv-tab-btn" data-tab="contact" data-i18n="tab_contact">📞 <?php echo esc_html(PPV_Lang::t('tab_contact')); ?></button>
-                    <button class="ppv-tab-btn" data-tab="settings" data-i18n="tab_settings">⚙️ <?php echo esc_html(PPV_Lang::t('tab_settings')); ?></button>
+                    <button class="ppv-tab-btn active" data-tab="general" data-i18n="tab_general"><i class="ri-file-list-line"></i> <?php echo esc_html(PPV_Lang::t('tab_general')); ?></button>
+                    <button class="ppv-tab-btn" data-tab="hours" data-i18n="tab_hours"><i class="ri-time-line"></i> <?php echo esc_html(PPV_Lang::t('tab_hours')); ?></button>
+                    <button class="ppv-tab-btn" data-tab="media" data-i18n="tab_media"><i class="ri-image-line"></i> <?php echo esc_html(PPV_Lang::t('tab_media')); ?></button>
+                    <button class="ppv-tab-btn" data-tab="contact" data-i18n="tab_contact"><i class="ri-phone-line"></i> <?php echo esc_html(PPV_Lang::t('tab_contact')); ?></button>
+                    <button class="ppv-tab-btn" data-tab="settings" data-i18n="tab_settings"><i class="ri-settings-3-line"></i> <?php echo esc_html(PPV_Lang::t('tab_settings')); ?></button>
                 </div>
 
                 <div id="ppv-alert-zone"></div>
@@ -207,7 +207,7 @@ wp_localize_script('pp-profile-lite-i18n', 'ppv_profile', [
                     <?php echo self::render_tab_settings($store); ?>
 
                     <div class="ppv-form-footer">
-                        <button type="submit" class="ppv-btn ppv-btn-primary" id="ppv-submit-btn">💾 <span data-i18n="save"><?php echo esc_html(PPV_Lang::t('save')); ?></span></button>
+                        <button type="submit" class="ppv-btn ppv-btn-primary" id="ppv-submit-btn"><i class="ri-save-line"></i> <span data-i18n="save"><?php echo esc_html(PPV_Lang::t('save')); ?></span></button>
                         <span class="ppv-save-indicator" id="ppv-save-indicator"></span>
                     </div>
                 </form>
@@ -229,7 +229,7 @@ private static function render_tab_general($store) {
     ob_start();
     ?>
     <div class="ppv-tab-content active" id="tab-general">
-        <h2 data-i18n="general_info"><?php echo esc_html(PPV_Lang::t('general_info')); ?></h2>
+        <h2 style="font-size: 18px; margin-bottom: 16px;" data-i18n="general_info"><i class="ri-file-list-line"></i> <?php echo esc_html(PPV_Lang::t('general_info')); ?></h2>
 
         <!-- STORE NAME -->
         <div class="ppv-form-group">
@@ -265,7 +265,7 @@ private static function render_tab_general($store) {
         <!-- ============================================================
              ✅ ÚJ SZEKCIÓ: ORSZÁG ÉS ADÓ INFORMÁCIÓK
              ============================================================ -->
-        <h3 data-i18n="country_tax_section"><?php echo esc_html(PPV_Lang::t('country_tax_section')); ?></h3>
+        <h3 style="font-size: 16px;" data-i18n="country_tax_section"><i class="ri-global-line"></i> <?php echo esc_html(PPV_Lang::t('country_tax_section')); ?></h3>
 
         <!-- ORSZÁG KIVÁLASZTÁS -->
         <div class="ppv-form-group">
@@ -301,7 +301,7 @@ private static function render_tab_general($store) {
         <!-- ============================================================
              MEGLÉVŐ: CÍM ADATOK
              ============================================================ -->
-        <h3 data-i18n="address_section"><?php echo esc_html(PPV_Lang::t('address_section')); ?></h3>
+        <h3 style="font-size: 16px;" data-i18n="address_section"><i class="ri-map-pin-line"></i> <?php echo esc_html(PPV_Lang::t('address_section')); ?></h3>
 
         <!-- STREET ADDRESS -->
         <div class="ppv-form-group">
@@ -326,7 +326,7 @@ private static function render_tab_general($store) {
         <!-- ============================================================
              MEGLÉVŐ: HELYKOORDINÁTÁK (LOCATION)
              ============================================================ -->
-        <h3 data-i18n="location_section"><?php echo esc_html(PPV_Lang::t('location_section')); ?></h3>
+        <h3 style="font-size: 16px;" data-i18n="location_section"><i class="ri-map-pin-2-line"></i> <?php echo esc_html(PPV_Lang::t('location_section')); ?></h3>
 
         <!-- LATITUDE -->
         <div class="ppv-form-group">
@@ -343,7 +343,7 @@ private static function render_tab_general($store) {
         <!-- GEOCODE BUTTON -->
         <div class="ppv-form-group">
             <button type="button" id="ppv-geocode-btn" class="ppv-btn ppv-btn-secondary" style="width: 100%; margin-top: 10px;" data-i18n="geocode_button">
-                🗺️ <?php echo esc_html(PPV_Lang::t('geocode_button')); ?>
+                <i class="ri-map-2-line"></i> <?php echo esc_html(PPV_Lang::t('geocode_button')); ?>
             </button>
         </div>
 
@@ -355,7 +355,7 @@ private static function render_tab_general($store) {
         <!-- ============================================================
              MEGLÉVŐ: CÉGINFORMÁCIÓK (COMPANY)
              ============================================================ -->
-        <h3 data-i18n="company_section"><?php echo esc_html(PPV_Lang::t('company_section')); ?></h3>
+        <h3 style="font-size: 16px;" data-i18n="company_section"><i class="ri-building-line"></i> <?php echo esc_html(PPV_Lang::t('company_section')); ?></h3>
 
         <!-- COMPANY NAME -->
         <div class="ppv-form-group">
@@ -388,7 +388,7 @@ private static function render_tab_general($store) {
             ob_start();
             ?>
             <div class="ppv-tab-content" id="tab-hours">
-                <h2 data-i18n="opening_hours"><?php echo esc_html(PPV_Lang::t('opening_hours')); ?></h2>
+                <h2 style="font-size: 18px; margin-bottom: 16px;" data-i18n="opening_hours"><i class="ri-time-line"></i> <?php echo esc_html(PPV_Lang::t('opening_hours')); ?></h2>
                 <p data-i18n="opening_hours_info"><?php echo esc_html(PPV_Lang::t('opening_hours_info')); ?></p>
 
                 <div class="ppv-opening-hours-wrapper" id="ppv-hours">
@@ -428,7 +428,7 @@ private static function render_tab_general($store) {
             ob_start();
             ?>
             <div class="ppv-tab-content" id="tab-media">
-                <h2 data-i18n="media_section"><?php echo esc_html(PPV_Lang::t('media_section')); ?></h2>
+                <h2 style="font-size: 18px; margin-bottom: 16px;" data-i18n="media_section"><i class="ri-image-line"></i> <?php echo esc_html(PPV_Lang::t('media_section')); ?></h2>
 
                 <div class="ppv-media-group">
                     <label data-i18n="logo"><?php echo esc_html(PPV_Lang::t('logo')); ?></label>
@@ -470,7 +470,7 @@ if (!empty($store->gallery)) {
             ob_start();
             ?>
             <div class="ppv-tab-content" id="tab-contact">
-                <h2 data-i18n="contact_data"><?php echo esc_html(PPV_Lang::t('contact_data')); ?></h2>
+                <h2 style="font-size: 18px; margin-bottom: 16px;" data-i18n="contact_data"><i class="ri-contacts-line"></i> <?php echo esc_html(PPV_Lang::t('contact_data')); ?></h2>
 
                 <div class="ppv-form-group">
                     <label data-i18n="phone"><?php echo esc_html(PPV_Lang::t('phone')); ?></label>
@@ -494,7 +494,7 @@ if (!empty($store->gallery)) {
 
                 <hr>
 
-                <h3 data-i18n="social_media"><?php echo esc_html(PPV_Lang::t('social_media')); ?></h3>
+                <h3 style="font-size: 16px;" data-i18n="social_media"><i class="ri-share-line"></i> <?php echo esc_html(PPV_Lang::t('social_media')); ?></h3>
 
                 <div class="ppv-form-group">
                     <label data-i18n="facebook_url"><?php echo esc_html(PPV_Lang::t('facebook_url')); ?></label>
@@ -519,9 +519,9 @@ if (!empty($store->gallery)) {
             ob_start();
             ?>
             <div class="ppv-tab-content" id="tab-settings">
-                <h2 data-i18n="profile_settings"><?php echo esc_html(PPV_Lang::t('profile_settings')); ?></h2>
+                <h2 style="font-size: 18px; margin-bottom: 16px;" data-i18n="profile_settings"><i class="ri-settings-3-line"></i> <?php echo esc_html(PPV_Lang::t('profile_settings')); ?></h2>
 
-                <h3 style="margin-top: 0;">Aktivierung</h3>
+                <h3 style="font-size: 16px; margin-top: 0;"><i class="ri-toggle-line"></i> Aktivierung</h3>
 
                 <div class="ppv-checkbox-group">
                     <label class="ppv-checkbox">
@@ -541,7 +541,7 @@ if (!empty($store->gallery)) {
 
                 <hr>
 
-                <h3>Wartungsmodus / Karbantartás / Mod de Întreținere</h3>
+                <h3 style="font-size: 16px;"><i class="ri-tools-line"></i> Wartungsmodus / Karbantartás / Mod de Întreținere</h3>
 
                 <div class="ppv-checkbox-group">
                     <label class="ppv-checkbox">
@@ -563,7 +563,7 @@ if (!empty($store->gallery)) {
 
                 <hr>
 
-                <h3>Zeitzone / Időzóna / Fus Orar</h3>
+                <h3 style="font-size: 16px;"><i class="ri-time-zone-line"></i> Zeitzone / Időzóna / Fus Orar</h3>
 
                 <div class="ppv-form-group">
                     <label data-i18n="timezone"><?php echo esc_html(PPV_Lang::t('timezone')); ?></label>
@@ -588,14 +588,14 @@ if (!empty($store->gallery)) {
                 <!-- ============================================================
                      ONBOARDING RESET
                      ============================================================ -->
-                <h3>Onboarding</h3>
+                <h3 style="font-size: 16px;"><i class="ri-restart-line"></i> Onboarding</h3>
 
                 <div class="ppv-form-group">
                     <p class="ppv-help" data-i18n="onboarding_reset_help" style="margin-bottom: 12px;">
                         <?php echo esc_html(PPV_Lang::t('onboarding_reset_help')); ?>
                     </p>
                     <button type="button" id="ppv-reset-onboarding-btn" class="ppv-btn ppv-btn-secondary" style="width: 100%;">
-                        🔄 <span data-i18n="onboarding_reset_btn"><?php echo esc_html(PPV_Lang::t('onboarding_reset_btn')); ?></span>
+                        <i class="ri-refresh-line"></i> <span data-i18n="onboarding_reset_btn"><?php echo esc_html(PPV_Lang::t('onboarding_reset_btn')); ?></span>
                     </button>
                 </div>
             </div>

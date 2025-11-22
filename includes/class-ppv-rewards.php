@@ -173,15 +173,15 @@ window.ppv_plugin_url = '" . esc_url(PPV_PLUGIN_URL) . "';",
         <script>window.PPV_STORE_ID = <?php echo intval($store->id); ?>;</script>
 
         <div class="ppv-rewards-wrapper glass-section">
-            <h2>✅ <?php echo esc_html(PPV_Lang::t('redeem_management_title') ?: 'Einlösungen Verwaltung – '); ?><?php echo esc_html($store->company_name); ?></h2>
+            <h2 style="font-size: 18px; margin-bottom: 16px;"><i class="ri-checkbox-circle-line"></i> <?php echo esc_html(PPV_Lang::t('redeem_management_title') ?: 'Einlösungen Verwaltung – '); ?><?php echo esc_html($store->company_name); ?></h2>
 
             <!-- TAB MENU -->
             <div class="ppv-rewards-tabs" style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ddd;">
                 <button class="ppv-tab-btn ppv-tab-active" data-tab="redeem" style="padding: 12px 20px; background: none; border: none; font-size: 14px; font-weight: 600; cursor: pointer; border-bottom: 3px solid #0066cc; color: #0066cc;">
-                    ✅ <?php echo esc_html(PPV_Lang::t('redeem_tab_redeems') ?: 'Einlösungen'); ?>
+                    <i class="ri-checkbox-circle-line"></i> <?php echo esc_html(PPV_Lang::t('redeem_tab_redeems') ?: 'Einlösungen'); ?>
                 </button>
                 <button class="ppv-tab-btn" data-tab="receipts" style="padding: 12px 20px; background: none; border: none; font-size: 14px; font-weight: 600; cursor: pointer; border-bottom: 3px solid transparent; color: #666;">
-                    📄 <?php echo esc_html(PPV_Lang::t('redeem_tab_receipts') ?: 'Bizonylatok'); ?>
+                    <i class="ri-file-text-line"></i> <?php echo esc_html(PPV_Lang::t('redeem_tab_receipts') ?: 'Bizonylatok'); ?>
                 </button>
             </div>
 
@@ -189,17 +189,17 @@ window.ppv_plugin_url = '" . esc_url(PPV_PLUGIN_URL) . "';",
             <div id="ppv-tab-redeem" class="ppv-tab-content" style="display: block;">
                 <!-- EINLÖSUNGEN LISTE -->
                 <div class="ppv-redeem-section">
-                    <h3>📋 <?php echo esc_html(PPV_Lang::t('redeem_list_title') ?: 'Einlösungen'); ?></h3>
+                    <h3><i class="ri-list-check-2"></i> <?php echo esc_html(PPV_Lang::t('redeem_list_title') ?: 'Einlösungen'); ?></h3>
                     <div id="ppv-redeem-list" class="ppv-redeem-grid">
-                        <p class="ppv-loading">⏳ <?php echo esc_html(PPV_Lang::t('redeem_loading') ?: 'Lade...'); ?></p>
+                        <p class="ppv-loading"><i class="ri-loader-4-line ri-spin"></i> <?php echo esc_html(PPV_Lang::t('redeem_loading') ?: 'Lade...'); ?></p>
                     </div>
                 </div>
 
                 <!-- RECENT LOGS -->
                 <div id="ppv-redeem-log" class="ppv-log-box" style="margin-top:30px;">
-                    <h3>📜 <?php echo esc_html(PPV_Lang::t('redeem_recent_logs') ?: 'Letzte 10 Einlösungen'); ?></h3>
+                    <h3><i class="ri-history-line"></i> <?php echo esc_html(PPV_Lang::t('redeem_recent_logs') ?: 'Letzte 10 Einlösungen'); ?></h3>
                     <div id="ppv-log-list">
-                        <p>⏳ <?php echo esc_html(PPV_Lang::t('redeem_loading') ?: 'Lade...'); ?></p>
+                        <p><i class="ri-loader-4-line ri-spin"></i> <?php echo esc_html(PPV_Lang::t('redeem_loading') ?: 'Lade...'); ?></p>
                     </div>
                 </div>
             </div>
@@ -207,7 +207,7 @@ window.ppv_plugin_url = '" . esc_url(PPV_PLUGIN_URL) . "';",
             <!-- TAB CONTENT: RECEIPTS -->
             <div id="ppv-tab-receipts" class="ppv-tab-content" style="display: none;">
                 <div id="ppv-receipts-container">
-                    <p class="ppv-loading">⏳ <?php echo esc_html(PPV_Lang::t('redeem_receipts_loading') ?: 'Bizonylatok betöltése...'); ?></p>
+                    <p class="ppv-loading"><i class="ri-loader-4-line ri-spin"></i> <?php echo esc_html(PPV_Lang::t('redeem_receipts_loading') ?: 'Bizonylatok betöltése...'); ?></p>
                 </div>
             </div>
         </div>

@@ -737,7 +737,7 @@ class PPV_Stats {
         ob_start(); ?>
         
         <div class="ppv-stats-wrapper">
-            <h2 class="ppv-stats-title">📊 <?php echo esc_html($T['statistics'] ?? 'Statistics'); ?></h2>
+            <h2 class="ppv-stats-title" style="font-size: 18px; margin-bottom: 16px;"><i class="ri-bar-chart-box-line"></i> <?php echo esc_html($T['statistics'] ?? 'Statistics'); ?></h2>
 
             <!-- BASIC STATS SECTION -->
             <div class="ppv-stats-loading" id="ppv-stats-loading" style="display:none;">
@@ -793,7 +793,7 @@ class PPV_Stats {
 
                 <!-- TOP 5 USERS -->
                 <div class="ppv-stats-section">
-                    <h3 class="ppv-section-title">🏆 <?php echo esc_html($T['top_5_users'] ?? 'Top 5 Users'); ?></h3>
+                    <h3 class="ppv-section-title"><i class="ri-trophy-line"></i> <?php echo esc_html($T['top_5_users'] ?? 'Top 5 Users'); ?></h3>
                     <div class="ppv-top5-list" id="ppv-top5-users">
                         <p class="ppv-loading-small"><?php echo esc_html($T['loading'] ?? 'Loading...'); ?></p>
                     </div>
@@ -821,7 +821,7 @@ class PPV_Stats {
 
                 <!-- PEAK HOURS -->
                 <div class="ppv-stats-section">
-                    <h3 class="ppv-section-title">⏰ <?php echo esc_html($T['peak_hours_today'] ?? 'Peak Hours Today'); ?></h3>
+                    <h3 class="ppv-section-title"><i class="ri-time-line"></i> <?php echo esc_html($T['peak_hours_today'] ?? 'Peak Hours Today'); ?></h3>
                     <div class="ppv-peak-hours" id="ppv-peak-hours">
                         <p class="ppv-loading-small"><?php echo esc_html($T['loading'] ?? 'Loading...'); ?></p>
                     </div>
@@ -831,29 +831,29 @@ class PPV_Stats {
             <!-- ADVANCED STATS SECTION -->
             <hr style="margin: 2rem 0; opacity: 0.2;">
 
-            <h2 class="ppv-stats-title">📈 <?php echo esc_html($T['advanced_statistics'] ?? 'Advanced Statistics'); ?></h2>
+            <h2 class="ppv-stats-title" style="font-size: 18px; margin-bottom: 16px;"><i class="ri-line-chart-line"></i> <?php echo esc_html($T['advanced_statistics'] ?? 'Advanced Statistics'); ?></h2>
 
             <!-- TREND -->
             <div class="ppv-stats-section">
-                <h3 class="ppv-section-title">📊 <?php echo esc_html($T['trend'] ?? 'Trend'); ?></h3>
+                <h3 class="ppv-section-title"><i class="ri-bar-chart-line"></i> <?php echo esc_html($T['trend'] ?? 'Trend'); ?></h3>
                 <div id="ppv-trend" class="ppv-loading-small"><?php echo esc_html($T['loading'] ?? 'Loading...'); ?></div>
             </div>
 
             <!-- SPENDING -->
             <div class="ppv-stats-section">
-                <h3 class="ppv-section-title">💰 <?php echo esc_html($T['rewards_spending'] ?? 'Rewards Spending'); ?></h3>
+                <h3 class="ppv-section-title"><i class="ri-money-euro-circle-line"></i> <?php echo esc_html($T['rewards_spending'] ?? 'Rewards Spending'); ?></h3>
                 <div id="ppv-spending" class="ppv-loading-small"><?php echo esc_html($T['loading'] ?? 'Loading...'); ?></div>
             </div>
 
             <!-- CONVERSION -->
             <div class="ppv-stats-section">
-                <h3 class="ppv-section-title">📊 <?php echo esc_html($T['conversion_rate'] ?? 'Conversion Rate'); ?></h3>
+                <h3 class="ppv-section-title"><i class="ri-percent-line"></i> <?php echo esc_html($T['conversion_rate'] ?? 'Conversion Rate'); ?></h3>
                 <div id="ppv-conversion" class="ppv-loading-small"><?php echo esc_html($T['loading'] ?? 'Loading...'); ?></div>
             </div>
 
             <!-- ADVANCED EXPORT -->
             <div class="ppv-stats-section">
-                <h3 class="ppv-section-title">📥 <?php echo esc_html($T['advanced_export'] ?? 'Advanced Export'); ?></h3>
+                <h3 class="ppv-section-title"><i class="ri-download-2-line"></i> <?php echo esc_html($T['advanced_export'] ?? 'Advanced Export'); ?></h3>
                 <div class="ppv-export-advanced-controls">
                     <select id="ppv-export-format">
                         <option value="detailed"><?php echo esc_html($T['detailed_user_email'] ?? 'Detailed (User + Email)'); ?></option>
