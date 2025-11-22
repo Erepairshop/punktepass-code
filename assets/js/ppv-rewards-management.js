@@ -1,9 +1,65 @@
 /**
  * PunktePass – Prämien Management Frontend
- * Version: 1.1 – FIXED + DEBUG
+ * Version: 1.2 – 503 Error Handling + Request Queue
  */
 
-console.log("✅ PPV Rewards Management JS v1.1 loaded");
+console.log("✅ PPV Rewards Management JS v1.2 loaded");
+
+// ============================================================
+// 🚦 REQUEST QUEUE - Prevent 503 errors (shared with ppv-qr.js)
+// ============================================================
+if (!window.PPV_REQUEST_QUEUE) {
+  window.PPV_REQUEST_QUEUE = {
+    pending: 0,
+    maxConcurrent: 2,
+    queue: [],
+
+    async add(fetchFn, priority = 0) {
+      return new Promise((resolve, reject) => {
+        this.queue.push({ fetchFn, resolve, reject, priority });
+        this.queue.sort((a, b) => b.priority - a.priority);
+        this.process();
+      });
+    },
+
+    async process() {
+      if (this.pending >= this.maxConcurrent || this.queue.length === 0) return;
+
+      const { fetchFn, resolve, reject } = this.queue.shift();
+      this.pending++;
+
+      try {
+        const result = await fetchFn();
+        resolve(result);
+      } catch (e) {
+        reject(e);
+      } finally {
+        this.pending--;
+        setTimeout(() => this.process(), 100);
+      }
+    }
+  };
+}
+
+// 🔄 API Fetch wrapper with 503 retry logic
+async function apiFetch(url, options = {}, retries = 2) {
+  const doFetch = async () => {
+    const res = await fetch(url, options);
+
+    if (res.status === 503) {
+      if (retries > 0) {
+        console.warn(`⚠️ [apiFetch] 503 error, retrying in 1s... (${retries} left)`);
+        await new Promise(r => setTimeout(r, 1000));
+        return apiFetch(url, options, retries - 1);
+      }
+      throw new Error('API vorübergehend nicht verfügbar. Bitte Seite neu laden.');
+    }
+
+    return res;
+  };
+
+  return window.PPV_REQUEST_QUEUE.add(doFetch);
+}
 
 document.addEventListener("DOMContentLoaded", function () {
 
@@ -71,9 +127,9 @@ document.addEventListener("DOMContentLoaded", function () {
     listContainer.innerHTML = "<div class='ppv-loading'>⏳ " + (L.rewards_list_loading || "Betöltés...") + "</div>";
 
     try {
-      const res = await fetch(url);
+      const res = await apiFetch(url);
       console.log("📨 Response status:", res.status, res.statusText);
-      
+
       const json = await res.json();
       console.log("📦 Response JSON:", json);
 
@@ -151,7 +207,7 @@ document.addEventListener("DOMContentLoaded", function () {
       if (editMode) body.id = editID;
 
       try {
-        const res = await fetch(`${base}${endpoint}`, {
+        const res = await apiFetch(`${base}${endpoint}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body)
@@ -183,7 +239,7 @@ document.addEventListener("DOMContentLoaded", function () {
       console.log("✏️ Edit ID:", id);
       
       try {
-        const res = await fetch(`${base}rewards/list?store_id=${storeID}`);
+        const res = await apiFetch(`${base}rewards/list?store_id=${storeID}`);
         const json = await res.json();
         console.log("📦 Edit fetch response:", json);
 
@@ -235,7 +291,7 @@ document.addEventListener("DOMContentLoaded", function () {
       console.log("🗑️ Delete ID:", id);
 
       try {
-        const res = await fetch(`${base}rewards/delete`, {
+        const res = await apiFetch(`${base}rewards/delete`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ store_id: storeID, id })
@@ -332,6 +388,38 @@ document.addEventListener("DOMContentLoaded", function () {
   /* ============================================================
    * 🚀 INIT
    * ============================================================ */
-  console.log("🚀 Initializing rewards management...");
-  loadRewards();
+  function initRewardsManagement() {
+    // Debounce: prevent multiple rapid inits
+    const now = Date.now();
+    if (window.PPV_REWARDS_LAST_INIT && (now - window.PPV_REWARDS_LAST_INIT) < 1000) {
+      console.log('⏭️ [Rewards] Skipping init - debounced');
+      return;
+    }
+    window.PPV_REWARDS_LAST_INIT = now;
+
+    console.log("🚀 Initializing rewards management...");
+
+    // Delay load to stagger requests with other components
+    setTimeout(() => {
+      if (listContainer) {
+        loadRewards();
+      }
+    }, 300);
+  }
+
+  // Export for Turbo reinit
+  window.ppv_rewards_reinit = initRewardsManagement;
+
+  // Initial load
+  initRewardsManagement();
+});
+
+// 🔄 Turbo: Re-initialize after navigation
+document.addEventListener('turbo:load', function() {
+  // Small delay to let DOM settle
+  setTimeout(() => {
+    if (typeof window.ppv_rewards_reinit === 'function') {
+      window.ppv_rewards_reinit();
+    }
+  }, 150);
 });
