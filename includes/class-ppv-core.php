@@ -13,6 +13,37 @@ class PPV_Core {
         register_deactivation_hook(PPV_PLUGIN_FILE, [__CLASS__, 'deactivate']);
         add_action('wp_enqueue_scripts', ['PPV_Core', 'enqueue_global_theme'], 5);
         add_action('wp', ['PPV_Core', 'init_session_bridge'], 1);
+        add_action('admin_init', [__CLASS__, 'run_db_migrations'], 5);
+    }
+
+    /** ============================================================
+     * 🔹 Database Migrations
+     * Runs once per version to add new columns
+     * ============================================================ */
+    public static function run_db_migrations() {
+        global $wpdb;
+
+        $migration_version = get_option('ppv_db_migration_version', '0');
+
+        // Migration 1.1: Add VIP bonus columns to stores
+        if (version_compare($migration_version, '1.1', '<')) {
+            $table = $wpdb->prefix . 'ppv_stores';
+
+            // Check if columns exist
+            $vip_col = $wpdb->get_results("SHOW COLUMNS FROM {$table} LIKE 'vip_enabled'");
+
+            if (empty($vip_col)) {
+                $wpdb->query("ALTER TABLE {$table}
+                    ADD COLUMN vip_enabled TINYINT(1) DEFAULT 0 COMMENT 'Enable VIP bonus points for this store',
+                    ADD COLUMN vip_silver_bonus INT DEFAULT 5 COMMENT 'Extra points % for Silver users',
+                    ADD COLUMN vip_gold_bonus INT DEFAULT 10 COMMENT 'Extra points % for Gold users',
+                    ADD COLUMN vip_platinum_bonus INT DEFAULT 20 COMMENT 'Extra points % for Platinum users'
+                ");
+                error_log("✅ [PPV_Core] VIP bonus columns added to ppv_stores table");
+            }
+
+            update_option('ppv_db_migration_version', '1.1');
+        }
     }
  
     public static function init_session_bridge() {
