@@ -16,8 +16,10 @@ class PPV_User_Settings {
         add_shortcode('ppv_user_settings', [__CLASS__, 'render_settings_page']);
         add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
         add_action('wp_ajax_ppv_save_user_settings', [__CLASS__, 'ajax_save_settings']);
-        // 🔒 Removed wp_ajax_nopriv - authentication required for settings
+        add_action('wp_ajax_nopriv_ppv_save_user_settings', [__CLASS__, 'ajax_save_settings']);
+        // ✅ Avatar upload needs nopriv for PunktePass session users
         add_action('wp_ajax_ppv_upload_avatar', [__CLASS__, 'ajax_upload_avatar']);
+        add_action('wp_ajax_nopriv_ppv_upload_avatar', [__CLASS__, 'ajax_upload_avatar']);
         add_action('wp_ajax_ppv_logout_all_devices', [__CLASS__, 'ajax_logout_all_devices']);
         add_action('wp_ajax_ppv_delete_account', [__CLASS__, 'ajax_delete_account']);
     }

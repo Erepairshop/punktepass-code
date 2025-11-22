@@ -94,26 +94,40 @@ function initUserSettings() {
   $("#ppv-avatar-upload").off("change").on("change", function () {
     const file = this.files[0];
     if (!file) return;
+
+    // ✅ Ellenőrizzük, hogy a settings objektum elérhető-e
+    if (!window.ppv_user_settings || !window.ppv_user_settings.nonce) {
+      console.error("❌ [Avatar] ppv_user_settings not available!", window.ppv_user_settings);
+      showToast(T.network_error + " (config)", "error");
+      return;
+    }
+
     const formData = new FormData();
     formData.append("action", "ppv_upload_avatar");
     formData.append("avatar", file);
-    formData.append("nonce", ppv_user_settings.nonce);
+    formData.append("nonce", window.ppv_user_settings.nonce);
+
+    console.log("📤 [Avatar] Uploading to:", window.ppv_user_settings.ajax_url);
 
     $.ajax({
-      url: ppv_user_settings.ajax_url,
+      url: window.ppv_user_settings.ajax_url,
       type: "POST",
       processData: false,
       contentType: false,
       data: formData,
       success: (res) => {
+        console.log("📥 [Avatar] Response:", res);
         if (res.success && res.data.url) {
           $("#ppv-avatar-preview").attr("src", res.data.url);
           showToast(T.avatar_updated, "success");
         } else {
-          showToast(T.upload_failed, "error");
+          showToast(T.upload_failed + (res.data?.msg ? ": " + res.data.msg : ""), "error");
         }
       },
-      error: () => showToast(T.network_error, "error"),
+      error: (xhr, status, error) => {
+        console.error("❌ [Avatar] Upload error:", status, error, xhr.responseText);
+        showToast(T.network_error + " (" + xhr.status + ")", "error");
+      },
     });
   });
 
