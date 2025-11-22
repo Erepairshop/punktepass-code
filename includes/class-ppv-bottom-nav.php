@@ -81,9 +81,9 @@ class PPV_Bottom_Nav {
      * Render Navigation (User vagy Händler)
      * ============================================================ */
     public static function render_nav() {
-        // Session indítása ha kell
+        // Session indítása ha kell (read_and_close to prevent 503!)
         if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
-            @session_start();
+            @session_start(['read_and_close' => true]);
         }
 
         $user  = wp_get_current_user();

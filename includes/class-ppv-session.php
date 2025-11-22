@@ -434,7 +434,6 @@ add_action('init', function() {
             $_SESSION['ppv_is_pos'] = true;
             $GLOBALS['ppv_active_store'] = $store;
             $GLOBALS['ppv_is_pos'] = true;
-            error_log("✅ [PPV_Session] POS restored via cookie | Store={$store->id}");
         }
     }
 
@@ -448,7 +447,6 @@ add_action('init', function() {
             $_SESSION['ppv_is_pos'] = true;
             $GLOBALS['ppv_active_store'] = $store;
             $GLOBALS['ppv_is_pos'] = true;
-            error_log("✅ [PPV_Session] POS login via GET token | Store={$store->id}");
         }
     }
 
@@ -466,10 +464,12 @@ add_action('init', function() {
             $GLOBALS['ppv_active_store'] = $store;
             $GLOBALS['ppv_is_pos'] = !empty($_SESSION['ppv_is_pos']);
             $_SESSION['ppv_store_id'] = $store->id;
-            error_log("✅ [PPV_Session] store sync ok | ID={$store_id}");
-        } else {
-            error_log("⚠️ [PPV_Session] store sync fail (id={$store_id})");
         }
+    }
+
+    // ✅ CRITICAL: Release session lock immediately to prevent 503 errors!
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        session_write_close();
     }
 }, 1);
 
