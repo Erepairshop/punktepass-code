@@ -246,13 +246,14 @@ class PPV_Belohnungen {
             WHERE user_id = %d
         ", $user_id));
 
-        // ✅ FIX: Load ALL rewards but mark which ones user has points for
-        // Show only rewards with points by default, but all when searching
+        // ✅ FIX: Load ALL rewards but mark which ones user has started collecting at
+        // Show only rewards with scans by default, but all when searching
+        // Check for qr_scan entries (not SUM of points, which can be negative after redeems)
         $rewards = $wpdb->get_results($wpdb->prepare("
             SELECT r.id, r.title, r.description, r.required_points, r.store_id,
                    s.company_name AS store_name,
                    COALESCE(user_store_points.store_points, 0) AS user_store_points,
-                   CASE WHEN user_store_points.store_points >= 1 THEN 1 ELSE 0 END AS has_points
+                   CASE WHEN COALESCE(user_store_scans.scan_count, 0) > 0 THEN 1 ELSE 0 END AS has_points
             FROM {$wpdb->prefix}ppv_rewards r
             LEFT JOIN {$wpdb->prefix}ppv_stores s ON r.store_id = s.id
             LEFT JOIN (
@@ -261,9 +262,15 @@ class PPV_Belohnungen {
                 WHERE user_id = %d
                 GROUP BY store_id
             ) AS user_store_points ON r.store_id = user_store_points.store_id
+            LEFT JOIN (
+                SELECT store_id, COUNT(*) AS scan_count
+                FROM {$wpdb->prefix}ppv_points
+                WHERE user_id = %d AND type = 'qr_scan'
+                GROUP BY store_id
+            ) AS user_store_scans ON r.store_id = user_store_scans.store_id
             WHERE s.active = 1
             ORDER BY has_points DESC, r.required_points ASC
-        ", $user_id));
+        ", $user_id, $user_id));
 
         $pending = $wpdb->get_results($wpdb->prepare("
             SELECT r.id, rw.title, rw.description, s.name AS store_name, r.redeemed_at, r.status, r.points_spent
