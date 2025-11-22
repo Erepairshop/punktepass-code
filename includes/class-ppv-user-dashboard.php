@@ -624,53 +624,10 @@ private static function get_today_hours($opening_hours) {
             }
             
             // ============================================================
-            // THEME TOGGLE - Fixed for multiple clicks
+            // THEME TOGGLE - Handled by ppv-theme-loader.js (v2.3+)
             // ============================================================
-            const themeBtn = document.getElementById('ppv-theme-toggle-global');
-            if (themeBtn && !themeBtn.dataset.listenerAttached) {
-                themeBtn.dataset.listenerAttached = 'true';
-
-                themeBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-
-                    // Get current theme from body class (most reliable)
-                    const current = document.body.classList.contains('ppv-light') ? 'light' : 'dark';
-                    const next = current === 'dark' ? 'light' : 'dark';
-
-                    console.log('🎨 [Theme] Switching:', current, '→', next);
-
-                    // Save to localStorage and cookie
-                    localStorage.setItem('ppv_theme', next);
-                    document.cookie = `ppv_theme=${next};path=/;max-age=${60*60*24*365}`;
-
-                    // Load new CSS
-                    const href = `/wp-content/plugins/punktepass/assets/css/ppv-theme-${next}.css?v=${Date.now()}`;
-                    document.querySelectorAll('link[id="ppv-theme-css"]').forEach(e => e.remove());
-                    const link = document.createElement('link');
-                    link.id = 'ppv-theme-css';
-                    link.rel = 'stylesheet';
-                    link.href = href;
-                    document.head.appendChild(link);
-
-                    // Update body classes
-                    document.body.classList.remove('ppv-light', 'ppv-dark');
-                    document.body.classList.add(`ppv-${next}`);
-                    document.documentElement.setAttribute('data-theme', next);
-
-                    // Update icon (shows what you'll switch TO next)
-                    const icon = document.getElementById('ppv-theme-icon');
-                    if (icon) {
-                        // light mode = moon (click for dark), dark mode = sun (click for light)
-                        icon.className = next === 'light' ? 'ri-moon-line' : 'ri-sun-line';
-                    }
-
-                    console.log('✅ [Theme] Switched to:', next);
-                    if (navigator.vibrate) navigator.vibrate(20);
-                });
-
-                console.log('✅ [Theme] Button listener attached');
-            }
+            // REMOVED: Duplicate listener was conflicting with theme-loader.js
+            // The theme-loader.js now handles all theme switching logic
 
             // ============================================================
             // LANGUAGE SWITCH - Fixed for Turbo compatibility
