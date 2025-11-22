@@ -143,13 +143,22 @@ class PPV_Rewards_Management {
             return [];
         }
 
-        // Get all stores: parent + children
+        // 🔍 First check if this store has a parent (meaning we're in a filiale)
+        $parent_id = $wpdb->get_var($wpdb->prepare(
+            "SELECT parent_store_id FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+            $vendor_store_id
+        ));
+
+        // If we're in a filiale, use the parent as the main vendor
+        $main_vendor_id = $parent_id ? intval($parent_id) : $vendor_store_id;
+
+        // Get all stores: parent + all children
         $filialen = $wpdb->get_results($wpdb->prepare("
             SELECT id, name, company_name, address, city, plz
             FROM {$wpdb->prefix}ppv_stores
             WHERE id = %d OR parent_store_id = %d
             ORDER BY (id = %d) DESC, name ASC
-        ", $vendor_store_id, $vendor_store_id, $vendor_store_id));
+        ", $main_vendor_id, $main_vendor_id, $main_vendor_id));
 
         return $filialen ?: [];
     }
