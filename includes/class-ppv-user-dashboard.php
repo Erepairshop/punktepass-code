@@ -1093,10 +1093,11 @@ public static function render_dashboard() {
     }
 
     // ✅ Alap lekérdezés – csak aktív boltok
+    // ✅ FIX: Added 'country' field for currency symbol display
     $stores = $wpdb->get_results("
         SELECT id, company_name, address, city, plz, latitude, longitude,
                phone, website, logo, qr_logo, opening_hours, description,
-               gallery, facebook, instagram, tiktok
+               gallery, facebook, instagram, tiktok, country
         FROM {$prefix}ppv_stores
         WHERE active = 1
         ORDER BY company_name ASC
@@ -1218,6 +1219,7 @@ if ($camps) {
             'website' => $store->website,
             'logo' => $store->logo,
             'gallery' => $gallery_images,
+            'country' => $store->country ?? 'DE', // ✅ FIX: Added for currency symbol
             'social' => [
                 'facebook' => $store->facebook ?: null,
                 'instagram' => $store->instagram ?: null,
