@@ -354,12 +354,13 @@ if (window.PPV_REWARDS_LOADED) {
     return `${day}.${month}.${year} ${hours}:${mins}`;
   }
 
-  document.addEventListener("DOMContentLoaded", function () {
+  // ✅ TURBO FIX: Wrap in function that can be called after DOMContentLoaded OR on Turbo load
+  function initRewardsPageCore() {
 
     /* ============================================================
      * 🔑 BASE + TOKEN + STORE
      * ============================================================ */
-    console.log('📦 [REWARDS] DOMContentLoaded fired');
+    console.log('📦 [REWARDS] initRewardsPageCore() called');
 
     // ✅ Use 'let' for base so Turbo reinit can update it
     let base = window.ppv_rewards_rest?.base || "/wp-json/ppv/v1/";
@@ -960,11 +961,47 @@ showToast("📄 Monatsbeleg wird heruntergeladen!", "success");
       loadRedeemRequests();
       loadRecentLogs();
     };
-  });
+  }
+
+  // ✅ TURBO FIX: Track if core init has run
+  let coreInitDone = false;
+
+  function runCoreInitOnce() {
+    if (coreInitDone) {
+      console.log('⏭️ [REWARDS] Core init already done - skipping');
+      return;
+    }
+
+    // Only init if we're on the rewards page
+    const redeemList = document.getElementById("ppv-redeem-list");
+    if (!redeemList) {
+      console.log('⏭️ [REWARDS] Not on rewards page - core init skipped');
+      return;
+    }
+
+    coreInitDone = true;
+    initRewardsPageCore();
+  }
+
+  // Call on DOMContentLoaded if not yet fired, otherwise call immediately
+  if (document.readyState === 'loading') {
+    document.addEventListener("DOMContentLoaded", runCoreInitOnce);
+  } else {
+    // DOM already loaded (Turbo navigation case)
+    console.log('📦 [REWARDS] DOM already loaded - running init immediately');
+    runCoreInitOnce();
+  }
 
   // 🚀 Turbo: Re-initialize after navigation (only turbo:load to avoid duplicates)
   document.addEventListener('turbo:load', function() {
     console.log('🔄 [REWARDS] turbo:load event');
+
+    // ✅ Only run on rewards page (check if DOM element exists)
+    const redeemList = document.getElementById("ppv-redeem-list");
+    if (!redeemList) {
+      console.log('⏭️ [REWARDS] Not on rewards page - skipping');
+      return;
+    }
 
     // Throttle: don't reinit if we just did it
     const now = Date.now();
@@ -974,12 +1011,25 @@ showToast("📄 Monatsbeleg wird heruntergeladen!", "success");
     }
     window.PPV_REWARDS_LAST_INIT = now;
 
-    // Small delay to ensure DOM is ready
+    // ✅ Delay to ensure inline scripts have executed
     setTimeout(() => {
+      console.log('🔄 [REWARDS] turbo:load - coreInitDone:', coreInitDone);
+
+      // If core init hasn't run yet (script loaded via Turbo), run it now
+      if (!coreInitDone) {
+        console.log('🔄 [REWARDS] Running core init from turbo:load');
+        runCoreInitOnce();
+        return;
+      }
+
+      // Core already initialized - just refresh data
+      console.log('🔄 [REWARDS] Refreshing data via ppv_rewards_reinit');
       if (typeof window.ppv_rewards_reinit === 'function') {
         window.ppv_rewards_reinit();
+      } else {
+        console.error('❌ [REWARDS] ppv_rewards_reinit not defined');
       }
-    }, 100);
+    }, 200);
   });
 
   /* ============================================================
