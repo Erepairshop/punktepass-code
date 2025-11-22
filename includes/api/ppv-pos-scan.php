@@ -254,6 +254,39 @@ class PPV_POS_SCAN {
             $points_add = (int)round(($points_add * (float)$bonus->multiplier) + (int)$bonus->extra_points);
         }
 
+        /** 6.5) VIP Level Bonus */
+        $vip_bonus_applied = 0;
+        if (class_exists('PPV_User_Level')) {
+            // Check if store has VIP enabled
+            $vip_settings = $wpdb->get_row($wpdb->prepare("
+                SELECT vip_enabled, vip_silver_bonus, vip_gold_bonus, vip_platinum_bonus
+                FROM {$wpdb->prefix}ppv_stores WHERE id = %d
+            ", $store_id));
+
+            if ($vip_settings && $vip_settings->vip_enabled) {
+                $user_level = PPV_User_Level::get_level($user_id);
+
+                $bonus_percent = 0;
+                switch ($user_level) {
+                    case 'silver':
+                        $bonus_percent = intval($vip_settings->vip_silver_bonus);
+                        break;
+                    case 'gold':
+                        $bonus_percent = intval($vip_settings->vip_gold_bonus);
+                        break;
+                    case 'platinum':
+                        $bonus_percent = intval($vip_settings->vip_platinum_bonus);
+                        break;
+                }
+
+                if ($bonus_percent > 0) {
+                    $vip_bonus_applied = (int)round($points_add * ($bonus_percent / 100));
+                    $points_add += $vip_bonus_applied;
+                    error_log("✅ [POS_SCAN] VIP bonus applied: level={$user_level}, bonus%={$bonus_percent}, extra_points={$vip_bonus_applied}, total={$points_add}");
+                }
+            }
+        }
+
         /** 7) Mentés */
         $wpdb->insert("{$wpdb->prefix}ppv_points", [
             'user_id'   => $user_id,
@@ -277,11 +310,21 @@ class PPV_POS_SCAN {
         self::log_scan_attempt($store_id, $user_id, $ip_address, 'ok', "✅ +{$points_add} Punkte", 'scan_success', $points_add, $lang);
 
         /** 10) Üzenet */
+        // Build message with VIP bonus info if applicable
+        $vip_suffix = '';
+        if ($vip_bonus_applied > 0) {
+            $vip_suffix = [
+                'hu' => " (VIP bónusz: +{$vip_bonus_applied})",
+                'ro' => " (bonus VIP: +{$vip_bonus_applied})",
+                'de' => " (VIP-Bonus: +{$vip_bonus_applied})",
+            ][$lang] ?? " (VIP-Bonus: +{$vip_bonus_applied})";
+        }
+
         $msg = [
-            'hu' => "✅ +{$points_add} pont hozzáadva",
-            'ro' => "✅ +{$points_add} puncte adăugate",
-            'de' => "✅ +{$points_add} Punkte hinzugefügt",
-        ][$lang] ?? "✅ +{$points_add} Punkte";
+            'hu' => "✅ +{$points_add} pont hozzáadva{$vip_suffix}",
+            'ro' => "✅ +{$points_add} puncte adăugate{$vip_suffix}",
+            'de' => "✅ +{$points_add} Punkte hinzugefügt{$vip_suffix}",
+        ][$lang] ?? "✅ +{$points_add} Punkte{$vip_suffix}";
 
         $response = [
             'success'    => true,
@@ -290,7 +333,8 @@ class PPV_POS_SCAN {
             'store_id'   => $store_id,
             'store_name' => $store->name ?? 'PunktePass',
             'points'     => $points_add,
-            'total'      => $total_points
+            'total'      => $total_points,
+            'vip_bonus'  => $vip_bonus_applied
         ];
 
 
