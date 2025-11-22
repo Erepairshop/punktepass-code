@@ -3,7 +3,14 @@
  * ✅ Fully translated
  * ✅ Supports: German, Hungarian, Romanian
  * ✅ getLabels() function
+ * ✅ TURBO COMPATIBLE
  */
+
+// ✅ Duplicate load prevention
+if (window.PPV_ANALYTICS_LOADED) {
+  console.warn('⚠️ PPV Analytics JS already loaded - skipping duplicate!');
+} else {
+  window.PPV_ANALYTICS_LOADED = true;
 
 class PPV_Analytics {
   constructor() {
@@ -640,14 +647,29 @@ class PPV_Analytics {
   }
 }
 
-// Global instance
-window.ppv_analytics = new PPV_Analytics();
+// Global instance (only create once)
+if (!window.ppv_analytics) {
+  window.ppv_analytics = new PPV_Analytics();
+}
 
-// Auto-init on page load
-document.addEventListener('DOMContentLoaded', () => {
-  if (document.getElementById('ppv-analytics-section')) {
-    window.ppv_analytics.init();
-  }
-});
+// Auto-init on page load (only add listener once)
+if (!window.PPV_ANALYTICS_INIT_ADDED) {
+  window.PPV_ANALYTICS_INIT_ADDED = true;
+
+  document.addEventListener('DOMContentLoaded', () => {
+    if (document.getElementById('ppv-analytics-section')) {
+      window.ppv_analytics.init();
+    }
+  });
+
+  // Turbo support
+  document.addEventListener('turbo:load', () => {
+    if (document.getElementById('ppv-analytics-section')) {
+      window.ppv_analytics.init();
+    }
+  });
+}
 
 console.log('✅ [Analytics] Script loaded - TRANSLATED');
+
+} // End of duplicate load prevention

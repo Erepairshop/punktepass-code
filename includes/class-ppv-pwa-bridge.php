@@ -102,17 +102,21 @@ if ($user_id > 0 && class_exists('PPV_Auth')) {
 wp_add_inline_script('ppv-bridge', "
     window.ppvAuthToken = " . json_encode($token) . ";
     console.log('🌉 PPV Bridge aktiv – Token=' + (window.ppvAuthToken ? window.ppvAuthToken.substring(0,10)+'…' : '(none)'));
-    const oldFetch = window.fetch;
-    window.fetch = function(input, init = {}) {
-        try {
-            if (typeof input === 'string' && input.includes('/wp-json/ppv/v1/')) {
-                init.headers = init.headers || {};
-                if (window.ppvAuthToken)
-                    init.headers['Authorization'] = 'Bearer ' + window.ppvAuthToken;
-            }
-        } catch(e){}
-        return oldFetch(input, init);
-    };
+    // ✅ TURBO COMPATIBLE: Only override fetch once
+    if (!window.PPV_FETCH_OVERRIDE) {
+        window.PPV_FETCH_OVERRIDE = true;
+        window.ppvOldFetch = window.fetch;
+        window.fetch = function(input, init = {}) {
+            try {
+                if (typeof input === 'string' && input.includes('/wp-json/ppv/v1/')) {
+                    init.headers = init.headers || {};
+                    if (window.ppvAuthToken)
+                        init.headers['Authorization'] = 'Bearer ' + window.ppvAuthToken;
+                }
+            } catch(e){}
+            return window.ppvOldFetch(input, init);
+        };
+    }
 ");
 
     }

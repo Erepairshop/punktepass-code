@@ -1,43 +1,55 @@
 /**
  * PunktePass – Hidden Scan (ChromeOS / Bluetooth)
  * Automatikus QR-küldés a háttérben → /pos/scan
+ * ✅ TURBO COMPATIBLE
  */
- 
- // 🔹 Service Worker regisztrálása háttérmódhoz
-if ('serviceWorker' in navigator) {
+
+// ✅ Duplicate load prevention
+if (window.PPV_HIDDEN_SCAN_LOADED) {
+  console.warn('⚠️ PPV Hidden Scan JS already loaded - skipping duplicate!');
+} else {
+  window.PPV_HIDDEN_SCAN_LOADED = true;
+
+// 🔹 Service Worker regisztrálása háttérmódhoz
+if ('serviceWorker' in navigator && typeof PPV_SCAN_DATA !== 'undefined') {
   navigator.serviceWorker.register(PPV_SCAN_DATA.plugin_url + 'assets/js/ppv-hidden-scan-sw.js')
     .then(reg => console.log('✅ HiddenScan SW registered', reg))
     .catch(err => console.error('❌ SW register failed', err));
 }
 
+// Use window-level variables to persist across Turbo navigations
+window.ppvBuffer = window.ppvBuffer || "";
+window.ppvTimer = window.ppvTimer || null;
 
-let ppvBuffer = "";
-let ppvTimer = null;
+// Only add keydown listener once
+if (!window.PPV_HIDDEN_SCAN_KEYDOWN_ADDED) {
+  window.PPV_HIDDEN_SCAN_KEYDOWN_ADDED = true;
 
-document.addEventListener("keydown", (e) => {
-  // Ha ESC, buffer törlés
-  if (e.key === "Escape") {
-    ppvBuffer = "";
-    return;
-  }
+  document.addEventListener("keydown", (e) => {
+    // Ha ESC, buffer törlés
+    if (e.key === "Escape") {
+      window.ppvBuffer = "";
+      return;
+    }
 
-  // Ha Enter – elküldjük a beolvasott QR-kódot
-  if (e.key === "Enter" && ppvBuffer.length > 5) {
-    const code = ppvBuffer.trim();
-    ppvBuffer = "";
-    ppvSendScan(code);
-    return;
-  }
+    // Ha Enter – elküldjük a beolvasott QR-kódot
+    if (e.key === "Enter" && window.ppvBuffer.length > 5) {
+      const code = window.ppvBuffer.trim();
+      window.ppvBuffer = "";
+      ppvSendScan(code);
+      return;
+    }
 
-  // Egyéb karakterek gyűjtése
-  if (e.key.length === 1) {
-    ppvBuffer += e.key;
+    // Egyéb karakterek gyűjtése
+    if (e.key.length === 1) {
+      window.ppvBuffer += e.key;
 
-    // Reset, ha túl hosszú szünet
-    clearTimeout(ppvTimer);
-    ppvTimer = setTimeout(() => (ppvBuffer = ""), 1000);
-  }
-});
+      // Reset, ha túl hosszú szünet
+      clearTimeout(window.ppvTimer);
+      window.ppvTimer = setTimeout(() => (window.ppvBuffer = ""), 1000);
+    }
+  });
+}
 
 async function ppvSendScan(code) {
   console.log("📡 HiddenScan →", code);
@@ -90,9 +102,11 @@ function ppvShowToast(msg, type = "info") {
   setTimeout(() => box.remove(), 3500);
 }
 
-// 🔹 Alap stílus (ha még nincs külön CSS)
-const style = document.createElement("style");
-style.innerHTML = `
+// 🔹 Alap stílus (ha még nincs külön CSS) - only add once
+if (!document.getElementById('ppv-hidden-scan-styles')) {
+  const style = document.createElement("style");
+  style.id = 'ppv-hidden-scan-styles';
+  style.innerHTML = `
 .ppv-toast {
   position: fixed;
   bottom: 30px;
@@ -112,4 +126,7 @@ style.innerHTML = `
 .ppv-toast.success { background: #00c853; }
 .ppv-toast.error { background: #e53935; }
 `;
-document.head.appendChild(style);
+  document.head.appendChild(style);
+}
+
+} // End of duplicate load prevention
