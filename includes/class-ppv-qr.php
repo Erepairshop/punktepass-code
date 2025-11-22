@@ -1541,11 +1541,12 @@ class PPV_QR {
         }
 
         // ═══════════════════════════════════════════════════════════
-        // BASE POINTS + CAMPAIGN CALCULATION
+        // BASE POINTS: Campaign OR Reward (Prämien) points_given
         // ═══════════════════════════════════════════════════════════
-        $points_add = 1;
+        $points_add = 0;
+        $points_source = 'none';
 
-        // Check for campaign points
+        // 1. Check for campaign points FIRST (if campaign_id provided)
         if ($campaign_id > 0) {
             $campaign_points = $wpdb->get_var($wpdb->prepare("
                 SELECT points FROM {$wpdb->prefix}ppv_campaigns
@@ -1554,8 +1555,35 @@ class PPV_QR {
 
             if ($campaign_points) {
                 $points_add = intval($campaign_points);
+                $points_source = 'campaign';
                 error_log("🎯 [PPV_QR] Campaign points applied: campaign_id={$campaign_id}, points={$points_add}");
             }
+        }
+
+        // 2. If no campaign, use Prämien (reward) points_given as base
+        if ($points_add === 0) {
+            $reward_points = $wpdb->get_var($wpdb->prepare("
+                SELECT points_given FROM {$wpdb->prefix}ppv_rewards
+                WHERE store_id=%d AND active=1
+                ORDER BY id ASC LIMIT 1
+            ", $store_id));
+
+            if ($reward_points && intval($reward_points) > 0) {
+                $points_add = intval($reward_points);
+                $points_source = 'reward';
+                error_log("🎁 [PPV_QR] Reward base points applied: store_id={$store_id}, points_given={$points_add}");
+            }
+        }
+
+        // 3. If neither exists, notify merchant to configure
+        if ($points_add === 0) {
+            error_log("⚠️ [PPV_QR] No points configured: store_id={$store_id}, campaign_id={$campaign_id}");
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => '⚠️ Keine Punkte konfiguriert. Bitte Prämie oder Kampagne einrichten.',
+                'store_name' => $store->name ?? 'PunktePass',
+                'error_type' => 'no_points_configured'
+            ], 400);
         }
 
         // Check for bonus day (multiplies base/campaign points)
