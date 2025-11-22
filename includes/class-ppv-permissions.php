@@ -29,57 +29,42 @@ class PPV_Permissions {
      * @return bool|WP_Error True if authenticated, WP_Error otherwise
      */
     public static function check_authenticated() {
-        error_log("🔍 [PPV_Permissions] check_authenticated() called");
-
-        // 0. Ensure session is started
+        // 0. Ensure session is started (read_and_close to prevent 503 blocking!)
         if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
-            @session_start();
-            error_log("🔍 [PPV_Permissions] Session started");
+            @session_start(['read_and_close' => true]);
         }
 
         // 1. Check session authentication
         if (!empty($_SESSION['ppv_user_id'])) {
-            error_log("✅ [PPV_Permissions] Auth via SESSION: user_id=" . $_SESSION['ppv_user_id']);
             return true;
         }
 
-        // 1b. 🏪 TRIAL HANDLER SUPPORT: Check ppv_vendor_store_id (händler trial has this set)
+        // 1b. 🏪 TRIAL HANDLER SUPPORT: Check ppv_vendor_store_id
         if (!empty($_SESSION['ppv_vendor_store_id'])) {
-            error_log("✅ [PPV_Permissions] Auth via SESSION: vendor_store_id=" . $_SESSION['ppv_vendor_store_id']);
             return true;
         }
-
-        error_log("🔍 [PPV_Permissions] No session user_id, checking token restore...");
 
         // 1a. Try to restore session from token (Google/Facebook/TikTok login)
         if (class_exists('PPV_SessionBridge') && empty($_SESSION['ppv_user_id'])) {
-            error_log("🔄 [PPV_Permissions] Calling PPV_SessionBridge::restore_from_token()");
             PPV_SessionBridge::restore_from_token();
 
             // Check again after restore
             if (!empty($_SESSION['ppv_user_id'])) {
-                error_log("✅ [PPV_Permissions] Auth via SESSION RESTORE: user_id=" . $_SESSION['ppv_user_id']);
                 return true;
             }
-            error_log("⚠️ [PPV_Permissions] Session restore did not populate user_id");
         }
 
         // 2. Check token authentication (for PWA - ppv_tokens table)
-        error_log("🔍 [PPV_Permissions] Checking token authentication...");
         $token_user = self::get_user_from_token();
         if ($token_user) {
-            error_log("✅ [PPV_Permissions] Auth via TOKEN: user_id=" . $token_user->id);
             return true;
         }
 
         // 3. Check WordPress authentication
         if (is_user_logged_in()) {
-            $wp_user_id = get_current_user_id();
-            error_log("✅ [PPV_Permissions] Auth via WORDPRESS: user_id=" . $wp_user_id);
             return true;
         }
 
-        error_log("❌ [PPV_Permissions] UNAUTHORIZED - no valid authentication found");
         return new WP_Error(
             'unauthorized',
             'Bejelentkezés szükséges',
@@ -95,33 +80,26 @@ class PPV_Permissions {
      */
     public static function check_handler() {
         global $wpdb;
-        error_log("🔍 [PPV_Permissions] check_handler() called");
 
         $auth_check = self::check_authenticated();
         if (is_wp_error($auth_check)) {
-            error_log("❌ [PPV_Permissions] check_handler() FAILED: auth check failed");
             return $auth_check;
         }
 
         // Check if WordPress admin
         if (current_user_can('manage_options')) {
-            error_log("✅ [PPV_Permissions] check_handler() SUCCESS: WordPress admin");
             return true;
         }
 
-        // ✅ NEW: Check if scanner user (limited access to QR Center only)
+        // ✅ Check if scanner user (limited access to QR Center only)
         if (self::is_scanner_user()) {
             $store_id = self::get_scanner_store_id();
             if ($store_id) {
-                error_log("✅ [PPV_Permissions] check_handler() SUCCESS: Scanner user with store_id={$store_id}");
-
                 // Set session variables for scanner user
                 $_SESSION['ppv_store_id'] = $store_id;
                 $_SESSION['ppv_user_type'] = 'scanner';
-
                 return true;
             } else {
-                error_log("❌ [PPV_Permissions] check_handler() FAILED: Scanner user has no store_id");
                 return new WP_Error(
                     'scanner_no_store',
                     'Scanner Konfigurationsfehler. Bitte kontaktieren Sie Ihren Administrator.',
