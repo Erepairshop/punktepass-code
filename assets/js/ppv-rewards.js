@@ -1,11 +1,12 @@
 /**
  * PunktePass – Einlösungen Management + Handler Notifications
- * Version: 7.2 - WITH NOTIFICATION SYSTEM + PPV_LANG
+ * Version: 7.3 - WITH NOTIFICATION SYSTEM + PPV_LANG + API MANAGER
  * ✅ Handler toast notifications
  * ✅ Browser notifications
  * ✅ Audio alerts
  * ✅ Page title badge
  * ✅ PPV_Lang translations
+ * ✅ Uses centralized ppv-api-manager.js
  */
 
 if (window.PPV_REWARDS_LOADED) {
@@ -13,7 +14,10 @@ if (window.PPV_REWARDS_LOADED) {
 } else {
   window.PPV_REWARDS_LOADED = true;
 
-  console.log("✅ PunktePass Einlösungen JS v7.2 geladen");
+  console.log("✅ PunktePass Einlösungen JS v7.3 geladen");
+
+  // Use centralized API manager (fallback to fetch if not available)
+  const ppvFetch = window.ppvFetch || window.apiFetch || fetch;
 
   // 🌍 FORDÍTÁSOK
   const L = window.ppv_lang || {};
@@ -426,7 +430,7 @@ if (window.PPV_REWARDS_LOADED) {
       redeemList.innerHTML = `<div class='ppv-loading'>${L.redeem_loading || 'Lade Einlösungen...'}</div>`;
 
       try {
-        const res = await fetch(url, {
+        const res = await ppvFetch(url, {
           headers: { "PPV-POS-Token": POS_TOKEN }
         });
 
@@ -580,7 +584,7 @@ if (window.PPV_REWARDS_LOADED) {
       const url = `${base}redeem/log?store_id=${storeID}`;
       
       try {
-        const res = await fetch(url, {
+        const res = await ppvFetch(url, {
           headers: { "PPV-POS-Token": POS_TOKEN }
         });
 
@@ -636,7 +640,7 @@ if (window.PPV_REWARDS_LOADED) {
       console.log(`📦 [REWARDS] Updating redeem #${id} → ${status}`);
 
       try {
-        const res = await fetch(`${base}redeem/update`, {
+        const res = await ppvFetch(`${base}redeem/update`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -767,7 +771,7 @@ if (window.PPV_REWARDS_LOADED) {
 
     try {
         // 1️⃣ Havi PDF generálás a szerveren
-        const res = await fetch(`${base}redeem/monthly-receipt`, {
+        const res = await ppvFetch(`${base}redeem/monthly-receipt`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
