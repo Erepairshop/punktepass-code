@@ -1573,7 +1573,7 @@ class PPV_QR {
 
             $reward_points = $wpdb->get_var($wpdb->prepare("
                 SELECT points_given FROM {$wpdb->prefix}ppv_rewards
-                WHERE store_id=%d AND active=1
+                WHERE store_id=%d AND points_given > 0
                 ORDER BY id ASC LIMIT 1
             ", $reward_store_id));
 
