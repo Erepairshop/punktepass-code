@@ -2217,8 +2217,10 @@ document.addEventListener("DOMContentLoaded", function () {
     // Load immediately
     loadRecentScans();
 
-    // Poll every 10 seconds
-    setInterval(loadRecentScans, 10000);
+    // Poll every 10 seconds (only create interval ONCE)
+    if (!window.PPV_RECENT_SCANS_INTERVAL) {
+      window.PPV_RECENT_SCANS_INTERVAL = setInterval(loadRecentScans, 10000);
+    }
 
   }
 
@@ -2350,18 +2352,18 @@ document.addEventListener("DOMContentLoaded", function () {
   };
 });
 
-// 🔄 Turbo: Re-initialize after navigation
+// 🔄 Turbo: Re-initialize after navigation (only turbo:load, not render to avoid duplicates)
 document.addEventListener('turbo:load', function() {
   console.log('🔄 [QR] turbo:load event');
-  setTimeout(() => {
-    if (typeof window.ppv_qr_reinit === 'function') {
-      window.ppv_qr_reinit();
-    }
-  }, 100);
-});
 
-document.addEventListener('turbo:render', function() {
-  console.log('🔄 [QR] turbo:render event');
+  // Throttle: don't reinit if we just did it
+  const now = Date.now();
+  if (window.PPV_QR_LAST_INIT && (now - window.PPV_QR_LAST_INIT) < 500) {
+    console.log('⏭️ [QR] Skipping reinit - too soon');
+    return;
+  }
+  window.PPV_QR_LAST_INIT = now;
+
   setTimeout(() => {
     if (typeof window.ppv_qr_reinit === 'function') {
       window.ppv_qr_reinit();

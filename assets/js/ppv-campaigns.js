@@ -240,14 +240,18 @@ window.ppv_campaigns_reinit = initCampaigns;
 // Initial load
 document.addEventListener("DOMContentLoaded", initCampaigns);
 
-// 🔄 Turbo: Re-initialize after navigation
+// 🔄 Turbo: Re-initialize after navigation (only turbo:load to avoid duplicates)
 document.addEventListener('turbo:load', function() {
   console.log('🔄 [CAMPAIGNS] turbo:load event');
-  setTimeout(initCampaigns, 100);
-});
 
-document.addEventListener('turbo:render', function() {
-  console.log('🔄 [CAMPAIGNS] turbo:render event');
+  // Throttle: don't reinit if we just did it
+  const now = Date.now();
+  if (window.PPV_CAMPAIGNS_LAST_INIT && (now - window.PPV_CAMPAIGNS_LAST_INIT) < 500) {
+    console.log('⏭️ [CAMPAIGNS] Skipping reinit - too soon');
+    return;
+  }
+  window.PPV_CAMPAIGNS_LAST_INIT = now;
+
   setTimeout(initCampaigns, 100);
 });
 
