@@ -549,10 +549,24 @@ class PPV_Stats {
 
         error_log("💰 [Spending] Start");
 
-        $store_id = self::get_handler_store_id();
-        if (!$store_id) {
-            return new WP_REST_Response(['success' => false, 'error' => 'No store'], 403);
+        // 🏪 FILIALE SUPPORT
+        $requested_store_id = $req->get_param('store_id');
+        if ($requested_store_id === 'all') {
+            $store_ids = self::get_user_store_ids();
+            if (empty($store_ids)) {
+                return new WP_REST_Response(['success' => false, 'error' => 'No stores'], 403);
+            }
+            $is_aggregated = true;
+        } else {
+            $store_id = $requested_store_id ? intval($requested_store_id) : self::get_handler_store_id();
+            if (!$store_id) {
+                return new WP_REST_Response(['success' => false, 'error' => 'No store'], 403);
+            }
+            $store_ids = [$store_id];
+            $is_aggregated = false;
         }
+
+        $store_where = self::build_store_where($store_ids);
 
         $table_redeemed = $wpdb->prefix . 'ppv_rewards_redeemed';
         $today = current_time('Y-m-d');
@@ -560,37 +574,32 @@ class PPV_Stats {
         $month_start = date('Y-m-01', strtotime($today));
 
         // Spending by period
-        $daily_spending = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT SUM(points_spent) FROM $table_redeemed WHERE store_id=%d AND DATE(redeemed_at)=%s AND status IN ('approved', 'bestätigt')",
-            $store_id, $today
-        )) ?? 0;
+        $daily_spending = (int) $wpdb->get_var(
+            "SELECT SUM(points_spent) FROM $table_redeemed WHERE $store_where AND DATE(redeemed_at)='$today' AND status IN ('approved', 'bestätigt')"
+        ) ?? 0;
 
-        $weekly_spending = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT SUM(points_spent) FROM $table_redeemed WHERE store_id=%d AND DATE(redeemed_at) >= %s AND status IN ('approved', 'bestätigt')",
-            $store_id, $week_start
-        )) ?? 0;
+        $weekly_spending = (int) $wpdb->get_var(
+            "SELECT SUM(points_spent) FROM $table_redeemed WHERE $store_where AND DATE(redeemed_at) >= '$week_start' AND status IN ('approved', 'bestätigt')"
+        ) ?? 0;
 
-        $monthly_spending = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT SUM(points_spent) FROM $table_redeemed WHERE store_id=%d AND DATE(redeemed_at) >= %s AND status IN ('approved', 'bestätigt')",
-            $store_id, $month_start
-        )) ?? 0;
+        $monthly_spending = (int) $wpdb->get_var(
+            "SELECT SUM(points_spent) FROM $table_redeemed WHERE $store_where AND DATE(redeemed_at) >= '$month_start' AND status IN ('approved', 'bestätigt')"
+        ) ?? 0;
 
         // Average reward
-        $avg_reward = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT AVG(points_spent) FROM $table_redeemed WHERE store_id=%d AND status IN ('approved', 'bestätigt')",
-            $store_id
-        )) ?? 0;
+        $avg_reward = (int) $wpdb->get_var(
+            "SELECT AVG(points_spent) FROM $table_redeemed WHERE $store_where AND status IN ('approved', 'bestätigt')"
+        ) ?? 0;
 
         // Top rewards
-        $top_rewards = $wpdb->get_results($wpdb->prepare(
+        $top_rewards = $wpdb->get_results(
             "SELECT reward_id, SUM(points_spent) as total, COUNT(*) as count
-             FROM $table_redeemed 
-             WHERE store_id=%d AND status IN ('approved', 'bestätigt')
+             FROM $table_redeemed
+             WHERE $store_where AND status IN ('approved', 'bestätigt')
              GROUP BY reward_id
              ORDER BY total DESC
-             LIMIT 5",
-            $store_id
-        ));
+             LIMIT 5"
+        );
 
         $top_rewards_formatted = [];
         foreach ($top_rewards as $reward) {
@@ -602,25 +611,23 @@ class PPV_Stats {
         }
 
         // By status
-        $pending = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT SUM(points_spent) FROM $table_redeemed WHERE store_id=%d AND status IN ('pending', 'offen')",
-            $store_id
-        )) ?? 0;
+        $pending = (int) $wpdb->get_var(
+            "SELECT SUM(points_spent) FROM $table_redeemed WHERE $store_where AND status IN ('pending', 'offen')"
+        ) ?? 0;
 
-        $rejected = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT SUM(points_spent) FROM $table_redeemed WHERE store_id=%d AND status IN ('rejected', 'abgelehnt')",
-            $store_id
-        )) ?? 0;
+        $rejected = (int) $wpdb->get_var(
+            "SELECT SUM(points_spent) FROM $table_redeemed WHERE $store_where AND status IN ('rejected', 'abgelehnt')"
+        ) ?? 0;
 
-        $approved = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT SUM(points_spent) FROM $table_redeemed WHERE store_id=%d AND status IN ('approved', 'bestätigt')",
-            $store_id
-        )) ?? 0;
+        $approved = (int) $wpdb->get_var(
+            "SELECT SUM(points_spent) FROM $table_redeemed WHERE $store_where AND status IN ('approved', 'bestätigt')"
+        ) ?? 0;
 
         error_log("✅ [Spending] Complete");
 
         return new WP_REST_Response([
             'success' => true,
+            'is_aggregated' => $is_aggregated,
             'spending' => [
                 'daily' => $daily_spending,
                 'weekly' => $weekly_spending,
@@ -644,53 +651,64 @@ class PPV_Stats {
 
         error_log("📊 [Conversion] Start");
 
-        $store_id = self::get_handler_store_id();
-        if (!$store_id) {
-            return new WP_REST_Response(['success' => false, 'error' => 'No store'], 403);
+        // 🏪 FILIALE SUPPORT
+        $requested_store_id = $req->get_param('store_id');
+        if ($requested_store_id === 'all') {
+            $store_ids = self::get_user_store_ids();
+            if (empty($store_ids)) {
+                return new WP_REST_Response(['success' => false, 'error' => 'No stores'], 403);
+            }
+            $is_aggregated = true;
+        } else {
+            $store_id = $requested_store_id ? intval($requested_store_id) : self::get_handler_store_id();
+            if (!$store_id) {
+                return new WP_REST_Response(['success' => false, 'error' => 'No store'], 403);
+            }
+            $store_ids = [$store_id];
+            $is_aggregated = false;
         }
+
+        $store_where = self::build_store_where($store_ids);
 
         $table_points = $wpdb->prefix . 'ppv_points';
         $table_redeemed = $wpdb->prefix . 'ppv_rewards_redeemed';
 
         // Users
-        $total_users = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(DISTINCT user_id) FROM $table_points WHERE store_id=%d",
-            $store_id
-        ));
+        $total_users = (int) $wpdb->get_var(
+            "SELECT COUNT(DISTINCT user_id) FROM $table_points WHERE $store_where"
+        );
 
-        $redeemed_users = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(DISTINCT user_id) FROM $table_redeemed WHERE store_id=%d",
-            $store_id
-        ));
+        $redeemed_users = (int) $wpdb->get_var(
+            "SELECT COUNT(DISTINCT user_id) FROM $table_redeemed WHERE $store_where"
+        );
 
         $conversion_rate = $total_users > 0 ? ($redeemed_users / $total_users) * 100 : 0;
 
         // Averages
-        $avg_points_per_user = (int) $wpdb->get_var($wpdb->prepare(
+        $avg_points_per_user = (int) $wpdb->get_var(
             "SELECT AVG(total) FROM (
-                SELECT user_id, SUM(points) as total 
-                FROM $table_points 
-                WHERE store_id=%d 
+                SELECT user_id, SUM(points) as total
+                FROM $table_points
+                WHERE $store_where
                 GROUP BY user_id
-            ) t",
-            $store_id
-        )) ?? 0;
+            ) t"
+        ) ?? 0;
 
-        $avg_redemptions_per_user = $redeemed_users > 0 
-            ? (int) $wpdb->get_var($wpdb->prepare(
-                "SELECT COUNT(*) / %d FROM $table_redeemed WHERE store_id=%d",
-                $redeemed_users, $store_id
-            )) ?? 0
+        $avg_redemptions_per_user = $redeemed_users > 0
+            ? (int) $wpdb->get_var(
+                "SELECT COUNT(*) / $redeemed_users FROM $table_redeemed WHERE $store_where"
+            ) ?? 0
             : 0;
 
         // Repeat customers
-        $repeat_customers = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(DISTINCT user_id) FROM $table_points 
-             WHERE store_id=%d 
-             GROUP BY user_id 
-             HAVING COUNT(*) > 1",
-            $store_id
-        ));
+        $repeat_customers = (int) $wpdb->get_var(
+            "SELECT COUNT(*) FROM (
+                SELECT user_id FROM $table_points
+                WHERE $store_where
+                GROUP BY user_id
+                HAVING COUNT(*) > 1
+            ) repeat_users"
+        );
 
         $repeat_rate = $total_users > 0 ? ($repeat_customers / $total_users) * 100 : 0;
 
@@ -698,6 +716,7 @@ class PPV_Stats {
 
         return new WP_REST_Response([
             'success' => true,
+            'is_aggregated' => $is_aggregated,
             'total_users' => $total_users,
             'redeemed_users' => $redeemed_users,
             'conversion_rate' => round($conversion_rate, 1),
