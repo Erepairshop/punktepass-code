@@ -210,16 +210,20 @@ class PPV_Bottom_Nav {
     private static function inline_css() {
         return "
         .ppv-bottom-nav {
-            position: fixed;
-            bottom: 0; left: 0; right: 0;
-            display: flex;
+            position: fixed !important;
+            bottom: 0 !important; left: 0 !important; right: 0 !important;
+            display: flex !important;
             justify-content: space-around;
             align-items: center;
             padding: 12px 0;
-            background: rgba(255,255,255,0.96);
-            border-top: 1px solid rgba(0,0,0,0.08);
+            background: #ffffff !important;
+            border-top: 1px solid rgba(0,0,0,0.12);
             backdrop-filter: blur(12px);
-            z-index: 9999;
+            z-index: 999999 !important;
+            pointer-events: auto !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
         }
         .ppv-bottom-nav .nav-item {
             flex: 1;
@@ -232,6 +236,11 @@ class PPV_Bottom_Nav {
             transition: all 0.25s ease;
             text-decoration: none;
             cursor: pointer;
+            pointer-events: auto !important;
+            position: relative;
+            z-index: 1;
+            padding: 8px 0;
+            min-height: 44px;
         }
         .ppv-bottom-nav .nav-item.active {
             color: #764ba2;
@@ -248,8 +257,8 @@ class PPV_Bottom_Nav {
         
         /* 🌙 DARK MODE */
         body.ppv-dark .ppv-bottom-nav {
-            background: rgba(10,18,28,0.95);
-            border-top-color: rgba(102,126,234,0.2);
+            background: #0a121c !important;
+            border-top-color: rgba(102,126,234,0.3);
         }
         body.ppv-dark .ppv-bottom-nav .nav-item {
             color: #667eea;
