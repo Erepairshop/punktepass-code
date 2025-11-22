@@ -46,13 +46,13 @@ class PPV_Login {
     }
     
     /** ============================================================
-     * 🔹 Get Current Language (Cookie > GET > Locale)
+     * 🔹 Get Current Language (Cookie > GET > GeoIP > Locale)
      * ============================================================ */
     private static function get_current_lang() {
         static $lang = null;
         if ($lang !== null) return $lang;
 
-        // 1. Check cookie
+        // 1. Check cookie (user preference)
         if (isset($_COOKIE['ppv_lang'])) {
             $lang = sanitize_text_field($_COOKIE['ppv_lang']);
         }
@@ -60,9 +60,9 @@ class PPV_Login {
         elseif (isset($_GET['lang'])) {
             $lang = sanitize_text_field($_GET['lang']);
         }
-        // 3. Fallback to locale
+        // 3. GeoIP detection (country-based)
         else {
-            $lang = substr(get_locale(), 0, 2);
+            $lang = self::detect_language_by_country();
         }
 
         // Validate (only allow de, hu, ro)
@@ -71,6 +71,86 @@ class PPV_Login {
         }
 
         return $lang;
+    }
+
+    /** ============================================================
+     * 🌍 Detect Language by Country (GeoIP)
+     * ============================================================ */
+    private static function detect_language_by_country() {
+        // Check cache first (1 hour)
+        $cache_key = 'ppv_geo_' . md5(self::get_client_ip());
+        $cached = get_transient($cache_key);
+        if ($cached !== false) {
+            return $cached;
+        }
+
+        $ip = self::get_client_ip();
+
+        // Skip for localhost/private IPs
+        if ($ip === '127.0.0.1' || strpos($ip, '192.168.') === 0 || strpos($ip, '10.') === 0) {
+            return 'de';
+        }
+
+        try {
+            // Use ip-api.com (free, no API key needed, 45 req/min limit)
+            $response = wp_remote_get("http://ip-api.com/json/{$ip}?fields=countryCode", [
+                'timeout' => 2, // Fast timeout to not slow down page
+                'sslverify' => false
+            ]);
+
+            if (!is_wp_error($response)) {
+                $data = json_decode(wp_remote_retrieve_body($response), true);
+                $country = $data['countryCode'] ?? '';
+
+                // Map country to language
+                $country_lang_map = [
+                    'DE' => 'de', // Germany
+                    'AT' => 'de', // Austria
+                    'CH' => 'de', // Switzerland
+                    'LI' => 'de', // Liechtenstein
+                    'HU' => 'hu', // Hungary
+                    'RO' => 'ro', // Romania
+                    'MD' => 'ro', // Moldova (Romanian)
+                ];
+
+                $detected_lang = $country_lang_map[$country] ?? 'de';
+
+                // Cache for 1 hour
+                set_transient($cache_key, $detected_lang, HOUR_IN_SECONDS);
+
+                error_log("🌍 [PPV_Login] GeoIP: IP={$ip}, Country={$country}, Lang={$detected_lang}");
+
+                return $detected_lang;
+            }
+        } catch (Exception $e) {
+            error_log("⚠️ [PPV_Login] GeoIP error: " . $e->getMessage());
+        }
+
+        // Fallback to locale
+        return substr(get_locale(), 0, 2);
+    }
+
+    /** ============================================================
+     * 🔹 Get Client IP Address
+     * ============================================================ */
+    private static function get_client_ip() {
+        $ip_keys = ['HTTP_CF_CONNECTING_IP', 'HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP', 'REMOTE_ADDR'];
+
+        foreach ($ip_keys as $key) {
+            if (!empty($_SERVER[$key])) {
+                $ip = $_SERVER[$key];
+                // Handle comma-separated IPs (X-Forwarded-For)
+                if (strpos($ip, ',') !== false) {
+                    $ip = trim(explode(',', $ip)[0]);
+                }
+                // Validate IP
+                if (filter_var($ip, FILTER_VALIDATE_IP)) {
+                    return $ip;
+                }
+            }
+        }
+
+        return '127.0.0.1';
     }
     
     /** ============================================================
@@ -507,16 +587,22 @@ public static function render_landing_page($atts) {
             $_SESSION['ppv_user_email'] = $user->email;
             
             $GLOBALS['ppv_role'] = 'user';
-            
-            // Generate token
-            $token = md5(uniqid('ppv_user_', true));
-            $wpdb->update("{$prefix}ppv_users", ['login_token' => $token], ['id' => $user->id]);
-            
+
+            // ✅ Multi-device: Reuse existing token if available (don't kick out other devices)
+            $token = $user->login_token;
+            if (empty($token)) {
+                $token = md5(uniqid('ppv_user_', true));
+                $wpdb->update("{$prefix}ppv_users", ['login_token' => $token], ['id' => $user->id]);
+                error_log("🔑 [PPV_Login] New token generated for user #{$user->id}");
+            } else {
+                error_log("🔑 [PPV_Login] Reusing existing token for user #{$user->id} (multi-device)");
+            }
+
             // Set cookie
             $domain = $_SERVER['HTTP_HOST'] ?? '';
             $expire = $remember ? time() + (86400 * 180) : time() + 86400;
             setcookie('ppv_user_token', $token, $expire, '/', $domain, true, true);
-            
+
             error_log("✅ [PPV_Login] User logged in (#{$user->id})");
             
             wp_send_json_success([
@@ -614,14 +700,23 @@ public static function render_landing_page($atts) {
                 error_log("💾 [PPV_Login] POS enabled for store #{$store->id}");
             }
             
-            // Generate token
-            $token = md5(uniqid('ppv_handler_', true));
-            $wpdb->update("{$prefix}ppv_users", ['login_token' => $token], ['id' => $user_id]);
-            
+            // ✅ Multi-device: Reuse existing token if available
+            $existing_token = $wpdb->get_var($wpdb->prepare(
+                "SELECT login_token FROM {$prefix}ppv_users WHERE id=%d", $user_id
+            ));
+            if (!empty($existing_token)) {
+                $token = $existing_token;
+                error_log("🔑 [PPV_Login] Reusing existing handler token (multi-device)");
+            } else {
+                $token = md5(uniqid('ppv_handler_', true));
+                $wpdb->update("{$prefix}ppv_users", ['login_token' => $token], ['id' => $user_id]);
+                error_log("🔑 [PPV_Login] New handler token generated");
+            }
+
             // Set cookie
             $domain = $_SERVER['HTTP_HOST'] ?? '';
             setcookie('ppv_user_token', $token, time() + (86400 * 180), '/', $domain, true, true);
-            
+
             error_log("✅ [PPV_Login] Handler login success!");
             
             wp_send_json_success([
@@ -687,9 +782,15 @@ public static function render_landing_page($atts) {
 
             $GLOBALS['ppv_role'] = 'scanner';
 
-            // Generate token
-            $token = md5(uniqid('ppv_scanner_', true));
-            $wpdb->update("{$prefix}ppv_users", ['login_token' => $token], ['id' => $scanner_user->id]);
+            // ✅ Multi-device: Reuse existing token if available
+            $token = $scanner_user->login_token;
+            if (empty($token)) {
+                $token = md5(uniqid('ppv_scanner_', true));
+                $wpdb->update("{$prefix}ppv_users", ['login_token' => $token], ['id' => $scanner_user->id]);
+                error_log("🔑 [PPV_Login] New scanner token generated");
+            } else {
+                error_log("🔑 [PPV_Login] Reusing existing scanner token (multi-device)");
+            }
 
             // Set cookie
             $domain = $_SERVER['HTTP_HOST'] ?? '';
@@ -805,21 +906,27 @@ public static function render_landing_page($atts) {
         $_SESSION['ppv_user_email'] = $user->email;
         
         $GLOBALS['ppv_role'] = 'user';
-        
-        // Generate token
-        $token = md5(uniqid('ppv_user_google_', true));
-        $wpdb->update(
-            "{$prefix}ppv_users",
-            ['login_token' => $token],
-            ['id' => $user->id],
-            ['%s'],
-            ['%d']
-        );
-        
+
+        // ✅ Multi-device: Reuse existing token if available
+        $token = $user->login_token;
+        if (empty($token)) {
+            $token = md5(uniqid('ppv_user_google_', true));
+            $wpdb->update(
+                "{$prefix}ppv_users",
+                ['login_token' => $token],
+                ['id' => $user->id],
+                ['%s'],
+                ['%d']
+            );
+            error_log("🔑 [PPV_Login] New Google token generated");
+        } else {
+            error_log("🔑 [PPV_Login] Reusing existing token for Google login (multi-device)");
+        }
+
         // Set cookie (180 days for Google login)
         $domain = $_SERVER['HTTP_HOST'] ?? '';
         setcookie('ppv_user_token', $token, time() + (86400 * 180), '/', $domain, true, true);
-        
+
         error_log("✅ [PPV_Login] Google login successful (#{$user->id}): {$email}");
         
         wp_send_json_success([
@@ -960,15 +1067,21 @@ public static function render_landing_page($atts) {
 
         $GLOBALS['ppv_role'] = 'user';
 
-        // Generate token
-        $token = md5(uniqid('ppv_user_fb_', true));
-        $wpdb->update(
-            "{$prefix}ppv_users",
-            ['login_token' => $token],
-            ['id' => $user->id],
-            ['%s'],
-            ['%d']
-        );
+        // ✅ Multi-device: Reuse existing token if available
+        $token = $user->login_token;
+        if (empty($token)) {
+            $token = md5(uniqid('ppv_user_fb_', true));
+            $wpdb->update(
+                "{$prefix}ppv_users",
+                ['login_token' => $token],
+                ['id' => $user->id],
+                ['%s'],
+                ['%d']
+            );
+            error_log("🔑 [PPV_Login] New Facebook token generated");
+        } else {
+            error_log("🔑 [PPV_Login] Reusing existing token for Facebook login (multi-device)");
+        }
 
         // Set cookie
         $domain = $_SERVER['HTTP_HOST'] ?? '';
@@ -1077,15 +1190,21 @@ public static function render_landing_page($atts) {
 
         $GLOBALS['ppv_role'] = 'user';
 
-        // Generate token
-        $token = md5(uniqid('ppv_user_tt_', true));
-        $wpdb->update(
-            "{$prefix}ppv_users",
-            ['login_token' => $token],
-            ['id' => $user->id],
-            ['%s'],
-            ['%d']
-        );
+        // ✅ Multi-device: Reuse existing token if available
+        $token = $user->login_token;
+        if (empty($token)) {
+            $token = md5(uniqid('ppv_user_tt_', true));
+            $wpdb->update(
+                "{$prefix}ppv_users",
+                ['login_token' => $token],
+                ['id' => $user->id],
+                ['%s'],
+                ['%d']
+            );
+            error_log("🔑 [PPV_Login] New TikTok token generated");
+        } else {
+            error_log("🔑 [PPV_Login] Reusing existing token for TikTok login (multi-device)");
+        }
 
         // Set cookie
         $domain = $_SERVER['HTTP_HOST'] ?? '';

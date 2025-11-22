@@ -20,6 +20,9 @@ window.PPV_VISIBILITY_HANDLER = null;
 window.PPV_SLIDER_HANDLER = null;
 window.PPV_SLIDER_INITIALIZED = false;
 window.PPV_STORES_LOADING = false;
+window.PPV_POLLING_IN_PROGRESS = false; // ✅ FIX: Prevent concurrent poll calls
+window.PPV_SLIDER_FETCH_IN_PROGRESS = false; // ✅ FIX: Prevent concurrent slider fetches
+window.PPV_CURRENT_DISTANCE = 10; // ✅ FIX: Track current slider value
 
 // 🧹 Cleanup function - call before navigation or re-init
 function cleanupPolling() {
@@ -41,6 +44,9 @@ function cleanupPolling() {
   window.PPV_POLLING_ACTIVE = false;
   window.PPV_SLIDER_INITIALIZED = false;
   window.PPV_STORES_LOADING = false;
+  window.PPV_POLLING_IN_PROGRESS = false;
+  window.PPV_SLIDER_FETCH_IN_PROGRESS = false;
+  window.PPV_CURRENT_DISTANCE = 10;
 }
 
 // 🚀 Turbo-compatible initialization
@@ -235,9 +241,17 @@ async function initUserDashboard() {
     const currentSpan = lb.querySelector('.ppv-lightbox-current');
     const totalSpan = lb.querySelector('.ppv-lightbox-total');
 
+    // ✅ FIX: Store keydown handler for cleanup
+    let keydownHandler = null;
+
     const closeLightbox = () => {
       lb.classList.remove('active');
       lightboxActive = false;
+      // ✅ FIX: Remove keydown listener to prevent memory leak
+      if (keydownHandler) {
+        document.removeEventListener('keydown', keydownHandler);
+        keydownHandler = null;
+      }
       setTimeout(() => lb.remove(), 300);
     };
 
@@ -262,12 +276,14 @@ async function initUserDashboard() {
       updateImage();
     });
 
-    document.addEventListener('keydown', (e) => {
+    // ✅ FIX: Store handler reference for cleanup
+    keydownHandler = (e) => {
       if (!lightboxActive) return;
       if (e.key === 'ArrowLeft') prevBtn.click();
       if (e.key === 'ArrowRight') nextBtn.click();
       if (e.key === 'Escape') closeLightbox();
-    });
+    };
+    document.addEventListener('keydown', keydownHandler);
 
     setTimeout(() => lb.classList.add('active'), 10);
   };
@@ -386,6 +402,13 @@ async function initUserDashboard() {
         return;
       }
 
+      // ✅ FIX: Prevent concurrent poll calls
+      if (window.PPV_POLLING_IN_PROGRESS) {
+        console.log('⏭️ [Polling] Already in progress, skipping');
+        return;
+      }
+      window.PPV_POLLING_IN_PROGRESS = true;
+
       try {
         const res = await fetch(API + 'user/points-poll', {
           method: 'GET',
@@ -452,6 +475,9 @@ async function initUserDashboard() {
         }
       } catch (e) {
         console.warn(`⚠️ [Polling] Error:`, e.message);
+      } finally {
+        // ✅ FIX: Always reset flag after poll completes
+        window.PPV_POLLING_IN_PROGRESS = false;
       }
     };
 
@@ -737,12 +763,20 @@ async function initUserDashboard() {
     window.PPV_SLIDER_HANDLER = async (e) => {
       if (e.target.id !== 'ppv-distance-slider') return;
 
-      const newDistance = e.target.value;
+      const newDistance = parseInt(e.target.value, 10);
+      window.PPV_CURRENT_DISTANCE = newDistance; // ✅ FIX: Track current value globally
       const valueSpan = document.getElementById('ppv-distance-value');
       if (valueSpan) valueSpan.textContent = newDistance;
 
       clearTimeout(sliderTimeout);
       sliderTimeout = setTimeout(async () => {
+        // ✅ FIX: Prevent concurrent slider fetches
+        if (window.PPV_SLIDER_FETCH_IN_PROGRESS) {
+          console.log('⏭️ [Slider] Fetch already in progress, skipping');
+          return;
+        }
+        window.PPV_SLIDER_FETCH_IN_PROGRESS = true;
+
         let newUrl = API + 'stores/list-optimized';
         if (userLat && userLng) {
           newUrl += `?lat=${userLat}&lng=${userLng}&max_distance=${newDistance}`;
@@ -762,15 +796,18 @@ async function initUserDashboard() {
 
           const storeCards = newStores.map(renderStoreCard).join('');
           const storeListDiv = document.getElementById('ppv-store-list');
-          storeListDiv.innerHTML = dynamicSliderHTML + storeCards;
-
-          // Re-attach listener for new elements
-          attachStoreListeners();
-          attachRouteListener();
+          if (storeListDiv) {
+            storeListDiv.innerHTML = dynamicSliderHTML + storeCards;
+            // ✅ FIX: Only attach store listeners, route is already handled there
+            attachStoreListeners();
+          }
 
           console.log("✅ [Slider] Stores updated");
         } catch (err) {
           console.error("❌ Filter error:", err);
+        } finally {
+          // ✅ FIX: Always reset flag after fetch completes
+          window.PPV_SLIDER_FETCH_IN_PROGRESS = false;
         }
       }, 500);
     };
@@ -854,42 +891,9 @@ async function initUserDashboard() {
   };
 
   // ============================================================
-  // ROUTE BUTTON HANDLER ✅
+  // ❌ REMOVED: attachRouteListener() - Route handling is already in attachStoreListeners()
+  // This was causing duplicate listeners and potential API loops!
   // ============================================================
-  const attachRouteListener = () => {
-    const storeListEl = document.getElementById('ppv-store-list');
-    if (!storeListEl) return;
-
-    storeListEl.addEventListener('click', (e) => {
-      const routeBtn = e.target.closest('.ppv-route');
-      if (!routeBtn) return;
-
-      const lat = routeBtn.getAttribute('data-lat');
-      const lng = routeBtn.getAttribute('data-lng');
-
-      if (!lat || !lng) {
-        console.error("❌ [Route] No coordinates");
-        return;
-      }
-
-      // 🌍 Google Maps - Default
-      const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
-
-      // 📱 Mobile: Apple Maps fallback
-      const appleMapsUrl = `maps://maps.apple.com/?daddr=${lat},${lng}`;
-
-      if (navigator.userAgent.includes('iPhone') || navigator.userAgent.includes('iPad')) {
-        window.open(appleMapsUrl, '_blank');
-      } else {
-        window.open(googleMapsUrl, '_blank');
-      }
-
-      console.log("✅ [Route] Opening:", googleMapsUrl);
-      if (navigator.vibrate) navigator.vibrate(20);
-    });
-
-    console.log("✅ [Route] Listener attached");
-  };
 
   // ============================================================
   // LOAD STORES - SIMPLE & RELIABLE 🚀
@@ -986,12 +990,15 @@ async function initUserDashboard() {
           const newLng = freshPos.coords.longitude;
           console.log('🔄 [Stores] Re-fetching with fresh geo...');
 
-          const newUrl = API + `stores/list-optimized?lat=${newLat}&lng=${newLng}&max_distance=10`;
+          // ✅ FIX: Use current slider distance value, not hardcoded 10
+          const currentDist = window.PPV_CURRENT_DISTANCE || 10;
+          const newUrl = API + `stores/list-optimized?lat=${newLat}&lng=${newLng}&max_distance=${currentDist}`;
           const newRes = await fetch(newUrl, { cache: "no-store" });
           if (newRes.ok) {
             const newStores = await newRes.json();
             if (Array.isArray(newStores) && newStores.length > 0) {
-              renderStoreList(box, newStores, newLat, newLng);
+              // ✅ FIX: Preserve slider value on re-render
+              renderStoreList(box, newStores, newLat, newLng, true);
               console.log('✅ [Stores] Re-rendered with distance sorting');
             }
           }
@@ -1008,16 +1015,18 @@ async function initUserDashboard() {
   };
 
   // Helper function to render store list (avoids duplicate code)
-  const renderStoreList = (box, stores, userLat, userLng) => {
+  // ✅ FIX: Preserve current slider value instead of always resetting to 10
+  const renderStoreList = (box, stores, userLat, userLng, preserveSliderValue = false) => {
+    const currentDistance = preserveSliderValue ? window.PPV_CURRENT_DISTANCE : 10;
     const sliderHTML = `
       <div class="ppv-distance-filter">
-        <label><i class="ri-ruler-line"></i> ${T.distance_label}: <span id="ppv-distance-value">10</span> km</label>
-        <input type="range" id="ppv-distance-slider" min="10" max="1000" value="10" step="10">
+        <label><i class="ri-ruler-line"></i> ${T.distance_label}: <span id="ppv-distance-value">${currentDistance}</span> km</label>
+        <input type="range" id="ppv-distance-slider" min="10" max="1000" value="${currentDistance}" step="10">
         <div class="ppv-distance-labels"><span>10 km</span><span>1000 km</span></div>
       </div>
     `;
     box.innerHTML = sliderHTML + stores.map(renderStoreCard).join('');
-    initDistanceSlider(sliderHTML, userLat, userLng);
+    initDistanceSlider(sliderHTML, userLat, userLng, currentDistance);
     attachStoreListeners();
   };
 

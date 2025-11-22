@@ -81,13 +81,26 @@ class PPV_User_Dashboard {
 
         $prefix = $wpdb->prefix;
 
+        // ✅ FIX: Only count rewards from stores where user has at least 1 point
         $result = $wpdb->get_row($wpdb->prepare("
             SELECT
                 COALESCE(SUM(p.points), 0) as points,
-                (SELECT COUNT(*) FROM {$prefix}ppv_rewards) as rewards
+                (
+                    SELECT COUNT(DISTINCT r.id)
+                    FROM {$prefix}ppv_rewards r
+                    INNER JOIN {$prefix}ppv_stores s ON r.store_id = s.id
+                    INNER JOIN (
+                        SELECT store_id
+                        FROM {$prefix}ppv_points
+                        WHERE user_id = %d
+                        GROUP BY store_id
+                        HAVING SUM(points) >= 1
+                    ) AS user_stores ON r.store_id = user_stores.store_id
+                    WHERE s.active = 1
+                ) as rewards
             FROM {$prefix}ppv_points p
             WHERE p.user_id=%d
-        ", $uid));
+        ", $uid, $uid));
 
         $stats = [
             'points' => (int)($result->points ?? 0),
@@ -428,6 +441,16 @@ private static function get_today_hours($opening_hours) {
         $stats = self::get_user_stats($uid);
         $lang = self::get_user_lang();
 
+        // 5.1️⃣ Get avatar (if exists)
+        $avatar_url = get_user_meta($uid, 'ppv_avatar', true);
+        $settings_url = home_url('/einstellungen');
+
+        // 5.2️⃣ Get user level badge (if class exists)
+        $level_badge = '';
+        if (class_exists('PPV_User_Level')) {
+            $level_badge = PPV_User_Level::render_compact_badge($uid, $lang);
+        }
+
         // 6️⃣ Translations
         $translations = [
             'de' => [
@@ -466,17 +489,29 @@ private static function get_today_hours($opening_hours) {
         ?>
         <div id="ppv-global-header" class="ppv-compact-header <?php echo $is_handler ? 'ppv-handler-mode' : ''; ?>">
             
-            <!-- Logo + Email -->
+            <!-- Logo + Avatar/Email -->
             <div class="ppv-header-left">
                 <img src="<?php echo PPV_PLUGIN_URL; ?>assets/img/logo.webp" alt="PunktePass" class="ppv-header-logo-tiny">
+                <?php if (!empty($avatar_url)): ?>
+                <!-- Avatar (links to settings) -->
+                <a href="<?php echo esc_url($settings_url); ?>" class="ppv-header-avatar-link" title="<?php echo esc_attr($email); ?>">
+                    <img src="<?php echo esc_url($avatar_url); ?>" alt="Avatar" class="ppv-header-avatar">
+                </a>
+                <?php else: ?>
+                <!-- Email (fallback) -->
                 <div class="ppv-user-info">
                     <span class="ppv-user-email"><?php echo esc_html($email); ?></span>
                 </div>
+                <?php endif; ?>
             </div>
             
             <!-- Stats (USER only) -->
             <?php if (!$is_handler): ?>
             <div class="ppv-header-stats">
+                <?php if (!empty($level_badge)): ?>
+                <!-- User Level Badge -->
+                <?php echo $level_badge; ?>
+                <?php endif; ?>
                 <div class="ppv-stat-mini">
                     <i class="ri-star-fill"></i>
                     <span id="ppv-global-points"><?php echo esc_html($stats['points']); ?></span>
@@ -540,8 +575,18 @@ private static function get_today_hours($opening_hours) {
              🎯 JAVASCRIPT
              ============================================================ -->
         <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            
+        // 🚀 Turbo-compatible initialization function
+        function initGlobalHeaderJS() {
+            // Prevent double initialization
+            if (document.getElementById('ppv-global-header')?.dataset.jsInit === 'true') {
+                console.log('⏭️ [Header] Already initialized, skipping');
+                return;
+            }
+            const header = document.getElementById('ppv-global-header');
+            if (header) header.dataset.jsInit = 'true';
+
+            console.log('🚀 [Header] Initializing global header JS (Turbo-compatible)');
+
             // ============================================================
             // LOGOUT WITH CACHE CLEARING
             // ============================================================
@@ -614,69 +659,80 @@ private static function get_today_hours($opening_hours) {
             }
             
             // ============================================================
-            // THEME TOGGLE
+            // THEME TOGGLE - Handled by ppv-theme-loader.js (v2.3+)
             // ============================================================
-            const themeBtn = document.getElementById('ppv-theme-toggle-global');
-            if (themeBtn) {
-                themeBtn.addEventListener('click', () => {
-                    const current = localStorage.getItem('ppv_theme') || 'dark';
-                    const next = current === 'dark' ? 'light' : 'dark';
-                    localStorage.setItem('ppv_theme', next);
-                    document.cookie = `ppv_theme=${next};path=/;max-age=${60*60*24*365}`;
-                    
-                    const href = `/wp-content/plugins/punktepass/assets/css/ppv-theme-${next}.css?v=${Date.now()}`;
-                    document.querySelectorAll('link[id="ppv-theme-css"]').forEach(e => e.remove());
-                    const link = document.createElement('link');
-                    link.id = 'ppv-theme-css';
-                    link.rel = 'stylesheet';
-                    link.href = href;
-                    document.head.appendChild(link);
-                    
-                    document.body.classList.remove('ppv-light', 'ppv-dark');
-                    document.body.classList.add(`ppv-${next}`);
-                    
-                    if (navigator.vibrate) navigator.vibrate(20);
-                });
-            }
+            // REMOVED: Duplicate listener was conflicting with theme-loader.js
+            // The theme-loader.js now handles all theme switching logic
 
             // ============================================================
-            // LANGUAGE SWITCH
+            // LANGUAGE SWITCH - Fixed for Turbo compatibility
             // ============================================================
             const langSel = document.getElementById('ppv-lang-select-global');
-            if (langSel) {
+            if (langSel && !langSel.dataset.listenerAttached) {
+                langSel.dataset.listenerAttached = 'true';
+
                 langSel.addEventListener('change', (e) => {
                     const v = e.target.value;
+                    console.log('🌐 [Lang] Switching to:', v);
+
                     document.cookie = `ppv_lang=${v};path=/;max-age=${60*60*24*365}`;
                     localStorage.setItem('ppv_lang', v);
+
                     const url = new URL(window.location.href);
                     url.searchParams.set('lang', v);
-                    window.location.href = url.toString();
+
+                    // Use Turbo visit if available, otherwise standard redirect
+                    if (window.Turbo) {
+                        window.Turbo.visit(url.toString(), { action: 'replace' });
+                    } else {
+                        window.location.href = url.toString();
+                    }
                 });
+
+                console.log('✅ [Lang] Select listener attached');
             }
 
             <?php if (!$is_handler): ?>
             // ============================================================
-            // POINTS POLLING (USER ONLY)
+            // POINTS POLLING (USER ONLY) - Only start if not already running
             // ============================================================
-            setInterval(async () => {
-                try {
-                    const res = await fetch('<?php echo esc_url(rest_url('ppv/v1/user/points-poll')); ?>', {
-                        method: 'GET',
-                        headers: {'Content-Type': 'application/json'}
-                    });
-                    if (!res.ok) return;
-                    const data = await res.json();
-                    if (data.success) {
-                        const pointsEl = document.getElementById('ppv-global-points');
-                        const rewardsEl = document.getElementById('ppv-global-rewards');
-                        if (pointsEl) pointsEl.textContent = data.points;
-                        if (rewardsEl) rewardsEl.textContent = data.rewards;
+            if (!window.PPV_HEADER_POLLING_ID) {
+                window.PPV_HEADER_POLLING_ID = setInterval(async () => {
+                    try {
+                        const res = await fetch('<?php echo esc_url(rest_url('ppv/v1/user/points-poll')); ?>', {
+                            method: 'GET',
+                            headers: {'Content-Type': 'application/json'}
+                        });
+                        if (!res.ok) return;
+                        const data = await res.json();
+                        if (data.success) {
+                            const pointsEl = document.getElementById('ppv-global-points');
+                            const rewardsEl = document.getElementById('ppv-global-rewards');
+                            if (pointsEl) pointsEl.textContent = data.points;
+                            if (rewardsEl) rewardsEl.textContent = data.rewards;
+                        }
+                    } catch (e) {
+                        // Silent fail
                     }
-                } catch (e) {
-                    // Silent fail
-                }
-            }, 5000);
+                }, 5000);
+            }
             <?php endif; ?>
+        }
+
+        // 🚀 Run on DOMContentLoaded
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initGlobalHeaderJS);
+        } else {
+            initGlobalHeaderJS();
+        }
+
+        // 🚀 Also run on Turbo navigation (re-init after page change)
+        document.addEventListener('turbo:load', initGlobalHeaderJS);
+
+        // 🧹 Reset init flag before Turbo renders new page
+        document.addEventListener('turbo:before-render', function() {
+            const header = document.getElementById('ppv-global-header');
+            if (header) header.dataset.jsInit = 'false';
         });
         </script>
         <?php
@@ -1072,10 +1128,11 @@ public static function render_dashboard() {
     }
 
     // ✅ Alap lekérdezés – csak aktív boltok
+    // ✅ FIX: Added 'country' field for currency symbol display
     $stores = $wpdb->get_results("
         SELECT id, company_name, address, city, plz, latitude, longitude,
                phone, website, logo, qr_logo, opening_hours, description,
-               gallery, facebook, instagram, tiktok
+               gallery, facebook, instagram, tiktok, country
         FROM {$prefix}ppv_stores
         WHERE active = 1
         ORDER BY company_name ASC
@@ -1197,6 +1254,7 @@ if ($camps) {
             'website' => $store->website,
             'logo' => $store->logo,
             'gallery' => $gallery_images,
+            'country' => $store->country ?? 'DE', // ✅ FIX: Added for currency symbol
             'social' => [
                 'facebook' => $store->facebook ?: null,
                 'instagram' => $store->instagram ?: null,

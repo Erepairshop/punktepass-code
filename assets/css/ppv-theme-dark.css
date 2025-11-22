@@ -209,6 +209,359 @@ body.ppv-user-dashboard {
     font-size: 15px;
 }
 
+/* ==========================================================================
+   🏆 USER LEVEL BADGES
+   ========================================================================== */
+
+/* Compact Badge (Header) */
+.ppv-level-badge-compact {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    font-size: 18px;
+    box-shadow: 0 0 12px var(--glow-color, rgba(0,168,204,0.4));
+    transition: var(--pp-trans);
+    cursor: default;
+}
+
+.ppv-level-badge-compact:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 20px var(--glow-color, rgba(0,168,204,0.6));
+}
+
+/* Full Badge */
+.ppv-level-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    box-shadow: 0 2px 8px var(--glow-color, rgba(0,168,204,0.3));
+    transition: var(--pp-trans);
+}
+
+.ppv-level-badge i {
+    font-size: 16px;
+}
+
+.ppv-level-badge-lg {
+    padding: 10px 18px;
+    font-size: 14px;
+    border-radius: 24px;
+}
+
+.ppv-level-badge-lg i {
+    font-size: 20px;
+}
+
+/* Level-specific animations */
+.ppv-level-platinum {
+    animation: platinumShimmer 3s ease-in-out infinite;
+}
+
+@keyframes platinumShimmer {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.2); }
+}
+
+.ppv-level-gold {
+    animation: goldGlow 2s ease-in-out infinite;
+}
+
+@keyframes goldGlow {
+    0%, 100% { box-shadow: 0 0 12px rgba(255, 215, 0, 0.4); }
+    50% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.7); }
+}
+
+/* ==========================================================================
+   🎛️ VIP SETTINGS PAGE
+   ========================================================================== */
+
+.ppv-vip-settings-wrapper {
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 24px;
+    background: var(--pp-surface);
+    border: 1px solid var(--pp-border);
+    border-radius: var(--pp-r-lg);
+}
+
+.ppv-vip-header {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.ppv-vip-header h2 {
+    font-size: 24px;
+    color: var(--pp-text);
+    margin-bottom: 8px;
+}
+
+.ppv-vip-header h2 i {
+    color: #FFD700;
+    margin-right: 8px;
+}
+
+.ppv-vip-subtitle {
+    color: var(--pp-text-3);
+    font-size: 14px;
+}
+
+/* Toggle Switch */
+.ppv-vip-toggle-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 16px;
+    background: var(--pp-bg-2);
+    border-radius: var(--pp-r-md);
+    margin-bottom: 24px;
+}
+
+.ppv-toggle-switch {
+    position: relative;
+    width: 52px;
+    height: 28px;
+    flex-shrink: 0;
+}
+
+.ppv-toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.ppv-toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background: rgba(255,255,255,0.15);
+    border-radius: 28px;
+    transition: 0.3s;
+}
+
+.ppv-toggle-slider:before {
+    content: '';
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    left: 3px;
+    bottom: 3px;
+    background: white;
+    border-radius: 50%;
+    transition: 0.3s;
+}
+
+.ppv-toggle-switch input:checked + .ppv-toggle-slider {
+    background: var(--pp-primary);
+}
+
+.ppv-toggle-switch input:checked + .ppv-toggle-slider:before {
+    transform: translateX(24px);
+}
+
+.ppv-toggle-label strong {
+    display: block;
+    color: var(--pp-text);
+    margin-bottom: 4px;
+}
+
+.ppv-toggle-label small {
+    color: var(--pp-text-3);
+    font-size: 12px;
+}
+
+/* VIP Levels */
+.ppv-vip-levels {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 24px;
+    transition: opacity 0.3s;
+}
+
+.ppv-vip-level {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    background: var(--pp-bg-2);
+    border-radius: var(--pp-r-md);
+    border: 1px solid var(--pp-border-soft);
+}
+
+.ppv-vip-level.disabled {
+    opacity: 0.5;
+}
+
+.ppv-level-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 24px;
+}
+
+.ppv-vip-bronze .ppv-level-icon { background: #CD7F32; color: #fff; }
+.ppv-vip-silver .ppv-level-icon { background: #C0C0C0; color: #333; }
+.ppv-vip-gold .ppv-level-icon { background: #FFD700; color: #333; }
+.ppv-vip-platinum .ppv-level-icon {
+    background: linear-gradient(135deg, #E5E4E2 0%, #A0B2C6 50%, #E5E4E2 100%);
+    color: #1a1a2e;
+}
+
+.ppv-level-info {
+    flex: 1;
+}
+
+.ppv-level-name {
+    display: block;
+    font-weight: 600;
+    color: var(--pp-text);
+    margin-bottom: 4px;
+}
+
+.ppv-level-bonus {
+    font-size: 12px;
+    color: var(--pp-text-3);
+}
+
+.ppv-level-input {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ppv-level-input input {
+    width: 70px;
+    padding: 8px 12px;
+    background: var(--pp-bg);
+    border: 1px solid var(--pp-border);
+    border-radius: 8px;
+    color: var(--pp-text);
+    font-size: 14px;
+    text-align: center;
+}
+
+.ppv-level-input input:focus {
+    outline: none;
+    border-color: var(--pp-primary);
+}
+
+.ppv-level-input span {
+    color: var(--pp-text-3);
+    font-size: 12px;
+}
+
+/* Preview */
+.ppv-vip-preview {
+    padding: 16px;
+    background: var(--pp-bg-2);
+    border-radius: var(--pp-r-md);
+    margin-bottom: 24px;
+}
+
+.ppv-vip-preview h4 {
+    margin: 0 0 12px;
+    color: var(--pp-text);
+    font-size: 14px;
+}
+
+.ppv-vip-preview p {
+    color: var(--pp-text-3);
+    font-size: 12px;
+    margin-bottom: 12px;
+}
+
+.ppv-preview-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+
+.ppv-preview-item {
+    text-align: center;
+    padding: 12px 8px;
+    border-radius: 8px;
+    background: var(--pp-bg);
+}
+
+.ppv-preview-item span {
+    display: block;
+    font-size: 10px;
+    color: var(--pp-text-3);
+    margin-bottom: 4px;
+}
+
+.ppv-preview-item strong {
+    font-size: 18px;
+    color: var(--pp-text);
+}
+
+.ppv-preview-item.bronze strong { color: #CD7F32; }
+.ppv-preview-item.silver strong { color: #C0C0C0; }
+.ppv-preview-item.gold strong { color: #FFD700; }
+.ppv-preview-item.platinum strong { color: #A0B2C6; }
+
+/* Actions */
+.ppv-vip-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.ppv-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background: var(--pp-primary);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--pp-trans);
+}
+
+.ppv-btn-primary:hover {
+    background: var(--pp-primary-dark);
+    transform: translateY(-2px);
+}
+
+.ppv-btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+#ppv-vip-status .ppv-success {
+    color: var(--pp-success);
+    font-size: 14px;
+}
+
+#ppv-vip-status .ppv-error {
+    color: var(--pp-danger);
+    font-size: 14px;
+}
+
+/* Spin animation for loader */
+@keyframes ri-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.ri-spin {
+    animation: ri-spin 1s linear infinite;
+}
+
 /* Header Navigation Buttons */
 #ppv-global-header .ppv-header-nav {
     display: flex;
@@ -1819,6 +2172,28 @@ body, h1, h2, h3, h4, h5, h6 {
     color: #fff !important;
 }
 
+/* Header Avatar (replaces email when set) */
+.ppv-header-avatar-link {
+    display: flex !important;
+    align-items: center !important;
+    text-decoration: none !important;
+}
+
+.ppv-header-avatar {
+    width: 48px !important;
+    height: 48px !important;
+    border-radius: 50% !important;
+    object-fit: cover !important;
+    border: 2px solid rgba(0, 230, 255, 0.6) !important;
+    transition: all 0.2s ease !important;
+}
+
+.ppv-header-avatar:hover {
+    border-color: #00e6ff !important;
+    transform: scale(1.05) !important;
+    box-shadow: 0 0 12px rgba(0, 230, 255, 0.4) !important;
+}
+
 /* MINI STATS */
 .ppv-stat-mini {
     padding: 4px 8px !important;
@@ -3291,4 +3666,443 @@ body.ppv-light .ppv-theme-btn-mini i {
 /* Make theme-switch more visible */
 body.ppv-light .ppv-theme-btn-mini {
     box-shadow: 0 0 6px rgba(0,180,255,0.25);
+}
+
+/* ==========================================================================
+   📊 MEINE PUNKTE - ANALYTICS DARK MODE STYLES
+   Added to fix light mode analytics on dark mode pages
+   ========================================================================== */
+
+/* Analytics CSS Variables - Dark Mode Override */
+#ppv-analytics-section,
+.ppv-analytics-wrapper {
+    --ppv-ana-bg: #0f172a;
+    --ppv-ana-card: linear-gradient(145deg, rgba(26, 34, 45, 0.95), rgba(21, 27, 35, 0.95));
+    --ppv-ana-text: #f0f6fc;
+    --ppv-ana-text-light: #8b949e;
+    --ppv-ana-primary: #00d4ff;
+    --ppv-ana-primary-soft: rgba(0, 212, 255, 0.15);
+    --ppv-ana-border: rgba(0, 212, 255, 0.15);
+    --ppv-ana-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
+}
+
+/* Analytics Wrapper */
+.ppv-analytics-wrapper {
+    background: var(--pp-bg, #0f172a) !important;
+    color: #f0f6fc !important;
+}
+
+/* Analytics Header */
+.ppv-analytics-header h3 {
+    color: #00d4ff !important;
+}
+
+.ppv-analytics-header h3 i {
+    color: #00d4ff !important;
+}
+
+.ppv-analytics-controls label {
+    color: #8b949e !important;
+}
+
+/* Range Select Dropdown */
+.ppv-analytics-range-select {
+    background: rgba(21, 27, 35, 0.9) !important;
+    border: 1px solid rgba(0, 212, 255, 0.20) !important;
+    color: #f0f6fc !important;
+}
+
+.ppv-analytics-range-select option {
+    background: #1e293b !important;
+    color: #f0f6fc !important;
+}
+
+/* Summary Cards (Diese Woche, Dieser Monat, etc.) */
+.ppv-summary-card {
+    background: linear-gradient(145deg, rgba(26, 34, 45, 0.95), rgba(21, 27, 35, 0.95)) !important;
+    border: 1px solid rgba(0, 212, 255, 0.15) !important;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4) !important;
+}
+
+.ppv-summary-card .card-icon {
+    background: rgba(0, 212, 255, 0.15) !important;
+    color: #00d4ff !important;
+}
+
+.ppv-summary-card .card-icon i {
+    color: #00d4ff !important;
+}
+
+.ppv-summary-card .label {
+    color: #8b949e !important;
+}
+
+.ppv-summary-card .value {
+    color: #f0f6fc !important;
+}
+
+.ppv-summary-card .unit {
+    color: #8b949e !important;
+}
+
+/* Analytics Section Headers */
+.ppv-analytics-section h4 {
+    color: #f0f6fc !important;
+}
+
+/* Chart Containers */
+.ppv-chart-container {
+    background: linear-gradient(145deg, rgba(26, 34, 45, 0.95), rgba(21, 27, 35, 0.95)) !important;
+    border: 1px solid rgba(0, 212, 255, 0.15) !important;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* SVG Chart Text */
+.ppv-trend-chart text {
+    fill: #8b949e !important;
+}
+
+.ppv-trend-chart line {
+    stroke: rgba(0, 212, 255, 0.15) !important;
+}
+
+/* Chart gradient for dark mode */
+.ppv-trend-chart defs linearGradient stop:first-child {
+    stop-color: #00d4ff !important;
+}
+
+.ppv-trend-chart path[fill="url(#grad1)"] {
+    fill: url(#grad1) !important;
+}
+
+.ppv-trend-chart path[stroke="#667eea"] {
+    stroke: #00d4ff !important;
+}
+
+.ppv-trend-chart circle {
+    fill: #00d4ff !important;
+}
+
+/* Stores Breakdown */
+.ppv-stores-breakdown {
+    background: transparent !important;
+}
+
+/* Stores List */
+.ppv-stores-list {
+    background: transparent !important;
+}
+
+.ppv-store-item {
+    background: linear-gradient(145deg, rgba(26, 34, 45, 0.95), rgba(21, 27, 35, 0.95)) !important;
+    border: 1px solid rgba(0, 212, 255, 0.15) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+}
+
+.ppv-store-item .store-name {
+    color: #f0f6fc !important;
+}
+
+.ppv-store-item .store-stats {
+    color: #8b949e !important;
+}
+
+.ppv-store-item .store-points .points {
+    color: #00d4ff !important;
+}
+
+.ppv-store-item .store-points .percentage {
+    color: #8b949e !important;
+}
+
+/* Best Day Card */
+.ppv-best-day-card {
+    background: linear-gradient(145deg, rgba(26, 34, 45, 0.95), rgba(21, 27, 35, 0.95)) !important;
+    border: 1px solid rgba(0, 212, 255, 0.15) !important;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4) !important;
+}
+
+.ppv-best-day-card .date,
+.best-day-info .date {
+    color: #f0f6fc !important;
+}
+
+.ppv-best-day-card .points,
+.best-day-info .points {
+    color: #00d4ff !important;
+}
+
+/* No Data Text */
+.ppv-analytics-wrapper p,
+.ppv-chart-container p {
+    color: #8b949e !important;
+}
+
+/* Error State */
+.ppv-analytics-wrapper .ppv-error {
+    background: rgba(239, 68, 68, 0.15) !important;
+    color: #f87171 !important;
+    border: 1px solid rgba(239, 68, 68, 0.25) !important;
+}
+
+/* ==========================================================================
+   📊 STATISTIK PAGE - HANDLER STATS DARK MODE
+   Fix for white stat cards on /statistik/ page
+   ========================================================================== */
+
+/* Stats Wrapper */
+.ppv-stats-wrapper {
+    background: transparent !important;
+    color: #f0f6fc !important;
+}
+
+.ppv-stats-title {
+    color: #00d4ff !important;
+}
+
+/* Stats Controls */
+.ppv-stats-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.ppv-stats-filters select,
+#ppv-stats-range {
+    background: rgba(21, 27, 35, 0.9) !important;
+    border: 1px solid rgba(0, 212, 255, 0.20) !important;
+    color: #f0f6fc !important;
+    padding: 10px 16px;
+    border-radius: 10px;
+}
+
+.ppv-stats-filters select option,
+#ppv-stats-range option {
+    background: #1e293b !important;
+    color: #f0f6fc !important;
+}
+
+/* Export Button */
+.ppv-export-btn {
+    background: linear-gradient(135deg, #00d4ff, #00a8cc) !important;
+    color: #fff !important;
+    border: none !important;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.ppv-export-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3) !important;
+}
+
+/* Main Stats Cards Grid */
+.ppv-stats-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+/* Stats Card - THE FIX FOR WHITE CARDS */
+.ppv-stats-wrapper .ppv-stat-card,
+.ppv-stats-content .ppv-stat-card {
+    background: linear-gradient(145deg, rgba(26, 34, 45, 0.95), rgba(21, 27, 35, 0.95)) !important;
+    border: 1px solid rgba(0, 212, 255, 0.15) !important;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4) !important;
+    border-radius: 14px !important;
+    padding: 16px !important;
+    text-align: center !important;
+}
+
+.ppv-stats-wrapper .ppv-stat-label,
+.ppv-stats-content .ppv-stat-label {
+    color: #8b949e !important;
+    font-size: 11px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+.ppv-stats-wrapper .ppv-stat-value,
+.ppv-stats-content .ppv-stat-value {
+    color: #00d4ff !important;
+    font-size: 28px !important;
+    font-weight: 700 !important;
+}
+
+/* Chart Container */
+.ppv-stats-chart {
+    background: linear-gradient(145deg, rgba(26, 34, 45, 0.95), rgba(21, 27, 35, 0.95)) !important;
+    border: 1px solid rgba(0, 212, 255, 0.15) !important;
+    border-radius: 18px !important;
+    padding: 20px !important;
+    margin-bottom: 20px !important;
+}
+
+.ppv-stats-chart canvas {
+    max-height: 300px !important;
+}
+
+/* Section Titles */
+.ppv-section-title,
+.ppv-stats-section h3 {
+    color: #f0f6fc !important;
+    font-size: 1.1rem !important;
+    margin-bottom: 12px !important;
+}
+
+/* Top 5 Users List */
+.ppv-top5-list {
+    background: transparent !important;
+}
+
+.ppv-top5-list .ppv-top5-item,
+.ppv-top5-item {
+    background: linear-gradient(145deg, rgba(26, 34, 45, 0.95), rgba(21, 27, 35, 0.95)) !important;
+    border: 1px solid rgba(0, 212, 255, 0.15) !important;
+    border-radius: 12px !important;
+    padding: 12px 16px !important;
+    margin-bottom: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+}
+
+.ppv-top5-item .ppv-user-name,
+.ppv-top5-list strong {
+    color: #f0f6fc !important;
+}
+
+.ppv-top5-item .ppv-user-email,
+.ppv-top5-list small {
+    color: #8b949e !important;
+}
+
+.ppv-top5-item .ppv-user-points {
+    color: #00d4ff !important;
+    font-weight: 700 !important;
+}
+
+/* Rewards Stats Cards */
+.ppv-rewards-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.ppv-reward-stat-card {
+    background: linear-gradient(145deg, rgba(26, 34, 45, 0.95), rgba(21, 27, 35, 0.95)) !important;
+    border: 1px solid rgba(0, 212, 255, 0.15) !important;
+    border-radius: 14px !important;
+    padding: 16px !important;
+    text-align: center !important;
+}
+
+.ppv-reward-stat-card .ppv-label {
+    color: #8b949e !important;
+    font-size: 12px !important;
+}
+
+.ppv-reward-stat-card .ppv-value {
+    color: #f0f6fc !important;
+    font-size: 24px !important;
+    font-weight: 700 !important;
+}
+
+.ppv-reward-stat-card .ppv-value.ppv-approved {
+    color: #10b981 !important;
+}
+
+.ppv-reward-stat-card .ppv-value.ppv-pending {
+    color: #f59e0b !important;
+}
+
+/* Peak Hours */
+.ppv-peak-hours {
+    background: transparent !important;
+}
+
+.ppv-peak-hour-item {
+    background: linear-gradient(145deg, rgba(26, 34, 45, 0.95), rgba(21, 27, 35, 0.95)) !important;
+    border: 1px solid rgba(0, 212, 255, 0.15) !important;
+    border-radius: 10px !important;
+    padding: 10px 14px !important;
+    margin-bottom: 6px !important;
+    display: inline-block !important;
+    margin-right: 8px !important;
+}
+
+.ppv-peak-hour-item .time {
+    color: #00d4ff !important;
+    font-weight: 600 !important;
+}
+
+.ppv-peak-hour-item .count {
+    color: #8b949e !important;
+}
+
+/* Loading States */
+.ppv-stats-loading,
+.ppv-loading-small {
+    color: #8b949e !important;
+}
+
+.ppv-stats-loading .ppv-spinner {
+    border-color: rgba(0, 212, 255, 0.2) !important;
+    border-top-color: #00d4ff !important;
+}
+
+/* Error State */
+.ppv-stats-error {
+    background: rgba(239, 68, 68, 0.15) !important;
+    color: #f87171 !important;
+    padding: 16px !important;
+    border-radius: 12px !important;
+}
+
+/* Advanced Stats Sections */
+#ppv-trend,
+#ppv-spending,
+#ppv-conversion {
+    background: linear-gradient(145deg, rgba(26, 34, 45, 0.95), rgba(21, 27, 35, 0.95)) !important;
+    border: 1px solid rgba(0, 212, 255, 0.15) !important;
+    border-radius: 14px !important;
+    padding: 16px !important;
+    color: #f0f6fc !important;
+}
+
+#ppv-trend .trend-card,
+#ppv-spending .spending-card,
+#ppv-conversion .conversion-card {
+    background: rgba(0, 212, 255, 0.08) !important;
+    border: 1px solid rgba(0, 212, 255, 0.15) !important;
+    border-radius: 10px !important;
+    padding: 12px !important;
+    margin-bottom: 8px !important;
+}
+
+/* Export Advanced Controls */
+.ppv-export-advanced-controls {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.ppv-export-advanced-controls select,
+#ppv-export-format {
+    background: rgba(21, 27, 35, 0.9) !important;
+    border: 1px solid rgba(0, 212, 255, 0.20) !important;
+    color: #f0f6fc !important;
+    padding: 10px 16px;
+    border-radius: 10px;
+}
+
+/* Horizontal Rule */
+.ppv-stats-wrapper hr {
+    border-color: rgba(0, 212, 255, 0.15) !important;
 }

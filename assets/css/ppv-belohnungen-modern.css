@@ -277,6 +277,83 @@
   background: var(--ppv-bg-card);
 }
 
+/* ✅ FIX: Hide rewards where user has no points (shown when searching) */
+.ppv-reward-card.ppv-no-points-hidden {
+  display: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ℹ️ INFO BANNER - User guidance
+   ═══════════════════════════════════════════════════════════════ */
+.ppv-info-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 20px;
+  border-radius: var(--ppv-radius-md, 10px);
+  margin-bottom: 20px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.ppv-info-banner > i {
+  font-size: 24px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.ppv-info-banner strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 15px;
+}
+
+.ppv-info-banner p {
+  margin: 0;
+  color: inherit;
+  opacity: 0.9;
+}
+
+/* Welcome banner - when no points collected yet */
+.ppv-info-welcome {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.15));
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  color: var(--ppv-text-primary, #f1f5f9);
+}
+
+.ppv-info-welcome > i {
+  color: #a78bfa;
+}
+
+/* Hint banner - when there are hidden rewards */
+.ppv-info-hint {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  color: var(--ppv-text-primary, #f1f5f9);
+}
+
+.ppv-info-hint > i {
+  color: #34d399;
+}
+
+/* Light theme adjustments */
+[data-theme="light"] .ppv-info-welcome,
+[data-theme="light"] .ppv-info-hint {
+  color: #1e293b;
+}
+
+@media (max-width: 480px) {
+  .ppv-info-banner {
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px 16px;
+  }
+
+  .ppv-info-banner > i {
+    font-size: 20px;
+  }
+}
+
 /* ═══════════════════════════════════════════════════════════════
    📋 REWARD CARD CONTENT - Compact
    ═══════════════════════════════════════════════════════════════ */
@@ -707,6 +784,108 @@
    ═══════════════════════════════════════════════════════════════ */
 .ppv-hidden {
   display: none !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   🌙 DARK MODE OVERRIDES
+   ═══════════════════════════════════════════════════════════════ */
+[data-theme="dark"] .ppv-belohnungen,
+[data-theme="dark"] .ppv-modern-rewards {
+  background: #0f172a;
+}
+
+[data-theme="dark"] .ppv-rewards-header {
+  background: #162233;
+  border: 1px solid rgba(0, 168, 204, 0.2);
+}
+
+[data-theme="dark"] .ppv-user-points-card {
+  background: #162233;
+  border: 1px solid rgba(0, 168, 204, 0.2);
+}
+
+[data-theme="dark"] #ppv-search-filter-container {
+  background: #162233;
+  border: 1px solid rgba(0, 168, 204, 0.15);
+}
+
+[data-theme="dark"] .ppv-reward-card {
+  background: #1e293b;
+  border-color: rgba(0, 168, 204, 0.2);
+}
+
+[data-theme="dark"] .ppv-reward-card:hover {
+  background: #2d3a4f;
+  border-color: rgba(0, 168, 204, 0.4);
+}
+
+[data-theme="dark"] .reward-header h4 {
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .reward-header small {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .ppv-reward-card p {
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .reward-meta {
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .ppv-progress-container {
+  background: #0f172a;
+}
+
+[data-theme="dark"] .ppv-progress-text {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .ppv-pending-section {
+  background: #162233;
+  border: 1px solid rgba(0, 168, 204, 0.15);
+}
+
+[data-theme="dark"] .ppv-pending-card {
+  background: #1e293b;
+  border-color: rgba(0, 168, 204, 0.15);
+}
+
+[data-theme="dark"] .ppv-pending-card h4 {
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .ppv-pending-card p {
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .ppv-search-input,
+[data-theme="dark"] .ppv-filter-select {
+  background: #0f172a;
+  border-color: rgba(0, 168, 204, 0.25);
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .ppv-filter-reset {
+  background: #1e293b;
+  border-color: rgba(0, 168, 204, 0.25);
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .ppv-empty {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .ppv-reward-popup-inner {
+  background: #162233;
+  border-color: rgba(0, 168, 204, 0.3);
+}
+
+[data-theme="dark"] .ppv-reward-popup-inner p {
+  color: #e2e8f0;
 }
 
 /* ═══════════════════════════════════════════════════════════════

@@ -245,6 +245,8 @@ $core_modules = [
      'includes/class-ppv-onboarding.php',
      'includes/admin/class-ppv-admin-handlers.php',
      'includes/class-ppv-legal.php',
+     'includes/class-ppv-user-level.php',
+     'includes/class-ppv-vip-settings.php',
 
 ];
 
@@ -371,18 +373,25 @@ add_action('wp_enqueue_scripts', function() {
         return; // Stop - don't load other themes
     }
     
-    // 🔹 HANDLER SESSION = HANDLER THEME
+    // 🔹 HANDLER-LIGHT.CSS - Always load globally (contains shared UI components)
+    wp_enqueue_style(
+        'ppv-handler-light',
+        PPV_PLUGIN_URL . 'assets/css/handler-light.css',
+        [],
+        time()
+    );
+
+    // 🔹 HANDLER SESSION = HANDLER DARK THEME (optional override)
     if (ppv_is_handler_session()) {
         $handler_theme = $_COOKIE['ppv_handler_theme'] ?? 'light';
-        $file = $handler_theme === 'dark' ? 'handler-dark.css' : 'handler-light.css';
-        
-        wp_enqueue_style(
-            'ppv-handler',
-            PPV_PLUGIN_URL . 'assets/css/' . $file,
-            [],
-            PPV_VERSION
-        );
-        
+        if ($handler_theme === 'dark') {
+            wp_enqueue_style(
+                'ppv-handler-dark',
+                PPV_PLUGIN_URL . 'assets/css/handler-dark.css',
+                ['ppv-handler-light'],
+                time()
+            );
+        }
     }
     
     // 🔹 NORMAL USER = USER THEME PREFERENCE
@@ -443,13 +452,16 @@ add_action('wp_enqueue_scripts', function() {
 $whitelist = [
     'ppv-theme-dark',
     'ppv-theme-light',
+    'ppv-handler',      // Handler theme (light/dark)
     'ppv-handler-light',
     'ppv-handler-dark',
     'ppv-login-light',
-    'ppv-login',        // ← ÚJ
+    'ppv-login',
     'ppv-toast-points',
-    'google-platform',  // ← ÚJ
-    'ppv-login-js'      // ← ÚJ
+    'ppv-vip-settings', // VIP settings
+    'remix-icons',      // Icons for VIP settings
+    'google-platform',
+    'ppv-login-js'
 ];
     
     foreach ($wp_styles->queue as $handle) {

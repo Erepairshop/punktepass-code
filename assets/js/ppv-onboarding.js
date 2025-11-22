@@ -107,6 +107,7 @@
 
             modal.on('click', '[data-action="later"]', () => {
                 this.markWelcomeShown();
+                this.postponeOnboarding(); // ⏰ 8 órás késleltetés
                 this.closeModal(modal);
             });
 
@@ -667,6 +668,7 @@
             });
 
             card.on('click', '[data-action="later"]', () => {
+                this.postponeOnboarding(); // ⏰ 8 órás késleltetés
                 card.removeClass('show');
                 setTimeout(() => card.remove(), 300);
             });
@@ -785,6 +787,28 @@
                         this.celebrationShown = true;
                         this.showCelebrationModal();
                     }
+                }
+            });
+        }
+
+        /** ============================================================
+         *  ⏰ POSTPONE ONBOARDING (8 hours)
+         * ============================================================ */
+        postponeOnboarding() {
+            $.ajax({
+                url: this.config.rest_url + 'postpone',
+                method: 'POST',
+                contentType: 'application/json',
+                headers: {
+                    'X-WP-Nonce': this.config.nonce
+                },
+                data: JSON.stringify({}),
+                success: (response) => {
+                    console.log('⏰ Onboarding postponed until:', response.postponed_until);
+                    this.showToast(L.onb_postponed || '⏰ 8 óra múlva emlékeztetünk!', 'info');
+                },
+                error: () => {
+                    console.error('❌ Failed to postpone onboarding');
                 }
             });
         }

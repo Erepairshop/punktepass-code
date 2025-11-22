@@ -1,10 +1,13 @@
 /**
- * PunktePass – Theme Loader v2.0 (UNIVERSAL)
+ * PunktePass – Theme Loader v2.3 (UNIVERSAL)
  * ✅ Auto-detects all pages
  * ✅ Multi-domain cookie
  * ✅ MutationObserver for button detection
  * ✅ Service Worker messaging
  * ✅ Refresh memory
+ * ✅ Icon sync on page load (sun/moon)
+ * ✅ Works with both ppv-theme-toggle and ppv-theme-toggle-global
+ * ✅ localStorage priority over meta tag (fixes Turbo navigation)
  * Author: Erik Borota / PunktePass
  */
 
@@ -52,10 +55,38 @@
   }
 
   // ============================================================
-  // 🔹 GET THEME (Priority: DB > Cookie > Default)
+  // 🔹 UPDATE THEME ICON (sun/moon)
+  // ============================================================
+  function updateThemeIcon(theme) {
+    const icon = document.getElementById('ppv-theme-icon');
+    if (icon) {
+      // Icon shows what you'll switch TO:
+      // light mode = moon icon (click to go dark)
+      // dark mode = sun icon (click to go light)
+      icon.className = theme === 'light' ? 'ri-moon-line' : 'ri-sun-line';
+      log('INFO', '🌙☀️ Icon updated:', theme === 'light' ? 'moon (click for dark)' : 'sun (click for light)');
+    }
+  }
+
+  // ============================================================
+  // 🔹 GET THEME (Priority: localStorage > Cookie > Meta > Default)
   // ============================================================
   function getTheme() {
-    // 1. Meta tag from PHP
+    // 1. localStorage (CLIENT-SIDE - highest priority, updated immediately on toggle)
+    const saved = localStorage.getItem(THEME_KEY);
+    if (saved && ['dark', 'light'].includes(saved)) {
+      log('DEBUG', 'Theme from localStorage:', saved);
+      return saved;
+    }
+
+    // 2. Cookie (also client-side, persists across sessions)
+    const cookie = getCookie(THEME_KEY);
+    if (cookie && ['dark', 'light'].includes(cookie)) {
+      log('DEBUG', 'Theme from cookie:', cookie);
+      return cookie;
+    }
+
+    // 3. Meta tag from PHP (server-side, may be stale after client toggle)
     const meta = document.querySelector('meta[name="ppv-theme"]');
     if (meta) {
       const theme = meta.getAttribute('content');
@@ -63,20 +94,6 @@
         log('DEBUG', 'Theme from meta tag:', theme);
         return theme;
       }
-    }
-
-    // 2. localStorage
-    const saved = localStorage.getItem(THEME_KEY);
-    if (saved && ['dark', 'light'].includes(saved)) {
-      log('DEBUG', 'Theme from localStorage:', saved);
-      return saved;
-    }
-
-    // 3. Cookie
-    const cookie = getCookie(THEME_KEY);
-    if (cookie && ['dark', 'light'].includes(cookie)) {
-      log('DEBUG', 'Theme from cookie:', cookie);
-      return cookie;
     }
 
     // 4. Default
@@ -150,11 +167,19 @@
   // 🔹 ATTACH BUTTON LISTENER (MutationObserver)
   // ============================================================
   function attachButtonListener() {
-    const btn = document.getElementById('ppv-theme-toggle');
+    // Try both button IDs (legacy and new global)
+    const btn = document.getElementById('ppv-theme-toggle') || document.getElementById('ppv-theme-toggle-global');
     if (!btn) {
       log('DEBUG', 'Button not found yet, will keep watching');
       return false;
     }
+
+    // Skip if already attached (prevents double listeners on Turbo navigation)
+    if (btn.dataset.themeListenerAttached) {
+      log('DEBUG', 'Button listener already attached, skipping');
+      return true;
+    }
+    btn.dataset.themeListenerAttached = 'true';
 
     log('INFO', '✅ Theme toggle button found, attaching listener');
 
@@ -172,10 +197,13 @@
       localStorage.setItem(THEME_KEY, newTheme);
       setMultiDomainCookie(newTheme);
 
-      // 2. Sync to server (async)
+      // 2. Update theme icon immediately
+      updateThemeIcon(newTheme);
+
+      // 3. Sync to server (async)
       await syncThemeToServer(newTheme);
 
-      // 3. Message Service Worker to clear cache
+      // 4. Message Service Worker to clear cache
       if (navigator.serviceWorker?.controller) {
         navigator.serviceWorker.controller.postMessage({
           type: 'clear-theme-cache',
@@ -184,7 +212,7 @@
         log('INFO', '✉️ SW message sent: clear-theme-cache');
       }
 
-      // 4. Broadcast to other tabs
+      // 5. Broadcast to other tabs
       if (typeof BroadcastChannel !== 'undefined') {
         try {
           const bc = new BroadcastChannel('ppv-theme-sync');
@@ -195,7 +223,7 @@
         }
       }
 
-      // 5. Haptic feedback
+      // 6. Haptic feedback
       if (navigator.vibrate) navigator.vibrate(20);
     });
 
@@ -207,9 +235,13 @@
   // ============================================================
   function startMutationObserver() {
     const observer = new MutationObserver(() => {
-      if (!document.getElementById('ppv-theme-toggle')) return;
+      // Check for either button ID
+      const btn = document.getElementById('ppv-theme-toggle') || document.getElementById('ppv-theme-toggle-global');
+      if (!btn) return;
 
       if (attachButtonListener()) {
+        // Also update icon when button is found
+        updateThemeIcon(getTheme());
         observer.disconnect();
         log('INFO', '✅ MutationObserver: Button found and attached');
       }
@@ -249,10 +281,10 @@
   }
 
   // ============================================================
-  // 🔹 MAIN INIT
+  // 🔹 MAIN INIT FUNCTION (Turbo-compatible)
   // ============================================================
-  window.addEventListener('DOMContentLoaded', () => {
-    log('INFO', '🚀 Theme Loader v2.0 initialized');
+  function initThemeLoader() {
+    log('INFO', '🚀 Theme Loader v2.3 initialized (localStorage priority + icon sync)');
 
     // 1. Get current theme
     const theme = getTheme();
@@ -261,22 +293,68 @@
     // 2. Load CSS immediately
     loadThemeCSS(theme);
 
-    // 3. Try to attach button (might already exist)
+    // 3. Apply body classes immediately (don't wait for CSS load)
+    document.documentElement.setAttribute('data-theme', theme);
+    document.body.classList.remove('ppv-light', 'ppv-dark');
+    document.body.classList.add(`ppv-${theme}`);
+
+    // 4. Update theme icon (sun/moon) - MUST happen on every init!
+    updateThemeIcon(theme);
+
+    // 5. Try to attach button (might already exist)
     if (!attachButtonListener()) {
       // Button doesn't exist yet, start watching
       startMutationObserver();
     }
 
-    // 4. Listen for cross-tab broadcasts
-    listenForBroadcasts();
+    // 6. Listen for cross-tab broadcasts (only once)
+    if (!window.PPV_BROADCAST_LISTENER) {
+      window.PPV_BROADCAST_LISTENER = true;
+      listenForBroadcasts();
+    }
+  }
+
+  // ============================================================
+  // 🔹 RUN ON DOMContentLoaded
+  // ============================================================
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initThemeLoader);
+  } else {
+    initThemeLoader();
+  }
+
+  // ============================================================
+  // 🔹 RUN ON TURBO NAVIGATION (re-apply theme after page change)
+  // ============================================================
+  document.addEventListener('turbo:load', () => {
+    log('INFO', '🔄 Turbo:load - Re-applying theme');
+    initThemeLoader();
   });
 
   // ============================================================
-  // 🔹 EARLY INIT (before DOMContentLoaded)
+  // 🔹 TURBO: Apply theme BEFORE render (prevent flash)
+  // ============================================================
+  document.addEventListener('turbo:before-render', (event) => {
+    const theme = getTheme();
+    const newBody = event.detail.newBody;
+    if (newBody) {
+      newBody.classList.remove('ppv-light', 'ppv-dark');
+      newBody.classList.add(`ppv-${theme}`);
+      log('DEBUG', '⚡ Turbo:before-render - Applied theme to new body:', theme);
+    }
+  });
+
+  // ============================================================
+  // 🔹 EARLY INIT (before DOMContentLoaded) - First page load only
   // ============================================================
   // Apply theme ASAP (avoid flash)
   const earlyTheme = getTheme();
   loadThemeCSS(earlyTheme);
+  document.documentElement.setAttribute('data-theme', earlyTheme);
+  if (document.body) {
+    document.body.classList.remove('ppv-light', 'ppv-dark');
+    document.body.classList.add(`ppv-${earlyTheme}`);
+  }
   log('INFO', `⚡ Early theme load: ${earlyTheme}`);
 
   // ============================================================

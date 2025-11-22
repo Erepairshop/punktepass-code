@@ -29,8 +29,8 @@ if (!class_exists('PPV_Onboarding')) {
             global $wpdb;
             $table = $wpdb->prefix . 'ppv_stores';
 
-            // Check if migration already done
-            if (get_option('ppv_onboarding_db_migrated')) {
+            // Check if migration already done (v2 includes postponed_until column)
+            if (get_option('ppv_onboarding_db_migrated_v2')) {
                 return;
             }
 
@@ -38,7 +38,8 @@ if (!class_exists('PPV_Onboarding')) {
             $columns = [
                 'onboarding_dismissed' => 'TINYINT(1) DEFAULT 0',
                 'onboarding_welcome_shown' => 'TINYINT(1) DEFAULT 0',
-                'onboarding_completed' => 'TINYINT(1) DEFAULT 0'
+                'onboarding_completed' => 'TINYINT(1) DEFAULT 0',
+                'onboarding_postponed_until' => 'DATETIME DEFAULT NULL'
             ];
 
             foreach ($columns as $col_name => $col_definition) {
@@ -50,9 +51,9 @@ if (!class_exists('PPV_Onboarding')) {
                 }
             }
 
-            // Mark as migrated
-            update_option('ppv_onboarding_db_migrated', true);
-            error_log("✅ [PPV_ONBOARDING] DB migration completed");
+            // Mark as migrated (v2)
+            update_option('ppv_onboarding_db_migrated_v2', true);
+            error_log("✅ [PPV_ONBOARDING] DB migration v2 completed (with postponed_until)");
         }
 
         /**
@@ -81,6 +82,13 @@ if (!class_exists('PPV_Onboarding')) {
             $subscription_status = $store->subscription_status ?? 'trial';
             if ($subscription_status !== 'trial') {
                 // Active or other status - skip onboarding
+                return;
+            }
+
+            // ⏰ Check if onboarding is postponed (8 hours delay)
+            $postponed_until = $store->onboarding_postponed_until ?? null;
+            if (!empty($postponed_until) && strtotime($postponed_until) > time()) {
+                // Still postponed - don't show onboarding
                 return;
             }
 
@@ -145,6 +153,13 @@ if (!class_exists('PPV_Onboarding')) {
             register_rest_route('ppv/v1', '/onboarding/reset', [
                 'methods' => 'POST',
                 'callback' => [__CLASS__, 'rest_reset_onboarding'],
+                'permission_callback' => [__CLASS__, 'rest_permission_check']
+            ]);
+
+            // Postpone onboarding (8 hours)
+            register_rest_route('ppv/v1', '/onboarding/postpone', [
+                'methods' => 'POST',
+                'callback' => [__CLASS__, 'rest_postpone_onboarding'],
                 'permission_callback' => [__CLASS__, 'rest_permission_check']
             ]);
 
@@ -296,6 +311,32 @@ if (!class_exists('PPV_Onboarding')) {
             error_log("🚫 [PPV_ONBOARDING] Dismissed store #{$auth['store_id']}: result=" . ($result !== false ? 'OK' : 'FAILED'));
 
             return rest_ensure_response(['success' => $result !== false]);
+        }
+
+        /**
+         * REST: Postpone onboarding (8 hours)
+         */
+        public static function rest_postpone_onboarding($request) {
+            $auth = self::check_auth();
+            global $wpdb;
+
+            // 8 óra múlva jelenjen meg újra
+            $postpone_until = date('Y-m-d H:i:s', strtotime('+8 hours'));
+
+            $result = $wpdb->update(
+                $wpdb->prefix . 'ppv_stores',
+                ['onboarding_postponed_until' => $postpone_until],
+                ['id' => $auth['store_id']],
+                ['%s'],
+                ['%d']
+            );
+
+            error_log("⏰ [PPV_ONBOARDING] Postponed store #{$auth['store_id']} until {$postpone_until}");
+
+            return rest_ensure_response([
+                'success' => $result !== false,
+                'postponed_until' => $postpone_until
+            ]);
         }
 
         /**

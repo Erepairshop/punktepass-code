@@ -16,8 +16,10 @@ class PPV_User_Settings {
         add_shortcode('ppv_user_settings', [__CLASS__, 'render_settings_page']);
         add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
         add_action('wp_ajax_ppv_save_user_settings', [__CLASS__, 'ajax_save_settings']);
-        // 🔒 Removed wp_ajax_nopriv - authentication required for settings
+        add_action('wp_ajax_nopriv_ppv_save_user_settings', [__CLASS__, 'ajax_save_settings']);
+        // ✅ Avatar upload needs nopriv for PunktePass session users
         add_action('wp_ajax_ppv_upload_avatar', [__CLASS__, 'ajax_upload_avatar']);
+        add_action('wp_ajax_nopriv_ppv_upload_avatar', [__CLASS__, 'ajax_upload_avatar']);
         add_action('wp_ajax_ppv_logout_all_devices', [__CLASS__, 'ajax_logout_all_devices']);
         add_action('wp_ajax_ppv_delete_account', [__CLASS__, 'ajax_delete_account']);
     }
@@ -110,18 +112,53 @@ private static function t($key) {
      *  🔹 Avatar feltöltés
      * ============================================================ */
     public static function ajax_upload_avatar() {
+        // ✅ Nonce ellenőrzés
+        check_ajax_referer('ppv_user_settings_nonce', 'nonce');
+
         self::ensure_user_context();
         $user_id = get_current_user_id() ?: intval($_SESSION['ppv_user_id'] ?? 0);
-        if (!$user_id) wp_send_json_error(['msg' => self::t('not_logged_in')]);
 
-        if (!empty($_FILES['avatar']['name'])) {
-            require_once ABSPATH . 'wp-admin/includes/file.php';
-            $upload = wp_handle_upload($_FILES['avatar'], ['test_form' => false]);
-            if (isset($upload['url'])) {
-                update_user_meta($user_id, 'ppv_avatar', esc_url($upload['url']));
-                wp_send_json_success(['url' => $upload['url']]);
-            }
+        if (!$user_id) {
+            wp_send_json_error(['msg' => self::t('not_logged_in')]);
+            return;
         }
+
+        if (empty($_FILES['avatar']['name'])) {
+            wp_send_json_error(['msg' => self::t('upload_failed') . ' (no file)']);
+            return;
+        }
+
+        // ✅ Fájl típus ellenőrzés
+        $allowed_types = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+        $file_type = wp_check_filetype($_FILES['avatar']['name']);
+
+        if (!in_array($_FILES['avatar']['type'], $allowed_types)) {
+            wp_send_json_error(['msg' => self::t('upload_failed') . ' (invalid type)']);
+            return;
+        }
+
+        // ✅ Méret ellenőrzés (max 4MB)
+        if ($_FILES['avatar']['size'] > 4 * 1024 * 1024) {
+            wp_send_json_error(['msg' => self::t('upload_failed') . ' (file too large)']);
+            return;
+        }
+
+        require_once ABSPATH . 'wp-admin/includes/file.php';
+
+        $upload = wp_handle_upload($_FILES['avatar'], ['test_form' => false]);
+
+        if (isset($upload['error'])) {
+            error_log("❌ [PPV_Avatar] Upload error: " . $upload['error']);
+            wp_send_json_error(['msg' => self::t('upload_failed') . ': ' . $upload['error']]);
+            return;
+        }
+
+        if (isset($upload['url'])) {
+            update_user_meta($user_id, 'ppv_avatar', esc_url($upload['url']));
+            wp_send_json_success(['url' => $upload['url']]);
+            return;
+        }
+
         wp_send_json_error(['msg' => self::t('upload_failed')]);
     }
 

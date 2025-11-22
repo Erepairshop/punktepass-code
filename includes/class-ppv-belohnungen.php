@@ -160,7 +160,7 @@ class PPV_Belohnungen {
             'ppv-theme-loader',
             $plugin_url . 'assets/js/ppv-theme-loader.js',
             [],
-            '2.0.0',
+            time(),
             false
         );
 
@@ -246,13 +246,31 @@ class PPV_Belohnungen {
             WHERE user_id = %d
         ", $user_id));
 
-        $rewards = $wpdb->get_results("
-            SELECT r.id, r.title, r.description, r.required_points, r.store_id, s.name AS store_name
+        // ✅ FIX: Load ALL rewards but mark which ones user has started collecting at
+        // Show only rewards with scans by default, but all when searching
+        // Check for qr_scan entries (not SUM of points, which can be negative after redeems)
+        $rewards = $wpdb->get_results($wpdb->prepare("
+            SELECT r.id, r.title, r.description, r.required_points, r.store_id,
+                   s.company_name AS store_name,
+                   COALESCE(user_store_points.store_points, 0) AS user_store_points,
+                   CASE WHEN COALESCE(user_store_scans.scan_count, 0) > 0 THEN 1 ELSE 0 END AS has_points
             FROM {$wpdb->prefix}ppv_rewards r
             LEFT JOIN {$wpdb->prefix}ppv_stores s ON r.store_id = s.id
+            LEFT JOIN (
+                SELECT store_id, SUM(points) AS store_points
+                FROM {$wpdb->prefix}ppv_points
+                WHERE user_id = %d
+                GROUP BY store_id
+            ) AS user_store_points ON r.store_id = user_store_points.store_id
+            LEFT JOIN (
+                SELECT store_id, COUNT(*) AS scan_count
+                FROM {$wpdb->prefix}ppv_points
+                WHERE user_id = %d AND type = 'qr_scan'
+                GROUP BY store_id
+            ) AS user_store_scans ON r.store_id = user_store_scans.store_id
             WHERE s.active = 1
-            ORDER BY r.required_points ASC
-        ");
+            ORDER BY has_points DESC, r.required_points ASC
+        ", $user_id, $user_id));
 
         $pending = $wpdb->get_results($wpdb->prepare("
             SELECT r.id, rw.title, rw.description, s.name AS store_name, r.redeemed_at, r.status, r.points_spent
@@ -283,6 +301,32 @@ class PPV_Belohnungen {
             <!-- SEARCH & FILTER -->
             <div id="ppv-search-filter-container"></div>
 
+            <?php
+            // ✅ Count rewards with/without points for info banner
+            $rewards_with_points = array_filter($rewards, fn($r) => !empty($r->has_points) && $r->has_points == 1);
+            $rewards_without_points = array_filter($rewards, fn($r) => empty($r->has_points) || $r->has_points != 1);
+            $has_any_points = count($rewards_with_points) > 0;
+            $has_hidden_rewards = count($rewards_without_points) > 0;
+            ?>
+
+            <!-- INFO BANNER -->
+            <?php if (!$has_any_points && !empty($rewards)): ?>
+                <!-- No points collected yet - show welcome message -->
+                <div class="ppv-info-banner ppv-info-welcome">
+                    <i class="ri-lightbulb-line"></i>
+                    <div>
+                        <strong><?php echo esc_html(self::get_label('rewards_info_title', $lang, 'So funktioniert es')); ?></strong>
+                        <p><?php echo esc_html(self::get_label('rewards_info_no_points', $lang, 'Sammle Punkte bei einem Geschäft, um dessen Prämien hier zu sehen. Nutze die Suche, um alle verfügbaren Prämien zu entdecken!')); ?></p>
+                    </div>
+                </div>
+            <?php elseif ($has_hidden_rewards): ?>
+                <!-- Has some points, but there are more rewards available -->
+                <div class="ppv-info-banner ppv-info-hint">
+                    <i class="ri-search-line"></i>
+                    <p><?php echo esc_html(self::get_label('rewards_info_search_hint', $lang, 'Tipp: Nutze die Suche, um alle verfügbaren Prämien zu entdecken – auch von Geschäften, bei denen du noch keine Punkte gesammelt hast!')); ?></p>
+                </div>
+            <?php endif; ?>
+
             <!-- REWARDS GRID -->
             <div class="ppv-reward-grid">
                 <?php if (empty($rewards)): ?>
@@ -292,8 +336,12 @@ class PPV_Belohnungen {
                         $can_redeem = $points >= $r->required_points;
                         $missing = $r->required_points - $points;
                         $progress = $points > 0 ? min(($points / $r->required_points) * 100, 100) : 0;
+                        $has_points = !empty($r->has_points) && $r->has_points == 1;
+                        $hidden_class = $has_points ? '' : 'ppv-no-points-hidden';
                     ?>
-                        <div class="ppv-reward-card <?php echo $can_redeem ? 'available' : 'locked'; ?>" data-store="<?php echo esc_attr($r->store_id); ?>">
+                        <div class="ppv-reward-card <?php echo $can_redeem ? 'available' : 'locked'; ?> <?php echo $hidden_class; ?>"
+                             data-store="<?php echo esc_attr($r->store_id); ?>"
+                             data-has-points="<?php echo $has_points ? '1' : '0'; ?>">
                             <div class="reward-header">
                                 <h4><?php echo esc_html($r->title); ?></h4>
                                 <small><i class="ri-store-2-line"></i> <?php echo esc_html($r->store_name ?: self::get_label('general', $lang, 'Allgemein')); ?></small>

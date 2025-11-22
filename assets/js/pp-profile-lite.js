@@ -459,122 +459,31 @@ if (typeof module !== 'undefined' && module.exports) {
 }
 
 // ============================================================
-// 🗺️ GEOCODING - Cím → Lat/Lng (PHP API) - FIXED
+// 🗺️ GEOCODING - Cím → Lat/Lng (PHP API) - FIXED + TURBO
 // ============================================================
 
-document.addEventListener('DOMContentLoaded', () => {
-  const geocodeBtn = document.getElementById('ppv-geocode-btn');
-  if (!geocodeBtn) return;
+// Global variables for interactive map
+let ppvInteractiveMap = null;
+let ppvInteractiveMapMarker = null;
 
-  geocodeBtn.addEventListener('click', async (e) => {
-    e.preventDefault();
+// ✅ Global showMapPreview function
+function showMapPreview(lat, lon) {
+  const mapDiv = document.getElementById('ppv-location-map');
+  if (!mapDiv) return;
 
-    // ✅ ÖSSZES MEZŐ LEKÉRÉSE
-    const addressInput = document.querySelector('input[name="address"]');
-    const plzInput = document.querySelector('input[name="plz"]');
-    const cityInput = document.querySelector('input[name="city"]');
-    const countryInput = document.querySelector('select[name="country"]');
-    
-    const address = addressInput?.value || '';
-    const plz = plzInput?.value || '';
-    const city = cityInput?.value || '';
-    const country = countryInput?.value || 'DE';
-
-    const latInput = document.getElementById('store_latitude');
-    const lngInput = document.getElementById('store_longitude');
-
-    // ✅ ELLENŐRZÉS
-    if (!address || !city || !country) {
-      alert('Kérlek, add meg az utcát, a várost ÉS az országot!');
-      return;
-    }
-
-    geocodeBtn.disabled = true;
-    geocodeBtn.textContent = '⏳ Keresés...';
-
-    try {
-      const formData = new FormData();
-      formData.append('action', 'ppv_geocode_address');
-      formData.append('ppv_nonce', ppv_profile.nonce);
-      formData.append('address', address);
-      formData.append('plz', plz);
-      formData.append('city', city);
-      formData.append('country', country);
-
-      const response = await fetch(ppv_profile.ajaxUrl, {
-        method: 'POST',
-        body: formData,
-      });
-
-      const responseText = await response.text();
-
-      let data;
-      try {
-        data = JSON.parse(responseText);
-      } catch (e) {
-        alert('❌ PHP hiba történt!\n\n' + responseText);
-        geocodeBtn.disabled = false;
-        geocodeBtn.textContent = '🗺️ Koordináták keresése (Cím alapján)';
-        return;
-      }
-
-if (!data.success) {
-  const errorMsg = data.data?.msg || 'Ismeretlen hiba történt';
-  alert(`❌ ${errorMsg}`);
-        geocodeBtn.disabled = false;
-        geocodeBtn.textContent = '🗺️ Koordináták keresése (Cím alapján)';
-        return;
-      }
-
-      const { lat, lon, country: detectedCountry, display_name, open_manual_map } = data.data;
-
-latInput.value = lat;
-lngInput.value = lon;
-
-if (countryInput) {
-  countryInput.value = detectedCountry;
+  mapDiv.innerHTML = `
+    <div style="position: relative; width: 100%; height: 100%; border-radius: 8px; overflow: hidden; background: #f0f0f0; display: flex; align-items: center; justify-content: center;">
+      <iframe style="width: 100%; height: 100%; border: none; border-radius: 8px;" src="https://www.openstreetmap.org/export/embed.html?bbox=${lon - 0.01},${lat - 0.01},${lon + 0.01},${lat + 0.01}&layer=mapnik&marker=${lat},${lon}"></iframe>
+    </div>
+  `;
 }
 
-latInput.style.borderColor = '#10b981';
-lngInput.style.borderColor = '#10b981';
+// ✅ Expose showMapPreview globally
+window.showMapPreview = showMapPreview;
 
-showMapPreview(lat, lon);
-
-// ✅ AUTO-NYITÁS MANUÁLIS MÓDBAN HA SZÜKSÉGES
-if (open_manual_map) {
-  alert(`⚠️ Az utca nem található!\n\nA város koordinátáit használom: ${display_name}\n\nKérjük, szúrd meg az X és a 🗺️ gombbal az pontos helyet!`);
-  setTimeout(() => {
-    openInteractiveMap(lat, lon);
-  }, 500);
-} else {
-  alert(`✅ Koordináták megtalálva!\n\n📍 ${display_name}\n\nSzélesség: ${lat}\nHosszúság: ${lon}`);
-}
-
-    } catch (error) {
-      alert('❌ Hiba a koordináták keresésekor!\n\n' + error.message);
-    }
-
-    geocodeBtn.disabled = false;
-    geocodeBtn.textContent = '🗺️ Koordináták keresése (Cím alapján)';
-  });
-
-  function showMapPreview(lat, lon) {
-    const mapDiv = document.getElementById('ppv-location-map');
-    if (!mapDiv) return;
-
-    mapDiv.innerHTML = `
-      <div style="position: relative; width: 100%; height: 100%; border-radius: 8px; overflow: hidden; background: #f0f0f0; display: flex; align-items: center; justify-content: center;">
-        <iframe style="width: 100%; height: 100%; border: none; border-radius: 8px;" src="https://www.openstreetmap.org/export/embed.html?bbox=${lon - 0.01},${lat - 0.01},${lon + 0.01},${lat + 0.01}&layer=mapnik&marker=${lat},${lon}"></iframe>
-      </div>
-    `;
-  }
-  
-  // ============================================================
+// ============================================================
 // 🗺️ INTERACTIVE MAP MODAL - Manual Geocoding
 // ============================================================
-
-let interactiveMap = null;
-let interactiveMapMarker = null;
 
 function openInteractiveMap(defaultLat, defaultLng) {
   // Modal HTML
@@ -666,10 +575,15 @@ function openInteractiveMap(defaultLat, defaultLng) {
 
   // Initialize map
   setTimeout(() => {
-    interactiveMap = new google.maps.Map(
+    if (typeof google === 'undefined' || !google.maps) {
+      console.warn('Google Maps not loaded');
+      return;
+    }
+
+    ppvInteractiveMap = new google.maps.Map(
       document.getElementById('ppv-interactive-map'),
       {
-        zoom: 15,  // ✅ Increased zoom for city-level focus (was 12)
+        zoom: 15,
         center: { lat: defaultLat || 47.5, lng: defaultLng || 22.5 },
         mapTypeControl: true,
         fullscreenControl: true,
@@ -678,19 +592,19 @@ function openInteractiveMap(defaultLat, defaultLng) {
     );
 
     // Click listener
-    interactiveMap.addListener('click', (e) => {
+    ppvInteractiveMap.addListener('click', (e) => {
       const lat = e.latLng.lat();
       const lng = e.latLng.lng();
 
       // Remove old marker
-      if (interactiveMapMarker) {
-        interactiveMapMarker.setMap(null);
+      if (ppvInteractiveMapMarker) {
+        ppvInteractiveMapMarker.setMap(null);
       }
 
       // Add new marker
-      interactiveMapMarker = new google.maps.Marker({
+      ppvInteractiveMapMarker = new google.maps.Marker({
         position: { lat, lng },
-        map: interactiveMap,
+        map: ppvInteractiveMap,
         title: `${lat.toFixed(4)}, ${lng.toFixed(4)}`
       });
 
@@ -709,8 +623,8 @@ function openInteractiveMap(defaultLat, defaultLng) {
 window.closeInteractiveMap = function() {
   const modal = document.getElementById('ppv-map-modal');
   if (modal) modal.remove();
-  interactiveMap = null;
-  interactiveMapMarker = null;
+  ppvInteractiveMap = null;
+  ppvInteractiveMapMarker = null;
 };
 
 window.confirmInteractiveMap = function() {
@@ -724,23 +638,112 @@ window.confirmInteractiveMap = function() {
   document.getElementById('store_latitude').value = lat.toFixed(4);
   document.getElementById('store_longitude').value = lng.toFixed(4);
 
-  // ✅ Update map preview
-  const showMapPreview = window.showMapPreview || function(lat, lon) {
-    const mapDiv = document.getElementById('ppv-location-map');
-    if (!mapDiv) return;
-
-    mapDiv.innerHTML = `
-      <div style="position: relative; width: 100%; height: 100%; border-radius: 8px; overflow: hidden; background: #f0f0f0; display: flex; align-items: center; justify-content: center;">
-        <iframe style="width: 100%; height: 100%; border: none; border-radius: 8px;" src="https://www.openstreetmap.org/export/embed.html?bbox=${lon - 0.01},${lat - 0.01},${lon + 0.01},${lat + 0.01}&layer=mapnik&marker=${lat},${lon}"></iframe>
-      </div>
-    `;
-  };
-
   showMapPreview(lat, lng);
-
   window.closeInteractiveMap();
 
   alert(`✅ Koordináták beállítva!\n\nLat: ${lat.toFixed(4)}\nLng: ${lng.toFixed(4)}`);
+};
+
+// ============================================================
+// 🗺️ GEOCODING INIT - Turbo Compatible
+// ============================================================
+
+function initGeocodingFeatures() {
+  const geocodeBtn = document.getElementById('ppv-geocode-btn');
+  if (!geocodeBtn || geocodeBtn.dataset.geocodeInitialized) return;
+  geocodeBtn.dataset.geocodeInitialized = 'true';
+
+  geocodeBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+
+    // ✅ ÖSSZES MEZŐ LEKÉRÉSE
+    const addressInput = document.querySelector('input[name="address"]');
+    const plzInput = document.querySelector('input[name="plz"]');
+    const cityInput = document.querySelector('input[name="city"]');
+    const countryInput = document.querySelector('select[name="country"]');
+
+    const address = addressInput?.value || '';
+    const plz = plzInput?.value || '';
+    const city = cityInput?.value || '';
+    const country = countryInput?.value || 'DE';
+
+    const latInput = document.getElementById('store_latitude');
+    const lngInput = document.getElementById('store_longitude');
+
+    // ✅ ELLENŐRZÉS
+    if (!address || !city || !country) {
+      alert('Kérlek, add meg az utcát, a várost ÉS az országot!');
+      return;
+    }
+
+    geocodeBtn.disabled = true;
+    geocodeBtn.textContent = '⏳ Keresés...';
+
+    try {
+      const formData = new FormData();
+      formData.append('action', 'ppv_geocode_address');
+      formData.append('ppv_nonce', ppv_profile.nonce);
+      formData.append('address', address);
+      formData.append('plz', plz);
+      formData.append('city', city);
+      formData.append('country', country);
+
+      const response = await fetch(ppv_profile.ajaxUrl, {
+        method: 'POST',
+        body: formData,
+      });
+
+      const responseText = await response.text();
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (e) {
+        alert('❌ PHP hiba történt!\n\n' + responseText);
+        geocodeBtn.disabled = false;
+        geocodeBtn.textContent = '🗺️ Koordináták keresése (Cím alapján)';
+        return;
+      }
+
+      if (!data.success) {
+        const errorMsg = data.data?.msg || 'Ismeretlen hiba történt';
+        alert(`❌ ${errorMsg}`);
+        geocodeBtn.disabled = false;
+        geocodeBtn.textContent = '🗺️ Koordináták keresése (Cím alapján)';
+        return;
+      }
+
+      const { lat, lon, country: detectedCountry, display_name, open_manual_map } = data.data;
+
+      latInput.value = lat;
+      lngInput.value = lon;
+
+      if (countryInput) {
+        countryInput.value = detectedCountry;
+      }
+
+      latInput.style.borderColor = '#10b981';
+      lngInput.style.borderColor = '#10b981';
+
+      showMapPreview(lat, lon);
+
+      // ✅ AUTO-NYITÁS MANUÁLIS MÓDBAN HA SZÜKSÉGES
+      if (open_manual_map) {
+        alert(`⚠️ Az utca nem található!\n\nA város koordinátáit használom: ${display_name}\n\nKérjük, szúrd meg az X és a 🗺️ gombbal az pontos helyet!`);
+        setTimeout(() => {
+          openInteractiveMap(lat, lon);
+        }, 500);
+      } else {
+        alert(`✅ Koordináták megtalálva!\n\n📍 ${display_name}\n\nSzélesség: ${lat}\nHosszúság: ${lon}`);
+      }
+
+    } catch (error) {
+      alert('❌ Hiba a koordináták keresésekor!\n\n' + error.message);
+    }
+
+    geocodeBtn.disabled = false;
+    geocodeBtn.textContent = '🗺️ Koordináták keresése (Cím alapján)';
+  });
 }
 
 // Geocoding button - add fallback button
@@ -775,9 +778,22 @@ function initManualMapButton() {
 }
 
 // Init on DOMContentLoaded
-document.addEventListener('DOMContentLoaded', initManualMapButton);
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    initGeocodingFeatures();
+    initManualMapButton();
+  });
+} else {
+  initGeocodingFeatures();
+  initManualMapButton();
+}
 
 // 🚀 Turbo: Re-init after navigation
-document.addEventListener('turbo:load', initManualMapButton);
-document.addEventListener('turbo:render', initManualMapButton);
+document.addEventListener('turbo:load', () => {
+  initGeocodingFeatures();
+  initManualMapButton();
+});
+document.addEventListener('turbo:render', () => {
+  initGeocodingFeatures();
+  initManualMapButton();
 });

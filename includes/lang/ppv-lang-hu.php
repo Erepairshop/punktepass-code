@@ -695,7 +695,12 @@ return [
     // ============================================================
     'belohnungen_title' => 'Jutalmaim',
     'belohnungen_subtitle' => 'Váltsd be pontjaidat csodálatos jutalmakért',
-    
+
+    // ✅ Info Banner (NEW)
+    'rewards_info_title' => 'Így működik',
+    'rewards_info_no_points' => 'Gyűjts pontokat egy üzletben, hogy itt megjelenjenek a jutalmak. Használd a keresőt az összes elérhető jutalom felfedezéséhez!',
+    'rewards_info_search_hint' => 'Tipp: Használd a keresőt az összes elérhető jutalom felfedezéséhez – olyan üzletekből is, ahol még nem gyűjtöttél pontot!',
+
     // Header
     'my_points' => 'Van',
     'points_available' => 'pont elérhető',
