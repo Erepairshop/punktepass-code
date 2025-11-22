@@ -154,35 +154,39 @@ class PPV_Bottom_Nav {
                 <a href="#" class="nav-item" id="ppv-support-nav-btn" title="Support"><i class="ri-customer-service-2-line"></i></a>
             </nav>
 
-            <!-- Support Modal -->
-            <div id="ppv-support-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:10000; align-items:center; justify-content:center; overflow-y:auto;">
-                <div style="background:var(--pp-bg-primary, #1a1a2e); padding:24px; border-radius:15px; max-width:450px; width:90%; box-shadow:0 10px 40px rgba(0,0,0,0.5); margin:20px auto;">
-                    <h3 style="margin:0 0 12px 0; color:var(--pp-text-primary, #fff);">
+            <!-- Support Modal - Premium Design -->
+            <div id="ppv-support-modal" class="ppv-support-modal">
+                <div class="ppv-support-modal-content">
+                    <h3 class="ppv-support-modal-title">
                         <i class="ri-customer-service-2-line"></i> Támogatás kérése
                     </h3>
-                    <p style="color:var(--pp-text-secondary, #999); font-size:14px; margin-bottom:16px;">
+                    <p class="ppv-support-modal-description">
                         Írja le a problémáját. Hamarosan jelentkezünk.
                     </p>
 
-                    <input type="email" id="ppv-support-email" placeholder="E-mail cím *" required style="width:100%; padding:12px; border-radius:8px; border:1px solid var(--pp-border, #333); background:var(--pp-bg-secondary, #0f0f1e); color:var(--pp-text-primary, #fff); margin-bottom:12px;">
+                    <label class="ppv-support-label">E-mail cím <span class="ppv-required">*</span></label>
+                    <input type="email" id="ppv-support-email" class="ppv-support-input" placeholder="pelda@email.com" required>
 
-                    <input type="tel" id="ppv-support-phone" placeholder="Telefonszám *" required style="width:100%; padding:12px; border-radius:8px; border:1px solid var(--pp-border, #333); background:var(--pp-bg-secondary, #0f0f1e); color:var(--pp-text-primary, #fff); margin-bottom:12px;">
+                    <label class="ppv-support-label">Telefonszám <span class="ppv-required">*</span></label>
+                    <input type="tel" id="ppv-support-phone" class="ppv-support-input" placeholder="+36 30 123 4567" required>
 
-                    <textarea id="ppv-support-desc" placeholder="Probléma leírása *" rows="4" style="width:100%; padding:12px; border-radius:8px; border:1px solid var(--pp-border, #333); background:var(--pp-bg-secondary, #0f0f1e); color:var(--pp-text-primary, #fff); margin-bottom:12px; resize:vertical;"></textarea>
+                    <label class="ppv-support-label">Probléma leírása <span class="ppv-required">*</span></label>
+                    <textarea id="ppv-support-desc" class="ppv-support-input" placeholder="Írja le részletesen a problémát..." rows="4"></textarea>
 
-                    <select id="ppv-support-priority" style="width:100%; padding:12px; border-radius:8px; border:1px solid var(--pp-border, #333); background:var(--pp-bg-secondary, #0f0f1e); color:var(--pp-text-primary, #fff); margin-bottom:12px;">
-                        <option value="normal">Prioritás: Normál</option>
-                        <option value="urgent">Prioritás: Sürgős</option>
-                        <option value="low">Prioritás: Alacsony</option>
+                    <label class="ppv-support-label">Prioritás</label>
+                    <select id="ppv-support-priority" class="ppv-support-input">
+                        <option value="normal">Normál</option>
+                        <option value="urgent">Sürgős</option>
+                        <option value="low">Alacsony</option>
                     </select>
 
-                    <div id="ppv-support-msg" style="display:none; padding:10px; border-radius:8px; margin-bottom:12px; font-size:14px;"></div>
+                    <div id="ppv-support-msg" class="ppv-support-message"></div>
 
-                    <div style="display:flex; gap:10px;">
-                        <button id="ppv-support-send" style="flex:1; padding:12px; background:linear-gradient(135deg,#667eea,#764ba2); color:#fff; border:none; border-radius:8px; font-weight:600; cursor:pointer;">
+                    <div class="ppv-support-buttons">
+                        <button id="ppv-support-send" class="ppv-support-btn-submit">
                             <i class="ri-send-plane-line"></i> Küldés
                         </button>
-                        <button id="ppv-support-close" style="flex:1; padding:12px; background:transparent; color:var(--pp-text-secondary, #999); border:1px solid var(--pp-border, #333); border-radius:8px; cursor:pointer;">
+                        <button id="ppv-support-close" class="ppv-support-btn-cancel">
                             Mégse
                         </button>
                     </div>
