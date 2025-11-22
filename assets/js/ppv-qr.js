@@ -1,9 +1,10 @@
 /**
- * PunktePass – Kassenscanner & Kampagnen v5.4 TURBO COMPATIBLE
+ * PunktePass – Kassenscanner & Kampagnen v5.5 TURBO COMPATIBLE
  * ✅ Save függvény integrálva
  * ✅ Összes dinamikus mező működik
  * ✅ Camera Scanner + Settings + Init
- * ✅ TURBO.JS COMPATIBLE
+ * ✅ TURBO.JS COMPATIBLE - Full event delegation
+ * ✅ All modals use event delegation (works after Turbo navigation)
  * Author: Erik Borota / PunktePass
  */
 
@@ -1719,449 +1720,24 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
   // ============================================================
-  // 📧 RENEWAL REQUEST MODAL
+  // 📧 RENEWAL REQUEST MODAL - Now uses event delegation (see bottom)
   // ============================================================
-  const renewalBtn = document.getElementById('ppv-request-renewal-btn');
-  const renewalModal = document.getElementById('ppv-renewal-modal');
-  const renewalSubmit = document.getElementById('ppv-renewal-submit');
-  const renewalCancel = document.getElementById('ppv-renewal-cancel');
-  const renewalPhone = document.getElementById('ppv-renewal-phone');
-  const renewalError = document.getElementById('ppv-renewal-error');
-
-  if (renewalBtn && renewalModal) {
-    renewalBtn.addEventListener('click', () => {
-      renewalModal.style.display = 'flex';
-      renewalPhone.value = '';
-      renewalError.style.display = 'none';
-      renewalPhone.focus();
-    });
-
-    renewalCancel.addEventListener('click', () => {
-      renewalModal.style.display = 'none';
-    });
-
-    renewalModal.addEventListener('click', (e) => {
-      if (e.target === renewalModal) {
-        renewalModal.style.display = 'none';
-      }
-    });
-
-    renewalSubmit.addEventListener('click', async () => {
-      const phone = renewalPhone.value.trim();
-
-      if (!phone) {
-        renewalError.textContent = L.phone_required || 'Telefonnummer ist erforderlich';
-        renewalError.style.display = 'block';
-        return;
-      }
-
-      renewalSubmit.disabled = true;
-      renewalSubmit.textContent = L.sending || 'Wird gesendet...';
-
-      try {
-        const response = await fetch('/wp-admin/admin-ajax.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams({
-            action: 'ppv_request_subscription_renewal',
-            phone: phone
-          })
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          renewalModal.style.display = 'none';
-          location.reload(); // Reload to show "in progress" message
-        } else {
-          renewalError.textContent = data.data?.message || (L.error_occurred || 'Ein Fehler ist aufgetreten');
-          renewalError.style.display = 'block';
-          renewalSubmit.disabled = false;
-          renewalSubmit.textContent = '✅ ' + (L.send_request || 'Anfrage senden');
-        }
-      } catch (err) {
-        console.error('Renewal request error:', err);
-        renewalError.textContent = L.error_occurred || 'Ein Fehler ist aufgetreten';
-        renewalError.style.display = 'block';
-        renewalSubmit.disabled = false;
-        renewalSubmit.textContent = '✅ ' + (L.send_request || 'Anfrage senden');
-      }
-    });
-  }
+  // Moved to event delegation for Turbo.js compatibility
 
   // ============================================================
-  // 🆘 SUPPORT TICKET MODAL
+  // 🆘 SUPPORT TICKET MODAL - Now uses event delegation (see bottom)
   // ============================================================
-  const supportBtn = document.getElementById('ppv-support-btn');
-  const supportModal = document.getElementById('ppv-support-modal');
-  const supportSubmit = document.getElementById('ppv-support-submit');
-  const supportCancel = document.getElementById('ppv-support-cancel');
-  const supportDescription = document.getElementById('ppv-support-description');
-  const supportPriority = document.getElementById('ppv-support-priority');
-  const supportContact = document.getElementById('ppv-support-contact');
-  const supportError = document.getElementById('ppv-support-error');
-  const supportSuccess = document.getElementById('ppv-support-success');
-
-  if (supportBtn && supportModal) {
-    supportBtn.addEventListener('click', () => {
-      supportModal.classList.add('show');
-      supportDescription.value = '';
-      supportPriority.value = 'normal';
-      supportContact.value = 'email';
-      supportError.classList.remove('show');
-      supportSuccess.classList.remove('show');
-      supportDescription.focus();
-    });
-
-    supportCancel.addEventListener('click', () => {
-      supportModal.classList.remove('show');
-    });
-
-    supportModal.addEventListener('click', (e) => {
-      if (e.target === supportModal) {
-        supportModal.classList.remove('show');
-      }
-    });
-
-    supportSubmit.addEventListener('click', async () => {
-      const description = supportDescription.value.trim();
-      const priority = supportPriority.value;
-      const contactPref = supportContact.value;
-
-      if (!description) {
-        supportError.textContent = L.description_required || 'Problembeschreibung ist erforderlich';
-        supportError.classList.add('show');
-        return;
-      }
-
-      supportSubmit.disabled = true;
-      const originalText = supportSubmit.textContent;
-      supportSubmit.textContent = L.sending || 'Wird gesendet...';
-      supportError.classList.remove('show');
-
-      try {
-        const response = await fetch('/wp-admin/admin-ajax.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams({
-            action: 'ppv_submit_support_ticket',
-            description: description,
-            priority: priority,
-            contact_preference: contactPref,
-            page_url: window.location.href
-          })
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          supportSuccess.textContent = data.data?.message || (L.ticket_sent || 'Ticket erfolgreich gesendet! Wir melden uns bald.');
-          supportSuccess.classList.add('show');
-          supportDescription.value = '';
-
-          setTimeout(() => {
-            supportModal.classList.remove('show');
-            supportSuccess.classList.remove('show');
-          }, 3000);
-        } else {
-          supportError.textContent = data.data?.message || (L.error_occurred || 'Ein Fehler ist aufgetreten');
-          supportError.classList.add('show');
-        }
-      } catch (err) {
-        console.error('Support ticket error:', err);
-        supportError.textContent = L.error_occurred || 'Ein Fehler ist aufgetreten';
-        supportError.classList.add('show');
-      } finally {
-        supportSubmit.disabled = false;
-        supportSubmit.textContent = originalText;
-      }
-    });
-  }
+  // Moved to event delegation for Turbo.js compatibility
 
   // ============================================================
-  // 👥 SCANNER USER MANAGEMENT
+  // 👥 SCANNER USER MANAGEMENT - Now uses event delegation (see bottom)
   // ============================================================
-  const scannerModal = document.getElementById('ppv-scanner-modal');
-  const newScannerBtn = document.getElementById('ppv-new-scanner-btn');
-  const scannerCreate = document.getElementById('ppv-scanner-create');
-  const scannerCancel = document.getElementById('ppv-scanner-cancel');
-  const scannerEmail = document.getElementById('ppv-scanner-email');
-  const scannerPassword = document.getElementById('ppv-scanner-password');
-  const scannerGenPw = document.getElementById('ppv-scanner-gen-pw');
-  const scannerError = document.getElementById('ppv-scanner-error');
-  const scannerSuccess = document.getElementById('ppv-scanner-success');
-
-  if (newScannerBtn && scannerModal) {
-    // Open modal
-    newScannerBtn.addEventListener('click', () => {
-      scannerModal.style.display = 'flex';
-      scannerEmail.value = '';
-      scannerPassword.value = '';
-      scannerError.style.display = 'none';
-      scannerSuccess.style.display = 'none';
-      scannerEmail.focus();
-    });
-
-    // Close modal
-    scannerCancel.addEventListener('click', () => {
-      scannerModal.style.display = 'none';
-    });
-
-    scannerModal.addEventListener('click', (e) => {
-      if (e.target === scannerModal) {
-        scannerModal.style.display = 'none';
-      }
-    });
-
-    // Generate password
-    scannerGenPw.addEventListener('click', () => {
-      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%^&*';
-      let pw = '';
-      for (let i = 0; i < 12; i++) {
-        pw += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
-      scannerPassword.value = pw;
-    });
-
-    // Create scanner
-    scannerCreate.addEventListener('click', async () => {
-      const email = scannerEmail.value.trim();
-      const password = scannerPassword.value.trim();
-      const filialeSelect = document.getElementById('ppv-scanner-filiale');
-      const filialeId = filialeSelect ? filialeSelect.value : '';
-
-      if (!email || !password) {
-        scannerError.textContent = L.email_password_required || 'E-Mail und Passwort sind erforderlich';
-        scannerError.style.display = 'block';
-        return;
-      }
-
-      if (!filialeId) {
-        scannerError.textContent = L.filiale_required || 'Bitte wählen Sie eine Filiale aus';
-        scannerError.style.display = 'block';
-        return;
-      }
-
-      scannerCreate.disabled = true;
-      const originalText = scannerCreate.textContent;
-      scannerCreate.textContent = L.creating || 'Erstellen...';
-      scannerError.style.display = 'none';
-
-      try {
-        const response = await fetch('/wp-admin/admin-ajax.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams({
-            action: 'ppv_create_scanner_user',
-            email: email,
-            password: password,
-            filiale_id: filialeId
-          })
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          scannerSuccess.textContent = data.data?.message || (L.scanner_created || 'Scanner erfolgreich erstellt!');
-          scannerSuccess.style.display = 'block';
-          scannerEmail.value = '';
-          scannerPassword.value = '';
-
-          setTimeout(() => {
-            location.reload(); // Reload to show new scanner in list
-          }, 1500);
-        } else {
-          scannerError.textContent = data.data?.message || (L.error_occurred || 'Ein Fehler ist aufgetreten');
-          scannerError.style.display = 'block';
-        }
-      } catch (err) {
-        console.error('Scanner creation error:', err);
-        scannerError.textContent = L.error_occurred || 'Ein Fehler ist aufgetreten';
-        scannerError.style.display = 'block';
-      } finally {
-        scannerCreate.disabled = false;
-        scannerCreate.textContent = originalText;
-      }
-    });
-  }
-
-  // Reset password
-  document.querySelectorAll('.ppv-scanner-reset-pw').forEach(btn => {
-    btn.addEventListener('click', async function() {
-      const userId = this.getAttribute('data-user-id');
-      const email = this.getAttribute('data-email');
-
-      const newPw = prompt(L.enter_new_password || 'Neues Passwort eingeben:', '');
-      if (!newPw) return;
-
-      this.disabled = true;
-      const originalText = this.textContent;
-      this.textContent = L.resetting || 'Reset...';
-
-      try {
-        const response = await fetch('/wp-admin/admin-ajax.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams({
-            action: 'ppv_reset_scanner_password',
-            user_id: userId,
-            new_password: newPw
-          })
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          alert(data.data?.message || (L.password_reset_success || 'Passwort erfolgreich zurückgesetzt!'));
-        } else {
-          alert(data.data?.message || (L.error_occurred || 'Ein Fehler ist aufgetreten'));
-        }
-      } catch (err) {
-        console.error('Password reset error:', err);
-        alert(L.error_occurred || 'Ein Fehler ist aufgetreten');
-      } finally {
-        this.disabled = false;
-        this.textContent = originalText;
-      }
-    });
-  });
-
-  // Toggle enable/disable
-  document.querySelectorAll('.ppv-scanner-toggle').forEach(btn => {
-    btn.addEventListener('click', async function() {
-      const userId = this.getAttribute('data-user-id');
-      const action = this.getAttribute('data-action');
-
-      if (!confirm((action === 'disable' ? L.confirm_disable : L.confirm_enable) || 'Sind Sie sicher?')) {
-        return;
-      }
-
-      this.disabled = true;
-      const originalText = this.textContent;
-      this.textContent = L.processing || 'Verarbeitung...';
-
-      try {
-        const response = await fetch('/wp-admin/admin-ajax.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams({
-            action: 'ppv_toggle_scanner_status',
-            user_id: userId,
-            action_type: action
-          })
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          location.reload(); // Reload to show updated status
-        } else {
-          alert(data.data?.message || (L.error_occurred || 'Ein Fehler ist aufgetreten'));
-        }
-      } catch (err) {
-        console.error('Toggle status error:', err);
-        alert(L.error_occurred || 'Ein Fehler ist aufgetreten');
-      } finally {
-        this.disabled = false;
-        this.textContent = originalText;
-      }
-    });
-  });
+  // Moved to event delegation for Turbo.js compatibility
 
   // ============================================================
-  // 🏪 CHANGE FILIALE FOR SCANNER USER
+  // 🏪 CHANGE FILIALE - Now uses event delegation (see bottom)
   // ============================================================
-  const changeFilialeModal = document.getElementById('ppv-change-filiale-modal');
-  const changeFilialeSelect = document.getElementById('ppv-change-filiale-select');
-  const changeFilialeSave = document.getElementById('ppv-change-filiale-save');
-  const changeFilialeCancel = document.getElementById('ppv-change-filiale-cancel');
-  const changeFilialeEmail = document.getElementById('ppv-change-filiale-email');
-  const changeFilialeUserId = document.getElementById('ppv-change-filiale-user-id');
-  const changeFilialeError = document.getElementById('ppv-change-filiale-error');
-  const changeFilialeSuccess = document.getElementById('ppv-change-filiale-success');
-
-  // Open change filiale modal
-  document.querySelectorAll('.ppv-scanner-change-filiale').forEach(btn => {
-    btn.addEventListener('click', function() {
-      const userId = this.getAttribute('data-user-id');
-      const email = this.getAttribute('data-email');
-      const currentStore = this.getAttribute('data-current-store');
-
-      changeFilialeEmail.textContent = email;
-      changeFilialeUserId.value = userId;
-      changeFilialeSelect.value = currentStore;
-      changeFilialeError.style.display = 'none';
-      changeFilialeSuccess.style.display = 'none';
-      changeFilialeModal.style.display = 'flex';
-    });
-  });
-
-  // Close change filiale modal
-  if (changeFilialeCancel) {
-    changeFilialeCancel.addEventListener('click', () => {
-      changeFilialeModal.style.display = 'none';
-    });
-  }
-
-  if (changeFilialeModal) {
-    changeFilialeModal.addEventListener('click', (e) => {
-      if (e.target === changeFilialeModal) {
-        changeFilialeModal.style.display = 'none';
-      }
-    });
-  }
-
-  // Save filiale change
-  if (changeFilialeSave) {
-    changeFilialeSave.addEventListener('click', async () => {
-      const userId = changeFilialeUserId.value;
-      const filialeId = changeFilialeSelect.value;
-
-      if (!userId || !filialeId) {
-        changeFilialeError.textContent = L.invalid_data || 'Ungültige Daten';
-        changeFilialeError.style.display = 'block';
-        return;
-      }
-
-      changeFilialeSave.disabled = true;
-      const originalText = changeFilialeSave.textContent;
-      changeFilialeSave.textContent = L.saving || 'Speichern...';
-      changeFilialeError.style.display = 'none';
-
-      try {
-        const response = await fetch('/wp-admin/admin-ajax.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams({
-            action: 'ppv_update_scanner_filiale',
-            user_id: userId,
-            filiale_id: filialeId
-          })
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          changeFilialeSuccess.textContent = data.data?.message || (L.filiale_updated || 'Filiale erfolgreich geändert!');
-          changeFilialeSuccess.style.display = 'block';
-
-          setTimeout(() => {
-            location.reload(); // Reload to show updated filiale
-          }, 1500);
-        } else {
-          changeFilialeError.textContent = data.data?.message || (L.error_occurred || 'Ein Fehler ist aufgetreten');
-          changeFilialeError.style.display = 'block';
-        }
-      } catch (err) {
-        console.error('Change filiale error:', err);
-        changeFilialeError.textContent = L.error_occurred || 'Ein Fehler ist aufgetreten';
-        changeFilialeError.style.display = 'block';
-      } finally {
-        changeFilialeSave.disabled = false;
-        changeFilialeSave.textContent = originalText;
-      }
-    });
-  }
+  // Moved to event delegation for Turbo.js compatibility
 
   // ============================================================
   // 📋 LIVE RECENT SCANS POLLING (5s interval)
@@ -2421,6 +1997,495 @@ document.addEventListener('click', async function(e) {
     if (window.ppvToast) {
       window.ppvToast('❌ CSV Export fehlgeschlagen', 'error');
     }
+  }
+});
+
+// ============================================================
+// 📧 RENEWAL REQUEST MODAL - EVENT DELEGATION (Turbo compatible)
+// ============================================================
+document.addEventListener('click', function(e) {
+  const L = window.ppv_lang || {};
+
+  // Open renewal modal
+  if (e.target.matches('#ppv-request-renewal-btn') || e.target.closest('#ppv-request-renewal-btn')) {
+    const modal = document.getElementById('ppv-renewal-modal');
+    const phone = document.getElementById('ppv-renewal-phone');
+    const error = document.getElementById('ppv-renewal-error');
+    if (modal) {
+      modal.style.display = 'flex';
+      if (phone) phone.value = '';
+      if (error) error.style.display = 'none';
+      if (phone) phone.focus();
+    }
+  }
+
+  // Cancel renewal modal
+  if (e.target.matches('#ppv-renewal-cancel') || e.target.closest('#ppv-renewal-cancel')) {
+    const modal = document.getElementById('ppv-renewal-modal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  // Close renewal modal on backdrop click
+  if (e.target.matches('#ppv-renewal-modal')) {
+    e.target.style.display = 'none';
+  }
+
+  // Submit renewal request
+  if (e.target.matches('#ppv-renewal-submit') || e.target.closest('#ppv-renewal-submit')) {
+    const btn = e.target.closest('#ppv-renewal-submit') || e.target;
+    const modal = document.getElementById('ppv-renewal-modal');
+    const phone = document.getElementById('ppv-renewal-phone');
+    const error = document.getElementById('ppv-renewal-error');
+
+    if (!phone || !phone.value.trim()) {
+      if (error) {
+        error.textContent = L.phone_required || 'Telefonnummer ist erforderlich';
+        error.style.display = 'block';
+      }
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = L.sending || 'Wird gesendet...';
+
+    fetch('/wp-admin/admin-ajax.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        action: 'ppv_request_subscription_renewal',
+        phone: phone.value.trim()
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        if (modal) modal.style.display = 'none';
+        location.reload();
+      } else {
+        if (error) {
+          error.textContent = data.data?.message || (L.error_occurred || 'Ein Fehler ist aufgetreten');
+          error.style.display = 'block';
+        }
+        btn.disabled = false;
+        btn.textContent = '✅ ' + (L.send_request || 'Anfrage senden');
+      }
+    })
+    .catch(err => {
+      console.error('Renewal request error:', err);
+      if (error) {
+        error.textContent = L.error_occurred || 'Ein Fehler ist aufgetreten';
+        error.style.display = 'block';
+      }
+      btn.disabled = false;
+      btn.textContent = '✅ ' + (L.send_request || 'Anfrage senden');
+    });
+  }
+});
+
+// ============================================================
+// 🆘 SUPPORT TICKET MODAL - EVENT DELEGATION (Turbo compatible)
+// ============================================================
+document.addEventListener('click', function(e) {
+  const L = window.ppv_lang || {};
+
+  // Open support modal
+  if (e.target.matches('#ppv-support-btn') || e.target.closest('#ppv-support-btn')) {
+    const modal = document.getElementById('ppv-support-modal');
+    const description = document.getElementById('ppv-support-description');
+    const priority = document.getElementById('ppv-support-priority');
+    const contact = document.getElementById('ppv-support-contact');
+    const error = document.getElementById('ppv-support-error');
+    const success = document.getElementById('ppv-support-success');
+
+    if (modal) {
+      modal.classList.add('show');
+      if (description) { description.value = ''; description.focus(); }
+      if (priority) priority.value = 'normal';
+      if (contact) contact.value = 'email';
+      if (error) error.classList.remove('show');
+      if (success) success.classList.remove('show');
+    }
+  }
+
+  // Cancel support modal
+  if (e.target.matches('#ppv-support-cancel') || e.target.closest('#ppv-support-cancel')) {
+    const modal = document.getElementById('ppv-support-modal');
+    if (modal) modal.classList.remove('show');
+  }
+
+  // Close support modal on backdrop click
+  if (e.target.matches('#ppv-support-modal')) {
+    e.target.classList.remove('show');
+  }
+
+  // Submit support ticket
+  if (e.target.matches('#ppv-support-submit') || e.target.closest('#ppv-support-submit')) {
+    const btn = e.target.closest('#ppv-support-submit') || e.target;
+    const modal = document.getElementById('ppv-support-modal');
+    const description = document.getElementById('ppv-support-description');
+    const priority = document.getElementById('ppv-support-priority');
+    const contact = document.getElementById('ppv-support-contact');
+    const error = document.getElementById('ppv-support-error');
+    const success = document.getElementById('ppv-support-success');
+
+    if (!description || !description.value.trim()) {
+      if (error) {
+        error.textContent = L.description_required || 'Problembeschreibung ist erforderlich';
+        error.classList.add('show');
+      }
+      return;
+    }
+
+    btn.disabled = true;
+    const originalText = btn.textContent;
+    btn.textContent = L.sending || 'Wird gesendet...';
+    if (error) error.classList.remove('show');
+
+    fetch('/wp-admin/admin-ajax.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        action: 'ppv_submit_support_ticket',
+        description: description.value.trim(),
+        priority: priority ? priority.value : 'normal',
+        contact_preference: contact ? contact.value : 'email',
+        page_url: window.location.href
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        if (success) {
+          success.textContent = data.data?.message || (L.ticket_sent || 'Ticket erfolgreich gesendet!');
+          success.classList.add('show');
+        }
+        if (description) description.value = '';
+        setTimeout(() => {
+          if (modal) modal.classList.remove('show');
+          if (success) success.classList.remove('show');
+        }, 3000);
+      } else {
+        if (error) {
+          error.textContent = data.data?.message || (L.error_occurred || 'Ein Fehler ist aufgetreten');
+          error.classList.add('show');
+        }
+      }
+    })
+    .catch(err => {
+      console.error('Support ticket error:', err);
+      if (error) {
+        error.textContent = L.error_occurred || 'Ein Fehler ist aufgetreten';
+        error.classList.add('show');
+      }
+    })
+    .finally(() => {
+      btn.disabled = false;
+      btn.textContent = originalText;
+    });
+  }
+});
+
+// ============================================================
+// 👥 SCANNER USER MANAGEMENT - EVENT DELEGATION (Turbo compatible)
+// ============================================================
+document.addEventListener('click', function(e) {
+  const L = window.ppv_lang || {};
+
+  // Open new scanner modal
+  if (e.target.matches('#ppv-new-scanner-btn') || e.target.closest('#ppv-new-scanner-btn')) {
+    const modal = document.getElementById('ppv-scanner-modal');
+    const email = document.getElementById('ppv-scanner-email');
+    const password = document.getElementById('ppv-scanner-password');
+    const error = document.getElementById('ppv-scanner-error');
+    const success = document.getElementById('ppv-scanner-success');
+
+    if (modal) {
+      modal.style.display = 'flex';
+      if (email) { email.value = ''; email.focus(); }
+      if (password) password.value = '';
+      if (error) error.style.display = 'none';
+      if (success) success.style.display = 'none';
+    }
+  }
+
+  // Cancel scanner modal
+  if (e.target.matches('#ppv-scanner-cancel') || e.target.closest('#ppv-scanner-cancel')) {
+    const modal = document.getElementById('ppv-scanner-modal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  // Close scanner modal on backdrop click
+  if (e.target.matches('#ppv-scanner-modal')) {
+    e.target.style.display = 'none';
+  }
+
+  // Generate password
+  if (e.target.matches('#ppv-scanner-gen-pw') || e.target.closest('#ppv-scanner-gen-pw')) {
+    const password = document.getElementById('ppv-scanner-password');
+    if (password) {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%^&*';
+      let pw = '';
+      for (let i = 0; i < 12; i++) {
+        pw += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      password.value = pw;
+    }
+  }
+
+  // Create scanner
+  if (e.target.matches('#ppv-scanner-create') || e.target.closest('#ppv-scanner-create')) {
+    const btn = e.target.closest('#ppv-scanner-create') || e.target;
+    const email = document.getElementById('ppv-scanner-email');
+    const password = document.getElementById('ppv-scanner-password');
+    const filialeSelect = document.getElementById('ppv-scanner-filiale');
+    const error = document.getElementById('ppv-scanner-error');
+    const success = document.getElementById('ppv-scanner-success');
+
+    const emailVal = email ? email.value.trim() : '';
+    const passwordVal = password ? password.value.trim() : '';
+    const filialeId = filialeSelect ? filialeSelect.value : '';
+
+    if (!emailVal || !passwordVal) {
+      if (error) {
+        error.textContent = L.email_password_required || 'E-Mail und Passwort sind erforderlich';
+        error.style.display = 'block';
+      }
+      return;
+    }
+
+    if (!filialeId) {
+      if (error) {
+        error.textContent = L.filiale_required || 'Bitte wählen Sie eine Filiale aus';
+        error.style.display = 'block';
+      }
+      return;
+    }
+
+    btn.disabled = true;
+    const originalText = btn.textContent;
+    btn.textContent = L.creating || 'Erstellen...';
+    if (error) error.style.display = 'none';
+
+    fetch('/wp-admin/admin-ajax.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        action: 'ppv_create_scanner_user',
+        email: emailVal,
+        password: passwordVal,
+        filiale_id: filialeId
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        if (success) {
+          success.textContent = data.data?.message || (L.scanner_created || 'Scanner erfolgreich erstellt!');
+          success.style.display = 'block';
+        }
+        if (email) email.value = '';
+        if (password) password.value = '';
+        setTimeout(() => location.reload(), 1500);
+      } else {
+        if (error) {
+          error.textContent = data.data?.message || (L.error_occurred || 'Ein Fehler ist aufgetreten');
+          error.style.display = 'block';
+        }
+      }
+    })
+    .catch(err => {
+      console.error('Scanner creation error:', err);
+      if (error) {
+        error.textContent = L.error_occurred || 'Ein Fehler ist aufgetreten';
+        error.style.display = 'block';
+      }
+    })
+    .finally(() => {
+      btn.disabled = false;
+      btn.textContent = originalText;
+    });
+  }
+
+  // Reset password button
+  if (e.target.matches('.ppv-scanner-reset-pw') || e.target.closest('.ppv-scanner-reset-pw')) {
+    const btn = e.target.closest('.ppv-scanner-reset-pw') || e.target;
+    const userId = btn.getAttribute('data-user-id');
+
+    const newPw = prompt(L.enter_new_password || 'Neues Passwort eingeben:', '');
+    if (!newPw) return;
+
+    btn.disabled = true;
+    const originalText = btn.textContent;
+    btn.textContent = L.resetting || 'Reset...';
+
+    fetch('/wp-admin/admin-ajax.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        action: 'ppv_reset_scanner_password',
+        user_id: userId,
+        new_password: newPw
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      alert(data.success
+        ? (data.data?.message || (L.password_reset_success || 'Passwort erfolgreich zurückgesetzt!'))
+        : (data.data?.message || (L.error_occurred || 'Ein Fehler ist aufgetreten'))
+      );
+    })
+    .catch(err => {
+      console.error('Password reset error:', err);
+      alert(L.error_occurred || 'Ein Fehler ist aufgetreten');
+    })
+    .finally(() => {
+      btn.disabled = false;
+      btn.textContent = originalText;
+    });
+  }
+
+  // Toggle enable/disable button
+  if (e.target.matches('.ppv-scanner-toggle') || e.target.closest('.ppv-scanner-toggle')) {
+    const btn = e.target.closest('.ppv-scanner-toggle') || e.target;
+    const userId = btn.getAttribute('data-user-id');
+    const action = btn.getAttribute('data-action');
+
+    if (!confirm((action === 'disable' ? L.confirm_disable : L.confirm_enable) || 'Sind Sie sicher?')) {
+      return;
+    }
+
+    btn.disabled = true;
+    const originalText = btn.textContent;
+    btn.textContent = L.processing || 'Verarbeitung...';
+
+    fetch('/wp-admin/admin-ajax.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        action: 'ppv_toggle_scanner_status',
+        user_id: userId,
+        action_type: action
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        location.reload();
+      } else {
+        alert(data.data?.message || (L.error_occurred || 'Ein Fehler ist aufgetreten'));
+      }
+    })
+    .catch(err => {
+      console.error('Toggle status error:', err);
+      alert(L.error_occurred || 'Ein Fehler ist aufgetreten');
+    })
+    .finally(() => {
+      btn.disabled = false;
+      btn.textContent = originalText;
+    });
+  }
+});
+
+// ============================================================
+// 🏪 CHANGE FILIALE MODAL - EVENT DELEGATION (Turbo compatible)
+// ============================================================
+document.addEventListener('click', function(e) {
+  const L = window.ppv_lang || {};
+
+  // Open change filiale modal
+  if (e.target.matches('.ppv-scanner-change-filiale') || e.target.closest('.ppv-scanner-change-filiale')) {
+    const btn = e.target.closest('.ppv-scanner-change-filiale') || e.target;
+    const modal = document.getElementById('ppv-change-filiale-modal');
+    const select = document.getElementById('ppv-change-filiale-select');
+    const emailEl = document.getElementById('ppv-change-filiale-email');
+    const userIdEl = document.getElementById('ppv-change-filiale-user-id');
+    const error = document.getElementById('ppv-change-filiale-error');
+    const success = document.getElementById('ppv-change-filiale-success');
+
+    const userId = btn.getAttribute('data-user-id');
+    const email = btn.getAttribute('data-email');
+    const currentStore = btn.getAttribute('data-current-store');
+
+    if (modal) {
+      if (emailEl) emailEl.textContent = email;
+      if (userIdEl) userIdEl.value = userId;
+      if (select) select.value = currentStore;
+      if (error) error.style.display = 'none';
+      if (success) success.style.display = 'none';
+      modal.style.display = 'flex';
+    }
+  }
+
+  // Cancel change filiale modal
+  if (e.target.matches('#ppv-change-filiale-cancel') || e.target.closest('#ppv-change-filiale-cancel')) {
+    const modal = document.getElementById('ppv-change-filiale-modal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  // Close change filiale modal on backdrop click
+  if (e.target.matches('#ppv-change-filiale-modal')) {
+    e.target.style.display = 'none';
+  }
+
+  // Save filiale change
+  if (e.target.matches('#ppv-change-filiale-save') || e.target.closest('#ppv-change-filiale-save')) {
+    const btn = e.target.closest('#ppv-change-filiale-save') || e.target;
+    const userIdEl = document.getElementById('ppv-change-filiale-user-id');
+    const select = document.getElementById('ppv-change-filiale-select');
+    const error = document.getElementById('ppv-change-filiale-error');
+    const success = document.getElementById('ppv-change-filiale-success');
+
+    const userId = userIdEl ? userIdEl.value : '';
+    const filialeId = select ? select.value : '';
+
+    if (!userId || !filialeId) {
+      if (error) {
+        error.textContent = L.invalid_data || 'Ungültige Daten';
+        error.style.display = 'block';
+      }
+      return;
+    }
+
+    btn.disabled = true;
+    const originalText = btn.textContent;
+    btn.textContent = L.saving || 'Speichern...';
+    if (error) error.style.display = 'none';
+
+    fetch('/wp-admin/admin-ajax.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        action: 'ppv_update_scanner_filiale',
+        user_id: userId,
+        filiale_id: filialeId
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        if (success) {
+          success.textContent = data.data?.message || (L.filiale_updated || 'Filiale erfolgreich geändert!');
+          success.style.display = 'block';
+        }
+        setTimeout(() => location.reload(), 1500);
+      } else {
+        if (error) {
+          error.textContent = data.data?.message || (L.error_occurred || 'Ein Fehler ist aufgetreten');
+          error.style.display = 'block';
+        }
+      }
+    })
+    .catch(err => {
+      console.error('Change filiale error:', err);
+      if (error) {
+        error.textContent = L.error_occurred || 'Ein Fehler ist aufgetreten';
+        error.style.display = 'block';
+      }
+    })
+    .finally(() => {
+      btn.disabled = false;
+      btn.textContent = originalText;
+    });
   }
 });
 
