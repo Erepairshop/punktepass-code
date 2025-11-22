@@ -147,7 +147,15 @@ class PPV_Rewards_Management {
 
         ob_start();
         ?>
-        <script>window.PPV_STORE_ID = <?php echo intval($store_id); ?>;</script>
+        <script>
+        // ✅ TURBO COMPATIBLE: Set config in body (runs on every navigation)
+        window.PPV_STORE_ID = <?php echo intval($store_id); ?>;
+        window.ppv_rewards_mgmt = {
+            base: "<?php echo esc_url(rest_url('ppv/v1/')); ?>",
+            nonce: "<?php echo wp_create_nonce('wp_rest'); ?>",
+            store_id: <?php echo intval($store_id); ?>
+        };
+        </script>
 
         <div class="ppv-rewards-management-wrapper glass-section">
             <h2 style="font-size: 18px; margin-bottom: 16px;"><i class="ri-gift-line"></i> <?php echo esc_html(PPV_Lang::t('rewards_title') ?: 'Jutalmak kezelése – '); ?><?php echo esc_html($store->company_name ?? 'Store'); ?></h2>
