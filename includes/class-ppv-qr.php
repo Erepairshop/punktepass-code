@@ -518,6 +518,9 @@ class PPV_QR {
                     <button class="ppv-tab active" data-tab="scanner" id="ppv-tab-scanner">
                         📲 <?php echo self::t('tab_scanner', 'Kassenscanner'); ?>
                     </button>
+                    <button class="ppv-tab" data-tab="vip" id="ppv-tab-vip">
+                        ⭐ <?php echo self::t('tab_vip', 'VIP Beállítások'); ?>
+                    </button>
                     <button class="ppv-tab" data-tab="rewards" id="ppv-tab-rewards">
                         🎁 <?php echo self::t('tab_rewards', 'Prämien'); ?>
                     </button>
@@ -532,6 +535,11 @@ class PPV_QR {
                 <!-- TAB CONTENT: SCANNER -->
                 <div class="ppv-tab-content active" id="tab-scanner">
                     <?php self::render_pos_scanner(); ?>
+                </div>
+
+                <!-- TAB CONTENT: VIP BEÁLLÍTÁSOK -->
+                <div class="ppv-tab-content" id="tab-vip">
+                    <?php echo do_shortcode('[ppv_vip_settings]'); ?>
                 </div>
 
                 <!-- TAB CONTENT: PRÄMIEN -->
