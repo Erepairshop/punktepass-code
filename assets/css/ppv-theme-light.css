@@ -9447,6 +9447,352 @@ body.ppv-dark .ppv-modal-inner textarea:focus {
     box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.15) !important;
 }
 
+/* ==========================================================================
+   📊 DARK MEINE PUNKTE PAGE (My Points)
+   ========================================================================== */
+body.ppv-dark #ppv-my-points-app {
+    background: var(--pp-bg) !important;
+}
+
+body.ppv-dark .ppv-points-header h2 {
+    color: #00d4ff !important;
+}
+
+body.ppv-dark .ppv-points-summary {
+    background: linear-gradient(145deg, rgba(26, 34, 45, 0.95), rgba(21, 27, 35, 0.95)) !important;
+    border: 1px solid rgba(0, 212, 255, 0.20) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+}
+
+body.ppv-dark .ppv-points-summary i {
+    color: #00d4ff !important;
+}
+
+body.ppv-dark .ppv-points-summary .big {
+    color: #00d4ff !important;
+}
+
+body.ppv-dark .ppv-points-summary .label {
+    color: #8b949e !important;
+}
+
+body.ppv-dark .ppv-motivation {
+    color: #c9d1d9 !important;
+}
+
+body.ppv-dark .ppv-stats-grid {
+    background: transparent !important;
+}
+
+body.ppv-dark .ppv-stat-card {
+    background: linear-gradient(145deg, rgba(26, 34, 45, 0.95), rgba(21, 27, 35, 0.95)) !important;
+    border: 1px solid rgba(0, 212, 255, 0.15) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+}
+
+body.ppv-dark .ppv-stat-card i {
+    color: #00d4ff !important;
+}
+
+body.ppv-dark .ppv-stat-card .value {
+    color: #f0f6fc !important;
+}
+
+body.ppv-dark .ppv-stat-card .label {
+    color: #8b949e !important;
+}
+
+body.ppv-dark #ppv-analytics-section {
+    background: linear-gradient(145deg, rgba(26, 34, 45, 0.95), rgba(21, 27, 35, 0.95)) !important;
+    border: 1px solid rgba(0, 212, 255, 0.15) !important;
+    border-radius: 18px !important;
+}
+
+body.ppv-dark .ppv-offline-banner {
+    background: rgba(255, 214, 10, 0.12) !important;
+    border-color: rgba(255, 214, 10, 0.30) !important;
+    color: #ffd60a !important;
+}
+
+/* ==========================================================================
+   🎁 DARK BELOHNUNGEN PAGE (Rewards)
+   ========================================================================== */
+body.ppv-dark .ppv-belohnungen {
+    background: var(--pp-bg) !important;
+    color: #f0f6fc !important;
+}
+
+body.ppv-dark .ppv-rewards-header h2 {
+    color: #f0f6fc !important;
+}
+
+body.ppv-dark .ppv-rewards-header h2 i {
+    color: #00d4ff !important;
+}
+
+body.ppv-dark .ppv-rewards-header p {
+    color: #8b949e !important;
+}
+
+body.ppv-dark .ppv-user-points-card {
+    background: linear-gradient(145deg, rgba(26, 34, 45, 0.95), rgba(21, 27, 35, 0.95)) !important;
+    border: 1px solid rgba(0, 212, 255, 0.15) !important;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4) !important;
+}
+
+body.ppv-dark .ppv-user-points-card .points-value {
+    color: #00d4ff !important;
+}
+
+body.ppv-dark .ppv-user-points-card .points-label {
+    color: #8b949e !important;
+}
+
+body.ppv-dark #ppv-search-input {
+    background: rgba(21, 27, 35, 0.9) !important;
+    border: 1px solid rgba(0, 212, 255, 0.20) !important;
+    color: #f0f6fc !important;
+}
+
+body.ppv-dark #ppv-search-input::placeholder {
+    color: #6e7681 !important;
+}
+
+body.ppv-dark .ppv-search-box i {
+    color: #00d4ff !important;
+}
+
+body.ppv-dark #ppv-store-filter {
+    background: rgba(21, 27, 35, 0.9) !important;
+    border: 1px solid rgba(0, 212, 255, 0.20) !important;
+    color: #f0f6fc !important;
+}
+
+body.ppv-dark .ppv-filter-reset-btn {
+    background: rgba(0, 212, 255, 0.12) !important;
+    color: #00d4ff !important;
+    border: 1px solid rgba(0, 212, 255, 0.25) !important;
+}
+
+body.ppv-dark .ppv-reward-card {
+    background: linear-gradient(145deg, rgba(26, 34, 45, 0.95), rgba(21, 27, 35, 0.95)) !important;
+    border: 1px solid rgba(0, 212, 255, 0.15) !important;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4) !important;
+}
+
+body.ppv-dark .ppv-reward-card h4,
+body.ppv-dark .reward-header h4 {
+    color: #f0f6fc !important;
+}
+
+body.ppv-dark .ppv-reward-card .store-name {
+    color: #8b949e !important;
+}
+
+body.ppv-dark .ppv-reward-card .points-needed {
+    color: #00d4ff !important;
+}
+
+body.ppv-dark .ppv-reward-card .progress-bar {
+    background: rgba(0, 212, 255, 0.15) !important;
+}
+
+body.ppv-dark .ppv-reward-card .progress-fill {
+    background: linear-gradient(90deg, #00d4ff, #00ffc8) !important;
+}
+
+body.ppv-dark .ppv-reward-card .progress-text {
+    color: #c9d1d9 !important;
+}
+
+body.ppv-dark .ppv-reward-card .reward-btn {
+    background: rgba(0, 212, 255, 0.12) !important;
+    border: 1px solid rgba(0, 212, 255, 0.25) !important;
+    color: #c9d1d9 !important;
+}
+
+body.ppv-dark .ppv-reward-card.available {
+    border-color: #00d4ff !important;
+}
+
+/* ==========================================================================
+   📑 DARK TABS NAVIGATION (Handler pages)
+   ========================================================================== */
+body.ppv-dark .ppv-tabs-nav {
+    background: linear-gradient(145deg, rgba(26, 34, 45, 0.95), rgba(21, 27, 35, 0.95)) !important;
+    border: 1px solid rgba(0, 212, 255, 0.15) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+}
+
+body.ppv-dark .ppv-tab-btn {
+    color: #8b949e !important;
+}
+
+body.ppv-dark .ppv-tab-btn:hover {
+    background: rgba(0, 212, 255, 0.10) !important;
+    color: #c9d1d9 !important;
+}
+
+body.ppv-dark .ppv-tab-btn.active {
+    background: rgba(0, 212, 255, 0.15) !important;
+    color: #00d4ff !important;
+    border-color: #00d4ff !important;
+}
+
+body.ppv-dark .ppv-tab-content {
+    background: transparent !important;
+    color: #f0f6fc !important;
+}
+
+body.ppv-dark .ppv-tab-content h2,
+body.ppv-dark .ppv-tab-content h3 {
+    color: #f0f6fc !important;
+}
+
+body.ppv-dark .ppv-tab-content p {
+    color: #c9d1d9 !important;
+}
+
+body.ppv-dark .ppv-tabs {
+    background: linear-gradient(145deg, rgba(26, 34, 45, 0.95), rgba(21, 27, 35, 0.95)) !important;
+    border: 1px solid rgba(0, 212, 255, 0.15) !important;
+}
+
+body.ppv-dark .ppv-tab {
+    color: #8b949e !important;
+}
+
+body.ppv-dark .ppv-tab:hover {
+    color: #c9d1d9 !important;
+}
+
+body.ppv-dark .ppv-tab.active {
+    color: #00d4ff !important;
+    border-color: #00d4ff !important;
+}
+
+/* ==========================================================================
+   🎚 DARK DISTANCE FILTER (User Dashboard)
+   ========================================================================== */
+body.ppv-dark .ppv-distance-filter {
+    background: linear-gradient(145deg, rgba(26, 34, 45, 0.95), rgba(21, 27, 35, 0.95)) !important;
+    border: 1px solid rgba(0, 212, 255, 0.15) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+}
+
+body.ppv-dark .ppv-distance-filter label {
+    color: #00d4ff !important;
+}
+
+body.ppv-dark #ppv-distance-slider {
+    background: rgba(0, 212, 255, 0.15) !important;
+}
+
+body.ppv-dark .ppv-distance-labels {
+    color: #8b949e !important;
+}
+
+/* ==========================================================================
+   📋 DARK QR CENTER (Handler Kassenscanner)
+   ========================================================================== */
+body.ppv-dark .ppv-qr-wrapper,
+body.ppv-dark .ppv-handler-wrapper {
+    background: var(--pp-bg) !important;
+}
+
+body.ppv-dark .ppv-filiale-selector,
+body.ppv-dark .ppv-branch-selector {
+    background: linear-gradient(145deg, rgba(26, 34, 45, 0.95), rgba(21, 27, 35, 0.95)) !important;
+    border: 1px solid rgba(0, 212, 255, 0.15) !important;
+}
+
+body.ppv-dark .ppv-filiale-selector label,
+body.ppv-dark .ppv-branch-selector label {
+    color: #c9d1d9 !important;
+}
+
+body.ppv-dark .ppv-filiale-selector select,
+body.ppv-dark .ppv-branch-selector select {
+    background: rgba(21, 27, 35, 0.9) !important;
+    border: 1px solid rgba(0, 212, 255, 0.20) !important;
+    color: #f0f6fc !important;
+}
+
+body.ppv-dark .ppv-alert-success {
+    background: rgba(48, 209, 88, 0.12) !important;
+    border: 1px solid rgba(48, 209, 88, 0.30) !important;
+    color: #30d158 !important;
+}
+
+body.ppv-dark .ppv-scans-table {
+    background: linear-gradient(145deg, rgba(26, 34, 45, 0.95), rgba(21, 27, 35, 0.95)) !important;
+    border: 1px solid rgba(0, 212, 255, 0.15) !important;
+}
+
+body.ppv-dark .ppv-scans-table th {
+    background: rgba(0, 212, 255, 0.15) !important;
+    color: #00d4ff !important;
+}
+
+body.ppv-dark .ppv-scans-table td {
+    color: #c9d1d9 !important;
+    border-color: rgba(0, 212, 255, 0.10) !important;
+}
+
+body.ppv-dark .ppv-scans-table tr:hover td {
+    background: rgba(0, 212, 255, 0.05) !important;
+}
+
+/* ==========================================================================
+   👤 DARK MEIN PROFIL (Handler Profile)
+   ========================================================================== */
+body.ppv-dark .ppv-profile-wrapper,
+body.ppv-dark .pp-profile-lite-wrapper {
+    background: var(--pp-bg) !important;
+}
+
+body.ppv-dark .ppv-profile-header {
+    color: #f0f6fc !important;
+}
+
+body.ppv-dark .ppv-profile-header p {
+    color: #8b949e !important;
+}
+
+body.ppv-dark .ppv-status-badge {
+    background: rgba(48, 209, 88, 0.15) !important;
+    color: #30d158 !important;
+}
+
+/* ==========================================================================
+   📦 DARK REWARDS WRAPPER (Einlösungen page)
+   ========================================================================== */
+body.ppv-dark .ppv-rewards-wrapper {
+    background: var(--pp-bg) !important;
+}
+
+body.ppv-dark .ppv-rewards-wrapper h2 {
+    color: #f0f6fc !important;
+}
+
+body.ppv-dark .ppv-rewards-wrapper h2 i {
+    color: #00d4ff !important;
+}
+
+body.ppv-dark .ppv-rewards-tabs {
+    background: linear-gradient(145deg, rgba(26, 34, 45, 0.95), rgba(21, 27, 35, 0.95)) !important;
+    border: 1px solid rgba(0, 212, 255, 0.15) !important;
+}
+
+body.ppv-dark .ppv-rewards-management-wrapper {
+    background: linear-gradient(145deg, rgba(26, 34, 45, 0.95), rgba(21, 27, 35, 0.95)) !important;
+    border: 1px solid rgba(0, 212, 255, 0.15) !important;
+}
+
+body.ppv-dark .ppv-rewards-management-wrapper h2 {
+    color: #f0f6fc !important;
+}
+
 /* ██████████████████████████████████████████████████████████████████████████
    🌙 END OF DARK THEME
    ██████████████████████████████████████████████████████████████████████████ */
