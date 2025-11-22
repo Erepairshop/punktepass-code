@@ -1,65 +1,28 @@
 /**
  * PunktePass – Prämien Management Frontend
- * Version: 1.2 – 503 Error Handling + Request Queue
+ * Version: 1.3 – Uses centralized ppv-api-manager.js
  */
 
-console.log("✅ PPV Rewards Management JS v1.2 loaded");
+console.log("✅ PPV Rewards Management JS v1.3 loaded");
 
 // ============================================================
-// 🚦 REQUEST QUEUE - Prevent 503 errors (shared with ppv-qr.js)
+// 🚦 Uses centralized ppv-api-manager.js
 // ============================================================
-if (!window.PPV_REQUEST_QUEUE) {
-  window.PPV_REQUEST_QUEUE = {
-    pending: 0,
-    maxConcurrent: 2,
-    queue: [],
-
-    async add(fetchFn, priority = 0) {
-      return new Promise((resolve, reject) => {
-        this.queue.push({ fetchFn, resolve, reject, priority });
-        this.queue.sort((a, b) => b.priority - a.priority);
-        this.process();
-      });
-    },
-
-    async process() {
-      if (this.pending >= this.maxConcurrent || this.queue.length === 0) return;
-
-      const { fetchFn, resolve, reject } = this.queue.shift();
-      this.pending++;
-
-      try {
-        const result = await fetchFn();
-        resolve(result);
-      } catch (e) {
-        reject(e);
-      } finally {
-        this.pending--;
-        setTimeout(() => this.process(), 100);
-      }
-    }
-  };
-}
-
-// 🔄 API Fetch wrapper with 503 retry logic
-async function apiFetch(url, options = {}, retries = 2) {
-  const doFetch = async () => {
+// Note: apiFetch/ppvFetch and PPV_REQUEST_QUEUE are defined in ppv-api-manager.js
+// Fallback if not loaded (shouldn't happen)
+if (typeof window.apiFetch !== 'function') {
+  console.warn('⚠️ [Rewards] API Manager not loaded, using fallback');
+  window.apiFetch = async function(url, options = {}) {
     const res = await fetch(url, options);
-
     if (res.status === 503) {
-      if (retries > 0) {
-        console.warn(`⚠️ [apiFetch] 503 error, retrying in 1s... (${retries} left)`);
-        await new Promise(r => setTimeout(r, 1000));
-        return apiFetch(url, options, retries - 1);
-      }
-      throw new Error('API vorübergehend nicht verfügbar. Bitte Seite neu laden.');
+      throw new Error('Server überlastet');
     }
-
     return res;
   };
-
-  return window.PPV_REQUEST_QUEUE.add(doFetch);
 }
+
+// Alias
+const apiFetch = window.apiFetch;
 
 document.addEventListener("DOMContentLoaded", function () {
 

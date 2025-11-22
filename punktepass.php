@@ -301,17 +301,30 @@ foreach ($core_modules as $module) {
  */
  
  // ========================================
+// 🚦 API MANAGER - MUST BE FIRST! Handles all API requests
+// ========================================
+add_action('wp_enqueue_scripts', function() {
+    wp_enqueue_script(
+        'ppv-api-manager',
+        PPV_PLUGIN_URL . 'assets/js/ppv-api-manager.js',
+        [],
+        PPV_VERSION . '.1',  // Cache bust
+        false  // In HEAD - load early!
+    );
+}, 0);  // Priority: 0 = ABSOLUTE FIRST!
+
+// ========================================
 // 🔒 GLOBAL INIT LOCK - Prevent duplicate listeners
 // ========================================
 add_action('wp_enqueue_scripts', function() {
     wp_enqueue_script(
         'ppv-global-init-lock',
         PPV_PLUGIN_URL . 'assets/js/ppv-global-init-lock.js',
-        [],
+        ['ppv-api-manager'],  // Depends on API manager
         PPV_VERSION,
         true  // In footer
     );
-}, 1);  // Priority: 1 = LEGELŐBB! Minden más előtt
+}, 1);  // Priority: 1
 
 
 add_action('wp_enqueue_scripts', function() {

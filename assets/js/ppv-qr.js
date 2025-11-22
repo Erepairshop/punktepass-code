@@ -1,11 +1,11 @@
 /**
- * PunktePass – Kassenscanner & Kampagnen v5.6 TURBO COMPATIBLE
+ * PunktePass – Kassenscanner & Kampagnen v5.7 TURBO COMPATIBLE
  * ✅ Save függvény integrálva
  * ✅ Összes dinamikus mező működik
  * ✅ Camera Scanner + Settings + Init
  * ✅ TURBO.JS COMPATIBLE - Full event delegation
  * ✅ All modals use event delegation (works after Turbo navigation)
- * ✅ Request queue & 503 error handling to prevent server overload
+ * ✅ Uses centralized ppv-api-manager.js for all API calls
  * Author: Erik Borota / PunktePass
  */
 
@@ -21,58 +21,19 @@ if (window.PPV_QR_LOADED) {
 window.PPV_LAST_SCAN = window.PPV_LAST_SCAN || 0;
 
 // ============================================================
-// 🚦 REQUEST QUEUE - Prevent 503 errors from too many requests
+// 🚦 REQUEST QUEUE - Uses centralized ppv-api-manager.js
 // ============================================================
-window.PPV_REQUEST_QUEUE = window.PPV_REQUEST_QUEUE || {
-  pending: 0,
-  maxConcurrent: 2,  // Max 2 simultaneous requests
-  queue: [],
-
-  async add(fetchFn, priority = 0) {
-    return new Promise((resolve, reject) => {
-      this.queue.push({ fetchFn, resolve, reject, priority });
-      this.queue.sort((a, b) => b.priority - a.priority);
-      this.process();
-    });
-  },
-
-  async process() {
-    if (this.pending >= this.maxConcurrent || this.queue.length === 0) return;
-
-    const { fetchFn, resolve, reject } = this.queue.shift();
-    this.pending++;
-
-    try {
-      const result = await fetchFn();
-      resolve(result);
-    } catch (e) {
-      reject(e);
-    } finally {
-      this.pending--;
-      // Small delay between requests
-      setTimeout(() => this.process(), 100);
-    }
-  }
-};
-
-// 🔄 Fetch wrapper with 503 retry logic
-async function ppvFetch(url, options = {}, retries = 2) {
-  const doFetch = async () => {
+// Note: ppvFetch and PPV_REQUEST_QUEUE are now defined in ppv-api-manager.js
+// This is a fallback if API manager not loaded (shouldn't happen)
+if (typeof window.ppvFetch !== 'function') {
+  console.warn('⚠️ [QR] API Manager not loaded, using fallback');
+  window.ppvFetch = async function(url, options = {}) {
     const res = await fetch(url, options);
-
     if (res.status === 503) {
-      if (retries > 0) {
-        console.warn(`⚠️ [ppvFetch] 503 error, retrying in 1s... (${retries} left)`);
-        await new Promise(r => setTimeout(r, 1000));
-        return ppvFetch(url, options, retries - 1);
-      }
-      throw new Error('503 Service Unavailable');
+      throw new Error('Server überlastet');
     }
-
     return res;
   };
-
-  return window.PPV_REQUEST_QUEUE.add(doFetch);
 }
 
 window.PPV_STORE_KEY =
