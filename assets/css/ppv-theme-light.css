@@ -4797,6 +4797,89 @@ body.ppv-light .ppv-theme-btn-mini {
 }
 
 /* ==========================================================================
+   USER SETTINGS – DARK MODE
+   ========================================================================== */
+body.ppv-dark .ppv-settings-wrapper {
+    background: #0a121c;
+    color: #f3f4f6;
+}
+
+body.ppv-dark .ppv-header-bar h2 {
+    color: #f3f4f6;
+}
+
+body.ppv-dark .ppv-avatar-block {
+    background: transparent;
+}
+
+body.ppv-dark #ppv-avatar-preview {
+    background: #1e293b;
+    border-color: #667eea;
+}
+
+body.ppv-dark .ppv-section {
+    background: #1e293b;
+    border-color: rgba(102, 126, 234, 0.2);
+    color: #f3f4f6;
+}
+
+body.ppv-dark .ppv-section h3 {
+    color: #f3f4f6;
+}
+
+body.ppv-dark .ppv-section p {
+    color: #9ca3af;
+}
+
+body.ppv-dark .ppv-section label {
+    color: #d1d5db;
+}
+
+body.ppv-dark .ppv-form input[type="text"],
+body.ppv-dark .ppv-form input[type="email"],
+body.ppv-dark .ppv-form input[type="password"] {
+    background: #0f172a;
+    border-color: rgba(102, 126, 234, 0.3);
+    color: #f3f4f6;
+}
+
+body.ppv-dark .ppv-form input::placeholder {
+    color: #6b7280;
+}
+
+body.ppv-dark .ppv-checkbox span {
+    color: #d1d5db;
+}
+
+body.ppv-dark .neutral-btn {
+    background: rgba(102, 126, 234, 0.15);
+    color: #818cf8;
+}
+
+body.ppv-dark .neutral-btn:hover {
+    background: rgba(102, 126, 234, 0.25);
+}
+
+body.ppv-dark .ppv-modal-content {
+    background: #1e293b;
+    color: #f3f4f6;
+}
+
+body.ppv-dark .ppv-modal-content h3 {
+    color: #f3f4f6;
+}
+
+body.ppv-dark .ppv-modal-content p {
+    color: #9ca3af;
+}
+
+body.ppv-dark .ppv-modal-form input {
+    background: #0f172a;
+    border-color: rgba(102, 126, 234, 0.3);
+    color: #f3f4f6;
+}
+
+/* ==========================================================================
    PUNKTEPASS – NATIVE APP FEELING v10.0
    Full PWA scroll engine • Smooth inertial scroll • Hidden scrollbars
    Works on iOS Safari, Android Chrome, Desktop PWA
