@@ -254,35 +254,131 @@ class PPV_POS_SCAN {
             $points_add = (int)round(($points_add * (float)$bonus->multiplier) + (int)$bonus->extra_points);
         }
 
-        /** 6.5) VIP Level Bonus */
+        /** 6.5) VIP Level Bonuses (Extended: 4 types) */
+        $vip_bonus_details = [
+            'pct' => 0,      // 1. Percentage bonus
+            'fix' => 0,      // 2. Fixed point bonus
+            'streak' => 0,   // 3. Every Xth scan bonus
+            'daily' => 0,    // 4. First daily scan bonus
+        ];
         $vip_bonus_applied = 0;
+
         if (class_exists('PPV_User_Level')) {
-            // Check if store has VIP enabled
+            // Get all VIP settings for this store
             $vip_settings = $wpdb->get_row($wpdb->prepare("
-                SELECT vip_enabled, vip_silver_bonus, vip_gold_bonus, vip_platinum_bonus
+                SELECT
+                    vip_enabled, vip_silver_bonus, vip_gold_bonus, vip_platinum_bonus,
+                    vip_fix_enabled, vip_fix_silver, vip_fix_gold, vip_fix_platinum,
+                    vip_streak_enabled, vip_streak_count, vip_streak_type,
+                    vip_streak_silver, vip_streak_gold, vip_streak_platinum,
+                    vip_daily_enabled, vip_daily_silver, vip_daily_gold, vip_daily_platinum
                 FROM {$wpdb->prefix}ppv_stores WHERE id = %d
             ", $store_id));
 
-            if ($vip_settings && $vip_settings->vip_enabled) {
+            if ($vip_settings) {
                 $user_level = PPV_User_Level::get_level($user_id);
+                $base_points = $points_add; // Store original points for calculations
 
-                $bonus_percent = 0;
-                switch ($user_level) {
-                    case 'silver':
-                        $bonus_percent = intval($vip_settings->vip_silver_bonus);
-                        break;
-                    case 'gold':
-                        $bonus_percent = intval($vip_settings->vip_gold_bonus);
-                        break;
-                    case 'platinum':
-                        $bonus_percent = intval($vip_settings->vip_platinum_bonus);
-                        break;
+                // Helper to get level-specific value
+                $getLevelValue = function($silver, $gold, $platinum) use ($user_level) {
+                    switch ($user_level) {
+                        case 'silver': return intval($silver);
+                        case 'gold': return intval($gold);
+                        case 'platinum': return intval($platinum);
+                        default: return 0;
+                    }
+                };
+
+                // ═══════════════════════════════════════════════════════════
+                // 1. PERCENTAGE BONUS
+                // ═══════════════════════════════════════════════════════════
+                if ($vip_settings->vip_enabled) {
+                    $bonus_percent = $getLevelValue(
+                        $vip_settings->vip_silver_bonus,
+                        $vip_settings->vip_gold_bonus,
+                        $vip_settings->vip_platinum_bonus
+                    );
+                    if ($bonus_percent > 0) {
+                        $vip_bonus_details['pct'] = (int)round($base_points * ($bonus_percent / 100));
+                    }
                 }
 
-                if ($bonus_percent > 0) {
-                    $vip_bonus_applied = (int)round($points_add * ($bonus_percent / 100));
+                // ═══════════════════════════════════════════════════════════
+                // 2. FIXED POINT BONUS
+                // ═══════════════════════════════════════════════════════════
+                if ($vip_settings->vip_fix_enabled) {
+                    $fix_bonus = $getLevelValue(
+                        $vip_settings->vip_fix_silver,
+                        $vip_settings->vip_fix_gold,
+                        $vip_settings->vip_fix_platinum
+                    );
+                    if ($fix_bonus > 0) {
+                        $vip_bonus_details['fix'] = $fix_bonus;
+                    }
+                }
+
+                // ═══════════════════════════════════════════════════════════
+                // 3. EVERY Xth SCAN BONUS (Streak)
+                // ═══════════════════════════════════════════════════════════
+                if ($vip_settings->vip_streak_enabled) {
+                    $streak_count = intval($vip_settings->vip_streak_count);
+                    if ($streak_count > 0) {
+                        // Count user's total scans at this store
+                        $user_scan_count = (int)$wpdb->get_var($wpdb->prepare("
+                            SELECT COUNT(*) FROM {$wpdb->prefix}ppv_points
+                            WHERE user_id = %d AND store_id = %d AND type = 'qr_scan'
+                        ", $user_id, $store_id));
+
+                        // Check if this scan is the Xth (next scan will be user_scan_count + 1)
+                        $next_scan_number = $user_scan_count + 1;
+                        if ($next_scan_number % $streak_count === 0) {
+                            $streak_type = $vip_settings->vip_streak_type ?? 'fixed';
+
+                            if ($streak_type === 'fixed') {
+                                $vip_bonus_details['streak'] = $getLevelValue(
+                                    $vip_settings->vip_streak_silver,
+                                    $vip_settings->vip_streak_gold,
+                                    $vip_settings->vip_streak_platinum
+                                );
+                            } elseif ($streak_type === 'double') {
+                                $vip_bonus_details['streak'] = $base_points; // +100%
+                            } elseif ($streak_type === 'triple') {
+                                $vip_bonus_details['streak'] = $base_points * 2; // +200%
+                            }
+
+                            error_log("🔥 [POS_SCAN] Streak bonus triggered! Scan #{$next_scan_number} (every {$streak_count})");
+                        }
+                    }
+                }
+
+                // ═══════════════════════════════════════════════════════════
+                // 4. FIRST DAILY SCAN BONUS
+                // ═══════════════════════════════════════════════════════════
+                if ($vip_settings->vip_daily_enabled) {
+                    // Check if user already scanned at this store today
+                    $today = date('Y-m-d');
+                    $already_scanned_today = (int)$wpdb->get_var($wpdb->prepare("
+                        SELECT COUNT(*) FROM {$wpdb->prefix}ppv_points
+                        WHERE user_id = %d AND store_id = %d AND type = 'qr_scan'
+                        AND DATE(created) = %s
+                    ", $user_id, $store_id, $today));
+
+                    if ($already_scanned_today === 0) {
+                        $vip_bonus_details['daily'] = $getLevelValue(
+                            $vip_settings->vip_daily_silver,
+                            $vip_settings->vip_daily_gold,
+                            $vip_settings->vip_daily_platinum
+                        );
+                        error_log("☀️ [POS_SCAN] First daily scan bonus applied for user {$user_id}");
+                    }
+                }
+
+                // Calculate total VIP bonus
+                $vip_bonus_applied = $vip_bonus_details['pct'] + $vip_bonus_details['fix'] + $vip_bonus_details['streak'] + $vip_bonus_details['daily'];
+
+                if ($vip_bonus_applied > 0) {
                     $points_add += $vip_bonus_applied;
-                    error_log("✅ [POS_SCAN] VIP bonus applied: level={$user_level}, bonus%={$bonus_percent}, extra_points={$vip_bonus_applied}, total={$points_add}");
+                    error_log("✅ [POS_SCAN] VIP bonuses applied: level={$user_level}, pct=+{$vip_bonus_details['pct']}, fix=+{$vip_bonus_details['fix']}, streak=+{$vip_bonus_details['streak']}, daily=+{$vip_bonus_details['daily']}, total_bonus={$vip_bonus_applied}, total_points={$points_add}");
                 }
             }
         }
@@ -334,7 +430,8 @@ class PPV_POS_SCAN {
             'store_name' => $store->name ?? 'PunktePass',
             'points'     => $points_add,
             'total'      => $total_points,
-            'vip_bonus'  => $vip_bonus_applied
+            'vip_bonus'  => $vip_bonus_applied,
+            'vip_bonus_details' => $vip_bonus_details,
         ];
 
 
