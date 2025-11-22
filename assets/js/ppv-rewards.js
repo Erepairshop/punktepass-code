@@ -849,44 +849,15 @@ showToast("📄 Monatsbeleg wird heruntergeladen!", "success");
     }
 
     /* ============================================================
-     * 📑 TAB SWITCHING
+     * 📑 TAB SWITCHING - Event Delegation (Turbo compatible)
      * ============================================================ */
-    const tabBtns = document.querySelectorAll('.ppv-tab-btn');
-    const tabContents = document.querySelectorAll('.ppv-tab-content');
-
-    tabBtns.forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        const tabName = btn.dataset.tab;
-        
-        tabContents.forEach(tab => {
-          tab.style.display = 'none';
-        });
-
-        tabBtns.forEach(b => {
-          b.classList.remove('ppv-tab-active');
-          b.style.color = '#666';
-          b.style.borderBottom = '3px solid transparent';
-        });
-
-        const selectedTab = document.getElementById(`ppv-tab-${tabName}`);
-        if (selectedTab) {
-          selectedTab.style.display = 'block';
-        }
-
-        btn.classList.add('ppv-tab-active');
-        btn.style.color = '#0066cc';
-        btn.style.borderBottom = '3px solid #0066cc';
-
-        if (tabName === 'receipts') {
-          loadReceiptsTab();
-        }
-      });
-    });
+    // Note: Tab click handlers moved to event delegation outside DOMContentLoaded
+    // This ensures they work after Turbo navigation
 
     /* ============================================================
      * 📄 LOAD RECEIPTS TAB
      * ============================================================ */
+    window.ppv_loadReceiptsTab = loadReceiptsTab; // Export for event delegation
     function loadReceiptsTab() {
       const receiptContainer = document.getElementById('ppv-receipts-container');
       
@@ -959,12 +930,12 @@ showToast("📄 Monatsbeleg wird heruntergeladen!", "success");
       });
     }
 
-    // ✅ Auto-refresh minden 10 másodpercben (only set once)
+    // ✅ Auto-refresh minden 60 másodpercben (only set once)
     if (!window.PPV_REWARDS_INTERVAL) {
       window.PPV_REWARDS_INTERVAL = setInterval(() => {
         loadRedeemRequests();
         loadRecentLogs();
-      }, 10000);
+      }, 60000);
     }
 
     console.log("✅ [REWARDS] Initialization complete!");
@@ -1010,4 +981,47 @@ showToast("📄 Monatsbeleg wird heruntergeladen!", "success");
       }
     }, 100);
   });
-}
+
+  /* ============================================================
+   * 📑 TAB SWITCHING - Event Delegation (runs once, works after Turbo)
+   * ============================================================ */
+  document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.ppv-tab-btn');
+    if (!btn) return;
+
+    e.preventDefault();
+    const tabName = btn.dataset.tab;
+    if (!tabName) return;
+
+    console.log(`📑 [REWARDS] Tab clicked: ${tabName}`);
+
+    // Hide all tab contents
+    document.querySelectorAll('.ppv-tab-content').forEach(tab => {
+      tab.style.display = 'none';
+    });
+
+    // Reset all tab buttons
+    document.querySelectorAll('.ppv-tab-btn').forEach(b => {
+      b.classList.remove('ppv-tab-active');
+      b.style.color = '#666';
+      b.style.borderBottom = '3px solid transparent';
+    });
+
+    // Show selected tab content
+    const selectedTab = document.getElementById(`ppv-tab-${tabName}`);
+    if (selectedTab) {
+      selectedTab.style.display = 'block';
+    }
+
+    // Highlight selected tab button
+    btn.classList.add('ppv-tab-active');
+    btn.style.color = '#0066cc';
+    btn.style.borderBottom = '3px solid #0066cc';
+
+    // Load receipts if that tab is selected
+    if (tabName === 'receipts' && typeof window.ppv_loadReceiptsTab === 'function') {
+      window.ppv_loadReceiptsTab();
+    }
+  });
+
+} // End of duplicate load prevention
