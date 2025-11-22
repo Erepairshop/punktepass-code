@@ -1924,6 +1924,10 @@ body, h1, h2, h3, h4, h5, h6 {
     height: 64px !important;
     padding: 8px 14px !important;
     overflow: hidden !important;
+    /* Background for USER mode (non-handler) */
+    background: var(--pp-header-bg) !important;
+    border-bottom: 1px solid rgba(14, 165, 233, 0.2);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
 }
 
 /* LEFT SIDE (logo + email + stats) */
