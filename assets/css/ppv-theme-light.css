@@ -5711,18 +5711,7 @@ ppv-app-root {
     transform: translateY(-3px);
 }
 
-.ppv-btn-outline {
-    background: transparent;
-    border: 2px solid var(--pp-border);
-    color: var(--pp-text);
-    padding: 0.625rem 1.25rem;
-}
-
-.ppv-btn-outline:hover {
-    background: var(--pp-bg-2);
-    border-color: var(--pp-primary);
-    color: var(--pp-primary);
-}
+/* .ppv-btn-outline moved to FORM BUTTONS section below */
 
 .ppv-btn.small {
     padding: 0.5rem 1rem;
@@ -6126,15 +6115,31 @@ ppv-app-root {
     background: transparent;
     color: var(--pp-primary);
     border: 1px solid var(--pp-primary);
-    padding: 0.75rem 1.25rem;
+    padding: 0.625rem 1rem;
     border-radius: var(--pp-r-sm);
     font-weight: 600;
     cursor: pointer;
     transition: var(--pp-trans-fast);
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    white-space: nowrap;
+    min-height: 38px;
 }
 
 .ppv-btn-outline:hover {
+    background: var(--pp-primary);
+    color: white;
+}
+
+.ppv-btn-outline.ppv-edit {
+    color: var(--pp-primary);
+    border-color: var(--pp-primary);
+}
+
+.ppv-btn-outline.ppv-edit:hover {
     background: var(--pp-primary);
     color: white;
 }
@@ -6147,6 +6152,12 @@ ppv-app-root {
 .ppv-btn-outline.ppv-delete:hover {
     background: #ef4444;
     color: white;
+}
+
+/* 🎯 Reward Item Action Buttons Container */
+.ppv-reward-item .ppv-btn-outline {
+    flex: 1;
+    min-width: 0;
 }
 
 /* ──────────────────────────────────────────────────────────────────────
