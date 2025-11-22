@@ -1339,7 +1339,12 @@ class PPV_QR {
     // 📡 REST ROUTES REGISTRATION
     // ============================================================
     public static function register_rest_routes() {
-        // NOTE: /pos/scan moved to PPV_Scan class
+        // Scan logic moved to PPV_Scan class
+        register_rest_route('punktepass/v1', '/pos/scan', [
+            'methods' => 'POST',
+            'callback' => ['PPV_Scan', 'rest_process_scan'],
+            'permission_callback' => ['PPV_Permissions', 'check_handler'],
+        ]);
 
         register_rest_route('punktepass/v1', '/pos/logs', [
             'methods' => 'GET',
