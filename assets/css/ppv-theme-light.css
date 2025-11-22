@@ -3487,6 +3487,106 @@ body.ppv-light .ppv-level-gold {
     50% { box-shadow: 0 4px 16px rgba(255, 193, 7, 0.6); }
 }
 
+/* ==========================================================================
+   🎛️ VIP SETTINGS PAGE (LIGHT THEME)
+   ========================================================================== */
+
+body.ppv-light .ppv-vip-settings-wrapper {
+    background: #ffffff;
+    border-color: rgba(0, 150, 200, 0.2);
+}
+
+body.ppv-light .ppv-vip-header h2 {
+    color: #003049;
+}
+
+body.ppv-light .ppv-vip-subtitle {
+    color: #5a6877;
+}
+
+body.ppv-light .ppv-vip-toggle-row {
+    background: rgba(0, 150, 200, 0.06);
+}
+
+body.ppv-light .ppv-toggle-slider {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+body.ppv-light .ppv-toggle-label strong {
+    color: #003049;
+}
+
+body.ppv-light .ppv-toggle-label small {
+    color: #5a6877;
+}
+
+body.ppv-light .ppv-vip-level {
+    background: rgba(0, 150, 200, 0.06);
+    border-color: rgba(0, 150, 200, 0.15);
+}
+
+body.ppv-light .ppv-level-name {
+    color: #003049;
+}
+
+body.ppv-light .ppv-level-bonus {
+    color: #5a6877;
+}
+
+body.ppv-light .ppv-level-input input {
+    background: #ffffff;
+    border-color: rgba(0, 150, 200, 0.25);
+    color: #003049;
+}
+
+body.ppv-light .ppv-level-input input:focus {
+    border-color: #0088bb;
+}
+
+body.ppv-light .ppv-level-input span {
+    color: #5a6877;
+}
+
+body.ppv-light .ppv-vip-preview {
+    background: rgba(0, 150, 200, 0.06);
+}
+
+body.ppv-light .ppv-vip-preview h4 {
+    color: #003049;
+}
+
+body.ppv-light .ppv-vip-preview p {
+    color: #5a6877;
+}
+
+body.ppv-light .ppv-preview-item {
+    background: #ffffff;
+}
+
+body.ppv-light .ppv-preview-item span {
+    color: #5a6877;
+}
+
+body.ppv-light .ppv-preview-item strong {
+    color: #003049;
+}
+
+body.ppv-light .ppv-btn-primary {
+    background: #0088bb;
+}
+
+body.ppv-light .ppv-btn-primary:hover {
+    background: #006699;
+}
+
+body.ppv-light #ppv-vip-status .ppv-success {
+    color: #10b981;
+}
+
+body.ppv-light #ppv-vip-status .ppv-error {
+    color: #ef4444;
+}
+
 /* NAV BUTTONS */
 body.ppv-light .ppv-nav-btn {
     background: rgba(0, 0, 0, 0.04) !important;
