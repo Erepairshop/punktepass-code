@@ -249,10 +249,10 @@
   }
 
   // ============================================================
-  // 🔹 MAIN INIT
+  // 🔹 MAIN INIT FUNCTION (Turbo-compatible)
   // ============================================================
-  window.addEventListener('DOMContentLoaded', () => {
-    log('INFO', '🚀 Theme Loader v2.0 initialized');
+  function initThemeLoader() {
+    log('INFO', '🚀 Theme Loader v2.1 initialized (Turbo-compatible)');
 
     // 1. Get current theme
     const theme = getTheme();
@@ -261,22 +261,65 @@
     // 2. Load CSS immediately
     loadThemeCSS(theme);
 
-    // 3. Try to attach button (might already exist)
+    // 3. Apply body classes immediately (don't wait for CSS load)
+    document.documentElement.setAttribute('data-theme', theme);
+    document.body.classList.remove('ppv-light', 'ppv-dark');
+    document.body.classList.add(`ppv-${theme}`);
+
+    // 4. Try to attach button (might already exist)
     if (!attachButtonListener()) {
       // Button doesn't exist yet, start watching
       startMutationObserver();
     }
 
-    // 4. Listen for cross-tab broadcasts
-    listenForBroadcasts();
+    // 5. Listen for cross-tab broadcasts (only once)
+    if (!window.PPV_BROADCAST_LISTENER) {
+      window.PPV_BROADCAST_LISTENER = true;
+      listenForBroadcasts();
+    }
+  }
+
+  // ============================================================
+  // 🔹 RUN ON DOMContentLoaded
+  // ============================================================
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initThemeLoader);
+  } else {
+    initThemeLoader();
+  }
+
+  // ============================================================
+  // 🔹 RUN ON TURBO NAVIGATION (re-apply theme after page change)
+  // ============================================================
+  document.addEventListener('turbo:load', () => {
+    log('INFO', '🔄 Turbo:load - Re-applying theme');
+    initThemeLoader();
   });
 
   // ============================================================
-  // 🔹 EARLY INIT (before DOMContentLoaded)
+  // 🔹 TURBO: Apply theme BEFORE render (prevent flash)
+  // ============================================================
+  document.addEventListener('turbo:before-render', (event) => {
+    const theme = getTheme();
+    const newBody = event.detail.newBody;
+    if (newBody) {
+      newBody.classList.remove('ppv-light', 'ppv-dark');
+      newBody.classList.add(`ppv-${theme}`);
+      log('DEBUG', '⚡ Turbo:before-render - Applied theme to new body:', theme);
+    }
+  });
+
+  // ============================================================
+  // 🔹 EARLY INIT (before DOMContentLoaded) - First page load only
   // ============================================================
   // Apply theme ASAP (avoid flash)
   const earlyTheme = getTheme();
   loadThemeCSS(earlyTheme);
+  document.documentElement.setAttribute('data-theme', earlyTheme);
+  if (document.body) {
+    document.body.classList.remove('ppv-light', 'ppv-dark');
+    document.body.classList.add(`ppv-${earlyTheme}`);
+  }
   log('INFO', `⚡ Early theme load: ${earlyTheme}`);
 
   // ============================================================
