@@ -158,32 +158,32 @@ class PPV_Bottom_Nav {
             <div id="ppv-support-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:10000; align-items:center; justify-content:center; overflow-y:auto;">
                 <div style="background:var(--pp-bg-primary, #1a1a2e); padding:24px; border-radius:15px; max-width:450px; width:90%; box-shadow:0 10px 40px rgba(0,0,0,0.5); margin:20px auto;">
                     <h3 style="margin:0 0 12px 0; color:var(--pp-text-primary, #fff);">
-                        <i class="ri-customer-service-2-line"></i> Support anfragen
+                        <i class="ri-customer-service-2-line"></i> Támogatás kérése
                     </h3>
                     <p style="color:var(--pp-text-secondary, #999); font-size:14px; margin-bottom:16px;">
-                        Beschreiben Sie Ihr Problem. Wir melden uns schnellstmöglich.
+                        Írja le a problémáját. Hamarosan jelentkezünk.
                     </p>
 
-                    <input type="email" id="ppv-support-email" placeholder="E-Mail Adresse *" required style="width:100%; padding:12px; border-radius:8px; border:1px solid var(--pp-border, #333); background:var(--pp-bg-secondary, #0f0f1e); color:var(--pp-text-primary, #fff); margin-bottom:12px;">
+                    <input type="email" id="ppv-support-email" placeholder="E-mail cím *" required style="width:100%; padding:12px; border-radius:8px; border:1px solid var(--pp-border, #333); background:var(--pp-bg-secondary, #0f0f1e); color:var(--pp-text-primary, #fff); margin-bottom:12px;">
 
-                    <input type="tel" id="ppv-support-phone" placeholder="Telefonnummer *" required style="width:100%; padding:12px; border-radius:8px; border:1px solid var(--pp-border, #333); background:var(--pp-bg-secondary, #0f0f1e); color:var(--pp-text-primary, #fff); margin-bottom:12px;">
+                    <input type="tel" id="ppv-support-phone" placeholder="Telefonszám *" required style="width:100%; padding:12px; border-radius:8px; border:1px solid var(--pp-border, #333); background:var(--pp-bg-secondary, #0f0f1e); color:var(--pp-text-primary, #fff); margin-bottom:12px;">
 
-                    <textarea id="ppv-support-desc" placeholder="Problembeschreibung *" rows="4" style="width:100%; padding:12px; border-radius:8px; border:1px solid var(--pp-border, #333); background:var(--pp-bg-secondary, #0f0f1e); color:var(--pp-text-primary, #fff); margin-bottom:12px; resize:vertical;"></textarea>
+                    <textarea id="ppv-support-desc" placeholder="Probléma leírása *" rows="4" style="width:100%; padding:12px; border-radius:8px; border:1px solid var(--pp-border, #333); background:var(--pp-bg-secondary, #0f0f1e); color:var(--pp-text-primary, #fff); margin-bottom:12px; resize:vertical;"></textarea>
 
                     <select id="ppv-support-priority" style="width:100%; padding:12px; border-radius:8px; border:1px solid var(--pp-border, #333); background:var(--pp-bg-secondary, #0f0f1e); color:var(--pp-text-primary, #fff); margin-bottom:12px;">
-                        <option value="normal">Priorität: Normal</option>
-                        <option value="urgent">Priorität: Dringend</option>
-                        <option value="low">Priorität: Niedrig</option>
+                        <option value="normal">Prioritás: Normál</option>
+                        <option value="urgent">Prioritás: Sürgős</option>
+                        <option value="low">Prioritás: Alacsony</option>
                     </select>
 
                     <div id="ppv-support-msg" style="display:none; padding:10px; border-radius:8px; margin-bottom:12px; font-size:14px;"></div>
 
                     <div style="display:flex; gap:10px;">
                         <button id="ppv-support-send" style="flex:1; padding:12px; background:linear-gradient(135deg,#667eea,#764ba2); color:#fff; border:none; border-radius:8px; font-weight:600; cursor:pointer;">
-                            <i class="ri-send-plane-line"></i> Senden
+                            <i class="ri-send-plane-line"></i> Küldés
                         </button>
                         <button id="ppv-support-close" style="flex:1; padding:12px; background:transparent; color:var(--pp-text-secondary, #999); border:1px solid var(--pp-border, #333); border-radius:8px; cursor:pointer;">
-                            Abbrechen
+                            Mégse
                         </button>
                     </div>
                 </div>
@@ -390,31 +390,31 @@ class PPV_Bottom_Nav {
                     const \$btn = \$(this);
 
                     if (!email) {
-                        \$msg.css({background:'rgba(255,82,82,0.2)', color:'#ff5252'}).text('Bitte geben Sie Ihre E-Mail Adresse ein.').show();
+                        \$msg.css({background:'rgba(255,82,82,0.2)', color:'#ff5252'}).text('Kérjük, adja meg az e-mail címét.').show();
                         \$('#ppv-support-email').focus();
                         return;
                     }
 
                     const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+\$/;
                     if (!emailRegex.test(email)) {
-                        \$msg.css({background:'rgba(255,82,82,0.2)', color:'#ff5252'}).text('Bitte geben Sie eine gültige E-Mail Adresse ein.').show();
+                        \$msg.css({background:'rgba(255,82,82,0.2)', color:'#ff5252'}).text('Kérjük, adjon meg érvényes e-mail címet.').show();
                         \$('#ppv-support-email').focus();
                         return;
                     }
 
                     if (!phone) {
-                        \$msg.css({background:'rgba(255,82,82,0.2)', color:'#ff5252'}).text('Bitte geben Sie Ihre Telefonnummer ein.').show();
+                        \$msg.css({background:'rgba(255,82,82,0.2)', color:'#ff5252'}).text('Kérjük, adja meg a telefonszámát.').show();
                         \$('#ppv-support-phone').focus();
                         return;
                     }
 
                     if (!desc) {
-                        \$msg.css({background:'rgba(255,82,82,0.2)', color:'#ff5252'}).text('Bitte beschreiben Sie Ihr Problem.').show();
+                        \$msg.css({background:'rgba(255,82,82,0.2)', color:'#ff5252'}).text('Kérjük, írja le a problémát.').show();
                         \$('#ppv-support-desc').focus();
                         return;
                     }
 
-                    \$btn.prop('disabled', true).html('<i class=\"ri-loader-4-line\"></i> Senden...');
+                    \$btn.prop('disabled', true).html('<i class=\"ri-loader-4-line\"></i> Küldés...');
                     \$msg.hide();
 
                     \$.ajax({
@@ -431,20 +431,20 @@ class PPV_Bottom_Nav {
                         },
                         success: function(res) {
                             if (res.success) {
-                                \$msg.css({background:'rgba(76,175,80,0.2)', color:'#4caf50'}).html('<i class=\"ri-checkbox-circle-line\"></i> Ticket gesendet!').show();
+                                \$msg.css({background:'rgba(76,175,80,0.2)', color:'#4caf50'}).html('<i class=\"ri-checkbox-circle-line\"></i> Ticket elküldve!').show();
                                 \$('#ppv-support-email').val('');
                                 \$('#ppv-support-phone').val('');
                                 \$('#ppv-support-desc').val('');
                                 setTimeout(function() { \$modal.fadeOut(200); }, 1500);
                             } else {
-                                \$msg.css({background:'rgba(255,82,82,0.2)', color:'#ff5252'}).text(res.data?.message || 'Fehler').show();
+                                \$msg.css({background:'rgba(255,82,82,0.2)', color:'#ff5252'}).text(res.data?.message || 'Hiba').show();
                             }
                         },
                         error: function() {
-                            \$msg.css({background:'rgba(255,82,82,0.2)', color:'#ff5252'}).text('Netzwerkfehler').show();
+                            \$msg.css({background:'rgba(255,82,82,0.2)', color:'#ff5252'}).text('Hálózati hiba').show();
                         },
                         complete: function() {
-                            \$btn.prop('disabled', false).html('<i class=\"ri-send-plane-line\"></i> Senden');
+                            \$btn.prop('disabled', false).html('<i class=\"ri-send-plane-line\"></i> Küldés');
                         }
                     });
                 });
