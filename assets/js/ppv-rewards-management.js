@@ -101,12 +101,12 @@ console.log("✅ PPV Rewards Management JS v1.2 loaded (Turbo-compatible)");
         card.innerHTML = `
           <h4>${escapeHtml(r.title)}</h4>
           <p>${escapeHtml(r.description || "")}</p>
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; flex-wrap: wrap; gap: 8px;">
-            <small style="color:#00e6ff;"><strong>⭐ ${r.required_points} ${L.rewards_points_label || 'Punkte'}</strong></small>
-            <small style="color:#999;">➕ ${r.points_given || 0} ${L.rewards_points_given_label || 'Punkte vergeben'}</small>
-            <small style="color:#999;">${r.action_type || ""}: ${r.action_value || ""} ${r.currency || ''}</small>
+          <div class="ppv-reward-item-meta">
+            <small class="ppv-points-required"><strong>⭐ ${r.required_points} ${L.rewards_points_label || 'Punkte'}</strong></small>
+            <small class="ppv-points-given">➕ ${r.points_given || 0} ${L.rewards_points_given_label || 'Punkte vergeben'}</small>
+            <small class="ppv-reward-type">${r.action_type || ""}: ${r.action_value || ""} ${r.currency || ''}</small>
           </div>
-          <div style="display:flex; gap:8px; margin-top:12px;">
+          <div class="ppv-reward-item-actions">
             <button type="button" class="ppv-btn-outline ppv-edit" data-id="${r.id}">✏️ ${L.rewards_btn_edit || 'Bearbeiten'}</button>
             <button type="button" class="ppv-btn-outline ppv-delete" data-id="${r.id}">🗑️ ${L.rewards_btn_delete || 'Löschen'}</button>
           </div>

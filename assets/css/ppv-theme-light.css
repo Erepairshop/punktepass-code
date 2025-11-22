@@ -6154,7 +6154,48 @@ ppv-app-root {
     color: white;
 }
 
+/* 🎯 Reward Item Meta Info */
+.ppv-reward-item-meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    padding: 0.5rem 0;
+    border-top: 1px solid var(--pp-border);
+}
+
+.ppv-reward-item-meta small {
+    font-size: 0.8rem;
+}
+
+.ppv-reward-item-meta .ppv-points-required {
+    color: var(--pp-primary);
+}
+
+.ppv-reward-item-meta .ppv-points-given {
+    color: var(--pp-text-2);
+}
+
+.ppv-reward-item-meta .ppv-reward-type {
+    color: var(--pp-text-2);
+}
+
 /* 🎯 Reward Item Action Buttons Container */
+.ppv-reward-item-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+.ppv-reward-item-actions .ppv-btn-outline {
+    flex: 1;
+    min-width: 0;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+}
+
 .ppv-reward-item .ppv-btn-outline {
     flex: 1;
     min-width: 0;
