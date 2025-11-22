@@ -5620,44 +5620,70 @@ ppv-app-root {
 
 /* ══════════════════════════════════════════════════════════════════════
    🆘 SUPPORT BUTTON & TICKET MODAL
+   🎨 MODERN PREMIUM DESIGN v2.0
    ══════════════════════════════════════════════════════════════════════ */
 
 /* ──────────────────────────────────────────────────────────────────────
-   🆘 FLOATING SUPPORT BUTTON
+   🆘 FLOATING SUPPORT BUTTON - Premium Glassmorphism
    ────────────────────────────────────────────────────────────────────── */
 #ppv-support-btn {
     position: fixed;
     bottom: 90px;
     left: 20px;
-    width: 60px;
-    height: 60px;
+    width: 64px;
+    height: 64px;
     border-radius: 50%;
-    background: linear-gradient(135deg, var(--pp-primary) 0%, var(--pp-primary-dark) 100%);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border: none;
     color: white;
-    font-size: 24px;
+    font-size: 26px;
     cursor: pointer;
-    box-shadow: 0 4px 15px rgba(0, 168, 204, 0.4);
+    box-shadow:
+        0 8px 32px rgba(102, 126, 234, 0.4),
+        0 4px 16px rgba(118, 75, 162, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
     z-index: 10000;
-    transition: box-shadow 0.3s ease, opacity 0.3s ease;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     align-items: center;
     justify-content: center;
     pointer-events: auto;
+    animation: supportBtnPulse 3s ease-in-out infinite;
+}
+
+@keyframes supportBtnPulse {
+    0%, 100% {
+        box-shadow:
+            0 8px 32px rgba(102, 126, 234, 0.4),
+            0 4px 16px rgba(118, 75, 162, 0.3),
+            inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    }
+    50% {
+        box-shadow:
+            0 8px 40px rgba(102, 126, 234, 0.6),
+            0 4px 24px rgba(118, 75, 162, 0.5),
+            inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    }
 }
 
 #ppv-support-btn:hover {
-    box-shadow: 0 6px 20px rgba(0, 168, 204, 0.6);
-    opacity: 0.9;
+    transform: scale(1.1) translateY(-4px);
+    box-shadow:
+        0 12px 40px rgba(102, 126, 234, 0.5),
+        0 8px 24px rgba(118, 75, 162, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    animation: none;
 }
 
 #ppv-support-btn:active {
-    opacity: 0.7;
-    box-shadow: 0 2px 10px rgba(0, 168, 204, 0.5);
+    transform: scale(1.05) translateY(-2px);
+    box-shadow:
+        0 6px 20px rgba(102, 126, 234, 0.4),
+        0 4px 12px rgba(118, 75, 162, 0.3);
 }
 
 /* ──────────────────────────────────────────────────────────────────────
-   📋 SUPPORT MODAL
+   📋 SUPPORT MODAL - Glassmorphism Backdrop
    ────────────────────────────────────────────────────────────────────── */
 .ppv-support-modal {
     display: none;
@@ -5668,7 +5694,12 @@ ppv-app-root {
     bottom: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(0, 0, 0, 0.5);
+    background: linear-gradient(135deg,
+        rgba(102, 126, 234, 0.15) 0%,
+        rgba(118, 75, 162, 0.15) 50%,
+        rgba(16, 185, 129, 0.1) 100%);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     z-index: 10001;
     align-items: center;
     justify-content: center;
@@ -5678,51 +5709,110 @@ ppv-app-root {
 
 .ppv-support-modal.show {
     display: flex !important;
+    animation: modalBackdropFadeIn 0.3s ease;
+}
+
+@keyframes modalBackdropFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 .ppv-support-modal-content {
-    background: var(--pp-surface);
-    padding: 30px;
-    border-radius: 15px;
-    max-width: 500px;
+    background: linear-gradient(145deg,
+        rgba(255, 255, 255, 0.95) 0%,
+        rgba(249, 250, 251, 0.98) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    padding: 32px;
+    border-radius: 24px;
+    max-width: 520px;
     width: 100%;
-    box-shadow: var(--pp-shadow-lg);
+    box-shadow:
+        0 25px 50px -12px rgba(0, 0, 0, 0.15),
+        0 12px 24px -8px rgba(102, 126, 234, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
     max-height: 90vh;
     overflow-y: auto;
-    animation: modalSlideIn 0.3s ease;
+    animation: supportModalSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     margin: auto;
     position: relative;
-    border: 1px solid var(--pp-border);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.ppv-support-modal-content::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg,
+        #667eea 0%,
+        #764ba2 25%,
+        #10b981 50%,
+        #f59e0b 75%,
+        #667eea 100%);
+    background-size: 200% 100%;
+    animation: supportGradientFlow 4s linear infinite;
+    border-radius: 24px 24px 0 0;
+}
+
+@keyframes supportGradientFlow {
+    0% { background-position: 0% 0%; }
+    100% { background-position: 200% 0%; }
+}
+
+@keyframes supportModalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-30px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 .ppv-support-modal-title {
-    margin-top: 0;
+    margin-top: 8px;
     margin-bottom: 1rem;
-    color: var(--pp-text);
+    color: #1f2937;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     font-size: 1.5rem;
-    font-weight: 700;
+    font-weight: 800;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .ppv-support-modal-description {
-    color: var(--pp-text-2);
+    color: #6b7280;
     font-size: 14px;
-    margin-bottom: 20px;
-    line-height: 1.5;
+    margin-bottom: 24px;
+    line-height: 1.6;
+    padding: 12px 16px;
+    background: linear-gradient(135deg,
+        rgba(102, 126, 234, 0.08) 0%,
+        rgba(118, 75, 162, 0.08) 100%);
+    border-radius: 12px;
+    border-left: 3px solid #667eea;
 }
 
 /* ──────────────────────────────────────────────────────────────────────
-   📝 FORM ELEMENTS
+   📝 FORM ELEMENTS - Modern Inputs
    ────────────────────────────────────────────────────────────────────── */
 .ppv-support-label {
-    color: var(--pp-text);
+    color: #374151;
     font-size: 13px;
     display: block;
-    margin-bottom: 5px;
-    margin-top: 15px;
-    font-weight: 600;
+    margin-bottom: 8px;
+    margin-top: 18px;
+    font-weight: 700;
+    letter-spacing: 0.025em;
+    text-transform: uppercase;
 }
 
 .ppv-support-label:first-of-type {
@@ -5730,127 +5820,206 @@ ppv-app-root {
 }
 
 .ppv-required {
-    color: #ff5252;
+    color: #ef4444;
+    font-weight: 700;
 }
 
 .ppv-support-input {
     width: 100%;
-    padding: 12px;
-    border-radius: 8px;
-    border: 1px solid var(--pp-border);
-    background: var(--pp-bg-2);
-    color: var(--pp-text);
-    margin-bottom: 15px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    border: 2px solid rgba(229, 231, 235, 0.8);
+    background: linear-gradient(145deg,
+        rgba(255, 255, 255, 0.9) 0%,
+        rgba(249, 250, 251, 0.95) 100%);
+    color: #1f2937;
+    margin-bottom: 16px;
     font-family: inherit;
     font-size: 14px;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.ppv-support-input:hover {
+    border-color: rgba(102, 126, 234, 0.4);
 }
 
 .ppv-support-input:focus {
     outline: none;
-    border-color: var(--pp-primary);
-    box-shadow: 0 0 0 3px rgba(0, 168, 204, 0.2);
+    border-color: #667eea;
+    box-shadow:
+        0 0 0 4px rgba(102, 126, 234, 0.15),
+        0 4px 12px rgba(102, 126, 234, 0.1);
+    background: white;
 }
 
 textarea.ppv-support-input {
     resize: vertical;
-    min-height: 100px;
+    min-height: 120px;
+    line-height: 1.6;
 }
 
 select.ppv-support-input {
     cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 20px;
+    padding-right: 44px;
 }
 
 /* ──────────────────────────────────────────────────────────────────────
-   📢 MESSAGE ALERTS
+   📢 MESSAGE ALERTS - Premium Notifications
    ────────────────────────────────────────────────────────────────────── */
 .ppv-support-message {
     display: none;
     font-size: 13px;
-    margin-bottom: 10px;
-    padding: 10px;
-    border-radius: 6px;
+    margin-bottom: 16px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    font-weight: 500;
+    animation: alertSlideIn 0.3s ease;
+}
+
+@keyframes alertSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .ppv-support-message.show {
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .ppv-support-error {
-    color: #ff5252;
-    background: rgba(255, 82, 82, 0.1);
-    border: 1px solid rgba(255, 82, 82, 0.3);
+    color: #dc2626;
+    background: linear-gradient(135deg,
+        rgba(254, 226, 226, 0.9) 0%,
+        rgba(254, 202, 202, 0.8) 100%);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
 }
 
 .ppv-support-success {
-    color: #4caf50;
-    background: rgba(76, 175, 80, 0.1);
-    border: 1px solid rgba(76, 175, 80, 0.3);
+    color: #059669;
+    background: linear-gradient(135deg,
+        rgba(209, 250, 229, 0.9) 0%,
+        rgba(167, 243, 208, 0.8) 100%);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
 }
 
 /* ──────────────────────────────────────────────────────────────────────
-   🔘 MODAL BUTTONS
+   🔘 MODAL BUTTONS - Premium Glass Buttons
    ────────────────────────────────────────────────────────────────────── */
 .ppv-support-buttons {
     display: flex;
-    gap: 10px;
-    margin-top: 20px;
+    gap: 14px;
+    margin-top: 28px;
 }
 
 .ppv-support-btn-submit,
 .ppv-support-btn-cancel {
     flex: 1;
-    padding: 12px;
-    border-radius: 8px;
-    font-weight: 600;
+    padding: 14px 20px;
+    border-radius: 14px;
+    font-weight: 700;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     font-size: 14px;
     border: none;
+    letter-spacing: 0.025em;
 }
 
 .ppv-support-btn-submit {
-    background: linear-gradient(135deg, var(--pp-primary) 0%, var(--pp-primary-dark) 100%);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
-    box-shadow: 0 4px 12px rgba(0, 168, 204, 0.3);
+    box-shadow:
+        0 8px 24px rgba(102, 126, 234, 0.35),
+        0 4px 12px rgba(118, 75, 162, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.ppv-support-btn-submit::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg,
+        transparent,
+        rgba(255, 255, 255, 0.2),
+        transparent);
+    transition: left 0.5s ease;
+}
+
+.ppv-support-btn-submit:hover::before {
+    left: 100%;
 }
 
 .ppv-support-btn-submit:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0, 168, 204, 0.4);
+    transform: translateY(-3px);
+    box-shadow:
+        0 12px 32px rgba(102, 126, 234, 0.4),
+        0 6px 16px rgba(118, 75, 162, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 .ppv-support-btn-submit:active {
-    transform: translateY(0);
+    transform: translateY(-1px);
+    box-shadow:
+        0 6px 20px rgba(102, 126, 234, 0.35),
+        0 4px 12px rgba(118, 75, 162, 0.25);
 }
 
 .ppv-support-btn-cancel {
-    background: transparent;
-    color: var(--pp-text-2);
-    border: 1px solid var(--pp-border);
+    background: linear-gradient(145deg,
+        rgba(255, 255, 255, 0.9) 0%,
+        rgba(249, 250, 251, 0.95) 100%);
+    color: #6b7280;
+    border: 2px solid rgba(229, 231, 235, 0.8);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .ppv-support-btn-cancel:hover {
-    background: var(--pp-bg-2);
-    border-color: var(--pp-primary);
-    color: var(--pp-text);
+    background: white;
+    border-color: #667eea;
+    color: #667eea;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(102, 126, 234, 0.15);
+}
+
+.ppv-support-btn-cancel:active {
+    transform: translateY(0);
 }
 
 /* ──────────────────────────────────────────────────────────────────────
-   📱 RESPONSIVE - MOBILE OPTIMIZATION
+   📱 RESPONSIVE - Mobile Optimization
    ────────────────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
     #ppv-support-btn {
-        width: 50px;
-        height: 50px;
-        font-size: 20px;
+        width: 56px;
+        height: 56px;
+        font-size: 22px;
         bottom: 80px;
         left: 15px;
     }
 
     .ppv-support-modal-content {
-        padding: 20px;
+        padding: 24px;
         width: 95%;
+        border-radius: 20px;
     }
 
     .ppv-support-modal-title {
@@ -5859,6 +6028,7 @@ select.ppv-support-input {
 
     .ppv-support-buttons {
         flex-direction: column;
+        gap: 12px;
     }
 
     .ppv-support-btn-submit,
@@ -5869,13 +6039,18 @@ select.ppv-support-input {
 
 @media (max-width: 480px) {
     .ppv-support-modal-content {
-        padding: 15px;
-        border-radius: 10px;
+        padding: 20px;
+        border-radius: 16px;
     }
 
     .ppv-support-input {
-        padding: 10px;
+        padding: 12px 14px;
         font-size: 13px;
+    }
+
+    .ppv-support-modal-description {
+        font-size: 13px;
+        padding: 10px 14px;
     }
 }
 
