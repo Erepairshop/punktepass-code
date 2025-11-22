@@ -9793,6 +9793,226 @@ body.ppv-dark .ppv-rewards-management-wrapper h2 {
     color: #f0f6fc !important;
 }
 
+/* ==========================================================================
+   🌙 DARK MODE - Meine Punkte Page (Stats Cards)
+   ========================================================================== */
+body.ppv-dark .ppv-stat-card,
+[data-theme="dark"] .ppv-stat-card {
+    background: #162233 !important;
+    border-color: rgba(0, 168, 204, 0.2) !important;
+}
+
+body.ppv-dark .ppv-stat-card .label,
+[data-theme="dark"] .ppv-stat-card .label {
+    color: #94a3b8 !important;
+}
+
+body.ppv-dark .ppv-stat-card .value,
+[data-theme="dark"] .ppv-stat-card .value {
+    color: #00d4ff !important;
+}
+
+body.ppv-dark .ppv-stats-cards,
+[data-theme="dark"] .ppv-stats-cards {
+    background: transparent !important;
+}
+
+/* ==========================================================================
+   🌙 DARK MODE - Glass Sections (QR Center, etc.)
+   ========================================================================== */
+body.ppv-dark .glass-section,
+[data-theme="dark"] .glass-section {
+    background: #162233 !important;
+    border-color: rgba(0, 168, 204, 0.2) !important;
+}
+
+body.ppv-dark .glass-card,
+[data-theme="dark"] .glass-card {
+    background: #1e293b !important;
+    border-color: rgba(0, 168, 204, 0.2) !important;
+}
+
+body.ppv-dark .ppv-pos-center,
+[data-theme="dark"] .ppv-pos-center {
+    background: #162233 !important;
+    border-color: rgba(0, 168, 204, 0.2) !important;
+}
+
+/* ==========================================================================
+   🌙 DARK MODE - QR Center Tabs
+   ========================================================================== */
+body.ppv-dark .ppv-tabs,
+[data-theme="dark"] .ppv-tabs {
+    border-bottom-color: rgba(0, 168, 204, 0.2) !important;
+}
+
+body.ppv-dark .ppv-tab,
+[data-theme="dark"] .ppv-tab {
+    color: #94a3b8 !important;
+}
+
+body.ppv-dark .ppv-tab.active,
+body.ppv-dark .ppv-tab:hover,
+[data-theme="dark"] .ppv-tab.active,
+[data-theme="dark"] .ppv-tab:hover {
+    color: #00d4ff !important;
+    border-color: #00d4ff !important;
+}
+
+/* ==========================================================================
+   🌙 DARK MODE - Tables (QR Center Scans)
+   ========================================================================== */
+body.ppv-dark table,
+[data-theme="dark"] table {
+    background: #162233 !important;
+}
+
+body.ppv-dark table th,
+[data-theme="dark"] table th {
+    background: #00a8cc !important;
+    color: #fff !important;
+}
+
+body.ppv-dark table td,
+[data-theme="dark"] table td {
+    background: #1e293b !important;
+    color: #e2e8f0 !important;
+    border-color: rgba(0, 168, 204, 0.15) !important;
+}
+
+body.ppv-dark table tr:hover td,
+[data-theme="dark"] table tr:hover td {
+    background: #2d3a4f !important;
+}
+
+/* ==========================================================================
+   🌙 DARK MODE - Filiale Select & Forms
+   ========================================================================== */
+body.ppv-dark select,
+body.ppv-dark .filiale-select,
+[data-theme="dark"] select,
+[data-theme="dark"] .filiale-select {
+    background: #1e293b !important;
+    border-color: rgba(0, 168, 204, 0.25) !important;
+    color: #e2e8f0 !important;
+}
+
+body.ppv-dark input[type="text"],
+body.ppv-dark input[type="number"],
+body.ppv-dark input[type="email"],
+body.ppv-dark input[type="password"],
+body.ppv-dark textarea,
+[data-theme="dark"] input[type="text"],
+[data-theme="dark"] input[type="number"],
+[data-theme="dark"] input[type="email"],
+[data-theme="dark"] input[type="password"],
+[data-theme="dark"] textarea {
+    background: #1e293b !important;
+    border-color: rgba(0, 168, 204, 0.25) !important;
+    color: #e2e8f0 !important;
+}
+
+/* ==========================================================================
+   🌙 DARK MODE - Profile Page Labels
+   ========================================================================== */
+body.ppv-dark .section-title,
+body.ppv-dark h3.section-title,
+body.ppv-dark .profile-section h3,
+[data-theme="dark"] .section-title,
+[data-theme="dark"] h3.section-title,
+[data-theme="dark"] .profile-section h3 {
+    color: #00d4ff !important;
+}
+
+body.ppv-dark label,
+body.ppv-dark .form-label,
+[data-theme="dark"] label,
+[data-theme="dark"] .form-label {
+    color: #94a3b8 !important;
+}
+
+body.ppv-dark .form-hint,
+body.ppv-dark .help-text,
+[data-theme="dark"] .form-hint,
+[data-theme="dark"] .help-text {
+    color: #64748b !important;
+}
+
+/* ==========================================================================
+   🌙 DARK MODE - Chart Area
+   ========================================================================== */
+body.ppv-dark .chart-container,
+body.ppv-dark .ppv-chart-section,
+[data-theme="dark"] .chart-container,
+[data-theme="dark"] .ppv-chart-section {
+    background: #162233 !important;
+    border-color: rgba(0, 168, 204, 0.2) !important;
+}
+
+/* ==========================================================================
+   🌙 DARK MODE - User Dashboard Store Cards
+   ========================================================================== */
+body.ppv-dark .ppv-store-card-enhanced,
+[data-theme="dark"] .ppv-store-card-enhanced {
+    background: #162233 !important;
+    border-color: rgba(0, 168, 204, 0.2) !important;
+}
+
+body.ppv-dark .ppv-store-info h4,
+[data-theme="dark"] .ppv-store-info h4 {
+    color: #00d4ff !important;
+}
+
+body.ppv-dark .ppv-store-details,
+[data-theme="dark"] .ppv-store-details {
+    border-top-color: rgba(0, 168, 204, 0.15) !important;
+}
+
+body.ppv-dark .ppv-qr-banner,
+[data-theme="dark"] .ppv-qr-banner {
+    background: #162233 !important;
+    border-color: rgba(0, 168, 204, 0.2) !important;
+}
+
+body.ppv-dark .ppv-qr-text h3,
+[data-theme="dark"] .ppv-qr-text h3 {
+    color: #00d4ff !important;
+}
+
+body.ppv-dark .ppv-qr-text p,
+[data-theme="dark"] .ppv-qr-text p {
+    color: #94a3b8 !important;
+}
+
+body.ppv-dark .ppv-distance-filter,
+[data-theme="dark"] .ppv-distance-filter {
+    background: #162233 !important;
+    border-color: rgba(0, 168, 204, 0.2) !important;
+}
+
+body.ppv-dark .ppv-distance-filter label,
+[data-theme="dark"] .ppv-distance-filter label {
+    color: #00d4ff !important;
+}
+
+/* ==========================================================================
+   🌙 DARK MODE - Reward/Campaign Mini Cards
+   ========================================================================== */
+body.ppv-dark .ppv-reward-mini,
+body.ppv-dark .ppv-campaign-mini,
+[data-theme="dark"] .ppv-reward-mini,
+[data-theme="dark"] .ppv-campaign-mini {
+    background: rgba(0, 168, 204, 0.08) !important;
+    border-color: rgba(0, 168, 204, 0.2) !important;
+}
+
+body.ppv-dark .ppv-reward-header strong,
+body.ppv-dark .ppv-campaign-header strong,
+[data-theme="dark"] .ppv-reward-header strong,
+[data-theme="dark"] .ppv-campaign-header strong {
+    color: #e2e8f0 !important;
+}
+
 /* ██████████████████████████████████████████████████████████████████████████
    🌙 END OF DARK THEME
    ██████████████████████████████████████████████████████████████████████████ */
