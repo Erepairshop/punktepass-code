@@ -540,8 +540,18 @@ private static function get_today_hours($opening_hours) {
              🎯 JAVASCRIPT
              ============================================================ -->
         <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            
+        // 🚀 Turbo-compatible initialization function
+        function initGlobalHeaderJS() {
+            // Prevent double initialization
+            if (document.getElementById('ppv-global-header')?.dataset.jsInit === 'true') {
+                console.log('⏭️ [Header] Already initialized, skipping');
+                return;
+            }
+            const header = document.getElementById('ppv-global-header');
+            if (header) header.dataset.jsInit = 'true';
+
+            console.log('🚀 [Header] Initializing global header JS (Turbo-compatible)');
+
             // ============================================================
             // LOGOUT WITH CACHE CLEARING
             // ============================================================
@@ -656,27 +666,45 @@ private static function get_today_hours($opening_hours) {
 
             <?php if (!$is_handler): ?>
             // ============================================================
-            // POINTS POLLING (USER ONLY)
+            // POINTS POLLING (USER ONLY) - Only start if not already running
             // ============================================================
-            setInterval(async () => {
-                try {
-                    const res = await fetch('<?php echo esc_url(rest_url('ppv/v1/user/points-poll')); ?>', {
-                        method: 'GET',
-                        headers: {'Content-Type': 'application/json'}
-                    });
-                    if (!res.ok) return;
-                    const data = await res.json();
-                    if (data.success) {
-                        const pointsEl = document.getElementById('ppv-global-points');
-                        const rewardsEl = document.getElementById('ppv-global-rewards');
-                        if (pointsEl) pointsEl.textContent = data.points;
-                        if (rewardsEl) rewardsEl.textContent = data.rewards;
+            if (!window.PPV_HEADER_POLLING_ID) {
+                window.PPV_HEADER_POLLING_ID = setInterval(async () => {
+                    try {
+                        const res = await fetch('<?php echo esc_url(rest_url('ppv/v1/user/points-poll')); ?>', {
+                            method: 'GET',
+                            headers: {'Content-Type': 'application/json'}
+                        });
+                        if (!res.ok) return;
+                        const data = await res.json();
+                        if (data.success) {
+                            const pointsEl = document.getElementById('ppv-global-points');
+                            const rewardsEl = document.getElementById('ppv-global-rewards');
+                            if (pointsEl) pointsEl.textContent = data.points;
+                            if (rewardsEl) rewardsEl.textContent = data.rewards;
+                        }
+                    } catch (e) {
+                        // Silent fail
                     }
-                } catch (e) {
-                    // Silent fail
-                }
-            }, 5000);
+                }, 5000);
+            }
             <?php endif; ?>
+        }
+
+        // 🚀 Run on DOMContentLoaded
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initGlobalHeaderJS);
+        } else {
+            initGlobalHeaderJS();
+        }
+
+        // 🚀 Also run on Turbo navigation (re-init after page change)
+        document.addEventListener('turbo:load', initGlobalHeaderJS);
+
+        // 🧹 Reset init flag before Turbo renders new page
+        document.addEventListener('turbo:before-render', function() {
+            const header = document.getElementById('ppv-global-header');
+            if (header) header.dataset.jsInit = 'false';
         });
         </script>
         <?php
