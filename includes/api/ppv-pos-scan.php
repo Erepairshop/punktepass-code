@@ -285,11 +285,24 @@ class PPV_POS_SCAN {
                 FROM {$wpdb->prefix}ppv_stores WHERE id = %d
             ", $vip_store_id));
 
+            // 🔍 DEBUG: Log VIP settings
+            error_log("🔍 [POS_SCAN] VIP settings for store {$vip_store_id}: " . json_encode([
+                'vip_enabled' => $vip_settings->vip_enabled ?? 'NULL',
+                'vip_fix_enabled' => $vip_settings->vip_fix_enabled ?? 'NULL',
+                'vip_fix_bronze' => $vip_settings->vip_fix_bronze ?? 'NULL',
+                'vip_fix_silver' => $vip_settings->vip_fix_silver ?? 'NULL',
+                'vip_daily_enabled' => $vip_settings->vip_daily_enabled ?? 'NULL',
+                'vip_daily_bronze' => $vip_settings->vip_daily_bronze ?? 'NULL',
+            ]));
+
             if ($vip_settings) {
                 // Check if user has VIP status (Bronze or higher = 100+ lifetime points)
                 // Starter users (0-99 points) do NOT get VIP bonuses
                 $user_level = PPV_User_Level::get_vip_level_for_bonus($user_id);
                 $base_points = $points_add; // Store original points for calculations
+
+                // 🔍 DEBUG: Log user level
+                error_log("🔍 [POS_SCAN] User VIP level: user_id={$user_id}, level=" . ($user_level ?? 'NULL (Starter - no VIP)'));
 
                 // Helper to get level-specific value (returns 0 for Starter/null)
                 $getLevelValue = function($bronze, $silver, $gold, $platinum) use ($user_level) {
