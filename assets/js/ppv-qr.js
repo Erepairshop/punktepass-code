@@ -1,11 +1,17 @@
 /**
- * PunktePass – Kassenscanner & Kampagnen v5.3 COMPLETE
+ * PunktePass – Kassenscanner & Kampagnen v5.4 TURBO COMPATIBLE
  * ✅ Save függvény integrálva
  * ✅ Összes dinamikus mező működik
  * ✅ Camera Scanner + Settings + Init
+ * ✅ TURBO.JS COMPATIBLE
  * Author: Erik Borota / PunktePass
  */
 
+// ✅ Duplicate load prevention
+if (window.PPV_QR_LOADED) {
+  console.warn('⚠️ PPV QR JS already loaded - skipping duplicate!');
+} else {
+  window.PPV_QR_LOADED = true;
 
 // ============================================================
 // 🌐 GLOBAL STATE & CONFIG
@@ -1677,28 +1683,10 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  document.getElementById("ppv-new-campaign")?.addEventListener("click", () => {
-    campaignManager.resetForm();
-    campaignManager.updateVisibilityByType("points"); // Default: Points típus
-    campaignManager.showModal();
-  });
+  // Store campaign manager globally for event delegation
+  window.ppvCampaignManager = campaignManager;
 
-  document.getElementById("camp-cancel")?.addEventListener("click", () => {
-    campaignManager.hideModal();
-    campaignManager.resetForm();
-  });
-
-  document.getElementById("camp-save")?.addEventListener("click", () => {
-    campaignManager.save();
-  });
-
-  document.getElementById("camp-type")?.addEventListener("change", (e) => {
-    campaignManager.updateValueLabel(e.target.value);
-  });
-
-  document.getElementById("ppv-campaign-filter")?.addEventListener("change", () => {
-    campaignManager.load();
-  });
+  // Note: Using event delegation below for Turbo compatibility
 
   // ✅ EGYSZERŰSÍTETT: Csak egy kattintás esemény
   if (campaignModal) {
@@ -2332,5 +2320,104 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
   }
+
+  // 🚀 Export reinit function for Turbo
+  window.ppv_qr_reinit = function() {
+    console.log('🔄 [QR] Turbo re-initialization');
+
+    // Re-query DOM elements
+    const campaignList = document.getElementById("ppv-campaign-list");
+    const campaignModal = document.getElementById("ppv-campaign-modal");
+    const logTable = document.querySelector("#ppv-pos-log tbody");
+    const resultBox = document.getElementById("ppv-pos-result");
+
+    if (campaignList) {
+      // Reinitialize campaign manager with new DOM
+      const ui = new UIManager(resultBox, logTable, campaignList);
+      const newCampaignManager = new CampaignManager(ui, campaignList, campaignModal);
+      newCampaignManager.load();
+
+      // Store globally for access
+      window.ppvCampaignManager = newCampaignManager;
+    }
+
+    // Reload logs if table exists
+    if (logTable && window.PPV_STORE_KEY) {
+      const ui = new UIManager(resultBox, logTable, campaignList);
+      const scanProcessor = new ScanProcessor(ui);
+      scanProcessor.loadLogs();
+    }
+  };
 });
+
+// 🔄 Turbo: Re-initialize after navigation
+document.addEventListener('turbo:load', function() {
+  console.log('🔄 [QR] turbo:load event');
+  setTimeout(() => {
+    if (typeof window.ppv_qr_reinit === 'function') {
+      window.ppv_qr_reinit();
+    }
+  }, 100);
+});
+
+document.addEventListener('turbo:render', function() {
+  console.log('🔄 [QR] turbo:render event');
+  setTimeout(() => {
+    if (typeof window.ppv_qr_reinit === 'function') {
+      window.ppv_qr_reinit();
+    }
+  }, 100);
+});
+
+// ============================================================
+// 🎯 EVENT DELEGATION - Campaign buttons (works after Turbo)
+// ============================================================
+document.addEventListener('click', function(e) {
+  // New campaign button
+  if (e.target.matches('#ppv-new-campaign') || e.target.closest('#ppv-new-campaign')) {
+    const cm = window.ppvCampaignManager;
+    if (cm) {
+      cm.resetForm();
+      cm.updateVisibilityByType("points");
+      cm.showModal();
+    }
+  }
+
+  // Cancel button
+  if (e.target.matches('#camp-cancel') || e.target.closest('#camp-cancel')) {
+    const cm = window.ppvCampaignManager;
+    if (cm) {
+      cm.hideModal();
+      cm.resetForm();
+    }
+  }
+
+  // Save button
+  if (e.target.matches('#camp-save') || e.target.closest('#camp-save')) {
+    const cm = window.ppvCampaignManager;
+    if (cm) {
+      cm.save();
+    }
+  }
+});
+
+document.addEventListener('change', function(e) {
+  // Campaign type change
+  if (e.target.matches('#camp-type')) {
+    const cm = window.ppvCampaignManager;
+    if (cm) {
+      cm.updateValueLabel(e.target.value);
+    }
+  }
+
+  // Campaign filter change
+  if (e.target.matches('#ppv-campaign-filter')) {
+    const cm = window.ppvCampaignManager;
+    if (cm) {
+      cm.load();
+    }
+  }
+});
+
+} // End of duplicate load prevention
 
