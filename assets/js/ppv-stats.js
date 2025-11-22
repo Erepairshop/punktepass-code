@@ -30,11 +30,15 @@ jQuery(document).ready(function($) {
     const $error = $('#ppv-stats-error');
     const $content = $('.ppv-stats-content');
     const $rangeSelect = $('#ppv-stats-range');
+    const $storeSelect = $('#ppv-stats-store');
     const $exportBtn = $('#ppv-export-csv');
     const $exportAdvBtn = $('#ppv-export-advanced');
     const $exportFormatSelect = $('#ppv-export-format');
 
-    console.log("✅ [Stats] Config OK");
+    // 🏪 Current selected store (default: all or from config)
+    let currentStoreId = $storeSelect.length ? $storeSelect.val() : config.store_id;
+
+    console.log("✅ [Stats] Config OK, store:", currentStoreId);
 
     // ============================================================
     // 🛡️ HELPERS
@@ -68,7 +72,7 @@ jQuery(document).ready(function($) {
     // 📊 LOAD BASIC STATS (1-3)
     // ============================================================
     function loadBasicStats(range = 'week') {
-        console.log(`📊 [Basic Stats] Loading range: ${range}`);
+        console.log(`📊 [Basic Stats] Loading range: ${range}, store: ${currentStoreId}`);
 
         $loading.show();
         $error.hide();
@@ -77,7 +81,7 @@ jQuery(document).ready(function($) {
         $.ajax({
             url: config.ajax_url,
             method: 'GET',
-            data: { range: range },
+            data: { range: range, store_id: currentStoreId },
             headers: { 'X-WP-Nonce': nonce },
             dataType: 'json',
             cache: false,
@@ -294,11 +298,12 @@ jQuery(document).ready(function($) {
     // 4️⃣ LOAD TREND
     // ============================================================
     function loadTrend() {
-        console.log("📈 [Trend] Loading...");
+        console.log(`📈 [Trend] Loading... store: ${currentStoreId}`);
 
         $.ajax({
             url: config.trend_url,
             method: 'GET',
+            data: { store_id: currentStoreId },
             headers: { 'X-WP-Nonce': nonce },
             dataType: 'json',
             cache: false,
@@ -368,11 +373,12 @@ jQuery(document).ready(function($) {
     // 5️⃣ LOAD SPENDING
     // ============================================================
     function loadSpending() {
-        console.log("💰 [Spending] Loading...");
+        console.log(`💰 [Spending] Loading... store: ${currentStoreId}`);
 
         $.ajax({
             url: config.spending_url,
             method: 'GET',
+            data: { store_id: currentStoreId },
             headers: { 'X-WP-Nonce': nonce },
             dataType: 'json',
             cache: false,
@@ -454,11 +460,12 @@ jQuery(document).ready(function($) {
     // 6️⃣ LOAD CONVERSION
     // ============================================================
     function loadConversion() {
-        console.log("📊 [Conversion] Loading...");
+        console.log(`📊 [Conversion] Loading... store: ${currentStoreId}`);
 
         $.ajax({
             url: config.conversion_url,
             method: 'GET',
+            data: { store_id: currentStoreId },
             headers: { 'X-WP-Nonce': nonce },
             dataType: 'json',
             cache: false,
@@ -617,6 +624,19 @@ jQuery(document).ready(function($) {
     $rangeSelect.on('change', function() {
         const range = $(this).val();
         loadBasicStats(range);
+    });
+
+    // ============================================================
+    // 🏪 STORE SELECTOR CHANGE
+    // ============================================================
+    $storeSelect.on('change', function() {
+        currentStoreId = $(this).val();
+        console.log(`🏪 [Stats] Store changed to: ${currentStoreId}`);
+
+        // Reload all stats
+        const range = $rangeSelect.val();
+        loadBasicStats(range);
+        loadAdvancedStats();
     });
 
     // ============================================================
