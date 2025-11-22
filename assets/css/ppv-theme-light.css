@@ -150,6 +150,22 @@ html, body {
 }
 
 /* ==========================================================================
+   🚫 SCROLLBAR HIDE - Clean App Experience
+   ========================================================================== */
+/* Hide scrollbar for Chrome, Safari and Opera */
+*::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+* {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+
+/* ==========================================================================
    📱 MAIN APP LAYOUT - Full Native App Feel
    ========================================================================== */
 body.ppv-user-dashboard {
