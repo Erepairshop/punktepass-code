@@ -264,7 +264,17 @@ class PPV_POS_SCAN {
         $vip_bonus_applied = 0;
 
         if (class_exists('PPV_User_Level')) {
-            // Get all VIP settings for this store
+            // 🏪 FILIALE FIX: Get VIP settings from PARENT store if this is a filiale
+            // This ensures all branches inherit VIP settings from the main store
+            $vip_store_id = $store_id;
+            if (class_exists('PPV_Filiale')) {
+                $vip_store_id = PPV_Filiale::get_parent_id($store_id);
+                if ($vip_store_id !== $store_id) {
+                    error_log("🏪 [POS_SCAN] VIP settings: Using PARENT store {$vip_store_id} instead of filiale {$store_id}");
+                }
+            }
+
+            // Get all VIP settings for this store (or parent store)
             $vip_settings = $wpdb->get_row($wpdb->prepare("
                 SELECT
                     vip_enabled, vip_silver_bonus, vip_gold_bonus, vip_platinum_bonus,
@@ -273,7 +283,7 @@ class PPV_POS_SCAN {
                     vip_streak_silver, vip_streak_gold, vip_streak_platinum,
                     vip_daily_enabled, vip_daily_silver, vip_daily_gold, vip_daily_platinum
                 FROM {$wpdb->prefix}ppv_stores WHERE id = %d
-            ", $store_id));
+            ", $vip_store_id));
 
             if ($vip_settings) {
                 $user_level = PPV_User_Level::get_level($user_id);
