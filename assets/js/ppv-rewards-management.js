@@ -1,16 +1,28 @@
 /**
  * PunktePass – Prämien Management Frontend
- * Version: 1.1 – FIXED + DEBUG
+ * Version: 1.2 – TURBO COMPATIBLE
  */
 
-console.log("✅ PPV Rewards Management JS v1.1 loaded");
+// ✅ Duplicate load prevention
+if (window.PPV_REWARDS_MGMT_LOADED) {
+  console.warn('⚠️ PPV Rewards Management JS already loaded - skipping duplicate!');
+} else {
+  window.PPV_REWARDS_MGMT_LOADED = true;
 
-document.addEventListener("DOMContentLoaded", function () {
+console.log("✅ PPV Rewards Management JS v1.2 loaded");
+
+// Global state (persists across Turbo navigations)
+let editMode = false;
+let editID = 0;
+const L = window.ppv_lang || {};
+
+function initRewardsManagement() {
+  console.log("🔄 [REWARDS-MGMT] Initializing...");
 
   const base = ppv_rewards_mgmt?.base || "/wp-json/ppv/v1/";
   const storeID = ppv_rewards_mgmt?.store_id || window.PPV_STORE_ID || 0;
 
-
+  // 🔄 Re-query DOM elements on each init (Turbo compatibility)
   const form = document.getElementById("ppv-reward-form");
   const listContainer = document.getElementById("ppv-rewards-list");
   const saveBtn = document.getElementById("save-btn");
@@ -19,14 +31,9 @@ document.addEventListener("DOMContentLoaded", function () {
   console.log("🔧 Config:", { base, storeID, form, listContainer });
 
   if (!listContainer) {
-    console.error("❌ ppv-rewards-list container nem található!");
+    console.log("ℹ️ [REWARDS-MGMT] ppv-rewards-list not found - not on this page");
     return;
   }
-
-  let editMode = false;
-  let editID = 0;
-
-  const L = window.ppv_lang || {};
 
   /* ============================================================
    * 🧩 TOAST HELPER
@@ -122,7 +129,8 @@ document.addEventListener("DOMContentLoaded", function () {
   /* ============================================================
    * 💾 SAVE REWARD (CREATE OR UPDATE)
    * ============================================================ */
-  if (form) {
+  if (form && !form.dataset.ppvInitialized) {
+    form.dataset.ppvInitialized = 'true';
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
 
@@ -167,92 +175,13 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  /* ============================================================
-   * ✏️ EDIT REWARD
-   * ============================================================ */
-  document.body.addEventListener("click", async (e) => {
-    if (e.target.classList.contains("ppv-edit")) {
-      const id = e.target.dataset.id;
-      console.log("✏️ Edit ID:", id);
-      
-      try {
-        const res = await fetch(`${base}rewards/list?store_id=${storeID}`);
-        const json = await res.json();
-        console.log("📦 Edit fetch response:", json);
-
-        const reward = json.rewards.find(r => r.id == id);
-        
-        if (reward) {
-          console.log("✏️ Editing:", reward);
-          editMode = true;
-          editID = reward.id;
-          
-          document.getElementById("reward-title").value = reward.title;
-          document.getElementById("reward-points").value = reward.required_points;
-          document.getElementById("reward-points-given").value = reward.points_given || 0;
-          document.getElementById("reward-description").value = reward.description || "";
-          document.getElementById("reward-type").value = reward.action_type || "discount_percent";
-          document.getElementById("reward-value").value = reward.action_value || "";
-
-          // Free product fields
-          const freeProductNameInput = document.getElementById("reward-free-product-name");
-          const freeProductValueInput = document.getElementById("reward-free-product-value");
-          if (freeProductNameInput) freeProductNameInput.value = reward.free_product || "";
-          if (freeProductValueInput) freeProductValueInput.value = reward.free_product_value || 0;
-
-          // Trigger field visibility update
-          toggleRewardFields();
-
-          saveBtn.textContent = "💾 " + (L.rewards_btn_update || 'Frissítés');
-          cancelBtn.style.display = "block";
-          
-          form.scrollIntoView({ behavior: "smooth" });
-        } else {
-          console.error("❌ Prémium nem találva:", id);
-        }
-      } catch (err) {
-        console.error("❌ loadReward hiba:", err);
-        showToast(`⚠️ ${L.rewards_error_loading || 'Hiba a betöltéskor'}: ${err.message}`, "error");
-      }
-    }
-  });
-
-  /* ============================================================
-   * 🗑️ DELETE REWARD
-   * ============================================================ */
-  document.body.addEventListener("click", async (e) => {
-    if (e.target.classList.contains("ppv-delete")) {
-      if (!confirm(L.rewards_confirm_delete || "Biztosan törlöd a jutalmat?")) return;
-      
-      const id = e.target.dataset.id;
-      console.log("🗑️ Delete ID:", id);
-
-      try {
-        const res = await fetch(`${base}rewards/delete`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ store_id: storeID, id })
-        });
-
-        console.log("📨 Delete response status:", res.status);
-
-        const json = await res.json();
-        console.log("✅ Delete response:", json);
-
-        showToast(json.message || (L.rewards_deleted || "🗑️ Törölve."), "success");
-        loadRewards();
-
-      } catch (err) {
-        console.error("❌ deleteReward hiba:", err);
-        showToast(`⚠️ ${L.rewards_error_delete || 'Törlési hiba'}: ${err.message}`, "error");
-      }
-    }
-  });
+  // Note: Edit/Delete handlers moved outside initRewardsManagement() to avoid duplicate listeners
 
   /* ============================================================
    * ❌ CANCEL EDIT
    * ============================================================ */
-  if (cancelBtn) {
+  if (cancelBtn && !cancelBtn.dataset.ppvInitialized) {
+    cancelBtn.dataset.ppvInitialized = 'true';
     cancelBtn.addEventListener("click", resetForm);
   }
 
@@ -310,15 +239,149 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  if (rewardTypeSelect) {
+  if (rewardTypeSelect && !rewardTypeSelect.dataset.ppvInitialized) {
+    rewardTypeSelect.dataset.ppvInitialized = 'true';
     rewardTypeSelect.addEventListener("change", toggleRewardFields);
-    // Initial check
-    toggleRewardFields();
   }
+  // Always run initial check
+  toggleRewardFields();
 
   /* ============================================================
    * 🚀 INIT
    * ============================================================ */
   console.log("🚀 Initializing rewards management...");
   loadRewards();
+}
+
+// 🚀 Export reinit function for Turbo
+window.ppv_rewards_mgmt_reinit = initRewardsManagement;
+
+// Initial load
+document.addEventListener("DOMContentLoaded", initRewardsManagement);
+
+// 🔄 Turbo: Re-initialize after navigation
+document.addEventListener('turbo:load', function() {
+  console.log('🔄 [REWARDS-MGMT] turbo:load event');
+  setTimeout(initRewardsManagement, 100);
 });
+
+document.addEventListener('turbo:render', function() {
+  console.log('🔄 [REWARDS-MGMT] turbo:render event');
+  setTimeout(initRewardsManagement, 100);
+});
+
+/* ============================================================
+ * ✏️ EDIT REWARD - Event Delegation (runs once, works after Turbo)
+ * ============================================================ */
+document.body.addEventListener("click", async (e) => {
+  if (e.target.classList.contains("ppv-edit")) {
+    const id = e.target.dataset.id;
+    console.log("✏️ Edit ID:", id);
+
+    const base = ppv_rewards_mgmt?.base || "/wp-json/ppv/v1/";
+    const storeID = ppv_rewards_mgmt?.store_id || window.PPV_STORE_ID || 0;
+
+    try {
+      const res = await fetch(`${base}rewards/list?store_id=${storeID}`);
+      const json = await res.json();
+      console.log("📦 Edit fetch response:", json);
+
+      const reward = json.rewards.find(r => r.id == id);
+
+      if (reward) {
+        console.log("✏️ Editing:", reward);
+        editMode = true;
+        editID = reward.id;
+
+        // Re-query DOM elements (Turbo compatibility)
+        const form = document.getElementById("ppv-reward-form");
+        const saveBtn = document.getElementById("save-btn");
+        const cancelBtn = document.getElementById("cancel-btn");
+
+        document.getElementById("reward-title").value = reward.title;
+        document.getElementById("reward-points").value = reward.required_points;
+        document.getElementById("reward-points-given").value = reward.points_given || 0;
+        document.getElementById("reward-description").value = reward.description || "";
+        document.getElementById("reward-type").value = reward.action_type || "discount_percent";
+        document.getElementById("reward-value").value = reward.action_value || "";
+
+        // Free product fields
+        const freeProductNameInput = document.getElementById("reward-free-product-name");
+        const freeProductValueInput = document.getElementById("reward-free-product-value");
+        if (freeProductNameInput) freeProductNameInput.value = reward.free_product || "";
+        if (freeProductValueInput) freeProductValueInput.value = reward.free_product_value || 0;
+
+        // Trigger field visibility update
+        const rewardTypeSelect = document.getElementById("reward-type");
+        if (rewardTypeSelect) {
+          rewardTypeSelect.dispatchEvent(new Event('change'));
+        }
+
+        if (saveBtn) saveBtn.textContent = "💾 " + (L.rewards_btn_update || 'Frissítés');
+        if (cancelBtn) cancelBtn.style.display = "block";
+
+        if (form) form.scrollIntoView({ behavior: "smooth" });
+      } else {
+        console.error("❌ Prémium nem találva:", id);
+      }
+    } catch (err) {
+      console.error("❌ loadReward hiba:", err);
+    }
+  }
+});
+
+/* ============================================================
+ * 🗑️ DELETE REWARD - Event Delegation (runs once, works after Turbo)
+ * ============================================================ */
+document.body.addEventListener("click", async (e) => {
+  if (e.target.classList.contains("ppv-delete")) {
+    if (!confirm(L.rewards_confirm_delete || "Biztosan törlöd a jutalmat?")) return;
+
+    const id = e.target.dataset.id;
+    console.log("🗑️ Delete ID:", id);
+
+    const base = ppv_rewards_mgmt?.base || "/wp-json/ppv/v1/";
+    const storeID = ppv_rewards_mgmt?.store_id || window.PPV_STORE_ID || 0;
+
+    try {
+      const res = await fetch(`${base}rewards/delete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ store_id: storeID, id })
+      });
+
+      console.log("📨 Delete response status:", res.status);
+
+      const json = await res.json();
+      console.log("✅ Delete response:", json);
+
+      // Show toast
+      const el = document.createElement("div");
+      el.className = `ppv-toast success`;
+      el.textContent = json.message || (L.rewards_deleted || "🗑️ Törölve.");
+      el.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        padding: 1rem 1.5rem;
+        background: #10b981;
+        color: white;
+        border-radius: 8px;
+        z-index: 999999;
+        animation: slideIn 0.3s ease-out;
+      `;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 3000);
+
+      // Reload rewards list
+      if (typeof window.ppv_rewards_mgmt_reinit === 'function') {
+        window.ppv_rewards_mgmt_reinit();
+      }
+
+    } catch (err) {
+      console.error("❌ deleteReward hiba:", err);
+    }
+  }
+});
+
+} // End of duplicate load prevention
