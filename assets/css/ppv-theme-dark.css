@@ -3469,3 +3469,265 @@ body.ppv-light .ppv-theme-btn-mini {
     color: #f87171 !important;
     border: 1px solid rgba(239, 68, 68, 0.25) !important;
 }
+
+/* ==========================================================================
+   📊 STATISTIK PAGE - HANDLER STATS DARK MODE
+   Fix for white stat cards on /statistik/ page
+   ========================================================================== */
+
+/* Stats Wrapper */
+.ppv-stats-wrapper {
+    background: transparent !important;
+    color: #f0f6fc !important;
+}
+
+.ppv-stats-title {
+    color: #00d4ff !important;
+}
+
+/* Stats Controls */
+.ppv-stats-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.ppv-stats-filters select,
+#ppv-stats-range {
+    background: rgba(21, 27, 35, 0.9) !important;
+    border: 1px solid rgba(0, 212, 255, 0.20) !important;
+    color: #f0f6fc !important;
+    padding: 10px 16px;
+    border-radius: 10px;
+}
+
+.ppv-stats-filters select option,
+#ppv-stats-range option {
+    background: #1e293b !important;
+    color: #f0f6fc !important;
+}
+
+/* Export Button */
+.ppv-export-btn {
+    background: linear-gradient(135deg, #00d4ff, #00a8cc) !important;
+    color: #fff !important;
+    border: none !important;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.ppv-export-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3) !important;
+}
+
+/* Main Stats Cards Grid */
+.ppv-stats-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+/* Stats Card - THE FIX FOR WHITE CARDS */
+.ppv-stats-wrapper .ppv-stat-card,
+.ppv-stats-content .ppv-stat-card {
+    background: linear-gradient(145deg, rgba(26, 34, 45, 0.95), rgba(21, 27, 35, 0.95)) !important;
+    border: 1px solid rgba(0, 212, 255, 0.15) !important;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4) !important;
+    border-radius: 14px !important;
+    padding: 16px !important;
+    text-align: center !important;
+}
+
+.ppv-stats-wrapper .ppv-stat-label,
+.ppv-stats-content .ppv-stat-label {
+    color: #8b949e !important;
+    font-size: 11px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+.ppv-stats-wrapper .ppv-stat-value,
+.ppv-stats-content .ppv-stat-value {
+    color: #00d4ff !important;
+    font-size: 28px !important;
+    font-weight: 700 !important;
+}
+
+/* Chart Container */
+.ppv-stats-chart {
+    background: linear-gradient(145deg, rgba(26, 34, 45, 0.95), rgba(21, 27, 35, 0.95)) !important;
+    border: 1px solid rgba(0, 212, 255, 0.15) !important;
+    border-radius: 18px !important;
+    padding: 20px !important;
+    margin-bottom: 20px !important;
+}
+
+.ppv-stats-chart canvas {
+    max-height: 300px !important;
+}
+
+/* Section Titles */
+.ppv-section-title,
+.ppv-stats-section h3 {
+    color: #f0f6fc !important;
+    font-size: 1.1rem !important;
+    margin-bottom: 12px !important;
+}
+
+/* Top 5 Users List */
+.ppv-top5-list {
+    background: transparent !important;
+}
+
+.ppv-top5-list .ppv-top5-item,
+.ppv-top5-item {
+    background: linear-gradient(145deg, rgba(26, 34, 45, 0.95), rgba(21, 27, 35, 0.95)) !important;
+    border: 1px solid rgba(0, 212, 255, 0.15) !important;
+    border-radius: 12px !important;
+    padding: 12px 16px !important;
+    margin-bottom: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+}
+
+.ppv-top5-item .ppv-user-name,
+.ppv-top5-list strong {
+    color: #f0f6fc !important;
+}
+
+.ppv-top5-item .ppv-user-email,
+.ppv-top5-list small {
+    color: #8b949e !important;
+}
+
+.ppv-top5-item .ppv-user-points {
+    color: #00d4ff !important;
+    font-weight: 700 !important;
+}
+
+/* Rewards Stats Cards */
+.ppv-rewards-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.ppv-reward-stat-card {
+    background: linear-gradient(145deg, rgba(26, 34, 45, 0.95), rgba(21, 27, 35, 0.95)) !important;
+    border: 1px solid rgba(0, 212, 255, 0.15) !important;
+    border-radius: 14px !important;
+    padding: 16px !important;
+    text-align: center !important;
+}
+
+.ppv-reward-stat-card .ppv-label {
+    color: #8b949e !important;
+    font-size: 12px !important;
+}
+
+.ppv-reward-stat-card .ppv-value {
+    color: #f0f6fc !important;
+    font-size: 24px !important;
+    font-weight: 700 !important;
+}
+
+.ppv-reward-stat-card .ppv-value.ppv-approved {
+    color: #10b981 !important;
+}
+
+.ppv-reward-stat-card .ppv-value.ppv-pending {
+    color: #f59e0b !important;
+}
+
+/* Peak Hours */
+.ppv-peak-hours {
+    background: transparent !important;
+}
+
+.ppv-peak-hour-item {
+    background: linear-gradient(145deg, rgba(26, 34, 45, 0.95), rgba(21, 27, 35, 0.95)) !important;
+    border: 1px solid rgba(0, 212, 255, 0.15) !important;
+    border-radius: 10px !important;
+    padding: 10px 14px !important;
+    margin-bottom: 6px !important;
+    display: inline-block !important;
+    margin-right: 8px !important;
+}
+
+.ppv-peak-hour-item .time {
+    color: #00d4ff !important;
+    font-weight: 600 !important;
+}
+
+.ppv-peak-hour-item .count {
+    color: #8b949e !important;
+}
+
+/* Loading States */
+.ppv-stats-loading,
+.ppv-loading-small {
+    color: #8b949e !important;
+}
+
+.ppv-stats-loading .ppv-spinner {
+    border-color: rgba(0, 212, 255, 0.2) !important;
+    border-top-color: #00d4ff !important;
+}
+
+/* Error State */
+.ppv-stats-error {
+    background: rgba(239, 68, 68, 0.15) !important;
+    color: #f87171 !important;
+    padding: 16px !important;
+    border-radius: 12px !important;
+}
+
+/* Advanced Stats Sections */
+#ppv-trend,
+#ppv-spending,
+#ppv-conversion {
+    background: linear-gradient(145deg, rgba(26, 34, 45, 0.95), rgba(21, 27, 35, 0.95)) !important;
+    border: 1px solid rgba(0, 212, 255, 0.15) !important;
+    border-radius: 14px !important;
+    padding: 16px !important;
+    color: #f0f6fc !important;
+}
+
+#ppv-trend .trend-card,
+#ppv-spending .spending-card,
+#ppv-conversion .conversion-card {
+    background: rgba(0, 212, 255, 0.08) !important;
+    border: 1px solid rgba(0, 212, 255, 0.15) !important;
+    border-radius: 10px !important;
+    padding: 12px !important;
+    margin-bottom: 8px !important;
+}
+
+/* Export Advanced Controls */
+.ppv-export-advanced-controls {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.ppv-export-advanced-controls select,
+#ppv-export-format {
+    background: rgba(21, 27, 35, 0.9) !important;
+    border: 1px solid rgba(0, 212, 255, 0.20) !important;
+    color: #f0f6fc !important;
+    padding: 10px 16px;
+    border-radius: 10px;
+}
+
+/* Horizontal Rule */
+.ppv-stats-wrapper hr {
+    border-color: rgba(0, 212, 255, 0.15) !important;
+}
