@@ -1,5 +1,5 @@
 /**
- * PunktePass – Theme Loader v2.2 (UNIVERSAL)
+ * PunktePass – Theme Loader v2.3 (UNIVERSAL)
  * ✅ Auto-detects all pages
  * ✅ Multi-domain cookie
  * ✅ MutationObserver for button detection
@@ -7,6 +7,7 @@
  * ✅ Refresh memory
  * ✅ Icon sync on page load (sun/moon)
  * ✅ Works with both ppv-theme-toggle and ppv-theme-toggle-global
+ * ✅ localStorage priority over meta tag (fixes Turbo navigation)
  * Author: Erik Borota / PunktePass
  */
 
@@ -66,10 +67,24 @@
   }
 
   // ============================================================
-  // 🔹 GET THEME (Priority: DB > Cookie > Default)
+  // 🔹 GET THEME (Priority: localStorage > Cookie > Meta > Default)
   // ============================================================
   function getTheme() {
-    // 1. Meta tag from PHP
+    // 1. localStorage (CLIENT-SIDE - highest priority, updated immediately on toggle)
+    const saved = localStorage.getItem(THEME_KEY);
+    if (saved && ['dark', 'light'].includes(saved)) {
+      log('DEBUG', 'Theme from localStorage:', saved);
+      return saved;
+    }
+
+    // 2. Cookie (also client-side, persists across sessions)
+    const cookie = getCookie(THEME_KEY);
+    if (cookie && ['dark', 'light'].includes(cookie)) {
+      log('DEBUG', 'Theme from cookie:', cookie);
+      return cookie;
+    }
+
+    // 3. Meta tag from PHP (server-side, may be stale after client toggle)
     const meta = document.querySelector('meta[name="ppv-theme"]');
     if (meta) {
       const theme = meta.getAttribute('content');
@@ -77,20 +92,6 @@
         log('DEBUG', 'Theme from meta tag:', theme);
         return theme;
       }
-    }
-
-    // 2. localStorage
-    const saved = localStorage.getItem(THEME_KEY);
-    if (saved && ['dark', 'light'].includes(saved)) {
-      log('DEBUG', 'Theme from localStorage:', saved);
-      return saved;
-    }
-
-    // 3. Cookie
-    const cookie = getCookie(THEME_KEY);
-    if (cookie && ['dark', 'light'].includes(cookie)) {
-      log('DEBUG', 'Theme from cookie:', cookie);
-      return cookie;
     }
 
     // 4. Default
@@ -281,7 +282,7 @@
   // 🔹 MAIN INIT FUNCTION (Turbo-compatible)
   // ============================================================
   function initThemeLoader() {
-    log('INFO', '🚀 Theme Loader v2.2 initialized (Turbo-compatible + icon sync)');
+    log('INFO', '🚀 Theme Loader v2.3 initialized (localStorage priority + icon sync)');
 
     // 1. Get current theme
     const theme = getTheme();
