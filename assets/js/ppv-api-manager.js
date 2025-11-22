@@ -1,11 +1,11 @@
 /**
- * PunktePass – Centralized API Manager v1.0
+ * PunktePass – Centralized API Manager v1.1
  *
  * This file MUST be loaded FIRST before all other PPV JS files!
  * Handles all API requests with:
  * - Request queue (max concurrent requests)
  * - 503 error retry logic
- * - Turbo.js navigation pause
+ * - Turbo.js navigation pause + queue clear
  * - Request deduplication
  * - Global throttling
  */
@@ -20,18 +20,19 @@
   }
   window.PPV_API_MANAGER_LOADED = true;
 
-  console.log('✅ PPV API Manager v1.0 loaded');
+  console.log('✅ PPV API Manager v1.1 loaded');
 
   // ============================================================
-  // 🔧 CONFIGURATION
+  // 🔧 CONFIGURATION - More aggressive throttling
   // ============================================================
   const CONFIG = {
-    maxConcurrent: 2,           // Max simultaneous requests
-    retryCount: 2,              // Retry attempts for 503
-    retryDelay: 1500,           // Delay between retries (ms)
-    requestDelay: 150,          // Delay between queued requests (ms)
-    dedupeWindow: 2000,         // Time window for duplicate detection (ms)
-    turboNavigationPause: 500,  // Pause requests during Turbo navigation (ms)
+    maxConcurrent: 1,           // ONLY 1 request at a time!
+    retryCount: 3,              // Retry attempts for 503
+    retryDelay: 2000,           // Delay between retries (ms)
+    requestDelay: 300,          // Delay between queued requests (ms)
+    dedupeWindow: 3000,         // Time window for duplicate detection (ms)
+    turboNavigationPause: 1000, // Pause requests during Turbo navigation (ms)
+    initialDelay: 500,          // Delay before first request after navigation
   };
 
   // ============================================================
@@ -175,30 +176,50 @@
   window.apiFetch = window.ppvFetch;
 
   // ============================================================
-  // 🔄 TURBO.JS INTEGRATION
+  // 🔄 TURBO.JS INTEGRATION - Aggressive queue management
   // ============================================================
 
-  // Pause requests when Turbo starts navigation
+  // Track navigation state
+  let isNavigating = false;
+
+  // CLEAR and PAUSE when Turbo starts navigation
   document.addEventListener('turbo:before-visit', function() {
-    console.log('🔄 [API] Turbo navigation starting, pausing queue...');
+    console.log('🔄 [API] Turbo navigation starting - CLEARING queue...');
+    isNavigating = true;
+    window.PPV_REQUEST_QUEUE.clear();
     window.PPV_REQUEST_QUEUE.pause(CONFIG.turboNavigationPause);
   });
 
-  // Also pause on turbo:before-render to catch all cases
+  // Also clear on turbo:before-render
   document.addEventListener('turbo:before-render', function() {
-    window.PPV_REQUEST_QUEUE.pause(300);
+    console.log('🔄 [API] Turbo rendering - clearing queue...');
+    window.PPV_REQUEST_QUEUE.clear();
+    window.PPV_REQUEST_QUEUE.pause(500);
   });
 
-  // Resume after navigation completes
+  // Resume after navigation completes with LONGER delay
   document.addEventListener('turbo:load', function() {
-    // Small delay to let DOM settle before resuming
+    console.log('🔄 [API] Turbo load complete - waiting before resume...');
+    isNavigating = false;
+
+    // Long delay to let all JS initialize before allowing requests
     setTimeout(() => {
-      window.PPV_REQUEST_QUEUE.resume();
-    }, 200);
+      if (!isNavigating) {
+        console.log('▶️ [API] Resuming queue after navigation');
+        window.PPV_REQUEST_QUEUE.resume();
+      }
+    }, CONFIG.initialDelay);
   });
 
   // Clear queue on turbo:before-cache (user navigating away)
   document.addEventListener('turbo:before-cache', function() {
+    console.log('🗑️ [API] Clearing queue before cache');
+    window.PPV_REQUEST_QUEUE.clear();
+  });
+
+  // Also handle turbo:visit for extra safety
+  document.addEventListener('turbo:visit', function() {
+    isNavigating = true;
     window.PPV_REQUEST_QUEUE.clear();
   });
 
