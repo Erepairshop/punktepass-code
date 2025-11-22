@@ -313,13 +313,21 @@ async function initUserDashboard() {
 
   const initQRToggle = () => {
     const btn = document.querySelector(".ppv-btn-qr");
-    const modal = document.getElementById("ppv-user-qr");
-    const overlay = document.getElementById("ppv-qr-overlay");
+    let modal = document.getElementById("ppv-user-qr");
+    let overlay = document.getElementById("ppv-qr-overlay");
     const closeBtn = document.querySelector(".ppv-qr-close");
 
     if (!btn || !modal || !overlay) {
       console.warn("⚠️ [QR] Elements not found");
       return;
+    }
+
+    // 🔧 FIX: Move modal and overlay to body for proper centering
+    // This fixes the issue where parent transform/animation breaks position:fixed
+    if (modal.parentElement !== document.body) {
+      document.body.appendChild(overlay);
+      document.body.appendChild(modal);
+      console.log("✅ [QR] Modal moved to body for proper centering");
     }
 
     const openQR = (e) => {
@@ -332,7 +340,6 @@ async function initUserDashboard() {
       document.body.classList.add("qr-modal-open");
       document.body.style.overflow = "hidden";
       if (navigator.vibrate) navigator.vibrate(30);
-      modal.offsetHeight;
     };
 
     const closeQR = () => {
@@ -347,10 +354,12 @@ async function initUserDashboard() {
     overlay.addEventListener("click", (e) => {
       if (e.target === overlay) closeQR();
     });
-    closeBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      closeQR();
-    });
+    if (closeBtn) {
+      closeBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        closeQR();
+      });
+    }
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && modal.classList.contains("show")) closeQR();
     });
