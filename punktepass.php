@@ -378,7 +378,7 @@ add_action('wp_enqueue_scripts', function() {
         'ppv-handler-light',
         PPV_PLUGIN_URL . 'assets/css/handler-light.css',
         [],
-        PPV_VERSION
+        time()
     );
 
     // 🔹 HANDLER SESSION = HANDLER DARK THEME (optional override)
@@ -389,7 +389,7 @@ add_action('wp_enqueue_scripts', function() {
                 'ppv-handler-dark',
                 PPV_PLUGIN_URL . 'assets/css/handler-dark.css',
                 ['ppv-handler-light'],
-                PPV_VERSION
+                time()
             );
         }
     }
