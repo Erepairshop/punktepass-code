@@ -361,7 +361,8 @@ if (window.PPV_REWARDS_LOADED) {
      * ============================================================ */
     console.log('📦 [REWARDS] DOMContentLoaded fired');
 
-    const base = window.ppv_rewards_rest?.base || "/wp-json/ppv/v1/";
+    // ✅ Use 'let' for base so Turbo reinit can update it
+    let base = window.ppv_rewards_rest?.base || "/wp-json/ppv/v1/";
     let storeID = 0;
 
     try {
@@ -971,6 +972,20 @@ showToast("📄 Monatsbeleg wird heruntergeladen!", "success");
     // 🚀 Export init function for Turbo re-initialization
     window.ppv_rewards_reinit = function() {
       console.log('🔄 [REWARDS] Turbo re-initialization');
+
+      // ✅ CRITICAL: Re-read config from window (Turbo sets fresh values)
+      base = window.ppv_rewards_rest?.base || "/wp-json/ppv/v1/";
+
+      if (window.PPV_STORE_ID && parseInt(window.PPV_STORE_ID) > 0) {
+        storeID = parseInt(window.PPV_STORE_ID);
+        console.log(`🔄 [REWARDS] Updated storeID from window: ${storeID}`);
+      }
+
+      POS_TOKEN = (window.PPV_STORE_KEY || "").trim() ||
+                  (sessionStorage.getItem("ppv_store_key") || "").trim() || "";
+
+      console.log(`📦 [REWARDS] Reinit with base: ${base}, storeID: ${storeID}`);
+
       loadRedeemRequests();
       loadRecentLogs();
     };
