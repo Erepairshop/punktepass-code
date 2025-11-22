@@ -1950,6 +1950,28 @@ body, h1, h2, h3, h4, h5, h6 {
     color: #fff !important;
 }
 
+/* Header Avatar (replaces email when set) */
+.ppv-header-avatar-link {
+    display: flex !important;
+    align-items: center !important;
+    text-decoration: none !important;
+}
+
+.ppv-header-avatar {
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 50% !important;
+    object-fit: cover !important;
+    border: 2px solid rgba(0, 230, 255, 0.6) !important;
+    transition: all 0.2s ease !important;
+}
+
+.ppv-header-avatar:hover {
+    border-color: #00e6ff !important;
+    transform: scale(1.05) !important;
+    box-shadow: 0 0 12px rgba(0, 230, 255, 0.4) !important;
+}
+
 /* MINI STATS */
 .ppv-stat-mini {
     padding: 4px 8px !important;

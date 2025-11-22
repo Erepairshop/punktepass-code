@@ -441,6 +441,10 @@ private static function get_today_hours($opening_hours) {
         $stats = self::get_user_stats($uid);
         $lang = self::get_user_lang();
 
+        // 5.1️⃣ Get avatar (if exists)
+        $avatar_url = get_user_meta($uid, 'ppv_avatar', true);
+        $settings_url = home_url('/user-settings');
+
         // 6️⃣ Translations
         $translations = [
             'de' => [
@@ -479,12 +483,20 @@ private static function get_today_hours($opening_hours) {
         ?>
         <div id="ppv-global-header" class="ppv-compact-header <?php echo $is_handler ? 'ppv-handler-mode' : ''; ?>">
             
-            <!-- Logo + Email -->
+            <!-- Logo + Avatar/Email -->
             <div class="ppv-header-left">
                 <img src="<?php echo PPV_PLUGIN_URL; ?>assets/img/logo.webp" alt="PunktePass" class="ppv-header-logo-tiny">
+                <?php if (!empty($avatar_url)): ?>
+                <!-- Avatar (links to settings) -->
+                <a href="<?php echo esc_url($settings_url); ?>" class="ppv-header-avatar-link" title="<?php echo esc_attr($email); ?>">
+                    <img src="<?php echo esc_url($avatar_url); ?>" alt="Avatar" class="ppv-header-avatar">
+                </a>
+                <?php else: ?>
+                <!-- Email (fallback) -->
                 <div class="ppv-user-info">
                     <span class="ppv-user-email"><?php echo esc_html($email); ?></span>
                 </div>
+                <?php endif; ?>
             </div>
             
             <!-- Stats (USER only) -->
