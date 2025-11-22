@@ -2046,7 +2046,14 @@ body, h1, h2, h3, h4, h5, h6 {
     }
 
     .ppv-stat-mini {
-        display: none !important;
+        display: flex !important;
+        padding: 3px 6px !important;
+        font-size: 11px !important;
+        gap: 3px !important;
+    }
+
+    .ppv-stat-mini i {
+        font-size: 12px !important;
     }
 
     .ppv-nav-btn,
