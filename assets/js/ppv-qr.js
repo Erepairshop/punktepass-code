@@ -1656,7 +1656,16 @@ document.addEventListener("DOMContentLoaded", function () {
   const ui = new UIManager(resultBox, logTable, campaignList);
   const scanProcessor = new ScanProcessor(ui);
   const campaignManager = new CampaignManager(ui, campaignList, campaignModal);
-  const cameraScanner = new CameraScanner(scanProcessor);
+
+  // 📷 MINIKAMERA: Only show on specific pages
+  const allowedScannerPages = ['/qr-center', '/rewards', '/mein-profil', '/statistik'];
+  const currentPath = window.location.pathname.replace(/\/$/, ''); // Remove trailing slash
+  const shouldShowScanner = allowedScannerPages.some(page => currentPath.endsWith(page));
+
+  let cameraScanner = null;
+  if (shouldShowScanner) {
+    cameraScanner = new CameraScanner(scanProcessor);
+  }
 
   // Only add input listeners if input exists
   if (input) {
