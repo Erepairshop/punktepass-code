@@ -170,7 +170,18 @@ window.ppv_plugin_url = '" . esc_url(PPV_PLUGIN_URL) . "';",
 
         ob_start();
         ?>
-        <script>window.PPV_STORE_ID = <?php echo intval($store->id); ?>;</script>
+        <script>
+        // ✅ TURBO COMPATIBLE: Set config in body (runs on every navigation)
+        window.PPV_STORE_ID = <?php echo intval($store->id); ?>;
+        window.ppv_rewards_rest = {
+            base: "<?php echo esc_url(rest_url('ppv/v1/')); ?>",
+            nonce: "<?php echo wp_create_nonce('wp_rest'); ?>",
+            store_id: <?php echo intval($store->id); ?>,
+            plugin_url: "<?php echo esc_url(PPV_PLUGIN_URL); ?>"
+        };
+        window.ppv_receipts_rest = window.ppv_rewards_rest;
+        window.ppv_plugin_url = "<?php echo esc_url(PPV_PLUGIN_URL); ?>";
+        </script>
 
         <div class="ppv-rewards-wrapper glass-section">
             <h2 style="font-size: 18px; margin-bottom: 16px;"><i class="ri-checkbox-circle-line"></i> <?php echo esc_html(PPV_Lang::t('redeem_management_title') ?: 'Einlösungen Verwaltung – '); ?><?php echo esc_html($store->company_name); ?></h2>

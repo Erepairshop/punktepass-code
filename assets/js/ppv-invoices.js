@@ -1,16 +1,26 @@
 /**
  * PunktePass – Invoice Management Frontend
- * Version: 1.0
+ * Version: 1.1
  * ✅ Single & Collective invoices
  * ✅ Modal workflow
  * ✅ Email sending
+ * ✅ TURBO COMPATIBLE
  */
 
-console.log("✅ PPV Invoices JS v1.0 loaded");
+// ✅ Duplicate load prevention
+if (window.PPV_INVOICES_LOADED) {
+  console.warn('⚠️ PPV Invoices JS already loaded - skipping duplicate!');
+} else {
+  window.PPV_INVOICES_LOADED = true;
 
-document.addEventListener("DOMContentLoaded", function () {
+console.log("✅ PPV Invoices JS v1.1 loaded");
 
-  const base = ppv_invoices?.rest_url || "/wp-json/ppv/v1/";
+function initInvoices() {
+  console.log("🔄 [INVOICES] Initializing...");
+
+  const base = (typeof ppv_invoices !== 'undefined' && ppv_invoices?.rest_url)
+    ? ppv_invoices.rest_url
+    : (window.ppv_rewards_rest?.base || "/wp-json/ppv/v1/");
 
   // ============================================================
   // 🏪 FILIALE SUPPORT: Store ID Detection
@@ -464,4 +474,28 @@ document.addEventListener("DOMContentLoaded", function () {
     document.body.appendChild(modal);
   }
 
+  console.log("✅ [INVOICES] Initialization complete");
+}
+
+// 🚀 Export reinit function for Turbo
+window.ppv_invoices_reinit = initInvoices;
+
+// Initial load
+document.addEventListener("DOMContentLoaded", initInvoices);
+
+// 🔄 Turbo: Re-initialize after navigation
+document.addEventListener('turbo:load', function() {
+  console.log('🔄 [INVOICES] turbo:load event');
+
+  // Throttle: don't reinit if we just did it
+  const now = Date.now();
+  if (window.PPV_INVOICES_LAST_INIT && (now - window.PPV_INVOICES_LAST_INIT) < 500) {
+    console.log('⏭️ [INVOICES] Skipping reinit - too soon');
+    return;
+  }
+  window.PPV_INVOICES_LAST_INIT = now;
+
+  setTimeout(initInvoices, 100);
 });
+
+} // End of duplicate load prevention
