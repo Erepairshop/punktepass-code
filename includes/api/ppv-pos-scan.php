@@ -245,16 +245,25 @@ class PPV_POS_SCAN {
         /** 6) BASE POINTS: Reward (Prämien) points_given */
         $points_add = 0;
 
+        // 🏪 FILIALE FIX: Get rewards from PARENT store if this is a filiale
+        $reward_store_id = $store_id;
+        if (class_exists('PPV_Filiale')) {
+            $reward_store_id = PPV_Filiale::get_parent_id($store_id);
+            if ($reward_store_id !== $store_id) {
+                error_log("🏪 [POS_SCAN] Reward lookup: Using PARENT store {$reward_store_id} instead of filiale {$store_id}");
+            }
+        }
+
         // Get base points from active reward (Prämien)
         $reward_points = $wpdb->get_var($wpdb->prepare("
             SELECT points_given FROM {$wpdb->prefix}ppv_rewards
             WHERE store_id=%d AND active=1
             ORDER BY id ASC LIMIT 1
-        ", $store_id));
+        ", $reward_store_id));
 
         if ($reward_points && intval($reward_points) > 0) {
             $points_add = intval($reward_points);
-            error_log("🎁 [POS_SCAN] Reward base points applied: store_id={$store_id}, points_given={$points_add}");
+            error_log("🎁 [POS_SCAN] Reward base points applied: reward_store_id={$reward_store_id}, points_given={$points_add}");
         }
 
         // If no reward configured, notify merchant
