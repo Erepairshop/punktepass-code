@@ -1175,6 +1175,7 @@ body {
   letter-spacing: 0.5px;
 }
 
+.ppv-vip-level-input.bronze > label { color: #CD7F32; }
 .ppv-vip-level-input.silver > label { color: #808080; }
 .ppv-vip-level-input.gold > label { color: #DAA520; }
 .ppv-vip-level-input.platinum > label { color: #6B7280; }
@@ -1337,6 +1338,11 @@ body {
   background: var(--color-primary);
   border-color: var(--color-primary);
   color: white;
+}
+
+.ppv-preview-level[data-level="bronze"].active {
+  background: linear-gradient(135deg, #CD7F32, #A66829);
+  border-color: #CD7F32;
 }
 
 .ppv-preview-level[data-level="silver"].active {

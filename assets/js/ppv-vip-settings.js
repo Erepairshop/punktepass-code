@@ -28,6 +28,7 @@
 
         // 1. Fixed point bonus
         const fixEnabled = document.getElementById('ppv-fix-enabled');
+        const fixBronze = document.getElementById('ppv-fix-bronze');
         const fixSilver = document.getElementById('ppv-fix-silver');
         const fixGold = document.getElementById('ppv-fix-gold');
         const fixPlatinum = document.getElementById('ppv-fix-platinum');
@@ -37,6 +38,7 @@
         const streakEnabled = document.getElementById('ppv-streak-enabled');
         const streakCount = document.getElementById('ppv-streak-count');
         const streakType = document.getElementById('ppv-streak-type');
+        const streakBronze = document.getElementById('ppv-streak-bronze');
         const streakSilver = document.getElementById('ppv-streak-silver');
         const streakGold = document.getElementById('ppv-streak-gold');
         const streakPlatinum = document.getElementById('ppv-streak-platinum');
@@ -45,6 +47,7 @@
 
         // 3. Daily bonus
         const dailyEnabled = document.getElementById('ppv-daily-enabled');
+        const dailyBronze = document.getElementById('ppv-daily-bronze');
         const dailySilver = document.getElementById('ppv-daily-silver');
         const dailyGold = document.getElementById('ppv-daily-gold');
         const dailyPlatinum = document.getElementById('ppv-daily-platinum');
@@ -92,6 +95,7 @@
 
                     // 1. Fixed
                     if (fixEnabled) fixEnabled.checked = s.vip_fix_enabled;
+                    if (fixBronze) fixBronze.value = s.vip_fix_bronze;
                     if (fixSilver) fixSilver.value = s.vip_fix_silver;
                     if (fixGold) fixGold.value = s.vip_fix_gold;
                     if (fixPlatinum) fixPlatinum.value = s.vip_fix_platinum;
@@ -100,12 +104,14 @@
                     if (streakEnabled) streakEnabled.checked = s.vip_streak_enabled;
                     if (streakCount) streakCount.value = s.vip_streak_count;
                     if (streakType) streakType.value = s.vip_streak_type;
+                    if (streakBronze) streakBronze.value = s.vip_streak_bronze;
                     if (streakSilver) streakSilver.value = s.vip_streak_silver;
                     if (streakGold) streakGold.value = s.vip_streak_gold;
                     if (streakPlatinum) streakPlatinum.value = s.vip_streak_platinum;
 
                     // 3. Daily
                     if (dailyEnabled) dailyEnabled.checked = s.vip_daily_enabled;
+                    if (dailyBronze) dailyBronze.value = s.vip_daily_bronze;
                     if (dailySilver) dailySilver.value = s.vip_daily_silver;
                     if (dailyGold) dailyGold.value = s.vip_daily_gold;
                     if (dailyPlatinum) dailyPlatinum.value = s.vip_daily_platinum;
@@ -157,20 +163,21 @@
         // VALIDATION
         // ═══════════════════════════════════════════════════════════
 
-        function validateAscending(silver, gold, platinum) {
+        function validateAscending(bronze, silver, gold, platinum) {
+            const b = parseInt(bronze) || 0;
             const s = parseInt(silver) || 0;
             const g = parseInt(gold) || 0;
             const p = parseInt(platinum) || 0;
-            return s <= g && g <= p;
+            return b <= s && s <= g && g <= p;
         }
 
         function validateAll() {
             let isValid = true;
-            const validationMsg = T.validation_error || 'Values must be in ascending order: Silver ≤ Gold ≤ Platinum';
+            const validationMsg = T.validation_error || 'Values must be in ascending order: Bronze ≤ Silver ≤ Gold ≤ Platinum';
 
             // 1. Fixed
             if (fixEnabled?.checked) {
-                const valid = validateAscending(fixSilver?.value, fixGold?.value, fixPlatinum?.value);
+                const valid = validateAscending(fixBronze?.value, fixSilver?.value, fixGold?.value, fixPlatinum?.value);
                 if (fixError) {
                     fixError.textContent = valid ? '' : validationMsg;
                     fixError.style.display = valid ? 'none' : 'block';
@@ -182,7 +189,7 @@
 
             // 2. Streak (only if type=fixed)
             if (streakEnabled?.checked && streakType?.value === 'fixed') {
-                const valid = validateAscending(streakSilver?.value, streakGold?.value, streakPlatinum?.value);
+                const valid = validateAscending(streakBronze?.value, streakSilver?.value, streakGold?.value, streakPlatinum?.value);
                 if (streakError) {
                     streakError.textContent = valid ? '' : validationMsg;
                     streakError.style.display = valid ? 'none' : 'block';
@@ -194,7 +201,7 @@
 
             // 3. Daily
             if (dailyEnabled?.checked) {
-                const valid = validateAscending(dailySilver?.value, dailyGold?.value, dailyPlatinum?.value);
+                const valid = validateAscending(dailyBronze?.value, dailySilver?.value, dailyGold?.value, dailyPlatinum?.value);
                 if (dailyError) {
                     dailyError.textContent = valid ? '' : validationMsg;
                     dailyError.style.display = valid ? 'none' : 'block';
@@ -216,8 +223,9 @@
             let total = basePoints;
 
             // Get values based on current preview level
-            const getValue = (silver, gold, platinum) => {
+            const getValue = (bronze, silver, gold, platinum) => {
                 const values = {
+                    bronze: parseInt(bronze?.value) || 0,
                     silver: parseInt(silver?.value) || 0,
                     gold: parseInt(gold?.value) || 0,
                     platinum: parseInt(platinum?.value) || 0
@@ -227,7 +235,7 @@
 
             // 1. Fixed bonus
             if (fixEnabled?.checked) {
-                const fix = getValue(fixSilver, fixGold, fixPlatinum);
+                const fix = getValue(fixBronze, fixSilver, fixGold, fixPlatinum);
                 if (previewFixValue) previewFixValue.textContent = '+' + fix;
                 if (previewRowFix) previewRowFix.style.display = 'flex';
                 total += fix;
@@ -239,7 +247,7 @@
             if (streakEnabled?.checked) {
                 let streakBonus = 0;
                 if (streakType?.value === 'fixed') {
-                    streakBonus = getValue(streakSilver, streakGold, streakPlatinum);
+                    streakBonus = getValue(streakBronze, streakSilver, streakGold, streakPlatinum);
                 } else if (streakType?.value === 'double') {
                     streakBonus = basePoints; // Double means +100% = +basePoints
                 } else if (streakType?.value === 'triple') {
@@ -254,7 +262,7 @@
 
             // 3. Daily bonus (assume first scan of day in preview scenario)
             if (dailyEnabled?.checked) {
-                const daily = getValue(dailySilver, dailyGold, dailyPlatinum);
+                const daily = getValue(dailyBronze, dailySilver, dailyGold, dailyPlatinum);
                 if (previewDailyValue) previewDailyValue.textContent = '+' + daily;
                 if (previewRowDaily) previewRowDaily.style.display = 'flex';
                 total += daily;
@@ -293,9 +301,9 @@
 
         // All input changes trigger preview update
         const allInputs = [
-            fixSilver, fixGold, fixPlatinum,
-            streakCount, streakSilver, streakGold, streakPlatinum,
-            dailySilver, dailyGold, dailyPlatinum
+            fixBronze, fixSilver, fixGold, fixPlatinum,
+            streakCount, streakBronze, streakSilver, streakGold, streakPlatinum,
+            dailyBronze, dailySilver, dailyGold, dailyPlatinum
         ];
         allInputs.forEach(input => {
             if (input) {
@@ -351,20 +359,23 @@
 
             // 1. Fixed
             formData.append('vip_fix_enabled', fixEnabled?.checked ? '1' : '0');
-            formData.append('vip_fix_silver', fixSilver?.value || '1');
-            formData.append('vip_fix_gold', fixGold?.value || '2');
-            formData.append('vip_fix_platinum', fixPlatinum?.value || '3');
+            formData.append('vip_fix_bronze', fixBronze?.value || '1');
+            formData.append('vip_fix_silver', fixSilver?.value || '2');
+            formData.append('vip_fix_gold', fixGold?.value || '3');
+            formData.append('vip_fix_platinum', fixPlatinum?.value || '5');
 
             // 2. Streak
             formData.append('vip_streak_enabled', streakEnabled?.checked ? '1' : '0');
             formData.append('vip_streak_count', streakCount?.value || '10');
             formData.append('vip_streak_type', streakType?.value || 'fixed');
-            formData.append('vip_streak_silver', streakSilver?.value || '1');
-            formData.append('vip_streak_gold', streakGold?.value || '2');
-            formData.append('vip_streak_platinum', streakPlatinum?.value || '3');
+            formData.append('vip_streak_bronze', streakBronze?.value || '1');
+            formData.append('vip_streak_silver', streakSilver?.value || '2');
+            formData.append('vip_streak_gold', streakGold?.value || '3');
+            formData.append('vip_streak_platinum', streakPlatinum?.value || '5');
 
             // 3. Daily
             formData.append('vip_daily_enabled', dailyEnabled?.checked ? '1' : '0');
+            formData.append('vip_daily_bronze', dailyBronze?.value || '5');
             formData.append('vip_daily_silver', dailySilver?.value || '10');
             formData.append('vip_daily_gold', dailyGold?.value || '20');
             formData.append('vip_daily_platinum', dailyPlatinum?.value || '30');

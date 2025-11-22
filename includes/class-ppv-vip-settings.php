@@ -543,11 +543,19 @@ class PPV_VIP_Settings {
                     </div>
                     <div class="ppv-vip-card-body">
                         <div class="ppv-vip-levels-row">
+                            <div class="ppv-vip-level-input bronze">
+                                <label><?php echo esc_html($T['bronze_label']); ?></label>
+                                <div class="ppv-input-group">
+                                    <span>+</span>
+                                    <input type="number" id="ppv-fix-bronze" name="vip_fix_bronze" min="0" max="1000" value="1">
+                                    <span><?php echo esc_html($T['fix_suffix']); ?></span>
+                                </div>
+                            </div>
                             <div class="ppv-vip-level-input silver">
                                 <label><?php echo esc_html($T['silver_label']); ?></label>
                                 <div class="ppv-input-group">
                                     <span>+</span>
-                                    <input type="number" id="ppv-fix-silver" name="vip_fix_silver" min="0" max="1000" value="1">
+                                    <input type="number" id="ppv-fix-silver" name="vip_fix_silver" min="0" max="1000" value="2">
                                     <span><?php echo esc_html($T['fix_suffix']); ?></span>
                                 </div>
                             </div>
@@ -555,7 +563,7 @@ class PPV_VIP_Settings {
                                 <label><?php echo esc_html($T['gold_label']); ?></label>
                                 <div class="ppv-input-group">
                                     <span>+</span>
-                                    <input type="number" id="ppv-fix-gold" name="vip_fix_gold" min="0" max="1000" value="2">
+                                    <input type="number" id="ppv-fix-gold" name="vip_fix_gold" min="0" max="1000" value="3">
                                     <span><?php echo esc_html($T['fix_suffix']); ?></span>
                                 </div>
                             </div>
@@ -563,7 +571,7 @@ class PPV_VIP_Settings {
                                 <label><?php echo esc_html($T['platinum_label']); ?></label>
                                 <div class="ppv-input-group">
                                     <span>+</span>
-                                    <input type="number" id="ppv-fix-platinum" name="vip_fix_platinum" min="0" max="1000" value="3">
+                                    <input type="number" id="ppv-fix-platinum" name="vip_fix_platinum" min="0" max="1000" value="5">
                                     <span><?php echo esc_html($T['fix_suffix']); ?></span>
                                 </div>
                             </div>
@@ -607,11 +615,19 @@ class PPV_VIP_Settings {
                         </div>
                         <!-- Fixed point inputs (shown only when type=fixed) -->
                         <div class="ppv-vip-levels-row ppv-streak-fixed-inputs">
+                            <div class="ppv-vip-level-input bronze">
+                                <label><?php echo esc_html($T['bronze_label']); ?></label>
+                                <div class="ppv-input-group">
+                                    <span>+</span>
+                                    <input type="number" id="ppv-streak-bronze" name="vip_streak_bronze" min="0" max="1000" value="1">
+                                    <span><?php echo esc_html($T['fix_suffix']); ?></span>
+                                </div>
+                            </div>
                             <div class="ppv-vip-level-input silver">
                                 <label><?php echo esc_html($T['silver_label']); ?></label>
                                 <div class="ppv-input-group">
                                     <span>+</span>
-                                    <input type="number" id="ppv-streak-silver" name="vip_streak_silver" min="0" max="1000" value="1">
+                                    <input type="number" id="ppv-streak-silver" name="vip_streak_silver" min="0" max="1000" value="2">
                                     <span><?php echo esc_html($T['fix_suffix']); ?></span>
                                 </div>
                             </div>
@@ -619,7 +635,7 @@ class PPV_VIP_Settings {
                                 <label><?php echo esc_html($T['gold_label']); ?></label>
                                 <div class="ppv-input-group">
                                     <span>+</span>
-                                    <input type="number" id="ppv-streak-gold" name="vip_streak_gold" min="0" max="1000" value="2">
+                                    <input type="number" id="ppv-streak-gold" name="vip_streak_gold" min="0" max="1000" value="3">
                                     <span><?php echo esc_html($T['fix_suffix']); ?></span>
                                 </div>
                             </div>
@@ -627,7 +643,7 @@ class PPV_VIP_Settings {
                                 <label><?php echo esc_html($T['platinum_label']); ?></label>
                                 <div class="ppv-input-group">
                                     <span>+</span>
-                                    <input type="number" id="ppv-streak-platinum" name="vip_streak_platinum" min="0" max="1000" value="3">
+                                    <input type="number" id="ppv-streak-platinum" name="vip_streak_platinum" min="0" max="1000" value="5">
                                     <span><?php echo esc_html($T['fix_suffix']); ?></span>
                                 </div>
                             </div>
@@ -655,6 +671,14 @@ class PPV_VIP_Settings {
                     </div>
                     <div class="ppv-vip-card-body">
                         <div class="ppv-vip-levels-row">
+                            <div class="ppv-vip-level-input bronze">
+                                <label><?php echo esc_html($T['bronze_label']); ?></label>
+                                <div class="ppv-input-group">
+                                    <span>+</span>
+                                    <input type="number" id="ppv-daily-bronze" name="vip_daily_bronze" min="0" max="1000" value="5">
+                                    <span><?php echo esc_html($T['daily_suffix']); ?></span>
+                                </div>
+                            </div>
                             <div class="ppv-vip-level-input silver">
                                 <label><?php echo esc_html($T['silver_label']); ?></label>
                                 <div class="ppv-input-group">
@@ -693,6 +717,7 @@ class PPV_VIP_Settings {
 
                     <!-- Level selector for preview -->
                     <div class="ppv-preview-level-selector">
+                        <button type="button" class="ppv-preview-level" data-level="bronze"><?php echo esc_html($T['bronze_label']); ?></button>
                         <button type="button" class="ppv-preview-level" data-level="silver"><?php echo esc_html($T['silver_label']); ?></button>
                         <button type="button" class="ppv-preview-level active" data-level="gold"><?php echo esc_html($T['gold_label']); ?></button>
                         <button type="button" class="ppv-preview-level" data-level="platinum"><?php echo esc_html($T['platinum_label']); ?></button>
