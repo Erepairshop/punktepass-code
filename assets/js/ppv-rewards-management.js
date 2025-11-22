@@ -1,30 +1,24 @@
 /**
  * PunktePass – Prämien Management Frontend
- * Version: 1.3 – Uses centralized ppv-api-manager.js
+ * Version: 1.4 – IIFE wrapped to prevent duplicate declaration errors
  */
 
-console.log("✅ PPV Rewards Management JS v1.3 loaded");
+// ✅ Prevent duplicate loading
+if (window.PPV_REWARDS_MGMT_LOADED) {
+  console.log('⏭️ [Rewards] Already loaded, skipping');
+} else {
+  window.PPV_REWARDS_MGMT_LOADED = true;
+
+console.log("✅ PPV Rewards Management JS v1.4 loaded");
 
 // ============================================================
 // 🚦 Uses centralized ppv-api-manager.js
 // ============================================================
-// Note: apiFetch/ppvFetch and PPV_REQUEST_QUEUE are defined in ppv-api-manager.js
-// Fallback if not loaded (shouldn't happen)
-if (typeof window.apiFetch !== 'function') {
-  console.warn('⚠️ [Rewards] API Manager not loaded, using fallback');
-  window.apiFetch = async function(url, options = {}) {
-    const res = await fetch(url, options);
-    if (res.status === 503) {
-      throw new Error('Server überlastet');
-    }
-    return res;
-  };
-}
-
-// Alias
-const apiFetch = window.apiFetch;
+// Use window.apiFetch or window.ppvFetch directly (no const alias!)
 
 document.addEventListener("DOMContentLoaded", function () {
+  // Local alias inside function scope (safe)
+  const apiFetch = window.apiFetch || window.ppvFetch || fetch;
 
   const base = ppv_rewards_mgmt?.base || "/wp-json/ppv/v1/";
   const storeID = ppv_rewards_mgmt?.store_id || window.PPV_STORE_ID || 0;
@@ -377,12 +371,16 @@ document.addEventListener("DOMContentLoaded", function () {
   initRewardsManagement();
 });
 
-// 🔄 Turbo: Re-initialize after navigation
-document.addEventListener('turbo:load', function() {
-  // Small delay to let DOM settle
-  setTimeout(() => {
-    if (typeof window.ppv_rewards_reinit === 'function') {
-      window.ppv_rewards_reinit();
-    }
-  }, 150);
-});
+} // End of duplicate load prevention
+
+// 🔄 Turbo: Re-initialize after navigation (outside guard - always register)
+if (!window.PPV_REWARDS_TURBO_REGISTERED) {
+  window.PPV_REWARDS_TURBO_REGISTERED = true;
+  document.addEventListener('turbo:load', function() {
+    setTimeout(() => {
+      if (typeof window.ppv_rewards_reinit === 'function') {
+        window.ppv_rewards_reinit();
+      }
+    }, 150);
+  });
+}

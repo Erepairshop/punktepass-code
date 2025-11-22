@@ -1,9 +1,16 @@
 /**
- * PunktePass – Analytics Dashboard (v2.0)
+ * PunktePass – Analytics Dashboard (v2.1)
  * ✅ Fully translated
  * ✅ Supports: German, Hungarian, Romanian
  * ✅ getLabels() function
+ * ✅ Duplicate load prevention
  */
+
+// ✅ Prevent duplicate loading
+if (window.PPV_ANALYTICS_LOADED) {
+  console.log('⏭️ [Analytics] Already loaded, skipping');
+} else {
+  window.PPV_ANALYTICS_LOADED = true;
 
 class PPV_Analytics {
   constructor() {
@@ -650,4 +657,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-console.log('✅ [Analytics] Script loaded - TRANSLATED');
+console.log('✅ [Analytics] Script loaded v2.1');
+
+} // End of duplicate load prevention
