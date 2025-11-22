@@ -135,11 +135,11 @@ class PPV_VIP_Settings {
 
         $store = $wpdb->get_row($wpdb->prepare(
             "SELECT
-                vip_enabled, vip_silver_bonus, vip_gold_bonus, vip_platinum_bonus,
-                vip_fix_enabled, vip_fix_silver, vip_fix_gold, vip_fix_platinum,
+                vip_enabled, vip_bronze_bonus, vip_silver_bonus, vip_gold_bonus, vip_platinum_bonus,
+                vip_fix_enabled, vip_fix_bronze, vip_fix_silver, vip_fix_gold, vip_fix_platinum,
                 vip_streak_enabled, vip_streak_count, vip_streak_type,
-                vip_streak_silver, vip_streak_gold, vip_streak_platinum,
-                vip_daily_enabled, vip_daily_silver, vip_daily_gold, vip_daily_platinum
+                vip_streak_bronze, vip_streak_silver, vip_streak_gold, vip_streak_platinum,
+                vip_daily_enabled, vip_daily_bronze, vip_daily_silver, vip_daily_gold, vip_daily_platinum
              FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
             $store_id
         ));
@@ -151,28 +151,32 @@ class PPV_VIP_Settings {
         return new WP_REST_Response([
             'success' => true,
             'data' => [
-                // 1. Percentage bonus
+                // 1. Percentage bonus (Bronze is new, starts at 100 lifetime points)
                 'vip_enabled' => (bool) ($store->vip_enabled ?? 0),
+                'vip_bronze_bonus' => intval($store->vip_bronze_bonus ?? 3),
                 'vip_silver_bonus' => intval($store->vip_silver_bonus ?? 5),
                 'vip_gold_bonus' => intval($store->vip_gold_bonus ?? 10),
                 'vip_platinum_bonus' => intval($store->vip_platinum_bonus ?? 20),
 
-                // 1. Fixed point bonus
+                // 2. Fixed point bonus
                 'vip_fix_enabled' => (bool) ($store->vip_fix_enabled ?? 0),
-                'vip_fix_silver' => intval($store->vip_fix_silver ?? 1),
-                'vip_fix_gold' => intval($store->vip_fix_gold ?? 2),
-                'vip_fix_platinum' => intval($store->vip_fix_platinum ?? 3),
+                'vip_fix_bronze' => intval($store->vip_fix_bronze ?? 1),
+                'vip_fix_silver' => intval($store->vip_fix_silver ?? 2),
+                'vip_fix_gold' => intval($store->vip_fix_gold ?? 3),
+                'vip_fix_platinum' => intval($store->vip_fix_platinum ?? 5),
 
-                // 2. Streak bonus (every Xth scan)
+                // 3. Streak bonus (every Xth scan)
                 'vip_streak_enabled' => (bool) ($store->vip_streak_enabled ?? 0),
                 'vip_streak_count' => intval($store->vip_streak_count ?? 10),
                 'vip_streak_type' => $store->vip_streak_type ?? 'fixed',
-                'vip_streak_silver' => intval($store->vip_streak_silver ?? 1),
-                'vip_streak_gold' => intval($store->vip_streak_gold ?? 2),
-                'vip_streak_platinum' => intval($store->vip_streak_platinum ?? 3),
+                'vip_streak_bronze' => intval($store->vip_streak_bronze ?? 1),
+                'vip_streak_silver' => intval($store->vip_streak_silver ?? 2),
+                'vip_streak_gold' => intval($store->vip_streak_gold ?? 3),
+                'vip_streak_platinum' => intval($store->vip_streak_platinum ?? 5),
 
-                // 3. Daily first scan bonus
+                // 4. Daily first scan bonus
                 'vip_daily_enabled' => (bool) ($store->vip_daily_enabled ?? 0),
+                'vip_daily_bronze' => intval($store->vip_daily_bronze ?? 5),
                 'vip_daily_silver' => intval($store->vip_daily_silver ?? 10),
                 'vip_daily_gold' => intval($store->vip_daily_gold ?? 20),
                 'vip_daily_platinum' => intval($store->vip_daily_platinum ?? 30),
@@ -199,70 +203,74 @@ class PPV_VIP_Settings {
             return max($min, min($max, intval($request->get_param($key) ?? $default)));
         };
 
-        // 1. Percentage bonus values
+        // 1. Percentage bonus values (Bronze → Silver → Gold → Platinum)
         $vip_enabled = (bool) $request->get_param('vip_enabled');
+        $bronze_pct = $getInt('vip_bronze_bonus', 3, 0, 100);
         $silver_pct = $getInt('vip_silver_bonus', 5, 0, 100);
         $gold_pct = $getInt('vip_gold_bonus', 10, 0, 100);
         $platinum_pct = $getInt('vip_platinum_bonus', 20, 0, 100);
 
-        // 1. Fixed point bonus values
+        // 2. Fixed point bonus values
         $fix_enabled = (bool) $request->get_param('vip_fix_enabled');
-        $fix_silver = $getInt('vip_fix_silver', 1, 0, 1000);
-        $fix_gold = $getInt('vip_fix_gold', 2, 0, 1000);
-        $fix_platinum = $getInt('vip_fix_platinum', 3, 0, 1000);
+        $fix_bronze = $getInt('vip_fix_bronze', 1, 0, 1000);
+        $fix_silver = $getInt('vip_fix_silver', 2, 0, 1000);
+        $fix_gold = $getInt('vip_fix_gold', 3, 0, 1000);
+        $fix_platinum = $getInt('vip_fix_platinum', 5, 0, 1000);
 
-        // 2. Streak bonus values
+        // 3. Streak bonus values
         $streak_enabled = (bool) $request->get_param('vip_streak_enabled');
         $streak_count = $getInt('vip_streak_count', 10, 2, 100);
         $streak_type = sanitize_text_field($request->get_param('vip_streak_type') ?? 'fixed');
         if (!in_array($streak_type, ['fixed', 'double', 'triple'])) {
             $streak_type = 'fixed';
         }
-        $streak_silver = $getInt('vip_streak_silver', 1, 0, 1000);
-        $streak_gold = $getInt('vip_streak_gold', 2, 0, 1000);
-        $streak_platinum = $getInt('vip_streak_platinum', 3, 0, 1000);
+        $streak_bronze = $getInt('vip_streak_bronze', 1, 0, 1000);
+        $streak_silver = $getInt('vip_streak_silver', 2, 0, 1000);
+        $streak_gold = $getInt('vip_streak_gold', 3, 0, 1000);
+        $streak_platinum = $getInt('vip_streak_platinum', 5, 0, 1000);
 
-        // 3. Daily first scan bonus values
+        // 4. Daily first scan bonus values
         $daily_enabled = (bool) $request->get_param('vip_daily_enabled');
+        $daily_bronze = $getInt('vip_daily_bronze', 5, 0, 1000);
         $daily_silver = $getInt('vip_daily_silver', 10, 0, 1000);
         $daily_gold = $getInt('vip_daily_gold', 20, 0, 1000);
         $daily_platinum = $getInt('vip_daily_platinum', 30, 0, 1000);
 
-        // Validation: Silver ≤ Gold ≤ Platinum for all enabled bonus types
+        // Validation: Bronze ≤ Silver ≤ Gold ≤ Platinum for all enabled bonus types
         $errors = [];
         $error_messages = [
             'de' => [
-                'pct' => 'Prozent-Bonus: Die Werte müssen aufsteigend sein (Silber ≤ Gold ≤ Platin)',
-                'fix' => 'Fixpunkte-Bonus: Die Werte müssen aufsteigend sein (Silber ≤ Gold ≤ Platin)',
-                'streak' => 'X. Scan Bonus: Die Werte müssen aufsteigend sein (Silber ≤ Gold ≤ Platin)',
-                'daily' => 'Erster Scan des Tages: Die Werte müssen aufsteigend sein (Silber ≤ Gold ≤ Platin)',
+                'pct' => 'Prozent-Bonus: Die Werte müssen aufsteigend sein (Bronze ≤ Silber ≤ Gold ≤ Platin)',
+                'fix' => 'Fixpunkte-Bonus: Die Werte müssen aufsteigend sein (Bronze ≤ Silber ≤ Gold ≤ Platin)',
+                'streak' => 'X. Scan Bonus: Die Werte müssen aufsteigend sein (Bronze ≤ Silber ≤ Gold ≤ Platin)',
+                'daily' => 'Erster Scan des Tages: Die Werte müssen aufsteigend sein (Bronze ≤ Silber ≤ Gold ≤ Platin)',
             ],
             'hu' => [
-                'pct' => 'Százalékos bónusz: Az értékeknek növekvő sorrendben kell lenniük (Ezüst ≤ Arany ≤ Platina)',
-                'fix' => 'Fix pont bónusz: Az értékeknek növekvő sorrendben kell lenniük (Ezüst ≤ Arany ≤ Platina)',
-                'streak' => 'X. scan bónusz: Az értékeknek növekvő sorrendben kell lenniük (Ezüst ≤ Arany ≤ Platina)',
-                'daily' => 'Első napi scan: Az értékeknek növekvő sorrendben kell lenniük (Ezüst ≤ Arany ≤ Platina)',
+                'pct' => 'Százalékos bónusz: Az értékeknek növekvő sorrendben kell lenniük (Bronz ≤ Ezüst ≤ Arany ≤ Platina)',
+                'fix' => 'Fix pont bónusz: Az értékeknek növekvő sorrendben kell lenniük (Bronz ≤ Ezüst ≤ Arany ≤ Platina)',
+                'streak' => 'X. scan bónusz: Az értékeknek növekvő sorrendben kell lenniük (Bronz ≤ Ezüst ≤ Arany ≤ Platina)',
+                'daily' => 'Első napi scan: Az értékeknek növekvő sorrendben kell lenniük (Bronz ≤ Ezüst ≤ Arany ≤ Platina)',
             ],
             'ro' => [
-                'pct' => 'Bonus procentual: Valorile trebuie să fie în ordine crescătoare (Argint ≤ Aur ≤ Platină)',
-                'fix' => 'Bonus puncte fixe: Valorile trebuie să fie în ordine crescătoare (Argint ≤ Aur ≤ Platină)',
-                'streak' => 'Bonus scanare X: Valorile trebuie să fie în ordine crescătoare (Argint ≤ Aur ≤ Platină)',
-                'daily' => 'Prima scanare zilnică: Valorile trebuie să fie în ordine crescătoare (Argint ≤ Aur ≤ Platină)',
+                'pct' => 'Bonus procentual: Valorile trebuie să fie în ordine crescătoare (Bronz ≤ Argint ≤ Aur ≤ Platină)',
+                'fix' => 'Bonus puncte fixe: Valorile trebuie să fie în ordine crescătoare (Bronz ≤ Argint ≤ Aur ≤ Platină)',
+                'streak' => 'Bonus scanare X: Valorile trebuie să fie în ordine crescătoare (Bronz ≤ Argint ≤ Aur ≤ Platină)',
+                'daily' => 'Prima scanare zilnică: Valorile trebuie să fie în ordine crescătoare (Bronz ≤ Argint ≤ Aur ≤ Platină)',
             ],
         ];
         $err = $error_messages[$lang] ?? $error_messages['de'];
 
-        // Check ascending order for each enabled bonus type
-        if ($vip_enabled && !($silver_pct <= $gold_pct && $gold_pct <= $platinum_pct)) {
+        // Check ascending order for each enabled bonus type (Bronze ≤ Silver ≤ Gold ≤ Platinum)
+        if ($vip_enabled && !($bronze_pct <= $silver_pct && $silver_pct <= $gold_pct && $gold_pct <= $platinum_pct)) {
             $errors[] = $err['pct'];
         }
-        if ($fix_enabled && !($fix_silver <= $fix_gold && $fix_gold <= $fix_platinum)) {
+        if ($fix_enabled && !($fix_bronze <= $fix_silver && $fix_silver <= $fix_gold && $fix_gold <= $fix_platinum)) {
             $errors[] = $err['fix'];
         }
-        if ($streak_enabled && $streak_type === 'fixed' && !($streak_silver <= $streak_gold && $streak_gold <= $streak_platinum)) {
+        if ($streak_enabled && $streak_type === 'fixed' && !($streak_bronze <= $streak_silver && $streak_silver <= $streak_gold && $streak_gold <= $streak_platinum)) {
             $errors[] = $err['streak'];
         }
-        if ($daily_enabled && !($daily_silver <= $daily_gold && $daily_gold <= $daily_platinum)) {
+        if ($daily_enabled && !($daily_bronze <= $daily_silver && $daily_silver <= $daily_gold && $daily_gold <= $daily_platinum)) {
             $errors[] = $err['daily'];
         }
 
@@ -274,17 +282,19 @@ class PPV_VIP_Settings {
             ], 400);
         }
 
-        // Save to database
+        // Save to database (with Bronze columns)
         $result = $wpdb->update(
             $wpdb->prefix . 'ppv_stores',
             [
-                // 1. Percentage
+                // 1. Percentage (Bronze → Silver → Gold → Platinum)
                 'vip_enabled' => $vip_enabled ? 1 : 0,
+                'vip_bronze_bonus' => $bronze_pct,
                 'vip_silver_bonus' => $silver_pct,
                 'vip_gold_bonus' => $gold_pct,
                 'vip_platinum_bonus' => $platinum_pct,
                 // 2. Fixed
                 'vip_fix_enabled' => $fix_enabled ? 1 : 0,
+                'vip_fix_bronze' => $fix_bronze,
                 'vip_fix_silver' => $fix_silver,
                 'vip_fix_gold' => $fix_gold,
                 'vip_fix_platinum' => $fix_platinum,
@@ -292,17 +302,19 @@ class PPV_VIP_Settings {
                 'vip_streak_enabled' => $streak_enabled ? 1 : 0,
                 'vip_streak_count' => $streak_count,
                 'vip_streak_type' => $streak_type,
+                'vip_streak_bronze' => $streak_bronze,
                 'vip_streak_silver' => $streak_silver,
                 'vip_streak_gold' => $streak_gold,
                 'vip_streak_platinum' => $streak_platinum,
                 // 4. Daily
                 'vip_daily_enabled' => $daily_enabled ? 1 : 0,
+                'vip_daily_bronze' => $daily_bronze,
                 'vip_daily_silver' => $daily_silver,
                 'vip_daily_gold' => $daily_gold,
                 'vip_daily_platinum' => $daily_platinum,
             ],
             ['id' => $store_id],
-            ['%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%s', '%d', '%d', '%d', '%d', '%d', '%d', '%d'],
+            ['%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%s', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d'],
             ['%d']
         );
 

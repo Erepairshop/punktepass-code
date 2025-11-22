@@ -274,24 +274,28 @@ class PPV_POS_SCAN {
                 }
             }
 
-            // Get all VIP settings for this store (or parent store)
+            // Get all VIP settings for this store (or parent store) - including Bronze columns
             $vip_settings = $wpdb->get_row($wpdb->prepare("
                 SELECT
-                    vip_enabled, vip_silver_bonus, vip_gold_bonus, vip_platinum_bonus,
-                    vip_fix_enabled, vip_fix_silver, vip_fix_gold, vip_fix_platinum,
+                    vip_enabled, vip_bronze_bonus, vip_silver_bonus, vip_gold_bonus, vip_platinum_bonus,
+                    vip_fix_enabled, vip_fix_bronze, vip_fix_silver, vip_fix_gold, vip_fix_platinum,
                     vip_streak_enabled, vip_streak_count, vip_streak_type,
-                    vip_streak_silver, vip_streak_gold, vip_streak_platinum,
-                    vip_daily_enabled, vip_daily_silver, vip_daily_gold, vip_daily_platinum
+                    vip_streak_bronze, vip_streak_silver, vip_streak_gold, vip_streak_platinum,
+                    vip_daily_enabled, vip_daily_bronze, vip_daily_silver, vip_daily_gold, vip_daily_platinum
                 FROM {$wpdb->prefix}ppv_stores WHERE id = %d
             ", $vip_store_id));
 
             if ($vip_settings) {
-                $user_level = PPV_User_Level::get_level($user_id);
+                // Check if user has VIP status (Bronze or higher = 100+ lifetime points)
+                // Starter users (0-99 points) do NOT get VIP bonuses
+                $user_level = PPV_User_Level::get_vip_level_for_bonus($user_id);
                 $base_points = $points_add; // Store original points for calculations
 
-                // Helper to get level-specific value
-                $getLevelValue = function($silver, $gold, $platinum) use ($user_level) {
+                // Helper to get level-specific value (returns 0 for Starter/null)
+                $getLevelValue = function($bronze, $silver, $gold, $platinum) use ($user_level) {
+                    if ($user_level === null) return 0; // Starter = no VIP bonus
                     switch ($user_level) {
+                        case 'bronze': return intval($bronze);
                         case 'silver': return intval($silver);
                         case 'gold': return intval($gold);
                         case 'platinum': return intval($platinum);
@@ -302,8 +306,9 @@ class PPV_POS_SCAN {
                 // ═══════════════════════════════════════════════════════════
                 // 1. PERCENTAGE BONUS
                 // ═══════════════════════════════════════════════════════════
-                if ($vip_settings->vip_enabled) {
+                if ($vip_settings->vip_enabled && $user_level !== null) {
                     $bonus_percent = $getLevelValue(
+                        $vip_settings->vip_bronze_bonus ?? 3,
                         $vip_settings->vip_silver_bonus,
                         $vip_settings->vip_gold_bonus,
                         $vip_settings->vip_platinum_bonus
@@ -316,8 +321,9 @@ class PPV_POS_SCAN {
                 // ═══════════════════════════════════════════════════════════
                 // 2. FIXED POINT BONUS
                 // ═══════════════════════════════════════════════════════════
-                if ($vip_settings->vip_fix_enabled) {
+                if ($vip_settings->vip_fix_enabled && $user_level !== null) {
                     $fix_bonus = $getLevelValue(
+                        $vip_settings->vip_fix_bronze ?? 1,
                         $vip_settings->vip_fix_silver,
                         $vip_settings->vip_fix_gold,
                         $vip_settings->vip_fix_platinum
@@ -330,7 +336,7 @@ class PPV_POS_SCAN {
                 // ═══════════════════════════════════════════════════════════
                 // 3. EVERY Xth SCAN BONUS (Streak)
                 // ═══════════════════════════════════════════════════════════
-                if ($vip_settings->vip_streak_enabled) {
+                if ($vip_settings->vip_streak_enabled && $user_level !== null) {
                     $streak_count = intval($vip_settings->vip_streak_count);
                     if ($streak_count > 0) {
                         // Count user's total scans at this store
@@ -346,6 +352,7 @@ class PPV_POS_SCAN {
 
                             if ($streak_type === 'fixed') {
                                 $vip_bonus_details['streak'] = $getLevelValue(
+                                    $vip_settings->vip_streak_bronze ?? 1,
                                     $vip_settings->vip_streak_silver,
                                     $vip_settings->vip_streak_gold,
                                     $vip_settings->vip_streak_platinum
@@ -364,7 +371,7 @@ class PPV_POS_SCAN {
                 // ═══════════════════════════════════════════════════════════
                 // 4. FIRST DAILY SCAN BONUS
                 // ═══════════════════════════════════════════════════════════
-                if ($vip_settings->vip_daily_enabled) {
+                if ($vip_settings->vip_daily_enabled && $user_level !== null) {
                     // Check if user already scanned at this store today
                     $today = date('Y-m-d');
                     $already_scanned_today = (int)$wpdb->get_var($wpdb->prepare("
@@ -375,6 +382,7 @@ class PPV_POS_SCAN {
 
                     if ($already_scanned_today === 0) {
                         $vip_bonus_details['daily'] = $getLevelValue(
+                            $vip_settings->vip_daily_bronze ?? 5,
                             $vip_settings->vip_daily_silver,
                             $vip_settings->vip_daily_gold,
                             $vip_settings->vip_daily_platinum
@@ -402,6 +410,11 @@ class PPV_POS_SCAN {
             'reference' => 'POS Scan',
             'created'   => current_time('mysql'),
         ]);
+
+        /** 7.5) Update lifetime_points (for VIP level calculation) */
+        if (class_exists('PPV_User_Level') && $points_add > 0) {
+            PPV_User_Level::add_lifetime_points($user_id, $points_add);
+        }
 
         /** 8) Teljes pont */
         $total_points = (int)$wpdb->get_var($wpdb->prepare("

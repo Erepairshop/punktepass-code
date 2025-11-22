@@ -44,6 +44,47 @@ class PPV_Core {
 
             update_option('ppv_db_migration_version', '1.1');
         }
+
+        // Migration 1.2: Add lifetime_points column to users + Bronze VIP bonus columns
+        if (version_compare($migration_version, '1.2', '<')) {
+            // 1. Add lifetime_points to ppv_users
+            $users_table = $wpdb->prefix . 'ppv_users';
+            $lifetime_col = $wpdb->get_results("SHOW COLUMNS FROM {$users_table} LIKE 'lifetime_points'");
+
+            if (empty($lifetime_col)) {
+                $wpdb->query("ALTER TABLE {$users_table}
+                    ADD COLUMN lifetime_points INT UNSIGNED DEFAULT 0 COMMENT 'Total points ever collected (never decreases)'
+                ");
+                error_log("✅ [PPV_Core] lifetime_points column added to ppv_users table");
+
+                // Calculate lifetime_points for existing users (only positive points = earned, not redeemed)
+                $wpdb->query("
+                    UPDATE {$users_table} u
+                    SET u.lifetime_points = (
+                        SELECT COALESCE(SUM(p.points), 0)
+                        FROM {$wpdb->prefix}ppv_points p
+                        WHERE p.user_id = u.id AND p.points > 0
+                    )
+                ");
+                error_log("✅ [PPV_Core] Calculated lifetime_points for existing users");
+            }
+
+            // 2. Add Bronze VIP bonus columns to stores (new level structure)
+            $stores_table = $wpdb->prefix . 'ppv_stores';
+            $bronze_col = $wpdb->get_results("SHOW COLUMNS FROM {$stores_table} LIKE 'vip_fix_bronze'");
+
+            if (empty($bronze_col)) {
+                $wpdb->query("ALTER TABLE {$stores_table}
+                    ADD COLUMN vip_bronze_bonus INT DEFAULT 3 COMMENT 'Extra points % for Bronze users' AFTER vip_enabled,
+                    ADD COLUMN vip_fix_bronze INT DEFAULT 1 COMMENT 'Fixed extra points for Bronze users' AFTER vip_fix_enabled,
+                    ADD COLUMN vip_streak_bronze INT DEFAULT 1 COMMENT 'Streak bonus for Bronze users' AFTER vip_streak_type,
+                    ADD COLUMN vip_daily_bronze INT DEFAULT 5 COMMENT 'Daily first scan bonus for Bronze users' AFTER vip_daily_enabled
+                ");
+                error_log("✅ [PPV_Core] Bronze VIP bonus columns added to ppv_stores table");
+            }
+
+            update_option('ppv_db_migration_version', '1.2');
+        }
     }
  
     public static function init_session_bridge() {

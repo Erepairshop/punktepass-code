@@ -140,6 +140,11 @@ class PPV_API {
             'created'=>current_time('mysql')
         ]);
 
+        // Update lifetime_points for VIP level calculation (only for positive points)
+        if (class_exists('PPV_User_Level') && $points > 0) {
+            PPV_User_Level::add_lifetime_points($user_id, $points);
+        }
+
         $new_total = (int)$wpdb->get_var($wpdb->prepare(
             "SELECT COALESCE(SUM(points),0) FROM {$wpdb->prefix}ppv_points WHERE user_id=%d", $user_id
         ));

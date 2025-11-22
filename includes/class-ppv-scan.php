@@ -129,6 +129,11 @@ public static function ajax_auto_add_point() {
         'created'    => current_time('mysql')
     ]);
 
+    // Update lifetime_points for VIP level calculation
+    if (class_exists('PPV_User_Level') && $points_to_add > 0) {
+        PPV_User_Level::add_lifetime_points($user_id, $points_to_add);
+    }
+
     // --- Visszajelzés ---
     wp_send_json_success([
         'msg'   => "{$points_to_add} Punkt(e) erfolgreich gesammelt!",

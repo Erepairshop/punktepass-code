@@ -1,8 +1,9 @@
 <?php
 /**
  * PunktePass – User Level System
- * Bronze → Silver → Gold → Platinum
- * Based on total points collected across all stores
+ * Starter → Bronze → Silver → Gold → Platinum
+ * Based on LIFETIME points (never decreases, even after redemptions)
+ * VIP bonuses start at Bronze (100+ points)
  * Author: PunktePass / Erik Borota
  */
 
@@ -10,16 +11,19 @@ if (!defined('ABSPATH')) exit;
 
 class PPV_User_Level {
 
-    // Level thresholds (total points)
+    // Level thresholds (lifetime points - never decreases)
+    // Starter = no VIP bonus, VIP starts at Bronze (100+)
     const LEVELS = [
-        'bronze'   => ['min' => 0,    'max' => 99,   'name_de' => 'Bronze',   'name_hu' => 'Bronz',    'name_ro' => 'Bronz'],
-        'silver'   => ['min' => 100,  'max' => 499,  'name_de' => 'Silber',   'name_hu' => 'Ezüst',    'name_ro' => 'Argint'],
-        'gold'     => ['min' => 500,  'max' => 999,  'name_de' => 'Gold',     'name_hu' => 'Arany',    'name_ro' => 'Aur'],
-        'platinum' => ['min' => 1000, 'max' => 999999, 'name_de' => 'Platin', 'name_hu' => 'Platina',  'name_ro' => 'Platină'],
+        'starter'  => ['min' => 0,    'max' => 99,     'name_de' => 'Starter',  'name_hu' => 'Kezdő',    'name_ro' => 'Începător', 'vip' => false],
+        'bronze'   => ['min' => 100,  'max' => 499,    'name_de' => 'Bronze',   'name_hu' => 'Bronz',    'name_ro' => 'Bronz',     'vip' => true],
+        'silver'   => ['min' => 500,  'max' => 999,    'name_de' => 'Silber',   'name_hu' => 'Ezüst',    'name_ro' => 'Argint',    'vip' => true],
+        'gold'     => ['min' => 1000, 'max' => 1999,   'name_de' => 'Gold',     'name_hu' => 'Arany',    'name_ro' => 'Aur',       'vip' => true],
+        'platinum' => ['min' => 2000, 'max' => 999999, 'name_de' => 'Platin',   'name_hu' => 'Platina',  'name_ro' => 'Platină',   'vip' => true],
     ];
 
     // Level icons (RemixIcon classes)
     const ICONS = [
+        'starter'  => 'ri-user-line',
         'bronze'   => 'ri-medal-line',
         'silver'   => 'ri-medal-fill',
         'gold'     => 'ri-vip-crown-fill',
@@ -28,6 +32,7 @@ class PPV_User_Level {
 
     // Level colors
     const COLORS = [
+        'starter'  => ['bg' => '#6c757d', 'text' => '#fff', 'glow' => 'rgba(108, 117, 125, 0.4)'],
         'bronze'   => ['bg' => '#CD7F32', 'text' => '#fff', 'glow' => 'rgba(205, 127, 50, 0.4)'],
         'silver'   => ['bg' => '#C0C0C0', 'text' => '#333', 'glow' => 'rgba(192, 192, 192, 0.5)'],
         'gold'     => ['bg' => '#FFD700', 'text' => '#333', 'glow' => 'rgba(255, 215, 0, 0.5)'],
@@ -35,21 +40,41 @@ class PPV_User_Level {
     ];
 
     /**
-     * Get user's total points across all stores
+     * Get user's LIFETIME points (never decreases, even after redemptions)
+     * This is used for VIP level calculation
      */
     public static function get_total_points($user_id) {
         global $wpdb;
 
         if (!$user_id) return 0;
 
-        $total = $wpdb->get_var($wpdb->prepare(
+        // Get lifetime_points from ppv_users table
+        $lifetime = $wpdb->get_var($wpdb->prepare(
+            "SELECT COALESCE(lifetime_points, 0)
+             FROM {$wpdb->prefix}ppv_users
+             WHERE id = %d",
+            $user_id
+        ));
+
+        return intval($lifetime);
+    }
+
+    /**
+     * Get user's CURRENT balance (spendable points, decreases on redemption)
+     */
+    public static function get_current_balance($user_id) {
+        global $wpdb;
+
+        if (!$user_id) return 0;
+
+        $balance = $wpdb->get_var($wpdb->prepare(
             "SELECT COALESCE(SUM(points), 0)
              FROM {$wpdb->prefix}ppv_points
              WHERE user_id = %d",
             $user_id
         ));
 
-        return intval($total);
+        return intval($balance);
     }
 
     /**
@@ -95,11 +120,31 @@ class PPV_User_Level {
 
     /**
      * Get level numeric value (for comparisons)
-     * bronze=1, silver=2, gold=3, platinum=4
+     * starter=0, bronze=1, silver=2, gold=3, platinum=4
      */
     public static function get_level_value($level_key) {
-        $values = ['bronze' => 1, 'silver' => 2, 'gold' => 3, 'platinum' => 4];
-        return $values[$level_key] ?? 1;
+        $values = ['starter' => 0, 'bronze' => 1, 'silver' => 2, 'gold' => 3, 'platinum' => 4];
+        return $values[$level_key] ?? 0;
+    }
+
+    /**
+     * Check if user has VIP status (Bronze or higher = 100+ lifetime points)
+     * Starter users (0-99 points) do NOT get VIP bonuses
+     */
+    public static function has_vip($user_id) {
+        $level = self::get_level($user_id);
+        return self::LEVELS[$level]['vip'] ?? false;
+    }
+
+    /**
+     * Get VIP level for bonus calculation (returns null for Starter)
+     * Used by POS scan to determine bonus amounts
+     */
+    public static function get_vip_level_for_bonus($user_id) {
+        if (!self::has_vip($user_id)) {
+            return null; // No VIP bonus for Starter
+        }
+        return self::get_level($user_id);
     }
 
     /**
@@ -213,10 +258,35 @@ class PPV_User_Level {
             'name' => self::get_level_name($user_id, $lang),
             'icon' => self::ICONS[$level],
             'colors' => self::COLORS[$level],
-            'total_points' => self::get_total_points($user_id),
+            'lifetime_points' => self::get_total_points($user_id),  // Lifetime (never decreases)
+            'current_balance' => self::get_current_balance($user_id), // Spendable balance
+            'has_vip' => self::has_vip($user_id),  // true if Bronze or higher
             'progress' => self::get_progress($user_id),
             'points_to_next' => self::get_points_to_next_level($user_id),
             'level_value' => self::get_level_value($level),
         ];
+    }
+
+    /**
+     * Increment user's lifetime points (called when points are ADDED, not redeemed)
+     */
+    public static function add_lifetime_points($user_id, $points) {
+        global $wpdb;
+
+        if (!$user_id || $points <= 0) return false;
+
+        $result = $wpdb->query($wpdb->prepare(
+            "UPDATE {$wpdb->prefix}ppv_users
+             SET lifetime_points = COALESCE(lifetime_points, 0) + %d
+             WHERE id = %d",
+            $points,
+            $user_id
+        ));
+
+        if ($result !== false) {
+            error_log("✅ [PPV_User_Level] Added {$points} lifetime points to user {$user_id}");
+        }
+
+        return $result !== false;
     }
 }

@@ -1547,6 +1547,11 @@ class PPV_QR {
             'created' => current_time('mysql')
         ]);
 
+        // Update lifetime_points for VIP level calculation
+        if (class_exists('PPV_User_Level')) {
+            PPV_User_Level::add_lifetime_points($user_id, 1);
+        }
+
         self::insert_log($store_id, $user_id, self::t('log_point_added', '1 pont hozzáadva'), 'qr_scan');
 
         // Get store name for response
