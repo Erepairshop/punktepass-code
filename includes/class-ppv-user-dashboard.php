@@ -81,13 +81,26 @@ class PPV_User_Dashboard {
 
         $prefix = $wpdb->prefix;
 
+        // ✅ FIX: Only count rewards from stores where user has at least 1 point
         $result = $wpdb->get_row($wpdb->prepare("
             SELECT
                 COALESCE(SUM(p.points), 0) as points,
-                (SELECT COUNT(*) FROM {$prefix}ppv_rewards) as rewards
+                (
+                    SELECT COUNT(DISTINCT r.id)
+                    FROM {$prefix}ppv_rewards r
+                    INNER JOIN {$prefix}ppv_stores s ON r.store_id = s.id
+                    INNER JOIN (
+                        SELECT store_id
+                        FROM {$prefix}ppv_points
+                        WHERE user_id = %d
+                        GROUP BY store_id
+                        HAVING SUM(points) >= 1
+                    ) AS user_stores ON r.store_id = user_stores.store_id
+                    WHERE s.active = 1
+                ) as rewards
             FROM {$prefix}ppv_points p
             WHERE p.user_id=%d
-        ", $uid));
+        ", $uid, $uid));
 
         $stats = [
             'points' => (int)($result->points ?? 0),
