@@ -38,56 +38,52 @@
         }
 
         // ==================== ONBOARDING RESET ====================
+        // Now uses event delegation (see bottom of file)
         bindOnboardingReset() {
-            const resetBtn = document.getElementById('ppv-reset-onboarding-btn');
-            if (!resetBtn) return;
+            // Handled via global event delegation for Turbo compatibility
+        }
 
-            resetBtn.addEventListener('click', () => {
-                const L = this.strings;
-                if (!confirm(L.onboarding_reset_confirm || 'Biztosan újraindítod az onboarding-ot?')) {
-                    return;
-                }
+        // Called from event delegation
+        handleOnboardingReset(resetBtn) {
+            const L = this.strings;
+            if (!confirm(L.onboarding_reset_confirm || 'Biztosan újraindítod az onboarding-ot?')) {
+                return;
+            }
 
-                resetBtn.disabled = true;
-                resetBtn.innerHTML = '⏳ ' + (L.onboarding_resetting || 'Újraindítás...');
+            resetBtn.disabled = true;
+            resetBtn.innerHTML = '⏳ ' + (L.onboarding_resetting || 'Újraindítás...');
 
-                fetch(window.ppv_onboarding?.rest_url + 'reset' || '/wp-json/ppv/v1/onboarding/reset', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-WP-Nonce': window.ppv_onboarding?.nonce || ''
-                    },
-                    body: JSON.stringify({})
-                })
-                .then(r => r.json())
-                .then(data => {
-                    if (data.success) {
-                        this.showAlert(L.onboarding_reset_success || '✅ Onboarding újraindítva! Az oldal frissül...', 'success');
-                        setTimeout(() => location.reload(), 1500);
-                    } else {
-                        this.showAlert(L.onboarding_reset_error || '❌ Hiba történt!', 'error');
-                        resetBtn.disabled = false;
-                        resetBtn.innerHTML = '🔄 ' + (L.onboarding_reset_btn || 'Onboarding újraindítása');
-                    }
-                })
-                .catch(err => {
-                    console.error('Onboarding reset error:', err);
+            fetch(window.ppv_onboarding?.rest_url + 'reset' || '/wp-json/ppv/v1/onboarding/reset', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-WP-Nonce': window.ppv_onboarding?.nonce || ''
+                },
+                body: JSON.stringify({})
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    this.showAlert(L.onboarding_reset_success || '✅ Onboarding újraindítva! Az oldal frissül...', 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
                     this.showAlert(L.onboarding_reset_error || '❌ Hiba történt!', 'error');
                     resetBtn.disabled = false;
                     resetBtn.innerHTML = '🔄 ' + (L.onboarding_reset_btn || 'Onboarding újraindítása');
-                });
+                }
+            })
+            .catch(err => {
+                console.error('Onboarding reset error:', err);
+                this.showAlert(L.onboarding_reset_error || '❌ Hiba történt!', 'error');
+                resetBtn.disabled = false;
+                resetBtn.innerHTML = '🔄 ' + (L.onboarding_reset_btn || 'Onboarding újraindítása');
             });
         }
 
         // ==================== GALLERY DELETE ====================
+        // Now uses event delegation (see bottom of file)
         bindGalleryDelete() {
-            document.querySelectorAll('.ppv-gallery-delete-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const imageUrl = e.target.dataset.imageUrl;
-                    this.deleteGalleryImage(imageUrl);
-                });
-            });
+            // Handled via global event delegation for Turbo compatibility
         }
 
         deleteGalleryImage(imageUrl) {
@@ -118,13 +114,9 @@
         }
 
         // ==================== TABS ====================
+        // Tab switching now uses event delegation (see bottom of file)
         bindTabs() {
-            document.querySelectorAll('.ppv-tab-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const tabName = e.currentTarget.dataset.tab;
-                    this.switchTab(tabName);
-                });
-            });
+            // Tabs handled via global event delegation for Turbo compatibility
         }
 
         switchTab(tabName) {
@@ -780,4 +772,48 @@ document.addEventListener('DOMContentLoaded', initManualMapButton);
 // 🚀 Turbo: Re-init after navigation
 document.addEventListener('turbo:load', initManualMapButton);
 document.addEventListener('turbo:render', initManualMapButton);
+});
+
+// ============================================================
+// 🎯 EVENT DELEGATION - Profile Tabs (Turbo compatible)
+// ============================================================
+document.addEventListener('click', function(e) {
+    // Tab switching
+    const tabBtn = e.target.closest('.ppv-tab-btn');
+    if (tabBtn && tabBtn.dataset.tab) {
+        e.preventDefault();
+        const tabName = tabBtn.dataset.tab;
+
+        // Remove active from all tabs
+        document.querySelectorAll('.ppv-tab-content').forEach(tab => {
+            tab.classList.remove('active');
+        });
+
+        // Add active to target tab
+        const targetTab = document.getElementById(`tab-${tabName}`);
+        if (targetTab) {
+            targetTab.classList.add('active');
+        }
+
+        // Update button states
+        document.querySelectorAll('.ppv-tab-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.tab === tabName);
+        });
+    }
+
+    // Gallery delete button
+    const deleteBtn = e.target.closest('.ppv-gallery-delete-btn');
+    if (deleteBtn) {
+        e.preventDefault();
+        const imageUrl = deleteBtn.dataset.imageUrl;
+        if (imageUrl && window.ppvProfileForm) {
+            window.ppvProfileForm.deleteGalleryImage(imageUrl);
+        }
+    }
+
+    // Onboarding reset button
+    const resetBtn = e.target.closest('#ppv-reset-onboarding-btn');
+    if (resetBtn && window.ppvProfileForm) {
+        window.ppvProfileForm.handleOnboardingReset(resetBtn);
+    }
 });
