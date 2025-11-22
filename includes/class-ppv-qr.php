@@ -113,51 +113,6 @@ class PPV_QR {
         ];
     }
 
-    /**
-     * 🏪 Get all filialen for the current vendor
-     * Returns array of store objects (parent + all child filialen)
-     */
-    private static function get_vendor_filialen() {
-        global $wpdb;
-
-        // Start session if needed
-        if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
-        }
-
-        // Get vendor store ID from session
-        $store_id = 0;
-        if (!empty($_SESSION['ppv_vendor_store_id'])) {
-            $store_id = intval($_SESSION['ppv_vendor_store_id']);
-        } elseif (!empty($_SESSION['ppv_store_id'])) {
-            $store_id = intval($_SESSION['ppv_store_id']);
-        }
-
-        if (!$store_id) {
-            return [];
-        }
-
-        // Get parent store ID
-        $parent_id = $wpdb->get_var($wpdb->prepare(
-            "SELECT COALESCE(parent_store_id, id) FROM {$wpdb->prefix}ppv_stores WHERE id=%d LIMIT 1",
-            $store_id
-        ));
-
-        if (!$parent_id) {
-            return [];
-        }
-
-        // Get all filialen (parent + children)
-        $filialen = $wpdb->get_results($wpdb->prepare("
-            SELECT id, name, city, parent_store_id
-            FROM {$wpdb->prefix}ppv_stores
-            WHERE id=%d OR parent_store_id=%d
-            ORDER BY CASE WHEN id=%d THEN 0 ELSE 1 END, name ASC
-        ", $parent_id, $parent_id, $parent_id));
-
-        return $filialen ?: [];
-    }
-
     private function prepare_campaign_fields($data, $store_id) {
     $fields = [];
 
@@ -506,29 +461,29 @@ class PPV_QR {
 
         <?php if ($is_scanner): ?>
             <!-- SCANNER USER: Only Scanner Interface -->
-            <div class="ppv-scanner-standalone glass-card">
+            <div class="ppv-pos-center glass-section">
                 <?php self::render_pos_scanner(); ?>
             </div>
         <?php else: ?>
             <!-- HANDLER USER: Full Interface with Tabs -->
             <div class="ppv-qr-wrapper glass-card">
-                <h2>📡 <?php echo self::t('qrcamp_title', 'Kassenscanner & Kampagnen'); ?></h2>
+                <h2 style="font-size: 18px; margin-bottom: 16px;"><i class="ri-broadcast-line" style="margin-right: 6px;"></i><?php echo self::t('qrcamp_title', 'Kassenscanner & Kampagnen'); ?></h2>
 
                 <div class="ppv-tabs">
                     <button class="ppv-tab active" data-tab="scanner" id="ppv-tab-scanner">
-                        📲 <?php echo self::t('tab_scanner', 'Kassenscanner'); ?>
+                        <i class="ri-qr-scan-2-line"></i> <?php echo self::t('tab_scanner', 'Kassenscanner'); ?>
                     </button>
                     <button class="ppv-tab" data-tab="vip" id="ppv-tab-vip">
-                        ⭐ <?php echo self::t('tab_vip', 'VIP Beállítások'); ?>
+                        <i class="ri-vip-crown-line"></i> <?php echo self::t('tab_vip', 'VIP Beállítások'); ?>
                     </button>
                     <button class="ppv-tab" data-tab="rewards" id="ppv-tab-rewards">
-                        🎁 <?php echo self::t('tab_rewards', 'Prämien'); ?>
+                        <i class="ri-gift-line"></i> <?php echo self::t('tab_rewards', 'Prämien'); ?>
                     </button>
                     <button class="ppv-tab" data-tab="campaigns" id="ppv-tab-campaigns">
-                        🎯 <?php echo self::t('tab_campaigns', 'Kampagnen'); ?>
+                        <i class="ri-focus-3-line"></i> <?php echo self::t('tab_campaigns', 'Kampagnen'); ?>
                     </button>
                     <button class="ppv-tab" data-tab="scanner-users" id="ppv-tab-scanner-users">
-                        👥 <?php echo self::t('tab_scanner_users', 'Scanner Felhasználók'); ?>
+                        <i class="ri-team-line"></i> <?php echo self::t('tab_scanner_users', 'Scanner Felhasználók'); ?>
                     </button>
                 </div>
 
@@ -560,56 +515,14 @@ class PPV_QR {
         <?php endif; ?>
 
         <script>
-        (function() {
-            function initQRCenterTabs() {
-                const $ = jQuery;
-
-                // Skip if already initialized
-                const wrapper = document.querySelector('.ppv-qr-wrapper');
-                if (!wrapper || wrapper.dataset.tabsInitialized === 'true') return;
-                wrapper.dataset.tabsInitialized = 'true';
-
-                // 🔄 TAB PERSISTENCE: Restore last active tab from localStorage
-                const savedTab = localStorage.getItem('ppv_qr_center_active_tab');
-                if (savedTab) {
-                    const $savedTabBtn = $(".ppv-tab[data-tab='" + savedTab + "']");
-                    if ($savedTabBtn.length) {
-                        $(".ppv-tab").removeClass("active");
-                        $savedTabBtn.addClass("active");
-                        $(".ppv-tab-content").removeClass("active");
-                        $("#tab-" + savedTab).addClass("active");
-                        console.log("🔄 [Tabs] Restored tab:", savedTab);
-                    }
-                }
-
-                // Tab click handler with localStorage save
-                $(".ppv-tab").off("click").on("click", function(){
-                    const tabName = $(this).data("tab");
-                    $(".ppv-tab").removeClass("active");
-                    $(this).addClass("active");
-                    $(".ppv-tab-content").removeClass("active");
-                    $("#tab-" + tabName).addClass("active");
-
-                    // 💾 Save to localStorage for persistence across refresh
-                    localStorage.setItem('ppv_qr_center_active_tab', tabName);
-                    console.log("💾 [Tabs] Saved tab:", tabName);
-                });
-            }
-
-            // Initialize on DOM ready
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', initQRCenterTabs);
-            } else {
-                initQRCenterTabs();
-            }
-
-            // 🚀 Turbo: Reset flag before render and reinitialize after navigation
-            document.addEventListener('turbo:before-render', function() {
-                const wrapper = document.querySelector('.ppv-qr-wrapper');
-                if (wrapper) wrapper.dataset.tabsInitialized = 'false';
+        jQuery(document).ready(function($){
+            $(".ppv-tab").on("click", function(){
+                $(".ppv-tab").removeClass("active");
+                $(this).addClass("active");
+                $(".ppv-tab-content").removeClass("active");
+                $("#tab-" + $(this).data("tab")).addClass("active");
             });
-            document.addEventListener('turbo:load', initQRCenterTabs);
-        })();
+        });
         </script>
 
         <?php
@@ -832,7 +745,7 @@ class PPV_QR {
 
         <?php self::render_filiale_switcher(); ?>
 
-        <div class="ppv-pos-center">
+        <div class="ppv-pos-center glass-section">
             <div id="ppv-offline-banner" style="display:none;background:#ffcc00;padding:8px;border-radius:6px;margin-bottom:10px;">
                 🛰️ <?php echo self::t('offline_banner', 'Offline-Modus aktiv'); ?>
                 <button id="ppv-sync-btn" class="ppv-btn small" type="button">
@@ -856,7 +769,7 @@ class PPV_QR {
                             📆 <?php echo self::t('csv_date', 'Datum wählen'); ?>
                         </a>
                         <a href="#" class="ppv-csv-export-option" data-period="month">
-                            📊 <?php echo self::t('csv_month', 'Diesen Monat'); ?>
+                            <i class="ri-file-chart-line"></i> <?php echo self::t('csv_month', 'Diesen Monat'); ?>
                         </a>
                     </div>
                 </div>
@@ -878,14 +791,14 @@ class PPV_QR {
                 <div class="ppv-modal-inner" style="max-width: 100%; width: 100%; max-height: 90vh; overflow-y: auto;">
                     
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                        <h4 style="margin: 0;">📷 <?php echo self::t('camera_scanner_title', 'Kamera QR-Scanner'); ?></h4>
+                        <h4 style="margin: 0;"><i class="ri-camera-line"></i> <?php echo self::t('camera_scanner_title', 'Kamera QR-Scanner'); ?></h4>
                         <button id="ppv-camera-close" class="ppv-btn-outline" type="button" style="width: 40px; height: 40px; padding: 0; display: flex; align-items: center; justify-content: center;">
                             ✕
                         </button>
                     </div>
 
                     <p style="color: #999; font-size: 14px; margin-bottom: 15px;">
-                        🎥 <?php echo self::t('camera_scanner_desc', 'Halte den QR-Code des Kunden vor die Kamera. Der Scanner erkennt diesen automatisch.'); ?>
+                        <i class="ri-vidicon-line"></i> <?php echo self::t('camera_scanner_desc', 'Halte den QR-Code des Kunden vor die Kamera. Der Scanner erkennt diesen automatisch.'); ?>
                     </p>
 
                     <!-- Scanner Area -->
@@ -893,7 +806,7 @@ class PPV_QR {
 
                     <!-- Result Box -->
                     <div id="ppv-scan-result" style="text-align: center; padding: 15px; background: rgba(0, 230, 255, 0.1); border-radius: 8px; border: 1px solid rgba(0, 230, 255, 0.3); margin-bottom: 15px; min-height: 40px; display: flex; align-items: center; justify-content: center; color: #00e6ff; font-weight: bold;">
-                        ⏳ Scanner aktiv...
+                        <i class="ri-loader-4-line ri-spin"></i> Scanner aktiv...
                     </div>
 
                     <!-- Controls -->
@@ -966,10 +879,10 @@ class PPV_QR {
 
         // Always show switcher (even if only 1 location, to allow adding new)
         ?>
-        <div class="ppv-filiale-switcher" style="margin-bottom: 20px; padding: 15px;">
+        <div class="ppv-filiale-switcher glass-section" style="margin-bottom: 20px; padding: 15px;">
             <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                 <label for="ppv-filiale-select" style="font-weight: 600; margin: 0;">
-                    🏪 <?php echo self::t('current_filiale', 'Aktuelle Filiale'); ?>:
+                    <i class="ri-store-2-line"></i> <?php echo self::t('current_filiale', 'Aktuelle Filiale'); ?>:
                 </label>
 
                 <select id="ppv-filiale-select" style="flex: 1; min-width: 200px; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-color, #e0e0e0); background: var(--bg-secondary, #fff); color: var(--text-primary, #333);">
@@ -990,7 +903,7 @@ class PPV_QR {
                 </select>
 
                 <button id="ppv-add-filiale-btn" class="ppv-btn" type="button" style="white-space: nowrap;">
-                    ➕ <?php echo self::t('add_filiale', 'Filiale hinzufügen'); ?>
+                    <i class="ri-add-line"></i> <?php echo self::t('add_filiale', 'Filiale hinzufügen'); ?>
                 </button>
             </div>
 
@@ -1000,7 +913,7 @@ class PPV_QR {
         <!-- Add Filiale Modal -->
         <div id="ppv-add-filiale-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; align-items: center; justify-content: center;">
             <div style="background: #1a1a2e; padding: 30px; border-radius: 15px; max-width: 500px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
-                <h3 style="margin-top: 0; color: #fff;">➕ <?php echo self::t('add_new_filiale', 'Neue Filiale hinzufügen'); ?></h3>
+                <h3 style="margin-top: 0; color: #fff;"><i class="ri-add-circle-line"></i> <?php echo self::t('add_new_filiale', 'Neue Filiale hinzufügen'); ?></h3>
 
                 <label style="display: block; margin-bottom: 5px; color: #ccc; font-size: 14px;">
                     <?php echo self::t('filiale_name', 'Name der Filiale'); ?> <span style="color: #ff5252;">*</span>
@@ -1135,9 +1048,9 @@ class PPV_QR {
     // ============================================================
     public static function render_campaigns() {
         ?>
-        <div class="ppv-campaigns">
+        <div class="ppv-campaigns glass-section">
             <div class="ppv-campaign-header">
-                <h3>🎯 <?php echo self::t('campaigns_title', 'Kampagnen'); ?></h3>
+                <h3><i class="ri-focus-3-line"></i> <?php echo self::t('campaigns_title', 'Kampagnen'); ?></h3>
                 <div class="ppv-campaign-controls">
                     <select id="ppv-campaign-filter" class="ppv-filter">
                         <option value="all">📋 <?php echo self::t('camp_filter_all', 'Alle'); ?></option>
@@ -1200,7 +1113,7 @@ class PPV_QR {
 
                     <!-- GRATIS TERMÉK ÉRTÉKE (csak ha van termék név!) -->
                     <div id="camp-free-product-value-wrapper" style="display: none;">
-                        <label style="color: #ff9800;">💰 <?php echo self::t('label_free_product_value', 'Termék értéke'); ?> <span style="color: #ff0000;">*</span></label>
+                        <label style="color: #ff9800;"><i class="ri-money-euro-circle-line"></i> <?php echo self::t('label_free_product_value', 'Termék értéke'); ?> <span style="color: #ff0000;">*</span></label>
                         <input type="number" id="camp-free-product-value" value="0" min="0.01" step="0.01" placeholder="0.00" style="border-color: #ff9800;">
                     </div>
 
@@ -1210,33 +1123,6 @@ class PPV_QR {
                         <option value="active"><?php echo self::t('status_active', '🟢 Aktiv'); ?></option>
                         <option value="archived"><?php echo self::t('status_archived', '📦 Archiv'); ?></option>
                     </select>
-
-                    <!-- 🏪 FILIALE AUSWAHL (nur für Händler mit mehreren Filialen) -->
-                    <?php
-                    $filialen = self::get_vendor_filialen();
-                    if (count($filialen) > 1):
-                    ?>
-                    <div class="ppv-filiale-selector" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(0,230,255,0.2);">
-                        <label><?php echo self::t('camp_target_filiale', 'Zielfiliale'); ?></label>
-                        <select id="camp-target-store">
-                            <option value="current"><?php echo self::t('camp_current_filiale', '📍 Aktuelle Filiale'); ?></option>
-                            <?php foreach ($filialen as $fil): ?>
-                                <option value="<?php echo esc_attr($fil->id); ?>">
-                                    🏪 <?php echo esc_html($fil->name); ?>
-                                    <?php if ($fil->city): ?>(<?php echo esc_html($fil->city); ?>)<?php endif; ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                        <small style="color: #888; display: block; margin-top: 5px;">
-                            <?php echo self::t('camp_filiale_hint', 'Wählen Sie die Filiale für diese Kampagne'); ?>
-                        </small>
-
-                        <label style="margin-top: 10px; display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                            <input type="checkbox" id="camp-apply-all" style="width: auto;">
-                            <span><?php echo self::t('camp_apply_all', 'Auf alle Filialen anwenden'); ?></span>
-                        </label>
-                    </div>
-                    <?php endif; ?>
 
                     <!-- GOMBÓK -->
                     <div class="ppv-modal-actions">
@@ -1303,11 +1189,11 @@ class PPV_QR {
         }
 
         ?>
-        <div class="ppv-scanner-users">
+        <div class="ppv-scanner-users glass-section">
             <div class="ppv-scanner-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h3>👥 <?php echo self::t('scanner_users_title', 'Scanner Felhasználók'); ?></h3>
+                <h3><i class="ri-team-line"></i> <?php echo self::t('scanner_users_title', 'Scanner Felhasználók'); ?></h3>
                 <button id="ppv-new-scanner-btn" class="ppv-btn neon" type="button">
-                    ➕ <?php echo self::t('add_scanner_user', 'Új Scanner Létrehozása'); ?>
+                    <i class="ri-add-line"></i> <?php echo self::t('add_scanner_user', 'Új Scanner Létrehozása'); ?>
                 </button>
             </div>
 
@@ -1358,12 +1244,12 @@ class PPV_QR {
                                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                                     <!-- Change Filiale -->
                                     <button class="ppv-scanner-change-filiale ppv-btn-outline" data-user-id="<?php echo $scanner->id; ?>" data-email="<?php echo esc_attr($scanner->email); ?>" data-current-store="<?php echo $scanner->vendor_store_id; ?>" style="padding: 8px 12px; font-size: 13px;">
-                                        🏪 <?php echo self::t('change_filiale', 'Filiale ändern'); ?>
+                                        <i class="ri-store-2-line"></i> <?php echo self::t('change_filiale', 'Filiale ändern'); ?>
                                     </button>
 
                                     <!-- Password Reset -->
                                     <button class="ppv-scanner-reset-pw ppv-btn-outline" data-user-id="<?php echo $scanner->id; ?>" data-email="<?php echo esc_attr($scanner->email); ?>" style="padding: 8px 12px; font-size: 13px;">
-                                        🔄 <?php echo self::t('reset_password', 'Jelszó Reset'); ?>
+                                        <i class="ri-refresh-line"></i> <?php echo self::t('reset_password', 'Jelszó Reset'); ?>
                                     </button>
 
                                     <!-- Toggle Active/Disable -->
@@ -1386,7 +1272,7 @@ class PPV_QR {
             <!-- Create Scanner Modal -->
             <div id="ppv-scanner-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; align-items: center; justify-content: center;">
                 <div style="background: #1a1a2e; padding: 30px; border-radius: 15px; max-width: 500px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
-                    <h3 style="margin-top: 0; color: #fff;">➕ <?php echo self::t('create_scanner_title', 'Új Scanner Létrehozása'); ?></h3>
+                    <h3 style="margin-top: 0; color: #fff;"><i class="ri-user-add-line"></i> <?php echo self::t('create_scanner_title', 'Új Scanner Létrehozása'); ?></h3>
 
                     <label style="color: #fff; font-size: 13px; display: block; margin-bottom: 5px;">
                         <?php echo self::t('scanner_email', 'E-mail cím'); ?> <span style="color: #ff5252;">*</span>
@@ -1404,7 +1290,7 @@ class PPV_QR {
                     </div>
 
                     <label style="color: #fff; font-size: 13px; display: block; margin-bottom: 5px;">
-                        🏪 <?php echo self::t('scanner_filiale', 'Filiale zuweisen'); ?> <span style="color: #ff5252;">*</span>
+                        <i class="ri-store-2-line"></i> <?php echo self::t('scanner_filiale', 'Filiale zuweisen'); ?> <span style="color: #ff5252;">*</span>
                     </label>
                     <select id="ppv-scanner-filiale" class="ppv-input" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #0f0f1e; color: #fff; margin-bottom: 15px;">
                         <?php foreach ($filialen as $filiale): ?>
@@ -1440,7 +1326,7 @@ class PPV_QR {
             <!-- Change Filiale Modal -->
             <div id="ppv-change-filiale-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; align-items: center; justify-content: center;">
                 <div style="background: #1a1a2e; padding: 30px; border-radius: 15px; max-width: 500px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
-                    <h3 style="margin-top: 0; color: #fff;">🏪 <?php echo self::t('change_filiale_title', 'Filiale ändern'); ?></h3>
+                    <h3 style="margin-top: 0; color: #fff;"><i class="ri-store-2-line"></i> <?php echo self::t('change_filiale_title', 'Filiale ändern'); ?></h3>
 
                     <p style="color: #999; font-size: 14px; margin-bottom: 15px;">
                         <strong style="color: #fff;">📧 <span id="ppv-change-filiale-email"></span></strong>
@@ -1831,53 +1717,19 @@ class PPV_QR {
                 break;
         }
 
-        // 🏪 FILIALE SUPPORT: Handle multi-filiale campaign creation
-        $target_store_id = sanitize_text_field($data['target_store_id'] ?? 'current');
-        $apply_to_all = filter_var($data['apply_to_all'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        // ✅ DEBUG: Log fields before insert
 
-        $created_count = 0;
-        $target_stores = [];
+        $wpdb->insert("{$prefix}ppv_campaigns", $fields);
 
-        if ($apply_to_all) {
-            // 🏪 Create campaign for ALL filialen
-            $filialen = self::get_vendor_filialen();
-            if (!empty($filialen)) {
-                foreach ($filialen as $fil) {
-                    $target_stores[] = intval($fil->id);
-                }
-            } else {
-                // Fallback to current store if no filialen found
-                $target_stores[] = intval($store->id);
-            }
-        } elseif ($target_store_id !== 'current' && is_numeric($target_store_id)) {
-            // 🏪 Create campaign for specific filiale
-            $target_stores[] = intval($target_store_id);
+        // ✅ DEBUG: Check if insert succeeded
+        if ($wpdb->last_error) {
         } else {
-            // Default: current store
-            $target_stores[] = intval($store->id);
         }
-
-        // Create campaign for each target store
-        foreach ($target_stores as $target_id) {
-            $fields['store_id'] = $target_id;
-            $fields['created_at'] = current_time('mysql'); // Reset timestamp for each
-
-            $wpdb->insert("{$prefix}ppv_campaigns", $fields);
-
-            if (!$wpdb->last_error) {
-                $created_count++;
-            }
-        }
-
-        $message = $created_count > 1
-            ? sprintf('✅ Kampány %d filiálban létrehozva', $created_count)
-            : '✅ Kampány sikeresen létrehozva';
 
         return new WP_REST_Response([
             'success' => true,
-            'message' => $message,
+            'message' => '✅ Kampány sikeresen létrehozva',
             'fields'  => $fields,
-            'created_count' => $created_count,
         ], 200);
     }
 

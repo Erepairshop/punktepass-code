@@ -1,11 +1,17 @@
 /**
- * PunktePass – Kassenscanner & Kampagnen v5.3 COMPLETE
+ * PunktePass – Kassenscanner & Kampagnen v5.4 TURBO COMPATIBLE
  * ✅ Save függvény integrálva
  * ✅ Összes dinamikus mező működik
  * ✅ Camera Scanner + Settings + Init
+ * ✅ TURBO.JS COMPATIBLE
  * Author: Erik Borota / PunktePass
  */
 
+// ✅ Duplicate load prevention
+if (window.PPV_QR_LOADED) {
+  console.warn('⚠️ PPV QR JS already loaded - skipping duplicate!');
+} else {
+  window.PPV_QR_LOADED = true;
 
 // ============================================================
 // 🌐 GLOBAL STATE & CONFIG
@@ -603,9 +609,6 @@ class CampaignManager {
           free_product_value: freeProductValue,
           points_given: pointsGiven,
           status,
-          // 🏪 FILIALE SUPPORT
-          target_store_id: document.getElementById("camp-target-store")?.value || "current",
-          apply_to_all: document.getElementById("camp-apply-all")?.checked || false,
         }),
       });
 
@@ -716,10 +719,6 @@ class CampaignManager {
     if (safe("camp-points-given")) safe("camp-points-given").value = 1;
     if (safe("camp-free-product-name")) safe("camp-free-product-name").value = "";
     if (safe("camp-free-product-value")) safe("camp-free-product-value").value = 0;
-
-    // 🏪 FILIALE SUPPORT: Reset filiale selector
-    if (safe("camp-target-store")) safe("camp-target-store").value = "current";
-    if (safe("camp-apply-all")) safe("camp-apply-all").checked = false;
 
     if (safe("camp-required-points-wrapper")) safe("camp-required-points-wrapper").style.display = "none";
     if (safe("camp-points-given-wrapper")) safe("camp-points-given-wrapper").style.display = "none";
@@ -1656,16 +1655,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const ui = new UIManager(resultBox, logTable, campaignList);
   const scanProcessor = new ScanProcessor(ui);
   const campaignManager = new CampaignManager(ui, campaignList, campaignModal);
-
-  // 📷 MINIKAMERA: Only show on specific pages
-  const allowedScannerPages = ['/qr-center', '/rewards', '/mein-profil', '/statistik'];
-  const currentPath = window.location.pathname.replace(/\/$/, ''); // Remove trailing slash
-  const shouldShowScanner = allowedScannerPages.some(page => currentPath.endsWith(page));
-
-  let cameraScanner = null;
-  if (shouldShowScanner) {
-    cameraScanner = new CameraScanner(scanProcessor);
-  }
+  const cameraScanner = new CameraScanner(scanProcessor);
 
   // Only add input listeners if input exists
   if (input) {
@@ -1693,28 +1683,10 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  document.getElementById("ppv-new-campaign")?.addEventListener("click", () => {
-    campaignManager.resetForm();
-    campaignManager.updateVisibilityByType("points"); // Default: Points típus
-    campaignManager.showModal();
-  });
+  // Store campaign manager globally for event delegation
+  window.ppvCampaignManager = campaignManager;
 
-  document.getElementById("camp-cancel")?.addEventListener("click", () => {
-    campaignManager.hideModal();
-    campaignManager.resetForm();
-  });
-
-  document.getElementById("camp-save")?.addEventListener("click", () => {
-    campaignManager.save();
-  });
-
-  document.getElementById("camp-type")?.addEventListener("change", (e) => {
-    campaignManager.updateValueLabel(e.target.value);
-  });
-
-  document.getElementById("ppv-campaign-filter")?.addEventListener("change", () => {
-    campaignManager.load();
-  });
+  // Note: Using event delegation below for Turbo compatibility
 
   // ✅ EGYSZERŰSÍTETT: Csak egy kattintás esemény
   if (campaignModal) {
@@ -2245,108 +2217,212 @@ document.addEventListener("DOMContentLoaded", function () {
     // Load immediately
     loadRecentScans();
 
-    // Poll every 10 seconds
-    setInterval(loadRecentScans, 10000);
+    // Poll every 10 seconds (only create interval ONCE)
+    if (!window.PPV_RECENT_SCANS_INTERVAL) {
+      window.PPV_RECENT_SCANS_INTERVAL = setInterval(loadRecentScans, 10000);
+    }
 
   }
 
   // ============================================================
-  // 📥 CSV EXPORT FUNCTIONALITY
+  // 📥 CSV EXPORT - Now uses event delegation (see bottom of file)
   // ============================================================
-  const csvExportBtn = document.getElementById('ppv-csv-export-btn');
-  const csvExportMenu = document.getElementById('ppv-csv-export-menu');
+  // CSV export buttons handled via event delegation for Turbo compatibility
 
-  if (csvExportBtn && csvExportMenu) {
-    // Toggle dropdown menu
-    csvExportBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const isVisible = csvExportMenu.style.display === 'block';
-      csvExportMenu.style.display = isVisible ? 'none' : 'block';
-    });
+  // 🚀 Export reinit function for Turbo
+  window.ppv_qr_reinit = function() {
+    console.log('🔄 [QR] Turbo re-initialization');
 
-    // Close dropdown when clicking outside
-    document.addEventListener('click', () => {
-      csvExportMenu.style.display = 'none';
-    });
+    // Re-query DOM elements
+    const campaignList = document.getElementById("ppv-campaign-list");
+    const campaignModal = document.getElementById("ppv-campaign-modal");
+    const logTable = document.querySelector("#ppv-pos-log tbody");
+    const resultBox = document.getElementById("ppv-pos-result");
 
-    // Handle CSV export options
-    document.querySelectorAll('.ppv-csv-export-option').forEach(option => {
-      option.addEventListener('click', async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
+    if (campaignList) {
+      // Reinitialize campaign manager with new DOM
+      const ui = new UIManager(resultBox, logTable, campaignList);
+      const newCampaignManager = new CampaignManager(ui, campaignList, campaignModal);
+      newCampaignManager.load();
 
-        const period = e.target.getAttribute('data-period');
-        let date = new Date().toISOString().split('T')[0]; // Today's date
+      // Store globally for access
+      window.ppvCampaignManager = newCampaignManager;
+    }
 
-        // If "date" period, prompt for date
-        if (period === 'date') {
-          const userDate = prompt(L.csv_prompt_date || 'Datum eingeben (YYYY-MM-DD):', date);
-          if (!userDate) return; // Cancelled
-          date = userDate;
-        }
+    // Reload logs if table exists
+    if (logTable && window.PPV_STORE_KEY) {
+      const ui = new UIManager(resultBox, logTable, campaignList);
+      const scanProcessor = new ScanProcessor(ui);
+      scanProcessor.loadLogs();
+    }
+  };
+});
 
-        // If "month" period, use current month
-        if (period === 'month') {
-          date = new Date().toISOString().substr(0, 7) + '-01'; // First day of month
-        }
+// 🔄 Turbo: Re-initialize after navigation (only turbo:load, not render to avoid duplicates)
+document.addEventListener('turbo:load', function() {
+  console.log('🔄 [QR] turbo:load event');
 
-        // Close dropdown
-        csvExportMenu.style.display = 'none';
+  // Throttle: don't reinit if we just did it
+  const now = Date.now();
+  if (window.PPV_QR_LAST_INIT && (now - window.PPV_QR_LAST_INIT) < 500) {
+    console.log('⏭️ [QR] Skipping reinit - too soon');
+    return;
+  }
+  window.PPV_QR_LAST_INIT = now;
 
-        // Download CSV
-        try {
+  setTimeout(() => {
+    if (typeof window.ppv_qr_reinit === 'function') {
+      window.ppv_qr_reinit();
+    }
+  }, 100);
+});
 
-          const url = `/wp-json/ppv/v1/pos/export-logs?period=${period}&date=${date}`;
-          const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json'
-            }
-          });
+// ============================================================
+// 🎯 EVENT DELEGATION - Campaign buttons (works after Turbo)
+// ============================================================
+document.addEventListener('click', function(e) {
+  // New campaign button
+  if (e.target.matches('#ppv-new-campaign') || e.target.closest('#ppv-new-campaign')) {
+    const cm = window.ppvCampaignManager;
+    if (cm) {
+      cm.resetForm();
+      cm.updateVisibilityByType("points");
+      cm.showModal();
+    }
+  }
 
-          if (!response.ok) {
-            throw new Error('Export failed');
-          }
+  // Cancel button
+  if (e.target.matches('#camp-cancel') || e.target.closest('#camp-cancel')) {
+    const cm = window.ppvCampaignManager;
+    if (cm) {
+      cm.hideModal();
+      cm.resetForm();
+    }
+  }
 
-          // Get CSV content
-          const blob = await response.blob();
-          const downloadUrl = window.URL.createObjectURL(blob);
-
-          // Create download link
-          const a = document.createElement('a');
-          a.style.display = 'none';
-          a.href = downloadUrl;
-          a.download = `pos_logs_${period}_${date}.csv`;
-
-          // Trigger download
-          document.body.appendChild(a);
-          a.click();
-
-          // Cleanup
-          window.URL.revokeObjectURL(downloadUrl);
-          document.body.removeChild(a);
-
-
-          if (window.ppvToast) {
-            window.ppvToast('✅ CSV erfolgreich heruntergeladen', 'success');
-          }
-        } catch (err) {
-          console.error('❌ [CSV Export] Failed:', err);
-          if (window.ppvToast) {
-            window.ppvToast('❌ CSV Export fehlgeschlagen', 'error');
-          }
-        }
-      });
-
-      // Hover effect
-      option.addEventListener('mouseenter', (e) => {
-        e.target.style.background = 'rgba(255,255,255,0.1)';
-      });
-      option.addEventListener('mouseleave', (e) => {
-        e.target.style.background = 'transparent';
-      });
-    });
-
+  // Save button
+  if (e.target.matches('#camp-save') || e.target.closest('#camp-save')) {
+    const cm = window.ppvCampaignManager;
+    if (cm) {
+      cm.save();
+    }
   }
 });
+
+document.addEventListener('change', function(e) {
+  // Campaign type change
+  if (e.target.matches('#camp-type')) {
+    const cm = window.ppvCampaignManager;
+    if (cm) {
+      cm.updateValueLabel(e.target.value);
+    }
+  }
+
+  // Campaign filter change
+  if (e.target.matches('#ppv-campaign-filter')) {
+    const cm = window.ppvCampaignManager;
+    if (cm) {
+      cm.load();
+    }
+  }
+});
+
+// ============================================================
+// 📥 CSV EXPORT - EVENT DELEGATION (Turbo compatible)
+// ============================================================
+
+// Toggle CSV dropdown menu
+document.addEventListener('click', function(e) {
+  const csvBtn = e.target.closest('#ppv-csv-export-btn');
+  const csvMenu = document.getElementById('ppv-csv-export-menu');
+
+  if (csvBtn && csvMenu) {
+    e.stopPropagation();
+    const isVisible = csvMenu.style.display === 'block';
+    csvMenu.style.display = isVisible ? 'none' : 'block';
+    return;
+  }
+
+  // Close dropdown when clicking outside (but not on menu items)
+  if (!e.target.closest('.ppv-csv-export-option') && !e.target.closest('#ppv-csv-export-btn')) {
+    if (csvMenu) {
+      csvMenu.style.display = 'none';
+    }
+  }
+});
+
+// Handle CSV export options
+document.addEventListener('click', async function(e) {
+  const option = e.target.closest('.ppv-csv-export-option');
+  if (!option) return;
+
+  e.preventDefault();
+  e.stopPropagation();
+
+  const L = window.ppv_lang || {};
+  const period = option.getAttribute('data-period');
+  let date = new Date().toISOString().split('T')[0]; // Today's date
+
+  // If "date" period, prompt for date
+  if (period === 'date') {
+    const userDate = prompt(L.csv_prompt_date || 'Datum eingeben (YYYY-MM-DD):', date);
+    if (!userDate) return; // Cancelled
+    date = userDate;
+  }
+
+  // If "month" period, use current month
+  if (period === 'month') {
+    date = new Date().toISOString().substr(0, 7) + '-01'; // First day of month
+  }
+
+  // Close dropdown
+  const csvMenu = document.getElementById('ppv-csv-export-menu');
+  if (csvMenu) {
+    csvMenu.style.display = 'none';
+  }
+
+  // Download CSV
+  try {
+    const url = `/wp-json/ppv/v1/pos/export-logs?period=${period}&date=${date}`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Export failed');
+    }
+
+    // Get CSV content
+    const blob = await response.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+
+    // Create download link
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = downloadUrl;
+    a.download = `pos_logs_${period}_${date}.csv`;
+
+    // Trigger download
+    document.body.appendChild(a);
+    a.click();
+
+    // Cleanup
+    window.URL.revokeObjectURL(downloadUrl);
+    document.body.removeChild(a);
+
+    if (window.ppvToast) {
+      window.ppvToast('✅ CSV erfolgreich heruntergeladen', 'success');
+    }
+  } catch (err) {
+    console.error('❌ [CSV Export] Failed:', err);
+    if (window.ppvToast) {
+      window.ppvToast('❌ CSV Export fehlgeschlagen', 'error');
+    }
+  }
+});
+
+} // End of duplicate load prevention
 
