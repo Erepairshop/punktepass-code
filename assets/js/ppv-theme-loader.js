@@ -16,7 +16,7 @@
 
   const THEME_KEY = 'ppv_theme';
   const API_URL = '/wp-json/ppv/v1/theme';
-  const DEBUG = true;
+  const DEBUG = false;
 
   // ============================================================
   // 🔹 LOG HELPER
