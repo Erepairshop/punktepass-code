@@ -980,6 +980,8 @@ showToast("📄 Monatsbeleg wird heruntergeladen!", "success");
     }
 
     coreInitDone = true;
+    // ✅ Set timestamp BEFORE init to prevent turbo:load double-loading
+    window.PPV_REWARDS_LAST_INIT = Date.now();
     initRewardsPageCore();
   }
 
@@ -1003,15 +1005,17 @@ showToast("📄 Monatsbeleg wird heruntergeladen!", "success");
       return;
     }
 
-    // Throttle: don't reinit if we just did it
+    // ✅ Throttle: don't reinit if we just did it (prevents double-load on initial page)
     const now = Date.now();
-    if (window.PPV_REWARDS_LAST_INIT && (now - window.PPV_REWARDS_LAST_INIT) < 500) {
-      console.log('⏭️ [REWARDS] Skipping reinit - too soon');
+    if (window.PPV_REWARDS_LAST_INIT && (now - window.PPV_REWARDS_LAST_INIT) < 1000) {
+      console.log('⏭️ [REWARDS] Skipping turbo:load - recent init detected');
       return;
     }
+
+    // ✅ Set timestamp before reinit
     window.PPV_REWARDS_LAST_INIT = now;
 
-    // ✅ Delay to ensure inline scripts have executed
+    // ✅ Shorter delay since we're just refreshing data
     setTimeout(() => {
       console.log('🔄 [REWARDS] turbo:load - coreInitDone:', coreInitDone);
 
@@ -1029,7 +1033,7 @@ showToast("📄 Monatsbeleg wird heruntergeladen!", "success");
       } else {
         console.error('❌ [REWARDS] ppv_rewards_reinit not defined');
       }
-    }, 200);
+    }, 150);
   });
 
   /* ============================================================
