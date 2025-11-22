@@ -2225,103 +2225,9 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // ============================================================
-  // 📥 CSV EXPORT FUNCTIONALITY
+  // 📥 CSV EXPORT - Now uses event delegation (see bottom of file)
   // ============================================================
-  const csvExportBtn = document.getElementById('ppv-csv-export-btn');
-  const csvExportMenu = document.getElementById('ppv-csv-export-menu');
-
-  if (csvExportBtn && csvExportMenu) {
-    // Toggle dropdown menu
-    csvExportBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const isVisible = csvExportMenu.style.display === 'block';
-      csvExportMenu.style.display = isVisible ? 'none' : 'block';
-    });
-
-    // Close dropdown when clicking outside
-    document.addEventListener('click', () => {
-      csvExportMenu.style.display = 'none';
-    });
-
-    // Handle CSV export options
-    document.querySelectorAll('.ppv-csv-export-option').forEach(option => {
-      option.addEventListener('click', async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-
-        const period = e.target.getAttribute('data-period');
-        let date = new Date().toISOString().split('T')[0]; // Today's date
-
-        // If "date" period, prompt for date
-        if (period === 'date') {
-          const userDate = prompt(L.csv_prompt_date || 'Datum eingeben (YYYY-MM-DD):', date);
-          if (!userDate) return; // Cancelled
-          date = userDate;
-        }
-
-        // If "month" period, use current month
-        if (period === 'month') {
-          date = new Date().toISOString().substr(0, 7) + '-01'; // First day of month
-        }
-
-        // Close dropdown
-        csvExportMenu.style.display = 'none';
-
-        // Download CSV
-        try {
-
-          const url = `/wp-json/ppv/v1/pos/export-logs?period=${period}&date=${date}`;
-          const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json'
-            }
-          });
-
-          if (!response.ok) {
-            throw new Error('Export failed');
-          }
-
-          // Get CSV content
-          const blob = await response.blob();
-          const downloadUrl = window.URL.createObjectURL(blob);
-
-          // Create download link
-          const a = document.createElement('a');
-          a.style.display = 'none';
-          a.href = downloadUrl;
-          a.download = `pos_logs_${period}_${date}.csv`;
-
-          // Trigger download
-          document.body.appendChild(a);
-          a.click();
-
-          // Cleanup
-          window.URL.revokeObjectURL(downloadUrl);
-          document.body.removeChild(a);
-
-
-          if (window.ppvToast) {
-            window.ppvToast('✅ CSV erfolgreich heruntergeladen', 'success');
-          }
-        } catch (err) {
-          console.error('❌ [CSV Export] Failed:', err);
-          if (window.ppvToast) {
-            window.ppvToast('❌ CSV Export fehlgeschlagen', 'error');
-          }
-        }
-      });
-
-      // Hover effect
-      option.addEventListener('mouseenter', (e) => {
-        e.target.style.background = 'rgba(255,255,255,0.1)';
-      });
-      option.addEventListener('mouseleave', (e) => {
-        e.target.style.background = 'transparent';
-      });
-    });
-
-  }
+  // CSV export buttons handled via event delegation for Turbo compatibility
 
   // 🚀 Export reinit function for Turbo
   window.ppv_qr_reinit = function() {
@@ -2417,6 +2323,103 @@ document.addEventListener('change', function(e) {
     const cm = window.ppvCampaignManager;
     if (cm) {
       cm.load();
+    }
+  }
+});
+
+// ============================================================
+// 📥 CSV EXPORT - EVENT DELEGATION (Turbo compatible)
+// ============================================================
+
+// Toggle CSV dropdown menu
+document.addEventListener('click', function(e) {
+  const csvBtn = e.target.closest('#ppv-csv-export-btn');
+  const csvMenu = document.getElementById('ppv-csv-export-menu');
+
+  if (csvBtn && csvMenu) {
+    e.stopPropagation();
+    const isVisible = csvMenu.style.display === 'block';
+    csvMenu.style.display = isVisible ? 'none' : 'block';
+    return;
+  }
+
+  // Close dropdown when clicking outside (but not on menu items)
+  if (!e.target.closest('.ppv-csv-export-option') && !e.target.closest('#ppv-csv-export-btn')) {
+    if (csvMenu) {
+      csvMenu.style.display = 'none';
+    }
+  }
+});
+
+// Handle CSV export options
+document.addEventListener('click', async function(e) {
+  const option = e.target.closest('.ppv-csv-export-option');
+  if (!option) return;
+
+  e.preventDefault();
+  e.stopPropagation();
+
+  const L = window.ppv_lang || {};
+  const period = option.getAttribute('data-period');
+  let date = new Date().toISOString().split('T')[0]; // Today's date
+
+  // If "date" period, prompt for date
+  if (period === 'date') {
+    const userDate = prompt(L.csv_prompt_date || 'Datum eingeben (YYYY-MM-DD):', date);
+    if (!userDate) return; // Cancelled
+    date = userDate;
+  }
+
+  // If "month" period, use current month
+  if (period === 'month') {
+    date = new Date().toISOString().substr(0, 7) + '-01'; // First day of month
+  }
+
+  // Close dropdown
+  const csvMenu = document.getElementById('ppv-csv-export-menu');
+  if (csvMenu) {
+    csvMenu.style.display = 'none';
+  }
+
+  // Download CSV
+  try {
+    const url = `/wp-json/ppv/v1/pos/export-logs?period=${period}&date=${date}`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Export failed');
+    }
+
+    // Get CSV content
+    const blob = await response.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+
+    // Create download link
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = downloadUrl;
+    a.download = `pos_logs_${period}_${date}.csv`;
+
+    // Trigger download
+    document.body.appendChild(a);
+    a.click();
+
+    // Cleanup
+    window.URL.revokeObjectURL(downloadUrl);
+    document.body.removeChild(a);
+
+    if (window.ppvToast) {
+      window.ppvToast('✅ CSV erfolgreich heruntergeladen', 'success');
+    }
+  } catch (err) {
+    console.error('❌ [CSV Export] Failed:', err);
+    if (window.ppvToast) {
+      window.ppvToast('❌ CSV Export fehlgeschlagen', 'error');
     }
   }
 });
