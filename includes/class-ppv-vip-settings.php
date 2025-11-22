@@ -2,12 +2,11 @@
 /**
  * PunktePass – VIP Settings Management (Extended)
  * Handlers can configure multiple VIP bonus types:
- * 1. Percentage bonus per level
- * 2. Fixed point bonus per level
- * 3. Every Xth scan bonus
- * 4. First daily scan bonus
+ * 1. Fixed point bonus per level
+ * 2. Every Xth scan bonus
+ * 3. First daily scan bonus
  *
- * Version: 2.0
+ * Version: 2.1
  * Author: PunktePass
  */
 
@@ -152,21 +151,21 @@ class PPV_VIP_Settings {
                 'vip_gold_bonus' => intval($store->vip_gold_bonus ?? 10),
                 'vip_platinum_bonus' => intval($store->vip_platinum_bonus ?? 20),
 
-                // 2. Fixed point bonus
+                // 1. Fixed point bonus
                 'vip_fix_enabled' => (bool) ($store->vip_fix_enabled ?? 0),
-                'vip_fix_silver' => intval($store->vip_fix_silver ?? 5),
-                'vip_fix_gold' => intval($store->vip_fix_gold ?? 10),
-                'vip_fix_platinum' => intval($store->vip_fix_platinum ?? 20),
+                'vip_fix_silver' => intval($store->vip_fix_silver ?? 1),
+                'vip_fix_gold' => intval($store->vip_fix_gold ?? 2),
+                'vip_fix_platinum' => intval($store->vip_fix_platinum ?? 3),
 
-                // 3. Streak bonus (every Xth scan)
+                // 2. Streak bonus (every Xth scan)
                 'vip_streak_enabled' => (bool) ($store->vip_streak_enabled ?? 0),
                 'vip_streak_count' => intval($store->vip_streak_count ?? 10),
                 'vip_streak_type' => $store->vip_streak_type ?? 'fixed',
-                'vip_streak_silver' => intval($store->vip_streak_silver ?? 30),
-                'vip_streak_gold' => intval($store->vip_streak_gold ?? 50),
-                'vip_streak_platinum' => intval($store->vip_streak_platinum ?? 100),
+                'vip_streak_silver' => intval($store->vip_streak_silver ?? 1),
+                'vip_streak_gold' => intval($store->vip_streak_gold ?? 2),
+                'vip_streak_platinum' => intval($store->vip_streak_platinum ?? 3),
 
-                // 4. Daily first scan bonus
+                // 3. Daily first scan bonus
                 'vip_daily_enabled' => (bool) ($store->vip_daily_enabled ?? 0),
                 'vip_daily_silver' => intval($store->vip_daily_silver ?? 10),
                 'vip_daily_gold' => intval($store->vip_daily_gold ?? 20),
@@ -200,24 +199,24 @@ class PPV_VIP_Settings {
         $gold_pct = $getInt('vip_gold_bonus', 10, 0, 100);
         $platinum_pct = $getInt('vip_platinum_bonus', 20, 0, 100);
 
-        // 2. Fixed point bonus values
+        // 1. Fixed point bonus values
         $fix_enabled = (bool) $request->get_param('vip_fix_enabled');
-        $fix_silver = $getInt('vip_fix_silver', 5, 0, 1000);
-        $fix_gold = $getInt('vip_fix_gold', 10, 0, 1000);
-        $fix_platinum = $getInt('vip_fix_platinum', 20, 0, 1000);
+        $fix_silver = $getInt('vip_fix_silver', 1, 0, 1000);
+        $fix_gold = $getInt('vip_fix_gold', 2, 0, 1000);
+        $fix_platinum = $getInt('vip_fix_platinum', 3, 0, 1000);
 
-        // 3. Streak bonus values
+        // 2. Streak bonus values
         $streak_enabled = (bool) $request->get_param('vip_streak_enabled');
         $streak_count = $getInt('vip_streak_count', 10, 2, 100);
         $streak_type = sanitize_text_field($request->get_param('vip_streak_type') ?? 'fixed');
         if (!in_array($streak_type, ['fixed', 'double', 'triple'])) {
             $streak_type = 'fixed';
         }
-        $streak_silver = $getInt('vip_streak_silver', 30, 0, 1000);
-        $streak_gold = $getInt('vip_streak_gold', 50, 0, 1000);
-        $streak_platinum = $getInt('vip_streak_platinum', 100, 0, 1000);
+        $streak_silver = $getInt('vip_streak_silver', 1, 0, 1000);
+        $streak_gold = $getInt('vip_streak_gold', 2, 0, 1000);
+        $streak_platinum = $getInt('vip_streak_platinum', 3, 0, 1000);
 
-        // 4. Daily first scan bonus values
+        // 3. Daily first scan bonus values
         $daily_enabled = (bool) $request->get_param('vip_daily_enabled');
         $daily_silver = $getInt('vip_daily_silver', 10, 0, 1000);
         $daily_gold = $getInt('vip_daily_gold', 20, 0, 1000);
@@ -508,52 +507,7 @@ class PPV_VIP_Settings {
             <div class="ppv-vip-form">
 
                 <!-- ═══════════════════════════════════════════════════════════
-                     1. PERCENTAGE BONUS CARD
-                ═══════════════════════════════════════════════════════════ -->
-                <div class="ppv-vip-card" data-bonus-type="pct">
-                    <div class="ppv-vip-card-header">
-                        <label class="ppv-toggle-switch">
-                            <input type="checkbox" id="ppv-vip-enabled" name="vip_enabled">
-                            <span class="ppv-toggle-slider"></span>
-                        </label>
-                        <div class="ppv-card-title">
-                            <i class="ri-percent-line"></i>
-                            <div>
-                                <strong><?php echo esc_html($T['pct_title']); ?></strong>
-                                <small><?php echo esc_html($T['pct_desc']); ?></small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="ppv-vip-card-body">
-                        <div class="ppv-vip-levels-row">
-                            <div class="ppv-vip-level-input silver">
-                                <label><?php echo esc_html($T['silver_label']); ?></label>
-                                <div class="ppv-input-group">
-                                    <input type="number" id="ppv-pct-silver" name="vip_silver_bonus" min="0" max="100" value="5">
-                                    <span><?php echo esc_html($T['pct_suffix']); ?></span>
-                                </div>
-                            </div>
-                            <div class="ppv-vip-level-input gold">
-                                <label><?php echo esc_html($T['gold_label']); ?></label>
-                                <div class="ppv-input-group">
-                                    <input type="number" id="ppv-pct-gold" name="vip_gold_bonus" min="0" max="100" value="10">
-                                    <span><?php echo esc_html($T['pct_suffix']); ?></span>
-                                </div>
-                            </div>
-                            <div class="ppv-vip-level-input platinum">
-                                <label><?php echo esc_html($T['platinum_label']); ?></label>
-                                <div class="ppv-input-group">
-                                    <input type="number" id="ppv-pct-platinum" name="vip_platinum_bonus" min="0" max="100" value="20">
-                                    <span><?php echo esc_html($T['pct_suffix']); ?></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="ppv-validation-error" id="ppv-pct-error"></div>
-                    </div>
-                </div>
-
-                <!-- ═══════════════════════════════════════════════════════════
-                     2. FIXED POINT BONUS CARD
+                     1. FIXED POINT BONUS CARD
                 ═══════════════════════════════════════════════════════════ -->
                 <div class="ppv-vip-card" data-bonus-type="fix">
                     <div class="ppv-vip-card-header">
@@ -575,7 +529,7 @@ class PPV_VIP_Settings {
                                 <label><?php echo esc_html($T['silver_label']); ?></label>
                                 <div class="ppv-input-group">
                                     <span>+</span>
-                                    <input type="number" id="ppv-fix-silver" name="vip_fix_silver" min="0" max="1000" value="5">
+                                    <input type="number" id="ppv-fix-silver" name="vip_fix_silver" min="0" max="1000" value="1">
                                     <span><?php echo esc_html($T['fix_suffix']); ?></span>
                                 </div>
                             </div>
@@ -583,7 +537,7 @@ class PPV_VIP_Settings {
                                 <label><?php echo esc_html($T['gold_label']); ?></label>
                                 <div class="ppv-input-group">
                                     <span>+</span>
-                                    <input type="number" id="ppv-fix-gold" name="vip_fix_gold" min="0" max="1000" value="10">
+                                    <input type="number" id="ppv-fix-gold" name="vip_fix_gold" min="0" max="1000" value="2">
                                     <span><?php echo esc_html($T['fix_suffix']); ?></span>
                                 </div>
                             </div>
@@ -591,7 +545,7 @@ class PPV_VIP_Settings {
                                 <label><?php echo esc_html($T['platinum_label']); ?></label>
                                 <div class="ppv-input-group">
                                     <span>+</span>
-                                    <input type="number" id="ppv-fix-platinum" name="vip_fix_platinum" min="0" max="1000" value="20">
+                                    <input type="number" id="ppv-fix-platinum" name="vip_fix_platinum" min="0" max="1000" value="3">
                                     <span><?php echo esc_html($T['fix_suffix']); ?></span>
                                 </div>
                             </div>
@@ -601,7 +555,7 @@ class PPV_VIP_Settings {
                 </div>
 
                 <!-- ═══════════════════════════════════════════════════════════
-                     3. STREAK BONUS CARD (Every Xth scan)
+                     2. STREAK BONUS CARD (Every Xth scan)
                 ═══════════════════════════════════════════════════════════ -->
                 <div class="ppv-vip-card" data-bonus-type="streak">
                     <div class="ppv-vip-card-header">
@@ -639,7 +593,7 @@ class PPV_VIP_Settings {
                                 <label><?php echo esc_html($T['silver_label']); ?></label>
                                 <div class="ppv-input-group">
                                     <span>+</span>
-                                    <input type="number" id="ppv-streak-silver" name="vip_streak_silver" min="0" max="1000" value="30">
+                                    <input type="number" id="ppv-streak-silver" name="vip_streak_silver" min="0" max="1000" value="1">
                                     <span><?php echo esc_html($T['fix_suffix']); ?></span>
                                 </div>
                             </div>
@@ -647,7 +601,7 @@ class PPV_VIP_Settings {
                                 <label><?php echo esc_html($T['gold_label']); ?></label>
                                 <div class="ppv-input-group">
                                     <span>+</span>
-                                    <input type="number" id="ppv-streak-gold" name="vip_streak_gold" min="0" max="1000" value="50">
+                                    <input type="number" id="ppv-streak-gold" name="vip_streak_gold" min="0" max="1000" value="2">
                                     <span><?php echo esc_html($T['fix_suffix']); ?></span>
                                 </div>
                             </div>
@@ -655,7 +609,7 @@ class PPV_VIP_Settings {
                                 <label><?php echo esc_html($T['platinum_label']); ?></label>
                                 <div class="ppv-input-group">
                                     <span>+</span>
-                                    <input type="number" id="ppv-streak-platinum" name="vip_streak_platinum" min="0" max="1000" value="100">
+                                    <input type="number" id="ppv-streak-platinum" name="vip_streak_platinum" min="0" max="1000" value="3">
                                     <span><?php echo esc_html($T['fix_suffix']); ?></span>
                                 </div>
                             </div>
@@ -665,7 +619,7 @@ class PPV_VIP_Settings {
                 </div>
 
                 <!-- ═══════════════════════════════════════════════════════════
-                     4. DAILY FIRST SCAN BONUS CARD
+                     3. DAILY FIRST SCAN BONUS CARD
                 ═══════════════════════════════════════════════════════════ -->
                 <div class="ppv-vip-card" data-bonus-type="daily">
                     <div class="ppv-vip-card-header">
@@ -731,17 +685,13 @@ class PPV_VIP_Settings {
                             <span><?php echo esc_html($T['preview_base']); ?></span>
                             <strong id="preview-base">100</strong>
                         </div>
-                        <div class="ppv-preview-row" id="preview-row-pct">
-                            <span>+ <?php echo esc_html($T['preview_pct']); ?></span>
-                            <strong id="preview-pct-value">+10</strong>
-                        </div>
                         <div class="ppv-preview-row" id="preview-row-fix">
                             <span>+ <?php echo esc_html($T['preview_fix']); ?></span>
-                            <strong id="preview-fix-value">+10</strong>
+                            <strong id="preview-fix-value">+2</strong>
                         </div>
                         <div class="ppv-preview-row" id="preview-row-streak">
                             <span>+ <?php echo esc_html($T['preview_streak']); ?></span>
-                            <strong id="preview-streak-value">+50</strong>
+                            <strong id="preview-streak-value">+2</strong>
                         </div>
                         <div class="ppv-preview-row" id="preview-row-daily">
                             <span>+ <?php echo esc_html($T['preview_daily']); ?></span>
@@ -749,7 +699,7 @@ class PPV_VIP_Settings {
                         </div>
                         <div class="ppv-preview-row ppv-preview-total">
                             <span><?php echo esc_html($T['preview_total']); ?></span>
-                            <strong id="preview-total">190</strong>
+                            <strong id="preview-total">124</strong>
                         </div>
                     </div>
                 </div>

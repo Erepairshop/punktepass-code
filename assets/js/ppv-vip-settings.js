@@ -1,12 +1,11 @@
 /**
  * PunktePass – VIP Settings Management (Extended)
- * Supports 4 bonus types:
- * 1. Percentage bonus per level
- * 2. Fixed point bonus per level
- * 3. Every Xth scan bonus
- * 4. First daily scan bonus
+ * Supports 3 bonus types:
+ * 1. Fixed point bonus per level
+ * 2. Every Xth scan bonus
+ * 3. First daily scan bonus
  *
- * Version: 2.0
+ * Version: 2.1
  */
 
 (function() {
@@ -27,21 +26,14 @@
         // ELEMENT REFERENCES
         // ═══════════════════════════════════════════════════════════
 
-        // 1. Percentage bonus
-        const pctEnabled = document.getElementById('ppv-vip-enabled');
-        const pctSilver = document.getElementById('ppv-pct-silver');
-        const pctGold = document.getElementById('ppv-pct-gold');
-        const pctPlatinum = document.getElementById('ppv-pct-platinum');
-        const pctError = document.getElementById('ppv-pct-error');
-
-        // 2. Fixed point bonus
+        // 1. Fixed point bonus
         const fixEnabled = document.getElementById('ppv-fix-enabled');
         const fixSilver = document.getElementById('ppv-fix-silver');
         const fixGold = document.getElementById('ppv-fix-gold');
         const fixPlatinum = document.getElementById('ppv-fix-platinum');
         const fixError = document.getElementById('ppv-fix-error');
 
-        // 3. Streak bonus
+        // 2. Streak bonus
         const streakEnabled = document.getElementById('ppv-streak-enabled');
         const streakCount = document.getElementById('ppv-streak-count');
         const streakType = document.getElementById('ppv-streak-type');
@@ -51,7 +43,7 @@
         const streakError = document.getElementById('ppv-streak-error');
         const streakFixedInputs = document.querySelector('.ppv-streak-fixed-inputs');
 
-        // 4. Daily bonus
+        // 3. Daily bonus
         const dailyEnabled = document.getElementById('ppv-daily-enabled');
         const dailySilver = document.getElementById('ppv-daily-silver');
         const dailyGold = document.getElementById('ppv-daily-gold');
@@ -60,11 +52,9 @@
 
         // Preview elements
         const previewLevelButtons = document.querySelectorAll('.ppv-preview-level');
-        const previewRowPct = document.getElementById('preview-row-pct');
         const previewRowFix = document.getElementById('preview-row-fix');
         const previewRowStreak = document.getElementById('preview-row-streak');
         const previewRowDaily = document.getElementById('preview-row-daily');
-        const previewPctValue = document.getElementById('preview-pct-value');
         const previewFixValue = document.getElementById('preview-fix-value');
         const previewStreakValue = document.getElementById('preview-streak-value');
         const previewDailyValue = document.getElementById('preview-daily-value');
@@ -100,19 +90,13 @@
                 if (data.success && data.data) {
                     const s = data.data;
 
-                    // 1. Percentage
-                    if (pctEnabled) pctEnabled.checked = s.vip_enabled;
-                    if (pctSilver) pctSilver.value = s.vip_silver_bonus;
-                    if (pctGold) pctGold.value = s.vip_gold_bonus;
-                    if (pctPlatinum) pctPlatinum.value = s.vip_platinum_bonus;
-
-                    // 2. Fixed
+                    // 1. Fixed
                     if (fixEnabled) fixEnabled.checked = s.vip_fix_enabled;
                     if (fixSilver) fixSilver.value = s.vip_fix_silver;
                     if (fixGold) fixGold.value = s.vip_fix_gold;
                     if (fixPlatinum) fixPlatinum.value = s.vip_fix_platinum;
 
-                    // 3. Streak
+                    // 2. Streak
                     if (streakEnabled) streakEnabled.checked = s.vip_streak_enabled;
                     if (streakCount) streakCount.value = s.vip_streak_count;
                     if (streakType) streakType.value = s.vip_streak_type;
@@ -120,7 +104,7 @@
                     if (streakGold) streakGold.value = s.vip_streak_gold;
                     if (streakPlatinum) streakPlatinum.value = s.vip_streak_platinum;
 
-                    // 4. Daily
+                    // 3. Daily
                     if (dailyEnabled) dailyEnabled.checked = s.vip_daily_enabled;
                     if (dailySilver) dailySilver.value = s.vip_daily_silver;
                     if (dailyGold) dailyGold.value = s.vip_daily_gold;
@@ -146,7 +130,6 @@
         function updateCardStates() {
             // Update card body opacity based on toggle state
             const cards = [
-                { toggle: pctEnabled, card: pctEnabled?.closest('.ppv-vip-card') },
                 { toggle: fixEnabled, card: fixEnabled?.closest('.ppv-vip-card') },
                 { toggle: streakEnabled, card: streakEnabled?.closest('.ppv-vip-card') },
                 { toggle: dailyEnabled, card: dailyEnabled?.closest('.ppv-vip-card') },
@@ -185,19 +168,7 @@
             let isValid = true;
             const validationMsg = T.validation_error || 'Values must be in ascending order: Silver ≤ Gold ≤ Platinum';
 
-            // 1. Percentage
-            if (pctEnabled?.checked) {
-                const valid = validateAscending(pctSilver?.value, pctGold?.value, pctPlatinum?.value);
-                if (pctError) {
-                    pctError.textContent = valid ? '' : validationMsg;
-                    pctError.style.display = valid ? 'none' : 'block';
-                }
-                if (!valid) isValid = false;
-            } else if (pctError) {
-                pctError.style.display = 'none';
-            }
-
-            // 2. Fixed
+            // 1. Fixed
             if (fixEnabled?.checked) {
                 const valid = validateAscending(fixSilver?.value, fixGold?.value, fixPlatinum?.value);
                 if (fixError) {
@@ -209,7 +180,7 @@
                 fixError.style.display = 'none';
             }
 
-            // 3. Streak (only if type=fixed)
+            // 2. Streak (only if type=fixed)
             if (streakEnabled?.checked && streakType?.value === 'fixed') {
                 const valid = validateAscending(streakSilver?.value, streakGold?.value, streakPlatinum?.value);
                 if (streakError) {
@@ -221,7 +192,7 @@
                 streakError.style.display = 'none';
             }
 
-            // 4. Daily
+            // 3. Daily
             if (dailyEnabled?.checked) {
                 const valid = validateAscending(dailySilver?.value, dailyGold?.value, dailyPlatinum?.value);
                 if (dailyError) {
@@ -254,18 +225,7 @@
                 return values[currentPreviewLevel] || 0;
             };
 
-            // 1. Percentage bonus
-            if (pctEnabled?.checked) {
-                const pct = getValue(pctSilver, pctGold, pctPlatinum);
-                const pctBonus = Math.round(basePoints * (pct / 100));
-                if (previewPctValue) previewPctValue.textContent = '+' + pctBonus;
-                if (previewRowPct) previewRowPct.style.display = 'flex';
-                total += pctBonus;
-            } else {
-                if (previewRowPct) previewRowPct.style.display = 'none';
-            }
-
-            // 2. Fixed bonus
+            // 1. Fixed bonus
             if (fixEnabled?.checked) {
                 const fix = getValue(fixSilver, fixGold, fixPlatinum);
                 if (previewFixValue) previewFixValue.textContent = '+' + fix;
@@ -275,7 +235,7 @@
                 if (previewRowFix) previewRowFix.style.display = 'none';
             }
 
-            // 3. Streak bonus (assume 10th scan in preview scenario)
+            // 2. Streak bonus (assume 10th scan in preview scenario)
             if (streakEnabled?.checked) {
                 let streakBonus = 0;
                 if (streakType?.value === 'fixed') {
@@ -292,7 +252,7 @@
                 if (previewRowStreak) previewRowStreak.style.display = 'none';
             }
 
-            // 4. Daily bonus (assume first scan of day in preview scenario)
+            // 3. Daily bonus (assume first scan of day in preview scenario)
             if (dailyEnabled?.checked) {
                 const daily = getValue(dailySilver, dailyGold, dailyPlatinum);
                 if (previewDailyValue) previewDailyValue.textContent = '+' + daily;
@@ -314,7 +274,7 @@
         // ═══════════════════════════════════════════════════════════
 
         // Toggle state changes
-        [pctEnabled, fixEnabled, streakEnabled, dailyEnabled].forEach(toggle => {
+        [fixEnabled, streakEnabled, dailyEnabled].forEach(toggle => {
             if (toggle) {
                 toggle.addEventListener('change', () => {
                     updateCardStates();
@@ -333,7 +293,6 @@
 
         // All input changes trigger preview update
         const allInputs = [
-            pctSilver, pctGold, pctPlatinum,
             fixSilver, fixGold, fixPlatinum,
             streakCount, streakSilver, streakGold, streakPlatinum,
             dailySilver, dailyGold, dailyPlatinum
@@ -345,8 +304,11 @@
         });
 
         // Preview level selector
+        console.log('✅ [VIP] Preview level buttons found:', previewLevelButtons.length);
         previewLevelButtons.forEach(btn => {
-            btn.addEventListener('click', () => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('✅ [VIP] Preview level clicked:', btn.dataset.level);
                 previewLevelButtons.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 currentPreviewLevel = btn.dataset.level;
@@ -358,8 +320,13 @@
         // SAVE SETTINGS
         // ═══════════════════════════════════════════════════════════
 
+        console.log('✅ [VIP] Save button found:', !!saveBtn);
         if (saveBtn) {
-            saveBtn.addEventListener('click', saveSettings);
+            saveBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('✅ [VIP] Save button clicked');
+                saveSettings();
+            });
         }
 
         function saveSettings() {
@@ -382,27 +349,21 @@
             // Language
             formData.append('lang', lang);
 
-            // 1. Percentage
-            formData.append('vip_enabled', pctEnabled?.checked ? '1' : '0');
-            formData.append('vip_silver_bonus', pctSilver?.value || '5');
-            formData.append('vip_gold_bonus', pctGold?.value || '10');
-            formData.append('vip_platinum_bonus', pctPlatinum?.value || '20');
-
-            // 2. Fixed
+            // 1. Fixed
             formData.append('vip_fix_enabled', fixEnabled?.checked ? '1' : '0');
-            formData.append('vip_fix_silver', fixSilver?.value || '5');
-            formData.append('vip_fix_gold', fixGold?.value || '10');
-            formData.append('vip_fix_platinum', fixPlatinum?.value || '20');
+            formData.append('vip_fix_silver', fixSilver?.value || '1');
+            formData.append('vip_fix_gold', fixGold?.value || '2');
+            formData.append('vip_fix_platinum', fixPlatinum?.value || '3');
 
-            // 3. Streak
+            // 2. Streak
             formData.append('vip_streak_enabled', streakEnabled?.checked ? '1' : '0');
             formData.append('vip_streak_count', streakCount?.value || '10');
             formData.append('vip_streak_type', streakType?.value || 'fixed');
-            formData.append('vip_streak_silver', streakSilver?.value || '30');
-            formData.append('vip_streak_gold', streakGold?.value || '50');
-            formData.append('vip_streak_platinum', streakPlatinum?.value || '100');
+            formData.append('vip_streak_silver', streakSilver?.value || '1');
+            formData.append('vip_streak_gold', streakGold?.value || '2');
+            formData.append('vip_streak_platinum', streakPlatinum?.value || '3');
 
-            // 4. Daily
+            // 3. Daily
             formData.append('vip_daily_enabled', dailyEnabled?.checked ? '1' : '0');
             formData.append('vip_daily_silver', dailySilver?.value || '10');
             formData.append('vip_daily_gold', dailyGold?.value || '20');
