@@ -316,10 +316,12 @@ class PPV_Bottom_Nav {
 
         return "
         (function() {
-            // 🚀 Initialize everything
-            function initAll() {
-                const \$ = jQuery;
-                console.log('✅ Bottom Nav aktiv (Turbo)');
+            const \$ = jQuery;
+            let initialized = false;
+
+            // 🚀 Initialize bottom nav (active icons only)
+            function initBottomNav() {
+                console.log('✅ Bottom Nav init');
                 const currentPath = window.location.pathname.replace(/\/+\$/, '');
 
                 // Aktív ikon megjelölése
@@ -333,51 +335,54 @@ class PPV_Bottom_Nav {
                         }
                     }
                 });
+            }
 
-                // Smooth icon hover feedback
-                \$('.ppv-bottom-nav .nav-item').off('touchstart mousedown touchend mouseup');
-                \$('.ppv-bottom-nav .nav-item').on('touchstart mousedown', function() {
-                    \$(this).addClass('touch');
-                }).on('touchend mouseup', function() {
-                    \$(this).removeClass('touch');
-                });
+            // 🚀 Initialize support modal (EVENT DELEGATION - csak egyszer!)
+            function initSupportModal() {
+                if (initialized) return;
+                initialized = true;
+                console.log('✅ Support Modal init (delegated)');
 
-                // ============ SUPPORT MODAL ============
-                const \$modal = \$('#ppv-support-modal');
-                const \$msg = \$('#ppv-support-msg');
-
-                // Unbind previous handlers to prevent duplicates
-                \$('#ppv-support-nav-btn').off('click');
-                \$('#ppv-support-close').off('click');
-                \$modal.off('click');
-                \$('#ppv-support-send').off('click');
+                // EVENT DELEGATION - kötés a document-hez, nem a konkrét elemekhez
+                // Ez működik Turbo navigáció után is!
 
                 // Open modal
-                \$('#ppv-support-nav-btn').on('click', function(e) {
+                \$(document).on('click', '#ppv-support-nav-btn', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
-                    \$modal.css('display', 'flex').hide().fadeIn(200);
-                    \$('#ppv-support-email').val('');
-                    \$('#ppv-support-phone').val('');
-                    \$('#ppv-support-desc').val('');
-                    \$('#ppv-support-email').focus();
-                    \$msg.hide();
-                });
-
-                // Close modal
-                \$('#ppv-support-close').on('click', function() {
-                    \$modal.fadeOut(200);
-                });
-
-                // Close on backdrop click
-                \$modal.on('click', function(e) {
-                    if (e.target === this) {
-                        \$modal.fadeOut(200);
+                    const \$modal = \$('#ppv-support-modal');
+                    if (\$modal.length) {
+                        \$modal.css({display: 'flex', opacity: 0}).animate({opacity: 1}, 200);
+                        \$('#ppv-support-email').val('').focus();
+                        \$('#ppv-support-phone').val('');
+                        \$('#ppv-support-desc').val('');
+                        \$('#ppv-support-msg').hide();
                     }
                 });
 
+                // Close modal
+                \$(document).on('click', '#ppv-support-close', function() {
+                    \$('#ppv-support-modal').fadeOut(200);
+                });
+
+                // Close on backdrop click
+                \$(document).on('click', '#ppv-support-modal', function(e) {
+                    if (e.target === this) {
+                        \$(this).fadeOut(200);
+                    }
+                });
+
+                // Touch feedback
+                \$(document).on('touchstart mousedown', '.ppv-bottom-nav .nav-item', function() {
+                    \$(this).addClass('touch');
+                }).on('touchend mouseup', '.ppv-bottom-nav .nav-item', function() {
+                    \$(this).removeClass('touch');
+                });
+
                 // Send ticket
-                \$('#ppv-support-send').on('click', function() {
+                \$(document).on('click', '#ppv-support-send', function() {
+                    const \$modal = \$('#ppv-support-modal');
+                    const \$msg = \$('#ppv-support-msg');
                     const email = \$('#ppv-support-email').val().trim();
                     const phone = \$('#ppv-support-phone').val().trim();
                     const desc = \$('#ppv-support-desc').val().trim();
@@ -447,13 +452,18 @@ class PPV_Bottom_Nav {
 
             // Initialize on DOM ready
             if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', initAll);
+                document.addEventListener('DOMContentLoaded', function() {
+                    initBottomNav();
+                    initSupportModal();
+                });
             } else {
-                initAll();
+                initBottomNav();
+                initSupportModal();
             }
 
-            // 🚀 Reinitialize after Turbo navigation
-            document.addEventListener('turbo:load', initAll);
+            // 🚀 Reinitialize ONLY bottom nav after Turbo navigation
+            document.addEventListener('turbo:load', initBottomNav);
+            document.addEventListener('turbo:render', initBottomNav);
 
             // 🚀 Show loading indicator
             document.addEventListener('turbo:before-fetch-request', function() {
