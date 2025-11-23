@@ -2,13 +2,13 @@
 if (!defined('ABSPATH')) exit;
 
 /**
- * PunktePass – Bottom Navigation (v6.7 Fixed)
+ * PunktePass – Bottom Navigation (v6.8)
  * ✅ User + Händler kompatibilis
  * ✅ Session Engine v4 támogatás
  * ✅ Multi-Filiale Safe
  * ✅ POS-Tablet kompatibilis
  * ✅ Neon Blue Theme
- * ✅ Linkek NEM interceptálódnak!
+ * ✅ data-turbo="false" on ALL links - prevents 503 errors
  * Author: PunktePass / Erik Borota
  */
 
@@ -134,23 +134,23 @@ class PPV_Bottom_Nav {
         ob_start();
 
         // --- User navigáció (prioritás!) ---
-        // 🚀 data-turbo="false" for vendors visiting user pages - forces full reload
-        $turbo_attr = $is_vendor ? 'data-turbo="false"' : '';
+        // 🚀 data-turbo="false" on ALL links - prevents 503 errors from API race conditions
         if ($is_user_page): ?>
             <nav class="ppv-bottom-nav">
-                <a href="/user_dashboard" class="nav-item" <?php echo $turbo_attr; ?> data-navlink="true" title="Dashboard"><i class="ri-home-smile-2-line"></i></a>
-                <a href="/meine-punkte" class="nav-item" <?php echo $turbo_attr; ?> data-navlink="true" title="Meine Punkte"><i class="ri-donut-chart-line"></i></a>
-                <a href="/belohnungen" class="nav-item" <?php echo $turbo_attr; ?> data-navlink="true" title="Belohnungen"><i class="ri-coupon-3-line"></i></a>
-                <a href="/einstellungen" class="nav-item" <?php echo $turbo_attr; ?> data-navlink="true" title="Einstellungen"><i class="ri-equalizer-line"></i></a>
+                <a href="/user_dashboard" class="nav-item" data-turbo="false" data-navlink="true" title="Dashboard"><i class="ri-home-smile-2-line"></i></a>
+                <a href="/meine-punkte" class="nav-item" data-turbo="false" data-navlink="true" title="Meine Punkte"><i class="ri-donut-chart-line"></i></a>
+                <a href="/belohnungen" class="nav-item" data-turbo="false" data-navlink="true" title="Belohnungen"><i class="ri-coupon-3-line"></i></a>
+                <a href="/einstellungen" class="nav-item" data-turbo="false" data-navlink="true" title="Einstellungen"><i class="ri-equalizer-line"></i></a>
             </nav>
         <?php
         // --- Händler / POS navigáció ---
+        // 🚀 data-turbo="false" on ALL links - prevents 503 errors from API race conditions
         elseif ($is_vendor || $is_pos): ?>
             <nav class="ppv-bottom-nav">
-                <a href="/qr-center" class="nav-item" data-navlink="true" title="Start"><i class="ri-home-smile-2-line"></i></a>
-                <a href="/rewards" class="nav-item" data-navlink="true" title="Rewards"><i class="ri-coupon-3-line"></i></a>
-                <a href="/mein-profil" class="nav-item" data-navlink="true" title="Profil"><i class="ri-user-3-line"></i></a>
-                <a href="/statistik" class="nav-item" data-navlink="true" title="Statistik"><i class="ri-bar-chart-line"></i></a>
+                <a href="/qr-center" class="nav-item" data-turbo="false" data-navlink="true" title="Start"><i class="ri-home-smile-2-line"></i></a>
+                <a href="/rewards" class="nav-item" data-turbo="false" data-navlink="true" title="Rewards"><i class="ri-coupon-3-line"></i></a>
+                <a href="/mein-profil" class="nav-item" data-turbo="false" data-navlink="true" title="Profil"><i class="ri-user-3-line"></i></a>
+                <a href="/statistik" class="nav-item" data-turbo="false" data-navlink="true" title="Statistik"><i class="ri-bar-chart-line"></i></a>
                 <a href="#" class="nav-item" id="ppv-support-nav-btn" title="Support"><i class="ri-customer-service-2-line"></i></a>
             </nav>
 
@@ -189,13 +189,14 @@ class PPV_Bottom_Nav {
                 </div>
             </div>
         <?php
-        // --- Alap user nav (basic users - Turbo enabled) ---
+        // --- Alap user nav (basic users) ---
+        // 🚀 data-turbo="false" on ALL links - prevents 503 errors from API race conditions
         else: ?>
             <nav class="ppv-bottom-nav">
-                <a href="/user_dashboard" class="nav-item" data-navlink="true" title="Dashboard"><i class="ri-home-smile-2-line"></i></a>
-                <a href="/meine-punkte" class="nav-item" data-navlink="true" title="Meine Punkte"><i class="ri-donut-chart-line"></i></a>
-                <a href="/belohnungen" class="nav-item" data-navlink="true" title="Belohnungen"><i class="ri-coupon-3-line"></i></a>
-                <a href="/einstellungen" class="nav-item" data-navlink="true" title="Einstellungen"><i class="ri-equalizer-line"></i></a>
+                <a href="/user_dashboard" class="nav-item" data-turbo="false" data-navlink="true" title="Dashboard"><i class="ri-home-smile-2-line"></i></a>
+                <a href="/meine-punkte" class="nav-item" data-turbo="false" data-navlink="true" title="Meine Punkte"><i class="ri-donut-chart-line"></i></a>
+                <a href="/belohnungen" class="nav-item" data-turbo="false" data-navlink="true" title="Belohnungen"><i class="ri-coupon-3-line"></i></a>
+                <a href="/einstellungen" class="nav-item" data-turbo="false" data-navlink="true" title="Einstellungen"><i class="ri-equalizer-line"></i></a>
             </nav>
         <?php
         endif;
