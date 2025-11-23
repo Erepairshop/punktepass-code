@@ -133,6 +133,15 @@ class PPV_User_Dashboard {
                 'created_at' => current_time('mysql'),
                 'expires_at' => date('Y-m-d H:i:s', strtotime('+30 days'))
             ]);
+
+            // 🔄 INVALIDATE QR CACHE when new token is created
+            // This ensures the QR image is regenerated with the new token
+            $qr_dir = WP_CONTENT_DIR . '/uploads/ppv_qr/';
+            $qr_file = $qr_dir . "user_{$uid}.png";
+            if (file_exists($qr_file)) {
+                @unlink($qr_file);
+                error_log("🔄 [PPV_Dashboard] QR cache invalidated for user {$uid} - new token created");
+            }
         }
 
         return $token;
