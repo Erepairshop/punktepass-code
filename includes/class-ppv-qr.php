@@ -822,18 +822,9 @@ class PPV_QR {
                 </div>
             </div>
 
-            <table id="ppv-pos-log" class="glass-table">
-                <thead>
-                    <tr>
-                        <th><?php echo self::t('t_col_time', 'Zeit'); ?></th>
-                        <th><?php echo self::t('t_col_customer', 'Kunde'); ?></th>
-                        <th><?php echo self::t('t_col_status', 'Status'); ?></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr class="ppv-loading-row"><td colspan="3" style="text-align:center;padding:20px;color:#888;"><i class="ri-loader-4-line ri-spin"></i> Laden...</td></tr>
-                </tbody>
-            </table>
+            <div id="ppv-pos-log" class="ppv-scan-list">
+                <div class="ppv-scan-loading"><i class="ri-loader-4-line ri-spin"></i> Laden...</div>
+            </div>
 
             <!-- 🎥 CAMERA SCANNER MODAL -->
             <div id="ppv-camera-modal" class="ppv-modal" role="dialog" aria-modal="true" style="display: none;">
@@ -1917,16 +1908,48 @@ class PPV_QR {
 
         $store_id = intval($session_store->id);
 
+        // Join with users table to get display name and email
         $logs = $wpdb->get_results($wpdb->prepare("
-            SELECT created_at, user_id, message, type
-            FROM {$wpdb->prefix}ppv_pos_log
-            WHERE store_id=%d
-            ORDER BY id DESC LIMIT 15
+            SELECT
+                l.created_at,
+                l.user_id,
+                l.message,
+                l.type,
+                u.display_name,
+                u.user_email
+            FROM {$wpdb->prefix}ppv_pos_log l
+            LEFT JOIN {$wpdb->users} u ON l.user_id = u.ID
+            WHERE l.store_id=%d
+            ORDER BY l.id DESC LIMIT 15
         ", $store_id));
 
-        // Add success field based on type (qr_scan = success, error = fail)
+        // Process each log entry
         foreach ($logs as &$log) {
             $log->success = ($log->type !== 'error');
+
+            // Customer name: prefer display_name, fallback to email username
+            if (!empty($log->display_name) && $log->display_name !== $log->user_email) {
+                $log->customer_name = $log->display_name;
+            } elseif (!empty($log->user_email)) {
+                $log->customer_name = explode('@', $log->user_email)[0];
+            } else {
+                $log->customer_name = '#' . $log->user_id;
+            }
+
+            // Parse points from message (e.g. "+1 Punkte" or "+3 Punkte (VIP: +2)")
+            $log->points = '';
+            if (preg_match('/\+(\d+)\s*Punkte/', $log->message, $m)) {
+                $base = $m[1];
+                if (preg_match('/VIP[:\s]*\+(\d+)/', $log->message, $vip)) {
+                    $log->points = "+{$base} <span class='ppv-vip-pts'>+{$vip[1]} VIP</span>";
+                } else {
+                    $log->points = "+{$base}";
+                }
+            }
+
+            // Format time to compact format (HH:MM)
+            $log->time_short = date('H:i', strtotime($log->created_at));
+            $log->date_short = date('d.m', strtotime($log->created_at));
         }
 
         return new WP_REST_Response($logs, 200);

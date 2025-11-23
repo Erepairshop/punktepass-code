@@ -82,13 +82,13 @@
   class UIManager {
     constructor() {
       this.resultBox = null;
-      this.logTable = null;
+      this.logList = null;
       this.campaignList = null;
     }
 
     init() {
       this.resultBox = document.getElementById('ppv-pos-result');
-      this.logTable = document.querySelector('#ppv-pos-log tbody');
+      this.logList = document.getElementById('ppv-pos-log');
       this.campaignList = document.getElementById('ppv-campaign-list');
     }
 
@@ -97,16 +97,23 @@
     }
 
     clearLogTable() {
-      if (!this.logTable) return;
-      this.logTable.innerHTML = '';
+      if (!this.logList) return;
+      this.logList.innerHTML = '';
     }
 
-    addLogRow(time, user, status) {
-      if (!this.logTable) return;
-      const row = document.createElement('tr');
-      row.innerHTML = `<td>${time}</td><td>${user}</td><td>${status}</td>`;
-      this.logTable.prepend(row);
-      while (this.logTable.rows.length > 15) this.logTable.deleteRow(15);
+    addScanItem(log) {
+      if (!this.logList) return;
+      const item = document.createElement('div');
+      item.className = `ppv-scan-item ${log.success ? 'success' : 'error'}`;
+      item.innerHTML = `
+        <div class="ppv-scan-status">${log.success ? '✓' : '✗'}</div>
+        <div class="ppv-scan-info">
+          <div class="ppv-scan-name">${log.customer_name || '#' + log.user_id}</div>
+          <div class="ppv-scan-time">${log.date_short} ${log.time_short}</div>
+        </div>
+        <div class="ppv-scan-points">${log.points || '-'}</div>
+      `;
+      this.logList.appendChild(item);
     }
 
     flashCampaignList() {
@@ -223,13 +230,11 @@
         });
         const logs = await res.json();
 
-        // Clear existing table rows before loading fresh data
+        // Clear existing items before loading fresh data
         this.ui.clearLogTable();
 
-        // Add logs in reverse order so newest appears at top
-        (logs || []).slice().reverse().forEach(l => {
-          this.ui.addLogRow(l.created_at, l.user_id, l.success ? '✅' : '❌');
-        });
+        // Add logs (API returns newest first)
+        (logs || []).forEach(l => this.ui.addScanItem(l));
       } catch (e) {
         console.warn('[QR] Failed to load logs:', e);
       }

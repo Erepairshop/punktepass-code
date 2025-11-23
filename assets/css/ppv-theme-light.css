@@ -11765,3 +11765,110 @@ body.dark-mode {
         display: none !important;
     }
 }
+
+
+/* ==========================================================================
+   📋 COMPACT SCAN LIST (Letzte Scans)
+   ========================================================================== */
+.ppv-scan-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 8px;
+}
+
+.ppv-scan-loading {
+    text-align: center;
+    padding: 20px;
+    color: #64748b;
+}
+
+.ppv-scan-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: #ffffff;
+    border-radius: 10px;
+    border-left: 3px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    transition: all 0.2s ease;
+}
+
+.ppv-scan-item:hover {
+    background: #f8fafc;
+    transform: translateX(2px);
+}
+
+.ppv-scan-item.success {
+    border-left-color: #10b981;
+}
+
+.ppv-scan-item.error {
+    border-left-color: #ef4444;
+}
+
+.ppv-scan-status {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.ppv-scan-item.success .ppv-scan-status {
+    background: rgba(16, 185, 129, 0.15);
+    color: #059669;
+}
+
+.ppv-scan-item.error .ppv-scan-status {
+    background: rgba(239, 68, 68, 0.15);
+    color: #dc2626;
+}
+
+.ppv-scan-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.ppv-scan-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e293b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ppv-scan-time {
+    font-size: 11px;
+    color: #64748b;
+}
+
+.ppv-scan-points {
+    font-size: 14px;
+    font-weight: 700;
+    color: #059669;
+    white-space: nowrap;
+    padding: 4px 10px;
+    background: rgba(16, 185, 129, 0.1);
+    border-radius: 20px;
+}
+
+.ppv-scan-item.error .ppv-scan-points {
+    color: #64748b;
+    background: rgba(100, 116, 139, 0.1);
+}
+
+.ppv-vip-pts {
+    font-size: 11px;
+    color: #d97706;
+    margin-left: 4px;
+}
+

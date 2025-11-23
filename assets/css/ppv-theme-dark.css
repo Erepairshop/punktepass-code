@@ -4228,3 +4228,109 @@ body.ppv-light .ppv-theme-btn-mini {
     background: #ef4444;
     color: white;
 }
+
+
+/* ==========================================================================
+   📋 COMPACT SCAN LIST (Letzte Scans)
+   ========================================================================== */
+.ppv-scan-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 8px;
+}
+
+.ppv-scan-loading {
+    text-align: center;
+    padding: 20px;
+    color: var(--pp-text-3);
+}
+
+.ppv-scan-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: var(--pp-surface);
+    border-radius: 10px;
+    border-left: 3px solid var(--pp-border);
+    transition: all 0.2s ease;
+}
+
+.ppv-scan-item:hover {
+    background: var(--pp-surface-soft);
+    transform: translateX(2px);
+}
+
+.ppv-scan-item.success {
+    border-left-color: var(--pp-success);
+}
+
+.ppv-scan-item.error {
+    border-left-color: var(--pp-danger);
+}
+
+.ppv-scan-status {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.ppv-scan-item.success .ppv-scan-status {
+    background: rgba(16, 185, 129, 0.2);
+    color: var(--pp-success);
+}
+
+.ppv-scan-item.error .ppv-scan-status {
+    background: rgba(239, 68, 68, 0.2);
+    color: var(--pp-danger);
+}
+
+.ppv-scan-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.ppv-scan-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--pp-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ppv-scan-time {
+    font-size: 11px;
+    color: var(--pp-text-3);
+}
+
+.ppv-scan-points {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--pp-success);
+    white-space: nowrap;
+    padding: 4px 10px;
+    background: rgba(16, 185, 129, 0.12);
+    border-radius: 20px;
+}
+
+.ppv-scan-item.error .ppv-scan-points {
+    color: var(--pp-text-3);
+    background: rgba(148, 163, 184, 0.1);
+}
+
+.ppv-vip-pts {
+    font-size: 11px;
+    color: #fbbf24;
+    margin-left: 4px;
+}
+
