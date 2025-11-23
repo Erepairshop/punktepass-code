@@ -97,7 +97,7 @@ class PPV_Analytics {
     const defaults = this.getDefaultStrings()[lang] || this.getDefaultStrings().de;
     const merged = Object.assign({}, defaults, serverLabels);
     
-    console.log(`🌍 [Analytics] Labels for ${lang}: ${Object.keys(merged).length} strings`);
+    if (this.DEBUG) console.log(`🌍 [Analytics] Labels for ${lang}: ${Object.keys(merged).length} strings`);
     return merged;
   }
 
@@ -107,11 +107,11 @@ class PPV_Analytics {
   async init(containerId = 'ppv-analytics-section') {
     this.container = document.getElementById(containerId);
     if (!this.container) {
-      console.warn('🚨 [Analytics] Container not found:', containerId);
+      if (this.DEBUG) console.warn('🚨 [Analytics] Container not found:', containerId);
       return;
     }
 
-    console.log('📊 [Analytics] Initializing...');
+    if (this.DEBUG) console.log('📊 [Analytics] Initializing...');
     
     try {
       // Fetch data
@@ -123,9 +123,9 @@ class PPV_Analytics {
       // Setup event listeners
       this.setupEventListeners();
       
-      console.log('✅ [Analytics] Ready');
+      if (this.DEBUG) console.log('✅ [Analytics] Ready');
     } catch (err) {
-      console.error('❌ [Analytics] Error:', err);
+      if (this.DEBUG) console.error('❌ [Analytics] Error:', err);
       this.renderError(err.message);
     }
   }
@@ -134,7 +134,7 @@ class PPV_Analytics {
    * FETCH DATA FROM API
    * ============================================================ */
   async fetchData() {
-    console.log('📡 [Analytics] Fetching data...');
+    if (this.DEBUG) console.log('📡 [Analytics] Fetching data...');
 
     try {
       // Get language
@@ -142,7 +142,7 @@ class PPV_Analytics {
 
       // ✅ NE küldjünk WordPress nonce-t!
       // Same fix as My Points - session-based auth, no WordPress nonce needed
-      console.log('📡 [Analytics] NOT sending X-WP-Nonce (using session-based auth)');
+      if (this.DEBUG) console.log('📡 [Analytics] NOT sending X-WP-Nonce (using session-based auth)');
 
       // Fetch trend data
       const trendRes = await fetch(
@@ -186,14 +186,14 @@ class PPV_Analytics {
       if (!summaryRes.ok) throw new Error('Summary fetch failed: ' + summaryRes.status);
       this.summary = await summaryRes.json();
 
-      console.log('✅ [Analytics] Data loaded');
       if (this.DEBUG) {
+        console.log('✅ [Analytics] Data loaded');
         console.log('📊 Trend:', this.data);
         console.log('🏪 Stores:', this.stores);
         console.log('📈 Summary:', this.summary);
       }
     } catch (err) {
-      console.error('❌ [Analytics] Fetch error:', err);
+      if (this.DEBUG) console.error('❌ [Analytics] Fetch error:', err);
       throw err;
     }
   }
@@ -612,12 +612,12 @@ class PPV_Analytics {
    * REFRESH DATA
    * ============================================================ */
   async refresh() {
-    console.log('🔄 [Analytics] Refreshing...');
+    if (this.DEBUG) console.log('🔄 [Analytics] Refreshing...');
     try {
       await this.fetchData();
       this.render();
     } catch (err) {
-      console.error('❌ [Analytics] Refresh error:', err);
+      if (this.DEBUG) console.error('❌ [Analytics] Refresh error:', err);
       this.renderError(err.message);
     }
   }
@@ -650,4 +650,4 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-console.log('✅ [Analytics] Script loaded - TRANSLATED');
+// Script loaded - DEBUG logging disabled for production

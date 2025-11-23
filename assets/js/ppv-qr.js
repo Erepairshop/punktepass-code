@@ -8,9 +8,14 @@
 (function() {
   'use strict';
 
+  // ✅ DEBUG mode - set to true for verbose logging
+  const PPV_DEBUG = false;
+  const ppvLog = (...args) => { if (PPV_DEBUG) console.log(...args); };
+  const ppvWarn = (...args) => { if (PPV_DEBUG) console.warn(...args); };
+
   // Guard against multiple script loads
   if (window.PPV_QR_LOADED) {
-    console.log('[QR] Already loaded, skipping');
+    ppvLog('[QR] Already loaded, skipping');
     return;
   }
   window.PPV_QR_LOADED = true;
@@ -186,7 +191,7 @@
           window.ppvToast(`✅ ${result.synced} ${L.pos_sync || 'synchronisiert'}`, 'success');
         }
       } catch (e) {
-        console.warn('[QR] Sync error:', e);
+        ppvWarn('[QR] Sync error:', e);
       }
     }
   }
@@ -233,12 +238,12 @@
 
     async loadLogs() {
       if (!getStoreKey()) return;
-      console.log('[QR] 📡 loadLogs() called at', new Date().toLocaleTimeString());
+      ppvLog('[QR] 📡 loadLogs() called at', new Date().toLocaleTimeString());
       try {
         const res = await fetch('/wp-json/punktepass/v1/pos/logs', {
           headers: { 'PPV-POS-Token': getStoreKey() }
         });
-        console.log('[QR] 📡 loadLogs() response:', res.status);
+        ppvLog('[QR] 📡 loadLogs() response:', res.status);
         const logs = await res.json();
 
         // Clear existing items before loading fresh data
@@ -247,7 +252,7 @@
         // Add logs (API returns newest first)
         (logs || []).forEach(l => this.ui.addScanItem(l));
       } catch (e) {
-        console.warn('[QR] Failed to load logs:', e);
+        ppvWarn('[QR] Failed to load logs:', e);
       }
     }
   }
@@ -281,7 +286,7 @@
         return;
       }
 
-      console.log('[QR] 📡 campaigns.load() called at', new Date().toLocaleTimeString());
+      ppvLog('[QR] 📡 campaigns.load() called at', new Date().toLocaleTimeString());
 
       this.list.innerHTML = `<div class='ppv-loading'>⏳ ${L.camp_loading || 'Lade Kampagnen...'}</div>`;
 
@@ -291,7 +296,7 @@
         const res = await fetch('/wp-json/punktepass/v1/pos/campaigns', {
           headers: { 'PPV-POS-Token': getStoreKey() }
         });
-        console.log('[QR] 📡 campaigns.load() response:', res.status);
+        ppvLog('[QR] 📡 campaigns.load() response:', res.status);
         const data = await res.json();
 
         this.list.innerHTML = '';
@@ -972,7 +977,7 @@
     // Prevent rapid re-initialization (within 2 seconds)
     const now = Date.now();
     if (now - STATE.lastInitTime < 2000) {
-      console.log('[QR] Init throttled (too soon)');
+      ppvLog('[QR] Init throttled (too soon)');
       return;
     }
     STATE.lastInitTime = now;
@@ -986,7 +991,7 @@
       return;
     }
 
-    console.log('[QR] Initializing...');
+    ppvLog('[QR] Initializing...');
     cleanup();
 
     STATE.uiManager = new UIManager();
@@ -1048,7 +1053,7 @@
     });
 
     STATE.initialized = true;
-    console.log('[QR] Initialization complete');
+    ppvLog('[QR] Initialization complete');
   }
 
   // ============================================================
@@ -1069,6 +1074,6 @@
   // Custom SPA event support
   window.addEventListener('ppv:spa-navigate', init);
 
-  console.log('[QR] Script loaded v6.0');
+  ppvLog('[QR] Script loaded v6.0');
 
 })();

@@ -4,7 +4,11 @@
  */
 
 (() => {
-  console.log("🧠 PPV JS Logger v4.0 aktiv");
+  // ✅ DEBUG mode - set to true for verbose logging
+  const PPV_DEBUG = false;
+  const ppvLog = (...args) => { if (PPV_DEBUG) console.log(...args); };
+
+  ppvLog("🧠 PPV JS Logger v4.0 aktiv");
 
   // --- CONFIG ---
   const API_JS = PPV_LOG_API?.js_url || "";
@@ -30,7 +34,7 @@
         body: JSON.stringify(payload),
       });
     } catch (e) {
-      console.warn("⚠️ Logger send error:", e);
+      if (PPV_DEBUG) console.warn("⚠️ Logger send error:", e);
     }
   }
 
@@ -150,7 +154,7 @@
       oldLog.apply(console, args);
     };
 
-    console.log("🧾 Debug Overlay aktiv (v4.0)");
+    ppvLog("🧾 Debug Overlay aktiv (v4.0)");
   }
 
   // --- Self-Test ---
@@ -167,9 +171,9 @@
         statusText: "SelfTest OK",
         body: checks,
       });
-      console.log("✅ PPV Logger SelfTest OK:", checks);
+      ppvLog("✅ PPV Logger SelfTest OK:", checks);
     } catch (e) {
-      console.warn("⚠️ PPV Logger SelfTest failed:", e);
+      if (PPV_DEBUG) console.warn("⚠️ PPV Logger SelfTest failed:", e);
     }
   }
 
