@@ -4260,26 +4260,26 @@ body.ppv-light .ppv-theme-btn-mini {
     }
 }
 /* ==========================================================================
-   PUNKTEPASS – ANALYTICS (v10.0 LIGHT THEME)
-   Harmonized with MyPoints v10.0 / Neon Blue PWA
+   PUNKTEPASS – ANALYTICS (v11.0 COMPACT APP STYLE)
+   Harmonized with MyPoints v11.0 / Neon Blue PWA
    ========================================================================== */
 
 :root {
-    --ppv-ana-bg: #f5f7fa;
-    --ppv-ana-card: #ffffff;
-    --ppv-ana-text: #111827;
-    --ppv-ana-text-light: #6b7280;
-    --ppv-ana-primary: #2563eb;
+    --ppv-ana-bg: transparent;
+    --ppv-ana-card: var(--pp-surface, #ffffff);
+    --ppv-ana-text: var(--pp-text, #111827);
+    --ppv-ana-text-light: var(--pp-text-muted, #6b7280);
+    --ppv-ana-primary: var(--pp-primary, #2563eb);
     --ppv-ana-primary-soft: rgba(37, 99, 235, 0.08);
-    --ppv-ana-border: #e5e7eb;
-    --ppv-ana-shadow: 0 4px 18px rgba(0, 0, 0, 0.06);
-    --ppv-ana-radius: 18px;
-    --ppv-ana-radius-sm: 12px;
+    --ppv-ana-border: var(--pp-border-soft, #e5e7eb);
+    --ppv-ana-shadow: var(--pp-shadow-sm, 0 2px 8px rgba(0, 0, 0, 0.04));
+    --ppv-ana-radius: 12px;
+    --ppv-ana-radius-sm: 10px;
 }
 
 /* WRAPPER --------------------------------------------------------------- */
 .ppv-analytics-wrapper {
-    padding: 1.2rem 1rem 2rem;
+    padding: 0;
     background: var(--ppv-ana-bg);
     color: var(--ppv-ana-text);
 }
@@ -4289,106 +4289,141 @@ body.ppv-light .ppv-theme-btn-mini {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1.2rem;
+    margin-bottom: 12px;
 }
 
 .ppv-analytics-header h3 {
-    font-size: 1.45rem;
+    font-size: 14px;
     font-weight: 700;
     display: flex;
     align-items: center;
-    gap: .4rem;
+    gap: 6px;
+    color: var(--pp-primary-dark, #1e40af);
+    margin: 0;
+}
+
+.ppv-analytics-header h3 i {
+    font-size: 16px;
+    color: var(--ppv-ana-primary);
 }
 
 .ppv-analytics-controls {
     display: flex;
     align-items: center;
-    gap: .5rem;
+    gap: 6px;
+}
+
+.ppv-analytics-controls label {
+    font-size: 11px;
+    color: var(--ppv-ana-text-light);
+    display: none;
 }
 
 .ppv-analytics-range-select {
-    padding: .45rem .7rem;
-    border-radius: var(--ppv-ana-radius-sm);
+    padding: 6px 10px;
+    border-radius: 8px;
     background: var(--ppv-ana-card);
     border: 1px solid var(--ppv-ana-border);
     box-shadow: var(--ppv-ana-shadow);
-    font-size: .9rem;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ppv-ana-text);
+    cursor: pointer;
 }
 
 /* SUMMARY CARDS -------------------------------------------------------- */
 .ppv-analytics-summary {
     display: grid;
-    grid-template-columns: repeat(2,1fr);
-    gap: .9rem;
-    margin-bottom: 1.5rem;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
 }
 
 .ppv-summary-card {
     background: var(--ppv-ana-card);
     box-shadow: var(--ppv-ana-shadow);
-    padding: 1rem;
+    padding: 10px;
     border-radius: var(--ppv-ana-radius);
+    border: 1px solid var(--ppv-ana-border);
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: .9rem;
+    text-align: center;
+    gap: 4px;
+    transition: all 0.2s ease;
+}
+
+.ppv-summary-card:active {
+    transform: scale(0.97);
 }
 
 .ppv-summary-card .card-icon {
-    width: 42px;
-    height: 42px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     background: var(--ppv-ana-primary-soft);
     color: var(--ppv-ana-primary);
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 1.3rem;
+    font-size: 14px;
+}
+
+.ppv-summary-card .card-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .ppv-summary-card .label {
-    font-size: .9rem;
+    font-size: 9px;
     color: var(--ppv-ana-text-light);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
 }
 
 .ppv-summary-card .value {
-    font-size: 1.4rem;
-    font-weight: 700;
-    line-height: 1.2;
+    font-size: 18px;
+    font-weight: 800;
+    line-height: 1.1;
+    color: var(--pp-primary-dark, #1e40af);
 }
 
 .ppv-summary-card .unit {
-    font-size: .75rem;
+    font-size: 9px;
     color: var(--ppv-ana-text-light);
 }
 
 /* SECTIONS ------------------------------------------------------------- */
 .ppv-analytics-section {
-    margin-bottom: 2rem;
+    margin-bottom: 16px;
 }
 
 .ppv-analytics-section h4 {
-    margin-bottom: .8rem;
-    font-size: 1.1rem;
+    margin-bottom: 8px;
+    font-size: 13px;
     font-weight: 700;
+    color: var(--pp-primary-dark, #1e40af);
 }
 
 /* CHART CONTAINERS ----------------------------------------------------- */
 .ppv-chart-container {
     width: 100%;
-    min-height: 220px;
+    min-height: 160px;
     background: var(--ppv-ana-card);
     border-radius: var(--ppv-ana-radius);
+    border: 1px solid var(--ppv-ana-border);
     box-shadow: var(--ppv-ana-shadow);
-    padding: 1rem;
+    padding: 10px;
 }
 
 .ppv-chart-pie {
-    min-height: 260px;
+    min-height: 180px;
 }
 
 /* SVG STYLING ---------------------------------------------------------- */
 .ppv-trend-chart text {
-    font-family: Inter, sans-serif;
+    font-family: 'Poppins', Inter, sans-serif;
 }
 
 .ppv-pie-chart path {
@@ -4400,39 +4435,56 @@ body.ppv-light .ppv-theme-btn-mini {
     cursor: pointer;
 }
 
+/* STORES BREAKDOWN ----------------------------------------------------- */
+.ppv-stores-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
 /* STORES LIST ---------------------------------------------------------- */
 .ppv-stores-list {
-    margin-top: 1rem;
+    margin-top: 0;
     display: grid;
-    gap: .8rem;
+    gap: 6px;
 }
 
 .ppv-store-item {
     display: grid;
     grid-template-columns: auto 1fr auto;
-    gap: .8rem;
+    gap: 8px;
     align-items: center;
     background: var(--ppv-ana-card);
-    padding: .8rem 1rem;
+    padding: 8px 10px;
     border-radius: var(--ppv-ana-radius-sm);
     border: 1px solid var(--ppv-ana-border);
     box-shadow: var(--ppv-ana-shadow);
+    transition: all 0.2s ease;
+}
+
+.ppv-store-item:active {
+    transform: scale(0.98);
 }
 
 .store-color {
-    width: 14px;
-    height: 14px;
-    border-radius: 4px;
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
 }
 
 .store-info .store-name {
     font-weight: 600;
-    font-size: .95rem;
+    font-size: 12px;
+    color: var(--ppv-ana-text);
 }
 
 .store-stats {
     color: var(--ppv-ana-text-light);
-    font-size: .8rem;
+    font-size: 10px;
+}
+
+.store-stats span {
+    margin-right: 2px;
 }
 
 .store-points {
@@ -4441,56 +4493,90 @@ body.ppv-light .ppv-theme-btn-mini {
 
 .store-points .points {
     font-weight: 700;
-    font-size: 1.1rem;
+    font-size: 13px;
+    color: var(--pp-primary-dark, #1e40af);
 }
 
 .store-points .percentage {
-    font-size: .75rem;
-    color: var(--ppv-ana-text-light);
+    font-size: 10px;
+    color: var(--ppv-ana-primary);
+    font-weight: 600;
 }
 
 /* BEST DAY ------------------------------------------------------------- */
 .ppv-best-day-card {
-    background: var(--ppv-ana-card);
-    padding: 1.2rem;
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 193, 7, 0.05) 100%);
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    padding: 12px;
     border-radius: var(--ppv-ana-radius);
     box-shadow: var(--ppv-ana-shadow);
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 10px;
+}
+
+.best-day-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .best-day-icon {
-    font-size: 2rem;
+    font-size: 24px;
 }
 
 .best-day-info .date {
-    font-size: 1rem;
+    font-size: 12px;
     font-weight: 600;
+    color: var(--ppv-ana-text);
 }
 
 .best-day-info .points {
-    font-size: .9rem;
+    font-size: 11px;
     color: var(--ppv-ana-text-light);
 }
 
 /* NO DATA -------------------------------------------------------------- */
 .ppv-analytics-wrapper p {
     color: var(--ppv-ana-text-light);
-    font-size: .9rem;
+    font-size: 11px;
     text-align: center;
-    margin-top: .8rem;
+    margin-top: 8px;
+    padding: 16px;
 }
 
 /* RESPONSIVE ----------------------------------------------------------- */
 @media (max-width: 480px) {
     .ppv-analytics-summary {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 6px;
+    }
+
+    .ppv-summary-card {
+        padding: 8px;
+    }
+
+    .ppv-summary-card .card-icon {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+
+    .ppv-summary-card .value {
+        font-size: 16px;
+    }
+
+    .ppv-chart-container {
+        min-height: 140px;
+        padding: 8px;
     }
 
     .ppv-store-item {
-        grid-template-columns: auto 1fr;
-        grid-template-rows: auto auto;
+        padding: 6px 8px;
+    }
+
+    .store-info .store-name {
+        font-size: 11px;
     }
 }
 
