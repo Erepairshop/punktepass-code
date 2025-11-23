@@ -1603,6 +1603,21 @@ class PPV_QR {
             $response_data = $rate_check['response']->get_data();
             $error_type = $response_data['error_type'] ?? null;
             self::insert_log($store_id, $user_id, $response_data['message'] ?? '⚠️ Rate limit', 'error', $error_type);
+
+            // 📡 ABLY: Notify user about the error
+            if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+                $store_name = $wpdb->get_var($wpdb->prepare(
+                    "SELECT name FROM {$wpdb->prefix}ppv_stores WHERE id=%d LIMIT 1",
+                    $store_id
+                ));
+                PPV_Ably::trigger_user_points($user_id, [
+                    'success' => false,
+                    'error_type' => $error_type,
+                    'message' => $response_data['message'] ?? '⚠️ Rate limit',
+                    'store_name' => $store_name ?? 'PunktePass',
+                ]);
+            }
+
             return $rate_check['response'];
         }
 

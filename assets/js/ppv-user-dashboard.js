@@ -431,7 +431,7 @@ async function initUserDashboard() {
       console.log('📡 [Ably] Points update received:', data);
 
       if (data.success && data.points_added > 0) {
-        // Show toast
+        // Show success toast
         if (window.ppvShowPointToast) {
           window.ppvShowPointToast('success', data.points_added, data.store_name || 'PunktePass');
         }
@@ -443,6 +443,12 @@ async function initUserDashboard() {
         // Update rewards count if provided
         if (data.total_rewards !== undefined) {
           updateGlobalRewards(data.total_rewards);
+        }
+      } else if (data.success === false) {
+        // Show error toast
+        console.log('📡 [Ably] Scan error received:', data.error_type, data.message);
+        if (window.ppvShowPointToast) {
+          window.ppvShowPointToast('error', 0, data.store_name || 'PunktePass', data.message);
         }
       }
     });
