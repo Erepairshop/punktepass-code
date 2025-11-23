@@ -4404,3 +4404,95 @@ body.ppv-light .ppv-scan-detail {
 body.ppv-light .ppv-scan-detail.ppv-scan-time {
     color: #94a3b8;
 }
+
+/* ============================================================
+   🎯 CAMPAIGN ITEMS (Card-based display)
+   ============================================================ */
+
+.ppv-campaign-item {
+    background: linear-gradient(145deg, rgba(26, 34, 45, 0.95), rgba(21, 27, 35, 0.95));
+    border: 1px solid rgba(0, 212, 255, 0.15);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    transition: all 0.2s ease;
+}
+
+.ppv-campaign-item:hover {
+    border-color: rgba(0, 212, 255, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.ppv-campaign-item.glass {
+    backdrop-filter: blur(10px);
+}
+
+/* Campaign Header */
+.ppv-camp-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.ppv-camp-header h4 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #f0f6fc;
+}
+
+/* Campaign Actions */
+.ppv-camp-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.ppv-camp-actions span {
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.ppv-camp-actions span:hover {
+    background: rgba(0, 212, 255, 0.2);
+    transform: scale(1.1);
+}
+
+.ppv-camp-clone:hover { background: rgba(59, 130, 246, 0.2) !important; }
+.ppv-camp-archive:hover { background: rgba(245, 158, 11, 0.2) !important; }
+.ppv-camp-edit:hover { background: rgba(16, 185, 129, 0.2) !important; }
+.ppv-camp-delete:hover { background: rgba(239, 68, 68, 0.2) !important; }
+
+/* Campaign Info */
+.ppv-campaign-item p {
+    margin: 4px 0;
+    font-size: 13px;
+    color: #8b949e;
+}
+
+/* Light mode */
+body.ppv-light .ppv-campaign-item {
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.95));
+    border-color: rgba(0, 168, 204, 0.15);
+}
+
+body.ppv-light .ppv-camp-header h4 {
+    color: #1e293b;
+}
+
+body.ppv-light .ppv-campaign-item p {
+    color: #64748b;
+}
+
+body.ppv-light .ppv-camp-actions span {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+body.ppv-light .ppv-camp-actions span:hover {
+    background: rgba(0, 168, 204, 0.15);
+}
