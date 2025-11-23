@@ -96,11 +96,18 @@ class PPV_My_Points {
             true
         );
 
+        // 📡 ABLY: Load JS library if configured
+        $js_deps = ['jquery'];
+        if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+            wp_enqueue_script('ably-js', 'https://cdn.ably.com/lib/ably.min-1.js', [], '1.2', true);
+            $js_deps[] = 'ably-js';
+        }
+
         // My Points
         wp_enqueue_script(
             'ppv-my-points',
             PPV_PLUGIN_URL . 'assets/js/ppv-my-points.js',
-            ['jquery'],
+            $js_deps,
             time(),
             true
         );
@@ -108,12 +115,27 @@ class PPV_My_Points {
         // ============================================================
         // 🌍 INLINE: GLOBAL DATA
         // ============================================================
+
+        // Get user ID for Ably channel subscription
+        $user_id = 0;
+        if (!empty($_SESSION['ppv_user_id'])) {
+            $user_id = intval($_SESSION['ppv_user_id']);
+        }
+
         $global_data = [
-    'ajaxurl' => admin_url('admin-ajax.php'),
-    'nonce'   => wp_create_nonce('ppv_mypoints_nonce'),
-    'api_url' => rest_url('ppv/v1/mypoints'),  // ✅ CORRECT ENDPOINT!
-    'lang'    => $lang,
-];
+            'ajaxurl' => admin_url('admin-ajax.php'),
+            'nonce'   => wp_create_nonce('ppv_mypoints_nonce'),
+            'api_url' => rest_url('ppv/v1/mypoints'),
+            'lang'    => $lang,
+            'uid'     => $user_id,
+        ];
+
+        // 📡 ABLY: Add config for real-time updates
+        if (class_exists('PPV_Ably') && PPV_Ably::is_enabled() && $user_id > 0) {
+            $global_data['ably'] = [
+                'key' => PPV_Ably::get_key(),
+            ];
+        }
         ppv_log("🔍 [PPV_My_Points] Global data prepared:");
         ppv_log("    - ajaxurl: " . $global_data['ajaxurl']);
         ppv_log("    - api_url: " . $global_data['api_url']);

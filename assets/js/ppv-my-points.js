@@ -173,6 +173,7 @@
     initLayout();
     initToken();
     initMyPoints();
+    initAblySync();  // 📡 Real-time updates
     protectBottomNav();
     if (DEBUG) initDebug();
   }
@@ -600,6 +601,76 @@ function claimReward(storeId) {
     window.location.href = '/belohnung?store=' + storeId;
   }, 1000);
 }
+
+  /** ============================
+   * 📡 ABLY REAL-TIME SYNC
+   * ============================ */
+  function initAblySync() {
+    const cfg = window.ppv_mypoints;
+    if (!cfg?.ably?.key || !cfg?.uid || typeof Ably === 'undefined') {
+      console.log('🔄 [PPV_MYPOINTS] Ably not available, no real-time updates');
+      return;
+    }
+
+    console.log('📡 [PPV_MYPOINTS] Initializing Ably for user:', cfg.uid);
+
+    const ably = new Ably.Realtime({ key: cfg.ably.key });
+    const channelName = 'user-' + cfg.uid;
+    const channel = ably.channels.get(channelName);
+
+    ably.connection.on('connected', () => {
+      console.log('📡 [PPV_MYPOINTS] Ably connected to channel:', channelName);
+    });
+
+    // Handle points update - refresh the whole page data
+    channel.subscribe('points-update', (message) => {
+      const data = message.data;
+      console.log('📡 [PPV_MYPOINTS] Points update received:', data);
+
+      if (data.success && data.points_added > 0) {
+        // Update total points in header if element exists
+        const totalEl = document.querySelector('.ppv-mypoints-total-number');
+        if (totalEl && data.total_points !== undefined) {
+          totalEl.textContent = data.total_points;
+          totalEl.style.transition = 'transform 0.3s, color 0.3s';
+          totalEl.style.transform = 'scale(1.2)';
+          totalEl.style.color = '#00e676';
+          setTimeout(() => {
+            totalEl.style.transform = 'scale(1)';
+            totalEl.style.color = '';
+          }, 500);
+        }
+
+        // Show toast notification
+        if (window.ppvShowPointToast) {
+          window.ppvShowPointToast('success', data.points_added, data.store_name || 'PunktePass');
+        }
+
+        // Refresh the page data after a short delay
+        setTimeout(() => {
+          console.log('📡 [PPV_MYPOINTS] Refreshing page data...');
+          initMyPoints();
+        }, 1000);
+      } else if (data.success === false) {
+        // Show error toast
+        if (window.ppvShowPointToast) {
+          window.ppvShowPointToast('error', 0, data.store_name || 'PunktePass', data.message);
+        }
+      }
+    });
+
+    // Store for cleanup on navigation
+    window.PPV_MYPOINTS_ABLY = ably;
+  }
+
+  // Cleanup Ably on navigation
+  document.addEventListener('turbo:before-visit', () => {
+    if (window.PPV_MYPOINTS_ABLY) {
+      console.log('🧹 [PPV_MYPOINTS] Cleaning up Ably connection');
+      window.PPV_MYPOINTS_ABLY.close();
+      window.PPV_MYPOINTS_ABLY = null;
+    }
+  });
 
   /** ============================
    * 🧠 DEBUG

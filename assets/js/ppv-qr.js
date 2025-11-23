@@ -101,12 +101,14 @@
       this.resultBox = null;
       this.logList = null;
       this.campaignList = null;
+      this.displayedScanIds = new Set(); // ✅ Track displayed scans to prevent duplicates
     }
 
     init() {
       this.resultBox = document.getElementById('ppv-pos-result');
       this.logList = document.getElementById('ppv-pos-log');
       this.campaignList = document.getElementById('ppv-campaign-list');
+      this.displayedScanIds.clear(); // Reset on init
     }
 
     showMessage(text, type = 'info') {
@@ -116,12 +118,23 @@
     clearLogTable() {
       if (!this.logList) return;
       this.logList.innerHTML = '';
+      this.displayedScanIds.clear(); // ✅ Clear tracked IDs when table is cleared
     }
 
     addScanItem(log) {
       if (!this.logList) return;
+
+      // ✅ FIX: Prevent duplicates using scan_id
+      const scanId = log.scan_id || `${log.user_id}-${log.date_short}-${log.time_short}`;
+      if (log._realtime && this.displayedScanIds.has(scanId)) {
+        ppvLog('[UI] Skipping duplicate scan:', scanId);
+        return;
+      }
+      this.displayedScanIds.add(scanId);
+
       const item = document.createElement('div');
       item.className = `ppv-scan-item ${log.success ? 'success' : 'error'}`;
+      item.dataset.scanId = scanId; // Store for reference
 
       // Build display: Name > Email > #ID
       const displayName = log.customer_name || log.email || `Kunde #${log.user_id}`;
@@ -131,16 +144,20 @@
       const vipBonus = vipMatch ? vipMatch[1] : null;
       const isVip = !!vipBonus;
 
-      // Subtitle logic:
-      // - Error: show error message (clean up emojis/prefixes)
-      // - Success with name+email: show email
-      // - Otherwise: show date/time
-      let subtitle = `${log.date_short} ${log.time_short}`;
+      // ✅ FIX: Subtitle logic - ALWAYS show date/time, with error message as second line
+      const dateTime = `${log.date_short || ''} ${log.time_short || ''}`.trim();
+      let subtitle = dateTime;
+      let subtitle2 = ''; // Second line for additional info
+
       if (!log.success && log.message) {
-        // Clean error message: remove emojis and common prefixes
-        subtitle = log.message.replace(/^[⚠️❌✗\s]+/, '').trim();
+        // Error: show cleaned error message + date/time
+        const errorMsg = log.message.replace(/^[⚠️❌✗\s]+/, '').trim();
+        subtitle = errorMsg;
+        subtitle2 = dateTime;
       } else if (log.customer_name && log.email) {
+        // Success with name: show email + date
         subtitle = log.email;
+        subtitle2 = dateTime;
       }
 
       // Avatar: Google profile pic or default icon
@@ -158,15 +175,24 @@
         pointsHtml = `<div class="ppv-scan-points">+${log.points || '-'}</div>`;
       }
 
+      // ✅ FIX: Show subtitle2 (date/time) for errors and successful scans with name
+      const subtitle2Html = subtitle2 ? `<div class="ppv-scan-detail ppv-scan-time">${subtitle2}</div>` : '';
+
       item.innerHTML = `
         ${avatarHtml}
         <div class="ppv-scan-info">
           <div class="ppv-scan-name">${displayName}</div>
           <div class="ppv-scan-detail">${subtitle}</div>
+          ${subtitle2Html}
         </div>
         ${pointsHtml}
       `;
-      this.logList.appendChild(item);
+      // ✅ FIX: Use prepend for real-time scans, append for initial load
+      if (log._realtime) {
+        this.logList.prepend(item);
+      } else {
+        this.logList.appendChild(item);
+      }
     }
 
     flashCampaignList() {
@@ -860,10 +886,52 @@
           if (data.success) {
             this.updateStatus('success', '✅ ' + (data.message || L.scanner_success_msg || 'Erfolgreich!'));
             window.ppvToast(data.message || L.scanner_point_added || '✅ Punkt hinzugefügt!', 'success');
+
+            // ✅ FIX: Add scan to UI immediately with unique scan_id
+            const now = new Date();
+            const scanId = data.scan_id || `local-${data.user_id}-${now.getTime()}`;
+
+            if (STATE.uiManager) {
+              STATE.uiManager.addScanItem({
+                scan_id: scanId,
+                user_id: data.user_id,
+                customer_name: data.customer_name || null,
+                email: data.email || null,
+                avatar: data.avatar || null,
+                message: data.message,
+                points: data.points || 1,
+                date_short: now.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'}).replace(/\./g, '.'),
+                time_short: now.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'}),
+                success: true,
+                _realtime: true  // Prepend to top of list
+              });
+            }
+
             this.startPauseCountdown();
           } else {
             this.updateStatus('warning', '⚠️ ' + (data.message || L.error_generic || 'Fehler'));
             window.ppvToast(data.message || '⚠️ Fehler', 'warning');
+
+            // ✅ FIX: Add error scan to UI immediately with unique scan_id
+            if (STATE.uiManager && data.user_id) {
+              const now = new Date();
+              const scanId = data.scan_id || `local-err-${data.user_id}-${now.getTime()}`;
+
+              STATE.uiManager.addScanItem({
+                scan_id: scanId,
+                user_id: data.user_id,
+                customer_name: data.customer_name || null,
+                email: data.email || null,
+                avatar: data.avatar || null,
+                message: data.message || '⚠️ Fehler',
+                points: 0,
+                date_short: now.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'}).replace(/\./g, '.'),
+                time_short: now.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'}),
+                success: false,
+                _realtime: true  // Prepend to top of list
+              });
+            }
+
             setTimeout(() => this.restartAfterError(), 3000);
           }
         })
@@ -979,19 +1047,33 @@
   function handleBodyClick(e) {
     const target = e.target;
 
-    // Campaign actions
-    if (target.classList.contains('ppv-camp-edit')) {
-      const camp = STATE.campaignManager?.campaigns.find(c => c.id == target.dataset.id);
-      if (camp) STATE.campaignManager.edit(camp);
+    // Campaign actions - use closest() to handle clicks on child elements (emoji text, etc.)
+    const editBtn = target.closest('.ppv-camp-edit');
+    const deleteBtn = target.closest('.ppv-camp-delete');
+    const archiveBtn = target.closest('.ppv-camp-archive');
+    const cloneBtn = target.closest('.ppv-camp-clone');
+
+    if (editBtn) {
+      ppvLog('[QR] Edit button clicked, id:', editBtn.dataset.id);
+      const camp = STATE.campaignManager?.campaigns.find(c => c.id == editBtn.dataset.id);
+      if (camp) {
+        ppvLog('[QR] Found campaign:', camp.title);
+        STATE.campaignManager.edit(camp);
+      } else {
+        ppvWarn('[QR] Campaign not found for id:', editBtn.dataset.id);
+      }
     }
-    if (target.classList.contains('ppv-camp-delete')) {
-      STATE.campaignManager?.delete(target.dataset.id);
+    if (deleteBtn) {
+      ppvLog('[QR] Delete button clicked, id:', deleteBtn.dataset.id);
+      STATE.campaignManager?.delete(deleteBtn.dataset.id);
     }
-    if (target.classList.contains('ppv-camp-archive')) {
-      STATE.campaignManager?.archive(target.dataset.id);
+    if (archiveBtn) {
+      ppvLog('[QR] Archive button clicked, id:', archiveBtn.dataset.id);
+      STATE.campaignManager?.archive(archiveBtn.dataset.id);
     }
-    if (target.classList.contains('ppv-camp-clone')) {
-      STATE.campaignManager?.clone(target.dataset.id);
+    if (cloneBtn) {
+      ppvLog('[QR] Clone button clicked, id:', cloneBtn.dataset.id);
+      STATE.campaignManager?.clone(cloneBtn.dataset.id);
     }
 
     // New campaign button
@@ -1000,13 +1082,13 @@
       STATE.campaignManager?.showModal();
     }
 
-    // Save campaign
-    if (target.id === 'ppv-camp-save' || target.closest('#ppv-camp-save')) {
+    // Save campaign (ID is "camp-save" in PHP)
+    if (target.id === 'camp-save' || target.closest('#camp-save')) {
       STATE.campaignManager?.save();
     }
 
-    // Cancel campaign
-    if (target.id === 'ppv-camp-cancel' || target.closest('#ppv-camp-cancel')) {
+    // Cancel campaign (ID is "camp-cancel" in PHP)
+    if (target.id === 'camp-cancel' || target.closest('#camp-cancel')) {
       STATE.campaignManager?.hideModal();
     }
 
@@ -1019,6 +1101,92 @@
     // Campaign filter
     if (target.id === 'ppv-campaign-filter') {
       STATE.campaignManager?.load();
+    }
+
+    // ✅ CSV Export Button - toggle dropdown
+    if (target.id === 'ppv-csv-export-btn' || target.closest('#ppv-csv-export-btn')) {
+      e.preventDefault();
+      const menu = document.getElementById('ppv-csv-export-menu');
+      if (menu) {
+        menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+      }
+    }
+
+    // ✅ CSV Export Options - handle export
+    if (target.classList.contains('ppv-csv-export-option') || target.closest('.ppv-csv-export-option')) {
+      e.preventDefault();
+      const option = target.closest('.ppv-csv-export-option') || target;
+      const period = option.dataset.period;
+
+      // Hide dropdown
+      const menu = document.getElementById('ppv-csv-export-menu');
+      if (menu) menu.style.display = 'none';
+
+      // Handle export based on period
+      handleCsvExport(period);
+    }
+
+    // ✅ Close CSV dropdown when clicking outside
+    if (!target.closest('.ppv-csv-wrapper')) {
+      const menu = document.getElementById('ppv-csv-export-menu');
+      if (menu) menu.style.display = 'none';
+    }
+  }
+
+  // ============================================================
+  // CSV EXPORT HANDLER
+  // ============================================================
+  async function handleCsvExport(period) {
+    const storeKey = getStoreKey();
+    if (!storeKey) {
+      window.ppvToast('⚠️ Kein Store ausgewählt', 'warning');
+      return;
+    }
+
+    let dateParam = '';
+
+    if (period === 'today') {
+      dateParam = new Date().toISOString().split('T')[0];
+    } else if (period === 'date') {
+      // Show date picker
+      const selectedDate = prompt('Datum eingeben (YYYY-MM-DD):', new Date().toISOString().split('T')[0]);
+      if (!selectedDate) return;
+      dateParam = selectedDate;
+    } else if (period === 'month') {
+      // Current month
+      const now = new Date();
+      dateParam = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    window.ppvToast('⏳ CSV wird erstellt...', 'info');
+
+    try {
+      const res = await fetch(`/wp-json/punktepass/v1/pos/export-csv?period=${period}&date=${dateParam}`, {
+        headers: { 'PPV-POS-Token': storeKey }
+      });
+
+      if (!res.ok) throw new Error('Export failed');
+
+      const data = await res.json();
+
+      if (data.csv) {
+        // Download CSV
+        const blob = new Blob([data.csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = data.filename || `pos-export-${dateParam}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        window.ppvToast('✅ CSV heruntergeladen', 'success');
+      } else {
+        throw new Error(data.message || 'Export failed');
+      }
+    } catch (err) {
+      ppvWarn('[CSV] Export error:', err);
+      window.ppvToast('❌ Export fehlgeschlagen', 'error');
     }
   }
 
@@ -1169,9 +1337,10 @@
       channel.subscribe('new-scan', (message) => {
         ppvLog('[Ably] New scan received:', message.data);
 
-        // Add scan to UI immediately
-        if (STATE.scanProcessor?.ui) {
-          STATE.scanProcessor.ui.addScanItem(message.data);
+        // ✅ FIX: Deduplication is now handled by addScanItem using scan_id
+        // Just pass the data through - the UI manager will skip if scan_id already displayed
+        if (STATE.uiManager) {
+          STATE.uiManager.addScanItem({ ...message.data, _realtime: true });
         }
       });
 
@@ -1180,6 +1349,20 @@
         ppvLog('[Ably] Reward request received:', message.data);
         // Refresh logs to show pending rewards
         STATE.scanProcessor?.loadLogs();
+      });
+
+      // 📡 Handle campaign updates (create/update/delete)
+      channel.subscribe('campaign-update', (message) => {
+        ppvLog('[Ably] Campaign update received:', message.data);
+        window.ppvToast(`📢 Kampány ${message.data.action === 'created' ? 'létrehozva' : message.data.action === 'updated' ? 'frissítve' : 'törölve'}`, 'info');
+        // Refresh campaign list
+        STATE.campaignManager?.load();
+      });
+
+      // 📡 Handle reward/prämien updates
+      channel.subscribe('reward-update', (message) => {
+        ppvLog('[Ably] Reward update received:', message.data);
+        window.ppvToast(`🎁 Prämie ${message.data.action === 'created' ? 'létrehozva' : message.data.action === 'updated' ? 'frissítve' : 'törölve'}`, 'info');
       });
 
       STATE.initialized = true;

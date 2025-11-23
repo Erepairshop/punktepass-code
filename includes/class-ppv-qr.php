@@ -263,6 +263,9 @@ class PPV_QR {
             'metadata' => $metadata,
             'created_at' => current_time('mysql')
         ]);
+
+        // ✅ Return the log ID for scan_id generation
+        return $wpdb->insert_id;
     }
 
     private static function decode_user_from_qr($qr) {
@@ -1515,6 +1518,13 @@ class PPV_QR {
             'permission_callback' => ['PPV_Permissions', 'check_handler'],
         ]);
 
+        // ✅ CSV Export endpoint
+        register_rest_route('punktepass/v1', '/pos/export-csv', [
+            'methods' => 'GET',
+            'callback' => [__CLASS__, 'rest_export_csv'],
+            'permission_callback' => ['PPV_Permissions', 'check_handler'],
+        ]);
+
         register_rest_route('punktepass/v1', '/strings', [
             'methods' => 'GET',
             'callback' => [__CLASS__, 'rest_get_strings'],
@@ -1603,6 +1613,56 @@ class PPV_QR {
             $response_data = $rate_check['response']->get_data();
             $error_type = $response_data['error_type'] ?? null;
             self::insert_log($store_id, $user_id, $response_data['message'] ?? '⚠️ Rate limit', 'error', $error_type);
+
+            // Get user info for error response
+            $user_info = $wpdb->get_row($wpdb->prepare("
+                SELECT first_name, last_name, email, avatar
+                FROM {$wpdb->prefix}ppv_users WHERE id = %d
+            ", $user_id));
+            $customer_name = trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
+            $store_name = $wpdb->get_var($wpdb->prepare(
+                "SELECT name FROM {$wpdb->prefix}ppv_stores WHERE id=%d LIMIT 1",
+                $store_id
+            ));
+
+            // ✅ Generate unique scan_id for error deduplication
+            $error_scan_id = "err-{$store_id}-{$user_id}-" . time();
+
+            // 📡 ABLY: Notify BOTH user AND store (POS) about the error
+            if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+                // Notify user dashboard
+                PPV_Ably::trigger_user_points($user_id, [
+                    'success' => false,
+                    'error_type' => $error_type,
+                    'message' => $response_data['message'] ?? '⚠️ Rate limit',
+                    'store_name' => $store_name ?? 'PunktePass',
+                ]);
+
+                // ✅ FIX: Also notify POS (store channel) so error appears in scan list
+                PPV_Ably::trigger_scan($store_id, [
+                    'scan_id' => $error_scan_id, // ✅ Include scan_id for deduplication
+                    'user_id' => $user_id,
+                    'customer_name' => $customer_name ?: null,
+                    'email' => $user_info->email ?? null,
+                    'avatar' => $user_info->avatar ?? null,
+                    'message' => $response_data['message'] ?? '⚠️ Rate limit',
+                    'points' => '0',
+                    'date_short' => date('d.m.'),
+                    'time_short' => date('H:i'),
+                    'success' => false,
+                    'error_type' => $error_type,
+                ]);
+            }
+
+            // ✅ Include user info in HTTP response for immediate UI display
+            $rate_check['response']->set_data(array_merge($response_data, [
+                'scan_id' => $error_scan_id, // ✅ Include scan_id for deduplication
+                'user_id' => $user_id,
+                'customer_name' => $customer_name ?: null,
+                'email' => $user_info->email ?? null,
+                'avatar' => $user_info->avatar ?? null,
+            ]));
+
             return $rate_check['response'];
         }
 
@@ -1839,7 +1899,10 @@ class PPV_QR {
         $log_msg = $vip_bonus_applied > 0
             ? "+{$points_add} " . self::t('points', 'Punkte') . " (VIP: +{$vip_bonus_applied})"
             : "+{$points_add} " . self::t('points', 'Punkte');
-        self::insert_log($store_id, $user_id, $log_msg, 'qr_scan');
+        $log_id = self::insert_log($store_id, $user_id, $log_msg, 'qr_scan');
+
+        // ✅ Generate unique scan_id for deduplication
+        $scan_id = "scan-{$store_id}-{$user_id}-{$log_id}";
 
         // Get store name for response
         $store_name = $wpdb->get_var($wpdb->prepare(
@@ -1847,17 +1910,17 @@ class PPV_QR {
             $store_id
         ));
 
+        // ✅ Get user info for response AND Ably notification
+        $user_info = $wpdb->get_row($wpdb->prepare("
+            SELECT first_name, last_name, email, avatar
+            FROM {$wpdb->prefix}ppv_users WHERE id = %d
+        ", $user_id));
+        $customer_name = trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
+
         // 📡 ABLY: Send real-time notification (non-blocking)
         if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
-            // Get user info for notification
-            $user_info = $wpdb->get_row($wpdb->prepare("
-                SELECT first_name, last_name, email, avatar
-                FROM {$wpdb->prefix}ppv_users WHERE id = %d
-            ", $user_id));
-
-            $customer_name = trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
-
             PPV_Ably::trigger_scan($store_id, [
+                'scan_id' => $scan_id, // ✅ Include scan_id for deduplication
                 'user_id' => $user_id,
                 'customer_name' => $customer_name ?: null,
                 'email' => $user_info->email ?? null,
@@ -1871,8 +1934,9 @@ class PPV_QR {
             ]);
 
             // 📡 ABLY: Also notify user's dashboard of points update
+            // ✅ FIX: Query from ppv_points table (not ppv_qr_scans!)
             $total_points = (int) $wpdb->get_var($wpdb->prepare(
-                "SELECT COALESCE(SUM(points), 0) FROM {$wpdb->prefix}ppv_qr_scans WHERE user_id = %d",
+                "SELECT COALESCE(SUM(points), 0) FROM {$wpdb->prefix}ppv_points WHERE user_id = %d",
                 $user_id
             ));
             $total_rewards = (int) $wpdb->get_var($wpdb->prepare(
@@ -1896,6 +1960,7 @@ class PPV_QR {
 
         return new WP_REST_Response([
             'success' => true,
+            'scan_id' => $scan_id, // ✅ Include scan_id for deduplication
             'message' => $success_msg,
             'user_id' => $user_id,
             'store_id' => $store_id,
@@ -1904,7 +1969,11 @@ class PPV_QR {
             'campaign_id' => $campaign_id ?: null,
             'vip_bonus' => $vip_bonus_applied,
             'vip_bonus_details' => $vip_bonus_details,
-            'time' => current_time('mysql')
+            'time' => current_time('mysql'),
+            // ✅ Include customer info for immediate UI display
+            'customer_name' => $customer_name ?: null,
+            'email' => $user_info->email ?? null,
+            'avatar' => $user_info->avatar ?? null,
         ], 200);
     }
 
@@ -1969,6 +2038,96 @@ class PPV_QR {
         }, $logs);
 
         return new WP_REST_Response($formatted, 200);
+    }
+
+    // ============================================================
+    // 📥 REST: EXPORT CSV
+    // ============================================================
+    public static function rest_export_csv(WP_REST_Request $r) {
+        global $wpdb;
+
+        // 🏪 Get store from session
+        $session_store = self::get_session_aware_store_id($r);
+        if (!$session_store || !isset($session_store->id)) {
+            return new WP_REST_Response(['error' => 'Invalid store'], 400);
+        }
+
+        $store_id = intval($session_store->id);
+        $period = sanitize_text_field($r->get_param('period') ?: 'today');
+        $date_param = sanitize_text_field($r->get_param('date') ?: '');
+
+        // Build date filter
+        $date_filter = '';
+        $filename_suffix = '';
+
+        if ($period === 'today' || ($period === 'date' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $date_param))) {
+            $target_date = $period === 'today' ? date('Y-m-d') : $date_param;
+            $date_filter = $wpdb->prepare(" AND DATE(l.created_at) = %s", $target_date);
+            $filename_suffix = $target_date;
+        } elseif ($period === 'month' && preg_match('/^\d{4}-\d{2}$/', $date_param)) {
+            $date_filter = $wpdb->prepare(" AND DATE_FORMAT(l.created_at, '%%Y-%%m') = %s", $date_param);
+            $filename_suffix = $date_param;
+        } else {
+            // Default: today
+            $date_filter = $wpdb->prepare(" AND DATE(l.created_at) = %s", date('Y-m-d'));
+            $filename_suffix = date('Y-m-d');
+        }
+
+        // Get logs for CSV
+        $logs = $wpdb->get_results($wpdb->prepare("
+            SELECT
+                l.created_at,
+                l.user_id,
+                l.message,
+                l.type,
+                u.email,
+                u.first_name,
+                u.last_name
+            FROM {$wpdb->prefix}ppv_pos_log l
+            LEFT JOIN {$wpdb->prefix}ppv_users u ON l.user_id = u.id
+            WHERE l.store_id = %d {$date_filter}
+            ORDER BY l.created_at DESC
+            LIMIT 1000
+        ", $store_id));
+
+        // Build CSV
+        $csv_lines = [];
+        $csv_lines[] = 'Datum,Zeit,Kunde,Email,Punkte,Status,Nachricht';
+
+        foreach ($logs as $log) {
+            $created = strtotime($log->created_at);
+            $date = date('d.m.Y', $created);
+            $time = date('H:i:s', $created);
+
+            $first = trim($log->first_name ?? '');
+            $last = trim($log->last_name ?? '');
+            $customer = trim("$first $last") ?: 'Unbekannt';
+            $email = $log->email ?: '-';
+
+            // Extract points from message
+            $points = '-';
+            if (preg_match('/\+(\d+)/', $log->message, $m)) {
+                $points = $m[1];
+            }
+
+            $status = $log->type === 'qr_scan' ? 'OK' : 'Fehler';
+            $message = str_replace([',', "\n", "\r"], [';', ' ', ' '], $log->message);
+
+            $csv_lines[] = sprintf('"%s","%s","%s","%s","%s","%s","%s"',
+                $date, $time, $customer, $email, $points, $status, $message
+            );
+        }
+
+        $csv_content = implode("\n", $csv_lines);
+        $store_name = sanitize_title($session_store->name ?? 'pos');
+        $filename = "pos-{$store_name}-{$filename_suffix}.csv";
+
+        return new WP_REST_Response([
+            'success' => true,
+            'csv' => $csv_content,
+            'filename' => $filename,
+            'rows' => count($logs)
+        ], 200);
     }
 
     // ============================================================
@@ -2145,10 +2304,21 @@ class PPV_QR {
         // ✅ DEBUG: Log fields before insert
 
         $wpdb->insert("{$prefix}ppv_campaigns", $fields);
+        $campaign_id = $wpdb->insert_id;
 
         // ✅ DEBUG: Check if insert succeeded
         if ($wpdb->last_error) {
         } else {
+        }
+
+        // 📡 Ably: Notify real-time about new campaign
+        if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+            PPV_Ably::trigger_campaign_update($store->id, [
+                'action' => 'created',
+                'campaign_id' => $campaign_id,
+                'title' => $fields['title'],
+                'campaign_type' => $fields['campaign_type'],
+            ]);
         }
 
         return new WP_REST_Response([
@@ -2262,6 +2432,14 @@ class PPV_QR {
 
         self::insert_log($store->id, 0, "Kampány törölve: ID {$id}", 'campaign_delete');
 
+        // 📡 Ably: Notify real-time about deleted campaign
+        if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+            PPV_Ably::trigger_campaign_update($store->id, [
+                'action' => 'deleted',
+                'campaign_id' => $id,
+            ]);
+        }
+
         return new WP_REST_Response([
             'success' => true,
             'message' => self::t('campaign_deleted', '🗑️ Kampány törölve!')
@@ -2350,6 +2528,16 @@ class PPV_QR {
         ]);
 
         self::insert_log($store->id, 0, "Kampány frissítve: ID {$id}", 'campaign_update');
+
+        // 📡 Ably: Notify real-time about updated campaign
+        if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+            PPV_Ably::trigger_campaign_update($store->id, [
+                'action' => 'updated',
+                'campaign_id' => $id,
+                'title' => $fields['title'],
+                'campaign_type' => $fields['campaign_type'],
+            ]);
+        }
 
         return new WP_REST_Response([
             'success' => true,

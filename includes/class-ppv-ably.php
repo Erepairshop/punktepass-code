@@ -166,6 +166,32 @@ class PPV_Ably {
     }
 
     /**
+     * Publish campaign update notification to POS
+     * Used when a campaign is created, updated, or deleted
+     *
+     * @param int $store_id Store ID
+     * @param array $data Campaign data (action: created/updated/deleted, campaign info)
+     */
+    public static function trigger_campaign_update($store_id, $data) {
+        $channel = 'store-' . intval($store_id);
+        ppv_log("📡 [PPV_Ably] trigger_campaign_update: channel={$channel}, action={$data['action']}");
+        return self::publish($channel, 'campaign-update', $data);
+    }
+
+    /**
+     * Publish reward/prämien update notification to POS
+     * Used when a reward is created, updated, or deleted
+     *
+     * @param int $store_id Store ID
+     * @param array $data Reward data (action: created/updated/deleted, reward info)
+     */
+    public static function trigger_reward_update($store_id, $data) {
+        $channel = 'store-' . intval($store_id);
+        ppv_log("📡 [PPV_Ably] trigger_reward_update: channel={$channel}, action={$data['action']}");
+        return self::publish($channel, 'reward-update', $data);
+    }
+
+    /**
      * Create a token request for frontend authentication
      * This is used for Ably's token-based auth (more secure than exposing API key)
      *

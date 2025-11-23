@@ -572,6 +572,67 @@
   }
 
   /* ==========================================================
+   * 📡 ABLY REAL-TIME + POLLING FALLBACK
+   * ========================================================== */
+  let ablyInstance = null;
+
+  function initRealtime() {
+    const ablyConfig = config.ably;
+
+    if (ablyConfig && ablyConfig.key && typeof Ably !== 'undefined') {
+      log('INFO', 'Initializing Ably real-time...');
+
+      // Cleanup previous instance
+      if (ablyInstance) {
+        ablyInstance.close();
+        ablyInstance = null;
+      }
+
+      ablyInstance = new Ably.Realtime({ key: ablyConfig.key });
+      const channel = ablyInstance.channels.get(ablyConfig.channel);
+
+      ablyInstance.connection.on('connected', () => {
+        log('INFO', 'Ably connected');
+        // Stop polling timer (but keep MAX_POLLS check)
+        pollCount = MAX_POLLS;
+      });
+
+      ablyInstance.connection.on('disconnected', () => {
+        log('INFO', 'Ably disconnected, resuming polling');
+        pollCount = 0;
+        startStatusPolling();
+      });
+
+      ablyInstance.connection.on('failed', (err) => {
+        log('ERROR', 'Ably failed:', err);
+        pollCount = 0;
+        startStatusPolling();
+      });
+
+      // 📡 Handle reward approved notifications
+      channel.subscribe('reward-approved', (message) => {
+        log('INFO', 'Reward approved received:', message.data);
+        const data = message.data;
+        const title = data.reward_title || 'Belohnung';
+        const msg = getLabel('reward_approved').replace('{title}', title);
+        showPopup(msg, 'success');
+      });
+
+      // 📡 Handle points update (when scanned)
+      channel.subscribe('points-update', (message) => {
+        log('INFO', 'Points update received:', message.data);
+        // Could refresh points display here if needed
+      });
+
+      log('INFO', 'Ably initialized');
+      return true;
+    }
+
+    log('INFO', 'Ably not available, using polling');
+    return false;
+  }
+
+  /* ==========================================================
    * 🚀 INIT (Turbo-compatible)
    * ========================================================== */
 
@@ -593,13 +654,17 @@
     // Init search/filter
     initSearchFilter();
 
-    // Start polling
+    // Check if user is logged in
     const $redeemButtons = $('button.ppv-redeem-btn');
     const hasUser = $redeemButtons.first().data('user') > 0;
 
     if (hasUser) {
-      log('INFO', 'Starting status polling');
-      startStatusPolling();
+      // Try Ably first, fall back to polling
+      const ablyStarted = initRealtime();
+      if (!ablyStarted) {
+        log('INFO', 'Starting status polling (fallback)');
+        startStatusPolling();
+      }
     }
 
     log('INFO', 'Initialization complete');

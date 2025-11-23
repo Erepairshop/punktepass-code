@@ -330,8 +330,65 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   /* ============================================================
+   * 📡 ABLY REAL-TIME + POLLING FALLBACK
+   * ============================================================ */
+  const config = window.ppv_rewards_mgmt || {};
+  let pollInterval = null;
+
+  function initRealtime() {
+    if (config.ably && config.ably.key && typeof Ably !== 'undefined') {
+      console.log('📡 [REWARDS-MGMT] Initializing Ably real-time...');
+
+      const ably = new Ably.Realtime({ key: config.ably.key });
+      const channel = ably.channels.get(config.ably.channel);
+
+      ably.connection.on('connected', () => {
+        console.log('📡 [REWARDS-MGMT] Ably connected');
+        // Stop polling if running
+        if (pollInterval) {
+          clearInterval(pollInterval);
+          pollInterval = null;
+        }
+      });
+
+      ably.connection.on('disconnected', () => {
+        console.log('📡 [REWARDS-MGMT] Ably disconnected, starting polling');
+        startPolling();
+      });
+
+      ably.connection.on('failed', (err) => {
+        console.log('📡 [REWARDS-MGMT] Ably failed:', err);
+        startPolling();
+      });
+
+      // 📡 Handle reward updates
+      channel.subscribe('reward-update', (message) => {
+        console.log('📡 [REWARDS-MGMT] Reward update received:', message.data);
+        showToast(`🎁 Prämie ${message.data.action === 'created' ? 'erstellt' : message.data.action === 'updated' ? 'aktualisiert' : 'gelöscht'}`, 'info');
+        loadRewards();
+      });
+
+      console.log('📡 [REWARDS-MGMT] Ably initialized');
+    } else {
+      console.log('🔄 [REWARDS-MGMT] Ably not available, using polling');
+      startPolling();
+    }
+  }
+
+  function startPolling() {
+    if (pollInterval) return; // Already polling
+    console.log('🔄 [REWARDS-MGMT] Starting polling (30s interval)');
+    pollInterval = setInterval(() => {
+      if (listContainer) {
+        loadRewards();
+      }
+    }, 30000);
+  }
+
+  /* ============================================================
    * 🚀 INIT
    * ============================================================ */
   console.log("🚀 Initializing rewards management...");
   loadRewards();
+  initRealtime();
 });

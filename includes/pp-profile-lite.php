@@ -712,9 +712,11 @@ public static function ajax_save_profile() {
         'address' => sanitize_text_field($_POST['address'] ?? ''),
         'plz' => sanitize_text_field($_POST['plz'] ?? ''),
         'city' => sanitize_text_field($_POST['city'] ?? ''),
-        
-        
-        
+
+        // ✅ COMPANY FIELDS (were missing!)
+        'company_name' => sanitize_text_field($_POST['company_name'] ?? ''),
+        'contact_person' => sanitize_text_field($_POST['contact_person'] ?? ''),
+
         // ✅ ÚJ MEZŐK:
         'tax_id' => sanitize_text_field($_POST['tax_id'] ?? ''),
         'is_taxable' => !empty($_POST['is_taxable']) ? 1 : 0,
@@ -752,6 +754,8 @@ $format_specs = [
     '%s',  // address
     '%s',  // plz
     '%s',  // city
+    '%s',  // company_name (was missing!)
+    '%s',  // contact_person (was missing!)
     '%s',  // tax_id
     '%d',  // is_taxable
     '%s',  // phone
@@ -767,8 +771,10 @@ $format_specs = [
     '%d',  // maintenance_mode
     '%s',  // maintenance_message
     '%s',  // timezone
+    '%s',  // updated_at (was missing!)
     '%s',  // logo
     '%s',  // gallery
+    '%s',  // opening_hours (was missing!)
 ];
 
 ppv_log("💾 [DEBUG] Saving store ID: {$store_id}");
@@ -785,7 +791,17 @@ $result = $wpdb->update(
 ppv_log("💾 [DEBUG] Update result: " . ($result !== false ? 'OK' : 'FAILED'));
 
     if ($result !== false) {
-        wp_send_json_success(['msg' => PPV_Lang::t('profile_saved_success'), 'store_id' => $store_id]);
+        // ✅ FIX: Return updated store data so JS can refresh form fields without reload
+        $updated_store = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
+            $store_id
+        ));
+
+        wp_send_json_success([
+            'msg' => PPV_Lang::t('profile_saved_success'),
+            'store_id' => $store_id,
+            'store' => $updated_store  // ✅ This enables updateFormFields() in JS
+        ]);
     } else {
         wp_send_json_error(['msg' => PPV_Lang::t('profile_save_error')]);
     }
