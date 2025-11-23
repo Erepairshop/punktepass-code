@@ -56,7 +56,7 @@ class PPV_POS_Archiver {
         ", "{$prev_year}-{$prev_month}"));
 
         // naplózás (logfileba)
-        error_log("✅ PPV_POS_Archiver: archived {$prev_year}-{$prev_month} successfully.");
+        ppv_log("✅ PPV_POS_Archiver: archived {$prev_year}-{$prev_month} successfully.");
     }
 }
 

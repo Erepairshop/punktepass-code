@@ -44,7 +44,7 @@ class PPV_Session {
                 $GLOBALS['ppv_active_store_id'] = $store->id;
                 $GLOBALS['ppv_active_token'] = $token;
                 $GLOBALS['ppv_is_pos'] = true;
-                error_log("✅ [PPV_Session] Token priority active → Store={$store->id}");
+                ppv_log("✅ [PPV_Session] Token priority active → Store={$store->id}");
                 return $store;
             }
         }
@@ -59,7 +59,7 @@ class PPV_Session {
             if ($device) {
                 $GLOBALS['ppv_active_device'] = $device;
                 $GLOBALS['ppv_active_device_key'] = $device->device_key;
-                error_log("📱 [PPV_Session] Active device detected → {$device->device_name}");
+                ppv_log("📱 [PPV_Session] Active device detected → {$device->device_name}");
             }
         }
 
@@ -74,7 +74,7 @@ class PPV_Session {
             ));
             if ($store) {
                 $GLOBALS['ppv_preview_store'] = $store;
-                error_log("👁️ [PPV_Session] Admin preview store={$store->id}");
+                ppv_log("👁️ [PPV_Session] Admin preview store={$store->id}");
                 return $store;
             }
         }
@@ -254,9 +254,9 @@ class PPV_Session {
             $key, $key
         ));
         if ($store) {
-            error_log("🧩 [PPV_Session::get_store_by_key] Store found → ID={$store->id}");
+            ppv_log("🧩 [PPV_Session::get_store_by_key] Store found → ID={$store->id}");
         } else {
-            error_log("⚠️ [PPV_Session::get_store_by_key] Not found for {$key}");
+            ppv_log("⚠️ [PPV_Session::get_store_by_key] Not found for {$key}");
         }
         return $store;
     }
@@ -267,7 +267,7 @@ class PPV_Session {
     public static function switch_store($store_id) {
         if (empty($store_id)) return false;
         $_SESSION['ppv_active_store'] = intval($store_id);
-        error_log("🔁 [PPV_Session] switched store → {$store_id}");
+        ppv_log("🔁 [PPV_Session] switched store → {$store_id}");
         return true;
     }
 
@@ -312,9 +312,9 @@ class PPV_Session {
             if (empty($_SESSION['ppv_current_filiale_id'])) {
                 $_SESSION['ppv_store_id'] = intval($_SESSION['ppv_vendor_store_id']);
                 $_SESSION['ppv_active_store'] = intval($_SESSION['ppv_vendor_store_id']);
-                error_log("🔄 [AutoMode] REST/AJAX + VENDOR → type=store, POS ON (store={$_SESSION['ppv_vendor_store_id']})");
+                ppv_log("🔄 [AutoMode] REST/AJAX + VENDOR → type=store, POS ON (store={$_SESSION['ppv_vendor_store_id']})");
             } else {
-                error_log("🔄 [AutoMode] REST/AJAX + VENDOR → type=store, POS ON (FILIALE ACTIVE: {$_SESSION['ppv_current_filiale_id']})");
+                ppv_log("🔄 [AutoMode] REST/AJAX + VENDOR → type=store, POS ON (FILIALE ACTIVE: {$_SESSION['ppv_current_filiale_id']})");
             }
 
             $_SESSION['ppv_is_pos'] = true;
@@ -333,7 +333,7 @@ class PPV_Session {
 
             // ✅ FIXED: Safe user_id access
             $uid = $_SESSION['ppv_user_id'] ?? 0;
-            error_log("🔄 [AutoMode] USER PAGE → type=user, NO POS (user_id={$uid})");
+            ppv_log("🔄 [AutoMode] USER PAGE → type=user, NO POS (user_id={$uid})");
             return;
         }
 
@@ -345,9 +345,9 @@ class PPV_Session {
             if (empty($_SESSION['ppv_current_filiale_id'])) {
                 $_SESSION['ppv_store_id'] = intval($_SESSION['ppv_vendor_store_id']);
                 $_SESSION['ppv_active_store'] = intval($_SESSION['ppv_vendor_store_id']);
-                error_log("🔄 [AutoMode] HANDLER PAGE → type=store, POS ON (store={$_SESSION['ppv_vendor_store_id']})");
+                ppv_log("🔄 [AutoMode] HANDLER PAGE → type=store, POS ON (store={$_SESSION['ppv_vendor_store_id']})");
             } else {
-                error_log("🔄 [AutoMode] HANDLER PAGE → type=store, POS ON (FILIALE ACTIVE: {$_SESSION['ppv_current_filiale_id']})");
+                ppv_log("🔄 [AutoMode] HANDLER PAGE → type=store, POS ON (FILIALE ACTIVE: {$_SESSION['ppv_current_filiale_id']})");
             }
 
             $_SESSION['ppv_is_pos'] = true;
@@ -434,7 +434,7 @@ add_action('init', function() {
             $_SESSION['ppv_is_pos'] = true;
             $GLOBALS['ppv_active_store'] = $store;
             $GLOBALS['ppv_is_pos'] = true;
-            error_log("✅ [PPV_Session] POS restored via cookie | Store={$store->id}");
+            ppv_log("✅ [PPV_Session] POS restored via cookie | Store={$store->id}");
         }
     }
 
@@ -448,7 +448,7 @@ add_action('init', function() {
             $_SESSION['ppv_is_pos'] = true;
             $GLOBALS['ppv_active_store'] = $store;
             $GLOBALS['ppv_is_pos'] = true;
-            error_log("✅ [PPV_Session] POS login via GET token | Store={$store->id}");
+            ppv_log("✅ [PPV_Session] POS login via GET token | Store={$store->id}");
         }
     }
 
@@ -466,9 +466,9 @@ add_action('init', function() {
             $GLOBALS['ppv_active_store'] = $store;
             $GLOBALS['ppv_is_pos'] = !empty($_SESSION['ppv_is_pos']);
             $_SESSION['ppv_store_id'] = $store->id;
-            error_log("✅ [PPV_Session] store sync ok | ID={$store_id}");
+            ppv_log("✅ [PPV_Session] store sync ok | ID={$store_id}");
         } else {
-            error_log("⚠️ [PPV_Session] store sync fail (id={$store_id})");
+            ppv_log("⚠️ [PPV_Session] store sync fail (id={$store_id})");
         }
     }
 }, 1);

@@ -66,7 +66,7 @@ class PPV_Analytics_API {
             'permission_callback' => ['PPV_Permissions', 'allow_anonymous'],
         ]);
         
-        error_log("✅ [PPV_Analytics] REST endpoints registered");
+        ppv_log("✅ [PPV_Analytics] REST endpoints registered");
     }
 
     public static function check_permission() {

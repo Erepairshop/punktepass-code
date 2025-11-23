@@ -969,12 +969,104 @@ showToast("📄 Monatsbeleg wird heruntergeladen!", "success");
       });
     }
 
-    // ✅ Auto-refresh minden 10 másodpercben
-    setInterval(() => {
+    // 📡 PUSHER: Real-time updates for reward requests
+    const config = window.ppv_rewards_rest || {};
+    if (config.pusher && config.pusher.key && window.Pusher) {
+      console.log('📡 [REWARDS] Initializing Pusher real-time...');
+
+      // Cleanup previous Pusher instance if exists (for Turbo navigation)
+      if (window.PPV_REWARDS_PUSHER) {
+        window.PPV_REWARDS_PUSHER.disconnect();
+        window.PPV_REWARDS_PUSHER = null;
+      }
+
+      const pusher = new Pusher(config.pusher.key, {
+        cluster: config.pusher.cluster,
+        authorizer: (channel) => ({
+          authorize: (socketId, callback) => {
+            fetch(config.pusher.auth_endpoint, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'PPV-POS-Token': POS_TOKEN
+              },
+              body: new URLSearchParams({
+                socket_id: socketId,
+                channel_name: channel.name
+              })
+            })
+            .then(res => res.json())
+            .then(data => {
+              if (data.auth) {
+                callback(null, data);
+              } else {
+                callback(new Error('Auth failed'), null);
+              }
+            })
+            .catch(err => callback(err, null));
+          }
+        })
+      });
+
+      // Store for cleanup
+      window.PPV_REWARDS_PUSHER = pusher;
+
+      const channel = pusher.subscribe(config.pusher.channel);
+
+      channel.bind('pusher:subscription_succeeded', () => {
+        console.log('📡 [REWARDS] Subscribed to store channel');
+      });
+
+      // 🎁 Handle new reward request from user
+      channel.bind('reward-request', (data) => {
+        console.log('📡 [REWARDS] New reward request received:', data);
+
+        // Refresh the list
+        loadRedeemRequests();
+
+        // Show notification
+        notificationSystem.notifyNewRedeem({
+          id: data.redeem_id,
+          first_name: data.customer_name?.split(' ')[0] || '',
+          last_name: data.customer_name?.split(' ').slice(1).join(' ') || '',
+          reward_title: data.reward_title,
+          points_spent: data.points_spent,
+        });
+      });
+
+      // 🎯 Handle scan events too (for Letzte Scans)
+      channel.bind('new-scan', (data) => {
+        console.log('📡 [REWARDS] New scan received:', data);
+        loadRecentLogs();
+      });
+
+      console.log('📡 [REWARDS] Pusher initialized - polling disabled');
+    } else {
+      // Fallback: Auto-refresh every 30 seconds
+      console.log('🔄 [REWARDS] Using polling fallback (30s)');
+      setInterval(() => {
+        loadRedeemRequests();
+        loadRecentLogs();
+      }, 30000);
+    }
+
+    // Expose reload function for Turbo navigation
+    window.ppv_rewards_reload = function() {
+      console.log('📦 [REWARDS] Reloading data...');
       loadRedeemRequests();
       loadRecentLogs();
-    }, 30000); // 30 sec polling
-    
+    };
+
     console.log("✅ [REWARDS] Initialization complete!");
+  });
+
+  // 🚀 Re-initialize on Turbo navigation
+  document.addEventListener('turbo:load', () => {
+    // Only reload if we're on a page with the redeem list
+    const redeemList = document.getElementById("ppv-redeem-list");
+    if (redeemList && typeof window.ppv_rewards_reload === 'function') {
+      console.log('📦 [REWARDS] turbo:load detected, reloading data...');
+      window.ppv_rewards_reload();
+    }
   });
 }

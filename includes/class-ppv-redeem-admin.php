@@ -87,7 +87,7 @@ public static function enqueue_assets() {
     }
 
     if (!$load_js) {
-        error_log("⏸️ [PPV_Redeem_Admin] JS übersprungen – Seite ohne [ppv_rewards]");
+        ppv_log("⏸️ [PPV_Redeem_Admin] JS übersprungen – Seite ohne [ppv_rewards]");
         return;
     }
  wp_enqueue_script(
@@ -123,7 +123,7 @@ public static function enqueue_assets() {
 $__json = wp_json_encode($__data);
 wp_add_inline_script('ppv-redeem-admin', "window.ppv_redeem_admin = {$__json}; window.PPV_STORE_ID = {$store_id};", 'before');
 
-    error_log("🟢 [PPV_Redeem_Admin] Assets loaded, store_id={$store_id}");
+    ppv_log("🟢 [PPV_Redeem_Admin] Assets loaded, store_id={$store_id}");
 }
 
 
@@ -237,10 +237,10 @@ public static function rest_list_redeems($req) {
     $store_id = self::get_store_id();
 
     // 🧠 Debug log
-    error_log("🧠 [PPV_REDEEM_ADMIN] REST store_id: " . $store_id);
+    ppv_log("🧠 [PPV_REDEEM_ADMIN] REST store_id: " . $store_id);
 
     if (!$store_id) {
-        error_log("⚠️ [PPV_REDEEM_ADMIN] Kein gültiger Store-ID (Request und Session leer)");
+        ppv_log("⚠️ [PPV_REDEEM_ADMIN] Kein gültiger Store-ID (Request und Session leer)");
         return [
             'success' => false,
             'message' => 'Kein gültiger Store gefunden.',
@@ -269,7 +269,7 @@ public static function rest_list_redeems($req) {
     $rows = $wpdb->get_results($sql, ARRAY_A);
 
     if ($wpdb->last_error) {
-        error_log("❌ [PPV_REDEEM_ADMIN] SQL Error: " . $wpdb->last_error);
+        ppv_log("❌ [PPV_REDEEM_ADMIN] SQL Error: " . $wpdb->last_error);
         return [
             'success' => false,
             'message' => 'SQL Fehler',
@@ -285,7 +285,7 @@ public static function rest_list_redeems($req) {
     }
 
     // 🟢 Logging + Rückgabe
-    error_log("🟢 [PPV_REDEEM_ADMIN] REST result count: " . count($rows));
+    ppv_log("🟢 [PPV_REDEEM_ADMIN] REST result count: " . count($rows));
 
     return [
         'success'  => true,
@@ -333,7 +333,7 @@ public static function rest_update_status($req) {
 );
 
     if ($wpdb->last_error) {
-        error_log('❌ [PPV_REDEEM_ADMIN] Update Error: ' . $wpdb->last_error);
+        ppv_log('❌ [PPV_REDEEM_ADMIN] Update Error: ' . $wpdb->last_error);
         return ['success' => false, 'message' => 'Update fehlgeschlagen'];
     }
 
@@ -345,7 +345,7 @@ if ($status === 'approved') {
 // 🔹 Ping-Update (cache-safe)
 $now = time();
 update_option('ppv_last_redeem_update', $now);
-error_log("🟡 [PPV_REDEEM_ADMIN] Ping-Update gesetzt: " . $now);
+ppv_log("🟡 [PPV_REDEEM_ADMIN] Ping-Update gesetzt: " . $now);
 
 return [
     'success' => true,
@@ -390,7 +390,7 @@ return [
 
 
         if ($wpdb->last_error) {
-            error_log('❌ [PPV_REDEEM_ADMIN] Punkteabzug Fehler: ' . $wpdb->last_error);
+            ppv_log('❌ [PPV_REDEEM_ADMIN] Punkteabzug Fehler: ' . $wpdb->last_error);
         }
     }
 

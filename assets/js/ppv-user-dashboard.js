@@ -319,6 +319,14 @@ async function initUserDashboard() {
     }
   };
 
+  // ✅ UPDATE GLOBAL HEADER REWARDS
+  const updateGlobalRewards = (rewards) => {
+    const globalRewardsEl = document.getElementById('ppv-global-rewards');
+    if (globalRewardsEl) {
+      globalRewardsEl.textContent = rewards;
+    }
+  };
+
   // ============================================================
   // 🎫 MODERN QR TOGGLE (v2.0)
   // ============================================================
@@ -375,34 +383,111 @@ async function initUserDashboard() {
   // ============================================================
 
   // ============================================================
-  // 📊 ADAPTIVE POLLING - 5s active, 30s inactive (increased from 3s to reduce 503 errors)
+  // 📡 PUSHER + FALLBACK POLLING - Real-time updates with polling fallback
   // ============================================================
   const initPointSync = () => {
     // 🧹 Always cleanup first to prevent multiple polling instances
     cleanupPolling();
 
     window.PPV_POLLING_ACTIVE = true;
+
+    // 📡 Try Pusher first for real-time updates
+    if (boot.pusher && boot.pusher.key && window.Pusher) {
+      initPusherSync();
+    } else {
+      console.log('🔄 [Sync] Pusher not available, using polling fallback');
+      initPollingSync();
+    }
+  };
+
+  // 📡 PUSHER REAL-TIME SYNC
+  const initPusherSync = () => {
+    console.log('📡 [Pusher] Initializing real-time sync...');
+
+    const pusher = new Pusher(boot.pusher.key, {
+      cluster: boot.pusher.cluster,
+      authEndpoint: boot.pusher.auth_endpoint,
+    });
+
+    // Store for cleanup
+    window.PPV_PUSHER_INSTANCE = pusher;
+
+    // Subscribe to user's private channel
+    const channel = pusher.subscribe('private-user-' + boot.uid);
+
+    channel.bind('pusher:subscription_succeeded', () => {
+      console.log('📡 [Pusher] Subscribed to user channel');
+    });
+
+    channel.bind('pusher:subscription_error', (err) => {
+      console.warn('📡 [Pusher] Subscription failed, falling back to polling', err);
+      pusher.disconnect();
+      initPollingSync();
+    });
+
+    // 🎯 Handle points update event
+    channel.bind('points-update', (data) => {
+      console.log('📡 [Pusher] Points update received:', data);
+
+      if (data.success && data.points_added > 0) {
+        // Show toast
+        if (window.ppvShowPointToast) {
+          window.ppvShowPointToast('success', data.points_added, data.store_name || 'PunktePass');
+        }
+
+        // Update UI
+        boot.points = data.total_points;
+        updateGlobalPoints(data.total_points);
+
+        // Update rewards count if provided
+        if (data.total_rewards !== undefined) {
+          updateGlobalRewards(data.total_rewards);
+        }
+      }
+    });
+
+    // 🎁 Handle reward approved event
+    channel.bind('reward-approved', (data) => {
+      console.log('📡 [Pusher] Reward approved:', data);
+
+      if (window.ppvShowPointToast) {
+        window.ppvShowPointToast('reward', 0, data.store_name || 'PunktePass', data.reward_name || T.reward_redeemed);
+      }
+
+      // Refresh points (they decreased)
+      if (data.new_points !== undefined) {
+        boot.points = data.new_points;
+        updateGlobalPoints(data.new_points);
+      }
+    });
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+      if (window.PPV_PUSHER_INSTANCE) {
+        window.PPV_PUSHER_INSTANCE.disconnect();
+      }
+    });
+  };
+
+  // 🔄 FALLBACK POLLING SYNC
+  const initPollingSync = () => {
     console.log('🔄 [Polling] Initializing point sync...');
 
     let lastPolledPoints = boot.points || 0;
-    let lastShownErrorTimestamp = null; // Track last shown error timestamp to prevent duplicates
-    let isFirstPoll = true; // Skip showing errors on first poll (page load)
+    let lastShownErrorTimestamp = null;
+    let isFirstPoll = true;
 
-    // Get current polling interval based on visibility
     const getCurrentInterval = () => {
-      return document.hidden ? 30000 : 5000; // 30s inactive, 5s active (increased from 3s)
+      return document.hidden ? 30000 : 5000; // 30s inactive, 5s active
     };
 
-    // Poll function
     const pollPoints = async () => {
-      // Skip if not on dashboard page anymore
       if (!document.getElementById('ppv-dashboard-root')) {
         console.log('⏭️ [Polling] Dashboard not found, cleaning up');
         cleanupPolling();
         return;
       }
 
-      // ✅ FIX: Prevent concurrent poll calls
       if (window.PPV_POLLING_IN_PROGRESS) {
         console.log('⏭️ [Polling] Already in progress, skipping');
         return;
@@ -415,7 +500,6 @@ async function initUserDashboard() {
           headers: { 'Content-Type': 'application/json' }
         });
 
-        // Handle HTTP errors gracefully
         if (!res.ok) {
           if (res.status === 503) {
             console.warn('⚠️ [Polling] Server busy (503), will retry next interval');
@@ -426,79 +510,57 @@ async function initUserDashboard() {
         const data = await res.json();
         if (!data.success) return;
 
-        // Always update lastPolledPoints to track current state
         if (data.points !== undefined && data.points !== lastPolledPoints) {
           const pointDiff = data.points - lastPolledPoints;
 
-          // Only show toast if points INCREASED (successful scan)
           if (pointDiff > 0) {
             if (window.ppvShowPointToast) {
               window.ppvShowPointToast('success', pointDiff, data.store || 'PunktePass');
             }
-            // Clear error timestamp when points increase (new successful scan)
             lastShownErrorTimestamp = null;
           }
 
-          // Always update tracked values (even if points decreased)
           lastPolledPoints = data.points;
           boot.points = data.points;
           updateGlobalPoints(data.points);
         }
 
-        // Check for error message (e.g., "bereits gescannt")
         if (data.error_type && data.error_timestamp) {
-          // First poll: Initialize tracking but don't show toast (ignore old errors from before page load)
           if (isFirstPoll) {
             lastShownErrorTimestamp = data.error_timestamp;
-            console.log(`⏭️ [Polling] First poll: Initializing error tracking, skipping toast for old error at ${data.error_timestamp}`);
-          }
-          // Subsequent polls: Show toast only if this is a NEW error (different timestamp)
-          else if (data.error_timestamp !== lastShownErrorTimestamp) {
+            console.log(`⏭️ [Polling] First poll: Initializing error tracking`);
+          } else if (data.error_timestamp !== lastShownErrorTimestamp) {
             if (window.ppvShowPointToast) {
               const errorStore = data.error_store || data.store || 'PunktePass';
-              // ✅ CLIENT-SIDE TRANSLATION: Translate error_type based on user's language
               const errorKey = 'err_' + data.error_type;
               const translatedError = T[errorKey] || data.error_message || T.err_duplicate_scan;
               window.ppvShowPointToast('error', 0, errorStore, translatedError);
-              console.log(`⚠️ [Polling] Error detected: ${translatedError} from ${errorStore} at ${data.error_timestamp}`);
             }
             lastShownErrorTimestamp = data.error_timestamp;
           }
         } else {
-          // No error in response - clear the last shown error
           lastShownErrorTimestamp = null;
         }
 
-        // Mark first poll as complete
-        if (isFirstPoll) {
-          isFirstPoll = false;
-        }
+        if (isFirstPoll) isFirstPoll = false;
       } catch (e) {
         console.warn(`⚠️ [Polling] Error:`, e.message);
       } finally {
-        // ✅ FIX: Always reset flag after poll completes
         window.PPV_POLLING_IN_PROGRESS = false;
       }
     };
 
-    // Start polling with current interval
     const startPolling = () => {
       if (window.PPV_POLL_INTERVAL_ID) clearInterval(window.PPV_POLL_INTERVAL_ID);
       const interval = getCurrentInterval();
-      console.log(`🔄 [Polling] Starting with ${interval/1000}s interval (tab ${document.hidden ? 'inactive' : 'active'})`);
+      console.log(`🔄 [Polling] Starting with ${interval/1000}s interval`);
       window.PPV_POLL_INTERVAL_ID = setInterval(pollPoints, interval);
     };
 
-    // Handle visibility change - store handler globally for cleanup
-    window.PPV_VISIBILITY_HANDLER = () => {
-      startPolling(); // Restart with new interval
-    };
+    window.PPV_VISIBILITY_HANDLER = () => startPolling();
     document.addEventListener('visibilitychange', window.PPV_VISIBILITY_HANDLER);
 
-    // Start initial polling
     startPolling();
-
-    // Cleanup on beforeunload (hard refresh/close)
     window.addEventListener('beforeunload', cleanupPolling);
   };
 

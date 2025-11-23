@@ -1,6 +1,6 @@
 <?php
 if (!defined('ABSPATH')) exit;
-error_log('✅ PPV_Stripe (Webhook aktiv, linked to ppv_stores)');
+ppv_log('✅ PPV_Stripe (Webhook aktiv, linked to ppv_stores)');
 
 class PPV_Stripe {
 
@@ -10,7 +10,7 @@ class PPV_Stripe {
 
     /** 🔹 Stripe Webhook endpoint regisztrálása */
     public static function register_routes() {
-        error_log('✅ Stripe REST route registered via rest_api_init');
+        ppv_log('✅ Stripe REST route registered via rest_api_init');
 
         register_rest_route('punktepass/v1', '/stripe-webhook', [
             'methods'  => ['POST', 'GET'],
@@ -50,7 +50,7 @@ class PPV_Stripe {
             \Stripe\Stripe::setApiKey(STRIPE_SECRET_KEY);
             $event = \Stripe\Webhook::constructEvent($payload, $sig_header, $secret);
         } catch (Exception $e) {
-            error_log('❌ Stripe Webhook Error: ' . $e->getMessage());
+            ppv_log('❌ Stripe Webhook Error: ' . $e->getMessage());
             return new WP_REST_Response(['error' => $e->getMessage()], 400);
         }
 
@@ -68,7 +68,7 @@ class PPV_Stripe {
                 $store_id = $session->metadata->store_id ?? null;
                 $store_email = strtolower(trim($session->customer_email ?? ''));
                 
-                error_log("✅ Stripe: Checkout abgeschlossen für {$store_email} (Store ID: {$store_id})");
+                ppv_log("✅ Stripe: Checkout abgeschlossen für {$store_email} (Store ID: {$store_id})");
 
                 if ($store_id) {
                     // 🔹 Aktiválás ID alapján
@@ -82,7 +82,7 @@ class PPV_Stripe {
                         ],
                         ['id' => $store_id]
                     );
-                    error_log("🟢 Store #{$store_id} aktiviert über Stripe ✅");
+                    ppv_log("🟢 Store #{$store_id} aktiviert über Stripe ✅");
                 } elseif ($store_email) {
                     // 🔹 Ha nincs metadata → keresés e-mail alapján
                     $wpdb->update(
@@ -95,9 +95,9 @@ class PPV_Stripe {
                         ],
                         ['email' => $store_email]
                     );
-                    error_log("🟢 Store aktiviert via Email-Match: {$store_email}");
+                    ppv_log("🟢 Store aktiviert via Email-Match: {$store_email}");
                 } else {
-                    error_log("⚠️ Stripe Checkout ohne store_id und Email – keine Aktivierung möglich");
+                    ppv_log("⚠️ Stripe Checkout ohne store_id und Email – keine Aktivierung möglich");
                 }
                 break;
 
@@ -105,7 +105,7 @@ class PPV_Stripe {
              * ❌ Sikertelen fizetés
              * ============================================================ */
             case 'invoice.payment_failed':
-                error_log("❌ Stripe: Zahlung fehlgeschlagen");
+                ppv_log("❌ Stripe: Zahlung fehlgeschlagen");
                 break;
 
             /* ============================================================
@@ -122,14 +122,14 @@ class PPV_Stripe {
                         ['subscription_status' => 'canceled', 'active' => 0, 'visible' => 0],
                         ['id' => $store_id]
                     );
-                    error_log("🛑 Store #{$store_id} deaktiviert (Abo gelöscht)");
+                    ppv_log("🛑 Store #{$store_id} deaktiviert (Abo gelöscht)");
                 } elseif ($store_email) {
                     $wpdb->update(
                         $stores_table,
                         ['subscription_status' => 'canceled', 'active' => 0, 'visible' => 0],
                         ['email' => $store_email]
                     );
-                    error_log("🛑 Store deaktiviert via Email: {$store_email}");
+                    ppv_log("🛑 Store deaktiviert via Email: {$store_email}");
                 }
                 break;
 
@@ -137,7 +137,7 @@ class PPV_Stripe {
              * ℹ️ Egyéb események logolása
              * ============================================================ */
             default:
-                error_log("ℹ️ Stripe: Unbehandeltes Event – {$event->type}");
+                ppv_log("ℹ️ Stripe: Unbehandeltes Event – {$event->type}");
         }
 
         return new WP_REST_Response(['success' => true], 200);

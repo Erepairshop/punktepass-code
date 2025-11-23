@@ -146,7 +146,7 @@ if ($existing > 0) {
                 'reference' => 'REWARD-BONUS-' . $reward->id,
                 'created'   => current_time('mysql')
             ]);
-            error_log("🎁 [PPV_Redeem] Bonus points added: user_id={$user_id}, points_given={$points_given}");
+            ppv_log("🎁 [PPV_Redeem] Bonus points added: user_id={$user_id}, points_given={$points_given}");
         }
 
 

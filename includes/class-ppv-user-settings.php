@@ -94,7 +94,7 @@ private static function t($key) {
         $_SESSION['ppv_lang'] = $lang;
         setcookie('ppv_lang', $lang, time() + 31536000, '/', '', false, true);
 
-        error_log("🌍 [PPV_User_Settings] Active language: {$lang}");
+        ppv_log("🌍 [PPV_User_Settings] Active language: {$lang}");
 
         wp_enqueue_style('remixicons', 'https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css', [], null);
         wp_enqueue_style('ppv-user-settings', PPV_PLUGIN_URL . 'assets/css/ppv-user-settings.css', [], time());
@@ -148,7 +148,7 @@ private static function t($key) {
         $upload = wp_handle_upload($_FILES['avatar'], ['test_form' => false]);
 
         if (isset($upload['error'])) {
-            error_log("❌ [PPV_Avatar] Upload error: " . $upload['error']);
+            ppv_log("❌ [PPV_Avatar] Upload error: " . $upload['error']);
             wp_send_json_error(['msg' => self::t('upload_failed') . ': ' . $upload['error']]);
             return;
         }
@@ -289,7 +289,7 @@ private static function t($key) {
         // ✅ Get language from session (already set by enqueue_assets)
         $lang = $_SESSION['ppv_lang'] ?? 'de';
 
-        error_log("🔍 [PPV_User_Settings::render] Using language: {$lang}");
+        ppv_log("🔍 [PPV_User_Settings::render] Using language: {$lang}");
 
         // Értesítési beállítások
         $email_notif = get_user_meta($user_id, 'ppv_email_notifications', true) !== '0';

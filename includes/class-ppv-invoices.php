@@ -116,7 +116,7 @@ class PPV_Invoices {
         $vat_rate = floatval($data['vat_rate'] ?? 19.00);
         $store_id = intval($data['store_id'] ?? 0);
 
-        error_log("📄 [INVOICE] Creating invoice for redeem #{$redeem_id}, store #{$store_id}");
+        ppv_log("📄 [INVOICE] Creating invoice for redeem #{$redeem_id}, store #{$store_id}");
 
         if (!$redeem_id || !$store_id) {
             return new WP_REST_Response([
@@ -132,7 +132,7 @@ class PPV_Invoices {
         ", $redeem_id, $store_id));
 
         if ($existing) {
-            error_log("ℹ️ [INVOICE] Invoice already exists: #{$existing->id}");
+            ppv_log("ℹ️ [INVOICE] Invoice already exists: #{$existing->id}");
             
             $pdf_url = $existing->pdf_path 
                 ? content_url('uploads/' . $existing->pdf_path) 
@@ -174,7 +174,7 @@ class PPV_Invoices {
         // Generate invoice number
         $invoice_number = self::generate_invoice_number($store_id, 'single');
 
-        error_log("📊 [INVOICE] Subtotal: {$subtotal}, VAT: {$vat_amount}, Total: {$total}, Number: {$invoice_number}");
+        ppv_log("📊 [INVOICE] Subtotal: {$subtotal}, VAT: {$vat_amount}, Total: {$total}, Number: {$invoice_number}");
 
         // Insert invoice
         $wpdb->insert("{$wpdb->prefix}ppv_invoices", [
@@ -191,7 +191,7 @@ class PPV_Invoices {
         ]);
 
         if ($wpdb->last_error) {
-            error_log("❌ [INVOICE] Insert error: {$wpdb->last_error}");
+            ppv_log("❌ [INVOICE] Insert error: {$wpdb->last_error}");
             return new WP_REST_Response([
                 'success' => false,
                 'message' => 'Datenbankfehler: ' . $wpdb->last_error
@@ -224,9 +224,9 @@ class PPV_Invoices {
 
         $upload_dir = wp_upload_dir();
 $pdf_url = $pdf_path ? $upload_dir['baseurl'] . '/' . $pdf_path : null;
-error_log("📄 [PDF URL] {$pdf_url}");
+ppv_log("📄 [PDF URL] {$pdf_url}");
 
-        error_log("✅ [INVOICE] Created successfully: ID={$invoice_id}, Number={$invoice_number}, PDF={$pdf_url}");
+        ppv_log("✅ [INVOICE] Created successfully: ID={$invoice_id}, Number={$invoice_number}, PDF={$pdf_url}");
 
         return new WP_REST_Response([
             'success' => true,
@@ -388,7 +388,7 @@ error_log("📄 [PDF URL] {$pdf_url}");
         // Return relative path
         $relative_path = "ppv_invoices/store_{$store->id}/{$year}/{$month}/{$filename}";
         
-        error_log("✅ [PDF] Generated at: {$relative_path}");
+        ppv_log("✅ [PDF] Generated at: {$relative_path}");
         
         return $relative_path;
     }

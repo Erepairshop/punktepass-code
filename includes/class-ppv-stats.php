@@ -20,7 +20,7 @@ class PPV_Stats {
         add_action('rest_api_init', [__CLASS__, 'register_rest']);
         add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets'], 1);
         add_action('admin_enqueue_scripts', [__CLASS__, 'enqueue_assets'], 1);
-        error_log("✅ [PPV_Stats] Hooks registered");
+        ppv_log("✅ [PPV_Stats] Hooks registered");
     }
 
     // ========================================
@@ -45,40 +45,40 @@ class PPV_Stats {
     // 🔍 HELPER: Get Store ID (with FILIALE support)
     // ========================================
     public static function get_handler_store_id() {
-        error_log("🔍 [Stats] get_handler_store_id() START");
+        ppv_log("🔍 [Stats] get_handler_store_id() START");
 
         // 🏪 FILIALE SUPPORT: Check ppv_current_filiale_id FIRST
         if (!empty($_SESSION['ppv_current_filiale_id'])) {
             $sid = intval($_SESSION['ppv_current_filiale_id']);
-            error_log("✅ [Stats] Store from SESSION (FILIALE): {$sid}");
+            ppv_log("✅ [Stats] Store from SESSION (FILIALE): {$sid}");
             return $sid;
         }
 
         // 1️⃣ GLOBALS
         if (!empty($GLOBALS['ppv_active_store_id'])) {
             $sid = intval($GLOBALS['ppv_active_store_id']);
-            error_log("✅ [Stats] Store from GLOBALS: {$sid}");
+            ppv_log("✅ [Stats] Store from GLOBALS: {$sid}");
             return $sid;
         }
 
         // 2️⃣ SESSION - Direct (base store)
         if (!empty($_SESSION['ppv_store_id'])) {
             $sid = intval($_SESSION['ppv_store_id']);
-            error_log("✅ [Stats] Store from SESSION (store): {$sid}");
+            ppv_log("✅ [Stats] Store from SESSION (store): {$sid}");
             return $sid;
         }
 
         // 3️⃣ SESSION - Vendor
         if (!empty($_SESSION['ppv_vendor_store_id'])) {
             $sid = intval($_SESSION['ppv_vendor_store_id']);
-            error_log("✅ [Stats] Store from SESSION (vendor): {$sid}");
+            ppv_log("✅ [Stats] Store from SESSION (vendor): {$sid}");
             return $sid;
         }
 
         // 4️⃣ SESSION - Active
         if (!empty($_SESSION['ppv_active_store'])) {
             $sid = intval($_SESSION['ppv_active_store']);
-            error_log("✅ [Stats] Store from SESSION (active): {$sid}");
+            ppv_log("✅ [Stats] Store from SESSION (active): {$sid}");
             return $sid;
         }
 
@@ -86,19 +86,19 @@ class PPV_Stats {
         global $wpdb;
         $uid = get_current_user_id();
         if ($uid > 0) {
-            error_log("📊 [Stats] Checking DB for WP user: {$uid}");
+            ppv_log("📊 [Stats] Checking DB for WP user: {$uid}");
             $sid = $wpdb->get_var($wpdb->prepare(
                 "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id=%d LIMIT 1",
                 $uid
             ));
             if ($sid) {
                 $sid = intval($sid);
-                error_log("✅ [Stats] Store from DB: {$sid}");
+                ppv_log("✅ [Stats] Store from DB: {$sid}");
                 return $sid;
             }
         }
 
-        error_log("❌ [Stats] NO STORE FOUND!");
+        ppv_log("❌ [Stats] NO STORE FOUND!");
         return null;
     }
 
@@ -109,11 +109,11 @@ class PPV_Stats {
         $store_id = self::get_handler_store_id();
         
         if (!$store_id) {
-            error_log("🚫 [Stats Perm] DENIED - no store");
+            ppv_log("🚫 [Stats Perm] DENIED - no store");
             return new WP_Error('unauthorized', 'Not authenticated', ['status' => 403]);
         }
         
-        error_log("✅ [Stats Perm] OK - store={$store_id}");
+        ppv_log("✅ [Stats Perm] OK - store={$store_id}");
         return true;
     }
 
@@ -157,14 +157,14 @@ class PPV_Stats {
             'permission_callback' => [__CLASS__, 'check_handler_permission']
         ]);
 
-        error_log("✅ [PPV_Stats] ALL REST routes OK");
+        ppv_log("✅ [PPV_Stats] ALL REST routes OK");
     }
 
     // ========================================
     // 📦 ENQUEUE ASSETS + TRANSLATIONS
     // ========================================
     public static function enqueue_assets() {
-        error_log('📈 [Stats] enqueue_assets() called');
+        ppv_log('📈 [Stats] enqueue_assets() called');
 
         wp_enqueue_script('jquery');
         wp_enqueue_script('chart.js', 'https://cdn.jsdelivr.net/npm/chart.js', [], null, true);
@@ -178,9 +178,9 @@ class PPV_Stats {
         $translations = [];
         if (class_exists('PPV_Lang') && !empty(PPV_Lang::$strings)) {
             $translations = PPV_Lang::$strings;
-            error_log("🌐 [Stats] Translations loaded from PPV_Lang: " . count($translations) . " strings");
+            ppv_log("🌐 [Stats] Translations loaded from PPV_Lang: " . count($translations) . " strings");
         } else {
-            error_log("⚠️ [Stats] PPV_Lang not available, using fallback");
+            ppv_log("⚠️ [Stats] PPV_Lang not available, using fallback");
         }
 
         $data = [
@@ -197,7 +197,7 @@ class PPV_Stats {
             'debug' => defined('WP_DEBUG') && WP_DEBUG
         ];
 
-        error_log("📊 [Stats] JS Data: store_id=" . $data['store_id'] . ", lang=" . $lang . ", translations=" . count($translations));
+        ppv_log("📊 [Stats] JS Data: store_id=" . $data['store_id'] . ", lang=" . $lang . ", translations=" . count($translations));
         wp_add_inline_script('ppv-stats', "window.ppvStats = " . wp_json_encode($data) . ";", 'before');
     }
 
@@ -207,7 +207,7 @@ class PPV_Stats {
     public static function rest_stats($req) {
         global $wpdb;
 
-        error_log("📊 [REST] stats() called");
+        ppv_log("📊 [REST] stats() called");
 
         $store_id = self::get_handler_store_id();
         if (!$store_id) {
@@ -322,7 +322,7 @@ class PPV_Stats {
             ];
         }
 
-        error_log("✅ [REST] stats() complete");
+        ppv_log("✅ [REST] stats() complete");
 
         return new WP_REST_Response([
             'success' => true,
@@ -382,7 +382,7 @@ class PPV_Stats {
             $csv .= "{$row->user_id},{$row->points},{$row->created}\n";
         }
 
-        error_log("✅ [Export] Generated: " . count($rows) . " rows");
+        ppv_log("✅ [Export] Generated: " . count($rows) . " rows");
 
         return new WP_REST_Response([
             'success' => true,
@@ -397,7 +397,7 @@ class PPV_Stats {
     public static function rest_trend($req) {
         global $wpdb;
 
-        error_log("📈 [Trend] Start");
+        ppv_log("📈 [Trend] Start");
 
         $store_id = self::get_handler_store_id();
         if (!$store_id) {
@@ -454,7 +454,7 @@ class PPV_Stats {
             ];
         }
 
-        error_log("✅ [Trend] Complete");
+        ppv_log("✅ [Trend] Complete");
 
         return new WP_REST_Response([
             'success' => true,
@@ -480,7 +480,7 @@ class PPV_Stats {
     public static function rest_spending($req) {
         global $wpdb;
 
-        error_log("💰 [Spending] Start");
+        ppv_log("💰 [Spending] Start");
 
         $store_id = self::get_handler_store_id();
         if (!$store_id) {
@@ -550,7 +550,7 @@ class PPV_Stats {
             $store_id
         )) ?? 0;
 
-        error_log("✅ [Spending] Complete");
+        ppv_log("✅ [Spending] Complete");
 
         return new WP_REST_Response([
             'success' => true,
@@ -575,7 +575,7 @@ class PPV_Stats {
     public static function rest_conversion($req) {
         global $wpdb;
 
-        error_log("📊 [Conversion] Start");
+        ppv_log("📊 [Conversion] Start");
 
         $store_id = self::get_handler_store_id();
         if (!$store_id) {
@@ -627,7 +627,7 @@ class PPV_Stats {
 
         $repeat_rate = $total_users > 0 ? ($repeat_customers / $total_users) * 100 : 0;
 
-        error_log("✅ [Conversion] Complete");
+        ppv_log("✅ [Conversion] Complete");
 
         return new WP_REST_Response([
             'success' => true,
@@ -647,7 +647,7 @@ class PPV_Stats {
     public static function rest_export_advanced($req) {
         global $wpdb;
 
-        error_log("📥 [Export Advanced] Start");
+        ppv_log("📥 [Export Advanced] Start");
 
         $store_id = self::get_handler_store_id();
         if (!$store_id) {
@@ -707,7 +707,7 @@ class PPV_Stats {
             $filename = 'stats_detailed_' . $store_id . '_' . date('Y-m-d') . '.csv';
         }
 
-        error_log("✅ [Export Advanced] Generated: $filename");
+        ppv_log("✅ [Export Advanced] Generated: $filename");
 
         return new WP_REST_Response([
             'success' => true,

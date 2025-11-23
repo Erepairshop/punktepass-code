@@ -27,7 +27,7 @@ class PPV_Signup {
         add_action('wp_ajax_ppv_signup', [__CLASS__, 'ajax_signup']);
         add_action('wp_ajax_ppv_google_signup', [__CLASS__, 'ajax_google_signup']);
 
-        error_log("✅ [PPV_Signup] Hooks registered successfully");
+        ppv_log("✅ [PPV_Signup] Hooks registered successfully");
     }
 
     /** ============================================================
@@ -39,7 +39,7 @@ class PPV_Signup {
         }
 
         self::hooks();
-        error_log("✅ [PPV_Signup] Initialized");
+        ppv_log("✅ [PPV_Signup] Initialized");
     }
 
     /** ============================================================
@@ -142,7 +142,7 @@ class PPV_Signup {
             'debug' => true
         ]);
 
-        error_log("✅ [PPV_Signup] Assets enqueued");
+        ppv_log("✅ [PPV_Signup] Assets enqueued");
     }
 
     /** ============================================================
@@ -444,15 +444,15 @@ class PPV_Signup {
      * 🔹 AJAX Signup Handler (WITH HÄNDLER SUPPORT)
      * ============================================================ */
     public static function ajax_signup() {
-        error_log("========================================");
-        error_log("🔹 [PPV_Signup] AJAX signup called");
-        error_log("========================================");
+        ppv_log("========================================");
+        ppv_log("🔹 [PPV_Signup] AJAX signup called");
+        ppv_log("========================================");
 
         global $wpdb;
         $prefix = $wpdb->prefix;
 
         if (!$wpdb) {
-            error_log("❌ [PPV_Signup] WPDB not available");
+            ppv_log("❌ [PPV_Signup] WPDB not available");
             wp_send_json_error(['message' => 'Adatbázis hiba']);
             return;
         }
@@ -461,7 +461,7 @@ class PPV_Signup {
 
         // NONCE CHECK
         if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'ppv_signup_nonce')) {
-            error_log("❌ [PPV_Signup] Nonce verification failed");
+            ppv_log("❌ [PPV_Signup] Nonce verification failed");
             wp_send_json_error(['message' => 'Biztonsági ellenőrzés sikertelen!']);
             return;
         }
@@ -473,8 +473,8 @@ class PPV_Signup {
         $privacy = isset($_POST['privacy']) && $_POST['privacy'] === 'true';
         $user_type = sanitize_text_field($_POST['user_type'] ?? 'user'); // NEW!
 
-        error_log("📧 Email: {$email}");
-        error_log("👤 User Type: {$user_type}");
+        ppv_log("📧 Email: {$email}");
+        ppv_log("👤 User Type: {$user_type}");
 
         // Validation
         if (empty($email) || empty($password)) {
@@ -509,7 +509,7 @@ class PPV_Signup {
         ));
 
         if ($exists) {
-            error_log("❌ [PPV_Signup] Email exists: {$email}");
+            ppv_log("❌ [PPV_Signup] Email exists: {$email}");
             wp_send_json_error(['message' => PPV_Lang::t('signup_error_email_exists')]);
             return;
         }
@@ -533,13 +533,13 @@ class PPV_Signup {
         $insert_result = $wpdb->insert("{$prefix}ppv_users", $insert_data, $insert_format);
 
         if ($insert_result === false) {
-            error_log("❌ [PPV_Signup] Insert failed: " . $wpdb->last_error);
+            ppv_log("❌ [PPV_Signup] Insert failed: " . $wpdb->last_error);
             wp_send_json_error(['message' => 'Regisztráció sikertelen: ' . $wpdb->last_error]);
             return;
         }
 
         $user_id = $wpdb->insert_id;
-        error_log("✅ [PPV_Signup] User created: #{$user_id} ({$user_type})");
+        ppv_log("✅ [PPV_Signup] User created: #{$user_id} ({$user_type})");
 
         // HÄNDLER: Create store
         $store_id = null;
@@ -575,9 +575,9 @@ class PPV_Signup {
                     ['%d']
                 );
 
-                error_log("✅ [PPV_Signup] Store created: #{$store_id} | Trial ends: {$trial_ends_at}");
+                ppv_log("✅ [PPV_Signup] Store created: #{$store_id} | Trial ends: {$trial_ends_at}");
             } else {
-                error_log("❌ [PPV_Signup] Store creation failed: " . $wpdb->last_error);
+                ppv_log("❌ [PPV_Signup] Store creation failed: " . $wpdb->last_error);
             }
         }
 
@@ -611,12 +611,12 @@ class PPV_Signup {
         // Determine redirect
         $redirect_url = $user_type === 'vendor' ? home_url('/qr-center') : home_url('/user_dashboard');
 
-        error_log("========================================");
-        error_log("✅ [PPV_Signup] SUCCESS - User #{$user_id}: {$email} ({$user_type})");
+        ppv_log("========================================");
+        ppv_log("✅ [PPV_Signup] SUCCESS - User #{$user_id}: {$email} ({$user_type})");
         if ($user_type === 'vendor') {
-            error_log("   Store: #{$store_id} | Trial: {$trial_ends_at}");
+            ppv_log("   Store: #{$store_id} | Trial: {$trial_ends_at}");
         }
-        error_log("========================================");
+        ppv_log("========================================");
 
         wp_send_json_success([
             'message' => PPV_Lang::t('signup_success'),
@@ -631,7 +631,7 @@ class PPV_Signup {
      * 🔹 AJAX Google Signup Handler
      * ============================================================ */
     public static function ajax_google_signup() {
-        error_log("🔹 [PPV_Signup] Google signup called");
+        ppv_log("🔹 [PPV_Signup] Google signup called");
 
         global $wpdb;
         $prefix = $wpdb->prefix;
@@ -639,7 +639,7 @@ class PPV_Signup {
         self::ensure_session();
 
         if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'ppv_signup_nonce')) {
-            error_log("❌ [PPV_Signup] Google signup - nonce failed");
+            ppv_log("❌ [PPV_Signup] Google signup - nonce failed");
             wp_send_json_error(['message' => PPV_Lang::t('signup_google_error')]);
             return;
         }
@@ -699,13 +699,13 @@ class PPV_Signup {
             $insert_result = $wpdb->insert("{$prefix}ppv_users", $insert_data, $insert_format);
 
             if ($insert_result === false) {
-                error_log("❌ [PPV_Signup] Google user insert failed: " . $wpdb->last_error);
+                ppv_log("❌ [PPV_Signup] Google user insert failed: " . $wpdb->last_error);
                 wp_send_json_error(['message' => PPV_Lang::t('signup_error_create')]);
                 return;
             }
 
             $user_id = $wpdb->insert_id;
-            error_log("✅ [PPV_Signup] Google user created: #{$user_id} ({$user_type})");
+            ppv_log("✅ [PPV_Signup] Google user created: #{$user_id} ({$user_type})");
 
             // HÄNDLER: Create store
             if ($user_type === 'vendor') {
@@ -739,7 +739,7 @@ class PPV_Signup {
                         ['%d']
                     );
 
-                    error_log("✅ [PPV_Signup] Store created for Google user: #{$store_id}");
+                    ppv_log("✅ [PPV_Signup] Store created for Google user: #{$store_id}");
                 }
             }
 
@@ -789,7 +789,7 @@ class PPV_Signup {
         // Determine redirect
         $redirect_url = $user->user_type === 'vendor' ? home_url('/qr-center') : home_url('/user_dashboard');
 
-        error_log("✅ [PPV_Signup] Google signup success: #{$user->id} ({$user->user_type})");
+        ppv_log("✅ [PPV_Signup] Google signup success: #{$user->id} ({$user->user_type})");
 
         wp_send_json_success([
             'message' => PPV_Lang::t('signup_google_success'),
@@ -858,7 +858,7 @@ class PPV_Signup {
 
         // ✅ If no store_id in session, lookup via user_id
         if ($store_id === 0) {
-            error_log("🔍 [PPV_Renewal] No store_id in session, looking up via user_id={$user_id}");
+            ppv_log("🔍 [PPV_Renewal] No store_id in session, looking up via user_id={$user_id}");
 
             $store_id = $wpdb->get_var($wpdb->prepare(
                 "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id = %d LIMIT 1",
@@ -866,13 +866,13 @@ class PPV_Signup {
             ));
 
             if (!$store_id) {
-                error_log("❌ [PPV_Renewal] No store found for user_id={$user_id}");
+                ppv_log("❌ [PPV_Renewal] No store found for user_id={$user_id}");
                 wp_send_json_error(['message' => 'Store nicht gefunden']);
                 return;
             }
 
             $store_id = intval($store_id);
-            error_log("✅ [PPV_Renewal] Found store_id={$store_id} via user_id");
+            ppv_log("✅ [PPV_Renewal] Found store_id={$store_id} via user_id");
         }
 
         $phone = sanitize_text_field($_POST['phone'] ?? '');
@@ -926,12 +926,12 @@ class PPV_Signup {
         $mail_sent = wp_mail($to, $subject, $message, $headers);
 
         if (!$mail_sent) {
-            error_log("❌ [PPV_Renewal] Failed to send email to {$to} for store #{$store_id}");
+            ppv_log("❌ [PPV_Renewal] Failed to send email to {$to} for store #{$store_id}");
         } else {
-            error_log("✅ [PPV_Renewal] Email sent to {$to} for store #{$store_id}");
+            ppv_log("✅ [PPV_Renewal] Email sent to {$to} for store #{$store_id}");
         }
 
-        error_log("✅ [PPV_Renewal] Request submitted - Store #{$store_id} | Phone: {$phone}");
+        ppv_log("✅ [PPV_Renewal] Request submitted - Store #{$store_id} | Phone: {$phone}");
 
         wp_send_json_success(['message' => 'Anfrage erfolgreich gesendet']);
     }
@@ -960,7 +960,7 @@ class PPV_Signup {
 
         // ✅ If no store_id in session, lookup via user_id
         if ($store_id === 0) {
-            error_log("🔍 [PPV_Support] No store_id in session, looking up via user_id={$user_id}");
+            ppv_log("🔍 [PPV_Support] No store_id in session, looking up via user_id={$user_id}");
 
             $store_id = $wpdb->get_var($wpdb->prepare(
                 "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id = %d LIMIT 1",
@@ -968,13 +968,13 @@ class PPV_Signup {
             ));
 
             if (!$store_id) {
-                error_log("❌ [PPV_Support] No store found for user_id={$user_id}");
+                ppv_log("❌ [PPV_Support] No store found for user_id={$user_id}");
                 wp_send_json_error(['message' => 'Store nicht gefunden']);
                 return;
             }
 
             $store_id = intval($store_id);
-            error_log("✅ [PPV_Support] Found store_id={$store_id} via user_id");
+            ppv_log("✅ [PPV_Support] Found store_id={$store_id} via user_id");
         }
 
         $description = sanitize_textarea_field($_POST['description'] ?? '');
@@ -1032,7 +1032,7 @@ class PPV_Signup {
         );
 
         if (!$insert_result) {
-            error_log("❌ [PPV_Support] Failed to insert ticket: " . $wpdb->last_error);
+            ppv_log("❌ [PPV_Support] Failed to insert ticket: " . $wpdb->last_error);
             wp_send_json_error(['message' => 'Fehler beim Speichern des Tickets']);
             return;
         }
@@ -1105,12 +1105,12 @@ class PPV_Signup {
         $mail_sent = wp_mail($to, $subject, $message, $headers);
 
         if (!$mail_sent) {
-            error_log("❌ [PPV_Support] Failed to send email to {$to} for ticket #{$ticket_id}");
+            ppv_log("❌ [PPV_Support] Failed to send email to {$to} for ticket #{$ticket_id}");
         } else {
-            error_log("✅ [PPV_Support] Email sent to {$to} for ticket #{$ticket_id}");
+            ppv_log("✅ [PPV_Support] Email sent to {$to} for ticket #{$ticket_id}");
         }
 
-        error_log("✅ [PPV_Support] Ticket #{$ticket_id} created - Store #{$store_id} | Priority: {$priority}");
+        ppv_log("✅ [PPV_Support] Ticket #{$ticket_id} created - Store #{$store_id} | Priority: {$priority}");
 
         wp_send_json_success(['message' => '✅ Ticket erfolgreich gesendet! Wir melden uns schnellstmöglich.']);
     }
@@ -1222,14 +1222,14 @@ class PPV_Signup {
         );
 
         if ($insert_result === false) {
-            error_log("❌ [PPV_Scanner] Failed to create scanner user: " . $wpdb->last_error);
+            ppv_log("❌ [PPV_Scanner] Failed to create scanner user: " . $wpdb->last_error);
             wp_send_json_error(['message' => 'Fehler beim Erstellen des Benutzers']);
             return;
         }
 
         $user_id = $wpdb->insert_id;
 
-        error_log("✅ [PPV_Scanner] Scanner user created: ID={$user_id}, Email={$email}, Store={$handler_store_id}, QR={$qr_token}");
+        ppv_log("✅ [PPV_Scanner] Scanner user created: ID={$user_id}, Email={$email}, Store={$handler_store_id}, QR={$qr_token}");
 
         wp_send_json_success([
             'message' => '✅ Scanner Benutzer erfolgreich erstellt!',
@@ -1304,12 +1304,12 @@ class PPV_Signup {
         );
 
         if ($update_result === false) {
-            error_log("❌ [PPV_Scanner] Password reset failed: " . $wpdb->last_error);
+            ppv_log("❌ [PPV_Scanner] Password reset failed: " . $wpdb->last_error);
             wp_send_json_error(['message' => 'Fehler beim Zurücksetzen des Passworts']);
             return;
         }
 
-        error_log("✅ [PPV_Scanner] Password reset for scanner: ID={$scanner_user_id}, Email={$scanner_user->email}");
+        ppv_log("✅ [PPV_Scanner] Password reset for scanner: ID={$scanner_user_id}, Email={$scanner_user->email}");
 
         wp_send_json_success([
             'message' => '✅ Passwort erfolgreich zurückgesetzt!',
@@ -1383,14 +1383,14 @@ class PPV_Signup {
         );
 
         if ($update_result === false) {
-            error_log("❌ [PPV_Scanner] Status toggle failed: " . $wpdb->last_error);
+            ppv_log("❌ [PPV_Scanner] Status toggle failed: " . $wpdb->last_error);
             wp_send_json_error(['message' => 'Fehler beim Ändern des Status']);
             return;
         }
 
         $status_text = $action === 'disable' ? 'deaktiviert' : 'aktiviert';
 
-        error_log("✅ [PPV_Scanner] Scanner {$status_text}: ID={$scanner_user_id}, Email={$scanner_user->email}");
+        ppv_log("✅ [PPV_Scanner] Scanner {$status_text}: ID={$scanner_user_id}, Email={$scanner_user->email}");
 
         wp_send_json_success([
             'message' => "✅ Scanner erfolgreich {$status_text}!",
@@ -1476,7 +1476,7 @@ class PPV_Signup {
         );
 
         if ($update_result === false) {
-            error_log("❌ [PPV_Scanner] Filiale update failed: " . $wpdb->last_error);
+            ppv_log("❌ [PPV_Scanner] Filiale update failed: " . $wpdb->last_error);
             wp_send_json_error(['message' => 'Fehler beim Ändern der Filiale']);
             return;
         }
@@ -1492,7 +1492,7 @@ class PPV_Signup {
             $filiale_display .= ' - ' . $new_filiale->city;
         }
 
-        error_log("✅ [PPV_Scanner] Filiale updated: Scanner ID={$scanner_user_id}, Email={$scanner_user->email}, New Filiale={$filiale_display}");
+        ppv_log("✅ [PPV_Scanner] Filiale updated: Scanner ID={$scanner_user_id}, Email={$scanner_user->email}, New Filiale={$filiale_display}");
 
         wp_send_json_success([
             'message' => "✅ Filiale erfolgreich geändert!",

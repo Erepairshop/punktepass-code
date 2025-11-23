@@ -4,7 +4,7 @@ if (!defined('ABSPATH')) exit;
 class PPV_Scan {
 
     public static function hooks() {
-        error_log('🧩 [PPV_REST] register_rest_route() started');
+        ppv_log('🧩 [PPV_REST] register_rest_route() started');
 
         add_shortcode('ppv_scan_page', [__CLASS__, 'render_scan_page']);
         add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);

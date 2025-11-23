@@ -1322,6 +1322,43 @@ body.ppv-user-dashboard {
     transform: scale(1.1);
 }
 
+/* Touch feedback */
+.ppv-bottom-nav .nav-item.touch {
+    transform: scale(0.95);
+    opacity: 0.8;
+}
+
+/* ==========================================================================
+   🚀 TURBO LOADING INDICATOR
+   ========================================================================== */
+.turbo-progress-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #667eea, #764ba2, #00eaff);
+    z-index: 99999;
+    transition: width 0.3s ease;
+}
+
+body.turbo-loading::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(90deg, #667eea, #764ba2, #00eaff);
+    background-size: 200% 100%;
+    animation: turbo-loading 1s ease-in-out infinite;
+    z-index: 99999;
+}
+
+@keyframes turbo-loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
 /* ==========================================================================
    🔎 LIGHTBOX – GALLERY fullscreen
    ========================================================================== */

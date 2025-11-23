@@ -319,11 +319,11 @@ class PPV_VIP_Settings {
         );
 
         if ($result === false) {
-            error_log("❌ [PPV_VIP] Failed to save VIP settings for store {$store_id}");
+            ppv_log("❌ [PPV_VIP] Failed to save VIP settings for store {$store_id}");
             return new WP_REST_Response(['success' => false, 'msg' => 'Database error'], 500);
         }
 
-        error_log("✅ [PPV_VIP] Extended VIP settings saved: store={$store_id}");
+        ppv_log("✅ [PPV_VIP] Extended VIP settings saved: store={$store_id}");
 
         return new WP_REST_Response(['success' => true, 'msg' => 'VIP settings saved'], 200);
     }
