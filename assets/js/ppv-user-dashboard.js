@@ -14,6 +14,11 @@
  * 🚀 TURBO-COMPATIBLE: Re-initializes on navigation
  */
 
+// ✅ DEBUG MODE - Set to false in production to reduce console spam
+const PPV_DEBUG = false;
+const ppvLog = (...args) => { if (PPV_DEBUG) console.log(...args); };
+const ppvWarn = (...args) => { if (PPV_DEBUG) console.warn(...args); };
+
 // 🚀 Global state for Turbo navigation cleanup
 window.PPV_POLL_INTERVAL_ID = null;
 window.PPV_VISIBILITY_HANDLER = null;
@@ -29,17 +34,17 @@ function cleanupPolling() {
   if (window.PPV_POLL_INTERVAL_ID) {
     clearInterval(window.PPV_POLL_INTERVAL_ID);
     window.PPV_POLL_INTERVAL_ID = null;
-    console.log('🧹 [Polling] Interval cleared');
+    ppvLog('🧹 [Polling] Interval cleared');
   }
   if (window.PPV_VISIBILITY_HANDLER) {
     document.removeEventListener('visibilitychange', window.PPV_VISIBILITY_HANDLER);
     window.PPV_VISIBILITY_HANDLER = null;
-    console.log('🧹 [Polling] Visibility listener removed');
+    ppvLog('🧹 [Polling] Visibility listener removed');
   }
   if (window.PPV_SLIDER_HANDLER) {
     document.removeEventListener('input', window.PPV_SLIDER_HANDLER);
     window.PPV_SLIDER_HANDLER = null;
-    console.log('🧹 [Slider] Handler removed');
+    ppvLog('🧹 [Slider] Handler removed');
   }
   window.PPV_POLLING_ACTIVE = false;
   window.PPV_SLIDER_INITIALIZED = false;
@@ -54,7 +59,7 @@ async function initUserDashboard() {
   // Check if dashboard root exists (only run on user dashboard pages)
   const dashboardRoot = document.getElementById('ppv-dashboard-root');
   if (!dashboardRoot) {
-    console.log("⏭️ [Dashboard] Not a dashboard page, skipping init");
+    ppvLog("⏭️ [Dashboard] Not a dashboard page, skipping init");
     // 🧹 Clean up polling if we're NOT on dashboard page anymore
     cleanupPolling();
     return;
@@ -62,7 +67,7 @@ async function initUserDashboard() {
 
   // Prevent double initialization
   if (dashboardRoot.dataset.initialized === 'true') {
-    console.log("⏭️ [Dashboard] Already initialized, skipping");
+    ppvLog("⏭️ [Dashboard] Already initialized, skipping");
     return;
   }
   dashboardRoot.dataset.initialized = 'true';
@@ -330,7 +335,7 @@ async function initUserDashboard() {
     const closeBtn = document.querySelector(".ppv-qr-close");
 
     if (!btn || !modal || !overlay) {
-      console.warn("⚠️ [QR] Elements not found");
+      ppvWarn("⚠️ [QR] Elements not found");
       return;
     }
 
@@ -367,7 +372,7 @@ async function initUserDashboard() {
       if (e.key === "Escape" && modal.classList.contains("show")) closeQR();
     });
 
-    console.log("✅ [QR] Toggle initialized");
+    ppvLog("✅ [QR] Toggle initialized");
   };
 
   // ============================================================
@@ -382,7 +387,7 @@ async function initUserDashboard() {
     cleanupPolling();
 
     window.PPV_POLLING_ACTIVE = true;
-    console.log('🔄 [Polling] Initializing point sync...');
+    ppvLog('🔄 [Polling] Initializing point sync...');
 
     let lastPolledPoints = boot.points || 0;
     let lastShownErrorTimestamp = null; // Track last shown error timestamp to prevent duplicates
@@ -397,14 +402,14 @@ async function initUserDashboard() {
     const pollPoints = async () => {
       // Skip if not on dashboard page anymore
       if (!document.getElementById('ppv-dashboard-root')) {
-        console.log('⏭️ [Polling] Dashboard not found, cleaning up');
+        ppvLog('⏭️ [Polling] Dashboard not found, cleaning up');
         cleanupPolling();
         return;
       }
 
       // ✅ FIX: Prevent concurrent poll calls
       if (window.PPV_POLLING_IN_PROGRESS) {
-        console.log('⏭️ [Polling] Already in progress, skipping');
+        ppvLog('⏭️ [Polling] Already in progress, skipping');
         return;
       }
       window.PPV_POLLING_IN_PROGRESS = true;
@@ -418,7 +423,7 @@ async function initUserDashboard() {
         // Handle HTTP errors gracefully
         if (!res.ok) {
           if (res.status === 503) {
-            console.warn('⚠️ [Polling] Server busy (503), will retry next interval');
+            ppvWarn('⚠️ [Polling] Server busy (503), will retry next interval');
           }
           return;
         }
@@ -450,7 +455,7 @@ async function initUserDashboard() {
           // First poll: Initialize tracking but don't show toast (ignore old errors from before page load)
           if (isFirstPoll) {
             lastShownErrorTimestamp = data.error_timestamp;
-            console.log(`⏭️ [Polling] First poll: Initializing error tracking, skipping toast for old error at ${data.error_timestamp}`);
+            ppvLog(`⏭️ [Polling] First poll: Initializing error tracking, skipping toast for old error at ${data.error_timestamp}`);
           }
           // Subsequent polls: Show toast only if this is a NEW error (different timestamp)
           else if (data.error_timestamp !== lastShownErrorTimestamp) {
@@ -460,7 +465,7 @@ async function initUserDashboard() {
               const errorKey = 'err_' + data.error_type;
               const translatedError = T[errorKey] || data.error_message || T.err_duplicate_scan;
               window.ppvShowPointToast('error', 0, errorStore, translatedError);
-              console.log(`⚠️ [Polling] Error detected: ${translatedError} from ${errorStore} at ${data.error_timestamp}`);
+              ppvLog(`⚠️ [Polling] Error detected: ${translatedError} from ${errorStore} at ${data.error_timestamp}`);
             }
             lastShownErrorTimestamp = data.error_timestamp;
           }
@@ -474,7 +479,7 @@ async function initUserDashboard() {
           isFirstPoll = false;
         }
       } catch (e) {
-        console.warn(`⚠️ [Polling] Error:`, e.message);
+        ppvWarn(`⚠️ [Polling] Error:`, e.message);
       } finally {
         // ✅ FIX: Always reset flag after poll completes
         window.PPV_POLLING_IN_PROGRESS = false;
@@ -485,7 +490,7 @@ async function initUserDashboard() {
     const startPolling = () => {
       if (window.PPV_POLL_INTERVAL_ID) clearInterval(window.PPV_POLL_INTERVAL_ID);
       const interval = getCurrentInterval();
-      console.log(`🔄 [Polling] Starting with ${interval/1000}s interval (tab ${document.hidden ? 'inactive' : 'active'})`);
+      ppvLog(`🔄 [Polling] Starting with ${interval/1000}s interval (tab ${document.hidden ? 'inactive' : 'active'})`);
       window.PPV_POLL_INTERVAL_ID = setInterval(pollPoints, interval);
     };
 
@@ -749,7 +754,7 @@ async function initUserDashboard() {
 
   const initDistanceSlider = (sliderHTML, userLat, userLng, currentDistance = 10) => {
     if (window.PPV_SLIDER_INITIALIZED) {
-      console.log("⏸️ [Slider] Already initialized");
+      ppvLog("⏸️ [Slider] Already initialized");
       return;
     }
     window.PPV_SLIDER_INITIALIZED = true;
@@ -772,7 +777,7 @@ async function initUserDashboard() {
       sliderTimeout = setTimeout(async () => {
         // ✅ FIX: Prevent concurrent slider fetches
         if (window.PPV_SLIDER_FETCH_IN_PROGRESS) {
-          console.log('⏭️ [Slider] Fetch already in progress, skipping');
+          ppvLog('⏭️ [Slider] Fetch already in progress, skipping');
           return;
         }
         window.PPV_SLIDER_FETCH_IN_PROGRESS = true;
@@ -802,9 +807,9 @@ async function initUserDashboard() {
             attachStoreListeners();
           }
 
-          console.log("✅ [Slider] Stores updated");
+          ppvLog("✅ [Slider] Stores updated");
         } catch (err) {
-          console.error("❌ Filter error:", err);
+          console.error("❌ [Slider] Filter error:", err);
         } finally {
           // ✅ FIX: Always reset flag after fetch completes
           window.PPV_SLIDER_FETCH_IN_PROGRESS = false;
@@ -813,7 +818,7 @@ async function initUserDashboard() {
     };
 
     document.addEventListener('input', window.PPV_SLIDER_HANDLER);
-    console.log("✅ [Slider] Initialized");
+    ppvLog("✅ [Slider] Initialized");
   };
 
   // ============================================================
@@ -841,7 +846,7 @@ async function initUserDashboard() {
           if (details && toggleBtn) {
             details.classList.toggle('expanded');
             toggleBtn.classList.toggle('active');
-            console.log("✅ [Toggle] Store expanded/collapsed");
+            ppvLog("✅ [Toggle] Store expanded/collapsed");
           }
         }
         return;
@@ -854,7 +859,7 @@ async function initUserDashboard() {
         const lng = routeBtn.getAttribute('data-lng');
 
         if (!lat || !lng) {
-          console.error("❌ [Route] No coordinates");
+          ppvLog("❌ [Route] No coordinates");
           return;
         }
 
@@ -870,7 +875,7 @@ async function initUserDashboard() {
           window.open(googleMapsUrl, '_blank');
         }
 
-        console.log("✅ [Route] Opening maps with coords:", lat, lng);
+        ppvLog("✅ [Route] Opening maps with coords:", lat, lng);
         if (navigator.vibrate) navigator.vibrate(20);
         return;
       }
@@ -882,12 +887,12 @@ async function initUserDashboard() {
         const images = Array.from(card.querySelectorAll('.ppv-gallery-thumb')).map(img => img.src);
         const index = Array.from(card.querySelectorAll('.ppv-gallery-thumb')).indexOf(galleryThumb);
         openLightbox(images, index);
-        console.log("✅ [Gallery] Lightbox opened");
+        ppvLog("✅ [Gallery] Lightbox opened");
         return;
       }
     });
 
-    console.log("✅ [Listeners] All listeners attached (toggle + route + gallery)");
+    ppvLog("✅ [Listeners] All listeners attached (toggle + route + gallery)");
   };
 
   // ============================================================
@@ -901,19 +906,19 @@ async function initUserDashboard() {
   const initStores = async () => {
     const box = document.getElementById('ppv-store-list');
     if (!box) {
-      console.log('⏭️ [Stores] No store list element found');
+      ppvLog('⏭️ [Stores] No store list element found');
       return;
     }
 
     // Prevent duplicate loading
     if (window.PPV_STORES_LOADING) {
-      console.log('⏭️ [Stores] Already loading, skipping');
+      ppvLog('⏭️ [Stores] Already loading, skipping');
       return;
     }
     window.PPV_STORES_LOADING = true;
 
     const startTime = performance.now();
-    console.log('🏪 [Stores] Starting store load...');
+    ppvLog('🏪 [Stores] Starting store load...');
 
     // Show loading state
     box.innerHTML = `<p class="ppv-loading"><i class="ri-loader-4-line ri-spin"></i> ${T.loading}</p>`;
@@ -927,7 +932,7 @@ async function initUserDashboard() {
     if (cachedLat && cachedLng) {
       userLat = parseFloat(cachedLat);
       userLng = parseFloat(cachedLng);
-      console.log('⚡ [Geo] Using cached position:', userLat.toFixed(4), userLng.toFixed(4));
+      ppvLog('⚡ [Geo] Using cached position:', userLat.toFixed(4), userLng.toFixed(4));
     }
 
     // 1️⃣ Start geo request in background (non-blocking)
@@ -937,7 +942,7 @@ async function initUserDashboard() {
         return;
       }
       const timeout = setTimeout(() => {
-        console.log('⏱️ [Geo] Timeout after 2s');
+        ppvLog('⏱️ [Geo] Timeout after 2s');
         resolve(null);
       }, 2000);
 
@@ -947,7 +952,7 @@ async function initUserDashboard() {
           // Cache for next time
           localStorage.setItem('ppv_user_lat', p.coords.latitude.toString());
           localStorage.setItem('ppv_user_lng', p.coords.longitude.toString());
-          console.log('📍 [Geo] Fresh position cached:', p.coords.latitude.toFixed(4), p.coords.longitude.toFixed(4));
+          ppvLog('📍 [Geo] Fresh position cached:', p.coords.latitude.toFixed(4), p.coords.longitude.toFixed(4));
           resolve(p);
         },
         () => {
@@ -965,7 +970,7 @@ async function initUserDashboard() {
         url += `?lat=${userLat}&lng=${userLng}&max_distance=10`;
       }
 
-      console.log('🌐 [Stores] Fetching:', url);
+      ppvLog('🌐 [Stores] Fetching:', url);
       const res = await fetch(url, { cache: "no-store" });
 
       if (!res.ok) {
@@ -973,7 +978,7 @@ async function initUserDashboard() {
       }
 
       const stores = await res.json();
-      console.log('✅ [Stores] Loaded', stores?.length || 0, 'stores in', (performance.now() - startTime).toFixed(0), 'ms');
+      ppvLog('✅ [Stores] Loaded', stores?.length || 0, 'stores in', (performance.now() - startTime).toFixed(0), 'ms');
 
       // Render stores
       if (!Array.isArray(stores) || stores.length === 0) {
@@ -988,7 +993,7 @@ async function initUserDashboard() {
         if (freshPos?.coords) {
           const newLat = freshPos.coords.latitude;
           const newLng = freshPos.coords.longitude;
-          console.log('🔄 [Stores] Re-fetching with fresh geo...');
+          ppvLog('🔄 [Stores] Re-fetching with fresh geo...');
 
           // ✅ FIX: Use current slider distance value, not hardcoded 10
           const currentDist = window.PPV_CURRENT_DISTANCE || 10;
@@ -999,7 +1004,7 @@ async function initUserDashboard() {
             if (Array.isArray(newStores) && newStores.length > 0) {
               // ✅ FIX: Preserve slider value on re-render
               renderStoreList(box, newStores, newLat, newLng, true);
-              console.log('✅ [Stores] Re-rendered with distance sorting');
+              ppvLog('✅ [Stores] Re-rendered with distance sorting');
             }
           }
         }
@@ -1011,7 +1016,7 @@ async function initUserDashboard() {
     }
 
     window.PPV_STORES_LOADING = false;
-    console.log('🏁 [Stores] Done in', (performance.now() - startTime).toFixed(0), 'ms');
+    ppvLog('🏁 [Stores] Done in', (performance.now() - startTime).toFixed(0), 'ms');
   };
 
   // Helper function to render store list (avoids duplicate code)
@@ -1094,19 +1099,19 @@ async function initUserDashboard() {
   // ============================================================
 
   window.ppvShowPointToast = function(type = "success", points = 1, store = "PunktePass", errorMessage = "") {
-    console.log("🔔 [ppvShowPointToast] Called with:", { type, points, store, errorMessage });
+    ppvLog("🔔 [ppvShowPointToast] Called with:", { type, points, store, errorMessage });
 
     // Remove existing toast if present
     const existingToast = document.querySelector(".ppv-point-toast");
     if (existingToast) {
-      console.log("🗑️ [ppvShowPointToast] Removing existing toast");
+      ppvLog("🗑️ [ppvShowPointToast] Removing existing toast");
       existingToast.classList.remove("show");
       setTimeout(() => existingToast.remove(), 200);
     }
 
     // Function to create new toast
     const createToast = () => {
-      console.log("✨ [ppvShowPointToast] Creating new toast");
+      ppvLog("✨ [ppvShowPointToast] Creating new toast");
 
       const L = {
         de: { dup: "Heute bereits gescannt", err: "Offline", pend: "Verbindung...", add: "Punkt(e) von", from: "von" },
@@ -1132,17 +1137,17 @@ async function initUserDashboard() {
         text = `+${points} ${L.add} <strong>${store}</strong>`;
       }
 
-      console.log("📝 [ppvShowPointToast] Toast text:", text);
+      ppvLog("📝 [ppvShowPointToast] Toast text:", text);
 
       const toast = document.createElement("div");
       toast.className = "ppv-point-toast " + type;
       toast.innerHTML = `<div class="ppv-point-toast-inner"><div class="ppv-toast-icon">${icon}</div><div class="ppv-toast-text">${text}</div></div>`;
       document.body.appendChild(toast);
-      console.log("➕ [ppvShowPointToast] Toast appended to body");
+      ppvLog("➕ [ppvShowPointToast] Toast appended to body");
 
       setTimeout(() => {
         toast.classList.add("show");
-        console.log("👁️ [ppvShowPointToast] Toast shown");
+        ppvLog("👁️ [ppvShowPointToast] Toast shown");
       }, 30);
 
       if (type === "success" && navigator.vibrate) navigator.vibrate(40);
@@ -1151,21 +1156,21 @@ async function initUserDashboard() {
         toast.classList.remove("show");
         setTimeout(() => {
           toast.remove();
-          console.log("🗑️ [ppvShowPointToast] Toast removed after timeout");
+          ppvLog("🗑️ [ppvShowPointToast] Toast removed after timeout");
         }, 400);
       }, type === "success" ? 6500 : 4500);
     };
 
     // Wait for old toast to be removed before creating new one
     if (existingToast) {
-      console.log("⏳ [ppvShowPointToast] Waiting 250ms for old toast removal");
+      ppvLog("⏳ [ppvShowPointToast] Waiting 250ms for old toast removal");
       setTimeout(createToast, 250);
     } else {
       createToast();
     }
   };
 
-  console.log("✅ Dashboard initialized");
+  ppvLog("✅ Dashboard initialized");
 }
 
 // 🚀 Initialize on DOMContentLoaded
@@ -1181,7 +1186,7 @@ if (!window.PPV_DASHBOARD_TURBO_LISTENERS) {
 
   // 🧹 Turbo: Clean up BEFORE navigating away
   document.addEventListener('turbo:before-visit', function() {
-    console.log('🧹 [Turbo] Before visit - cleaning up polling');
+    ppvLog('🧹 [Turbo] Before visit - cleaning up polling');
     cleanupPolling();
   });
 
@@ -1198,7 +1203,7 @@ if (!window.PPV_DASHBOARD_TURBO_LISTENERS) {
 
   // 🚀 Custom SPA: Clean up and re-init
   window.addEventListener('ppv:spa-navigate', function() {
-    console.log('🧹 [SPA] Navigate event - cleanup then init');
+    ppvLog('🧹 [SPA] Navigate event - cleanup then init');
     cleanupPolling();
     // Reset dashboard flag
     const root = document.getElementById('ppv-dashboard-root');
@@ -1209,5 +1214,5 @@ if (!window.PPV_DASHBOARD_TURBO_LISTENERS) {
     setTimeout(initUserDashboard, 100);
   });
 
-  console.log('✅ [Dashboard] Turbo/SPA listeners registered (once)');
+  ppvLog('✅ [Dashboard] Turbo/SPA listeners registered (once)');
 }

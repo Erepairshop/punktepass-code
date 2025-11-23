@@ -6,13 +6,18 @@
  */
 
 jQuery(document).ready(function($) {
-    console.log("📊 [Stats COMPLETE JS v3.0] Loaded");
+    // ✅ DEBUG MODE - Set to false in production to reduce console spam
+    const PPV_DEBUG = false;
+    const ppvLog = (...args) => { if (PPV_DEBUG) console.log(...args); };
+    const ppvWarn = (...args) => { if (PPV_DEBUG) console.warn(...args); };
+
+    ppvLog("📊 [Stats COMPLETE JS v3.0] Loaded");
 
     // ============================================================
     // 🔧 CONFIG + TRANSLATIONS
     // ============================================================
     if (!window.ppvStats) {
-        console.error("❌ [Stats] Config missing!");
+        ppvLog("❌ [Stats] Config missing!");
         return;
     }
 
@@ -34,7 +39,7 @@ jQuery(document).ready(function($) {
     const $exportAdvBtn = $('#ppv-export-advanced');
     const $exportFormatSelect = $('#ppv-export-format');
 
-    console.log("✅ [Stats] Config OK");
+    ppvLog("✅ [Stats] Config OK");
 
     // ============================================================
     // 🛡️ HELPERS
@@ -58,7 +63,7 @@ jQuery(document).ready(function($) {
     }
 
     function showError(msg) {
-        console.error("❌ " + msg);
+        ppvLog("❌ " + msg);
         $loading.hide();
         $content.hide();
         $error.show().find('p').text(`❌ ${msg}`);
@@ -68,7 +73,7 @@ jQuery(document).ready(function($) {
     // 📊 LOAD BASIC STATS (1-3)
     // ============================================================
     function loadBasicStats(range = 'week') {
-        console.log(`📊 [Basic Stats] Loading range: ${range}`);
+        ppvLog(`📊 [Basic Stats] Loading range: ${range}`);
 
         $loading.show();
         $error.hide();
@@ -82,7 +87,7 @@ jQuery(document).ready(function($) {
             dataType: 'json',
             cache: false,
             success: function(res) {
-                console.log("✅ [Basic] Response OK");
+                ppvLog("✅ [Basic] Response OK");
 
                 if (!res || !res.success) {
                     showError(res.error || T['error_loading_data'] || 'Server error');
@@ -110,7 +115,7 @@ jQuery(document).ready(function($) {
     // 🎨 UPDATE BASIC STATS
     // ============================================================
     function updateBasicStats(data) {
-        console.log("🎨 [Basic] Updating");
+        ppvLog("🎨 [Basic] Updating");
 
         // Main stats cards
         $('#ppv-stat-daily').text(formatNumber(data.daily || 0));
@@ -133,7 +138,7 @@ jQuery(document).ready(function($) {
         // Peak hours
         updatePeakHours(data.peak_hours || []);
 
-        console.log("✅ [Basic] Updated");
+        ppvLog("✅ [Basic] Updated");
     }
 
     // ============================================================
@@ -173,7 +178,7 @@ jQuery(document).ready(function($) {
         });
 
         $container.html(html);
-        console.log("✅ [Top5] Updated");
+        ppvLog("✅ [Top5] Updated");
     }
 
     // ============================================================
@@ -205,7 +210,7 @@ jQuery(document).ready(function($) {
         });
 
         $container.html(html);
-        console.log("✅ [Peak] Updated");
+        ppvLog("✅ [Peak] Updated");
     }
 
     // ============================================================
@@ -213,12 +218,12 @@ jQuery(document).ready(function($) {
     // ============================================================
     function updateChart(chartData) {
         if (!ctx) {
-            console.warn("⚠️ [Chart] Canvas not found");
+            ppvWarn("⚠️ [Chart] Canvas not found");
             return;
         }
 
         if (!Array.isArray(chartData) || chartData.length === 0) {
-            console.warn("⚠️ [Chart] No data");
+            ppvWarn("⚠️ [Chart] No data");
             return;
         }
 
@@ -284,9 +289,9 @@ jQuery(document).ready(function($) {
                 }
             });
 
-            console.log("✅ [Chart] OK");
+            ppvLog("✅ [Chart] OK");
         } catch (e) {
-            console.error("❌ [Chart] Error:", e.message);
+            ppvLog("❌ [Chart] Error:", e.message);
         }
     }
 
@@ -294,7 +299,7 @@ jQuery(document).ready(function($) {
     // 4️⃣ LOAD TREND
     // ============================================================
     function loadTrend() {
-        console.log("📈 [Trend] Loading...");
+        ppvLog("📈 [Trend] Loading...");
 
         $.ajax({
             url: config.trend_url,
@@ -305,7 +310,7 @@ jQuery(document).ready(function($) {
             success: function(res) {
                 if (res.success) {
                     displayTrend(res);
-                    console.log("✅ [Trend] OK");
+                    ppvLog("✅ [Trend] OK");
                 }
             },
             error: function() {
@@ -368,7 +373,7 @@ jQuery(document).ready(function($) {
     // 5️⃣ LOAD SPENDING
     // ============================================================
     function loadSpending() {
-        console.log("💰 [Spending] Loading...");
+        ppvLog("💰 [Spending] Loading...");
 
         $.ajax({
             url: config.spending_url,
@@ -379,7 +384,7 @@ jQuery(document).ready(function($) {
             success: function(res) {
                 if (res.success) {
                     displaySpending(res);
-                    console.log("✅ [Spending] OK");
+                    ppvLog("✅ [Spending] OK");
                 }
             },
             error: function() {
@@ -454,7 +459,7 @@ jQuery(document).ready(function($) {
     // 6️⃣ LOAD CONVERSION
     // ============================================================
     function loadConversion() {
-        console.log("📊 [Conversion] Loading...");
+        ppvLog("📊 [Conversion] Loading...");
 
         $.ajax({
             url: config.conversion_url,
@@ -465,7 +470,7 @@ jQuery(document).ready(function($) {
             success: function(res) {
                 if (res.success) {
                     displayConversion(res);
-                    console.log("✅ [Conversion] OK");
+                    ppvLog("✅ [Conversion] OK");
                 }
             },
             error: function() {
@@ -532,7 +537,7 @@ jQuery(document).ready(function($) {
     // ============================================================
     $exportAdvBtn.on('click', function() {
         const format = $exportFormatSelect.val() || 'detailed';
-        console.log(`📥 [Export Advanced] Format: ${format}`);
+        ppvLog(`📥 [Export Advanced] Format: ${format}`);
 
         const $btn = $(this);
         const txt = $btn.text();
@@ -558,7 +563,7 @@ jQuery(document).ready(function($) {
                     link.click();
                     document.body.removeChild(link);
 
-                    console.log("✅ [Export Advanced] Downloaded");
+                    ppvLog("✅ [Export Advanced] Downloaded");
                 }
             },
             error: function() {
@@ -575,7 +580,7 @@ jQuery(document).ready(function($) {
     // ============================================================
     $exportBtn.on('click', function() {
         const range = $rangeSelect.val();
-        console.log(`📥 [Export Basic] Range: ${range}`);
+        ppvLog(`📥 [Export Basic] Range: ${range}`);
 
         const $btn = $(this);
         const txt = $btn.html();
@@ -622,16 +627,16 @@ jQuery(document).ready(function($) {
     // ============================================================
     // 🚀 INIT
     // ============================================================
-    console.log("🚀 [Stats COMPLETE] Initializing...");
+    ppvLog("🚀 [Stats COMPLETE] Initializing...");
 
     if (!config.ajax_url) {
-        console.error("❌ Config invalid!");
+        ppvLog("❌ Config invalid!");
         return;
     }
 
     // Check if user has a store (is a handler/merchant)
     if (!config.store_id || config.store_id === 0) {
-        console.log("ℹ️ [Stats] No store ID - stats not available for this user");
+        ppvLog("ℹ️ [Stats] No store ID - stats not available for this user");
         $loading.hide();
         $content.hide();
         $error.show().find('p').html('ℹ️ ' + (T['no_store_access'] || 'Statistics only available for merchants'));
@@ -644,5 +649,5 @@ jQuery(document).ready(function($) {
     loadSpending();
     loadConversion();
 
-    console.log("✅ [Stats COMPLETE] Ready!");
+    ppvLog("✅ [Stats COMPLETE] Ready!");
 });

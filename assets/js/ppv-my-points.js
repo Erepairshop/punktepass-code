@@ -7,10 +7,15 @@
  */
 
 (() => {
-  const DEBUG = true;
+  const DEBUG = false; // ✅ Disabled in production to reduce console spam
   let isOnline = navigator.onLine;
 
-  console.log('🟢 [PPV_MYPOINTS] Production script loaded');
+  // ✅ Production-safe logging - only logs when DEBUG is true
+  const log = (...args) => { if (DEBUG) console.log(...args); };
+  const warn = (...args) => { if (DEBUG) console.warn(...args); };
+  const error = console.error; // Always show errors
+
+  log('🟢 [PPV_MYPOINTS] Production script loaded');
 
   /** ============================
    * 🌍 DEFAULT FALLBACK STRINGS (Offline)
@@ -115,7 +120,7 @@
     // Merge: server > fallback
     const merged = Object.assign({}, defaults, serverLabels);
     
-    console.log(`🌍 [getLabels] lang=${lang}, strings=${Object.keys(merged).length}`);
+    log(`🌍 [getLabels] lang=${lang}, strings=${Object.keys(merged).length}`);
     return merged;
   }
 
@@ -126,13 +131,13 @@
 
   window.addEventListener("online", () => {
     isOnline = true;
-    console.log('🟢 [PPV_MYPOINTS] Back online!');
+    log('🟢 [PPV_MYPOINTS] Back online!');
     document.body.classList.remove("ppv-offline-mode");
   });
 
   window.addEventListener("offline", () => {
     isOnline = false;
-    console.log('🔴 [PPV_MYPOINTS] Offline mode');
+    log('🔴 [PPV_MYPOINTS] Offline mode');
     document.body.classList.add("ppv-offline-mode");
   });
 
@@ -141,7 +146,7 @@
 
   // 🌍 LISTEN FOR LANGUAGE CHANGE FROM DASHBOARD
   window.addEventListener('ppv_lang_changed', (e) => {
-    console.log('🌍 [PPV_MYPOINTS] Language changed event:', e.detail);
+    log('🌍 [PPV_MYPOINTS] Language changed event:', e.detail);
     if (e.detail.lang) {
       const newLang = e.detail.lang;
       if (['de', 'hu', 'ro'].includes(newLang)) {
@@ -158,18 +163,18 @@
     // ✅ FIRST: Check if we're on the my-points page
     const container = document.getElementById("ppv-my-points-app");
     if (!container) {
-      console.log('⏭️ [PPV_MYPOINTS] Not a my-points page, skipping');
+      log('⏭️ [PPV_MYPOINTS] Not a my-points page, skipping');
       return;
     }
 
     // ✅ Prevent duplicate initialization (causes HTTP 503 on rapid re-init)
     if (container.dataset.initialized === 'true') {
-      console.log('⏭️ [PPV_MYPOINTS] Already initialized, skipping');
+      log('⏭️ [PPV_MYPOINTS] Already initialized, skipping');
       return;
     }
     container.dataset.initialized = 'true';
 
-    console.log('📄 [PPV_MYPOINTS] Initializing...');
+    log('📄 [PPV_MYPOINTS] Initializing...');
     initLayout();
     initToken();
     initMyPoints();
@@ -196,7 +201,7 @@
    * 🧩 LAYOUT INIT
    * ============================ */
   function initLayout() {
-    console.log('🧩 [PPV_MYPOINTS] initLayout started');
+    log('🧩 [PPV_MYPOINTS] initLayout started');
     const body = document.body;
     body.classList.remove("ppv-user-dashboard");
     body.classList.add("ppv-app-mode", "ppv-my-points");
@@ -207,17 +212,17 @@
     
     void body.offsetHeight;
     setTimeout(() => window.scrollTo(0, 0), 50);
-    console.log('✅ [PPV_MYPOINTS] Layout OK');
+    log('✅ [PPV_MYPOINTS] Layout OK');
   }
 
   /** ============================
    * 🔐 TOKEN SYNC
    * ============================ */
   function initToken() {
-    console.log('🔐 [PPV_MYPOINTS] initToken started');
+    log('🔐 [PPV_MYPOINTS] initToken started');
     if (!window.ppvAuthToken && window.ppv_bridge?.token) {
       window.ppvAuthToken = window.ppv_bridge.token;
-      console.log("🔐 Token synced");
+      log("🔐 Token synced");
     }
   }
 
@@ -225,7 +230,7 @@
    * 🛡️ BOTTOM NAV PROTECTION
    * ============================ */
   function protectBottomNav() {
-    console.log('🛡️ [PPV_MYPOINTS] protectBottomNav started');
+    log('🛡️ [PPV_MYPOINTS] protectBottomNav started');
     const navItems = document.querySelectorAll('.ppv-bottom-nav .nav-item[data-navlink]');
     
     navItems.forEach(item => {
@@ -241,36 +246,36 @@
    * 🌍 INIT MY POINTS
    * ============================ */
   async function initMyPoints() {
-    console.log('🔍 [PPV_MYPOINTS::initMyPoints] ========== START ==========');
-    console.log('🔍 [PPV_MYPOINTS] Current URL:', window.location.href);
-    console.log('🔍 [PPV_MYPOINTS] Online status:', isOnline);
+    log('🔍 [PPV_MYPOINTS::initMyPoints] ========== START ==========');
+    log('🔍 [PPV_MYPOINTS] Current URL:', window.location.href);
+    log('🔍 [PPV_MYPOINTS] Online status:', isOnline);
 
     const container = document.getElementById("ppv-my-points-app");
     if (!container) {
-      console.log('ℹ️ [PPV_MYPOINTS] Container not found - script not needed on this page');
+      log('ℹ️ [PPV_MYPOINTS] Container not found - script not needed on this page');
       return;
     }
-    console.log('✅ [PPV_MYPOINTS] Container found:', container);
+    log('✅ [PPV_MYPOINTS] Container found:', container);
 
     // Check window.ppv_mypoints
-    console.log('🔍 [PPV_MYPOINTS] Checking window.ppv_mypoints...');
+    log('🔍 [PPV_MYPOINTS] Checking window.ppv_mypoints...');
     if (typeof window.ppv_mypoints === 'undefined') {
-      console.error('❌ [PPV_MYPOINTS] window.ppv_mypoints is UNDEFINED!');
-      console.log('🔍 [PPV_MYPOINTS] This means PHP inline script did not load or Service Worker cached old HTML');
+      error('❌ [PPV_MYPOINTS] window.ppv_mypoints is UNDEFINED!');
+      log('🔍 [PPV_MYPOINTS] This means PHP inline script did not load or Service Worker cached old HTML');
     } else {
-      console.log('✅ [PPV_MYPOINTS] window.ppv_mypoints exists:', window.ppv_mypoints);
-      console.log('    - ajaxurl:', window.ppv_mypoints.ajaxurl);
-      console.log('    - api_url:', window.ppv_mypoints.api_url);
-      console.log('    - lang:', window.ppv_mypoints.lang);
-      console.log('    - nonce:', window.ppv_mypoints.nonce ? window.ppv_mypoints.nonce.substring(0, 10) + '...' : 'NOT SET');
+      log('✅ [PPV_MYPOINTS] window.ppv_mypoints exists:', window.ppv_mypoints);
+      log('    - ajaxurl:', window.ppv_mypoints.ajaxurl);
+      log('    - api_url:', window.ppv_mypoints.api_url);
+      log('    - lang:', window.ppv_mypoints.lang);
+      log('    - nonce:', window.ppv_mypoints.nonce ? window.ppv_mypoints.nonce.substring(0, 10) + '...' : 'NOT SET');
     }
 
     // Check window.ppv_lang
-    console.log('🔍 [PPV_MYPOINTS] Checking window.ppv_lang...');
+    log('🔍 [PPV_MYPOINTS] Checking window.ppv_lang...');
     if (typeof window.ppv_lang === 'undefined') {
-      console.warn('⚠️ [PPV_MYPOINTS] window.ppv_lang is UNDEFINED - using fallback strings');
+      warn('⚠️ [PPV_MYPOINTS] window.ppv_lang is UNDEFINED - using fallback strings');
     } else {
-      console.log('✅ [PPV_MYPOINTS] window.ppv_lang exists with', Object.keys(window.ppv_lang).length, 'keys');
+      log('✅ [PPV_MYPOINTS] window.ppv_lang exists with', Object.keys(window.ppv_lang).length, 'keys');
     }
 
     // Get language from global
@@ -278,20 +283,20 @@
     if (!["de", "hu", "ro"].includes(lang)) lang = "de";
 
     const l = getLabels(lang);
-    console.log('🌍 [PPV_MYPOINTS] Active language:', lang);
-    console.log('🔍 [PPV_MYPOINTS] Labels loaded:', Object.keys(l).length, 'keys');
+    log('🌍 [PPV_MYPOINTS] Active language:', lang);
+    log('🔍 [PPV_MYPOINTS] Labels loaded:', Object.keys(l).length, 'keys');
 
     document.dispatchEvent(new Event("ppv-show-loader"));
 
     try {
-      console.log('📡 [PPV_MYPOINTS] Fetching points data...');
+      log('📡 [PPV_MYPOINTS] Fetching points data...');
 
       let pointsData = null;
 
       if (isOnline) {
         pointsData = await fetchPointsFromServer(lang);
       } else {
-        console.log('🔴 [PPV_MYPOINTS] Offline mode - loading cache');
+        log('🔴 [PPV_MYPOINTS] Offline mode - loading cache');
         if (window.ppv_offlineDB) {
           pointsData = await window.ppv_offlineDB.getPointsData();
         }
@@ -301,19 +306,19 @@
         throw new Error(l.error_loading || 'No data available');
       }
 
-      console.log('✅ [PPV_MYPOINTS] Data loaded successfully');
+      log('✅ [PPV_MYPOINTS] Data loaded successfully');
       renderPoints(container, pointsData, lang, l);
 
     } catch (err) {
-      console.error("❌ [PPV_MYPOINTS] Error:", err.message);
-      console.error("❌ [PPV_MYPOINTS] Full error:", err);
+      error("❌ [PPV_MYPOINTS] Error:", err.message);
+      error("❌ [PPV_MYPOINTS] Full error:", err);
       const l = getLabels(lang);
       container.innerHTML = `<div style="padding: 20px; color: #f55; text-align: center;">
         <strong>❌ ${l.error}:</strong> ${escapeHtml(err.message)}
       </div>`;
     } finally {
       document.dispatchEvent(new Event("ppv-hide-loader"));
-      console.log('🔍 [PPV_MYPOINTS::initMyPoints] ========== END ==========');
+      log('🔍 [PPV_MYPOINTS::initMyPoints] ========== END ==========');
     }
   }
 
@@ -321,11 +326,11 @@
    * 📡 FETCH FROM SERVER
    * ============================ */
   async function fetchPointsFromServer(lang) {
-    console.log('🔍 [fetchPointsFromServer] ========== START ==========');
-    console.log('🔍 [fetchPointsFromServer] Lang:', lang);
+    log('🔍 [fetchPointsFromServer] ========== START ==========');
+    log('🔍 [fetchPointsFromServer] Lang:', lang);
 
     const token = window.ppvAuthToken || window.ppv_bridge?.token || "";
-    console.log('🔍 [fetchPointsFromServer] Token:', token ? token.substring(0, 20) + '...' : 'NOT SET');
+    log('🔍 [fetchPointsFromServer] Token:', token ? token.substring(0, 20) + '...' : 'NOT SET');
 
     const headers = new Headers();
     headers.append("Cache-Control", "no-cache");
@@ -337,15 +342,15 @@
     // és 403-at ad vissza invalid nonce esetén, MÉG A permission callback előtt!
     // Mivel saját session-based permission callback-ünk van (check_mypoints_permission),
     // nincs szükség WordPress nonce-ra.
-    console.log('🔍 [fetchPointsFromServer] NOT sending X-WP-Nonce (using session-based auth instead)');
+    log('🔍 [fetchPointsFromServer] NOT sending X-WP-Nonce (using session-based auth instead)');
 
     const apiUrl = window.ppv_mypoints?.api_url ||
                    `${location.origin}/wp-json/ppv/v1/mypoints`;
 
-    console.log('🔍 [fetchPointsFromServer] API URL:', apiUrl);
-    console.log('🔍 [fetchPointsFromServer] Using fallback URL:', !window.ppv_mypoints?.api_url);
+    log('🔍 [fetchPointsFromServer] API URL:', apiUrl);
+    log('🔍 [fetchPointsFromServer] Using fallback URL:', !window.ppv_mypoints?.api_url);
 
-    console.log('📡 [fetchPointsFromServer] Making fetch request...');
+    log('📡 [fetchPointsFromServer] Making fetch request...');
     const res = await fetch(apiUrl, {
       method: "GET",
       headers,
@@ -353,22 +358,22 @@
       cache: "no-store",
     });
 
-    console.log('🔍 [fetchPointsFromServer] Response status:', res.status, res.statusText);
-    console.log('🔍 [fetchPointsFromServer] Response headers:');
+    log('🔍 [fetchPointsFromServer] Response status:', res.status, res.statusText);
+    log('🔍 [fetchPointsFromServer] Response headers:');
     res.headers.forEach((value, key) => {
-      console.log(`    - ${key}: ${value}`);
+      log(`    - ${key}: ${value}`);
     });
 
     if (!res.ok) {
-      console.error('❌ [fetchPointsFromServer] HTTP error:', res.status);
+      error('❌ [fetchPointsFromServer] HTTP error:', res.status);
 
       // Try to get error body
       let errorBody = '';
       try {
         errorBody = await res.text();
-        console.error('❌ [fetchPointsFromServer] Error body:', errorBody);
+        error('❌ [fetchPointsFromServer] Error body:', errorBody);
       } catch (e) {
-        console.error('❌ [fetchPointsFromServer] Could not read error body');
+        error('❌ [fetchPointsFromServer] Could not read error body');
       }
 
       const l = getLabels(lang);
@@ -379,8 +384,8 @@
     }
 
     const jsonData = await res.json();
-    console.log('✅ [fetchPointsFromServer] Success! Data:', jsonData);
-    console.log('🔍 [fetchPointsFromServer] ========== END ==========');
+    log('✅ [fetchPointsFromServer] Success! Data:', jsonData);
+    log('🔍 [fetchPointsFromServer] ========== END ==========');
     return jsonData;
   }
 
@@ -388,7 +393,7 @@
    * 🎨 RENDER POINTS
    * ============================ */
   function renderPoints(container, json, lang, l) {
-    console.log('🎨 renderPoints started');
+    log('🎨 renderPoints started');
     
     const d = json.data || {};
     const total = d.total || 0;
@@ -468,16 +473,16 @@
     `;
 
     container.innerHTML = html;
-    console.log('✅ Render complete');
+    log('✅ Render complete');
 
     // Init analytics
     if (window.ppv_analytics) {
       setTimeout(() => {
         try {
           window.ppv_analytics.init('ppv-analytics-section');
-          console.log('✅ Analytics initialized');
+          log('✅ Analytics initialized');
         } catch (err) {
-          console.warn('⚠️ Analytics error:', err.message);
+          warn('⚠️ Analytics error:', err.message);
         }
       }, 100);
     }
@@ -605,13 +610,13 @@ function claimReward(storeId) {
    * 🧠 DEBUG
    * ============================ */
   function initDebug() {
-    console.log('🧠 [PPV_DEBUG] ===== DEBUG INFO =====');
-    console.log('🧠 Online:', isOnline);
-    console.log('🧠 Container:', !!document.getElementById("ppv-my-points-app"));
-    console.log('🧠 API URL:', window.ppv_mypoints?.api_url);
-    console.log('🧠 Lang:', window.ppv_mypoints?.lang);
-    console.log('🧠 Strings:', Object.keys(window.ppv_lang || {}).length);
-    console.log('🧠 =======================');
+    log('🧠 [PPV_DEBUG] ===== DEBUG INFO =====');
+    log('🧠 Online:', isOnline);
+    log('🧠 Container:', !!document.getElementById("ppv-my-points-app"));
+    log('🧠 API URL:', window.ppv_mypoints?.api_url);
+    log('🧠 Lang:', window.ppv_mypoints?.lang);
+    log('🧠 Strings:', Object.keys(window.ppv_lang || {}).length);
+    log('🧠 =======================');
   }
 
 })();

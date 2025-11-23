@@ -8,9 +8,13 @@
 (function() {
   'use strict';
 
+  // ✅ DEBUG MODE - Set to false in production to reduce console spam
+  const PPV_DEBUG = false;
+  const ppvLog = (...args) => { if (PPV_DEBUG) console.log(...args); };
+
   // Guard against multiple script loads
   if (window.PPV_REWARDS_LOADED) {
-    console.log('[REWARDS] Already loaded, skipping');
+    ppvLog('[REWARDS] Already loaded, skipping');
     return;
   }
   window.PPV_REWARDS_LOADED = true;
@@ -325,7 +329,7 @@
       }
 
     } catch (err) {
-      console.error('[REWARDS] Load error:', err);
+      ppvLog('[REWARDS] Load error:', err);
       redeemList.innerHTML = `<div class="ppv-error">${L.redeem_load_error || 'Fehler beim Laden'}</div>`;
     }
   }
@@ -372,7 +376,7 @@
       });
 
     } catch (err) {
-      console.error('[REWARDS] Log error:', err);
+      ppvLog('[REWARDS] Log error:', err);
     }
   }
 
@@ -402,7 +406,7 @@
         showToast(json.message, 'error');
       }
     } catch (err) {
-      console.error('[REWARDS] Update error:', err);
+      ppvLog('[REWARDS] Update error:', err);
       showToast(L.redeem_error_processing || 'Fehler bei der Verarbeitung', 'error');
     }
   }
@@ -538,7 +542,7 @@
         setTimeout(() => modal.remove(), 300);
 
       } catch (err) {
-        console.error('[REWARDS] Monthly PDF error:', err);
+        ppvLog('[REWARDS] Monthly PDF error:', err);
         resultBox.innerHTML = `<div class='ppv-error'>Fehler bei der Generierung</div>`;
       }
 
@@ -599,12 +603,12 @@
     const logList = document.getElementById("ppv-log-list");
 
     if (!redeemList && !logList) {
-      console.log('[REWARDS] No reward elements on this page');
+      ppvLog('[REWARDS] No reward elements on this page');
       cleanup();
       return;
     }
 
-    console.log('[REWARDS] Initializing...');
+    ppvLog('[REWARDS] Initializing...');
 
     // Cleanup old state
     cleanup();
@@ -628,16 +632,16 @@
 
     // Start auto-refresh (only if not already running)
     if (!STATE.refreshInterval) {
-      console.log('[REWARDS] Starting auto-refresh interval (30s)');
+      ppvLog('[REWARDS] Starting auto-refresh interval (30s)');
       STATE.refreshInterval = setInterval(() => {
-        console.log('[REWARDS] Auto-refresh tick');
+        ppvLog('[REWARDS] Auto-refresh tick');
         loadRedeemRequests();
         loadRecentLogs();
       }, 30000);  // Changed from 10s to 30s to reduce load
     }
 
     STATE.initialized = true;
-    console.log('[REWARDS] Initialization complete');
+    ppvLog('[REWARDS] Initialization complete');
   }
 
   // ============================================================
@@ -654,18 +658,18 @@
   // Turbo.js support
   document.addEventListener('turbo:load', init);
   document.addEventListener('turbo:before-visit', function() {
-    console.log('[REWARDS] Turbo before-visit - cleanup');
+    ppvLog('[REWARDS] Turbo before-visit - cleanup');
     cleanup();
   });
 
   // Custom SPA event support - cleanup FIRST, then init
   window.addEventListener('ppv:spa-navigate', function() {
-    console.log('[REWARDS] SPA navigate - cleanup then init');
+    ppvLog('[REWARDS] SPA navigate - cleanup then init');
     cleanup();
     // Small delay to ensure DOM is ready
     setTimeout(init, 100);
   });
 
-  console.log('[REWARDS] Script loaded v8.2 (fixed interval bug)');
+  ppvLog('[REWARDS] Script loaded v8.2 (fixed interval bug)');
 
 })();
