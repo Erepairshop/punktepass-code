@@ -19,6 +19,8 @@ class PPV_QR {
         add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
         add_action('rest_api_init', [__CLASS__, 'register_rest_routes']);
         add_action('wp_ajax_ppv_switch_filiale', [__CLASS__, 'ajax_switch_filiale']);
+        // Pusher auth endpoint for private channels
+        add_action('wp_ajax_ppv_pusher_auth', [__CLASS__, 'ajax_pusher_auth']);
     }
 
     // ============================================================
@@ -371,7 +373,13 @@ class PPV_QR {
 
         // Only enqueue camera scanner JS for handlers/scanners
         if ($is_handler) {
-            wp_enqueue_script('ppv-qr', PPV_PLUGIN_URL . 'assets/js/ppv-qr.js', ['jquery'], time(), true);
+            // Load Pusher JS library if configured
+            if (class_exists('PPV_Pusher') && PPV_Pusher::is_enabled()) {
+                wp_enqueue_script('pusher-js', 'https://js.pusher.com/8.2.0/pusher.min.js', [], '8.2.0', true);
+                wp_enqueue_script('ppv-qr', PPV_PLUGIN_URL . 'assets/js/ppv-qr.js', ['jquery', 'pusher-js'], time(), true);
+            } else {
+                wp_enqueue_script('ppv-qr', PPV_PLUGIN_URL . 'assets/js/ppv-qr.js', ['jquery'], time(), true);
+            }
 
             $lang = sanitize_text_field($_COOKIE['ppv_lang'] ?? '');
             if (empty($lang) || !in_array($lang, ['de', 'hu', 'ro'])) {
@@ -441,10 +449,22 @@ class PPV_QR {
                 ));
             }
 
-            wp_localize_script('ppv-qr', 'PPV_STORE_DATA', [
+            // Build store data with optional Pusher config
+            $store_data = [
                 'store_id' => intval($store_id),
                 'store_key' => $store_key ?: '',
-            ]);
+            ];
+
+            // Add Pusher config if enabled
+            if (class_exists('PPV_Pusher') && PPV_Pusher::is_enabled()) {
+                $store_data['pusher'] = [
+                    'key' => PPV_Pusher::get_key(),
+                    'cluster' => PPV_Pusher::get_cluster(),
+                    'auth_endpoint' => admin_url('admin-ajax.php?action=ppv_pusher_auth'),
+                ];
+            }
+
+            wp_localize_script('ppv-qr', 'PPV_STORE_DATA', $store_data);
 
             wp_enqueue_script('ppv-hidden-scan', PPV_PLUGIN_URL . 'assets/js/ppv-hidden-scan.js', [], time(), true);
 
@@ -1828,6 +1848,30 @@ class PPV_QR {
             $store_id
         ));
 
+        // 📡 PUSHER: Send real-time notification (non-blocking)
+        if (class_exists('PPV_Pusher') && PPV_Pusher::is_enabled()) {
+            // Get user info for notification
+            $user_info = $wpdb->get_row($wpdb->prepare("
+                SELECT first_name, last_name, email, avatar
+                FROM {$wpdb->prefix}ppv_users WHERE id = %d
+            ", $user_id));
+
+            $customer_name = trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
+
+            PPV_Pusher::trigger_scan($store_id, [
+                'user_id' => $user_id,
+                'customer_name' => $customer_name ?: null,
+                'email' => $user_info->email ?? null,
+                'avatar' => $user_info->avatar ?? null,
+                'message' => $log_msg,
+                'points' => (string)$points_add,
+                'vip_bonus' => $vip_bonus_applied,
+                'date_short' => date('d.m.'),
+                'time_short' => date('H:i'),
+                'success' => true,
+            ]);
+        }
+
         // Build response message with VIP info
         $vip_suffix = $vip_bonus_applied > 0 ? " (VIP-Bonus: +{$vip_bonus_applied})" : '';
         $success_msg = "✅ +{$points_add} " . self::t('points', 'Punkte') . $vip_suffix;
@@ -1860,12 +1904,95 @@ class PPV_QR {
 
         $store_id = intval($session_store->id);
 
-        return new WP_REST_Response($wpdb->get_results($wpdb->prepare("
-            SELECT created_at, user_id, message
-            FROM {$wpdb->prefix}ppv_pos_log
-            WHERE store_id=%d
-            ORDER BY id DESC LIMIT 15
-        ", $store_id)), 200);
+        // ✅ FIX: Get logs from ppv_users table (NOT WordPress users!)
+        $logs = $wpdb->get_results($wpdb->prepare("
+            SELECT
+                l.created_at,
+                l.user_id,
+                l.message,
+                l.type,
+                u.email,
+                u.first_name,
+                u.last_name,
+                u.avatar
+            FROM {$wpdb->prefix}ppv_pos_log l
+            LEFT JOIN {$wpdb->prefix}ppv_users u ON l.user_id = u.id
+            WHERE l.store_id=%d
+            ORDER BY l.id DESC LIMIT 15
+        ", $store_id));
+
+        // Format response for JS with detailed info
+        $formatted = array_map(function($log) {
+            $created = strtotime($log->created_at);
+
+            // Extract points from message (e.g., "+5 Punkte" → 5)
+            $points = '-';
+            if (preg_match('/\+(\d+)/', $log->message, $m)) {
+                $points = $m[1];
+            }
+
+            // Build display: Name > Email > #ID
+            $first = trim($log->first_name ?? '');
+            $last = trim($log->last_name ?? '');
+            $full_name = trim("$first $last");
+            $email = $log->email ?? '';
+
+            return [
+                'user_id' => $log->user_id,
+                'customer_name' => $full_name ?: null,
+                'email' => $email ?: null,
+                'avatar' => $log->avatar ?: null,
+                'message' => $log->message,
+                'date_short' => date('d.m.', $created),
+                'time_short' => date('H:i', $created),
+                'points' => $points,
+                'success' => ($log->type === 'qr_scan'),
+            ];
+        }, $logs);
+
+        return new WP_REST_Response($formatted, 200);
+    }
+
+    // ============================================================
+    // 📡 PUSHER: Auth endpoint for private channels
+    // ============================================================
+    public static function ajax_pusher_auth() {
+        // Get store from POS token
+        $store_key = isset($_SERVER['HTTP_PPV_POS_TOKEN'])
+            ? sanitize_text_field($_SERVER['HTTP_PPV_POS_TOKEN'])
+            : '';
+
+        if (empty($store_key)) {
+            wp_send_json_error('Unauthorized', 401);
+        }
+
+        $store = self::get_store_by_key($store_key);
+        if (!$store) {
+            wp_send_json_error('Invalid store', 401);
+        }
+
+        // Validate channel matches store
+        $channel_name = sanitize_text_field($_POST['channel_name'] ?? '');
+        $socket_id = sanitize_text_field($_POST['socket_id'] ?? '');
+
+        // Channel format: private-store-{store_id}
+        $expected_channel = 'private-store-' . intval($store->id);
+        if ($channel_name !== $expected_channel) {
+            wp_send_json_error('Channel mismatch', 403);
+        }
+
+        // Check if Pusher is configured
+        if (!class_exists('PPV_Pusher') || !PPV_Pusher::is_enabled()) {
+            wp_send_json_error('Pusher not configured', 500);
+        }
+
+        // Generate auth
+        $auth = PPV_Pusher::auth($channel_name, $socket_id);
+        if (!$auth) {
+            wp_send_json_error('Auth failed', 500);
+        }
+
+        wp_send_json($auth);
     }
 
     // ============================================================

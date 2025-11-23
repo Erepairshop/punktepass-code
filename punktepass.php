@@ -18,6 +18,14 @@ define('PPV_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('PPV_CSS_LOCKDOWN', true);
 
 // ========================================
+// 📡 PUSHER REAL-TIME CONFIG
+// ========================================
+define('PPV_PUSHER_APP_ID', '2081758');
+define('PPV_PUSHER_KEY', '342e2e0b87cce8df8905');
+define('PPV_PUSHER_SECRET', 'fb12777135a68050a16d');
+define('PPV_PUSHER_CLUSTER', 'eu');
+
+// ========================================
 // 🔐 SESSION INIT (Early Priority)
 // ========================================
 add_action('init', function () {
@@ -247,6 +255,7 @@ $core_modules = [
      'includes/class-ppv-legal.php',
      'includes/class-ppv-user-level.php',
      'includes/class-ppv-vip-settings.php',
+     'includes/class-ppv-pusher.php',
 
 ];
 
