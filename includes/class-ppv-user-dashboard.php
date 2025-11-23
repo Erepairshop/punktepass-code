@@ -48,14 +48,37 @@ class PPV_User_Dashboard {
     }
 
     private static function get_safe_user_id() {
+        global $wpdb;
         self::ensure_session();
 
+        // Priority 1: Session ppv_user_id (already the correct ppv_users.id)
         if (!empty($_SESSION['ppv_user_id'])) {
             return intval($_SESSION['ppv_user_id']);
         }
 
+        // Priority 2: WordPress user - but we need to find the corresponding ppv_users.id!
         $wp_uid = get_current_user_id();
         if ($wp_uid > 0) {
+            // ✅ FIX: Lookup ppv_users.id by WordPress user's email
+            // WordPress user ID is NOT the same as ppv_users.id!
+            $wp_user = get_userdata($wp_uid);
+            if ($wp_user && $wp_user->user_email) {
+                $ppv_user_id = $wpdb->get_var($wpdb->prepare(
+                    "SELECT id FROM {$wpdb->prefix}ppv_users WHERE email = %s LIMIT 1",
+                    $wp_user->user_email
+                ));
+
+                if ($ppv_user_id) {
+                    // Cache in session for future requests
+                    $_SESSION['ppv_user_id'] = $ppv_user_id;
+                    error_log("✅ [PPV_Dashboard] get_safe_user_id: Mapped WP user #{$wp_uid} ({$wp_user->user_email}) to ppv_users.id={$ppv_user_id}");
+                    return intval($ppv_user_id);
+                } else {
+                    error_log("⚠️ [PPV_Dashboard] get_safe_user_id: WP user #{$wp_uid} ({$wp_user->user_email}) NOT FOUND in ppv_users table");
+                }
+            }
+            // Fallback: return WordPress user ID (but this may not have points!)
+            error_log("⚠️ [PPV_Dashboard] get_safe_user_id: Falling back to WP user ID #{$wp_uid} (may not have points)");
             return $wp_uid;
         }
 
