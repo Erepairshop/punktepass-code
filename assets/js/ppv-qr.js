@@ -1651,6 +1651,12 @@ document.addEventListener("DOMContentLoaded", function () {
   const campaignList = document.getElementById("ppv-campaign-list");
   const campaignModal = document.getElementById("ppv-campaign-modal");
 
+  // 🔧 FIX: Move modal to body to escape stacking context from glass-card transform
+  if (campaignModal && campaignModal.parentElement !== document.body) {
+    document.body.appendChild(campaignModal);
+    console.log("📌 Campaign modal moved to body for proper fixed positioning");
+  }
+
   // Initialize even without input (for scanner-only mode)
   const ui = new UIManager(resultBox, logTable, campaignList);
   const scanProcessor = new ScanProcessor(ui);
