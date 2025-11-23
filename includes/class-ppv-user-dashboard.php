@@ -856,14 +856,18 @@ public static function render_dashboard() {
     public static function rest_poll_points(WP_REST_Request $request) {
         global $wpdb;
 
-        $user_id = get_current_user_id();
+        // ✅ FIX: Use helper methods for session + user ID (same as rest_get_detailed_points)
+        self::ensure_session();
 
-        if (!$user_id && !empty($_SESSION['ppv_user_id'])) {
-            $user_id = intval($_SESSION['ppv_user_id']);
+        // ✅ FORCE SESSION RESTORE (Google/Facebook/TikTok login)
+        if (class_exists('PPV_SessionBridge') && empty($_SESSION['ppv_user_id'])) {
+            PPV_SessionBridge::restore_from_token();
         }
 
+        $user_id = self::get_safe_user_id();
+
         if ($user_id <= 0) {
-            error_log("❌ [PPV_Dashboard] rest_poll_points: No user found");
+            error_log("❌ [PPV_Dashboard] rest_poll_points: No user found (WP=" . get_current_user_id() . ", SESSION=" . ($_SESSION['ppv_user_id'] ?? 'none') . ")");
             return new WP_REST_Response(['success' => false, 'points' => 0], 401);
         }
 
