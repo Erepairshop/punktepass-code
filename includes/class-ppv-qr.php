@@ -19,9 +19,8 @@ class PPV_QR {
         add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
         add_action('rest_api_init', [__CLASS__, 'register_rest_routes']);
         add_action('wp_ajax_ppv_switch_filiale', [__CLASS__, 'ajax_switch_filiale']);
-        // 📡 SSE: Server-Sent Events for real-time scan updates
-        add_action('wp_ajax_ppv_logs_sse', [__CLASS__, 'ajax_logs_sse']);
-        add_action('wp_ajax_nopriv_ppv_logs_sse', [__CLASS__, 'ajax_logs_sse']);
+        // SSE disabled - was blocking PHP workers and causing slow scan processing
+        // Using client-side polling instead (5s interval, non-blocking)
     }
 
     // ============================================================
