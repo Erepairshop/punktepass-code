@@ -164,6 +164,8 @@ class PPV_Stats {
     // 📦 ENQUEUE ASSETS + TRANSLATIONS
     // ========================================
     public static function enqueue_assets() {
+        global $wpdb;
+
         error_log('📈 [Stats] enqueue_assets() called');
 
         wp_enqueue_script('jquery');
@@ -173,6 +175,17 @@ class PPV_Stats {
 
         $store_id = self::get_handler_store_id();
         $lang = self::get_user_lang();
+
+        // 🏪 FILIALE SUPPORT: Get parent ID and all filialen
+        $parent_id = class_exists('PPV_Filiale') ? PPV_Filiale::get_parent_id($store_id) : $store_id;
+        $filialen = $wpdb->get_results($wpdb->prepare("
+            SELECT id, name, city
+            FROM {$wpdb->prefix}ppv_stores
+            WHERE id=%d OR parent_store_id=%d
+            ORDER BY id ASC
+        ", $parent_id, $parent_id));
+
+        $filiale_ids = array_map(function($f) { return intval($f->id); }, $filialen);
 
         // ✅ JAVÍTÁS 1: Initialize translations array
         $translations = [];
@@ -192,13 +205,35 @@ class PPV_Stats {
             'export_adv_url' => esc_url(rest_url('punktepass/v1/stats/export-advanced')),
             'nonce' => wp_create_nonce('wp_rest'),
             'store_id' => intval($store_id ?? 0),
+            'parent_id' => intval($parent_id ?? 0),
+            'filiale_ids' => $filiale_ids,
             'lang' => $lang,
             'translations' => $translations,
             'debug' => defined('WP_DEBUG') && WP_DEBUG
         ];
 
-        error_log("📊 [Stats] JS Data: store_id=" . $data['store_id'] . ", lang=" . $lang . ", translations=" . count($translations));
+        error_log("📊 [Stats] JS Data: store_id=" . $data['store_id'] . ", parent_id=" . $data['parent_id'] . ", filialen=" . count($filiale_ids));
         wp_add_inline_script('ppv-stats', "window.ppvStats = " . wp_json_encode($data) . ";", 'before');
+    }
+
+    // ========================================
+    // 🏪 HELPER: Get store IDs for filiale filter
+    // ========================================
+    private static function get_store_ids_for_filiale($req, $store_id) {
+        global $wpdb;
+
+        $filiale_param = sanitize_text_field($req->get_param('filiale') ?? '');
+        $parent_id = class_exists('PPV_Filiale') ? PPV_Filiale::get_parent_id($store_id) : $store_id;
+
+        if ($filiale_param === 'all' || empty($filiale_param)) {
+            $filialen = $wpdb->get_col($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE id=%d OR parent_store_id=%d",
+                $parent_id, $parent_id
+            ));
+            return array_map('intval', $filialen);
+        }
+
+        return [intval($filiale_param)];
     }
 
     // ========================================
@@ -214,32 +249,36 @@ class PPV_Stats {
             return new WP_REST_Response(['success' => false, 'error' => 'No store'], 403);
         }
 
+        // 🏪 FILIALE SUPPORT
+        $store_ids = self::get_store_ids_for_filiale($req, $store_id);
+        $store_ids_placeholder = implode(',', array_fill(0, count($store_ids), '%d'));
+
         $table_points = $wpdb->prefix . 'ppv_points';
         $table_redeemed = $wpdb->prefix . 'ppv_rewards_redeemed';
         $today = current_time('Y-m-d');
         $week_start = date('Y-m-d', strtotime('monday this week', strtotime($today)));
         $month_start = date('Y-m-01', strtotime($today));
 
-        // Main stats
+        // Main stats (with IN clause for multiple stores)
         $daily = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM $table_points WHERE store_id=%d AND DATE(created)=%s",
-            $store_id, $today
+            "SELECT COUNT(*) FROM $table_points WHERE store_id IN ($store_ids_placeholder) AND DATE(created)=%s",
+            ...array_merge($store_ids, [$today])
         ));
         $weekly = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM $table_points WHERE store_id=%d AND DATE(created) >= %s",
-            $store_id, $week_start
+            "SELECT COUNT(*) FROM $table_points WHERE store_id IN ($store_ids_placeholder) AND DATE(created) >= %s",
+            ...array_merge($store_ids, [$week_start])
         ));
         $monthly = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM $table_points WHERE store_id=%d AND DATE(created) >= %s",
-            $store_id, $month_start
+            "SELECT COUNT(*) FROM $table_points WHERE store_id IN ($store_ids_placeholder) AND DATE(created) >= %s",
+            ...array_merge($store_ids, [$month_start])
         ));
         $all_time = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM $table_points WHERE store_id=%d",
-            $store_id
+            "SELECT COUNT(*) FROM $table_points WHERE store_id IN ($store_ids_placeholder)",
+            ...$store_ids
         ));
         $unique = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(DISTINCT user_id) FROM $table_points WHERE store_id=%d",
-            $store_id
+            "SELECT COUNT(DISTINCT user_id) FROM $table_points WHERE store_id IN ($store_ids_placeholder)",
+            ...$store_ids
         ));
 
         // Chart (7-day)
@@ -247,28 +286,28 @@ class PPV_Stats {
         for ($i = 6; $i >= 0; $i--) {
             $date = date('Y-m-d', strtotime("-$i days", strtotime($today)));
             $count = (int) $wpdb->get_var($wpdb->prepare(
-                "SELECT COUNT(*) FROM $table_points WHERE store_id=%d AND DATE(created)=%s",
-                $store_id, $date
+                "SELECT COUNT(*) FROM $table_points WHERE store_id IN ($store_ids_placeholder) AND DATE(created)=%s",
+                ...array_merge($store_ids, [$date])
             ));
             $chart[] = ['date' => $date, 'count' => $count];
         }
 
         // Top 5 Users
         $top5 = $wpdb->get_results($wpdb->prepare("
-            SELECT 
-                p.user_id, 
-                COUNT(*) as purchases, 
+            SELECT
+                p.user_id,
+                COUNT(*) as purchases,
                 SUM(p.points) as total_points,
                 pu.email,
                 pu.first_name,
                 pu.last_name
             FROM $table_points p
             LEFT JOIN {$wpdb->prefix}ppv_users pu ON p.user_id = pu.id
-            WHERE p.store_id=%d
+            WHERE p.store_id IN ($store_ids_placeholder)
             GROUP BY p.user_id
             ORDER BY total_points DESC
             LIMIT 5
-        ", $store_id));
+        ", ...$store_ids));
 
         $top5_formatted = [];
         foreach ($top5 as $user) {
@@ -285,33 +324,33 @@ class PPV_Stats {
             ];
         }
 
-        // Rewards Stats
+        // Rewards Stats (with IN clause for multiple stores)
         $rewards_total = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM $table_redeemed WHERE store_id=%d",
-            $store_id
+            "SELECT COUNT(*) FROM $table_redeemed WHERE store_id IN ($store_ids_placeholder)",
+            ...$store_ids
         ));
         $rewards_approved = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM $table_redeemed WHERE store_id=%d AND status IN ('approved', 'bestätigt')",
-            $store_id
+            "SELECT COUNT(*) FROM $table_redeemed WHERE store_id IN ($store_ids_placeholder) AND status IN ('approved', 'bestätigt')",
+            ...$store_ids
         ));
         $rewards_pending = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM $table_redeemed WHERE store_id=%d AND status IN ('pending', 'offen')",
-            $store_id
+            "SELECT COUNT(*) FROM $table_redeemed WHERE store_id IN ($store_ids_placeholder) AND status IN ('pending', 'offen')",
+            ...$store_ids
         ));
         $rewards_spent = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT SUM(points_spent) FROM $table_redeemed WHERE store_id=%d AND status IN ('approved', 'bestätigt')",
-            $store_id
+            "SELECT SUM(points_spent) FROM $table_redeemed WHERE store_id IN ($store_ids_placeholder) AND status IN ('approved', 'bestätigt')",
+            ...$store_ids
         )) ?? 0;
 
-        // Peak Hours
+        // Peak Hours (with IN clause for multiple stores)
         $peak_hours = $wpdb->get_results($wpdb->prepare("
             SELECT HOUR(created) as hour, COUNT(*) as count
             FROM $table_points
-            WHERE store_id=%d AND DATE(created)=%s
+            WHERE store_id IN ($store_ids_placeholder) AND DATE(created)=%s
             GROUP BY HOUR(created)
             ORDER BY count DESC
             LIMIT 3
-        ", $store_id, $today));
+        ", ...array_merge($store_ids, [$today])));
 
         $peak_formatted = [];
         foreach ($peak_hours as $peak) {
@@ -404,6 +443,10 @@ class PPV_Stats {
             return new WP_REST_Response(['success' => false, 'error' => 'No store'], 403);
         }
 
+        // 🏪 FILIALE SUPPORT
+        $store_ids = self::get_store_ids_for_filiale($req, $store_id);
+        $store_ids_placeholder = implode(',', array_fill(0, count($store_ids), '%d'));
+
         $table = $wpdb->prefix . 'ppv_points';
         $today = current_time('Y-m-d');
 
@@ -414,12 +457,12 @@ class PPV_Stats {
         $prev_week_end = date('Y-m-d', strtotime('-1 day', strtotime($week_start)));
 
         $current_week = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM $table WHERE store_id=%d AND DATE(created) BETWEEN %s AND %s",
-            $store_id, $week_start, $week_end
+            "SELECT COUNT(*) FROM $table WHERE store_id IN ($store_ids_placeholder) AND DATE(created) BETWEEN %s AND %s",
+            ...array_merge($store_ids, [$week_start, $week_end])
         ));
         $previous_week = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM $table WHERE store_id=%d AND DATE(created) BETWEEN %s AND %s",
-            $store_id, $prev_week_start, $prev_week_end
+            "SELECT COUNT(*) FROM $table WHERE store_id IN ($store_ids_placeholder) AND DATE(created) BETWEEN %s AND %s",
+            ...array_merge($store_ids, [$prev_week_start, $prev_week_end])
         ));
         $week_trend = $previous_week > 0 ? (($current_week - $previous_week) / $previous_week) * 100 : 0;
 
@@ -430,12 +473,12 @@ class PPV_Stats {
         $prev_month_end = date('Y-m-t', strtotime('-1 month', strtotime($today)));
 
         $current_month = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM $table WHERE store_id=%d AND DATE(created) BETWEEN %s AND %s",
-            $store_id, $month_start, $month_end
+            "SELECT COUNT(*) FROM $table WHERE store_id IN ($store_ids_placeholder) AND DATE(created) BETWEEN %s AND %s",
+            ...array_merge($store_ids, [$month_start, $month_end])
         ));
         $previous_month = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM $table WHERE store_id=%d AND DATE(created) BETWEEN %s AND %s",
-            $store_id, $prev_month_start, $prev_month_end
+            "SELECT COUNT(*) FROM $table WHERE store_id IN ($store_ids_placeholder) AND DATE(created) BETWEEN %s AND %s",
+            ...array_merge($store_ids, [$prev_month_start, $prev_month_end])
         ));
         $month_trend = $previous_month > 0 ? (($current_month - $previous_month) / $previous_month) * 100 : 0;
 
@@ -444,8 +487,8 @@ class PPV_Stats {
         for ($i = 0; $i < 7; $i++) {
             $date = date('Y-m-d', strtotime($week_start . " +$i days"));
             $count = (int) $wpdb->get_var($wpdb->prepare(
-                "SELECT COUNT(*) FROM $table WHERE store_id=%d AND DATE(created)=%s",
-                $store_id, $date
+                "SELECT COUNT(*) FROM $table WHERE store_id IN ($store_ids_placeholder) AND DATE(created)=%s",
+                ...array_merge($store_ids, [$date])
             ));
             $daily_week[] = [
                 'date' => $date,
@@ -487,6 +530,10 @@ class PPV_Stats {
             return new WP_REST_Response(['success' => false, 'error' => 'No store'], 403);
         }
 
+        // 🏪 FILIALE SUPPORT
+        $store_ids = self::get_store_ids_for_filiale($req, $store_id);
+        $store_ids_placeholder = implode(',', array_fill(0, count($store_ids), '%d'));
+
         $table_redeemed = $wpdb->prefix . 'ppv_rewards_redeemed';
         $today = current_time('Y-m-d');
         $week_start = date('Y-m-d', strtotime('monday this week', strtotime($today)));
@@ -494,35 +541,35 @@ class PPV_Stats {
 
         // Spending by period
         $daily_spending = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT SUM(points_spent) FROM $table_redeemed WHERE store_id=%d AND DATE(redeemed_at)=%s AND status IN ('approved', 'bestätigt')",
-            $store_id, $today
+            "SELECT SUM(points_spent) FROM $table_redeemed WHERE store_id IN ($store_ids_placeholder) AND DATE(redeemed_at)=%s AND status IN ('approved', 'bestätigt')",
+            ...array_merge($store_ids, [$today])
         )) ?? 0;
 
         $weekly_spending = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT SUM(points_spent) FROM $table_redeemed WHERE store_id=%d AND DATE(redeemed_at) >= %s AND status IN ('approved', 'bestätigt')",
-            $store_id, $week_start
+            "SELECT SUM(points_spent) FROM $table_redeemed WHERE store_id IN ($store_ids_placeholder) AND DATE(redeemed_at) >= %s AND status IN ('approved', 'bestätigt')",
+            ...array_merge($store_ids, [$week_start])
         )) ?? 0;
 
         $monthly_spending = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT SUM(points_spent) FROM $table_redeemed WHERE store_id=%d AND DATE(redeemed_at) >= %s AND status IN ('approved', 'bestätigt')",
-            $store_id, $month_start
+            "SELECT SUM(points_spent) FROM $table_redeemed WHERE store_id IN ($store_ids_placeholder) AND DATE(redeemed_at) >= %s AND status IN ('approved', 'bestätigt')",
+            ...array_merge($store_ids, [$month_start])
         )) ?? 0;
 
         // Average reward
         $avg_reward = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT AVG(points_spent) FROM $table_redeemed WHERE store_id=%d AND status IN ('approved', 'bestätigt')",
-            $store_id
+            "SELECT AVG(points_spent) FROM $table_redeemed WHERE store_id IN ($store_ids_placeholder) AND status IN ('approved', 'bestätigt')",
+            ...$store_ids
         )) ?? 0;
 
         // Top rewards
         $top_rewards = $wpdb->get_results($wpdb->prepare(
             "SELECT reward_id, SUM(points_spent) as total, COUNT(*) as count
-             FROM $table_redeemed 
-             WHERE store_id=%d AND status IN ('approved', 'bestätigt')
+             FROM $table_redeemed
+             WHERE store_id IN ($store_ids_placeholder) AND status IN ('approved', 'bestätigt')
              GROUP BY reward_id
              ORDER BY total DESC
              LIMIT 5",
-            $store_id
+            ...$store_ids
         ));
 
         $top_rewards_formatted = [];
@@ -536,18 +583,18 @@ class PPV_Stats {
 
         // By status
         $pending = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT SUM(points_spent) FROM $table_redeemed WHERE store_id=%d AND status IN ('pending', 'offen')",
-            $store_id
+            "SELECT SUM(points_spent) FROM $table_redeemed WHERE store_id IN ($store_ids_placeholder) AND status IN ('pending', 'offen')",
+            ...$store_ids
         )) ?? 0;
 
         $rejected = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT SUM(points_spent) FROM $table_redeemed WHERE store_id=%d AND status IN ('rejected', 'abgelehnt')",
-            $store_id
+            "SELECT SUM(points_spent) FROM $table_redeemed WHERE store_id IN ($store_ids_placeholder) AND status IN ('rejected', 'abgelehnt')",
+            ...$store_ids
         )) ?? 0;
 
         $approved = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT SUM(points_spent) FROM $table_redeemed WHERE store_id=%d AND status IN ('approved', 'bestätigt')",
-            $store_id
+            "SELECT SUM(points_spent) FROM $table_redeemed WHERE store_id IN ($store_ids_placeholder) AND status IN ('approved', 'bestätigt')",
+            ...$store_ids
         )) ?? 0;
 
         error_log("✅ [Spending] Complete");
@@ -582,18 +629,22 @@ class PPV_Stats {
             return new WP_REST_Response(['success' => false, 'error' => 'No store'], 403);
         }
 
+        // 🏪 FILIALE SUPPORT
+        $store_ids = self::get_store_ids_for_filiale($req, $store_id);
+        $store_ids_placeholder = implode(',', array_fill(0, count($store_ids), '%d'));
+
         $table_points = $wpdb->prefix . 'ppv_points';
         $table_redeemed = $wpdb->prefix . 'ppv_rewards_redeemed';
 
         // Users
         $total_users = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(DISTINCT user_id) FROM $table_points WHERE store_id=%d",
-            $store_id
+            "SELECT COUNT(DISTINCT user_id) FROM $table_points WHERE store_id IN ($store_ids_placeholder)",
+            ...$store_ids
         ));
 
         $redeemed_users = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(DISTINCT user_id) FROM $table_redeemed WHERE store_id=%d",
-            $store_id
+            "SELECT COUNT(DISTINCT user_id) FROM $table_redeemed WHERE store_id IN ($store_ids_placeholder)",
+            ...$store_ids
         ));
 
         $conversion_rate = $total_users > 0 ? ($redeemed_users / $total_users) * 100 : 0;
@@ -601,28 +652,30 @@ class PPV_Stats {
         // Averages
         $avg_points_per_user = (int) $wpdb->get_var($wpdb->prepare(
             "SELECT AVG(total) FROM (
-                SELECT user_id, SUM(points) as total 
-                FROM $table_points 
-                WHERE store_id=%d 
+                SELECT user_id, SUM(points) as total
+                FROM $table_points
+                WHERE store_id IN ($store_ids_placeholder)
                 GROUP BY user_id
             ) t",
-            $store_id
+            ...$store_ids
         )) ?? 0;
 
-        $avg_redemptions_per_user = $redeemed_users > 0 
+        $avg_redemptions_per_user = $redeemed_users > 0
             ? (int) $wpdb->get_var($wpdb->prepare(
-                "SELECT COUNT(*) / %d FROM $table_redeemed WHERE store_id=%d",
-                $redeemed_users, $store_id
+                "SELECT COUNT(*) / %d FROM $table_redeemed WHERE store_id IN ($store_ids_placeholder)",
+                ...array_merge([$redeemed_users], $store_ids)
             )) ?? 0
             : 0;
 
         // Repeat customers
         $repeat_customers = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(DISTINCT user_id) FROM $table_points 
-             WHERE store_id=%d 
-             GROUP BY user_id 
-             HAVING COUNT(*) > 1",
-            $store_id
+            "SELECT COUNT(*) FROM (
+                SELECT user_id FROM $table_points
+                WHERE store_id IN ($store_ids_placeholder)
+                GROUP BY user_id
+                HAVING COUNT(*) > 1
+            ) t",
+            ...$store_ids
         ));
 
         $repeat_rate = $total_users > 0 ? ($repeat_customers / $total_users) * 100 : 0;
@@ -722,11 +775,13 @@ class PPV_Stats {
     // ✅ JAVÍTÁS 3: Translations integration
     // ========================================
     public static function render_stats_dashboard() {
+        global $wpdb;
+
         $store_id = self::get_handler_store_id();
 
         if (!$store_id) {
-            $msg = isset(PPV_Lang::$strings['not_authorized']) 
-                ? PPV_Lang::$strings['not_authorized'] 
+            $msg = isset(PPV_Lang::$strings['not_authorized'])
+                ? PPV_Lang::$strings['not_authorized']
                 : '⚠️ Not authorized';
             return '<div class="ppv-notice-error">' . esc_html($msg) . '</div>';
         }
@@ -734,10 +789,48 @@ class PPV_Stats {
         // ✅ JAVÍTÁS 3: Fordítások betöltése
         $T = PPV_Lang::$strings ?? [];
 
+        // 🏪 FILIALE SUPPORT: Get all filialen for this parent store
+        $parent_id = class_exists('PPV_Filiale') ? PPV_Filiale::get_parent_id($store_id) : $store_id;
+        $filialen = $wpdb->get_results($wpdb->prepare("
+            SELECT id, name, city, parent_store_id
+            FROM {$wpdb->prefix}ppv_stores
+            WHERE id=%d OR parent_store_id=%d
+            ORDER BY CASE WHEN id=%d THEN 0 ELSE 1 END, name ASC
+        ", $parent_id, $parent_id, $parent_id));
+
+        $has_multiple_filialen = count($filialen) > 1;
+
         ob_start(); ?>
-        
+
         <div class="ppv-stats-wrapper">
             <h2 class="ppv-stats-title">📊 <?php echo esc_html($T['statistics'] ?? 'Statistics'); ?></h2>
+
+            <?php if ($has_multiple_filialen): ?>
+            <!-- 🏪 FILIALE SELECTOR -->
+            <div class="ppv-filiale-selector glass-section" style="margin-bottom: 20px; padding: 16px 20px; background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 12px;">
+                <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                    <label for="ppv-stats-filiale" style="font-weight: 600; margin: 0; color: #334155;">
+                        🏢 <?php echo esc_html($T['select_filiale'] ?? 'Filiale auswählen'); ?>:
+                    </label>
+                    <select id="ppv-stats-filiale" style="flex: 1; min-width: 200px; padding: 10px 14px; border-radius: 10px; border: 2px solid #e2e8f0; background: #fff; color: #1e293b; font-size: 14px; cursor: pointer;">
+                        <option value="all" style="font-weight: bold; color: #10b981;">📊 <?php echo esc_html($T['all_filialen'] ?? 'Összes filiale'); ?></option>
+                        <?php foreach ($filialen as $filiale): ?>
+                            <option value="<?php echo esc_attr($filiale->id); ?>" <?php selected($filiale->id, $store_id); ?>>
+                                <?php
+                                echo esc_html($filiale->name);
+                                if ($filiale->id == $parent_id && (empty($filiale->parent_store_id) || $filiale->parent_store_id === null)) {
+                                    echo ' (' . esc_html($T['main_location'] ?? 'Főüzlet') . ')';
+                                }
+                                if (!empty($filiale->city)) {
+                                    echo ' - ' . esc_html($filiale->city);
+                                }
+                                ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+            <?php endif; ?>
 
             <!-- BASIC STATS SECTION -->
             <div class="ppv-stats-loading" id="ppv-stats-loading" style="display:none;">

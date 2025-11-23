@@ -35,11 +35,15 @@ jQuery(document).ready(function($) {
     const $error = $('#ppv-stats-error');
     const $content = $('.ppv-stats-content');
     const $rangeSelect = $('#ppv-stats-range');
+    const $filialeSelect = $('#ppv-stats-filiale');
     const $exportBtn = $('#ppv-export-csv');
     const $exportAdvBtn = $('#ppv-export-advanced');
     const $exportFormatSelect = $('#ppv-export-format');
 
-    ppvLog("✅ [Stats] Config OK");
+    // 🏪 Current filiale selection (default: all)
+    let currentFiliale = $filialeSelect.length ? $filialeSelect.val() : 'all';
+
+    ppvLog("✅ [Stats] Config OK, filiale:", currentFiliale);
 
     // ============================================================
     // 🛡️ HELPERS
@@ -73,7 +77,7 @@ jQuery(document).ready(function($) {
     // 📊 LOAD BASIC STATS (1-3)
     // ============================================================
     function loadBasicStats(range = 'week') {
-        ppvLog(`📊 [Basic Stats] Loading range: ${range}`);
+        ppvLog(`📊 [Basic Stats] Loading range: ${range}, filiale: ${currentFiliale}`);
 
         $loading.show();
         $error.hide();
@@ -82,7 +86,7 @@ jQuery(document).ready(function($) {
         $.ajax({
             url: config.ajax_url,
             method: 'GET',
-            data: { range: range },
+            data: { range: range, filiale: currentFiliale },
             headers: { 'X-WP-Nonce': nonce },
             dataType: 'json',
             cache: false,
@@ -299,11 +303,12 @@ jQuery(document).ready(function($) {
     // 4️⃣ LOAD TREND
     // ============================================================
     function loadTrend() {
-        ppvLog("📈 [Trend] Loading...");
+        ppvLog("📈 [Trend] Loading..., filiale:", currentFiliale);
 
         $.ajax({
             url: config.trend_url,
             method: 'GET',
+            data: { filiale: currentFiliale },
             headers: { 'X-WP-Nonce': nonce },
             dataType: 'json',
             cache: false,
@@ -373,11 +378,12 @@ jQuery(document).ready(function($) {
     // 5️⃣ LOAD SPENDING
     // ============================================================
     function loadSpending() {
-        ppvLog("💰 [Spending] Loading...");
+        ppvLog("💰 [Spending] Loading..., filiale:", currentFiliale);
 
         $.ajax({
             url: config.spending_url,
             method: 'GET',
+            data: { filiale: currentFiliale },
             headers: { 'X-WP-Nonce': nonce },
             dataType: 'json',
             cache: false,
@@ -459,11 +465,12 @@ jQuery(document).ready(function($) {
     // 6️⃣ LOAD CONVERSION
     // ============================================================
     function loadConversion() {
-        ppvLog("📊 [Conversion] Loading...");
+        ppvLog("📊 [Conversion] Loading..., filiale:", currentFiliale);
 
         $.ajax({
             url: config.conversion_url,
             method: 'GET',
+            data: { filiale: currentFiliale },
             headers: { 'X-WP-Nonce': nonce },
             dataType: 'json',
             cache: false,
@@ -622,6 +629,21 @@ jQuery(document).ready(function($) {
     $rangeSelect.on('change', function() {
         const range = $(this).val();
         loadBasicStats(range);
+    });
+
+    // ============================================================
+    // 🏪 FILIALE CHANGE - Reload all stats
+    // ============================================================
+    $filialeSelect.on('change', function() {
+        currentFiliale = $(this).val();
+        ppvLog("🏪 [Filiale] Changed to:", currentFiliale);
+
+        // Reload all sections with new filiale
+        const range = $rangeSelect.val() || 'week';
+        loadBasicStats(range);
+        loadTrend();
+        loadSpending();
+        loadConversion();
     });
 
     // ============================================================
