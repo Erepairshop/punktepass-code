@@ -528,11 +528,13 @@ class PPV_POS_SCAN {
         $user_agent = sanitize_text_field($_SERVER['HTTP_USER_AGENT'] ?? '');
 
 
-        // Store message_key, points, AND user_lang in metadata for translation
+        // Store error_type, points, AND user_lang in metadata for translation
+        // ✅ FIX: Use 'error_type' key - rest_poll_points expects this!
         $metadata = json_encode([
-            'message_key' => $message_key,
+            'error_type' => $message_key,
+            'message_key' => $message_key,  // Keep for backwards compatibility
             'points' => $points,
-            'user_lang' => $user_lang,  // ✅ Store user's language
+            'user_lang' => $user_lang,
             'timestamp' => current_time('mysql')
         ]);
 
