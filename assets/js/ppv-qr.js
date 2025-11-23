@@ -1068,13 +1068,13 @@
       STATE.campaignManager?.showModal();
     }
 
-    // Save campaign
-    if (target.id === 'ppv-camp-save' || target.closest('#ppv-camp-save')) {
+    // Save campaign (ID is "camp-save" in PHP)
+    if (target.id === 'camp-save' || target.closest('#camp-save')) {
       STATE.campaignManager?.save();
     }
 
-    // Cancel campaign
-    if (target.id === 'ppv-camp-cancel' || target.closest('#ppv-camp-cancel')) {
+    // Cancel campaign (ID is "camp-cancel" in PHP)
+    if (target.id === 'camp-cancel' || target.closest('#camp-cancel')) {
       STATE.campaignManager?.hideModal();
     }
 
