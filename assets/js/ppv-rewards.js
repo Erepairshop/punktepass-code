@@ -1,9 +1,8 @@
 /**
- * PunktePass – Einlösungen Management v9.0 COMPACT
+ * PunktePass – Einlösungen Management v9.1 ULTRA-COMPACT
  * Turbo.js compatible, clean architecture
- * NEW: Compact card layout for better space efficiency
- * FIXED: Multiple interval creation bug causing 503 errors
- * FIXED: Added init throttle to prevent rapid API calls
+ * NEW: Ultra-compact row layout - table-like design
+ * NEW: Minimal status dots, smaller fonts, tighter spacing
  * Author: PunktePass / Erik Borota
  */
 
@@ -279,20 +278,14 @@
 
       STATE.notificationSystem?.updatePageTitle(pending.length);
 
-      // Pending section - Compact Layout
+      // Pending section - Ultra Compact
       if (pending.length > 0) {
         const section = document.createElement('div');
-        section.className = 'ppv-redeem-section-compact';
-        section.innerHTML = `
-          <div class="ppv-section-header ppv-section-pending">
-            <i class="ri-time-line"></i>
-            <span>${L.redeem_pending_section || 'Offene Einlösungen'}</span>
-            <span class="ppv-section-count">${pending.length}</span>
-          </div>
-        `;
+        section.className = 'ppv-redeem-section-v2';
+        section.innerHTML = `<div class="ppv-sh2 ppv-sh2-pending"><span>${L.redeem_pending_section || 'Offene Einlösungen'}</span><span class="ppv-sh2-count">${pending.length}</span></div>`;
 
-        const grid = document.createElement('div');
-        grid.className = 'ppv-redeem-compact-grid';
+        const list = document.createElement('div');
+        list.className = 'ppv-redeem-list-v2';
 
         pending.forEach(r => {
           const id = parseInt(r.id);
@@ -301,67 +294,51 @@
           }
           STATE.previousPendingIds.add(id);
 
-          const card = document.createElement("div");
-          card.className = "ppv-redeem-compact status-pending";
-          card.dataset.id = r.id;
-          card.innerHTML = `
-            <div class="ppv-rc-status"><i class="ri-timer-line"></i></div>
-            <div class="ppv-rc-main">
-              <div class="ppv-rc-title">${escapeHtml(r.reward_title || 'Belohnung')}</div>
-              <div class="ppv-rc-user"><i class="ri-user-line"></i> ${escapeHtml(r.user_email || 'Unbekannt')}</div>
-            </div>
-            <div class="ppv-rc-info">
-              <span class="ppv-rc-points"><i class="ri-star-fill"></i> ${r.points_spent || 0}</span>
-              <span class="ppv-rc-value">${r.euro_value ? r.euro_value + ' €' : ''}</span>
-              <span class="ppv-rc-date"><i class="ri-calendar-line"></i> ${formatDate(r.redeemed_at)}</span>
-            </div>
-            <div class="ppv-rc-actions">
-              <button class="ppv-approve" data-id="${r.id}" title="${L.redeem_btn_approve || 'Bestätigen'}"><i class="ri-check-line"></i></button>
-              <button class="ppv-reject" data-id="${r.id}" title="${L.redeem_btn_reject || 'Ablehnen'}"><i class="ri-close-line"></i></button>
-            </div>
+          const row = document.createElement("div");
+          row.className = "ppv-rr status-pending";
+          row.dataset.id = r.id;
+          row.innerHTML = `
+            <span class="ppv-rr-icon pending"></span>
+            <span class="ppv-rr-title">${escapeHtml(r.reward_title || 'Belohnung')}</span>
+            <span class="ppv-rr-user">${escapeHtml(r.user_email || '-')}</span>
+            <span class="ppv-rr-pts">${r.points_spent || 0}</span>
+            <span class="ppv-rr-date">${formatDate(r.redeemed_at)}</span>
+            <span class="ppv-rr-actions">
+              <button class="ppv-approve" data-id="${r.id}"><i class="ri-check-line"></i></button>
+              <button class="ppv-reject" data-id="${r.id}"><i class="ri-close-line"></i></button>
+            </span>
           `;
-          grid.appendChild(card);
+          list.appendChild(row);
         });
 
-        section.appendChild(grid);
+        section.appendChild(list);
         redeemList.appendChild(section);
       }
 
-      // Approved section - Compact Layout
+      // Approved section - Ultra Compact
       if (approved.length > 0) {
         const section = document.createElement('div');
-        section.className = 'ppv-redeem-section-compact';
-        section.innerHTML = `
-          <div class="ppv-section-header ppv-section-approved">
-            <i class="ri-checkbox-circle-line"></i>
-            <span>${L.redeem_approved_section || 'Bestätigte Einlösungen'}</span>
-            <span class="ppv-section-count">${approved.length}</span>
-          </div>
-        `;
+        section.className = 'ppv-redeem-section-v2';
+        section.innerHTML = `<div class="ppv-sh2 ppv-sh2-approved"><span>${L.redeem_approved_section || 'Bestätigte Einlösungen'}</span><span class="ppv-sh2-count">${approved.length}</span></div>`;
 
-        const grid = document.createElement('div');
-        grid.className = 'ppv-redeem-compact-grid';
+        const list = document.createElement('div');
+        list.className = 'ppv-redeem-list-v2';
 
         approved.forEach(r => {
-          const card = document.createElement("div");
-          card.className = "ppv-redeem-compact status-approved";
-          card.innerHTML = `
-            <div class="ppv-rc-status"><i class="ri-checkbox-circle-fill"></i></div>
-            <div class="ppv-rc-main">
-              <div class="ppv-rc-title">${escapeHtml(r.reward_title || 'Belohnung')}</div>
-              <div class="ppv-rc-user"><i class="ri-user-line"></i> ${escapeHtml(r.user_email || 'Unbekannt')}</div>
-            </div>
-            <div class="ppv-rc-info">
-              <span class="ppv-rc-points"><i class="ri-star-fill"></i> ${r.points_spent || 0}</span>
-              <span class="ppv-rc-value">${r.euro_value ? r.euro_value + ' €' : ''}</span>
-              <span class="ppv-rc-date"><i class="ri-calendar-line"></i> ${formatDate(r.redeemed_at)}</span>
-            </div>
-            <div class="ppv-rc-badge">${L.redeem_status_approved || 'Bestätigt'}</div>
+          const row = document.createElement("div");
+          row.className = "ppv-rr status-approved";
+          row.innerHTML = `
+            <span class="ppv-rr-icon approved"></span>
+            <span class="ppv-rr-title">${escapeHtml(r.reward_title || 'Belohnung')}</span>
+            <span class="ppv-rr-user">${escapeHtml(r.user_email || '-')}</span>
+            <span class="ppv-rr-pts">${r.points_spent || 0}</span>
+            <span class="ppv-rr-date">${formatDate(r.redeemed_at)}</span>
+            <span class="ppv-rr-badge">${L.redeem_status_approved || 'Bestätigt'}</span>
           `;
-          grid.appendChild(card);
+          list.appendChild(row);
         });
 
-        section.appendChild(grid);
+        section.appendChild(list);
         redeemList.appendChild(section);
       }
 
@@ -724,6 +701,6 @@
     setTimeout(init, 100);
   });
 
-  ppvLog('[REWARDS] Script loaded v9.0 (compact card layout)');
+  ppvLog('[REWARDS] Script loaded v9.1 (ultra-compact rows)');
 
 })();
