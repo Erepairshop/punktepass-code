@@ -123,15 +123,26 @@
       // Build display: Name > Email > #ID
       const displayName = log.customer_name || log.email || `Kunde #${log.user_id}`;
 
-      // Subtitle: email if name exists, otherwise date/time
-      const subtitle = log.customer_name && log.email
-        ? log.email
-        : `${log.date_short} ${log.time_short}`;
+      // Check for VIP bonus in message (e.g., "(VIP: +2)")
+      const vipMatch = (log.message || '').match(/\(VIP:?\s*\+(\d+)\)/i);
+      const vipBonus = vipMatch ? vipMatch[1] : null;
+      const isVip = !!vipBonus;
+
+      // Subtitle: VIP info if present, else email if name exists, else date/time
+      let subtitle = `${log.date_short} ${log.time_short}`;
+      if (log.customer_name && log.email) {
+        subtitle = log.email;
+      }
 
       // Avatar: Google profile pic or default icon
       const avatarHtml = log.avatar
         ? `<img src="${log.avatar}" class="ppv-scan-avatar" alt="">`
         : `<div class="ppv-scan-avatar-placeholder">${log.success ? '✓' : '✗'}</div>`;
+
+      // Points display: show VIP badge if applicable
+      const pointsHtml = isVip
+        ? `<div class="ppv-scan-points vip">+${log.points}<span class="ppv-vip-badge">VIP +${vipBonus}</span></div>`
+        : `<div class="ppv-scan-points">${log.points || '-'}</div>`;
 
       item.innerHTML = `
         ${avatarHtml}
@@ -139,7 +150,7 @@
           <div class="ppv-scan-name">${displayName}</div>
           <div class="ppv-scan-detail">${subtitle}</div>
         </div>
-        <div class="ppv-scan-points">${log.points || '-'}</div>
+        ${pointsHtml}
       `;
       this.logList.appendChild(item);
     }
