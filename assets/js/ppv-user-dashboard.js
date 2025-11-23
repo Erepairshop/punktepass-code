@@ -1,5 +1,5 @@
 /**
- * PunktePass – User Dashboard JS (v4.7 - Geo Fix Edition)
+ * PunktePass – User Dashboard JS (v4.8 - Geo Retry Edition)
  *
  * ✨ REQUIRED: Remix Icon CDN
  * Add this to your HTML <head>:
@@ -12,7 +12,8 @@
  * ✅ FULLY TRANSLATED: DE/HU/RO
  * ✅ MODERN ICONS: No emojis, pure icon fonts
  * 🚀 TURBO-COMPATIBLE: Re-initializes on navigation
- * ✅ FIX: Geolocation timeout increased (2s→8s) for first-time users after login
+ * ✅ FIX: Geolocation timeout increased (2s→8s) for first-time users
+ * ✅ FIX: Auto-retry geo after 5s if first attempt fails (login redirect fix)
  */
 
 // 🚀 Global state for Turbo navigation cleanup
@@ -1204,6 +1205,63 @@ async function initUserDashboard() {
               console.log('✅ [Stores] Re-rendered with distance sorting');
             }
           }
+        } else {
+          // ✅ FIX: Geo failed on first try - set up delayed retry
+          console.log('⏳ [Geo] First attempt failed, scheduling retry in 5s...');
+          setTimeout(async () => {
+            // Check if we got location in the meantime (from another source)
+            const retryLat = localStorage.getItem('ppv_user_lat');
+            const retryLng = localStorage.getItem('ppv_user_lng');
+            if (retryLat && retryLng) {
+              console.log('✅ [Geo] Found cached location on retry');
+              const currentDist = window.PPV_CURRENT_DISTANCE || 10;
+              const retryUrl = API + `stores/list-optimized?lat=${retryLat}&lng=${retryLng}&max_distance=${currentDist}`;
+              try {
+                const retryRes = await fetch(retryUrl, { cache: "no-store" });
+                if (retryRes.ok) {
+                  const retryStores = await retryRes.json();
+                  const currentBox = document.getElementById('ppv-store-list');
+                  if (currentBox && Array.isArray(retryStores) && retryStores.length > 0) {
+                    renderStoreList(currentBox, retryStores, parseFloat(retryLat), parseFloat(retryLng), true);
+                    console.log('✅ [Stores] Re-rendered on retry with distance sorting');
+                  }
+                }
+              } catch (e) {
+                console.log('⚠️ [Stores] Retry fetch failed:', e.message);
+              }
+              return;
+            }
+
+            // Try geo again
+            if (navigator.geolocation) {
+              console.log('🔄 [Geo] Retrying geolocation...');
+              navigator.geolocation.getCurrentPosition(
+                async (p) => {
+                  localStorage.setItem('ppv_user_lat', p.coords.latitude.toString());
+                  localStorage.setItem('ppv_user_lng', p.coords.longitude.toString());
+                  console.log('📍 [Geo] Retry succeeded:', p.coords.latitude.toFixed(4), p.coords.longitude.toFixed(4));
+
+                  const currentDist = window.PPV_CURRENT_DISTANCE || 10;
+                  const retryUrl = API + `stores/list-optimized?lat=${p.coords.latitude}&lng=${p.coords.longitude}&max_distance=${currentDist}`;
+                  try {
+                    const retryRes = await fetch(retryUrl, { cache: "no-store" });
+                    if (retryRes.ok) {
+                      const retryStores = await retryRes.json();
+                      const currentBox = document.getElementById('ppv-store-list');
+                      if (currentBox && Array.isArray(retryStores) && retryStores.length > 0) {
+                        renderStoreList(currentBox, retryStores, p.coords.latitude, p.coords.longitude, true);
+                        console.log('✅ [Stores] Re-rendered on geo retry with distance sorting');
+                      }
+                    }
+                  } catch (e) {
+                    console.log('⚠️ [Stores] Retry fetch failed:', e.message);
+                  }
+                },
+                (err) => console.log('⚠️ [Geo] Retry also failed:', err.message),
+                { timeout: 10000, maximumAge: 60000, enableHighAccuracy: false }
+              );
+            }
+          }, 5000);
         }
       }
 
