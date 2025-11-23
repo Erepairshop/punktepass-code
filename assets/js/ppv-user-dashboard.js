@@ -1191,7 +1191,7 @@ async function initUserDashboard() {
         if (freshPos?.coords) {
           const newLat = freshPos.coords.latitude;
           const newLng = freshPos.coords.longitude;
-          console.log('🔄 [Stores] Re-fetching with fresh geo...');
+          console.log('🔄 [Stores] Re-fetching with fresh geo:', newLat.toFixed(4), newLng.toFixed(4));
 
           // ✅ FIX: Use current slider distance value, not hardcoded 10
           const currentDist = window.PPV_CURRENT_DISTANCE || 10;
@@ -1203,13 +1203,30 @@ async function initUserDashboard() {
 
             if (newRes.ok) {
               const newStores = await newRes.json();
-              console.log('📦 [Stores] Got', newStores?.length || 0, 'stores from re-fetch');
+              // Log distances from API
+              console.log('📦 [Stores] Got', newStores?.length || 0, 'stores. First 3 distances:',
+                newStores?.slice(0,3).map(s => `${s.company_name||s.name||'?'}: ${s.distance_km}km`).join(', '));
 
               if (Array.isArray(newStores) && newStores.length > 0) {
-                // ✅ FIX: Get fresh DOM reference (original 'box' might be stale after Turbo navigation)
+                // ✅ FIX: Get fresh DOM reference
                 const freshBox = document.getElementById('ppv-store-list');
+                console.log('🎯 [DOM] freshBox found:', !!freshBox, 'children before:', freshBox?.children?.length);
+
                 if (freshBox) {
-                  renderStoreList(freshBox, newStores, newLat, newLng, true);
+                  // ✅ FIX: Directly update innerHTML instead of calling renderStoreList
+                  const sliderHTML = `
+                    <div class="ppv-distance-filter">
+                      <label><i class="ri-ruler-line"></i> ${T.distance_label}: <span id="ppv-distance-value">${currentDist}</span> km</label>
+                      <input type="range" id="ppv-distance-slider" min="10" max="1000" value="${currentDist}" step="10">
+                      <div class="ppv-distance-labels"><span>10 km</span><span>1000 km</span></div>
+                    </div>
+                  `;
+                  const cardsHTML = newStores.map(renderStoreCard).join('');
+                  freshBox.innerHTML = sliderHTML + cardsHTML;
+                  console.log('🎯 [DOM] innerHTML updated, children after:', freshBox?.children?.length);
+
+                  initDistanceSlider(sliderHTML, newLat, newLng, currentDist);
+                  attachStoreListeners();
                   console.log('✅ [Stores] Re-rendered with distance sorting');
                 } else {
                   console.warn('⚠️ [Stores] Store list element not found for re-render');
