@@ -354,12 +354,15 @@ if (window.PPV_REWARDS_LOADED) {
     return `${day}.${month}.${year} ${hours}:${mins}`;
   }
 
-  document.addEventListener("DOMContentLoaded", function () {
-
+  /* ============================================================
+   * 🚀 MAIN INITIALIZATION FUNCTION
+   * Called on both DOMContentLoaded and turbo:load
+   * ============================================================ */
+  function initRewardsPage() {
     /* ============================================================
      * 🔑 BASE + TOKEN + STORE
      * ============================================================ */
-    console.log('📦 [REWARDS] DOMContentLoaded fired');
+    console.log('📦 [REWARDS] initRewardsPage() called');
 
     const base = window.ppv_rewards_rest?.base || "/wp-json/ppv/v1/";
     let storeID = 0;
@@ -393,9 +396,16 @@ if (window.PPV_REWARDS_LOADED) {
     if (window.PPV_STORE_KEY)
       sessionStorage.setItem("ppv_store_key", window.PPV_STORE_KEY);
 
+    // 🔄 FRESH DOM QUERIES - important for Turbo navigation!
     const redeemList = document.getElementById("ppv-redeem-list");
     const logList = document.getElementById("ppv-log-list");
     const monthlyReceiptBtn = document.getElementById("ppv-monthly-receipt-btn");
+
+    // Skip if this page doesn't have the rewards elements
+    if (!redeemList) {
+      console.log('📦 [REWARDS] No ppv-redeem-list found, skipping initialization');
+      return;
+    }
 
     console.log(`📦 [REWARDS] base: ${base}, storeID: ${storeID}`);
 
@@ -1042,15 +1052,24 @@ showToast("📄 Monatsbeleg wird heruntergeladen!", "success");
 
       console.log('📡 [REWARDS] Pusher initialized - polling disabled');
     } else {
-      // Fallback: Auto-refresh every 30 seconds
-      console.log('🔄 [REWARDS] Using polling fallback (30s)');
-      setInterval(() => {
-        loadRedeemRequests();
-        loadRecentLogs();
-      }, 30000);
+      // Fallback: Auto-refresh every 30 seconds (only set once)
+      if (!window.PPV_REWARDS_POLLING) {
+        console.log('🔄 [REWARDS] Using polling fallback (30s)');
+        window.PPV_REWARDS_POLLING = setInterval(() => {
+          // Use global reload function which gets updated on each init
+          if (typeof window.ppv_rewards_reload === 'function') {
+            const currentRedeemList = document.getElementById("ppv-redeem-list");
+            if (currentRedeemList) {
+              window.ppv_rewards_reload();
+            }
+          }
+        }, 30000);
+      } else {
+        console.log('🔄 [REWARDS] Polling already active, skipping');
+      }
     }
 
-    // Expose reload function for Turbo navigation
+    // Expose reload function for polling (updated each init)
     window.ppv_rewards_reload = function() {
       console.log('📦 [REWARDS] Reloading data...');
       loadRedeemRequests();
@@ -1058,15 +1077,21 @@ showToast("📄 Monatsbeleg wird heruntergeladen!", "success");
     };
 
     console.log("✅ [REWARDS] Initialization complete!");
+  }
+
+  // 🚀 CALL INIT ON DOMContentLoaded
+  document.addEventListener("DOMContentLoaded", function () {
+    console.log('📦 [REWARDS] DOMContentLoaded fired');
+    initRewardsPage();
   });
 
   // 🚀 Re-initialize on Turbo navigation
   document.addEventListener('turbo:load', () => {
-    // Only reload if we're on a page with the redeem list
+    // Only reinitialize if we're on a page with the redeem list
     const redeemList = document.getElementById("ppv-redeem-list");
-    if (redeemList && typeof window.ppv_rewards_reload === 'function') {
-      console.log('📦 [REWARDS] turbo:load detected, reloading data...');
-      window.ppv_rewards_reload();
+    if (redeemList) {
+      console.log('📦 [REWARDS] turbo:load detected, reinitializing...');
+      initRewardsPage();
     }
   });
 }
