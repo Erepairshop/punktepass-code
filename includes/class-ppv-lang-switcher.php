@@ -20,7 +20,7 @@ class PPV_Lang_Switcher {
             <div class="ppv-lang-menu">
                 <?php foreach ($langs as $code => $info): ?>
                     <?php if ($code !== $current): ?>
-                        <a href="?ppv_lang=<?php echo $code; ?>" class="ppv-lang-item">
+                        <a href="?ppv_lang=<?php echo $code; ?>" class="ppv-lang-item" data-turbo="false">
                             <?php echo $info['flag']; ?> <?php echo $info['name']; ?>
                         </a>
                     <?php endif; ?>
