@@ -727,9 +727,14 @@ private static function get_today_hours($opening_hours) {
 
             <?php if (!$is_handler): ?>
             // ============================================================
-            // POINTS POLLING (USER ONLY) - Only start if not already running
+            // POINTS SYNC (USER ONLY) - Pusher on dashboard, polling fallback elsewhere
             // ============================================================
-            if (!window.PPV_HEADER_POLLING_ID) {
+            // Skip header polling if dashboard page (dashboard JS handles Pusher sync)
+            if (document.getElementById('ppv-dashboard-root')) {
+                console.log('📡 [Header] Dashboard detected - Pusher handles sync');
+            } else if (!window.PPV_HEADER_POLLING_ID) {
+                // Fallback polling for non-dashboard pages (30s interval)
+                console.log('🔄 [Header] Starting polling fallback (30s)');
                 window.PPV_HEADER_POLLING_ID = setInterval(async () => {
                     try {
                         const res = await fetch('<?php echo esc_url(rest_url('ppv/v1/user/points-poll')); ?>', {
@@ -747,7 +752,7 @@ private static function get_today_hours($opening_hours) {
                     } catch (e) {
                         // Silent fail
                     }
-                }, 5000);
+                }, 30000); // 30s polling on non-dashboard pages
             }
             <?php endif; ?>
         }
@@ -778,10 +783,23 @@ private static function get_today_hours($opening_hours) {
             null
         );
 
+        // 📡 PUSHER: Load JS SDK from CDN if enabled
+        $dependencies = ['jquery'];
+        if (class_exists('PPV_Pusher') && PPV_Pusher::is_enabled()) {
+            wp_enqueue_script(
+                'pusher-js',
+                'https://js.pusher.com/8.2.0/pusher.min.js',
+                [],
+                '8.2.0',
+                true
+            );
+            $dependencies[] = 'pusher-js';
+        }
+
         wp_enqueue_script(
             'ppv-dashboard',
             PPV_PLUGIN_URL . 'assets/js/ppv-user-dashboard.js',
-            ['jquery'],
+            $dependencies,
             time(),
             true
         );
@@ -831,7 +849,7 @@ private static function get_today_hours($opening_hours) {
 
         self::cleanup_tokens($uid);
 
-        return [
+        $boot = [
             'uid' => $uid,
             'email' => $email,
             'lang' => $lang,
@@ -844,6 +862,17 @@ private static function get_today_hours($opening_hours) {
                 'store_default' => PPV_PLUGIN_URL . 'assets/img/store-default-logo.webp'
             ]
         ];
+
+        // 📡 PUSHER: Add config for real-time updates
+        if (class_exists('PPV_Pusher') && PPV_Pusher::is_enabled()) {
+            $boot['pusher'] = [
+                'key' => PPV_Pusher::get_key(),
+                'cluster' => PPV_Pusher::get_cluster(),
+                'auth_endpoint' => esc_url_raw(rest_url('ppv/v1/pusher/auth')),
+            ];
+        }
+
+        return $boot;
     }
 
 public static function render_dashboard() {

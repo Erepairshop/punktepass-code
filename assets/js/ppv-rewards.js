@@ -969,12 +969,55 @@ showToast("📄 Monatsbeleg wird heruntergeladen!", "success");
       });
     }
 
-    // ✅ Auto-refresh minden 10 másodpercben
-    setInterval(() => {
-      loadRedeemRequests();
-      loadRecentLogs();
-    }, 30000); // 30 sec polling
-    
+    // 📡 PUSHER: Real-time updates for reward requests
+    const config = window.ppv_rewards_rest || {};
+    if (config.pusher && config.pusher.key && window.Pusher) {
+      console.log('📡 [REWARDS] Initializing Pusher real-time...');
+
+      const pusher = new Pusher(config.pusher.key, {
+        cluster: config.pusher.cluster,
+        authEndpoint: config.pusher.auth_endpoint,
+      });
+
+      const channel = pusher.subscribe(config.pusher.channel);
+
+      channel.bind('pusher:subscription_succeeded', () => {
+        console.log('📡 [REWARDS] Subscribed to store channel');
+      });
+
+      // 🎁 Handle new reward request from user
+      channel.bind('reward-request', (data) => {
+        console.log('📡 [REWARDS] New reward request received:', data);
+
+        // Refresh the list
+        loadRedeemRequests();
+
+        // Show notification
+        notificationSystem.notifyNewRedeem({
+          id: data.redeem_id,
+          first_name: data.customer_name?.split(' ')[0] || '',
+          last_name: data.customer_name?.split(' ').slice(1).join(' ') || '',
+          reward_title: data.reward_title,
+          points_spent: data.points_spent,
+        });
+      });
+
+      // 🎯 Handle scan events too (for Letzte Scans)
+      channel.bind('new-scan', (data) => {
+        console.log('📡 [REWARDS] New scan received:', data);
+        loadRecentLogs();
+      });
+
+      console.log('📡 [REWARDS] Pusher initialized - polling disabled');
+    } else {
+      // Fallback: Auto-refresh every 30 seconds
+      console.log('🔄 [REWARDS] Using polling fallback (30s)');
+      setInterval(() => {
+        loadRedeemRequests();
+        loadRecentLogs();
+      }, 30000);
+    }
+
     console.log("✅ [REWARDS] Initialization complete!");
   });
 }

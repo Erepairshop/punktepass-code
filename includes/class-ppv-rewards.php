@@ -62,20 +62,45 @@ class PPV_Rewards {
             return; // Skip loading
         }
 
+        // 📡 PUSHER: Load JS SDK from CDN if enabled
+        $dependencies = ['jquery'];
+        if (class_exists('PPV_Pusher') && PPV_Pusher::is_enabled()) {
+            wp_enqueue_script(
+                'pusher-js',
+                'https://js.pusher.com/8.2.0/pusher.min.js',
+                [],
+                '8.2.0',
+                true
+            );
+            $dependencies[] = 'pusher-js';
+        }
+
         wp_enqueue_script(
             'ppv-rewards',
             PPV_PLUGIN_URL . 'assets/js/ppv-rewards.js',
-            ['jquery'],
+            $dependencies,
             time(),
             true
         );
 
+        $store_id = self::get_store_id();
+
         $payload = [
             'base'     => esc_url(rest_url('ppv/v1/')),
             'nonce'    => wp_create_nonce('wp_rest'),
-            'store_id' => self::get_store_id(),
+            'store_id' => $store_id,
             'plugin_url' => esc_url(PPV_PLUGIN_URL)
         ];
+
+        // 📡 PUSHER: Add config for real-time updates
+        if (class_exists('PPV_Pusher') && PPV_Pusher::is_enabled()) {
+            $payload['pusher'] = [
+                'key' => PPV_Pusher::get_key(),
+                'cluster' => PPV_Pusher::get_cluster(),
+                'auth_endpoint' => esc_url_raw(rest_url('ppv/v1/pusher/auth')),
+                'channel' => 'private-store-' . $store_id,
+            ];
+        }
 
         wp_add_inline_script(
             'ppv-rewards',
@@ -396,6 +421,36 @@ window.ppv_plugin_url = '" . esc_url(PPV_PLUGIN_URL) . "';",
 
         $msg_approved = class_exists('PPV_Lang') ? PPV_Lang::t('redeem_approved') : 'Anfrage bestätigt';
         $msg_cancelled = class_exists('PPV_Lang') ? PPV_Lang::t('redeem_rejected') : 'Anfrage abgelehnt';
+
+        // 📡 PUSHER: Notify user about reward approval/rejection
+        if (class_exists('PPV_Pusher') && PPV_Pusher::is_enabled()) {
+            // Get redeem details for notification
+            $redeem_info = $wpdb->get_row($wpdb->prepare("
+                SELECT r.user_id, r.points_spent, rw.title as reward_title, s.name as store_name
+                FROM {$wpdb->prefix}ppv_rewards_redeemed r
+                LEFT JOIN {$wpdb->prefix}ppv_rewards rw ON r.reward_id = rw.id
+                LEFT JOIN {$wpdb->prefix}ppv_stores s ON r.store_id = s.id
+                WHERE r.id = %d
+            ", $id));
+
+            if ($redeem_info && $redeem_info->user_id) {
+                // Get user's new points total
+                $new_points = (int) $wpdb->get_var($wpdb->prepare(
+                    "SELECT COALESCE(SUM(points), 0) FROM {$wpdb->prefix}ppv_qr_scans WHERE user_id = %d",
+                    $redeem_info->user_id
+                ));
+
+                PPV_Pusher::trigger_reward_approved($redeem_info->user_id, [
+                    'redeem_id' => $id,
+                    'status' => $status,
+                    'reward_name' => $redeem_info->reward_title,
+                    'store_name' => $redeem_info->store_name,
+                    'points_spent' => $redeem_info->points_spent,
+                    'new_points' => $new_points,
+                    'approved' => ($status === 'approved'),
+                ]);
+            }
+        }
 
         return new WP_REST_Response([
             'success' => true,

@@ -512,9 +512,38 @@ class PPV_Belohnungen {
             $wpdb->query('COMMIT');
             update_option('ppv_last_redeem_update', time());
 
+            $redeem_id = $wpdb->insert_id;
+
+            // 📡 PUSHER: Notify POS about new reward request
+            if (class_exists('PPV_Pusher') && PPV_Pusher::is_enabled()) {
+                // Get user info
+                $user_info = $wpdb->get_row($wpdb->prepare("
+                    SELECT first_name, last_name, email, avatar
+                    FROM {$wpdb->prefix}ppv_users WHERE id = %d
+                ", $user_id));
+
+                // Get reward title
+                $reward_title = $wpdb->get_var($wpdb->prepare("
+                    SELECT title FROM {$wpdb->prefix}ppv_rewards WHERE id = %d
+                ", $reward_id));
+
+                $customer_name = trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
+
+                PPV_Pusher::trigger_reward_request($reward->store_id, [
+                    'redeem_id' => $redeem_id,
+                    'user_id' => $user_id,
+                    'customer_name' => $customer_name ?: ($user_info->email ?? 'Kunde'),
+                    'avatar' => $user_info->avatar ?? null,
+                    'reward_id' => $reward_id,
+                    'reward_title' => $reward_title,
+                    'points_spent' => $reward->required_points,
+                    'time' => date('H:i'),
+                ]);
+            }
+
             return new WP_REST_Response([
                 'success' => true,
-                'redeem_id' => $wpdb->insert_id
+                'redeem_id' => $redeem_id
             ], 200);
 
         } catch (Exception $e) {

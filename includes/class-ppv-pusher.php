@@ -161,6 +161,42 @@ class PPV_Pusher {
     }
 
     /**
+     * Trigger points update for a user
+     * Used to notify user's dashboard of point changes
+     *
+     * @param int $user_id User ID
+     * @param array $data Points data (points, store, message, etc.)
+     */
+    public static function trigger_user_points($user_id, $data) {
+        $channel = 'private-user-' . intval($user_id);
+        return self::trigger($channel, 'points-update', $data);
+    }
+
+    /**
+     * Trigger reward request notification to POS
+     * Used when a user requests to redeem a reward
+     *
+     * @param int $store_id Store ID
+     * @param array $data Reward request data
+     */
+    public static function trigger_reward_request($store_id, $data) {
+        $channel = 'private-store-' . intval($store_id);
+        return self::trigger($channel, 'reward-request', $data);
+    }
+
+    /**
+     * Trigger reward approved notification to user
+     * Used when POS approves a reward redemption
+     *
+     * @param int $user_id User ID
+     * @param array $data Reward approval data
+     */
+    public static function trigger_reward_approved($user_id, $data) {
+        $channel = 'private-user-' . intval($user_id);
+        return self::trigger($channel, 'reward-approved', $data);
+    }
+
+    /**
      * Generate auth signature for private channels
      * Used by frontend to authenticate with Pusher
      *

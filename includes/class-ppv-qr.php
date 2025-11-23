@@ -1870,6 +1870,25 @@ class PPV_QR {
                 'time_short' => date('H:i'),
                 'success' => true,
             ]);
+
+            // 📡 PUSHER: Also notify user's dashboard of points update
+            $total_points = (int) $wpdb->get_var($wpdb->prepare(
+                "SELECT COALESCE(SUM(points), 0) FROM {$wpdb->prefix}ppv_qr_scans WHERE user_id = %d",
+                $user_id
+            ));
+            $total_rewards = (int) $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_reward_log WHERE user_id = %d",
+                $user_id
+            ));
+
+            PPV_Pusher::trigger_user_points($user_id, [
+                'points_added' => $points_add,
+                'total_points' => $total_points,
+                'total_rewards' => $total_rewards,
+                'store_name' => $store_name ?? 'PunktePass',
+                'vip_bonus' => $vip_bonus_applied,
+                'success' => true,
+            ]);
         }
 
         // Build response message with VIP info
