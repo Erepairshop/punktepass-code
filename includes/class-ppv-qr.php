@@ -271,10 +271,13 @@ class PPV_QR {
 
         if (strpos($qr, 'PPU') === 0) {
             $body = substr($qr, 3);
-            // Extract user_id (for logging only) and token
-            if (preg_match('/^(\d+)(.+)$/', $body, $m)) {
-                $uid_from_qr = intval($m[1]);
-                $token_from_qr = $m[2];
+
+            // ✅ FIX: Token is ALWAYS 16 characters - take LAST 16 chars
+            // This fixes the bug when token starts with digit (e.g. "5SEmtXSebxC0kwd3")
+            // Old regex would incorrectly parse "PPU35SEmtXSebxC0kwd3" as user_id=35
+            if (strlen($body) >= 16) {
+                $token_from_qr = substr($body, -16); // Last 16 chars = token
+                $uid_from_qr = intval(substr($body, 0, -16)); // Everything before = user_id (for logging only)
 
                 // Look up entity_id directly from ppv_tokens by token
                 $token_entity_id = $wpdb->get_var($wpdb->prepare("
