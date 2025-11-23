@@ -263,18 +263,65 @@ class PPV_QR {
     }
 
     private static function decode_user_from_qr($qr) {
+        global $wpdb;
         if (empty($qr)) return false;
+
+        // ✅ FIX: Look up user by TOKEN from ppv_tokens.entity_id
+        // The QR may contain wrong user_id, but ppv_tokens.entity_id is source of truth
 
         if (strpos($qr, 'PPU') === 0) {
             $body = substr($qr, 3);
-            if (preg_match('/^(\d+)/', $body, $m)) {
-                return intval($m[1]);
+
+            // ✅ FIX: Token is ALWAYS 16 characters - take LAST 16 chars
+            // This fixes the bug when token starts with digit (e.g. "5SEmtXSebxC0kwd3")
+            // Old regex would incorrectly parse "PPU35SEmtXSebxC0kwd3" as user_id=35
+            if (strlen($body) >= 16) {
+                $token_from_qr = substr($body, -16); // Last 16 chars = token
+                $uid_from_qr = intval(substr($body, 0, -16)); // Everything before = user_id (for logging only)
+
+                // Look up entity_id directly from ppv_tokens by token
+                $token_entity_id = $wpdb->get_var($wpdb->prepare("
+                    SELECT entity_id
+                    FROM {$wpdb->prefix}ppv_tokens
+                    WHERE token=%s AND entity_type='user' AND expires_at > NOW()
+                    LIMIT 1
+                ", $token_from_qr));
+
+                if ($token_entity_id) {
+                    if ($uid_from_qr != $token_entity_id) {
+                        error_log("⚠️ [PPV_QR] decode_user_from_qr: QR user_id mismatch! QR={$uid_from_qr}, token_entity_id={$token_entity_id} - using token_entity_id");
+                    }
+                    return intval($token_entity_id);
+                }
+
+                // Fallback to QR user_id if token not found (legacy support)
+                error_log("⚠️ [PPV_QR] decode_user_from_qr: Token not found in DB, falling back to QR user_id={$uid_from_qr}");
+                return $uid_from_qr;
             }
         }
 
         if (strpos($qr, 'PPUSER-') === 0) {
             $parts = explode('-', $qr);
-            return intval($parts[1] ?? 0);
+            $uid_from_qr = intval($parts[1] ?? 0);
+            $token_from_qr = $parts[2] ?? '';
+
+            if (!empty($token_from_qr)) {
+                // Look up actual user_id from ppv_users by qr_token
+                $actual_user_id = $wpdb->get_var($wpdb->prepare("
+                    SELECT id FROM {$wpdb->prefix}ppv_users
+                    WHERE qr_token=%s AND active=1
+                    LIMIT 1
+                ", $token_from_qr));
+
+                if ($actual_user_id) {
+                    if ($uid_from_qr != $actual_user_id) {
+                        error_log("⚠️ [PPV_QR] decode_user_from_qr (PPUSER): QR user_id mismatch! QR={$uid_from_qr}, actual={$actual_user_id} - using actual");
+                    }
+                    return intval($actual_user_id);
+                }
+            }
+
+            return $uid_from_qr;
         }
 
         return false;
