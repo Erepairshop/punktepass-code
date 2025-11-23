@@ -953,11 +953,37 @@ showToast("📄 Monatsbeleg wird heruntergeladen!", "success");
     }
 
     // ✅ Auto-refresh minden 10 másodpercben
-    setInterval(() => {
+    let refreshInterval = setInterval(() => {
       loadRedeemRequests();
       loadRecentLogs();
     }, 10000);
-    
+
+    // 🔄 SPA Navigation listener - reinitialize when page content changes
+    window.addEventListener('ppv:spa-navigate', () => {
+      console.log('📦 [REWARDS] SPA navigation detected - reinitializing...');
+
+      // Clear old interval
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+      }
+
+      // Re-get elements (they may have changed)
+      const newRedeemList = document.getElementById("ppv-redeem-list");
+      const newLogList = document.getElementById("ppv-log-list");
+
+      if (newRedeemList || newLogList) {
+        console.log('📦 [REWARDS] Found reward elements, reloading data...');
+        loadRedeemRequests();
+        loadRecentLogs();
+
+        // Restart interval
+        refreshInterval = setInterval(() => {
+          loadRedeemRequests();
+          loadRecentLogs();
+        }, 10000);
+      }
+    });
+
     console.log("✅ [REWARDS] Initialization complete!");
   });
 }

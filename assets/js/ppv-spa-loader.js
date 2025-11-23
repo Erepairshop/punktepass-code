@@ -51,6 +51,9 @@ document.addEventListener("DOMContentLoaded", () => {
       if (newRoot) {
         root.innerHTML = newRoot.innerHTML;
         history.pushState({}, "", url);
+
+        // 🔄 Dispatch custom event for JS re-initialization
+        window.dispatchEvent(new CustomEvent('ppv:spa-navigate', { detail: { url } }));
       }
 
       document.querySelectorAll(".ppv-bottom-nav a").forEach(a => a.classList.remove("active"));
@@ -67,9 +70,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const html = await res.text();
     const dom = new DOMParser().parseFromString(html, "text/html");
     const newRoot = dom.querySelector("#ppv-app-root");
-    if (newRoot) root.innerHTML = newRoot.innerHTML;
+    if (newRoot) {
+      root.innerHTML = newRoot.innerHTML;
+      // 🔄 Dispatch custom event for JS re-initialization
+      window.dispatchEvent(new CustomEvent('ppv:spa-navigate', { detail: { url: location.href } }));
+    }
     fadeIn();
-    
+
   });
 });
 
@@ -137,7 +144,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const dom = new DOMParser().parseFromString(html, "text/html");
       const newRoot = dom.querySelector("#ppv-app-root");
-      if (newRoot) root.innerHTML = newRoot.innerHTML;
+      if (newRoot) {
+        root.innerHTML = newRoot.innerHTML;
+
+        // 🔄 Dispatch custom event for JS re-initialization
+        window.dispatchEvent(new CustomEvent('ppv:spa-navigate', { detail: { url } }));
+      }
 
       document.querySelectorAll(".ppv-bottom-nav a").forEach(a => a.classList.remove("active"));
       link.classList.add("active");
@@ -186,7 +198,11 @@ document.addEventListener("DOMContentLoaded", () => {
       const html = await res.text();
       const dom = new DOMParser().parseFromString(html, "text/html");
       const newRoot = dom.querySelector("#ppv-app-root");
-      if (newRoot) root.innerHTML = newRoot.innerHTML;
+      if (newRoot) {
+        root.innerHTML = newRoot.innerHTML;
+        // 🔄 Dispatch custom event for JS re-initialization
+        window.dispatchEvent(new CustomEvent('ppv:spa-navigate', { detail: { url: location.href } }));
+      }
     } finally {
       fadeIn();
     }
