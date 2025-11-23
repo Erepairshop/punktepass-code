@@ -670,29 +670,44 @@ public static function ajax_save_profile() {
     $upload_dir = wp_upload_dir();
     $gallery_files = [];
 
+    // ✅ FIX: Get existing store data to preserve logo/gallery if not uploading new
+    $existing_store = $wpdb->get_row($wpdb->prepare(
+        "SELECT logo, gallery FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
+        $store_id
+    ));
+
     // Logo upload
     if (!empty($_FILES['logo']['name'])) {
         $tmp_file = $_FILES['logo']['tmp_name'];
         $filename = basename($_FILES['logo']['name']);
         $new_file = $upload_dir['path'] . '/' . $filename;
-        
+
         if (move_uploaded_file($tmp_file, $new_file)) {
             $_POST['logo'] = $upload_dir['url'] . '/' . $filename;
         }
+    } else {
+        // ✅ FIX: Preserve existing logo if no new upload
+        $_POST['logo'] = $existing_store->logo ?? '';
     }
 
     // Gallery upload
     if (!empty($_FILES['gallery']['name'][0])) {
+        // ✅ FIX: Get existing gallery to merge with new uploads
+        $existing_gallery = json_decode($existing_store->gallery ?? '[]', true) ?: [];
+
         foreach ($_FILES['gallery']['name'] as $key => $filename) {
             if ($_FILES['gallery']['error'][$key] === UPLOAD_ERR_OK) {
                 $tmp_file = $_FILES['gallery']['tmp_name'][$key];
                 $new_file = $upload_dir['path'] . '/' . basename($filename);
-                
+
                 if (move_uploaded_file($tmp_file, $new_file)) {
                     $gallery_files[] = $upload_dir['url'] . '/' . basename($filename);
                 }
             }
         }
+
+        // ✅ FIX: Merge new uploads with existing gallery (append new images)
+        $gallery_files = array_merge($existing_gallery, $gallery_files);
     }
 
 
@@ -752,7 +767,8 @@ public static function ajax_save_profile() {
         'timezone' => sanitize_text_field($_POST['timezone'] ?? 'Europe/Berlin'),
         'updated_at' => current_time('mysql'),
         'logo' => sanitize_text_field($_POST['logo'] ?? ''),
-'gallery' => !empty($gallery_files) ? json_encode($gallery_files) : ($_POST['gallery'] ?? ''),
+// ✅ FIX: Preserve existing gallery if no new uploads
+        'gallery' => !empty($gallery_files) ? json_encode($gallery_files) : ($existing_store->gallery ?? ''),
     'opening_hours' => json_encode($opening_hours),  // ← ADD THIS!
 ];
 
