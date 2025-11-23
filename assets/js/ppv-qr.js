@@ -1,7 +1,8 @@
 /**
- * PunktePass – Kassenscanner & Kampagnen v6.1 CLEAN
+ * PunktePass – Kassenscanner & Kampagnen v6.2 CLEAN
  * Turbo.js compatible, clean architecture
  * FIXED: Multiple init() calls causing API spam
+ * FIXED: Ably connection cleanup on page navigation
  * Author: Erik Borota / PunktePass
  */
 
@@ -29,7 +30,9 @@
     cameraScanner: null,
     scanProcessor: null,
     uiManager: null,
-    lastInitTime: 0  // Prevent rapid re-init
+    lastInitTime: 0,  // Prevent rapid re-init
+    ablyInstance: null,  // Ably connection for cleanup
+    pollInterval: null   // Polling interval for cleanup
   };
 
   const L = window.ppv_lang || {};
@@ -1023,6 +1026,20 @@
   // CLEANUP
   // ============================================================
   function cleanup() {
+    // Close Ably connection if exists
+    if (STATE.ablyInstance) {
+      ppvLog('[Ably] Closing connection on cleanup');
+      STATE.ablyInstance.close();
+      STATE.ablyInstance = null;
+    }
+
+    // Clear polling interval if exists
+    if (STATE.pollInterval) {
+      ppvLog('[Poll] Clearing interval on cleanup');
+      clearInterval(STATE.pollInterval);
+      STATE.pollInterval = null;
+    }
+
     STATE.cameraScanner?.cleanup();
     STATE.cameraScanner = null;
     STATE.campaignManager = null;
@@ -1107,7 +1124,6 @@
     // ============================================================
     // REAL-TIME UPDATES: Ably (primary) or Polling (fallback)
     // ============================================================
-    let pollInterval = null;
     const POLL_INTERVAL_MS = 10000; // 10s fallback polling
 
     // Check if Ably is configured
@@ -1118,27 +1134,27 @@
       // ABLY MODE: Real-time updates via WebSocket
       ppvLog('[Ably] Initializing with key:', ablyConfig.key.substring(0, 10) + '...');
 
-      const ably = new Ably.Realtime({ key: ablyConfig.key });
+      STATE.ablyInstance = new Ably.Realtime({ key: ablyConfig.key });
 
       // Subscribe to store's channel
       const channelName = 'store-' + storeId;
-      const channel = ably.channels.get(channelName);
+      const channel = STATE.ablyInstance.channels.get(channelName);
 
-      ably.connection.on('connected', () => {
+      STATE.ablyInstance.connection.on('connected', () => {
         ppvLog('[Ably] Connected');
         // Stop polling if it was running
-        if (pollInterval) {
-          clearInterval(pollInterval);
-          pollInterval = null;
+        if (STATE.pollInterval) {
+          clearInterval(STATE.pollInterval);
+          STATE.pollInterval = null;
         }
       });
 
-      ably.connection.on('disconnected', () => {
+      STATE.ablyInstance.connection.on('disconnected', () => {
         ppvLog('[Ably] Disconnected, starting fallback polling');
         startPolling();
       });
 
-      ably.connection.on('failed', (err) => {
+      STATE.ablyInstance.connection.on('failed', (err) => {
         ppvLog('[Ably] Connection failed:', err);
         startPolling();
       });
@@ -1178,8 +1194,8 @@
       }
 
       // Clear existing interval if any
-      if (pollInterval) {
-        clearInterval(pollInterval);
+      if (STATE.pollInterval) {
+        clearInterval(STATE.pollInterval);
       }
 
       ppvLog('[Poll] Starting polling (every ' + (POLL_INTERVAL_MS / 1000) + 's)');
@@ -1191,7 +1207,7 @@
       };
 
       // Start interval
-      pollInterval = setInterval(poll, POLL_INTERVAL_MS);
+      STATE.pollInterval = setInterval(poll, POLL_INTERVAL_MS);
     }
 
     // Visibility change handler - refresh immediately when page becomes visible
