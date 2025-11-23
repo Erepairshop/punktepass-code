@@ -1,5 +1,5 @@
 /**
- * PunktePass – User Dashboard JS (v4.6 - Modern Icons Edition)
+ * PunktePass – User Dashboard JS (v4.7 - Geo Fix Edition)
  *
  * ✨ REQUIRED: Remix Icon CDN
  * Add this to your HTML <head>:
@@ -12,6 +12,7 @@
  * ✅ FULLY TRANSLATED: DE/HU/RO
  * ✅ MODERN ICONS: No emojis, pure icon fonts
  * 🚀 TURBO-COMPATIBLE: Re-initializes on navigation
+ * ✅ FIX: Geolocation timeout increased (2s→8s) for first-time users after login
  */
 
 // 🚀 Global state for Turbo navigation cleanup
@@ -1129,15 +1130,17 @@ async function initUserDashboard() {
     }
 
     // 1️⃣ Start geo request in background (non-blocking)
+    // ✅ FIX: Use longer timeout when no cached location (first-time users need time for permission prompt)
+    const geoTimeoutMs = (cachedLat && cachedLng) ? 2000 : 8000;
     const geoPromise = new Promise((resolve) => {
       if (!navigator.geolocation) {
         resolve(null);
         return;
       }
       const timeout = setTimeout(() => {
-        console.log('⏱️ [Geo] Timeout after 2s');
+        console.log(`⏱️ [Geo] Timeout after ${geoTimeoutMs/1000}s`);
         resolve(null);
-      }, 2000);
+      }, geoTimeoutMs);
 
       navigator.geolocation.getCurrentPosition(
         (p) => {
@@ -1148,11 +1151,12 @@ async function initUserDashboard() {
           console.log('📍 [Geo] Fresh position cached:', p.coords.latitude.toFixed(4), p.coords.longitude.toFixed(4));
           resolve(p);
         },
-        () => {
+        (err) => {
           clearTimeout(timeout);
+          console.log('⚠️ [Geo] Error:', err.code, err.message);
           resolve(null);
         },
-        { timeout: 2000, maximumAge: 600000 }
+        { timeout: geoTimeoutMs, maximumAge: 600000, enableHighAccuracy: false }
       );
     });
 
