@@ -152,6 +152,7 @@ class PPV_User_Dashboard {
             $wpdb->insert("{$prefix}ppv_tokens", [
                 'entity_type' => 'user',
                 'entity_id' => $uid,
+                'user_id' => $uid,  // ✅ FIX: Set both user_id AND entity_id
                 'token' => $token,
                 'created_at' => current_time('mysql'),
                 'expires_at' => date('Y-m-d H:i:s', strtotime('+30 days'))
