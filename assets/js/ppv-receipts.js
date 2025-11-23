@@ -1,13 +1,15 @@
 /**
  * PunktePass – Bizonylatok Verwaltung (Receipts Management)
- * Version: 2.0 FIXED - PDF DOWNLOAD MEGOLDVA
+ * Version: 2.1 - IIFE wrapper
  * ✅ Működő download funkcionalitás
  * ✅ Helyes JSON kezelés
  */
 
-if (window.PPV_RECEIPTS_LOADED) {
-  // Already loaded - skip duplicate
-} else {
+(function() {
+  'use strict';
+
+  // Script guard - prevent duplicate loading with Turbo.js
+  if (window.PPV_RECEIPTS_LOADED) { return; }
   window.PPV_RECEIPTS_LOADED = true;
 
   // ✅ DEBUG mode - set to true for verbose logging
@@ -15,7 +17,7 @@ if (window.PPV_RECEIPTS_LOADED) {
   const ppvLog = (...args) => { if (PPV_DEBUG) console.log(...args); };
   const ppvWarn = (...args) => { if (PPV_DEBUG) console.warn(...args); };
 
-  ppvLog("✅ PunktePass Bizonylatok JS v2.0 geladen");
+  ppvLog("✅ PunktePass Bizonylatok JS v2.1 geladen");
 
   /* ============================================================
    * 🔑 BASE + TOKEN + STORE - GLOBAL
@@ -326,9 +328,10 @@ if (window.PPV_RECEIPTS_LOADED) {
         ppvLog('✅ [RECEIPTS v2.0] Search input listener attached');
       }
 
-      ppvLog('✅ [RECEIPTS v2.0] Event listeners attached');
+      ppvLog('✅ [RECEIPTS v2.1] Event listeners attached');
     }, 100);
   });
 
-  ppvLog("✅ [RECEIPTS v2.0] Ready!");
-}
+  ppvLog("✅ [RECEIPTS v2.1] Ready!");
+
+})(); // End IIFE
