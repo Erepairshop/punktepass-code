@@ -468,12 +468,13 @@
   });
 
   /* ==========================================================
-   * 🟢 STATUS POLLING
+   * 🟢 STATUS POLLING (with cleanup)
    * ========================================================== */
-  
+
   let pollCount = 0;
   const MAX_POLLS = 120;
   let lastStatuses = {};
+  let pollTimeoutId = null; // Store timeout ID for cleanup
 
   async function checkRewardStatus() {
     const currentUser = $('button.ppv-redeem-btn').first().data('user');
@@ -549,9 +550,26 @@
     }
   }
 
+  // Cleanup function to stop polling
+  function cleanupPolling() {
+    if (pollTimeoutId) {
+      clearTimeout(pollTimeoutId);
+      pollTimeoutId = null;
+      log('INFO', 'Polling cleanup - timeout cleared');
+    }
+    pollCount = MAX_POLLS; // Prevent further polling
+  }
+
   function startStatusPolling() {
+    // Check if we're still on the belohnungen page
+    if (!document.querySelector('.ppv-belohnungen')) {
+      log('INFO', 'Not on belohnungen page, stopping poll');
+      cleanupPolling();
+      return;
+    }
+
     if (pollCount >= MAX_POLLS) {
-      log('INFO', 'Polling stopped');
+      log('INFO', 'Polling stopped (max reached)');
       return;
     }
 
@@ -568,7 +586,8 @@
     }
 
     log('DEBUG', `Next poll in ${nextInterval / 1000}s`);
-    setTimeout(() => startStatusPolling(), nextInterval);
+    // Store timeout ID for cleanup
+    pollTimeoutId = setTimeout(() => startStatusPolling(), nextInterval);
   }
 
   /* ==========================================================
@@ -608,27 +627,35 @@
   // Initialize on document ready
   $(document).ready(initBelohnungen);
 
+  // 🧹 Turbo: Cleanup BEFORE navigating away
+  document.addEventListener('turbo:before-visit', function() {
+    log('INFO', 'Turbo before-visit - cleanup');
+    cleanupPolling();
+  });
+
   // 🚀 Turbo-compatible: Re-initialize after navigation
   document.addEventListener('turbo:load', function() {
     const container = document.querySelector('.ppv-belohnungen');
     if (container) {
       container.dataset.initialized = 'false';
     }
-    // Reset polling
+    // Reset polling state
+    cleanupPolling();
     pollCount = 0;
+    pollTimeoutId = null;
     lastStatuses = {};
     initBelohnungen();
   });
 
-  document.addEventListener('turbo:render', function() {
-    const container = document.querySelector('.ppv-belohnungen');
-    if (container) {
-      container.dataset.initialized = 'false';
-    }
-    // Reset polling
+  // Custom SPA event support
+  window.addEventListener('ppv:spa-navigate', function() {
+    log('INFO', 'SPA navigate - cleanup');
+    cleanupPolling();
     pollCount = 0;
+    pollTimeoutId = null;
     lastStatuses = {};
-    initBelohnungen();
+    // Re-init if on belohnungen page
+    setTimeout(initBelohnungen, 100);
   });
 
 })(jQuery);

@@ -641,11 +641,19 @@
 
   // Turbo.js support
   document.addEventListener('turbo:load', init);
-  document.addEventListener('turbo:before-visit', cleanup);
+  document.addEventListener('turbo:before-visit', function() {
+    console.log('[REWARDS] Turbo before-visit - cleanup');
+    cleanup();
+  });
 
-  // Custom SPA event support
-  window.addEventListener('ppv:spa-navigate', init);
+  // Custom SPA event support - cleanup FIRST, then init
+  window.addEventListener('ppv:spa-navigate', function() {
+    console.log('[REWARDS] SPA navigate - cleanup then init');
+    cleanup();
+    // Small delay to ensure DOM is ready
+    setTimeout(init, 100);
+  });
 
-  console.log('[REWARDS] Script loaded v8.0');
+  console.log('[REWARDS] Script loaded v8.1 (improved cleanup)');
 
 })();
