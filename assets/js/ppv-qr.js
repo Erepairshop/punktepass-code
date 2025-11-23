@@ -1079,17 +1079,25 @@
     STATE.campaignManager.load();
     OfflineSyncManager.sync();
 
-    // Visibility change handler
+    // ✅ POLLING: Refresh logs every 10 seconds
+    let logsPollingInterval = setInterval(() => {
+      if (!document.hidden && getStoreKey()) {
+        STATE.scanProcessor?.loadLogs();
+      }
+    }, 10000);
+
+    // Visibility change handler - also refresh logs when page becomes visible
     let lastVis = 0;
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden && Date.now() - lastVis > 5000) {
         lastVis = Date.now();
         STATE.campaignManager?.load();
+        STATE.scanProcessor?.loadLogs(); // ✅ Also refresh logs
       }
     });
 
     STATE.initialized = true;
-    ppvLog('[QR] Initialization complete');
+    ppvLog('[QR] Initialization complete (polling every 10s)');
   }
 
   // ============================================================
