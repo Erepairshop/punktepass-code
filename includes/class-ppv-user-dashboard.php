@@ -125,7 +125,13 @@ class PPV_User_Dashboard {
         ", $uid));
 
         if (empty($token)) {
-            $token = wp_generate_password(16, false);
+            // Generate token that NEVER starts with a digit
+            // This is critical for QR parsing: PPU{user_id}{token}
+            // If token starts with digit, it gets confused with user_id
+            do {
+                $token = wp_generate_password(16, false);
+            } while (ctype_digit($token[0]));
+
             $wpdb->insert("{$prefix}ppv_tokens", [
                 'entity_type' => 'user',
                 'entity_id' => $uid,
