@@ -47,13 +47,13 @@ if (!class_exists('PPV_Onboarding')) {
 
                 if (!$exists) {
                     $wpdb->query("ALTER TABLE `{$table}` ADD COLUMN `{$col_name}` {$col_definition}");
-                    error_log("✅ [PPV_ONBOARDING] Added column: {$col_name}");
+                    ppv_log("✅ [PPV_ONBOARDING] Added column: {$col_name}");
                 }
             }
 
             // Mark as migrated (v2)
             update_option('ppv_onboarding_db_migrated_v2', true);
-            error_log("✅ [PPV_ONBOARDING] DB migration v2 completed (with postponed_until)");
+            ppv_log("✅ [PPV_ONBOARDING] DB migration v2 completed (with postponed_until)");
         }
 
         /**
@@ -308,7 +308,7 @@ if (!class_exists('PPV_Onboarding')) {
                 ['%d']
             );
 
-            error_log("🚫 [PPV_ONBOARDING] Dismissed store #{$auth['store_id']}: result=" . ($result !== false ? 'OK' : 'FAILED'));
+            ppv_log("🚫 [PPV_ONBOARDING] Dismissed store #{$auth['store_id']}: result=" . ($result !== false ? 'OK' : 'FAILED'));
 
             return rest_ensure_response(['success' => $result !== false]);
         }
@@ -331,7 +331,7 @@ if (!class_exists('PPV_Onboarding')) {
                 ['%d']
             );
 
-            error_log("⏰ [PPV_ONBOARDING] Postponed store #{$auth['store_id']} until {$postpone_until}");
+            ppv_log("⏰ [PPV_ONBOARDING] Postponed store #{$auth['store_id']} until {$postpone_until}");
 
             return rest_ensure_response([
                 'success' => $result !== false,
@@ -358,7 +358,7 @@ if (!class_exists('PPV_Onboarding')) {
                 ['%d']
             );
 
-            error_log("🔄 [PPV_ONBOARDING] Reset store #{$auth['store_id']}: result=" . ($result !== false ? 'OK' : 'FAILED'));
+            ppv_log("🔄 [PPV_ONBOARDING] Reset store #{$auth['store_id']}: result=" . ($result !== false ? 'OK' : 'FAILED'));
 
             // Get fresh progress
             $store = self::get_store($auth['store_id']);

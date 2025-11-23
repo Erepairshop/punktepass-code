@@ -31,7 +31,7 @@ class PPV_SessionBridge {
             ]);
 
             @session_start();
-            error_log("✅ [PPV_SessionBridge] Session started with 30-day lifetime");
+            ppv_log("✅ [PPV_SessionBridge] Session started with 30-day lifetime");
         }
     }
     
@@ -42,10 +42,10 @@ class PPV_SessionBridge {
         global $wpdb;
         $prefix = $wpdb->prefix;
 
-        error_log("🔍 [SessionBridge] restore_from_token() called");
-        error_log("🔍 [SessionBridge] Current session_id: " . (session_status() === PHP_SESSION_ACTIVE ? session_id() : 'NO SESSION'));
-        error_log("🔍 [SessionBridge] ppv_vendor_store_id in session: " . ($_SESSION['ppv_vendor_store_id'] ?? 'EMPTY'));
-        error_log("🔍 [SessionBridge] ppv_user_id in session: " . ($_SESSION['ppv_user_id'] ?? 'EMPTY'));
+        ppv_log("🔍 [SessionBridge] restore_from_token() called");
+        ppv_log("🔍 [SessionBridge] Current session_id: " . (session_status() === PHP_SESSION_ACTIVE ? session_id() : 'NO SESSION'));
+        ppv_log("🔍 [SessionBridge] ppv_vendor_store_id in session: " . ($_SESSION['ppv_vendor_store_id'] ?? 'EMPTY'));
+        ppv_log("🔍 [SessionBridge] ppv_user_id in session: " . ($_SESSION['ppv_user_id'] ?? 'EMPTY'));
 
         // 🔒 VENDOR MODE – vendor user ID-t vissza KELL állítani!
         if (!empty($_SESSION['ppv_vendor_store_id'])) {
@@ -64,31 +64,31 @@ class PPV_SessionBridge {
 
                     if ($user) {
                         $_SESSION['ppv_user_id'] = $user->id;
-                        error_log("✅ [PPV_SessionBridge] Vendor user ID restored: {$user->id}");
+                        ppv_log("✅ [PPV_SessionBridge] Vendor user ID restored: {$user->id}");
                     } else {
-                        error_log("⚠️ [PPV_SessionBridge] Vendor user not found for email: {$store->email}");
+                        ppv_log("⚠️ [PPV_SessionBridge] Vendor user not found for email: {$store->email}");
                     }
                 }
             }
 
-            error_log("🔒 [PPV_SessionBridge] VENDOR MODE active, user_id=" . ($_SESSION['ppv_user_id'] ?? 0));
+            ppv_log("🔒 [PPV_SessionBridge] VENDOR MODE active, user_id=" . ($_SESSION['ppv_user_id'] ?? 0));
             return;
         }
 
         // 🆕 USER TOKEN RESTORE (Normal users!)
         $user_token = $_COOKIE['ppv_user_token'] ?? '';
-        error_log("🔍 [SessionBridge] ppv_user_token cookie: " . ($user_token ? 'EXISTS (len=' . strlen($user_token) . ', value=' . substr($user_token, 0, 20) . '...)' : 'MISSING'));
+        ppv_log("🔍 [SessionBridge] ppv_user_token cookie: " . ($user_token ? 'EXISTS (len=' . strlen($user_token) . ', value=' . substr($user_token, 0, 20) . '...)' : 'MISSING'));
 
         if (!empty($user_token) && empty($_SESSION['ppv_user_id'])) {
-            error_log("🔍 [SessionBridge] Querying database for token: " . substr($user_token, 0, 20) . "...");
+            ppv_log("🔍 [SessionBridge] Querying database for token: " . substr($user_token, 0, 20) . "...");
 
             $user = $wpdb->get_row($wpdb->prepare(
                 "SELECT * FROM {$prefix}ppv_users WHERE login_token=%s AND active=1 LIMIT 1",
                 $user_token
             ));
 
-            error_log("🔍 [SessionBridge] Database query result: " . ($user ? "FOUND user ID={$user->id}" : "NO USER FOUND"));
-            error_log("🔍 [SessionBridge] Last SQL error: " . ($wpdb->last_error ?: 'none'));
+            ppv_log("🔍 [SessionBridge] Database query result: " . ($user ? "FOUND user ID={$user->id}" : "NO USER FOUND"));
+            ppv_log("🔍 [SessionBridge] Last SQL error: " . ($wpdb->last_error ?: 'none'));
 
             if ($user) {
                 $_SESSION['ppv_user_id'] = $user->id;
@@ -104,22 +104,22 @@ class PPV_SessionBridge {
                     if (empty($_SESSION['ppv_current_filiale_id'])) {
                         $_SESSION['ppv_store_id'] = $user->vendor_store_id;
                         $_SESSION['ppv_active_store'] = $user->vendor_store_id;
-                        error_log("✅ [PPV_SessionBridge] Store restored for {$user->user_type}: store_id={$user->vendor_store_id}");
+                        ppv_log("✅ [PPV_SessionBridge] Store restored for {$user->user_type}: store_id={$user->vendor_store_id}");
                     } else {
-                        error_log("🔹 [PPV_SessionBridge] Filiale active (ID=" . $_SESSION['ppv_current_filiale_id'] . "), skipping store_id restore");
+                        ppv_log("🔹 [PPV_SessionBridge] Filiale active (ID=" . $_SESSION['ppv_current_filiale_id'] . "), skipping store_id restore");
                     }
                 }
 
-                error_log("✅ [PPV_SessionBridge] User restored from token: ID={$user->id}, type=" . ($user->user_type ?? 'user'));
+                ppv_log("✅ [PPV_SessionBridge] User restored from token: ID={$user->id}, type=" . ($user->user_type ?? 'user'));
                 return;
             } else {
                 // ✅ FIX: Invalid token - töröljük a cookie-t hogy ne próbálkozzon újra
-                error_log("⚠️ [PPV_SessionBridge] Invalid user token (deleted or expired) - removing cookie");
+                ppv_log("⚠️ [PPV_SessionBridge] Invalid user token (deleted or expired) - removing cookie");
                 setcookie('ppv_user_token', '', time() - 3600, '/', '', true, true);
                 unset($_COOKIE['ppv_user_token']);
             }
         } else {
-            error_log("🔍 [SessionBridge] Skipping token restore: user_token=" . ($user_token ? 'exists' : 'missing') . ", ppv_user_id=" . ($_SESSION['ppv_user_id'] ?? 'empty'));
+            ppv_log("🔍 [SessionBridge] Skipping token restore: user_token=" . ($user_token ? 'exists' : 'missing') . ", ppv_user_id=" . ($_SESSION['ppv_user_id'] ?? 'empty'));
         }
         
         // 1️⃣ POS token sessionből vagy cookie-ból
@@ -142,20 +142,20 @@ class PPV_SessionBridge {
                 $_SESSION['ppv_user_id'] == $_SESSION['ppv_store_id'] &&
                 empty($_SESSION['ppv_user_type'])) {
                 unset($_SESSION['ppv_user_id']);
-                error_log("⚠️ [PPV_SessionBridge] Removed invalid user_id (was same as store_id, no user_type)");
+                ppv_log("⚠️ [PPV_SessionBridge] Removed invalid user_id (was same as store_id, no user_type)");
             }
-            error_log("✅ [PPV_SessionBridge] Fallback POS active | store={$_SESSION['ppv_store_id']}");
+            ppv_log("✅ [PPV_SessionBridge] Fallback POS active | store={$_SESSION['ppv_store_id']}");
             return;
         }
         
         if (empty($row)) {
-            error_log("⚠️ [PPV_SessionBridge] Token not found");
+            ppv_log("⚠️ [PPV_SessionBridge] Token not found");
             return;
         }
         
         // 3️⃣ Lejárt token?
         if (strtotime($row->expires_at) < time()) {
-            error_log("⚠️ [PPV_SessionBridge] Token expired");
+            ppv_log("⚠️ [PPV_SessionBridge] Token expired");
             return;
         }
         
@@ -169,7 +169,7 @@ class PPV_SessionBridge {
         $GLOBALS['ppv_active_store'] = $store_id;
         $GLOBALS['ppv_is_pos'] = true;
         $GLOBALS['ppv_active_user'] = $row->user_id;
-        error_log("✅ [PPV_SessionBridge] POS restored | user={$row->user_id}, store={$store_id}");
+        ppv_log("✅ [PPV_SessionBridge] POS restored | user={$row->user_id}, store={$store_id}");
     }
 }
 

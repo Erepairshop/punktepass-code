@@ -122,7 +122,7 @@ public static function ajax_auto_add_point() {
 
         if ($campaign_points) {
             $points_to_add = intval($campaign_points);
-            error_log("🎯 [PPV_Scan] Campaign points applied: campaign_id={$campaign_id}, points={$points_to_add}");
+            ppv_log("🎯 [PPV_Scan] Campaign points applied: campaign_id={$campaign_id}, points={$points_to_add}");
         }
     }
 
@@ -133,7 +133,7 @@ public static function ajax_auto_add_point() {
         if (class_exists('PPV_Filiale')) {
             $reward_store_id = PPV_Filiale::get_parent_id($store_id);
             if ($reward_store_id !== $store_id) {
-                error_log("🏪 [PPV_Scan] Reward lookup: Using PARENT store {$reward_store_id} instead of filiale {$store_id}");
+                ppv_log("🏪 [PPV_Scan] Reward lookup: Using PARENT store {$reward_store_id} instead of filiale {$store_id}");
             }
         }
 
@@ -145,18 +145,18 @@ public static function ajax_auto_add_point() {
 
         if ($reward_points && intval($reward_points) > 0) {
             $points_to_add = intval($reward_points);
-            error_log("🎁 [PPV_Scan] Reward base points applied: reward_store_id={$reward_store_id}, points_given={$points_to_add}");
+            ppv_log("🎁 [PPV_Scan] Reward base points applied: reward_store_id={$reward_store_id}, points_given={$points_to_add}");
         }
     }
 
     // 3. If neither exists, notify merchant to configure
     if ($points_to_add === 0) {
-        error_log("⚠️ [PPV_Scan] No points configured: store_id={$store_id}, campaign_id={$campaign_id}");
+        ppv_log("⚠️ [PPV_Scan] No points configured: store_id={$store_id}, campaign_id={$campaign_id}");
         wp_send_json_error(['msg' => '⚠️ Keine Punkte konfiguriert. Bitte Prämie oder Kampagne einrichten.']);
     }
 
     // 🔍 DEBUG: Log scan source
-    error_log("🔍 [PPV_Scan] AJAX scan: user_id={$user_id}, store_id={$store_id}, points={$points_to_add}");
+    ppv_log("🔍 [PPV_Scan] AJAX scan: user_id={$user_id}, store_id={$store_id}, points={$points_to_add}");
 
     /** 🌟 VIP Level Bonuses */
     $vip_bonus_applied = 0;
@@ -167,7 +167,7 @@ public static function ajax_auto_add_point() {
         if (class_exists('PPV_Filiale')) {
             $vip_store_id = PPV_Filiale::get_parent_id($store_id);
             if ($vip_store_id !== $store_id) {
-                error_log("🏪 [PPV_Scan] VIP settings: Using PARENT store {$vip_store_id} instead of filiale {$store_id}");
+                ppv_log("🏪 [PPV_Scan] VIP settings: Using PARENT store {$vip_store_id} instead of filiale {$store_id}");
             }
         }
 
@@ -182,7 +182,7 @@ public static function ajax_auto_add_point() {
             FROM {$wpdb->prefix}ppv_stores WHERE id = %d
         ", $vip_store_id));
 
-        error_log("🔍 [PPV_Scan] VIP settings for store {$vip_store_id}: " . json_encode([
+        ppv_log("🔍 [PPV_Scan] VIP settings for store {$vip_store_id}: " . json_encode([
             'vip_enabled' => $vip_settings->vip_enabled ?? 'NULL',
             'vip_fix_enabled' => $vip_settings->vip_fix_enabled ?? 'NULL',
             'vip_fix_bronze' => $vip_settings->vip_fix_bronze ?? 'NULL',
@@ -192,7 +192,7 @@ public static function ajax_auto_add_point() {
             $user_level = PPV_User_Level::get_vip_level_for_bonus($user_id);
             $base_points = $points_to_add;
 
-            error_log("🔍 [PPV_Scan] User VIP level: user_id={$user_id}, level=" . ($user_level ?? 'NULL (Starter)'));
+            ppv_log("🔍 [PPV_Scan] User VIP level: user_id={$user_id}, level=" . ($user_level ?? 'NULL (Starter)'));
 
             // Helper to get level-specific value
             $getLevelValue = function($bronze, $silver, $gold, $platinum) use ($user_level) {
@@ -260,7 +260,7 @@ public static function ajax_auto_add_point() {
                             $vip_bonus_details['streak'] = $base_points * 2;
                         }
 
-                        error_log("🔥 [PPV_Scan] Streak bonus triggered! Scan #{$next_scan_number} (every {$streak_count})");
+                        ppv_log("🔥 [PPV_Scan] Streak bonus triggered! Scan #{$next_scan_number} (every {$streak_count})");
                     }
                 }
             }
@@ -281,7 +281,7 @@ public static function ajax_auto_add_point() {
                         $vip_settings->vip_daily_gold,
                         $vip_settings->vip_daily_platinum
                     );
-                    error_log("☀️ [PPV_Scan] First daily scan bonus applied for user {$user_id}");
+                    ppv_log("☀️ [PPV_Scan] First daily scan bonus applied for user {$user_id}");
                 }
             }
 
@@ -290,7 +290,7 @@ public static function ajax_auto_add_point() {
 
             if ($vip_bonus_applied > 0) {
                 $points_to_add += $vip_bonus_applied;
-                error_log("✅ [PPV_Scan] VIP bonuses applied: level={$user_level}, pct=+{$vip_bonus_details['pct']}, fix=+{$vip_bonus_details['fix']}, streak=+{$vip_bonus_details['streak']}, daily=+{$vip_bonus_details['daily']}, total_bonus={$vip_bonus_applied}, total_points={$points_to_add}");
+                ppv_log("✅ [PPV_Scan] VIP bonuses applied: level={$user_level}, pct=+{$vip_bonus_details['pct']}, fix=+{$vip_bonus_details['fix']}, streak=+{$vip_bonus_details['streak']}, daily=+{$vip_bonus_details['daily']}, total_bonus={$vip_bonus_applied}, total_points={$points_to_add}");
             }
         }
     }

@@ -118,12 +118,12 @@ class PPV_Login {
                 // Cache for 1 hour
                 set_transient($cache_key, $detected_lang, HOUR_IN_SECONDS);
 
-                error_log("🌍 [PPV_Login] GeoIP: IP={$ip}, Country={$country}, Lang={$detected_lang}");
+                ppv_log("🌍 [PPV_Login] GeoIP: IP={$ip}, Country={$country}, Lang={$detected_lang}");
 
                 return $detected_lang;
             }
         } catch (Exception $e) {
-            error_log("⚠️ [PPV_Login] GeoIP error: " . $e->getMessage());
+            ppv_log("⚠️ [PPV_Login] GeoIP error: " . $e->getMessage());
         }
 
         // Fallback to locale
@@ -162,7 +162,7 @@ class PPV_Login {
                    (isset($_POST['action']) && str_contains($_POST['action'], 'ppv_pos_')));
         
         if ($is_pos) {
-            error_log("🚫 [PPV_Login] POS context – session skipped");
+            ppv_log("🚫 [PPV_Login] POS context – session skipped");
             return;
         }
         
@@ -177,7 +177,7 @@ class PPV_Login {
                 'samesite' => 'Lax'
             ]);
             @session_start();
-            error_log("✅ [PPV_Login] Session started (ID=" . session_id() . ")");
+            ppv_log("✅ [PPV_Login] Session started (ID=" . session_id() . ")");
         }
     }
     
@@ -231,28 +231,28 @@ public static function check_already_logged_in() {
 
     // 🔐 USER already logged in (CHECK SESSION FIRST, not cookie!)
     if (!empty($_SESSION['ppv_user_id']) && $_SESSION['ppv_user_type'] === 'user') {
-        error_log("🔄 [PPV_Login] User redirect from login page (session check)");
+        ppv_log("🔄 [PPV_Login] User redirect from login page (session check)");
         wp_safe_redirect(home_url('/user_dashboard'));
         exit;
     }
 
     // 🏪 HANDLER/STORE already logged in
     if (!empty($_SESSION['ppv_store_id']) && in_array($_SESSION['ppv_user_type'], ['store', 'handler', 'vendor', 'admin'])) {
-        error_log("🔄 [PPV_Login] Store redirect from login page (session check)");
+        ppv_log("🔄 [PPV_Login] Store redirect from login page (session check)");
         wp_safe_redirect(home_url('/qr-center'));
         exit;
     }
 
     // 👥 SCANNER already logged in
     if (!empty($_SESSION['ppv_user_id']) && isset($_SESSION['ppv_user_type']) && $_SESSION['ppv_user_type'] === 'scanner') {
-        error_log("🔄 [PPV_Login] Scanner redirect from login page (session check)");
+        ppv_log("🔄 [PPV_Login] Scanner redirect from login page (session check)");
         wp_safe_redirect(home_url('/qr-center'));
         exit;
     }
 
     // ⚠️ If we reach here, session restore failed or no valid login
     // Don't redirect based on cookie alone - let the login page load
-    error_log("🔍 [PPV_Login] No valid session - showing login page");
+    ppv_log("🔍 [PPV_Login] No valid session - showing login page");
 }
     
 public static function render_landing_page($atts) {
@@ -593,9 +593,9 @@ public static function render_landing_page($atts) {
             if (empty($token)) {
                 $token = md5(uniqid('ppv_user_', true));
                 $wpdb->update("{$prefix}ppv_users", ['login_token' => $token], ['id' => $user->id]);
-                error_log("🔑 [PPV_Login] New token generated for user #{$user->id}");
+                ppv_log("🔑 [PPV_Login] New token generated for user #{$user->id}");
             } else {
-                error_log("🔑 [PPV_Login] Reusing existing token for user #{$user->id} (multi-device)");
+                ppv_log("🔑 [PPV_Login] Reusing existing token for user #{$user->id} (multi-device)");
             }
 
             // Set cookie
@@ -603,7 +603,7 @@ public static function render_landing_page($atts) {
             $expire = $remember ? time() + (86400 * 180) : time() + 86400;
             setcookie('ppv_user_token', $token, $expire, '/', $domain, true, true);
 
-            error_log("✅ [PPV_Login] User logged in (#{$user->id})");
+            ppv_log("✅ [PPV_Login] User logged in (#{$user->id})");
             
             wp_send_json_success([
                 'message' => PPV_Lang::t('login_success'),
@@ -621,7 +621,7 @@ public static function render_landing_page($atts) {
         ));
         
         if ($store && password_verify($password, $store->password)) {
-            error_log("✅ [PPV_Login] Handler match: Store={$store->id}");
+            ppv_log("✅ [PPV_Login] Handler match: Store={$store->id}");
             
             // ============================================================
             // 🆕 CREATE VENDOR USER (if not exists)
@@ -632,7 +632,7 @@ public static function render_landing_page($atts) {
             ));
             
             if (!$vendor_user) {
-                error_log("🆕 [PPV_Login] Creating vendor user...");
+                ppv_log("🆕 [PPV_Login] Creating vendor user...");
                 
                 // Generate QR token
                 do {
@@ -660,10 +660,10 @@ public static function render_landing_page($atts) {
                 );
                 
                 $user_id = $wpdb->insert_id;
-                error_log("✅ [PPV_Login] Vendor user created: ID={$user_id}, QR={$qr_token}");
+                ppv_log("✅ [PPV_Login] Vendor user created: ID={$user_id}, QR={$qr_token}");
             } else {
                 $user_id = $vendor_user->id;
-                error_log("📝 [PPV_Login] Vendor user exists: ID={$user_id}");
+                ppv_log("📝 [PPV_Login] Vendor user exists: ID={$user_id}");
             }
             
             // ============================================================
@@ -681,7 +681,7 @@ public static function render_landing_page($atts) {
             $_SESSION['ppv_vendor_store_id'] = $store->id;
             $_SESSION['ppv_user_email'] = $store->email;
             
-            error_log("✅ [PPV_Login] SESSION: user_id={$user_id}, type=store, store={$store->id}");
+            ppv_log("✅ [PPV_Login] SESSION: user_id={$user_id}, type=store, store={$store->id}");
             
             $GLOBALS['ppv_role'] = 'handler';
             
@@ -697,7 +697,7 @@ public static function render_landing_page($atts) {
                 $domain = $_SERVER['HTTP_HOST'] ?? '';
                 setcookie('ppv_pos_token', $store->pos_token, time() + (86400 * 180), '/', $domain, true, true);
                 
-                error_log("💾 [PPV_Login] POS enabled for store #{$store->id}");
+                ppv_log("💾 [PPV_Login] POS enabled for store #{$store->id}");
             }
             
             // ✅ Multi-device: Reuse existing token if available
@@ -706,18 +706,18 @@ public static function render_landing_page($atts) {
             ));
             if (!empty($existing_token)) {
                 $token = $existing_token;
-                error_log("🔑 [PPV_Login] Reusing existing handler token (multi-device)");
+                ppv_log("🔑 [PPV_Login] Reusing existing handler token (multi-device)");
             } else {
                 $token = md5(uniqid('ppv_handler_', true));
                 $wpdb->update("{$prefix}ppv_users", ['login_token' => $token], ['id' => $user_id]);
-                error_log("🔑 [PPV_Login] New handler token generated");
+                ppv_log("🔑 [PPV_Login] New handler token generated");
             }
 
             // Set cookie
             $domain = $_SERVER['HTTP_HOST'] ?? '';
             setcookie('ppv_user_token', $token, time() + (86400 * 180), '/', $domain, true, true);
 
-            error_log("✅ [PPV_Login] Handler login success!");
+            ppv_log("✅ [PPV_Login] Handler login success!");
             
             wp_send_json_success([
                 'message' => PPV_Lang::t('login_success'),
@@ -735,11 +735,11 @@ public static function render_landing_page($atts) {
         ));
 
         if ($scanner_user && password_verify($password, $scanner_user->password)) {
-            error_log("✅ [PPV_Login] Scanner user match: ID={$scanner_user->id}");
+            ppv_log("✅ [PPV_Login] Scanner user match: ID={$scanner_user->id}");
 
             // Check if scanner is disabled
             if ($scanner_user->active != 1) {
-                error_log("❌ [PPV_Login] Scanner user is disabled: ID={$scanner_user->id}");
+                ppv_log("❌ [PPV_Login] Scanner user is disabled: ID={$scanner_user->id}");
                 wp_send_json_error(['message' => 'Ihr Konto wurde deaktiviert. Bitte kontaktieren Sie Ihren Administrator.']);
             }
 
@@ -750,19 +750,19 @@ public static function render_landing_page($atts) {
             ));
 
             if (!$handler_store) {
-                error_log("❌ [PPV_Login] Scanner's handler store not found: store_id={$scanner_user->vendor_store_id}");
+                ppv_log("❌ [PPV_Login] Scanner's handler store not found: store_id={$scanner_user->vendor_store_id}");
                 wp_send_json_error(['message' => 'Handler Store nicht gefunden. Bitte kontaktieren Sie Ihren Administrator.']);
             }
 
             // Check if handler store is active
             if ($handler_store->active != 1) {
-                error_log("❌ [PPV_Login] Handler store is inactive: store_id={$handler_store->id}");
+                ppv_log("❌ [PPV_Login] Handler store is inactive: store_id={$handler_store->id}");
                 wp_send_json_error(['message' => 'Der Handler ist inaktiv. Scanner Login nicht möglich.']);
             }
 
             // Check if handler subscription is valid
             if ($handler_store->subscription_end && strtotime($handler_store->subscription_end) < time()) {
-                error_log("❌ [PPV_Login] Handler subscription expired: store_id={$handler_store->id}, expired={$handler_store->subscription_end}");
+                ppv_log("❌ [PPV_Login] Handler subscription expired: store_id={$handler_store->id}, expired={$handler_store->subscription_end}");
                 wp_send_json_error(['message' => 'Die Handler Subscription ist abgelaufen. Scanner Login nicht möglich.']);
             }
 
@@ -787,16 +787,16 @@ public static function render_landing_page($atts) {
             if (empty($token)) {
                 $token = md5(uniqid('ppv_scanner_', true));
                 $wpdb->update("{$prefix}ppv_users", ['login_token' => $token], ['id' => $scanner_user->id]);
-                error_log("🔑 [PPV_Login] New scanner token generated");
+                ppv_log("🔑 [PPV_Login] New scanner token generated");
             } else {
-                error_log("🔑 [PPV_Login] Reusing existing scanner token (multi-device)");
+                ppv_log("🔑 [PPV_Login] Reusing existing scanner token (multi-device)");
             }
 
             // Set cookie
             $domain = $_SERVER['HTTP_HOST'] ?? '';
             setcookie('ppv_user_token', $token, time() + (86400 * 180), '/', $domain, true, true);
 
-            error_log("✅ [PPV_Login] Scanner login success: user_id={$scanner_user->id}, store_id={$handler_store->id}");
+            ppv_log("✅ [PPV_Login] Scanner login success: user_id={$scanner_user->id}, store_id={$handler_store->id}");
 
             wp_send_json_success([
                 'message' => PPV_Lang::t('login_success'),
@@ -808,7 +808,7 @@ public static function render_landing_page($atts) {
         }
 
         // 🔹 LOGIN FAILED
-        error_log("❌ [PPV_Login] Failed login attempt for: {$email}");
+        ppv_log("❌ [PPV_Login] Failed login attempt for: {$email}");
         wp_send_json_error(['message' => PPV_Lang::t('login_error_invalid')]);
     }
 /** ============================================================
@@ -867,12 +867,12 @@ public static function render_landing_page($atts) {
             );
             
             if ($insert_result === false) {
-                error_log("❌ [PPV_Login] Failed to create Google user: {$email}");
+                ppv_log("❌ [PPV_Login] Failed to create Google user: {$email}");
                 wp_send_json_error(['message' => PPV_Lang::t('login_user_create_error')]);
             }
             
             $user_id = $wpdb->insert_id;
-            error_log("✅ [PPV_Login] New Google user created (#{$user_id}): {$email}");
+            ppv_log("✅ [PPV_Login] New Google user created (#{$user_id}): {$email}");
             
             // Fetch the newly created user
             $user = $wpdb->get_row($wpdb->prepare(
@@ -889,7 +889,7 @@ public static function render_landing_page($atts) {
                     ['%s'],
                     ['%d']
                 );
-                error_log("✅ [PPV_Login] Google ID updated for user #{$user->id}");
+                ppv_log("✅ [PPV_Login] Google ID updated for user #{$user->id}");
             }
         }
         
@@ -918,16 +918,16 @@ public static function render_landing_page($atts) {
                 ['%s'],
                 ['%d']
             );
-            error_log("🔑 [PPV_Login] New Google token generated");
+            ppv_log("🔑 [PPV_Login] New Google token generated");
         } else {
-            error_log("🔑 [PPV_Login] Reusing existing token for Google login (multi-device)");
+            ppv_log("🔑 [PPV_Login] Reusing existing token for Google login (multi-device)");
         }
 
         // Set cookie (180 days for Google login)
         $domain = $_SERVER['HTTP_HOST'] ?? '';
         setcookie('ppv_user_token', $token, time() + (86400 * 180), '/', $domain, true, true);
 
-        error_log("✅ [PPV_Login] Google login successful (#{$user->id}): {$email}");
+        ppv_log("✅ [PPV_Login] Google login successful (#{$user->id}): {$email}");
         
         wp_send_json_success([
             'message' => PPV_Lang::t('login_google_success'),
@@ -945,7 +945,7 @@ public static function render_landing_page($atts) {
         // Check wp-config.php define first, then options table
         $client_id = defined('PPV_GOOGLE_CLIENT_ID') ? PPV_GOOGLE_CLIENT_ID : get_option('ppv_google_client_id', '453567547051-odmqrinafba8ls8ktp9snlp7d2fpl9q0.apps.googleusercontent.com');
         
-        error_log("🔍 [PPV_Google] Starting token verification");
+        ppv_log("🔍 [PPV_Google] Starting token verification");
         
         if (empty($client_id)) {
             return false;
@@ -1028,12 +1028,12 @@ public static function render_landing_page($atts) {
             );
 
             if ($insert_result === false) {
-                error_log("❌ [PPV_Login] Failed to create Facebook user: {$email}");
+                ppv_log("❌ [PPV_Login] Failed to create Facebook user: {$email}");
                 wp_send_json_error(['message' => 'Benutzer konnte nicht erstellt werden']);
             }
 
             $user_id = $wpdb->insert_id;
-            error_log("✅ [PPV_Login] New Facebook user created (#{$user_id}): {$email}");
+            ppv_log("✅ [PPV_Login] New Facebook user created (#{$user_id}): {$email}");
 
             $user = $wpdb->get_row($wpdb->prepare(
                 "SELECT * FROM {$prefix}ppv_users WHERE id=%d LIMIT 1",
@@ -1049,7 +1049,7 @@ public static function render_landing_page($atts) {
                     ['%s'],
                     ['%d']
                 );
-                error_log("✅ [PPV_Login] Facebook ID updated for user #{$user->id}");
+                ppv_log("✅ [PPV_Login] Facebook ID updated for user #{$user->id}");
             }
         }
 
@@ -1078,16 +1078,16 @@ public static function render_landing_page($atts) {
                 ['%s'],
                 ['%d']
             );
-            error_log("🔑 [PPV_Login] New Facebook token generated");
+            ppv_log("🔑 [PPV_Login] New Facebook token generated");
         } else {
-            error_log("🔑 [PPV_Login] Reusing existing token for Facebook login (multi-device)");
+            ppv_log("🔑 [PPV_Login] Reusing existing token for Facebook login (multi-device)");
         }
 
         // Set cookie
         $domain = $_SERVER['HTTP_HOST'] ?? '';
         setcookie('ppv_user_token', $token, time() + (86400 * 180), '/', $domain, true, true);
 
-        error_log("✅ [PPV_Login] Facebook login successful (#{$user->id}): {$email}");
+        ppv_log("✅ [PPV_Login] Facebook login successful (#{$user->id}): {$email}");
 
         wp_send_json_success([
             'message' => 'Erfolgreich angemeldet!',
@@ -1163,12 +1163,12 @@ public static function render_landing_page($atts) {
             );
 
             if ($insert_result === false) {
-                error_log("❌ [PPV_Login] Failed to create TikTok user: {$tiktok_id}");
+                ppv_log("❌ [PPV_Login] Failed to create TikTok user: {$tiktok_id}");
                 wp_send_json_error(['message' => 'Benutzer konnte nicht erstellt werden']);
             }
 
             $user_id = $wpdb->insert_id;
-            error_log("✅ [PPV_Login] New TikTok user created (#{$user_id}): {$tiktok_id}");
+            ppv_log("✅ [PPV_Login] New TikTok user created (#{$user_id}): {$tiktok_id}");
 
             $user = $wpdb->get_row($wpdb->prepare(
                 "SELECT * FROM {$prefix}ppv_users WHERE id=%d LIMIT 1",
@@ -1201,16 +1201,16 @@ public static function render_landing_page($atts) {
                 ['%s'],
                 ['%d']
             );
-            error_log("🔑 [PPV_Login] New TikTok token generated");
+            ppv_log("🔑 [PPV_Login] New TikTok token generated");
         } else {
-            error_log("🔑 [PPV_Login] Reusing existing token for TikTok login (multi-device)");
+            ppv_log("🔑 [PPV_Login] Reusing existing token for TikTok login (multi-device)");
         }
 
         // Set cookie
         $domain = $_SERVER['HTTP_HOST'] ?? '';
         setcookie('ppv_user_token', $token, time() + (86400 * 180), '/', $domain, true, true);
 
-        error_log("✅ [PPV_Login] TikTok login successful (#{$user->id}): {$tiktok_id}");
+        ppv_log("✅ [PPV_Login] TikTok login successful (#{$user->id}): {$tiktok_id}");
 
         wp_send_json_success([
             'message' => 'Erfolgreich angemeldet!',
@@ -1229,7 +1229,7 @@ public static function render_landing_page($atts) {
         $app_secret = defined('PPV_FACEBOOK_APP_SECRET') ? PPV_FACEBOOK_APP_SECRET : get_option('ppv_facebook_app_secret', '');
 
         if (empty($app_id) || empty($app_secret)) {
-            error_log("❌ [PPV_Facebook] App ID or Secret not configured");
+            ppv_log("❌ [PPV_Facebook] App ID or Secret not configured");
             return false;
         }
 
@@ -1238,14 +1238,14 @@ public static function render_landing_page($atts) {
         $verify_response = wp_remote_get($verify_url);
 
         if (is_wp_error($verify_response)) {
-            error_log("❌ [PPV_Facebook] Token verification failed: " . $verify_response->get_error_message());
+            ppv_log("❌ [PPV_Facebook] Token verification failed: " . $verify_response->get_error_message());
             return false;
         }
 
         $verify_data = json_decode(wp_remote_retrieve_body($verify_response), true);
 
         if (!isset($verify_data['data']['is_valid']) || !$verify_data['data']['is_valid']) {
-            error_log("❌ [PPV_Facebook] Invalid token");
+            ppv_log("❌ [PPV_Facebook] Invalid token");
             return false;
         }
 
@@ -1254,7 +1254,7 @@ public static function render_landing_page($atts) {
         $user_response = wp_remote_get($user_url);
 
         if (is_wp_error($user_response)) {
-            error_log("❌ [PPV_Facebook] User data fetch failed: " . $user_response->get_error_message());
+            ppv_log("❌ [PPV_Facebook] User data fetch failed: " . $user_response->get_error_message());
             return false;
         }
 
@@ -1272,7 +1272,7 @@ public static function render_landing_page($atts) {
         $redirect_uri = home_url('/login');
 
         if (empty($client_key) || empty($client_secret)) {
-            error_log("❌ [PPV_TikTok] Client Key or Secret not configured");
+            ppv_log("❌ [PPV_TikTok] Client Key or Secret not configured");
             return false;
         }
 
@@ -1289,14 +1289,14 @@ public static function render_landing_page($atts) {
         ]);
 
         if (is_wp_error($token_response)) {
-            error_log("❌ [PPV_TikTok] Token exchange failed: " . $token_response->get_error_message());
+            ppv_log("❌ [PPV_TikTok] Token exchange failed: " . $token_response->get_error_message());
             return false;
         }
 
         $token_data = json_decode(wp_remote_retrieve_body($token_response), true);
 
         if (!isset($token_data['data']['access_token'])) {
-            error_log("❌ [PPV_TikTok] No access token in response");
+            ppv_log("❌ [PPV_TikTok] No access token in response");
             return false;
         }
 
@@ -1316,14 +1316,14 @@ public static function render_landing_page($atts) {
         ]);
 
         if (is_wp_error($user_response)) {
-            error_log("❌ [PPV_TikTok] User info fetch failed: " . $user_response->get_error_message());
+            ppv_log("❌ [PPV_TikTok] User info fetch failed: " . $user_response->get_error_message());
             return false;
         }
 
         $user_data = json_decode(wp_remote_retrieve_body($user_response), true);
 
         if (!isset($user_data['data']['user'])) {
-            error_log("❌ [PPV_TikTok] No user data in response");
+            ppv_log("❌ [PPV_TikTok] No user data in response");
             return false;
         }
 

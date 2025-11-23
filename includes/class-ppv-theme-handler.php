@@ -37,7 +37,7 @@ class PPV_Theme_Handler {
         $_SESSION[self::COOKIE_KEY] = $theme;
         self::set_multi_domain_cookie($theme);
 
-        error_log("🎨 [PPV_Theme_Handler::init] Theme initialized: {$theme}");
+        ppv_log("🎨 [PPV_Theme_Handler::init] Theme initialized: {$theme}");
     }
 
     /** ============================================================
@@ -49,7 +49,7 @@ class PPV_Theme_Handler {
         if (!empty($_COOKIE[self::COOKIE_KEY])) {
             $cookie = sanitize_text_field($_COOKIE[self::COOKIE_KEY]);
             if (in_array($cookie, self::VALID_THEMES)) {
-                error_log("🎨 [PPV_Theme_Handler] Theme from Cookie: {$cookie}");
+                ppv_log("🎨 [PPV_Theme_Handler] Theme from Cookie: {$cookie}");
 
                 // Sync to DB in background if logged in
                 if (is_user_logged_in()) {
@@ -57,7 +57,7 @@ class PPV_Theme_Handler {
                     $db_theme = get_user_meta($uid, self::THEME_META_KEY, true);
                     if ($db_theme !== $cookie) {
                         update_user_meta($uid, self::THEME_META_KEY, $cookie);
-                        error_log("🔄 [PPV_Theme_Handler] Synced cookie→DB: {$cookie}");
+                        ppv_log("🔄 [PPV_Theme_Handler] Synced cookie→DB: {$cookie}");
                     }
                 }
 
@@ -70,7 +70,7 @@ class PPV_Theme_Handler {
             $uid = get_current_user_id();
             $saved = get_user_meta($uid, self::THEME_META_KEY, true);
             if (in_array($saved, self::VALID_THEMES)) {
-                error_log("🎨 [PPV_Theme_Handler] Theme from DB: {$saved}");
+                ppv_log("🎨 [PPV_Theme_Handler] Theme from DB: {$saved}");
                 return $saved;
             }
         }
@@ -79,13 +79,13 @@ class PPV_Theme_Handler {
         if (!empty($_SESSION[self::COOKIE_KEY])) {
             $session = sanitize_text_field($_SESSION[self::COOKIE_KEY]);
             if (in_array($session, self::VALID_THEMES)) {
-                error_log("🎨 [PPV_Theme_Handler] Theme from Session: {$session}");
+                ppv_log("🎨 [PPV_Theme_Handler] Theme from Session: {$session}");
                 return $session;
             }
         }
 
         // 4️⃣ Default
-        error_log("🎨 [PPV_Theme_Handler] Using default theme: light");
+        ppv_log("🎨 [PPV_Theme_Handler] Using default theme: light");
         return 'light';
     }
 
@@ -137,7 +137,7 @@ class PPV_Theme_Handler {
         }
 
         $_COOKIE[self::COOKIE_KEY] = $value;
-        error_log("🍪 [PPV_Theme_Handler] Cookie set on domains: " . json_encode($domains));
+        ppv_log("🍪 [PPV_Theme_Handler] Cookie set on domains: " . json_encode($domains));
     }
 
     /** ============================================================
@@ -207,14 +207,14 @@ class PPV_Theme_Handler {
 
         // Optional nonce check (not required for PWA/offline)
         if (!empty($nonce) && !wp_verify_nonce($nonce, 'wp_rest')) {
-            error_log("⚠️ [PPV_Theme_Handler] Nonce failed, but continuing (PWA)");
+            ppv_log("⚠️ [PPV_Theme_Handler] Nonce failed, but continuing (PWA)");
         }
 
         // Save to user meta if logged in
         $uid = get_current_user_id();
         if ($uid > 0) {
             update_user_meta($uid, self::THEME_META_KEY, $theme);
-            error_log("💾 [PPV_Theme_Handler] Theme saved to DB: user_id={$uid}, theme={$theme}");
+            ppv_log("💾 [PPV_Theme_Handler] Theme saved to DB: user_id={$uid}, theme={$theme}");
         }
 
         // Set cookie
@@ -224,7 +224,7 @@ class PPV_Theme_Handler {
         $_SESSION[self::COOKIE_KEY] = $theme;
 
         // Trigger SW cache clear message (client-side will handle)
-        error_log("🎨 [PPV_Theme_Handler] Theme changed: {$theme}");
+        ppv_log("🎨 [PPV_Theme_Handler] Theme changed: {$theme}");
 
         return new WP_REST_Response([
             'success' => true,
@@ -241,7 +241,7 @@ class PPV_Theme_Handler {
      * ============================================================ */
     public static function enqueue_theme_loader() {
         // Loader JS already in plugin.php, but we can add here if needed
-        error_log("🎨 [PPV_Theme_Handler] Enqueue called");
+        ppv_log("🎨 [PPV_Theme_Handler] Enqueue called");
     }
 }
 

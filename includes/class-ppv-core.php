@@ -39,7 +39,7 @@ class PPV_Core {
                     ADD COLUMN vip_gold_bonus INT DEFAULT 10 COMMENT 'Extra points % for Gold users',
                     ADD COLUMN vip_platinum_bonus INT DEFAULT 20 COMMENT 'Extra points % for Platinum users'
                 ");
-                error_log("✅ [PPV_Core] VIP bonus columns added to ppv_stores table");
+                ppv_log("✅ [PPV_Core] VIP bonus columns added to ppv_stores table");
             }
 
             update_option('ppv_db_migration_version', '1.1');
@@ -55,7 +55,7 @@ class PPV_Core {
                 $wpdb->query("ALTER TABLE {$users_table}
                     ADD COLUMN lifetime_points INT UNSIGNED DEFAULT 0 COMMENT 'Total points ever collected (never decreases)'
                 ");
-                error_log("✅ [PPV_Core] lifetime_points column added to ppv_users table");
+                ppv_log("✅ [PPV_Core] lifetime_points column added to ppv_users table");
 
                 // Calculate lifetime_points for existing users (only positive points = earned, not redeemed)
                 $wpdb->query("
@@ -66,7 +66,7 @@ class PPV_Core {
                         WHERE p.user_id = u.id AND p.points > 0
                     )
                 ");
-                error_log("✅ [PPV_Core] Calculated lifetime_points for existing users");
+                ppv_log("✅ [PPV_Core] Calculated lifetime_points for existing users");
             }
 
             // 2. Add Bronze VIP bonus columns to stores (new level structure)
@@ -80,7 +80,7 @@ class PPV_Core {
                     ADD COLUMN vip_streak_bronze INT DEFAULT 1 COMMENT 'Streak bonus for Bronze users' AFTER vip_streak_type,
                     ADD COLUMN vip_daily_bronze INT DEFAULT 5 COMMENT 'Daily first scan bonus for Bronze users' AFTER vip_daily_enabled
                 ");
-                error_log("✅ [PPV_Core] Bronze VIP bonus columns added to ppv_stores table");
+                ppv_log("✅ [PPV_Core] Bronze VIP bonus columns added to ppv_stores table");
             }
 
             update_option('ppv_db_migration_version', '1.2');

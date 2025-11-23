@@ -52,7 +52,7 @@ class PPV_POS_GATEWAY {
      * ============================================================ */
     public static function register_routes() {
         // a további endpointokat a következő részek fogják hozzáadni
-        error_log("🧠 [PPV_POS_GATEWAY] Base route setup ready.");
+        ppv_log("🧠 [PPV_POS_GATEWAY] Base route setup ready.");
     }
 
     /** ============================================================
@@ -80,7 +80,7 @@ class PPV_POS_GATEWAY {
                 $GLOBALS['ppv_active_store'] = $store;
                 $GLOBALS['ppv_is_pos'] = true;
 
-                error_log("✅ [POS_SESSION] Restored for store={$store->id}");
+                ppv_log("✅ [POS_SESSION] Restored for store={$store->id}");
             }
         }
     }
@@ -104,7 +104,7 @@ add_action('plugins_loaded', ['PPV_POS_GATEWAY', 'hooks']);
             'permission_callback' => '__return_true'
         ]);
 
-        error_log("🧠 [PPV_POS_GATEWAY] Login endpoints registered.");
+        ppv_log("🧠 [PPV_POS_GATEWAY] Login endpoints registered.");
     }
 
     /** 🔹 POS bejelentkezés PIN vagy API kulccsal */
@@ -193,7 +193,7 @@ add_action('plugins_loaded', ['PPV_POS_GATEWAY', 'hooks']);
             'permission_callback' => [__CLASS__, 'verify_access']
         ]);
 
-        error_log("🧠 [PPV_POS_GATEWAY] Points + Sync endpoints ready.");
+        ppv_log("🧠 [PPV_POS_GATEWAY] Points + Sync endpoints ready.");
     }
 
     /** 🔹 POS sale – pontjóváírás vásárláskor */
@@ -231,7 +231,7 @@ add_action('plugins_loaded', ['PPV_POS_GATEWAY', 'hooks']);
             'created'  => current_time('mysql')
         ]);
 
-        error_log("💰 [POS_SALE] +{$points} points for user={$user_id}, store={$store_id}");
+        ppv_log("💰 [POS_SALE] +{$points} points for user={$user_id}, store={$store_id}");
 
         return rest_ensure_response([
             'success' => true,
@@ -275,7 +275,7 @@ add_action('plugins_loaded', ['PPV_POS_GATEWAY', 'hooks']);
             $count++;
         }
 
-        error_log("🔄 [POS_SYNC_OFFLINE] {$count} offline transactions imported (store={$store_id})");
+        ppv_log("🔄 [POS_SYNC_OFFLINE] {$count} offline transactions imported (store={$store_id})");
 
         return rest_ensure_response([
             'success' => true,
@@ -305,7 +305,7 @@ add_action('plugins_loaded', ['PPV_POS_GATEWAY', 'hooks']);
             'permission_callback' => [__CLASS__, 'verify_access']
         ]);
 
-        error_log("🧩 [PPV_POS_GATEWAY] Redeem + Bonus + Stats endpoints ready.");
+        ppv_log("🧩 [PPV_POS_GATEWAY] Redeem + Bonus + Stats endpoints ready.");
     }
 
     /** 🔹 Reward beváltás (POS terminálról) */
@@ -468,7 +468,7 @@ add_action('plugins_loaded', ['PPV_POS_GATEWAY', 'hooks']);
             if ($count > 0) return true;
         }
 
-        error_log("🚫 [PPV_POS_SECURITY] Unauthorized request");
+        ppv_log("🚫 [PPV_POS_SECURITY] Unauthorized request");
         return new WP_Error('unauthorized', 'Du bist leider nicht berechtigt, diese Aktion durchzuführen.', ['status' => 403]);
     }
 
@@ -485,6 +485,6 @@ add_action('plugins_loaded', ['PPV_POS_GATEWAY', 'hooks']);
             'created_at' => current_time('mysql')
         ]);
 
-        error_log("📝 [PPV_POS_LOG] {$action} → {$message}");
+        ppv_log("📝 [PPV_POS_LOG] {$action} → {$message}");
     }
 }

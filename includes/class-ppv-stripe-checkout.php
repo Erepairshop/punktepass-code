@@ -6,12 +6,12 @@ class PPV_Stripe_Checkout {
     public static function hooks() {
         // 🔹 REST route regisztrálása a megfelelő időben
         add_action('rest_api_init', [__CLASS__, 'register_routes']);
-        error_log('✅ PPV_Stripe_Checkout::hooks() initialized');
+        ppv_log('✅ PPV_Stripe_Checkout::hooks() initialized');
     }
 
     /** 🔹 REST API route a Checkout Session létrehozásához */
     public static function register_routes() {
-        error_log('✅ Stripe Checkout REST route registered');
+        ppv_log('✅ Stripe Checkout REST route registered');
         register_rest_route('punktepass/v1', '/create-checkout-session', [
             'methods'  => ['POST', 'GET'], // GET engedélyezve teszteléshez
             'callback' => [__CLASS__, 'create_checkout_session'],
@@ -57,7 +57,7 @@ class PPV_Stripe_Checkout {
             return new WP_REST_Response(['url' => $session->url], 200);
 
         } catch (Exception $e) {
-            error_log('❌ Stripe Checkout Fehler: ' . $e->getMessage());
+            ppv_log('❌ Stripe Checkout Fehler: ' . $e->getMessage());
             return new WP_REST_Response(['error' => $e->getMessage()], 400);
         }
     }

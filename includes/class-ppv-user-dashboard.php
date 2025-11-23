@@ -71,14 +71,14 @@ class PPV_User_Dashboard {
                 if ($ppv_user_id) {
                     // Cache in session for future requests
                     $_SESSION['ppv_user_id'] = $ppv_user_id;
-                    error_log("✅ [PPV_Dashboard] get_safe_user_id: Mapped WP user #{$wp_uid} ({$wp_user->user_email}) to ppv_users.id={$ppv_user_id}");
+                    ppv_log("✅ [PPV_Dashboard] get_safe_user_id: Mapped WP user #{$wp_uid} ({$wp_user->user_email}) to ppv_users.id={$ppv_user_id}");
                     return intval($ppv_user_id);
                 } else {
-                    error_log("⚠️ [PPV_Dashboard] get_safe_user_id: WP user #{$wp_uid} ({$wp_user->user_email}) NOT FOUND in ppv_users table");
+                    ppv_log("⚠️ [PPV_Dashboard] get_safe_user_id: WP user #{$wp_uid} ({$wp_user->user_email}) NOT FOUND in ppv_users table");
                 }
             }
             // Fallback: return WordPress user ID (but this may not have points!)
-            error_log("⚠️ [PPV_Dashboard] get_safe_user_id: Falling back to WP user ID #{$wp_uid} (may not have points)");
+            ppv_log("⚠️ [PPV_Dashboard] get_safe_user_id: Falling back to WP user ID #{$wp_uid} (may not have points)");
             return $wp_uid;
         }
 
@@ -164,7 +164,7 @@ class PPV_User_Dashboard {
             $qr_file = $qr_dir . "user_{$uid}.png";
             if (file_exists($qr_file)) {
                 @unlink($qr_file);
-                error_log("🔄 [PPV_Dashboard] QR cache invalidated for user {$uid} - new token created");
+                ppv_log("🔄 [PPV_Dashboard] QR cache invalidated for user {$uid} - new token created");
             }
         }
 
@@ -204,7 +204,7 @@ class PPV_User_Dashboard {
 
         $response = wp_remote_get($qr_api, ['timeout' => 5]);
         if (is_wp_error($response)) {
-            error_log("🚫 [PPV_Dashboard] QR generation failed: " . $response->get_error_message());
+            ppv_log("🚫 [PPV_Dashboard] QR generation failed: " . $response->get_error_message());
             return '';
         }
 
@@ -271,7 +271,7 @@ private static function is_store_open($opening_hours) {
         return false;
     }
 
-    error_log("🕒 [Open Check] Day: {$day}, Time: {$current_time}, Data: " . json_encode($hours));
+    ppv_log("🕒 [Open Check] Day: {$day}, Time: {$current_time}, Data: " . json_encode($hours));
 
     // ✅ NEW FORMAT: Check if it's closed
     if (!isset($hours[$day])) {
@@ -286,7 +286,7 @@ private static function is_store_open($opening_hours) {
     }
     
     if (!empty($day_hours['closed'])) {
-        error_log("🕒 [Open Check] CLOSED flag set for {$day}");
+        ppv_log("🕒 [Open Check] CLOSED flag set for {$day}");
         return false;
     }
 
@@ -295,12 +295,12 @@ private static function is_store_open($opening_hours) {
     $bis = $day_hours['bis'] ?? '';
 
     if (empty($von) || empty($bis)) {
-        error_log("🕒 [Open Check] Empty hours for {$day}: von={$von}, bis={$bis}");
+        ppv_log("🕒 [Open Check] Empty hours for {$day}: von={$von}, bis={$bis}");
         return false;
     }
 
     $is_open = ($current_time >= $von && $current_time <= $bis);
-    error_log("🕒 [Open Check] {$day}: {$von}-{$bis}, Current: {$current_time}, Result: " . ($is_open ? 'NYITVA' : 'ZÁRVA'));
+    ppv_log("🕒 [Open Check] {$day}: {$von}-{$bis}, Current: {$current_time}, Result: " . ($is_open ? 'NYITVA' : 'ZÁRVA'));
     
     return $is_open;
 }
@@ -385,18 +385,18 @@ private static function get_today_hours($opening_hours) {
         $detection_source = 'default';
 
         // 🔍 DEBUG: Start detection
-        error_log("🔍 [PPV_Header] === USER TYPE DETECTION START === User ID: {$uid}");
+        ppv_log("🔍 [PPV_Header] === USER TYPE DETECTION START === User ID: {$uid}");
 
         // First try session
         if (!empty($_SESSION['ppv_user_type'])) {
             $user_type = $_SESSION['ppv_user_type'];
             $detection_source = 'session';
-            error_log("✅ [PPV_Header] User type from SESSION: '{$user_type}'");
+            ppv_log("✅ [PPV_Header] User type from SESSION: '{$user_type}'");
             
             // ✅ FIX: If session says 'user', double-check the DB!
             // (Session might be stale or incorrect)
             if (strtolower($user_type) === 'user') {
-                error_log("⚠️ [PPV_Header] Session says 'user', double-checking DB...");
+                ppv_log("⚠️ [PPV_Header] Session says 'user', double-checking DB...");
                 
                 $db_user_type = $wpdb->get_var($wpdb->prepare(
                     "SELECT user_type FROM {$wpdb->prefix}ppv_users WHERE id=%d LIMIT 1",
@@ -404,18 +404,18 @@ private static function get_today_hours($opening_hours) {
                 ));
                 
                 if ($db_user_type && strtolower($db_user_type) !== 'user') {
-                    error_log("✅ [PPV_Header] DB override! Changed from 'user' to '{$db_user_type}'");
+                    ppv_log("✅ [PPV_Header] DB override! Changed from 'user' to '{$db_user_type}'");
                     $user_type = $db_user_type;
                     $detection_source = 'ppv_users (override)';
                     $_SESSION['ppv_user_type'] = $db_user_type; // Update session!
                 } else {
-                    error_log("ℹ️ [PPV_Header] DB confirms: user type is 'user'");
+                    ppv_log("ℹ️ [PPV_Header] DB confirms: user type is 'user'");
                 }
             }
         } 
         // Then check ppv_users table
         else {
-            error_log("⚠️ [PPV_Header] Session empty, checking ppv_users table...");
+            ppv_log("⚠️ [PPV_Header] Session empty, checking ppv_users table...");
             
             $db_user_type = $wpdb->get_var($wpdb->prepare(
                 "SELECT user_type FROM {$wpdb->prefix}ppv_users WHERE id=%d LIMIT 1",
@@ -426,11 +426,11 @@ private static function get_today_hours($opening_hours) {
                 $user_type = $db_user_type;
                 $detection_source = 'ppv_users';
                 $_SESSION['ppv_user_type'] = $db_user_type; // Cache in session
-                error_log("✅ [PPV_Header] User type from ppv_users: '{$db_user_type}'");
+                ppv_log("✅ [PPV_Header] User type from ppv_users: '{$db_user_type}'");
             } 
             // Fallback: Check ppv_stores table (if user is store owner)
             else {
-                error_log("⚠️ [PPV_Header] Not found in ppv_users, checking ppv_stores...");
+                ppv_log("⚠️ [PPV_Header] Not found in ppv_users, checking ppv_stores...");
                 
                 $store_check = $wpdb->get_var($wpdb->prepare(
                     "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id=%d LIMIT 1",
@@ -441,9 +441,9 @@ private static function get_today_hours($opening_hours) {
                     $user_type = 'handler';
                     $detection_source = 'ppv_stores';
                     $_SESSION['ppv_user_type'] = 'handler';
-                    error_log("✅ [PPV_Header] User is store owner → Set as 'handler'");
+                    ppv_log("✅ [PPV_Header] User is store owner → Set as 'handler'");
                 } else {
-                    error_log("❌ [PPV_Header] User #{$uid} NOT FOUND in ppv_users OR ppv_stores!");
+                    ppv_log("❌ [PPV_Header] User #{$uid} NOT FOUND in ppv_users OR ppv_stores!");
                 }
             }
         }
@@ -454,20 +454,20 @@ private static function get_today_hours($opening_hours) {
         $is_handler = in_array($user_type_clean, $handler_types);
 
         // 🔍 DEBUG: Final result
-        error_log("🔍 [PPV_Header] === DETECTION RESULT ===");
-        error_log("   User ID: {$uid}");
-        error_log("   Raw type: '{$user_type}'");
-        error_log("   Clean type: '{$user_type_clean}'");
-        error_log("   Source: {$detection_source}");
-        error_log("   Is Handler: " . ($is_handler ? 'YES ✅' : 'NO ❌'));
-        error_log("   Valid handler types: " . implode(', ', $handler_types));
+        ppv_log("🔍 [PPV_Header] === DETECTION RESULT ===");
+        ppv_log("   User ID: {$uid}");
+        ppv_log("   Raw type: '{$user_type}'");
+        ppv_log("   Clean type: '{$user_type_clean}'");
+        ppv_log("   Source: {$detection_source}");
+        ppv_log("   Is Handler: " . ($is_handler ? 'YES ✅' : 'NO ❌'));
+        ppv_log("   Valid handler types: " . implode(', ', $handler_types));
         
         if ($is_handler) {
-            error_log("✅ [PPV_Header] WILL RENDER: User Dashboard + Scanner buttons");
+            ppv_log("✅ [PPV_Header] WILL RENDER: User Dashboard + Scanner buttons");
         } else {
-            error_log("ℹ️ [PPV_Header] WILL RENDER: Points + Rewards stats");
+            ppv_log("ℹ️ [PPV_Header] WILL RENDER: Points + Rewards stats");
         }
-        error_log("🔍 [PPV_Header] === DETECTION END ===");
+        ppv_log("🔍 [PPV_Header] === DETECTION END ===");
 
         // 5️⃣ Get user data
         $email = self::get_user_email($uid);
@@ -903,7 +903,7 @@ public static function render_dashboard() {
         'permission_callback' => ['PPV_Permissions', 'allow_anonymous'],
     ]);
 
-    error_log("✅ [PPV_Dashboard] REST routes registered (with points-detailed)");
+    ppv_log("✅ [PPV_Dashboard] REST routes registered (with points-detailed)");
 }
     
     public static function rest_poll_points(WP_REST_Request $request) {
@@ -920,7 +920,7 @@ public static function render_dashboard() {
         $user_id = self::get_safe_user_id();
 
         if ($user_id <= 0) {
-            error_log("❌ [PPV_Dashboard] rest_poll_points: No user found (WP=" . get_current_user_id() . ", SESSION=" . ($_SESSION['ppv_user_id'] ?? 'none') . ")");
+            ppv_log("❌ [PPV_Dashboard] rest_poll_points: No user found (WP=" . get_current_user_id() . ", SESSION=" . ($_SESSION['ppv_user_id'] ?? 'none') . ")");
             return new WP_REST_Response(['success' => false, 'points' => 0], 401);
         }
 
@@ -977,13 +977,13 @@ public static function render_dashboard() {
                 $response['error_type'] = $error_type; // Send error_type for client-side translation
                 $response['error_store'] = $recent_error->store_name ?: 'PunktePass';
                 $response['error_timestamp'] = $recent_error->created_at; // Add timestamp for tracking
-                error_log("⚠️ [PPV_Dashboard] rest_poll_points: User=$user_id has recent error: " . $recent_error->message . " (type: $error_type)");
+                ppv_log("⚠️ [PPV_Dashboard] rest_poll_points: User=$user_id has recent error: " . $recent_error->message . " (type: $error_type)");
             } else {
-                error_log("✅ [PPV_Dashboard] rest_poll_points: Error found but successful scan happened after, ignoring error");
+                ppv_log("✅ [PPV_Dashboard] rest_poll_points: Error found but successful scan happened after, ignoring error");
             }
         }
 
-        error_log("✅ [PPV_Dashboard] rest_poll_points: User=$user_id, Points=" . $stats['points'] . ", Store=" . ($last_store_name ?: 'none'));
+        ppv_log("✅ [PPV_Dashboard] rest_poll_points: User=$user_id, Points=" . $stats['points'] . ", Store=" . ($last_store_name ?: 'none'));
 
         return new WP_REST_Response($response, 200);
     }
@@ -997,13 +997,13 @@ public static function render_dashboard() {
     // ✅ FORCE SESSION RESTORE (Google/Facebook/TikTok login)
     if (class_exists('PPV_SessionBridge') && empty($_SESSION['ppv_user_id'])) {
         PPV_SessionBridge::restore_from_token();
-        error_log("🔄 [PPV_Dashboard] Forced session restore from token");
+        ppv_log("🔄 [PPV_Dashboard] Forced session restore from token");
     }
 
     $user_id = self::get_safe_user_id();
 
     if ($user_id <= 0) {
-        error_log("❌ [PPV_Dashboard] No user found (WP_user=" . get_current_user_id() . ", SESSION=" . ($_SESSION['ppv_user_id'] ?? 'none') . ")");
+        ppv_log("❌ [PPV_Dashboard] No user found (WP_user=" . get_current_user_id() . ", SESSION=" . ($_SESSION['ppv_user_id'] ?? 'none') . ")");
         return new WP_REST_Response([
             'success' => false,
             'message' => 'Not authenticated',
@@ -1178,7 +1178,7 @@ public static function render_dashboard() {
 
    public static function rest_stores_optimized(WP_REST_Request $request) {
     global $wpdb;
-    error_log("🛰️ [REST DEBUG] rest_stores_optimized START");
+    ppv_log("🛰️ [REST DEBUG] rest_stores_optimized START");
 
     $prefix = $wpdb->prefix;
 
@@ -1209,10 +1209,10 @@ public static function render_dashboard() {
     }
 
     $result = [];
-    error_log("🛰️ [REST DEBUG] stores count: " . count($stores));
+    ppv_log("🛰️ [REST DEBUG] stores count: " . count($stores));
 
     foreach ($stores as $store) {
-            error_log("🏪 [REST DEBUG] Store: {$store->company_name} (ID: {$store->id})");
+            ppv_log("🏪 [REST DEBUG] Store: {$store->company_name} (ID: {$store->id})");
 
         $lat = floatval($store->latitude);
         $lng = floatval($store->longitude);

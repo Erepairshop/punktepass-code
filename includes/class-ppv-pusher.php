@@ -67,7 +67,7 @@ class PPV_Pusher {
      */
     public static function trigger($channel, $event, $data = []) {
         if (!self::init()) {
-            error_log('[PPV_Pusher] Not configured - skipping trigger');
+            ppv_log('[PPV_Pusher] Not configured - skipping trigger');
             return false;
         }
 
@@ -102,7 +102,7 @@ class PPV_Pusher {
         $result = self::send_async($url, $payload);
 
         if ($result) {
-            error_log("[PPV_Pusher] Event triggered: {$channel}/{$event}");
+            ppv_log("[PPV_Pusher] Event triggered: {$channel}/{$event}");
         }
 
         return $result;
@@ -144,7 +144,7 @@ class PPV_Pusher {
             return $http_code >= 200 && $http_code < 300;
         }
 
-        error_log('[PPV_Pusher] No HTTP client available');
+        ppv_log('[PPV_Pusher] No HTTP client available');
         return false;
     }
 

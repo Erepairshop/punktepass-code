@@ -14,7 +14,7 @@ class PPV_Stripe_Callback {
             $store_id = intval($_GET['store_id']);
             $session_id = sanitize_text_field($_GET['session_id']);
 
-            error_log("💳 Stripe Callback gestartet – Store ID: $store_id | Session: $session_id");
+            ppv_log("💳 Stripe Callback gestartet – Store ID: $store_id | Session: $session_id");
 
             // Stripe SDK betöltés
             $paths = [
@@ -25,13 +25,13 @@ class PPV_Stripe_Callback {
             foreach ($paths as $path) {
                 if (file_exists($path)) {
                     require_once $path;
-                    error_log("✅ Stripe SDK geladen aus: $path");
+                    ppv_log("✅ Stripe SDK geladen aus: $path");
                     break;
                 }
             }
 
             if (!class_exists('\Stripe\Stripe')) {
-                error_log("❌ Stripe SDK nicht gefunden für Callback");
+                ppv_log("❌ Stripe SDK nicht gefunden für Callback");
                 return;
             }
 
@@ -48,17 +48,17 @@ class PPV_Stripe_Callback {
                         'updated_at' => current_time('mysql')
                     ], ['id' => $store_id]);
 
-                    error_log("✅ Händler aktiviert: ID $store_id");
+                    ppv_log("✅ Händler aktiviert: ID $store_id");
                     wp_redirect(home_url('/handler_dashboard?activated=1'));
                     exit;
                 } else {
-                    error_log("⚠️ Zahlung noch nicht bestätigt: $session_id");
+                    ppv_log("⚠️ Zahlung noch nicht bestätigt: $session_id");
                     wp_redirect(home_url('/handler_dashboard?payment=pending'));
                     exit;
                 }
 
             } catch (Exception $e) {
-                error_log("❌ Stripe Callback Fehler: " . $e->getMessage());
+                ppv_log("❌ Stripe Callback Fehler: " . $e->getMessage());
                 wp_redirect(home_url('/handler_dashboard?payment=error'));
                 exit;
             }

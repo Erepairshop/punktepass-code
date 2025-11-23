@@ -93,9 +93,9 @@ if ($user_id > 0 && class_exists('PPV_Auth')) {
     ));
     if (!$token) {
         $token = PPV_Auth::create_token($user_id);
-        error_log("🟢 [PPV_BRIDGE] Új token létrehozva user={$user_id}");
+        ppv_log("🟢 [PPV_BRIDGE] Új token létrehozva user={$user_id}");
     } else {
-        error_log("✅ [PPV_BRIDGE] Meglévő token betöltve user={$user_id}");
+        ppv_log("✅ [PPV_BRIDGE] Meglévő token betöltve user={$user_id}");
     }
 }
 

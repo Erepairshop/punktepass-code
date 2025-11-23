@@ -14,7 +14,7 @@ class PPV_My_Points_REST {
 
     /** 🔹 REST útvonal regisztrálása */
     public static function register_routes() {
-        error_log("🧠 [PPV_MyPoints_REST] register_rest_route aktiválva");
+        ppv_log("🧠 [PPV_MyPoints_REST] register_rest_route aktiválva");
 
         register_rest_route('ppv/v1', '/mypoints', [
             'methods' => 'GET',
@@ -25,46 +25,46 @@ class PPV_My_Points_REST {
 
     /** 🔹 Permission Check - Session alapú, NEM WordPress nonce! */
     public static function check_mypoints_permission($request) {
-        error_log("🔍 [PPV_MyPoints_REST::check_mypoints_permission] ========== START ==========");
+        ppv_log("🔍 [PPV_MyPoints_REST::check_mypoints_permission] ========== START ==========");
 
         // Start session
         if (session_status() === PHP_SESSION_NONE) {
             @session_start();
-            error_log("🔍 [check_mypoints_permission] Session started");
+            ppv_log("🔍 [check_mypoints_permission] Session started");
         }
 
         // WordPress user check
         if (is_user_logged_in()) {
             $wp_user_id = get_current_user_id();
-            error_log("✅ [check_mypoints_permission] WordPress user logged in: {$wp_user_id}");
+            ppv_log("✅ [check_mypoints_permission] WordPress user logged in: {$wp_user_id}");
             return true;
         }
 
         // Session user check (Google/Facebook/TikTok login)
         if (!empty($_SESSION['ppv_user_id'])) {
             $session_user_id = intval($_SESSION['ppv_user_id']);
-            error_log("✅ [check_mypoints_permission] Session user found: {$session_user_id}");
+            ppv_log("✅ [check_mypoints_permission] Session user found: {$session_user_id}");
             return true;
         }
 
         // Try to restore from cookie token
         if (class_exists('PPV_SessionBridge')) {
-            error_log("🔄 [check_mypoints_permission] No session user - trying PPV_SessionBridge::restore_from_token()");
+            ppv_log("🔄 [check_mypoints_permission] No session user - trying PPV_SessionBridge::restore_from_token()");
             PPV_SessionBridge::restore_from_token();
 
             if (!empty($_SESSION['ppv_user_id'])) {
                 $restored_user_id = intval($_SESSION['ppv_user_id']);
-                error_log("✅ [check_mypoints_permission] Session restored from token: {$restored_user_id}");
+                ppv_log("✅ [check_mypoints_permission] Session restored from token: {$restored_user_id}");
                 return true;
             } else {
-                error_log("❌ [check_mypoints_permission] Session restore failed - still no ppv_user_id");
+                ppv_log("❌ [check_mypoints_permission] Session restore failed - still no ppv_user_id");
             }
         }
 
-        error_log("❌ [check_mypoints_permission] UNAUTHORIZED - No user found");
-        error_log("    - WP user: " . (is_user_logged_in() ? get_current_user_id() : 'NOT LOGGED IN'));
-        error_log("    - SESSION ppv_user_id: " . ($_SESSION['ppv_user_id'] ?? 'NOT SET'));
-        error_log("    - COOKIE ppv_user_token: " . (isset($_COOKIE['ppv_user_token']) ? 'EXISTS' : 'NOT SET'));
+        ppv_log("❌ [check_mypoints_permission] UNAUTHORIZED - No user found");
+        ppv_log("    - WP user: " . (is_user_logged_in() ? get_current_user_id() : 'NOT LOGGED IN'));
+        ppv_log("    - SESSION ppv_user_id: " . ($_SESSION['ppv_user_id'] ?? 'NOT SET'));
+        ppv_log("    - COOKIE ppv_user_token: " . (isset($_COOKIE['ppv_user_token']) ? 'EXISTS' : 'NOT SET'));
         return new WP_Error('unauthorized', 'Nicht angemeldet', ['status' => 401]);
     }
 
@@ -73,17 +73,17 @@ class PPV_My_Points_REST {
         global $wpdb;
         $start = microtime(true);
 
-        error_log("🔍 [PPV_MyPoints_REST::rest_get_points] ========== START ==========");
-        error_log("🔍 [PPV_MyPoints_REST] Request URL: " . ($_SERVER['REQUEST_URI'] ?? 'N/A'));
-        error_log("🔍 [PPV_MyPoints_REST] Request Method: " . ($_SERVER['REQUEST_METHOD'] ?? 'N/A'));
+        ppv_log("🔍 [PPV_MyPoints_REST::rest_get_points] ========== START ==========");
+        ppv_log("🔍 [PPV_MyPoints_REST] Request URL: " . ($_SERVER['REQUEST_URI'] ?? 'N/A'));
+        ppv_log("🔍 [PPV_MyPoints_REST] Request Method: " . ($_SERVER['REQUEST_METHOD'] ?? 'N/A'));
 
         // Log all headers
         $headers = function_exists('getallheaders') ? getallheaders() : [];
-        error_log("🔍 [PPV_MyPoints_REST] Request Headers:");
+        ppv_log("🔍 [PPV_MyPoints_REST] Request Headers:");
         foreach ($headers as $key => $value) {
             if (stripos($key, 'auth') !== false || stripos($key, 'ppv') !== false || stripos($key, 'nonce') !== false) {
                 $safe_value = substr($value, 0, 20) . '...';
-                error_log("    - {$key}: {$safe_value}");
+                ppv_log("    - {$key}: {$safe_value}");
             }
         }
 
@@ -95,19 +95,19 @@ if (class_exists('PPV_Lang')) {
     $session_lang = $_SESSION['ppv_lang'] ?? '';
     $header_lang  = $_SERVER['HTTP_X_PPV_LANG'] ?? '';
 
-    error_log("🔍 [PPV_MyPoints_REST] Lang detection:");
-    error_log("    - Cookie: " . ($cookie_lang ?: 'EMPTY'));
-    error_log("    - Session: " . ($session_lang ?: 'EMPTY'));
-    error_log("    - Header: " . ($header_lang ?: 'EMPTY'));
+    ppv_log("🔍 [PPV_MyPoints_REST] Lang detection:");
+    ppv_log("    - Cookie: " . ($cookie_lang ?: 'EMPTY'));
+    ppv_log("    - Session: " . ($session_lang ?: 'EMPTY'));
+    ppv_log("    - Header: " . ($header_lang ?: 'EMPTY'));
 
     $lang = $header_lang ?: ($cookie_lang ?: $session_lang ?: 'de');
 
     if (!empty($lang) && in_array($lang, ['de','hu','ro'], true)) {
         PPV_Lang::load($lang);
         PPV_Lang::$active = $lang;
-        error_log("🌍 [PPV_MyPoints_REST] Lang forced before response → {$lang}");
+        ppv_log("🌍 [PPV_MyPoints_REST] Lang forced before response → {$lang}");
     } else {
-        error_log("⚠️ [PPV_MyPoints_REST] No valid lang detected, fallback → de");
+        ppv_log("⚠️ [PPV_MyPoints_REST] No valid lang detected, fallback → de");
     }
 }
 
@@ -115,52 +115,52 @@ if (class_exists('PPV_Lang')) {
         // Start session if not started yet
         if (session_status() === PHP_SESSION_NONE) {
             @session_start();
-            error_log("🔍 [PPV_MyPoints_REST] Session started");
+            ppv_log("🔍 [PPV_MyPoints_REST] Session started");
         } else {
-            error_log("🔍 [PPV_MyPoints_REST] Session already active, SID: " . session_id());
+            ppv_log("🔍 [PPV_MyPoints_REST] Session already active, SID: " . session_id());
         }
 
-        error_log("🔍 [PPV_MyPoints_REST] Session data BEFORE restore:");
-        error_log("    - ppv_user_id: " . ($_SESSION['ppv_user_id'] ?? 'NOT SET'));
-        error_log("    - ppv_user_type: " . ($_SESSION['ppv_user_type'] ?? 'NOT SET'));
-        error_log("    - ppv_email: " . ($_SESSION['ppv_email'] ?? 'NOT SET'));
+        ppv_log("🔍 [PPV_MyPoints_REST] Session data BEFORE restore:");
+        ppv_log("    - ppv_user_id: " . ($_SESSION['ppv_user_id'] ?? 'NOT SET'));
+        ppv_log("    - ppv_user_type: " . ($_SESSION['ppv_user_type'] ?? 'NOT SET'));
+        ppv_log("    - ppv_email: " . ($_SESSION['ppv_email'] ?? 'NOT SET'));
 
-        error_log("🔍 [PPV_MyPoints_REST] Cookies:");
-        error_log("    - ppv_user_token: " . (isset($_COOKIE['ppv_user_token']) ? substr($_COOKIE['ppv_user_token'], 0, 20) . '...' : 'NOT SET'));
+        ppv_log("🔍 [PPV_MyPoints_REST] Cookies:");
+        ppv_log("    - ppv_user_token: " . (isset($_COOKIE['ppv_user_token']) ? substr($_COOKIE['ppv_user_token'], 0, 20) . '...' : 'NOT SET'));
 
         // ✅ CRITICAL: Force session restore from token BEFORE checking user_id
         // This is REQUIRED for Google/Facebook/TikTok login to work
         if (class_exists('PPV_SessionBridge') && empty($_SESSION['ppv_user_id'])) {
-            error_log("🔄 [PPV_MyPoints_REST] Session empty - calling PPV_SessionBridge::restore_from_token()");
+            ppv_log("🔄 [PPV_MyPoints_REST] Session empty - calling PPV_SessionBridge::restore_from_token()");
             PPV_SessionBridge::restore_from_token();
-            error_log("🔄 [PPV_MyPoints_REST] After restore:");
-            error_log("    - ppv_user_id: " . ($_SESSION['ppv_user_id'] ?? 'STILL NOT SET'));
+            ppv_log("🔄 [PPV_MyPoints_REST] After restore:");
+            ppv_log("    - ppv_user_id: " . ($_SESSION['ppv_user_id'] ?? 'STILL NOT SET'));
         } else {
-            error_log("🔍 [PPV_MyPoints_REST] Session restore skipped (already have user_id or no SessionBridge)");
+            ppv_log("🔍 [PPV_MyPoints_REST] Session restore skipped (already have user_id or no SessionBridge)");
         }
 
         // Try WordPress user first
         $wp_user_id = get_current_user_id();
-        error_log("🔍 [PPV_MyPoints_REST] WordPress user ID: " . ($wp_user_id ?: 'NOT LOGGED IN'));
+        ppv_log("🔍 [PPV_MyPoints_REST] WordPress user ID: " . ($wp_user_id ?: 'NOT LOGGED IN'));
 
         $user_id = $wp_user_id;
 
         // Fallback to session (Google/Facebook/TikTok login)
         if (!$user_id && !empty($_SESSION['ppv_user_id'])) {
             $user_id = intval($_SESSION['ppv_user_id']);
-            error_log("🔍 [PPV_MyPoints_REST] Using SESSION user_id: {$user_id}");
+            ppv_log("🔍 [PPV_MyPoints_REST] Using SESSION user_id: {$user_id}");
         }
 
         if ($user_id <= 0) {
-            error_log("❌ [PPV_MyPoints_REST] No user found");
-            error_log("    - WP_user: " . get_current_user_id());
-            error_log("    - SESSION ppv_user_id: " . ($_SESSION['ppv_user_id'] ?? 'none'));
-            error_log("    - COOKIE ppv_user_token: " . (isset($_COOKIE['ppv_user_token']) ? 'exists' : 'none'));
-            error_log("🔍 [PPV_MyPoints_REST::rest_get_points] ========== END (401) ==========");
+            ppv_log("❌ [PPV_MyPoints_REST] No user found");
+            ppv_log("    - WP_user: " . get_current_user_id());
+            ppv_log("    - SESSION ppv_user_id: " . ($_SESSION['ppv_user_id'] ?? 'none'));
+            ppv_log("    - COOKIE ppv_user_token: " . (isset($_COOKIE['ppv_user_token']) ? 'exists' : 'none'));
+            ppv_log("🔍 [PPV_MyPoints_REST::rest_get_points] ========== END (401) ==========");
             return new WP_REST_Response(['error' => 'unauthorized', 'message' => 'Nicht angemeldet'], 401);
         }
 
-        error_log("✅ [PPV_MyPoints_REST] User authenticated: user_id={$user_id}");
+        ppv_log("✅ [PPV_MyPoints_REST] User authenticated: user_id={$user_id}");
 
         $days = intval($request->get_param('range')) ?: 30;
         $points_table  = $wpdb->prefix . 'ppv_points';
@@ -230,7 +230,7 @@ $active_lang = $header_lang ?: $cookie_lang ?: $session_lang ?: 'de';
 if (class_exists('PPV_Lang')) {
     PPV_Lang::load($active_lang);
     PPV_Lang::$active = $active_lang;
-    error_log("🌍 [PPV_MyPoints_REST] Lang forced before labels → {$active_lang}");
+    ppv_log("🌍 [PPV_MyPoints_REST] Lang forced before labels → {$active_lang}");
 }
 
             // 🔹 Nyelvi kulcsok a Dashboard mintájára
@@ -249,13 +249,13 @@ if (class_exists('PPV_Lang')) {
 
             $response = ['labels' => $labels, 'data' => $data];
 
-            error_log("✅ [PPV_MYPOINTS_REST] Success, response ready (" . round(microtime(true)-$start,3) . "s)");
-            error_log("📦 [PPV_MYPOINTS_REST] Data: " . substr(json_encode($response),0,500));
+            ppv_log("✅ [PPV_MYPOINTS_REST] Success, response ready (" . round(microtime(true)-$start,3) . "s)");
+            ppv_log("📦 [PPV_MYPOINTS_REST] Data: " . substr(json_encode($response),0,500));
 
             return rest_ensure_response($response);
 
         } catch (Throwable $e) {
-            error_log("❌ [PPV_MYPOINTS_REST] ERROR: " . $e->getMessage());
+            ppv_log("❌ [PPV_MYPOINTS_REST] ERROR: " . $e->getMessage());
             return rest_ensure_response(['error' => 'db_error', 'message' => $e->getMessage()]);
         }
     }

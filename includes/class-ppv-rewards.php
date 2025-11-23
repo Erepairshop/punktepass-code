@@ -270,7 +270,7 @@ window.ppv_plugin_url = '" . esc_url(PPV_PLUGIN_URL) . "';",
             'session_ppv_store_id' => $_SESSION['ppv_store_id'] ?? 'NOT_SET',
             'session_ppv_vendor_store_id' => $_SESSION['ppv_vendor_store_id'] ?? 'NOT_SET',
         ];
-        error_log("🔍 [rest_list_redeems] " . json_encode($debug_info));
+        ppv_log("🔍 [rest_list_redeems] " . json_encode($debug_info));
 
         if (!$store_id) {
             $msg = class_exists('PPV_Lang') ? PPV_Lang::t('error_no_store') : 'Nincs Store ID';
@@ -334,7 +334,7 @@ window.ppv_plugin_url = '" . esc_url(PPV_PLUGIN_URL) . "';",
         // 🏪 FILIALE SUPPORT: ALWAYS use session-aware store ID, ignore request parameter
         $store_id = self::get_store_id();
 
-        error_log("📝 [PPV_REWARDS] Update redeem #{$id} to status: {$status}, store_id: {$store_id}");
+        ppv_log("📝 [PPV_REWARDS] Update redeem #{$id} to status: {$status}, store_id: {$store_id}");
 
         if (!$id || !$status) {
             $msg = class_exists('PPV_Lang') ? PPV_Lang::t('error_invalid_data') : 'Ungültige Daten';
@@ -373,7 +373,7 @@ window.ppv_plugin_url = '" . esc_url(PPV_PLUGIN_URL) . "';",
         );
 
         if ($wpdb->last_error) {
-            error_log('❌ [PPV_REWARDS] Update Error: ' . $wpdb->last_error);
+            ppv_log('❌ [PPV_REWARDS] Update Error: ' . $wpdb->last_error);
             $msg = class_exists('PPV_Lang') ? PPV_Lang::t('error_update_failed') : 'Update fehlgeschlagen';
             return new WP_REST_Response([
                 'success' => false,
@@ -381,7 +381,7 @@ window.ppv_plugin_url = '" . esc_url(PPV_PLUGIN_URL) . "';",
             ], 500);
         }
 
-        error_log("✅ [PPV_REWARDS] Updated redeem #{$id} to {$status}");
+        ppv_log("✅ [PPV_REWARDS] Updated redeem #{$id} to {$status}");
 
         // ✅ RECEIPT GENERÁLÁS - APPROVED ESETÉN
         $receipt_path = null;
@@ -392,28 +392,28 @@ window.ppv_plugin_url = '" . esc_url(PPV_PLUGIN_URL) . "';",
             self::deduct_points_for_redeem($id, $store_id);
 
             // 2️⃣ BIZONYLAT GENERÁLÁS
-            error_log("📄 [PPV_REWARDS] Bizonylat generálása: redeem #{$id}");
+            ppv_log("📄 [PPV_REWARDS] Bizonylat generálása: redeem #{$id}");
 
             // Betöltjük az Expense Receipt class-t
             $expense_receipt_file = PPV_PLUGIN_DIR . 'includes/class-ppv-expense-receipt.php';
 
             if (!file_exists($expense_receipt_file)) {
-                error_log("❌ [PPV_REWARDS] Expense receipt class nem található: {$expense_receipt_file}");
+                ppv_log("❌ [PPV_REWARDS] Expense receipt class nem található: {$expense_receipt_file}");
             } else {
                 require_once $expense_receipt_file;
 
                 // Ellenőrizzük, hogy a class betöltődött-e
                 if (!class_exists('PPV_Expense_Receipt')) {
-                    error_log("❌ [PPV_REWARDS] PPV_Expense_Receipt class nem létezik a fájl betöltése után");
+                    ppv_log("❌ [PPV_REWARDS] PPV_Expense_Receipt class nem létezik a fájl betöltése után");
                 } else {
                     // Generáljuk a bizonylatot
                     $receipt_path = PPV_Expense_Receipt::generate_for_redeem($id);
 
                     if ($receipt_path) {
                         $receipt_url = PPV_Expense_Receipt::get_receipt_url($receipt_path);
-                        error_log("✅ [PPV_REWARDS] Bizonylat sikeres: {$receipt_path}");
+                        ppv_log("✅ [PPV_REWARDS] Bizonylat sikeres: {$receipt_path}");
                     } else {
-                        error_log("❌ [PPV_REWARDS] Bizonylat generálás sikertelen: #{$id}");
+                        ppv_log("❌ [PPV_REWARDS] Bizonylat generálás sikertelen: #{$id}");
                     }
                 }
             }
@@ -475,7 +475,7 @@ window.ppv_plugin_url = '" . esc_url(PPV_PLUGIN_URL) . "';",
         // 🏪 FILIALE SUPPORT: ALWAYS use session-aware store ID, ignore request parameter
         $store_id = self::get_store_id();
 
-        error_log("📝 [PPV_REWARDS] rest_recent_logs for store_id: {$store_id}");
+        ppv_log("📝 [PPV_REWARDS] rest_recent_logs for store_id: {$store_id}");
 
         $table = $wpdb->prefix . 'ppv_rewards_redeemed';
         
@@ -512,7 +512,7 @@ window.ppv_plugin_url = '" . esc_url(PPV_PLUGIN_URL) . "';",
 
         $rows = $wpdb->get_results($sql);
 
-        error_log("✅ [PPV_REWARDS] Found " . count($rows) . " log items");
+        ppv_log("✅ [PPV_REWARDS] Found " . count($rows) . " log items");
 
         return new WP_REST_Response([
             'success' => true,
@@ -546,12 +546,12 @@ window.ppv_plugin_url = '" . esc_url(PPV_PLUGIN_URL) . "';",
             ], 400);
         }
 
-        error_log("📊 [PPV_REWARDS] Havi bizonylat: store_id={$store_id}, {$year}-{$month}");
+        ppv_log("📊 [PPV_REWARDS] Havi bizonylat: store_id={$store_id}, {$year}-{$month}");
 
         $expense_receipt_file = PPV_PLUGIN_DIR . 'includes/class-ppv-expense-receipt.php';
 
         if (!file_exists($expense_receipt_file)) {
-            error_log("❌ [PPV_REWARDS] Expense receipt class nem található");
+            ppv_log("❌ [PPV_REWARDS] Expense receipt class nem található");
             $msg = class_exists('PPV_Lang') ? PPV_Lang::t('error_system') : 'Systemfehler';
             return new WP_REST_Response([
                 'success' => false,
@@ -562,7 +562,7 @@ window.ppv_plugin_url = '" . esc_url(PPV_PLUGIN_URL) . "';",
         require_once $expense_receipt_file;
 
         if (!class_exists('PPV_Expense_Receipt')) {
-            error_log("❌ [PPV_REWARDS] PPV_Expense_Receipt class nem létezik");
+            ppv_log("❌ [PPV_REWARDS] PPV_Expense_Receipt class nem létezik");
             $msg = class_exists('PPV_Lang') ? PPV_Lang::t('error_system') : 'Systemfehler';
             return new WP_REST_Response([
                 'success' => false,
@@ -577,7 +577,7 @@ window.ppv_plugin_url = '" . esc_url(PPV_PLUGIN_URL) . "';",
             $open_url = rest_url('ppv/v1/receipts/monthly-open?path=' . urlencode($receipt_path));
             $receipt_url = PPV_Expense_Receipt::get_receipt_url($receipt_path);
             
-            error_log("✅ [PPV_REWARDS] Havi bizonylat generálva: {$receipt_path}");
+            ppv_log("✅ [PPV_REWARDS] Havi bizonylat generálva: {$receipt_path}");
 
             $msg = class_exists('PPV_Lang') ? PPV_Lang::t('redeem_monthly_receipt_created') : 'Monatliche Dispoziție erstellt';
             
@@ -609,7 +609,7 @@ window.ppv_plugin_url = '" . esc_url(PPV_PLUGIN_URL) . "';",
         ), ARRAY_A);
 
         if (!$redeem) {
-            error_log("❌ [PPV_REWARDS] Redeem not found: {$redeem_id}");
+            ppv_log("❌ [PPV_REWARDS] Redeem not found: {$redeem_id}");
             return false;
         }
 
@@ -623,7 +623,7 @@ window.ppv_plugin_url = '" . esc_url(PPV_PLUGIN_URL) . "';",
         ", 'REDEEM-' . $redeem_id));
 
         if ($existing > 0) {
-            error_log("⚠️ [PPV_REWARDS] Points already deducted for redeem: {$redeem_id}");
+            ppv_log("⚠️ [PPV_REWARDS] Points already deducted for redeem: {$redeem_id}");
             return false;
         }
 
@@ -642,11 +642,11 @@ window.ppv_plugin_url = '" . esc_url(PPV_PLUGIN_URL) . "';",
         );
 
         if ($wpdb->last_error) {
-            error_log('❌ [PPV_REWARDS] Punkteabzug Fehler: ' . $wpdb->last_error);
+            ppv_log('❌ [PPV_REWARDS] Punkteabzug Fehler: ' . $wpdb->last_error);
             return false;
         }
 
-        error_log("✅ [PPV_REWARDS] Points deducted: -{$points} for user {$user_id}");
+        ppv_log("✅ [PPV_REWARDS] Points deducted: -{$points} for user {$user_id}");
         return true;
     }
 }

@@ -390,7 +390,7 @@ public static function rest_download_monthly_receipt($request) {
         wp_die('❌ Ungültige Parameter', 400);
     }
 
-    error_log("📥 [PPV_RECEIPTS] Download monthly receipt: store={$store_id}, year={$year}, month={$month}");
+    ppv_log("📥 [PPV_RECEIPTS] Download monthly receipt: store={$store_id}, year={$year}, month={$month}");
 
     $pdf_dir = '/home/u660905446/domains/punktepass.de/public_html/pdf/';
     $pdf_url = 'https://pdf.punktepass.de/';
@@ -401,7 +401,7 @@ public static function rest_download_monthly_receipt($request) {
     $html_path = $upload['basedir'] . '/ppv_receipts/' . $html_filename;
 
     if (!file_exists($html_path)) {
-        error_log("❌ [PPV_RECEIPTS] HTML file not found: {$html_path}");
+        ppv_log("❌ [PPV_RECEIPTS] HTML file not found: {$html_path}");
         wp_die('❌ HTML Datei nicht gefunden', 404);
     }
 
@@ -411,7 +411,7 @@ public static function rest_download_monthly_receipt($request) {
 
     // Ha nincs PDF → DOMPDF-fel generáljuk (PONTOSAN UGYANAZ MINT EGYSZERI!)
     if (!file_exists($fullpath)) {
-        error_log("📥 [PPV_RECEIPTS] Generating PDF from HTML: {$html_filename}");
+        ppv_log("📥 [PPV_RECEIPTS] Generating PDF from HTML: {$html_filename}");
 
         $html = file_get_contents($html_path);
 
@@ -426,11 +426,11 @@ public static function rest_download_monthly_receipt($request) {
         $dompdf->render();
 
         $pdf_bytes = file_put_contents($fullpath, $dompdf->output());
-        error_log("✅ [PPV_RECEIPTS] PDF saved: {$pdf_filename} ({$pdf_bytes} bytes)");
+        ppv_log("✅ [PPV_RECEIPTS] PDF saved: {$pdf_filename} ({$pdf_bytes} bytes)");
     }
 
     // 302 REDIRECT a valódi PDF-re
-    error_log("✅ [PPV_RECEIPTS] Redirecting to: {$pdf_url}{$pdf_filename}");
+    ppv_log("✅ [PPV_RECEIPTS] Redirecting to: {$pdf_url}{$pdf_filename}");
     wp_redirect($pdf_url . $pdf_filename);
     exit;
 }
@@ -442,7 +442,7 @@ public static function rest_download_monthly_receipt($request) {
     public static function rest_generate_monthly_receipt($request) {
         global $wpdb;
 
-        error_log("📅 [PPV_RECEIPTS] rest_generate_monthly_receipt() called");
+        ppv_log("📅 [PPV_RECEIPTS] rest_generate_monthly_receipt() called");
 
         $params = $request->get_json_params();
         
@@ -450,10 +450,10 @@ public static function rest_download_monthly_receipt($request) {
         $year     = intval($params['year'] ?? 0);
         $month    = intval($params['month'] ?? 0);
 
-        error_log("📅 [PPV_RECEIPTS] Params: store_id={$store_id}, year={$year}, month={$month}");
+        ppv_log("📅 [PPV_RECEIPTS] Params: store_id={$store_id}, year={$year}, month={$month}");
 
         if (!$store_id || !$year || !$month) {
-            error_log("❌ [PPV_RECEIPTS] Invalid parameters");
+            ppv_log("❌ [PPV_RECEIPTS] Invalid parameters");
             return new WP_REST_Response([
                 'success' => false,
                 'message' => 'Ungültige Parameter (store_id, year, month erforderlich)'
@@ -461,26 +461,26 @@ public static function rest_download_monthly_receipt($request) {
         }
 
         try {
-            error_log("📅 [PPV_RECEIPTS] Calling PPV_Expense_Receipt::generate_monthly_receipt()");
+            ppv_log("📅 [PPV_RECEIPTS] Calling PPV_Expense_Receipt::generate_monthly_receipt()");
 
             // ✅ PDF generálás - meghívjuk az PPV_Expense_Receipt class-t
             $html_path = PPV_Expense_Receipt::generate_monthly_receipt($store_id, $year, $month);
 
             if (!$html_path) {
-                error_log("❌ [PPV_RECEIPTS] PDF generation failed");
+                ppv_log("❌ [PPV_RECEIPTS] PDF generation failed");
                 return new WP_REST_Response([
                     'success' => false,
                     'message' => 'Fehler bei der PDF-Generierung'
                 ], 500);
             }
 
-            error_log("✅ [PPV_RECEIPTS] PDF generated: {$html_path}");
+            ppv_log("✅ [PPV_RECEIPTS] PDF generated: {$html_path}");
 
             // ✅ URL összeállítása
             $upload = wp_upload_dir();
             $url = $upload['baseurl'] . '/' . $html_path;
 
-            error_log("✅ [PPV_RECEIPTS] URL: {$url}");
+            ppv_log("✅ [PPV_RECEIPTS] URL: {$url}");
 
             return new WP_REST_Response([
                 'success' => true,
@@ -490,7 +490,7 @@ public static function rest_download_monthly_receipt($request) {
             ], 200);
 
         } catch (Exception $e) {
-            error_log("❌ [PPV_RECEIPTS] Exception: " . $e->getMessage());
+            ppv_log("❌ [PPV_RECEIPTS] Exception: " . $e->getMessage());
             return new WP_REST_Response([
                 'success' => false,
                 'message' => 'Fehler: ' . $e->getMessage()

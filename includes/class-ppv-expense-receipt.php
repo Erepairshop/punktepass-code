@@ -25,7 +25,7 @@ class PPV_Expense_Receipt {
     public static function generate_for_redeem($redeem_id) {
         global $wpdb;
 
-        error_log("📄 [PPV_EXPENSE_RECEIPT] Bizonylat generálása: redeem_id={$redeem_id}");
+        ppv_log("📄 [PPV_EXPENSE_RECEIPT] Bizonylat generálása: redeem_id={$redeem_id}");
 
         // 1️⃣ Beváltás adatainak lekérése
         $redeem = $wpdb->get_row($wpdb->prepare("
@@ -55,7 +55,7 @@ class PPV_Expense_Receipt {
         ", $redeem_id), ARRAY_A);
 
         if (!$redeem) {
-            error_log("❌ [PPV_EXPENSE_RECEIPT] Redeem nem található: {$redeem_id}");
+            ppv_log("❌ [PPV_EXPENSE_RECEIPT] Redeem nem található: {$redeem_id}");
             return false;
         }
 
@@ -65,7 +65,7 @@ class PPV_Expense_Receipt {
             $lang = 'DE';
         }
 
-        error_log("🌍 [PPV_EXPENSE_RECEIPT] Língua: {$lang}");
+        ppv_log("🌍 [PPV_EXPENSE_RECEIPT] Língua: {$lang}");
 
         // 3️⃣ HTML generálás
         $html = self::generate_html_for_redeem($redeem, $lang);
@@ -85,15 +85,15 @@ class PPV_Expense_Receipt {
             );
 
             if ($update_result === false) {
-                error_log("❌ [PPV_EXPENSE_RECEIPT] DB update hiba: " . $wpdb->last_error);
+                ppv_log("❌ [PPV_EXPENSE_RECEIPT] DB update hiba: " . $wpdb->last_error);
                 return false;
             }
 
-            error_log("✅ [PPV_EXPENSE_RECEIPT] Bizonylat sikeres: {$redeem_id} → {$path}");
+            ppv_log("✅ [PPV_EXPENSE_RECEIPT] Bizonylat sikeres: {$redeem_id} → {$path}");
             return $path;
         }
 
-        error_log("❌ [PPV_EXPENSE_RECEIPT] Fájl mentés sikertelen: {$redeem_id}");
+        ppv_log("❌ [PPV_EXPENSE_RECEIPT] Fájl mentés sikertelen: {$redeem_id}");
         return false;
     }
 
@@ -105,7 +105,7 @@ class PPV_Expense_Receipt {
     {
         global $wpdb;
 
-        error_log("📅 [PPV_EXPENSE_RECEIPT] generate_monthly_receipt() called: store={$store_id}, year={$year}, month={$month}");
+        ppv_log("📅 [PPV_EXPENSE_RECEIPT] generate_monthly_receipt() called: store={$store_id}, year={$year}, month={$month}");
 
         // 1️⃣ Store adatok lekérése
         $store = $wpdb->get_row($wpdb->prepare("
@@ -115,11 +115,11 @@ class PPV_Expense_Receipt {
         ", $store_id), ARRAY_A);
 
         if (!$store) {
-            error_log("❌ [PPV_EXPENSE_RECEIPT] Store nem található: {$store_id}");
+            ppv_log("❌ [PPV_EXPENSE_RECEIPT] Store nem található: {$store_id}");
             return false;
         }
 
-        error_log("✅ [PPV_EXPENSE_RECEIPT] Store megtalálva: " . $store['company_name']);
+        ppv_log("✅ [PPV_EXPENSE_RECEIPT] Store megtalálva: " . $store['company_name']);
 
         // 2️⃣ Beváltások lekérése a hónapra
         $items = $wpdb->get_results($wpdb->prepare("
@@ -146,12 +146,12 @@ class PPV_Expense_Receipt {
         ", $store_id, $year, $month));
 
         if (!$items || count($items) === 0) {
-            error_log("⚠️ [PPV_EXPENSE_RECEIPT] Nincsenek beváltások: year={$year}, month={$month}");
+            ppv_log("⚠️ [PPV_EXPENSE_RECEIPT] Nincsenek beváltások: year={$year}, month={$month}");
             return false;
         }
 
         $count = count($items);
-        error_log("✅ [PPV_EXPENSE_RECEIPT] {$count} beváltás találva");
+        ppv_log("✅ [PPV_EXPENSE_RECEIPT] {$count} beváltás találva");
 
         // 3️⃣ Nyelvválasztás a store country alapján
         $lang = strtoupper($store['country'] ?? 'DE');
@@ -159,17 +159,17 @@ class PPV_Expense_Receipt {
             $lang = 'DE';
         }
 
-        error_log("🌍 [PPV_EXPENSE_RECEIPT] Jezik: {$lang}");
+        ppv_log("🌍 [PPV_EXPENSE_RECEIPT] Jezik: {$lang}");
 
         // 4️⃣ HTML generálás (az existing generate_html_for_monthly() függvénnyel)
         $html = self::generate_html_for_monthly($store, $items, $year, $month, $lang);
 
         if (!$html) {
-            error_log("❌ [PPV_EXPENSE_RECEIPT] HTML generálás sikertelen");
+            ppv_log("❌ [PPV_EXPENSE_RECEIPT] HTML generálás sikertelen");
             return false;
         }
 
-        error_log("✅ [PPV_EXPENSE_RECEIPT] HTML generálva (" . strlen($html) . " bytes)");
+        ppv_log("✅ [PPV_EXPENSE_RECEIPT] HTML generálva (" . strlen($html) . " bytes)");
 
         // 5️⃣ Könyvtár létrehozása
         $upload = wp_upload_dir();
@@ -177,12 +177,12 @@ class PPV_Expense_Receipt {
 
         if (!is_dir($dir)) {
             if (!wp_mkdir_p($dir)) {
-                error_log("❌ [PPV_EXPENSE_RECEIPT] Mappa létrehozás sikertelen: {$dir}");
+                ppv_log("❌ [PPV_EXPENSE_RECEIPT] Mappa létrehozás sikertelen: {$dir}");
                 return false;
             }
         }
 
-        error_log("✅ [PPV_EXPENSE_RECEIPT] Könyvtár OK: {$dir}");
+        ppv_log("✅ [PPV_EXPENSE_RECEIPT] Könyvtár OK: {$dir}");
 
         // 6️⃣ Fájlnév és útvonal
         $filename = sprintf("monthly-receipt-%d-%04d%02d.html", $store_id, $year, $month);
@@ -192,11 +192,11 @@ class PPV_Expense_Receipt {
         $bytes = file_put_contents($filepath, $html);
 
         if ($bytes === false) {
-            error_log("❌ [PPV_EXPENSE_RECEIPT] Fájl írás sikertelen: {$filepath}");
+            ppv_log("❌ [PPV_EXPENSE_RECEIPT] Fájl írás sikertelen: {$filepath}");
             return false;
         }
 
-        error_log("✅ [PPV_EXPENSE_RECEIPT] Havi bizonylat mentve: {$filename} ({$bytes} bytes)");
+        ppv_log("✅ [PPV_EXPENSE_RECEIPT] Havi bizonylat mentve: {$filename} ({$bytes} bytes)");
 
         // ✅ Relatív útvonal visszaadása
         return 'ppv_receipts/' . $filename;
@@ -654,7 +654,7 @@ HTML;
         // Mappa létrehozása
         if (!is_dir($receipts_dir)) {
             if (!wp_mkdir_p($receipts_dir)) {
-                error_log("❌ [PPV_EXPENSE_RECEIPT] Mappa létrehozás sikertelen: {$receipts_dir}");
+                ppv_log("❌ [PPV_EXPENSE_RECEIPT] Mappa létrehozás sikertelen: {$receipts_dir}");
                 return false;
             }
         }
@@ -665,11 +665,11 @@ HTML;
         $bytes = file_put_contents($filepath, $html);
 
         if ($bytes === false) {
-            error_log("❌ [PPV_EXPENSE_RECEIPT] Fájl írás sikertelen: {$filepath}");
+            ppv_log("❌ [PPV_EXPENSE_RECEIPT] Fájl írás sikertelen: {$filepath}");
             return false;
         }
 
-        error_log("✅ [PPV_EXPENSE_RECEIPT] Fájl mentve: {$filename} ({$bytes} bytes)");
+        ppv_log("✅ [PPV_EXPENSE_RECEIPT] Fájl mentve: {$filename} ({$bytes} bytes)");
 
         // Relatív útvonal visszaadása az adatbázisba
         return self::RECEIPTS_DIR . '/' . $filename;

@@ -153,7 +153,7 @@ public static function ajax_register_user() {
         COOKIEPATH ?: '/', COOKIE_DOMAIN ?: '', is_ssl(), true);
 
     // 🔹 Debug log (ellenőrzéshez)
-    error_log("✅ Neuer User erstellt (ID={$user_id}, Email={$email}, QR={$qr_token})");
+    ppv_log("✅ Neuer User erstellt (ID={$user_id}, Email={$email}, QR={$qr_token})");
 
     wp_send_json_success([
         'msg' => 'Registrierung erfolgreich! Dein QR-Code wurde erstellt.',
@@ -227,7 +227,7 @@ public static function ajax_register_user() {
     ]);
 
     $user_id = $wpdb->insert_id;
-    error_log("✅ Neuer Google-User mit QR erstellt (ID={$user_id}, Email={$email})");
+    ppv_log("✅ Neuer Google-User mit QR erstellt (ID={$user_id}, Email={$email})");
 } else {
     $user_id = $exists;
 }

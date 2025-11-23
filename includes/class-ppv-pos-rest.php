@@ -13,7 +13,7 @@ class PPV_POS_REST {
      *  🔹 Inicializálás
      * ============================================================ */
     public static function hooks() {
-            error_log("✅ [PPV_POS_REST] hooks() aktiv");
+            ppv_log("✅ [PPV_POS_REST] hooks() aktiv");
 
         add_action('rest_api_init', [__CLASS__, 'register_routes']);
         add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
@@ -36,12 +36,12 @@ public static function pos_permission($request) {
         $token = sanitize_text_field($_GET['pos_token']);
     }
     if (empty($token)) {
-        error_log('❌ [POS_PERMISSION] Missing token');
+        ppv_log('❌ [POS_PERMISSION] Missing token');
         return false;
     }
 
     // 🔹 Debug – prefix és token ellenőrzés
-    error_log('🧠 [POS_PERMISSION] Checking token=' . $token . ' on table=' . $wpdb->prefix . 'ppv_stores');
+    ppv_log('🧠 [POS_PERMISSION] Checking token=' . $token . ' on table=' . $wpdb->prefix . 'ppv_stores');
 
     // 🔹 SQL ellenőrzés
     $count = (int) $wpdb->get_var($wpdb->prepare(
@@ -50,10 +50,10 @@ public static function pos_permission($request) {
     ));
 
     if ($count > 0) {
-        error_log('✅ [POS_PERMISSION] Token valid');
+        ppv_log('✅ [POS_PERMISSION] Token valid');
         return true;
     } else {
-        error_log('❌ [POS_PERMISSION] Token not found or pos_disabled');
+        ppv_log('❌ [POS_PERMISSION] Token not found or pos_disabled');
         return false;
     }
 }
@@ -63,11 +63,11 @@ public static function pos_permission($request) {
      * ============================================================ */
    public static function register_routes() {
     $routes = rest_get_server()->get_routes();
-    error_log("🧩 [PPV_POS_REST] register_routes aktiválva");
+    ppv_log("🧩 [PPV_POS_REST] register_routes aktiválva");
 
     // 🧱 Guard – ha már regisztrálva máshol, ne duplikáljuk
     if (isset($routes['/ppv/v1/pos/stats'])) {
-        error_log('⚠️ [PPV_POS_REST] /ppv/v1/pos/stats already registered – skipping duplicate.');
+        ppv_log('⚠️ [PPV_POS_REST] /ppv/v1/pos/stats already registered – skipping duplicate.');
         return;
     }
 
@@ -79,7 +79,7 @@ public static function pos_permission($request) {
         'callback' => [__CLASS__, 'handle_pos_login'],
         'permission_callback' => ['PPV_Permissions', 'allow_anonymous'],
     ]);
-    error_log("🧩 [PPV_POS_REST] /pos/login route regisztrálva");
+    ppv_log("🧩 [PPV_POS_REST] /pos/login route regisztrálva");
 
     // 🏪 Multi-Store lista
     register_rest_route($ns, '/pos/stores', [
@@ -120,7 +120,7 @@ public static function pos_permission($request) {
         'permission_callback' => [__CLASS__, 'pos_permission'],
     ]);
 
-    error_log("✅ [PPV_POS_REST] alle /ppv/v1 POS routes erfolgreich registriert");
+    ppv_log("✅ [PPV_POS_REST] alle /ppv/v1 POS routes erfolgreich registriert");
 }
 
     /** ============================================================
@@ -128,7 +128,7 @@ public static function pos_permission($request) {
      * ============================================================ */
     public static function handle_pos_login(WP_REST_Request $request) {
     global $wpdb;
-    error_log("🧩 [POS_Login] STARTED --- incoming data: " . json_encode($request->get_json_params()));
+    ppv_log("🧩 [POS_Login] STARTED --- incoming data: " . json_encode($request->get_json_params()));
 
     $pin = sanitize_text_field($request['pin'] ?? '');
     if (empty($pin)) {
@@ -149,7 +149,7 @@ if (
     empty($store->active) ||
     !in_array($store->subscription_status, ['active', 'trial'])
 ) {
-    error_log("🚫 [POS_Login_DEBUG] FAIL CHECK → " . json_encode([
+    ppv_log("🚫 [POS_Login_DEBUG] FAIL CHECK → " . json_encode([
         'found' => !!$store,
         'pos_enabled' => $store->pos_enabled ?? 'NULL',
         'active' => $store->active ?? 'NULL',
@@ -180,7 +180,7 @@ if (
         'samesite' => 'Lax'
     ]);
 
-    error_log("✅ [POS_Login] Erfolgreich – Store={$store->company_name} (ID={$store->id})");
+    ppv_log("✅ [POS_Login] Erfolgreich – Store={$store->company_name} (ID={$store->id})");
 
     return new WP_REST_Response([
         'success' => true,

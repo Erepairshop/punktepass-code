@@ -292,13 +292,13 @@ class PPV_QR {
 
                 if ($token_entity_id) {
                     if ($uid_from_qr != $token_entity_id) {
-                        error_log("⚠️ [PPV_QR] decode_user_from_qr: QR user_id mismatch! QR={$uid_from_qr}, token_entity_id={$token_entity_id} - using token_entity_id");
+                        ppv_log("⚠️ [PPV_QR] decode_user_from_qr: QR user_id mismatch! QR={$uid_from_qr}, token_entity_id={$token_entity_id} - using token_entity_id");
                     }
                     return intval($token_entity_id);
                 }
 
                 // Fallback to QR user_id if token not found (legacy support)
-                error_log("⚠️ [PPV_QR] decode_user_from_qr: Token not found in DB, falling back to QR user_id={$uid_from_qr}");
+                ppv_log("⚠️ [PPV_QR] decode_user_from_qr: Token not found in DB, falling back to QR user_id={$uid_from_qr}");
                 return $uid_from_qr;
             }
         }
@@ -318,7 +318,7 @@ class PPV_QR {
 
                 if ($actual_user_id) {
                     if ($uid_from_qr != $actual_user_id) {
-                        error_log("⚠️ [PPV_QR] decode_user_from_qr (PPUSER): QR user_id mismatch! QR={$uid_from_qr}, actual={$actual_user_id} - using actual");
+                        ppv_log("⚠️ [PPV_QR] decode_user_from_qr (PPUSER): QR user_id mismatch! QR={$uid_from_qr}, actual={$actual_user_id} - using actual");
                     }
                     return intval($actual_user_id);
                 }
@@ -493,7 +493,7 @@ class PPV_QR {
         }
 
         // 🔍 DEBUG: Log session before permission check
-        error_log("🔍 [QR_CENTER] SESSION CHECK: " . json_encode([
+        ppv_log("🔍 [QR_CENTER] SESSION CHECK: " . json_encode([
             'ppv_user_id' => $_SESSION['ppv_user_id'] ?? 'NOT_SET',
             'ppv_user_type' => $_SESSION['ppv_user_type'] ?? 'NOT_SET',
             'ppv_store_id' => $_SESSION['ppv_store_id'] ?? 'NOT_SET',
@@ -503,12 +503,12 @@ class PPV_QR {
 
         $auth_check = PPV_Permissions::check_handler();
         if (is_wp_error($auth_check)) {
-            error_log("❌ [QR_CENTER] check_handler() FAILED: " . $auth_check->get_error_message());
+            ppv_log("❌ [QR_CENTER] check_handler() FAILED: " . $auth_check->get_error_message());
             return '<div class="ppv-error" style="padding: 20px; text-align: center; color: #ff5252;">
                 ❌ Zugriff verweigert. Nur für Händler und Scanner.
             </div>';
         }
-        error_log("✅ [QR_CENTER] check_handler() PASSED");
+        ppv_log("✅ [QR_CENTER] check_handler() PASSED");
 
         $lang = sanitize_text_field($_COOKIE['ppv_lang'] ?? '');
         if (empty($lang) || !in_array($lang, ['de', 'hu', 'ro'])) {
@@ -921,11 +921,11 @@ class PPV_QR {
         }
 
         if (!$current_filiale_id) {
-            error_log("⚠️ [PPV_QR] render_filiale_switcher: No store_id found in session");
+            ppv_log("⚠️ [PPV_QR] render_filiale_switcher: No store_id found in session");
             return; // No store in session
         }
 
-        error_log("🏪 [PPV_QR] render_filiale_switcher: current_filiale_id={$current_filiale_id}");
+        ppv_log("🏪 [PPV_QR] render_filiale_switcher: current_filiale_id={$current_filiale_id}");
 
         // Get parent store ID (if current is a filiale, get its parent; otherwise it's the parent)
         $parent_id = $wpdb->get_var($wpdb->prepare(
@@ -1460,7 +1460,7 @@ class PPV_QR {
         $_SESSION['ppv_current_filiale_id'] = $filiale_id;
 
         // Optional: Log the switch
-        error_log("✅ [PPV_QR] Filiale switched to ID: {$filiale_id}");
+        ppv_log("✅ [PPV_QR] Filiale switched to ID: {$filiale_id}");
 
         wp_send_json_success(['message' => 'Filiale gewechselt']);
     }
@@ -1574,7 +1574,7 @@ class PPV_QR {
         }
 
         // 🔍 DEBUG: Log store_id resolution
-        error_log("🔍 [PPV_QR rest_process_scan] Store ID resolution: " . json_encode([
+        ppv_log("🔍 [PPV_QR rest_process_scan] Store ID resolution: " . json_encode([
             'session_store_object' => $session_store ? 'EXISTS' : 'NULL',
             'session_store_id' => $session_store->id ?? 'NULL',
             'validated_store_id' => $store->id ?? 'NULL',
@@ -1582,7 +1582,7 @@ class PPV_QR {
         ]));
 
         if ($store_id === 0) {
-            error_log("❌ [PPV_QR] CRITICAL: store_id is 0! This should not happen!");
+            ppv_log("❌ [PPV_QR] CRITICAL: store_id is 0! This should not happen!");
             return new WP_REST_Response([
                 'success' => false,
                 'message' => '❌ Invalid store_id (0)'
@@ -1624,7 +1624,7 @@ class PPV_QR {
             if ($campaign_points) {
                 $points_add = intval($campaign_points);
                 $points_source = 'campaign';
-                error_log("🎯 [PPV_QR] Campaign points applied: campaign_id={$campaign_id}, points={$points_add}");
+                ppv_log("🎯 [PPV_QR] Campaign points applied: campaign_id={$campaign_id}, points={$points_add}");
             }
         }
 
@@ -1635,7 +1635,7 @@ class PPV_QR {
             if (class_exists('PPV_Filiale')) {
                 $reward_store_id = PPV_Filiale::get_parent_id($store_id);
                 if ($reward_store_id !== $store_id) {
-                    error_log("🏪 [PPV_QR] Reward lookup: Using PARENT store {$reward_store_id} instead of filiale {$store_id}");
+                    ppv_log("🏪 [PPV_QR] Reward lookup: Using PARENT store {$reward_store_id} instead of filiale {$store_id}");
                 }
             }
 
@@ -1648,13 +1648,13 @@ class PPV_QR {
             if ($reward_points && intval($reward_points) > 0) {
                 $points_add = intval($reward_points);
                 $points_source = 'reward';
-                error_log("🎁 [PPV_QR] Reward base points applied: reward_store_id={$reward_store_id}, points_given={$points_add}");
+                ppv_log("🎁 [PPV_QR] Reward base points applied: reward_store_id={$reward_store_id}, points_given={$points_add}");
             }
         }
 
         // 3. If neither exists, notify merchant to configure
         if ($points_add === 0) {
-            error_log("⚠️ [PPV_QR] No points configured: store_id={$store_id}, campaign_id={$campaign_id}");
+            ppv_log("⚠️ [PPV_QR] No points configured: store_id={$store_id}, campaign_id={$campaign_id}");
             return new WP_REST_Response([
                 'success' => false,
                 'message' => '⚠️ Keine Punkte konfiguriert. Bitte Prämie oder Kampagne einrichten.',
@@ -1690,7 +1690,7 @@ class PPV_QR {
             if (class_exists('PPV_Filiale')) {
                 $vip_store_id = PPV_Filiale::get_parent_id($store_id);
                 if ($vip_store_id !== $store_id) {
-                    error_log("🏪 [PPV_QR] VIP settings: Using PARENT store {$vip_store_id} instead of filiale {$store_id}");
+                    ppv_log("🏪 [PPV_QR] VIP settings: Using PARENT store {$vip_store_id} instead of filiale {$store_id}");
                 }
             }
 
@@ -1706,7 +1706,7 @@ class PPV_QR {
             ", $vip_store_id));
 
             // 🔍 DEBUG: Log VIP settings
-            error_log("🔍 [PPV_QR] VIP settings for store {$vip_store_id}: " . json_encode([
+            ppv_log("🔍 [PPV_QR] VIP settings for store {$vip_store_id}: " . json_encode([
                 'vip_enabled' => $vip_settings->vip_enabled ?? 'NULL',
                 'vip_fix_enabled' => $vip_settings->vip_fix_enabled ?? 'NULL',
                 'vip_fix_bronze' => $vip_settings->vip_fix_bronze ?? 'NULL',
@@ -1719,7 +1719,7 @@ class PPV_QR {
                 $base_points = $points_add;
 
                 // 🔍 DEBUG: Log user level
-                error_log("🔍 [PPV_QR] User VIP level: user_id={$user_id}, level=" . ($user_level ?? 'NULL (Starter - no VIP)'));
+                ppv_log("🔍 [PPV_QR] User VIP level: user_id={$user_id}, level=" . ($user_level ?? 'NULL (Starter - no VIP)'));
 
                 // Helper to get level-specific value (returns 0 for Starter/null)
                 $getLevelValue = function($bronze, $silver, $gold, $platinum) use ($user_level) {
@@ -1785,7 +1785,7 @@ class PPV_QR {
                                 $vip_bonus_details['streak'] = $base_points * 2;
                             }
 
-                            error_log("🔥 [PPV_QR] Streak bonus triggered! Scan #{$next_scan_number} (every {$streak_count})");
+                            ppv_log("🔥 [PPV_QR] Streak bonus triggered! Scan #{$next_scan_number} (every {$streak_count})");
                         }
                     }
                 }
@@ -1806,7 +1806,7 @@ class PPV_QR {
                             $vip_settings->vip_daily_gold,
                             $vip_settings->vip_daily_platinum
                         );
-                        error_log("☀️ [PPV_QR] First daily scan bonus applied for user {$user_id}");
+                        ppv_log("☀️ [PPV_QR] First daily scan bonus applied for user {$user_id}");
                     }
                 }
 
@@ -1815,7 +1815,7 @@ class PPV_QR {
 
                 if ($vip_bonus_applied > 0) {
                     $points_add += $vip_bonus_applied;
-                    error_log("✅ [PPV_QR] VIP bonuses applied: level={$user_level}, pct=+{$vip_bonus_details['pct']}, fix=+{$vip_bonus_details['fix']}, streak=+{$vip_bonus_details['streak']}, daily=+{$vip_bonus_details['daily']}, total_bonus={$vip_bonus_applied}, total_points={$points_add}");
+                    ppv_log("✅ [PPV_QR] VIP bonuses applied: level={$user_level}, pct=+{$vip_bonus_details['pct']}, fix=+{$vip_bonus_details['fix']}, streak=+{$vip_bonus_details['streak']}, daily=+{$vip_bonus_details['daily']}, total_bonus={$vip_bonus_applied}, total_points={$points_add}");
                 }
             }
         }

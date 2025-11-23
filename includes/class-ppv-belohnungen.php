@@ -44,7 +44,7 @@ class PPV_Belohnungen {
 
         // Debug log if using default (missing translation)
         if ($value === $default && $default !== '') {
-            error_log("⚠️ [PPV_Belohnungen] Missing translation key '{$key}' for lang '{$lang}', using default: {$default}");
+            ppv_log("⚠️ [PPV_Belohnungen] Missing translation key '{$key}' for lang '{$lang}', using default: {$default}");
         }
 
         return $value ?: $key;
@@ -154,7 +154,7 @@ class PPV_Belohnungen {
         $_SESSION['ppv_lang'] = $lang;
         setcookie('ppv_lang', $lang, time() + 31536000, '/', '', false, true);
 
-        error_log("🌍 [PPV_Belohnungen] Active language: {$lang}");
+        ppv_log("🌍 [PPV_Belohnungen] Active language: {$lang}");
 
         wp_enqueue_script(
             'ppv-theme-loader',

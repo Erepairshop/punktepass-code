@@ -6,7 +6,7 @@ class PPV_QR_Generator {
 
     /** 🔹 QR generálás időbélyeges fájlnévvel + automatikus régi törléssel */
     public static function generate_qr($store) {
-        error_log('🧩 PPV_QR_Generator::generate_qr() called for store_id=' . ($store->id ?? 'undefined'));
+        ppv_log('🧩 PPV_QR_Generator::generate_qr() called for store_id=' . ($store->id ?? 'undefined'));
 
         $upload_dir = wp_upload_dir();
         $qr_dir = trailingslashit($upload_dir['basedir']) . 'punktepass_qr/';
