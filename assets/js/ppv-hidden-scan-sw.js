@@ -2,14 +2,16 @@
 // ✅ REST Relay → BroadcastChannel → User Toast Bridge
 // ✅ Cross-tab + PWA kompatibilis
 // ✅ Offline-safe queue (future use)
+//
+// ⛔ DISABLED - Not in use
 
 self.addEventListener("install", (e) => {
-  console.log("📦 HiddenScan SW installed");
+  console.log("⏭️ HiddenScan SW installed (DISABLED)");
   self.skipWaiting();
 });
 
 self.addEventListener("activate", (e) => {
-  console.log("✅ HiddenScan SW active");
+  console.log("⏭️ HiddenScan SW active (DISABLED)");
   return self.clients.claim();
 });
 
@@ -17,6 +19,10 @@ self.addEventListener("activate", (e) => {
 // 🔁 QR üzenet feldolgozása
 // ============================================================
 self.addEventListener("message", async (e) => {
+  // ⛔ DISABLED - Not in use
+  console.log("⏭️ HiddenScan SW message ignored (DISABLED)");
+  return;
+
   const data = e.data || {};
   if (!data.qr) return;
 

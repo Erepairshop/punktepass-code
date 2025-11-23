@@ -1,8 +1,14 @@
 /**
  * PunktePass – Hidden Scan (ChromeOS / Bluetooth)
  * Automatikus QR-küldés a háttérben → /pos/scan
+ *
+ * DISABLED: Not in use, causing potential API spam
  */
- 
+
+// ⛔ DISABLED - Script not in use
+console.log('⏭️ [HiddenScan] Disabled - not in use');
+if (true) { /* DISABLED */ } else {
+
  // 🔹 Service Worker regisztrálása háttérmódhoz
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register(PPV_SCAN_DATA.plugin_url + 'assets/js/ppv-hidden-scan-sw.js')
@@ -113,3 +119,5 @@ style.innerHTML = `
 .ppv-toast.error { background: #e53935; }
 `;
 document.head.appendChild(style);
+
+} // END DISABLED else block
