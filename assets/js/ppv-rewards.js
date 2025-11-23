@@ -959,7 +959,25 @@ showToast("📄 Monatsbeleg wird heruntergeladen!", "success");
     }, 10000);
 
     // 🔄 Navigation listener - reinitialize when page content changes
+    let isReinitializing = false;
+
     function reinitAfterNavigation() {
+      // Debounce guard - prevent multiple simultaneous calls
+      if (isReinitializing) {
+        console.log('📦 [REWARDS] Already reinitializing, skipping...');
+        return;
+      }
+
+      // Check if rewards elements exist on this page
+      const newRedeemList = document.getElementById("ppv-redeem-list");
+      const newLogList = document.getElementById("ppv-log-list");
+
+      if (!newRedeemList && !newLogList) {
+        console.log('📦 [REWARDS] No reward elements on this page, skipping reinit');
+        return;
+      }
+
+      isReinitializing = true;
       console.log('📦 [REWARDS] Navigation detected - reinitializing...');
 
       // Clear old interval
@@ -968,12 +986,10 @@ showToast("📄 Monatsbeleg wird heruntergeladen!", "success");
         refreshInterval = null;
       }
 
-      // Re-get elements (they may have changed)
-      const newRedeemList = document.getElementById("ppv-redeem-list");
-      const newLogList = document.getElementById("ppv-log-list");
+      console.log('📦 [REWARDS] Found reward elements, reloading data...');
 
-      if (newRedeemList || newLogList) {
-        console.log('📦 [REWARDS] Found reward elements, reloading data...');
+      // Delay to let the page settle
+      setTimeout(() => {
         loadRedeemRequests();
         loadRecentLogs();
 
@@ -982,7 +998,9 @@ showToast("📄 Monatsbeleg wird heruntergeladen!", "success");
           loadRedeemRequests();
           loadRecentLogs();
         }, 10000);
-      }
+
+        isReinitializing = false;
+      }, 100);
     }
 
     // 🧹 Turbo: Clean up BEFORE navigating away (prevents multiple polling instances)
@@ -992,11 +1010,11 @@ showToast("📄 Monatsbeleg wird heruntergeladen!", "success");
         clearInterval(refreshInterval);
         refreshInterval = null;
       }
+      isReinitializing = false;
     });
 
-    // 🚀 Turbo.js support (primary navigation handler)
+    // 🚀 Turbo.js support (only turbo:load to avoid double-init)
     document.addEventListener('turbo:load', reinitAfterNavigation);
-    document.addEventListener('turbo:render', reinitAfterNavigation);
 
     // 🔄 Custom SPA event support (fallback)
     window.addEventListener('ppv:spa-navigate', reinitAfterNavigation);
