@@ -1,6 +1,7 @@
 /**
- * PunktePass – Einlösungen Management v8.3 CLEAN
+ * PunktePass – Einlösungen Management v9.0 COMPACT
  * Turbo.js compatible, clean architecture
+ * NEW: Compact card layout for better space efficiency
  * FIXED: Multiple interval creation bug causing 503 errors
  * FIXED: Added init throttle to prevent rapid API calls
  * Author: PunktePass / Erik Borota
@@ -278,12 +279,20 @@
 
       STATE.notificationSystem?.updatePageTitle(pending.length);
 
-      // Pending section
+      // Pending section - Compact Layout
       if (pending.length > 0) {
-        const title = document.createElement('h4');
-        title.textContent = L.redeem_pending_section || 'Offene Einlösungen';
-        title.style.cssText = 'margin: 20px 0 15px; font-size: 16px;';
-        redeemList.appendChild(title);
+        const section = document.createElement('div');
+        section.className = 'ppv-redeem-section-compact';
+        section.innerHTML = `
+          <div class="ppv-section-header ppv-section-pending">
+            <i class="ri-time-line"></i>
+            <span>${L.redeem_pending_section || 'Offene Einlösungen'}</span>
+            <span class="ppv-section-count">${pending.length}</span>
+          </div>
+        `;
+
+        const grid = document.createElement('div');
+        grid.className = 'ppv-redeem-compact-grid';
 
         pending.forEach(r => {
           const id = parseInt(r.id);
@@ -293,44 +302,67 @@
           STATE.previousPendingIds.add(id);
 
           const card = document.createElement("div");
-          card.className = "ppv-redeem-item status-pending";
+          card.className = "ppv-redeem-compact status-pending";
           card.dataset.id = r.id;
           card.innerHTML = `
-            <strong>${escapeHtml(r.reward_title || 'Belohnung')}</strong>
-            <small>${escapeHtml(r.user_email || 'Unbekannt')}</small>
-            <div class="ppv-redeem-meta">
-              <span class="ppv-redeem-meta-item"><i class="ri-star-fill"></i> ${r.points_spent || 0} ${L.redeem_points || 'Punkte'}</span>
-              <span class="ppv-redeem-meta-item"><i class="ri-time-line"></i> ${formatDate(r.redeemed_at)}</span>
+            <div class="ppv-rc-status"><i class="ri-timer-line"></i></div>
+            <div class="ppv-rc-main">
+              <div class="ppv-rc-title">${escapeHtml(r.reward_title || 'Belohnung')}</div>
+              <div class="ppv-rc-user"><i class="ri-user-line"></i> ${escapeHtml(r.user_email || 'Unbekannt')}</div>
             </div>
-            <div class="ppv-redeem-actions">
-              <button class="ppv-approve" data-id="${r.id}">${L.redeem_btn_approve || 'Bestätigen'}</button>
-              <button class="ppv-reject" data-id="${r.id}">${L.redeem_btn_reject || 'Ablehnen'}</button>
+            <div class="ppv-rc-info">
+              <span class="ppv-rc-points"><i class="ri-star-fill"></i> ${r.points_spent || 0}</span>
+              <span class="ppv-rc-value">${r.euro_value ? r.euro_value + ' €' : ''}</span>
+              <span class="ppv-rc-date"><i class="ri-calendar-line"></i> ${formatDate(r.redeemed_at)}</span>
+            </div>
+            <div class="ppv-rc-actions">
+              <button class="ppv-approve" data-id="${r.id}" title="${L.redeem_btn_approve || 'Bestätigen'}"><i class="ri-check-line"></i></button>
+              <button class="ppv-reject" data-id="${r.id}" title="${L.redeem_btn_reject || 'Ablehnen'}"><i class="ri-close-line"></i></button>
             </div>
           `;
-          redeemList.appendChild(card);
+          grid.appendChild(card);
         });
+
+        section.appendChild(grid);
+        redeemList.appendChild(section);
       }
 
-      // Approved section
+      // Approved section - Compact Layout
       if (approved.length > 0) {
-        const title = document.createElement('h4');
-        title.textContent = L.redeem_approved_section || 'Bestätigte Einlösungen';
-        title.style.cssText = 'margin: 30px 0 15px; font-size: 16px;';
-        redeemList.appendChild(title);
+        const section = document.createElement('div');
+        section.className = 'ppv-redeem-section-compact';
+        section.innerHTML = `
+          <div class="ppv-section-header ppv-section-approved">
+            <i class="ri-checkbox-circle-line"></i>
+            <span>${L.redeem_approved_section || 'Bestätigte Einlösungen'}</span>
+            <span class="ppv-section-count">${approved.length}</span>
+          </div>
+        `;
+
+        const grid = document.createElement('div');
+        grid.className = 'ppv-redeem-compact-grid';
 
         approved.forEach(r => {
           const card = document.createElement("div");
-          card.className = "ppv-redeem-item status-approved";
+          card.className = "ppv-redeem-compact status-approved";
           card.innerHTML = `
-            <strong>${escapeHtml(r.reward_title || 'Belohnung')}</strong>
-            <small>${escapeHtml(r.user_email || 'Unbekannt')}</small>
-            <div class="ppv-redeem-meta">
-              <span class="ppv-redeem-meta-item"><i class="ri-star-fill"></i> ${r.points_spent || 0} ${L.redeem_points || 'Punkte'}</span>
-              <span class="ppv-redeem-meta-item"><i class="ri-checkbox-circle-line"></i> ${L.redeem_status_approved || 'Bestätigt'}</span>
+            <div class="ppv-rc-status"><i class="ri-checkbox-circle-fill"></i></div>
+            <div class="ppv-rc-main">
+              <div class="ppv-rc-title">${escapeHtml(r.reward_title || 'Belohnung')}</div>
+              <div class="ppv-rc-user"><i class="ri-user-line"></i> ${escapeHtml(r.user_email || 'Unbekannt')}</div>
             </div>
+            <div class="ppv-rc-info">
+              <span class="ppv-rc-points"><i class="ri-star-fill"></i> ${r.points_spent || 0}</span>
+              <span class="ppv-rc-value">${r.euro_value ? r.euro_value + ' €' : ''}</span>
+              <span class="ppv-rc-date"><i class="ri-calendar-line"></i> ${formatDate(r.redeemed_at)}</span>
+            </div>
+            <div class="ppv-rc-badge">${L.redeem_status_approved || 'Bestätigt'}</div>
           `;
-          redeemList.appendChild(card);
+          grid.appendChild(card);
         });
+
+        section.appendChild(grid);
+        redeemList.appendChild(section);
       }
 
     } catch (err) {
@@ -692,6 +724,6 @@
     setTimeout(init, 100);
   });
 
-  ppvLog('[REWARDS] Script loaded v8.3 (fixed interval bug + init throttle)');
+  ppvLog('[REWARDS] Script loaded v9.0 (compact card layout)');
 
 })();
