@@ -96,6 +96,11 @@
       window.ppvToast(text, type);
     }
 
+    clearLogTable() {
+      if (!this.logTable) return;
+      this.logTable.innerHTML = '';
+    }
+
     addLogRow(time, user, status) {
       if (!this.logTable) return;
       const row = document.createElement('tr');
@@ -217,8 +222,17 @@
           headers: { 'PPV-POS-Token': getStoreKey() }
         });
         const logs = await res.json();
-        (logs || []).forEach(l => this.ui.addLogRow(l.created_at, l.user_id, l.success ? '✅' : '❌'));
-      } catch (e) {}
+
+        // Clear existing table rows before loading fresh data
+        this.ui.clearLogTable();
+
+        // Add logs in reverse order so newest appears at top
+        (logs || []).slice().reverse().forEach(l => {
+          this.ui.addLogRow(l.created_at, l.user_id, l.success ? '✅' : '❌');
+        });
+      } catch (e) {
+        console.warn('[QR] Failed to load logs:', e);
+      }
     }
   }
 

@@ -822,7 +822,7 @@ class PPV_QR {
                 </div>
             </div>
 
-            <table id="ppv-pos-log" class="glass-table" data-turbo-permanent>
+            <table id="ppv-pos-log" class="glass-table">
                 <thead>
                     <tr>
                         <th><?php echo self::t('t_col_time', 'Zeit'); ?></th>
@@ -1917,12 +1917,19 @@ class PPV_QR {
 
         $store_id = intval($session_store->id);
 
-        return new WP_REST_Response($wpdb->get_results($wpdb->prepare("
-            SELECT created_at, user_id, message
+        $logs = $wpdb->get_results($wpdb->prepare("
+            SELECT created_at, user_id, message, type
             FROM {$wpdb->prefix}ppv_pos_log
             WHERE store_id=%d
             ORDER BY id DESC LIMIT 15
-        ", $store_id)), 200);
+        ", $store_id));
+
+        // Add success field based on type (qr_scan = success, error = fail)
+        foreach ($logs as &$log) {
+            $log->success = ($log->type !== 'error');
+        }
+
+        return new WP_REST_Response($logs, 200);
     }
 
     // ============================================================
