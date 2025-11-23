@@ -1,11 +1,27 @@
 /**
- * PunktePass – Prämien Management v2.0 CLEAN
+ * PunktePass – Prämien Management v2.1 CLEAN
  * Turbo.js compatible, clean architecture
+ * FIXED: Script guard, init throttle, reduced API spam
  * Author: PunktePass / Erik Borota
  */
 
 (function() {
   'use strict';
+
+  // ✅ DEBUG MODE - Set to false in production to reduce console spam
+  const PPV_DEBUG = false;
+  const ppvLog = (...args) => { if (PPV_DEBUG) console.log(...args); };
+
+  // ✅ Script guard - prevent multiple loads
+  if (window.PPV_REWARDS_MGMT_LOADED) {
+    ppvLog('[REWARDS-MGMT] Already loaded, skipping');
+    return;
+  }
+  window.PPV_REWARDS_MGMT_LOADED = true;
+
+  // ✅ Init throttle - prevent rapid re-initialization (min 2 seconds between inits)
+  let lastInitTime = 0;
+  const INIT_THROTTLE_MS = 2000;
 
   // ============================================================
   // GLOBAL STATE
@@ -139,7 +155,7 @@
       });
 
     } catch (err) {
-      console.error('[REWARDS-MGMT] Load error:', err);
+      ppvLog('[REWARDS-MGMT] Load error:', err);
       listContainer.innerHTML = `<p style='text-align:center;color:#ef4444;'>⚠️ ${L.rewards_error_loading || 'Hiba a betöltéskor'}: ${err.message}</p>`;
     }
   }
@@ -189,7 +205,7 @@
       loadRewards();
 
     } catch (err) {
-      console.error('[REWARDS-MGMT] Save error:', err);
+      ppvLog('[REWARDS-MGMT] Save error:', err);
       showToast(`⚠️ ${L.rewards_error_save || 'Mentési hiba'}: ${err.message}`, 'error');
     }
   }
@@ -207,7 +223,7 @@
       const reward = json.rewards?.find(r => r.id == id);
 
       if (!reward) {
-        console.error('[REWARDS-MGMT] Reward not found:', id);
+        ppvLog('[REWARDS-MGMT] Reward not found:', id);
         return;
       }
 
@@ -234,7 +250,7 @@
       STATE.elements.form?.scrollIntoView({ behavior: 'smooth' });
 
     } catch (err) {
-      console.error('[REWARDS-MGMT] Edit error:', err);
+      ppvLog('[REWARDS-MGMT] Edit error:', err);
       showToast(`⚠️ ${L.rewards_error_loading || 'Hiba a betöltéskor'}: ${err.message}`, 'error');
     }
   }
@@ -260,7 +276,7 @@
       loadRewards();
 
     } catch (err) {
-      console.error('[REWARDS-MGMT] Delete error:', err);
+      ppvLog('[REWARDS-MGMT] Delete error:', err);
       showToast(`⚠️ ${L.rewards_error_delete || 'Törlési hiba'}: ${err.message}`, 'error');
     }
   }
@@ -368,7 +384,15 @@
       return;
     }
 
-    console.log('[REWARDS-MGMT] Initializing...');
+    // ✅ Init throttle - prevent rapid re-initialization
+    const now = Date.now();
+    if (now - lastInitTime < INIT_THROTTLE_MS) {
+      ppvLog('[REWARDS-MGMT] Init throttled, skipping (too soon)');
+      return;
+    }
+    lastInitTime = now;
+
+    ppvLog('[REWARDS-MGMT] Initializing...');
     cleanup();
 
     // Cache elements
@@ -404,7 +428,7 @@
     loadRewards();
 
     STATE.initialized = true;
-    console.log('[REWARDS-MGMT] Initialization complete');
+    ppvLog('[REWARDS-MGMT] Initialization complete');
   }
 
   // ============================================================
@@ -426,13 +450,14 @@
   window.addEventListener('ppv:spa-navigate', init);
 
   // Tab change support - reinitialize when rewards tab becomes visible
+  // ✅ NOTE: init() has built-in throttle, so rapid tab changes won't cause API spam
   window.addEventListener('ppv:tab-change', function(e) {
     if (e.detail?.tab === 'rewards') {
-      console.log('[REWARDS-MGMT] Tab activated, reinitializing...');
+      ppvLog('[REWARDS-MGMT] Tab activated, reinitializing...');
       init();
     }
   });
 
-  console.log('[REWARDS-MGMT] Script loaded v2.0');
+  ppvLog('[REWARDS-MGMT] Script loaded v2.1');
 
 })();

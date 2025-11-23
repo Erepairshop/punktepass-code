@@ -1,7 +1,8 @@
 /**
- * PunktePass – Einlösungen Management v8.2 CLEAN
+ * PunktePass – Einlösungen Management v8.3 CLEAN
  * Turbo.js compatible, clean architecture
  * FIXED: Multiple interval creation bug causing 503 errors
+ * FIXED: Added init throttle to prevent rapid API calls
  * Author: PunktePass / Erik Borota
  */
 
@@ -18,6 +19,10 @@
     return;
   }
   window.PPV_REWARDS_LOADED = true;
+
+  // ✅ Init throttle - prevent rapid re-initialization (min 2 seconds between inits)
+  let lastInitTime = 0;
+  const INIT_THROTTLE_MS = 2000;
 
   // ============================================================
   // GLOBAL STATE
@@ -608,6 +613,14 @@
       return;
     }
 
+    // ✅ Init throttle - prevent rapid re-initialization
+    const now = Date.now();
+    if (now - lastInitTime < INIT_THROTTLE_MS) {
+      ppvLog('[REWARDS] Init throttled, skipping (too soon)');
+      return;
+    }
+    lastInitTime = now;
+
     ppvLog('[REWARDS] Initializing...');
 
     // Cleanup old state
@@ -670,6 +683,6 @@
     setTimeout(init, 100);
   });
 
-  ppvLog('[REWARDS] Script loaded v8.2 (fixed interval bug)');
+  ppvLog('[REWARDS] Script loaded v8.3 (fixed interval bug + init throttle)');
 
 })();
