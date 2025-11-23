@@ -974,10 +974,42 @@ showToast("📄 Monatsbeleg wird heruntergeladen!", "success");
     if (config.pusher && config.pusher.key && window.Pusher) {
       console.log('📡 [REWARDS] Initializing Pusher real-time...');
 
+      // Cleanup previous Pusher instance if exists (for Turbo navigation)
+      if (window.PPV_REWARDS_PUSHER) {
+        window.PPV_REWARDS_PUSHER.disconnect();
+        window.PPV_REWARDS_PUSHER = null;
+      }
+
       const pusher = new Pusher(config.pusher.key, {
         cluster: config.pusher.cluster,
-        authEndpoint: config.pusher.auth_endpoint,
+        authorizer: (channel) => ({
+          authorize: (socketId, callback) => {
+            fetch(config.pusher.auth_endpoint, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'PPV-POS-Token': POS_TOKEN
+              },
+              body: new URLSearchParams({
+                socket_id: socketId,
+                channel_name: channel.name
+              })
+            })
+            .then(res => res.json())
+            .then(data => {
+              if (data.auth) {
+                callback(null, data);
+              } else {
+                callback(new Error('Auth failed'), null);
+              }
+            })
+            .catch(err => callback(err, null));
+          }
+        })
       });
+
+      // Store for cleanup
+      window.PPV_REWARDS_PUSHER = pusher;
 
       const channel = pusher.subscribe(config.pusher.channel);
 
@@ -1018,6 +1050,23 @@ showToast("📄 Monatsbeleg wird heruntergeladen!", "success");
       }, 30000);
     }
 
+    // Expose reload function for Turbo navigation
+    window.ppv_rewards_reload = function() {
+      console.log('📦 [REWARDS] Reloading data...');
+      loadRedeemRequests();
+      loadRecentLogs();
+    };
+
     console.log("✅ [REWARDS] Initialization complete!");
+  });
+
+  // 🚀 Re-initialize on Turbo navigation
+  document.addEventListener('turbo:load', () => {
+    // Only reload if we're on a page with the redeem list
+    const redeemList = document.getElementById("ppv-redeem-list");
+    if (redeemList && typeof window.ppv_rewards_reload === 'function') {
+      console.log('📦 [REWARDS] turbo:load detected, reloading data...');
+      window.ppv_rewards_reload();
+    }
   });
 }
