@@ -727,11 +727,11 @@ private static function get_today_hours($opening_hours) {
 
             <?php if (!$is_handler): ?>
             // ============================================================
-            // POINTS SYNC (USER ONLY) - Pusher on dashboard, polling fallback elsewhere
+            // POINTS SYNC (USER ONLY) - Ably on dashboard, polling fallback elsewhere
             // ============================================================
-            // Skip header polling if dashboard page (dashboard JS handles Pusher sync)
+            // Skip header polling if dashboard page (dashboard JS handles Ably sync)
             if (document.getElementById('ppv-dashboard-root')) {
-                console.log('📡 [Header] Dashboard detected - Pusher handles sync');
+                console.log('📡 [Header] Dashboard detected - Ably handles sync');
             } else if (!window.PPV_HEADER_POLLING_ID) {
                 // Fallback polling for non-dashboard pages (30s interval)
                 console.log('🔄 [Header] Starting polling fallback (30s)');
@@ -783,17 +783,17 @@ private static function get_today_hours($opening_hours) {
             null
         );
 
-        // 📡 PUSHER: Load JS SDK from CDN if enabled
+        // 📡 ABLY: Load JS SDK from CDN if enabled
         $dependencies = ['jquery'];
-        if (class_exists('PPV_Pusher') && PPV_Pusher::is_enabled()) {
+        if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
             wp_enqueue_script(
-                'pusher-js',
-                'https://js.pusher.com/8.2.0/pusher.min.js',
+                'ably-js',
+                'https://cdn.ably.com/lib/ably.min-1.js',
                 [],
-                '8.2.0',
+                '1.2',
                 true
             );
-            $dependencies[] = 'pusher-js';
+            $dependencies[] = 'ably-js';
         }
 
         wp_enqueue_script(
@@ -863,12 +863,10 @@ private static function get_today_hours($opening_hours) {
             ]
         ];
 
-        // 📡 PUSHER: Add config for real-time updates
-        if (class_exists('PPV_Pusher') && PPV_Pusher::is_enabled()) {
-            $boot['pusher'] = [
-                'key' => PPV_Pusher::get_key(),
-                'cluster' => PPV_Pusher::get_cluster(),
-                'auth_endpoint' => esc_url_raw(rest_url('ppv/v1/pusher/auth')),
+        // 📡 ABLY: Add config for real-time updates
+        if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+            $boot['ably'] = [
+                'key' => PPV_Ably::get_key(),
             ];
         }
 

@@ -383,7 +383,7 @@ async function initUserDashboard() {
   // ============================================================
 
   // ============================================================
-  // 📡 PUSHER + FALLBACK POLLING - Real-time updates with polling fallback
+  // 📡 ABLY + FALLBACK POLLING - Real-time updates with polling fallback
   // ============================================================
   const initPointSync = () => {
     // 🧹 Always cleanup first to prevent multiple polling instances
@@ -391,43 +391,41 @@ async function initUserDashboard() {
 
     window.PPV_POLLING_ACTIVE = true;
 
-    // 📡 Try Pusher first for real-time updates
-    if (boot.pusher && boot.pusher.key && window.Pusher) {
-      initPusherSync();
+    // 📡 Try Ably first for real-time updates
+    if (boot.ably && boot.ably.key && window.Ably) {
+      initAblySync();
     } else {
-      console.log('🔄 [Sync] Pusher not available, using polling fallback');
+      console.log('🔄 [Sync] Ably not available, using polling fallback');
       initPollingSync();
     }
   };
 
-  // 📡 PUSHER REAL-TIME SYNC
-  const initPusherSync = () => {
-    console.log('📡 [Pusher] Initializing real-time sync...');
+  // 📡 ABLY REAL-TIME SYNC
+  const initAblySync = () => {
+    console.log('📡 [Ably] Initializing real-time sync...');
 
-    const pusher = new Pusher(boot.pusher.key, {
-      cluster: boot.pusher.cluster,
-      authEndpoint: boot.pusher.auth_endpoint,
-    });
+    const ably = new Ably.Realtime({ key: boot.ably.key });
 
     // Store for cleanup
-    window.PPV_PUSHER_INSTANCE = pusher;
+    window.PPV_ABLY_INSTANCE = ably;
 
-    // Subscribe to user's private channel
-    const channel = pusher.subscribe('private-user-' + boot.uid);
+    // Subscribe to user's channel
+    const channel = ably.channels.get('user-' + boot.uid);
 
-    channel.bind('pusher:subscription_succeeded', () => {
-      console.log('📡 [Pusher] Subscribed to user channel');
+    ably.connection.on('connected', () => {
+      console.log('📡 [Ably] Connected to user channel');
     });
 
-    channel.bind('pusher:subscription_error', (err) => {
-      console.warn('📡 [Pusher] Subscription failed, falling back to polling', err);
-      pusher.disconnect();
+    ably.connection.on('failed', (err) => {
+      console.warn('📡 [Ably] Connection failed, falling back to polling', err);
+      ably.close();
       initPollingSync();
     });
 
     // 🎯 Handle points update event
-    channel.bind('points-update', (data) => {
-      console.log('📡 [Pusher] Points update received:', data);
+    channel.subscribe('points-update', (message) => {
+      const data = message.data;
+      console.log('📡 [Ably] Points update received:', data);
 
       if (data.success && data.points_added > 0) {
         // Show toast
@@ -447,8 +445,9 @@ async function initUserDashboard() {
     });
 
     // 🎁 Handle reward approved event
-    channel.bind('reward-approved', (data) => {
-      console.log('📡 [Pusher] Reward approved:', data);
+    channel.subscribe('reward-approved', (message) => {
+      const data = message.data;
+      console.log('📡 [Ably] Reward approved:', data);
 
       if (window.ppvShowPointToast) {
         window.ppvShowPointToast('reward', 0, data.store_name || 'PunktePass', data.reward_name || T.reward_redeemed);
@@ -463,8 +462,8 @@ async function initUserDashboard() {
 
     // Cleanup on page unload
     window.addEventListener('beforeunload', () => {
-      if (window.PPV_PUSHER_INSTANCE) {
-        window.PPV_PUSHER_INSTANCE.disconnect();
+      if (window.PPV_ABLY_INSTANCE) {
+        window.PPV_ABLY_INSTANCE.close();
       }
     });
   };

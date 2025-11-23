@@ -1080,74 +1080,27 @@
     OfflineSyncManager.sync();
 
     // ============================================================
-    // REAL-TIME UPDATES: Pusher (primary) or Polling (fallback)
+    // REAL-TIME UPDATES: Ably (primary) or Polling (fallback)
     // ============================================================
     let pollInterval = null;
     const POLL_INTERVAL_MS = 10000; // 10s fallback polling
 
-    // Check if Pusher is configured
-    const pusherConfig = window.PPV_STORE_DATA?.pusher;
+    // Check if Ably is configured
+    const ablyConfig = window.PPV_STORE_DATA?.ably;
     const storeId = window.PPV_STORE_DATA?.store_id;
 
-    if (pusherConfig && typeof Pusher !== 'undefined' && storeId) {
-      // PUSHER MODE: Real-time updates via WebSocket
-      ppvLog('[Pusher] Initializing with key:', pusherConfig.key);
+    if (ablyConfig && typeof Ably !== 'undefined' && storeId) {
+      // ABLY MODE: Real-time updates via WebSocket
+      ppvLog('[Ably] Initializing with key:', ablyConfig.key.substring(0, 10) + '...');
 
-      const pusher = new Pusher(pusherConfig.key, {
-        cluster: pusherConfig.cluster,
-        authorizer: (channel) => ({
-          authorize: (socketId, callback) => {
-            fetch(pusherConfig.auth_endpoint, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'PPV-POS-Token': getStoreKey()
-              },
-              body: new URLSearchParams({
-                socket_id: socketId,
-                channel_name: channel.name
-              })
-            })
-            .then(res => res.json())
-            .then(data => {
-              if (data.auth) {
-                callback(null, data);
-              } else {
-                callback(new Error('Auth failed'), null);
-              }
-            })
-            .catch(err => callback(err, null));
-          }
-        })
-      });
+      const ably = new Ably.Realtime({ key: ablyConfig.key });
 
-      // Subscribe to store's private channel
-      const channelName = 'private-store-' + storeId;
-      const channel = pusher.subscribe(channelName);
+      // Subscribe to store's channel
+      const channelName = 'store-' + storeId;
+      const channel = ably.channels.get(channelName);
 
-      channel.bind('pusher:subscription_succeeded', () => {
-        ppvLog('[Pusher] Subscribed to', channelName);
-      });
-
-      channel.bind('pusher:subscription_error', (err) => {
-        ppvLog('[Pusher] Subscription error:', err);
-        // Fall back to polling on subscription error
-        startPolling();
-      });
-
-      // Handle incoming scan events
-      channel.bind('new-scan', (data) => {
-        ppvLog('[Pusher] New scan received:', data);
-
-        // Add scan to UI immediately
-        if (STATE.scanProcessor?.ui) {
-          STATE.scanProcessor.ui.addScanItem(data);
-        }
-      });
-
-      // Connection state logging
-      pusher.connection.bind('connected', () => {
-        ppvLog('[Pusher] Connected');
+      ably.connection.on('connected', () => {
+        ppvLog('[Ably] Connected');
         // Stop polling if it was running
         if (pollInterval) {
           clearInterval(pollInterval);
@@ -1155,17 +1108,39 @@
         }
       });
 
-      pusher.connection.bind('disconnected', () => {
-        ppvLog('[Pusher] Disconnected, starting fallback polling');
+      ably.connection.on('disconnected', () => {
+        ppvLog('[Ably] Disconnected, starting fallback polling');
         startPolling();
       });
 
+      ably.connection.on('failed', (err) => {
+        ppvLog('[Ably] Connection failed:', err);
+        startPolling();
+      });
+
+      // Handle incoming scan events
+      channel.subscribe('new-scan', (message) => {
+        ppvLog('[Ably] New scan received:', message.data);
+
+        // Add scan to UI immediately
+        if (STATE.scanProcessor?.ui) {
+          STATE.scanProcessor.ui.addScanItem(message.data);
+        }
+      });
+
+      // Handle reward requests
+      channel.subscribe('reward-request', (message) => {
+        ppvLog('[Ably] Reward request received:', message.data);
+        // Refresh logs to show pending rewards
+        STATE.scanProcessor?.loadLogs();
+      });
+
       STATE.initialized = true;
-      ppvLog('[QR] Initialization complete (Pusher mode)');
+      ppvLog('[QR] Initialization complete (Ably mode)');
 
     } else {
-      // POLLING MODE: Fallback when Pusher not available
-      ppvLog('[Poll] Pusher not available, using polling fallback');
+      // POLLING MODE: Fallback when Ably not available
+      ppvLog('[Poll] Ably not available, using polling fallback');
       startPolling();
       STATE.initialized = true;
       ppvLog('[QR] Initialization complete (polling mode)');

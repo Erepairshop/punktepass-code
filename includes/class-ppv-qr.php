@@ -19,9 +19,9 @@ class PPV_QR {
         add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
         add_action('rest_api_init', [__CLASS__, 'register_rest_routes']);
         add_action('wp_ajax_ppv_switch_filiale', [__CLASS__, 'ajax_switch_filiale']);
-        // Pusher auth endpoint for private channels (both logged-in and guest users)
-        add_action('wp_ajax_ppv_pusher_auth', [__CLASS__, 'ajax_pusher_auth']);
-        add_action('wp_ajax_nopriv_ppv_pusher_auth', [__CLASS__, 'ajax_pusher_auth']);
+        // Ably auth endpoint for token requests (both logged-in and guest users)
+        add_action('wp_ajax_ppv_ably_auth', [__CLASS__, 'ajax_ably_auth']);
+        add_action('wp_ajax_nopriv_ppv_ably_auth', [__CLASS__, 'ajax_ably_auth']);
     }
 
     // ============================================================
@@ -374,10 +374,10 @@ class PPV_QR {
 
         // Only enqueue camera scanner JS for handlers/scanners
         if ($is_handler) {
-            // Load Pusher JS library if configured
-            if (class_exists('PPV_Pusher') && PPV_Pusher::is_enabled()) {
-                wp_enqueue_script('pusher-js', 'https://js.pusher.com/8.2.0/pusher.min.js', [], '8.2.0', true);
-                wp_enqueue_script('ppv-qr', PPV_PLUGIN_URL . 'assets/js/ppv-qr.js', ['jquery', 'pusher-js'], time(), true);
+            // Load Ably JS library if configured
+            if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+                wp_enqueue_script('ably-js', 'https://cdn.ably.com/lib/ably.min-1.js', [], '1.2', true);
+                wp_enqueue_script('ppv-qr', PPV_PLUGIN_URL . 'assets/js/ppv-qr.js', ['jquery', 'ably-js'], time(), true);
             } else {
                 wp_enqueue_script('ppv-qr', PPV_PLUGIN_URL . 'assets/js/ppv-qr.js', ['jquery'], time(), true);
             }
@@ -450,18 +450,16 @@ class PPV_QR {
                 ));
             }
 
-            // Build store data with optional Pusher config
+            // Build store data with optional Ably config
             $store_data = [
                 'store_id' => intval($store_id),
                 'store_key' => $store_key ?: '',
             ];
 
-            // Add Pusher config if enabled
-            if (class_exists('PPV_Pusher') && PPV_Pusher::is_enabled()) {
-                $store_data['pusher'] = [
-                    'key' => PPV_Pusher::get_key(),
-                    'cluster' => PPV_Pusher::get_cluster(),
-                    'auth_endpoint' => admin_url('admin-ajax.php?action=ppv_pusher_auth'),
+            // Add Ably config if enabled
+            if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+                $store_data['ably'] = [
+                    'key' => PPV_Ably::get_key(),
                 ];
             }
 
@@ -1849,8 +1847,8 @@ class PPV_QR {
             $store_id
         ));
 
-        // 📡 PUSHER: Send real-time notification (non-blocking)
-        if (class_exists('PPV_Pusher') && PPV_Pusher::is_enabled()) {
+        // 📡 ABLY: Send real-time notification (non-blocking)
+        if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
             // Get user info for notification
             $user_info = $wpdb->get_row($wpdb->prepare("
                 SELECT first_name, last_name, email, avatar
@@ -1859,7 +1857,7 @@ class PPV_QR {
 
             $customer_name = trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
 
-            PPV_Pusher::trigger_scan($store_id, [
+            PPV_Ably::trigger_scan($store_id, [
                 'user_id' => $user_id,
                 'customer_name' => $customer_name ?: null,
                 'email' => $user_info->email ?? null,
@@ -1872,7 +1870,7 @@ class PPV_QR {
                 'success' => true,
             ]);
 
-            // 📡 PUSHER: Also notify user's dashboard of points update
+            // 📡 ABLY: Also notify user's dashboard of points update
             $total_points = (int) $wpdb->get_var($wpdb->prepare(
                 "SELECT COALESCE(SUM(points), 0) FROM {$wpdb->prefix}ppv_qr_scans WHERE user_id = %d",
                 $user_id
@@ -1882,7 +1880,7 @@ class PPV_QR {
                 $user_id
             ));
 
-            PPV_Pusher::trigger_user_points($user_id, [
+            PPV_Ably::trigger_user_points($user_id, [
                 'points_added' => $points_add,
                 'total_points' => $total_points,
                 'total_rewards' => $total_rewards,
@@ -1974,9 +1972,9 @@ class PPV_QR {
     }
 
     // ============================================================
-    // 📡 PUSHER: Auth endpoint for private channels
+    // 📡 ABLY: Auth endpoint for token requests
     // ============================================================
-    public static function ajax_pusher_auth() {
+    public static function ajax_ably_auth() {
         // Get store from POS token
         $store_key = isset($_SERVER['HTTP_PPV_POS_TOKEN'])
             ? sanitize_text_field($_SERVER['HTTP_PPV_POS_TOKEN'])
@@ -1995,24 +1993,24 @@ class PPV_QR {
         $channel_name = sanitize_text_field($_POST['channel_name'] ?? '');
         $socket_id = sanitize_text_field($_POST['socket_id'] ?? '');
 
-        // Channel format: private-store-{store_id}
-        $expected_channel = 'private-store-' . intval($store->id);
+        // Channel format: store-{store_id}
+        $expected_channel = 'store-' . intval($store->id);
         if ($channel_name !== $expected_channel) {
             wp_send_json_error('Channel mismatch', 403);
         }
 
-        // Check if Pusher is configured
-        if (!class_exists('PPV_Pusher') || !PPV_Pusher::is_enabled()) {
-            wp_send_json_error('Pusher not configured', 500);
+        // Check if Ably is configured
+        if (!class_exists('PPV_Ably') || !PPV_Ably::is_enabled()) {
+            wp_send_json_error('Ably not configured', 500);
         }
 
-        // Generate auth
-        $auth = PPV_Pusher::auth($channel_name, $socket_id);
-        if (!$auth) {
-            wp_send_json_error('Auth failed', 500);
+        // Generate Ably token request
+        $token_request = PPV_Ably::create_token_request('store-' . $store->id);
+        if (!$token_request) {
+            wp_send_json_error('Token request failed', 500);
         }
 
-        wp_send_json($auth);
+        wp_send_json($token_request);
     }
 
     // ============================================================
