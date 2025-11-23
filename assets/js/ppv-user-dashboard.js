@@ -403,6 +403,7 @@ async function initUserDashboard() {
   // 📡 ABLY REAL-TIME SYNC
   const initAblySync = () => {
     console.log('📡 [Ably] Initializing real-time sync...');
+    console.log('📡 [Ably Debug] boot.uid:', boot.uid);
 
     const ably = new Ably.Realtime({ key: boot.ably.key });
 
@@ -410,10 +411,12 @@ async function initUserDashboard() {
     window.PPV_ABLY_INSTANCE = ably;
 
     // Subscribe to user's channel
-    const channel = ably.channels.get('user-' + boot.uid);
+    const channelName = 'user-' + boot.uid;
+    console.log('📡 [Ably Debug] Subscribing to channel:', channelName);
+    const channel = ably.channels.get(channelName);
 
     ably.connection.on('connected', () => {
-      console.log('📡 [Ably] Connected to user channel');
+      console.log('📡 [Ably] Connected to user channel:', channelName);
     });
 
     ably.connection.on('failed', (err) => {

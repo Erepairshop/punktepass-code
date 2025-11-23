@@ -137,6 +137,7 @@ class PPV_Ably {
      */
     public static function trigger_user_points($user_id, $data) {
         $channel = 'user-' . intval($user_id);
+        ppv_log("📡 [PPV_Ably] trigger_user_points: channel={$channel}, user_id={$user_id}, data=" . json_encode($data));
         return self::publish($channel, 'points-update', $data);
     }
 
