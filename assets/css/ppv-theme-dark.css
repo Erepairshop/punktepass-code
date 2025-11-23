@@ -4360,6 +4360,18 @@ body.ppv-light .ppv-theme-btn-mini {
     background: rgba(148, 163, 184, 0.1);
 }
 
+/* Error badge in scan list */
+.ppv-scan-points.error-badge {
+    color: var(--pp-danger);
+    background: rgba(239, 68, 68, 0.2);
+    font-size: 16px;
+}
+
+.ppv-scan-item.error .ppv-scan-detail {
+    color: var(--pp-danger);
+    font-weight: 500;
+}
+
 /* VIP badge in scan list */
 .ppv-scan-points.vip {
     display: flex;

@@ -11898,6 +11898,18 @@ body.dark-mode {
     background: rgba(100, 116, 139, 0.1);
 }
 
+/* Error badge in scan list */
+.ppv-scan-points.error-badge {
+    color: #dc2626;
+    background: rgba(239, 68, 68, 0.15);
+    font-size: 16px;
+}
+
+.ppv-scan-item.error .ppv-scan-detail {
+    color: #dc2626;
+    font-weight: 500;
+}
+
 /* VIP badge in scan list */
 .ppv-scan-points.vip {
     display: flex;

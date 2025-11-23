@@ -128,9 +128,15 @@
       const vipBonus = vipMatch ? vipMatch[1] : null;
       const isVip = !!vipBonus;
 
-      // Subtitle: VIP info if present, else email if name exists, else date/time
+      // Subtitle logic:
+      // - Error: show error message (clean up emojis/prefixes)
+      // - Success with name+email: show email
+      // - Otherwise: show date/time
       let subtitle = `${log.date_short} ${log.time_short}`;
-      if (log.customer_name && log.email) {
+      if (!log.success && log.message) {
+        // Clean error message: remove emojis and common prefixes
+        subtitle = log.message.replace(/^[⚠️❌✗\s]+/, '').trim();
+      } else if (log.customer_name && log.email) {
         subtitle = log.email;
       }
 
@@ -139,10 +145,15 @@
         ? `<img src="${log.avatar}" class="ppv-scan-avatar" alt="">`
         : `<div class="ppv-scan-avatar-placeholder">${log.success ? '✓' : '✗'}</div>`;
 
-      // Points display: show VIP badge if applicable
-      const pointsHtml = isVip
-        ? `<div class="ppv-scan-points vip">+${log.points}<span class="ppv-vip-badge">VIP +${vipBonus}</span></div>`
-        : `<div class="ppv-scan-points">${log.points || '-'}</div>`;
+      // Points display: show VIP badge if applicable, or error indicator
+      let pointsHtml;
+      if (!log.success) {
+        pointsHtml = `<div class="ppv-scan-points error-badge">✗</div>`;
+      } else if (isVip) {
+        pointsHtml = `<div class="ppv-scan-points vip">+${log.points}<span class="ppv-vip-badge">VIP +${vipBonus}</span></div>`;
+      } else {
+        pointsHtml = `<div class="ppv-scan-points">+${log.points || '-'}</div>`;
+      }
 
       item.innerHTML = `
         ${avatarHtml}
