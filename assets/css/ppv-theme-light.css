@@ -2137,9 +2137,9 @@ body, h1, h2, h3, h4, h5, h6 {
     display: none !important;
 }
 
-/* Remove empty space where logo was */
+/* Match dark theme spacing */
 .ppv-header-left {
-    gap: 6px !important;
+    gap: 12px !important;
 }
 /* FIX THEME SWITCH ICON VISIBILITY */
 .ppv-theme-btn-mini i {
