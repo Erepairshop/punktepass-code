@@ -1860,20 +1860,19 @@ class PPV_QR {
 
         $store_id = intval($session_store->id);
 
-        // ✅ FIX: Get logs with user names AND email for detailed display
+        // ✅ FIX: Get logs from ppv_users table (NOT WordPress users!)
         $logs = $wpdb->get_results($wpdb->prepare("
             SELECT
                 l.created_at,
                 l.user_id,
                 l.message,
                 l.type,
-                u.user_email,
-                um_fn.meta_value AS first_name,
-                um_ln.meta_value AS last_name
+                u.email,
+                u.first_name,
+                u.last_name,
+                u.avatar
             FROM {$wpdb->prefix}ppv_pos_log l
-            LEFT JOIN {$wpdb->users} u ON l.user_id = u.ID
-            LEFT JOIN {$wpdb->usermeta} um_fn ON l.user_id = um_fn.user_id AND um_fn.meta_key = 'first_name'
-            LEFT JOIN {$wpdb->usermeta} um_ln ON l.user_id = um_ln.user_id AND um_ln.meta_key = 'last_name'
+            LEFT JOIN {$wpdb->prefix}ppv_users u ON l.user_id = u.id
             WHERE l.store_id=%d
             ORDER BY l.id DESC LIMIT 15
         ", $store_id));
@@ -1888,16 +1887,17 @@ class PPV_QR {
                 $points = $m[1];
             }
 
-            // Build display: Name (if exists), Email, fallback to #ID
+            // Build display: Name > Email > #ID
             $first = trim($log->first_name ?? '');
             $last = trim($log->last_name ?? '');
             $full_name = trim("$first $last");
-            $email = $log->user_email ?? '';
+            $email = $log->email ?? '';
 
             return [
                 'user_id' => $log->user_id,
                 'customer_name' => $full_name ?: null,
                 'email' => $email ?: null,
+                'avatar' => $log->avatar ?: null,
                 'message' => $log->message,
                 'date_short' => date('d.m.', $created),
                 'time_short' => date('H:i', $created),

@@ -120,17 +120,23 @@
       const item = document.createElement('div');
       item.className = `ppv-scan-item ${log.success ? 'success' : 'error'}`;
 
-      // Build display name: Name > Email > #ID
-      const name = log.customer_name || log.email || '#' + log.user_id;
-      // Show email as subtitle if we have both name AND email
-      const subtitle = (log.customer_name && log.email) ? log.email : (log.date_short + ' ' + log.time_short);
-      // For errors, show message instead of time
-      const detail = log.success ? (log.date_short + ' ' + log.time_short) : (log.message || '');
+      // Build display: Name > Email > #ID
+      const displayName = log.customer_name || log.email || `Kunde #${log.user_id}`;
+
+      // Subtitle: email if name exists, otherwise date/time
+      const subtitle = log.customer_name && log.email
+        ? log.email
+        : `${log.date_short} ${log.time_short}`;
+
+      // Avatar: Google profile pic or default icon
+      const avatarHtml = log.avatar
+        ? `<img src="${log.avatar}" class="ppv-scan-avatar" alt="">`
+        : `<div class="ppv-scan-avatar-placeholder">${log.success ? '✓' : '✗'}</div>`;
 
       item.innerHTML = `
-        <div class="ppv-scan-status">${log.success ? '✓' : '✗'}</div>
+        ${avatarHtml}
         <div class="ppv-scan-info">
-          <div class="ppv-scan-name">#${log.user_id} ${name}</div>
+          <div class="ppv-scan-name">${displayName}</div>
           <div class="ppv-scan-detail">${subtitle}</div>
         </div>
         <div class="ppv-scan-points">${log.points || '-'}</div>

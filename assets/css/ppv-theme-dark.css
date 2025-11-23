@@ -4294,6 +4294,34 @@ body.ppv-light .ppv-theme-btn-mini {
     color: var(--pp-danger);
 }
 
+/* Avatar for scan items */
+.ppv-scan-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.ppv-scan-avatar-placeholder {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    flex-shrink: 0;
+    background: rgba(16, 185, 129, 0.2);
+    color: var(--pp-success);
+}
+
+.ppv-scan-item.error .ppv-scan-avatar-placeholder {
+    background: rgba(239, 68, 68, 0.2);
+    color: var(--pp-danger);
+}
+
 .ppv-scan-info {
     flex: 1;
     min-width: 0;
