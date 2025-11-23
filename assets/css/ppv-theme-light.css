@@ -11846,9 +11846,13 @@ body.dark-mode {
     text-overflow: ellipsis;
 }
 
-.ppv-scan-time {
+.ppv-scan-time,
+.ppv-scan-detail {
     font-size: 11px;
     color: #64748b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .ppv-scan-points {

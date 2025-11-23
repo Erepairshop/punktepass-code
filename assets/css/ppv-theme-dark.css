@@ -4308,9 +4308,13 @@ body.ppv-light .ppv-theme-btn-mini {
     text-overflow: ellipsis;
 }
 
-.ppv-scan-time {
+.ppv-scan-time,
+.ppv-scan-detail {
     font-size: 11px;
     color: var(--pp-text-3);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .ppv-scan-points {

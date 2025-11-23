@@ -119,11 +119,19 @@
       if (!this.logList) return;
       const item = document.createElement('div');
       item.className = `ppv-scan-item ${log.success ? 'success' : 'error'}`;
+
+      // Build display name: Name > Email > #ID
+      const name = log.customer_name || log.email || '#' + log.user_id;
+      // Show email as subtitle if we have both name AND email
+      const subtitle = (log.customer_name && log.email) ? log.email : (log.date_short + ' ' + log.time_short);
+      // For errors, show message instead of time
+      const detail = log.success ? (log.date_short + ' ' + log.time_short) : (log.message || '');
+
       item.innerHTML = `
         <div class="ppv-scan-status">${log.success ? '✓' : '✗'}</div>
         <div class="ppv-scan-info">
-          <div class="ppv-scan-name">${log.customer_name || '#' + log.user_id}</div>
-          <div class="ppv-scan-time">${log.date_short} ${log.time_short}</div>
+          <div class="ppv-scan-name">#${log.user_id} ${name}</div>
+          <div class="ppv-scan-detail">${subtitle}</div>
         </div>
         <div class="ppv-scan-points">${log.points || '-'}</div>
       `;
