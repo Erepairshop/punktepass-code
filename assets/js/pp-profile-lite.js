@@ -259,6 +259,7 @@
             })
             .then(r => r.json())
             .then(data => {
+                console.log('📥 [Profile] Save response:', data);
                 if (data.success) {
                     this.showAlert(this.t('profile_saved_success'), 'success');
                     this.updateStatus(this.t('saved'));
@@ -268,8 +269,12 @@
                         `${this.t('last_updated')}: ${new Date().toLocaleString()}`;
 
                     // ✅ Frissítjük a form mezőket a backend válasz alapján (nem kell reload!)
+                    console.log('📥 [Profile] Store data:', data.data?.store);
                     if (data.data?.store) {
+                        console.log('✅ [Profile] Updating form fields with:', data.data.store);
                         this.updateFormFields(data.data.store);
+                    } else {
+                        console.warn('⚠️ [Profile] No store data in response!');
                     }
                 } else {
                     this.showAlert(data.data?.msg || this.t('profile_save_error'), 'error');
