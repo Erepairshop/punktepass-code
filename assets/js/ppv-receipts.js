@@ -1,9 +1,10 @@
 /**
  * PunktePass – Bizonylatok Verwaltung (Receipts Management)
- * Version: 2.2 - Auto-load fix
+ * Version: 2.3 - Element ID fix
  * ✅ Működő download funkcionalitás
  * ✅ Helyes JSON kezelés
  * ✅ Auto-load on DOMContentLoaded + Turbo.js + Tab change
+ * ✅ FIX: Uses ppv-receipts-container (correct HTML element ID)
  */
 
 (function() {
@@ -88,12 +89,13 @@
    * 📋 LOAD RECEIPTS - MAIN FUNCTION
    * ============================================================ */
   window.ppv_receipts_load = async function() {
-    ppvLog('📦 [RECEIPTS v2.0] ppv_receipts_load() called');
-    
-    const receiptsList = document.getElementById("ppv-receipts-list");
-    
+    ppvLog('📦 [RECEIPTS v2.3] ppv_receipts_load() called');
+
+    // ✅ FIX: Correct element ID is ppv-receipts-container (not ppv-receipts-list)
+    const receiptsList = document.getElementById("ppv-receipts-container") || document.getElementById("ppv-receipts-list");
+
     if (!receiptsList) {
-      ppvLog('❌ [RECEIPTS v2.0] receiptsList element not found!');
+      ppvLog('❌ [RECEIPTS v2.3] receiptsList element not found!');
       return;
     }
 
@@ -244,7 +246,8 @@
    * 🔍 FILTER RECEIPTS
    * ============================================================ */
   window.ppv_receipts_filter = async function() {
-    const receiptsList = document.getElementById("ppv-receipts-list");
+    // ✅ FIX: Correct element ID
+    const receiptsList = document.getElementById("ppv-receipts-container") || document.getElementById("ppv-receipts-list");
     const searchInput = document.getElementById("ppv-receipt-search");
     const dateFromInput = document.getElementById("ppv-receipt-date-from");
     const dateToInput = document.getElementById("ppv-receipt-date-to");
@@ -305,10 +308,11 @@
    * ⚡ INIT FUNCTION
    * ============================================================ */
   function initReceipts() {
-    const receiptsList = document.getElementById("ppv-receipts-list");
+    // ✅ FIX: Correct element ID is ppv-receipts-container (not ppv-receipts-list)
+    const receiptsList = document.getElementById("ppv-receipts-container") || document.getElementById("ppv-receipts-list");
 
     if (!receiptsList) {
-      ppvLog('📦 [RECEIPTS v2.2] No receipts list element on this page');
+      ppvLog('📦 [RECEIPTS v2.3] No receipts container element on this page');
       return;
     }
 
