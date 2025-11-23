@@ -39,13 +39,17 @@ class PPV_Bottom_Nav {
             null,
             false
         );
-        // Add module type to Turbo script
-        add_filter('script_loader_tag', function($tag, $handle) {
-            if ($handle === 'turbo') {
-                return str_replace('<script ', '<script type="module" ', $tag);
-            }
-            return $tag;
-        }, 10, 2);
+        // Add module type to Turbo script (only once)
+        static $turbo_filter_added = false;
+        if (!$turbo_filter_added) {
+            add_filter('script_loader_tag', function($tag, $handle) {
+                if ($handle === 'turbo') {
+                    return str_replace('<script ', '<script type="module" ', $tag);
+                }
+                return $tag;
+            }, 10, 2);
+            $turbo_filter_added = true;
+        }
 
         wp_register_style('ppv-bottom-nav', false);
         wp_add_inline_style('ppv-bottom-nav', self::inline_css());
