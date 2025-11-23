@@ -1234,5 +1234,12 @@ return [
     'imprint_liability_links_text' => 'Unser Angebot enthält Links zu externen Websites Dritter, auf deren Inhalte wir keinen Einfluss haben. Für die Inhalte der verlinkten Seiten ist stets der jeweilige Anbieter verantwortlich.',
     'imprint_copyright_title' => 'Urheberrecht',
     'imprint_copyright_text' => 'Die durch die Seitenbetreiber erstellten Inhalte und Werke auf diesen Seiten unterliegen dem deutschen Urheberrecht. Die Vervielfältigung, Bearbeitung und Verbreitung außerhalb der Grenzen des Urheberrechtes bedürfen der schriftlichen Zustimmung des jeweiligen Autors.',
+
+    // ============================================
+    // FILIALE / VIP TRANSLATIONS
+    // ============================================
+    'rewards_form_filiale_all' => 'Alle Filialen',
+    'camp_filiale_all' => 'Alle Filialen',
+    'tab_vip' => 'VIP Einstellungen',
 ];
 

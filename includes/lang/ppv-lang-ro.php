@@ -1222,4 +1222,11 @@ return [
     'imprint_liability_links_text' => 'Oferta noastră conține link-uri către site-uri web externe ale terților, asupra al căror conținut nu avem nicio influență. Furnizorul respectiv este întotdeauna responsabil pentru conținutul paginilor legate.',
     'imprint_copyright_title' => 'Drepturi de autor',
     'imprint_copyright_text' => 'Conținutul și lucrările create de operatorii site-ului pe aceste pagini sunt supuse legii germane a drepturilor de autor. Reproducerea, editarea și distribuirea în afara limitelor drepturilor de autor necesită acordul scris al autorului respectiv.',
+
+    // ============================================
+    // FILIALE / VIP TRANSLATIONS
+    // ============================================
+    'rewards_form_filiale_all' => 'Toate filialele',
+    'camp_filiale_all' => 'Toate filialele',
+    'tab_vip' => 'Setări VIP',
 ];

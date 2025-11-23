@@ -1210,4 +1210,11 @@ return [
     'imprint_liability_links_text' => 'Kínálatunk harmadik felek külső weboldalaira mutató hivatkozásokat tartalmaz, amelyek tartalmára nincs befolyásunk. A hivatkozott oldalak tartalmáért mindig az adott szolgáltató felelős.',
     'imprint_copyright_title' => 'Szerzői jog',
     'imprint_copyright_text' => 'Az oldal üzemeltetői által készített tartalmak és művek a német szerzői jog hatálya alá tartoznak. A szerzői jog határain túli sokszorosítás, feldolgozás és terjesztés a szerző írásbeli hozzájárulását igényli.',
+
+    // ============================================
+    // FILIALE / VIP TRANSLATIONS
+    // ============================================
+    'rewards_form_filiale_all' => 'Minden fiók',
+    'camp_filiale_all' => 'Minden fiók',
+    'tab_vip' => 'VIP Beállítások',
 ];

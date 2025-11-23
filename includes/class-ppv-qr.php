@@ -2,10 +2,11 @@
 if (!defined('ABSPATH')) exit;
 
 /**
- * PunktePass – Kassenscanner & Kampagnen v5.3 COMPLETE PHP
+ * PunktePass – Kassenscanner & Kampagnen v5.4 COMPLETE PHP
  * ✅ Gratis Termék opcióval
  * ✅ Dinamikus mezők
  * ✅ Teljes kampány kezelés
+ * ✅ Filiale support for campaigns (like rewards)
  * Author: Erik Borota / PunktePass
  */
 
@@ -48,6 +49,52 @@ class PPV_QR {
         ));
 
         return $store ?: null;
+    }
+
+    /** ============================================================
+     *  🏢 GET FILIALEN FOR VENDOR (Campaigns filiale support)
+     * ============================================================ */
+    private static function get_filialen_for_campaigns() {
+        global $wpdb;
+
+        // Get vendor store ID (parent store)
+        $vendor_store_id = 0;
+        if (!empty($_SESSION['ppv_vendor_store_id'])) {
+            $vendor_store_id = intval($_SESSION['ppv_vendor_store_id']);
+        } elseif (!empty($_SESSION['ppv_store_id'])) {
+            $vendor_store_id = intval($_SESSION['ppv_store_id']);
+        }
+
+        if (!$vendor_store_id) {
+            return [];
+        }
+
+        // Get all stores: parent + children
+        $filialen = $wpdb->get_results($wpdb->prepare("
+            SELECT id, name, company_name, address, city, plz
+            FROM {$wpdb->prefix}ppv_stores
+            WHERE id = %d OR parent_store_id = %d
+            ORDER BY (id = %d) DESC, name ASC
+        ", $vendor_store_id, $vendor_store_id, $vendor_store_id));
+
+        return $filialen ?: [];
+    }
+
+    /** ============================================================
+     *  🏪 GET CURRENT STORE ID FOR CAMPAIGNS
+     * ============================================================ */
+    private static function get_current_campaign_store_id() {
+        // Priority: filiale > store
+        if (!empty($_SESSION['ppv_current_filiale_id'])) {
+            return intval($_SESSION['ppv_current_filiale_id']);
+        }
+        if (!empty($_SESSION['ppv_store_id'])) {
+            return intval($_SESSION['ppv_store_id']);
+        }
+        if (!empty($_SESSION['ppv_vendor_store_id'])) {
+            return intval($_SESSION['ppv_vendor_store_id']);
+        }
+        return 0;
     }
 
     /** ============================================================
@@ -775,7 +822,7 @@ class PPV_QR {
                 </div>
             </div>
 
-            <table id="ppv-pos-log" class="glass-table">
+            <table id="ppv-pos-log" class="glass-table" data-turbo-permanent>
                 <thead>
                     <tr>
                         <th><?php echo self::t('t_col_time', 'Zeit'); ?></th>
@@ -783,7 +830,9 @@ class PPV_QR {
                         <th><?php echo self::t('t_col_status', 'Status'); ?></th>
                     </tr>
                 </thead>
-                <tbody></tbody>
+                <tbody>
+                    <tr class="ppv-loading-row"><td colspan="3" style="text-align:center;padding:20px;color:#888;"><i class="ri-loader-4-line ri-spin"></i> Laden...</td></tr>
+                </tbody>
             </table>
 
             <!-- 🎥 CAMERA SCANNER MODAL -->
@@ -1047,7 +1096,29 @@ class PPV_QR {
     // 🎯 KAMPAGNEN - KOMPLETT FORMA
     // ============================================================
     public static function render_campaigns() {
+        global $wpdb;
+
+        // 🏢 Get filialen for this vendor
+        $filialen = self::get_filialen_for_campaigns();
+        $has_multiple_filialen = count($filialen) > 1;
+        $current_store_id = self::get_current_campaign_store_id();
+
+        // Get current store name for display
+        $current_store = null;
+        if ($current_store_id) {
+            $current_store = $wpdb->get_row($wpdb->prepare(
+                "SELECT company_name, city FROM {$wpdb->prefix}ppv_stores WHERE id=%d",
+                $current_store_id
+            ));
+        }
         ?>
+        <!-- 🏢 Filiale data for JavaScript -->
+        <script>
+            window.PPV_CAMPAIGN_FILIALEN = <?php echo wp_json_encode($filialen); ?>;
+            window.PPV_CAMPAIGN_HAS_MULTIPLE_FILIALEN = <?php echo $has_multiple_filialen ? 'true' : 'false'; ?>;
+            window.PPV_CAMPAIGN_CURRENT_STORE_ID = <?php echo intval($current_store_id); ?>;
+        </script>
+
         <div class="ppv-campaigns glass-section">
             <div class="ppv-campaign-header">
                 <h3><i class="ri-focus-3-line"></i> <?php echo self::t('campaigns_title', 'Kampagnen'); ?></h3>
@@ -1123,6 +1194,39 @@ class PPV_QR {
                         <option value="active"><?php echo self::t('status_active', '🟢 Aktiv'); ?></option>
                         <option value="archived"><?php echo self::t('status_archived', '📦 Archiv'); ?></option>
                     </select>
+
+                    <?php if ($has_multiple_filialen): ?>
+                    <!-- 🏢 FILIALE SELECTOR -->
+                    <div class="ppv-campaign-filiale-selector" style="margin-top: 15px; padding: 15px; background: rgba(0,230,255,0.1); border-radius: 8px;">
+                        <label style="font-weight: 600; color: #00e6ff;">
+                            <i class="ri-store-2-line"></i> <?php echo self::t('camp_filiale_label', 'Welche Filiale(n)?'); ?>
+                        </label>
+
+                        <select id="camp-target-store" style="margin-top: 8px; width: 100%;">
+                            <option value="current"><?php echo self::t('camp_filiale_current', 'Nur diese Filiale'); ?> (<?php echo esc_html($current_store->company_name ?? ''); ?>)</option>
+                            <option value="all" style="color: #34d399; font-weight: bold;">🏢 <?php echo self::t('camp_filiale_all', 'Alle Filialen'); ?></option>
+                            <?php foreach ($filialen as $fil): ?>
+                                <?php if (intval($fil->id) !== $current_store_id): ?>
+                                <option value="<?php echo intval($fil->id); ?>">
+                                    <?php echo esc_html($fil->company_name ?: $fil->name); ?>
+                                    <?php if ($fil->city): ?>(<?php echo esc_html($fil->city); ?>)<?php endif; ?>
+                                </option>
+                                <?php endif; ?>
+                            <?php endforeach; ?>
+                        </select>
+
+                        <div style="margin-top: 10px;">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" id="camp-apply-all" value="1" style="width: 18px; height: 18px;">
+                                <span style="color: #34d399; font-weight: 500;">
+                                    <i class="ri-checkbox-multiple-line"></i>
+                                    <?php echo self::t('camp_apply_all', 'Für alle Filialen anwenden'); ?>
+                                </span>
+                            </label>
+                            <small style="color: #999; margin-left: 26px;"><?php echo self::t('camp_apply_all_hint', 'Dieselbe Kampagne wird für alle Filialen erstellt'); ?></small>
+                        </div>
+                    </div>
+                    <?php endif; ?>
 
                     <!-- GOMBÓK -->
                     <div class="ppv-modal-actions">
@@ -1919,8 +2023,29 @@ class PPV_QR {
             $campaign_type = 'points';
         }
 
-        $fields = [
-            'store_id'           => $store->id,
+        // 🏢 FILIALE SUPPORT: Handle target_store_id and apply_to_all
+        $target_store_id = sanitize_text_field($data['target_store_id'] ?? 'current');
+        $apply_to_all = !empty($data['apply_to_all']) || $target_store_id === 'all';
+
+        // Determine which store(s) to create the campaign for
+        $store_ids_to_create = [];
+
+        if ($apply_to_all) {
+            // Get all filialen for this vendor (dropdown "all" or checkbox selected)
+            $filialen = self::get_filialen_for_campaigns();
+            foreach ($filialen as $fil) {
+                $store_ids_to_create[] = intval($fil->id);
+            }
+        } elseif ($target_store_id !== 'current' && is_numeric($target_store_id)) {
+            // Specific store selected
+            $store_ids_to_create[] = intval($target_store_id);
+        } else {
+            // Current store only
+            $store_ids_to_create[] = $store->id;
+        }
+
+        // Build base campaign fields
+        $base_fields = [
             'title'              => sanitize_text_field($data['title'] ?? ''),
             'start_date'         => sanitize_text_field($data['start_date'] ?? ''),
             'end_date'           => sanitize_text_field($data['end_date'] ?? ''),
@@ -1932,37 +2057,49 @@ class PPV_QR {
         ];
 
         // 🧠 Típusfüggő értékek
-        switch ($fields['campaign_type']) {
+        switch ($campaign_type) {
             case 'points':
-                $fields['extra_points'] = (int)($data['camp_value'] ?? 0);
+                $base_fields['extra_points'] = (int)($data['camp_value'] ?? 0);
                 break;
             case 'discount':
-                $fields['discount_percent'] = (float)($data['camp_value'] ?? 0);
+                $base_fields['discount_percent'] = (float)($data['camp_value'] ?? 0);
                 break;
             case 'fixed':
-                $fields['fixed_amount'] = (float)($data['camp_value'] ?? 0);
+                $base_fields['fixed_amount'] = (float)($data['camp_value'] ?? 0);
                 break;
             case 'free_product':
-                $fields['free_product'] = sanitize_text_field($data['free_product'] ?? '');
-                $fields['free_product_value'] = (float)($data['free_product_value'] ?? 0);
+                $base_fields['free_product'] = sanitize_text_field($data['free_product'] ?? '');
+                $base_fields['free_product_value'] = (float)($data['free_product_value'] ?? 0);
                 break;
             default:
                 break;
         }
 
-        // ✅ DEBUG: Log fields before insert
+        // 🏢 Create campaign for each store
+        $created_count = 0;
+        $created_ids = [];
 
-        $wpdb->insert("{$prefix}ppv_campaigns", $fields);
+        foreach ($store_ids_to_create as $sid) {
+            $fields = $base_fields;
+            $fields['store_id'] = $sid;
 
-        // ✅ DEBUG: Check if insert succeeded
-        if ($wpdb->last_error) {
-        } else {
+            $result = $wpdb->insert("{$prefix}ppv_campaigns", $fields);
+            if ($result) {
+                $created_count++;
+                $created_ids[] = $wpdb->insert_id;
+            }
         }
+
+        $message = $created_count > 1
+            ? "✅ Kampány létrehozva {$created_count} filiálénak!"
+            : '✅ Kampány sikeresen létrehozva';
 
         return new WP_REST_Response([
             'success' => true,
-            'message' => '✅ Kampány sikeresen létrehozva',
-            'fields'  => $fields,
+            'message' => $message,
+            'created_count' => $created_count,
+            'created_ids' => $created_ids,
+            'fields'  => $base_fields,
         ], 200);
     }
 

@@ -232,6 +232,7 @@ class PPV_Rewards_Management {
 
                     <select name="target_store_id" id="reward-target-store" style="margin-top: 8px;">
                         <option value="current"><?php echo esc_html(PPV_Lang::t('rewards_form_filiale_current') ?: 'Csak ez a filiálé'); ?> (<?php echo esc_html($store->company_name ?? ''); ?>)</option>
+                        <option value="all" style="color: #34d399; font-weight: bold;">🏢 <?php echo esc_html(PPV_Lang::t('rewards_form_filiale_all') ?: 'Alle Filialen'); ?></option>
                         <?php foreach ($filialen as $fil): ?>
                             <?php if (intval($fil->id) !== $store_id): ?>
                             <option value="<?php echo intval($fil->id); ?>">
@@ -317,7 +318,7 @@ class PPV_Rewards_Management {
 
         // 🏢 Filiale options
         $target_store_id = sanitize_text_field($data['target_store_id'] ?? 'current');
-        $apply_to_all = !empty($data['apply_to_all']);
+        $apply_to_all = !empty($data['apply_to_all']) || $target_store_id === 'all';
 
         if (!$store_id || !$title || $points <= 0) {
             $msg = class_exists('PPV_Lang') ? PPV_Lang::t('rewards_error_invalid') : 'Érvénytelen bevitel.';
@@ -331,7 +332,7 @@ class PPV_Rewards_Management {
         $target_stores = [];
 
         if ($apply_to_all) {
-            // Get all filialen for this vendor
+            // Get all filialen for this vendor (dropdown "all" or checkbox selected)
             $filialen = self::get_filialen_for_vendor();
             foreach ($filialen as $fil) {
                 $target_stores[] = intval($fil->id);
