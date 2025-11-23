@@ -3418,12 +3418,9 @@ body.ppv-light #ppv-global-header.ppv-compact-header::before {
     opacity: 0.65;
 }
 
-/* LOGO – optional highlight */
+/* LOGO – same as dark theme, no extra padding */
 body.ppv-light #ppv-global-header .ppv-header-logo-tiny {
-    background: rgba(0, 180, 255, 0.05) !important;
-    padding: 6px;
-    border-radius: 10px;
-    box-shadow: 0 2px 6px rgba(0,150,255,0.08);
+    /* No extra background/padding to match dark theme spacing */
 }
 
 /* Email text – good contrast */
@@ -3432,18 +3429,18 @@ body.ppv-light .ppv-user-email {
     font-weight: 600;
 }
 
-/* MINI STATS */
+/* MINI STATS - same size as dark theme */
 body.ppv-light .ppv-stat-mini {
     background: rgba(0, 150, 200, 0.12) !important;
     border: 1px solid rgba(0, 150, 200, 0.3) !important;
     color: #0077aa !important;
-    padding: 7px 14px !important;
-    border-radius: 8px !important;
+    padding: 4px 8px !important;
+    border-radius: 6px !important;
     font-size: 12px !important;
     font-weight: 700 !important;
     display: flex !important;
     align-items: center !important;
-    gap: 6px !important;
+    gap: 4px !important;
 }
 
 body.ppv-light .ppv-stat-mini span {

@@ -538,7 +538,7 @@ private static function get_today_hours($opening_hours) {
                 <?php endif; ?>
             </div>
             
-            <!-- Stats (USER only) -->
+            <!-- Stats (USER only) - Points only, rewards removed -->
             <?php if (!$is_handler): ?>
             <div class="ppv-header-stats">
                 <?php if (!empty($level_badge)): ?>
@@ -548,10 +548,6 @@ private static function get_today_hours($opening_hours) {
                 <div class="ppv-stat-mini">
                     <i class="ri-star-fill"></i>
                     <span id="ppv-global-points"><?php echo esc_html($stats['points']); ?></span>
-                </div>
-                <div class="ppv-stat-mini">
-                    <i class="ri-gift-fill"></i>
-                    <span id="ppv-global-rewards"><?php echo esc_html($stats['rewards']); ?></span>
                 </div>
             </div>
             <?php endif; ?>
