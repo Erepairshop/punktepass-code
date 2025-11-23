@@ -791,7 +791,17 @@ $result = $wpdb->update(
 ppv_log("💾 [DEBUG] Update result: " . ($result !== false ? 'OK' : 'FAILED'));
 
     if ($result !== false) {
-        wp_send_json_success(['msg' => PPV_Lang::t('profile_saved_success'), 'store_id' => $store_id]);
+        // ✅ FIX: Return updated store data so JS can refresh form fields without reload
+        $updated_store = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
+            $store_id
+        ));
+
+        wp_send_json_success([
+            'msg' => PPV_Lang::t('profile_saved_success'),
+            'store_id' => $store_id,
+            'store' => $updated_store  // ✅ This enables updateFormFields() in JS
+        ]);
     } else {
         wp_send_json_error(['msg' => PPV_Lang::t('profile_save_error')]);
     }
