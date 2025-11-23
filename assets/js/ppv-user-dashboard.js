@@ -1196,14 +1196,30 @@ async function initUserDashboard() {
           // ✅ FIX: Use current slider distance value, not hardcoded 10
           const currentDist = window.PPV_CURRENT_DISTANCE || 10;
           const newUrl = API + `stores/list-optimized?lat=${newLat}&lng=${newLng}&max_distance=${currentDist}`;
-          const newRes = await fetch(newUrl, { cache: "no-store" });
-          if (newRes.ok) {
-            const newStores = await newRes.json();
-            if (Array.isArray(newStores) && newStores.length > 0) {
-              // ✅ FIX: Preserve slider value on re-render
-              renderStoreList(box, newStores, newLat, newLng, true);
-              console.log('✅ [Stores] Re-rendered with distance sorting');
+
+          try {
+            const newRes = await fetch(newUrl, { cache: "no-store" });
+            console.log('📡 [Stores] Re-fetch response:', newRes.status);
+
+            if (newRes.ok) {
+              const newStores = await newRes.json();
+              console.log('📦 [Stores] Got', newStores?.length || 0, 'stores from re-fetch');
+
+              if (Array.isArray(newStores) && newStores.length > 0) {
+                // ✅ FIX: Get fresh DOM reference (original 'box' might be stale after Turbo navigation)
+                const freshBox = document.getElementById('ppv-store-list');
+                if (freshBox) {
+                  renderStoreList(freshBox, newStores, newLat, newLng, true);
+                  console.log('✅ [Stores] Re-rendered with distance sorting');
+                } else {
+                  console.warn('⚠️ [Stores] Store list element not found for re-render');
+                }
+              } else {
+                console.warn('⚠️ [Stores] No stores returned from re-fetch');
+              }
             }
+          } catch (fetchErr) {
+            console.error('❌ [Stores] Re-fetch failed:', fetchErr.message);
           }
         } else {
           // ✅ FIX: Geo failed on first try - set up delayed retry
