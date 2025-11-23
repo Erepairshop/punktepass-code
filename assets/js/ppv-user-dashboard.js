@@ -1,5 +1,5 @@
 /**
- * PunktePass – User Dashboard JS (v4.6 - Modern Icons Edition)
+ * PunktePass – User Dashboard JS (v4.7 - Modern Icons Edition)
  *
  * ✨ REQUIRED: Remix Icon CDN
  * Add this to your HTML <head>:
@@ -7,17 +7,25 @@
  *
  * 🎨 ICONS: All icons from Remix Icon (https://remixicon.com/)
  * ✅ FIXED: Toggle listener - Simple & Clean
- * ✅ REMOVED: Complex attachStoreCardListeners, flag system
- * ✅ KEPT: All other functionality
+ * ✅ FIXED: Wrapped in IIFE to prevent duplicate declaration errors with Turbo.js
  * ✅ FULLY TRANSLATED: DE/HU/RO
  * ✅ MODERN ICONS: No emojis, pure icon fonts
  * 🚀 TURBO-COMPATIBLE: Re-initializes on navigation
  */
 
-// ✅ DEBUG MODE - Set to false in production to reduce console spam
-const PPV_DEBUG = false;
-const ppvLog = (...args) => { if (PPV_DEBUG) console.log(...args); };
-const ppvWarn = (...args) => { if (PPV_DEBUG) console.warn(...args); };
+(function() {
+  'use strict';
+
+  // ✅ Script guard - prevent duplicate execution
+  if (window.PPV_USER_DASHBOARD_LOADED) {
+    return;
+  }
+  window.PPV_USER_DASHBOARD_LOADED = true;
+
+  // ✅ DEBUG MODE - Set to false in production to reduce console spam
+  const PPV_DEBUG = false;
+  const ppvLog = (...args) => { if (PPV_DEBUG) console.log(...args); };
+  const ppvWarn = (...args) => { if (PPV_DEBUG) console.warn(...args); };
 
 // 🚀 Global state for Turbo navigation cleanup
 window.PPV_POLL_INTERVAL_ID = null;
@@ -1216,3 +1224,5 @@ if (!window.PPV_DASHBOARD_TURBO_LISTENERS) {
 
   ppvLog('✅ [Dashboard] Turbo/SPA listeners registered (once)');
 }
+
+})(); // End IIFE

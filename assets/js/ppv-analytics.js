@@ -1,9 +1,19 @@
 /**
- * PunktePass – Analytics Dashboard (v2.0)
+ * PunktePass – Analytics Dashboard (v2.1)
  * ✅ Fully translated
  * ✅ Supports: German, Hungarian, Romanian
  * ✅ getLabels() function
+ * ✅ FIXED: Script guard to prevent duplicate class declaration with Turbo.js
  */
+
+(function() {
+  'use strict';
+
+  // ✅ Script guard - prevent duplicate class declaration
+  if (window.PPV_ANALYTICS_LOADED) {
+    return;
+  }
+  window.PPV_ANALYTICS_LOADED = true;
 
 class PPV_Analytics {
   constructor() {
@@ -650,4 +660,4 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// Script loaded - DEBUG logging disabled for production
+})(); // End IIFE

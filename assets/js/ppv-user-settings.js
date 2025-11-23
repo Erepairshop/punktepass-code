@@ -1,9 +1,23 @@
 /**
- * PunktePass – User Settings v5.1
+ * PunktePass – User Settings v5.2
  * Avatar Upload • Modal System • Notifications • Privacy • Address
  * 🚀 Turbo-compatible
+ * ✅ FIXED: Reduced console.log spam
  * Author: Erik Borota / PunktePass
  */
+
+(function() {
+  'use strict';
+
+  // ✅ Script guard - prevent duplicate execution
+  if (window.PPV_USER_SETTINGS_LOADED) {
+    return;
+  }
+  window.PPV_USER_SETTINGS_LOADED = true;
+
+  // ✅ DEBUG MODE - Set to false in production to reduce console spam
+  const PPV_SETTINGS_DEBUG = false;
+  const settingsLog = (...args) => { if (PPV_SETTINGS_DEBUG) console.log(...args); };
 
 // 🚀 Main initialization function
 function initUserSettings() {
@@ -12,16 +26,16 @@ function initUserSettings() {
   // Prevent double initialization
   const wrapper = document.querySelector('.ppv-settings-wrapper');
   if (!wrapper) {
-    console.log("⏭️ [Settings] Not a settings page, skipping");
+    settingsLog("⏭️ [Settings] Not a settings page, skipping");
     return;
   }
   if (wrapper.dataset.initialized === 'true') {
-    console.log("⏭️ [Settings] Already initialized, skipping");
+    settingsLog("⏭️ [Settings] Already initialized, skipping");
     return;
   }
   wrapper.dataset.initialized = 'true';
 
-  console.log("✅ PunktePass User Settings JS v5.1 aktiv (Turbo)");
+  settingsLog("✅ PunktePass User Settings JS v5.2 aktiv (Turbo)");
 
   /** =============================
    * 🌍 TRANSLATIONS (DE/HU/RO)
@@ -269,3 +283,5 @@ document.addEventListener("turbo:render", function() {
   }
   initUserSettings();
 });
+
+})(); // End IIFE

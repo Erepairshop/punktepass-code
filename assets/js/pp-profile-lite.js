@@ -463,8 +463,13 @@ if (typeof module !== 'undefined' && module.exports) {
 // ============================================================
 
 // Global variables for interactive map
-let ppvInteractiveMap = null;
-let ppvInteractiveMapMarker = null;
+// ✅ FIXED: Use window assignment to prevent duplicate declaration errors with Turbo.js
+if (typeof window.ppvInteractiveMap === 'undefined') {
+  window.ppvInteractiveMap = null;
+}
+if (typeof window.ppvInteractiveMapMarker === 'undefined') {
+  window.ppvInteractiveMapMarker = null;
+}
 
 // ✅ Global showMapPreview function
 function showMapPreview(lat, lon) {
@@ -580,7 +585,7 @@ function openInteractiveMap(defaultLat, defaultLng) {
       return;
     }
 
-    ppvInteractiveMap = new google.maps.Map(
+    window.ppvInteractiveMap = new google.maps.Map(
       document.getElementById('ppv-interactive-map'),
       {
         zoom: 15,
@@ -592,19 +597,19 @@ function openInteractiveMap(defaultLat, defaultLng) {
     );
 
     // Click listener
-    ppvInteractiveMap.addListener('click', (e) => {
+    window.ppvInteractiveMap.addListener('click', (e) => {
       const lat = e.latLng.lat();
       const lng = e.latLng.lng();
 
       // Remove old marker
-      if (ppvInteractiveMapMarker) {
-        ppvInteractiveMapMarker.setMap(null);
+      if (window.ppvInteractiveMapMarker) {
+        window.ppvInteractiveMapMarker.setMap(null);
       }
 
       // Add new marker
-      ppvInteractiveMapMarker = new google.maps.Marker({
+      window.ppvInteractiveMapMarker = new google.maps.Marker({
         position: { lat, lng },
-        map: ppvInteractiveMap,
+        map: window.ppvInteractiveMap,
         title: `${lat.toFixed(4)}, ${lng.toFixed(4)}`
       });
 
@@ -623,8 +628,8 @@ function openInteractiveMap(defaultLat, defaultLng) {
 window.closeInteractiveMap = function() {
   const modal = document.getElementById('ppv-map-modal');
   if (modal) modal.remove();
-  ppvInteractiveMap = null;
-  ppvInteractiveMapMarker = null;
+  window.ppvInteractiveMap = null;
+  window.ppvInteractiveMapMarker = null;
 };
 
 window.confirmInteractiveMap = function() {
