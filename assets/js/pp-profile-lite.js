@@ -35,6 +35,12 @@
             this.bindOnboardingReset();
 
             this.updateUI();
+
+            // ✅ Restore tab from URL hash (e.g. #tab-contact)
+            if (window.location.hash?.startsWith('#tab-')) {
+                const tabName = window.location.hash.replace('#tab-', '');
+                this.switchTab(tabName);
+            }
         }
 
         // ==================== ONBOARDING RESET ====================
@@ -274,10 +280,15 @@
                         console.log('✅ [Profile] Updating form fields with:', data.data.store);
                         this.updateFormFields(data.data.store);
 
-                        // ✅ Force reload with cache-bust parameter
+                        // ✅ Force reload with cache-bust parameter + preserve current tab
                         setTimeout(() => {
                             const url = new URL(window.location.href);
                             url.searchParams.set('_t', Date.now());
+                            // Save current active tab to hash
+                            const activeTab = document.querySelector('.ppv-tab-btn.active');
+                            if (activeTab?.dataset.tab) {
+                                url.hash = 'tab-' + activeTab.dataset.tab;
+                            }
                             window.location.replace(url.toString());
                         }, 800);
                     } else {
