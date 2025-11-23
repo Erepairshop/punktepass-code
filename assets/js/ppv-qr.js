@@ -1,7 +1,8 @@
 /**
- * PunktePass – Kassenscanner & Kampagnen v6.1 CLEAN
+ * PunktePass – Kassenscanner & Kampagnen v6.2 CLEAN
  * Turbo.js compatible, clean architecture
  * FIXED: Memory leaks from document event listeners
+ * FIXED: API call throttling to prevent 503 errors
  * Author: Erik Borota / PunktePass
  */
 
@@ -24,6 +25,15 @@
       touchMove: null,
       touchEnd: null,
       visibilityChange: null
+    },
+    // API call management
+    api: {
+      logsController: null,
+      campaignsController: null,
+      lastLogsCall: 0,
+      lastCampaignsCall: 0,
+      logsThrottle: 3000,      // 3 second minimum between log calls
+      campaignsThrottle: 5000  // 5 second minimum between campaign calls
     }
   };
 
@@ -224,18 +234,34 @@
           }
         }
 
-        setTimeout(() => this.loadLogs(), 1000);
+        setTimeout(() => this.loadLogs(true), 1000);
       } catch (e) {
         this.ui.showMessage('⚠️ ' + (L.server_error || 'Serverfehler'), 'error');
         OfflineSyncManager.save(qrCode);
       }
     }
 
-    async loadLogs() {
+    async loadLogs(force = false) {
       if (!getStoreKey()) return;
+
+      // Throttle check - skip if called too recently (unless forced)
+      const now = Date.now();
+      if (!force && now - STATE.api.lastLogsCall < STATE.api.logsThrottle) {
+        console.log('[QR] Logs call throttled');
+        return;
+      }
+      STATE.api.lastLogsCall = now;
+
+      // Cancel any pending request
+      if (STATE.api.logsController) {
+        STATE.api.logsController.abort();
+      }
+      STATE.api.logsController = new AbortController();
+
       try {
         const res = await fetch('/wp-json/punktepass/v1/pos/logs', {
-          headers: { 'PPV-POS-Token': getStoreKey() }
+          headers: { 'PPV-POS-Token': getStoreKey() },
+          signal: STATE.api.logsController.signal
         });
         const logs = await res.json();
 
@@ -245,7 +271,13 @@
         // Add logs (API returns newest first)
         (logs || []).forEach(l => this.ui.addScanItem(l));
       } catch (e) {
-        console.warn('[QR] Failed to load logs:', e);
+        if (e.name === 'AbortError') {
+          console.log('[QR] Logs request aborted');
+        } else {
+          console.warn('[QR] Failed to load logs:', e);
+        }
+      } finally {
+        STATE.api.logsController = null;
       }
     }
   }
@@ -272,12 +304,26 @@
       }
     }
 
-    async load() {
+    async load(force = false) {
       if (!this.list) return;
       if (!getStoreKey()) {
         this.list.innerHTML = `<p style='text-align:center;color:#999;padding:20px;'>${L.camp_no_store || 'Kein Geschäft ausgewählt'}</p>`;
         return;
       }
+
+      // Throttle check - skip if called too recently (unless forced)
+      const now = Date.now();
+      if (!force && now - STATE.api.lastCampaignsCall < STATE.api.campaignsThrottle) {
+        console.log('[QR] Campaigns call throttled');
+        return;
+      }
+      STATE.api.lastCampaignsCall = now;
+
+      // Cancel any pending request
+      if (STATE.api.campaignsController) {
+        STATE.api.campaignsController.abort();
+      }
+      STATE.api.campaignsController = new AbortController();
 
       this.list.innerHTML = `<div class='ppv-loading'>⏳ ${L.camp_loading || 'Lade Kampagnen...'}</div>`;
 
@@ -285,7 +331,8 @@
 
       try {
         const res = await fetch('/wp-json/punktepass/v1/pos/campaigns', {
-          headers: { 'PPV-POS-Token': getStoreKey() }
+          headers: { 'PPV-POS-Token': getStoreKey() },
+          signal: STATE.api.campaignsController.signal
         });
         const data = await res.json();
 
@@ -303,7 +350,13 @@
 
         filtered.forEach(c => this.renderCampaign(c));
       } catch (e) {
-        this.list.innerHTML = `<p>⚠️ ${L.camp_load_error || 'Fehler beim Laden'}</p>`;
+        if (e.name === 'AbortError') {
+          console.log('[QR] Campaigns request aborted');
+        } else {
+          this.list.innerHTML = `<p>⚠️ ${L.camp_load_error || 'Fehler beim Laden'}</p>`;
+        }
+      } finally {
+        STATE.api.campaignsController = null;
       }
     }
 
@@ -408,7 +461,7 @@
           window.ppvToast(this.editingId > 0 ? (L.camp_updated || '✅ Aktualisiert!') : (L.camp_saved || '✅ Gespeichert!'), 'success');
           this.hideModal();
           this.resetForm();
-          setTimeout(() => this.load(), 500);
+          setTimeout(() => this.load(true), 500);
         } else {
           window.ppvToast('❌ ' + (data.message || L.error_generic || 'Fehler'), 'error');
         }
@@ -428,7 +481,7 @@
         const data = await res.json();
         if (data.success) {
           window.ppvToast('🗑️ ' + (L.camp_deleted || 'Gelöscht'), 'success');
-          setTimeout(() => this.load(), 500);
+          setTimeout(() => this.load(true), 500);
         }
       } catch (e) {
         window.ppvToast('⚠️ ' + (L.server_error || 'Serverfehler'), 'error');
@@ -445,7 +498,7 @@
         const data = await res.json();
         if (data.success) {
           window.ppvToast('📦 ' + (L.camp_archived || 'Archiviert'), 'success');
-          setTimeout(() => this.load(), 500);
+          setTimeout(() => this.load(true), 500);
         }
       } catch (e) {
         window.ppvToast('⚠️ ' + (L.server_error || 'Serverfehler'), 'error');
@@ -475,7 +528,7 @@
         const data = await res.json();
         if (data.success) {
           window.ppvToast('📄 ' + (L.camp_cloned || 'Dupliziert!'), 'success');
-          setTimeout(() => this.load(), 500);
+          setTimeout(() => this.load(true), 500);
         }
       } catch (e) {
         window.ppvToast('⚠️ ' + (L.server_error || 'Serverfehler'), 'error');
@@ -973,9 +1026,9 @@
       STATE.campaignManager?.updateValueLabel(target.value);
     }
 
-    // Campaign filter
+    // Campaign filter - user action, force refresh
     if (target.id === 'ppv-campaign-filter') {
-      STATE.campaignManager?.load();
+      STATE.campaignManager?.load(true);
     }
   }
 
@@ -983,6 +1036,16 @@
   // CLEANUP
   // ============================================================
   function cleanup() {
+    // Abort any pending API requests
+    if (STATE.api.logsController) {
+      STATE.api.logsController.abort();
+      STATE.api.logsController = null;
+    }
+    if (STATE.api.campaignsController) {
+      STATE.api.campaignsController.abort();
+      STATE.api.campaignsController = null;
+    }
+
     // Remove drag handlers from document
     if (STATE.boundHandlers.dragMove) {
       document.removeEventListener('mousemove', STATE.boundHandlers.dragMove);
@@ -1123,6 +1186,6 @@
     }
   });
 
-  console.log('[QR] Script loaded v6.1');
+  console.log('[QR] Script loaded v6.2');
 
 })();
