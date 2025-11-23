@@ -1139,7 +1139,7 @@
     SettingsManager.initTheme();
 
     // Load data
-    STATE.scanProcessor.loadLogs();
+    // STATE.scanProcessor.loadLogs();  // DISABLED FOR TESTING - check if this causes 503 errors
     STATE.campaignManager.load();
     OfflineSyncManager.sync();
 
