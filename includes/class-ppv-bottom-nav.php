@@ -47,9 +47,12 @@ class PPV_Bottom_Nav {
             return $tag;
         }, 10, 2);
 
-        wp_register_style('ppv-bottom-nav', false);
-        wp_add_inline_style('ppv-bottom-nav', self::inline_css());
-        wp_enqueue_style('ppv-bottom-nav');
+        wp_enqueue_style(
+            'ppv-bottom-nav',
+            plugins_url('assets/css/ppv-bottom-nav.css', dirname(__FILE__)),
+            [],
+            filemtime(plugin_dir_path(dirname(__FILE__)) . 'assets/css/ppv-bottom-nav.css')
+        );
 
         wp_register_script('ppv-bottom-nav', false, ['jquery'], time(), true);
         wp_add_inline_script('ppv-bottom-nav', self::inline_js());
@@ -155,34 +158,32 @@ class PPV_Bottom_Nav {
             </nav>
 
             <!-- Support Modal -->
-            <div id="ppv-support-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:10000; align-items:center; justify-content:center; overflow-y:auto;">
-                <div style="background:var(--pp-bg-primary, #1a1a2e); padding:24px; border-radius:15px; max-width:450px; width:90%; box-shadow:0 10px 40px rgba(0,0,0,0.5); margin:20px auto;">
-                    <h3 style="margin:0 0 12px 0; color:var(--pp-text-primary, #fff);">
+            <div id="ppv-support-modal" style="display:none;">
+                <div class="modal-content">
+                    <h3 class="modal-title">
                         <i class="ri-customer-service-2-line"></i> Support anfragen
                     </h3>
-                    <p style="color:var(--pp-text-secondary, #999); font-size:14px; margin-bottom:16px;">
+                    <p class="modal-description">
                         Beschreiben Sie Ihr Problem. Wir melden uns schnellstmöglich.
                     </p>
 
-                    <input type="email" id="ppv-support-email" placeholder="E-Mail Adresse *" required style="width:100%; padding:12px; border-radius:8px; border:1px solid var(--pp-border, #333); background:var(--pp-bg-secondary, #0f0f1e); color:var(--pp-text-primary, #fff); margin-bottom:12px;">
+                    <input type="email" id="ppv-support-email" placeholder="E-Mail Adresse *" required>
+                    <input type="tel" id="ppv-support-phone" placeholder="Telefonnummer *" required>
+                    <textarea id="ppv-support-desc" placeholder="Problembeschreibung *" rows="4"></textarea>
 
-                    <input type="tel" id="ppv-support-phone" placeholder="Telefonnummer *" required style="width:100%; padding:12px; border-radius:8px; border:1px solid var(--pp-border, #333); background:var(--pp-bg-secondary, #0f0f1e); color:var(--pp-text-primary, #fff); margin-bottom:12px;">
-
-                    <textarea id="ppv-support-desc" placeholder="Problembeschreibung *" rows="4" style="width:100%; padding:12px; border-radius:8px; border:1px solid var(--pp-border, #333); background:var(--pp-bg-secondary, #0f0f1e); color:var(--pp-text-primary, #fff); margin-bottom:12px; resize:vertical;"></textarea>
-
-                    <select id="ppv-support-priority" style="width:100%; padding:12px; border-radius:8px; border:1px solid var(--pp-border, #333); background:var(--pp-bg-secondary, #0f0f1e); color:var(--pp-text-primary, #fff); margin-bottom:12px;">
+                    <select id="ppv-support-priority">
                         <option value="normal">Priorität: Normal</option>
                         <option value="urgent">Priorität: Dringend</option>
                         <option value="low">Priorität: Niedrig</option>
                     </select>
 
-                    <div id="ppv-support-msg" style="display:none; padding:10px; border-radius:8px; margin-bottom:12px; font-size:14px;"></div>
+                    <div id="ppv-support-msg" class="modal-msg"></div>
 
-                    <div style="display:flex; gap:10px;">
-                        <button id="ppv-support-send" style="flex:1; padding:12px; background:linear-gradient(135deg,#667eea,#764ba2); color:#fff; border:none; border-radius:8px; font-weight:600; cursor:pointer;">
+                    <div class="modal-actions">
+                        <button id="ppv-support-send" class="btn-send">
                             <i class="ri-send-plane-line"></i> Senden
                         </button>
-                        <button id="ppv-support-close" style="flex:1; padding:12px; background:transparent; color:var(--pp-text-secondary, #999); border:1px solid var(--pp-border, #333); border-radius:8px; cursor:pointer;">
+                        <button id="ppv-support-close" class="btn-cancel">
                             Abbrechen
                         </button>
                     </div>
@@ -205,100 +206,6 @@ class PPV_Bottom_Nav {
 
 
     /** ============================================================
-     * CSS – Neon Blue Icon Bar
-     * ============================================================ */
-    private static function inline_css() {
-        return "
-        .ppv-bottom-nav {
-            position: fixed;
-            bottom: 0; left: 0; right: 0;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            padding: 12px 0;
-            background: rgba(255,255,255,0.96);
-            border-top: 1px solid rgba(0,0,0,0.08);
-            backdrop-filter: blur(12px);
-            z-index: 9999;
-        }
-        .ppv-bottom-nav .nav-item {
-            flex: 1;
-            text-align: center;
-            color: #667eea;
-            font-size: 26px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: all 0.25s ease;
-            text-decoration: none;
-            cursor: pointer;
-        }
-        .ppv-bottom-nav .nav-item.active {
-            color: #764ba2;
-            transform: scale(1.18);
-            text-shadow: 0 0 10px rgba(102,126,234,0.3);
-        }
-        .ppv-bottom-nav .nav-item:hover {
-            color: #764ba2;
-        }
-        .ppv-bottom-nav .nav-item.touch {
-            transform: scale(0.95);
-            opacity: 0.8;
-        }
-        
-        /* 🌙 DARK MODE */
-        body.ppv-dark .ppv-bottom-nav {
-            background: rgba(10,18,28,0.95);
-            border-top-color: rgba(102,126,234,0.2);
-        }
-        body.ppv-dark .ppv-bottom-nav .nav-item {
-            color: #667eea;
-        }
-        body.ppv-dark .ppv-bottom-nav .nav-item.active {
-            color: #00eaff;
-            text-shadow: 0 0 10px rgba(0,234,255,0.5);
-        }
-        body.ppv-dark .ppv-bottom-nav .nav-item:hover {
-            color: #00eaff;
-        }
-        
-        @supports(padding:max(0px)) {
-            .ppv-bottom-nav {
-                padding-bottom: max(12px, env(safe-area-inset-bottom));
-            }
-        }
-
-        /* 🚀 Turbo Loading Indicator */
-        .turbo-progress-bar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            height: 3px;
-            background: linear-gradient(90deg, #667eea, #764ba2, #00eaff);
-            z-index: 99999;
-            transition: width 0.3s ease;
-        }
-
-        body.turbo-loading::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 3px;
-            background: linear-gradient(90deg, #667eea, #764ba2, #00eaff);
-            background-size: 200% 100%;
-            animation: turbo-loading 1s ease-in-out infinite;
-            z-index: 99999;
-        }
-
-        @keyframes turbo-loading {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }";
-    }
-
-    /** ============================================================
      * JS – Aktív ikon kijelölés + Turbo Navigation
      * ============================================================ */
     private static function inline_js() {
@@ -310,7 +217,6 @@ class PPV_Bottom_Nav {
             // 🚀 Initialize everything
             function initAll() {
                 const \$ = jQuery;
-                console.log('✅ Bottom Nav aktiv (Turbo)');
                 const currentPath = window.location.pathname.replace(/\/+\$/, '');
 
                 // Aktív ikon megjelölése
@@ -376,26 +282,26 @@ class PPV_Bottom_Nav {
                     const \$btn = \$(this);
 
                     if (!email) {
-                        \$msg.css({background:'rgba(255,82,82,0.2)', color:'#ff5252'}).text('Bitte geben Sie Ihre E-Mail Adresse ein.').show();
+                        \$msg.removeClass('success').addClass('error').text('Bitte geben Sie Ihre E-Mail Adresse ein.').show();
                         \$('#ppv-support-email').focus();
                         return;
                     }
 
                     const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+\$/;
                     if (!emailRegex.test(email)) {
-                        \$msg.css({background:'rgba(255,82,82,0.2)', color:'#ff5252'}).text('Bitte geben Sie eine gültige E-Mail Adresse ein.').show();
+                        \$msg.removeClass('success').addClass('error').text('Bitte geben Sie eine gültige E-Mail Adresse ein.').show();
                         \$('#ppv-support-email').focus();
                         return;
                     }
 
                     if (!phone) {
-                        \$msg.css({background:'rgba(255,82,82,0.2)', color:'#ff5252'}).text('Bitte geben Sie Ihre Telefonnummer ein.').show();
+                        \$msg.removeClass('success').addClass('error').text('Bitte geben Sie Ihre Telefonnummer ein.').show();
                         \$('#ppv-support-phone').focus();
                         return;
                     }
 
                     if (!desc) {
-                        \$msg.css({background:'rgba(255,82,82,0.2)', color:'#ff5252'}).text('Bitte beschreiben Sie Ihr Problem.').show();
+                        \$msg.removeClass('success').addClass('error').text('Bitte beschreiben Sie Ihr Problem.').show();
                         \$('#ppv-support-desc').focus();
                         return;
                     }
@@ -417,17 +323,17 @@ class PPV_Bottom_Nav {
                         },
                         success: function(res) {
                             if (res.success) {
-                                \$msg.css({background:'rgba(76,175,80,0.2)', color:'#4caf50'}).html('<i class=\"ri-checkbox-circle-line\"></i> Ticket gesendet!').show();
+                                \$msg.removeClass('error').addClass('success').html('<i class=\"ri-checkbox-circle-line\"></i> Ticket gesendet!').show();
                                 \$('#ppv-support-email').val('');
                                 \$('#ppv-support-phone').val('');
                                 \$('#ppv-support-desc').val('');
                                 setTimeout(function() { \$modal.fadeOut(200); }, 1500);
                             } else {
-                                \$msg.css({background:'rgba(255,82,82,0.2)', color:'#ff5252'}).text(res.data?.message || 'Fehler').show();
+                                \$msg.removeClass('success').addClass('error').text(res.data?.message || 'Fehler').show();
                             }
                         },
                         error: function() {
-                            \$msg.css({background:'rgba(255,82,82,0.2)', color:'#ff5252'}).text('Netzwerkfehler').show();
+                            \$msg.removeClass('success').addClass('error').text('Netzwerkfehler').show();
                         },
                         complete: function() {
                             \$btn.prop('disabled', false).html('<i class=\"ri-send-plane-line\"></i> Senden');
