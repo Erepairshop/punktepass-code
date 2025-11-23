@@ -3,7 +3,7 @@ if (!defined('ABSPATH')) exit;
 
 /**
  * PunktePass – Kiadási Bizonylat Generálás (Expense Receipt)
- * Version: 3.0 MODERN - Teljes újratervezés
+ * Version: 3.1 - Free Product Support
  * ✅ Modern design (Inter font, gradient header, card layout)
  * ✅ Egyszeri + Havi bizonylatok
  * ✅ DE (Deutsch) + RO (Română) verzió - HELYES NYELVEK
@@ -11,6 +11,7 @@ if (!defined('ABSPATH')) exit;
  * ✅ Auto nyelvválasztás (store country alapján)
  * ✅ HTML mentés → böngésző PDF-ként letölti
  * ✅ NINCS ÁFA - Interne Vergütung / Operațiune internă
+ * ✅ Free Product támogatás (action_type, free_product, free_product_value)
  */
 
 class PPV_Expense_Receipt {
@@ -28,9 +29,9 @@ class PPV_Expense_Receipt {
 
         error_log("📄 [PPV_EXPENSE_RECEIPT] Bizonylat generálása: redeem_id={$redeem_id}");
 
-        // 1️⃣ Beváltás adatainak lekérése
+        // 1️⃣ Beváltás adatainak lekérése (+ free_product támogatás!)
         $redeem = $wpdb->get_row($wpdb->prepare("
-            SELECT 
+            SELECT
                 r.id,
                 r.user_id,
                 r.store_id,
@@ -39,6 +40,10 @@ class PPV_Expense_Receipt {
                 r.actual_amount,
                 r.redeemed_at,
                 rw.title as reward_title,
+                rw.action_type,
+                rw.action_value,
+                rw.free_product,
+                rw.free_product_value,
                 u.email as user_email,
                 u.first_name,
                 u.last_name,
@@ -122,9 +127,9 @@ class PPV_Expense_Receipt {
 
         error_log("✅ [PPV_EXPENSE_RECEIPT] Store megtalálva: " . $store['company_name']);
 
-        // 2️⃣ Beváltások lekérése a hónapra
+        // 2️⃣ Beváltások lekérése a hónapra (+ free_product támogatás!)
         $items = $wpdb->get_results($wpdb->prepare("
-            SELECT 
+            SELECT
                 r.id,
                 r.user_id,
                 r.store_id,
@@ -135,7 +140,10 @@ class PPV_Expense_Receipt {
                 u.email AS user_email,
                 u.first_name,
                 u.last_name,
-                rw.title AS reward_title
+                rw.title AS reward_title,
+                rw.action_type,
+                rw.free_product,
+                rw.free_product_value
             FROM {$wpdb->prefix}ppv_rewards_redeemed r
             LEFT JOIN {$wpdb->prefix}ppv_users u ON r.user_id = u.id
             LEFT JOIN {$wpdb->prefix}ppv_rewards rw ON r.reward_id = rw.id
@@ -209,12 +217,19 @@ class PPV_Expense_Receipt {
     private static function generate_html_for_redeem($redeem, $lang) {
         $customer_name = trim(($redeem['first_name'] ?? '') . ' ' . ($redeem['last_name'] ?? ''));
         if (!$customer_name) {
-            $customer_name = $redeem['user_email'] ?? 'Unbekannt';
+            $customer_name = $redeem['user_email'] ?? ($lang === 'RO' ? 'Necunoscut' : 'Unbekannt');
         }
 
         // ✅ HELYES DÁTUM FORMÁZÁS
         $receipt_num = date('Y-m-', strtotime($redeem['redeemed_at'])) . sprintf('%04d', $redeem['id']);
-        $amount = floatval($redeem['actual_amount'] ?? $redeem['points_spent'] ?? 0);
+
+        // ✅ FREE PRODUCT TÁMOGATÁS - használja a free_product_value-t ha van!
+        $action_type = $redeem['action_type'] ?? 'discount';
+        if ($action_type === 'free_product' && floatval($redeem['free_product_value'] ?? 0) > 0) {
+            $amount = floatval($redeem['free_product_value']);
+        } else {
+            $amount = floatval($redeem['actual_amount'] ?? $redeem['points_spent'] ?? 0);
+        }
 
         if ($lang === 'RO') {
             return self::html_receipt_ro($redeem, $customer_name, $receipt_num, $amount);
@@ -240,6 +255,19 @@ class PPV_Expense_Receipt {
         $points = intval($redeem['points_spent'] ?? 0);
         $date = date('d.m.Y H:i', strtotime($redeem['redeemed_at']));
         $amount_formatted = number_format($amount, 2, ',', '.');
+
+        // ✅ FREE PRODUCT TÁMOGATÁS
+        $action_type = $redeem['action_type'] ?? 'discount';
+        $free_product = htmlspecialchars($redeem['free_product'] ?? '');
+        $is_free_product = ($action_type === 'free_product' && !empty($free_product));
+
+        // Free product row HTML (csak ha van)
+        $free_product_row = $is_free_product
+            ? "<div class=\"info-row\"><span class=\"label\">Gratis Produkt:</span><span class=\"value\" style=\"color:#667eea;font-weight:600;\">🎁 {$free_product}</span></div>"
+            : '';
+
+        // Beschreibung típus alapján
+        $description_text = $is_free_product ? 'Gratis Produkt – Punkteeinlösung' : 'Kundenrabatt – Punkteeinlösung';
 
         return <<<HTML
 <!DOCTYPE html>
@@ -458,7 +486,7 @@ class PPV_Expense_Receipt {
                 <div class="section-card">
                     <div class="info-row">
                         <span class="label">Verwendungszweck:</span>
-                        <span class="value">Kundenrabatt – Punkteeinlösung</span>
+                        <span class="value">{$description_text}</span>
                     </div>
                     <div class="info-row">
                         <span class="label">Programm:</span>
@@ -486,6 +514,7 @@ class PPV_Expense_Receipt {
                         <span class="label">Belohnung:</span>
                         <span class="value">{$reward}</span>
                     </div>
+                    {$free_product_row}
                 </div>
             </div>
 
@@ -531,6 +560,19 @@ HTML;
         $points = intval($redeem['points_spent'] ?? 0);
         $date = date('d.m.Y H:i', strtotime($redeem['redeemed_at']));
         $amount_formatted = number_format($amount, 2, ',', '.');
+
+        // ✅ FREE PRODUCT TÁMOGATÁS
+        $action_type = $redeem['action_type'] ?? 'discount';
+        $free_product = htmlspecialchars($redeem['free_product'] ?? '');
+        $is_free_product = ($action_type === 'free_product' && !empty($free_product));
+
+        // Free product row HTML (csak ha van)
+        $free_product_row = $is_free_product
+            ? "<div class=\"info-row\"><span class=\"label\">Produs gratuit:</span><span class=\"value\" style=\"color:#667eea;font-weight:600;\">🎁 {$free_product}</span></div>"
+            : '';
+
+        // Descriere típus alapján
+        $description_text = $is_free_product ? 'Produs gratuit – Valorificare puncte' : 'Rambursare puncte fidelitate';
 
         return <<<HTML
 <!DOCTYPE html>
@@ -749,7 +791,7 @@ HTML;
                 <div class="section-card">
                     <div class="info-row">
                         <span class="label">Scop:</span>
-                        <span class="value">Rambursare puncte fidelitate</span>
+                        <span class="value">{$description_text}</span>
                     </div>
                     <div class="info-row">
                         <span class="label">Program:</span>
@@ -777,6 +819,7 @@ HTML;
                         <span class="label">Recompensă:</span>
                         <span class="value">{$reward}</span>
                     </div>
+                    {$free_product_row}
                 </div>
             </div>
 
@@ -813,7 +856,13 @@ HTML;
         $total_points = 0;
 
         foreach ($redeems as $r) {
-            $total_amount += floatval($r->actual_amount ?? $r->points_spent ?? 0);
+            // ✅ FREE PRODUCT TÁMOGATÁS - használja a free_product_value-t ha van!
+            $action_type = $r->action_type ?? 'discount';
+            if ($action_type === 'free_product' && floatval($r->free_product_value ?? 0) > 0) {
+                $total_amount += floatval($r->free_product_value);
+            } else {
+                $total_amount += floatval($r->actual_amount ?? $r->points_spent ?? 0);
+            }
             $total_points += intval($r->points_spent ?? 0);
         }
 
@@ -848,7 +897,20 @@ HTML;
             }
             $reward = htmlspecialchars($r->reward_title ?? 'Belohnung');
             $points = intval($r->points_spent ?? 0);
-            $amount = number_format(floatval($r->actual_amount ?? $r->points_spent ?? 0), 2, ',', '.');
+
+            // ✅ FREE PRODUCT TÁMOGATÁS
+            $action_type = $r->action_type ?? 'discount';
+            $free_product = $r->free_product ?? '';
+            if ($action_type === 'free_product' && floatval($r->free_product_value ?? 0) > 0) {
+                $amount = number_format(floatval($r->free_product_value), 2, ',', '.');
+                // Free product neve hozzáadva a reward-hoz
+                if (!empty($free_product)) {
+                    $reward .= ' <span style="color:#667eea;">(🎁 ' . htmlspecialchars($free_product) . ')</span>';
+                }
+            } else {
+                $amount = number_format(floatval($r->actual_amount ?? $r->points_spent ?? 0), 2, ',', '.');
+            }
+
             $date = date('d.m.Y', strtotime($r->redeemed_at));
 
             $rows .= "<tr>
@@ -1084,7 +1146,20 @@ HTML;
             }
             $reward = htmlspecialchars($r->reward_title ?? 'Recompensă');
             $points = intval($r->points_spent ?? 0);
-            $amount = number_format(floatval($r->actual_amount ?? $r->points_spent ?? 0), 2, ',', '.');
+
+            // ✅ FREE PRODUCT TÁMOGATÁS
+            $action_type = $r->action_type ?? 'discount';
+            $free_product = $r->free_product ?? '';
+            if ($action_type === 'free_product' && floatval($r->free_product_value ?? 0) > 0) {
+                $amount = number_format(floatval($r->free_product_value), 2, ',', '.');
+                // Free product neve hozzáadva a reward-hoz
+                if (!empty($free_product)) {
+                    $reward .= ' <span style="color:#667eea;">(🎁 ' . htmlspecialchars($free_product) . ')</span>';
+                }
+            } else {
+                $amount = number_format(floatval($r->actual_amount ?? $r->points_spent ?? 0), 2, ',', '.');
+            }
+
             $date = date('d.m.Y', strtotime($r->redeemed_at));
 
             $rows .= "<tr>
