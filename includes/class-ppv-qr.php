@@ -263,6 +263,9 @@ class PPV_QR {
             'metadata' => $metadata,
             'created_at' => current_time('mysql')
         ]);
+
+        // ✅ Return the log ID for scan_id generation
+        return $wpdb->insert_id;
     }
 
     private static function decode_user_from_qr($qr) {
@@ -1615,6 +1618,9 @@ class PPV_QR {
                 $store_id
             ));
 
+            // ✅ Generate unique scan_id for error deduplication
+            $error_scan_id = "err-{$store_id}-{$user_id}-" . time();
+
             // 📡 ABLY: Notify BOTH user AND store (POS) about the error
             if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
                 // Notify user dashboard
@@ -1627,6 +1633,7 @@ class PPV_QR {
 
                 // ✅ FIX: Also notify POS (store channel) so error appears in scan list
                 PPV_Ably::trigger_scan($store_id, [
+                    'scan_id' => $error_scan_id, // ✅ Include scan_id for deduplication
                     'user_id' => $user_id,
                     'customer_name' => $customer_name ?: null,
                     'email' => $user_info->email ?? null,
@@ -1642,6 +1649,7 @@ class PPV_QR {
 
             // ✅ Include user info in HTTP response for immediate UI display
             $rate_check['response']->set_data(array_merge($response_data, [
+                'scan_id' => $error_scan_id, // ✅ Include scan_id for deduplication
                 'user_id' => $user_id,
                 'customer_name' => $customer_name ?: null,
                 'email' => $user_info->email ?? null,
@@ -1884,7 +1892,10 @@ class PPV_QR {
         $log_msg = $vip_bonus_applied > 0
             ? "+{$points_add} " . self::t('points', 'Punkte') . " (VIP: +{$vip_bonus_applied})"
             : "+{$points_add} " . self::t('points', 'Punkte');
-        self::insert_log($store_id, $user_id, $log_msg, 'qr_scan');
+        $log_id = self::insert_log($store_id, $user_id, $log_msg, 'qr_scan');
+
+        // ✅ Generate unique scan_id for deduplication
+        $scan_id = "scan-{$store_id}-{$user_id}-{$log_id}";
 
         // Get store name for response
         $store_name = $wpdb->get_var($wpdb->prepare(
@@ -1902,6 +1913,7 @@ class PPV_QR {
         // 📡 ABLY: Send real-time notification (non-blocking)
         if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
             PPV_Ably::trigger_scan($store_id, [
+                'scan_id' => $scan_id, // ✅ Include scan_id for deduplication
                 'user_id' => $user_id,
                 'customer_name' => $customer_name ?: null,
                 'email' => $user_info->email ?? null,
@@ -1941,6 +1953,7 @@ class PPV_QR {
 
         return new WP_REST_Response([
             'success' => true,
+            'scan_id' => $scan_id, // ✅ Include scan_id for deduplication
             'message' => $success_msg,
             'user_id' => $user_id,
             'store_id' => $store_id,

@@ -101,12 +101,14 @@
       this.resultBox = null;
       this.logList = null;
       this.campaignList = null;
+      this.displayedScanIds = new Set(); // ✅ Track displayed scans to prevent duplicates
     }
 
     init() {
       this.resultBox = document.getElementById('ppv-pos-result');
       this.logList = document.getElementById('ppv-pos-log');
       this.campaignList = document.getElementById('ppv-campaign-list');
+      this.displayedScanIds.clear(); // Reset on init
     }
 
     showMessage(text, type = 'info') {
@@ -116,12 +118,23 @@
     clearLogTable() {
       if (!this.logList) return;
       this.logList.innerHTML = '';
+      this.displayedScanIds.clear(); // ✅ Clear tracked IDs when table is cleared
     }
 
     addScanItem(log) {
       if (!this.logList) return;
+
+      // ✅ FIX: Prevent duplicates using scan_id
+      const scanId = log.scan_id || `${log.user_id}-${log.date_short}-${log.time_short}`;
+      if (log._realtime && this.displayedScanIds.has(scanId)) {
+        ppvLog('[UI] Skipping duplicate scan:', scanId);
+        return;
+      }
+      this.displayedScanIds.add(scanId);
+
       const item = document.createElement('div');
       item.className = `ppv-scan-item ${log.success ? 'success' : 'error'}`;
+      item.dataset.scanId = scanId; // Store for reference
 
       // Build display: Name > Email > #ID
       const displayName = log.customer_name || log.email || `Kunde #${log.user_id}`;
@@ -131,16 +144,20 @@
       const vipBonus = vipMatch ? vipMatch[1] : null;
       const isVip = !!vipBonus;
 
-      // Subtitle logic:
-      // - Error: show error message (clean up emojis/prefixes)
-      // - Success with name+email: show email
-      // - Otherwise: show date/time
-      let subtitle = `${log.date_short} ${log.time_short}`;
+      // ✅ FIX: Subtitle logic - ALWAYS show date/time, with error message as second line
+      const dateTime = `${log.date_short || ''} ${log.time_short || ''}`.trim();
+      let subtitle = dateTime;
+      let subtitle2 = ''; // Second line for additional info
+
       if (!log.success && log.message) {
-        // Clean error message: remove emojis and common prefixes
-        subtitle = log.message.replace(/^[⚠️❌✗\s]+/, '').trim();
+        // Error: show cleaned error message + date/time
+        const errorMsg = log.message.replace(/^[⚠️❌✗\s]+/, '').trim();
+        subtitle = errorMsg;
+        subtitle2 = dateTime;
       } else if (log.customer_name && log.email) {
+        // Success with name: show email + date
         subtitle = log.email;
+        subtitle2 = dateTime;
       }
 
       // Avatar: Google profile pic or default icon
@@ -158,11 +175,15 @@
         pointsHtml = `<div class="ppv-scan-points">+${log.points || '-'}</div>`;
       }
 
+      // ✅ FIX: Show subtitle2 (date/time) for errors and successful scans with name
+      const subtitle2Html = subtitle2 ? `<div class="ppv-scan-detail ppv-scan-time">${subtitle2}</div>` : '';
+
       item.innerHTML = `
         ${avatarHtml}
         <div class="ppv-scan-info">
           <div class="ppv-scan-name">${displayName}</div>
           <div class="ppv-scan-detail">${subtitle}</div>
+          ${subtitle2Html}
         </div>
         ${pointsHtml}
       `;
@@ -866,14 +887,13 @@
             this.updateStatus('success', '✅ ' + (data.message || L.scanner_success_msg || 'Erfolgreich!'));
             window.ppvToast(data.message || L.scanner_point_added || '✅ Punkt hinzugefügt!', 'success');
 
-            // ✅ FIX: Add scan to UI immediately (don't rely solely on Ably)
-            // Track this scan to prevent Ably duplicate
-            const scanKey = `${data.user_id}-${Date.now()}`;
-            window._ppvLastLocalScan = { user_id: data.user_id, time: Date.now() };
+            // ✅ FIX: Add scan to UI immediately with unique scan_id
+            const now = new Date();
+            const scanId = data.scan_id || `local-${data.user_id}-${now.getTime()}`;
 
             if (STATE.uiManager) {
-              const now = new Date();
               STATE.uiManager.addScanItem({
+                scan_id: scanId,
                 user_id: data.user_id,
                 customer_name: data.customer_name || null,
                 email: data.email || null,
@@ -892,15 +912,13 @@
             this.updateStatus('warning', '⚠️ ' + (data.message || L.error_generic || 'Fehler'));
             window.ppvToast(data.message || '⚠️ Fehler', 'warning');
 
-            // ✅ FIX: Add error scan to UI immediately
-            // Track this scan to prevent Ably duplicate
-            if (data.user_id) {
-              window._ppvLastLocalScan = { user_id: data.user_id, time: Date.now() };
-            }
-
+            // ✅ FIX: Add error scan to UI immediately with unique scan_id
             if (STATE.uiManager && data.user_id) {
               const now = new Date();
+              const scanId = data.scan_id || `local-err-${data.user_id}-${now.getTime()}`;
+
               STATE.uiManager.addScanItem({
+                scan_id: scanId,
                 user_id: data.user_id,
                 customer_name: data.customer_name || null,
                 email: data.email || null,
@@ -1219,16 +1237,10 @@
       channel.subscribe('new-scan', (message) => {
         ppvLog('[Ably] New scan received:', message.data);
 
-        // ✅ FIX: Skip if this is a duplicate from our own local scan (within 3s)
-        const lastLocal = window._ppvLastLocalScan;
-        if (lastLocal && message.data.user_id == lastLocal.user_id && (Date.now() - lastLocal.time) < 3000) {
-          ppvLog('[Ably] Skipping duplicate (already added locally)');
-          return;
-        }
-
-        // Add scan to UI immediately (with _realtime flag for prepend)
-        if (STATE.scanProcessor?.ui) {
-          STATE.scanProcessor.ui.addScanItem({ ...message.data, _realtime: true });
+        // ✅ FIX: Deduplication is now handled by addScanItem using scan_id
+        // Just pass the data through - the UI manager will skip if scan_id already displayed
+        if (STATE.uiManager) {
+          STATE.uiManager.addScanItem({ ...message.data, _realtime: true });
         }
       });
 
