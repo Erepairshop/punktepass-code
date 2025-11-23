@@ -39,11 +39,14 @@ define('PPV_ABLY_API_KEY', 'jKxtxA.r58iZQ:6SXOogAhhlFxnOsDxOAfX5KYWYcbtKbHNnNvIY
 // ========================================
 // 🔐 SESSION INIT (Early Priority)
 // ========================================
-add_action('init', function () {
-    if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
-        @session_start();
-    }
-}, 1);
+// ✅ REMOVED: Session is now handled by PPV_SessionBridge with proper cookie params
+// Having duplicate session_start() with priority 1 caused race condition where
+// session could start with default PHP settings instead of custom domain/lifetime
+// add_action('init', function () {
+//     if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+//         @session_start();
+//     }
+// }, 1);
 
 // ========================================
 // 🔒 SECURITY HEADERS (PWA-compatible)
