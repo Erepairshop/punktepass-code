@@ -1047,19 +1047,33 @@
   function handleBodyClick(e) {
     const target = e.target;
 
-    // Campaign actions
-    if (target.classList.contains('ppv-camp-edit')) {
-      const camp = STATE.campaignManager?.campaigns.find(c => c.id == target.dataset.id);
-      if (camp) STATE.campaignManager.edit(camp);
+    // Campaign actions - use closest() to handle clicks on child elements (emoji text, etc.)
+    const editBtn = target.closest('.ppv-camp-edit');
+    const deleteBtn = target.closest('.ppv-camp-delete');
+    const archiveBtn = target.closest('.ppv-camp-archive');
+    const cloneBtn = target.closest('.ppv-camp-clone');
+
+    if (editBtn) {
+      ppvLog('[QR] Edit button clicked, id:', editBtn.dataset.id);
+      const camp = STATE.campaignManager?.campaigns.find(c => c.id == editBtn.dataset.id);
+      if (camp) {
+        ppvLog('[QR] Found campaign:', camp.title);
+        STATE.campaignManager.edit(camp);
+      } else {
+        ppvWarn('[QR] Campaign not found for id:', editBtn.dataset.id);
+      }
     }
-    if (target.classList.contains('ppv-camp-delete')) {
-      STATE.campaignManager?.delete(target.dataset.id);
+    if (deleteBtn) {
+      ppvLog('[QR] Delete button clicked, id:', deleteBtn.dataset.id);
+      STATE.campaignManager?.delete(deleteBtn.dataset.id);
     }
-    if (target.classList.contains('ppv-camp-archive')) {
-      STATE.campaignManager?.archive(target.dataset.id);
+    if (archiveBtn) {
+      ppvLog('[QR] Archive button clicked, id:', archiveBtn.dataset.id);
+      STATE.campaignManager?.archive(archiveBtn.dataset.id);
     }
-    if (target.classList.contains('ppv-camp-clone')) {
-      STATE.campaignManager?.clone(target.dataset.id);
+    if (cloneBtn) {
+      ppvLog('[QR] Clone button clicked, id:', cloneBtn.dataset.id);
+      STATE.campaignManager?.clone(cloneBtn.dataset.id);
     }
 
     // New campaign button
