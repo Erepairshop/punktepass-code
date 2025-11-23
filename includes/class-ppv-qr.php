@@ -775,7 +775,7 @@ class PPV_QR {
                 </div>
             </div>
 
-            <table id="ppv-pos-log" class="glass-table">
+            <table id="ppv-pos-log" class="glass-table" data-turbo-permanent>
                 <thead>
                     <tr>
                         <th><?php echo self::t('t_col_time', 'Zeit'); ?></th>
@@ -783,7 +783,9 @@ class PPV_QR {
                         <th><?php echo self::t('t_col_status', 'Status'); ?></th>
                     </tr>
                 </thead>
-                <tbody></tbody>
+                <tbody>
+                    <tr class="ppv-loading-row"><td colspan="3" style="text-align:center;padding:20px;color:#888;"><i class="ri-loader-4-line ri-spin"></i> Laden...</td></tr>
+                </tbody>
             </table>
 
             <!-- 🎥 CAMERA SCANNER MODAL -->

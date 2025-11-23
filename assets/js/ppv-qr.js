@@ -1888,14 +1888,14 @@ document.addEventListener('turbo:load', function() {
   }, 100);
 });
 
-// 🧹 Turbo: Clear dynamic content before caching (prevents stale data on restore)
+// 🧹 Turbo: Reset dynamic content before caching (shows loading state on restore)
 document.addEventListener('turbo:before-cache', function() {
-  console.log('🧹 [QR] turbo:before-cache - clearing dynamic content');
+  console.log('🧹 [QR] turbo:before-cache - resetting to loading state');
 
-  // Clear scan log table - will be reloaded fresh via API
+  // Reset scan log table to loading state
   const logTable = document.querySelector('#ppv-pos-log tbody');
   if (logTable) {
-    logTable.innerHTML = '';
+    logTable.innerHTML = '<tr class="ppv-loading-row"><td colspan="3" style="text-align:center;padding:20px;color:#888;"><i class="ri-loader-4-line ri-spin"></i> Laden...</td></tr>';
   }
 
   // Clear any result boxes
