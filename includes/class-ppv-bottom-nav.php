@@ -239,42 +239,46 @@ class PPV_Bottom_Nav {
                     \$(this).removeClass('touch');
                 });
 
-                // ============ SUPPORT MODAL ============
-                const \$modal = \$('#ppv-support-modal');
-                const \$msg = \$('#ppv-support-msg');
+            }
 
-                // Unbind previous handlers to prevent duplicates
-                \$('#ppv-support-nav-btn').off('click');
-                \$('#ppv-support-close').off('click');
-                \$modal.off('click');
-                \$('#ppv-support-send').off('click');
+            // ============ SUPPORT MODAL (Event Delegation - Turbo Safe) ============
+            let supportEventsInitialized = false;
+            function initSupportModal() {
+                if (supportEventsInitialized) return;
+                supportEventsInitialized = true;
 
-                // Open modal
-                \$('#ppv-support-nav-btn').on('click', function(e) {
+                const \$ = jQuery;
+
+                // Open modal - event delegation on body
+                \$(document).on('click', '#ppv-support-nav-btn', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
+                    const \$modal = \$('#ppv-support-modal');
+                    const \$msg = \$('#ppv-support-msg');
                     \$modal.css('display', 'flex').hide().fadeIn(200);
                     \$('#ppv-support-email').val('');
                     \$('#ppv-support-phone').val('');
                     \$('#ppv-support-desc').val('');
                     \$('#ppv-support-email').focus();
-                    \$msg.hide();
+                    \$msg.hide().removeClass('error success');
                 });
 
                 // Close modal
-                \$('#ppv-support-close').on('click', function() {
-                    \$modal.fadeOut(200);
+                \$(document).on('click', '#ppv-support-close', function() {
+                    \$('#ppv-support-modal').fadeOut(200);
                 });
 
                 // Close on backdrop click
-                \$modal.on('click', function(e) {
+                \$(document).on('click', '#ppv-support-modal', function(e) {
                     if (e.target === this) {
-                        \$modal.fadeOut(200);
+                        \$(this).fadeOut(200);
                     }
                 });
 
                 // Send ticket
-                \$('#ppv-support-send').on('click', function() {
+                \$(document).on('click', '#ppv-support-send', function() {
+                    const \$modal = \$('#ppv-support-modal');
+                    const \$msg = \$('#ppv-support-msg');
                     const email = \$('#ppv-support-email').val().trim();
                     const phone = \$('#ppv-support-phone').val().trim();
                     const desc = \$('#ppv-support-desc').val().trim();
@@ -344,12 +348,16 @@ class PPV_Bottom_Nav {
 
             // Initialize on DOM ready
             if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', initAll);
+                document.addEventListener('DOMContentLoaded', function() {
+                    initAll();
+                    initSupportModal();
+                });
             } else {
                 initAll();
+                initSupportModal();
             }
 
-            // 🚀 Reinitialize after Turbo navigation
+            // 🚀 Reinitialize nav after Turbo navigation (Support modal uses event delegation, no reinit needed)
             document.addEventListener('turbo:load', initAll);
 
             // 🚀 Show loading indicator
