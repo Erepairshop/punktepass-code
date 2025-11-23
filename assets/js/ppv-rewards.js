@@ -1,11 +1,19 @@
 /**
- * PunktePass – Einlösungen Management v8.0 CLEAN
+ * PunktePass – Einlösungen Management v8.2 CLEAN
  * Turbo.js compatible, clean architecture
+ * FIXED: Multiple interval creation bug causing 503 errors
  * Author: PunktePass / Erik Borota
  */
 
 (function() {
   'use strict';
+
+  // Guard against multiple script loads
+  if (window.PPV_REWARDS_LOADED) {
+    console.log('[REWARDS] Already loaded, skipping');
+    return;
+  }
+  window.PPV_REWARDS_LOADED = true;
 
   // ============================================================
   // GLOBAL STATE
@@ -618,11 +626,15 @@
     // Add notification controls
     setTimeout(addNotificationControls, 500);
 
-    // Start auto-refresh
-    STATE.refreshInterval = setInterval(() => {
-      loadRedeemRequests();
-      loadRecentLogs();
-    }, 10000);
+    // Start auto-refresh (only if not already running)
+    if (!STATE.refreshInterval) {
+      console.log('[REWARDS] Starting auto-refresh interval (30s)');
+      STATE.refreshInterval = setInterval(() => {
+        console.log('[REWARDS] Auto-refresh tick');
+        loadRedeemRequests();
+        loadRecentLogs();
+      }, 30000);  // Changed from 10s to 30s to reduce load
+    }
 
     STATE.initialized = true;
     console.log('[REWARDS] Initialization complete');
@@ -654,6 +666,6 @@
     setTimeout(init, 100);
   });
 
-  console.log('[REWARDS] Script loaded v8.1 (improved cleanup)');
+  console.log('[REWARDS] Script loaded v8.2 (fixed interval bug)');
 
 })();
