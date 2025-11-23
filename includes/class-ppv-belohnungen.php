@@ -189,11 +189,22 @@ class PPV_Belohnungen {
             true
         );
 
+        // 📡 Ably config for user channel
+        $ably_config = null;
+        if (is_user_logged_in() && class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+            $user_id = get_current_user_id();
+            $ably_config = [
+                'key' => PPV_Ably::get_key(),
+                'channel' => 'user-' . $user_id
+            ];
+        }
+
         $data = [
             'base_url' => esc_url(rest_url('ppv/v1/')),
             'nonce'    => wp_create_nonce('wp_rest'),
             'lang'     => $lang,
             'debug'    => defined('WP_DEBUG') && WP_DEBUG,
+            'ably'     => $ably_config,
         ];
         wp_add_inline_script(
             'ppv-belohnungen',

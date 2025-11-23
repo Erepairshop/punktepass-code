@@ -242,9 +242,42 @@ tabButtons.forEach((btn) => {
   }
 
   // ============================================================
-  // 🔔 AUTO-POLLING (Neue Einlösungen Popup)
+  // 🔔 POPUP NOTIFICATION
   // ============================================================
+  function showPopupNotification(msg) {
+    document.querySelectorAll(".ppv-popup-alert").forEach((el) => el.remove());
+    const popup = document.createElement("div");
+    popup.className = "ppv-popup-alert";
+    popup.innerHTML = `
+      <div class="ppv-popup-inner">
+        <h3>🎁 Neue Einlösung!</h3>
+        <p>${msg}</p>
+        <button id="ppv-popup-close">OK</button>
+      </div>`;
+    document.body.appendChild(popup);
+    document.getElementById("ppv-popup-close").onclick = () => popup.remove();
+    playRedeemSound();
+  }
+
+  function playRedeemSound() {
+    try {
+      const audio = new Audio(
+        "https://cdn.pixabay.com/download/audio/2022/03/15/audio_dba733ce07.mp3"
+      );
+      audio.volume = 0.5;
+      audio.play().catch(() => console.warn("🔇 Ton blockiert (Autoplay)."));
+    } catch (e) {
+      console.warn("Audio Fehler:", e);
+    }
+  }
+
+  // ============================================================
+  // 📡 ABLY REAL-TIME + POLLING FALLBACK
+  // ============================================================
+  const config = window.ppv_rewards_rest || {};
+  let pollInterval = null;
   let lastUpdate = 0;
+
   async function checkNewRedeems() {
     try {
       const res = await fetch(`${base}redeem/ping?_=${Date.now()}`);
@@ -260,18 +293,57 @@ tabButtons.forEach((btn) => {
     }
   }
 
-  function showPopupNotification(msg) {
-    document.querySelectorAll(".ppv-popup-alert").forEach((el) => el.remove());
-    const popup = document.createElement("div");
-    popup.className = "ppv-popup-alert";
-    popup.innerHTML = `
-      <div class="ppv-popup-inner">
-        <h3>🎁 Neue Einlösung!</h3>
-        <p>${msg}</p>
-        <button id="ppv-popup-close">OK</button>
-      </div>`;
-    document.body.appendChild(popup);
-    document.getElementById("ppv-popup-close").onclick = () => popup.remove();
+  function startPolling() {
+    if (pollInterval) return;
+    console.log('🔄 [REWARDS-ADMIN] Starting polling (15s interval)');
+    pollInterval = setInterval(checkNewRedeems, 15000);
+  }
+
+  function initRealtime() {
+    if (config.ably && config.ably.key && typeof Ably !== 'undefined') {
+      console.log('📡 [REWARDS-ADMIN] Initializing Ably real-time...');
+
+      const ably = new Ably.Realtime({ key: config.ably.key });
+      const channel = ably.channels.get(config.ably.channel);
+
+      ably.connection.on('connected', () => {
+        console.log('📡 [REWARDS-ADMIN] Ably connected');
+        if (pollInterval) {
+          clearInterval(pollInterval);
+          pollInterval = null;
+        }
+      });
+
+      ably.connection.on('disconnected', () => {
+        console.log('📡 [REWARDS-ADMIN] Ably disconnected, starting polling');
+        startPolling();
+      });
+
+      ably.connection.on('failed', (err) => {
+        console.log('📡 [REWARDS-ADMIN] Ably failed:', err);
+        startPolling();
+      });
+
+      // 📡 Handle reward requests
+      channel.subscribe('reward-request', (message) => {
+        console.log('📡 [REWARDS-ADMIN] Reward request received:', message.data);
+        showPopupNotification(`🎁 Neue Einlösung: ${message.data.reward_title || 'Belohnung'}`);
+        loadRedeems();
+        loadRedeemLog();
+      });
+
+      // 📡 Handle reward updates (CRUD)
+      channel.subscribe('reward-update', (message) => {
+        console.log('📡 [REWARDS-ADMIN] Reward update received:', message.data);
+        showToast(`🎁 Prämie ${message.data.action === 'created' ? 'erstellt' : message.data.action === 'updated' ? 'aktualisiert' : 'gelöscht'}`, 'info');
+        loadRewards();
+      });
+
+      console.log('📡 [REWARDS-ADMIN] Ably initialized');
+    } else {
+      console.log('🔄 [REWARDS-ADMIN] Ably not available, using polling');
+      startPolling();
+    }
   }
 
   // ============================================================
@@ -280,21 +352,6 @@ tabButtons.forEach((btn) => {
   loadRewards();
   loadRedeems();
   loadRedeemLog();
-  setInterval(checkNewRedeems, 15000);
-  
-  function playRedeemSound() {
-  try {
-    const audio = new Audio(
-      "https://cdn.pixabay.com/download/audio/2022/03/15/audio_dba733ce07.mp3"
-    );
-    audio.volume = 0.5;
-    audio.play().catch(() => console.warn("🔇 Ton blockiert (Autoplay)."));
-  } catch (e) {
-    console.warn("Audio Fehler:", e);
-  }
-}
-
-// 🎵 illeszd be a showPopupNotification() végére:
-playRedeemSound();
+  initRealtime();
 
 });

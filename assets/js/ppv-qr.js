@@ -1337,6 +1337,20 @@
         STATE.scanProcessor?.loadLogs();
       });
 
+      // 📡 Handle campaign updates (create/update/delete)
+      channel.subscribe('campaign-update', (message) => {
+        ppvLog('[Ably] Campaign update received:', message.data);
+        window.ppvToast(`📢 Kampány ${message.data.action === 'created' ? 'létrehozva' : message.data.action === 'updated' ? 'frissítve' : 'törölve'}`, 'info');
+        // Refresh campaign list
+        STATE.campaignManager?.load();
+      });
+
+      // 📡 Handle reward/prämien updates
+      channel.subscribe('reward-update', (message) => {
+        ppvLog('[Ably] Reward update received:', message.data);
+        window.ppvToast(`🎁 Prämie ${message.data.action === 'created' ? 'létrehozva' : message.data.action === 'updated' ? 'frissítve' : 'törölve'}`, 'info');
+      });
+
       STATE.initialized = true;
       ppvLog('[QR] Initialization complete (Ably mode)');
 

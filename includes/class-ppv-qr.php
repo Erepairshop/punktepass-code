@@ -2304,10 +2304,21 @@ class PPV_QR {
         // ✅ DEBUG: Log fields before insert
 
         $wpdb->insert("{$prefix}ppv_campaigns", $fields);
+        $campaign_id = $wpdb->insert_id;
 
         // ✅ DEBUG: Check if insert succeeded
         if ($wpdb->last_error) {
         } else {
+        }
+
+        // 📡 Ably: Notify real-time about new campaign
+        if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+            PPV_Ably::trigger_campaign_update($store->id, [
+                'action' => 'created',
+                'campaign_id' => $campaign_id,
+                'title' => $fields['title'],
+                'campaign_type' => $fields['campaign_type'],
+            ]);
         }
 
         return new WP_REST_Response([
@@ -2421,6 +2432,14 @@ class PPV_QR {
 
         self::insert_log($store->id, 0, "Kampány törölve: ID {$id}", 'campaign_delete');
 
+        // 📡 Ably: Notify real-time about deleted campaign
+        if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+            PPV_Ably::trigger_campaign_update($store->id, [
+                'action' => 'deleted',
+                'campaign_id' => $id,
+            ]);
+        }
+
         return new WP_REST_Response([
             'success' => true,
             'message' => self::t('campaign_deleted', '🗑️ Kampány törölve!')
@@ -2509,6 +2528,16 @@ class PPV_QR {
         ]);
 
         self::insert_log($store->id, 0, "Kampány frissítve: ID {$id}", 'campaign_update');
+
+        // 📡 Ably: Notify real-time about updated campaign
+        if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+            PPV_Ably::trigger_campaign_update($store->id, [
+                'action' => 'updated',
+                'campaign_id' => $id,
+                'title' => $fields['title'],
+                'campaign_type' => $fields['campaign_type'],
+            ]);
+        }
 
         return new WP_REST_Response([
             'success' => true,
