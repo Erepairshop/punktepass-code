@@ -158,7 +158,7 @@ class PPV_Bottom_Nav {
             </nav>
 
             <!-- Support Modal -->
-            <div id="ppv-support-modal" style="display:none;">
+            <div id="ppv-support-modal">
                 <div class="modal-content">
                     <h3 class="modal-title">
                         <i class="ri-customer-service-2-line"></i> Support anfragen
@@ -255,23 +255,23 @@ class PPV_Bottom_Nav {
                     e.stopPropagation();
                     const \$modal = \$('#ppv-support-modal');
                     const \$msg = \$('#ppv-support-msg');
-                    \$modal.css('display', 'flex').hide().fadeIn(200);
+                    \$modal.addClass('show');
                     \$('#ppv-support-email').val('');
                     \$('#ppv-support-phone').val('');
                     \$('#ppv-support-desc').val('');
-                    \$('#ppv-support-email').focus();
+                    setTimeout(function() { \$('#ppv-support-email').focus(); }, 100);
                     \$msg.hide().removeClass('error success');
                 });
 
                 // Close modal
                 \$(document).on('click', '#ppv-support-close', function() {
-                    \$('#ppv-support-modal').fadeOut(200);
+                    \$('#ppv-support-modal').removeClass('show');
                 });
 
                 // Close on backdrop click
                 \$(document).on('click', '#ppv-support-modal', function(e) {
                     if (e.target === this) {
-                        \$(this).fadeOut(200);
+                        \$(this).removeClass('show');
                     }
                 });
 
@@ -331,7 +331,7 @@ class PPV_Bottom_Nav {
                                 \$('#ppv-support-email').val('');
                                 \$('#ppv-support-phone').val('');
                                 \$('#ppv-support-desc').val('');
-                                setTimeout(function() { \$modal.fadeOut(200); }, 1500);
+                                setTimeout(function() { \$modal.removeClass('show'); }, 1500);
                             } else {
                                 \$msg.removeClass('success').addClass('error').text(res.data?.message || 'Fehler').show();
                             }

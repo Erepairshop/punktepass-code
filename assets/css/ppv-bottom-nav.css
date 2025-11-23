@@ -123,6 +123,7 @@ body.turbo-loading::before {
 
 /* Support Modal */
 #ppv-support-modal {
+  display: none;
   position: fixed;
   top: 0;
   left: 0;
@@ -133,6 +134,10 @@ body.turbo-loading::before {
   align-items: center;
   justify-content: center;
   overflow-y: auto;
+}
+
+#ppv-support-modal.show {
+  display: flex;
 }
 
 #ppv-support-modal .modal-content {
