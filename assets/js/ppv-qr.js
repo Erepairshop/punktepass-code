@@ -1079,25 +1079,142 @@
     STATE.campaignManager.load();
     OfflineSyncManager.sync();
 
-    // ✅ POLLING: Refresh logs every 10 seconds
-    let logsPollingInterval = setInterval(() => {
-      if (!document.hidden && getStoreKey()) {
-        STATE.scanProcessor?.loadLogs();
-      }
-    }, 10000);
+    // 📡 SSE: Server-Sent Events for real-time log updates (replaces polling)
+    let sseConnection = null;
+    let sseLastId = 0;
+    let sseReconnectAttempts = 0;
+    const SSE_MAX_RECONNECT = 5;
 
-    // Visibility change handler - also refresh logs when page becomes visible
+    function connectSSE() {
+      if (!getStoreKey()) {
+        ppvLog('[SSE] No store key, skipping SSE connection');
+        return;
+      }
+
+      const sseUrl = '/wp-admin/admin-ajax.php?action=ppv_logs_sse&last_id=' + sseLastId;
+
+      ppvLog('[SSE] 📡 Connecting to SSE...', sseUrl);
+
+      // Close existing connection if any
+      if (sseConnection) {
+        sseConnection.close();
+      }
+
+      // Create custom EventSource with headers (using fetch + ReadableStream)
+      fetch(sseUrl, {
+        headers: {
+          'PPV-POS-Token': getStoreKey(),
+          'Accept': 'text/event-stream'
+        }
+      }).then(response => {
+        if (!response.ok) {
+          throw new Error('SSE connection failed: ' + response.status);
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        function processSSE() {
+          reader.read().then(({ done, value }) => {
+            if (done) {
+              ppvLog('[SSE] 📡 Connection closed, reconnecting...');
+              setTimeout(connectSSE, 1000);
+              return;
+            }
+
+            buffer += decoder.decode(value, { stream: true });
+
+            // Process complete events
+            const lines = buffer.split('\n\n');
+            buffer = lines.pop() || ''; // Keep incomplete data
+
+            lines.forEach(eventBlock => {
+              if (!eventBlock.trim()) return;
+
+              const eventLines = eventBlock.split('\n');
+              let eventType = 'message';
+              let eventData = '';
+
+              eventLines.forEach(line => {
+                if (line.startsWith('event: ')) {
+                  eventType = line.substring(7);
+                } else if (line.startsWith('data: ')) {
+                  eventData = line.substring(6);
+                }
+              });
+
+              if (eventData) {
+                try {
+                  const data = JSON.parse(eventData);
+
+                  if (eventType === 'logs' && data.logs && data.logs.length > 0) {
+                    ppvLog('[SSE] 📥 Received', data.logs.length, 'new logs');
+                    sseLastId = data.last_id || sseLastId;
+                    sseReconnectAttempts = 0;
+
+                    // Update the UI with new logs
+                    STATE.scanProcessor?.ui?.clearLogTable();
+                    data.logs.forEach(log => {
+                      STATE.scanProcessor?.ui?.appendLog(log);
+                    });
+                  } else if (eventType === 'keepalive' && data.reconnect) {
+                    ppvLog('[SSE] 💓 Keepalive, reconnecting...');
+                    setTimeout(connectSSE, 100);
+                  }
+                } catch (e) {
+                  ppvLog('[SSE] ⚠️ Parse error:', e.message);
+                }
+              }
+            });
+
+            // Continue reading
+            processSSE();
+          }).catch(err => {
+            ppvLog('[SSE] ❌ Read error:', err.message);
+            sseReconnectAttempts++;
+            if (sseReconnectAttempts < SSE_MAX_RECONNECT) {
+              setTimeout(connectSSE, 2000 * sseReconnectAttempts);
+            } else {
+              ppvLog('[SSE] ⚠️ Max reconnect attempts reached, falling back to polling');
+              // Fallback to polling if SSE fails
+              setInterval(() => {
+                if (!document.hidden && getStoreKey()) {
+                  STATE.scanProcessor?.loadLogs();
+                }
+              }, 10000);
+            }
+          });
+        }
+
+        processSSE();
+        ppvLog('[SSE] ✅ Connected successfully');
+        sseReconnectAttempts = 0;
+
+      }).catch(err => {
+        ppvLog('[SSE] ❌ Connection error:', err.message);
+        sseReconnectAttempts++;
+        if (sseReconnectAttempts < SSE_MAX_RECONNECT) {
+          setTimeout(connectSSE, 2000 * sseReconnectAttempts);
+        }
+      });
+    }
+
+    // Start SSE connection
+    connectSSE();
+
+    // Visibility change handler - reconnect SSE when page becomes visible
     let lastVis = 0;
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden && Date.now() - lastVis > 5000) {
         lastVis = Date.now();
         STATE.campaignManager?.load();
-        STATE.scanProcessor?.loadLogs(); // ✅ Also refresh logs
+        connectSSE(); // Reconnect SSE
       }
     });
 
     STATE.initialized = true;
-    ppvLog('[QR] Initialization complete (polling every 10s)');
+    ppvLog('[QR] Initialization complete (SSE mode)');
   }
 
   // ============================================================

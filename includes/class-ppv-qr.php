@@ -19,6 +19,9 @@ class PPV_QR {
         add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
         add_action('rest_api_init', [__CLASS__, 'register_rest_routes']);
         add_action('wp_ajax_ppv_switch_filiale', [__CLASS__, 'ajax_switch_filiale']);
+        // 📡 SSE: Server-Sent Events for real-time scan updates
+        add_action('wp_ajax_ppv_logs_sse', [__CLASS__, 'ajax_logs_sse']);
+        add_action('wp_ajax_nopriv_ppv_logs_sse', [__CLASS__, 'ajax_logs_sse']);
     }
 
     // ============================================================
@@ -1907,6 +1910,128 @@ class PPV_QR {
         }, $logs);
 
         return new WP_REST_Response($formatted, 200);
+    }
+
+    // ============================================================
+    // 📡 SSE: Server-Sent Events for real-time log updates
+    // ============================================================
+    public static function ajax_logs_sse() {
+        global $wpdb;
+
+        // 🔐 Auth check - get store from POS token
+        $store_key = isset($_SERVER['HTTP_PPV_POS_TOKEN'])
+            ? sanitize_text_field($_SERVER['HTTP_PPV_POS_TOKEN'])
+            : '';
+
+        if (empty($store_key)) {
+            header('HTTP/1.1 401 Unauthorized');
+            exit('Unauthorized');
+        }
+
+        $store = self::get_store_by_key($store_key);
+        if (!$store) {
+            header('HTTP/1.1 401 Unauthorized');
+            exit('Invalid store');
+        }
+
+        $store_id = intval($store->id);
+
+        // 📡 SSE Headers
+        header('Content-Type: text/event-stream');
+        header('Cache-Control: no-cache');
+        header('Connection: keep-alive');
+        header('X-Accel-Buffering: no'); // Disable nginx buffering
+
+        // Disable output buffering
+        while (ob_get_level()) ob_end_clean();
+
+        // Get last_id from query param (to only send new logs)
+        $last_id = isset($_GET['last_id']) ? intval($_GET['last_id']) : 0;
+
+        // SSE loop - check for new logs every 3 seconds, max 30 seconds total
+        $start_time = time();
+        $max_duration = 30; // Close connection after 30 seconds (client will reconnect)
+
+        while ((time() - $start_time) < $max_duration) {
+            // Check for new logs
+            $new_logs = $wpdb->get_results($wpdb->prepare("
+                SELECT
+                    l.id,
+                    l.created_at,
+                    l.user_id,
+                    l.message,
+                    l.type,
+                    u.email,
+                    u.first_name,
+                    u.last_name,
+                    u.avatar
+                FROM {$wpdb->prefix}ppv_pos_log l
+                LEFT JOIN {$wpdb->prefix}ppv_users u ON l.user_id = u.id
+                WHERE l.store_id = %d AND l.id > %d
+                ORDER BY l.id DESC
+                LIMIT 15
+            ", $store_id, $last_id));
+
+            if (!empty($new_logs)) {
+                // Get the highest ID for next check
+                $max_id = max(array_column($new_logs, 'id'));
+
+                // Format logs
+                $formatted = array_map(function($log) {
+                    $created = strtotime($log->created_at);
+                    $points = '-';
+                    if (preg_match('/\+(\d+)/', $log->message, $m)) {
+                        $points = $m[1];
+                    }
+
+                    $first = trim($log->first_name ?? '');
+                    $last = trim($log->last_name ?? '');
+                    $full_name = trim("$first $last");
+
+                    return [
+                        'id' => intval($log->id),
+                        'user_id' => $log->user_id,
+                        'customer_name' => $full_name ?: null,
+                        'email' => $log->email ?: null,
+                        'avatar' => $log->avatar ?: null,
+                        'message' => $log->message,
+                        'date_short' => date('d.m.', $created),
+                        'time_short' => date('H:i', $created),
+                        'points' => $points,
+                        'success' => ($log->type === 'qr_scan'),
+                    ];
+                }, $new_logs);
+
+                // Send SSE event
+                echo "event: logs\n";
+                echo "data: " . json_encode([
+                    'logs' => $formatted,
+                    'last_id' => $max_id
+                ]) . "\n\n";
+
+                // Update last_id for next iteration
+                $last_id = $max_id;
+            }
+
+            // Flush output
+            if (ob_get_level()) ob_flush();
+            flush();
+
+            // Check if client disconnected
+            if (connection_aborted()) {
+                break;
+            }
+
+            // Wait 3 seconds before checking again
+            sleep(3);
+        }
+
+        // Send keepalive/close event
+        echo "event: keepalive\n";
+        echo "data: {\"reconnect\": true}\n\n";
+        flush();
+
+        exit;
     }
 
     // ============================================================
