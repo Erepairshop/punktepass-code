@@ -48,14 +48,37 @@ class PPV_User_Dashboard {
     }
 
     private static function get_safe_user_id() {
+        global $wpdb;
         self::ensure_session();
 
+        // Priority 1: Session ppv_user_id (already the correct ppv_users.id)
         if (!empty($_SESSION['ppv_user_id'])) {
             return intval($_SESSION['ppv_user_id']);
         }
 
+        // Priority 2: WordPress user - but we need to find the corresponding ppv_users.id!
         $wp_uid = get_current_user_id();
         if ($wp_uid > 0) {
+            // ✅ FIX: Lookup ppv_users.id by WordPress user's email
+            // WordPress user ID is NOT the same as ppv_users.id!
+            $wp_user = get_userdata($wp_uid);
+            if ($wp_user && $wp_user->user_email) {
+                $ppv_user_id = $wpdb->get_var($wpdb->prepare(
+                    "SELECT id FROM {$wpdb->prefix}ppv_users WHERE email = %s LIMIT 1",
+                    $wp_user->user_email
+                ));
+
+                if ($ppv_user_id) {
+                    // Cache in session for future requests
+                    $_SESSION['ppv_user_id'] = $ppv_user_id;
+                    error_log("✅ [PPV_Dashboard] get_safe_user_id: Mapped WP user #{$wp_uid} ({$wp_user->user_email}) to ppv_users.id={$ppv_user_id}");
+                    return intval($ppv_user_id);
+                } else {
+                    error_log("⚠️ [PPV_Dashboard] get_safe_user_id: WP user #{$wp_uid} ({$wp_user->user_email}) NOT FOUND in ppv_users table");
+                }
+            }
+            // Fallback: return WordPress user ID (but this may not have points!)
+            error_log("⚠️ [PPV_Dashboard] get_safe_user_id: Falling back to WP user ID #{$wp_uid} (may not have points)");
             return $wp_uid;
         }
 
@@ -125,20 +148,24 @@ class PPV_User_Dashboard {
         ", $uid));
 
         if (empty($token)) {
-            // Generate token that NEVER starts with a digit
-            // This is critical for QR parsing: PPU{user_id}{token}
-            // If token starts with digit, it gets confused with user_id
-            do {
-                $token = wp_generate_password(16, false);
-            } while (ctype_digit($token[0]));
-
+            $token = wp_generate_password(16, false);
             $wpdb->insert("{$prefix}ppv_tokens", [
                 'entity_type' => 'user',
                 'entity_id' => $uid,
+                'user_id' => $uid,  // ✅ FIX: Set both user_id AND entity_id
                 'token' => $token,
                 'created_at' => current_time('mysql'),
                 'expires_at' => date('Y-m-d H:i:s', strtotime('+30 days'))
             ]);
+
+            // 🔄 INVALIDATE QR CACHE when new token is created
+            // This ensures the QR image is regenerated with the new token
+            $qr_dir = WP_CONTENT_DIR . '/uploads/ppv_qr/';
+            $qr_file = $qr_dir . "user_{$uid}.png";
+            if (file_exists($qr_file)) {
+                @unlink($qr_file);
+                error_log("🔄 [PPV_Dashboard] QR cache invalidated for user {$uid} - new token created");
+            }
         }
 
         return $token;
@@ -853,14 +880,18 @@ public static function render_dashboard() {
     public static function rest_poll_points(WP_REST_Request $request) {
         global $wpdb;
 
-        $user_id = get_current_user_id();
+        // ✅ FIX: Use helper methods for session + user ID (same as rest_get_detailed_points)
+        self::ensure_session();
 
-        if (!$user_id && !empty($_SESSION['ppv_user_id'])) {
-            $user_id = intval($_SESSION['ppv_user_id']);
+        // ✅ FORCE SESSION RESTORE (Google/Facebook/TikTok login)
+        if (class_exists('PPV_SessionBridge') && empty($_SESSION['ppv_user_id'])) {
+            PPV_SessionBridge::restore_from_token();
         }
 
+        $user_id = self::get_safe_user_id();
+
         if ($user_id <= 0) {
-            error_log("❌ [PPV_Dashboard] rest_poll_points: No user found");
+            error_log("❌ [PPV_Dashboard] rest_poll_points: No user found (WP=" . get_current_user_id() . ", SESSION=" . ($_SESSION['ppv_user_id'] ?? 'none') . ")");
             return new WP_REST_Response(['success' => false, 'points' => 0], 401);
         }
 
