@@ -159,33 +159,38 @@ class PPV_POS_SCAN {
         /** 3) QR -> User ID extraction with security
          *    IMPORTANT: Only USER tokens allowed
          *    Format: PPU{user_id}{16-char-token}
+         *
+         *    FIX: Look up user_id from TOKEN in database (not from QR parsing)
+         *    This prevents issues when token starts with a digit
          */
         $user_id = 0;
 
         if (strpos($qr, 'PPU') === 0) {
-            $payload = substr($qr, 3);
+            $payload = substr($qr, 3); // Everything after "PPU"
 
-            // Find where user_id ends (first non-digit)
-            if (preg_match('/^(\d+)(.+)$/', $payload, $matches)) {
-                $uid = intval($matches[1]);
-                $token_from_qr = $matches[2];
+            // Token is always 16 characters - take LAST 16 chars from payload
+            // The user_id prefix doesn't matter - we get it from the database
+            if (strlen($payload) >= 16) {
+                $token_from_qr = substr($payload, -16); // Last 16 characters = token
 
-                // Security: Verify token + active status in single JOIN query
+                // SECURE: Look up user_id FROM TOKEN in database
+                // This is the authoritative source - not the QR prefix
                 $user_check = $wpdb->get_row($wpdb->prepare("
-                    SELECT u.id, u.active
-                    FROM {$wpdb->prefix}ppv_users u
-                    INNER JOIN {$wpdb->prefix}ppv_tokens t
-                        ON t.entity_type='user' AND t.entity_id=u.id
-                    WHERE u.id=%d
-                        AND t.token=%s
+                    SELECT t.entity_id as user_id, u.active
+                    FROM {$wpdb->prefix}ppv_tokens t
+                    INNER JOIN {$wpdb->prefix}ppv_users u ON u.id = t.entity_id
+                    WHERE t.entity_type = 'user'
+                        AND t.token = %s
                         AND t.expires_at > NOW()
                     LIMIT 1
-                ", $uid, $token_from_qr));
+                ", $token_from_qr));
 
                 if ($user_check && $user_check->active == 1) {
-                    $user_id = intval($user_check->id);
+                    $user_id = intval($user_check->user_id);
+                    error_log("✅ [POS_SCAN] User ID from token lookup: {$user_id}");
                 } elseif ($user_check && $user_check->active == 0) {
-                    self::log_scan_attempt($store_id, $uid, $ip_address, 'blocked', 'User inactive', 'user_blocked', 0, $lang);
+                    $blocked_uid = intval($user_check->user_id);
+                    self::log_scan_attempt($store_id, $blocked_uid, $ip_address, 'blocked', 'User inactive', 'user_blocked', 0, $lang);
                     return rest_ensure_response([
                         'success' => false,
                         'message' => '🚫 Benutzer gesperrt',
