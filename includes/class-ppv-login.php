@@ -461,7 +461,7 @@ public static function render_landing_page($atts) {
                                 
                                 <div class="ppv-form-footer">
                                     <label class="ppv-checkbox">
-                                        <input type="checkbox" name="remember" id="ppv-remember">
+                                        <input type="checkbox" name="remember" id="ppv-remember" checked>
                                         <span><?php echo PPV_Lang::t('login_remember_me'); ?></span>
                                     </label>
                                     <a href="/passwort-vergessen" class="ppv-forgot-link"><?php echo PPV_Lang::t('login_forgot_password'); ?></a>
@@ -600,7 +600,9 @@ public static function render_landing_page($atts) {
 
             // Set cookie
             $domain = $_SERVER['HTTP_HOST'] ?? '';
-            $expire = $remember ? time() + (86400 * 180) : time() + 86400;
+            // ✅ FIX: Default is 30 days (was 1 day - caused unexpected logout!)
+            // Remember me = 180 days, no remember = 30 days
+            $expire = $remember ? time() + (86400 * 180) : time() + (86400 * 30);
             setcookie('ppv_user_token', $token, $expire, '/', $domain, true, true);
 
             ppv_log("✅ [PPV_Login] User logged in (#{$user->id})");
