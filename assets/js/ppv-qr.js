@@ -2236,8 +2236,14 @@ document.addEventListener("DOMContentLoaded", function () {
   // CSV export buttons handled via event delegation for Turbo compatibility
 
   // 🚀 Export reinit function for Turbo
+  let isQrReinitializing = false;
+
   window.ppv_qr_reinit = function() {
-    console.log('🔄 [QR] Turbo re-initialization');
+    // Debounce guard
+    if (isQrReinitializing) {
+      console.log('⏭️ [QR] Already reinitializing, skipping...');
+      return;
+    }
 
     // Re-query DOM elements
     const campaignList = document.getElementById("ppv-campaign-list");
@@ -2245,22 +2251,36 @@ document.addEventListener("DOMContentLoaded", function () {
     const logTable = document.querySelector("#ppv-pos-log tbody");
     const resultBox = document.getElementById("ppv-pos-result");
 
-    if (campaignList) {
-      // Reinitialize campaign manager with new DOM
-      const ui = new UIManager(resultBox, logTable, campaignList);
-      const newCampaignManager = new CampaignManager(ui, campaignList, campaignModal);
-      newCampaignManager.load();
-
-      // Store globally for access
-      window.ppvCampaignManager = newCampaignManager;
+    // Skip if no QR elements on this page
+    if (!campaignList && !logTable) {
+      console.log('⏭️ [QR] No QR elements on this page, skipping reinit');
+      return;
     }
 
-    // Reload logs if table exists
-    if (logTable && window.PPV_STORE_KEY) {
-      const ui = new UIManager(resultBox, logTable, campaignList);
-      const scanProcessor = new ScanProcessor(ui);
-      scanProcessor.loadLogs();
-    }
+    isQrReinitializing = true;
+    console.log('🔄 [QR] Turbo re-initialization');
+
+    // Delay API calls to let page settle
+    setTimeout(() => {
+      if (campaignList) {
+        // Reinitialize campaign manager with new DOM
+        const ui = new UIManager(resultBox, logTable, campaignList);
+        const newCampaignManager = new CampaignManager(ui, campaignList, campaignModal);
+        newCampaignManager.load();
+
+        // Store globally for access
+        window.ppvCampaignManager = newCampaignManager;
+      }
+
+      // Reload logs if table exists
+      if (logTable && window.PPV_STORE_KEY) {
+        const ui = new UIManager(resultBox, logTable, campaignList);
+        const scanProcessor = new ScanProcessor(ui);
+        scanProcessor.loadLogs();
+      }
+
+      isQrReinitializing = false;
+    }, 200);
   };
 });
 
@@ -2268,9 +2288,9 @@ document.addEventListener("DOMContentLoaded", function () {
 document.addEventListener('turbo:load', function() {
   console.log('🔄 [QR] turbo:load event');
 
-  // Throttle: don't reinit if we just did it
+  // Throttle: don't reinit if we just did it (increased to 1000ms)
   const now = Date.now();
-  if (window.PPV_QR_LAST_INIT && (now - window.PPV_QR_LAST_INIT) < 500) {
+  if (window.PPV_QR_LAST_INIT && (now - window.PPV_QR_LAST_INIT) < 1000) {
     console.log('⏭️ [QR] Skipping reinit - too soon');
     return;
   }
@@ -2280,7 +2300,7 @@ document.addEventListener('turbo:load', function() {
     if (typeof window.ppv_qr_reinit === 'function') {
       window.ppv_qr_reinit();
     }
-  }, 100);
+  }, 150);
 });
 
 // ============================================================
