@@ -514,8 +514,8 @@ class PPV_Belohnungen {
 
             $redeem_id = $wpdb->insert_id;
 
-            // 📡 PUSHER: Notify POS about new reward request
-            if (class_exists('PPV_Pusher') && PPV_Pusher::is_enabled()) {
+            // 📡 ABLY: Notify POS about new reward request
+            if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
                 // Get user info
                 $user_info = $wpdb->get_row($wpdb->prepare("
                     SELECT first_name, last_name, email, avatar
@@ -529,7 +529,7 @@ class PPV_Belohnungen {
 
                 $customer_name = trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
 
-                PPV_Pusher::trigger_reward_request($reward->store_id, [
+                PPV_Ably::trigger_reward_request($reward->store_id, [
                     'redeem_id' => $redeem_id,
                     'user_id' => $user_id,
                     'customer_name' => $customer_name ?: ($user_info->email ?? 'Kunde'),

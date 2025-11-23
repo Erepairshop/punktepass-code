@@ -62,17 +62,17 @@ class PPV_Rewards {
             return; // Skip loading
         }
 
-        // 📡 PUSHER: Load JS SDK from CDN if enabled
+        // 📡 ABLY: Load JS SDK from CDN if enabled
         $dependencies = ['jquery'];
-        if (class_exists('PPV_Pusher') && PPV_Pusher::is_enabled()) {
+        if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
             wp_enqueue_script(
-                'pusher-js',
-                'https://js.pusher.com/8.2.0/pusher.min.js',
+                'ably-js',
+                'https://cdn.ably.com/lib/ably.min-1.js',
                 [],
-                '8.2.0',
+                '1.2',
                 true
             );
-            $dependencies[] = 'pusher-js';
+            $dependencies[] = 'ably-js';
         }
 
         wp_enqueue_script(
@@ -92,13 +92,11 @@ class PPV_Rewards {
             'plugin_url' => esc_url(PPV_PLUGIN_URL)
         ];
 
-        // 📡 PUSHER: Add config for real-time updates
-        if (class_exists('PPV_Pusher') && PPV_Pusher::is_enabled()) {
-            $payload['pusher'] = [
-                'key' => PPV_Pusher::get_key(),
-                'cluster' => PPV_Pusher::get_cluster(),
-                'auth_endpoint' => esc_url_raw(rest_url('ppv/v1/pusher/auth')),
-                'channel' => 'private-store-' . $store_id,
+        // 📡 ABLY: Add config for real-time updates
+        if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+            $payload['ably'] = [
+                'key' => PPV_Ably::get_key(),
+                'channel' => 'store-' . $store_id,
             ];
         }
 
@@ -422,8 +420,8 @@ window.ppv_plugin_url = '" . esc_url(PPV_PLUGIN_URL) . "';",
         $msg_approved = class_exists('PPV_Lang') ? PPV_Lang::t('redeem_approved') : 'Anfrage bestätigt';
         $msg_cancelled = class_exists('PPV_Lang') ? PPV_Lang::t('redeem_rejected') : 'Anfrage abgelehnt';
 
-        // 📡 PUSHER: Notify user about reward approval/rejection
-        if (class_exists('PPV_Pusher') && PPV_Pusher::is_enabled()) {
+        // 📡 ABLY: Notify user about reward approval/rejection
+        if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
             // Get redeem details for notification
             $redeem_info = $wpdb->get_row($wpdb->prepare("
                 SELECT r.user_id, r.points_spent, rw.title as reward_title, s.name as store_name
@@ -440,7 +438,7 @@ window.ppv_plugin_url = '" . esc_url(PPV_PLUGIN_URL) . "';",
                     $redeem_info->user_id
                 ));
 
-                PPV_Pusher::trigger_reward_approved($redeem_info->user_id, [
+                PPV_Ably::trigger_reward_approved($redeem_info->user_id, [
                     'redeem_id' => $id,
                     'status' => $status,
                     'reward_name' => $redeem_info->reward_title,

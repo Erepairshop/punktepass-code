@@ -1,7 +1,8 @@
 /**
- * PunktePass – Kassenscanner & Kampagnen v6.1 CLEAN
+ * PunktePass – Kassenscanner & Kampagnen v6.2 CLEAN
  * Turbo.js compatible, clean architecture
  * FIXED: Multiple init() calls causing API spam
+ * FIXED: Ably connection cleanup on page navigation
  * Author: Erik Borota / PunktePass
  */
 
@@ -9,7 +10,7 @@
   'use strict';
 
   // ✅ DEBUG mode - set to true for verbose logging
-  const PPV_DEBUG = false;
+  const PPV_DEBUG = true;
   const ppvLog = (...args) => { if (PPV_DEBUG) console.log(...args); };
   const ppvWarn = (...args) => { if (PPV_DEBUG) console.warn(...args); };
 
@@ -29,7 +30,9 @@
     cameraScanner: null,
     scanProcessor: null,
     uiManager: null,
-    lastInitTime: 0  // Prevent rapid re-init
+    lastInitTime: 0,  // Prevent rapid re-init
+    ablyInstance: null,  // Ably connection for cleanup
+    pollInterval: null   // Polling interval for cleanup
   };
 
   const L = window.ppv_lang || {};
@@ -595,6 +598,24 @@
 
     init() {
       this.createMiniScanner();
+      // Auto-start if was running before navigation
+      this.checkAutoStart();
+    }
+
+    checkAutoStart() {
+      try {
+        const wasRunning = localStorage.getItem('ppv_scanner_running') === 'true';
+        if (wasRunning) {
+          ppvLog('[Scanner] Auto-starting (was running before navigation)');
+          setTimeout(() => this.startScannerManual(), 500);
+        }
+      } catch (e) {}
+    }
+
+    saveScannerState(running) {
+      try {
+        localStorage.setItem('ppv_scanner_running', running ? 'true' : 'false');
+      } catch (e) {}
     }
 
     createMiniScanner() {
@@ -708,6 +729,9 @@
       this.toggleBtn.style.background = 'linear-gradient(135deg, #00e676, #00c853)';
 
       if (this.countdownInterval) { clearInterval(this.countdownInterval); this.countdownInterval = null; }
+
+      // Save state for persistence across navigation
+      this.saveScannerState(false);
     }
 
     async startScannerManual() {
@@ -716,6 +740,10 @@
       this.toggleBtn.querySelector('.ppv-toggle-icon').textContent = '🛑';
       this.toggleBtn.querySelector('.ppv-toggle-text').textContent = 'Stop';
       this.toggleBtn.style.background = 'linear-gradient(135deg, #ff5252, #f44336)';
+
+      // Save state for persistence across navigation
+      this.saveScannerState(true);
+
       await this.loadLibrary();
     }
 
@@ -998,6 +1026,20 @@
   // CLEANUP
   // ============================================================
   function cleanup() {
+    // Close Ably connection if exists
+    if (STATE.ablyInstance) {
+      ppvLog('[Ably] Closing connection on cleanup');
+      STATE.ablyInstance.close();
+      STATE.ablyInstance = null;
+    }
+
+    // Clear polling interval if exists
+    if (STATE.pollInterval) {
+      ppvLog('[Poll] Clearing interval on cleanup');
+      clearInterval(STATE.pollInterval);
+      STATE.pollInterval = null;
+    }
+
     STATE.cameraScanner?.cleanup();
     STATE.cameraScanner = null;
     STATE.campaignManager = null;
@@ -1080,92 +1122,72 @@
     OfflineSyncManager.sync();
 
     // ============================================================
-    // REAL-TIME UPDATES: Pusher (primary) or Polling (fallback)
+    // REAL-TIME UPDATES: Ably (primary) or Polling (fallback)
     // ============================================================
-    let pollInterval = null;
     const POLL_INTERVAL_MS = 10000; // 10s fallback polling
 
-    // Check if Pusher is configured
-    const pusherConfig = window.PPV_STORE_DATA?.pusher;
+    // Check if Ably is configured
+    const ablyConfig = window.PPV_STORE_DATA?.ably;
     const storeId = window.PPV_STORE_DATA?.store_id;
 
-    if (pusherConfig && typeof Pusher !== 'undefined' && storeId) {
-      // PUSHER MODE: Real-time updates via WebSocket
-      ppvLog('[Pusher] Initializing with key:', pusherConfig.key);
+    // 🔍 DEBUG: Log all conditions
+    console.log('[Ably Debug] PPV_STORE_DATA:', window.PPV_STORE_DATA);
+    console.log('[Ably Debug] ablyConfig:', ablyConfig);
+    console.log('[Ably Debug] storeId:', storeId);
+    console.log('[Ably Debug] typeof Ably:', typeof Ably);
 
-      const pusher = new Pusher(pusherConfig.key, {
-        cluster: pusherConfig.cluster,
-        authorizer: (channel) => ({
-          authorize: (socketId, callback) => {
-            fetch(pusherConfig.auth_endpoint, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'PPV-POS-Token': getStoreKey()
-              },
-              body: new URLSearchParams({
-                socket_id: socketId,
-                channel_name: channel.name
-              })
-            })
-            .then(res => res.json())
-            .then(data => {
-              if (data.auth) {
-                callback(null, data);
-              } else {
-                callback(new Error('Auth failed'), null);
-              }
-            })
-            .catch(err => callback(err, null));
-          }
-        })
+    if (ablyConfig && typeof Ably !== 'undefined' && storeId) {
+      // ABLY MODE: Real-time updates via WebSocket
+      ppvLog('[Ably] Initializing with key:', ablyConfig.key.substring(0, 10) + '...');
+
+      STATE.ablyInstance = new Ably.Realtime({ key: ablyConfig.key });
+
+      // Subscribe to store's channel
+      const channelName = 'store-' + storeId;
+      const channel = STATE.ablyInstance.channels.get(channelName);
+
+      STATE.ablyInstance.connection.on('connected', () => {
+        ppvLog('[Ably] Connected');
+        // Stop polling if it was running
+        if (STATE.pollInterval) {
+          clearInterval(STATE.pollInterval);
+          STATE.pollInterval = null;
+        }
       });
 
-      // Subscribe to store's private channel
-      const channelName = 'private-store-' + storeId;
-      const channel = pusher.subscribe(channelName);
-
-      channel.bind('pusher:subscription_succeeded', () => {
-        ppvLog('[Pusher] Subscribed to', channelName);
+      STATE.ablyInstance.connection.on('disconnected', () => {
+        ppvLog('[Ably] Disconnected, starting fallback polling');
+        startPolling();
       });
 
-      channel.bind('pusher:subscription_error', (err) => {
-        ppvLog('[Pusher] Subscription error:', err);
-        // Fall back to polling on subscription error
+      STATE.ablyInstance.connection.on('failed', (err) => {
+        ppvLog('[Ably] Connection failed:', err);
         startPolling();
       });
 
       // Handle incoming scan events
-      channel.bind('new-scan', (data) => {
-        ppvLog('[Pusher] New scan received:', data);
+      channel.subscribe('new-scan', (message) => {
+        ppvLog('[Ably] New scan received:', message.data);
 
         // Add scan to UI immediately
         if (STATE.scanProcessor?.ui) {
-          STATE.scanProcessor.ui.addScanItem(data);
+          STATE.scanProcessor.ui.addScanItem(message.data);
         }
       });
 
-      // Connection state logging
-      pusher.connection.bind('connected', () => {
-        ppvLog('[Pusher] Connected');
-        // Stop polling if it was running
-        if (pollInterval) {
-          clearInterval(pollInterval);
-          pollInterval = null;
-        }
-      });
-
-      pusher.connection.bind('disconnected', () => {
-        ppvLog('[Pusher] Disconnected, starting fallback polling');
-        startPolling();
+      // Handle reward requests
+      channel.subscribe('reward-request', (message) => {
+        ppvLog('[Ably] Reward request received:', message.data);
+        // Refresh logs to show pending rewards
+        STATE.scanProcessor?.loadLogs();
       });
 
       STATE.initialized = true;
-      ppvLog('[QR] Initialization complete (Pusher mode)');
+      ppvLog('[QR] Initialization complete (Ably mode)');
 
     } else {
-      // POLLING MODE: Fallback when Pusher not available
-      ppvLog('[Poll] Pusher not available, using polling fallback');
+      // POLLING MODE: Fallback when Ably not available
+      ppvLog('[Poll] Ably not available, using polling fallback');
       startPolling();
       STATE.initialized = true;
       ppvLog('[QR] Initialization complete (polling mode)');
@@ -1178,8 +1200,8 @@
       }
 
       // Clear existing interval if any
-      if (pollInterval) {
-        clearInterval(pollInterval);
+      if (STATE.pollInterval) {
+        clearInterval(STATE.pollInterval);
       }
 
       ppvLog('[Poll] Starting polling (every ' + (POLL_INTERVAL_MS / 1000) + 's)');
@@ -1191,7 +1213,7 @@
       };
 
       // Start interval
-      pollInterval = setInterval(poll, POLL_INTERVAL_MS);
+      STATE.pollInterval = setInterval(poll, POLL_INTERVAL_MS);
     }
 
     // Visibility change handler - refresh immediately when page becomes visible

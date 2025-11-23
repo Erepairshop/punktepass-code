@@ -354,12 +354,15 @@ if (window.PPV_REWARDS_LOADED) {
     return `${day}.${month}.${year} ${hours}:${mins}`;
   }
 
-  document.addEventListener("DOMContentLoaded", function () {
-
+  /* ============================================================
+   * 🚀 MAIN INITIALIZATION FUNCTION
+   * Called on both DOMContentLoaded and turbo:load
+   * ============================================================ */
+  function initRewardsPage() {
     /* ============================================================
      * 🔑 BASE + TOKEN + STORE
      * ============================================================ */
-    console.log('📦 [REWARDS] DOMContentLoaded fired');
+    console.log('📦 [REWARDS] initRewardsPage() called');
 
     const base = window.ppv_rewards_rest?.base || "/wp-json/ppv/v1/";
     let storeID = 0;
@@ -393,9 +396,16 @@ if (window.PPV_REWARDS_LOADED) {
     if (window.PPV_STORE_KEY)
       sessionStorage.setItem("ppv_store_key", window.PPV_STORE_KEY);
 
+    // 🔄 FRESH DOM QUERIES - important for Turbo navigation!
     const redeemList = document.getElementById("ppv-redeem-list");
     const logList = document.getElementById("ppv-log-list");
     const monthlyReceiptBtn = document.getElementById("ppv-monthly-receipt-btn");
+
+    // Skip if this page doesn't have the rewards elements
+    if (!redeemList) {
+      console.log('📦 [REWARDS] No ppv-redeem-list found, skipping initialization');
+      return;
+    }
 
     console.log(`📦 [REWARDS] base: ${base}, storeID: ${storeID}`);
 
@@ -969,56 +979,31 @@ showToast("📄 Monatsbeleg wird heruntergeladen!", "success");
       });
     }
 
-    // 📡 PUSHER: Real-time updates for reward requests
+    // 📡 ABLY: Real-time updates for reward requests
     const config = window.ppv_rewards_rest || {};
-    if (config.pusher && config.pusher.key && window.Pusher) {
-      console.log('📡 [REWARDS] Initializing Pusher real-time...');
+    if (config.ably && config.ably.key && window.Ably) {
+      console.log('📡 [REWARDS] Initializing Ably real-time...');
 
-      // Cleanup previous Pusher instance if exists (for Turbo navigation)
-      if (window.PPV_REWARDS_PUSHER) {
-        window.PPV_REWARDS_PUSHER.disconnect();
-        window.PPV_REWARDS_PUSHER = null;
+      // Cleanup previous Ably instance if exists (for Turbo navigation)
+      if (window.PPV_REWARDS_ABLY) {
+        window.PPV_REWARDS_ABLY.close();
+        window.PPV_REWARDS_ABLY = null;
       }
 
-      const pusher = new Pusher(config.pusher.key, {
-        cluster: config.pusher.cluster,
-        authorizer: (channel) => ({
-          authorize: (socketId, callback) => {
-            fetch(config.pusher.auth_endpoint, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'PPV-POS-Token': POS_TOKEN
-              },
-              body: new URLSearchParams({
-                socket_id: socketId,
-                channel_name: channel.name
-              })
-            })
-            .then(res => res.json())
-            .then(data => {
-              if (data.auth) {
-                callback(null, data);
-              } else {
-                callback(new Error('Auth failed'), null);
-              }
-            })
-            .catch(err => callback(err, null));
-          }
-        })
-      });
+      const ably = new Ably.Realtime({ key: config.ably.key });
 
       // Store for cleanup
-      window.PPV_REWARDS_PUSHER = pusher;
+      window.PPV_REWARDS_ABLY = ably;
 
-      const channel = pusher.subscribe(config.pusher.channel);
+      const channel = ably.channels.get(config.ably.channel);
 
-      channel.bind('pusher:subscription_succeeded', () => {
-        console.log('📡 [REWARDS] Subscribed to store channel');
+      ably.connection.on('connected', () => {
+        console.log('📡 [REWARDS] Connected to store channel');
       });
 
       // 🎁 Handle new reward request from user
-      channel.bind('reward-request', (data) => {
+      channel.subscribe('reward-request', (message) => {
+        const data = message.data;
         console.log('📡 [REWARDS] New reward request received:', data);
 
         // Refresh the list
@@ -1035,22 +1020,31 @@ showToast("📄 Monatsbeleg wird heruntergeladen!", "success");
       });
 
       // 🎯 Handle scan events too (for Letzte Scans)
-      channel.bind('new-scan', (data) => {
-        console.log('📡 [REWARDS] New scan received:', data);
+      channel.subscribe('new-scan', (message) => {
+        console.log('📡 [REWARDS] New scan received:', message.data);
         loadRecentLogs();
       });
 
-      console.log('📡 [REWARDS] Pusher initialized - polling disabled');
+      console.log('📡 [REWARDS] Ably initialized - polling disabled');
     } else {
-      // Fallback: Auto-refresh every 30 seconds
-      console.log('🔄 [REWARDS] Using polling fallback (30s)');
-      setInterval(() => {
-        loadRedeemRequests();
-        loadRecentLogs();
-      }, 30000);
+      // Fallback: Auto-refresh every 30 seconds (only set once)
+      if (!window.PPV_REWARDS_POLLING) {
+        console.log('🔄 [REWARDS] Using polling fallback (30s)');
+        window.PPV_REWARDS_POLLING = setInterval(() => {
+          // Use global reload function which gets updated on each init
+          if (typeof window.ppv_rewards_reload === 'function') {
+            const currentRedeemList = document.getElementById("ppv-redeem-list");
+            if (currentRedeemList) {
+              window.ppv_rewards_reload();
+            }
+          }
+        }, 30000);
+      } else {
+        console.log('🔄 [REWARDS] Polling already active, skipping');
+      }
     }
 
-    // Expose reload function for Turbo navigation
+    // Expose reload function for polling (updated each init)
     window.ppv_rewards_reload = function() {
       console.log('📦 [REWARDS] Reloading data...');
       loadRedeemRequests();
@@ -1058,15 +1052,21 @@ showToast("📄 Monatsbeleg wird heruntergeladen!", "success");
     };
 
     console.log("✅ [REWARDS] Initialization complete!");
+  }
+
+  // 🚀 CALL INIT ON DOMContentLoaded
+  document.addEventListener("DOMContentLoaded", function () {
+    console.log('📦 [REWARDS] DOMContentLoaded fired');
+    initRewardsPage();
   });
 
   // 🚀 Re-initialize on Turbo navigation
   document.addEventListener('turbo:load', () => {
-    // Only reload if we're on a page with the redeem list
+    // Only reinitialize if we're on a page with the redeem list
     const redeemList = document.getElementById("ppv-redeem-list");
-    if (redeemList && typeof window.ppv_rewards_reload === 'function') {
-      console.log('📦 [REWARDS] turbo:load detected, reloading data...');
-      window.ppv_rewards_reload();
+    if (redeemList) {
+      console.log('📦 [REWARDS] turbo:load detected, reinitializing...');
+      initRewardsPage();
     }
   });
 }
