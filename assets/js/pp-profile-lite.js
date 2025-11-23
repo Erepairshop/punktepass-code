@@ -268,11 +268,19 @@
                     document.getElementById('ppv-last-updated').textContent =
                         `${this.t('last_updated')}: ${new Date().toLocaleString()}`;
 
-                    // ✅ Frissítjük a form mezőket (no auto-refresh, Turbo cache disabled via meta tag)
+                    // ✅ Frissítjük a form mezőket és reload cache-bust URL-lel
                     console.log('📥 [Profile] Store data:', data.data?.store);
                     if (data.data?.store) {
                         console.log('✅ [Profile] Updating form fields with:', data.data.store);
                         this.updateFormFields(data.data.store);
+
+                        // ✅ FIX: Force reload with cache-bust parameter after 800ms
+                        setTimeout(() => {
+                            const url = new URL(window.location.href);
+                            url.searchParams.set('_t', Date.now());
+                            console.log('🔄 [Profile] Redirecting to:', url.toString());
+                            window.location.replace(url.toString());
+                        }, 800);
                     } else {
                         console.warn('⚠️ [Profile] No store data in response!');
                     }
