@@ -425,6 +425,14 @@
   // Custom SPA event support
   window.addEventListener('ppv:spa-navigate', init);
 
+  // Tab change support - reinitialize when rewards tab becomes visible
+  window.addEventListener('ppv:tab-change', function(e) {
+    if (e.detail?.tab === 'rewards') {
+      console.log('[REWARDS-MGMT] Tab activated, reinitializing...');
+      init();
+    }
+  });
+
   console.log('[REWARDS-MGMT] Script loaded v2.0');
 
 })();

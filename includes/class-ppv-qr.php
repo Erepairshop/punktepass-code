@@ -564,10 +564,14 @@ class PPV_QR {
         <script>
         jQuery(document).ready(function($){
             $(".ppv-tab").on("click", function(){
+                var tabName = $(this).data("tab");
                 $(".ppv-tab").removeClass("active");
                 $(this).addClass("active");
                 $(".ppv-tab-content").removeClass("active");
-                $("#tab-" + $(this).data("tab")).addClass("active");
+                $("#tab-" + tabName).addClass("active");
+
+                // Dispatch custom event for JS modules to reinitialize
+                window.dispatchEvent(new CustomEvent('ppv:tab-change', { detail: { tab: tabName } }));
             });
         });
         </script>

@@ -1047,6 +1047,14 @@
   // Custom SPA event support
   window.addEventListener('ppv:spa-navigate', init);
 
+  // Tab change support - reinitialize when scanner tab becomes visible
+  window.addEventListener('ppv:tab-change', function(e) {
+    if (e.detail?.tab === 'scanner') {
+      console.log('[QR] Scanner tab activated, reinitializing...');
+      init();
+    }
+  });
+
   console.log('[QR] Script loaded v6.0');
 
 })();
