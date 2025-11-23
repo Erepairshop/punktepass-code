@@ -158,32 +158,32 @@ class PPV_Bottom_Nav {
             </nav>
 
             <!-- Support Modal -->
-            <div id="ppv-support-modal">
-                <div class="modal-content">
-                    <h3 class="modal-title">
+            <div id="ppv-support-modal" class="ppv-support-modal">
+                <div class="ppv-support-modal-content">
+                    <h3 class="ppv-support-modal-title">
                         <i class="ri-customer-service-2-line"></i> Support anfragen
                     </h3>
-                    <p class="modal-description">
+                    <p class="ppv-support-modal-description">
                         Beschreiben Sie Ihr Problem. Wir melden uns schnellstmöglich.
                     </p>
 
-                    <input type="email" id="ppv-support-email" placeholder="E-Mail Adresse *" required>
-                    <input type="tel" id="ppv-support-phone" placeholder="Telefonnummer *" required>
-                    <textarea id="ppv-support-desc" placeholder="Problembeschreibung *" rows="4"></textarea>
+                    <input type="email" id="ppv-support-email" class="ppv-support-input" placeholder="E-Mail Adresse *" required>
+                    <input type="tel" id="ppv-support-phone" class="ppv-support-input" placeholder="Telefonnummer *" required>
+                    <textarea id="ppv-support-desc" class="ppv-support-input" placeholder="Problembeschreibung *" rows="4"></textarea>
 
-                    <select id="ppv-support-priority">
+                    <select id="ppv-support-priority" class="ppv-support-input">
                         <option value="normal">Priorität: Normal</option>
                         <option value="urgent">Priorität: Dringend</option>
                         <option value="low">Priorität: Niedrig</option>
                     </select>
 
-                    <div id="ppv-support-msg" class="modal-msg"></div>
+                    <div id="ppv-support-msg" class="ppv-support-message"></div>
 
-                    <div class="modal-actions">
-                        <button id="ppv-support-send" class="btn-send">
+                    <div class="ppv-support-buttons">
+                        <button id="ppv-support-send" class="ppv-support-btn-submit">
                             <i class="ri-send-plane-line"></i> Senden
                         </button>
-                        <button id="ppv-support-close" class="btn-cancel">
+                        <button id="ppv-support-close" class="ppv-support-btn-cancel">
                             Abbrechen
                         </button>
                     </div>
@@ -260,7 +260,7 @@ class PPV_Bottom_Nav {
                     \$('#ppv-support-phone').val('');
                     \$('#ppv-support-desc').val('');
                     setTimeout(function() { \$('#ppv-support-email').focus(); }, 100);
-                    \$msg.hide().removeClass('error success');
+                    \$msg.removeClass('show ppv-support-error ppv-support-success');
                 });
 
                 // Close modal
@@ -286,32 +286,32 @@ class PPV_Bottom_Nav {
                     const \$btn = \$(this);
 
                     if (!email) {
-                        \$msg.removeClass('success').addClass('error').text('Bitte geben Sie Ihre E-Mail Adresse ein.').show();
+                        \$msg.removeClass('ppv-support-success').addClass('ppv-support-error show').text('Bitte geben Sie Ihre E-Mail Adresse ein.');
                         \$('#ppv-support-email').focus();
                         return;
                     }
 
                     const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+\$/;
                     if (!emailRegex.test(email)) {
-                        \$msg.removeClass('success').addClass('error').text('Bitte geben Sie eine gültige E-Mail Adresse ein.').show();
+                        \$msg.removeClass('ppv-support-success').addClass('ppv-support-error show').text('Bitte geben Sie eine gültige E-Mail Adresse ein.');
                         \$('#ppv-support-email').focus();
                         return;
                     }
 
                     if (!phone) {
-                        \$msg.removeClass('success').addClass('error').text('Bitte geben Sie Ihre Telefonnummer ein.').show();
+                        \$msg.removeClass('ppv-support-success').addClass('ppv-support-error show').text('Bitte geben Sie Ihre Telefonnummer ein.');
                         \$('#ppv-support-phone').focus();
                         return;
                     }
 
                     if (!desc) {
-                        \$msg.removeClass('success').addClass('error').text('Bitte beschreiben Sie Ihr Problem.').show();
+                        \$msg.removeClass('ppv-support-success').addClass('ppv-support-error show').text('Bitte beschreiben Sie Ihr Problem.');
                         \$('#ppv-support-desc').focus();
                         return;
                     }
 
                     \$btn.prop('disabled', true).html('<i class=\"ri-loader-4-line\"></i> Senden...');
-                    \$msg.hide();
+                    \$msg.removeClass('show ppv-support-error ppv-support-success');
 
                     \$.ajax({
                         url: '{$ajax_url}',
@@ -327,17 +327,17 @@ class PPV_Bottom_Nav {
                         },
                         success: function(res) {
                             if (res.success) {
-                                \$msg.removeClass('error').addClass('success').html('<i class=\"ri-checkbox-circle-line\"></i> Ticket gesendet!').show();
+                                \$msg.removeClass('ppv-support-error').addClass('ppv-support-success show').html('<i class=\"ri-checkbox-circle-line\"></i> Ticket gesendet!');
                                 \$('#ppv-support-email').val('');
                                 \$('#ppv-support-phone').val('');
                                 \$('#ppv-support-desc').val('');
                                 setTimeout(function() { \$modal.removeClass('show'); }, 1500);
                             } else {
-                                \$msg.removeClass('success').addClass('error').text(res.data?.message || 'Fehler').show();
+                                \$msg.removeClass('ppv-support-success').addClass('ppv-support-error show').text(res.data?.message || 'Fehler');
                             }
                         },
                         error: function() {
-                            \$msg.removeClass('success').addClass('error').text('Netzwerkfehler').show();
+                            \$msg.removeClass('ppv-support-success').addClass('ppv-support-error show').text('Netzwerkfehler');
                         },
                         complete: function() {
                             \$btn.prop('disabled', false).html('<i class=\"ri-send-plane-line\"></i> Senden');
