@@ -802,87 +802,77 @@ async function initUserDashboard() {
     ` : '';
 
     // ============================================================
-    // 👑 VIP BONUS SECTION - Show if store has VIP enabled
+    // 👑 VIP BONUS SECTION - COMPACT GRID VERSION
     // ============================================================
     const vipHTML = store.vip ? (() => {
       const vip = store.vip;
-      let vipContent = '';
+      const rows = [];
 
-      // 1️⃣ FIX PONT BÓNUSZ
+      // 1️⃣ FIX PONT BÓNUSZ - compact row
       if (vip.fix && vip.fix.enabled) {
-        vipContent += `
-          <div class="ppv-vip-bonus-item">
-            <div class="ppv-vip-bonus-header">
-              <i class="ri-add-circle-line"></i>
-              <strong>${T.vip_fix_title}</strong>
-            </div>
-            <div class="ppv-vip-levels">
-              <span class="ppv-vip-level bronze"><i class="ri-medal-line"></i> ${T.vip_bronze}: +${vip.fix.bronze}</span>
-              <span class="ppv-vip-level silver"><i class="ri-medal-line"></i> ${T.vip_silver}: +${vip.fix.silver}</span>
-              <span class="ppv-vip-level gold"><i class="ri-medal-fill"></i> ${T.vip_gold}: +${vip.fix.gold}</span>
-              <span class="ppv-vip-level platinum"><i class="ri-vip-crown-fill"></i> ${T.vip_platinum}: +${vip.fix.platinum}</span>
-            </div>
+        rows.push(`
+          <div class="ppv-vip-row">
+            <span class="ppv-vip-label"><i class="ri-add-circle-line"></i> ${T.vip_fix_title}</span>
+            <span class="ppv-vip-grid">
+              <span class="bronze" title="${T.vip_bronze}">+${vip.fix.bronze}</span>
+              <span class="silver" title="${T.vip_silver}">+${vip.fix.silver}</span>
+              <span class="gold" title="${T.vip_gold}">+${vip.fix.gold}</span>
+              <span class="platinum" title="${T.vip_platinum}">+${vip.fix.platinum}</span>
+            </span>
           </div>
-        `;
+        `);
       }
 
-      // 2️⃣ STREAK BÓNUSZ (minden X. scan)
+      // 2️⃣ STREAK BÓNUSZ - compact row
       if (vip.streak && vip.streak.enabled) {
-        let streakReward = '';
+        let streakValues = '';
         if (vip.streak.type === 'double') {
-          streakReward = T.vip_double;
+          streakValues = `<span class="ppv-vip-special">${T.vip_double}</span>`;
         } else if (vip.streak.type === 'triple') {
-          streakReward = T.vip_triple;
+          streakValues = `<span class="ppv-vip-special">${T.vip_triple}</span>`;
         } else {
-          // Fixed points by level
-          streakReward = `
-            <span class="ppv-vip-level bronze"><i class="ri-medal-line"></i> +${vip.streak.bronze}</span>
-            <span class="ppv-vip-level silver"><i class="ri-medal-line"></i> +${vip.streak.silver}</span>
-            <span class="ppv-vip-level gold"><i class="ri-medal-fill"></i> +${vip.streak.gold}</span>
-            <span class="ppv-vip-level platinum"><i class="ri-vip-crown-fill"></i> +${vip.streak.platinum}</span>
+          streakValues = `
+            <span class="bronze" title="${T.vip_bronze}">+${vip.streak.bronze}</span>
+            <span class="silver" title="${T.vip_silver}">+${vip.streak.silver}</span>
+            <span class="gold" title="${T.vip_gold}">+${vip.streak.gold}</span>
+            <span class="platinum" title="${T.vip_platinum}">+${vip.streak.platinum}</span>
           `;
         }
-
-        vipContent += `
-          <div class="ppv-vip-bonus-item">
-            <div class="ppv-vip-bonus-header">
-              <i class="ri-fire-line"></i>
-              <strong>${T.vip_streak_title}</strong>
-              <span class="ppv-vip-streak-count">${T.vip_every} ${vip.streak.count}. ${T.vip_scan}</span>
-            </div>
-            <div class="ppv-vip-levels">
-              ${vip.streak.type !== 'fixed' ? `<span class="ppv-vip-streak-reward">${streakReward}</span>` : streakReward}
-            </div>
+        rows.push(`
+          <div class="ppv-vip-row">
+            <span class="ppv-vip-label"><i class="ri-fire-line"></i> ${vip.streak.count}. scan</span>
+            <span class="ppv-vip-grid">${streakValues}</span>
           </div>
-        `;
+        `);
       }
 
-      // 3️⃣ DAILY BÓNUSZ (első scan/nap)
+      // 3️⃣ DAILY BÓNUSZ - compact row
       if (vip.daily && vip.daily.enabled) {
-        vipContent += `
-          <div class="ppv-vip-bonus-item">
-            <div class="ppv-vip-bonus-header">
-              <i class="ri-sun-line"></i>
-              <strong>${T.vip_daily_title}</strong>
-            </div>
-            <div class="ppv-vip-levels">
-              <span class="ppv-vip-level bronze"><i class="ri-medal-line"></i> ${T.vip_bronze}: +${vip.daily.bronze}</span>
-              <span class="ppv-vip-level silver"><i class="ri-medal-line"></i> ${T.vip_silver}: +${vip.daily.silver}</span>
-              <span class="ppv-vip-level gold"><i class="ri-medal-fill"></i> ${T.vip_gold}: +${vip.daily.gold}</span>
-              <span class="ppv-vip-level platinum"><i class="ri-vip-crown-fill"></i> ${T.vip_platinum}: +${vip.daily.platinum}</span>
-            </div>
+        rows.push(`
+          <div class="ppv-vip-row">
+            <span class="ppv-vip-label"><i class="ri-sun-line"></i> ${T.vip_daily_title}</span>
+            <span class="ppv-vip-grid">
+              <span class="bronze" title="${T.vip_bronze}">+${vip.daily.bronze}</span>
+              <span class="silver" title="${T.vip_silver}">+${vip.daily.silver}</span>
+              <span class="gold" title="${T.vip_gold}">+${vip.daily.gold}</span>
+              <span class="platinum" title="${T.vip_platinum}">+${vip.daily.platinum}</span>
+            </span>
           </div>
-        `;
+        `);
       }
 
-      return vipContent ? `
-        <div class="ppv-store-vip">
-          <h5 style="margin: 12px 0 8px 0; font-weight: 600; color: #fbbf24;">
-            <i class="ri-vip-crown-fill"></i> ${T.vip_title}
-          </h5>
-          <div class="ppv-vip-bonuses">
-            ${vipContent}
+      return rows.length ? `
+        <div class="ppv-store-vip-compact">
+          <div class="ppv-vip-header-row">
+            <span class="ppv-vip-title"><i class="ri-vip-crown-fill"></i> ${T.vip_title}</span>
+            <span class="ppv-vip-levels-header">
+              <span class="bronze" title="${T.vip_bronze}"><i class="ri-medal-line"></i></span>
+              <span class="silver" title="${T.vip_silver}"><i class="ri-medal-line"></i></span>
+              <span class="gold" title="${T.vip_gold}"><i class="ri-medal-fill"></i></span>
+              <span class="platinum" title="${T.vip_platinum}"><i class="ri-vip-crown-fill"></i></span>
+            </span>
           </div>
+          ${rows.join('')}
         </div>
       ` : '';
     })() : '';

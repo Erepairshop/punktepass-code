@@ -4649,6 +4649,113 @@ body.ppv-light .ppv-camp-actions span:hover {
     border-radius: 6px;
 }
 
+/* ==========================================================================
+   👑 VIP BONUS SECTION - COMPACT GRID VERSION
+   ========================================================================== */
+.ppv-store-vip-compact {
+    margin-top: 12px;
+    padding: 10px;
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.08) 0%, rgba(251, 191, 36, 0.03) 100%);
+    border: 1px solid rgba(251, 191, 36, 0.2);
+    border-radius: var(--pp-r-sm);
+}
+
+.ppv-vip-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(251, 191, 36, 0.15);
+}
+
+.ppv-vip-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #fbbf24;
+}
+
+.ppv-vip-title i {
+    font-size: 14px;
+}
+
+.ppv-vip-levels-header {
+    display: flex;
+    gap: 4px;
+}
+
+.ppv-vip-levels-header span {
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    font-size: 11px;
+}
+
+.ppv-vip-levels-header span.bronze { background: var(--pp-vip-bronze-bg); color: var(--pp-vip-bronze); }
+.ppv-vip-levels-header span.silver { background: var(--pp-vip-silver-bg); color: var(--pp-vip-silver); }
+.ppv-vip-levels-header span.gold { background: var(--pp-vip-gold-bg); color: var(--pp-vip-gold); }
+.ppv-vip-levels-header span.platinum { background: var(--pp-vip-platinum-bg); color: var(--pp-vip-platinum); }
+
+.ppv-vip-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 0;
+}
+
+.ppv-vip-row:not(:last-child) {
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.ppv-vip-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--pp-text-2);
+}
+
+.ppv-vip-label i {
+    font-size: 12px;
+    color: #fbbf24;
+}
+
+.ppv-vip-grid {
+    display: flex;
+    gap: 4px;
+}
+
+.ppv-vip-grid span {
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.ppv-vip-grid span.bronze { background: var(--pp-vip-bronze-bg); color: var(--pp-vip-bronze); border: 1px solid var(--pp-vip-bronze-border); }
+.ppv-vip-grid span.silver { background: var(--pp-vip-silver-bg); color: var(--pp-vip-silver); border: 1px solid var(--pp-vip-silver-border); }
+.ppv-vip-grid span.gold { background: var(--pp-vip-gold-bg); color: var(--pp-vip-gold); border: 1px solid var(--pp-vip-gold-border); }
+.ppv-vip-grid span.platinum { background: var(--pp-vip-platinum-bg); color: var(--pp-vip-platinum); border: 1px solid var(--pp-vip-platinum-border); }
+
+.ppv-vip-special {
+    font-size: 11px;
+    font-weight: 600;
+    color: #fbbf24;
+    padding: 2px 8px;
+    background: rgba(251, 191, 36, 0.15);
+    border-radius: 4px;
+}
+
 /* VIP Tag in preview */
 .ppv-preview-tag.ppv-vip-tag {
     background: linear-gradient(135deg, rgba(251, 191, 36, 0.25) 0%, rgba(251, 191, 36, 0.15) 100%);
