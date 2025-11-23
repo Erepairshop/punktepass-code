@@ -6007,54 +6007,58 @@ ppv-app-root {
    ────────────────────────────────────────────────────────────────────── */
 
 /* ══════════════════════════════════════════════════════════════════════
-   🎁 REWARDS MANAGEMENT SECTION
+   🎁 REWARDS MANAGEMENT SECTION - MODERN APP DESIGN v2.0
    ══════════════════════════════════════════════════════════════════════ */
 
 /* ──────────────────────────────────────────────────────────────────────
-   🎨 MAIN WRAPPER
+   🎨 MAIN WRAPPER - Compact App Style
    ────────────────────────────────────────────────────────────────────── */
 .ppv-rewards-management-wrapper {
     background: var(--pp-surface);
-    border-radius: var(--pp-r-lg);
-    padding: 2rem;
-    box-shadow: var(--pp-shadow);
-    margin: 1.5rem 0;
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    margin: 0.75rem 0;
 }
 
 .ppv-rewards-management-wrapper.glass-section {
     background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: var(--pp-glass);
+    backdrop-filter: blur(12px);
 }
 
 .ppv-rewards-management-wrapper h2 {
-    margin: 0 0 1.5rem 0;
-    font-size: 1.75rem;
+    margin: 0 0 0.875rem 0;
+    font-size: 1.1rem;
     font-weight: 700;
     color: var(--pp-text);
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.4rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--pp-border);
 }
 
 /* ──────────────────────────────────────────────────────────────────────
-   📝 FORM STYLING
+   📝 FORM STYLING - Compact Modern
    ────────────────────────────────────────────────────────────────────── */
 .ppv-reward-form {
-    background: var(--pp-bg-2);
-    border: 1px solid var(--pp-border);
-    border-radius: var(--pp-r-md);
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    background: linear-gradient(145deg, #f8fafc 0%, #f1f5f9 100%);
+    border: 1px solid rgba(0, 168, 204, 0.15);
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1.25rem;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
 .ppv-reward-form label {
     display: block;
-    margin-bottom: 0.5rem;
-    margin-top: 1rem;
+    margin-bottom: 0.3rem;
+    margin-top: 0.75rem;
     color: var(--pp-text);
     font-weight: 600;
-    font-size: 0.9rem;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
 }
 
 .ppv-reward-form label:first-of-type {
@@ -6066,14 +6070,14 @@ ppv-app-root {
 .ppv-reward-form textarea,
 .ppv-reward-form select {
     width: 100%;
-    padding: 0.75rem 1rem;
+    padding: 0.55rem 0.75rem;
     border: 1px solid var(--pp-border);
-    border-radius: var(--pp-r-sm);
+    border-radius: 8px;
     background: var(--pp-surface);
     color: var(--pp-text);
-    font-size: 0.95rem;
+    font-size: 0.85rem;
     font-family: inherit;
-    transition: var(--pp-trans-fast);
+    transition: all 0.2s ease;
 }
 
 .ppv-reward-form input[type="text"]:focus,
@@ -6086,36 +6090,70 @@ ppv-app-root {
 }
 
 .ppv-reward-form textarea {
-    min-height: 100px;
+    min-height: 60px;
     resize: vertical;
 }
 
 .ppv-reward-form small {
     display: block;
-    margin-top: 0.5rem;
-    font-size: 0.85rem;
+    margin-top: 0.25rem;
+    font-size: 0.7rem;
     color: var(--pp-text-2);
+    opacity: 0.8;
 }
 
 /* ──────────────────────────────────────────────────────────────────────
-   🔘 FORM BUTTONS
+   🏢 FILIALE SELECTOR - Modern Card Style
+   ────────────────────────────────────────────────────────────────────── */
+.ppv-filiale-selector {
+    margin-top: 0.875rem !important;
+    padding: 0.875rem !important;
+    background: linear-gradient(145deg, rgba(0, 230, 255, 0.08) 0%, rgba(0, 168, 204, 0.05) 100%) !important;
+    border: 1px solid rgba(0, 230, 255, 0.2) !important;
+    border-radius: 10px !important;
+}
+
+.ppv-filiale-selector label {
+    font-size: 0.75rem !important;
+    font-weight: 700 !important;
+    color: #00b8d4 !important;
+    margin-bottom: 0.5rem !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.35rem !important;
+}
+
+.ppv-filiale-selector select {
+    font-size: 0.8rem !important;
+    padding: 0.5rem 0.75rem !important;
+}
+
+.ppv-filiale-selector .ri-checkbox-multiple-line {
+    color: #34d399;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   🔘 FORM BUTTONS - Compact Modern
    ────────────────────────────────────────────────────────────────────── */
 .ppv-btn-blue {
     background: linear-gradient(135deg, var(--pp-primary) 0%, var(--pp-primary-dark) 100%);
     color: white;
     border: none;
-    padding: 0.875rem 1.5rem;
-    border-radius: var(--pp-r-sm);
+    padding: 0.6rem 1.1rem;
+    border-radius: 8px;
     font-weight: 600;
     cursor: pointer;
-    transition: var(--pp-trans-fast);
-    font-size: 0.95rem;
-    box-shadow: 0 4px 12px rgba(0, 168, 204, 0.3);
+    transition: all 0.2s ease;
+    font-size: 0.8rem;
+    box-shadow: 0 3px 10px rgba(0, 168, 204, 0.25);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
 }
 
 .ppv-btn-blue:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0, 168, 204, 0.4);
+    transform: translateY(-1px);
+    box-shadow: 0 5px 14px rgba(0, 168, 204, 0.35);
 }
 
 .ppv-btn-blue:active {
@@ -6126,12 +6164,15 @@ ppv-app-root {
     background: transparent;
     color: var(--pp-primary);
     border: 1px solid var(--pp-primary);
-    padding: 0.75rem 1.25rem;
-    border-radius: var(--pp-r-sm);
+    padding: 0.5rem 0.9rem;
+    border-radius: 8px;
     font-weight: 600;
     cursor: pointer;
-    transition: var(--pp-trans-fast);
-    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    font-size: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
 }
 
 .ppv-btn-outline:hover {
@@ -6150,22 +6191,25 @@ ppv-app-root {
 }
 
 /* ──────────────────────────────────────────────────────────────────────
-   🎁 REWARDS GRID
+   🎁 REWARDS GRID - Modern Card Layout
    ────────────────────────────────────────────────────────────────────── */
-.ppv-reward-grid {
+.ppv-rewards-management-wrapper .ppv-reward-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1.25rem;
-    margin-top: 1.5rem;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+    margin-top: 1rem;
 }
 
 .ppv-reward-item {
     background: var(--pp-surface);
     border: 1px solid var(--pp-border);
-    border-radius: var(--pp-r-md);
-    padding: 1.5rem;
-    transition: var(--pp-trans);
+    border-radius: 10px;
+    padding: 0.875rem 1rem;
+    transition: all 0.2s ease;
     position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
 }
 
 .ppv-reward-item.glass-card {
@@ -6174,31 +6218,142 @@ ppv-app-root {
 }
 
 .ppv-reward-item:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
     border-color: var(--pp-primary);
 }
 
+/* Reward Type Badge - Left Side */
+.ppv-reward-item .reward-type-badge {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+    color: #0284c7;
+    border: 1px solid rgba(2, 132, 199, 0.2);
+}
+
+.ppv-reward-item .reward-type-badge.discount {
+    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+    color: #16a34a;
+    border-color: rgba(22, 163, 74, 0.2);
+}
+
+.ppv-reward-item .reward-type-badge.free {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    color: #d97706;
+    border-color: rgba(217, 119, 6, 0.2);
+}
+
+/* Reward Content - Middle */
+.ppv-reward-item .reward-content {
+    flex: 1;
+    min-width: 0;
+}
+
 .ppv-reward-item h4 {
-    margin: 0 0 0.75rem 0;
-    font-size: 1.15rem;
+    margin: 0 0 0.25rem 0;
+    font-size: 0.9rem;
     font-weight: 700;
     color: var(--pp-text);
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.4rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .ppv-reward-item p {
-    margin: 0 0 1rem 0;
+    margin: 0;
     color: var(--pp-text-2);
-    font-size: 0.9rem;
-    line-height: 1.5;
-    min-height: 40px;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
-.ppv-reward-item small {
-    font-size: 0.85rem;
+/* Reward Stats Badges */
+.ppv-reward-item .reward-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.35rem;
+}
+
+.ppv-reward-item .stat-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.65rem;
+    font-weight: 600;
+}
+
+.ppv-reward-item .stat-badge.points {
+    background: rgba(0, 168, 204, 0.1);
+    color: #0891b2;
+}
+
+.ppv-reward-item .stat-badge.points-given {
+    background: rgba(16, 185, 129, 0.1);
+    color: #059669;
+}
+
+.ppv-reward-item .stat-badge.value {
+    background: rgba(139, 92, 246, 0.1);
+    color: #7c3aed;
+}
+
+/* Reward Actions - Right Side */
+.ppv-reward-item .reward-actions {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.ppv-reward-item .reward-actions button {
+    padding: 0.4rem 0.65rem;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.ppv-reward-item .reward-actions .btn-edit {
+    background: rgba(0, 168, 204, 0.1);
+    color: var(--pp-primary);
+}
+
+.ppv-reward-item .reward-actions .btn-edit:hover {
+    background: var(--pp-primary);
+    color: white;
+}
+
+.ppv-reward-item .reward-actions .btn-delete {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+.ppv-reward-item .reward-actions .btn-delete:hover {
+    background: #ef4444;
+    color: white;
 }
 
 /* ──────────────────────────────────────────────────────────────────────
@@ -6306,49 +6461,75 @@ ppv-app-root {
 }
 
 /* ──────────────────────────────────────────────────────────────────────
-   📱 RESPONSIVE - MOBILE OPTIMIZATION
+   📱 RESPONSIVE - MOBILE OPTIMIZATION (App-Style Compact)
    ────────────────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
     .ppv-rewards-management-wrapper {
-        padding: 1.25rem;
+        padding: 0.875rem 1rem;
+        margin: 0.5rem 0;
     }
 
     .ppv-rewards-management-wrapper h2 {
-        font-size: 1.4rem;
+        font-size: 1rem;
     }
 
     .ppv-reward-form {
-        padding: 1.25rem;
+        padding: 0.875rem;
     }
 
-    .ppv-reward-grid {
-        grid-template-columns: 1fr;
-        gap: 1rem;
+    .ppv-rewards-management-wrapper .ppv-reward-grid {
+        gap: 0.6rem;
     }
 
     .ppv-reward-item {
-        padding: 1.25rem;
+        padding: 0.75rem;
+        gap: 0.6rem;
     }
 
-    .ppv-btn-blue,
-    .ppv-btn-outline {
-        padding: 0.75rem 1rem;
-        font-size: 0.875rem;
+    .ppv-reward-item .reward-type-badge {
+        width: 42px;
+        height: 42px;
+        font-size: 1rem;
+    }
+
+    .ppv-reward-item h4 {
+        font-size: 0.85rem;
+    }
+
+    .ppv-reward-item .reward-actions {
+        flex-direction: row;
     }
 }
 
 @media (max-width: 480px) {
     .ppv-rewards-management-wrapper {
-        padding: 1rem;
-        border-radius: var(--pp-r-sm);
+        padding: 0.75rem;
+        border-radius: 10px;
     }
 
     .ppv-reward-form {
-        padding: 1rem;
+        padding: 0.75rem;
+    }
+
+    .ppv-reward-item .reward-type-badge {
+        width: 38px;
+        height: 38px;
+        font-size: 0.9rem;
+        border-radius: 8px;
     }
 
     .ppv-reward-item h4 {
-        font-size: 1rem;
+        font-size: 0.8rem;
+    }
+
+    .ppv-reward-item .stat-badge {
+        font-size: 0.6rem;
+        padding: 0.15rem 0.4rem;
+    }
+
+    .ppv-reward-item .reward-actions button {
+        padding: 0.35rem 0.5rem;
+        font-size: 0.65rem;
     }
 
     .ppv-toast {

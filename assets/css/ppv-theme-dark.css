@@ -4106,3 +4106,125 @@ body.ppv-light .ppv-theme-btn-mini {
 .ppv-stats-wrapper hr {
     border-color: rgba(0, 212, 255, 0.15) !important;
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   🎁 REWARDS MANAGEMENT - DARK THEME v2.0
+   ══════════════════════════════════════════════════════════════════════ */
+
+.ppv-rewards-management-wrapper {
+    background: var(--pp-surface);
+    border: 1px solid var(--pp-border);
+}
+
+.ppv-rewards-management-wrapper h2 {
+    color: var(--pp-text);
+    border-bottom-color: var(--pp-border);
+}
+
+.ppv-reward-form {
+    background: linear-gradient(145deg, rgba(22, 34, 51, 0.95) 0%, rgba(27, 40, 61, 0.9) 100%);
+    border: 1px solid var(--pp-border);
+}
+
+.ppv-reward-form label {
+    color: var(--pp-text-2);
+}
+
+.ppv-reward-form input[type="text"],
+.ppv-reward-form input[type="number"],
+.ppv-reward-form textarea,
+.ppv-reward-form select {
+    background: var(--pp-bg-2);
+    border-color: var(--pp-border);
+    color: var(--pp-text);
+}
+
+.ppv-reward-form input[type="text"]:focus,
+.ppv-reward-form input[type="number"]:focus,
+.ppv-reward-form textarea:focus,
+.ppv-reward-form select:focus {
+    border-color: var(--pp-primary);
+    box-shadow: 0 0 0 3px rgba(0, 168, 204, 0.2);
+}
+
+.ppv-reward-form small {
+    color: var(--pp-text-3);
+}
+
+/* Filiale Selector Dark */
+.ppv-filiale-selector {
+    background: linear-gradient(145deg, rgba(0, 168, 204, 0.1) 0%, rgba(0, 168, 204, 0.05) 100%) !important;
+    border-color: rgba(0, 230, 255, 0.25) !important;
+}
+
+/* Reward Items Dark */
+.ppv-reward-item {
+    background: var(--pp-surface);
+    border-color: var(--pp-border);
+}
+
+.ppv-reward-item:hover {
+    border-color: var(--pp-primary);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.ppv-reward-item .reward-type-badge {
+    background: linear-gradient(135deg, rgba(0, 168, 204, 0.2) 0%, rgba(0, 168, 204, 0.1) 100%);
+    color: var(--pp-primary-light);
+    border-color: rgba(0, 168, 204, 0.3);
+}
+
+.ppv-reward-item .reward-type-badge.discount {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(16, 185, 129, 0.1) 100%);
+    color: #34d399;
+    border-color: rgba(16, 185, 129, 0.3);
+}
+
+.ppv-reward-item .reward-type-badge.free {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(245, 158, 11, 0.1) 100%);
+    color: #fbbf24;
+    border-color: rgba(245, 158, 11, 0.3);
+}
+
+.ppv-reward-item h4 {
+    color: var(--pp-text);
+}
+
+.ppv-reward-item p {
+    color: var(--pp-text-3);
+}
+
+.ppv-reward-item .stat-badge.points {
+    background: rgba(0, 168, 204, 0.15);
+    color: var(--pp-primary-light);
+}
+
+.ppv-reward-item .stat-badge.points-given {
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+}
+
+.ppv-reward-item .stat-badge.value {
+    background: rgba(139, 92, 246, 0.15);
+    color: #a78bfa;
+}
+
+.ppv-reward-item .reward-actions .btn-edit {
+    background: rgba(0, 168, 204, 0.15);
+    color: var(--pp-primary-light);
+}
+
+.ppv-reward-item .reward-actions .btn-edit:hover {
+    background: var(--pp-primary);
+    color: white;
+}
+
+.ppv-reward-item .reward-actions .btn-delete {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+}
+
+.ppv-reward-item .reward-actions .btn-delete:hover {
+    background: #ef4444;
+    color: white;
+}

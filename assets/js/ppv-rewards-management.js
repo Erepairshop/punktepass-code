@@ -90,28 +90,62 @@ document.addEventListener("DOMContentLoaded", function () {
       }
 
       console.log("✅ Prémiumok betöltve:", json.rewards.length);
-      
+
       listContainer.innerHTML = "";
       json.rewards.forEach((r) => {
         console.log("  🎁 Prémium:", r.title, "Pontok:", r.required_points);
-        
+
+        // Determine type badge
+        const typeInfo = getTypeInfo(r.action_type);
+
         const card = document.createElement("div");
         card.className = "ppv-reward-item glass-card";
         card.innerHTML = `
-          <h4>${escapeHtml(r.title)}</h4>
-          <p>${escapeHtml(r.description || "")}</p>
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; flex-wrap: wrap; gap: 8px;">
-            <small style="color:#00e6ff;"><strong>⭐ ${r.required_points} ${L.rewards_points_label || 'Pontok'}</strong></small>
-            <small style="color:#999;">➕ ${r.points_given || 0} ${L.rewards_points_given_label || 'Pontok adott'}</small>
-            <small style="color:#999;">${r.action_type || ""}: ${r.action_value || ""} ${r.currency || ''}</small>
+          <div class="reward-type-badge ${typeInfo.class}">
+            <i class="${typeInfo.icon}"></i>
           </div>
-          <div style="display:flex; gap:8px; margin-top:12px;">
-            <button class="ppv-btn-outline ppv-edit" data-id="${r.id}" style="flex:1;">✏️ ${L.rewards_btn_edit || 'Szerkesztés'}</button>
-            <button class="ppv-btn-outline ppv-delete" data-id="${r.id}" style="flex:1; color:#ef4444; border-color:#ef4444;">🗑️ ${L.rewards_btn_delete || 'Törlés'}</button>
+          <div class="reward-content">
+            <h4>${escapeHtml(r.title)}</h4>
+            ${r.description ? `<p>${escapeHtml(r.description)}</p>` : ''}
+            <div class="reward-stats">
+              <span class="stat-badge points"><i class="ri-star-fill"></i> ${r.required_points} ${L.rewards_points_label || 'Punkte'}</span>
+              <span class="stat-badge points-given"><i class="ri-add-circle-fill"></i> +${r.points_given || 0} ${L.rewards_points_given_label || 'vergeben'}</span>
+              <span class="stat-badge value"><i class="${typeInfo.valueIcon}"></i> ${formatValue(r)}</span>
+            </div>
+          </div>
+          <div class="reward-actions">
+            <button class="btn-edit ppv-edit" data-id="${r.id}"><i class="ri-pencil-line"></i> ${L.rewards_btn_edit || 'Bearbeiten'}</button>
+            <button class="btn-delete ppv-delete" data-id="${r.id}"><i class="ri-delete-bin-line"></i> ${L.rewards_btn_delete || 'Löschen'}</button>
           </div>
         `;
         listContainer.appendChild(card);
       });
+
+      // Helper function to get type info
+      function getTypeInfo(actionType) {
+        switch(actionType) {
+          case 'discount_percent':
+            return { class: 'discount', icon: 'ri-percent-line', valueIcon: 'ri-percent-fill' };
+          case 'discount_fixed':
+            return { class: 'discount', icon: 'ri-money-euro-circle-line', valueIcon: 'ri-money-euro-circle-fill' };
+          case 'free_product':
+            return { class: 'free', icon: 'ri-gift-line', valueIcon: 'ri-gift-fill' };
+          default:
+            return { class: '', icon: 'ri-coupon-line', valueIcon: 'ri-coupon-fill' };
+        }
+      }
+
+      // Helper function to format value display
+      function formatValue(r) {
+        if (r.action_type === 'discount_percent') {
+          return `${r.action_value || 0}%`;
+        } else if (r.action_type === 'discount_fixed') {
+          return `${r.action_value || 0} ${r.currency || 'EUR'}`;
+        } else if (r.action_type === 'free_product') {
+          return r.free_product || r.action_value || '🎁';
+        }
+        return r.action_value || '-';
+      }
 
     } catch (err) {
       console.error("❌ loadRewards hiba:", err);
