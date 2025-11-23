@@ -1,8 +1,9 @@
 /**
  * PunktePass – Bizonylatok Verwaltung (Receipts Management)
- * Version: 2.1 - IIFE wrapper
+ * Version: 2.2 - Auto-load fix
  * ✅ Működő download funkcionalitás
  * ✅ Helyes JSON kezelés
+ * ✅ Auto-load on DOMContentLoaded + Turbo.js + Tab change
  */
 
 (function() {
@@ -301,37 +302,68 @@
   };
 
   /* ============================================================
-   * ⚡ EVENT LISTENERS SETUP
+   * ⚡ INIT FUNCTION
    * ============================================================ */
-  document.addEventListener('DOMContentLoaded', function() {
-    ppvLog('📦 [RECEIPTS v2.0] DOMContentLoaded - setting up event listeners');
+  function initReceipts() {
+    const receiptsList = document.getElementById("ppv-receipts-list");
 
-    setTimeout(() => {
-      const filterBtn = document.getElementById('ppv-receipt-filter-btn');
-      const searchInput = document.getElementById('ppv-receipt-search');
+    if (!receiptsList) {
+      ppvLog('📦 [RECEIPTS v2.2] No receipts list element on this page');
+      return;
+    }
 
-      if (filterBtn) {
-        filterBtn.addEventListener('click', (e) => {
+    ppvLog('📦 [RECEIPTS v2.2] Initializing...');
+
+    // Setup filter button
+    const filterBtn = document.getElementById('ppv-receipt-filter-btn');
+    const searchInput = document.getElementById('ppv-receipt-search');
+
+    if (filterBtn && !filterBtn.hasAttribute('data-ppv-bound')) {
+      filterBtn.setAttribute('data-ppv-bound', 'true');
+      filterBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.ppv_receipts_filter();
+      });
+      ppvLog('✅ [RECEIPTS v2.2] Filter button listener attached');
+    }
+
+    if (searchInput && !searchInput.hasAttribute('data-ppv-bound')) {
+      searchInput.setAttribute('data-ppv-bound', 'true');
+      searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
           e.preventDefault();
           window.ppv_receipts_filter();
-        });
-        ppvLog('✅ [RECEIPTS v2.0] Filter button listener attached');
-      }
+        }
+      });
+      ppvLog('✅ [RECEIPTS v2.2] Search input listener attached');
+    }
 
-      if (searchInput) {
-        searchInput.addEventListener('keypress', (e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            window.ppv_receipts_filter();
-          }
-        });
-        ppvLog('✅ [RECEIPTS v2.0] Search input listener attached');
-      }
+    // ✅ AUTO-LOAD RECEIPTS!
+    window.ppv_receipts_load();
+  }
 
-      ppvLog('✅ [RECEIPTS v2.1] Event listeners attached');
-    }, 100);
+  /* ============================================================
+   * ⚡ EVENT LISTENERS
+   * ============================================================ */
+
+  // Initial load
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => setTimeout(initReceipts, 100));
+  } else {
+    setTimeout(initReceipts, 100);
+  }
+
+  // Turbo.js support
+  document.addEventListener('turbo:load', () => setTimeout(initReceipts, 100));
+
+  // Tab change support - reinitialize when receipts/quittungen tab becomes visible
+  window.addEventListener('ppv:tab-change', function(e) {
+    if (e.detail?.tab === 'receipts' || e.detail?.tab === 'quittungen') {
+      ppvLog('[RECEIPTS v2.2] Tab activated, loading...');
+      setTimeout(initReceipts, 100);
+    }
   });
 
-  ppvLog("✅ [RECEIPTS v2.1] Ready!");
+  ppvLog("✅ [RECEIPTS v2.2] Ready!");
 
 })(); // End IIFE
