@@ -1133,8 +1133,9 @@ class PPV_QR {
             </div>
 
             <div id="ppv-campaign-list" class="ppv-campaign-list"></div>
+        </div>
 
-            <!-- 🎯 KAMPAGNE MODAL - KOMPLETT FORMA! -->
+        <!-- 🎯 KAMPAGNE MODAL - OUTSIDE glass-section for proper fixed positioning! -->
             <div id="ppv-campaign-modal" class="ppv-modal" role="dialog" aria-modal="true">
                 <div class="ppv-modal-inner">
                     <h4><?php echo self::t('camp_edit_modal', 'Kampagne bearbeiten'); ?></h4>
@@ -1239,7 +1240,6 @@ class PPV_QR {
                     </div>
                 </div>
             </div>
-        </div>
         <?php
     }
 
