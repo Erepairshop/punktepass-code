@@ -595,6 +595,24 @@
 
     init() {
       this.createMiniScanner();
+      // Auto-start if was running before navigation
+      this.checkAutoStart();
+    }
+
+    checkAutoStart() {
+      try {
+        const wasRunning = localStorage.getItem('ppv_scanner_running') === 'true';
+        if (wasRunning) {
+          ppvLog('[Scanner] Auto-starting (was running before navigation)');
+          setTimeout(() => this.startScannerManual(), 500);
+        }
+      } catch (e) {}
+    }
+
+    saveScannerState(running) {
+      try {
+        localStorage.setItem('ppv_scanner_running', running ? 'true' : 'false');
+      } catch (e) {}
     }
 
     createMiniScanner() {
@@ -708,6 +726,9 @@
       this.toggleBtn.style.background = 'linear-gradient(135deg, #00e676, #00c853)';
 
       if (this.countdownInterval) { clearInterval(this.countdownInterval); this.countdownInterval = null; }
+
+      // Save state for persistence across navigation
+      this.saveScannerState(false);
     }
 
     async startScannerManual() {
@@ -716,6 +737,10 @@
       this.toggleBtn.querySelector('.ppv-toggle-icon').textContent = '🛑';
       this.toggleBtn.querySelector('.ppv-toggle-text').textContent = 'Stop';
       this.toggleBtn.style.background = 'linear-gradient(135deg, #ff5252, #f44336)';
+
+      // Save state for persistence across navigation
+      this.saveScannerState(true);
+
       await this.loadLibrary();
     }
 
