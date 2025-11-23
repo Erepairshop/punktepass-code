@@ -1,11 +1,12 @@
 /**
- * PunktePass – Kassenscanner & Kampagnen v5.7 TURBO COMPATIBLE
+ * PunktePass – Kassenscanner & Kampagnen v5.8 TURBO COMPATIBLE
  * ✅ Save függvény integrálva
  * ✅ Összes dinamikus mező működik
  * ✅ Camera Scanner + Settings + Init
  * ✅ TURBO.JS COMPATIBLE - Full event delegation
  * ✅ All modals use event delegation (works after Turbo navigation)
  * ✅ Uses centralized ppv-api-manager.js for all API calls
+ * ✅ Clear dynamic content before Turbo cache (prevents stale data)
  * Author: Erik Borota / PunktePass
  */
 
@@ -1885,6 +1886,30 @@ document.addEventListener('turbo:load', function() {
       window.ppv_qr_reinit();
     }
   }, 100);
+});
+
+// 🧹 Turbo: Clear dynamic content before caching (prevents stale data on restore)
+document.addEventListener('turbo:before-cache', function() {
+  console.log('🧹 [QR] turbo:before-cache - clearing dynamic content');
+
+  // Clear scan log table - will be reloaded fresh via API
+  const logTable = document.querySelector('#ppv-pos-log tbody');
+  if (logTable) {
+    logTable.innerHTML = '';
+  }
+
+  // Clear any result boxes
+  const resultBox = document.getElementById('ppv-pos-result');
+  if (resultBox) {
+    resultBox.innerHTML = '';
+    resultBox.className = 'ppv-result';
+  }
+
+  // Stop the polling interval (will restart on turbo:load)
+  if (window.PPV_RECENT_SCANS_INTERVAL) {
+    clearInterval(window.PPV_RECENT_SCANS_INTERVAL);
+    window.PPV_RECENT_SCANS_INTERVAL = null;
+  }
 });
 
 // ============================================================
