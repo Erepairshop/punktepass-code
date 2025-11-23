@@ -1,6 +1,7 @@
 /**
- * PunktePass – Kassenscanner & Kampagnen v6.0 CLEAN
+ * PunktePass – Kassenscanner & Kampagnen v6.1 CLEAN
  * Turbo.js compatible, clean architecture
+ * FIXED: Memory leaks from document event listeners
  * Author: Erik Borota / PunktePass
  */
 
@@ -15,7 +16,15 @@
     campaignManager: null,
     cameraScanner: null,
     scanProcessor: null,
-    uiManager: null
+    uiManager: null,
+    // Track bound handlers for cleanup
+    boundHandlers: {
+      dragMove: null,
+      dragEnd: null,
+      touchMove: null,
+      touchEnd: null,
+      visibilityChange: null
+    }
   };
 
   const L = window.ppv_lang || {};
@@ -587,6 +596,20 @@
       const handle = document.getElementById('ppv-mini-drag-handle');
       if (!handle) return;
 
+      // Remove old document listeners if they exist
+      if (STATE.boundHandlers.dragMove) {
+        document.removeEventListener('mousemove', STATE.boundHandlers.dragMove);
+      }
+      if (STATE.boundHandlers.dragEnd) {
+        document.removeEventListener('mouseup', STATE.boundHandlers.dragEnd);
+      }
+      if (STATE.boundHandlers.touchMove) {
+        document.removeEventListener('touchmove', STATE.boundHandlers.touchMove);
+      }
+      if (STATE.boundHandlers.touchEnd) {
+        document.removeEventListener('touchend', STATE.boundHandlers.touchEnd);
+      }
+
       let isDragging = false, currentX = 0, currentY = 0, offsetX = 0, offsetY = 0;
 
       const dragStart = e => {
@@ -622,6 +645,12 @@
         }
       };
 
+      // Store handlers for cleanup
+      STATE.boundHandlers.dragMove = drag;
+      STATE.boundHandlers.dragEnd = dragEnd;
+      STATE.boundHandlers.touchMove = drag;
+      STATE.boundHandlers.touchEnd = dragEnd;
+
       handle.addEventListener('mousedown', dragStart);
       document.addEventListener('mousemove', drag);
       document.addEventListener('mouseup', dragEnd);
@@ -632,6 +661,9 @@
 
     setupToggle() {
       if (!this.toggleBtn) return;
+      // Skip if already initialized
+      if (this.toggleBtn.dataset.ppvInitialized === 'true') return;
+      this.toggleBtn.dataset.ppvInitialized = 'true';
       this.toggleBtn.addEventListener('click', async () => {
         if (this.scanning) await this.stopScanner();
         else await this.startScannerManual();
@@ -846,6 +878,10 @@
       const langSel = document.getElementById('ppv-lang-select');
       if (!langSel) return;
 
+      // Skip if already initialized
+      if (langSel.dataset.ppvInitialized === 'true') return;
+      langSel.dataset.ppvInitialized = 'true';
+
       const cur = (document.cookie.match(/ppv_lang=([^;]+)/) || [])[1] || 'de';
       langSel.value = cur;
 
@@ -868,6 +904,10 @@
     static initTheme() {
       const themeBtn = document.getElementById('ppv-theme-toggle');
       if (!themeBtn) return;
+
+      // Skip if already initialized
+      if (themeBtn.dataset.ppvInitialized === 'true') return;
+      themeBtn.dataset.ppvInitialized = 'true';
 
       const apply = v => {
         document.body.classList.remove('ppv-light', 'ppv-dark');
@@ -943,6 +983,28 @@
   // CLEANUP
   // ============================================================
   function cleanup() {
+    // Remove drag handlers from document
+    if (STATE.boundHandlers.dragMove) {
+      document.removeEventListener('mousemove', STATE.boundHandlers.dragMove);
+      STATE.boundHandlers.dragMove = null;
+    }
+    if (STATE.boundHandlers.dragEnd) {
+      document.removeEventListener('mouseup', STATE.boundHandlers.dragEnd);
+      STATE.boundHandlers.dragEnd = null;
+    }
+    if (STATE.boundHandlers.touchMove) {
+      document.removeEventListener('touchmove', STATE.boundHandlers.touchMove);
+      STATE.boundHandlers.touchMove = null;
+    }
+    if (STATE.boundHandlers.touchEnd) {
+      document.removeEventListener('touchend', STATE.boundHandlers.touchEnd);
+      STATE.boundHandlers.touchEnd = null;
+    }
+    if (STATE.boundHandlers.visibilityChange) {
+      document.removeEventListener('visibilitychange', STATE.boundHandlers.visibilityChange);
+      STATE.boundHandlers.visibilityChange = null;
+    }
+
     STATE.cameraScanner?.cleanup();
     STATE.cameraScanner = null;
     STATE.campaignManager = null;
@@ -981,8 +1043,9 @@
     // Setup event delegation
     setupEventDelegation();
 
-    // Input handling
-    if (posInput) {
+    // Input handling - skip if already initialized
+    if (posInput && posInput.dataset.ppvInitialized !== 'true') {
+      posInput.dataset.ppvInitialized = 'true';
       posInput.addEventListener('keypress', e => {
         if (e.key === 'Enter') {
           e.preventDefault();
@@ -997,7 +1060,8 @@
     }
 
     const sendBtn = document.getElementById('ppv-pos-send');
-    if (sendBtn && posInput) {
+    if (sendBtn && posInput && sendBtn.dataset.ppvInitialized !== 'true') {
+      sendBtn.dataset.ppvInitialized = 'true';
       sendBtn.addEventListener('click', () => {
         const qr = posInput.value.trim();
         if (qr) {
@@ -1016,14 +1080,18 @@
     STATE.campaignManager.load();
     OfflineSyncManager.sync();
 
-    // Visibility change handler
+    // Visibility change handler - remove old listener first
+    if (STATE.boundHandlers.visibilityChange) {
+      document.removeEventListener('visibilitychange', STATE.boundHandlers.visibilityChange);
+    }
     let lastVis = 0;
-    document.addEventListener('visibilitychange', () => {
+    STATE.boundHandlers.visibilityChange = () => {
       if (!document.hidden && Date.now() - lastVis > 5000) {
         lastVis = Date.now();
         STATE.campaignManager?.load();
       }
-    });
+    };
+    document.addEventListener('visibilitychange', STATE.boundHandlers.visibilityChange);
 
     STATE.initialized = true;
     console.log('[QR] Initialization complete');
@@ -1055,6 +1123,6 @@
     }
   });
 
-  console.log('[QR] Script loaded v6.0');
+  console.log('[QR] Script loaded v6.1');
 
 })();

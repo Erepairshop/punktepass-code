@@ -1,6 +1,7 @@
 /**
- * PunktePass – Bottom Nav v2.0 (Active + Lang Sync)
+ * PunktePass – Bottom Nav v2.1 (Active + Lang Sync)
  * FIXED: Event delegation to prevent listener duplication
+ * FIXED: Turbo/SPA listeners only added once
  */
 (function($) {
   'use strict';
@@ -12,7 +13,7 @@
   }
   window.PPV_BOTTOM_NAV_INITIALIZED = true;
 
-  console.log("✅ [Bottom Nav] v2.0 active");
+  console.log("✅ [Bottom Nav] v2.1 active");
 
   // Update active state
   function updateActiveState() {
@@ -27,15 +28,16 @@
   updateActiveState();
 
   // Event delegation for touch feedback (only one listener on document)
-  $(document).on("touchstart mousedown", ".ppv-bottom-nav .nav-item", function() {
+  // Using namespaced events to prevent duplicates
+  $(document).off("touchstart.ppvnav mousedown.ppvnav").on("touchstart.ppvnav mousedown.ppvnav", ".ppv-bottom-nav .nav-item", function() {
     $(this).addClass("touch");
   });
 
-  $(document).on("touchend mouseup mouseleave", ".ppv-bottom-nav .nav-item", function() {
+  $(document).off("touchend.ppvnav mouseup.ppvnav mouseleave.ppvnav").on("touchend.ppvnav mouseup.ppvnav mouseleave.ppvnav", ".ppv-bottom-nav .nav-item", function() {
     $(this).removeClass("touch");
   });
 
-  // Update active state on Turbo navigation
+  // Update active state on Turbo navigation (listeners are within IIFE guard)
   document.addEventListener('turbo:load', updateActiveState);
 
   // Update on custom SPA navigation
