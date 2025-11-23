@@ -1193,10 +1193,15 @@ public static function render_dashboard() {
 
     // ✅ Alap lekérdezés – csak aktív boltok
     // ✅ FIX: Added 'country' field for currency symbol display
+    // ✅ FIX: Added VIP fields for shop card display
     $stores = $wpdb->get_results("
         SELECT id, company_name, address, city, plz, latitude, longitude,
                phone, website, logo, qr_logo, opening_hours, description,
-               gallery, facebook, instagram, tiktok, country
+               gallery, facebook, instagram, tiktok, country,
+               vip_fix_enabled, vip_fix_bronze, vip_fix_silver, vip_fix_gold, vip_fix_platinum,
+               vip_streak_enabled, vip_streak_count, vip_streak_type,
+               vip_streak_bronze, vip_streak_silver, vip_streak_gold, vip_streak_platinum,
+               vip_daily_enabled, vip_daily_bronze, vip_daily_silver, vip_daily_gold, vip_daily_platinum
         FROM {$prefix}ppv_stores
         WHERE active = 1
         ORDER BY company_name ASC
@@ -1303,6 +1308,42 @@ if ($camps) {
         ];
     }
 }
+        // ✅ Build VIP object (only if at least one VIP type is enabled)
+        $vip = null;
+        $has_vip = (
+            !empty($store->vip_fix_enabled) ||
+            !empty($store->vip_streak_enabled) ||
+            !empty($store->vip_daily_enabled)
+        );
+
+        if ($has_vip) {
+            $vip = [
+                'fix' => !empty($store->vip_fix_enabled) ? [
+                    'enabled' => true,
+                    'bronze' => (int)($store->vip_fix_bronze ?? 1),
+                    'silver' => (int)($store->vip_fix_silver ?? 2),
+                    'gold' => (int)($store->vip_fix_gold ?? 3),
+                    'platinum' => (int)($store->vip_fix_platinum ?? 5),
+                ] : null,
+                'streak' => !empty($store->vip_streak_enabled) ? [
+                    'enabled' => true,
+                    'count' => (int)($store->vip_streak_count ?? 10),
+                    'type' => $store->vip_streak_type ?? 'fixed',
+                    'bronze' => (int)($store->vip_streak_bronze ?? 1),
+                    'silver' => (int)($store->vip_streak_silver ?? 2),
+                    'gold' => (int)($store->vip_streak_gold ?? 3),
+                    'platinum' => (int)($store->vip_streak_platinum ?? 5),
+                ] : null,
+                'daily' => !empty($store->vip_daily_enabled) ? [
+                    'enabled' => true,
+                    'bronze' => (int)($store->vip_daily_bronze ?? 5),
+                    'silver' => (int)($store->vip_daily_silver ?? 10),
+                    'gold' => (int)($store->vip_daily_gold ?? 20),
+                    'platinum' => (int)($store->vip_daily_platinum ?? 30),
+                ] : null,
+            ];
+        }
+
         $result[] = [
             'id' => (int)$store->id,
             'company_name' => $store->company_name,
@@ -1315,17 +1356,20 @@ if ($camps) {
             'open_now' => $is_open,
             'open_hours_today' => $today_hours,
             'phone' => $store->phone,
-            'website' => $store->website,
-            'logo' => $store->logo,
-            'gallery' => $gallery_images,
+            'website' => esc_url($store->website),
+            // ✅ FIX: Validate logo URL - return null if empty/invalid
+            'logo' => (!empty($store->logo) && $store->logo !== 'null') ? esc_url($store->logo) : null,
+            'gallery' => array_map('esc_url', $gallery_images),
             'country' => $store->country ?? 'DE', // ✅ FIX: Added for currency symbol
             'social' => [
-                'facebook' => $store->facebook ?: null,
-                'instagram' => $store->instagram ?: null,
-                'tiktok' => $store->tiktok ?: null
+                // ✅ FIX: Escape social media URLs
+                'facebook' => !empty($store->facebook) ? esc_url($store->facebook) : null,
+                'instagram' => !empty($store->instagram) ? esc_url($store->instagram) : null,
+                'tiktok' => !empty($store->tiktok) ? esc_url($store->tiktok) : null
             ],
             'rewards' => $rewards,
-            'campaigns' => $campaigns
+            'campaigns' => $campaigns,
+            'vip' => $vip  // ✅ NEW: VIP bonus info
         ];
     }
 

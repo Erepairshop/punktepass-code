@@ -114,6 +114,19 @@ async function initUserDashboard() {
       // ✅ ERROR MESSAGES - Client-side translation
       err_already_scanned_today: "⚠️ Heute bereits gescannt",
       err_duplicate_scan: "⚠️ Bereits gescannt. Bitte warten.",
+      // ✅ VIP BONUS SECTION
+      vip_title: "VIP Boni",
+      vip_fix_title: "Fixpunkte",
+      vip_streak_title: "X. Scan",
+      vip_daily_title: "1. Scan/Tag",
+      vip_bronze: "Bronze",
+      vip_silver: "Silber",
+      vip_gold: "Gold",
+      vip_platinum: "Platin",
+      vip_every: "Jeden",
+      vip_scan: "Scan",
+      vip_double: "2x Punkte",
+      vip_triple: "3x Punkte",
     },
     hu: {
       welcome: "Üdv a PunktePassban",
@@ -158,6 +171,19 @@ async function initUserDashboard() {
       // ✅ ERROR MESSAGES - Client-side translation
       err_already_scanned_today: "⚠️ Ma már beolvasva",
       err_duplicate_scan: "⚠️ Már beolvasva. Kérlek várj.",
+      // ✅ VIP BONUS SECTION
+      vip_title: "VIP Bónuszok",
+      vip_fix_title: "Fix pont",
+      vip_streak_title: "X. scan",
+      vip_daily_title: "1. scan/nap",
+      vip_bronze: "Bronz",
+      vip_silver: "Ezüst",
+      vip_gold: "Arany",
+      vip_platinum: "Platina",
+      vip_every: "Minden",
+      vip_scan: "scan",
+      vip_double: "2x Pont",
+      vip_triple: "3x Pont",
     },
     ro: {
       welcome: "Bun venit la PunktePass",
@@ -202,6 +228,19 @@ async function initUserDashboard() {
       // ✅ ERROR MESSAGES - Client-side translation
       err_already_scanned_today: "⚠️ Deja scanat astăzi",
       err_duplicate_scan: "⚠️ Deja scanat. Vă rugăm așteptați.",
+      // ✅ VIP BONUS SECTION
+      vip_title: "Bonusuri VIP",
+      vip_fix_title: "Puncte fixe",
+      vip_streak_title: "Scan X",
+      vip_daily_title: "1. scan/zi",
+      vip_bronze: "Bronz",
+      vip_silver: "Argint",
+      vip_gold: "Aur",
+      vip_platinum: "Platină",
+      vip_every: "La fiecare",
+      vip_scan: "scanare",
+      vip_double: "2x Puncte",
+      vip_triple: "3x Puncte",
     }
   }[lang] || T.de;
 
@@ -577,9 +616,11 @@ async function initUserDashboard() {
    * 🎨 MODERN ICONS - All Remix Icon ✅
    */
   const renderStoreCard = (store) => {
-    const logo = (store.logo && store.logo !== 'null')
+    // ✅ FIX: Better logo fallback - check for valid URL
+    const defaultLogo = boot.assets?.store_default || '/wp-content/plugins/punktepass/assets/img/store-default-logo.webp';
+    const logo = (store.logo && store.logo !== 'null' && store.logo.startsWith('http'))
         ? store.logo
-        : (boot.assets?.store_default || PPV_PLUGIN_URL + 'assets/img/store-default-logo.webp');
+        : defaultLogo;
 
     const distanceBadge = store.distance_km !== null ? `<span class="ppv-distance-badge"><i class="ri-map-pin-distance-line"></i> ${store.distance_km} ${T.km}</span>` : '';
     const statusBadge = store.open_now
@@ -763,6 +804,92 @@ async function initUserDashboard() {
       </div>
     ` : '';
 
+    // ============================================================
+    // 👑 VIP BONUS SECTION - Show if store has VIP enabled
+    // ============================================================
+    const vipHTML = store.vip ? (() => {
+      const vip = store.vip;
+      let vipContent = '';
+
+      // 1️⃣ FIX PONT BÓNUSZ
+      if (vip.fix && vip.fix.enabled) {
+        vipContent += `
+          <div class="ppv-vip-bonus-item">
+            <div class="ppv-vip-bonus-header">
+              <i class="ri-add-circle-line"></i>
+              <strong>${T.vip_fix_title}</strong>
+            </div>
+            <div class="ppv-vip-levels">
+              <span class="ppv-vip-level bronze"><i class="ri-medal-line"></i> ${T.vip_bronze}: +${vip.fix.bronze}</span>
+              <span class="ppv-vip-level silver"><i class="ri-medal-line"></i> ${T.vip_silver}: +${vip.fix.silver}</span>
+              <span class="ppv-vip-level gold"><i class="ri-medal-fill"></i> ${T.vip_gold}: +${vip.fix.gold}</span>
+              <span class="ppv-vip-level platinum"><i class="ri-vip-crown-fill"></i> ${T.vip_platinum}: +${vip.fix.platinum}</span>
+            </div>
+          </div>
+        `;
+      }
+
+      // 2️⃣ STREAK BÓNUSZ (minden X. scan)
+      if (vip.streak && vip.streak.enabled) {
+        let streakReward = '';
+        if (vip.streak.type === 'double') {
+          streakReward = T.vip_double;
+        } else if (vip.streak.type === 'triple') {
+          streakReward = T.vip_triple;
+        } else {
+          // Fixed points by level
+          streakReward = `
+            <span class="ppv-vip-level bronze"><i class="ri-medal-line"></i> +${vip.streak.bronze}</span>
+            <span class="ppv-vip-level silver"><i class="ri-medal-line"></i> +${vip.streak.silver}</span>
+            <span class="ppv-vip-level gold"><i class="ri-medal-fill"></i> +${vip.streak.gold}</span>
+            <span class="ppv-vip-level platinum"><i class="ri-vip-crown-fill"></i> +${vip.streak.platinum}</span>
+          `;
+        }
+
+        vipContent += `
+          <div class="ppv-vip-bonus-item">
+            <div class="ppv-vip-bonus-header">
+              <i class="ri-fire-line"></i>
+              <strong>${T.vip_streak_title}</strong>
+              <span class="ppv-vip-streak-count">${T.vip_every} ${vip.streak.count}. ${T.vip_scan}</span>
+            </div>
+            <div class="ppv-vip-levels">
+              ${vip.streak.type !== 'fixed' ? `<span class="ppv-vip-streak-reward">${streakReward}</span>` : streakReward}
+            </div>
+          </div>
+        `;
+      }
+
+      // 3️⃣ DAILY BÓNUSZ (első scan/nap)
+      if (vip.daily && vip.daily.enabled) {
+        vipContent += `
+          <div class="ppv-vip-bonus-item">
+            <div class="ppv-vip-bonus-header">
+              <i class="ri-sun-line"></i>
+              <strong>${T.vip_daily_title}</strong>
+            </div>
+            <div class="ppv-vip-levels">
+              <span class="ppv-vip-level bronze"><i class="ri-medal-line"></i> ${T.vip_bronze}: +${vip.daily.bronze}</span>
+              <span class="ppv-vip-level silver"><i class="ri-medal-line"></i> ${T.vip_silver}: +${vip.daily.silver}</span>
+              <span class="ppv-vip-level gold"><i class="ri-medal-fill"></i> ${T.vip_gold}: +${vip.daily.gold}</span>
+              <span class="ppv-vip-level platinum"><i class="ri-vip-crown-fill"></i> ${T.vip_platinum}: +${vip.daily.platinum}</span>
+            </div>
+          </div>
+        `;
+      }
+
+      return vipContent ? `
+        <div class="ppv-store-vip">
+          <h5 style="margin: 12px 0 8px 0; font-weight: 600; color: #fbbf24;">
+            <i class="ri-vip-crown-fill"></i> ${T.vip_title}
+          </h5>
+          <div class="ppv-vip-bonuses">
+            ${vipContent}
+          </div>
+        </div>
+      ` : '';
+    })() : '';
+
     return `
       <div class="ppv-store-card-enhanced" data-store-id="${store.id}">
         <div class="ppv-store-header">
@@ -784,6 +911,11 @@ async function initUserDashboard() {
                   <i class="ri-megaphone-line"></i> ${store.campaigns.length} ${T.campaigns_preview}
                 </span>
               ` : ''}
+              ${store.vip ? `
+                <span class="ppv-preview-tag ppv-vip-tag">
+                  <i class="ri-vip-crown-fill"></i> VIP
+                </span>
+              ` : ''}
             </div>
           </div>
           <button class="ppv-toggle-btn" type="button">
@@ -800,6 +932,7 @@ async function initUserDashboard() {
           </div>
           ${rewardsHTML}
           ${campaignsHTML}
+          ${vipHTML}
           <div class="ppv-store-actions">
             <button class="ppv-action-btn ppv-route" data-lat="${store.latitude}" data-lng="${store.longitude}" type="button">
               <i class="ri-route-fill"></i> ${T.route}
