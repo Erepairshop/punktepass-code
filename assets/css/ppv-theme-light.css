@@ -7315,6 +7315,320 @@ select.ppv-support-input {
 }
 
 /* ──────────────────────────────────────────────────────────────────────
+   🎯 MODERN EINLÖSUNGEN - App Style Components
+   ────────────────────────────────────────────────────────────────────── */
+
+/* Section Titles */
+.ppv-section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: #374151;
+    margin: 1.5rem 0 1rem 0;
+    padding: 0.75rem 1rem;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-radius: 12px;
+    border-left: 4px solid #667eea;
+    letter-spacing: -0.01em;
+}
+
+.ppv-section-title i {
+    font-size: 1.125rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.ppv-section-title.ppv-section-pending {
+    border-left-color: #f59e0b;
+    background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+}
+
+.ppv-section-title.ppv-section-pending i {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.ppv-section-title.ppv-section-approved {
+    border-left-color: #10b981;
+    background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+}
+
+.ppv-section-title.ppv-section-approved i {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Redeem Header Layout */
+.ppv-redeem-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.875rem;
+    margin-bottom: 0.75rem;
+}
+
+.ppv-redeem-icon {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.ppv-redeem-icon i {
+    font-size: 1.25rem;
+    color: white;
+}
+
+.ppv-redeem-icon.approved {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.ppv-redeem-title-wrap {
+    flex: 1;
+    min-width: 0;
+}
+
+.ppv-redeem-title-wrap strong {
+    display: block;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 0.25rem;
+    line-height: 1.3;
+}
+
+.ppv-redeem-user {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.8125rem;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.ppv-redeem-user i {
+    font-size: 0.875rem;
+    color: #9ca3af;
+}
+
+/* Status Badge */
+.ppv-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    white-space: nowrap;
+}
+
+.ppv-status-badge.status-pending {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    color: #92400e;
+    box-shadow: 0 2px 6px rgba(245, 158, 11, 0.2);
+}
+
+.ppv-status-badge.status-approved {
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    color: #065f46;
+    box-shadow: 0 2px 6px rgba(16, 185, 129, 0.2);
+}
+
+.ppv-status-badge.status-rejected {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    color: #991b1b;
+    box-shadow: 0 2px 6px rgba(239, 68, 68, 0.2);
+}
+
+/* Modern Log Item */
+.ppv-log-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.875rem 1rem;
+    background: linear-gradient(135deg, #ffffff 0%, #fafafa 100%);
+    border-radius: 14px;
+    border: 1px solid rgba(229, 231, 235, 0.6);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-left: 0;
+    gap: 1rem;
+}
+
+.ppv-log-item::before {
+    display: none;
+}
+
+.ppv-log-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+    border-color: rgba(102, 126, 234, 0.2);
+}
+
+.ppv-log-item.log-approved {
+    border-left: 3px solid #10b981;
+}
+
+.ppv-log-item.log-rejected {
+    border-left: 3px solid #ef4444;
+}
+
+.ppv-log-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.ppv-log-icon {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ppv-log-icon.approved {
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    color: #059669;
+}
+
+.ppv-log-icon.rejected {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    color: #dc2626;
+}
+
+.ppv-log-icon i {
+    font-size: 1.125rem;
+}
+
+.ppv-log-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+}
+
+.ppv-log-email {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #1f2937;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ppv-log-details {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+.ppv-log-details i {
+    font-size: 0.8125rem;
+    color: #9ca3af;
+}
+
+.ppv-log-separator {
+    color: #d1d5db;
+    margin: 0 0.125rem;
+}
+
+.ppv-log-status {
+    padding: 0.375rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.ppv-log-status.approved {
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    color: #065f46;
+}
+
+.ppv-log-status.rejected {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    color: #991b1b;
+}
+
+/* Empty & Loading States */
+.ppv-redeem-empty,
+.ppv-loading {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: #6b7280;
+    font-size: 0.9375rem;
+    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+    border-radius: 16px;
+    border: 2px dashed #e5e7eb;
+}
+
+.ppv-error {
+    text-align: center;
+    padding: 1.5rem;
+    color: #dc2626;
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    border-radius: 12px;
+    border: 1px solid #fecaca;
+    font-weight: 500;
+}
+
+/* Mobile Responsive */
+@media (max-width: 640px) {
+    .ppv-redeem-header {
+        flex-wrap: wrap;
+    }
+
+    .ppv-status-badge {
+        order: -1;
+        margin-bottom: 0.5rem;
+    }
+
+    .ppv-redeem-meta {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .ppv-redeem-actions {
+        flex-direction: column;
+    }
+
+    .ppv-log-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .ppv-log-status {
+        align-self: flex-start;
+    }
+
+    .ppv-section-title {
+        font-size: 0.875rem;
+        padding: 0.625rem 0.875rem;
+    }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
    📄 QUITTUNGEN/BIZONYLATOK SECTION (Receipts)
    ────────────────────────────────────────────────────────────────────── */
 

@@ -4106,3 +4106,152 @@ body.ppv-light .ppv-theme-btn-mini {
 .ppv-stats-wrapper hr {
     border-color: rgba(0, 212, 255, 0.15) !important;
 }
+
+/* ──────────────────────────────────────────────────────────────────────
+   🎯 MODERN EINLÖSUNGEN - Dark Mode
+   ────────────────────────────────────────────────────────────────────── */
+
+/* Section Titles - Dark */
+.ppv-section-title {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(51, 65, 85, 0.6) 100%);
+    color: #e2e8f0;
+    border-color: #667eea;
+}
+
+.ppv-section-title.ppv-section-pending {
+    background: linear-gradient(135deg, rgba(120, 53, 15, 0.3) 0%, rgba(146, 64, 14, 0.2) 100%);
+    border-left-color: #f59e0b;
+}
+
+.ppv-section-title.ppv-section-approved {
+    background: linear-gradient(135deg, rgba(6, 78, 59, 0.3) 0%, rgba(4, 120, 87, 0.2) 100%);
+    border-left-color: #10b981;
+}
+
+/* Redeem Item Card - Dark */
+.ppv-redeem-item {
+    background: linear-gradient(145deg, rgba(30, 41, 59, 0.95) 0%, rgba(51, 65, 85, 0.9) 100%);
+    border: 1px solid rgba(100, 116, 139, 0.3);
+}
+
+.ppv-redeem-item:hover {
+    border-color: rgba(102, 126, 234, 0.4);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.ppv-redeem-title-wrap strong {
+    color: #f1f5f9;
+}
+
+.ppv-redeem-user {
+    color: #94a3b8;
+}
+
+.ppv-redeem-user i {
+    color: #64748b;
+}
+
+/* Meta Items - Dark */
+.ppv-redeem-meta-item {
+    background: linear-gradient(135deg, rgba(51, 65, 85, 0.6) 0%, rgba(71, 85, 105, 0.4) 100%);
+    color: #cbd5e1;
+}
+
+/* Buttons - Dark */
+.ppv-reject {
+    background: linear-gradient(135deg, rgba(51, 65, 85, 0.8) 0%, rgba(71, 85, 105, 0.6) 100%);
+    border-color: rgba(100, 116, 139, 0.4);
+    color: #e2e8f0;
+}
+
+.ppv-reject:hover {
+    background: linear-gradient(135deg, rgba(127, 29, 29, 0.4) 0%, rgba(153, 27, 27, 0.3) 100%);
+    border-color: rgba(239, 68, 68, 0.5);
+    color: #fca5a5;
+}
+
+/* Log Box - Dark */
+.ppv-log-box {
+    background: linear-gradient(145deg, rgba(30, 41, 59, 0.95) 0%, rgba(51, 65, 85, 0.9) 100%);
+    border-color: rgba(100, 116, 139, 0.3);
+}
+
+.ppv-log-box h3 {
+    color: #f1f5f9;
+    border-bottom-color: rgba(100, 116, 139, 0.3);
+}
+
+/* Log Items - Dark */
+.ppv-log-item {
+    background: linear-gradient(135deg, rgba(51, 65, 85, 0.6) 0%, rgba(71, 85, 105, 0.4) 100%);
+    border-color: rgba(100, 116, 139, 0.3);
+}
+
+.ppv-log-item:hover {
+    background: linear-gradient(135deg, rgba(51, 65, 85, 0.8) 0%, rgba(71, 85, 105, 0.6) 100%);
+    border-color: rgba(102, 126, 234, 0.3);
+}
+
+.ppv-log-email {
+    color: #f1f5f9;
+}
+
+.ppv-log-details {
+    color: #94a3b8;
+}
+
+.ppv-log-details i {
+    color: #64748b;
+}
+
+/* Status Badges - Dark */
+.ppv-status-badge.status-pending {
+    background: linear-gradient(135deg, rgba(120, 53, 15, 0.5) 0%, rgba(146, 64, 14, 0.4) 100%);
+    color: #fcd34d;
+}
+
+.ppv-status-badge.status-approved {
+    background: linear-gradient(135deg, rgba(6, 78, 59, 0.5) 0%, rgba(4, 120, 87, 0.4) 100%);
+    color: #6ee7b7;
+}
+
+.ppv-status-badge.status-rejected {
+    background: linear-gradient(135deg, rgba(127, 29, 29, 0.5) 0%, rgba(153, 27, 27, 0.4) 100%);
+    color: #fca5a5;
+}
+
+/* Log Status - Dark */
+.ppv-log-status.approved {
+    background: linear-gradient(135deg, rgba(6, 78, 59, 0.5) 0%, rgba(4, 120, 87, 0.4) 100%);
+    color: #6ee7b7;
+}
+
+.ppv-log-status.rejected {
+    background: linear-gradient(135deg, rgba(127, 29, 29, 0.5) 0%, rgba(153, 27, 27, 0.4) 100%);
+    color: #fca5a5;
+}
+
+/* Log Icon - Dark */
+.ppv-log-icon.approved {
+    background: linear-gradient(135deg, rgba(6, 78, 59, 0.5) 0%, rgba(4, 120, 87, 0.4) 100%);
+    color: #6ee7b7;
+}
+
+.ppv-log-icon.rejected {
+    background: linear-gradient(135deg, rgba(127, 29, 29, 0.5) 0%, rgba(153, 27, 27, 0.4) 100%);
+    color: #fca5a5;
+}
+
+/* Empty & Loading - Dark */
+.ppv-redeem-empty,
+.ppv-loading {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(51, 65, 85, 0.4) 100%);
+    color: #94a3b8;
+    border-color: rgba(100, 116, 139, 0.3);
+}
+
+.ppv-error {
+    background: linear-gradient(135deg, rgba(127, 29, 29, 0.3) 0%, rgba(153, 27, 27, 0.2) 100%);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: #fca5a5;
+}
