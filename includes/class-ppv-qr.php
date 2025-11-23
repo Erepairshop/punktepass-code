@@ -331,10 +331,16 @@ class PPV_QR {
         if (strpos($qr, 'PPU') === 0) {
             $payload = substr($qr, 3);
 
+            // 🔍 DEBUG: Log received QR
+            error_log("🔍 [PPV_QR] decode_user_from_qr: QR starts with PPU, payload=" . substr($payload, 0, 30) . "...");
+
             // Extract user_id (digits) and token (rest)
             if (preg_match('/^(\d+)(.+)$/', $payload, $matches)) {
                 $uid = intval($matches[1]);
                 $token_from_qr = $matches[2];
+
+                // 🔍 DEBUG: Log parsed values
+                error_log("🔍 [PPV_QR] decode_user_from_qr: Parsed uid={$uid}, token_length=" . strlen($token_from_qr));
 
                 // Security: Verify token + active status in single JOIN query
                 // Same validation as ppv-pos-scan.php
@@ -349,14 +355,26 @@ class PPV_QR {
                     LIMIT 1
                 ", $uid, $token_from_qr));
 
+                // 🔍 DEBUG: Log query result
+                error_log("🔍 [PPV_QR] decode_user_from_qr: user_check=" . ($user_check ? "found (active={$user_check->active})" : "NOT FOUND"));
+
                 if ($user_check && $user_check->active == 1) {
+                    error_log("✅ [PPV_QR] decode_user_from_qr: SUCCESS user_id={$uid}");
                     return intval($user_check->id);
                 }
 
                 // Set specific error for proper client-side handling
                 if (!$user_check) {
                     self::$last_decode_error = 'invalid_qr';
-                    error_log("🔴 [PPV_QR] decode_user_from_qr: Invalid/expired token for user_id={$uid}");
+                    // 🔍 DEBUG: Check what tokens exist for this user
+                    $token_debug = $wpdb->get_results($wpdb->prepare("
+                        SELECT token, expires_at, entity_type
+                        FROM {$wpdb->prefix}ppv_tokens
+                        WHERE entity_id=%d
+                        ORDER BY created_at DESC LIMIT 3
+                    ", $uid));
+                    error_log("🔴 [PPV_QR] decode_user_from_qr: Invalid/expired token for user_id={$uid}. Token in QR: " . substr($token_from_qr, 0, 8) . "...");
+                    error_log("🔴 [PPV_QR] Existing tokens for user {$uid}: " . json_encode($token_debug));
                 } elseif ($user_check->active == 0) {
                     self::$last_decode_error = 'user_blocked';
                     error_log("🔴 [PPV_QR] decode_user_from_qr: User {$uid} is inactive");
@@ -366,22 +384,19 @@ class PPV_QR {
             }
         }
 
-        // Legacy format: PPUSER-{user_id}-{token}
+        // Legacy format: PPUSER-{user_id}-{qr_token}
+        // Uses qr_token from ppv_users table (NOT ppv_tokens!)
         if (strpos($qr, 'PPUSER-') === 0) {
             $parts = explode('-', $qr);
             $uid = intval($parts[1] ?? 0);
             $token_from_qr = $parts[2] ?? '';
 
             if ($uid > 0 && !empty($token_from_qr)) {
-                // Validate token for legacy format too
+                // Validate token from ppv_users.qr_token column
                 $user_check = $wpdb->get_row($wpdb->prepare("
-                    SELECT u.id, u.active
-                    FROM {$wpdb->prefix}ppv_users u
-                    INNER JOIN {$wpdb->prefix}ppv_tokens t
-                        ON t.entity_type='user' AND t.entity_id=u.id
-                    WHERE u.id=%d
-                        AND t.token=%s
-                        AND t.expires_at > NOW()
+                    SELECT id, active, qr_token
+                    FROM {$wpdb->prefix}ppv_users
+                    WHERE id=%d AND qr_token=%s
                     LIMIT 1
                 ", $uid, $token_from_qr));
 
@@ -392,8 +407,10 @@ class PPV_QR {
                 // Set specific error
                 if (!$user_check) {
                     self::$last_decode_error = 'invalid_qr';
+                    error_log("🔴 [PPV_QR] decode_user_from_qr (PPUSER): Invalid qr_token for user_id={$uid}");
                 } elseif ($user_check->active == 0) {
                     self::$last_decode_error = 'user_blocked';
+                    error_log("🔴 [PPV_QR] decode_user_from_qr (PPUSER): User {$uid} is inactive");
                 }
             }
 
