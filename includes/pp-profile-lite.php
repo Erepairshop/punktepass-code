@@ -609,10 +609,15 @@ if (!empty($store->gallery)) {
         private static function get_current_store() {
             global $wpdb;
 
+            // ✅ FIX: Flush WordPress object cache to ensure fresh data
+            wp_cache_flush();
+            $wpdb->flush();
+
             // 🏪 FILIALE SUPPORT: Use session-aware store ID
             $store_id = self::get_store_id();
             if ($store_id) {
-                return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1", $store_id));
+                // SQL_NO_CACHE ensures MySQL doesn't return cached results
+                return $wpdb->get_row($wpdb->prepare("SELECT SQL_NO_CACHE * FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1", $store_id));
             }
 
             // Fallback: GET parameter (admin use)
