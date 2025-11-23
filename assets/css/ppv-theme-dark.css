@@ -69,6 +69,23 @@
 
     /* Backdrop */
     --pp-glass: blur(12px) saturate(160%);
+
+    /* ✅ VIP Level Colors - Consolidated for reuse */
+    --pp-vip-bronze: #CD7F32;
+    --pp-vip-bronze-bg: linear-gradient(135deg, rgba(205, 127, 50, 0.2) 0%, rgba(205, 127, 50, 0.1) 100%);
+    --pp-vip-bronze-border: rgba(205, 127, 50, 0.3);
+
+    --pp-vip-silver: #C0C0C0;
+    --pp-vip-silver-bg: linear-gradient(135deg, rgba(192, 192, 192, 0.2) 0%, rgba(192, 192, 192, 0.1) 100%);
+    --pp-vip-silver-border: rgba(192, 192, 192, 0.3);
+
+    --pp-vip-gold: #FFD700;
+    --pp-vip-gold-bg: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 215, 0, 0.1) 100%);
+    --pp-vip-gold-border: rgba(255, 215, 0, 0.3);
+
+    --pp-vip-platinum: #A0B2C6;
+    --pp-vip-platinum-bg: linear-gradient(135deg, rgba(160, 178, 198, 0.2) 0%, rgba(160, 178, 198, 0.1) 100%);
+    --pp-vip-platinum-border: rgba(160, 178, 198, 0.3);
 }
 
 /* ==========================================================================
@@ -505,10 +522,11 @@ body.ppv-user-dashboard {
     color: var(--pp-text);
 }
 
-.ppv-preview-item.bronze strong { color: #CD7F32; }
-.ppv-preview-item.silver strong { color: #C0C0C0; }
-.ppv-preview-item.gold strong { color: #FFD700; }
-.ppv-preview-item.platinum strong { color: #A0B2C6; }
+/* ✅ OPTIMIZED: Using CSS variables for preview items */
+.ppv-preview-item.bronze strong { color: var(--pp-vip-bronze); }
+.ppv-preview-item.silver strong { color: var(--pp-vip-silver); }
+.ppv-preview-item.gold strong { color: var(--pp-vip-gold); }
+.ppv-preview-item.platinum strong { color: var(--pp-vip-platinum); }
 
 /* Actions */
 .ppv-vip-actions {
@@ -4597,28 +4615,29 @@ body.ppv-light .ppv-camp-actions span:hover {
     font-size: 12px;
 }
 
+/* ✅ OPTIMIZED: Using CSS variables for VIP levels */
 .ppv-vip-level.bronze {
-    background: linear-gradient(135deg, rgba(205, 127, 50, 0.2) 0%, rgba(205, 127, 50, 0.1) 100%);
-    color: #cd7f32;
-    border: 1px solid rgba(205, 127, 50, 0.3);
+    background: var(--pp-vip-bronze-bg);
+    color: var(--pp-vip-bronze);
+    border: 1px solid var(--pp-vip-bronze-border);
 }
 
 .ppv-vip-level.silver {
-    background: linear-gradient(135deg, rgba(192, 192, 192, 0.2) 0%, rgba(192, 192, 192, 0.1) 100%);
-    color: #c0c0c0;
-    border: 1px solid rgba(192, 192, 192, 0.3);
+    background: var(--pp-vip-silver-bg);
+    color: var(--pp-vip-silver);
+    border: 1px solid var(--pp-vip-silver-border);
 }
 
 .ppv-vip-level.gold {
-    background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 215, 0, 0.1) 100%);
-    color: #ffd700;
-    border: 1px solid rgba(255, 215, 0, 0.3);
+    background: var(--pp-vip-gold-bg);
+    color: var(--pp-vip-gold);
+    border: 1px solid var(--pp-vip-gold-border);
 }
 
 .ppv-vip-level.platinum {
-    background: linear-gradient(135deg, rgba(229, 228, 226, 0.2) 0%, rgba(229, 228, 226, 0.1) 100%);
-    color: #e5e4e2;
-    border: 1px solid rgba(229, 228, 226, 0.4);
+    background: var(--pp-vip-platinum-bg);
+    color: var(--pp-vip-platinum);
+    border: 1px solid var(--pp-vip-platinum-border);
 }
 
 .ppv-vip-streak-reward {

@@ -464,7 +464,8 @@ if (!empty($store->gallery)) {
     if (is_array($gallery)) {
         foreach ($gallery as $image_url) {
             echo '<div class="ppv-gallery-item" style="position: relative; display: inline-block; width: 100%;">';
-            echo '<img src="' . esc_url($image_url) . '" alt="Gallery" style="width: 100%; height: auto; border-radius: 4px;">';
+            // ✅ OPTIMIZED: Added loading="lazy" for performance
+            echo '<img src="' . esc_url($image_url) . '" alt="Gallery" loading="lazy" style="width: 100%; height: auto; border-radius: 4px;">';
             echo '<button type="button" class="ppv-gallery-delete-btn" data-image-url="' . esc_attr($image_url) . '" style="position: absolute; top: -10px; right: -10px; background: red; color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-size: 18px; padding: 0; line-height: 1;">×</button>';
             echo '</div>';
         }
@@ -645,6 +646,8 @@ if (!empty($store->gallery)) {
         }
 
 public static function ajax_save_profile() {
+    global $wpdb; // ✅ FIX: Declare $wpdb at the start of the function
+
     if (!isset($_POST[self::NONCE_NAME])) {
         wp_send_json_error(['msg' => 'Nonce missing']);
     }
@@ -771,9 +774,6 @@ public static function ajax_save_profile() {
         'gallery' => !empty($gallery_files) ? json_encode($gallery_files) : ($existing_store->gallery ?? ''),
     'opening_hours' => json_encode($opening_hours),  // ← ADD THIS!
 ];
-
-
-    global $wpdb;
 
 // ✅ Format specifierek az összes mezőhöz
 $format_specs = [

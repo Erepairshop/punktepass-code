@@ -1184,8 +1184,9 @@ public static function render_dashboard() {
     $user_lng = floatval($request->get_param('lng'));
     $max_distance = floatval($request->get_param('max_distance') ?? 10);
 
-    // ✅ Cache kulcs
-    $cache_key = 'ppv_stores_list_' . md5("{$user_lat}_{$user_lng}_{$max_distance}");
+    // ✅ Cache kulcs - now includes VIP version for cache invalidation
+    $vip_version = wp_cache_get('ppv_vip_version') ?: '1';
+    $cache_key = 'ppv_stores_list_' . md5("{$user_lat}_{$user_lng}_{$max_distance}_{$vip_version}");
     $cached = wp_cache_get($cache_key);
     if ($cached !== false) {
         return new WP_REST_Response($cached, 200);
@@ -1211,12 +1212,97 @@ public static function render_dashboard() {
         return new WP_REST_Response([], 200);
     }
 
-    $result = [];
     ppv_log("🛰️ [REST DEBUG] stores count: " . count($stores));
 
-    foreach ($stores as $store) {
-            ppv_log("🏪 [REST DEBUG] Store: {$store->company_name} (ID: {$store->id})");
+    // ✅ SQL OPTIMIZATION: Batch fetch all rewards and campaigns in 2 queries instead of N*2
+    $store_ids = array_map(function($s) { return (int)$s->id; }, $stores);
+    $store_ids_str = implode(',', $store_ids);
 
+    // ✅ Batch query for ALL rewards
+    $all_rewards = [];
+    if (!empty($store_ids_str)) {
+        $rewards_query = "
+            SELECT store_id, id, title, required_points, points_given,
+                   action_type, action_value, currency, description
+            FROM {$prefix}ppv_rewards
+            WHERE store_id IN ({$store_ids_str})
+              AND required_points > 0
+            ORDER BY store_id, required_points ASC
+        ";
+        $rewards_raw = $wpdb->get_results($rewards_query);
+
+        // Group by store_id (limit 5 per store)
+        $rewards_count = [];
+        foreach ($rewards_raw as $r) {
+            $sid = (int)$r->store_id;
+            if (!isset($rewards_count[$sid])) $rewards_count[$sid] = 0;
+            if ($rewards_count[$sid] >= 5) continue;
+
+            if (!isset($all_rewards[$sid])) $all_rewards[$sid] = [];
+            $all_rewards[$sid][] = [
+                'id' => (int)$r->id,
+                'title' => $r->title,
+                'description' => $r->description,
+                'required_points' => (int)$r->required_points,
+                'points_given' => (int)$r->points_given,
+                'action_type' => $r->action_type,
+                'action_value' => $r->action_value,
+                'currency' => $r->currency
+            ];
+            $rewards_count[$sid]++;
+        }
+    }
+
+    // ✅ Batch query for ALL campaigns
+    $all_campaigns = [];
+    if (!empty($store_ids_str)) {
+        $campaigns_query = "
+            SELECT store_id, id, title, start_date, end_date, campaign_type,
+                   discount_percent, extra_points, multiplier,
+                   min_purchase, fixed_amount, required_points,
+                   free_product, free_product_value, points_given, description
+            FROM {$prefix}ppv_campaigns
+            WHERE store_id IN ({$store_ids_str})
+              AND status = 'active'
+              AND start_date <= CURDATE()
+              AND end_date >= CURDATE()
+            ORDER BY store_id, start_date ASC
+        ";
+        $campaigns_raw = $wpdb->get_results($campaigns_query);
+
+        // Group by store_id (limit 5 per store)
+        $campaigns_count = [];
+        foreach ($campaigns_raw as $c) {
+            $sid = (int)$c->store_id;
+            if (!isset($campaigns_count[$sid])) $campaigns_count[$sid] = 0;
+            if ($campaigns_count[$sid] >= 5) continue;
+
+            if (!isset($all_campaigns[$sid])) $all_campaigns[$sid] = [];
+            $all_campaigns[$sid][] = [
+                'id' => (int)$c->id,
+                'title' => $c->title,
+                'start_date' => $c->start_date,
+                'end_date' => $c->end_date,
+                'campaign_type' => $c->campaign_type,
+                'discount_percent' => (float)$c->discount_percent,
+                'extra_points' => (int)$c->extra_points,
+                'multiplier' => (int)$c->multiplier,
+                'min_purchase' => (float)$c->min_purchase,
+                'fixed_amount' => (float)$c->fixed_amount,
+                'required_points' => (int)$c->required_points,
+                'free_product' => $c->free_product,
+                'free_product_value' => (float)$c->free_product_value,
+                'points_given' => (int)$c->points_given,
+                'description' => $c->description
+            ];
+            $campaigns_count[$sid]++;
+        }
+    }
+
+    ppv_log("✅ [REST DEBUG] Batch loaded " . count($all_rewards) . " store rewards, " . count($all_campaigns) . " store campaigns");
+
+    $result = [];
+    foreach ($stores as $store) {
         $lat = floatval($store->latitude);
         $lng = floatval($store->longitude);
 
@@ -1238,76 +1324,11 @@ public static function render_dashboard() {
             if (is_array($decoded)) $gallery_images = array_slice($decoded, 0, 6);
         }
 
-        // ✅ Rewards quick & safe
-        $rewards = [];
-        $rws = $wpdb->get_results($wpdb->prepare("
-    SELECT 
-        id, 
-        title, 
-        required_points, 
-        points_given,      -- ✅ új mező
-        action_type, 
-        action_value, 
-        currency, 
-        description
-    FROM {$prefix}ppv_rewards
-    WHERE store_id = %d 
-      AND required_points > 0
-    ORDER BY required_points ASC 
-    LIMIT 5
-", $store->id));
+        // ✅ Get rewards from batch-loaded data
+        $rewards = $all_rewards[(int)$store->id] ?? [];
 
-if ($rws) {
-    foreach ($rws as $r) {
-        $rewards[] = [
-            'id' => (int)$r->id,
-            'title' => $r->title,
-            'description' => $r->description,
-            'required_points' => (int)$r->required_points,
-            'points_given' => (int)$r->points_given, // ✅ hozzáadva
-            'action_type' => $r->action_type,
-            'action_value' => $r->action_value,
-            'currency' => $r->currency
-        ];
-    }
-}
-
-
-        // ✅ Campaigns - TELJES ADAT!
-$campaigns = [];
-$camps = $wpdb->get_results($wpdb->prepare("
-    SELECT id, title, start_date, end_date, campaign_type, 
-           discount_percent, extra_points, multiplier, 
-           min_purchase, fixed_amount, required_points,
-           free_product, free_product_value, points_given, description
-    FROM {$prefix}ppv_campaigns
-    WHERE store_id = %d
-      AND status = 'active'
-      AND start_date <= CURDATE()
-      AND end_date >= CURDATE()
-    ORDER BY start_date ASC LIMIT 5
-", $store->id));
-if ($camps) {
-    foreach ($camps as $c) {
-        $campaigns[] = [
-            'id' => (int)$c->id,
-            'title' => $c->title,
-            'start_date' => $c->start_date,
-            'end_date' => $c->end_date,
-            'campaign_type' => $c->campaign_type,
-            'discount_percent' => (float)$c->discount_percent,
-            'extra_points' => (int)$c->extra_points,
-            'multiplier' => (int)$c->multiplier,
-            'min_purchase' => (float)$c->min_purchase,
-            'fixed_amount' => (float)$c->fixed_amount,
-            'required_points' => (int)$c->required_points,
-            'free_product' => $c->free_product,
-            'free_product_value' => (float)$c->free_product_value,
-            'points_given' => (int)$c->points_given,
-            'description' => $c->description
-        ];
-    }
-}
+        // ✅ Get campaigns from batch-loaded data
+        $campaigns = $all_campaigns[(int)$store->id] ?? [];
         // ✅ Build VIP object (only if at least one VIP type is enabled)
         $vip = null;
         $has_vip = (

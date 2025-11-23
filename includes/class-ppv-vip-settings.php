@@ -296,6 +296,11 @@ class PPV_VIP_Settings {
             return new WP_REST_Response(['success' => false, 'msg' => 'Database error'], 500);
         }
 
+        // ✅ CACHE INVALIDATION: Increment VIP version to invalidate store list cache
+        $current_version = wp_cache_get('ppv_vip_version') ?: 1;
+        wp_cache_set('ppv_vip_version', $current_version + 1);
+        ppv_log("🔄 [PPV_VIP] Cache invalidated: VIP version incremented to " . ($current_version + 1));
+
         ppv_log("✅ [PPV_VIP] Extended VIP settings saved: store={$store_id}");
 
         return new WP_REST_Response(['success' => true, 'msg' => 'VIP settings saved'], 200);
