@@ -973,7 +973,7 @@ showToast("📄 Monatsbeleg wird heruntergeladen!", "success");
     setInterval(() => {
       loadRedeemRequests();
       loadRecentLogs();
-    }, 10000);
+    }, 30000); // 30 sec polling
     
     console.log("✅ [REWARDS] Initialization complete!");
   });
