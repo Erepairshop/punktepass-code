@@ -1,8 +1,6 @@
 /**
- * PunktePass – Kassenscanner & Kampagnen v6.2 CLEAN
+ * PunktePass – Kassenscanner & Kampagnen v6.0 CLEAN
  * Turbo.js compatible, clean architecture
- * FIXED: Memory leaks from document event listeners
- * FIXED: API call throttling to prevent 503 errors
  * Author: Erik Borota / PunktePass
  */
 
@@ -17,24 +15,7 @@
     campaignManager: null,
     cameraScanner: null,
     scanProcessor: null,
-    uiManager: null,
-    // Track bound handlers for cleanup
-    boundHandlers: {
-      dragMove: null,
-      dragEnd: null,
-      touchMove: null,
-      touchEnd: null,
-      visibilityChange: null
-    },
-    // API call management
-    api: {
-      logsController: null,
-      campaignsController: null,
-      lastLogsCall: 0,
-      lastCampaignsCall: 0,
-      logsThrottle: 3000,      // 3 second minimum between log calls
-      campaignsThrottle: 5000  // 5 second minimum between campaign calls
-    }
+    uiManager: null
   };
 
   const L = window.ppv_lang || {};
@@ -234,34 +215,18 @@
           }
         }
 
-        setTimeout(() => this.loadLogs(true), 1000);
+        setTimeout(() => this.loadLogs(), 1000);
       } catch (e) {
         this.ui.showMessage('⚠️ ' + (L.server_error || 'Serverfehler'), 'error');
         OfflineSyncManager.save(qrCode);
       }
     }
 
-    async loadLogs(force = false) {
+    async loadLogs() {
       if (!getStoreKey()) return;
-
-      // Throttle check - skip if called too recently (unless forced)
-      const now = Date.now();
-      if (!force && now - STATE.api.lastLogsCall < STATE.api.logsThrottle) {
-        console.log('[QR] Logs call throttled');
-        return;
-      }
-      STATE.api.lastLogsCall = now;
-
-      // Cancel any pending request
-      if (STATE.api.logsController) {
-        STATE.api.logsController.abort();
-      }
-      STATE.api.logsController = new AbortController();
-
       try {
         const res = await fetch('/wp-json/punktepass/v1/pos/logs', {
-          headers: { 'PPV-POS-Token': getStoreKey() },
-          signal: STATE.api.logsController.signal
+          headers: { 'PPV-POS-Token': getStoreKey() }
         });
         const logs = await res.json();
 
@@ -271,13 +236,7 @@
         // Add logs (API returns newest first)
         (logs || []).forEach(l => this.ui.addScanItem(l));
       } catch (e) {
-        if (e.name === 'AbortError') {
-          console.log('[QR] Logs request aborted');
-        } else {
-          console.warn('[QR] Failed to load logs:', e);
-        }
-      } finally {
-        STATE.api.logsController = null;
+        console.warn('[QR] Failed to load logs:', e);
       }
     }
   }
@@ -304,26 +263,12 @@
       }
     }
 
-    async load(force = false) {
+    async load() {
       if (!this.list) return;
       if (!getStoreKey()) {
         this.list.innerHTML = `<p style='text-align:center;color:#999;padding:20px;'>${L.camp_no_store || 'Kein Geschäft ausgewählt'}</p>`;
         return;
       }
-
-      // Throttle check - skip if called too recently (unless forced)
-      const now = Date.now();
-      if (!force && now - STATE.api.lastCampaignsCall < STATE.api.campaignsThrottle) {
-        console.log('[QR] Campaigns call throttled');
-        return;
-      }
-      STATE.api.lastCampaignsCall = now;
-
-      // Cancel any pending request
-      if (STATE.api.campaignsController) {
-        STATE.api.campaignsController.abort();
-      }
-      STATE.api.campaignsController = new AbortController();
 
       this.list.innerHTML = `<div class='ppv-loading'>⏳ ${L.camp_loading || 'Lade Kampagnen...'}</div>`;
 
@@ -331,8 +276,7 @@
 
       try {
         const res = await fetch('/wp-json/punktepass/v1/pos/campaigns', {
-          headers: { 'PPV-POS-Token': getStoreKey() },
-          signal: STATE.api.campaignsController.signal
+          headers: { 'PPV-POS-Token': getStoreKey() }
         });
         const data = await res.json();
 
@@ -350,13 +294,7 @@
 
         filtered.forEach(c => this.renderCampaign(c));
       } catch (e) {
-        if (e.name === 'AbortError') {
-          console.log('[QR] Campaigns request aborted');
-        } else {
-          this.list.innerHTML = `<p>⚠️ ${L.camp_load_error || 'Fehler beim Laden'}</p>`;
-        }
-      } finally {
-        STATE.api.campaignsController = null;
+        this.list.innerHTML = `<p>⚠️ ${L.camp_load_error || 'Fehler beim Laden'}</p>`;
       }
     }
 
@@ -461,7 +399,7 @@
           window.ppvToast(this.editingId > 0 ? (L.camp_updated || '✅ Aktualisiert!') : (L.camp_saved || '✅ Gespeichert!'), 'success');
           this.hideModal();
           this.resetForm();
-          setTimeout(() => this.load(true), 500);
+          setTimeout(() => this.load(), 500);
         } else {
           window.ppvToast('❌ ' + (data.message || L.error_generic || 'Fehler'), 'error');
         }
@@ -481,7 +419,7 @@
         const data = await res.json();
         if (data.success) {
           window.ppvToast('🗑️ ' + (L.camp_deleted || 'Gelöscht'), 'success');
-          setTimeout(() => this.load(true), 500);
+          setTimeout(() => this.load(), 500);
         }
       } catch (e) {
         window.ppvToast('⚠️ ' + (L.server_error || 'Serverfehler'), 'error');
@@ -498,7 +436,7 @@
         const data = await res.json();
         if (data.success) {
           window.ppvToast('📦 ' + (L.camp_archived || 'Archiviert'), 'success');
-          setTimeout(() => this.load(true), 500);
+          setTimeout(() => this.load(), 500);
         }
       } catch (e) {
         window.ppvToast('⚠️ ' + (L.server_error || 'Serverfehler'), 'error');
@@ -528,7 +466,7 @@
         const data = await res.json();
         if (data.success) {
           window.ppvToast('📄 ' + (L.camp_cloned || 'Dupliziert!'), 'success');
-          setTimeout(() => this.load(true), 500);
+          setTimeout(() => this.load(), 500);
         }
       } catch (e) {
         window.ppvToast('⚠️ ' + (L.server_error || 'Serverfehler'), 'error');
@@ -649,20 +587,6 @@
       const handle = document.getElementById('ppv-mini-drag-handle');
       if (!handle) return;
 
-      // Remove old document listeners if they exist
-      if (STATE.boundHandlers.dragMove) {
-        document.removeEventListener('mousemove', STATE.boundHandlers.dragMove);
-      }
-      if (STATE.boundHandlers.dragEnd) {
-        document.removeEventListener('mouseup', STATE.boundHandlers.dragEnd);
-      }
-      if (STATE.boundHandlers.touchMove) {
-        document.removeEventListener('touchmove', STATE.boundHandlers.touchMove);
-      }
-      if (STATE.boundHandlers.touchEnd) {
-        document.removeEventListener('touchend', STATE.boundHandlers.touchEnd);
-      }
-
       let isDragging = false, currentX = 0, currentY = 0, offsetX = 0, offsetY = 0;
 
       const dragStart = e => {
@@ -698,12 +622,6 @@
         }
       };
 
-      // Store handlers for cleanup
-      STATE.boundHandlers.dragMove = drag;
-      STATE.boundHandlers.dragEnd = dragEnd;
-      STATE.boundHandlers.touchMove = drag;
-      STATE.boundHandlers.touchEnd = dragEnd;
-
       handle.addEventListener('mousedown', dragStart);
       document.addEventListener('mousemove', drag);
       document.addEventListener('mouseup', dragEnd);
@@ -714,9 +632,6 @@
 
     setupToggle() {
       if (!this.toggleBtn) return;
-      // Skip if already initialized
-      if (this.toggleBtn.dataset.ppvInitialized === 'true') return;
-      this.toggleBtn.dataset.ppvInitialized = 'true';
       this.toggleBtn.addEventListener('click', async () => {
         if (this.scanning) await this.stopScanner();
         else await this.startScannerManual();
@@ -931,10 +846,6 @@
       const langSel = document.getElementById('ppv-lang-select');
       if (!langSel) return;
 
-      // Skip if already initialized
-      if (langSel.dataset.ppvInitialized === 'true') return;
-      langSel.dataset.ppvInitialized = 'true';
-
       const cur = (document.cookie.match(/ppv_lang=([^;]+)/) || [])[1] || 'de';
       langSel.value = cur;
 
@@ -957,10 +868,6 @@
     static initTheme() {
       const themeBtn = document.getElementById('ppv-theme-toggle');
       if (!themeBtn) return;
-
-      // Skip if already initialized
-      if (themeBtn.dataset.ppvInitialized === 'true') return;
-      themeBtn.dataset.ppvInitialized = 'true';
 
       const apply = v => {
         document.body.classList.remove('ppv-light', 'ppv-dark');
@@ -1026,9 +933,9 @@
       STATE.campaignManager?.updateValueLabel(target.value);
     }
 
-    // Campaign filter - user action, force refresh
+    // Campaign filter
     if (target.id === 'ppv-campaign-filter') {
-      STATE.campaignManager?.load(true);
+      STATE.campaignManager?.load();
     }
   }
 
@@ -1036,38 +943,6 @@
   // CLEANUP
   // ============================================================
   function cleanup() {
-    // Abort any pending API requests
-    if (STATE.api.logsController) {
-      STATE.api.logsController.abort();
-      STATE.api.logsController = null;
-    }
-    if (STATE.api.campaignsController) {
-      STATE.api.campaignsController.abort();
-      STATE.api.campaignsController = null;
-    }
-
-    // Remove drag handlers from document
-    if (STATE.boundHandlers.dragMove) {
-      document.removeEventListener('mousemove', STATE.boundHandlers.dragMove);
-      STATE.boundHandlers.dragMove = null;
-    }
-    if (STATE.boundHandlers.dragEnd) {
-      document.removeEventListener('mouseup', STATE.boundHandlers.dragEnd);
-      STATE.boundHandlers.dragEnd = null;
-    }
-    if (STATE.boundHandlers.touchMove) {
-      document.removeEventListener('touchmove', STATE.boundHandlers.touchMove);
-      STATE.boundHandlers.touchMove = null;
-    }
-    if (STATE.boundHandlers.touchEnd) {
-      document.removeEventListener('touchend', STATE.boundHandlers.touchEnd);
-      STATE.boundHandlers.touchEnd = null;
-    }
-    if (STATE.boundHandlers.visibilityChange) {
-      document.removeEventListener('visibilitychange', STATE.boundHandlers.visibilityChange);
-      STATE.boundHandlers.visibilityChange = null;
-    }
-
     STATE.cameraScanner?.cleanup();
     STATE.cameraScanner = null;
     STATE.campaignManager = null;
@@ -1106,9 +981,8 @@
     // Setup event delegation
     setupEventDelegation();
 
-    // Input handling - skip if already initialized
-    if (posInput && posInput.dataset.ppvInitialized !== 'true') {
-      posInput.dataset.ppvInitialized = 'true';
+    // Input handling
+    if (posInput) {
       posInput.addEventListener('keypress', e => {
         if (e.key === 'Enter') {
           e.preventDefault();
@@ -1123,8 +997,7 @@
     }
 
     const sendBtn = document.getElementById('ppv-pos-send');
-    if (sendBtn && posInput && sendBtn.dataset.ppvInitialized !== 'true') {
-      sendBtn.dataset.ppvInitialized = 'true';
+    if (sendBtn && posInput) {
       sendBtn.addEventListener('click', () => {
         const qr = posInput.value.trim();
         if (qr) {
@@ -1139,22 +1012,18 @@
     SettingsManager.initTheme();
 
     // Load data
-    // STATE.scanProcessor.loadLogs();  // DISABLED FOR TESTING - check if this causes 503 errors
+    STATE.scanProcessor.loadLogs();
     STATE.campaignManager.load();
     OfflineSyncManager.sync();
 
-    // Visibility change handler - remove old listener first
-    if (STATE.boundHandlers.visibilityChange) {
-      document.removeEventListener('visibilitychange', STATE.boundHandlers.visibilityChange);
-    }
+    // Visibility change handler
     let lastVis = 0;
-    STATE.boundHandlers.visibilityChange = () => {
+    document.addEventListener('visibilitychange', () => {
       if (!document.hidden && Date.now() - lastVis > 5000) {
         lastVis = Date.now();
         STATE.campaignManager?.load();
       }
-    };
-    document.addEventListener('visibilitychange', STATE.boundHandlers.visibilityChange);
+    });
 
     STATE.initialized = true;
     console.log('[QR] Initialization complete');
@@ -1178,14 +1047,6 @@
   // Custom SPA event support
   window.addEventListener('ppv:spa-navigate', init);
 
-  // Tab change support - reinitialize when scanner tab becomes visible
-  window.addEventListener('ppv:tab-change', function(e) {
-    if (e.detail?.tab === 'scanner') {
-      console.log('[QR] Scanner tab activated, reinitializing...');
-      init();
-    }
-  });
-
-  console.log('[QR] Script loaded v6.2');
+  console.log('[QR] Script loaded v6.0');
 
 })();

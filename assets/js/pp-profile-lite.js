@@ -447,14 +447,9 @@
         initProfileForm();
     }
 
-    // 🛡️ Guard to prevent multiple Turbo listener registrations
-    if (!window.PPV_PROFILE_TURBO_LISTENERS) {
-        window.PPV_PROFILE_TURBO_LISTENERS = true;
-        document.addEventListener('turbo:load', initProfileForm);
-        document.addEventListener('turbo:render', initProfileForm);
-        window.addEventListener('ppv:spa-navigate', () => setTimeout(initProfileForm, 100));
-        console.log('✅ [Profile] Turbo/SPA listeners registered (once)');
-    }
+    // 🚀 Turbo: Re-init after navigation
+    document.addEventListener('turbo:load', initProfileForm);
+    document.addEventListener('turbo:render', initProfileForm);
 
 })();
 
@@ -793,21 +788,12 @@ if (document.readyState === 'loading') {
   initManualMapButton();
 }
 
-// 🛡️ Guard to prevent multiple Turbo listener registrations (geocoding)
-if (!window.PPV_PROFILE_GEO_TURBO_LISTENERS) {
-  window.PPV_PROFILE_GEO_TURBO_LISTENERS = true;
-  document.addEventListener('turbo:load', () => {
-    initGeocodingFeatures();
-    initManualMapButton();
-  });
-  document.addEventListener('turbo:render', () => {
-    initGeocodingFeatures();
-    initManualMapButton();
-  });
-  window.addEventListener('ppv:spa-navigate', () => {
-    setTimeout(() => {
-      initGeocodingFeatures();
-      initManualMapButton();
-    }, 100);
-  });
-}
+// 🚀 Turbo: Re-init after navigation
+document.addEventListener('turbo:load', () => {
+  initGeocodingFeatures();
+  initManualMapButton();
+});
+document.addEventListener('turbo:render', () => {
+  initGeocodingFeatures();
+  initManualMapButton();
+});

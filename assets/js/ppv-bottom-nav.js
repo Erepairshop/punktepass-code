@@ -1,49 +1,22 @@
 /**
- * PunktePass – Bottom Nav v2.1 (Active + Lang Sync)
- * FIXED: Event delegation to prevent listener duplication
- * FIXED: Turbo/SPA listeners only added once
+ * PunktePass – Bottom Nav (Active + Lang Sync)
  */
-(function($) {
-  'use strict';
+jQuery(document).ready(function ($) {
+  console.log("✅ Bottom Nav aktiv");
 
-  // Guard against multiple initializations
-  if (window.PPV_BOTTOM_NAV_INITIALIZED) {
-    console.log("⏭️ [Bottom Nav] Already initialized");
-    return;
-  }
-  window.PPV_BOTTOM_NAV_INITIALIZED = true;
+  const currentPath = window.location.pathname.replace(/\/+$/, "");
 
-  console.log("✅ [Bottom Nav] v2.1 active");
-
-  // Update active state
-  function updateActiveState() {
-    const currentPath = window.location.pathname.replace(/\/+$/, "");
-    $(".ppv-bottom-nav .nav-item").each(function() {
-      const href = $(this).attr("href")?.replace(/\/+$/, "") || "";
-      $(this).toggleClass("active", currentPath === href);
-    });
-  }
-
-  // Initial active state
-  updateActiveState();
-
-  // Event delegation for touch feedback (only one listener on document)
-  // Using namespaced events to prevent duplicates
-  $(document).off("touchstart.ppvnav mousedown.ppvnav").on("touchstart.ppvnav mousedown.ppvnav", ".ppv-bottom-nav .nav-item", function() {
-    $(this).addClass("touch");
+  $(".ppv-bottom-nav .nav-item").each(function () {
+    const href = $(this).attr("href").replace(/\/+$/, "");
+    if (currentPath === href) {
+      $(this).addClass("active");
+    }
   });
 
-  $(document).off("touchend.ppvnav mouseup.ppvnav mouseleave.ppvnav").on("touchend.ppvnav mouseup.ppvnav mouseleave.ppvnav", ".ppv-bottom-nav .nav-item", function() {
+  // smooth icon hover feedback
+  $(".ppv-bottom-nav .nav-item").on("touchstart mousedown", function () {
+    $(this).addClass("touch");
+  }).on("touchend mouseup", function () {
     $(this).removeClass("touch");
   });
-
-  // Update active state on Turbo navigation (listeners are within IIFE guard)
-  document.addEventListener('turbo:load', updateActiveState);
-
-  // Update on custom SPA navigation
-  window.addEventListener('ppv:spa-navigate', updateActiveState);
-
-  // Update on popstate (back/forward)
-  window.addEventListener('popstate', updateActiveState);
-
-})(jQuery);
+});
