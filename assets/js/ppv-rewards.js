@@ -414,16 +414,22 @@ if (window.PPV_REWARDS_LOADED) {
      * ============================================================ */
     async function loadRedeemRequests() {
       console.log('📦 [REWARDS] loadRedeemRequests() called');
-      
-      if (!redeemList) {
+
+      // 🔄 Re-query DOM element each time (for Turbo compatibility)
+      const currentRedeemList = document.getElementById("ppv-redeem-list");
+
+      if (!currentRedeemList) {
         console.error('❌ [REWARDS] redeemList element not found!');
         return;
       }
 
-      const url = `${base}redeem/list?store_id=${storeID}`;
-      
-      redeemList.innerHTML = "";
-      redeemList.innerHTML = `<div class='ppv-loading'>${L.redeem_loading || 'Lade Einlösungen...'}</div>`;
+      // 🔄 Re-get storeID from window (might have changed with Turbo)
+      const currentStoreID = window.PPV_STORE_ID ? parseInt(window.PPV_STORE_ID) : storeID;
+
+      const url = `${base}redeem/list?store_id=${currentStoreID}`;
+
+      currentRedeemList.innerHTML = "";
+      currentRedeemList.innerHTML = `<div class='ppv-loading'>${L.redeem_loading || 'Lade Einlösungen...'}</div>`;
 
       try {
         const res = await fetch(url, {
@@ -437,13 +443,13 @@ if (window.PPV_REWARDS_LOADED) {
         const json = await res.json();
         
         if (!json?.success || !json?.items?.length) {
-          redeemList.innerHTML = "";
-          redeemList.innerHTML = `<div class='ppv-redeem-empty'>${L.redeem_no_items || 'Keine Einlösungen vorhanden'}</div>`;
+          currentRedeemList.innerHTML = "";
+          currentRedeemList.innerHTML = `<div class='ppv-redeem-empty'>${L.redeem_no_items || 'Keine Einlösungen vorhanden'}</div>`;
           notificationSystem.updatePageTitle(0);
           return;
         }
 
-        redeemList.innerHTML = "";
+        currentRedeemList.innerHTML = "";
         
         const pending = json.items.filter(r => r.status === 'pending');
         const approved = json.items.filter(r => r.status === 'approved');
@@ -458,7 +464,7 @@ if (window.PPV_REWARDS_LOADED) {
           const pendingTitle = document.createElement('h4');
           pendingTitle.textContent = L.redeem_pending_section || '⏳ Offene Einlösungen';
           pendingTitle.style.cssText = 'margin: 20px 0 15px; font-size: 16px;';
-          redeemList.appendChild(pendingTitle);
+          currentRedeemList.appendChild(pendingTitle);
 
           pending.forEach((r) => {
             const redeemId = parseInt(r.id);
@@ -500,8 +506,8 @@ if (window.PPV_REWARDS_LOADED) {
                 </button>
               </div>
             `;
-            
-            redeemList.appendChild(card);
+
+            currentRedeemList.appendChild(card);
           });
         }
 
@@ -510,7 +516,7 @@ if (window.PPV_REWARDS_LOADED) {
           const approvedTitle = document.createElement('h4');
           approvedTitle.textContent = L.redeem_approved_section || '✅ Bestätigte Einlösungen';
           approvedTitle.style.cssText = 'margin: 30px 0 15px; font-size: 16px;';
-          redeemList.appendChild(approvedTitle);
+          currentRedeemList.appendChild(approvedTitle);
 
           approved.forEach((r) => {
             const card = document.createElement("div");
@@ -539,13 +545,13 @@ if (window.PPV_REWARDS_LOADED) {
                 </span>
               </div>
             `;
-            
-            redeemList.appendChild(card);
+
+            currentRedeemList.appendChild(card);
           });
         }
 
         // ✅ Attach event listeners
-        redeemList.querySelectorAll('.ppv-approve').forEach(btn => {
+        currentRedeemList.querySelectorAll('.ppv-approve').forEach(btn => {
           btn.addEventListener('click', (e) => {
             e.preventDefault();
             const id = parseInt(btn.dataset.id);
@@ -553,7 +559,7 @@ if (window.PPV_REWARDS_LOADED) {
           });
         });
 
-        redeemList.querySelectorAll('.ppv-reject').forEach(btn => {
+        currentRedeemList.querySelectorAll('.ppv-reject').forEach(btn => {
           btn.addEventListener('click', (e) => {
             e.preventDefault();
             const id = parseInt(btn.dataset.id);
@@ -563,7 +569,7 @@ if (window.PPV_REWARDS_LOADED) {
 
       } catch (err) {
         console.error('❌ [REWARDS] Load error:', err);
-        redeemList.innerHTML = `<div class="ppv-error">❌ ${L.redeem_load_error || 'Fehler beim Laden der Daten'}</div>`;
+        currentRedeemList.innerHTML = `<div class="ppv-error">❌ ${L.redeem_load_error || 'Fehler beim Laden der Daten'}</div>`;
       }
     }
 
@@ -572,13 +578,19 @@ if (window.PPV_REWARDS_LOADED) {
      * ============================================================ */
     async function loadRecentLogs() {
       console.log('📦 [REWARDS] loadRecentLogs() called');
-      
-      if (!logList) {
+
+      // 🔄 Re-query DOM element each time (for Turbo compatibility)
+      const currentLogList = document.getElementById("ppv-log-list");
+
+      if (!currentLogList) {
         return;
       }
 
-      const url = `${base}redeem/log?store_id=${storeID}`;
-      
+      // 🔄 Re-get storeID from window (might have changed with Turbo)
+      const currentStoreID = window.PPV_STORE_ID ? parseInt(window.PPV_STORE_ID) : storeID;
+
+      const url = `${base}redeem/log?store_id=${currentStoreID}`;
+
       try {
         const res = await fetch(url, {
           headers: { "PPV-POS-Token": POS_TOKEN }
@@ -591,11 +603,11 @@ if (window.PPV_REWARDS_LOADED) {
         const json = await res.json();
 
         if (!json?.success || !json?.items?.length) {
-          logList.innerHTML = `<p>${L.redeem_no_logs || 'Keine Logs vorhanden'}</p>`;
+          currentLogList.innerHTML = `<p>${L.redeem_no_logs || 'Keine Logs vorhanden'}</p>`;
           return;
         }
 
-        logList.innerHTML = '';
+        currentLogList.innerHTML = '';
 
         json.items.forEach((item) => {
           const statusBadge = item.status === 'approved' 
@@ -621,7 +633,7 @@ if (window.PPV_REWARDS_LOADED) {
             <small>${item.points_spent} ${L.redeem_points || 'Punkte'} • ${formatDate(item.redeemed_at)}</small>
           `;
 
-          logList.appendChild(logItem);
+          currentLogList.appendChild(logItem);
         });
 
       } catch (err) {
@@ -635,6 +647,9 @@ if (window.PPV_REWARDS_LOADED) {
     async function updateRedeemStatus(id, status) {
       console.log(`📦 [REWARDS] Updating redeem #${id} → ${status}`);
 
+      // 🔄 Re-get storeID from window (might have changed with Turbo)
+      const currentStoreID = window.PPV_STORE_ID ? parseInt(window.PPV_STORE_ID) : storeID;
+
       try {
         const res = await fetch(`${base}redeem/update`, {
           method: 'POST',
@@ -645,7 +660,7 @@ if (window.PPV_REWARDS_LOADED) {
           body: JSON.stringify({
             id: id,
             status: status,
-            store_id: storeID
+            store_id: currentStoreID
           })
         });
 
