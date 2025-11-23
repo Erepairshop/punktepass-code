@@ -588,6 +588,10 @@ class CampaignManager {
     const freeProductName = (document.getElementById("camp-free-product-name")?.value || "").trim();
     const freeProductValue = safeNum("camp-free-product-value");
 
+    // 🏢 FILIALE SUPPORT
+    const targetStoreId = safe("camp-target-store") || "current";
+    const applyToAll = document.getElementById("camp-apply-all")?.checked || false;
+
     if (!title || !start || !end) {
       const msg = L.camp_fill_title_date || "Kérlek töltsd ki a címet és a dátumot";
       this.ui.showMessage(msg, "warning");
@@ -633,6 +637,9 @@ class CampaignManager {
           free_product_value: freeProductValue,
           points_given: pointsGiven,
           status,
+          // 🏢 FILIALE SUPPORT
+          target_store_id: targetStoreId,
+          apply_to_all: applyToAll,
         }),
       });
 
@@ -743,6 +750,10 @@ class CampaignManager {
     if (safe("camp-points-given")) safe("camp-points-given").value = 1;
     if (safe("camp-free-product-name")) safe("camp-free-product-name").value = "";
     if (safe("camp-free-product-value")) safe("camp-free-product-value").value = 0;
+
+    // 🏢 FILIALE SUPPORT - reset filiale fields
+    if (safe("camp-target-store")) safe("camp-target-store").value = "current";
+    if (safe("camp-apply-all")) safe("camp-apply-all").checked = false;
 
     if (safe("camp-required-points-wrapper")) safe("camp-required-points-wrapper").style.display = "none";
     if (safe("camp-points-given-wrapper")) safe("camp-points-given-wrapper").style.display = "none";
