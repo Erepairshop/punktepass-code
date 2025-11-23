@@ -172,6 +172,9 @@ wp_localize_script('pp-profile-lite-i18n', 'ppv_profile', [
 
             ob_start();
             ?>
+            <!-- ✅ Disable Turbo cache for this page to ensure fresh data after save -->
+            <meta name="turbo-cache-control" content="no-cache">
+
             <div class="ppv-profile-container">
                 <div class="ppv-profile-header">
                     <div class="ppv-header-left">
