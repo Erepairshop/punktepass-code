@@ -274,14 +274,18 @@
                         console.log('✅ [Profile] Updating form fields with:', data.data.store);
                         this.updateFormFields(data.data.store);
 
-                        // ✅ FIX: Clear Turbo cache to prevent stale data on refresh
-                        if (typeof Turbo !== 'undefined' && Turbo.cache) {
-                            console.log('🗑️ [Profile] Clearing Turbo cache');
-                            Turbo.cache.clear();
-                        }
-                        // Reload after delay to show success message & ensure fresh data
+                        // ✅ FIX: Force hard reload bypassing all caches
                         setTimeout(() => {
-                            window.location.reload();
+                            // Method 1: Turbo visit with replace action (bypasses Turbo cache)
+                            if (typeof Turbo !== 'undefined') {
+                                console.log('🔄 [Profile] Using Turbo.visit for fresh reload');
+                                Turbo.cache.clear();
+                                Turbo.visit(window.location.href, { action: 'replace' });
+                            } else {
+                                // Method 2: Hard reload (bypasses browser cache)
+                                console.log('🔄 [Profile] Using hard reload');
+                                window.location.href = window.location.href.split('?')[0] + '?_=' + Date.now();
+                            }
                         }, 800);
                     } else {
                         console.warn('⚠️ [Profile] No store data in response!');
