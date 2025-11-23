@@ -247,6 +247,7 @@ $core_modules = [
      'includes/class-ppv-legal.php',
      'includes/class-ppv-user-level.php',
      'includes/class-ppv-vip-settings.php',
+     'includes/class-ppv-pusher.php',
 
 ];
 

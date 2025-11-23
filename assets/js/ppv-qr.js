@@ -1079,9 +1079,97 @@
     STATE.campaignManager.load();
     OfflineSyncManager.sync();
 
-    // Polling: Refresh logs every 5 seconds (non-blocking, doesn't tie up PHP workers)
+    // ============================================================
+    // REAL-TIME UPDATES: Pusher (primary) or Polling (fallback)
+    // ============================================================
     let pollInterval = null;
-    const POLL_INTERVAL_MS = 5000;
+    const POLL_INTERVAL_MS = 10000; // 10s fallback polling
+
+    // Check if Pusher is configured
+    const pusherConfig = window.PPV_STORE_DATA?.pusher;
+    const storeId = window.PPV_STORE_DATA?.store_id;
+
+    if (pusherConfig && typeof Pusher !== 'undefined' && storeId) {
+      // PUSHER MODE: Real-time updates via WebSocket
+      ppvLog('[Pusher] Initializing with key:', pusherConfig.key);
+
+      const pusher = new Pusher(pusherConfig.key, {
+        cluster: pusherConfig.cluster,
+        authorizer: (channel) => ({
+          authorize: (socketId, callback) => {
+            fetch(pusherConfig.auth_endpoint, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'PPV-POS-Token': getStoreKey()
+              },
+              body: new URLSearchParams({
+                socket_id: socketId,
+                channel_name: channel.name
+              })
+            })
+            .then(res => res.json())
+            .then(data => {
+              if (data.auth) {
+                callback(null, data);
+              } else {
+                callback(new Error('Auth failed'), null);
+              }
+            })
+            .catch(err => callback(err, null));
+          }
+        })
+      });
+
+      // Subscribe to store's private channel
+      const channelName = 'private-store-' + storeId;
+      const channel = pusher.subscribe(channelName);
+
+      channel.bind('pusher:subscription_succeeded', () => {
+        ppvLog('[Pusher] Subscribed to', channelName);
+      });
+
+      channel.bind('pusher:subscription_error', (err) => {
+        ppvLog('[Pusher] Subscription error:', err);
+        // Fall back to polling on subscription error
+        startPolling();
+      });
+
+      // Handle incoming scan events
+      channel.bind('new-scan', (data) => {
+        ppvLog('[Pusher] New scan received:', data);
+
+        // Add scan to UI immediately
+        if (STATE.scanProcessor?.ui) {
+          STATE.scanProcessor.ui.addScanItem(data);
+        }
+      });
+
+      // Connection state logging
+      pusher.connection.bind('connected', () => {
+        ppvLog('[Pusher] Connected');
+        // Stop polling if it was running
+        if (pollInterval) {
+          clearInterval(pollInterval);
+          pollInterval = null;
+        }
+      });
+
+      pusher.connection.bind('disconnected', () => {
+        ppvLog('[Pusher] Disconnected, starting fallback polling');
+        startPolling();
+      });
+
+      STATE.initialized = true;
+      ppvLog('[QR] Initialization complete (Pusher mode)');
+
+    } else {
+      // POLLING MODE: Fallback when Pusher not available
+      ppvLog('[Poll] Pusher not available, using polling fallback');
+      startPolling();
+      STATE.initialized = true;
+      ppvLog('[QR] Initialization complete (polling mode)');
+    }
 
     function startPolling() {
       if (!getStoreKey()) {
@@ -1106,9 +1194,6 @@
       pollInterval = setInterval(poll, POLL_INTERVAL_MS);
     }
 
-    // Start polling
-    startPolling();
-
     // Visibility change handler - refresh immediately when page becomes visible
     let lastVis = 0;
     document.addEventListener('visibilitychange', () => {
@@ -1118,9 +1203,6 @@
         STATE.scanProcessor?.loadLogs(); // Refresh logs immediately
       }
     });
-
-    STATE.initialized = true;
-    ppvLog('[QR] Initialization complete (polling mode)');
   }
 
   // ============================================================
