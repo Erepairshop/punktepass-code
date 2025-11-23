@@ -284,19 +284,8 @@ public static function force_visible() {
             true
         );
 
-        wp_enqueue_script(
-            'ppv-user-dashboard',
-            PPV_PLUGIN_URL . 'assets/js/ppv-user-dashboard.js',
-            ['jquery'],
-            time(), // Always fresh - no cache issues
-            true
-        );
-
-        // 🔹 Nyelvi adatok JS-hez
-        if (class_exists('PPV_Lang')) {
-            $__data = is_array(PPV_Lang::$strings ?? null) ? PPV_Lang::$strings : [];
-            wp_localize_script('ppv-user-dashboard', 'ppv_lang', $__data);
-        }
+        // ❌ REMOVED: ppv-user-dashboard.js - already loaded by class-ppv-user-dashboard.php
+        // This was causing duplicate script loading and "PPV_TRANSLATIONS already declared" error
     }
 }
 
