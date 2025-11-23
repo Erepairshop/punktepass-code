@@ -9,8 +9,8 @@
 (function() {
   'use strict';
 
-  // ✅ DEBUG mode - set to true for verbose logging
-  const PPV_DEBUG = true;
+  // ✅ DEBUG mode - set to false for production
+  const PPV_DEBUG = false;
   const ppvLog = (...args) => { if (PPV_DEBUG) console.log(...args); };
   const ppvWarn = (...args) => { if (PPV_DEBUG) console.warn(...args); };
 
@@ -62,7 +62,7 @@
   window.ppvToast = function(msg, type = 'info') {
     const box = document.createElement('div');
     box.className = 'ppv-toast ' + type;
-    box.innerHTML = msg;
+    box.textContent = msg; // ✅ FIX: Use textContent to prevent XSS
     document.body.appendChild(box);
     setTimeout(() => box.classList.add('show'), 10);
     setTimeout(() => box.classList.remove('show'), 3000);
@@ -78,6 +78,15 @@
     if (now - lastScanTime < 600) return false;
     lastScanTime = now;
     return true;
+  }
+
+  // ============================================================
+  // HTML ESCAPE (XSS Prevention)
+  // ============================================================
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
   }
 
   // ============================================================
@@ -286,15 +295,14 @@
 
         if (data.success) {
           this.ui.showMessage('✅ ' + data.message, 'success');
-          this.ui.addLogRow(data.time || new Date().toLocaleString(), data.user_id || '-', '✅');
+          // ✅ FIX: Removed non-existent addLogRow call - inlineProcessScan handles UI updates
         } else {
           this.ui.showMessage('⚠️ ' + (data.message || ''), 'warning');
           if (!/bereits|gescannt|duplikat/i.test(data.message || '')) {
             OfflineSyncManager.save(qrCode);
           }
         }
-
-        setTimeout(() => this.loadLogs(), 1000);
+        // ✅ FIX: Removed redundant loadLogs - real-time updates handle this
       } catch (e) {
         this.ui.showMessage('⚠️ ' + (L.server_error || 'Serverfehler'), 'error');
         OfflineSyncManager.save(qrCode);
@@ -388,11 +396,15 @@
       if (c.campaign_type === 'discount') value = c.discount_percent + '%';
       if (c.campaign_type === 'fixed') value = (c.min_purchase ?? c.fixed_amount ?? 0) + '€';
 
+      // ✅ FIX: Escape HTML to prevent XSS
+      const safeTitle = escapeHtml(c.title || '');
+      const safeType = escapeHtml(c.campaign_type || '');
+
       const card = document.createElement('div');
       card.className = 'ppv-campaign-item glass';
       card.innerHTML = `
         <div class="ppv-camp-header">
-          <h4>${c.title}</h4>
+          <span class="ppv-camp-title">${safeTitle}</span>
           <div class="ppv-camp-actions">
             <span class="ppv-camp-clone" data-id="${c.id}">📄</span>
             <span class="ppv-camp-archive" data-id="${c.id}">📦</span>
@@ -400,8 +412,8 @@
             <span class="ppv-camp-delete" data-id="${c.id}">🗑️</span>
           </div>
         </div>
-        <p>${(c.start_date || '').substring(0, 10)} – ${(c.end_date || '').substring(0, 10)}</p>
-        <p>⭐ ${L.camp_type || 'Typ'}: ${c.campaign_type} | ${L.camp_value || 'Wert'}: ${value} | ${statusBadge(c.state)}</p>
+        <p class="ppv-camp-dates">${(c.start_date || '').substring(0, 10)} – ${(c.end_date || '').substring(0, 10)}</p>
+        <p class="ppv-camp-meta">⭐ ${safeType} | ${value} | ${statusBadge(c.state)}</p>
       `;
       this.list.appendChild(card);
     }
@@ -1042,6 +1054,25 @@
   function setupEventDelegation() {
     document.body.removeEventListener('click', handleBodyClick);
     document.body.addEventListener('click', handleBodyClick);
+
+    // ✅ FIX: Setup change listener for camp-type select (click doesn't work for select)
+    const campTypeSelect = document.getElementById('camp-type');
+    if (campTypeSelect && !campTypeSelect.dataset.listenerAdded) {
+      campTypeSelect.dataset.listenerAdded = 'true';
+      campTypeSelect.addEventListener('change', (e) => {
+        STATE.campaignManager?.updateVisibilityByType(e.target.value);
+        STATE.campaignManager?.updateValueLabel(e.target.value);
+      });
+    }
+
+    // ✅ FIX: Setup change listener for campaign filter select
+    const campFilterSelect = document.getElementById('ppv-campaign-filter');
+    if (campFilterSelect && !campFilterSelect.dataset.listenerAdded) {
+      campFilterSelect.dataset.listenerAdded = 'true';
+      campFilterSelect.addEventListener('change', () => {
+        STATE.campaignManager?.load();
+      });
+    }
   }
 
   function handleBodyClick(e) {
@@ -1092,11 +1123,7 @@
       STATE.campaignManager?.hideModal();
     }
 
-    // Campaign type change
-    if (target.id === 'camp-type') {
-      STATE.campaignManager?.updateVisibilityByType(target.value);
-      STATE.campaignManager?.updateValueLabel(target.value);
-    }
+    // ✅ NOTE: Campaign type change handled via setupCampTypeListener()
 
     // Campaign filter
     if (target.id === 'ppv-campaign-filter') {
@@ -1206,6 +1233,12 @@
       ppvLog('[Poll] Clearing interval on cleanup');
       clearInterval(STATE.pollInterval);
       STATE.pollInterval = null;
+    }
+
+    // ✅ FIX: Remove visibilitychange handler to prevent memory leak
+    if (STATE.visibilityHandler) {
+      document.removeEventListener('visibilitychange', STATE.visibilityHandler);
+      STATE.visibilityHandler = null;
     }
 
     STATE.cameraScanner?.cleanup();
@@ -1399,15 +1432,18 @@
       STATE.pollInterval = setInterval(poll, POLL_INTERVAL_MS);
     }
 
-    // Visibility change handler - refresh immediately when page becomes visible
-    let lastVis = 0;
-    document.addEventListener('visibilitychange', () => {
-      if (!document.hidden && Date.now() - lastVis > 3000) {
-        lastVis = Date.now();
-        STATE.campaignManager?.load();
-        STATE.scanProcessor?.loadLogs(); // Refresh logs immediately
-      }
-    });
+    // ✅ FIX: Move visibilitychange handler to STATE to prevent memory leak
+    if (!STATE.visibilityHandler) {
+      let lastVis = 0;
+      STATE.visibilityHandler = () => {
+        if (!document.hidden && Date.now() - lastVis > 3000) {
+          lastVis = Date.now();
+          STATE.campaignManager?.load();
+          STATE.scanProcessor?.loadLogs();
+        }
+      };
+      document.addEventListener('visibilitychange', STATE.visibilityHandler);
+    }
   }
 
   // ============================================================
