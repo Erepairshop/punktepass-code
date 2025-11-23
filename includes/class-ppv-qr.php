@@ -1871,8 +1871,9 @@ class PPV_QR {
             ]);
 
             // 📡 ABLY: Also notify user's dashboard of points update
+            // ✅ FIX: Query from ppv_points table (not ppv_qr_scans!)
             $total_points = (int) $wpdb->get_var($wpdb->prepare(
-                "SELECT COALESCE(SUM(points), 0) FROM {$wpdb->prefix}ppv_qr_scans WHERE user_id = %d",
+                "SELECT COALESCE(SUM(points), 0) FROM {$wpdb->prefix}ppv_points WHERE user_id = %d",
                 $user_id
             ));
             $total_rewards = (int) $wpdb->get_var($wpdb->prepare(
