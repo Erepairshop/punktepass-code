@@ -155,35 +155,39 @@ class PPV_Bottom_Nav {
             </nav>
 
             <!-- Support Modal -->
-            <div id="ppv-support-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:10000; align-items:center; justify-content:center; overflow-y:auto;">
-                <div style="background:var(--pp-bg-primary, #1a1a2e); padding:24px; border-radius:15px; max-width:450px; width:90%; box-shadow:0 10px 40px rgba(0,0,0,0.5); margin:20px auto;">
-                    <h3 style="margin:0 0 12px 0; color:var(--pp-text-primary, #fff);">
+            <div id="ppv-support-modal" class="ppv-support-modal">
+                <div class="ppv-support-modal-content">
+                    <h3 class="ppv-support-modal-title">
                         <i class="ri-customer-service-2-line"></i> Support anfragen
                     </h3>
-                    <p style="color:var(--pp-text-secondary, #999); font-size:14px; margin-bottom:16px;">
+                    <p class="ppv-support-modal-description">
                         Beschreiben Sie Ihr Problem. Wir melden uns schnellstmöglich.
                     </p>
 
-                    <input type="email" id="ppv-support-email" placeholder="E-Mail Adresse *" required style="width:100%; padding:12px; border-radius:8px; border:1px solid var(--pp-border, #333); background:var(--pp-bg-secondary, #0f0f1e); color:var(--pp-text-primary, #fff); margin-bottom:12px;">
+                    <label class="ppv-support-label">E-Mail Adresse <span class="ppv-required">*</span></label>
+                    <input type="email" id="ppv-support-email" class="ppv-support-input" placeholder="ihre@email.de" required>
 
-                    <input type="tel" id="ppv-support-phone" placeholder="Telefonnummer *" required style="width:100%; padding:12px; border-radius:8px; border:1px solid var(--pp-border, #333); background:var(--pp-bg-secondary, #0f0f1e); color:var(--pp-text-primary, #fff); margin-bottom:12px;">
+                    <label class="ppv-support-label">Telefonnummer <span class="ppv-required">*</span></label>
+                    <input type="tel" id="ppv-support-phone" class="ppv-support-input" placeholder="+49 123 456789" required>
 
-                    <textarea id="ppv-support-desc" placeholder="Problembeschreibung *" rows="4" style="width:100%; padding:12px; border-radius:8px; border:1px solid var(--pp-border, #333); background:var(--pp-bg-secondary, #0f0f1e); color:var(--pp-text-primary, #fff); margin-bottom:12px; resize:vertical;"></textarea>
+                    <label class="ppv-support-label">Problembeschreibung <span class="ppv-required">*</span></label>
+                    <textarea id="ppv-support-desc" class="ppv-support-input" placeholder="Beschreiben Sie Ihr Anliegen..." rows="3"></textarea>
 
-                    <select id="ppv-support-priority" style="width:100%; padding:12px; border-radius:8px; border:1px solid var(--pp-border, #333); background:var(--pp-bg-secondary, #0f0f1e); color:var(--pp-text-primary, #fff); margin-bottom:12px;">
-                        <option value="normal">Priorität: Normal</option>
-                        <option value="urgent">Priorität: Dringend</option>
-                        <option value="low">Priorität: Niedrig</option>
+                    <label class="ppv-support-label">Priorität</label>
+                    <select id="ppv-support-priority" class="ppv-support-input">
+                        <option value="normal">Normal</option>
+                        <option value="urgent">Dringend</option>
+                        <option value="low">Niedrig</option>
                     </select>
 
-                    <div id="ppv-support-msg" style="display:none; padding:10px; border-radius:8px; margin-bottom:12px; font-size:14px;"></div>
+                    <div id="ppv-support-msg" class="ppv-support-message"></div>
 
-                    <div style="display:flex; gap:10px;">
-                        <button id="ppv-support-send" style="flex:1; padding:12px; background:linear-gradient(135deg,#667eea,#764ba2); color:#fff; border:none; border-radius:8px; font-weight:600; cursor:pointer;">
+                    <div class="ppv-support-buttons">
+                        <button id="ppv-support-send" class="ppv-support-btn-submit">
                             <i class="ri-send-plane-line"></i> Senden
                         </button>
-                        <button id="ppv-support-close" style="flex:1; padding:12px; background:transparent; color:var(--pp-text-secondary, #999); border:1px solid var(--pp-border, #333); border-radius:8px; cursor:pointer;">
-                            Abbrechen
+                        <button id="ppv-support-close" class="ppv-support-btn-cancel">
+                            <i class="ri-close-line"></i> Abbrechen
                         </button>
                     </div>
                 </div>
@@ -347,23 +351,23 @@ class PPV_Bottom_Nav {
                 \$('#ppv-support-nav-btn').on('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
-                    \$modal.css('display', 'flex').hide().fadeIn(200);
+                    \$modal.addClass('show');
                     \$('#ppv-support-email').val('');
                     \$('#ppv-support-phone').val('');
                     \$('#ppv-support-desc').val('');
                     \$('#ppv-support-email').focus();
-                    \$msg.hide();
+                    \$msg.removeClass('show');
                 });
 
                 // Close modal
                 \$('#ppv-support-close').on('click', function() {
-                    \$modal.fadeOut(200);
+                    \$modal.removeClass('show');
                 });
 
                 // Close on backdrop click
                 \$modal.on('click', function(e) {
                     if (e.target === this) {
-                        \$modal.fadeOut(200);
+                        \$modal.removeClass('show');
                     }
                 });
 
@@ -376,32 +380,32 @@ class PPV_Bottom_Nav {
                     const \$btn = \$(this);
 
                     if (!email) {
-                        \$msg.css({background:'rgba(255,82,82,0.2)', color:'#ff5252'}).text('Bitte geben Sie Ihre E-Mail Adresse ein.').show();
+                        \$msg.removeClass('ppv-support-success').addClass('ppv-support-error show').text('Bitte geben Sie Ihre E-Mail Adresse ein.');
                         \$('#ppv-support-email').focus();
                         return;
                     }
 
                     const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+\$/;
                     if (!emailRegex.test(email)) {
-                        \$msg.css({background:'rgba(255,82,82,0.2)', color:'#ff5252'}).text('Bitte geben Sie eine gültige E-Mail Adresse ein.').show();
+                        \$msg.removeClass('ppv-support-success').addClass('ppv-support-error show').text('Bitte geben Sie eine gültige E-Mail Adresse ein.');
                         \$('#ppv-support-email').focus();
                         return;
                     }
 
                     if (!phone) {
-                        \$msg.css({background:'rgba(255,82,82,0.2)', color:'#ff5252'}).text('Bitte geben Sie Ihre Telefonnummer ein.').show();
+                        \$msg.removeClass('ppv-support-success').addClass('ppv-support-error show').text('Bitte geben Sie Ihre Telefonnummer ein.');
                         \$('#ppv-support-phone').focus();
                         return;
                     }
 
                     if (!desc) {
-                        \$msg.css({background:'rgba(255,82,82,0.2)', color:'#ff5252'}).text('Bitte beschreiben Sie Ihr Problem.').show();
+                        \$msg.removeClass('ppv-support-success').addClass('ppv-support-error show').text('Bitte beschreiben Sie Ihr Problem.');
                         \$('#ppv-support-desc').focus();
                         return;
                     }
 
-                    \$btn.prop('disabled', true).html('<i class=\"ri-loader-4-line\"></i> Senden...');
-                    \$msg.hide();
+                    \$btn.prop('disabled', true).html('<i class=\"ri-loader-4-line ri-spin\"></i> Senden...');
+                    \$msg.removeClass('show');
 
                     \$.ajax({
                         url: '{$ajax_url}',
@@ -417,17 +421,17 @@ class PPV_Bottom_Nav {
                         },
                         success: function(res) {
                             if (res.success) {
-                                \$msg.css({background:'rgba(76,175,80,0.2)', color:'#4caf50'}).html('<i class=\"ri-checkbox-circle-line\"></i> Ticket gesendet!').show();
+                                \$msg.removeClass('ppv-support-error').addClass('ppv-support-success show').html('<i class=\"ri-checkbox-circle-line\"></i> Ticket gesendet!');
                                 \$('#ppv-support-email').val('');
                                 \$('#ppv-support-phone').val('');
                                 \$('#ppv-support-desc').val('');
-                                setTimeout(function() { \$modal.fadeOut(200); }, 1500);
+                                setTimeout(function() { \$modal.removeClass('show'); }, 1500);
                             } else {
-                                \$msg.css({background:'rgba(255,82,82,0.2)', color:'#ff5252'}).text(res.data?.message || 'Fehler').show();
+                                \$msg.removeClass('ppv-support-success').addClass('ppv-support-error show').text(res.data?.message || 'Fehler');
                             }
                         },
                         error: function() {
-                            \$msg.css({background:'rgba(255,82,82,0.2)', color:'#ff5252'}).text('Netzwerkfehler').show();
+                            \$msg.removeClass('ppv-support-success').addClass('ppv-support-error show').text('Netzwerkfehler');
                         },
                         complete: function() {
                             \$btn.prop('disabled', false).html('<i class=\"ri-send-plane-line\"></i> Senden');
