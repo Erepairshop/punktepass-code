@@ -958,13 +958,14 @@ showToast("📄 Monatsbeleg wird heruntergeladen!", "success");
       loadRecentLogs();
     }, 10000);
 
-    // 🔄 SPA Navigation listener - reinitialize when page content changes
-    window.addEventListener('ppv:spa-navigate', () => {
-      console.log('📦 [REWARDS] SPA navigation detected - reinitializing...');
+    // 🔄 Navigation listener - reinitialize when page content changes
+    function reinitAfterNavigation() {
+      console.log('📦 [REWARDS] Navigation detected - reinitializing...');
 
       // Clear old interval
       if (refreshInterval) {
         clearInterval(refreshInterval);
+        refreshInterval = null;
       }
 
       // Re-get elements (they may have changed)
@@ -982,7 +983,23 @@ showToast("📄 Monatsbeleg wird heruntergeladen!", "success");
           loadRecentLogs();
         }, 10000);
       }
+    }
+
+    // 🧹 Turbo: Clean up BEFORE navigating away (prevents multiple polling instances)
+    document.addEventListener('turbo:before-visit', function() {
+      console.log('🧹 [REWARDS] Turbo before-visit - cleaning up polling');
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+        refreshInterval = null;
+      }
     });
+
+    // 🚀 Turbo.js support (primary navigation handler)
+    document.addEventListener('turbo:load', reinitAfterNavigation);
+    document.addEventListener('turbo:render', reinitAfterNavigation);
+
+    // 🔄 Custom SPA event support (fallback)
+    window.addEventListener('ppv:spa-navigate', reinitAfterNavigation);
 
     console.log("✅ [REWARDS] Initialization complete!");
   });
