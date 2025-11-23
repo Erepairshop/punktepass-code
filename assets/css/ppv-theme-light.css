@@ -199,7 +199,7 @@ body.ppv-user-dashboard {
     max-width: 900px;
     width: 100%;
     margin: 0 auto;
-    padding: 20px;
+    padding: 16px;
     animation: appFadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -3781,57 +3781,64 @@ body.ppv-light .ppv-theme-btn-mini {
 }
 
 /* =====================================================================================
-   HEADER: TITLE + TOTAL POINTS
+   HEADER: TITLE + TOTAL POINTS (Compact App Style)
 ===================================================================================== */
 
 .ppv-points-header {
     text-align: center;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
 }
 
 .ppv-points-header h2 {
     font-family: 'Poppins', sans-serif;
-    font-size: 26px;
-    font-weight: 800;
+    font-size: 20px;
+    font-weight: 700;
     color: var(--pp-primary-dark);
-    margin-bottom: 12px;
+    margin-bottom: 10px;
 }
 
 .ppv-points-summary {
-    background: var(--pp-surface);
-    border: 1px solid var(--pp-border);
-    border-radius: var(--pp-radius-lg);
-    padding: 20px;
+    background: linear-gradient(135deg, var(--pp-primary) 0%, var(--pp-accent) 100%);
+    border: none;
+    border-radius: 16px;
+    padding: 16px 20px;
     width: 100%;
-    max-width: 260px;
-    margin: 0 auto 10px;
-    box-shadow: var(--pp-shadow);
+    max-width: 220px;
+    margin: 0 auto 8px;
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.25);
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
+    justify-content: center;
+    gap: 12px;
 }
 
 .ppv-points-summary i {
-    font-size: 38px;
-    color: var(--pp-primary);
-    margin-bottom: 6px;
+    font-size: 28px;
+    color: #fff;
+    margin-bottom: 0;
+    opacity: 0.9;
 }
 
 .ppv-points-summary .big {
-    font-size: 38px;
+    font-size: 32px;
     font-weight: 800;
-    color: var(--pp-primary-dark);
+    color: #fff;
+    line-height: 1;
 }
 
 .ppv-points-summary .label {
-    font-size: 14px;
-    color: var(--pp-text-muted);
-    margin-top: 4px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.85);
+    margin-top: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .ppv-motivation {
-    font-size: 14px;
-    color: var(--pp-text-2);
+    font-size: 13px;
+    color: var(--pp-text-3);
+    margin-top: 6px;
 }
 
 /* =====================================================================================
@@ -3842,239 +3849,346 @@ body.ppv-light .ppv-theme-btn-mini {
 }
 
 /* =====================================================================================
-   STATS GRID (3 cards)
+   STATS GRID (3 cards) - Compact App Style
 ===================================================================================== */
 
 .ppv-stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit,minmax(110px,1fr));
-    gap: 16px;
-    margin-bottom: 26px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
 }
 
 .ppv-stat-card {
     background: var(--pp-surface);
     border: 1px solid var(--pp-border-soft);
-    border-radius: var(--pp-radius);
-    padding: 16px;
+    border-radius: 12px;
+    padding: 12px 8px;
     text-align: center;
     box-shadow: var(--pp-shadow-sm);
-    transition: var(--pp-trans);
+    transition: all 0.2s ease;
 }
 
 .ppv-stat-card i {
-    font-size: 22px;
+    font-size: 18px;
     color: var(--pp-primary);
+    display: block;
+    margin-bottom: 4px;
 }
 
 .ppv-stat-card .label {
-    font-size: 13px;
+    font-size: 10px;
     color: var(--pp-text-muted);
-    margin-top: 6px;
+    margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
 }
 
 .ppv-stat-card .value {
-    font-size: 16px;
+    font-size: 13px;
     font-weight: 700;
     color: var(--pp-primary-dark);
-    margin-top: 4px;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.ppv-stat-card:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--pp-shadow);
+.ppv-stat-card:active {
+    transform: scale(0.97);
 }
 
 /* =====================================================================================
-   REWARDS BY STORE
+   REWARDS BY STORE - Compact App Style
 ===================================================================================== */
 
-.ppv-rewards-by-store h3 {
-    font-size: 18px;
-    font-weight: 800;
-    color: var(--pp-primary-dark);
+.ppv-rewards-by-store {
     margin-bottom: 16px;
+}
+
+.ppv-rewards-by-store h3 {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--pp-primary-dark);
+    margin-bottom: 10px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+}
+
+.ppv-rewards-by-store h3 i {
+    font-size: 16px;
+    color: var(--pp-primary);
 }
 
 .ppv-reward-card {
     background: var(--pp-surface);
-    border: 1px solid var(--pp-border);
-    border-radius: var(--pp-radius);
-    padding: 16px;
-    margin-bottom: 14px;
+    border: 1px solid var(--pp-border-soft);
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 10px;
     box-shadow: var(--pp-shadow-sm);
+    transition: all 0.2s ease;
+}
+
+.ppv-reward-card:active {
+    transform: scale(0.98);
 }
 
 .ppv-reward-card .reward-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-bottom: 8px;
 }
 
 .ppv-reward-card h4 {
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--pp-primary-dark);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--pp-text);
+    margin: 0;
 }
 
 .reward-points {
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 700;
     color: var(--pp-primary);
+    background: rgba(37, 99, 235, 0.08);
+    padding: 3px 8px;
+    border-radius: 6px;
 }
 
-/* Progress bar */
+/* Progress bar - compact */
 .reward-progress {
-    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 0;
 }
 
 .progress-bar {
-    width: 100%;
-    height: 10px;
+    flex: 1;
+    height: 6px;
     background: var(--pp-bg-3);
-    border-radius: 10px;
+    border-radius: 6px;
     overflow: hidden;
 }
 
 .progress-fill {
     height: 100%;
-    background: var(--pp-gradient-primary);
-    transition: width .4s ease;
+    background: linear-gradient(90deg, var(--pp-primary), var(--pp-accent));
+    border-radius: 6px;
+    transition: width 0.4s ease;
 }
 
 .progress-text {
-    font-size: 12px;
-    margin-top: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--pp-primary);
+    min-width: 32px;
     text-align: right;
-    color: var(--pp-primary-dark);
+}
+
+/* Reward Status */
+.reward-status {
+    margin-top: 8px;
+}
+
+.reward-status .remaining {
+    font-size: 11px;
+    color: var(--pp-text-muted);
 }
 
 /* Achieved */
 .ppv-reward-achieved {
     border-color: var(--pp-accent);
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(37, 99, 235, 0.05) 100%);
 }
 
 .ppv-btn-claim {
-    margin-top: 12px;
+    margin-top: 0;
     width: 100%;
-    background: var(--pp-gradient-primary);
+    background: linear-gradient(135deg, var(--pp-primary) 0%, var(--pp-accent) 100%);
     color: #fff;
     border: none;
-    padding: 12px;
-    border-radius: var(--pp-radius);
-    font-size: 14px;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 12px;
     font-weight: 700;
     cursor: pointer;
-    transition: var(--pp-trans);
+    transition: all 0.2s ease;
 }
 
-.ppv-btn-claim:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--pp-shadow);
+.ppv-btn-claim:active {
+    transform: scale(0.97);
 }
 
 /* =====================================================================================
-   TOP 3 STORES
+   TOP 3 STORES - Compact App Style
 ===================================================================================== */
 
-.ppv-top3 h3 {
-    font-size: 18px;
-    font-weight: 800;
-    color: var(--pp-primary-dark);
+.ppv-top3 {
     margin-bottom: 16px;
+}
+
+.ppv-top3 h3 {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--pp-primary-dark);
+    margin-bottom: 10px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+}
+
+.ppv-top3 h3 i {
+    font-size: 16px;
+    color: #FFD700;
 }
 
 .ppv-top3-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit,minmax(110px,1fr));
-    gap: 12px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
 }
 
 .ppv-top3-card {
     background: var(--pp-surface);
     border: 1px solid var(--pp-border-soft);
-    border-radius: var(--pp-radius);
-    padding: 16px;
+    border-radius: 10px;
+    padding: 10px 8px;
     text-align: center;
     box-shadow: var(--pp-shadow-sm);
+    transition: all 0.2s ease;
+}
+
+.ppv-top3-card:first-child {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.08) 0%, rgba(255, 193, 7, 0.05) 100%);
+    border-color: rgba(255, 215, 0, 0.3);
 }
 
 .ppv-top3-card i {
-    font-size: 22px;
-    color: var(--pp-primary-dark);
+    font-size: 18px;
+    color: var(--pp-primary);
+    display: block;
+    margin-bottom: 4px;
+}
+
+.ppv-top3-card:first-child i {
+    color: #FFD700;
 }
 
 .ppv-top3-card .rank {
-    display: block;
-    font-size: 14px;
+    display: inline-block;
+    font-size: 10px;
     font-weight: 700;
-    color: var(--pp-primary);
-    margin-top: 4px;
+    color: #fff;
+    background: var(--pp-primary);
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-bottom: 4px;
+}
+
+.ppv-top3-card:first-child .rank {
+    background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
 }
 
 .ppv-top3-card .name {
-    font-size: 14px;
+    font-size: 11px;
     color: var(--pp-text);
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .ppv-top3-card .score {
-    font-size: 12px;
-    color: var(--pp-primary-dark);
-    margin-top: 4px;
+    font-size: 10px;
+    color: var(--pp-primary);
+    font-weight: 600;
+    margin-top: 2px;
+    display: block;
 }
 
 /* =====================================================================================
-   RECENT ENTRIES (point list)
+   RECENT ENTRIES (point list) - Compact App Style
 ===================================================================================== */
 
+.ppv-points-list {
+    margin-bottom: 16px;
+}
+
 .ppv-points-list h3 {
-    font-size: 18px;
-    font-weight: 800;
+    font-size: 14px;
+    font-weight: 700;
     color: var(--pp-primary-dark);
-    margin-bottom: 14px;
+    margin-bottom: 10px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+}
+
+.ppv-points-list h3 i {
+    font-size: 16px;
+    color: var(--pp-primary);
 }
 
 .ppv-point-card {
     background: var(--pp-surface);
     border: 1px solid var(--pp-border-soft);
-    border-radius: var(--pp-radius);
-    padding: 16px;
+    border-radius: 10px;
+    padding: 10px 12px;
     display: flex;
     align-items: center;
-    gap: 14px;
-    margin-bottom: 12px;
+    gap: 10px;
+    margin-bottom: 8px;
     box-shadow: var(--pp-shadow-sm);
+    transition: all 0.2s ease;
+}
+
+.ppv-point-card:active {
+    transform: scale(0.98);
 }
 
 .ppv-point-card i {
-    font-size: 24px;
+    font-size: 20px;
     color: var(--pp-primary);
+    background: rgba(37, 99, 235, 0.08);
+    padding: 8px;
+    border-radius: 8px;
+}
+
+.ppv-point-card .info {
+    flex: 1;
+    min-width: 0;
 }
 
 .ppv-point-card .info strong {
-    color: var(--pp-primary-dark);
-    font-size: 14px;
+    color: var(--pp-text);
+    font-size: 12px;
+    font-weight: 600;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .ppv-point-card .info small {
     color: var(--pp-text-muted);
+    font-size: 10px;
     display: block;
-    margin-top: 2px;
+    margin-top: 1px;
 }
 
 .ppv-point-card .ppv-points {
     margin-left: auto;
-    color: var(--pp-primary-dark);
-    font-weight: 800;
+    color: #fff;
+    font-weight: 700;
+    font-size: 11px;
+    background: linear-gradient(135deg, var(--pp-primary) 0%, var(--pp-accent) 100%);
+    padding: 4px 10px;
+    border-radius: 6px;
+    white-space: nowrap;
 }
 
 /* =====================================================================================
@@ -4087,20 +4201,62 @@ body.ppv-light .ppv-theme-btn-mini {
 }
 
 /* =====================================================================================
-   RESPONSIVE
+   RESPONSIVE - Compact App Style
 ===================================================================================== */
 
 @media (max-width: 480px) {
-    .ppv-points-summary { max-width: 220px; }
+    .ppv-points-summary {
+        max-width: 200px;
+        padding: 12px 16px;
+    }
+
+    .ppv-points-summary .big {
+        font-size: 28px;
+    }
 
     .ppv-top3-grid,
     .ppv-stats-grid {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+    }
+
+    .ppv-stat-card {
+        padding: 10px 6px;
+    }
+
+    .ppv-stat-card i {
+        font-size: 16px;
+    }
+
+    .ppv-stat-card .value {
+        font-size: 11px;
     }
 
     .ppv-point-card {
+        padding: 8px 10px;
+        gap: 8px;
+    }
+
+    .ppv-point-card i {
+        font-size: 18px;
+        padding: 6px;
+    }
+
+    .ppv-tier-step .tier-dot {
+        width: 24px;
+        height: 24px;
+    }
+
+    .ppv-tier-step .tier-dot i {
+        font-size: 12px;
+    }
+
+    .ppv-tier-step .tier-name {
+        font-size: 8px;
+    }
+
+    .ppv-dashboard-inner {
         padding: 14px;
-        gap: 10px;
     }
 }
 /* ==========================================================================
@@ -11917,29 +12073,31 @@ body.dark-mode {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   🏆 TIER PROGRESS SECTION - MyPoints
+   🏆 TIER PROGRESS SECTION - MyPoints (Compact App Style)
    ═══════════════════════════════════════════════════════════════════════════ */
 .ppv-tier-progress-section {
     background: var(--pp-surface);
-    border-radius: 20px;
-    padding: 24px;
-    margin: 20px 0;
-    box-shadow: var(--pp-shadow-card);
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin: 16px 0;
+    box-shadow: var(--pp-shadow-sm);
     text-align: center;
+    border: 1px solid var(--pp-border-soft);
 }
 
 .ppv-tier-progress-section h3 {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--pp-text);
-    margin-bottom: 20px;
+    gap: 6px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--pp-primary-dark);
+    margin-bottom: 12px;
 }
 
 .ppv-tier-progress-section h3 i {
+    font-size: 16px;
     color: var(--tier-color, var(--pp-primary));
 }
 
@@ -11947,19 +12105,19 @@ body.dark-mode {
 .ppv-current-tier-badge {
     display: inline-flex;
     align-items: center;
-    gap: 10px;
-    padding: 12px 24px;
+    gap: 8px;
+    padding: 8px 16px;
     background: linear-gradient(135deg, var(--tier-color) 0%, color-mix(in srgb, var(--tier-color) 80%, #000) 100%);
-    border-radius: 50px;
+    border-radius: 20px;
     color: #fff;
-    font-size: 1.3rem;
+    font-size: 14px;
     font-weight: 700;
-    box-shadow: 0 4px 20px color-mix(in srgb, var(--tier-color) 40%, transparent);
-    margin-bottom: 16px;
+    box-shadow: 0 3px 12px color-mix(in srgb, var(--tier-color) 35%, transparent);
+    margin-bottom: 10px;
 }
 
 .ppv-current-tier-badge i {
-    font-size: 1.5rem;
+    font-size: 16px;
 }
 
 /* Lifetime Points */
@@ -11967,51 +12125,54 @@ body.dark-mode {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 12px;
 }
 
 .ppv-lifetime-points .points-value {
-    font-size: 2.2rem;
+    font-size: 1.6rem;
     font-weight: 800;
     color: var(--pp-primary);
     line-height: 1;
 }
 
 .ppv-lifetime-points .points-label {
-    font-size: 0.85rem;
+    font-size: 11px;
     color: var(--pp-text-muted);
-    margin-top: 4px;
+    margin-top: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
 }
 
 /* Progress Bar Container */
 .ppv-tier-progress-bar-container {
-    margin-bottom: 24px;
+    margin-bottom: 14px;
 }
 
 .ppv-tier-progress-info {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 8px;
-    font-size: 0.85rem;
+    margin-bottom: 6px;
+    font-size: 11px;
     color: var(--pp-text-muted);
 }
 
 .ppv-tier-progress-info strong {
     color: var(--pp-text);
+    font-size: 11px;
 }
 
 .ppv-tier-progress-bar {
-    height: 12px;
+    height: 8px;
     background: var(--pp-bg-3);
-    border-radius: 10px;
+    border-radius: 8px;
     overflow: hidden;
     position: relative;
 }
 
 .ppv-tier-progress-fill {
     height: 100%;
-    border-radius: 10px;
+    border-radius: 8px;
     transition: width 0.8s ease-out;
     position: relative;
 }
@@ -12037,27 +12198,28 @@ body.dark-mode {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
-    padding: 16px 24px;
+    gap: 8px;
+    padding: 10px 16px;
     background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-    border-radius: 12px;
+    border-radius: 10px;
     color: #333;
     font-weight: 700;
-    margin-bottom: 24px;
+    font-size: 12px;
+    margin-bottom: 12px;
 }
 
 .ppv-tier-max-level i {
-    font-size: 1.5rem;
+    font-size: 16px;
 }
 
-/* Tier Steps */
+/* Tier Steps - Compact */
 .ppv-tier-steps {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    gap: 4px;
-    margin-bottom: 16px;
-    padding: 0 8px;
+    gap: 2px;
+    margin-bottom: 12px;
+    padding: 0;
 }
 
 .ppv-tier-step {
@@ -12065,7 +12227,7 @@ body.dark-mode {
     flex-direction: column;
     align-items: center;
     flex: 1;
-    opacity: 0.4;
+    opacity: 0.35;
     transition: all 0.3s ease;
 }
 
@@ -12074,28 +12236,28 @@ body.dark-mode {
 }
 
 .ppv-tier-step.current {
-    transform: scale(1.1);
+    transform: scale(1.05);
 }
 
 .ppv-tier-step .tier-dot {
-    width: 40px;
-    height: 40px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     background: var(--pp-bg-3);
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
     transition: all 0.3s ease;
 }
 
 .ppv-tier-step.active .tier-dot {
     background: var(--tier-color);
-    box-shadow: 0 4px 15px color-mix(in srgb, var(--tier-color) 40%, transparent);
+    box-shadow: 0 2px 10px color-mix(in srgb, var(--tier-color) 35%, transparent);
 }
 
 .ppv-tier-step .tier-dot i {
-    font-size: 1.2rem;
+    font-size: 14px;
     color: var(--pp-text-muted);
 }
 
@@ -12104,7 +12266,7 @@ body.dark-mode {
 }
 
 .ppv-tier-step .tier-name {
-    font-size: 0.7rem;
+    font-size: 9px;
     font-weight: 600;
     color: var(--pp-text-muted);
     text-align: center;
@@ -12115,7 +12277,7 @@ body.dark-mode {
 }
 
 .ppv-tier-step .tier-points {
-    font-size: 0.65rem;
+    font-size: 8px;
     color: var(--pp-text-muted);
 }
 
@@ -12124,13 +12286,17 @@ body.dark-mode {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    font-size: 0.8rem;
+    gap: 4px;
+    font-size: 10px;
     color: var(--pp-text-muted);
     background: var(--pp-bg-2);
-    padding: 10px 16px;
-    border-radius: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
     margin: 0;
+}
+
+.ppv-tier-info-text i {
+    font-size: 12px;
 }
 
 .ppv-tier-info-text i {
