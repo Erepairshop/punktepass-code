@@ -10,7 +10,7 @@
   'use strict';
 
   // ✅ DEBUG mode - set to true for verbose logging
-  const PPV_DEBUG = false;
+  const PPV_DEBUG = true;
   const ppvLog = (...args) => { if (PPV_DEBUG) console.log(...args); };
   const ppvWarn = (...args) => { if (PPV_DEBUG) console.warn(...args); };
 
@@ -1129,6 +1129,12 @@
     // Check if Ably is configured
     const ablyConfig = window.PPV_STORE_DATA?.ably;
     const storeId = window.PPV_STORE_DATA?.store_id;
+
+    // 🔍 DEBUG: Log all conditions
+    console.log('[Ably Debug] PPV_STORE_DATA:', window.PPV_STORE_DATA);
+    console.log('[Ably Debug] ablyConfig:', ablyConfig);
+    console.log('[Ably Debug] storeId:', storeId);
+    console.log('[Ably Debug] typeof Ably:', typeof Ably);
 
     if (ablyConfig && typeof Ably !== 'undefined' && storeId) {
       // ABLY MODE: Real-time updates via WebSocket
