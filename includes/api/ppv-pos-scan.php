@@ -167,29 +167,25 @@ class PPV_POS_SCAN {
 
             // Find where user_id ends (first non-digit)
             if (preg_match('/^(\d+)(.+)$/', $payload, $matches)) {
-                $uid_from_qr = intval($matches[1]); // Only for logging, NOT for user lookup!
+                $uid = intval($matches[1]);
                 $token_from_qr = $matches[2];
 
-                // ✅ FIX: Look up user by TOKEN ONLY, not by user_id from QR
-                // The QR may contain wrong user_id, but the token is the source of truth
+                // Security: Verify token + active status in single JOIN query
                 $user_check = $wpdb->get_row($wpdb->prepare("
                     SELECT u.id, u.active
                     FROM {$wpdb->prefix}ppv_users u
                     INNER JOIN {$wpdb->prefix}ppv_tokens t
                         ON t.entity_type='user' AND t.entity_id=u.id
-                    WHERE t.token=%s
+                    WHERE u.id=%d
+                        AND t.token=%s
                         AND t.expires_at > NOW()
                     LIMIT 1
-                ", $token_from_qr));
+                ", $uid, $token_from_qr));
 
                 if ($user_check && $user_check->active == 1) {
                     $user_id = intval($user_check->id);
-                    // Log if QR user_id doesn't match token's actual user
-                    if ($uid_from_qr != $user_id) {
-                        error_log("⚠️ [POS_SCAN] QR user_id mismatch: QR={$uid_from_qr}, actual={$user_id} - using actual");
-                    }
                 } elseif ($user_check && $user_check->active == 0) {
-                    self::log_scan_attempt($store_id, $user_check->id, $ip_address, 'blocked', 'User inactive', 'user_blocked', 0, $lang);
+                    self::log_scan_attempt($store_id, $uid, $ip_address, 'blocked', 'User inactive', 'user_blocked', 0, $lang);
                     return rest_ensure_response([
                         'success' => false,
                         'message' => '🚫 Benutzer gesperrt',
@@ -532,13 +528,11 @@ class PPV_POS_SCAN {
         $user_agent = sanitize_text_field($_SERVER['HTTP_USER_AGENT'] ?? '');
 
 
-        // Store error_type, points, AND user_lang in metadata for translation
-        // ✅ FIX: Use 'error_type' key - rest_poll_points expects this!
+        // Store message_key, points, AND user_lang in metadata for translation
         $metadata = json_encode([
-            'error_type' => $message_key,
-            'message_key' => $message_key,  // Keep for backwards compatibility
+            'message_key' => $message_key,
             'points' => $points,
-            'user_lang' => $user_lang,
+            'user_lang' => $user_lang,  // ✅ Store user's language
             'timestamp' => current_time('mysql')
         ]);
 
