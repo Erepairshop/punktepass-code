@@ -3,13 +3,14 @@ if (!defined('ABSPATH')) exit;
 
 /**
  * PunktePass – Kiadási Bizonylat Generálás (Expense Receipt)
- * Version: 2.2 FIXED - Működő havi bizonylat generálás
+ * Version: 3.0 MODERN - Teljes újratervezés
+ * ✅ Modern design (Inter font, gradient header, card layout)
  * ✅ Egyszeri + Havi bizonylatok
- * ✅ DE (Deutsch) + RO (Română) verzió
+ * ✅ DE (Deutsch) + RO (Română) verzió - HELYES NYELVEK
+ * ✅ Lokalizált hónapnevek (német/román)
  * ✅ Auto nyelvválasztás (store country alapján)
  * ✅ HTML mentés → böngésző PDF-ként letölti
  * ✅ NINCS ÁFA - Interne Vergütung / Operațiune internă
- * ✅ Működő generate_monthly_receipt() - nincs include error!
  */
 
 class PPV_Expense_Receipt {
@@ -223,101 +224,289 @@ class PPV_Expense_Receipt {
     }
 
     /**
-     * 🎨 HTML - Német verzió (DE)
+     * 🎨 HTML - Német verzió (DE) - MODERN DESIGN
      */
     private static function html_receipt_de($redeem, $customer_name, $receipt_num, $amount) {
-        $company = htmlspecialchars($redeem['company_name'] ?? 'Bolt');
+        $company = htmlspecialchars($redeem['company_name'] ?? 'Unternehmen');
         $address = htmlspecialchars($redeem['address'] ?? '');
         $plz = htmlspecialchars($redeem['plz'] ?? '');
         $city = htmlspecialchars($redeem['city'] ?? '');
         $tax_id = htmlspecialchars($redeem['tax_id'] ?? '');
-        $tax_id_html = $tax_id ? "<p><strong>Steuernummer:</strong> {$tax_id}</p>" : '';
-        
+        $tax_id_html = $tax_id ? "<div class=\"info-row\"><span class=\"label\">Steuernummer:</span><span class=\"value\">{$tax_id}</span></div>" : '';
+
         $customer = htmlspecialchars($customer_name);
         $email = htmlspecialchars($redeem['user_email'] ?? '');
         $reward = htmlspecialchars($redeem['reward_title'] ?? 'Belohnung');
         $points = intval($redeem['points_spent'] ?? 0);
         $date = date('d.m.Y H:i', strtotime($redeem['redeemed_at']));
+        $amount_formatted = number_format($amount, 2, ',', '.');
 
         return <<<HTML
 <!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Ausgabebeleg</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ausgabebeleg - {$receipt_num}</title>
     <style>
-        * { margin: 0; padding: 0; }
-        body { font-family: Arial, sans-serif; padding: 20px; background: white; }
-        .receipt { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border: 1px solid #ddd; }
-        .header { border-bottom: 2px solid #333; padding-bottom: 15px; margin-bottom: 20px; }
-        .header h1 { font-size: 18px; font-weight: bold; margin-bottom: 5px; }
-        .header p { font-size: 12px; color: #666; }
-        .company-info { margin-bottom: 20px; }
-        .company-info p { margin: 3px 0; font-size: 13px; }
-        .receipt-num { background: #f0f0f0; padding: 10px; margin: 15px 0; font-size: 12px; }
-        .section { margin-bottom: 20px; padding: 12px; background: #f9f9f9; border-left: 3px solid #007bff; }
-        .section-title { font-weight: bold; font-size: 12px; margin-bottom: 8px; color: #333; }
-        .line { display: flex; justify-content: space-between; font-size: 12px; margin: 4px 0; }
-        .amount-section { background: white; border: 2px solid #333; padding: 15px; margin: 20px 0; text-align: center; }
-        .amount-section .label { font-size: 12px; color: #666; }
-        .amount-section .value { font-size: 24px; font-weight: bold; margin: 5px 0; }
-        .booking { background: #fff3cd; padding: 12px; margin: 15px 0; font-size: 11px; }
-        .disclaimer { background: #e8f4f8; padding: 10px; margin: 15px 0; font-size: 11px; }
-        .footer { text-align: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid #ddd; font-size: 11px; color: #666; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .receipt {
+            max-width: 650px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 30px;
+            color: white;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .content { padding: 30px; }
+
+        .company-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .company-card h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+        }
+
+        .info-row:last-child { border-bottom: none; }
+        .info-row .label { color: #666; }
+        .info-row .value { font-weight: 500; color: #333; }
+
+        .meta-bar {
+            display: flex;
+            justify-content: space-between;
+            background: #f0f4f8;
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+        }
+
+        .meta-item {
+            text-align: center;
+        }
+
+        .meta-item .meta-label {
+            font-size: 11px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .meta-item .meta-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-top: 4px;
+        }
+
+        .section {
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #667eea;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-card {
+            background: #fafbfc;
+            border-radius: 10px;
+            padding: 16px;
+            border-left: 4px solid #667eea;
+        }
+
+        .amount-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            color: white;
+            margin: 24px 0;
+        }
+
+        .amount-box .amount-label {
+            font-size: 12px;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .amount-box .amount-value {
+            font-size: 36px;
+            font-weight: 700;
+            margin-top: 8px;
+        }
+
+        .notice-box {
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 16px;
+            font-size: 13px;
+        }
+
+        .notice-box.warning {
+            background: #fff8e6;
+            border: 1px solid #ffd666;
+        }
+
+        .notice-box.info {
+            background: #e6f7ff;
+            border: 1px solid #91d5ff;
+        }
+
+        .notice-box strong {
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .footer {
+            background: #f8f9fa;
+            padding: 20px 30px;
+            text-align: center;
+            font-size: 12px;
+            color: #888;
+            border-top: 1px solid #eee;
+        }
+
+        @media print {
+            body { background: white; padding: 0; }
+            .receipt { box-shadow: none; }
+        }
     </style>
 </head>
 <body>
     <div class="receipt">
         <div class="header">
-            <h1>KIADÁSI BIZONYLAT</h1>
-            <p>AUSGABEBELEG – Loyalty Program Auszahlung</p>
+            <h1>AUSGABEBELEG</h1>
+            <p>Kundenbindungsprogramm – Punkteeinlösung</p>
         </div>
 
-        <div class="company-info">
-            <p><strong>Betrieb:</strong> {$company}</p>
-            <p><strong>Adresse:</strong> {$address}, {$plz} {$city}</p>
-            {$tax_id_html}
-        </div>
+        <div class="content">
+            <div class="company-card">
+                <h3>{$company}</h3>
+                <div class="info-row">
+                    <span class="label">Adresse:</span>
+                    <span class="value">{$address}, {$plz} {$city}</span>
+                </div>
+                {$tax_id_html}
+            </div>
 
-        <div class="receipt-num">
-            <div class="line"><span><strong>Datum:</strong></span><span>{$date}</span></div>
-            <div class="line"><span><strong>Belegnummer:</strong></span><span>{$receipt_num}</span></div>
-        </div>
+            <div class="meta-bar">
+                <div class="meta-item">
+                    <div class="meta-label">Datum</div>
+                    <div class="meta-value">{$date}</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">Belegnummer</div>
+                    <div class="meta-value">{$receipt_num}</div>
+                </div>
+            </div>
 
-        <div class="section">
-            <div class="section-title">📋 BESCHREIBUNG:</div>
-            <p style="margin: 5px 0; font-size: 12px;">Kundenrabatt - Punkteeinlösung</p>
-            <p style="margin: 5px 0; font-size: 11px; color: #666;">PunktePass Loyalty Programm</p>
-        </div>
+            <div class="section">
+                <div class="section-title">Beschreibung</div>
+                <div class="section-card">
+                    <div class="info-row">
+                        <span class="label">Verwendungszweck:</span>
+                        <span class="value">Kundenrabatt – Punkteeinlösung</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Programm:</span>
+                        <span class="value">PunktePass Loyalty</span>
+                    </div>
+                </div>
+            </div>
 
-        <div class="section">
-            <div class="section-title">👤 KUNDE:</div>
-            <div class="line"><span>Name:</span><span>{$customer}</span></div>
-            <div class="line"><span>E-Mail:</span><span>{$email}</span></div>
-            <div class="line"><span>Punkte:</span><span>{$points} Punkte</span></div>
-            <div class="line"><span>Belohnung:</span><span>{$reward}</span></div>
-        </div>
+            <div class="section">
+                <div class="section-title">Kundeninformationen</div>
+                <div class="section-card">
+                    <div class="info-row">
+                        <span class="label">Name:</span>
+                        <span class="value">{$customer}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">E-Mail:</span>
+                        <span class="value">{$email}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Eingelöste Punkte:</span>
+                        <span class="value">{$points} Punkte</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Belohnung:</span>
+                        <span class="value">{$reward}</span>
+                    </div>
+                </div>
+            </div>
 
-        <div class="amount-section">
-            <div class="label">BETRAG (Kundenbindung)</div>
-            <div class="value">{$amount} EUR</div>
-        </div>
+            <div class="amount-box">
+                <div class="amount-label">Auszahlungsbetrag</div>
+                <div class="amount-value">{$amount_formatted} €</div>
+            </div>
 
-        <div class="booking">
-            <strong>📊 BUCHUNGSVORSCHLAG:</strong><br>
-            Soll: 4930 (Marketing / Kundenbindung)<br>
-            Haben: 1000 (Kasse)
-        </div>
+            <div class="notice-box warning">
+                <strong>Buchungsvorschlag:</strong>
+                Soll: 4930 (Marketing / Kundenbindung) → Haben: 1000 (Kasse)
+            </div>
 
-        <div class="disclaimer">
-            <strong>⚠️ WICHTIG:</strong><br>
-            KEINE UMSATZSTEUER<br>
-            Interne Vergütung – Nicht steuerbar
+            <div class="notice-box info">
+                <strong>Hinweis zur Umsatzsteuer:</strong>
+                Keine Umsatzsteuer – Interne Vergütung, nicht steuerbar gemäß § 1 UStG
+            </div>
         </div>
 
         <div class="footer">
-            <p>Dieses Dokument wurde automatisch von PunktePass generiert.</p>
-            <p>Für Rückfragen: info@punktepass.de</p>
+            <p>Automatisch generiert von PunktePass | info@punktepass.de</p>
         </div>
     </div>
 </body>
@@ -326,7 +515,7 @@ HTML;
     }
 
     /**
-     * 🎨 HTML - Román verzió (RO)
+     * 🎨 HTML - Román verzió (RO) - MODERN DESIGN
      */
     private static function html_receipt_ro($redeem, $customer_name, $receipt_num, $amount) {
         $company = htmlspecialchars($redeem['company_name'] ?? 'Societate');
@@ -334,91 +523,281 @@ HTML;
         $plz = htmlspecialchars($redeem['plz'] ?? '');
         $city = htmlspecialchars($redeem['city'] ?? '');
         $tax_id = htmlspecialchars($redeem['tax_id'] ?? '');
-        $tax_id_html = $tax_id ? "<p><strong>Cod fiscal:</strong> {$tax_id}</p>" : '';
-        
+        $tax_id_html = $tax_id ? "<div class=\"info-row\"><span class=\"label\">CUI / CIF:</span><span class=\"value\">{$tax_id}</span></div>" : '';
+
         $customer = htmlspecialchars($customer_name);
         $email = htmlspecialchars($redeem['user_email'] ?? '');
         $reward = htmlspecialchars($redeem['reward_title'] ?? 'Recompensă');
         $points = intval($redeem['points_spent'] ?? 0);
         $date = date('d.m.Y H:i', strtotime($redeem['redeemed_at']));
+        $amount_formatted = number_format($amount, 2, ',', '.');
 
         return <<<HTML
 <!DOCTYPE html>
 <html lang="ro">
 <head>
     <meta charset="UTF-8">
-    <title>Dispoziție de Cheltuieli</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dispoziție de Plată - {$receipt_num}</title>
     <style>
-        * { margin: 0; padding: 0; }
-        body { font-family: Arial, sans-serif; padding: 20px; background: white; }
-        .receipt { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border: 1px solid #ddd; }
-        .header { border-bottom: 2px solid #333; padding-bottom: 15px; margin-bottom: 20px; }
-        .header h1 { font-size: 18px; font-weight: bold; margin-bottom: 5px; }
-        .company-info { margin-bottom: 20px; }
-        .company-info p { margin: 3px 0; font-size: 13px; }
-        .receipt-num { background: #f0f0f0; padding: 10px; margin: 15px 0; font-size: 12px; }
-        .section { margin-bottom: 20px; padding: 12px; background: #f9f9f9; border-left: 3px solid #007bff; }
-        .section-title { font-weight: bold; font-size: 12px; margin-bottom: 8px; color: #333; }
-        .line { display: flex; justify-content: space-between; font-size: 12px; margin: 4px 0; }
-        .amount-section { background: white; border: 2px solid #333; padding: 15px; margin: 20px 0; text-align: center; }
-        .amount-section .value { font-size: 24px; font-weight: bold; margin: 5px 0; }
-        .booking { background: #fff3cd; padding: 12px; margin: 15px 0; font-size: 11px; }
-        .disclaimer { background: #e8f4f8; padding: 10px; margin: 15px 0; font-size: 11px; }
-        .footer { text-align: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid #ddd; font-size: 11px; color: #666; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .receipt {
+            max-width: 650px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 30px;
+            color: white;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .content { padding: 30px; }
+
+        .company-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .company-card h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+        }
+
+        .info-row:last-child { border-bottom: none; }
+        .info-row .label { color: #666; }
+        .info-row .value { font-weight: 500; color: #333; }
+
+        .meta-bar {
+            display: flex;
+            justify-content: space-between;
+            background: #f0f4f8;
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+        }
+
+        .meta-item {
+            text-align: center;
+        }
+
+        .meta-item .meta-label {
+            font-size: 11px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .meta-item .meta-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-top: 4px;
+        }
+
+        .section {
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #667eea;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-card {
+            background: #fafbfc;
+            border-radius: 10px;
+            padding: 16px;
+            border-left: 4px solid #667eea;
+        }
+
+        .amount-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            color: white;
+            margin: 24px 0;
+        }
+
+        .amount-box .amount-label {
+            font-size: 12px;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .amount-box .amount-value {
+            font-size: 36px;
+            font-weight: 700;
+            margin-top: 8px;
+        }
+
+        .notice-box {
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 16px;
+            font-size: 13px;
+        }
+
+        .notice-box.warning {
+            background: #fff8e6;
+            border: 1px solid #ffd666;
+        }
+
+        .notice-box.info {
+            background: #e6f7ff;
+            border: 1px solid #91d5ff;
+        }
+
+        .notice-box strong {
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .footer {
+            background: #f8f9fa;
+            padding: 20px 30px;
+            text-align: center;
+            font-size: 12px;
+            color: #888;
+            border-top: 1px solid #eee;
+        }
+
+        @media print {
+            body { background: white; padding: 0; }
+            .receipt { box-shadow: none; }
+        }
     </style>
 </head>
 <body>
     <div class="receipt">
         <div class="header">
-            <h1>DISPOZIȚIE DE CHELTUIELI</h1>
-            <p>Bon de consum intern – Program de fidelizare</p>
+            <h1>DISPOZIȚIE DE PLATĂ</h1>
+            <p>Program de fidelizare – Valorificare puncte</p>
         </div>
 
-        <div class="company-info">
-            <p><strong>Societate:</strong> {$company}</p>
-            <p><strong>Adresă:</strong> {$address}, {$plz} {$city}</p>
-            {$tax_id_html}
-        </div>
+        <div class="content">
+            <div class="company-card">
+                <h3>{$company}</h3>
+                <div class="info-row">
+                    <span class="label">Adresă:</span>
+                    <span class="value">{$address}, {$plz} {$city}</span>
+                </div>
+                {$tax_id_html}
+            </div>
 
-        <div class="receipt-num">
-            <div class="line"><span><strong>Data:</strong></span><span>{$date}</span></div>
-            <div class="line"><span><strong>Nr. Dispoziție:</strong></span><span>{$receipt_num}</span></div>
-        </div>
+            <div class="meta-bar">
+                <div class="meta-item">
+                    <div class="meta-label">Data</div>
+                    <div class="meta-value">{$date}</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">Nr. Dispoziție</div>
+                    <div class="meta-value">{$receipt_num}</div>
+                </div>
+            </div>
 
-        <div class="section">
-            <div class="section-title">📋 DESCRIERE:</div>
-            <p style="margin: 5px 0; font-size: 12px;">Rambursare puncte program fidelizare</p>
-            <p style="margin: 5px 0; font-size: 11px; color: #666;">Program PunktePass</p>
-        </div>
+            <div class="section">
+                <div class="section-title">Descriere</div>
+                <div class="section-card">
+                    <div class="info-row">
+                        <span class="label">Scop:</span>
+                        <span class="value">Rambursare puncte fidelitate</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Program:</span>
+                        <span class="value">PunktePass Loyalty</span>
+                    </div>
+                </div>
+            </div>
 
-        <div class="section">
-            <div class="section-title">👤 CLIENT BENEFICIAR:</div>
-            <div class="line"><span>Nume:</span><span>{$customer}</span></div>
-            <div class="line"><span>E-Mail:</span><span>{$email}</span></div>
-            <div class="line"><span>Puncte folosite:</span><span>{$points} Puncte</span></div>
-            <div class="line"><span>Recompensă:</span><span>{$reward}</span></div>
-        </div>
+            <div class="section">
+                <div class="section-title">Informații Client</div>
+                <div class="section-card">
+                    <div class="info-row">
+                        <span class="label">Nume:</span>
+                        <span class="value">{$customer}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">E-Mail:</span>
+                        <span class="value">{$email}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Puncte valorificate:</span>
+                        <span class="value">{$points} puncte</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Recompensă:</span>
+                        <span class="value">{$reward}</span>
+                    </div>
+                </div>
+            </div>
 
-        <div class="amount-section">
-            <div class="label">SUMA TOTALĂ</div>
-            <div class="value">{$amount} RON</div>
-        </div>
+            <div class="amount-box">
+                <div class="amount-label">Suma de Plată</div>
+                <div class="amount-value">{$amount_formatted} RON</div>
+            </div>
 
-        <div class="booking">
-            <strong>📊 ÎNREGISTRARE CONTABILĂ SUGERATĂ:</strong><br>
-            Debit: 623 (Cheltuieli marketing)<br>
-            Credit: 5311 (Casa în lei)
-        </div>
+            <div class="notice-box warning">
+                <strong>Sugestie înregistrare contabilă:</strong>
+                Debit: 623 (Cheltuieli marketing) → Credit: 5311 (Casa în lei)
+            </div>
 
-        <div class="disclaimer">
-            <strong>⚠️ IMPORTANT:</strong><br>
-            FĂRĂ TVA<br>
-            Operațiune internă, neimpozabilă
+            <div class="notice-box info">
+                <strong>Informații TVA:</strong>
+                Fără TVA – Operațiune internă, neimpozabilă conform Codului Fiscal
+            </div>
         </div>
 
         <div class="footer">
-            <p>Acest document a fost generat automat de PunktePass.</p>
-            <p>Pentru întrebări: info@punktepass.de</p>
+            <p>Document generat automat de PunktePass | info@punktepass.de</p>
         </div>
     </div>
 </body>
@@ -446,15 +825,20 @@ HTML;
     }
 
     /**
-     * 🎨 HTML - Havi bizonylat NÉMET verzió
+     * 🎨 HTML - Havi bizonylat NÉMET verzió - MODERN DESIGN
      */
     private static function html_monthly_receipt_de($store, $redeems, $year, $month, $total_amount, $total_points) {
-        $company = htmlspecialchars($store['company_name'] ?? 'Bolt');
+        $company = htmlspecialchars($store['company_name'] ?? 'Unternehmen');
         $address = htmlspecialchars($store['address'] ?? '');
         $plz = htmlspecialchars($store['plz'] ?? '');
         $city = htmlspecialchars($store['city'] ?? '');
-        $month_str = date('F Y', mktime(0, 0, 0, $month, 1, $year));
+
+        // German month names
+        $months_de = ['', 'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+        $month_str = $months_de[$month] . ' ' . $year;
+
         $count = count($redeems);
+        $total_formatted = number_format($total_amount, 2, ',', '.');
 
         $rows = '';
         foreach ($redeems as $r) {
@@ -464,15 +848,15 @@ HTML;
             }
             $reward = htmlspecialchars($r->reward_title ?? 'Belohnung');
             $points = intval($r->points_spent ?? 0);
-            $amount = floatval($r->actual_amount ?? $r->points_spent ?? 0);
+            $amount = number_format(floatval($r->actual_amount ?? $r->points_spent ?? 0), 2, ',', '.');
             $date = date('d.m.Y', strtotime($r->redeemed_at));
 
-            $rows .= "<tr style=\"border-bottom: 1px solid #ddd;\">
-                <td style=\"padding: 8px; font-size: 11px;\">{$date}</td>
-                <td style=\"padding: 8px; font-size: 11px;\">{$customer}</td>
-                <td style=\"padding: 8px; font-size: 11px;\">{$reward}</td>
-                <td style=\"padding: 8px; font-size: 11px; text-align: right;\">{$points}</td>
-                <td style=\"padding: 8px; font-size: 11px; text-align: right;\">{$amount} EUR</td>
+            $rows .= "<tr>
+                <td>{$date}</td>
+                <td>{$customer}</td>
+                <td>{$reward}</td>
+                <td class=\"text-right\">{$points}</td>
+                <td class=\"text-right\">{$amount} €</td>
             </tr>";
         }
 
@@ -481,62 +865,194 @@ HTML;
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Monatlicher Ausgabebeleg</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monatlicher Ausgabebeleg - {$month_str}</title>
     <style>
-        * { margin: 0; padding: 0; }
-        body { font-family: Arial, sans-serif; padding: 20px; background: white; }
-        .receipt { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border: 1px solid #ddd; }
-        .header { border-bottom: 2px solid #333; padding-bottom: 15px; margin-bottom: 20px; }
-        .header h1 { font-size: 18px; font-weight: bold; }
-        .company-info { margin-bottom: 20px; }
-        .company-info p { margin: 3px 0; font-size: 13px; }
-        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-        th { background: #007bff; color: white; padding: 10px; text-align: left; font-size: 12px; font-weight: bold; }
-        .total-row { background: #f9f9f9; font-weight: bold; }
-        .booking { background: #fff3cd; padding: 12px; margin: 15px 0; font-size: 11px; }
-        .disclaimer { background: #e8f4f8; padding: 10px; margin: 15px 0; font-size: 11px; }
-        .footer { text-align: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid #ddd; font-size: 11px; color: #666; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .receipt {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 30px;
+            color: white;
+            text-align: center;
+        }
+
+        .header h1 { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+        .header p { font-size: 14px; opacity: 0.9; }
+
+        .content { padding: 30px; }
+
+        .info-bar {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .info-item { }
+        .info-item .label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+        .info-item .value { font-size: 14px; font-weight: 600; color: #333; margin-top: 4px; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 14px 12px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 12px;
+            font-size: 13px;
+            border-bottom: 1px solid #eee;
+            color: #333;
+        }
+
+        tr:hover { background: #f9fafb; }
+
+        .text-right { text-align: right; }
+
+        .total-row {
+            background: #f0f4f8 !important;
+        }
+
+        .total-row td {
+            font-weight: 700;
+            font-size: 14px;
+            border-bottom: none;
+            padding: 16px 12px;
+        }
+
+        .summary-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 24px;
+            color: white;
+            text-align: center;
+            margin: 24px 0;
+        }
+
+        .summary-box .label { font-size: 12px; opacity: 0.9; text-transform: uppercase; }
+        .summary-box .value { font-size: 36px; font-weight: 700; margin-top: 8px; }
+
+        .notice-box {
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 16px;
+            font-size: 13px;
+        }
+
+        .notice-box.warning { background: #fff8e6; border: 1px solid #ffd666; }
+        .notice-box.info { background: #e6f7ff; border: 1px solid #91d5ff; }
+        .notice-box strong { display: block; margin-bottom: 8px; }
+
+        .footer {
+            background: #f8f9fa;
+            padding: 20px 30px;
+            text-align: center;
+            font-size: 12px;
+            color: #888;
+            border-top: 1px solid #eee;
+        }
+
+        @media print {
+            body { background: white; padding: 0; }
+            .receipt { box-shadow: none; }
+        }
     </style>
 </head>
 <body>
     <div class="receipt">
         <div class="header">
             <h1>MONATLICHER AUSGABEBELEG</h1>
-            <p>Sammelabrechnung – PunktePass Loyalty Program</p>
+            <p>Sammelabrechnung – PunktePass Kundenbindungsprogramm</p>
         </div>
 
-        <div class="company-info">
-            <p><strong>Betrieb:</strong> {$company}</p>
-            <p><strong>Adresse:</strong> {$address}, {$plz} {$city}</p>
-            <p><strong>Zeitraum:</strong> {$month_str}</p>
-        </div>
+        <div class="content">
+            <div class="info-bar">
+                <div class="info-item">
+                    <div class="label">Unternehmen</div>
+                    <div class="value">{$company}</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">Adresse</div>
+                    <div class="value">{$address}, {$plz} {$city}</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">Abrechnungszeitraum</div>
+                    <div class="value">{$month_str}</div>
+                </div>
+            </div>
 
-        <table>
-            <thead><tr><th>Datum</th><th>Kunde</th><th>Belohnung</th><th style="text-align: right;">Punkte</th><th style="text-align: right;">Betrag</th></tr></thead>
-            <tbody>
-                {$rows}
-                <tr class="total-row">
-                    <td colspan="3" style="padding: 10px; text-align: right;">GESAMT ({$count} Einlösungen):</td>
-                    <td style="padding: 10px; text-align: right;">{$total_points}</td>
-                    <td style="padding: 10px; text-align: right;">{$total_amount} EUR</td>
-                </tr>
-            </tbody>
-        </table>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Datum</th>
+                        <th>Kunde</th>
+                        <th>Belohnung</th>
+                        <th class="text-right">Punkte</th>
+                        <th class="text-right">Betrag</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {$rows}
+                    <tr class="total-row">
+                        <td colspan="3" class="text-right">Gesamt ({$count} Einlösungen):</td>
+                        <td class="text-right">{$total_points}</td>
+                        <td class="text-right">{$total_formatted} €</td>
+                    </tr>
+                </tbody>
+            </table>
 
-        <div class="booking">
-            <strong>📊 BUCHUNGSVORSCHLAG:</strong><br>
-            Soll: 4930 (Marketing / Kundenbindung)<br>
-            Haben: 1000 (Kasse)
-        </div>
+            <div class="summary-box">
+                <div class="label">Gesamtbetrag</div>
+                <div class="value">{$total_formatted} €</div>
+            </div>
 
-        <div class="disclaimer">
-            <strong>⚠️ WICHTIG:</strong><br>
-            KEINE UMSATZSTEUER<br>
-            Interne Vergütung – Nicht steuerbar
+            <div class="notice-box warning">
+                <strong>Buchungsvorschlag:</strong>
+                Soll: 4930 (Marketing / Kundenbindung) → Haben: 1000 (Kasse)
+            </div>
+
+            <div class="notice-box info">
+                <strong>Hinweis zur Umsatzsteuer:</strong>
+                Keine Umsatzsteuer – Interne Vergütung, nicht steuerbar gemäß § 1 UStG
+            </div>
         </div>
 
         <div class="footer">
-            <p>Dieses Dokument wurde automatisch von PunktePass generiert.</p>
+            <p>Automatisch generiert von PunktePass | info@punktepass.de</p>
         </div>
     </div>
 </body>
@@ -545,33 +1061,38 @@ HTML;
     }
 
     /**
-     * 🎨 HTML - Havi bizonylat ROMÁN verzió
+     * 🎨 HTML - Havi bizonylat ROMÁN verzió - MODERN DESIGN
      */
     private static function html_monthly_receipt_ro($store, $redeems, $year, $month, $total_amount, $total_points) {
         $company = htmlspecialchars($store['company_name'] ?? 'Societate');
         $address = htmlspecialchars($store['address'] ?? '');
         $plz = htmlspecialchars($store['plz'] ?? '');
         $city = htmlspecialchars($store['city'] ?? '');
-        $month_str = date('F Y', mktime(0, 0, 0, $month, 1, $year));
+
+        // Romanian month names
+        $months_ro = ['', 'Ianuarie', 'Februarie', 'Martie', 'Aprilie', 'Mai', 'Iunie', 'Iulie', 'August', 'Septembrie', 'Octombrie', 'Noiembrie', 'Decembrie'];
+        $month_str = $months_ro[$month] . ' ' . $year;
+
         $count = count($redeems);
+        $total_formatted = number_format($total_amount, 2, ',', '.');
 
         $rows = '';
         foreach ($redeems as $r) {
             $customer = htmlspecialchars(trim(($r->first_name ?? '') . ' ' . ($r->last_name ?? '')));
             if (!$customer) {
-                $customer = htmlspecialchars($r->user_email ?? 'Unbekannt');
+                $customer = htmlspecialchars($r->user_email ?? 'Necunoscut');
             }
             $reward = htmlspecialchars($r->reward_title ?? 'Recompensă');
             $points = intval($r->points_spent ?? 0);
-            $amount = floatval($r->actual_amount ?? $r->points_spent ?? 0);
+            $amount = number_format(floatval($r->actual_amount ?? $r->points_spent ?? 0), 2, ',', '.');
             $date = date('d.m.Y', strtotime($r->redeemed_at));
 
-            $rows .= "<tr style=\"border-bottom: 1px solid #ddd;\">
-                <td style=\"padding: 8px; font-size: 11px;\">{$date}</td>
-                <td style=\"padding: 8px; font-size: 11px;\">{$customer}</td>
-                <td style=\"padding: 8px; font-size: 11px;\">{$reward}</td>
-                <td style=\"padding: 8px; font-size: 11px; text-align: right;\">{$points}</td>
-                <td style=\"padding: 8px; font-size: 11px; text-align: right;\">{$amount} RON</td>
+            $rows .= "<tr>
+                <td>{$date}</td>
+                <td>{$customer}</td>
+                <td>{$reward}</td>
+                <td class=\"text-right\">{$points}</td>
+                <td class=\"text-right\">{$amount} RON</td>
             </tr>";
         }
 
@@ -580,62 +1101,194 @@ HTML;
 <html lang="ro">
 <head>
     <meta charset="UTF-8">
-    <title>Dispoziție Lunară de Cheltuieli</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dispoziție Lunară de Plată - {$month_str}</title>
     <style>
-        * { margin: 0; padding: 0; }
-        body { font-family: Arial, sans-serif; padding: 20px; background: white; }
-        .receipt { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border: 1px solid #ddd; }
-        .header { border-bottom: 2px solid #333; padding-bottom: 15px; margin-bottom: 20px; }
-        .header h1 { font-size: 18px; font-weight: bold; }
-        .company-info { margin-bottom: 20px; }
-        .company-info p { margin: 3px 0; font-size: 13px; }
-        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-        th { background: #007bff; color: white; padding: 10px; text-align: left; font-size: 12px; font-weight: bold; }
-        .total-row { background: #f9f9f9; font-weight: bold; }
-        .booking { background: #fff3cd; padding: 12px; margin: 15px 0; font-size: 11px; }
-        .disclaimer { background: #e8f4f8; padding: 10px; margin: 15px 0; font-size: 11px; }
-        .footer { text-align: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid #ddd; font-size: 11px; color: #666; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .receipt {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 30px;
+            color: white;
+            text-align: center;
+        }
+
+        .header h1 { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+        .header p { font-size: 14px; opacity: 0.9; }
+
+        .content { padding: 30px; }
+
+        .info-bar {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .info-item { }
+        .info-item .label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+        .info-item .value { font-size: 14px; font-weight: 600; color: #333; margin-top: 4px; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 14px 12px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 12px;
+            font-size: 13px;
+            border-bottom: 1px solid #eee;
+            color: #333;
+        }
+
+        tr:hover { background: #f9fafb; }
+
+        .text-right { text-align: right; }
+
+        .total-row {
+            background: #f0f4f8 !important;
+        }
+
+        .total-row td {
+            font-weight: 700;
+            font-size: 14px;
+            border-bottom: none;
+            padding: 16px 12px;
+        }
+
+        .summary-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 24px;
+            color: white;
+            text-align: center;
+            margin: 24px 0;
+        }
+
+        .summary-box .label { font-size: 12px; opacity: 0.9; text-transform: uppercase; }
+        .summary-box .value { font-size: 36px; font-weight: 700; margin-top: 8px; }
+
+        .notice-box {
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 16px;
+            font-size: 13px;
+        }
+
+        .notice-box.warning { background: #fff8e6; border: 1px solid #ffd666; }
+        .notice-box.info { background: #e6f7ff; border: 1px solid #91d5ff; }
+        .notice-box strong { display: block; margin-bottom: 8px; }
+
+        .footer {
+            background: #f8f9fa;
+            padding: 20px 30px;
+            text-align: center;
+            font-size: 12px;
+            color: #888;
+            border-top: 1px solid #eee;
+        }
+
+        @media print {
+            body { background: white; padding: 0; }
+            .receipt { box-shadow: none; }
+        }
     </style>
 </head>
 <body>
     <div class="receipt">
         <div class="header">
-            <h1>DISPOZIȚIE LUNARĂ DE CHELTUIELI</h1>
-            <p>Situație rezumativă – Program PunktePass</p>
+            <h1>DISPOZIȚIE LUNARĂ DE PLATĂ</h1>
+            <p>Situație centralizatoare – Program de fidelizare PunktePass</p>
         </div>
 
-        <div class="company-info">
-            <p><strong>Societate:</strong> {$company}</p>
-            <p><strong>Adresă:</strong> {$address}, {$plz} {$city}</p>
-            <p><strong>Perioada:</strong> {$month_str}</p>
-        </div>
+        <div class="content">
+            <div class="info-bar">
+                <div class="info-item">
+                    <div class="label">Societate</div>
+                    <div class="value">{$company}</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">Adresă</div>
+                    <div class="value">{$address}, {$plz} {$city}</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">Perioada de raportare</div>
+                    <div class="value">{$month_str}</div>
+                </div>
+            </div>
 
-        <table>
-            <thead><tr><th>Data</th><th>Client</th><th>Recompensă</th><th style="text-align: right;">Puncte</th><th style="text-align: right;">Suma</th></tr></thead>
-            <tbody>
-                {$rows}
-                <tr class="total-row">
-                    <td colspan="3" style="padding: 10px; text-align: right;">TOTAL ({$count} Rambursări):</td>
-                    <td style="padding: 10px; text-align: right;">{$total_points}</td>
-                    <td style="padding: 10px; text-align: right;">{$total_amount} RON</td>
-                </tr>
-            </tbody>
-        </table>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Client</th>
+                        <th>Recompensă</th>
+                        <th class="text-right">Puncte</th>
+                        <th class="text-right">Suma</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {$rows}
+                    <tr class="total-row">
+                        <td colspan="3" class="text-right">Total ({$count} valorificări):</td>
+                        <td class="text-right">{$total_points}</td>
+                        <td class="text-right">{$total_formatted} RON</td>
+                    </tr>
+                </tbody>
+            </table>
 
-        <div class="booking">
-            <strong>📊 ÎNREGISTRARE CONTABILĂ SUGERATĂ:</strong><br>
-            Debit: 623 (Cheltuieli marketing)<br>
-            Credit: 5311 (Casa în lei)
-        </div>
+            <div class="summary-box">
+                <div class="label">Sumă Totală</div>
+                <div class="value">{$total_formatted} RON</div>
+            </div>
 
-        <div class="disclaimer">
-            <strong>⚠️ IMPORTANT:</strong><br>
-            FĂRĂ TVA<br>
-            Operațiune internă, neimpozabilă
+            <div class="notice-box warning">
+                <strong>Sugestie înregistrare contabilă:</strong>
+                Debit: 623 (Cheltuieli marketing) → Credit: 5311 (Casa în lei)
+            </div>
+
+            <div class="notice-box info">
+                <strong>Informații TVA:</strong>
+                Fără TVA – Operațiune internă, neimpozabilă conform Codului Fiscal
+            </div>
         </div>
 
         <div class="footer">
-            <p>Acest document a fost generat automat de PunktePass.</p>
+            <p>Document generat automat de PunktePass | info@punktepass.de</p>
         </div>
     </div>
 </body>
