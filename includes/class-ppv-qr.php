@@ -1860,12 +1860,44 @@ class PPV_QR {
 
         $store_id = intval($session_store->id);
 
-        return new WP_REST_Response($wpdb->get_results($wpdb->prepare("
-            SELECT created_at, user_id, message
-            FROM {$wpdb->prefix}ppv_pos_log
-            WHERE store_id=%d
-            ORDER BY id DESC LIMIT 15
-        ", $store_id)), 200);
+        // ✅ FIX: Get logs with user names for display
+        $logs = $wpdb->get_results($wpdb->prepare("
+            SELECT
+                l.created_at,
+                l.user_id,
+                l.message,
+                l.type,
+                um_fn.meta_value AS first_name,
+                um_ln.meta_value AS last_name
+            FROM {$wpdb->prefix}ppv_pos_log l
+            LEFT JOIN {$wpdb->usermeta} um_fn ON l.user_id = um_fn.user_id AND um_fn.meta_key = 'first_name'
+            LEFT JOIN {$wpdb->usermeta} um_ln ON l.user_id = um_ln.user_id AND um_ln.meta_key = 'last_name'
+            WHERE l.store_id=%d
+            ORDER BY l.id DESC LIMIT 15
+        ", $store_id));
+
+        // Format response for JS
+        $formatted = array_map(function($log) {
+            $created = strtotime($log->created_at);
+
+            // Extract points from message (e.g., "+5 Punkte" → 5)
+            $points = '-';
+            if (preg_match('/\+(\d+)/', $log->message, $m)) {
+                $points = $m[1];
+            }
+
+            return [
+                'user_id' => $log->user_id,
+                'customer_name' => trim(($log->first_name ?? '') . ' ' . ($log->last_name ?? '')) ?: null,
+                'message' => $log->message,
+                'date_short' => date('d.m.', $created),
+                'time_short' => date('H:i', $created),
+                'points' => $points,
+                'success' => ($log->type === 'qr_scan'),
+            ];
+        }, $logs);
+
+        return new WP_REST_Response($formatted, 200);
     }
 
     // ============================================================
