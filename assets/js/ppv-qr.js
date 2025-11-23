@@ -1088,6 +1088,92 @@
     if (target.id === 'ppv-campaign-filter') {
       STATE.campaignManager?.load();
     }
+
+    // ✅ CSV Export Button - toggle dropdown
+    if (target.id === 'ppv-csv-export-btn' || target.closest('#ppv-csv-export-btn')) {
+      e.preventDefault();
+      const menu = document.getElementById('ppv-csv-export-menu');
+      if (menu) {
+        menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+      }
+    }
+
+    // ✅ CSV Export Options - handle export
+    if (target.classList.contains('ppv-csv-export-option') || target.closest('.ppv-csv-export-option')) {
+      e.preventDefault();
+      const option = target.closest('.ppv-csv-export-option') || target;
+      const period = option.dataset.period;
+
+      // Hide dropdown
+      const menu = document.getElementById('ppv-csv-export-menu');
+      if (menu) menu.style.display = 'none';
+
+      // Handle export based on period
+      handleCsvExport(period);
+    }
+
+    // ✅ Close CSV dropdown when clicking outside
+    if (!target.closest('.ppv-csv-wrapper')) {
+      const menu = document.getElementById('ppv-csv-export-menu');
+      if (menu) menu.style.display = 'none';
+    }
+  }
+
+  // ============================================================
+  // CSV EXPORT HANDLER
+  // ============================================================
+  async function handleCsvExport(period) {
+    const storeKey = getStoreKey();
+    if (!storeKey) {
+      window.ppvToast('⚠️ Kein Store ausgewählt', 'warning');
+      return;
+    }
+
+    let dateParam = '';
+
+    if (period === 'today') {
+      dateParam = new Date().toISOString().split('T')[0];
+    } else if (period === 'date') {
+      // Show date picker
+      const selectedDate = prompt('Datum eingeben (YYYY-MM-DD):', new Date().toISOString().split('T')[0]);
+      if (!selectedDate) return;
+      dateParam = selectedDate;
+    } else if (period === 'month') {
+      // Current month
+      const now = new Date();
+      dateParam = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    window.ppvToast('⏳ CSV wird erstellt...', 'info');
+
+    try {
+      const res = await fetch(`/wp-json/punktepass/v1/pos/export-csv?period=${period}&date=${dateParam}`, {
+        headers: { 'PPV-POS-Token': storeKey }
+      });
+
+      if (!res.ok) throw new Error('Export failed');
+
+      const data = await res.json();
+
+      if (data.csv) {
+        // Download CSV
+        const blob = new Blob([data.csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = data.filename || `pos-export-${dateParam}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        window.ppvToast('✅ CSV heruntergeladen', 'success');
+      } else {
+        throw new Error(data.message || 'Export failed');
+      }
+    } catch (err) {
+      ppvWarn('[CSV] Export error:', err);
+      window.ppvToast('❌ Export fehlgeschlagen', 'error');
+    }
   }
 
   // ============================================================

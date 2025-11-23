@@ -1518,6 +1518,13 @@ class PPV_QR {
             'permission_callback' => ['PPV_Permissions', 'check_handler'],
         ]);
 
+        // ✅ CSV Export endpoint
+        register_rest_route('punktepass/v1', '/pos/export-csv', [
+            'methods' => 'GET',
+            'callback' => [__CLASS__, 'rest_export_csv'],
+            'permission_callback' => ['PPV_Permissions', 'check_handler'],
+        ]);
+
         register_rest_route('punktepass/v1', '/strings', [
             'methods' => 'GET',
             'callback' => [__CLASS__, 'rest_get_strings'],
@@ -2031,6 +2038,96 @@ class PPV_QR {
         }, $logs);
 
         return new WP_REST_Response($formatted, 200);
+    }
+
+    // ============================================================
+    // 📥 REST: EXPORT CSV
+    // ============================================================
+    public static function rest_export_csv(WP_REST_Request $r) {
+        global $wpdb;
+
+        // 🏪 Get store from session
+        $session_store = self::get_session_aware_store_id($r);
+        if (!$session_store || !isset($session_store->id)) {
+            return new WP_REST_Response(['error' => 'Invalid store'], 400);
+        }
+
+        $store_id = intval($session_store->id);
+        $period = sanitize_text_field($r->get_param('period') ?: 'today');
+        $date_param = sanitize_text_field($r->get_param('date') ?: '');
+
+        // Build date filter
+        $date_filter = '';
+        $filename_suffix = '';
+
+        if ($period === 'today' || ($period === 'date' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $date_param))) {
+            $target_date = $period === 'today' ? date('Y-m-d') : $date_param;
+            $date_filter = $wpdb->prepare(" AND DATE(l.created_at) = %s", $target_date);
+            $filename_suffix = $target_date;
+        } elseif ($period === 'month' && preg_match('/^\d{4}-\d{2}$/', $date_param)) {
+            $date_filter = $wpdb->prepare(" AND DATE_FORMAT(l.created_at, '%%Y-%%m') = %s", $date_param);
+            $filename_suffix = $date_param;
+        } else {
+            // Default: today
+            $date_filter = $wpdb->prepare(" AND DATE(l.created_at) = %s", date('Y-m-d'));
+            $filename_suffix = date('Y-m-d');
+        }
+
+        // Get logs for CSV
+        $logs = $wpdb->get_results($wpdb->prepare("
+            SELECT
+                l.created_at,
+                l.user_id,
+                l.message,
+                l.type,
+                u.email,
+                u.first_name,
+                u.last_name
+            FROM {$wpdb->prefix}ppv_pos_log l
+            LEFT JOIN {$wpdb->prefix}ppv_users u ON l.user_id = u.id
+            WHERE l.store_id = %d {$date_filter}
+            ORDER BY l.created_at DESC
+            LIMIT 1000
+        ", $store_id));
+
+        // Build CSV
+        $csv_lines = [];
+        $csv_lines[] = 'Datum,Zeit,Kunde,Email,Punkte,Status,Nachricht';
+
+        foreach ($logs as $log) {
+            $created = strtotime($log->created_at);
+            $date = date('d.m.Y', $created);
+            $time = date('H:i:s', $created);
+
+            $first = trim($log->first_name ?? '');
+            $last = trim($log->last_name ?? '');
+            $customer = trim("$first $last") ?: 'Unbekannt';
+            $email = $log->email ?: '-';
+
+            // Extract points from message
+            $points = '-';
+            if (preg_match('/\+(\d+)/', $log->message, $m)) {
+                $points = $m[1];
+            }
+
+            $status = $log->type === 'qr_scan' ? 'OK' : 'Fehler';
+            $message = str_replace([',', "\n", "\r"], [';', ' ', ' '], $log->message);
+
+            $csv_lines[] = sprintf('"%s","%s","%s","%s","%s","%s","%s"',
+                $date, $time, $customer, $email, $points, $status, $message
+            );
+        }
+
+        $csv_content = implode("\n", $csv_lines);
+        $store_name = sanitize_title($session_store->name ?? 'pos');
+        $filename = "pos-{$store_name}-{$filename_suffix}.csv";
+
+        return new WP_REST_Response([
+            'success' => true,
+            'csv' => $csv_content,
+            'filename' => $filename,
+            'rows' => count($logs)
+        ], 200);
     }
 
     // ============================================================
