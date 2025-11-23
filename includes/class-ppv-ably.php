@@ -80,8 +80,8 @@ class PPV_Ably {
         if (function_exists('wp_remote_post')) {
             $response = wp_remote_post($url, [
                 'method' => 'POST',
-                'timeout' => 5,
-                'blocking' => false, // Non-blocking for performance
+                'timeout' => 3,
+                'blocking' => true, // Must be blocking for Ably to receive message
                 'headers' => [
                     'Content-Type' => 'application/json',
                     'Authorization' => 'Basic ' . base64_encode(self::$api_key),
