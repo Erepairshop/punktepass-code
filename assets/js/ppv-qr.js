@@ -865,10 +865,55 @@
           if (data.success) {
             this.updateStatus('success', '✅ ' + (data.message || L.scanner_success_msg || 'Erfolgreich!'));
             window.ppvToast(data.message || L.scanner_point_added || '✅ Punkt hinzugefügt!', 'success');
+
+            // ✅ FIX: Add scan to UI immediately (don't rely solely on Ably)
+            // Track this scan to prevent Ably duplicate
+            const scanKey = `${data.user_id}-${Date.now()}`;
+            window._ppvLastLocalScan = { user_id: data.user_id, time: Date.now() };
+
+            if (STATE.uiManager) {
+              const now = new Date();
+              STATE.uiManager.addScanItem({
+                user_id: data.user_id,
+                customer_name: data.customer_name || null,
+                email: data.email || null,
+                avatar: data.avatar || null,
+                message: data.message,
+                points: data.points || 1,
+                date_short: now.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'}).replace(/\./g, '.'),
+                time_short: now.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'}),
+                success: true,
+                _realtime: true  // Prepend to top of list
+              });
+            }
+
             this.startPauseCountdown();
           } else {
             this.updateStatus('warning', '⚠️ ' + (data.message || L.error_generic || 'Fehler'));
             window.ppvToast(data.message || '⚠️ Fehler', 'warning');
+
+            // ✅ FIX: Add error scan to UI immediately
+            // Track this scan to prevent Ably duplicate
+            if (data.user_id) {
+              window._ppvLastLocalScan = { user_id: data.user_id, time: Date.now() };
+            }
+
+            if (STATE.uiManager && data.user_id) {
+              const now = new Date();
+              STATE.uiManager.addScanItem({
+                user_id: data.user_id,
+                customer_name: data.customer_name || null,
+                email: data.email || null,
+                avatar: data.avatar || null,
+                message: data.message || '⚠️ Fehler',
+                points: 0,
+                date_short: now.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'}).replace(/\./g, '.'),
+                time_short: now.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'}),
+                success: false,
+                _realtime: true  // Prepend to top of list
+              });
+            }
+
             setTimeout(() => this.restartAfterError(), 3000);
           }
         })
@@ -1173,6 +1218,13 @@
       // Handle incoming scan events
       channel.subscribe('new-scan', (message) => {
         ppvLog('[Ably] New scan received:', message.data);
+
+        // ✅ FIX: Skip if this is a duplicate from our own local scan (within 3s)
+        const lastLocal = window._ppvLastLocalScan;
+        if (lastLocal && message.data.user_id == lastLocal.user_id && (Date.now() - lastLocal.time) < 3000) {
+          ppvLog('[Ably] Skipping duplicate (already added locally)');
+          return;
+        }
 
         // Add scan to UI immediately (with _realtime flag for prepend)
         if (STATE.scanProcessor?.ui) {

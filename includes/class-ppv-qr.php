@@ -1604,19 +1604,49 @@ class PPV_QR {
             $error_type = $response_data['error_type'] ?? null;
             self::insert_log($store_id, $user_id, $response_data['message'] ?? '⚠️ Rate limit', 'error', $error_type);
 
-            // 📡 ABLY: Notify user about the error
+            // Get user info for error response
+            $user_info = $wpdb->get_row($wpdb->prepare("
+                SELECT first_name, last_name, email, avatar
+                FROM {$wpdb->prefix}ppv_users WHERE id = %d
+            ", $user_id));
+            $customer_name = trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
+            $store_name = $wpdb->get_var($wpdb->prepare(
+                "SELECT name FROM {$wpdb->prefix}ppv_stores WHERE id=%d LIMIT 1",
+                $store_id
+            ));
+
+            // 📡 ABLY: Notify BOTH user AND store (POS) about the error
             if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
-                $store_name = $wpdb->get_var($wpdb->prepare(
-                    "SELECT name FROM {$wpdb->prefix}ppv_stores WHERE id=%d LIMIT 1",
-                    $store_id
-                ));
+                // Notify user dashboard
                 PPV_Ably::trigger_user_points($user_id, [
                     'success' => false,
                     'error_type' => $error_type,
                     'message' => $response_data['message'] ?? '⚠️ Rate limit',
                     'store_name' => $store_name ?? 'PunktePass',
                 ]);
+
+                // ✅ FIX: Also notify POS (store channel) so error appears in scan list
+                PPV_Ably::trigger_scan($store_id, [
+                    'user_id' => $user_id,
+                    'customer_name' => $customer_name ?: null,
+                    'email' => $user_info->email ?? null,
+                    'avatar' => $user_info->avatar ?? null,
+                    'message' => $response_data['message'] ?? '⚠️ Rate limit',
+                    'points' => '0',
+                    'date_short' => date('d.m.'),
+                    'time_short' => date('H:i'),
+                    'success' => false,
+                    'error_type' => $error_type,
+                ]);
             }
+
+            // ✅ Include user info in HTTP response for immediate UI display
+            $rate_check['response']->set_data(array_merge($response_data, [
+                'user_id' => $user_id,
+                'customer_name' => $customer_name ?: null,
+                'email' => $user_info->email ?? null,
+                'avatar' => $user_info->avatar ?? null,
+            ]));
 
             return $rate_check['response'];
         }
@@ -1862,16 +1892,15 @@ class PPV_QR {
             $store_id
         ));
 
+        // ✅ Get user info for response AND Ably notification
+        $user_info = $wpdb->get_row($wpdb->prepare("
+            SELECT first_name, last_name, email, avatar
+            FROM {$wpdb->prefix}ppv_users WHERE id = %d
+        ", $user_id));
+        $customer_name = trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
+
         // 📡 ABLY: Send real-time notification (non-blocking)
         if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
-            // Get user info for notification
-            $user_info = $wpdb->get_row($wpdb->prepare("
-                SELECT first_name, last_name, email, avatar
-                FROM {$wpdb->prefix}ppv_users WHERE id = %d
-            ", $user_id));
-
-            $customer_name = trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
-
             PPV_Ably::trigger_scan($store_id, [
                 'user_id' => $user_id,
                 'customer_name' => $customer_name ?: null,
@@ -1920,7 +1949,11 @@ class PPV_QR {
             'campaign_id' => $campaign_id ?: null,
             'vip_bonus' => $vip_bonus_applied,
             'vip_bonus_details' => $vip_bonus_details,
-            'time' => current_time('mysql')
+            'time' => current_time('mysql'),
+            // ✅ Include customer info for immediate UI display
+            'customer_name' => $customer_name ?: null,
+            'email' => $user_info->email ?? null,
+            'avatar' => $user_info->avatar ?? null,
         ], 200);
     }
 
