@@ -155,6 +155,14 @@ wp_localize_script('pp-profile-lite-i18n', 'ppv_profile', [
         public static function render_form() {
             self::ensure_session();
 
+            // ✅ FIX: Send no-cache headers to bypass server-level caching (LiteSpeed, Cloudflare, etc.)
+            if (!headers_sent()) {
+                header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+                header('Cache-Control: post-check=0, pre-check=0', false);
+                header('Pragma: no-cache');
+                header('Expires: Thu, 01 Jan 1970 00:00:00 GMT');
+            }
+
             // ✅ SCANNER USERS: Don't show profile/onboarding page
             if (class_exists('PPV_Permissions') && PPV_Permissions::is_scanner_user()) {
                 echo '<div class="ppv-alert ppv-alert-info" style="padding: 20px; text-align: center;">
