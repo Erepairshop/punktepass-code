@@ -1,11 +1,19 @@
 /**
- * PunktePass – Kassenscanner & Kampagnen v6.0 CLEAN
+ * PunktePass – Kassenscanner & Kampagnen v6.1 CLEAN
  * Turbo.js compatible, clean architecture
+ * FIXED: Multiple init() calls causing API spam
  * Author: Erik Borota / PunktePass
  */
 
 (function() {
   'use strict';
+
+  // Guard against multiple script loads
+  if (window.PPV_QR_LOADED) {
+    console.log('[QR] Already loaded, skipping');
+    return;
+  }
+  window.PPV_QR_LOADED = true;
 
   // ============================================================
   // GLOBAL STATE
@@ -15,7 +23,8 @@
     campaignManager: null,
     cameraScanner: null,
     scanProcessor: null,
-    uiManager: null
+    uiManager: null,
+    lastInitTime: 0  // Prevent rapid re-init
   };
 
   const L = window.ppv_lang || {};
@@ -960,6 +969,14 @@
   // INITIALIZATION
   // ============================================================
   function init() {
+    // Prevent rapid re-initialization (within 2 seconds)
+    const now = Date.now();
+    if (now - STATE.lastInitTime < 2000) {
+      console.log('[QR] Init throttled (too soon)');
+      return;
+    }
+    STATE.lastInitTime = now;
+
     const campaignList = document.getElementById('ppv-campaign-list');
     const posInput = document.getElementById('ppv-pos-input');
 
