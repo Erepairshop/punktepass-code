@@ -19,8 +19,9 @@ class PPV_QR {
         add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
         add_action('rest_api_init', [__CLASS__, 'register_rest_routes']);
         add_action('wp_ajax_ppv_switch_filiale', [__CLASS__, 'ajax_switch_filiale']);
-        // Pusher auth endpoint for private channels
+        // Pusher auth endpoint for private channels (both logged-in and guest users)
         add_action('wp_ajax_ppv_pusher_auth', [__CLASS__, 'ajax_pusher_auth']);
+        add_action('wp_ajax_nopriv_ppv_pusher_auth', [__CLASS__, 'ajax_pusher_auth']);
     }
 
     // ============================================================
