@@ -139,17 +139,19 @@ if (class_exists('PPV_Lang')) {
             error_log("🔍 [PPV_MyPoints_REST] Session restore skipped (already have user_id or no SessionBridge)");
         }
 
-        // Try WordPress user first
-        $wp_user_id = get_current_user_id();
-        error_log("🔍 [PPV_MyPoints_REST] WordPress user ID: " . ($wp_user_id ?: 'NOT LOGGED IN'));
+        // ✅ FIX: ALWAYS use ppv_user_id from session (points are stored with ppv_users.id, NOT wp_users.ID!)
+        // WordPress user ID is NOT the same as ppv_users.id
+        $user_id = 0;
 
-        $user_id = $wp_user_id;
-
-        // Fallback to session (Google/Facebook/TikTok login)
-        if (!$user_id && !empty($_SESSION['ppv_user_id'])) {
+        // Priority 1: Session user_id (ppv_users.id)
+        if (!empty($_SESSION['ppv_user_id'])) {
             $user_id = intval($_SESSION['ppv_user_id']);
-            error_log("🔍 [PPV_MyPoints_REST] Using SESSION user_id: {$user_id}");
+            error_log("🔍 [PPV_MyPoints_REST] Using SESSION ppv_user_id: {$user_id}");
         }
+
+        // Log WordPress user for debugging (but don't use it for points query!)
+        $wp_user_id = get_current_user_id();
+        error_log("🔍 [PPV_MyPoints_REST] WordPress user ID (not used): " . ($wp_user_id ?: 'NOT LOGGED IN'));
 
         if ($user_id <= 0) {
             error_log("❌ [PPV_MyPoints_REST] No user found");
