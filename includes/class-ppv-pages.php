@@ -288,7 +288,7 @@ public static function force_visible() {
             'ppv-user-dashboard',
             PPV_PLUGIN_URL . 'assets/js/ppv-user-dashboard.js',
             ['jquery'],
-            defined('PPV_VERSION') ? PPV_VERSION : time(),
+            time(), // Always fresh - no cache issues
             true
         );
 
