@@ -180,17 +180,32 @@
   // Initialize on DOMContentLoaded
   document.addEventListener("DOMContentLoaded", initAll);
 
-  // 🚀 Turbo-compatible: Reset flag before rendering new page
-  document.addEventListener("turbo:before-render", function() {
-    // Reset initialization flag before new content renders
-    const container = document.getElementById("ppv-my-points-app");
-    if (container) {
-      container.dataset.initialized = 'false';
-    }
-  });
+  // 🛡️ Guard to prevent multiple Turbo listener registrations
+  if (!window.PPV_MYPOINTS_TURBO_LISTENERS) {
+    window.PPV_MYPOINTS_TURBO_LISTENERS = true;
 
-  // 🚀 Re-initialize after navigation (only turbo:load, not render to avoid double-init)
-  document.addEventListener("turbo:load", initAll);
+    // 🚀 Turbo-compatible: Reset flag before rendering new page
+    document.addEventListener("turbo:before-render", function() {
+      const container = document.getElementById("ppv-my-points-app");
+      if (container) {
+        container.dataset.initialized = 'false';
+      }
+    });
+
+    // 🚀 Re-initialize after navigation
+    document.addEventListener("turbo:load", initAll);
+
+    // 🚀 Custom SPA event support
+    window.addEventListener('ppv:spa-navigate', function() {
+      const container = document.getElementById("ppv-my-points-app");
+      if (container) {
+        container.dataset.initialized = 'false';
+      }
+      setTimeout(initAll, 100);
+    });
+
+    console.log('✅ [MyPoints] Turbo/SPA listeners registered (once)');
+  }
 
   /** ============================
    * 🧩 LAYOUT INIT

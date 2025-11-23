@@ -1175,19 +1175,39 @@ if (document.readyState === 'loading') {
   initUserDashboard();
 }
 
-// 🧹 Turbo: Clean up BEFORE navigating away (prevents multiple polling instances)
-document.addEventListener('turbo:before-visit', function() {
-  console.log('🧹 [Turbo] Before visit - cleaning up polling');
-  cleanupPolling();
-});
+// 🛡️ Guard to prevent multiple Turbo listener registrations
+if (!window.PPV_DASHBOARD_TURBO_LISTENERS) {
+  window.PPV_DASHBOARD_TURBO_LISTENERS = true;
 
-// 🚀 Turbo: Reset flag before rendering new page
-document.addEventListener('turbo:before-render', function() {
-  const root = document.getElementById('ppv-dashboard-root');
-  if (root) {
-    root.dataset.initialized = 'false';
-  }
-});
+  // 🧹 Turbo: Clean up BEFORE navigating away
+  document.addEventListener('turbo:before-visit', function() {
+    console.log('🧹 [Turbo] Before visit - cleaning up polling');
+    cleanupPolling();
+  });
 
-// 🚀 Turbo: Re-initialize after navigation (only turbo:load, not render to avoid double-init)
-document.addEventListener('turbo:load', initUserDashboard);
+  // 🚀 Turbo: Reset flag before rendering new page
+  document.addEventListener('turbo:before-render', function() {
+    const root = document.getElementById('ppv-dashboard-root');
+    if (root) {
+      root.dataset.initialized = 'false';
+    }
+  });
+
+  // 🚀 Turbo: Re-initialize after navigation
+  document.addEventListener('turbo:load', initUserDashboard);
+
+  // 🚀 Custom SPA: Clean up and re-init
+  window.addEventListener('ppv:spa-navigate', function() {
+    console.log('🧹 [SPA] Navigate event - cleanup then init');
+    cleanupPolling();
+    // Reset dashboard flag
+    const root = document.getElementById('ppv-dashboard-root');
+    if (root) {
+      root.dataset.initialized = 'false';
+    }
+    // Re-init after short delay
+    setTimeout(initUserDashboard, 100);
+  });
+
+  console.log('✅ [Dashboard] Turbo/SPA listeners registered (once)');
+}
