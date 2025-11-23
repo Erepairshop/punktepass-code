@@ -309,21 +309,98 @@ class PPV_QR {
         ]);
     }
 
-    private static function decode_user_from_qr($qr) {
-        if (empty($qr)) return false;
+    // Track last decode error for better error messages
+    private static $last_decode_error = null;
 
+    /**
+     * Decode and validate user from QR code
+     * Returns: user_id on success, false on failure
+     * Sets self::$last_decode_error for the caller to check
+     */
+    private static function decode_user_from_qr($qr) {
+        global $wpdb;
+
+        self::$last_decode_error = null;
+
+        if (empty($qr)) {
+            self::$last_decode_error = 'empty_qr';
+            return false;
+        }
+
+        // Format: PPU{user_id}{16-char-token}
         if (strpos($qr, 'PPU') === 0) {
-            $body = substr($qr, 3);
-            if (preg_match('/^(\d+)/', $body, $m)) {
-                return intval($m[1]);
+            $payload = substr($qr, 3);
+
+            // Extract user_id (digits) and token (rest)
+            if (preg_match('/^(\d+)(.+)$/', $payload, $matches)) {
+                $uid = intval($matches[1]);
+                $token_from_qr = $matches[2];
+
+                // Security: Verify token + active status in single JOIN query
+                // Same validation as ppv-pos-scan.php
+                $user_check = $wpdb->get_row($wpdb->prepare("
+                    SELECT u.id, u.active
+                    FROM {$wpdb->prefix}ppv_users u
+                    INNER JOIN {$wpdb->prefix}ppv_tokens t
+                        ON t.entity_type='user' AND t.entity_id=u.id
+                    WHERE u.id=%d
+                        AND t.token=%s
+                        AND t.expires_at > NOW()
+                    LIMIT 1
+                ", $uid, $token_from_qr));
+
+                if ($user_check && $user_check->active == 1) {
+                    return intval($user_check->id);
+                }
+
+                // Set specific error for proper client-side handling
+                if (!$user_check) {
+                    self::$last_decode_error = 'invalid_qr';
+                    error_log("🔴 [PPV_QR] decode_user_from_qr: Invalid/expired token for user_id={$uid}");
+                } elseif ($user_check->active == 0) {
+                    self::$last_decode_error = 'user_blocked';
+                    error_log("🔴 [PPV_QR] decode_user_from_qr: User {$uid} is inactive");
+                }
+
+                return false;
             }
         }
 
+        // Legacy format: PPUSER-{user_id}-{token}
         if (strpos($qr, 'PPUSER-') === 0) {
             $parts = explode('-', $qr);
-            return intval($parts[1] ?? 0);
+            $uid = intval($parts[1] ?? 0);
+            $token_from_qr = $parts[2] ?? '';
+
+            if ($uid > 0 && !empty($token_from_qr)) {
+                // Validate token for legacy format too
+                $user_check = $wpdb->get_row($wpdb->prepare("
+                    SELECT u.id, u.active
+                    FROM {$wpdb->prefix}ppv_users u
+                    INNER JOIN {$wpdb->prefix}ppv_tokens t
+                        ON t.entity_type='user' AND t.entity_id=u.id
+                    WHERE u.id=%d
+                        AND t.token=%s
+                        AND t.expires_at > NOW()
+                    LIMIT 1
+                ", $uid, $token_from_qr));
+
+                if ($user_check && $user_check->active == 1) {
+                    return intval($user_check->id);
+                }
+
+                // Set specific error
+                if (!$user_check) {
+                    self::$last_decode_error = 'invalid_qr';
+                } elseif ($user_check->active == 0) {
+                    self::$last_decode_error = 'user_blocked';
+                }
+            }
+
+            return false;
         }
 
+        self::$last_decode_error = 'invalid_qr';
         return false;
     }
 
@@ -1622,6 +1699,19 @@ class PPV_QR {
 
         $user_id = self::decode_user_from_qr($qr_code);
         if (!$user_id) {
+            // Use specific error from decode function
+            $error_type = self::$last_decode_error ?? 'invalid_qr';
+
+            // Different messages for different error types
+            if ($error_type === 'user_blocked') {
+                return new WP_REST_Response([
+                    'success' => false,
+                    'message' => self::t('err_user_blocked', '🚫 Benutzer gesperrt'),
+                    'store_name' => $store->name ?? 'PunktePass',
+                    'error_type' => 'user_blocked'
+                ], 403);
+            }
+
             return new WP_REST_Response([
                 'success' => false,
                 'message' => self::t('err_invalid_qr', '❌ Érvénytelen QR'),
