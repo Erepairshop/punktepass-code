@@ -224,10 +224,12 @@
 
     async loadLogs() {
       if (!getStoreKey()) return;
+      console.log('[QR] 📡 loadLogs() called at', new Date().toLocaleTimeString());
       try {
         const res = await fetch('/wp-json/punktepass/v1/pos/logs', {
           headers: { 'PPV-POS-Token': getStoreKey() }
         });
+        console.log('[QR] 📡 loadLogs() response:', res.status);
         const logs = await res.json();
 
         // Clear existing items before loading fresh data
@@ -270,6 +272,8 @@
         return;
       }
 
+      console.log('[QR] 📡 campaigns.load() called at', new Date().toLocaleTimeString());
+
       this.list.innerHTML = `<div class='ppv-loading'>⏳ ${L.camp_loading || 'Lade Kampagnen...'}</div>`;
 
       const filter = document.getElementById('ppv-campaign-filter')?.value || 'active';
@@ -278,6 +282,7 @@
         const res = await fetch('/wp-json/punktepass/v1/pos/campaigns', {
           headers: { 'PPV-POS-Token': getStoreKey() }
         });
+        console.log('[QR] 📡 campaigns.load() response:', res.status);
         const data = await res.json();
 
         this.list.innerHTML = '';
