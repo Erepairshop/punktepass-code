@@ -581,6 +581,15 @@
         btn.classList.add('ppv-tab-active');
         btn.style.color = '#0066cc';
         btn.style.borderBottom = '3px solid #0066cc';
+
+        // ✅ FIX: Load receipts when tab is clicked
+        if (tabName === 'receipts' && typeof window.ppv_receipts_load === 'function') {
+          ppvLog('[REWARDS] Receipts tab clicked, loading receipts...');
+          window.ppv_receipts_load();
+        }
+
+        // ✅ Dispatch tab change event for other scripts
+        window.dispatchEvent(new CustomEvent('ppv:tab-change', { detail: { tab: tabName } }));
       });
     });
   }

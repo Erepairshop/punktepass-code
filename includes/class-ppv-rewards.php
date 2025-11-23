@@ -70,6 +70,15 @@ class PPV_Rewards {
             true
         );
 
+        // ✅ Receipts JS betöltése a Quittungen tab-hoz
+        wp_enqueue_script(
+            'ppv-receipts',
+            PPV_PLUGIN_URL . 'assets/js/ppv-receipts.js',
+            ['jquery'],
+            time(),
+            true
+        );
+
         $payload = [
             'base'     => esc_url(rest_url('ppv/v1/')),
             'nonce'    => wp_create_nonce('wp_rest'),
