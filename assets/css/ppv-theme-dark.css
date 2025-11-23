@@ -4818,3 +4818,103 @@ body.ppv-light .ppv-preview-tag.ppv-vip-tag {
 body.ppv-light .ppv-preview-tag.ppv-vip-tag i {
     color: #d97706;
 }
+
+/* ──────────────────────────────────────────────────────────────────────
+   📊 POS LOG TABLE - MODERN CARD STYLE (Letzte Scans)
+   ────────────────────────────────────────────────────────────────────── */
+.glass-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 8px;
+    background: transparent;
+}
+
+.glass-table thead {
+    background: transparent;
+}
+
+.glass-table thead th {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--pp-text-3);
+    border: none;
+}
+
+.glass-table tbody tr {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
+}
+
+.glass-table tbody tr:hover {
+    background: rgba(0, 230, 255, 0.05);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 230, 255, 0.15);
+}
+
+.glass-table tbody td {
+    padding: 1rem;
+    font-size: 0.9rem;
+    color: var(--pp-text-2);
+    border: none;
+    background: transparent;
+}
+
+.glass-table tbody td:first-child {
+    border-radius: 12px 0 0 12px;
+    font-weight: 600;
+    color: #00e6ff;
+}
+
+.glass-table tbody td:last-child {
+    border-radius: 0 12px 12px 0;
+}
+
+/* Log type badges */
+.glass-table .log-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0.375rem 0.875rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.log-badge.success {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+}
+
+.log-badge.error {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+.log-badge.pending {
+    background: rgba(251, 191, 36, 0.2);
+    color: #fbbf24;
+}
+
+/* POS Header */
+.ppv-pos-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    gap: 1rem;
+}
+
+.ppv-pos-title {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #00e6ff;
+}
