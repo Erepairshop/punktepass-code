@@ -166,7 +166,12 @@
         </div>
         ${pointsHtml}
       `;
-      this.logList.appendChild(item);
+      // ✅ FIX: Use prepend for real-time scans, append for initial load
+      if (log._realtime) {
+        this.logList.prepend(item);
+      } else {
+        this.logList.appendChild(item);
+      }
     }
 
     flashCampaignList() {
@@ -1169,9 +1174,9 @@
       channel.subscribe('new-scan', (message) => {
         ppvLog('[Ably] New scan received:', message.data);
 
-        // Add scan to UI immediately
+        // Add scan to UI immediately (with _realtime flag for prepend)
         if (STATE.scanProcessor?.ui) {
-          STATE.scanProcessor.ui.addScanItem(message.data);
+          STATE.scanProcessor.ui.addScanItem({ ...message.data, _realtime: true });
         }
       });
 
