@@ -1755,7 +1755,6 @@ class PPV_QR {
             // Get all VIP settings for this store (or parent store)
             $vip_settings = $wpdb->get_row($wpdb->prepare("
                 SELECT
-                    vip_enabled, vip_bronze_bonus, vip_silver_bonus, vip_gold_bonus, vip_platinum_bonus,
                     vip_fix_enabled, vip_fix_bronze, vip_fix_silver, vip_fix_gold, vip_fix_platinum,
                     vip_streak_enabled, vip_streak_count, vip_streak_type,
                     vip_streak_bronze, vip_streak_silver, vip_streak_gold, vip_streak_platinum,
@@ -1765,7 +1764,6 @@ class PPV_QR {
 
             // 🔍 DEBUG: Log VIP settings
             ppv_log("🔍 [PPV_QR] VIP settings for store {$vip_store_id}: " . json_encode([
-                'vip_enabled' => $vip_settings->vip_enabled ?? 'NULL',
                 'vip_fix_enabled' => $vip_settings->vip_fix_enabled ?? 'NULL',
                 'vip_fix_bronze' => $vip_settings->vip_fix_bronze ?? 'NULL',
                 'vip_daily_enabled' => $vip_settings->vip_daily_enabled ?? 'NULL',
@@ -1791,20 +1789,7 @@ class PPV_QR {
                     }
                 };
 
-                // 1. PERCENTAGE BONUS
-                if ($vip_settings->vip_enabled && $user_level !== null) {
-                    $bonus_percent = $getLevelValue(
-                        $vip_settings->vip_bronze_bonus ?? 3,
-                        $vip_settings->vip_silver_bonus,
-                        $vip_settings->vip_gold_bonus,
-                        $vip_settings->vip_platinum_bonus
-                    );
-                    if ($bonus_percent > 0) {
-                        $vip_bonus_details['pct'] = (int)round($base_points * ($bonus_percent / 100));
-                    }
-                }
-
-                // 2. FIXED POINT BONUS
+                // 1. FIXED POINT BONUS
                 if ($vip_settings->vip_fix_enabled && $user_level !== null) {
                     $fix_bonus = $getLevelValue(
                         $vip_settings->vip_fix_bronze ?? 1,

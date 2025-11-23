@@ -408,10 +408,10 @@
     let html = offlineBanner + `
       <div class="ppv-dashboard-netto animate-in">
         <div class="ppv-dashboard-inner">
-          
+
           <!-- HEADER -->
           <div class="ppv-points-header">
-          
+
             <h2>${l.title}</h2>
 
             <div class="ppv-points-summary">
@@ -421,6 +421,9 @@
             </div>
             <p class="ppv-motivation">${l.motivation}</p>
           </div>
+
+          <!-- 🏆 TIER PROGRESS SECTION -->
+          ${buildTierProgressHtml(d.tier, d.tiers, l, lang)}
 
           <!-- ANALYTICS SECTION -->
           <div id="ppv-analytics-section"></div>
@@ -529,6 +532,139 @@
       `;
     });
     return html;
+  }
+
+  /** ============================
+   * 🏆 BUILD TIER PROGRESS HTML
+   * ============================ */
+  function buildTierProgressHtml(tier, tiers, l, lang) {
+    if (!tier || !tiers) {
+      return '';
+    }
+
+    // Tier labels for different languages
+    const tierLabels = {
+      de: {
+        your_level: 'Dein Level',
+        next_level: 'Nächstes Level',
+        points_needed: 'Punkte noch nötig',
+        max_level: 'Maximales Level erreicht!',
+        lifetime_points: 'Lifetime Punkte',
+        all_shops_info: 'Deine Punkte von allen Shops zählen hierzu',
+      },
+      hu: {
+        your_level: 'Szinted',
+        next_level: 'Következő szint',
+        points_needed: 'pont még szükséges',
+        max_level: 'Maximális szint elérve!',
+        lifetime_points: 'Lifetime pontok',
+        all_shops_info: 'Az összes boltból gyűjtött pontjaid számítanak',
+      },
+      ro: {
+        your_level: 'Nivelul tău',
+        next_level: 'Următorul nivel',
+        points_needed: 'puncte mai necesare',
+        max_level: 'Nivel maxim atins!',
+        lifetime_points: 'Puncte lifetime',
+        all_shops_info: 'Punctele de la toate magazinele sunt luate în calcul',
+      }
+    };
+
+    const t = tierLabels[lang] || tierLabels.de;
+    const currentLevel = tier.level || 'starter';
+    const lifetimePoints = tier.lifetime_points || 0;
+    const progress = tier.progress || 0;
+    const pointsToNext = tier.points_to_next || 0;
+    const isMaxLevel = currentLevel === 'platinum';
+
+    // Tier icons and colors
+    const tierIcons = {
+      starter: 'ri-user-line',
+      bronze: 'ri-medal-line',
+      silver: 'ri-medal-fill',
+      gold: 'ri-vip-crown-fill',
+      platinum: 'ri-vip-diamond-fill'
+    };
+
+    const tierColors = {
+      starter: '#6c757d',
+      bronze: '#CD7F32',
+      silver: '#C0C0C0',
+      gold: '#FFD700',
+      platinum: '#A0B2C6'
+    };
+
+    // Find next level
+    const tierOrder = ['starter', 'bronze', 'silver', 'gold', 'platinum'];
+    const currentIndex = tierOrder.indexOf(currentLevel);
+    const nextLevel = currentIndex < tierOrder.length - 1 ? tierOrder[currentIndex + 1] : null;
+    const nextLevelName = nextLevel && tiers[nextLevel] ? tiers[nextLevel].name : '';
+    const nextLevelMin = nextLevel && tiers[nextLevel] ? tiers[nextLevel].min : 0;
+
+    // Build tier dots/steps
+    let tierDotsHtml = '';
+    tierOrder.forEach((t, i) => {
+      const isActive = i <= currentIndex;
+      const isCurrent = t === currentLevel;
+      const tierData = tiers[t] || {};
+      tierDotsHtml += `
+        <div class="ppv-tier-step ${isActive ? 'active' : ''} ${isCurrent ? 'current' : ''}"
+             style="--tier-color: ${tierColors[t]}">
+          <div class="tier-dot">
+            <i class="${tierIcons[t]}"></i>
+          </div>
+          <span class="tier-name">${tierData.name || t}</span>
+          <span class="tier-points">${tierData.min || 0}+</span>
+        </div>
+      `;
+    });
+
+    return `
+      <div class="ppv-tier-progress-section">
+        <h3><i class="ri-vip-crown-fill"></i> ${t.your_level}</h3>
+
+        <!-- Current Level Badge -->
+        <div class="ppv-current-tier-badge" style="--tier-color: ${tierColors[currentLevel]}">
+          <i class="${tierIcons[currentLevel]}"></i>
+          <span class="tier-level-name">${tier.name || currentLevel}</span>
+        </div>
+
+        <!-- Lifetime Points -->
+        <div class="ppv-lifetime-points">
+          <span class="points-value">${lifetimePoints}</span>
+          <span class="points-label">${t.lifetime_points}</span>
+        </div>
+
+        <!-- Progress Bar to Next Level -->
+        ${!isMaxLevel ? `
+          <div class="ppv-tier-progress-bar-container">
+            <div class="ppv-tier-progress-info">
+              <span>${t.next_level}: <strong>${nextLevelName}</strong></span>
+              <span><strong>${pointsToNext}</strong> ${t.points_needed}</span>
+            </div>
+            <div class="ppv-tier-progress-bar">
+              <div class="ppv-tier-progress-fill" style="width: ${progress}%; background: linear-gradient(90deg, ${tierColors[currentLevel]}, ${tierColors[nextLevel]})"></div>
+            </div>
+          </div>
+        ` : `
+          <div class="ppv-tier-max-level">
+            <i class="ri-trophy-fill"></i>
+            <span>${t.max_level}</span>
+          </div>
+        `}
+
+        <!-- All Tiers Overview -->
+        <div class="ppv-tier-steps">
+          ${tierDotsHtml}
+        </div>
+
+        <!-- Info text -->
+        <p class="ppv-tier-info-text">
+          <i class="ri-information-line"></i>
+          ${t.all_shops_info}
+        </p>
+      </div>
+    `;
   }
 
   /** ============================

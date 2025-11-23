@@ -11915,3 +11915,258 @@ body.dark-mode {
         display: none !important;
     }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   🏆 TIER PROGRESS SECTION - MyPoints
+   ═══════════════════════════════════════════════════════════════════════════ */
+.ppv-tier-progress-section {
+    background: var(--pp-surface);
+    border-radius: 20px;
+    padding: 24px;
+    margin: 20px 0;
+    box-shadow: var(--pp-shadow-card);
+    text-align: center;
+}
+
+.ppv-tier-progress-section h3 {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--pp-text);
+    margin-bottom: 20px;
+}
+
+.ppv-tier-progress-section h3 i {
+    color: var(--tier-color, var(--pp-primary));
+}
+
+/* Current Tier Badge */
+.ppv-current-tier-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 24px;
+    background: linear-gradient(135deg, var(--tier-color) 0%, color-mix(in srgb, var(--tier-color) 80%, #000) 100%);
+    border-radius: 50px;
+    color: #fff;
+    font-size: 1.3rem;
+    font-weight: 700;
+    box-shadow: 0 4px 20px color-mix(in srgb, var(--tier-color) 40%, transparent);
+    margin-bottom: 16px;
+}
+
+.ppv-current-tier-badge i {
+    font-size: 1.5rem;
+}
+
+/* Lifetime Points */
+.ppv-lifetime-points {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.ppv-lifetime-points .points-value {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: var(--pp-primary);
+    line-height: 1;
+}
+
+.ppv-lifetime-points .points-label {
+    font-size: 0.85rem;
+    color: var(--pp-text-muted);
+    margin-top: 4px;
+}
+
+/* Progress Bar Container */
+.ppv-tier-progress-bar-container {
+    margin-bottom: 24px;
+}
+
+.ppv-tier-progress-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 0.85rem;
+    color: var(--pp-text-muted);
+}
+
+.ppv-tier-progress-info strong {
+    color: var(--pp-text);
+}
+
+.ppv-tier-progress-bar {
+    height: 12px;
+    background: var(--pp-bg-3);
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+}
+
+.ppv-tier-progress-fill {
+    height: 100%;
+    border-radius: 10px;
+    transition: width 0.8s ease-out;
+    position: relative;
+}
+
+.ppv-tier-progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* Max Level Reached */
+.ppv-tier-max-level {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 16px 24px;
+    background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+    border-radius: 12px;
+    color: #333;
+    font-weight: 700;
+    margin-bottom: 24px;
+}
+
+.ppv-tier-max-level i {
+    font-size: 1.5rem;
+}
+
+/* Tier Steps */
+.ppv-tier-steps {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 4px;
+    margin-bottom: 16px;
+    padding: 0 8px;
+}
+
+.ppv-tier-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    opacity: 0.4;
+    transition: all 0.3s ease;
+}
+
+.ppv-tier-step.active {
+    opacity: 1;
+}
+
+.ppv-tier-step.current {
+    transform: scale(1.1);
+}
+
+.ppv-tier-step .tier-dot {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--pp-bg-3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 6px;
+    transition: all 0.3s ease;
+}
+
+.ppv-tier-step.active .tier-dot {
+    background: var(--tier-color);
+    box-shadow: 0 4px 15px color-mix(in srgb, var(--tier-color) 40%, transparent);
+}
+
+.ppv-tier-step .tier-dot i {
+    font-size: 1.2rem;
+    color: var(--pp-text-muted);
+}
+
+.ppv-tier-step.active .tier-dot i {
+    color: #fff;
+}
+
+.ppv-tier-step .tier-name {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--pp-text-muted);
+    text-align: center;
+}
+
+.ppv-tier-step.active .tier-name {
+    color: var(--pp-text);
+}
+
+.ppv-tier-step .tier-points {
+    font-size: 0.65rem;
+    color: var(--pp-text-muted);
+}
+
+/* Info Text */
+.ppv-tier-info-text {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: var(--pp-text-muted);
+    background: var(--pp-bg-2);
+    padding: 10px 16px;
+    border-radius: 10px;
+    margin: 0;
+}
+
+.ppv-tier-info-text i {
+    color: var(--pp-primary);
+}
+
+/* Mobile Responsive */
+@media (max-width: 480px) {
+    .ppv-tier-progress-section {
+        padding: 16px;
+        margin: 12px 0;
+    }
+
+    .ppv-tier-step .tier-dot {
+        width: 32px;
+        height: 32px;
+    }
+
+    .ppv-tier-step .tier-dot i {
+        font-size: 1rem;
+    }
+
+    .ppv-tier-step .tier-name {
+        font-size: 0.6rem;
+    }
+
+    .ppv-tier-step .tier-points {
+        display: none;
+    }
+
+    .ppv-current-tier-badge {
+        padding: 10px 18px;
+        font-size: 1.1rem;
+    }
+
+    .ppv-lifetime-points .points-value {
+        font-size: 1.8rem;
+    }
+}
