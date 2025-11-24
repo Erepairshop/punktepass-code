@@ -425,25 +425,24 @@
         } else {
           this.ui.showMessage('⚠️ ' + (data.message || ''), 'warning');
 
-          // ✅ FIX: Add error scan to UI immediately
-          if (data.user_id) {
-            const now = new Date();
-            const scanId = data.scan_id || `local-err-${data.user_id}-${now.getTime()}`;
+          // ✅ FIX: Add error scan to UI immediately (always, even without user_id)
+          const now = new Date();
+          const oderId = data.user_id || 0;
+          const scanId = data.scan_id || `local-err-${oderId}-${now.getTime()}`;
 
-            this.ui.addScanItem({
-              scan_id: scanId,
-              user_id: data.user_id,
-              customer_name: data.customer_name || null,
-              email: data.email || null,
-              avatar: data.avatar || null,
-              message: data.message || '⚠️ Fehler',
-              points: 0,
-              date_short: now.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'}).replace(/\./g, '.'),
-              time_short: now.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'}),
-              success: false,
-              _realtime: true
-            });
-          }
+          this.ui.addScanItem({
+            scan_id: scanId,
+            user_id: oderId,
+            customer_name: data.customer_name || null,
+            email: data.email || null,
+            avatar: data.avatar || null,
+            message: data.message || '⚠️ Fehler',
+            points: 0,
+            date_short: now.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'}).replace(/\./g, '.'),
+            time_short: now.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'}),
+            success: false,
+            _realtime: true
+          });
 
           if (!/bereits|gescannt|duplikat/i.test(data.message || '')) {
             OfflineSyncManager.save(qrCode);
@@ -1385,14 +1384,15 @@
             this.updateStatus('warning', '⚠️ ' + (data.message || L.error_generic || 'Fehler'));
             window.ppvToast(data.message || '⚠️ Fehler', 'warning');
 
-            // ✅ FIX: Add error scan to UI immediately with unique scan_id
-            if (STATE.uiManager && data.user_id) {
+            // ✅ FIX: Add error scan to UI immediately (always, even without user_id)
+            if (STATE.uiManager) {
               const now = new Date();
-              const scanId = data.scan_id || `local-err-${data.user_id}-${now.getTime()}`;
+              const oderId = data.user_id || 0;
+              const scanId = data.scan_id || `local-err-${oderId}-${now.getTime()}`;
 
               STATE.uiManager.addScanItem({
                 scan_id: scanId,
-                user_id: data.user_id,
+                user_id: oderId,
                 customer_name: data.customer_name || null,
                 email: data.email || null,
                 avatar: data.avatar || null,
