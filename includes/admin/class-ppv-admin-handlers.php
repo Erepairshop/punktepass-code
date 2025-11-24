@@ -34,32 +34,32 @@ class PPV_Admin_Handlers {
 
         add_submenu_page(
             'punktepass-admin',
-            'Handler Verwaltung',
-            'Handler',
+            'Kereskedő kezelés',
+            'Kereskedők',
             'manage_options',
             'punktepass-admin',
             [__CLASS__, 'render_handlers_page']
         );
 
-        // 📧 Renewal Anfragen
+        // 📧 Megújítási kérelmek
         add_submenu_page(
             'punktepass-admin',
-            'Renewal Anfragen',
-            'Renewal Anfragen',
+            'Megújítási kérelmek',
+            'Megújítási kérelmek',
             'manage_options',
             'punktepass-renewal-requests',
             [__CLASS__, 'render_renewal_requests_page']
         );
 
-        // 🆘 Support Tickets (with counter)
+        // 🆘 Támogatási jegyek (számlálóval)
         global $wpdb;
         $open_tickets_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ppv_support_tickets WHERE status IN ('new', 'in_progress')");
         $counter_badge = $open_tickets_count > 0 ? " <span class='awaiting-mod'>$open_tickets_count</span>" : "";
 
         add_submenu_page(
             'punktepass-admin',
-            'Support Tickets',
-            'Support Tickets' . $counter_badge,
+            'Támogatási jegyek',
+            'Támogatás' . $counter_badge,
             'manage_options',
             'punktepass-support-tickets',
             [__CLASS__, 'render_support_tickets_page']
@@ -95,31 +95,31 @@ class PPV_Admin_Handlers {
 
         ?>
         <div class="wrap">
-            <h1>🏪 Handler Verwaltung</h1>
+            <h1>🏪 Kereskedő kezelés</h1>
 
-            <!-- Convert User to Handler -->
+            <!-- Felhasználó kereskedővé alakítása -->
             <div class="card" style="max-width: 600px; margin-bottom: 20px;">
-                <h2>👤 User zu Handler konvertieren</h2>
+                <h2>👤 Felhasználó kereskedővé alakítása</h2>
                 <form method="post" action="<?php echo admin_url('admin-post.php'); ?>">
                     <?php wp_nonce_field('ppv_convert_handler', 'ppv_convert_nonce'); ?>
                     <input type="hidden" name="action" value="ppv_convert_to_handler">
 
                     <table class="form-table">
                         <tr>
-                            <th><label for="user_id">User ID</label></th>
+                            <th><label for="user_id">Felhasználó ID</label></th>
                             <td>
                                 <input type="number" name="user_id" id="user_id" class="regular-text" required>
-                                <p class="description">Geben Sie die WordPress User ID ein</p>
+                                <p class="description">Adja meg a WordPress felhasználó ID-t</p>
                             </td>
                         </tr>
                         <tr>
-                            <th><label for="company_name">Firma</label></th>
+                            <th><label for="company_name">Cégnév</label></th>
                             <td>
                                 <input type="text" name="company_name" id="company_name" class="regular-text" required>
                             </td>
                         </tr>
                         <tr>
-                            <th><label for="store_email">E-Mail</label></th>
+                            <th><label for="store_email">E-mail</label></th>
                             <td>
                                 <input type="email" name="store_email" id="store_email" class="regular-text" required>
                             </td>
@@ -128,34 +128,34 @@ class PPV_Admin_Handlers {
 
                     <p class="submit">
                         <button type="submit" class="button button-primary">
-                            ✨ Zu Handler konvertieren (30 Tage Trial)
+                            ✨ Kereskedővé alakítás (30 nap próba)
                         </button>
                     </p>
                 </form>
             </div>
 
-            <!-- Handlers List -->
-            <h2>📋 Handler Liste</h2>
+            <!-- Kereskedők listája -->
+            <h2>📋 Kereskedők listája</h2>
             <table class="wp-list-table widefat fixed striped">
                 <thead>
                     <tr>
                         <th>ID</th>
-                        <th>Firma</th>
-                        <th>Name</th>
-                        <th>E-Mail</th>
-                        <th>Stadt</th>
-                        <th>Filialen</th>
-                        <th>Trial Ende</th>
-                        <th>Abo Ende</th>
-                        <th>Status</th>
-                        <th>Erstellt</th>
-                        <th>Aktionen</th>
+                        <th>Cégnév</th>
+                        <th>Név</th>
+                        <th>E-mail</th>
+                        <th>Város</th>
+                        <th>Fiókok</th>
+                        <th>Próba vége</th>
+                        <th>Előfiz. vége</th>
+                        <th>Státusz</th>
+                        <th>Létrehozva</th>
+                        <th>Műveletek</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if (empty($handlers)): ?>
                         <tr>
-                            <td colspan="11">Keine Handler gefunden</td>
+                            <td colspan="11">Nincs kereskedő</td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($handlers as $handler): ?>
@@ -173,26 +173,26 @@ class PPV_Admin_Handlers {
                             if ($handler->subscription_status === 'active') {
                                 if ($sub_days_left > 30) {
                                     $status_class = 'success';
-                                    $status_text = "✅ Aktiv ({$sub_days_left} Tage)";
+                                    $status_text = "✅ Aktív ({$sub_days_left} nap)";
                                 } elseif ($sub_days_left > 7) {
                                     $status_class = 'info';
-                                    $status_text = "📅 Aktiv ({$sub_days_left} Tage)";
+                                    $status_text = "📅 Aktív ({$sub_days_left} nap)";
                                 } elseif ($sub_days_left > 0) {
                                     $status_class = 'warning';
-                                    $status_text = "⚠️ Läuft ab ({$sub_days_left} Tage)";
+                                    $status_text = "⚠️ Lejár ({$sub_days_left} nap)";
                                 } else {
                                     $status_class = 'error';
-                                    $status_text = '❌ Abo abgelaufen';
+                                    $status_text = '❌ Előfizetés lejárt';
                                 }
                             } elseif ($trial_days_left > 7) {
                                 $status_class = 'info';
-                                $status_text = "📅 Trial ({$trial_days_left} Tage)";
+                                $status_text = "📅 Próba ({$trial_days_left} nap)";
                             } elseif ($trial_days_left > 0) {
                                 $status_class = 'warning';
-                                $status_text = "⚠️ Trial ({$trial_days_left} Tage)";
+                                $status_text = "⚠️ Próba ({$trial_days_left} nap)";
                             } else {
                                 $status_class = 'error';
-                                $status_text = '❌ Trial abgelaufen';
+                                $status_text = '❌ Próba lejárt';
                             }
                             ?>
                             <tr>
@@ -246,7 +246,7 @@ class PPV_Admin_Handlers {
                                             <input type="hidden" name="action" value="ppv_extend_trial">
                                             <input type="hidden" name="handler_id" value="<?php echo intval($handler->id); ?>">
                                             <button type="submit" class="button button-small">
-                                                ⏰ +30 Tage
+                                                ⏰ +30 nap
                                             </button>
                                         </form>
 
@@ -255,7 +255,7 @@ class PPV_Admin_Handlers {
                                             <input type="hidden" name="action" value="ppv_activate_subscription">
                                             <input type="hidden" name="handler_id" value="<?php echo intval($handler->id); ?>">
                                             <button type="submit" class="button button-primary button-small">
-                                                ✅ Aktivieren
+                                                ✅ Aktiválás
                                             </button>
                                         </form>
                                     <?php else: ?>
@@ -265,7 +265,7 @@ class PPV_Admin_Handlers {
                                             <input type="hidden" name="handler_id" value="<?php echo intval($handler->id); ?>">
                                             <input type="number" name="months" value="6" min="1" max="36" style="width: 60px;" placeholder="6">
                                             <button type="submit" class="button button-primary button-small">
-                                                📅 Verlängern
+                                                📅 Hosszabbítás
                                             </button>
                                         </form>
                                     <?php endif; ?>
@@ -311,7 +311,7 @@ class PPV_Admin_Handlers {
     public static function handle_convert_to_handler() {
         // Security check
         if (!current_user_can('manage_options')) {
-            wp_die('Keine Berechtigung');
+            wp_die('Nincs jogosultság');
         }
 
         check_admin_referer('ppv_convert_handler', 'ppv_convert_nonce');
@@ -379,7 +379,7 @@ class PPV_Admin_Handlers {
     // ============================================================
     public static function handle_extend_trial() {
         if (!current_user_can('manage_options')) {
-            wp_die('Keine Berechtigung');
+            wp_die('Nincs jogosultság');
         }
 
         check_admin_referer('ppv_extend_trial', 'ppv_extend_nonce');
@@ -425,7 +425,7 @@ class PPV_Admin_Handlers {
     // ============================================================
     public static function handle_activate_subscription() {
         if (!current_user_can('manage_options')) {
-            wp_die('Keine Berechtigung');
+            wp_die('Nincs jogosultság');
         }
 
         check_admin_referer('ppv_activate_sub', 'ppv_activate_nonce');
@@ -459,7 +459,7 @@ class PPV_Admin_Handlers {
     // ============================================================
     public static function handle_extend_subscription() {
         if (!current_user_can('manage_options')) {
-            wp_die('Keine Berechtigung');
+            wp_die('Nincs jogosultság');
         }
 
         check_admin_referer('ppv_extend_subscription', 'ppv_extend_sub_nonce');
@@ -537,26 +537,26 @@ class PPV_Admin_Handlers {
 
         ?>
         <div class="wrap">
-            <h1>📧 Renewal Anfragen (<?php echo $open_count; ?> offen)</h1>
-            <p>Handler, die eine Abo-Verlängerung angefordert haben.</p>
+            <h1>📧 Megújítási kérelmek (<?php echo $open_count; ?> nyitott)</h1>
+            <p>Kereskedők, akik előfizetés hosszabbítást kértek.</p>
 
             <?php if ($open_count === 0): ?>
                 <div class="notice notice-info">
-                    <p>✅ Keine offenen Renewal Anfragen!</p>
+                    <p>✅ Nincs nyitott megújítási kérelem!</p>
                 </div>
             <?php else: ?>
                 <table class="wp-list-table widefat fixed striped">
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Firma</th>
-                            <th>E-Mail</th>
+                            <th>Cégnév</th>
+                            <th>E-mail</th>
                             <th>Telefon</th>
-                            <th>Renewal Telefon</th>
-                            <th>Stadt</th>
-                            <th>Angefordert am</th>
-                            <th>Status</th>
-                            <th>Aktionen</th>
+                            <th>Megújítási telefon</th>
+                            <th>Város</th>
+                            <th>Kérelem dátuma</th>
+                            <th>Státusz</th>
+                            <th>Műveletek</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -573,18 +573,18 @@ class PPV_Admin_Handlers {
                             // Status badge
                             if ($request->subscription_status === 'active') {
                                 if ($sub_days_left > 0) {
-                                    $status_text = "✅ Active ({$sub_days_left} Tage)";
+                                    $status_text = "✅ Aktív ({$sub_days_left} nap)";
                                     $status_class = 'success';
                                 } else {
-                                    $status_text = '❌ Abo abgelaufen';
+                                    $status_text = '❌ Előfizetés lejárt';
                                     $status_class = 'error';
                                 }
                             } else {
                                 if ($trial_days_left > 0) {
-                                    $status_text = "📅 Trial ({$trial_days_left} Tage)";
+                                    $status_text = "📅 Próba ({$trial_days_left} nap)";
                                     $status_class = 'info';
                                 } else {
-                                    $status_text = '❌ Trial abgelaufen';
+                                    $status_text = '❌ Próba lejárt';
                                     $status_class = 'error';
                                 }
                             }
@@ -628,19 +628,19 @@ class PPV_Admin_Handlers {
                                     </span>
                                 </td>
                                 <td>
-                                    <!-- Mark as Done -->
+                                    <!-- Készként jelölés -->
                                     <form method="post" action="<?php echo admin_url('admin-post.php'); ?>" style="display: inline-block;">
                                         <?php wp_nonce_field('ppv_mark_renewal_done', 'ppv_renewal_done_nonce'); ?>
                                         <input type="hidden" name="action" value="ppv_mark_renewal_done">
                                         <input type="hidden" name="handler_id" value="<?php echo intval($request->id); ?>">
-                                        <button type="submit" class="button button-primary button-small" onclick="return confirm('Als erledigt markieren?');">
-                                            ✅ Erledigt
+                                        <button type="submit" class="button button-primary button-small" onclick="return confirm('Készként jelöli?');">
+                                            ✅ Kész
                                         </button>
                                     </form>
 
-                                    <!-- Quick Actions -->
-                                    <a href="mailto:<?php echo esc_attr($request->email); ?>?subject=Ihre%20Abo-Verl%C3%A4ngerung" class="button button-small">
-                                        📧 Email
+                                    <!-- Gyors műveletek -->
+                                    <a href="mailto:<?php echo esc_attr($request->email); ?>?subject=El%C5%91fizet%C3%A9s%20hosszabb%C3%ADt%C3%A1s" class="button button-small">
+                                        📧 E-mail
                                     </a>
                                 </td>
                             </tr>
@@ -683,7 +683,7 @@ class PPV_Admin_Handlers {
     // ============================================================
     public static function handle_mark_renewal_done() {
         if (!current_user_can('manage_options')) {
-            wp_die('Keine Berechtigung');
+            wp_die('Nincs jogosultság');
         }
 
         check_admin_referer('ppv_mark_renewal_done', 'ppv_renewal_done_nonce');
@@ -757,45 +757,45 @@ class PPV_Admin_Handlers {
 
         ?>
         <div class="wrap">
-            <h1>🆘 Support Tickets (<?php echo $open_count; ?> offen)</h1>
-            <p>Support-Anfragen von Handlers verwalten und bearbeiten.</p>
+            <h1>🆘 Támogatási jegyek (<?php echo $open_count; ?> nyitott)</h1>
+            <p>Kereskedők támogatási kérelmeinek kezelése.</p>
 
-            <!-- Filter Tabs -->
+            <!-- Szűrő fülek -->
             <div class="nav-tab-wrapper" style="margin-bottom: 20px;">
                 <a href="<?php echo admin_url('admin.php?page=punktepass-support-tickets&ticket_status=open'); ?>"
                    class="nav-tab <?php echo $status_filter === 'open' ? 'nav-tab-active' : ''; ?>">
-                    🟡 Offen (<?php echo $open_count; ?>)
+                    🟡 Nyitott (<?php echo $open_count; ?>)
                 </a>
                 <a href="<?php echo admin_url('admin.php?page=punktepass-support-tickets&ticket_status=new'); ?>"
                    class="nav-tab <?php echo $status_filter === 'new' ? 'nav-tab-active' : ''; ?>">
-                    🆕 Neu (<?php echo $new_count; ?>)
+                    🆕 Új (<?php echo $new_count; ?>)
                 </a>
                 <a href="<?php echo admin_url('admin.php?page=punktepass-support-tickets&ticket_status=in_progress'); ?>"
                    class="nav-tab <?php echo $status_filter === 'in_progress' ? 'nav-tab-active' : ''; ?>">
-                    🔄 In Bearbeitung (<?php echo $in_progress_count; ?>)
+                    🔄 Folyamatban (<?php echo $in_progress_count; ?>)
                 </a>
                 <a href="<?php echo admin_url('admin.php?page=punktepass-support-tickets&ticket_status=resolved'); ?>"
                    class="nav-tab <?php echo $status_filter === 'resolved' ? 'nav-tab-active' : ''; ?>">
-                    ✅ Erledigt (<?php echo $resolved_count; ?>)
+                    ✅ Megoldva (<?php echo $resolved_count; ?>)
                 </a>
             </div>
 
             <?php if ($ticket_count === 0): ?>
                 <div class="notice notice-info">
-                    <p>✅ Keine Tickets in dieser Kategorie!</p>
+                    <p>✅ Nincs jegy ebben a kategóriában!</p>
                 </div>
             <?php else: ?>
                 <table class="wp-list-table widefat fixed striped">
                     <thead>
                         <tr>
                             <th style="width: 50px;">ID</th>
-                            <th style="width: 80px;">Priorität</th>
-                            <th style="width: 100px;">Status</th>
-                            <th>Firma</th>
-                            <th>Kontakt</th>
-                            <th>Problem</th>
-                            <th style="width: 140px;">Erstellt am</th>
-                            <th style="width: 200px;">Aktionen</th>
+                            <th style="width: 80px;">Prioritás</th>
+                            <th style="width: 100px;">Státusz</th>
+                            <th>Cégnév</th>
+                            <th>Kapcsolat</th>
+                            <th>Probléma</th>
+                            <th style="width: 140px;">Létrehozva</th>
+                            <th style="width: 200px;">Műveletek</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -803,17 +803,17 @@ class PPV_Admin_Handlers {
                             <?php
                             // Priority badge
                             $priority_badges = [
-                                'low' => ['text' => '🟢 Niedrig', 'class' => 'success'],
-                                'normal' => ['text' => '🟡 Normal', 'class' => 'warning'],
-                                'urgent' => ['text' => '🔴 Dringend', 'class' => 'error']
+                                'low' => ['text' => '🟢 Alacsony', 'class' => 'success'],
+                                'normal' => ['text' => '🟡 Normál', 'class' => 'warning'],
+                                'urgent' => ['text' => '🔴 Sürgős', 'class' => 'error']
                             ];
                             $priority_badge = $priority_badges[$ticket->priority] ?? $priority_badges['normal'];
 
                             // Status badge
                             $status_badges = [
-                                'new' => ['text' => '🆕 Neu', 'class' => 'info'],
-                                'in_progress' => ['text' => '🔄 In Bearbeitung', 'class' => 'warning'],
-                                'resolved' => ['text' => '✅ Erledigt', 'class' => 'success']
+                                'new' => ['text' => '🆕 Új', 'class' => 'info'],
+                                'in_progress' => ['text' => '🔄 Folyamatban', 'class' => 'warning'],
+                                'resolved' => ['text' => '✅ Megoldva', 'class' => 'success']
                             ];
                             $status_badge = $status_badges[$ticket->status] ?? $status_badges['new'];
 
@@ -870,7 +870,7 @@ class PPV_Admin_Handlers {
                                         </div>
                                         <?php if (!empty($ticket->page_url)): ?>
                                             <small style="color: #666;">
-                                                🌐 <a href="<?php echo esc_url($ticket->page_url); ?>" target="_blank">Seite</a>
+                                                🌐 <a href="<?php echo esc_url($ticket->page_url); ?>" target="_blank">Oldal</a>
                                             </small>
                                         <?php endif; ?>
                                     </div>
@@ -878,35 +878,35 @@ class PPV_Admin_Handlers {
                                 <td><?php echo $created_time; ?></td>
                                 <td>
                                     <?php if ($ticket->status === 'new'): ?>
-                                        <!-- Mark as In Progress -->
+                                        <!-- Folyamatba vétel -->
                                         <form method="post" action="<?php echo admin_url('admin-post.php'); ?>" style="display: inline-block;">
                                             <?php wp_nonce_field('ppv_update_ticket_status', 'ppv_ticket_status_nonce'); ?>
                                             <input type="hidden" name="action" value="ppv_update_ticket_status">
                                             <input type="hidden" name="ticket_id" value="<?php echo intval($ticket->id); ?>">
                                             <input type="hidden" name="new_status" value="in_progress">
                                             <button type="submit" class="button button-small" style="background: #ffb900; color: #fff; border: none;">
-                                                🔄 Bearbeiten
+                                                🔄 Felvétel
                                             </button>
                                         </form>
                                     <?php endif; ?>
 
                                     <?php if ($ticket->status !== 'resolved'): ?>
-                                        <!-- Mark as Resolved -->
+                                        <!-- Megoldottként jelölés -->
                                         <form method="post" action="<?php echo admin_url('admin-post.php'); ?>" style="display: inline-block;">
                                             <?php wp_nonce_field('ppv_update_ticket_status', 'ppv_ticket_status_nonce'); ?>
                                             <input type="hidden" name="action" value="ppv_update_ticket_status">
                                             <input type="hidden" name="ticket_id" value="<?php echo intval($ticket->id); ?>">
                                             <input type="hidden" name="new_status" value="resolved">
-                                            <button type="submit" class="button button-primary button-small" onclick="return confirm('Ticket als erledigt markieren?');">
-                                                ✅ Erledigt
+                                            <button type="submit" class="button button-primary button-small" onclick="return confirm('Megoldottként jelöli a jegyet?');">
+                                                ✅ Megoldva
                                             </button>
                                         </form>
                                     <?php endif; ?>
 
-                                    <!-- Email Handler -->
-                                    <a href="mailto:<?php echo esc_attr($ticket->handler_email); ?>?subject=Support%20Ticket%20%23<?php echo intval($ticket->id); ?>"
+                                    <!-- E-mail küldés -->
+                                    <a href="mailto:<?php echo esc_attr($ticket->handler_email); ?>?subject=T%C3%A1mogat%C3%A1si%20jegy%20%23<?php echo intval($ticket->id); ?>"
                                        class="button button-small">
-                                        📧 Email
+                                        📧 E-mail
                                     </a>
                                 </td>
                             </tr>
@@ -950,7 +950,7 @@ class PPV_Admin_Handlers {
     // ============================================================
     public static function handle_update_ticket_status() {
         if (!current_user_can('manage_options')) {
-            wp_die('Keine Berechtigung');
+            wp_die('Nincs jogosultság');
         }
 
         check_admin_referer('ppv_update_ticket_status', 'ppv_ticket_status_nonce');
@@ -962,7 +962,7 @@ class PPV_Admin_Handlers {
 
         // Validate status
         if (!in_array($new_status, ['new', 'in_progress', 'resolved'])) {
-            wp_die('Ungültiger Status');
+            wp_die('Érvénytelen státusz');
         }
 
         // Update ticket status
@@ -992,7 +992,7 @@ class PPV_Admin_Handlers {
     // ============================================================
     public static function handle_update_max_filialen() {
         if (!current_user_can('manage_options')) {
-            wp_die('Keine Berechtigung');
+            wp_die('Nincs jogosultság');
         }
 
         check_admin_referer('ppv_update_max_filialen', 'ppv_filialen_nonce');
