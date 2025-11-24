@@ -16,6 +16,7 @@ class PPV_Admin_Handlers {
         add_action('admin_post_ppv_mark_renewal_done', [__CLASS__, 'handle_mark_renewal_done']);
         add_action('admin_post_ppv_update_ticket_status', [__CLASS__, 'handle_update_ticket_status']);
         add_action('admin_post_ppv_update_max_filialen', [__CLASS__, 'handle_update_max_filialen']);
+        add_action('admin_post_ppv_update_scanner_type', [__CLASS__, 'handle_update_scanner_type']);
     }
 
     // ============================================================
@@ -87,6 +88,7 @@ class PPV_Admin_Handlers {
                 s.created_at,
                 s.active,
                 s.max_filialen,
+                s.scanner_type,
                 (SELECT COUNT(*) FROM {$wpdb->prefix}ppv_stores WHERE parent_store_id = s.id) as filiale_count
             FROM {$wpdb->prefix}ppv_stores s
             WHERE s.parent_store_id IS NULL
@@ -145,6 +147,7 @@ class PPV_Admin_Handlers {
                         <th>E-mail</th>
                         <th>Város</th>
                         <th>Fiókok</th>
+                        <th>Mobil</th>
                         <th>Próba vége</th>
                         <th>Előfiz. vége</th>
                         <th>Státusz</th>
@@ -155,7 +158,7 @@ class PPV_Admin_Handlers {
                 <tbody>
                     <?php if (empty($handlers)): ?>
                         <tr>
-                            <td colspan="11">Nincs kereskedő</td>
+                            <td colspan="12">Nincs kereskedő</td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($handlers as $handler): ?>
@@ -213,6 +216,20 @@ class PPV_Admin_Handlers {
                                         <span style="color: #666; font-size: 11px;"><?php echo $current_filialen; ?>/</span>
                                         <input type="number" name="max_filialen" value="<?php echo $max_filialen; ?>" min="1" max="100" style="width: 50px; padding: 2px 4px; font-size: 12px;">
                                         <button type="submit" class="button button-small" style="padding: 0 6px; height: 24px; line-height: 22px;">💾</button>
+                                    </form>
+                                </td>
+                                <td>
+                                    <?php
+                                    $is_mobile = ($handler->scanner_type === 'mobile');
+                                    ?>
+                                    <form method="post" action="<?php echo admin_url('admin-post.php'); ?>" style="display: inline;">
+                                        <?php wp_nonce_field('ppv_update_scanner_type', 'ppv_scanner_type_nonce'); ?>
+                                        <input type="hidden" name="action" value="ppv_update_scanner_type">
+                                        <input type="hidden" name="handler_id" value="<?php echo intval($handler->id); ?>">
+                                        <input type="hidden" name="scanner_type" value="<?php echo $is_mobile ? 'fixed' : 'mobile'; ?>">
+                                        <button type="submit" class="button button-small <?php echo $is_mobile ? 'button-primary' : ''; ?>" style="min-width: 50px;">
+                                            <?php echo $is_mobile ? '📱 BE' : '🏪 KI'; ?>
+                                        </button>
                                     </form>
                                 </td>
                                 <td>
@@ -1019,6 +1036,51 @@ class PPV_Admin_Handlers {
         error_log("✅ [PPV_Admin] Max Filialen updated for Handler #{$handler_id} to {$max_filialen}");
 
         wp_redirect(admin_url('admin.php?page=punktepass-admin&success=filialen_updated'));
+        exit;
+    }
+
+    // ============================================================
+    // 📱 UPDATE SCANNER TYPE (MOBILE/FIXED)
+    // ============================================================
+    public static function handle_update_scanner_type() {
+        if (!current_user_can('manage_options')) {
+            wp_die('Nincs jogosultság');
+        }
+
+        check_admin_referer('ppv_update_scanner_type', 'ppv_scanner_type_nonce');
+
+        global $wpdb;
+
+        $handler_id = intval($_POST['handler_id']);
+        $scanner_type = sanitize_text_field($_POST['scanner_type']);
+
+        // Validate scanner type
+        if (!in_array($scanner_type, ['fixed', 'mobile'])) {
+            $scanner_type = 'fixed';
+        }
+
+        // Update scanner_type for the handler and all its filialen
+        $wpdb->update(
+            "{$wpdb->prefix}ppv_stores",
+            ['scanner_type' => $scanner_type],
+            ['id' => $handler_id],
+            ['%s'],
+            ['%d']
+        );
+
+        // Also update all filialen of this handler
+        $wpdb->update(
+            "{$wpdb->prefix}ppv_stores",
+            ['scanner_type' => $scanner_type],
+            ['parent_store_id' => $handler_id],
+            ['%s'],
+            ['%d']
+        );
+
+        $type_label = ($scanner_type === 'mobile') ? 'Mobile' : 'Fixed';
+        error_log("📱 [PPV_Admin] Scanner type updated for Handler #{$handler_id} to {$type_label}");
+
+        wp_redirect(admin_url('admin.php?page=punktepass-admin&success=scanner_type_updated'));
         exit;
     }
 }
