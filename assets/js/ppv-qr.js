@@ -37,7 +37,8 @@
     lastInitTime: 0,  // Prevent rapid re-init
     ablyInstance: null,  // Ably connection for cleanup
     pollInterval: null,   // Polling interval for cleanup
-    gpsPosition: null     // Current GPS position for fraud detection
+    gpsPosition: null,     // Current GPS position for fraud detection
+    gpsWatchId: null       // GPS watch ID for cleanup
   };
 
   // ============================================================
@@ -72,7 +73,8 @@
     );
 
     // Watch for position changes (update every minute or on significant move)
-    navigator.geolocation.watchPosition(
+    // Store watch ID so we can stop it later
+    STATE.gpsWatchId = navigator.geolocation.watchPosition(
       (pos) => {
         STATE.gpsPosition = {
           latitude: pos.coords.latitude,
@@ -91,6 +93,15 @@
         maximumAge: 60000
       }
     );
+  }
+
+  // Stop GPS tracking
+  function stopGpsTracking() {
+    if (STATE.gpsWatchId !== null) {
+      navigator.geolocation.clearWatch(STATE.gpsWatchId);
+      STATE.gpsWatchId = null;
+      ppvLog('[GPS] Watch stopped');
+    }
   }
 
   function getGpsCoordinates() {
@@ -1716,6 +1727,9 @@
       document.removeEventListener('visibilitychange', STATE.visibilityHandler);
       STATE.visibilityHandler = null;
     }
+
+    // ✅ FIX: Stop GPS tracking to prevent battery drain
+    stopGpsTracking();
 
     STATE.cameraScanner?.cleanup();
     STATE.cameraScanner = null;

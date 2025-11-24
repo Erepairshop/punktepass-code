@@ -1330,11 +1330,26 @@ async function initUserDashboard() {
       );
     });
 
-    // 2️⃣ Fetch stores immediately with cached location (or without)
+    // 2️⃣ OPTIMIZED: Wait for geo first if no cached location, then fetch ONCE
     try {
+      // If no cached location, wait for geo promise first (max 8s)
+      if (!cachedLat && !cachedLng) {
+        console.log('⏳ [Stores] No cached location, waiting for geo first...');
+        const freshPos = await geoPromise;
+        if (freshPos?.coords) {
+          userLat = freshPos.coords.latitude;
+          userLng = freshPos.coords.longitude;
+          console.log('📍 [Stores] Got fresh geo:', userLat.toFixed(4), userLng.toFixed(4));
+        } else {
+          console.log('⚠️ [Stores] Geo failed/timeout, fetching without coordinates');
+        }
+      }
+
+      // Now make ONE fetch with best available coordinates
+      const currentDist = window.PPV_CURRENT_DISTANCE || 10;
       let url = API + 'stores/list-optimized';
       if (userLat && userLng) {
-        url += `?lat=${userLat}&lng=${userLng}&max_distance=10`;
+        url += `?lat=${userLat}&lng=${userLng}&max_distance=${currentDist}`;
       }
 
       console.log('🌐 [Stores] Fetching:', url);
@@ -1352,119 +1367,6 @@ async function initUserDashboard() {
         box.innerHTML = `<p class="ppv-no-stores"><i class="ri-store-3-line"></i> ${T.no_stores}</p>`;
       } else {
         renderStoreList(box, stores, userLat, userLng);
-      }
-
-      // 3️⃣ If we didn't have cached location, wait for geo and re-fetch
-      if (!cachedLat && !cachedLng) {
-        const freshPos = await geoPromise;
-        if (freshPos?.coords) {
-          const newLat = freshPos.coords.latitude;
-          const newLng = freshPos.coords.longitude;
-          console.log('🔄 [Stores] Re-fetching with fresh geo:', newLat.toFixed(4), newLng.toFixed(4));
-
-          // ✅ FIX: Use current slider distance value, not hardcoded 10
-          const currentDist = window.PPV_CURRENT_DISTANCE || 10;
-          const newUrl = API + `stores/list-optimized?lat=${newLat}&lng=${newLng}&max_distance=${currentDist}`;
-
-          try {
-            const newRes = await fetch(newUrl, { cache: "no-store" });
-            console.log('📡 [Stores] Re-fetch response:', newRes.status);
-
-            if (newRes.ok) {
-              const newStores = await newRes.json();
-              // Log distances from API
-              console.log('📦 [Stores] Got', newStores?.length || 0, 'stores. First 3 distances:',
-                newStores?.slice(0,3).map(s => `${s.company_name||s.name||'?'}: ${s.distance_km}km`).join(', '));
-
-              if (Array.isArray(newStores) && newStores.length > 0) {
-                // ✅ FIX: Get fresh DOM reference
-                const freshBox = document.getElementById('ppv-store-list');
-                console.log('🎯 [DOM] freshBox found:', !!freshBox, 'children before:', freshBox?.children?.length);
-
-                if (freshBox) {
-                  // ✅ FIX: Directly update innerHTML instead of calling renderStoreList
-                  const sliderHTML = `
-                    <div class="ppv-distance-filter">
-                      <label><i class="ri-ruler-line"></i> ${T.distance_label}: <span id="ppv-distance-value">${currentDist}</span> km</label>
-                      <input type="range" id="ppv-distance-slider" min="10" max="1000" value="${currentDist}" step="10">
-                      <div class="ppv-distance-labels"><span>10 km</span><span>1000 km</span></div>
-                    </div>
-                  `;
-                  const cardsHTML = newStores.map(renderStoreCard).join('');
-                  freshBox.innerHTML = sliderHTML + cardsHTML;
-                  console.log('🎯 [DOM] innerHTML updated, children after:', freshBox?.children?.length);
-
-                  initDistanceSlider(sliderHTML, newLat, newLng, currentDist);
-                  attachStoreListeners();
-                  console.log('✅ [Stores] Re-rendered with distance sorting');
-                } else {
-                  console.warn('⚠️ [Stores] Store list element not found for re-render');
-                }
-              } else {
-                console.warn('⚠️ [Stores] No stores returned from re-fetch');
-              }
-            }
-          } catch (fetchErr) {
-            console.error('❌ [Stores] Re-fetch failed:', fetchErr.message);
-          }
-        } else {
-          // ✅ FIX: Geo failed on first try - set up delayed retry
-          console.log('⏳ [Geo] First attempt failed, scheduling retry in 5s...');
-          setTimeout(async () => {
-            // Check if we got location in the meantime (from another source)
-            const retryLat = localStorage.getItem('ppv_user_lat');
-            const retryLng = localStorage.getItem('ppv_user_lng');
-            if (retryLat && retryLng) {
-              console.log('✅ [Geo] Found cached location on retry');
-              const currentDist = window.PPV_CURRENT_DISTANCE || 10;
-              const retryUrl = API + `stores/list-optimized?lat=${retryLat}&lng=${retryLng}&max_distance=${currentDist}`;
-              try {
-                const retryRes = await fetch(retryUrl, { cache: "no-store" });
-                if (retryRes.ok) {
-                  const retryStores = await retryRes.json();
-                  const currentBox = document.getElementById('ppv-store-list');
-                  if (currentBox && Array.isArray(retryStores) && retryStores.length > 0) {
-                    renderStoreList(currentBox, retryStores, parseFloat(retryLat), parseFloat(retryLng), true);
-                    console.log('✅ [Stores] Re-rendered on retry with distance sorting');
-                  }
-                }
-              } catch (e) {
-                console.log('⚠️ [Stores] Retry fetch failed:', e.message);
-              }
-              return;
-            }
-
-            // Try geo again
-            if (navigator.geolocation) {
-              console.log('🔄 [Geo] Retrying geolocation...');
-              navigator.geolocation.getCurrentPosition(
-                async (p) => {
-                  localStorage.setItem('ppv_user_lat', p.coords.latitude.toString());
-                  localStorage.setItem('ppv_user_lng', p.coords.longitude.toString());
-                  console.log('📍 [Geo] Retry succeeded:', p.coords.latitude.toFixed(4), p.coords.longitude.toFixed(4));
-
-                  const currentDist = window.PPV_CURRENT_DISTANCE || 10;
-                  const retryUrl = API + `stores/list-optimized?lat=${p.coords.latitude}&lng=${p.coords.longitude}&max_distance=${currentDist}`;
-                  try {
-                    const retryRes = await fetch(retryUrl, { cache: "no-store" });
-                    if (retryRes.ok) {
-                      const retryStores = await retryRes.json();
-                      const currentBox = document.getElementById('ppv-store-list');
-                      if (currentBox && Array.isArray(retryStores) && retryStores.length > 0) {
-                        renderStoreList(currentBox, retryStores, p.coords.latitude, p.coords.longitude, true);
-                        console.log('✅ [Stores] Re-rendered on geo retry with distance sorting');
-                      }
-                    }
-                  } catch (e) {
-                    console.log('⚠️ [Stores] Retry fetch failed:', e.message);
-                  }
-                },
-                (err) => console.log('⚠️ [Geo] Retry also failed:', err.message),
-                { timeout: 10000, maximumAge: 60000, enableHighAccuracy: false }
-              );
-            }
-          }, 5000);
-        }
       }
 
     } catch (e) {
