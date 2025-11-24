@@ -10987,6 +10987,51 @@ body.ppv-dark .ppv-campaign-header strong,
     color: #e2e8f0 !important;
 }
 
+/* ==========================================================================
+   🌙 DARK MODE - Glass Table (Letzte Scans)
+   ========================================================================== */
+body.ppv-dark .glass-table tbody tr,
+[data-theme="dark"] .glass-table tbody tr {
+    background: rgba(255, 255, 255, 0.03) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+}
+
+body.ppv-dark .glass-table tbody tr:hover,
+[data-theme="dark"] .glass-table tbody tr:hover {
+    background: rgba(0, 230, 255, 0.05) !important;
+    box-shadow: 0 4px 16px rgba(0, 230, 255, 0.15) !important;
+}
+
+body.ppv-dark .glass-table tbody td:first-child,
+[data-theme="dark"] .glass-table tbody td:first-child {
+    color: #00e6ff !important;
+}
+
+body.ppv-dark .glass-table .log-badge.success,
+[data-theme="dark"] .glass-table .log-badge.success {
+    background: rgba(16, 185, 129, 0.2) !important;
+    color: #10b981 !important;
+}
+
+body.ppv-dark .glass-table .log-badge.error,
+[data-theme="dark"] .glass-table .log-badge.error {
+    background: rgba(239, 68, 68, 0.2) !important;
+    color: #ef4444 !important;
+}
+
+body.ppv-dark .glass-table .log-badge.pending,
+body.ppv-dark .glass-table .log-badge.info,
+[data-theme="dark"] .glass-table .log-badge.pending,
+[data-theme="dark"] .glass-table .log-badge.info {
+    background: rgba(251, 191, 36, 0.2) !important;
+    color: #fbbf24 !important;
+}
+
+body.ppv-dark .ppv-pos-title,
+[data-theme="dark"] .ppv-pos-title {
+    color: #00e6ff !important;
+}
+
 /* ██████████████████████████████████████████████████████████████████████████
    🌙 END OF DARK THEME
    ██████████████████████████████████████████████████████████████████████████ */

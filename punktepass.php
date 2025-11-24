@@ -417,12 +417,9 @@ add_action('wp_enqueue_scripts', function() {
         }
     }
     
-    // 🔹 NORMAL USER = USER THEME PREFERENCE
-    $theme = $_COOKIE['ppv_theme'] ?? 'dark';
-    $file = $theme === 'light' ? 'ppv-theme-light.css' : 'ppv-theme-dark.css';
-    $handle = $theme === 'light' ? 'ppv-theme-light' : 'ppv-theme-dark';
-
-    wp_enqueue_style($handle, PPV_PLUGIN_URL . 'assets/css/' . $file, [], PPV_VERSION);
+    // 🔹 ALWAYS USE LIGHT CSS (contains all dark mode styles via body.ppv-dark selectors)
+    // Theme switching is handled via body class (ppv-light/ppv-dark) by theme-loader.js
+    wp_enqueue_style('ppv-theme-light', PPV_PLUGIN_URL . 'assets/css/ppv-theme-light.css', [], PPV_VERSION);
 }, 100);
 
 /**
@@ -474,8 +471,7 @@ add_action('wp_enqueue_scripts', function() {
     if (empty($wp_styles->queue)) return;
     
 $whitelist = [
-    'ppv-theme-dark',
-    'ppv-theme-light',
+    'ppv-theme-light',  // Single unified theme CSS (contains both light/dark styles)
     'ppv-handler',      // Handler theme (light/dark)
     'ppv-handler-light',
     'ppv-handler-dark',

@@ -195,11 +195,8 @@ class PPV_Core {
         return;
     }
         
-        // 🎨 Theme autodetect
-        $theme = isset($_COOKIE['ppv_theme']) ? sanitize_text_field($_COOKIE['ppv_theme']) : 'dark';
-
         // 🧹 Minden korábbi PPV CSS eltávolítása (kivéve whitelistet)
-        $whitelist = ['ppv-theme-dark', 'ppv-theme-light', 'ppv-login-light', 'ppv-handler-light', 'ppv-handler-dark'];
+        $whitelist = ['ppv-theme-light', 'ppv-login-light', 'ppv-handler-light', 'ppv-handler-dark'];
         foreach (wp_styles()->queue as $handle) {
             if (strpos($handle, 'ppv-') === 0 && !in_array($handle, $whitelist)) {
                 wp_dequeue_style($handle);
@@ -207,22 +204,15 @@ class PPV_Core {
             }
         }
 
-        // 🔹 Csak a két globális CSS
-        wp_register_style(
-            'ppv-theme-dark',
-            PPV_PLUGIN_URL . 'assets/css/ppv-theme-dark.css',
-            [],
-            PPV_VERSION
-        );
+        // 🔹 ALWAYS USE LIGHT CSS (contains all dark mode styles via body.ppv-dark selectors)
+        // Theme switching is handled via body class (ppv-light/ppv-dark) by theme-loader.js
         wp_register_style(
             'ppv-theme-light',
             PPV_PLUGIN_URL . 'assets/css/ppv-theme-light.css',
             [],
             PPV_VERSION
         );
-
-        // 🔹 Aktuális theme betöltése
-        wp_enqueue_style($theme === 'light' ? 'ppv-theme-light' : 'ppv-theme-dark');
+        wp_enqueue_style('ppv-theme-light');
 
         // 🔹 Theme váltó JS (globálisan minden oldalra)
         wp_enqueue_script(

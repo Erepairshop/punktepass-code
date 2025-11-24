@@ -1,5 +1,5 @@
 /**
- * PunktePass – Theme Loader v2.4 (NO DUPLICATE CSS)
+ * PunktePass – Theme Loader v2.5 (SINGLE CSS - light.css contains all styles)
  * ✅ Auto-detects all pages
  * ✅ Multi-domain cookie
  * ✅ MutationObserver for button detection
@@ -28,73 +28,55 @@
   }
 
   // ============================================================
-  // 🔹 LOAD CSS (Only if not already loaded by PHP)
+  // 🔹 LOAD CSS (Always use LIGHT CSS - contains all dark mode styles via body.ppv-dark)
   // ============================================================
   function loadThemeCSS(theme, forceReload = false) {
-    const cssPath = `ppv-theme-${theme}.css`;
+    // ALWAYS use light CSS - it contains both light and dark styles via body.ppv-dark selectors
+    const cssPath = 'ppv-theme-light.css';
 
-    // Check if theme CSS is already loaded (by PHP wp_enqueue_style or previous JS call)
+    // Check if light CSS is already loaded (by PHP wp_enqueue_style or previous JS call)
     const existingLinks = document.querySelectorAll('link[rel="stylesheet"]');
-    let alreadyLoaded = false;
+    let lightCSSLoaded = false;
 
     existingLinks.forEach(link => {
       if (link.href && link.href.includes(cssPath)) {
-        alreadyLoaded = true;
+        lightCSSLoaded = true;
       }
     });
 
-    // If already loaded and not forcing reload (theme switch), skip
-    if (alreadyLoaded && !forceReload) {
-      log('DEBUG', '⏩ Theme CSS already loaded by PHP, skipping:', theme);
-      // Just update classes
-      document.documentElement.setAttribute('data-theme', theme);
-      if (document.body) {
-        document.body.classList.remove('ppv-light', 'ppv-dark');
-        document.body.classList.add(`ppv-${theme}`);
-      }
+    // Update body classes and data-theme attribute for theme switching
+    document.documentElement.setAttribute('data-theme', theme);
+    if (document.body) {
+      document.body.classList.remove('ppv-light', 'ppv-dark');
+      document.body.classList.add(`ppv-${theme}`);
+      log('INFO', `✅ Theme applied via body class: ppv-${theme}`);
+    }
+
+    // If light CSS already loaded, we're done (classes are updated above)
+    if (lightCSSLoaded) {
+      log('DEBUG', '⏩ Light CSS already loaded, theme switched via body class');
       return;
     }
 
-    // For theme switching: remove old theme CSS (both PHP and JS versions)
-    if (forceReload) {
-      const otherTheme = theme === 'dark' ? 'light' : 'dark';
-      const otherCssPath = `ppv-theme-${otherTheme}.css`;
+    // Load light CSS if not already loaded
+    const id = 'ppv-theme-css';
+    const href = `/wp-content/plugins/punktepass/assets/css/ppv-theme-light.css?v=${Date.now()}`;
 
-      existingLinks.forEach(link => {
-        if (link.href && link.href.includes(otherCssPath)) {
-          link.remove();
-          log('DEBUG', '🗑️ Removed old theme CSS:', otherTheme);
-        }
-      });
+    // Remove any old JS-loaded CSS
+    document.querySelectorAll(`link[id="${id}"]`).forEach(e => e.remove());
 
-      // Also remove JS-loaded theme CSS
-      document.querySelectorAll('link[id="ppv-theme-css"]').forEach(e => e.remove());
-    }
+    const link = document.createElement('link');
+    link.id = id;
+    link.rel = 'stylesheet';
+    link.href = href;
+    link.onload = () => {
+      log('INFO', '✅ Light CSS loaded (contains all theme styles)');
+    };
+    link.onerror = () => {
+      log('ERROR', '❌ Light CSS failed to load:', href);
+    };
 
-    // Only create new link if not already loaded
-    if (!alreadyLoaded || forceReload) {
-      const id = 'ppv-theme-css';
-      const href = `/wp-content/plugins/punktepass/assets/css/ppv-theme-${theme}.css?v=${Date.now()}`;
-
-      // Remove old JS-loaded CSS
-      document.querySelectorAll(`link[id="${id}"]`).forEach(e => e.remove());
-
-      const link = document.createElement('link');
-      link.id = id;
-      link.rel = 'stylesheet';
-      link.href = href;
-      link.onload = () => {
-        log('INFO', '✅ Theme CSS loaded:', theme);
-        document.documentElement.setAttribute('data-theme', theme);
-        document.body.classList.remove('ppv-light', 'ppv-dark');
-        document.body.classList.add(`ppv-${theme}`);
-      };
-      link.onerror = () => {
-        log('ERROR', '❌ Theme CSS failed to load:', href);
-      };
-
-      document.head.appendChild(link);
-    }
+    document.head.appendChild(link);
   }
 
   // ============================================================

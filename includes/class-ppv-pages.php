@@ -258,7 +258,7 @@ public static function force_visible() {
         }
 
         // 🧹 Minden PPV CSS törlése (kivéve whitelist)
-        $whitelist = ['ppv-theme-dark', 'ppv-theme-light', 'ppv-login-light', 'ppv-handler-light', 'ppv-handler-dark'];
+        $whitelist = ['ppv-theme-light', 'ppv-login-light', 'ppv-handler-light', 'ppv-handler-dark'];
         foreach (wp_styles()->queue as $handle) {
             if (strpos($handle, 'ppv-') === 0 && !in_array($handle, $whitelist)) {
                 wp_dequeue_style($handle);
@@ -266,11 +266,11 @@ public static function force_visible() {
             }
         }
 
-        // 🔹 Csak a globális theme CSS marad
-        $theme = isset($_COOKIE['ppv_theme']) ? sanitize_text_field($_COOKIE['ppv_theme']) : 'dark';
+        // 🔹 ALWAYS USE LIGHT CSS (contains all dark mode styles via body.ppv-dark selectors)
+        // Theme switching is handled via body class (ppv-light/ppv-dark) by theme-loader.js
         wp_enqueue_style(
-            $theme === 'light' ? 'ppv-theme-light' : 'ppv-theme-dark',
-            PPV_PLUGIN_URL . 'assets/css/' . ($theme === 'light' ? 'ppv-theme-light.css' : 'ppv-theme-dark.css'),
+            'ppv-theme-light',
+            PPV_PLUGIN_URL . 'assets/css/ppv-theme-light.css',
             [],
             defined('PPV_VERSION') ? PPV_VERSION : time()
         );
