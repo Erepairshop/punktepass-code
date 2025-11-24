@@ -6862,6 +6862,16 @@ body.ppv-dark .ppv-vip-badge,
     margin: 1.5rem 0;
 }
 
+/* Remove double frame when inside tab content */
+.ppv-tab-content .ppv-rewards-management-wrapper {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    margin: 0;
+    border-radius: 0;
+}
+
 .ppv-rewards-management-wrapper.glass-section {
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: var(--pp-glass);
