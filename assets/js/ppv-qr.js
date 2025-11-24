@@ -915,24 +915,19 @@
       try {
         this.scanner = new Html5Qrcode('ppv-mini-reader');
 
-        // Camera constraints - use simpler constraints in fallback mode
-        const cameraConstraints = fallbackMode ? {
-          facingMode: 'environment'
-        } : {
-          facingMode: 'environment',
-          width: { min: 640, ideal: 1920, max: 2560 },
-          height: { min: 480, ideal: 1080, max: 1440 },
-          // Advanced constraints for better focus
-          focusMode: 'continuous',
-          exposureMode: 'continuous',
-          whiteBalanceMode: 'continuous'
-        };
+        // Html5Qrcode only accepts { facingMode } - advanced constraints applied later via videoTrack
+        const cameraConstraints = { facingMode: 'environment' };
 
         // Optimized scanner config
         const scannerConfig = {
           fps: fallbackMode ? 15 : 30,  // Lower FPS in fallback mode
           qrbox: { width: 250, height: 250 },  // Scan area
           aspectRatio: 1.0,
+          videoConstraints: {
+            // These are passed to getUserMedia internally
+            width: { min: 640, ideal: 1280, max: 1920 },
+            height: { min: 480, ideal: 720, max: 1080 }
+          },
           experimentalFeatures: {
             useBarCodeDetectorIfSupported: true
           },
