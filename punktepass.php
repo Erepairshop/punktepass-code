@@ -420,8 +420,9 @@ add_action('wp_enqueue_scripts', function() {
     // 🔹 NORMAL USER = USER THEME PREFERENCE
     $theme = $_COOKIE['ppv_theme'] ?? 'dark';
     $file = $theme === 'light' ? 'ppv-theme-light.css' : 'ppv-theme-dark.css';
-    
-    wp_enqueue_style('ppv-theme', PPV_PLUGIN_URL . 'assets/css/' . $file, [], PPV_VERSION);
+    $handle = $theme === 'light' ? 'ppv-theme-light' : 'ppv-theme-dark';
+
+    wp_enqueue_style($handle, PPV_PLUGIN_URL . 'assets/css/' . $file, [], PPV_VERSION);
 }, 100);
 
 /**
