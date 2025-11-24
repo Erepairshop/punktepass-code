@@ -123,12 +123,64 @@ class PPV_VIP_Settings {
     }
 
     /** ============================================================
+     *  🏢 GET ALL FILIALEN FOR HANDLER
+     * ============================================================ */
+    public static function get_handler_filialen() {
+        global $wpdb;
+
+        // Get the base store ID (not filiale-specific)
+        $base_store_id = null;
+
+        if (!empty($_SESSION['ppv_store_id'])) {
+            $base_store_id = intval($_SESSION['ppv_store_id']);
+        } elseif (!empty($_SESSION['ppv_vendor_store_id'])) {
+            $base_store_id = intval($_SESSION['ppv_vendor_store_id']);
+        } elseif (!empty($GLOBALS['ppv_active_store_id'])) {
+            $base_store_id = intval($GLOBALS['ppv_active_store_id']);
+        }
+
+        if (!$base_store_id) {
+            // Try DB fallback
+            $uid = get_current_user_id();
+            if ($uid > 0) {
+                $base_store_id = $wpdb->get_var($wpdb->prepare(
+                    "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id=%d LIMIT 1",
+                    $uid
+                ));
+            }
+        }
+
+        if (!$base_store_id) {
+            return [];
+        }
+
+        // Get all stores: parent + children
+        $filialen = $wpdb->get_results($wpdb->prepare("
+            SELECT id, name, company_name, address, city, plz
+            FROM {$wpdb->prefix}ppv_stores
+            WHERE id = %d OR parent_store_id = %d
+            ORDER BY (id = %d) DESC, name ASC
+        ", $base_store_id, $base_store_id, $base_store_id));
+
+        return $filialen ?: [];
+    }
+
+    /** ============================================================
      *  📡 REST: Get VIP Settings (Extended)
      * ============================================================ */
     public static function rest_get_settings(WP_REST_Request $request) {
         global $wpdb;
 
-        $store_id = self::get_store_id();
+        // Check for filiale_id parameter
+        $filiale_param = $request->get_param('filiale_id');
+        if ($filiale_param && $filiale_param !== 'all') {
+            // Use specific filiale
+            $store_id = intval($filiale_param);
+        } else {
+            // Use default store
+            $store_id = self::get_store_id();
+        }
+
         if (!$store_id) {
             return new WP_REST_Response(['success' => false, 'msg' => 'Store not found'], 403);
         }
@@ -182,7 +234,16 @@ class PPV_VIP_Settings {
     public static function rest_save_settings(WP_REST_Request $request) {
         global $wpdb;
 
-        $store_id = self::get_store_id();
+        // Check for filiale_id parameter
+        $filiale_param = $request->get_param('filiale_id');
+        if ($filiale_param && $filiale_param !== 'all') {
+            // Save to specific filiale
+            $store_id = intval($filiale_param);
+        } else {
+            // Use default store
+            $store_id = self::get_store_id();
+        }
+
         if (!$store_id) {
             return new WP_REST_Response(['success' => false, 'msg' => 'Store not found'], 403);
         }
@@ -315,6 +376,10 @@ class PPV_VIP_Settings {
             return '<div class="ppv-error">Not authorized. Please log in.</div>';
         }
 
+        // Get filialen for dropdown
+        $filialen = self::get_handler_filialen();
+        $has_multiple_filialen = count($filialen) > 1;
+
         // Get current language
         $lang = isset($_COOKIE['ppv_lang']) ? sanitize_text_field($_COOKIE['ppv_lang']) : 'de';
 
@@ -323,6 +388,7 @@ class PPV_VIP_Settings {
             'de' => [
                 'title' => 'VIP Bonus-Punkte',
                 'subtitle' => 'Gib deinen treuen Kunden extra Punkte basierend auf ihrem Level!',
+                'all_branches' => 'Alle Filialen',
                 'bronze_label' => 'Bronze',
                 'silver_label' => 'Silber',
                 'gold_label' => 'Gold',
@@ -363,6 +429,7 @@ class PPV_VIP_Settings {
             'hu' => [
                 'title' => 'VIP Bónusz Pontok',
                 'subtitle' => 'Adj extra pontokat a hűséges vásárlóidnak a szintjük alapján!',
+                'all_branches' => 'Összes filiale',
                 'bronze_label' => 'Bronz',
                 'silver_label' => 'Ezüst',
                 'gold_label' => 'Arany',
@@ -403,6 +470,7 @@ class PPV_VIP_Settings {
             'ro' => [
                 'title' => 'Puncte Bonus VIP',
                 'subtitle' => 'Oferă puncte extra clienților fideli în funcție de nivelul lor!',
+                'all_branches' => 'Toate filialele',
                 'bronze_label' => 'Bronz',
                 'silver_label' => 'Argint',
                 'gold_label' => 'Aur',
@@ -443,6 +511,7 @@ class PPV_VIP_Settings {
         ][$lang] ?? [
             'title' => 'VIP Bonus-Punkte',
             'subtitle' => 'Gib deinen treuen Kunden extra Punkte basierend auf ihrem Level!',
+            'all_branches' => 'Alle Filialen',
             'bronze_label' => 'Bronze',
             'silver_label' => 'Silber',
             'gold_label' => 'Gold',
@@ -479,6 +548,19 @@ class PPV_VIP_Settings {
             <div class="ppv-vip-header">
                 <h2><i class="ri-vip-crown-fill"></i> <?php echo esc_html($T['title']); ?></h2>
                 <p class="ppv-vip-subtitle"><?php echo esc_html($T['subtitle']); ?></p>
+                <?php if ($has_multiple_filialen): ?>
+                <div class="ppv-vip-filiale-selector" style="margin-top: 15px;">
+                    <select id="ppv-vip-filiale" class="ppv-select">
+                        <option value="all"><?php echo esc_html($T['all_branches']); ?></option>
+                        <?php foreach ($filialen as $filiale): ?>
+                            <option value="<?php echo esc_attr($filiale->id); ?>">
+                                <?php echo esc_html($filiale->name ?: $filiale->company_name); ?>
+                                <?php if ($filiale->city): ?> – <?php echo esc_html($filiale->city); ?><?php endif; ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <?php endif; ?>
             </div>
 
             <div class="ppv-vip-form">

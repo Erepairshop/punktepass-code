@@ -473,12 +473,22 @@
       this.list.innerHTML = `<div class='ppv-loading'>⏳ ${L.camp_loading || 'Lade Kampagnen...'}</div>`;
 
       const filter = document.getElementById('ppv-campaign-filter')?.value || 'active';
+      const filialeSelect = document.getElementById('ppv-campaign-filiale');
+      const filialeId = filialeSelect?.value || 'all';
 
       try {
-        const res = await fetch('/wp-json/punktepass/v1/pos/campaigns', {
+        // Build URL with filiale_id parameter
+        let url = '/wp-json/punktepass/v1/pos/campaigns';
+        if (filialeId && filialeId !== 'all') {
+          url += `?filiale_id=${encodeURIComponent(filialeId)}`;
+        } else {
+          url += '?filiale_id=all';
+        }
+
+        const res = await fetch(url, {
           headers: { 'PPV-POS-Token': getStoreKey() }
         });
-        ppvLog('[QR] 📡 campaigns.load() response:', res.status);
+        ppvLog('[QR] 📡 campaigns.load() response:', res.status, 'filiale:', filialeId);
         const data = await res.json();
 
         this.list.innerHTML = '';
@@ -508,6 +518,7 @@
       // ✅ FIX: Escape HTML to prevent XSS
       const safeTitle = escapeHtml(c.title || '');
       const safeType = escapeHtml(c.campaign_type || '');
+      const safeStoreName = c.store_name ? escapeHtml(c.store_name) : '';
 
       const card = document.createElement('div');
       card.className = 'ppv-campaign-item glass';
@@ -521,6 +532,7 @@
             <span class="ppv-camp-delete" data-id="${c.id}">🗑️</span>
           </div>
         </div>
+        ${safeStoreName ? `<p class="ppv-camp-store"><i class="ri-store-2-line"></i> ${safeStoreName}</p>` : ''}
         <p class="ppv-camp-dates">${(c.start_date || '').substring(0, 10)} – ${(c.end_date || '').substring(0, 10)}</p>
         <p class="ppv-camp-meta">⭐ ${safeType} | ${value} | ${statusBadge(c.state)}</p>
       `;
@@ -1486,6 +1498,16 @@
     if (campFilterSelect && !campFilterSelect.dataset.listenerAdded) {
       campFilterSelect.dataset.listenerAdded = 'true';
       campFilterSelect.addEventListener('change', () => {
+        STATE.campaignManager?.load();
+      });
+    }
+
+    // 🏢 Setup change listener for campaign filiale select
+    const campFilialeSelect = document.getElementById('ppv-campaign-filiale');
+    if (campFilialeSelect && !campFilialeSelect.dataset.listenerAdded) {
+      campFilialeSelect.dataset.listenerAdded = 'true';
+      campFilialeSelect.addEventListener('change', () => {
+        ppvLog('[QR] 🏢 Campaign filiale changed to:', campFilialeSelect.value);
         STATE.campaignManager?.load();
       });
     }
