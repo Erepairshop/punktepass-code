@@ -36,7 +36,6 @@ class PPV_POS_API {
         if (empty($token) && isset($_COOKIE['ppv_pos_token'])) $token = sanitize_text_field($_COOKIE['ppv_pos_token']);
 
         if (empty($token)) {
-            error_log("❌ [PPV_POS_API] Missing POS token");
             return false;
         }
 
@@ -47,11 +46,9 @@ class PPV_POS_API {
         ));
 
         if ($exists > 0) {
-            error_log("✅ [PPV_POS_API] Token accepted ({$token})");
             return true;
         }
 
-        error_log("🚫 [PPV_POS_API] Invalid POS token ({$token})");
         return false;
     }
 
@@ -83,8 +80,6 @@ class PPV_POS_API {
         $transaction_id = sanitize_text_field($params['transaction_id'] ?? '');
         $amount         = floatval($params['amount'] ?? 0);
 
-        error_log("🧠 [PPV_POS_API] Incoming POS sync | store_id={$store_id} | key={$store_key} | email={$email}");
-
         /** =========================================================
          * 🩵 Auto Session Restore (POS-token or key)
          * ========================================================= */
@@ -100,7 +95,6 @@ class PPV_POS_API {
                     $GLOBALS['ppv_active_store'] = $store;
                     $GLOBALS['ppv_is_pos'] = true;
                     $store_id = intval($store->id);
-                    error_log("✅ [PPV_POS_API] Store auto-restored via key={$store_id}");
                 }
             }
         }
@@ -138,7 +132,6 @@ class PPV_POS_API {
                 'created'  => current_time('mysql'),
                 'note'     => 'POS Sync #' . esc_sql($transaction_id)
             ]);
-            error_log("✅ [PPV_POS_API] {$points} Punkte hinzugefügt | user={$user_id} | store={$store_id}");
         }
 
         /** =========================================================
@@ -150,7 +143,6 @@ class PPV_POS_API {
                 'store_id'    => $store_id,
                 'reward_code' => $reward_code
             ]);
-            error_log("🎁 [PPV_POS_API] Reward redeem via POS | user={$user_id} | code={$reward_code}");
         }
 
         /** =========================================================

@@ -176,40 +176,25 @@ add_filter('rest_authentication_errors', function ($result) {
 
     // WP user auth
     if (is_user_logged_in()) {
-        error_log("✅ [REST_AUTH] WordPress user logged in: " . get_current_user_id());
         return true;
     }
 
-    // ✅ SESSION auth (Google/Facebook/TikTok login)
-    error_log("🔍 [REST_AUTH] Starting session auth check...");
-    error_log("🔍 [REST_AUTH] URI: " . ($_SERVER['REQUEST_URI'] ?? 'none'));
-    error_log("🔍 [REST_AUTH] ppv_user_token cookie: " . (isset($_COOKIE['ppv_user_token']) ? 'EXISTS (len=' . strlen($_COOKIE['ppv_user_token']) . ')' : 'MISSING'));
-    error_log("🔍 [REST_AUTH] Session status before: " . session_status() . " (1=disabled, 2=active, 3=none)");
-
+    // SESSION auth (Google/Facebook/TikTok login)
     // Start session and restore from token if needed
     if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
         @session_start();
-        error_log("🔍 [REST_AUTH] Session started, new status: " . session_status());
     }
-
-    error_log("🔍 [REST_AUTH] Session ID: " . (session_status() === PHP_SESSION_ACTIVE ? session_id() : 'NONE'));
-    error_log("🔍 [REST_AUTH] ppv_user_id in session BEFORE restore: " . ($_SESSION['ppv_user_id'] ?? 'EMPTY'));
-    error_log("🔍 [REST_AUTH] PPV_SessionBridge class exists: " . (class_exists('PPV_SessionBridge') ? 'YES' : 'NO'));
 
     // Restore session from ppv_user_token cookie
     if (class_exists('PPV_SessionBridge') && empty($_SESSION['ppv_user_id'])) {
-        error_log("🔄 [REST_AUTH] Calling PPV_SessionBridge::restore_from_token()...");
         PPV_SessionBridge::restore_from_token();
-        error_log("🔍 [REST_AUTH] ppv_user_id in session AFTER restore: " . ($_SESSION['ppv_user_id'] ?? 'STILL EMPTY'));
     }
 
     // Check if session has valid user_id
     if (!empty($_SESSION['ppv_user_id'])) {
-        error_log("✅ [REST_AUTH] Session user authenticated: user_id=" . $_SESSION['ppv_user_id']);
         return true;
     }
 
-    error_log("❌ [REST_AUTH] No authentication found - returning 401 error");
     return new WP_Error('rest_forbidden', __('Du bist leider nicht berechtigt, diese Aktion durchzuführen.'), ['status' => 401]);
 });
 
@@ -295,27 +280,8 @@ if (str_contains($uri, 'pos') || str_contains($uri, 'kasse') || str_contains($ur
 // Load modules
 foreach ($core_modules as $module) {
     $path = PPV_PLUGIN_DIR . ltrim($module, '/');
-
-    // Debug: Log PPV_Permissions loading attempt
-    if (strpos($module, 'class-ppv-permissions') !== false) {
-        error_log("🔍 [Module Loader] Attempting to load: " . $module);
-        error_log("🔍 [Module Loader] Full path: " . $path);
-        error_log("🔍 [Module Loader] File exists: " . (file_exists($path) ? 'YES' : 'NO'));
-    }
-
     if (file_exists($path)) {
         require_once $path;
-
-        // Debug: Confirm loading
-        if (strpos($module, 'class-ppv-permissions') !== false) {
-            error_log("✅ [Module Loader] Successfully loaded: " . $module);
-            error_log("✅ [Module Loader] Class exists: " . (class_exists('PPV_Permissions') ? 'YES' : 'NO'));
-        }
-    } else {
-        // Debug: File not found
-        if (strpos($module, 'class-ppv-permissions') !== false) {
-            error_log("❌ [Module Loader] FILE NOT FOUND: " . $path);
-        }
     }
 }
 

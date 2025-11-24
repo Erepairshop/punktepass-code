@@ -1,6 +1,5 @@
 <?php
 if (!defined('ABSPATH')) exit;
-error_log("🟢 PPV_POS_DOCK.php loaded (v1.5 Secure+POSSession)");
 
 /**
  * PunktePass – POS Dock Gateway (v1.5)
@@ -22,7 +21,6 @@ class PPV_POS_DOCK {
      *  🔹 Register unified endpoint
      * ============================================================ */
     public static function register_routes() {
-        error_log("✅ [PPV_POS_DOCK] register_routes fired");
         register_rest_route('punktepass/v1', '/pos/dock', [
             'methods'  => ['POST', 'GET'],
             'callback' => [__CLASS__, 'handle_request'],
@@ -48,12 +46,11 @@ class PPV_POS_DOCK {
                 if (method_exists('PPV_Session', 'current_store')) {
                     $cs = PPV_Session::current_store();
                     if (!empty($cs) && is_object($cs)) {
-                        error_log("🔓 [PPV_POS_DOCK] validate_request: PPV_Session active, bypassing auth (store={$cs->id})");
                         return true;
                     }
                 }
             } catch (Throwable $e) {
-                error_log("⚠️ [PPV_POS_DOCK] PPV_Session check failed: " . $e->getMessage());
+                // Silent fail - session check not critical
             }
         }
 
@@ -78,8 +75,6 @@ class PPV_POS_DOCK {
         $tokenToCheck = $headerToken ?: $paramToken ?: $cookieToken;
         $apiToCheck   = $apiKeyParam;
 
-        error_log("🔎 [PPV_POS_DOCK] validate_request tokens → header=" . ($headerToken ? 'yes' : 'no') . " param=" . ($paramToken ? 'yes' : 'no') . " cookie=" . ($cookieToken ? 'yes' : 'no') . " api=" . ($apiToCheck ? 'yes' : 'no'));
-
         // 3) DB checks
         if (!empty($tokenToCheck)) {
             $exists = (int)$wpdb->get_var($wpdb->prepare(
@@ -87,7 +82,6 @@ class PPV_POS_DOCK {
                 $tokenToCheck, $tokenToCheck
             ));
             if ($exists > 0) {
-                error_log("✅ [PPV_POS_DOCK] validate_request: token validated (store exists)");
                 return true;
             }
         }
@@ -98,13 +92,10 @@ class PPV_POS_DOCK {
                 $apiToCheck
             ));
             if ($exists > 0) {
-                error_log("✅ [PPV_POS_DOCK] validate_request: api_key validated (store exists)");
                 return true;
             }
         }
 
-        // nothing matched
-        error_log("⛔ [PPV_POS_DOCK] validate_request: unauthorized");
         return false;
     }
 
@@ -157,7 +148,6 @@ class PPV_POS_DOCK {
         }
 
         if (!$store) {
-            error_log("⛔ [PPV_POS_DOCK] handle_request: store not found (action={$action})");
             return rest_ensure_response(['success' => false, 'message' => '❌ Invalid or inactive API key / token / store']);
         }
 
@@ -173,7 +163,6 @@ class PPV_POS_DOCK {
         }
 
         $response = ['success' => false, 'action' => $action];
-        error_log("🧩 [PPV_POS_DOCK] Action={$action} | Store={$store_id} | User={$user_id}");
 
         switch ($action) {
             case 'sale':

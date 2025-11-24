@@ -109,7 +109,6 @@ if ($points_add !== 0) {
     $safe_user_id = intval($user_id) > 0 ? intval($user_id) : 0;
 
     $table_name = $wpdb->prefix . 'ppv_points';
-    error_log("🧩 POS_DEBUG: inserting into {$table_name} (user_id={$safe_user_id}, store_id={$store_id}, points={$points_add})");
 
     $insert_result = $wpdb->insert(
         $table_name,
@@ -122,12 +121,6 @@ if ($points_add !== 0) {
             'created'   => current_time('mysql')
         ]
     );
-
-    if ($insert_result === false) {
-        error_log("❌ POS_DEBUG_INSERT_ERROR: " . $wpdb->last_error);
-    } else {
-        error_log("✅ POS_DEBUG_INSERT_SUCCESS: ID=" . $wpdb->insert_id);
-    }
 
     if ($safe_user_id === 0) {
         $response_message[] = "+{$points_add} Punkte gutgeschrieben (POS Modus)";
