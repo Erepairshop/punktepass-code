@@ -1123,6 +1123,36 @@ return [
     'filiale_error' => 'Hiba a fiók létrehozása közben',
     'no_filialen' => 'Nincsenek elérhető fiókok',
 
+    // Filiale Limit
+    'more_filialen_title' => 'Több fiókra van szüksége?',
+    'more_filialen_desc' => 'Elérte a fiókok maximális számát. Lépjen velünk kapcsolatba további fiókok feloldásához!',
+    'filiale_limit_info' => 'Jelenleg',
+    'filialen' => 'Fiók',
+    'contact_email' => 'E-mail',
+    'contact_email_placeholder' => 'Az Ön e-mail címe',
+    'contact_phone' => 'Telefon',
+    'contact_phone_placeholder' => 'Az Ön telefonszáma',
+    'contact_message' => 'Üzenet (opcionális)',
+    'contact_message_placeholder' => 'Hány fiókra van szüksége?',
+    'contact_required' => 'Kérjük, adjon meg egy e-mail címet vagy telefonszámot',
+    'send_request' => 'Kérés küldése',
+    'sending' => 'Küldés...',
+    'request_sent' => 'Kérés sikeresen elküldve!',
+    'sent' => 'Elküldve',
+    'send_error' => 'Hiba a küldéskor',
+    'add_new_filiale' => 'Új fiók hozzáadása',
+    'filiale_city' => 'Város',
+    'filiale_city_placeholder' => 'pl. Budapest',
+    'filiale_plz' => 'Irányítószám',
+    'filiale_plz_placeholder' => 'pl. 1010',
+    'filiale_name_placeholder' => 'pl. Budapest 1. fiók',
+    'name_required' => 'A név megadása kötelező',
+    'saving' => 'Mentés...',
+    'save' => 'Mentés',
+    'cancel' => 'Mégse',
+    'save_error' => 'Hiba a mentéskor',
+    'switch_error' => 'Hiba a váltáskor',
+
     // ============================================
     // LEGAL PAGES
     // ============================================

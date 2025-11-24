@@ -1135,6 +1135,36 @@ return [
     'filiale_error' => 'Eroare la crearea filialei',
     'no_filialen' => 'Nicio filială disponibilă',
 
+    // Filiale Limit
+    'more_filialen_title' => 'Aveți nevoie de mai multe filiale?',
+    'more_filialen_desc' => 'Ați atins limita maximă de filiale. Contactați-ne pentru a debloca filiale suplimentare!',
+    'filiale_limit_info' => 'Actual',
+    'filialen' => 'Filiale',
+    'contact_email' => 'E-mail',
+    'contact_email_placeholder' => 'Adresa dvs. de e-mail',
+    'contact_phone' => 'Telefon',
+    'contact_phone_placeholder' => 'Numărul dvs. de telefon',
+    'contact_message' => 'Mesaj (opțional)',
+    'contact_message_placeholder' => 'Câte filiale aveți nevoie?',
+    'contact_required' => 'Vă rugăm să introduceți un e-mail sau număr de telefon',
+    'send_request' => 'Trimite cererea',
+    'sending' => 'Se trimite...',
+    'request_sent' => 'Cerere trimisă cu succes!',
+    'sent' => 'Trimis',
+    'send_error' => 'Eroare la trimitere',
+    'add_new_filiale' => 'Adaugă filială nouă',
+    'filiale_city' => 'Oraș',
+    'filiale_city_placeholder' => 'ex. București',
+    'filiale_plz' => 'Cod poștal',
+    'filiale_plz_placeholder' => 'ex. 010101',
+    'filiale_name_placeholder' => 'ex. Filiala București 1',
+    'name_required' => 'Numele este obligatoriu',
+    'saving' => 'Se salvează...',
+    'save' => 'Salvează',
+    'cancel' => 'Anulează',
+    'save_error' => 'Eroare la salvare',
+    'switch_error' => 'Eroare la comutare',
+
     // ============================================
     // LEGAL PAGES
     // ============================================

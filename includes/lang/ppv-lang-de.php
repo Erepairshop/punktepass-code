@@ -1147,6 +1147,36 @@ return [
     'filiale_error' => 'Fehler beim Erstellen der Filiale',
     'no_filialen' => 'Keine Filialen verfügbar',
 
+    // Filiale Limit
+    'more_filialen_title' => 'Mehr Filialen benötigt?',
+    'more_filialen_desc' => 'Sie haben das Maximum an Filialen erreicht. Kontaktieren Sie uns, um weitere Filialen freizuschalten!',
+    'filiale_limit_info' => 'Aktuell',
+    'filialen' => 'Filialen',
+    'contact_email' => 'E-Mail',
+    'contact_email_placeholder' => 'Ihre E-Mail-Adresse',
+    'contact_phone' => 'Telefon',
+    'contact_phone_placeholder' => 'Ihre Telefonnummer',
+    'contact_message' => 'Nachricht (optional)',
+    'contact_message_placeholder' => 'Wie viele Filialen benötigen Sie?',
+    'contact_required' => 'Bitte geben Sie eine E-Mail oder Telefonnummer an',
+    'send_request' => 'Anfrage senden',
+    'sending' => 'Senden...',
+    'request_sent' => 'Anfrage erfolgreich gesendet!',
+    'sent' => 'Gesendet',
+    'send_error' => 'Fehler beim Senden',
+    'add_new_filiale' => 'Neue Filiale hinzufügen',
+    'filiale_city' => 'Stadt',
+    'filiale_city_placeholder' => 'z.B. Wien',
+    'filiale_plz' => 'PLZ',
+    'filiale_plz_placeholder' => 'z.B. 1010',
+    'filiale_name_placeholder' => 'z.B. Wien Filiale 1',
+    'name_required' => 'Name ist erforderlich',
+    'saving' => 'Speichern...',
+    'save' => 'Speichern',
+    'cancel' => 'Abbrechen',
+    'save_error' => 'Fehler beim Speichern',
+    'switch_error' => 'Fehler beim Wechseln',
+
     // ============================================
     // LEGAL PAGES
     // ============================================
