@@ -270,12 +270,12 @@
     background: var(--ppv-card);
     border-radius: var(--radius);
     box-shadow: var(--shadow-lg);
-    padding: 36px;
+    padding: 24px;
 }
 
 .ppv-login-welcome {
     text-align: center;
-    margin-bottom: 28px;
+    margin-bottom: 16px;
 }
 
 .ppv-login-welcome h2 {
@@ -297,8 +297,8 @@
 .ppv-social-login-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-    margin-bottom: 20px;
+    gap: 10px;
+    margin-bottom: 12px;
 }
 
 .ppv-social-btn {
@@ -369,8 +369,8 @@
 .ppv-login-divider {
     display: flex;
     align-items: center;
-    gap: 16px;
-    margin: 20px 0;
+    gap: 12px;
+    margin: 12px 0;
     color: var(--ppv-text-muted);
     font-size: 13px;
     font-weight: 500;
@@ -390,13 +390,13 @@
 .ppv-login-form {
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 14px;
 }
 
 .ppv-form-group {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
 }
 
 .ppv-form-group label {
@@ -580,8 +580,8 @@
    ============================================ */
 .ppv-register-link {
     text-align: center;
-    margin-top: 20px;
-    padding-top: 20px;
+    margin-top: 14px;
+    padding-top: 14px;
     border-top: 1px solid var(--ppv-border);
 }
 
