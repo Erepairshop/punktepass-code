@@ -928,6 +928,7 @@ return [
 'err_already_scanned_today' => '⚠️ Deja scanat astăzi',
 'err_duplicate_scan' => '⚠️ Deja scanat. Vă rugăm așteptați.',
 'err_gps_distance' => 'Scanarea nu este posibilă - prea departe de locație',
+'err_wrong_country' => 'Scanarea nu este posibilă - țară greșită detectată',
 'log_point_added' => '1 punct adaugat',
 'scan_success' => '✅ 1 punct adaugat',
 'offline_synced' => '✅ Sincronizat offline',

@@ -940,6 +940,7 @@ return [
 'err_already_scanned_today' => '⚠️ Heute bereits gescannt',
 'err_duplicate_scan' => '⚠️ Bereits gescannt. Bitte warten.',
 'err_gps_distance' => 'Scan nicht möglich - zu weit vom Standort entfernt',
+'err_wrong_country' => 'Scan nicht möglich - falsches Land erkannt',
 'log_point_added' => '1 Punkt hinzugefügt',
 'scan_success' => '✅ 1 Punkt hinzugefügt',
 'offline_synced' => '✅ Offline synchronisiert',

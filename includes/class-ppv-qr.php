@@ -1832,6 +1832,22 @@ class PPV_QR {
                     $store_id
                 ));
 
+                // Determine error type and message
+                $reason = $gps_check['reason'] ?? 'gps_distance';
+
+                if ($reason === 'wrong_country') {
+                    ppv_log("[PPV_QR] Country mismatch: user={$user_id}, store={$store_id}, store_country={$gps_check['store_country']}, scan_country={$gps_check['scan_country']}");
+
+                    return new WP_REST_Response([
+                        'success' => false,
+                        'message' => self::t('err_wrong_country', 'Scan nicht möglich - falsches Land erkannt'),
+                        'store_name' => $store_name ?? 'PunktePass',
+                        'error_type' => 'wrong_country',
+                        'store_country' => $gps_check['store_country'] ?? null,
+                        'detected_country' => $gps_check['scan_country'] ?? null
+                    ], 403);
+                }
+
                 ppv_log("[PPV_QR] GPS distance check failed: user={$user_id}, store={$store_id}, distance={$gps_check['distance']}m");
 
                 // Return error - scan not allowed

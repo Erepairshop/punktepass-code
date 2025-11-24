@@ -198,14 +198,27 @@ class PPV_Scan_Monitoring {
             return ['valid' => true, 'distance' => null, 'reason' => null, 'skipped' => 'no_gps_data'];
         }
 
-        // Get store location
+        // Get store location AND country
         $store = $wpdb->get_row($wpdb->prepare(
-            "SELECT latitude, longitude, max_scan_distance FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+            "SELECT latitude, longitude, max_scan_distance, country FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
             $store_id
         ));
 
-        // If store has no GPS coordinates, skip check
+        // If store has no GPS coordinates, try country-based check as fallback
         if (empty($store->latitude) || empty($store->longitude)) {
+            // Check if store has country set - do country-level validation
+            if (!empty($store->country)) {
+                $country_check = self::validate_scan_country($scan_lat, $scan_lng, $store->country);
+                if (!$country_check['valid']) {
+                    return [
+                        'valid' => false,
+                        'distance' => null,
+                        'reason' => 'wrong_country',
+                        'store_country' => $store->country,
+                        'scan_country' => $country_check['detected_country']
+                    ];
+                }
+            }
             return ['valid' => true, 'distance' => null, 'reason' => null, 'skipped' => 'no_store_gps'];
         }
 
@@ -254,6 +267,62 @@ class PPV_Scan_Monitoring {
         $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
 
         return round($earth_radius * $c);
+    }
+
+    /**
+     * Country bounding boxes (approximate)
+     * Format: [min_lat, max_lat, min_lng, max_lng]
+     */
+    private static function get_country_bounds() {
+        return [
+            'DE' => [47.27, 55.10, 5.87, 15.04],   // Germany
+            'HU' => [45.74, 48.59, 16.11, 22.90],  // Hungary
+            'RO' => [43.62, 48.27, 20.26, 29.76],  // Romania
+            'AT' => [46.37, 49.02, 9.53, 17.16],   // Austria
+            'PL' => [49.00, 54.83, 14.12, 24.15],  // Poland
+            'CZ' => [48.55, 51.06, 12.09, 18.86],  // Czech Republic
+            'SK' => [47.73, 49.61, 16.84, 22.57],  // Slovakia
+        ];
+    }
+
+    /**
+     * Detect country from GPS coordinates using bounding boxes
+     * Returns country code or null if not in any known country
+     */
+    public static function detect_country_from_gps($lat, $lng) {
+        $bounds = self::get_country_bounds();
+
+        foreach ($bounds as $country => $box) {
+            list($min_lat, $max_lat, $min_lng, $max_lng) = $box;
+            if ($lat >= $min_lat && $lat <= $max_lat && $lng >= $min_lng && $lng <= $max_lng) {
+                return $country;
+            }
+        }
+
+        return null; // Unknown/other country
+    }
+
+    /**
+     * Validate if scan GPS is in the expected country
+     * Returns: ['valid' => bool, 'detected_country' => string|null]
+     */
+    public static function validate_scan_country($scan_lat, $scan_lng, $expected_country) {
+        $detected = self::detect_country_from_gps($scan_lat, $scan_lng);
+
+        // If we can't detect country, allow the scan (benefit of the doubt)
+        if ($detected === null) {
+            ppv_log("[PPV_Scan_Monitoring] Country check: GPS ({$scan_lat}, {$scan_lng}) not in known country bounds, allowing scan");
+            return ['valid' => true, 'detected_country' => 'UNKNOWN'];
+        }
+
+        // Check if detected country matches expected
+        if ($detected === $expected_country) {
+            return ['valid' => true, 'detected_country' => $detected];
+        }
+
+        // Country mismatch - suspicious!
+        ppv_log("[PPV_Scan_Monitoring] COUNTRY MISMATCH: Store country={$expected_country}, Scan GPS in {$detected}");
+        return ['valid' => false, 'detected_country' => $detected];
     }
 
     /**
