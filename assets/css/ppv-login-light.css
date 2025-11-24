@@ -390,7 +390,7 @@
 .ppv-login-form {
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 12px !important;
 }
 
 .ppv-form-group {
@@ -473,6 +473,7 @@
     gap: 8px;
     padding: 12px 16px !important;
     margin-top: 8px !important;
+    margin-bottom: 0 !important;
     background: var(--ppv-bg) !important;
     border: 1px solid var(--ppv-border) !important;
     border-radius: var(--radius-sm) !important;
