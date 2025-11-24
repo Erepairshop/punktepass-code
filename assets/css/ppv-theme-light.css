@@ -3634,6 +3634,48 @@ html, body {
   display: none;
 }
 
+/* QR Scanner scan region highlight - Fullscreen centered & larger */
+#ppv-mini-scanner.ppv-fullscreen-mode .scan-region-highlight {
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  width: 280px !important;
+  height: 280px !important;
+}
+
+#ppv-mini-scanner.ppv-fullscreen-mode .scan-region-highlight svg {
+  width: 280px !important;
+  height: 280px !important;
+}
+
+#ppv-mini-scanner.ppv-fullscreen-mode .scan-region-highlight-svg {
+  width: 280px !important;
+  height: 280px !important;
+}
+
+/* Code outline when detected */
+#ppv-mini-scanner.ppv-fullscreen-mode .code-outline-highlight {
+  stroke: #00e676 !important;
+  stroke-width: 4 !important;
+}
+
+/* Mini mode - smaller scan region */
+#ppv-mini-scanner:not(.ppv-fullscreen-mode) .scan-region-highlight {
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  width: 100px !important;
+  height: 100px !important;
+}
+
+#ppv-mini-scanner:not(.ppv-fullscreen-mode) .scan-region-highlight svg,
+#ppv-mini-scanner:not(.ppv-fullscreen-mode) .scan-region-highlight-svg {
+  width: 100px !important;
+  height: 100px !important;
+}
+
 /* ============================================================
    🎭 TAB CONTENT VISIBILITY
    ============================================================ */
