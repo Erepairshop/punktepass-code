@@ -87,6 +87,29 @@ class PPV_Admin_Suspicious_Devices {
         $suspicious_devices = count($devices);
         $max_accounts = $devices ? max(array_column($devices, 'account_count')) : 0;
 
+        // OPTIMIZED: Batch load all users at once instead of N+1 queries per device
+        $all_user_ids = [];
+        foreach ($devices as $device) {
+            $ids = explode(',', $device->user_ids);
+            foreach ($ids as $uid) {
+                $all_user_ids[intval($uid)] = true;
+            }
+        }
+        $all_user_ids = array_keys($all_user_ids);
+
+        $users_map = [];
+        if (!empty($all_user_ids)) {
+            $ids_placeholder = implode(',', array_map('intval', $all_user_ids));
+            $users_data = $wpdb->get_results("
+                SELECT id, email, first_name, last_name, created_at
+                FROM {$table_users}
+                WHERE id IN ({$ids_placeholder})
+            ");
+            foreach ($users_data as $u) {
+                $users_map[$u->id] = $u;
+            }
+        }
+
         ?>
         <div class="wrap">
             <h1>🔍 Gyanús eszközök</h1>
@@ -134,15 +157,12 @@ class PPV_Admin_Suspicious_Devices {
                             $risk_color = $risk_level === 'high' ? '#dc3545' : '#ffc107';
                             $risk_icon = $risk_level === 'high' ? '🔴' : '🟡';
 
-                            // Get user details
+                            // Get user details from pre-loaded map (OPTIMIZED - no N+1)
                             $users = [];
                             foreach ($user_ids as $uid) {
-                                $user = $wpdb->get_row($wpdb->prepare(
-                                    "SELECT id, email, first_name, last_name, created_at FROM {$table_users} WHERE id = %d",
-                                    intval($uid)
-                                ));
-                                if ($user) {
-                                    $users[] = $user;
+                                $uid = intval($uid);
+                                if (isset($users_map[$uid])) {
+                                    $users[] = $users_map[$uid];
                                 }
                             }
                         ?>

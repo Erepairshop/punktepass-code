@@ -28,6 +28,7 @@
                 reward: {}
             };
             this.celebrationShown = false; // ✅ Initialize flag
+            this.progressInterval = null; // ✅ Store interval ID for cleanup
 
             this.init();
         }
@@ -50,8 +51,8 @@
 
                 // ❌ Sticky Reminder eltávolítva - nem kell
 
-                // Progress polling - 15 másodpercenként
-                setInterval(() => this.refreshProgress(), 15000);
+                // Progress polling - 15 másodpercenként (store ID for cleanup)
+                this.progressInterval = setInterval(() => this.refreshProgress(), 15000);
             });
         }
 
@@ -841,6 +842,12 @@
          *  🚫 HIDE ALL
          * ============================================================ */
         hideAllOnboarding() {
+            // ✅ Clear progress polling interval to prevent memory leak
+            if (this.progressInterval) {
+                clearInterval(this.progressInterval);
+                this.progressInterval = null;
+            }
+
             $('.ppv-onboarding-progress-card').fadeOut(300, function() { $(this).remove(); });
             $('.ppv-onboarding-sticky').fadeOut(300, function() { $(this).remove(); });
         }

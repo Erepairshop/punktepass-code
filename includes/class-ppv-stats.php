@@ -320,15 +320,27 @@ class PPV_Stats {
             $store_ids
         ));
 
-        // Chart (7-day)
+        // Chart (7-day) - OPTIMIZED: Single query with GROUP BY instead of 7 queries
+        $week_ago = date('Y-m-d', strtotime("-6 days", strtotime($today)));
+        $chart_results = $wpdb->get_results($wpdb->prepare(
+            "SELECT DATE(created) as date, COUNT(*) as count
+             FROM $table_points
+             WHERE store_id IN ($placeholders) AND DATE(created) >= %s
+             GROUP BY DATE(created)",
+            array_merge($store_ids, [$week_ago])
+        ));
+
+        // Build lookup map from results
+        $chart_map = [];
+        foreach ($chart_results as $row) {
+            $chart_map[$row->date] = (int) $row->count;
+        }
+
+        // Fill in all 7 days (including zero-count days)
         $chart = [];
         for ($i = 6; $i >= 0; $i--) {
             $date = date('Y-m-d', strtotime("-$i days", strtotime($today)));
-            $count = (int) $wpdb->get_var($wpdb->prepare(
-                "SELECT COUNT(*) FROM $table_points WHERE store_id IN ($placeholders) AND DATE(created)=%s",
-                array_merge($store_ids, [$date])
-            ));
-            $chart[] = ['date' => $date, 'count' => $count];
+            $chart[] = ['date' => $date, 'count' => $chart_map[$date] ?? 0];
         }
 
         // Top 5 Users
@@ -522,18 +534,29 @@ class PPV_Stats {
         ));
         $month_trend = $previous_month > 0 ? (($current_month - $previous_month) / $previous_month) * 100 : 0;
 
-        // Daily breakdown
+        // Daily breakdown - OPTIMIZED: Single query with GROUP BY instead of 7 queries
+        $daily_results = $wpdb->get_results($wpdb->prepare(
+            "SELECT DATE(created) as date, COUNT(*) as count
+             FROM $table
+             WHERE store_id IN ($placeholders) AND DATE(created) BETWEEN %s AND %s
+             GROUP BY DATE(created)",
+            array_merge($store_ids, [$week_start, $week_end])
+        ));
+
+        // Build lookup map from results
+        $daily_map = [];
+        foreach ($daily_results as $row) {
+            $daily_map[$row->date] = (int) $row->count;
+        }
+
+        // Fill in all 7 days (including zero-count days)
         $daily_week = [];
         for ($i = 0; $i < 7; $i++) {
             $date = date('Y-m-d', strtotime($week_start . " +$i days"));
-            $count = (int) $wpdb->get_var($wpdb->prepare(
-                "SELECT COUNT(*) FROM $table WHERE store_id IN ($placeholders) AND DATE(created)=%s",
-                array_merge($store_ids, [$date])
-            ));
             $daily_week[] = [
                 'date' => $date,
                 'day' => date('D', strtotime($date)),
-                'count' => $count
+                'count' => $daily_map[$date] ?? 0
             ];
         }
 
