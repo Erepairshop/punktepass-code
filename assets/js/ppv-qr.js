@@ -1151,11 +1151,11 @@
         }
 
         // QrScanner options - preferredCamera: 'environment' forces back camera
-        // maxScansPerSecond: 8 - reduced from 25 to minimize console log spam
+        // maxScansPerSecond: 3 - reduced to minimize console log spam
         // (library logs "No QR code found" for every failed scan attempt)
         const options = {
           preferredCamera: 'environment',  // Back camera
-          maxScansPerSecond: 8,
+          maxScansPerSecond: 3,
           highlightScanRegion: true,
           highlightCodeOutline: true,
           returnDetailedScanResult: true
