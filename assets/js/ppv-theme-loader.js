@@ -1,5 +1,5 @@
 /**
- * PunktePass – Theme Loader v2.3 (UNIVERSAL)
+ * PunktePass – Theme Loader v2.5 (SINGLE CSS - light.css contains all styles)
  * ✅ Auto-detects all pages
  * ✅ Multi-domain cookie
  * ✅ MutationObserver for button detection
@@ -8,6 +8,7 @@
  * ✅ Icon sync on page load (sun/moon)
  * ✅ Works with both ppv-theme-toggle and ppv-theme-toggle-global
  * ✅ localStorage priority over meta tag (fixes Turbo navigation)
+ * ✅ Prevents duplicate CSS loading (PHP already loads theme CSS)
  * Author: Erik Borota / PunktePass
  */
 
@@ -27,28 +28,52 @@
   }
 
   // ============================================================
-  // 🔹 LOAD CSS
+  // 🔹 LOAD CSS (Always use LIGHT CSS - contains all dark mode styles via body.ppv-dark)
   // ============================================================
-  function loadThemeCSS(theme) {
-    const id = 'ppv-theme-css';
-    const href = `/wp-content/plugins/punktepass/assets/css/ppv-theme-${theme}.css?v=${Date.now()}`;
+  function loadThemeCSS(theme, forceReload = false) {
+    // ALWAYS use light CSS - it contains both light and dark styles via body.ppv-dark selectors
+    const cssPath = 'ppv-theme-light.css';
 
-    // Remove old
+    // Check if light CSS is already loaded (by PHP wp_enqueue_style or previous JS call)
+    const existingLinks = document.querySelectorAll('link[rel="stylesheet"]');
+    let lightCSSLoaded = false;
+
+    existingLinks.forEach(link => {
+      if (link.href && link.href.includes(cssPath)) {
+        lightCSSLoaded = true;
+      }
+    });
+
+    // Update body classes and data-theme attribute for theme switching
+    document.documentElement.setAttribute('data-theme', theme);
+    if (document.body) {
+      document.body.classList.remove('ppv-light', 'ppv-dark');
+      document.body.classList.add(`ppv-${theme}`);
+      log('INFO', `✅ Theme applied via body class: ppv-${theme}`);
+    }
+
+    // If light CSS already loaded, we're done (classes are updated above)
+    if (lightCSSLoaded) {
+      log('DEBUG', '⏩ Light CSS already loaded, theme switched via body class');
+      return;
+    }
+
+    // Load light CSS if not already loaded
+    const id = 'ppv-theme-css';
+    const href = `/wp-content/plugins/punktepass/assets/css/ppv-theme-light.css?v=${Date.now()}`;
+
+    // Remove any old JS-loaded CSS
     document.querySelectorAll(`link[id="${id}"]`).forEach(e => e.remove());
 
-    // Create new
     const link = document.createElement('link');
     link.id = id;
     link.rel = 'stylesheet';
     link.href = href;
     link.onload = () => {
-      log('INFO', '✅ Theme CSS loaded:', theme);
-      document.documentElement.setAttribute('data-theme', theme);
-      document.body.classList.remove('ppv-light', 'ppv-dark');
-      document.body.classList.add(`ppv-${theme}`);
+      log('INFO', '✅ Light CSS loaded (contains all theme styles)');
     };
     link.onerror = () => {
-      log('ERROR', '❌ Theme CSS failed to load:', href);
+      log('ERROR', '❌ Light CSS failed to load:', href);
     };
 
     document.head.appendChild(link);
@@ -192,8 +217,8 @@
 
       log('INFO', `🔄 Theme switching: ${current} → ${newTheme}`);
 
-      // 1. Update UI immediately
-      loadThemeCSS(newTheme);
+      // 1. Update UI immediately (forceReload=true for theme switch)
+      loadThemeCSS(newTheme, true);
       localStorage.setItem(THEME_KEY, newTheme);
       setMultiDomainCookie(newTheme);
 
@@ -268,8 +293,8 @@
           const newTheme = event.data.theme;
           log('INFO', '📨 Broadcast received: theme-changed', newTheme);
 
-          // Update UI
-          loadThemeCSS(newTheme);
+          // Update UI (forceReload=true for cross-tab theme sync)
+          loadThemeCSS(newTheme, true);
           localStorage.setItem(THEME_KEY, newTheme);
         }
       });
@@ -364,7 +389,7 @@
     if (e.key === THEME_KEY && e.newValue) {
       const newTheme = e.newValue;
       log('INFO', '🔄 Storage event: theme changed', newTheme);
-      loadThemeCSS(newTheme);
+      loadThemeCSS(newTheme, true);
     }
   });
 })();

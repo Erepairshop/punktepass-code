@@ -129,7 +129,13 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
                 return;
             }
 
-            wp_enqueue_style('ppv-theme-light', PPV_PLUGIN_URL . 'assets/css/ppv-theme-light.css', [], filemtime(PPV_PLUGIN_DIR . 'assets/css/ppv-theme-light.css'));
+            // 🔹 ALWAYS USE LIGHT CSS (contains all dark mode styles via body.ppv-dark selectors)
+            wp_enqueue_style(
+                'ppv-theme-light',
+                PPV_PLUGIN_URL . 'assets/css/ppv-theme-light.css',
+                [],
+                filemtime(PPV_PLUGIN_DIR . 'assets/css/ppv-theme-light.css')
+            );
             // Google Maps JS API
 if (defined('PPV_GOOGLE_MAPS_KEY') && PPV_GOOGLE_MAPS_KEY) {
     wp_enqueue_script(
@@ -155,6 +161,14 @@ wp_localize_script('pp-profile-lite-i18n', 'ppv_profile', [
         public static function render_form() {
             self::ensure_session();
 
+            // ✅ FIX: Send no-cache headers to bypass server-level caching (LiteSpeed, Cloudflare, etc.)
+            if (!headers_sent()) {
+                header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+                header('Cache-Control: post-check=0, pre-check=0', false);
+                header('Pragma: no-cache');
+                header('Expires: Thu, 01 Jan 1970 00:00:00 GMT');
+            }
+
             // ✅ SCANNER USERS: Don't show profile/onboarding page
             if (class_exists('PPV_Permissions') && PPV_Permissions::is_scanner_user()) {
                 echo '<div class="ppv-alert ppv-alert-info" style="padding: 20px; text-align: center;">
@@ -172,6 +186,9 @@ wp_localize_script('pp-profile-lite-i18n', 'ppv_profile', [
 
             ob_start();
             ?>
+            <!-- ✅ Disable Turbo cache for this page to ensure fresh data after save -->
+            <meta name="turbo-cache-control" content="no-cache">
+
             <div class="ppv-profile-container">
                 <div class="ppv-profile-header">
                     <div class="ppv-header-left">
@@ -453,7 +470,8 @@ if (!empty($store->gallery)) {
     if (is_array($gallery)) {
         foreach ($gallery as $image_url) {
             echo '<div class="ppv-gallery-item" style="position: relative; display: inline-block; width: 100%;">';
-            echo '<img src="' . esc_url($image_url) . '" alt="Gallery" style="width: 100%; height: auto; border-radius: 4px;">';
+            // ✅ OPTIMIZED: Added loading="lazy" for performance
+            echo '<img src="' . esc_url($image_url) . '" alt="Gallery" loading="lazy" style="width: 100%; height: auto; border-radius: 4px;">';
             echo '<button type="button" class="ppv-gallery-delete-btn" data-image-url="' . esc_attr($image_url) . '" style="position: absolute; top: -10px; right: -10px; background: red; color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-size: 18px; padding: 0; line-height: 1;">×</button>';
             echo '</div>';
         }
@@ -606,10 +624,15 @@ if (!empty($store->gallery)) {
         private static function get_current_store() {
             global $wpdb;
 
+            // ✅ FIX: Flush WordPress object cache to ensure fresh data
+            wp_cache_flush();
+            $wpdb->flush();
+
             // 🏪 FILIALE SUPPORT: Use session-aware store ID
             $store_id = self::get_store_id();
             if ($store_id) {
-                return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1", $store_id));
+                // SQL_NO_CACHE ensures MySQL doesn't return cached results
+                return $wpdb->get_row($wpdb->prepare("SELECT SQL_NO_CACHE * FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1", $store_id));
             }
 
             // Fallback: GET parameter (admin use)
@@ -629,6 +652,8 @@ if (!empty($store->gallery)) {
         }
 
 public static function ajax_save_profile() {
+    global $wpdb; // ✅ FIX: Declare $wpdb at the start of the function
+
     if (!isset($_POST[self::NONCE_NAME])) {
         wp_send_json_error(['msg' => 'Nonce missing']);
     }
@@ -654,29 +679,44 @@ public static function ajax_save_profile() {
     $upload_dir = wp_upload_dir();
     $gallery_files = [];
 
+    // ✅ FIX: Get existing store data to preserve logo/gallery if not uploading new
+    $existing_store = $wpdb->get_row($wpdb->prepare(
+        "SELECT logo, gallery FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
+        $store_id
+    ));
+
     // Logo upload
     if (!empty($_FILES['logo']['name'])) {
         $tmp_file = $_FILES['logo']['tmp_name'];
         $filename = basename($_FILES['logo']['name']);
         $new_file = $upload_dir['path'] . '/' . $filename;
-        
+
         if (move_uploaded_file($tmp_file, $new_file)) {
             $_POST['logo'] = $upload_dir['url'] . '/' . $filename;
         }
+    } else {
+        // ✅ FIX: Preserve existing logo if no new upload
+        $_POST['logo'] = $existing_store->logo ?? '';
     }
 
     // Gallery upload
     if (!empty($_FILES['gallery']['name'][0])) {
+        // ✅ FIX: Get existing gallery to merge with new uploads
+        $existing_gallery = json_decode($existing_store->gallery ?? '[]', true) ?: [];
+
         foreach ($_FILES['gallery']['name'] as $key => $filename) {
             if ($_FILES['gallery']['error'][$key] === UPLOAD_ERR_OK) {
                 $tmp_file = $_FILES['gallery']['tmp_name'][$key];
                 $new_file = $upload_dir['path'] . '/' . basename($filename);
-                
+
                 if (move_uploaded_file($tmp_file, $new_file)) {
                     $gallery_files[] = $upload_dir['url'] . '/' . basename($filename);
                 }
             }
         }
+
+        // ✅ FIX: Merge new uploads with existing gallery (append new images)
+        $gallery_files = array_merge($existing_gallery, $gallery_files);
     }
 
 
@@ -736,12 +776,10 @@ public static function ajax_save_profile() {
         'timezone' => sanitize_text_field($_POST['timezone'] ?? 'Europe/Berlin'),
         'updated_at' => current_time('mysql'),
         'logo' => sanitize_text_field($_POST['logo'] ?? ''),
-'gallery' => !empty($gallery_files) ? json_encode($gallery_files) : ($_POST['gallery'] ?? ''),
+// ✅ FIX: Preserve existing gallery if no new uploads
+        'gallery' => !empty($gallery_files) ? json_encode($gallery_files) : ($existing_store->gallery ?? ''),
     'opening_hours' => json_encode($opening_hours),  // ← ADD THIS!
 ];
-
-
-    global $wpdb;
 
 // ✅ Format specifierek az összes mezőhöz
 $format_specs = [

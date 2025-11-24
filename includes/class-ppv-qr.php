@@ -1012,6 +1012,48 @@ class PPV_QR {
             </div>
         </div>
 
+        <!-- Contact Modal for Filiale Limit Reached -->
+        <div id="ppv-filiale-contact-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; align-items: center; justify-content: center;">
+            <div style="background: #1a1a2e; padding: 30px; border-radius: 15px; max-width: 500px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
+                <h3 style="margin-top: 0; color: #fff;"><i class="ri-building-line"></i> <?php echo self::t('more_filialen_title', 'Mehr Filialen benötigt?'); ?></h3>
+
+                <p style="color: #ccc; font-size: 14px; margin-bottom: 20px;">
+                    <?php echo self::t('more_filialen_desc', 'Sie haben das Maximum an Filialen erreicht. Kontaktieren Sie uns, um weitere Filialen freizuschalten!'); ?>
+                </p>
+
+                <div id="ppv-filiale-limit-info" style="background: rgba(255,82,82,0.1); border: 1px solid rgba(255,82,82,0.3); border-radius: 8px; padding: 12px; margin-bottom: 20px;">
+                    <span style="color: #ff5252; font-size: 13px;"><i class="ri-information-line"></i> <span id="ppv-filiale-limit-text"></span></span>
+                </div>
+
+                <label style="display: block; margin-bottom: 5px; color: #ccc; font-size: 14px;">
+                    <?php echo self::t('contact_email', 'E-Mail'); ?>
+                </label>
+                <input type="email" id="ppv-contact-email" class="ppv-input" placeholder="<?php echo esc_attr(self::t('contact_email_placeholder', 'Ihre E-Mail-Adresse')); ?>" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #0f0f1e; color: #fff; margin-bottom: 15px;">
+
+                <label style="display: block; margin-bottom: 5px; color: #ccc; font-size: 14px;">
+                    <?php echo self::t('contact_phone', 'Telefon'); ?>
+                </label>
+                <input type="tel" id="ppv-contact-phone" class="ppv-input" placeholder="<?php echo esc_attr(self::t('contact_phone_placeholder', 'Ihre Telefonnummer')); ?>" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #0f0f1e; color: #fff; margin-bottom: 15px;">
+
+                <label style="display: block; margin-bottom: 5px; color: #ccc; font-size: 14px;">
+                    <?php echo self::t('contact_message', 'Nachricht (optional)'); ?>
+                </label>
+                <textarea id="ppv-contact-message" class="ppv-input" placeholder="<?php echo esc_attr(self::t('contact_message_placeholder', 'Wie viele Filialen benötigen Sie?')); ?>" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #0f0f1e; color: #fff; margin-bottom: 15px; min-height: 80px; resize: vertical;"></textarea>
+
+                <div id="ppv-contact-error" style="display: none; color: #ff5252; font-size: 13px; margin-bottom: 10px;"></div>
+                <div id="ppv-contact-success" style="display: none; color: #4caf50; font-size: 13px; margin-bottom: 10px;"></div>
+
+                <div style="display: flex; gap: 10px;">
+                    <button id="ppv-send-contact-btn" class="ppv-btn" style="flex: 1; padding: 12px;">
+                        📧 <?php echo self::t('send_request', 'Anfrage senden'); ?>
+                    </button>
+                    <button id="ppv-cancel-contact-btn" class="ppv-btn-outline" style="flex: 1; padding: 12px;">
+                        ❌ <?php echo self::t('cancel', 'Abbrechen'); ?>
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <script>
         jQuery(document).ready(function($){
             // Switch filiale on dropdown change
@@ -1051,18 +1093,108 @@ class PPV_QR {
             // Store original value for rollback
             $('#ppv-filiale-select').data('original-value', $('#ppv-filiale-select').val());
 
-            // Show add filiale modal
+            // Show add filiale modal (check limit first)
             $('#ppv-add-filiale-btn').on('click', function(){
-                $('#ppv-add-filiale-modal').fadeIn(200).css('display', 'flex');
-                $('#ppv-new-filiale-name').val('').focus();
-                $('#ppv-new-filiale-city').val('');
-                $('#ppv-new-filiale-plz').val('');
-                $('#ppv-add-filiale-error').hide();
+                const $btn = $(this);
+                $btn.prop('disabled', true);
+
+                // Check filiale limit first
+                $.ajax({
+                    url: '<?php echo admin_url('admin-ajax.php'); ?>',
+                    type: 'POST',
+                    data: {
+                        action: 'ppv_check_filiale_limit',
+                        parent_store_id: <?php echo intval($parent_id); ?>
+                    },
+                    success: function(response) {
+                        $btn.prop('disabled', false);
+
+                        if (response.success && response.data.can_add) {
+                            // Can add more - show add modal
+                            $('#ppv-add-filiale-modal').fadeIn(200).css('display', 'flex');
+                            $('#ppv-new-filiale-name').val('').focus();
+                            $('#ppv-new-filiale-city').val('');
+                            $('#ppv-new-filiale-plz').val('');
+                            $('#ppv-add-filiale-error').hide();
+                        } else {
+                            // Limit reached - show contact modal
+                            const current = response.data?.current || 1;
+                            const max = response.data?.max || 1;
+                            $('#ppv-filiale-limit-text').text('<?php echo esc_js(self::t('filiale_limit_info', 'Aktuell')); ?>: ' + current + ' / ' + max + ' <?php echo esc_js(self::t('filialen', 'Filialen')); ?>');
+                            $('#ppv-filiale-contact-modal').fadeIn(200).css('display', 'flex');
+                            $('#ppv-contact-email').val('').focus();
+                            $('#ppv-contact-phone').val('');
+                            $('#ppv-contact-message').val('');
+                            $('#ppv-contact-error').hide();
+                            $('#ppv-contact-success').hide();
+                        }
+                    },
+                    error: function() {
+                        $btn.prop('disabled', false);
+                        // On error, just show the add modal (server will check limit again)
+                        $('#ppv-add-filiale-modal').fadeIn(200).css('display', 'flex');
+                        $('#ppv-new-filiale-name').val('').focus();
+                    }
+                });
             });
 
-            // Hide modal
+            // Hide add filiale modal
             $('#ppv-cancel-filiale-btn').on('click', function(){
                 $('#ppv-add-filiale-modal').fadeOut(200);
+            });
+
+            // Hide contact modal
+            $('#ppv-cancel-contact-btn').on('click', function(){
+                $('#ppv-filiale-contact-modal').fadeOut(200);
+            });
+
+            // Send contact request
+            $('#ppv-send-contact-btn').on('click', function(){
+                const email = $('#ppv-contact-email').val().trim();
+                const phone = $('#ppv-contact-phone').val().trim();
+                const message = $('#ppv-contact-message').val().trim();
+                const $btn = $(this);
+                const $error = $('#ppv-contact-error');
+                const $success = $('#ppv-contact-success');
+
+                $error.hide();
+                $success.hide();
+
+                if (!email && !phone) {
+                    $error.text('<?php echo esc_js(self::t('contact_required', 'Bitte geben Sie eine E-Mail oder Telefonnummer an')); ?>').show();
+                    return;
+                }
+
+                $btn.prop('disabled', true).text('<?php echo esc_js(self::t('sending', 'Senden...')); ?>');
+
+                $.ajax({
+                    url: '<?php echo admin_url('admin-ajax.php'); ?>',
+                    type: 'POST',
+                    data: {
+                        action: 'ppv_request_more_filialen',
+                        parent_store_id: <?php echo intval($parent_id); ?>,
+                        contact_email: email,
+                        contact_phone: phone,
+                        message: message
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            $success.text(response.data?.msg || '<?php echo esc_js(self::t('request_sent', 'Anfrage erfolgreich gesendet!')); ?>').show();
+                            $btn.text('✅ <?php echo esc_js(self::t('sent', 'Gesendet')); ?>');
+                            setTimeout(function(){
+                                $('#ppv-filiale-contact-modal').fadeOut(200);
+                                $btn.prop('disabled', false).html('📧 <?php echo esc_js(self::t('send_request', 'Anfrage senden')); ?>');
+                            }, 2000);
+                        } else {
+                            $error.text(response.data?.msg || '<?php echo esc_js(self::t('send_error', 'Fehler beim Senden')); ?>').show();
+                            $btn.prop('disabled', false).html('📧 <?php echo esc_js(self::t('send_request', 'Anfrage senden')); ?>');
+                        }
+                    },
+                    error: function() {
+                        $error.text('<?php echo esc_js(self::t('network_error', 'Netzwerkfehler')); ?>').show();
+                        $btn.prop('disabled', false).html('📧 <?php echo esc_js(self::t('send_request', 'Anfrage senden')); ?>');
+                    }
+                });
             });
 
             // Save new filiale
@@ -1097,8 +1229,22 @@ class PPV_QR {
                         if (response.success) {
                             location.reload();
                         } else {
-                            $error.text(response.data?.msg || '<?php echo esc_js(self::t('save_error', 'Fehler beim Speichern')); ?>').show();
-                            $btn.prop('disabled', false).html('✅ <?php echo esc_js(self::t('save', 'Speichern')); ?>');
+                            // Check if limit was reached
+                            if (response.data?.limit_reached) {
+                                // Close add modal and show contact modal
+                                $('#ppv-add-filiale-modal').fadeOut(200);
+                                const current = response.data?.current || 1;
+                                const max = response.data?.max || 1;
+                                $('#ppv-filiale-limit-text').text('<?php echo esc_js(self::t('filiale_limit_info', 'Aktuell')); ?>: ' + current + ' / ' + max + ' <?php echo esc_js(self::t('filialen', 'Filialen')); ?>');
+                                setTimeout(function(){
+                                    $('#ppv-filiale-contact-modal').fadeIn(200).css('display', 'flex');
+                                    $('#ppv-contact-email').val('').focus();
+                                }, 200);
+                                $btn.prop('disabled', false).html('✅ <?php echo esc_js(self::t('save', 'Speichern')); ?>');
+                            } else {
+                                $error.text(response.data?.msg || '<?php echo esc_js(self::t('save_error', 'Fehler beim Speichern')); ?>').show();
+                                $btn.prop('disabled', false).html('✅ <?php echo esc_js(self::t('save', 'Speichern')); ?>');
+                            }
                         }
                     },
                     error: function() {
@@ -1560,6 +1706,10 @@ class PPV_QR {
         $store_key = sanitize_text_field($data['store_key'] ?? '');
         $campaign_id = intval($data['campaign_id'] ?? 0);
 
+        // GPS data from scanner (optional)
+        $scan_lat = isset($data['latitude']) ? floatval($data['latitude']) : null;
+        $scan_lng = isset($data['longitude']) ? floatval($data['longitude']) : null;
+
         if (empty($qr_code) || empty($store_key)) {
             return new WP_REST_Response([
                 'success' => false,
@@ -1667,6 +1817,28 @@ class PPV_QR {
         }
 
         // ═══════════════════════════════════════════════════════════
+        // GPS DISTANCE CHECK (Fraud Detection) - LOG ONLY, DON'T BLOCK
+        // Scan always goes through, suspicious cases logged for admin review
+        // ═══════════════════════════════════════════════════════════
+        if (class_exists('PPV_Scan_Monitoring') && ($scan_lat || $scan_lng)) {
+            $gps_check = PPV_Scan_Monitoring::validate_scan_location($store_id, $scan_lat, $scan_lng);
+
+            if (!$gps_check['valid']) {
+                // Log suspicious scan for admin review - but allow scan to continue
+                PPV_Scan_Monitoring::log_suspicious_scan($store_id, $user_id, $scan_lat, $scan_lng, $gps_check);
+
+                $reason = $gps_check['reason'] ?? 'gps_distance';
+
+                if ($reason === 'wrong_country') {
+                    ppv_log("[PPV_QR] ⚠️ SUSPICIOUS: Country mismatch (SCAN ALLOWED): user={$user_id}, store={$store_id}, store_country={$gps_check['store_country']}, scan_country={$gps_check['scan_country']}");
+                } else {
+                    ppv_log("[PPV_QR] ⚠️ SUSPICIOUS: GPS distance exceeded (SCAN ALLOWED): user={$user_id}, store={$store_id}, distance={$gps_check['distance']}m");
+                }
+                // Scan continues - admin can review suspicious scans in WP admin
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════
         // BASE POINTS: Campaign OR Reward (Prämien) points_given
         // ═══════════════════════════════════════════════════════════
         $points_add = 0;
@@ -1755,7 +1927,6 @@ class PPV_QR {
             // Get all VIP settings for this store (or parent store)
             $vip_settings = $wpdb->get_row($wpdb->prepare("
                 SELECT
-                    vip_enabled, vip_bronze_bonus, vip_silver_bonus, vip_gold_bonus, vip_platinum_bonus,
                     vip_fix_enabled, vip_fix_bronze, vip_fix_silver, vip_fix_gold, vip_fix_platinum,
                     vip_streak_enabled, vip_streak_count, vip_streak_type,
                     vip_streak_bronze, vip_streak_silver, vip_streak_gold, vip_streak_platinum,
@@ -1765,7 +1936,6 @@ class PPV_QR {
 
             // 🔍 DEBUG: Log VIP settings
             ppv_log("🔍 [PPV_QR] VIP settings for store {$vip_store_id}: " . json_encode([
-                'vip_enabled' => $vip_settings->vip_enabled ?? 'NULL',
                 'vip_fix_enabled' => $vip_settings->vip_fix_enabled ?? 'NULL',
                 'vip_fix_bronze' => $vip_settings->vip_fix_bronze ?? 'NULL',
                 'vip_daily_enabled' => $vip_settings->vip_daily_enabled ?? 'NULL',
@@ -1791,20 +1961,7 @@ class PPV_QR {
                     }
                 };
 
-                // 1. PERCENTAGE BONUS
-                if ($vip_settings->vip_enabled && $user_level !== null) {
-                    $bonus_percent = $getLevelValue(
-                        $vip_settings->vip_bronze_bonus ?? 3,
-                        $vip_settings->vip_silver_bonus,
-                        $vip_settings->vip_gold_bonus,
-                        $vip_settings->vip_platinum_bonus
-                    );
-                    if ($bonus_percent > 0) {
-                        $vip_bonus_details['pct'] = (int)round($base_points * ($bonus_percent / 100));
-                    }
-                }
-
-                // 2. FIXED POINT BONUS
+                // 1. FIXED POINT BONUS
                 if ($vip_settings->vip_fix_enabled && $user_level !== null) {
                     $fix_bonus = $getLevelValue(
                         $vip_settings->vip_fix_bronze ?? 1,
@@ -1992,8 +2149,10 @@ class PPV_QR {
         $store_id = intval($session_store->id);
 
         // ✅ FIX: Get logs from ppv_users table (NOT WordPress users!)
+        // ✅ FIX: Include log ID for unique scan_id generation
         $logs = $wpdb->get_results($wpdb->prepare("
             SELECT
+                l.id AS log_id,
                 l.created_at,
                 l.user_id,
                 l.message,
@@ -2009,7 +2168,7 @@ class PPV_QR {
         ", $store_id));
 
         // Format response for JS with detailed info
-        $formatted = array_map(function($log) {
+        $formatted = array_map(function($log) use ($store_id) {
             $created = strtotime($log->created_at);
 
             // Extract points from message (e.g., "+5 Punkte" → 5)
@@ -2025,6 +2184,7 @@ class PPV_QR {
             $email = $log->email ?? '';
 
             return [
+                'scan_id' => "log-{$store_id}-{$log->log_id}", // ✅ Unique ID for deduplication
                 'user_id' => $log->user_id,
                 'customer_name' => $full_name ?: null,
                 'email' => $email ?: null,

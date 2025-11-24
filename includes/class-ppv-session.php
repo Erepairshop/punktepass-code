@@ -482,3 +482,44 @@ add_action('init', [PPV_Session::class, 'auto_detect_and_switch'], 10);
  *  AUTO-MODE REST ACTION (Priority 100 – very late, after routes)
  * ============================================================ */
 add_action('rest_api_init', [PPV_Session::class, 'auto_detect_and_switch'], 100);
+
+/* ============================================================
+ *  GLOBAL LOGIN REDIRECT – User pages require login
+ * ============================================================ */
+add_action('template_redirect', function() {
+    // Skip admin, REST, and AJAX
+    if (is_admin() || wp_doing_ajax()) return;
+    $uri = $_SERVER['REQUEST_URI'] ?? '';
+    if (strpos($uri, '/wp-json/') !== false) return;
+
+    // Check if this is a protected user page
+    $protected_pages = ['/belohnungen', '/meine-punkte', '/punkte', '/einstellungen', '/settings', '/profile', '/user-dashboard', '/dashboard'];
+    $is_protected = false;
+    foreach ($protected_pages as $page) {
+        if (stripos($uri, $page) !== false) {
+            $is_protected = true;
+            break;
+        }
+    }
+
+    if (!$is_protected) return;
+
+    // Check if user is logged in (WP or session)
+    if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+        @session_start();
+    }
+
+    $user_id = 0;
+    if (is_user_logged_in()) {
+        $user_id = get_current_user_id();
+    } elseif (!empty($_SESSION['ppv_user_id'])) {
+        $user_id = intval($_SESSION['ppv_user_id']);
+    }
+
+    // Not logged in -> redirect to login
+    if (!$user_id) {
+        $login_url = home_url('/einloggen/');
+        wp_redirect($login_url);
+        exit;
+    }
+}, 5);
