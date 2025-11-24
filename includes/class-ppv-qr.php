@@ -97,6 +97,49 @@ class PPV_QR {
         return null;
     }
 
+    /** ============================================================
+     *  🏢 GET ALL FILIALEN FOR HANDLER
+     * ============================================================ */
+    public static function get_handler_filialen() {
+        global $wpdb;
+
+        // Get the base store ID (not filiale-specific)
+        $base_store_id = null;
+
+        if (!empty($_SESSION['ppv_store_id'])) {
+            $base_store_id = intval($_SESSION['ppv_store_id']);
+        } elseif (!empty($_SESSION['ppv_vendor_store_id'])) {
+            $base_store_id = intval($_SESSION['ppv_vendor_store_id']);
+        } elseif (!empty($GLOBALS['ppv_active_store_id'])) {
+            $base_store_id = intval($GLOBALS['ppv_active_store_id']);
+        }
+
+        if (!$base_store_id) {
+            // Try DB fallback
+            $uid = get_current_user_id();
+            if ($uid > 0) {
+                $base_store_id = $wpdb->get_var($wpdb->prepare(
+                    "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id=%d LIMIT 1",
+                    $uid
+                ));
+            }
+        }
+
+        if (!$base_store_id) {
+            return [];
+        }
+
+        // Get all stores: parent + children
+        $filialen = $wpdb->get_results($wpdb->prepare("
+            SELECT id, name, company_name, address, city, plz
+            FROM {$wpdb->prefix}ppv_stores
+            WHERE id = %d OR parent_store_id = %d
+            ORDER BY (id = %d) DESC, name ASC
+        ", $base_store_id, $base_store_id, $base_store_id));
+
+        return $filialen ?: [];
+    }
+
     private static function validate_store($store_key) {
         $store = self::get_store_by_key($store_key);
 
@@ -585,11 +628,23 @@ class PPV_QR {
 
         <script>
         jQuery(document).ready(function($){
+            // Restore saved tab on page load
+            var savedTab = localStorage.getItem('ppv_active_tab');
+            if (savedTab && $(".ppv-tab[data-tab='" + savedTab + "']").length) {
+                $(".ppv-tab").removeClass("active");
+                $(".ppv-tab[data-tab='" + savedTab + "']").addClass("active");
+                $(".ppv-tab-content").removeClass("active");
+                $("#tab-" + savedTab).addClass("active");
+            }
+
+            // Save tab on click
             $(".ppv-tab").on("click", function(){
+                var tabName = $(this).data("tab");
+                localStorage.setItem('ppv_active_tab', tabName);
                 $(".ppv-tab").removeClass("active");
                 $(this).addClass("active");
                 $(".ppv-tab-content").removeClass("active");
-                $("#tab-" + $(this).data("tab")).addClass("active");
+                $("#tab-" + tabName).addClass("active");
             });
         });
         </script>
@@ -1262,11 +1317,24 @@ class PPV_QR {
     // 🎯 KAMPAGNEN - KOMPLETT FORMA
     // ============================================================
     public static function render_campaigns() {
+        // Get filialen for dropdown
+        $filialen = self::get_handler_filialen();
+        $has_multiple_filialen = count($filialen) > 1;
         ?>
         <div class="ppv-campaigns glass-section">
             <div class="ppv-campaign-header">
                 <h3><i class="ri-focus-3-line"></i> <?php echo self::t('campaigns_title', 'Kampagnen'); ?></h3>
                 <div class="ppv-campaign-controls">
+                    <?php if ($has_multiple_filialen): ?>
+                    <select id="ppv-campaign-filiale" class="ppv-filter ppv-filiale-select">
+                        <option value="all"><?php echo self::t('all_branches', 'Összes filiale'); ?></option>
+                        <?php foreach ($filialen as $fil): ?>
+                            <option value="<?php echo intval($fil->id); ?>">
+                                <?php echo esc_html($fil->company_name ?: $fil->name ?: 'Filiale #' . $fil->id); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <?php endif; ?>
                     <select id="ppv-campaign-filter" class="ppv-filter">
                         <option value="all">📋 <?php echo self::t('camp_filter_all', 'Alle'); ?></option>
                         <option value="active">🟢 <?php echo self::t('camp_filter_active', 'Aktive'); ?></option>
@@ -2498,35 +2566,63 @@ class PPV_QR {
             $r->get_header('ppv-pos-token') ?? $r->get_param('store_key') ?? ''
         );
 
-        // 🏪 FILIALE SUPPORT: Use session-aware store ID lookup
-        $store = self::get_session_aware_store_id($store_key);
+        // 🏢 FILIALE SUPPORT: Check filiale_id parameter
+        $filiale_param = $r->get_param('filiale_id');
 
-        if (!$store) {
+        // Get all filialen for this handler
+        $filialen = self::get_handler_filialen();
+
+        // Determine which store IDs to query
+        if ($filiale_param === 'all' || empty($filiale_param)) {
+            // All filialen
+            $store_ids = array_map(function($f) { return intval($f->id); }, $filialen);
+        } else {
+            // Single filiale selected - verify it belongs to handler
+            $filiale_id = intval($filiale_param);
+            $valid_ids = array_map(function($f) { return intval($f->id); }, $filialen);
+            if (in_array($filiale_id, $valid_ids)) {
+                $store_ids = [$filiale_id];
+            } else {
+                // Fallback to session-aware store
+                $store = self::get_session_aware_store_id($store_key);
+                $store_ids = $store ? [$store->id] : [];
+            }
+        }
+
+        if (empty($store_ids)) {
             return new WP_REST_Response([
                 'success' => false,
                 'message' => 'Token hiányzik vagy ismeretlen bolt'
             ], 400);
         }
 
+        // Build IN clause for multiple stores
+        $placeholders = implode(',', array_fill(0, count($store_ids), '%d'));
+
         $rows = $wpdb->get_results($wpdb->prepare("
-            SELECT id, title, start_date, end_date, campaign_type, multiplier,
-                   extra_points, discount_percent, min_purchase, fixed_amount, status,
-                   required_points, free_product, free_product_value, points_given
-            FROM {$wpdb->prefix}ppv_campaigns
-            WHERE store_id=%d ORDER BY start_date DESC
-        ", $store->id));
+            SELECT c.id, c.title, c.start_date, c.end_date, c.campaign_type, c.multiplier,
+                   c.extra_points, c.discount_percent, c.min_purchase, c.fixed_amount, c.status,
+                   c.required_points, c.free_product, c.free_product_value, c.points_given, c.store_id,
+                   s.company_name as store_name
+            FROM {$wpdb->prefix}ppv_campaigns c
+            LEFT JOIN {$wpdb->prefix}ppv_stores s ON c.store_id = s.id
+            WHERE c.store_id IN ($placeholders) ORDER BY c.start_date DESC
+        ", $store_ids));
 
         if (empty($rows)) {
             return new WP_REST_Response([], 200);
         }
 
+        // Get country from first store (all filialen should have same country)
         $store_country = $wpdb->get_var($wpdb->prepare(
             "SELECT country FROM {$wpdb->prefix}ppv_stores WHERE id=%d LIMIT 1",
-            $store->id
+            $store_ids[0]
         ));
 
         $today = date('Y-m-d');
-        $data = array_map(function ($r) use ($today, $store_country) {
+        $show_store_name = count($store_ids) > 1; // Show store name when viewing all filialen
+
+        $data = array_map(function ($r) use ($today, $store_country, $show_store_name) {
             if ($today < $r->start_date) {
                 $state = 'upcoming';
             } elseif ($today > $r->end_date) {
@@ -2535,7 +2631,7 @@ class PPV_QR {
                 $state = 'active';
             }
 
-            return [
+            $item = [
                 'id' => intval($r->id),
                 'title' => $r->title,
                 'start_date' => $r->start_date,
@@ -2552,8 +2648,16 @@ class PPV_QR {
                 'points_given' => intval($r->points_given ?? 1),
                 'status' => $r->status,
                 'state' => $state,
-                'country' => $store_country
+                'country' => $store_country,
+                'store_id' => intval($r->store_id ?? 0)
             ];
+
+            // Add store name when showing all filialen
+            if ($show_store_name && !empty($r->store_name)) {
+                $item['store_name'] = $r->store_name;
+            }
+
+            return $item;
         }, $rows);
 
         return new WP_REST_Response($data, 200);

@@ -1107,6 +1107,7 @@ return [
     'onboarding_reset_error' => 'Hiba történt!',
 
     // Filiale (Fiókok)
+    'all_branches' => 'Összes filiale',
     'filiale_switcher' => 'Fiók kiválasztása',
     'add_filiale' => 'Új fiók',
     'main_location' => 'Fő telephely',

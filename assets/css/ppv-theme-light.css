@@ -3001,13 +3001,13 @@ html, body {
 .ppv-form-footer {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 24px;
+  gap: 12px;
+  padding: 14px 16px;
   background: var(--color-card);
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
   box-shadow: var(--shadow-sm);
-  margin-top: 24px;
+  margin-top: 14px;
 }
 
 .ppv-btn {
@@ -5228,41 +5228,42 @@ body.ppv-light .ppv-theme-btn-mini {
 
 /* PENDING SECTION ---------------------------------------------------------- */
 .ppv-pending-section {
-    margin-top: 2rem;
+    margin-top: 1rem;
 }
 
 .ppv-pending-section h3 {
-    margin-bottom: 1rem;
-    font-size: 1.2rem;
+    margin-bottom: 0.75rem;
+    font-size: 1rem;
     display: flex;
     align-items: center;
-    gap: .5rem;
+    gap: .4rem;
 }
 
 .ppv-pending-grid {
     display: grid;
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 0.5rem;
 }
 
 .ppv-pending-card {
     background: var(--ppv-r-card);
-    border-radius: var(--ppv-r-radius);
-    padding: 1rem;
+    border-radius: 10px;
+    padding: 0.75rem;
     box-shadow: var(--ppv-r-shadow);
     border: 1px solid var(--ppv-r-border);
 }
 
 .ppv-pending-card h4 {
-    font-size: 1.1rem;
-    font-weight: 700;
-    margin-bottom: .3rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: .2rem;
 }
 
 /* STATUS BADGES ------------------------------------------------------------ */
 .status-badge {
-    padding: .35rem .6rem;
-    border-radius: 8px;
-    font-size: .8rem;
+    padding: .25rem .5rem;
+    border-radius: 6px;
+    font-size: .7rem;
     font-weight: 600;
 }
 
@@ -6862,6 +6863,16 @@ body.ppv-dark .ppv-vip-badge,
     margin: 1.5rem 0;
 }
 
+/* Remove double frame when inside tab content */
+.ppv-tab-content .ppv-rewards-management-wrapper {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    margin: 0;
+    border-radius: 0;
+}
+
 .ppv-rewards-management-wrapper.glass-section {
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: var(--pp-glass);
@@ -6994,52 +7005,191 @@ body.ppv-dark .ppv-vip-badge,
    🎁 REWARDS GRID
    ────────────────────────────────────────────────────────────────────── */
 .ppv-reward-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1.25rem;
-    margin-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 1rem;
 }
 
+/* ──────────────────────────────────────────────────────────────────────
+   🎁 REWARD ITEM - Modern Horizontal Slim Card
+   ────────────────────────────────────────────────────────────────────── */
 .ppv-reward-item {
     background: var(--pp-surface);
     border: 1px solid var(--pp-border);
-    border-radius: var(--pp-r-md);
-    padding: 1.5rem;
-    transition: var(--pp-trans);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    transition: all 0.2s ease;
     position: relative;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.75rem;
 }
 
 .ppv-reward-item.glass-card {
-    background: rgba(255, 255, 255, 0.98);
-    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(0, 150, 200, 0.15);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+/* Icon container for reward items */
+.ppv-reward-item .reward-icon {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #00a8cc, #00d4ff);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.ppv-reward-item .reward-icon i {
+    font-size: 16px;
+    color: #ffffff;
+}
+
+/* Content area - grows to fill space */
+.ppv-reward-item .reward-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
 }
 
 .ppv-reward-item:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-    border-color: var(--pp-primary);
+    transform: translateX(2px);
+    box-shadow: 0 4px 12px rgba(0, 168, 204, 0.12);
+    border-color: rgba(0, 168, 204, 0.3);
 }
 
 .ppv-reward-item h4 {
-    margin: 0 0 0.75rem 0;
-    font-size: 1.15rem;
-    font-weight: 700;
+    margin: 0;
+    font-size: 0.875rem;
+    font-weight: 600;
     color: var(--pp-text);
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.375rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .ppv-reward-item p {
-    margin: 0 0 1rem 0;
+    margin: 0;
     color: var(--pp-text-2);
-    font-size: 0.9rem;
-    line-height: 1.5;
-    min-height: 40px;
+    font-size: 0.7rem;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
 .ppv-reward-item small {
-    font-size: 0.85rem;
+    font-size: 0.7rem;
+    color: var(--pp-text-2);
+}
+
+/* Points badge on the right */
+.ppv-reward-item .reward-points {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    background: rgba(0, 168, 204, 0.1);
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #00a8cc;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.ppv-reward-item .reward-points i {
+    font-size: 12px;
+    color: #f59e0b;
+}
+
+/* Action buttons */
+.ppv-reward-item .reward-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.ppv-reward-item .reward-actions button {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.ppv-reward-item .reward-actions .edit-btn {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+}
+
+.ppv-reward-item .reward-actions .edit-btn:hover {
+    background: #3b82f6;
+    color: white;
+}
+
+.ppv-reward-item .reward-actions .delete-btn {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+.ppv-reward-item .reward-actions .delete-btn:hover {
+    background: #ef4444;
+    color: white;
+}
+
+/* Dark mode for reward items */
+body.ppv-dark .ppv-reward-item,
+[data-theme="dark"] .ppv-reward-item {
+    background: #161b22 !important;
+    border-color: rgba(0, 168, 204, 0.2) !important;
+}
+
+body.ppv-dark .ppv-reward-item.glass-card,
+[data-theme="dark"] .ppv-reward-item.glass-card {
+    background: #161b22 !important;
+    border-color: rgba(0, 168, 204, 0.2) !important;
+}
+
+body.ppv-dark .ppv-reward-item:hover,
+[data-theme="dark"] .ppv-reward-item:hover {
+    background: #1e293b !important;
+    border-color: rgba(0, 212, 255, 0.4) !important;
+}
+
+body.ppv-dark .ppv-reward-item h4,
+[data-theme="dark"] .ppv-reward-item h4 {
+    color: #e6edf3 !important;
+}
+
+body.ppv-dark .ppv-reward-item p,
+body.ppv-dark .ppv-reward-item small,
+[data-theme="dark"] .ppv-reward-item p,
+[data-theme="dark"] .ppv-reward-item small {
+    color: #8b949e !important;
+}
+
+body.ppv-dark .ppv-reward-item .reward-points,
+[data-theme="dark"] .ppv-reward-item .reward-points {
+    background: rgba(0, 212, 255, 0.15) !important;
+    color: #00d4ff !important;
 }
 
 /* ──────────────────────────────────────────────────────────────────────
@@ -7151,30 +7301,48 @@ body.ppv-dark .ppv-vip-badge,
    ────────────────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
     .ppv-rewards-management-wrapper {
-        padding: 1.25rem;
+        padding: 1rem;
     }
 
     .ppv-rewards-management-wrapper h2 {
-        font-size: 1.4rem;
+        font-size: 1.25rem;
     }
 
     .ppv-reward-form {
-        padding: 1.25rem;
+        padding: 1rem;
     }
 
     .ppv-reward-grid {
-        grid-template-columns: 1fr;
-        gap: 1rem;
+        gap: 0.5rem;
     }
 
     .ppv-reward-item {
-        padding: 1.25rem;
+        padding: 0.625rem 0.75rem;
+    }
+
+    .ppv-reward-item .reward-icon {
+        width: 32px;
+        height: 32px;
+        min-width: 32px;
+    }
+
+    .ppv-reward-item .reward-icon i {
+        font-size: 14px;
+    }
+
+    .ppv-reward-item h4 {
+        font-size: 0.8125rem;
+    }
+
+    .ppv-reward-item .reward-actions button {
+        width: 28px;
+        height: 28px;
     }
 
     .ppv-btn-blue,
     .ppv-btn-outline {
-        padding: 0.75rem 1rem;
-        font-size: 0.875rem;
+        padding: 0.625rem 0.875rem;
+        font-size: 0.8125rem;
     }
 }
 
@@ -7846,27 +8014,22 @@ select.ppv-support-input {
 
 .ppv-redeem-item {
     background: linear-gradient(145deg,
-        rgba(255, 255, 255, 0.9) 0%,
-        rgba(255, 255, 255, 0.7) 100%);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+        rgba(255, 255, 255, 0.95) 0%,
+        rgba(255, 255, 255, 0.85) 100%);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     border: 1px solid rgba(255, 255, 255, 0.5);
-    border-radius: 20px;
-    padding: 1.5rem;
+    border-radius: 12px;
+    padding: 0.875rem;
     position: relative;
     overflow: hidden;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow:
-        0 4px 6px -1px rgba(0, 0, 0, 0.05),
-        0 10px 15px -3px rgba(0, 0, 0, 0.08);
+    transition: all 0.25s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .ppv-redeem-item:hover {
-    transform: translateY(-8px) scale(1.02);
-    box-shadow:
-        0 20px 25px -5px rgba(0, 0, 0, 0.1),
-        0 10px 10px -5px rgba(0, 0, 0, 0.04),
-        0 0 0 1px rgba(102, 126, 234, 0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
 }
 
 /* Status Stripe - Glowing Effect */
@@ -7926,22 +8089,21 @@ select.ppv-support-input {
 
 .ppv-redeem-item strong {
     display: block;
-    font-size: 1.125rem;
-    font-weight: 700;
+    font-size: 0.9375rem;
+    font-weight: 600;
     color: #1f2937;
-    margin-bottom: 0.5rem;
-    line-height: 1.4;
-    letter-spacing: -0.01em;
+    margin-bottom: 0.25rem;
+    line-height: 1.3;
 }
 
 .ppv-redeem-item small {
     display: flex;
     align-items: center;
-    gap: 0.375rem;
-    font-size: 0.875rem;
+    gap: 0.25rem;
+    font-size: 0.75rem;
     color: #6b7280;
-    margin-bottom: 0.375rem;
-    line-height: 1.5;
+    margin-bottom: 0.25rem;
+    line-height: 1.4;
 }
 
 .ppv-redeem-item small:first-of-type {
@@ -7952,18 +8114,18 @@ select.ppv-support-input {
 .ppv-redeem-meta {
     display: flex;
     flex-wrap: wrap;
-    gap: 1rem;
-    margin: 1rem 0;
-    padding: 1rem 0;
-    border-top: 1px dashed rgba(0, 0, 0, 0.08);
-    border-bottom: 1px dashed rgba(0, 0, 0, 0.08);
+    gap: 0.5rem;
+    margin: 0.5rem 0;
+    padding: 0.5rem 0;
+    border-top: 1px dashed rgba(0, 0, 0, 0.06);
+    border-bottom: 1px dashed rgba(0, 0, 0, 0.06);
 }
 
 .ppv-redeem-meta-item {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    font-size: 0.875rem;
+    gap: 0.375rem;
+    font-size: 0.75rem;
     color: #4b5563;
     background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
     padding: 0.5rem 0.875rem;
@@ -8163,20 +8325,19 @@ select.ppv-support-input {
 .ppv-section-title {
     display: flex;
     align-items: center;
-    gap: 0.625rem;
-    font-size: 0.9375rem;
-    font-weight: 700;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
     color: #374151;
-    margin: 1.5rem 0 1rem 0;
-    padding: 0.75rem 1rem;
+    margin: 1rem 0 0.625rem 0;
+    padding: 0.5rem 0.75rem;
     background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-    border-radius: 12px;
-    border-left: 4px solid #667eea;
-    letter-spacing: -0.01em;
+    border-radius: 8px;
+    border-left: 3px solid #667eea;
 }
 
 .ppv-section-title i {
-    font-size: 1.125rem;
+    font-size: 0.9375rem;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -8209,30 +8370,30 @@ select.ppv-support-input {
 .ppv-redeem-header {
     display: flex;
     align-items: flex-start;
-    gap: 0.875rem;
-    margin-bottom: 0.75rem;
+    gap: 0.625rem;
+    margin-bottom: 0.5rem;
 }
 
 .ppv-redeem-icon {
-    width: 44px;
-    height: 44px;
-    min-width: 44px;
-    border-radius: 12px;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    border-radius: 10px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 2px 6px rgba(102, 126, 234, 0.25);
 }
 
 .ppv-redeem-icon i {
-    font-size: 1.25rem;
+    font-size: 1rem;
     color: white;
 }
 
 .ppv-redeem-icon.approved {
     background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);
 }
 
 .ppv-redeem-title-wrap {
@@ -8242,10 +8403,10 @@ select.ppv-support-input {
 
 .ppv-redeem-title-wrap strong {
     display: block;
-    font-size: 1rem;
-    font-weight: 700;
+    font-size: 0.875rem;
+    font-weight: 600;
     color: #1f2937;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.125rem;
     line-height: 1.3;
 }
 
@@ -9176,7 +9337,7 @@ select.ppv-support-input {
 .ppv-form-footer {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
 }
 
 .ppv-checkbox {
@@ -13028,4 +13189,127 @@ body.dark-mode {
     .ppv-lifetime-points .points-value {
         font-size: 1.8rem;
     }
+}
+
+/* ==========================================================================
+   🌙 DARK MODE - VIP SETTINGS PAGE
+   Darker backgrounds with proper text colors for better visibility
+   ========================================================================== */
+body.ppv-dark .ppv-vip-settings-wrapper,
+[data-theme="dark"] .ppv-vip-settings-wrapper {
+    background: #0d1117 !important;
+    border-color: rgba(0, 168, 204, 0.2) !important;
+}
+
+body.ppv-dark .ppv-vip-header h2,
+[data-theme="dark"] .ppv-vip-header h2 {
+    color: #00d4ff !important;
+}
+
+body.ppv-dark .ppv-vip-subtitle,
+[data-theme="dark"] .ppv-vip-subtitle {
+    color: #8b949e !important;
+}
+
+body.ppv-dark .ppv-vip-toggle-row,
+[data-theme="dark"] .ppv-vip-toggle-row {
+    background: #161b22 !important;
+    border-color: rgba(0, 168, 204, 0.15) !important;
+}
+
+body.ppv-dark .ppv-toggle-label strong,
+[data-theme="dark"] .ppv-toggle-label strong {
+    color: #e6edf3 !important;
+}
+
+body.ppv-dark .ppv-toggle-label small,
+[data-theme="dark"] .ppv-toggle-label small {
+    color: #8b949e !important;
+}
+
+body.ppv-dark .ppv-vip-level,
+[data-theme="dark"] .ppv-vip-level {
+    background: #161b22 !important;
+    border-color: rgba(0, 168, 204, 0.2) !important;
+}
+
+body.ppv-dark .ppv-level-name,
+[data-theme="dark"] .ppv-level-name {
+    color: #e6edf3 !important;
+}
+
+body.ppv-dark .ppv-level-bonus,
+[data-theme="dark"] .ppv-level-bonus {
+    color: #8b949e !important;
+}
+
+body.ppv-dark .ppv-level-input input,
+[data-theme="dark"] .ppv-level-input input {
+    background: #0d1117 !important;
+    border-color: rgba(0, 168, 204, 0.25) !important;
+    color: #e6edf3 !important;
+}
+
+body.ppv-dark .ppv-level-input input:focus,
+[data-theme="dark"] .ppv-level-input input:focus {
+    border-color: #00d4ff !important;
+    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.15) !important;
+}
+
+body.ppv-dark .ppv-level-input span,
+[data-theme="dark"] .ppv-level-input span {
+    color: #8b949e !important;
+}
+
+body.ppv-dark .ppv-vip-preview,
+[data-theme="dark"] .ppv-vip-preview {
+    background: #161b22 !important;
+    border-color: rgba(0, 168, 204, 0.15) !important;
+}
+
+body.ppv-dark .ppv-vip-preview h4,
+[data-theme="dark"] .ppv-vip-preview h4 {
+    color: #00d4ff !important;
+}
+
+body.ppv-dark .ppv-vip-preview p,
+[data-theme="dark"] .ppv-vip-preview p {
+    color: #8b949e !important;
+}
+
+body.ppv-dark .ppv-preview-item,
+[data-theme="dark"] .ppv-preview-item {
+    background: #0d1117 !important;
+    border-color: rgba(0, 168, 204, 0.15) !important;
+}
+
+body.ppv-dark .ppv-preview-item span,
+[data-theme="dark"] .ppv-preview-item span {
+    color: #8b949e !important;
+}
+
+body.ppv-dark .ppv-preview-item strong,
+[data-theme="dark"] .ppv-preview-item strong {
+    color: #e6edf3 !important;
+}
+
+body.ppv-dark .ppv-btn-primary,
+[data-theme="dark"] .ppv-btn-primary {
+    background: linear-gradient(135deg, #00a8cc, #00d4ff) !important;
+    color: #ffffff !important;
+}
+
+body.ppv-dark .ppv-btn-primary:hover,
+[data-theme="dark"] .ppv-btn-primary:hover {
+    background: linear-gradient(135deg, #00c4e6, #40e0ff) !important;
+}
+
+body.ppv-dark #ppv-vip-status .ppv-success,
+[data-theme="dark"] #ppv-vip-status .ppv-success {
+    color: #3fb950 !important;
+}
+
+body.ppv-dark #ppv-vip-status .ppv-error,
+[data-theme="dark"] #ppv-vip-status .ppv-error {
+    color: #f85149 !important;
 }

@@ -308,6 +308,17 @@ body.ppv-user-dashboard {
     border-radius: var(--pp-r-lg);
 }
 
+/* Remove double frame when inside tab content */
+.ppv-tab-content .ppv-vip-settings-wrapper {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    margin: 0;
+    max-width: 100%;
+    border-radius: 0;
+}
+
 .ppv-vip-header {
     text-align: center;
     margin-bottom: 24px;
@@ -3077,13 +3088,13 @@ html, body {
 .ppv-form-footer {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 24px;
+  gap: 12px;
+  padding: 14px 16px;
   background: var(--color-card);
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
   box-shadow: var(--shadow-sm);
-  margin-top: 24px;
+  margin-top: 14px;
 }
 
 .ppv-btn {
@@ -5644,6 +5655,16 @@ body.ppv-light .ppv-preview-tag.ppv-vip-tag i {
     box-shadow: var(--pp-shadow);
     margin: 1.5rem 0;
     border: 1px solid var(--pp-border);
+}
+
+/* Remove double frame when inside tab content */
+.ppv-tab-content .ppv-rewards-management-wrapper {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    margin: 0;
+    border-radius: 0;
 }
 
 .ppv-rewards-management-wrapper.glass-section {

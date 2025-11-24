@@ -1119,6 +1119,7 @@ return [
     'onboarding_reset_error' => 'A apărut o eroare!',
 
     // Filiale (Filiale)
+    'all_branches' => 'Toate filialele',
     'filiale_switcher' => 'Selectați filiala',
     'add_filiale' => 'Filială nouă',
     'main_location' => 'Locație principală',

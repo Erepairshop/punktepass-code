@@ -751,6 +751,16 @@ body {
   box-shadow: var(--shadow-sm);
 }
 
+/* Remove double frame when inside tab content */
+.ppv-tab-content .ppv-vip-settings-wrapper {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  margin: 0;
+  max-width: 100%;
+}
+
 .ppv-vip-header {
   text-align: center;
   margin-bottom: 28px;
