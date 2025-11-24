@@ -85,6 +85,38 @@
   }
 
   // ============================================================
+  // SOUND EFFECTS
+  // ============================================================
+  const SOUNDS = {
+    success: null,
+    error: null
+  };
+
+  function preloadSounds() {
+    try {
+      const baseUrl = window.PPV_ASSETS_URL || '/wp-content/plugins/punktepass/assets';
+      SOUNDS.success = new Audio(`${baseUrl}/sounds/scan-beep.wav`);
+      SOUNDS.error = new Audio(`${baseUrl}/sounds/error.mp3`);
+      // Preload
+      SOUNDS.success.load();
+      SOUNDS.error.load();
+      ppvLog('[Sound] Sounds preloaded');
+    } catch (e) {
+      ppvWarn('[Sound] Failed to preload sounds:', e);
+    }
+  }
+
+  function playSound(type) {
+    try {
+      const sound = SOUNDS[type];
+      if (sound) {
+        sound.currentTime = 0;
+        sound.play().catch(() => {}); // Ignore autoplay errors
+      }
+    } catch (e) {}
+  }
+
+  // ============================================================
   // HTML ESCAPE (XSS Prevention)
   // ============================================================
   function escapeHtml(text) {
@@ -1129,6 +1161,7 @@
         .then(res => res.json())
         .then(data => {
           if (data.success) {
+            playSound('success');  // 🔊 Success beep
             this.updateStatus('success', '✅ ' + (data.message || L.scanner_success_msg || 'Erfolgreich!'));
             window.ppvToast(data.message || L.scanner_point_added || '✅ Punkt hinzugefügt!', 'success');
 
@@ -1154,6 +1187,7 @@
 
             this.startPauseCountdown();
           } else {
+            playSound('error');  // 🔊 Error sound
             this.updateStatus('warning', '⚠️ ' + (data.message || L.error_generic || 'Fehler'));
             window.ppvToast(data.message || '⚠️ Fehler', 'warning');
 
@@ -1181,6 +1215,7 @@
           }
         })
         .catch(() => {
+          playSound('error');  // 🔊 Error sound
           this.updateStatus('error', '❌ ' + (L.pos_network_error || 'Netzwerkfehler'));
           window.ppvToast('❌ ' + (L.pos_network_error || 'Netzwerkfehler'), 'error');
           setTimeout(() => this.restartAfterError(), 3000);
@@ -1509,6 +1544,9 @@
 
     ppvLog('[QR] Initializing...');
     cleanup();
+
+    // Preload sound effects
+    preloadSounds();
 
     STATE.uiManager = new UIManager();
     STATE.uiManager.init();
