@@ -36,8 +36,72 @@
     uiManager: null,
     lastInitTime: 0,  // Prevent rapid re-init
     ablyInstance: null,  // Ably connection for cleanup
-    pollInterval: null   // Polling interval for cleanup
+    pollInterval: null,   // Polling interval for cleanup
+    gpsPosition: null     // Current GPS position for fraud detection
   };
+
+  // ============================================================
+  // GPS LOCATION TRACKING (for fraud detection)
+  // ============================================================
+  function initGpsTracking() {
+    if (!navigator.geolocation) {
+      ppvLog('[GPS] Geolocation not supported');
+      return;
+    }
+
+    // Get initial position
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        STATE.gpsPosition = {
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          accuracy: pos.coords.accuracy,
+          timestamp: Date.now()
+        };
+        ppvLog('[GPS] Position acquired:', STATE.gpsPosition.latitude.toFixed(4), STATE.gpsPosition.longitude.toFixed(4));
+      },
+      (err) => {
+        ppvWarn('[GPS] Position error:', err.message);
+        STATE.gpsPosition = null;
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 60000  // Cache for 1 minute
+      }
+    );
+
+    // Watch for position changes (update every minute or on significant move)
+    navigator.geolocation.watchPosition(
+      (pos) => {
+        STATE.gpsPosition = {
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          accuracy: pos.coords.accuracy,
+          timestamp: Date.now()
+        };
+        ppvLog('[GPS] Position updated:', STATE.gpsPosition.latitude.toFixed(4), STATE.gpsPosition.longitude.toFixed(4));
+      },
+      (err) => {
+        ppvWarn('[GPS] Watch error:', err.message);
+      },
+      {
+        enableHighAccuracy: false,
+        timeout: 30000,
+        maximumAge: 60000
+      }
+    );
+  }
+
+  function getGpsCoordinates() {
+    if (STATE.gpsPosition && (Date.now() - STATE.gpsPosition.timestamp) < 120000) {
+      return {
+        latitude: STATE.gpsPosition.latitude,
+        longitude: STATE.gpsPosition.longitude
+      };
+    }
+    return { latitude: null, longitude: null };
+  }
 
   const L = window.ppv_lang || {};
 
@@ -320,11 +384,20 @@
 
       this.ui.showMessage('⏳ ' + (L.pos_checking || 'Wird geprüft...'), 'info');
 
+      // Get GPS coordinates for fraud detection
+      const gps = getGpsCoordinates();
+
       try {
         const res = await fetch('/wp-json/punktepass/v1/pos/scan', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'PPV-POS-Token': getStoreKey() },
-          body: JSON.stringify({ qr: qrCode, store_key: getStoreKey(), points: 1 })
+          body: JSON.stringify({
+            qr: qrCode,
+            store_key: getStoreKey(),
+            points: 1,
+            latitude: gps.latitude,
+            longitude: gps.longitude
+          })
         });
 
         const data = await res.json();
@@ -1215,10 +1288,19 @@
     }
 
     inlineProcessScan(qrCode) {
+      // Get GPS coordinates for fraud detection
+      const gps = getGpsCoordinates();
+
       fetch('/wp-json/punktepass/v1/pos/scan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'PPV-POS-Token': getStoreKey() },
-        body: JSON.stringify({ qr: qrCode, store_key: getStoreKey(), points: 1 })
+        body: JSON.stringify({
+          qr: qrCode,
+          store_key: getStoreKey(),
+          points: 1,
+          latitude: gps.latitude,
+          longitude: gps.longitude
+        })
       })
         .then(res => res.json())
         .then(data => {
@@ -1609,6 +1691,9 @@
 
     // Preload sound effects
     preloadSounds();
+
+    // Start GPS tracking for fraud detection
+    initGpsTracking();
 
     STATE.uiManager = new UIManager();
     STATE.uiManager.init();
