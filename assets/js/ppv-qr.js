@@ -1792,6 +1792,7 @@
       const channel = STATE.ablyInstance.channels.get(channelName);
 
       STATE.ablyInstance.connection.on('connected', () => {
+        console.log('✅ [Ably] CONNECTED to channel: store-' + storeId);
         ppvLog('[Ably] Connected');
         // Stop polling if it was running
         if (STATE.pollInterval) {
@@ -1801,23 +1802,29 @@
       });
 
       STATE.ablyInstance.connection.on('disconnected', () => {
+        console.warn('⚠️ [Ably] DISCONNECTED - starting fallback polling');
         ppvLog('[Ably] Disconnected, starting fallback polling');
         startPolling();
       });
 
       STATE.ablyInstance.connection.on('failed', (err) => {
+        console.error('❌ [Ably] CONNECTION FAILED:', err);
         ppvLog('[Ably] Connection failed:', err);
         startPolling();
       });
 
       // Handle incoming scan events
       channel.subscribe('new-scan', (message) => {
+        console.log('📡 [Ably] NEW-SCAN EVENT RECEIVED:', message.data);
         ppvLog('[Ably] New scan received:', message.data);
 
         // ✅ FIX: Deduplication is now handled by addScanItem using scan_id
         // Just pass the data through - the UI manager will skip if scan_id already displayed
         if (STATE.uiManager) {
+          console.log('📡 [Ably] Adding scan to UI...');
           STATE.uiManager.addScanItem({ ...message.data, _realtime: true });
+        } else {
+          console.warn('📡 [Ably] STATE.uiManager is null!');
         }
       });
 

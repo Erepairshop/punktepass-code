@@ -290,6 +290,9 @@ jQuery(document).ready(function ($) {
         console.log("🟢 Token & Dashboard OK → initStoreSelector()");
         initStoreSelector();
         setTimeout(() => loadStatus(token), 600);
+
+        // 📡 Initialize Ably real-time after dashboard is ready
+        setTimeout(() => initAblyRealtime(), 1000);
       }
     }, 400);
   }, 800);
@@ -297,6 +300,98 @@ jQuery(document).ready(function ($) {
   $("#ppv-pos-refresh").on("click", function () {
     const token = localStorage.getItem(TOKEN_KEY);
     if (token) loadStatus(token);
+  });
+
+
+  /** ============================================================
+   * 📡 ABLY REAL-TIME INTEGRATION
+   * Refreshes stats when new scan arrives
+   * ============================================================ */
+  let ablyInstance = null;
+  let ablyChannel = null;
+
+  function initAblyRealtime() {
+    // Check if Ably is available
+    if (typeof Ably === 'undefined') {
+      console.warn("⚠️ [POS Admin] Ably not loaded, skipping real-time");
+      return;
+    }
+
+    // Get Ably config from global
+    const ablyKey = window.PPV_POS_ADMIN?.ably_key || window.ppvAblyConfig?.key;
+    if (!ablyKey) {
+      console.warn("⚠️ [POS Admin] No Ably key found");
+      return;
+    }
+
+    // Get store ID
+    const storeId = localStorage.getItem("ppv_active_store");
+    if (!storeId) {
+      console.warn("⚠️ [POS Admin] No store ID for Ably channel");
+      return;
+    }
+
+    // Close existing connection if any
+    if (ablyInstance) {
+      ablyInstance.close();
+    }
+
+    // Create Ably connection
+    ablyInstance = new Ably.Realtime({ key: ablyKey });
+    const channelName = 'store-' + storeId;
+    ablyChannel = ablyInstance.channels.get(channelName);
+
+    ablyInstance.connection.on('connected', () => {
+      console.log("📡 [POS Admin] Ably connected to channel:", channelName);
+    });
+
+    ablyInstance.connection.on('failed', (err) => {
+      console.error("❌ [POS Admin] Ably connection failed:", err);
+    });
+
+    // 🎯 Subscribe to new-scan events
+    ablyChannel.subscribe('new-scan', (message) => {
+      console.log("📡 [POS Admin] New scan received via Ably:", message.data);
+
+      // Refresh stats immediately
+      const token = localStorage.getItem(TOKEN_KEY);
+      if (token) {
+        loadStatus(token);
+      }
+
+      // Update last-scan directly if data is available
+      if (message.data) {
+        const scanTime = message.data.time_short || new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+        $("#last-scan").text(scanTime);
+
+        // Flash effect to show update
+        $("#last-scan").css("color", "#00e0ff");
+        setTimeout(() => $("#last-scan").css("color", ""), 1000);
+      }
+    });
+
+    // Subscribe to other relevant events
+    ablyChannel.subscribe('reward-request', (message) => {
+      console.log("📡 [POS Admin] Reward request received:", message.data);
+      const token = localStorage.getItem(TOKEN_KEY);
+      if (token) loadStatus(token);
+    });
+
+    console.log("✅ [POS Admin] Ably real-time initialized for store:", storeId);
+  }
+
+  // Cleanup on page unload
+  window.addEventListener('beforeunload', () => {
+    if (ablyInstance) {
+      ablyInstance.close();
+      ablyInstance = null;
+    }
+  });
+
+  // Re-init Ably when store changes
+  $(document).on('change', '#ppv-store-selector', function() {
+    console.log("🔄 [POS Admin] Store changed, reinitializing Ably...");
+    setTimeout(initAblyRealtime, 500);
   });
 
 });
