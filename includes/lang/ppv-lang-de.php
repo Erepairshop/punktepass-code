@@ -1131,6 +1131,7 @@ return [
     'onboarding_reset_error' => 'Hiba történt!',
 
     // Filiale (Branch stores)
+    'all_branches' => 'Alle Filialen',
     'filiale_switcher' => 'Filiale wählen',
     'add_filiale' => 'Neue Filiale',
     'main_location' => 'Hauptstandort',
