@@ -1007,10 +1007,19 @@
         this.updateStatus('scanning', L.scanner_active || 'Scanning...');
       } catch (e) {
         ppvWarn('[Camera] Start error:', e);
-        console.error('[Camera] Detailed error:', e.name, e.message);
 
-        // If OverconstrainedError and not already in fallback mode, retry with simpler constraints
-        if ((e.name === 'OverconstrainedError' || e.name === 'ConstraintNotSatisfiedError') && !fallbackMode) {
+        // Html5Qrcode may throw string errors or custom objects - normalize error info
+        const errName = e?.name || (typeof e === 'string' ? 'StringError' : 'UnknownError');
+        const errMsg = e?.message || (typeof e === 'string' ? e : JSON.stringify(e));
+        console.error('[Camera] Detailed error:', errName, errMsg, e);
+
+        // Check if error message contains constraint-related text (Html5Qrcode specific)
+        const isConstraintError = errName === 'OverconstrainedError' ||
+                                  errName === 'ConstraintNotSatisfiedError' ||
+                                  /overconstrained|constraint/i.test(errMsg);
+
+        // If constraint error and not already in fallback mode, retry with simpler constraints
+        if (isConstraintError && !fallbackMode) {
           ppvLog('[Camera] Retrying with fallback constraints...');
           window.ppvToast('📷 Kamera wird neu gestartet...', 'info');
           this.scanner = null;
@@ -1018,22 +1027,31 @@
           return;
         }
 
-        // Show specific error message based on error type
+        // Show specific error message based on error type/message
         let errorMsg = '❌ Kamera nicht verfügbar';
-        if (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError') {
+
+        // Check by error name OR by error message content (Html5Qrcode specific)
+        if (errName === 'NotAllowedError' || errName === 'PermissionDeniedError' ||
+            /permission|denied|not allowed/i.test(errMsg)) {
           errorMsg = '❌ Kamera-Zugriff verweigert';
           window.ppvToast('Bitte erlaube den Kamerazugriff in den Browser-Einstellungen', 'error');
-        } else if (e.name === 'NotFoundError' || e.name === 'DevicesNotFoundError') {
+        } else if (errName === 'NotFoundError' || errName === 'DevicesNotFoundError' ||
+                   /not found|no camera|no video/i.test(errMsg)) {
           errorMsg = '❌ Keine Kamera gefunden';
-        } else if (e.name === 'NotReadableError' || e.name === 'TrackStartError') {
+          window.ppvToast('Es wurde keine Kamera gefunden', 'error');
+        } else if (errName === 'NotReadableError' || errName === 'TrackStartError' ||
+                   /not readable|in use|busy/i.test(errMsg)) {
           errorMsg = '❌ Kamera wird verwendet';
           window.ppvToast('Die Kamera wird von einer anderen App verwendet', 'error');
-        } else if (e.name === 'OverconstrainedError' || e.name === 'ConstraintNotSatisfiedError') {
+        } else if (isConstraintError) {
           errorMsg = '❌ Kamera nicht kompatibel';
           window.ppvToast('Die Kamera unterstützt die Anforderungen nicht', 'error');
-        } else if (e.name === 'SecurityError') {
+        } else if (errName === 'SecurityError' || /security|https|insecure/i.test(errMsg)) {
           errorMsg = '❌ HTTPS erforderlich';
           window.ppvToast('Kamera funktioniert nur über HTTPS', 'error');
+        } else {
+          // Unknown error - show the actual message to help debug
+          window.ppvToast('Kamera-Fehler: ' + (errMsg.substring(0, 50) || 'Unbekannt'), 'error');
         }
         this.updateStatus('error', errorMsg);
       }
