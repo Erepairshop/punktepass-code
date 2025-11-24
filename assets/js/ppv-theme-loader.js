@@ -1,5 +1,5 @@
 /**
- * PunktePass – Theme Loader v2.3 (UNIVERSAL)
+ * PunktePass – Theme Loader v2.4 (NO DUPLICATE CSS)
  * ✅ Auto-detects all pages
  * ✅ Multi-domain cookie
  * ✅ MutationObserver for button detection
@@ -8,6 +8,7 @@
  * ✅ Icon sync on page load (sun/moon)
  * ✅ Works with both ppv-theme-toggle and ppv-theme-toggle-global
  * ✅ localStorage priority over meta tag (fixes Turbo navigation)
+ * ✅ Prevents duplicate CSS loading (PHP already loads theme CSS)
  * Author: Erik Borota / PunktePass
  */
 
@@ -27,31 +28,73 @@
   }
 
   // ============================================================
-  // 🔹 LOAD CSS
+  // 🔹 LOAD CSS (Only if not already loaded by PHP)
   // ============================================================
-  function loadThemeCSS(theme) {
-    const id = 'ppv-theme-css';
-    const href = `/wp-content/plugins/punktepass/assets/css/ppv-theme-${theme}.css?v=${Date.now()}`;
+  function loadThemeCSS(theme, forceReload = false) {
+    const cssPath = `ppv-theme-${theme}.css`;
 
-    // Remove old
-    document.querySelectorAll(`link[id="${id}"]`).forEach(e => e.remove());
+    // Check if theme CSS is already loaded (by PHP wp_enqueue_style or previous JS call)
+    const existingLinks = document.querySelectorAll('link[rel="stylesheet"]');
+    let alreadyLoaded = false;
 
-    // Create new
-    const link = document.createElement('link');
-    link.id = id;
-    link.rel = 'stylesheet';
-    link.href = href;
-    link.onload = () => {
-      log('INFO', '✅ Theme CSS loaded:', theme);
+    existingLinks.forEach(link => {
+      if (link.href && link.href.includes(cssPath)) {
+        alreadyLoaded = true;
+      }
+    });
+
+    // If already loaded and not forcing reload (theme switch), skip
+    if (alreadyLoaded && !forceReload) {
+      log('DEBUG', '⏩ Theme CSS already loaded by PHP, skipping:', theme);
+      // Just update classes
       document.documentElement.setAttribute('data-theme', theme);
-      document.body.classList.remove('ppv-light', 'ppv-dark');
-      document.body.classList.add(`ppv-${theme}`);
-    };
-    link.onerror = () => {
-      log('ERROR', '❌ Theme CSS failed to load:', href);
-    };
+      if (document.body) {
+        document.body.classList.remove('ppv-light', 'ppv-dark');
+        document.body.classList.add(`ppv-${theme}`);
+      }
+      return;
+    }
 
-    document.head.appendChild(link);
+    // For theme switching: remove old theme CSS (both PHP and JS versions)
+    if (forceReload) {
+      const otherTheme = theme === 'dark' ? 'light' : 'dark';
+      const otherCssPath = `ppv-theme-${otherTheme}.css`;
+
+      existingLinks.forEach(link => {
+        if (link.href && link.href.includes(otherCssPath)) {
+          link.remove();
+          log('DEBUG', '🗑️ Removed old theme CSS:', otherTheme);
+        }
+      });
+
+      // Also remove JS-loaded theme CSS
+      document.querySelectorAll('link[id="ppv-theme-css"]').forEach(e => e.remove());
+    }
+
+    // Only create new link if not already loaded
+    if (!alreadyLoaded || forceReload) {
+      const id = 'ppv-theme-css';
+      const href = `/wp-content/plugins/punktepass/assets/css/ppv-theme-${theme}.css?v=${Date.now()}`;
+
+      // Remove old JS-loaded CSS
+      document.querySelectorAll(`link[id="${id}"]`).forEach(e => e.remove());
+
+      const link = document.createElement('link');
+      link.id = id;
+      link.rel = 'stylesheet';
+      link.href = href;
+      link.onload = () => {
+        log('INFO', '✅ Theme CSS loaded:', theme);
+        document.documentElement.setAttribute('data-theme', theme);
+        document.body.classList.remove('ppv-light', 'ppv-dark');
+        document.body.classList.add(`ppv-${theme}`);
+      };
+      link.onerror = () => {
+        log('ERROR', '❌ Theme CSS failed to load:', href);
+      };
+
+      document.head.appendChild(link);
+    }
   }
 
   // ============================================================
@@ -192,8 +235,8 @@
 
       log('INFO', `🔄 Theme switching: ${current} → ${newTheme}`);
 
-      // 1. Update UI immediately
-      loadThemeCSS(newTheme);
+      // 1. Update UI immediately (forceReload=true for theme switch)
+      loadThemeCSS(newTheme, true);
       localStorage.setItem(THEME_KEY, newTheme);
       setMultiDomainCookie(newTheme);
 
@@ -268,8 +311,8 @@
           const newTheme = event.data.theme;
           log('INFO', '📨 Broadcast received: theme-changed', newTheme);
 
-          // Update UI
-          loadThemeCSS(newTheme);
+          // Update UI (forceReload=true for cross-tab theme sync)
+          loadThemeCSS(newTheme, true);
           localStorage.setItem(THEME_KEY, newTheme);
         }
       });
@@ -364,7 +407,7 @@
     if (e.key === THEME_KEY && e.newValue) {
       const newTheme = e.newValue;
       log('INFO', '🔄 Storage event: theme changed', newTheme);
-      loadThemeCSS(newTheme);
+      loadThemeCSS(newTheme, true);
     }
   });
 })();
