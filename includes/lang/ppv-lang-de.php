@@ -939,6 +939,7 @@ return [
 'err_invalid_qr' => '❌ Ungültiger QR',
 'err_already_scanned_today' => '⚠️ Heute bereits gescannt',
 'err_duplicate_scan' => '⚠️ Bereits gescannt. Bitte warten.',
+'err_gps_distance' => 'Scan nicht möglich - zu weit vom Standort entfernt',
 'log_point_added' => '1 Punkt hinzugefügt',
 'scan_success' => '✅ 1 Punkt hinzugefügt',
 'offline_synced' => '✅ Offline synchronisiert',

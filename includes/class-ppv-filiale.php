@@ -340,6 +340,9 @@ class PPV_Filiale {
 
         $new_filiale_id = $wpdb->insert_id;
 
+        // Auto-enable scan monitoring for new filiale
+        do_action('ppv_filiale_created', $new_filiale_id);
+
         // Set as current filiale
         self::set_current_filiale($new_filiale_id);
 

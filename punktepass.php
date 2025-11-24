@@ -270,6 +270,8 @@ $core_modules = [
      'includes/class-ppv-user-level.php',
      'includes/class-ppv-vip-settings.php',
      'includes/class-ppv-ably.php',
+     'includes/class-ppv-scan-monitoring.php',
+     'includes/admin/class-ppv-admin-suspicious-scans.php',
 
 ];
 

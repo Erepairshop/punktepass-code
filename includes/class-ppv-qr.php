@@ -1706,6 +1706,10 @@ class PPV_QR {
         $store_key = sanitize_text_field($data['store_key'] ?? '');
         $campaign_id = intval($data['campaign_id'] ?? 0);
 
+        // GPS data from scanner (optional)
+        $scan_lat = isset($data['latitude']) ? floatval($data['latitude']) : null;
+        $scan_lng = isset($data['longitude']) ? floatval($data['longitude']) : null;
+
         if (empty($qr_code) || empty($store_key)) {
             return new WP_REST_Response([
                 'success' => false,
@@ -1810,6 +1814,36 @@ class PPV_QR {
             ]));
 
             return $rate_check['response'];
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // GPS DISTANCE CHECK (Fraud Detection)
+        // ═══════════════════════════════════════════════════════════
+        if (class_exists('PPV_Scan_Monitoring') && ($scan_lat || $scan_lng)) {
+            $gps_check = PPV_Scan_Monitoring::validate_scan_location($store_id, $scan_lat, $scan_lng);
+
+            if (!$gps_check['valid']) {
+                // Log suspicious scan
+                PPV_Scan_Monitoring::log_suspicious_scan($store_id, $user_id, $scan_lat, $scan_lng, $gps_check);
+
+                // Get store name for response
+                $store_name = $wpdb->get_var($wpdb->prepare(
+                    "SELECT name FROM {$wpdb->prefix}ppv_stores WHERE id=%d LIMIT 1",
+                    $store_id
+                ));
+
+                ppv_log("[PPV_QR] GPS distance check failed: user={$user_id}, store={$store_id}, distance={$gps_check['distance']}m");
+
+                // Return error - scan not allowed
+                return new WP_REST_Response([
+                    'success' => false,
+                    'message' => self::t('err_gps_distance', 'Scan nicht möglich - zu weit vom Standort entfernt'),
+                    'store_name' => $store_name ?? 'PunktePass',
+                    'error_type' => 'gps_distance',
+                    'distance' => $gps_check['distance'],
+                    'max_distance' => $gps_check['max_distance'] ?? 500
+                ], 403);
+            }
         }
 
         // ═══════════════════════════════════════════════════════════

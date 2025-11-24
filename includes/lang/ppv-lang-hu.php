@@ -913,6 +913,7 @@ return [
 'err_invalid_qr' => '❌ Érvénytelen QR',
 'err_already_scanned_today' => '⚠️ Ma már beolvasva',
 'err_duplicate_scan' => '⚠️ Már beolvasva. Kérlek várj.',
+'err_gps_distance' => 'A beolvasás nem lehetséges - túl messze van a helyszíntől',
 'log_point_added' => '1 pont hozzáadva',
 'scan_success' => '✅ 1 pont hozzáadva',
 'offline_synced' => '✅ Offline szinkronizálva',
