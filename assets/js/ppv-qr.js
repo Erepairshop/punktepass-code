@@ -708,24 +708,31 @@
         <div id="ppv-mini-reader" style="display:none;"></div>
         <div id="ppv-mini-status" style="display:none;"><span class="ppv-mini-icon">📷</span><span class="ppv-mini-text">${L.scanner_active || 'Scanner aktiv'}</span></div>
         <div class="ppv-mini-controls">
-          <button id="ppv-mini-torch" class="ppv-mini-torch" style="display:none;" title="Blitz"><span class="ppv-torch-icon">🔦</span></button>
-          <button id="ppv-mini-refocus" class="ppv-mini-refocus" style="display:none;" title="Fokus"><span class="ppv-refocus-icon">🎯</span></button>
           <button id="ppv-mini-toggle" class="ppv-mini-toggle"><span class="ppv-toggle-icon">📷</span><span class="ppv-toggle-text">Start</span></button>
+        </div>
+        <div class="ppv-mini-toolbar" style="display:none;">
+          <button id="ppv-mini-fullscreen" class="ppv-mini-btn" title="Kiosk mód"><span>⛶</span></button>
+          <button id="ppv-mini-torch" class="ppv-mini-btn" style="display:none;" title="Blitz"><span class="ppv-torch-icon">🔦</span></button>
+          <button id="ppv-mini-refocus" class="ppv-mini-btn" style="display:none;" title="Fokus"><span class="ppv-refocus-icon">🎯</span></button>
         </div>
       `;
       document.body.appendChild(this.miniContainer);
+      this.isFullscreen = false;
 
       this.readerDiv = document.getElementById('ppv-mini-reader');
       this.statusDiv = document.getElementById('ppv-mini-status');
       this.toggleBtn = document.getElementById('ppv-mini-toggle');
       this.torchBtn = document.getElementById('ppv-mini-torch');
       this.refocusBtn = document.getElementById('ppv-mini-refocus');
+      this.fullscreenBtn = document.getElementById('ppv-mini-fullscreen');
+      this.toolbar = this.miniContainer.querySelector('.ppv-mini-toolbar');
 
       this.loadPosition();
       this.makeDraggable();
       this.setupToggle();
       this.setupTorch();
       this.setupRefocus();
+      this.setupFullscreen();
     }
 
     // ============================================================
@@ -775,14 +782,12 @@
           await new Promise(r => setTimeout(r, 100));
           await this.videoTrack.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
           ppvLog('[Camera] Refocus triggered');
-          window.ppvToast('🎯 Fokus aktualisiert', 'info');
         } else if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
           // Some devices: toggle continuous off/on
           await this.videoTrack.applyConstraints({ advanced: [{ focusMode: 'single-shot' }] });
           await new Promise(r => setTimeout(r, 200));
           await this.videoTrack.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
           ppvLog('[Camera] Refocus triggered (single-shot method)');
-          window.ppvToast('🎯 Fokus aktualisiert', 'info');
         }
       } catch (e) {
         ppvWarn('[Camera] Refocus error:', e);
@@ -805,6 +810,54 @@
         clearInterval(this.refocusInterval);
         this.refocusInterval = null;
         ppvLog('[Camera] Periodic refocus stopped');
+      }
+    }
+
+    // ============================================================
+    // ⛶ FULLSCREEN / KIOSK MODE
+    // ============================================================
+    setupFullscreen() {
+      if (!this.fullscreenBtn) return;
+      this.fullscreenBtn.addEventListener('click', () => {
+        this.toggleFullscreen();
+      });
+    }
+
+    toggleFullscreen() {
+      this.isFullscreen = !this.isFullscreen;
+
+      if (this.isFullscreen) {
+        // Save current position before going fullscreen
+        const rect = this.miniContainer.getBoundingClientRect();
+        this.savedPosition = { x: rect.left, y: rect.top };
+
+        // Apply fullscreen mode
+        this.miniContainer.classList.add('ppv-fullscreen-mode');
+        this.fullscreenBtn.querySelector('span').textContent = '⛶';
+        this.fullscreenBtn.title = 'Mini mód';
+
+        // Reset position for fullscreen centering
+        this.miniContainer.style.left = '';
+        this.miniContainer.style.top = '';
+        this.miniContainer.style.bottom = '';
+        this.miniContainer.style.right = '';
+
+        ppvLog('[Scanner] Entered fullscreen/kiosk mode');
+      } else {
+        // Exit fullscreen mode
+        this.miniContainer.classList.remove('ppv-fullscreen-mode');
+        this.fullscreenBtn.querySelector('span').textContent = '⛶';
+        this.fullscreenBtn.title = 'Kiosk mód';
+
+        // Restore saved position
+        if (this.savedPosition) {
+          this.miniContainer.style.bottom = 'auto';
+          this.miniContainer.style.right = 'auto';
+          this.miniContainer.style.left = this.savedPosition.x + 'px';
+          this.miniContainer.style.top = this.savedPosition.y + 'px';
+        }
+
+        ppvLog('[Scanner] Exited fullscreen mode');
       }
     }
 
@@ -901,9 +954,15 @@
       this.toggleBtn.querySelector('.ppv-toggle-text').textContent = 'Start';
       this.toggleBtn.style.background = 'linear-gradient(135deg, #00e676, #00c853)';
 
-      // Hide torch and refocus buttons
+      // Hide toolbar and buttons
+      if (this.toolbar) this.toolbar.style.display = 'none';
       if (this.torchBtn) this.torchBtn.style.display = 'none';
       if (this.refocusBtn) this.refocusBtn.style.display = 'none';
+
+      // Exit fullscreen if active
+      if (this.isFullscreen) {
+        this.toggleFullscreen();
+      }
 
       if (this.countdownInterval) { clearInterval(this.countdownInterval); this.countdownInterval = null; }
 
@@ -916,10 +975,13 @@
 
     async startScannerManual() {
       this.readerDiv.style.display = 'block';
-      this.statusDiv.style.display = 'block';
+      this.statusDiv.style.display = 'none'; // Hide status in mini mode - only show toggle
       this.toggleBtn.querySelector('.ppv-toggle-icon').textContent = '🛑';
-      this.toggleBtn.querySelector('.ppv-toggle-text').textContent = 'Stop';
+      this.toggleBtn.querySelector('.ppv-toggle-text').textContent = '';
       this.toggleBtn.style.background = 'linear-gradient(135deg, #ff5252, #f44336)';
+
+      // Show toolbar with fullscreen button
+      if (this.toolbar) this.toolbar.style.display = 'flex';
 
       // Save state for persistence across navigation
       this.saveScannerState(true);
