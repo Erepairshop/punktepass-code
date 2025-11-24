@@ -82,6 +82,10 @@ const PPV_TRANSLATIONS = {
     vip_scan: "Scan",
     vip_double: "2x Punkte",
     vip_triple: "3x Punkte",
+    qr_valid_for: "Gültig noch:",
+    qr_expired: "QR-Code abgelaufen",
+    qr_refresh: "Neuen QR-Code generieren",
+    qr_new_generated: "Neuer QR-Code (30 Min)",
   },
   hu: {
     welcome: "Üdv a PunktePassban",
@@ -137,6 +141,10 @@ const PPV_TRANSLATIONS = {
     vip_scan: "scan",
     vip_double: "2x Pont",
     vip_triple: "3x Pont",
+    qr_valid_for: "Érvényes még:",
+    qr_expired: "QR-kód lejárt",
+    qr_refresh: "Új QR-kód generálása",
+    qr_new_generated: "Új QR-kód (30 perc)",
   },
   ro: {
     welcome: "Bun venit la PunktePass",
@@ -192,6 +200,10 @@ const PPV_TRANSLATIONS = {
     vip_scan: "scanare",
     vip_double: "2x Puncte",
     vip_triple: "3x Puncte",
+    qr_valid_for: "Valid încă:",
+    qr_expired: "Cod QR expirat",
+    qr_refresh: "Generează cod QR nou",
+    qr_new_generated: "Cod QR nou (30 min)",
   }
 };
 
@@ -367,21 +379,25 @@ async function initUserDashboard() {
   };
 
   // ============================================================
-  // 🎫 MODERN QR TOGGLE (v2.0)
+  // 🎫 TIMED QR WITH COUNTDOWN (v3.0)
   // ============================================================
+
+  let qrCountdownInterval = null;
+  let qrExpiresAt = null;
 
   const initQRToggle = () => {
     const btn = document.querySelector(".ppv-btn-qr");
     const modal = document.getElementById("ppv-user-qr");
     const overlay = document.getElementById("ppv-qr-overlay");
     const closeBtn = document.querySelector(".ppv-qr-close");
+    const refreshBtn = document.getElementById("ppv-qr-refresh-btn");
 
     if (!btn || !modal || !overlay) {
       console.warn("⚠️ [QR] Elements not found");
       return;
     }
 
-    const openQR = (e) => {
+    const openQR = async (e) => {
       if (e) {
         e.preventDefault();
         e.stopPropagation();
@@ -392,6 +408,9 @@ async function initUserDashboard() {
       document.body.style.overflow = "hidden";
       if (navigator.vibrate) navigator.vibrate(30);
       modal.offsetHeight;
+
+      // Load timed QR on open
+      await loadTimedQR();
     };
 
     const closeQR = () => {
@@ -410,11 +429,168 @@ async function initUserDashboard() {
       e.stopPropagation();
       closeQR();
     });
+
+    // Refresh button
+    if (refreshBtn) {
+      refreshBtn.addEventListener("click", async (e) => {
+        e.preventDefault();
+        await loadTimedQR(true);
+      });
+    }
+
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && modal.classList.contains("show")) closeQR();
     });
 
-    console.log("✅ [QR] Toggle initialized");
+    console.log("✅ [QR] Timed QR toggle initialized");
+  };
+
+  // ============================================================
+  // 🔄 LOAD TIMED QR FROM REST API
+  // ============================================================
+  const loadTimedQR = async (forceNew = false) => {
+    const qrImg = document.getElementById("ppv-qr-image");
+    const qrLoading = document.getElementById("ppv-qr-loading");
+    const qrDisplay = document.getElementById("ppv-qr-display");
+    const qrExpired = document.getElementById("ppv-qr-expired");
+    const qrStatus = document.getElementById("ppv-qr-status");
+
+    // Show loading
+    if (qrLoading) qrLoading.style.display = "flex";
+    if (qrDisplay) qrDisplay.style.display = "none";
+    if (qrExpired) qrExpired.style.display = "none";
+
+    try {
+      const res = await fetch(API + "user/generate-timed-qr", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: boot.uid })
+      });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const data = await res.json();
+
+      if (data.code) {
+        // Error response
+        showQRStatus("❌ " + (data.message || "Error"), "error");
+        return;
+      }
+
+      // Display QR
+      if (qrImg) qrImg.src = data.qr_url;
+      if (qrLoading) qrLoading.style.display = "none";
+      if (qrDisplay) qrDisplay.style.display = "block";
+      if (qrExpired) qrExpired.style.display = "none";
+
+      // Start countdown
+      startQRCountdown(data.expires_at);
+
+      // Status message
+      if (data.is_new) {
+        showQRStatus("✅ " + (T.qr_new_generated || "Neuer QR-Code (30 Min)"), "success");
+      } else {
+        const remainingMin = Math.floor(data.expires_in / 60);
+        showQRStatus(`✅ QR geladen (${remainingMin} Min)`, "success");
+      }
+
+      console.log("✅ [QR] Timed QR loaded, expires in", data.expires_in, "seconds");
+
+    } catch (err) {
+      console.error("❌ [QR] Load error:", err);
+      if (qrLoading) qrLoading.style.display = "none";
+      showQRStatus("❌ Netzwerkfehler", "error");
+    }
+  };
+
+  // ============================================================
+  // ⏱️ COUNTDOWN TIMER (30:00 → 00:00)
+  // ============================================================
+  const startQRCountdown = (expirationTimestamp) => {
+    qrExpiresAt = expirationTimestamp;
+
+    const timerEl = document.getElementById("ppv-qr-timer");
+    const timerValue = document.getElementById("ppv-qr-timer-value");
+
+    // Clear previous interval
+    if (qrCountdownInterval) {
+      clearInterval(qrCountdownInterval);
+    }
+
+    // Reset classes
+    if (timerEl) {
+      timerEl.classList.remove("ppv-timer-warning", "ppv-timer-critical");
+    }
+
+    // Update every second
+    qrCountdownInterval = setInterval(() => {
+      const now = Math.floor(Date.now() / 1000);
+      const remaining = qrExpiresAt - now;
+
+      if (remaining <= 0) {
+        // QR expired
+        clearInterval(qrCountdownInterval);
+        showQRExpired();
+        return;
+      }
+
+      // Format: MM:SS
+      const mins = Math.floor(remaining / 60);
+      const secs = remaining % 60;
+      const formatted = `${mins}:${secs.toString().padStart(2, "0")}`;
+
+      if (timerValue) {
+        timerValue.textContent = formatted;
+      }
+
+      // Warning at 5 minutes
+      if (remaining <= 300 && remaining > 60) {
+        if (timerEl) {
+          timerEl.classList.add("ppv-timer-warning");
+          timerEl.classList.remove("ppv-timer-critical");
+        }
+      }
+
+      // Critical at 1 minute
+      if (remaining <= 60) {
+        if (timerEl) {
+          timerEl.classList.add("ppv-timer-critical");
+          timerEl.classList.remove("ppv-timer-warning");
+        }
+      }
+    }, 1000);
+  };
+
+  // ============================================================
+  // 🔴 SHOW QR EXPIRED STATE
+  // ============================================================
+  const showQRExpired = () => {
+    const qrDisplay = document.getElementById("ppv-qr-display");
+    const qrExpired = document.getElementById("ppv-qr-expired");
+
+    if (qrDisplay) qrDisplay.style.display = "none";
+    if (qrExpired) qrExpired.style.display = "flex";
+
+    showQRStatus("⏰ " + (T.qr_expired || "QR abgelaufen"), "warning");
+  };
+
+  // ============================================================
+  // 📝 QR STATUS MESSAGE
+  // ============================================================
+  const showQRStatus = (message, type = "info") => {
+    const status = document.getElementById("ppv-qr-status");
+    if (!status) return;
+
+    status.textContent = message;
+    status.className = "ppv-qr-status ppv-status-" + type;
+
+    // Auto-clear after 4 seconds
+    setTimeout(() => {
+      if (status.textContent === message) {
+        status.textContent = "";
+        status.className = "ppv-qr-status";
+      }
+    }, 4000);
   };
 
   // ============================================================
@@ -1343,20 +1519,49 @@ async function initUserDashboard() {
           <button class="ppv-qr-close" type="button">
             <i class="ri-close-line"></i>
           </button>
-          <img src="${boot.qr_url || ''}" alt="My QR Code" class="ppv-qr-image">
-          <div class="ppv-qr-warning">
-            <span class="ppv-qr-warning-icon">⚠️</span>
-            <span class="ppv-qr-warning-text">${T.qr_daily_warning}</span>
+
+          <!-- Loading State -->
+          <div class="ppv-qr-loading" id="ppv-qr-loading" style="display: flex;">
+            <div class="ppv-spinner"></div>
+            <p>${T.loading || "Lädt..."}</p>
           </div>
-          <p class="qr-info">
-            <strong>${T.show_code_tip}</strong>
-          </p>
-          <div class="ppv-qr-instructions">
-            <strong><i class="ri-lightbulb-line"></i> ${T.how_to_use}:</strong><br>
-            ${T.qr_instruction_1}<br>
-            ${T.qr_instruction_2}<br>
-            ${T.qr_instruction_3}
+
+          <!-- QR Display -->
+          <div id="ppv-qr-display" style="display: none;">
+            <img src="" alt="My QR Code" class="ppv-qr-image" id="ppv-qr-image">
+
+            <!-- Countdown Timer -->
+            <div class="ppv-qr-timer" id="ppv-qr-timer">
+              <i class="ri-time-line"></i>
+              <span>${T.qr_valid_for || "Gültig noch:"} <strong id="ppv-qr-timer-value">--:--</strong></span>
+            </div>
+
+            <div class="ppv-qr-warning">
+              <span class="ppv-qr-warning-icon">⚠️</span>
+              <span class="ppv-qr-warning-text">${T.qr_daily_warning}</span>
+            </div>
+            <p class="qr-info">
+              <strong>${T.show_code_tip}</strong>
+            </p>
+            <div class="ppv-qr-instructions">
+              <strong><i class="ri-lightbulb-line"></i> ${T.how_to_use}:</strong><br>
+              ${T.qr_instruction_1}<br>
+              ${T.qr_instruction_2}<br>
+              ${T.qr_instruction_3}
+            </div>
           </div>
+
+          <!-- Expired State -->
+          <div class="ppv-qr-expired" id="ppv-qr-expired" style="display: none;">
+            <i class="ri-time-line" style="font-size: 48px; color: #f59e0b;"></i>
+            <p style="margin: 16px 0;">${T.qr_expired || "QR-Code abgelaufen"}</p>
+            <button class="ppv-btn-refresh" id="ppv-qr-refresh-btn" type="button">
+              <i class="ri-refresh-line"></i> ${T.qr_refresh || "Neuen QR-Code generieren"}
+            </button>
+          </div>
+
+          <!-- Status Message -->
+          <div class="ppv-qr-status" id="ppv-qr-status"></div>
         </div>
 
         <section class="ppv-store-section">
