@@ -2585,10 +2585,17 @@ html, body {
   display: none;
   padding: 24px;
   background: var(--color-card);
-  border: 1px solid var(--color-border);
+  border: none; /* ✅ FIX: Remove nested border - parent glass-card already has border */
   border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
+  box-shadow: none; /* ✅ FIX: Remove nested shadow */
   animation: fadeIn 0.3s ease;
+}
+
+/* ✅ FIX: Remove nested borders from glass-section inside tab content */
+.ppv-tab-content .glass-section {
+  border: none;
+  box-shadow: none;
+  background: transparent;
 }
 
 .ppv-tab-content.active {
