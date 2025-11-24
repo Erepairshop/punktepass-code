@@ -513,7 +513,7 @@ add_action('wp_head', function () { ?>
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="PunktePass">
     <link rel="apple-touch-icon" href="<?php echo PPV_PLUGIN_URL; ?>assets/img/icons/icon-192.png">
-    <link rel="apple-touch-startup-image" href="<?php echo PPV_PLUGIN_URL; ?>assets/img/icons/icon-512.png">
+    <!-- ❌ REMOVED: apple-touch-startup-image - caused big logo flash on iOS -->
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <?php }, 1);
 
@@ -555,18 +555,37 @@ add_action('wp_footer', function() {
 
 
 // ========================================
-// ⚡ PWA SPLASH LOADER (Turbo-compatible)
+// ⚡ PWA SPLASH LOADER (Turbo-compatible) + iOS Flash Fix
 // ========================================
 add_action('wp_head', function() {
     if (ppv_is_login_page()) return; // Skip on login
     ?>
     <style>
-      html,body{margin:0;padding:0;background:#0b0f17;height:100%;}
-      #ppv-loader{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#0b0f17;z-index:999999;transition:opacity .4s ease;}
+      html,body{margin:0;padding:0;height:100%;}
+      /* ✅ FIX: Use CSS variables for background - prevents flash when theme CSS loads */
+      html{background:var(--pp-bg,#0b0f17);}
+      body{background:var(--pp-bg,#0b0f17);}
+
+      #ppv-loader{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--pp-bg,#0b0f17);z-index:999999;transition:opacity .4s ease;}
       #ppv-loader.fadeout{opacity:0;pointer-events:none;}
       #ppv-loader.hidden{display:none;}
       .ppv-spinner{width:60px;height:60px;border:5px solid rgba(0,191,255,0.25);border-top-color:#00bfff;border-radius:50%;animation:ppvspin 1s linear infinite;}
       @keyframes ppvspin{to{transform:rotate(360deg)}}
+
+      /* ✅ iOS Safari: Prevent flash during Turbo navigation */
+      @supports (-webkit-touch-callout: none) {
+        html.turbo-loading,
+        body.turbo-loading {
+          /* Keep current state stable during navigation */
+          background:var(--pp-bg,#0b0f17)!important;
+        }
+        /* Prevent content flash */
+        .turbo-loading #ppv-my-points-app,
+        .turbo-loading .ppv-dashboard-netto {
+          opacity:1!important;
+          visibility:visible!important;
+        }
+      }
     </style>
     <div id="ppv-loader" data-turbo-permanent><div class="ppv-spinner"></div></div>
     <script>
@@ -589,12 +608,20 @@ add_action('wp_head', function() {
           window.ppvLoaderInitialized = true;
         });
 
-        // 🚀 Turbo: Hide loader on navigation
+        // 🚀 Turbo: Prevent CSS flash on iOS Safari
         document.addEventListener("turbo:before-fetch-request", function() {
-          // Don't show big loader for Turbo - bottom nav has its own indicator
+          // Add turbo-loading class to html to trigger iOS-specific CSS
+          document.documentElement.classList.add("turbo-loading");
         });
         document.addEventListener("turbo:load", function() {
           loader.classList.add("fadeout", "hidden");
+          // Remove turbo-loading class
+          document.documentElement.classList.remove("turbo-loading");
+        });
+        document.addEventListener("turbo:render", function() {
+          // Ensure loader stays hidden after render
+          loader.classList.add("fadeout", "hidden");
+          document.documentElement.classList.remove("turbo-loading");
         });
       })();
     </script>

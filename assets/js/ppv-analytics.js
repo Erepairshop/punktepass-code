@@ -111,18 +111,25 @@ class PPV_Analytics {
       return;
     }
 
+    // ✅ FIX: Prevent double initialization (causes duplicate API calls)
+    if (this.container.dataset.analyticsInitialized === 'true') {
+      console.log('⏭️ [Analytics] Already initialized, skipping');
+      return;
+    }
+    this.container.dataset.analyticsInitialized = 'true';
+
     console.log('📊 [Analytics] Initializing...');
-    
+
     try {
       // Fetch data
       await this.fetchData();
-      
+
       // Render UI
       this.render();
-      
+
       // Setup event listeners
       this.setupEventListeners();
-      
+
       console.log('✅ [Analytics] Ready');
     } catch (err) {
       console.error('❌ [Analytics] Error:', err);
@@ -643,11 +650,22 @@ class PPV_Analytics {
 // Global instance
 window.ppv_analytics = new PPV_Analytics();
 
-// Auto-init on page load
+// ✅ FIX: Don't auto-init on DOMContentLoaded - MyPoints handles this
+// The analytics container is dynamically created by my-points.js after rendering,
+// so it won't exist at DOMContentLoaded. Calling init() explicitly from my-points.js
+// is the correct approach.
+
+// Support standalone use on pages that have the section in their HTML
 document.addEventListener('DOMContentLoaded', () => {
-  if (document.getElementById('ppv-analytics-section')) {
+  const section = document.getElementById('ppv-analytics-section');
+  // Only auto-init if section already has content (static HTML, not dynamic)
+  if (section && section.innerHTML.trim() === '') {
+    // Empty section - will be initialized by parent script (my-points.js)
+    console.log('📊 [Analytics] Container found but empty - waiting for parent init');
+  } else if (section) {
+    // Section has content - might be standalone page, auto-init
     window.ppv_analytics.init();
   }
 });
 
-console.log('✅ [Analytics] Script loaded - TRANSLATED');
+console.log('✅ [Analytics] Script loaded v2.1 (double-init fix)');
