@@ -3356,10 +3356,6 @@ html, body {
 
 /* Toggle Button */
 .ppv-mini-toggle {
-  position: absolute;
-  bottom: 8px;
-  left: 50%;
-  transform: translateX(-50%);
   background: linear-gradient(135deg, #00e676, #00c853);
   color: #fff;
   border: none;
@@ -3373,16 +3369,15 @@ html, body {
   display: flex;
   align-items: center;
   gap: 6px;
-  z-index: 11;
 }
 
 .ppv-mini-toggle:hover {
-  transform: translateX(-50%) translateY(-2px);
+  transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 230, 118, 0.4);
 }
 
 .ppv-mini-toggle:active {
-  transform: translateX(-50%) translateY(0);
+  transform: translateY(0);
   box-shadow: 0 1px 4px rgba(0, 230, 118, 0.2);
 }
 
@@ -3394,6 +3389,74 @@ html, body {
 .ppv-toggle-text {
   font-size: 11px;
   white-space: nowrap;
+}
+
+/* Controls container (torch, refocus, toggle) */
+.ppv-mini-controls {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 11;
+}
+
+/* Torch button */
+.ppv-mini-torch {
+  background: linear-gradient(135deg, #ffab00, #ff8f00);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(255, 171, 0, 0.3);
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+}
+
+.ppv-mini-torch:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 171, 0, 0.4);
+}
+
+.ppv-mini-torch:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(255, 171, 0, 0.2);
+}
+
+/* Refocus button */
+.ppv-mini-refocus {
+  background: linear-gradient(135deg, #2196f3, #1976d2);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+}
+
+.ppv-mini-refocus:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
+}
+
+.ppv-mini-refocus:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(33, 150, 243, 0.2);
 }
 
 /* Pulse animation for scanning state */

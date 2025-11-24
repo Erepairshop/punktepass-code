@@ -1,8 +1,10 @@
 /**
- * PunktePass – Kassenscanner & Kampagnen v6.2 CLEAN
+ * PunktePass – Kassenscanner & Kampagnen v6.3 OPTIMIZED
  * Turbo.js compatible, clean architecture
  * FIXED: Multiple init() calls causing API spam
  * FIXED: Ably connection cleanup on page navigation
+ * OPTIMIZED: Camera focus for XCover 4S and low-end devices
+ * OPTIMIZED: Higher resolution, continuous autofocus, torch support
  * Author: Erik Borota / PunktePass
  */
 
@@ -632,6 +634,10 @@
       this.readerDiv = null;
       this.statusDiv = null;
       this.toggleBtn = null;
+      this.torchBtn = null;
+      this.torchOn = false;
+      this.videoTrack = null;
+      this.refocusInterval = null;
     }
 
     init() {
@@ -667,17 +673,105 @@
         <div id="ppv-mini-drag-handle" class="ppv-mini-drag-handle"><span class="ppv-drag-icon">⋮⋮</span></div>
         <div id="ppv-mini-reader" style="display:none;"></div>
         <div id="ppv-mini-status" style="display:none;"><span class="ppv-mini-icon">📷</span><span class="ppv-mini-text">${L.scanner_active || 'Scanner aktiv'}</span></div>
-        <button id="ppv-mini-toggle" class="ppv-mini-toggle"><span class="ppv-toggle-icon">📷</span><span class="ppv-toggle-text">Start</span></button>
+        <div class="ppv-mini-controls">
+          <button id="ppv-mini-torch" class="ppv-mini-torch" style="display:none;" title="Blitz"><span class="ppv-torch-icon">🔦</span></button>
+          <button id="ppv-mini-refocus" class="ppv-mini-refocus" style="display:none;" title="Fokus"><span class="ppv-refocus-icon">🎯</span></button>
+          <button id="ppv-mini-toggle" class="ppv-mini-toggle"><span class="ppv-toggle-icon">📷</span><span class="ppv-toggle-text">Start</span></button>
+        </div>
       `;
       document.body.appendChild(this.miniContainer);
 
       this.readerDiv = document.getElementById('ppv-mini-reader');
       this.statusDiv = document.getElementById('ppv-mini-status');
       this.toggleBtn = document.getElementById('ppv-mini-toggle');
+      this.torchBtn = document.getElementById('ppv-mini-torch');
+      this.refocusBtn = document.getElementById('ppv-mini-refocus');
 
       this.loadPosition();
       this.makeDraggable();
       this.setupToggle();
+      this.setupTorch();
+      this.setupRefocus();
+    }
+
+    // ============================================================
+    // 🔦 TORCH CONTROL
+    // ============================================================
+    setupTorch() {
+      if (!this.torchBtn) return;
+      this.torchBtn.addEventListener('click', async () => {
+        await this.toggleTorch();
+      });
+    }
+
+    async toggleTorch() {
+      if (!this.videoTrack) return;
+      try {
+        const capabilities = this.videoTrack.getCapabilities();
+        if (!capabilities.torch) {
+          ppvLog('[Camera] Torch not supported');
+          return;
+        }
+        this.torchOn = !this.torchOn;
+        await this.videoTrack.applyConstraints({ advanced: [{ torch: this.torchOn }] });
+        this.torchBtn.querySelector('.ppv-torch-icon').textContent = this.torchOn ? '💡' : '🔦';
+        ppvLog('[Camera] Torch:', this.torchOn ? 'ON' : 'OFF');
+      } catch (e) {
+        ppvWarn('[Camera] Torch error:', e);
+      }
+    }
+
+    // ============================================================
+    // 🎯 MANUAL REFOCUS
+    // ============================================================
+    setupRefocus() {
+      if (!this.refocusBtn) return;
+      this.refocusBtn.addEventListener('click', async () => {
+        await this.triggerRefocus();
+      });
+    }
+
+    async triggerRefocus() {
+      if (!this.videoTrack) return;
+      try {
+        const capabilities = this.videoTrack.getCapabilities();
+        if (capabilities.focusMode && capabilities.focusMode.includes('manual')) {
+          // Briefly switch to manual then back to continuous to force refocus
+          await this.videoTrack.applyConstraints({ advanced: [{ focusMode: 'manual' }] });
+          await new Promise(r => setTimeout(r, 100));
+          await this.videoTrack.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
+          ppvLog('[Camera] Refocus triggered');
+          window.ppvToast('🎯 Fokus aktualisiert', 'info');
+        } else if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+          // Some devices: toggle continuous off/on
+          await this.videoTrack.applyConstraints({ advanced: [{ focusMode: 'single-shot' }] });
+          await new Promise(r => setTimeout(r, 200));
+          await this.videoTrack.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
+          ppvLog('[Camera] Refocus triggered (single-shot method)');
+          window.ppvToast('🎯 Fokus aktualisiert', 'info');
+        }
+      } catch (e) {
+        ppvWarn('[Camera] Refocus error:', e);
+      }
+    }
+
+    // Start periodic refocus (every 8 seconds) for problematic devices
+    startPeriodicRefocus() {
+      if (this.refocusInterval) return;
+      this.refocusInterval = setInterval(() => {
+        if (this.scanning && this.state === 'scanning') {
+          this.triggerRefocus();
+        }
+      }, 8000);
+      ppvLog('[Camera] Periodic refocus started (8s interval)');
+    }
+
+    stopPeriodicRefocus() {
+      if (this.refocusInterval) {
+        clearInterval(this.refocusInterval);
+        this.refocusInterval = null;
+        ppvLog('[Camera] Periodic refocus stopped');
+      }
     }
 
     loadPosition() {
@@ -760,13 +854,22 @@
 
       this.scanning = false;
       this.state = 'stopped';
+      this.videoTrack = null;
+      this.torchOn = false;
       this.readerDiv.style.display = 'none';
       this.statusDiv.style.display = 'none';
       this.toggleBtn.querySelector('.ppv-toggle-icon').textContent = '📷';
       this.toggleBtn.querySelector('.ppv-toggle-text').textContent = 'Start';
       this.toggleBtn.style.background = 'linear-gradient(135deg, #00e676, #00c853)';
 
+      // Hide torch and refocus buttons
+      if (this.torchBtn) this.torchBtn.style.display = 'none';
+      if (this.refocusBtn) this.refocusBtn.style.display = 'none';
+
       if (this.countdownInterval) { clearInterval(this.countdownInterval); this.countdownInterval = null; }
+
+      // Stop periodic refocus
+      this.stopPeriodicRefocus();
 
       // Save state for persistence across navigation
       this.saveScannerState(false);
@@ -809,15 +912,95 @@
       if (!this.readerDiv || !window.Html5Qrcode) return;
       try {
         this.scanner = new Html5Qrcode('ppv-mini-reader');
+
+        // Optimized camera constraints for XCover 4S and similar devices
+        const cameraConstraints = {
+          facingMode: 'environment',
+          width: { min: 640, ideal: 1920, max: 2560 },
+          height: { min: 480, ideal: 1080, max: 1440 },
+          // Advanced constraints for better focus
+          focusMode: 'continuous',
+          exposureMode: 'continuous',
+          whiteBalanceMode: 'continuous'
+        };
+
+        // Optimized scanner config
+        const scannerConfig = {
+          fps: 30,  // Higher FPS for faster detection
+          qrbox: { width: 280, height: 280 },  // Larger scan area
+          aspectRatio: 1.0,
+          experimentalFeatures: {
+            useBarCodeDetectorIfSupported: true
+          },
+          // Only scan QR codes for faster processing
+          formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE]
+        };
+
         await this.scanner.start(
-          { facingMode: 'environment' },
-          { fps: 20, qrbox: 220, experimentalFeatures: { useBarCodeDetectorIfSupported: true } },
+          cameraConstraints,
+          scannerConfig,
           qrCode => this.onScanSuccess(qrCode)
         );
+
+        // Get video track for torch and refocus control
+        try {
+          const videoElement = document.querySelector('#ppv-mini-reader video');
+          if (videoElement && videoElement.srcObject) {
+            this.videoTrack = videoElement.srcObject.getVideoTracks()[0];
+            if (this.videoTrack) {
+              // Apply advanced focus settings
+              const capabilities = this.videoTrack.getCapabilities();
+              ppvLog('[Camera] Capabilities:', capabilities);
+
+              const advancedConstraints = [];
+
+              // Enable continuous autofocus
+              if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+                advancedConstraints.push({ focusMode: 'continuous' });
+              }
+
+              // Set focus distance for close-up QR (if supported)
+              if (capabilities.focusDistance) {
+                // Set to macro range (close focus)
+                const minFocus = capabilities.focusDistance.min || 0;
+                const maxFocus = capabilities.focusDistance.max || 1;
+                const macroFocus = minFocus + (maxFocus - minFocus) * 0.2;  // 20% into range (close)
+                advancedConstraints.push({ focusDistance: macroFocus });
+              }
+
+              // Enable continuous exposure
+              if (capabilities.exposureMode && capabilities.exposureMode.includes('continuous')) {
+                advancedConstraints.push({ exposureMode: 'continuous' });
+              }
+
+              if (advancedConstraints.length > 0) {
+                await this.videoTrack.applyConstraints({ advanced: advancedConstraints });
+                ppvLog('[Camera] Advanced constraints applied:', advancedConstraints);
+              }
+
+              // Show torch button if supported
+              if (capabilities.torch && this.torchBtn) {
+                this.torchBtn.style.display = 'inline-flex';
+              }
+
+              // Show refocus button
+              if (this.refocusBtn) {
+                this.refocusBtn.style.display = 'inline-flex';
+              }
+
+              // Start periodic refocus for problematic devices
+              this.startPeriodicRefocus();
+            }
+          }
+        } catch (trackErr) {
+          ppvWarn('[Camera] Track setup error:', trackErr);
+        }
+
         this.scanning = true;
         this.state = 'scanning';
         this.updateStatus('scanning', L.scanner_active || 'Scanning...');
       } catch (e) {
+        ppvWarn('[Camera] Start error:', e);
         this.updateStatus('error', '❌ Kamera nicht verfügbar');
       }
     }
@@ -830,31 +1013,71 @@
         const video = document.createElement('video');
         video.style.cssText = 'width:100%;height:100%;object-fit:cover;';
         video.setAttribute('playsinline', 'true');
+        video.setAttribute('autoplay', 'true');
+        video.setAttribute('muted', 'true');
         const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
         this.readerDiv.innerHTML = '';
         this.readerDiv.appendChild(video);
 
+        // Optimized iOS camera constraints
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { exact: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
+          video: {
+            facingMode: { exact: 'environment' },
+            width: { min: 640, ideal: 1920, max: 2560 },
+            height: { min: 480, ideal: 1080, max: 1440 },
+            frameRate: { ideal: 30, max: 60 }
+          }
         });
 
         video.srcObject = stream;
         await video.play();
 
-        canvas.width = video.videoWidth || 640;
-        canvas.height = video.videoHeight || 480;
+        canvas.width = video.videoWidth || 1280;
+        canvas.height = video.videoHeight || 720;
 
         this.iosStream = stream;
         this.iosVideo = video;
         this.iosCanvas = canvas;
         this.iosCanvasCtx = ctx;
+
+        // Get video track for iOS torch/refocus
+        this.videoTrack = stream.getVideoTracks()[0];
+        if (this.videoTrack) {
+          try {
+            const capabilities = this.videoTrack.getCapabilities();
+            ppvLog('[iOS Camera] Capabilities:', capabilities);
+
+            // Apply focus constraints if available
+            const advancedConstraints = [];
+            if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+              advancedConstraints.push({ focusMode: 'continuous' });
+            }
+            if (advancedConstraints.length > 0) {
+              await this.videoTrack.applyConstraints({ advanced: advancedConstraints });
+            }
+
+            // Show torch button if supported
+            if (capabilities.torch && this.torchBtn) {
+              this.torchBtn.style.display = 'inline-flex';
+            }
+
+            // Show refocus button
+            if (this.refocusBtn) {
+              this.refocusBtn.style.display = 'inline-flex';
+            }
+          } catch (constraintErr) {
+            ppvWarn('[iOS Camera] Constraint error:', constraintErr);
+          }
+        }
+
         this.scanning = true;
         this.state = 'scanning';
         this.updateStatus('scanning', L.scanner_active || 'Scanning...');
         this.iosScanLoop();
       } catch (e) {
+        ppvWarn('[iOS Camera] Start error:', e);
         this.updateStatus('error', '❌ Kamera nicht verfügbar');
       }
     }
@@ -867,11 +1090,15 @@
       if (video.readyState === video.HAVE_ENOUGH_DATA) {
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
+        // Use more aggressive inversion attempts for better detection
+        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+          inversionAttempts: 'attemptBoth'  // Try both normal and inverted
+        });
         if (code && code.data) this.onScanSuccess(code.data);
       }
 
-      if (this.scanning) setTimeout(() => this.iosScanLoop(), 100);
+      // Faster scan loop: 33ms = ~30fps (was 100ms = 10fps)
+      if (this.scanning) setTimeout(() => this.iosScanLoop(), 33);
     }
 
     onScanSuccess(qrCode) {
@@ -983,6 +1210,9 @@
       if (this.state === 'stopped' || !this.scanning) return;
       this.state = 'scanning';
       this.updateStatus('scanning', L.scanner_active || 'Scanning...');
+
+      // Trigger refocus when resuming scan (helps XCover 4S and similar devices)
+      setTimeout(() => this.triggerRefocus(), 200);
     }
 
     updateStatus(state, text) {
@@ -996,6 +1226,7 @@
 
     cleanup() {
       this.stopScanner();
+      this.stopPeriodicRefocus();
       const mini = document.getElementById('ppv-mini-scanner');
       if (mini) mini.remove();
     }
