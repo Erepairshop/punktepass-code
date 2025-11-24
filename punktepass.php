@@ -272,6 +272,7 @@ $core_modules = [
      'includes/class-ppv-ably.php',
      'includes/class-ppv-scan-monitoring.php',
      'includes/admin/class-ppv-admin-suspicious-scans.php',
+     'includes/class-ppv-user-qr.php', // Timed QR endpoint
 
 ];
 
