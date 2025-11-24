@@ -328,9 +328,14 @@
 
     $container.html(html);
 
+    // ✅ FIX: Debounced search input (300ms delay)
+    let searchDebounce = null;
     $('#ppv-search-input').on('keyup', function() {
       const query = $(this).val().toLowerCase();
-      filterRewards(query, $('#ppv-store-filter').val());
+      if (searchDebounce) clearTimeout(searchDebounce);
+      searchDebounce = setTimeout(() => {
+        filterRewards(query, $('#ppv-store-filter').val());
+      }, 300);
     });
 
     $('#ppv-store-filter').on('change', function() {

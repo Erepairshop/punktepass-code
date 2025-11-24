@@ -780,7 +780,16 @@ async function initUserDashboard() {
       window.PPV_POLL_INTERVAL_ID = setInterval(pollPoints, interval);
     };
 
-    window.PPV_VISIBILITY_HANDLER = () => startPolling();
+    // ✅ FIX: Debounced visibility handler - only restart when visible, with 3s cooldown
+    let lastVisibilityChange = 0;
+    window.PPV_VISIBILITY_HANDLER = () => {
+      if (document.hidden) return; // Only act when becoming visible
+      const now = Date.now();
+      if (now - lastVisibilityChange < 3000) return; // 3s debounce
+      lastVisibilityChange = now;
+      console.log('👁️ [Visibility] Tab visible, restarting polling');
+      startPolling();
+    };
     document.addEventListener('visibilitychange', window.PPV_VISIBILITY_HANDLER);
 
     startPolling();
