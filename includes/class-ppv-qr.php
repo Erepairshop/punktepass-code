@@ -1977,8 +1977,10 @@ class PPV_QR {
         $store_id = intval($session_store->id);
 
         // ✅ FIX: Get logs from ppv_users table (NOT WordPress users!)
+        // ✅ FIX: Include log ID for unique scan_id generation
         $logs = $wpdb->get_results($wpdb->prepare("
             SELECT
+                l.id AS log_id,
                 l.created_at,
                 l.user_id,
                 l.message,
@@ -1994,7 +1996,7 @@ class PPV_QR {
         ", $store_id));
 
         // Format response for JS with detailed info
-        $formatted = array_map(function($log) {
+        $formatted = array_map(function($log) use ($store_id) {
             $created = strtotime($log->created_at);
 
             // Extract points from message (e.g., "+5 Punkte" → 5)
@@ -2010,6 +2012,7 @@ class PPV_QR {
             $email = $log->email ?? '';
 
             return [
+                'scan_id' => "log-{$store_id}-{$log->log_id}", // ✅ Unique ID for deduplication
                 'user_id' => $log->user_id,
                 'customer_name' => $full_name ?: null,
                 'email' => $email ?: null,

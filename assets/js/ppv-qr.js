@@ -169,9 +169,9 @@
     addScanItem(log) {
       if (!this.logList) return;
 
-      // ✅ FIX: Prevent duplicates using scan_id
+      // ✅ FIX: Prevent duplicates using scan_id (always check, not just _realtime)
       const scanId = log.scan_id || `${log.user_id}-${log.date_short}-${log.time_short}`;
-      if (log._realtime && this.displayedScanIds.has(scanId)) {
+      if (this.displayedScanIds.has(scanId)) {
         ppvLog('[UI] Skipping duplicate scan:', scanId);
         return;
       }
