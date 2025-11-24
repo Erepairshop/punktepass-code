@@ -1333,7 +1333,6 @@
       this.state = 'processing';
       this.updateStatus('processing', '⏳ ' + (L.scanner_points_adding || 'Wird verarbeitet...'));
 
-      try { if (navigator.vibrate) navigator.vibrate(30); } catch (e) {}
 
       this.inlineProcessScan(qrCode);
     }
