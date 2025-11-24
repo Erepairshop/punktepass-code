@@ -404,14 +404,51 @@
 
         if (data.success) {
           this.ui.showMessage('✅ ' + data.message, 'success');
-          // ✅ FIX: Removed non-existent addLogRow call - inlineProcessScan handles UI updates
+
+          // ✅ FIX: Add scan to UI immediately (same as inlineProcessScan)
+          const now = new Date();
+          const scanId = data.scan_id || `local-${data.user_id}-${now.getTime()}`;
+
+          this.ui.addScanItem({
+            scan_id: scanId,
+            user_id: data.user_id,
+            customer_name: data.customer_name || null,
+            email: data.email || null,
+            avatar: data.avatar || null,
+            message: data.message,
+            points: data.points || 1,
+            date_short: now.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'}).replace(/\./g, '.'),
+            time_short: now.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'}),
+            success: true,
+            _realtime: true  // Prepend to top of list
+          });
         } else {
           this.ui.showMessage('⚠️ ' + (data.message || ''), 'warning');
+
+          // ✅ FIX: Add error scan to UI immediately
+          if (data.user_id) {
+            const now = new Date();
+            const scanId = data.scan_id || `local-err-${data.user_id}-${now.getTime()}`;
+
+            this.ui.addScanItem({
+              scan_id: scanId,
+              user_id: data.user_id,
+              customer_name: data.customer_name || null,
+              email: data.email || null,
+              avatar: data.avatar || null,
+              message: data.message || '⚠️ Fehler',
+              points: 0,
+              date_short: now.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'}).replace(/\./g, '.'),
+              time_short: now.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'}),
+              success: false,
+              _realtime: true
+            });
+          }
+
           if (!/bereits|gescannt|duplikat/i.test(data.message || '')) {
             OfflineSyncManager.save(qrCode);
           }
         }
-        // ✅ FIX: Removed redundant loadLogs - real-time updates handle this
       } catch (e) {
         this.ui.showMessage('⚠️ ' + (L.server_error || 'Serverfehler'), 'error');
         OfflineSyncManager.save(qrCode);
