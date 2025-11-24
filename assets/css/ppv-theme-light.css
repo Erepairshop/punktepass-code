@@ -110,75 +110,89 @@
 }
 
 /* ==========================================================================
-   🌙 DARK THEME ROOT VARIABLES (when body.ppv-dark is active)
+   🌙 DARK THEME ROOT VARIABLES (Optimized v2.0)
    ========================================================================== */
 body.ppv-dark,
 [data-theme="dark"] {
-    /* Brand Colors - Dark */
-    --pp-primary: #00a8cc;
-    --pp-primary-dark: #0077a8;
-    --pp-primary-light: #00d4ff;
-    --pp-primary-lighter: #7dd3fc;
-    --pp-primary-glow: rgba(0, 168, 204, 0.35);
+    /* Brand Colors - Enhanced Neon Cyan */
+    --pp-primary: #00d4ff;
+    --pp-primary-dark: #00a8cc;
+    --pp-primary-darker: #0088a8;
+    --pp-primary-light: #4de5ff;
+    --pp-primary-lighter: #99f0ff;
+    --pp-primary-glow: rgba(0, 212, 255, 0.40);
 
-    --pp-secondary: #00a878;
-    --pp-secondary-dark: #007d5e;
-    --pp-secondary-light: #70e8c4;
+    /* Secondary - Vibrant Teal */
+    --pp-secondary: #00d9a3;
+    --pp-secondary-dark: #00a878;
+    --pp-secondary-light: #70ffce;
+    --pp-secondary-glow: rgba(0, 217, 163, 0.35);
 
-    --pp-accent: #9333ea;
+    /* Accent - Electric Purple */
+    --pp-accent: #a855f7;
+    --pp-accent-dark: #8b5cf6;
     --pp-accent-light: #d8b4fe;
+    --pp-accent-glow: rgba(168, 85, 247, 0.35);
 
-    /* States */
-    --pp-success: #10b981;
-    --pp-warning: #f59e0b;
-    --pp-danger: #ef4444;
+    /* States - Brighter for dark bg */
+    --pp-success: #22c55e;
+    --pp-success-light: #4ade80;
+    --pp-warning: #fbbf24;
+    --pp-warning-light: #fcd34d;
+    --pp-danger: #f87171;
+    --pp-danger-light: #fca5a5;
+    --pp-info: #38bdf8;
 
-    /* Dark Surfaces */
-    --pp-bg: #0f172a;
-    --pp-bg-2: #141e33;
-    --pp-bg-3: #1e293b;
-    --pp-bg-warm: linear-gradient(135deg, #0f172a 0%, #141e33 50%, #1a2744 100%);
+    /* Dark Surfaces - Deep Navy */
+    --pp-bg: #0a0f1a;
+    --pp-bg-2: #0f172a;
+    --pp-bg-3: #1a2744;
+    --pp-bg-warm: linear-gradient(180deg, #0a0f1a 0%, #0f172a 50%, #141e33 100%);
 
-    --pp-surface: #162233;
-    --pp-surface-soft: #1b283d;
-    --pp-surface-glass: rgba(22, 34, 51, 0.85);
-    --pp-surface-elevated: #1e293b;
+    --pp-surface: #141e33;
+    --pp-surface-soft: #1a2744;
+    --pp-surface-glass: rgba(20, 30, 51, 0.88);
+    --pp-surface-elevated: #1e3048;
 
-    /* Text - Dark */
-    --pp-text: #e2e8f0;
-    --pp-text-2: #cbd5e1;
+    /* Text - High Contrast */
+    --pp-text: #f1f5f9;
+    --pp-text-2: #e2e8f0;
     --pp-text-3: #94a3b8;
     --pp-text-muted: #64748b;
-    --pp-text-inverse: #0f172a;
+    --pp-text-inverse: #0a0f1a;
 
-    /* Header - Dark */
-    --pp-header-bg: linear-gradient(135deg, #0a1424 0%, #0f172a 100%);
-    --pp-header-dark: #050a12;
+    /* Header - Darker */
+    --pp-header-bg: linear-gradient(135deg, #070c14 0%, #0a0f1a 100%);
+    --pp-header-dark: #030508;
 
-    /* Borders - Dark */
-    --pp-border: rgba(0, 168, 204, 0.25);
-    --pp-border-soft: rgba(0, 168, 204, 0.12);
-    --pp-border-strong: rgba(0, 168, 204, 0.42);
-    --pp-border-glass: rgba(0, 168, 204, 0.18);
+    /* Borders - Cyan Glow */
+    --pp-border: rgba(0, 212, 255, 0.28);
+    --pp-border-soft: rgba(0, 212, 255, 0.14);
+    --pp-border-strong: rgba(0, 212, 255, 0.50);
+    --pp-border-glass: rgba(0, 212, 255, 0.20);
 
-    /* Shadows - Dark */
-    --pp-shadow-xs: 0 1px 2px rgba(0,0,0,0.2);
-    --pp-shadow-sm: 0 2px 8px rgba(0,0,0,0.45);
-    --pp-shadow: 0 4px 16px rgba(0,0,0,0.55);
-    --pp-shadow-md: 0 8px 24px rgba(0,0,0,0.5);
-    --pp-shadow-lg: 0 10px 26px rgba(0,0,0,0.65);
-    --pp-shadow-xl: 0 20px 48px rgba(0,0,0,0.7);
-    --pp-shadow-glow: 0 0 22px rgba(0,168,204,0.35);
-    --pp-shadow-glow-lg: 0 0 40px rgba(0,168,204,0.4);
-    --pp-shadow-inner: inset 0 2px 4px rgba(0,0,0,0.2);
+    /* Shadows - Enhanced Depth + Glow */
+    --pp-shadow-xs: 0 1px 3px rgba(0,0,0,0.35);
+    --pp-shadow-sm: 0 2px 8px rgba(0,0,0,0.50);
+    --pp-shadow: 0 4px 16px rgba(0,0,0,0.60);
+    --pp-shadow-md: 0 8px 24px rgba(0,0,0,0.55);
+    --pp-shadow-lg: 0 12px 32px rgba(0,0,0,0.70);
+    --pp-shadow-xl: 0 20px 48px rgba(0,0,0,0.75);
+    --pp-shadow-glow: 0 0 24px rgba(0,212,255,0.40);
+    --pp-shadow-glow-lg: 0 0 48px rgba(0,212,255,0.50);
+    --pp-shadow-inner: inset 0 2px 4px rgba(0,0,0,0.25);
 
     /* Glassmorphism - Dark */
     --pp-glass: blur(16px) saturate(180%);
     --pp-glass-heavy: blur(24px) saturate(200%);
+    --pp-glass-light: blur(8px) saturate(150%);
 
-    /* Gradients - Dark */
-    --gradient-card: linear-gradient(145deg, #1e293b 0%, #162233 100%);
-    --gradient-shimmer: linear-gradient(90deg, transparent, rgba(0,168,204,0.2), transparent);
+    /* Gradients - Dark Neon */
+    --gradient-primary: linear-gradient(135deg, #00d4ff 0%, #00a8cc 100%);
+    --gradient-secondary: linear-gradient(135deg, #00d9a3 0%, #00a878 100%);
+    --gradient-accent: linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%);
+    --gradient-card: linear-gradient(145deg, #1a2744 0%, #141e33 100%);
+    --gradient-shimmer: linear-gradient(90deg, transparent, rgba(0,212,255,0.25), transparent);
 }
 
 /* ==========================================================================
@@ -5608,15 +5622,15 @@ body.ppv-light .ppv-theme-btn-mini {
 }
 
 /* ==========================================================================
-   USER SETTINGS – DARK MODE
+   USER SETTINGS – DARK MODE (Optimized v2.0)
    ========================================================================== */
 body.ppv-dark .ppv-settings-wrapper {
-    background: #0a121c;
-    color: #f3f4f6;
+    background: var(--pp-bg);
+    color: var(--pp-text);
 }
 
 body.ppv-dark .ppv-header-bar h2 {
-    color: #f3f4f6;
+    color: var(--pp-text);
 }
 
 body.ppv-dark .ppv-avatar-block {
@@ -5624,70 +5638,86 @@ body.ppv-dark .ppv-avatar-block {
 }
 
 body.ppv-dark #ppv-avatar-preview {
-    background: #1e293b;
-    border-color: #667eea;
+    background: var(--pp-surface);
+    border-color: var(--pp-primary);
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.25);
 }
 
 body.ppv-dark .ppv-section {
-    background: #1e293b;
-    border-color: rgba(102, 126, 234, 0.2);
-    color: #f3f4f6;
+    background: var(--pp-surface);
+    border-color: var(--pp-border);
+    color: var(--pp-text);
+    box-shadow: var(--pp-shadow-sm);
 }
 
 body.ppv-dark .ppv-section h3 {
-    color: #f3f4f6;
+    color: var(--pp-text);
 }
 
 body.ppv-dark .ppv-section p {
-    color: #9ca3af;
+    color: var(--pp-text-3);
 }
 
 body.ppv-dark .ppv-section label {
-    color: #d1d5db;
+    color: var(--pp-text-2);
 }
 
 body.ppv-dark .ppv-form input[type="text"],
 body.ppv-dark .ppv-form input[type="email"],
 body.ppv-dark .ppv-form input[type="password"] {
-    background: #0f172a;
-    border-color: rgba(102, 126, 234, 0.3);
-    color: #f3f4f6;
+    background: var(--pp-bg-2);
+    border-color: var(--pp-border);
+    color: var(--pp-text);
+}
+
+body.ppv-dark .ppv-form input:focus {
+    border-color: var(--pp-primary);
+    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.15);
 }
 
 body.ppv-dark .ppv-form input::placeholder {
-    color: #6b7280;
+    color: var(--pp-text-muted);
 }
 
 body.ppv-dark .ppv-checkbox span {
-    color: #d1d5db;
+    color: var(--pp-text-2);
 }
 
 body.ppv-dark .neutral-btn {
-    background: rgba(102, 126, 234, 0.15);
-    color: #818cf8;
+    background: rgba(0, 212, 255, 0.12);
+    color: var(--pp-primary);
+    border: 1px solid var(--pp-border);
 }
 
 body.ppv-dark .neutral-btn:hover {
-    background: rgba(102, 126, 234, 0.25);
+    background: rgba(0, 212, 255, 0.22);
+    border-color: var(--pp-primary);
 }
 
 body.ppv-dark .ppv-modal-content {
-    background: #1e293b;
-    color: #f3f4f6;
+    background: var(--pp-surface);
+    color: var(--pp-text);
+    border: 1px solid var(--pp-border);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 212, 255, 0.15);
 }
 
 body.ppv-dark .ppv-modal-content h3 {
-    color: #f3f4f6;
+    color: var(--pp-text);
 }
 
 body.ppv-dark .ppv-modal-content p {
-    color: #9ca3af;
+    color: var(--pp-text-3);
 }
 
 body.ppv-dark .ppv-modal-form input {
-    background: #0f172a;
-    border-color: rgba(102, 126, 234, 0.3);
-    color: #f3f4f6;
+    background: var(--pp-bg-2);
+    border-color: var(--pp-border);
+    color: var(--pp-text);
+}
+
+body.ppv-dark .ppv-modal-form input:focus {
+    border-color: var(--pp-primary);
+    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.15);
 }
 
 /* ==========================================================================
@@ -10093,87 +10123,87 @@ select.ppv-support-input {
    ────────────────────────────────────────────────────────────────────── */
 
 /* ██████████████████████████████████████████████████████████████████████████
-   🌙 DARK NEON THEME - Complete Dark Mode Override
+   🌙 DARK NEON THEME v2.0 - Optimized Dark Mode Override
    ██████████████████████████████████████████████████████████████████████████ */
 
 /* ==========================================================================
-   🎨 DARK THEME ROOT VARIABLES
+   🎨 DARK THEME ROOT VARIABLES (Optimized)
    ========================================================================== */
 body.ppv-dark {
-    /* 🌊 Neon Brand Colors */
+    /* 🌊 Enhanced Neon Cyan */
     --pp-primary: #00d4ff;
-    --pp-primary-dark: #00b8e6;
-    --pp-primary-darker: #0099cc;
-    --pp-primary-light: #33ddff;
-    --pp-primary-lighter: #66e6ff;
+    --pp-primary-dark: #00a8cc;
+    --pp-primary-darker: #0088a8;
+    --pp-primary-light: #4de5ff;
+    --pp-primary-lighter: #99f0ff;
     --pp-primary-glow: rgba(0, 212, 255, 0.45);
 
-    /* 🌿 Neon Secondary - Cyan/Teal */
-    --pp-secondary: #00ffc8;
-    --pp-secondary-dark: #00e6b4;
-    --pp-secondary-light: #33ffd4;
-    --pp-secondary-glow: rgba(0, 255, 200, 0.35);
+    /* 🌿 Vibrant Teal */
+    --pp-secondary: #00d9a3;
+    --pp-secondary-dark: #00a878;
+    --pp-secondary-light: #70ffce;
+    --pp-secondary-glow: rgba(0, 217, 163, 0.40);
 
-    /* 💜 Neon Accent - Electric Purple */
-    --pp-accent: #bf5af2;
-    --pp-accent-dark: #a347d1;
-    --pp-accent-light: #d17ff5;
-    --pp-accent-glow: rgba(191, 90, 242, 0.40);
+    /* 💜 Electric Purple */
+    --pp-accent: #a855f7;
+    --pp-accent-dark: #8b5cf6;
+    --pp-accent-light: #d8b4fe;
+    --pp-accent-glow: rgba(168, 85, 247, 0.40);
 
-    /* ✨ Status Colors - Neon */
-    --pp-success: #30d158;
+    /* ✨ Status Colors - Enhanced */
+    --pp-success: #22c55e;
     --pp-success-light: #4ade80;
-    --pp-warning: #ffd60a;
-    --pp-warning-light: #ffe066;
-    --pp-danger: #ff453a;
-    --pp-danger-light: #ff6b6b;
-    --pp-info: #0a84ff;
+    --pp-warning: #fbbf24;
+    --pp-warning-light: #fcd34d;
+    --pp-danger: #f87171;
+    --pp-danger-light: #fca5a5;
+    --pp-info: #38bdf8;
 
-    /* 🎨 Dark Surface Colors */
-    --pp-bg: #0a0e14;
-    --pp-bg-2: #0f1419;
-    --pp-bg-3: #151b23;
-    --pp-bg-warm: linear-gradient(135deg, #0a0e14 0%, #0f1419 50%, #101820 100%);
+    /* 🎨 Dark Surface Colors - Deep Navy */
+    --pp-bg: #0a0f1a;
+    --pp-bg-2: #0f172a;
+    --pp-bg-3: #1a2744;
+    --pp-bg-warm: linear-gradient(180deg, #0a0f1a 0%, #0f172a 50%, #141e33 100%);
 
-    --pp-surface: #151b23;
-    --pp-surface-soft: rgba(21, 27, 35, 0.92);
-    --pp-surface-glass: rgba(15, 20, 25, 0.85);
-    --pp-surface-elevated: #1a222d;
+    --pp-surface: #141e33;
+    --pp-surface-soft: #1a2744;
+    --pp-surface-glass: rgba(20, 30, 51, 0.90);
+    --pp-surface-elevated: #1e3048;
 
-    /* 📝 Text Hierarchy - Bright for dark bg */
-    --pp-text: #f0f6fc;
-    --pp-text-2: #c9d1d9;
-    --pp-text-3: #8b949e;
-    --pp-text-muted: #6e7681;
-    --pp-text-inverse: #0a0e14;
+    /* 📝 Text - High Contrast */
+    --pp-text: #f1f5f9;
+    --pp-text-2: #e2e8f0;
+    --pp-text-3: #94a3b8;
+    --pp-text-muted: #64748b;
+    --pp-text-inverse: #0a0f1a;
 
-    /* 🌙 Header Dark Neon */
-    --pp-header-bg: linear-gradient(135deg, #0a0e14 0%, #151b23 100%);
-    --pp-header-dark: #050709;
+    /* 🌙 Header - Deep Dark */
+    --pp-header-bg: linear-gradient(135deg, #070c14 0%, #0a0f1a 100%);
+    --pp-header-dark: #030508;
 
-    /* 🔲 Neon Borders */
-    --pp-border: rgba(0, 212, 255, 0.20);
-    --pp-border-soft: rgba(0, 212, 255, 0.10);
-    --pp-border-strong: rgba(0, 212, 255, 0.35);
-    --pp-border-glass: rgba(0, 212, 255, 0.15);
+    /* 🔲 Borders - Cyan Glow */
+    --pp-border: rgba(0, 212, 255, 0.28);
+    --pp-border-soft: rgba(0, 212, 255, 0.14);
+    --pp-border-strong: rgba(0, 212, 255, 0.50);
+    --pp-border-glass: rgba(0, 212, 255, 0.20);
 
-    /* ✨ Dark Shadows with Glow */
-    --pp-shadow-xs: 0 1px 2px rgba(0,0,0,0.3);
-    --pp-shadow-sm: 0 2px 8px rgba(0,0,0,0.4), 0 0 4px rgba(0, 212, 255, 0.05);
-    --pp-shadow: 0 4px 16px rgba(0,0,0,0.5), 0 0 8px rgba(0, 212, 255, 0.08);
-    --pp-shadow-md: 0 8px 24px rgba(0,0,0,0.5), 0 0 12px rgba(0, 212, 255, 0.10);
-    --pp-shadow-lg: 0 12px 32px rgba(0,0,0,0.6), 0 0 20px rgba(0, 212, 255, 0.12);
-    --pp-shadow-xl: 0 20px 48px rgba(0,0,0,0.7), 0 0 30px rgba(0, 212, 255, 0.15);
-    --pp-shadow-glow: 0 0 30px var(--pp-primary-glow);
-    --pp-shadow-glow-lg: 0 0 50px var(--pp-primary-glow);
+    /* ✨ Shadows - Enhanced Depth + Glow */
+    --pp-shadow-xs: 0 1px 3px rgba(0,0,0,0.35);
+    --pp-shadow-sm: 0 2px 8px rgba(0,0,0,0.50), 0 0 6px rgba(0, 212, 255, 0.08);
+    --pp-shadow: 0 4px 16px rgba(0,0,0,0.60), 0 0 10px rgba(0, 212, 255, 0.10);
+    --pp-shadow-md: 0 8px 24px rgba(0,0,0,0.55), 0 0 16px rgba(0, 212, 255, 0.12);
+    --pp-shadow-lg: 0 12px 32px rgba(0,0,0,0.70), 0 0 24px rgba(0, 212, 255, 0.15);
+    --pp-shadow-xl: 0 20px 48px rgba(0,0,0,0.75), 0 0 36px rgba(0, 212, 255, 0.18);
+    --pp-shadow-glow: 0 0 32px var(--pp-primary-glow);
+    --pp-shadow-glow-lg: 0 0 56px var(--pp-primary-glow);
 
     /* 🌈 Dark Neon Gradients */
-    --gradient-primary: linear-gradient(135deg, #00d4ff 0%, #00b8e6 100%);
-    --gradient-secondary: linear-gradient(135deg, #00ffc8 0%, #00e6b4 100%);
-    --gradient-accent: linear-gradient(135deg, #bf5af2 0%, #a347d1 100%);
-    --gradient-premium: linear-gradient(135deg, #00d4ff 0%, #bf5af2 50%, #ff2d55 100%);
-    --gradient-card: linear-gradient(145deg, #1a222d 0%, #151b23 100%);
-    --gradient-shimmer: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.15), transparent);
+    --gradient-primary: linear-gradient(135deg, #00d4ff 0%, #00a8cc 100%);
+    --gradient-secondary: linear-gradient(135deg, #00d9a3 0%, #00a878 100%);
+    --gradient-accent: linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%);
+    --gradient-premium: linear-gradient(135deg, #00d4ff 0%, #a855f7 50%, #ec4899 100%);
+    --gradient-card: linear-gradient(145deg, #1a2744 0%, #141e33 100%);
+    --gradient-shimmer: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.20), transparent);
 }
 
 /* ==========================================================================
@@ -10206,7 +10236,7 @@ body.ppv-dark #ppv-global-header.ppv-compact-header {
 }
 
 body.ppv-dark #ppv-global-header.ppv-compact-header::before {
-    background: linear-gradient(90deg, transparent, #00d4ff, #bf5af2, #00d4ff, transparent) !important;
+    background: linear-gradient(90deg, transparent, #00d4ff, #a855f7, #00d4ff, transparent) !important;
     opacity: 0.8;
 }
 
@@ -10346,18 +10376,18 @@ body.ppv-dark .ppv-nav-btn i {
 }
 
 body.ppv-dark .ppv-theme-btn-mini {
-    background: rgba(191, 90, 242, 0.12) !important;
-    border: 1px solid rgba(191, 90, 242, 0.25) !important;
+    background: rgba(168, 85, 247, 0.12) !important;
+    border: 1px solid rgba(168, 85, 247, 0.25) !important;
 }
 
 body.ppv-dark .ppv-theme-btn-mini:hover {
-    background: rgba(191, 90, 242, 0.22) !important;
-    box-shadow: 0 0 15px rgba(191, 90, 242, 0.3) !important;
+    background: rgba(168, 85, 247, 0.22) !important;
+    box-shadow: 0 0 15px rgba(168, 85, 247, 0.35) !important;
 }
 
 body.ppv-dark .ppv-theme-btn-mini i {
-    color: #bf5af2 !important;
-    text-shadow: 0 0 8px rgba(191, 90, 242, 0.5);
+    color: #a855f7 !important;
+    text-shadow: 0 0 8px rgba(168, 85, 247, 0.5);
 }
 
 body.ppv-dark .ppv-lang-mini {
@@ -10631,9 +10661,9 @@ body.ppv-dark .ppv-support-modal-content {
 body.ppv-dark .ppv-support-modal-content::before {
     background: linear-gradient(90deg,
         #00d4ff 0%,
-        #bf5af2 25%,
-        #00ffc8 50%,
-        #ffd60a 75%,
+        #a855f7 25%,
+        #00d9a3 50%,
+        #fbbf24 75%,
         #00d4ff 100%) !important;
 }
 
@@ -10795,7 +10825,7 @@ body.ppv-dark .ppv-qr-banner:hover {
 }
 
 body.ppv-dark .ppv-qr-banner::before {
-    background: linear-gradient(90deg, #00d4ff, #bf5af2, #00ffc8, #00d4ff) !important;
+    background: linear-gradient(90deg, #00d4ff, #a855f7, #00d9a3, #00d4ff) !important;
 }
 
 body.ppv-dark .ppv-qr-text h3 {
