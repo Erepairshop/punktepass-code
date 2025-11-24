@@ -272,6 +272,7 @@ $core_modules = [
      'includes/class-ppv-ably.php',
      'includes/class-ppv-scan-monitoring.php',
      'includes/admin/class-ppv-admin-suspicious-scans.php',
+     'includes/admin/class-ppv-admin-suspicious-devices.php', // Admin panel for suspicious devices
      'includes/class-ppv-user-qr.php', // Timed QR endpoint
      'includes/class-ppv-device-fingerprint.php', // Device fingerprint for fraud prevention
 

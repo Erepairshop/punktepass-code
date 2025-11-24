@@ -42,6 +42,12 @@ wp_add_inline_script('ppv-user-signup', "window.ppv_user_signup = {$__json};", '
 
             <h2>👤 PunktePass Benutzerregistrierung</h2>
 
+            <!-- 📱 Device limit warning box (hidden by default) -->
+            <div id="ppv_device_warning" style="display:none; padding:12px; border-radius:8px; margin-bottom:15px; font-size:14px;">
+                <span id="ppv_device_warning_icon"></span>
+                <span id="ppv_device_warning_text"></span>
+            </div>
+
             <label>E-Mail *</label>
             <input type="email" name="email" required>
 
@@ -84,17 +90,54 @@ wp_add_inline_script('ppv-user-signup', "window.ppv_user_signup = {$__json};", '
         jQuery(function($){
             // 📱 Initialize FingerprintJS and get device fingerprint
             let deviceFingerprint = '';
+            let deviceBlocked = false;
+
             if (typeof FingerprintJS !== 'undefined') {
                 FingerprintJS.load().then(fp => {
                     fp.get().then(result => {
                         deviceFingerprint = result.visitorId;
                         $('#ppv_device_fingerprint').val(deviceFingerprint);
                         console.log('📱 Device fingerprint loaded');
+
+                        // 📱 Check device limit via REST API
+                        $.ajax({
+                            url: '<?php echo rest_url('punktepass/v1/device/check'); ?>',
+                            method: 'POST',
+                            contentType: 'application/json',
+                            data: JSON.stringify({ fingerprint: deviceFingerprint }),
+                            success: function(res) {
+                                const $warning = $('#ppv_device_warning');
+                                const $icon = $('#ppv_device_warning_icon');
+                                const $text = $('#ppv_device_warning_text');
+                                const $submitBtn = $('#ppv_user_form button[type="submit"]');
+
+                                if (res.accounts >= res.limit) {
+                                    // 🔴 BLOCKED - Max accounts reached
+                                    deviceBlocked = true;
+                                    $warning.css({ display: 'block', background: '#fee2e2', border: '1px solid #ef4444', color: '#991b1b' });
+                                    $icon.text('🚫 ');
+                                    $text.text('Maximale Konten für dieses Gerät erreicht (' + res.accounts + '/' + res.limit + '). Registrierung nicht möglich.');
+                                    $submitBtn.prop('disabled', true).css({ opacity: 0.5, cursor: 'not-allowed' });
+                                } else if (res.accounts > 0) {
+                                    // 🟡 WARNING - Has accounts but can still register
+                                    $warning.css({ display: 'block', background: '#fef3c7', border: '1px solid #f59e0b', color: '#92400e' });
+                                    $icon.text('⚠️ ');
+                                    $text.text('Auf diesem Gerät existiert bereits ' + res.accounts + ' Konto. Noch ' + (res.limit - res.accounts) + ' möglich.');
+                                }
+                                // If accounts == 0, no warning shown
+                            }
+                        });
                     });
                 });
             }
 
             $('#ppv_user_form').on('submit', function(e){
+                // Block submit if device limit reached
+                if (deviceBlocked) {
+                    e.preventDefault();
+                    $('#ppv_user_msg').html('🚫 <strong>Registrierung blockiert.</strong> Maximale Konten für dieses Gerät erreicht.');
+                    return false;
+                }
                 e.preventDefault();
                 const pw  = $('#ppv_user_password').val();
                 const pw2 = $('#ppv_user_password_repeat').val();
