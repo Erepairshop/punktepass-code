@@ -915,8 +915,8 @@
       try {
         this.scanner = new Html5Qrcode('ppv-mini-reader');
 
-        // Html5Qrcode only accepts { facingMode } - advanced constraints applied later via videoTrack
-        const cameraConstraints = { facingMode: 'environment' };
+        // Html5Qrcode only accepts { facingMode } - use exact to force back camera
+        const cameraConstraints = { facingMode: { exact: 'environment' } };
 
         // Optimized scanner config
         const scannerConfig = {
