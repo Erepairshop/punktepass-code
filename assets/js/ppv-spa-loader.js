@@ -32,6 +32,16 @@ document.addEventListener("DOMContentLoaded", () => {
     document.body.classList.remove("ppv-loading");
   };
 
+  // ✅ Close QR modal before navigation (prevents flash)
+  const closeModals = () => {
+    const modal = document.getElementById("ppv-user-qr");
+    const overlay = document.getElementById("ppv-qr-overlay");
+    if (modal) modal.classList.remove("show");
+    if (overlay) overlay.classList.remove("show");
+    document.body.classList.remove("qr-modal-open");
+    document.body.style.overflow = "";
+  };
+
   // ✅ Menü intercept (with navigation guard)
   let isNavigating = false;
   document.querySelectorAll(".ppv-bottom-nav a").forEach(link => {
@@ -40,6 +50,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Block rapid clicks
       if (isNavigating) return;
+
+      // ✅ Close any open modals before navigation
+      closeModals();
 
       const url = link.href;
       if (!url || url === window.location.href) return;
@@ -116,6 +129,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ✅ History back
   window.addEventListener("popstate", async () => {
+    closeModals(); // ✅ Close modals before navigation
     fadeOut();
     try {
       const res = await fetch(location.href);
