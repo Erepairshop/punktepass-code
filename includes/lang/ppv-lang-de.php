@@ -247,6 +247,8 @@ return [
   'show_qr_in_store' => 'Zeig deinen persönlichen QR-Code im Geschäft',
   'show_qr_code' => 'QR-Code anzeigen',
   'show_this_code_to_collect' => 'Zeig diesen Code im Geschäft, um Punkte zu sammeln.',
+  'your_punktepass_qr' => 'Dein PunktePass-QR',
+  'qr_daily_limit_warning' => 'Pro Geschäft ist nur 1 Scan pro Tag möglich!',
   'stores_near_you' => 'Geschäfte in deiner Nähe',
   'store_list_auto_update' => 'Die Liste wird automatisch aktualisiert anhand deiner Position.' , 
   

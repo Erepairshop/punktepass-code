@@ -533,6 +533,33 @@ body.ppv-user-dashboard {
     transform: scale(1);
 }
 
+/* QR Warning Banner */
+.ppv-qr-warning {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border: 1px solid #f59e0b;
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);
+}
+
+.ppv-qr-warning-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.ppv-qr-warning-text {
+    font-size: 13px;
+    font-weight: 600;
+    color: #92400e;
+    line-height: 1.3;
+    text-align: left;
+}
+
 /* QR Modal Title */
 .ppv-user-qr h3,
 .ppv-user-qr .qr-title {

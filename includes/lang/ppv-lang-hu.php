@@ -277,6 +277,8 @@ return [
   'show_qr_in_store' => 'Mutasd meg a QR-kódodat az üzletben',
   'show_qr_code' => 'QR-kód megjelenítése',
   'show_this_code_to_collect' => 'Mutasd ezt a kódot a pontgyűjtéshez.',
+  'your_punktepass_qr' => 'A te PunktePass QR-kódod',
+  'qr_daily_limit_warning' => 'Üzletenként naponta csak 1 beolvasás lehetséges!',
   'stores_near_you' => 'Üzletek a közeledben',
   'store_list_auto_update' => 'A lista automatikusan frissül a pozíciód alapján.',
 
