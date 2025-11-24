@@ -273,6 +273,7 @@ $core_modules = [
      'includes/class-ppv-scan-monitoring.php',
      'includes/admin/class-ppv-admin-suspicious-scans.php',
      'includes/class-ppv-user-qr.php', // Timed QR endpoint
+     'includes/class-ppv-device-fingerprint.php', // Device fingerprint for fraud prevention
 
 ];
 
@@ -520,6 +521,7 @@ if (class_exists('PPV_Bottom_Nav')) PPV_Bottom_Nav::hooks();
 if (class_exists('PPV_Logout')) PPV_Logout::hooks();
 if (class_exists('PPV_Account_Delete')) PPV_Account_Delete::hooks();
 if (class_exists('PPV_My_Points')) PPV_My_Points::hooks();  // ← ÚJ!
+if (class_exists('PPV_Device_Fingerprint')) PPV_Device_Fingerprint::hooks(); // Device fingerprint fraud prevention
 
 if (class_exists('PPV_Theme_Handler')) PPV_Theme_Handler::hooks();
 

@@ -1245,4 +1245,16 @@ return [
     'imprint_liability_links_text' => 'Kínálatunk harmadik felek külső weboldalaira mutató hivatkozásokat tartalmaz, amelyek tartalmára nincs befolyásunk. A hivatkozott oldalak tartalmáért mindig az adott szolgáltató felelős.',
     'imprint_copyright_title' => 'Szerzői jog',
     'imprint_copyright_text' => 'Az oldal üzemeltetői által készített tartalmak és művek a német szerzői jog hatálya alá tartoznak. A szerzői jog határain túli sokszorosítás, feldolgozás és terjesztés a szerző írásbeli hozzájárulását igényli.',
+
+    // ============================================================
+    // SCAN VALIDATION - OPENING HOURS
+    // ============================================================
+    'err_store_closed' => '⏰ Az üzlet jelenleg zárva van',
+    'err_store_closed_detail' => 'Scan nem lehetséges nyitvatartási időn kívül',
+
+    // ============================================================
+    // DEVICE FINGERPRINT - ACCOUNT LIMIT
+    // ============================================================
+    'err_device_limit' => '⚠️ Eszközlimit elérve',
+    'err_device_limit_detail' => 'Maximális fiókok száma ezen az eszközön elérve',
 ];

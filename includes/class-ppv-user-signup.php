@@ -15,11 +15,16 @@ class PPV_User_Signup {
 
     /** 🔹 Scripts + AJAX URL */
     public static function enqueue_assets() {
-        wp_enqueue_script('ppv-user-signup', PPV_PLUGIN_URL . 'assets/js/ppv-user-signup.js', ['jquery'], time(), true);
+        // Load FingerprintJS for device identification
+        wp_enqueue_script('fingerprintjs', 'https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@4/dist/fp.min.js', [], '4.0', true);
+
+        wp_enqueue_script('ppv-user-signup', PPV_PLUGIN_URL . 'assets/js/ppv-user-signup.js', ['jquery', 'fingerprintjs'], time(), true);
         $__data = is_array([
-            'ajax_url' => admin_url('admin-ajax.php')
+            'ajax_url' => admin_url('admin-ajax.php'),
+            'max_accounts_per_device' => 2
         ] ?? null) ? [
-            'ajax_url' => admin_url('admin-ajax.php')
+            'ajax_url' => admin_url('admin-ajax.php'),
+            'max_accounts_per_device' => 2
         ] : [];
 $__json = wp_json_encode($__data);
 wp_add_inline_script('ppv-user-signup', "window.ppv_user_signup = {$__json};", 'before');
@@ -33,6 +38,7 @@ wp_add_inline_script('ppv-user-signup', "window.ppv_user_signup = {$__json};", '
         <form id="ppv_user_form" method="post">
             <?php wp_nonce_field('ppv_user_signup', 'ppv_user_nonce'); ?>
             <input type="hidden" name="action" value="ppv_user_signup">
+            <input type="hidden" name="device_fingerprint" id="ppv_device_fingerprint" value="">
 
             <h2>👤 PunktePass Benutzerregistrierung</h2>
 
@@ -76,6 +82,18 @@ wp_add_inline_script('ppv-user-signup', "window.ppv_user_signup = {$__json};", '
 
         <script>
         jQuery(function($){
+            // 📱 Initialize FingerprintJS and get device fingerprint
+            let deviceFingerprint = '';
+            if (typeof FingerprintJS !== 'undefined') {
+                FingerprintJS.load().then(fp => {
+                    fp.get().then(result => {
+                        deviceFingerprint = result.visitorId;
+                        $('#ppv_device_fingerprint').val(deviceFingerprint);
+                        console.log('📱 Device fingerprint loaded');
+                    });
+                });
+            }
+
             $('#ppv_user_form').on('submit', function(e){
                 e.preventDefault();
                 const pw  = $('#ppv_user_password').val();
@@ -89,6 +107,11 @@ wp_add_inline_script('ppv-user-signup', "window.ppv_user_signup = {$__json};", '
                 if (!regex.test(pw)) {
                     $('#ppv_user_msg').text('❌ Passwort muss Großbuchstaben, Zahl und Sonderzeichen enthalten.');
                     return;
+                }
+
+                // Ensure fingerprint is set
+                if (deviceFingerprint) {
+                    $('#ppv_device_fingerprint').val(deviceFingerprint);
                 }
 
                 $('#ppv_user_msg').text('⏳ Registrierung läuft...');
@@ -119,11 +142,24 @@ public static function ajax_register_user() {
     global $wpdb;
     $table = $wpdb->prefix . 'ppv_users';
 
-    $email    = sanitize_email($_POST['email'] ?? '');
-    $password = sanitize_text_field($_POST['password'] ?? '');
+    $email       = sanitize_email($_POST['email'] ?? '');
+    $password    = sanitize_text_field($_POST['password'] ?? '');
+    $fingerprint = sanitize_text_field($_POST['device_fingerprint'] ?? '');
 
     if (!is_email($email)) {
         wp_send_json_error(['msg' => 'Ungültige E-Mail-Adresse.']);
+    }
+
+    // 📱 Device fingerprint limit check (max 2 accounts per device)
+    if (!empty($fingerprint) && class_exists('PPV_Device_Fingerprint')) {
+        $device_check = PPV_Device_Fingerprint::check_device_limit($fingerprint);
+        if (!$device_check['allowed']) {
+            ppv_log("⚠️ [Signup] Device limit reached: fingerprint={$fingerprint}, accounts={$device_check['accounts']}");
+            wp_send_json_error([
+                'msg' => 'Maximale Anzahl an Konten für dieses Gerät erreicht (' . $device_check['limit'] . ').',
+                'error_type' => 'device_limit'
+            ]);
+        }
     }
 
     $exists = $wpdb->get_var($wpdb->prepare("SELECT id FROM $table WHERE email=%s", $email));
@@ -148,12 +184,17 @@ public static function ajax_register_user() {
 
     $user_id = $wpdb->insert_id;
 
+    // 📱 Store device fingerprint after successful registration
+    if (!empty($fingerprint) && $user_id > 0 && class_exists('PPV_Device_Fingerprint')) {
+        PPV_Device_Fingerprint::store_fingerprint($user_id, $fingerprint);
+    }
+
     // 🔹 Login-Session Cookie beállítás
     setcookie('ppv_user_id', $user_id, time() + (86400*14),
         COOKIEPATH ?: '/', COOKIE_DOMAIN ?: '', is_ssl(), true);
 
     // 🔹 Debug log (ellenőrzéshez)
-    ppv_log("✅ Neuer User erstellt (ID={$user_id}, Email={$email}, QR={$qr_token})");
+    ppv_log("✅ Neuer User erstellt (ID={$user_id}, Email={$email}, QR={$qr_token}, FP=" . ($fingerprint ? 'YES' : 'NO') . ")");
 
     wp_send_json_success([
         'msg' => 'Registrierung erfolgreich! Dein QR-Code wurde erstellt.',
