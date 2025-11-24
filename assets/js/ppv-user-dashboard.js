@@ -36,6 +36,7 @@ const PPV_TRANSLATIONS = {
     show_in_store: "Zeig deinen persönlichen QR-Code im Geschäft",
     show_qr: "QR-Code anzeigen",
     show_code_tip: "Zeig diesen Code im Geschäft, um Punkte zu sammeln.",
+    qr_daily_warning: "Pro Geschäft ist nur 1 Scan pro Tag möglich!",
     how_to_use: "So verwendest du den Code",
     qr_instruction_1: "1. Zeige diesen Code dem Kassierer",
     qr_instruction_2: "2. Er scannt ihn mit seinem Terminal",
@@ -90,6 +91,7 @@ const PPV_TRANSLATIONS = {
     show_in_store: "Mutasd a saját QR-kódod az üzletben",
     show_qr: "QR-kód megjelenítése",
     show_code_tip: "Mutasd ezt a kódot az üzletben a pontgyűjtéshez.",
+    qr_daily_warning: "Üzletenként naponta csak 1 beolvasás lehetséges!",
     how_to_use: "Így használd a kódot",
     qr_instruction_1: "1. Mutasd ezt a kódot a pénztárosnak",
     qr_instruction_2: "2. Ő beolvassa a terminálba",
@@ -144,6 +146,7 @@ const PPV_TRANSLATIONS = {
     show_in_store: "Arată codul tău QR în magazin",
     show_qr: "Afișează codul QR",
     show_code_tip: "Arată acest cod în magazin pentru a colecta puncte.",
+    qr_daily_warning: "Doar 1 scanare pe zi este permisă per magazin!",
     how_to_use: "Cum să folosești codul",
     qr_instruction_1: "1. Arată acest cod casierului",
     qr_instruction_2: "2. El îl scanează pe terminalul lui",
@@ -1341,6 +1344,10 @@ async function initUserDashboard() {
             <i class="ri-close-line"></i>
           </button>
           <img src="${boot.qr_url || ''}" alt="My QR Code" class="ppv-qr-image">
+          <div class="ppv-qr-warning">
+            <span class="ppv-qr-warning-icon">⚠️</span>
+            <span class="ppv-qr-warning-text">${T.qr_daily_warning}</span>
+          </div>
           <p class="qr-info">
             <strong>${T.show_code_tip}</strong>
           </p>
