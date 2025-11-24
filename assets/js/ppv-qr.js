@@ -1,10 +1,8 @@
 /**
- * PunktePass – Kassenscanner & Kampagnen v6.4 OPTIMIZED
+ * PunktePass – Kassenscanner & Kampagnen v6.3 OPTIMIZED
  * Turbo.js compatible, clean architecture
  * FIXED: Multiple init() calls causing API spam
  * FIXED: Ably connection cleanup on page navigation
- * FIXED: Better camera error messages (NotAllowed, NotFound, NotReadable, etc.)
- * FIXED: Fallback to lower resolution on OverconstrainedError
  * OPTIMIZED: Camera focus for XCover 4S and low-end devices
  * OPTIMIZED: Higher resolution, continuous autofocus, torch support
  * Author: Erik Borota / PunktePass
@@ -910,32 +908,33 @@
       }
     }
 
-    async startScanner(fallbackMode = false) {
+    async startScanner() {
       if (!this.readerDiv || !window.Html5Qrcode) return;
       try {
         this.scanner = new Html5Qrcode('ppv-mini-reader');
 
-        // Html5Qrcode only accepts { facingMode } - use exact to force back camera
-        const cameraConstraints = { facingMode: { exact: 'environment' } };
+        // Optimized camera constraints for XCover 4S and similar devices
+        const cameraConstraints = {
+          facingMode: 'environment',
+          width: { min: 640, ideal: 1920, max: 2560 },
+          height: { min: 480, ideal: 1080, max: 1440 },
+          // Advanced constraints for better focus
+          focusMode: 'continuous',
+          exposureMode: 'continuous',
+          whiteBalanceMode: 'continuous'
+        };
 
         // Optimized scanner config
         const scannerConfig = {
-          fps: fallbackMode ? 15 : 30,  // Lower FPS in fallback mode
-          qrbox: { width: 250, height: 250 },  // Scan area
+          fps: 30,  // Higher FPS for faster detection
+          qrbox: { width: 280, height: 280 },  // Larger scan area
           aspectRatio: 1.0,
-          videoConstraints: {
-            // These are passed to getUserMedia internally
-            width: { min: 640, ideal: 1280, max: 1920 },
-            height: { min: 480, ideal: 720, max: 1080 }
-          },
           experimentalFeatures: {
             useBarCodeDetectorIfSupported: true
           },
           // Only scan QR codes for faster processing
           formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE]
         };
-
-        ppvLog('[Camera] Starting with', fallbackMode ? 'fallback' : 'optimized', 'constraints');
 
         await this.scanner.start(
           cameraConstraints,
@@ -1002,53 +1001,7 @@
         this.updateStatus('scanning', L.scanner_active || 'Scanning...');
       } catch (e) {
         ppvWarn('[Camera] Start error:', e);
-
-        // Html5Qrcode may throw string errors or custom objects - normalize error info
-        const errName = e?.name || (typeof e === 'string' ? 'StringError' : 'UnknownError');
-        const errMsg = e?.message || (typeof e === 'string' ? e : JSON.stringify(e));
-        console.error('[Camera] Detailed error:', errName, errMsg, e);
-
-        // Check if error message contains constraint-related text (Html5Qrcode specific)
-        const isConstraintError = errName === 'OverconstrainedError' ||
-                                  errName === 'ConstraintNotSatisfiedError' ||
-                                  /overconstrained|constraint/i.test(errMsg);
-
-        // If constraint error and not already in fallback mode, retry with simpler constraints
-        if (isConstraintError && !fallbackMode) {
-          ppvLog('[Camera] Retrying with fallback constraints...');
-          window.ppvToast('📷 Kamera wird neu gestartet...', 'info');
-          this.scanner = null;
-          await this.startScanner(true);  // Retry with fallback mode
-          return;
-        }
-
-        // Show specific error message based on error type/message
-        let errorMsg = '❌ Kamera nicht verfügbar';
-
-        // Check by error name OR by error message content (Html5Qrcode specific)
-        if (errName === 'NotAllowedError' || errName === 'PermissionDeniedError' ||
-            /permission|denied|not allowed/i.test(errMsg)) {
-          errorMsg = '❌ Kamera-Zugriff verweigert';
-          window.ppvToast('Bitte erlaube den Kamerazugriff in den Browser-Einstellungen', 'error');
-        } else if (errName === 'NotFoundError' || errName === 'DevicesNotFoundError' ||
-                   /not found|no camera|no video/i.test(errMsg)) {
-          errorMsg = '❌ Keine Kamera gefunden';
-          window.ppvToast('Es wurde keine Kamera gefunden', 'error');
-        } else if (errName === 'NotReadableError' || errName === 'TrackStartError' ||
-                   /not readable|in use|busy/i.test(errMsg)) {
-          errorMsg = '❌ Kamera wird verwendet';
-          window.ppvToast('Die Kamera wird von einer anderen App verwendet', 'error');
-        } else if (isConstraintError) {
-          errorMsg = '❌ Kamera nicht kompatibel';
-          window.ppvToast('Die Kamera unterstützt die Anforderungen nicht', 'error');
-        } else if (errName === 'SecurityError' || /security|https|insecure/i.test(errMsg)) {
-          errorMsg = '❌ HTTPS erforderlich';
-          window.ppvToast('Kamera funktioniert nur über HTTPS', 'error');
-        } else {
-          // Unknown error - show the actual message to help debug
-          window.ppvToast('Kamera-Fehler: ' + (errMsg.substring(0, 50) || 'Unbekannt'), 'error');
-        }
-        this.updateStatus('error', errorMsg);
+        this.updateStatus('error', '❌ Kamera nicht verfügbar');
       }
     }
 
@@ -1125,24 +1078,7 @@
         this.iosScanLoop();
       } catch (e) {
         ppvWarn('[iOS Camera] Start error:', e);
-        // Show specific error message based on error type
-        let errorMsg = '❌ Kamera nicht verfügbar';
-        if (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError') {
-          errorMsg = '❌ Kamera-Zugriff verweigert';
-          window.ppvToast('Bitte erlaube den Kamerazugriff in den Browser-Einstellungen', 'error');
-        } else if (e.name === 'NotFoundError' || e.name === 'DevicesNotFoundError') {
-          errorMsg = '❌ Keine Kamera gefunden';
-        } else if (e.name === 'NotReadableError' || e.name === 'TrackStartError') {
-          errorMsg = '❌ Kamera wird verwendet';
-          window.ppvToast('Die Kamera wird von einer anderen App verwendet', 'error');
-        } else if (e.name === 'OverconstrainedError') {
-          errorMsg = '❌ Kamera nicht kompatibel';
-        } else if (e.name === 'SecurityError') {
-          errorMsg = '❌ HTTPS erforderlich';
-          window.ppvToast('Kamera funktioniert nur über HTTPS', 'error');
-        }
-        console.error('[iOS Camera] Detailed error:', e.name, e.message);
-        this.updateStatus('error', errorMsg);
+        this.updateStatus('error', '❌ Kamera nicht verfügbar');
       }
     }
 
