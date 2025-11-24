@@ -247,8 +247,9 @@ class PPV_Belohnungen {
         }
 
         if (!$user_id) {
-            $msg = self::get_label('no_login', $lang, 'Kérjük, hogy jelentkezz be');
-            return '<div class="ppv-notice-error">⚠️ ' . esc_html($msg) . '</div>';
+            // This should not happen (global redirect handles it), but just in case
+            $login_url = home_url('/einloggen/');
+            return '<script>window.location.href = "' . esc_js($login_url) . '";</script>';
         }
 
         $points = (int)$wpdb->get_var($wpdb->prepare("
