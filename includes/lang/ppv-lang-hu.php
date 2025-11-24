@@ -277,6 +277,8 @@ return [
   'show_qr_in_store' => 'Mutasd meg a QR-kódodat az üzletben',
   'show_qr_code' => 'QR-kód megjelenítése',
   'show_this_code_to_collect' => 'Mutasd ezt a kódot a pontgyűjtéshez.',
+  'your_punktepass_qr' => 'A te PunktePass QR-kódod',
+  'qr_daily_limit_warning' => 'Üzletenként naponta csak 1 beolvasás lehetséges!',
   'stores_near_you' => 'Üzletek a közeledben',
   'store_list_auto_update' => 'A lista automatikusan frissül a pozíciód alapján.',
 
@@ -506,6 +508,7 @@ return [
     'tab_contact' => 'Elérhetőség & Közösségi',
     'tab_preview' => 'Előnézet',
     'tab_settings' => 'Beállítások',
+    'tab_devices' => 'Eszközök',
     
     // ========== GENERAL TAB ==========
     'general_info' => 'Általános Információk',
@@ -911,6 +914,8 @@ return [
 'err_invalid_qr' => '❌ Érvénytelen QR',
 'err_already_scanned_today' => '⚠️ Ma már beolvasva',
 'err_duplicate_scan' => '⚠️ Már beolvasva. Kérlek várj.',
+'err_gps_distance' => 'A beolvasás nem lehetséges - túl messze van a helyszíntől',
+'err_wrong_country' => 'A beolvasás nem lehetséges - rossz ország észlelve',
 'log_point_added' => '1 pont hozzáadva',
 'scan_success' => '✅ 1 pont hozzáadva',
 'offline_synced' => '✅ Offline szinkronizálva',
@@ -1103,6 +1108,7 @@ return [
     'onboarding_reset_error' => 'Hiba történt!',
 
     // Filiale (Fiókok)
+    'all_branches' => 'Összes filiale',
     'filiale_switcher' => 'Fiók kiválasztása',
     'add_filiale' => 'Új fiók',
     'main_location' => 'Fő telephely',
@@ -1120,6 +1126,36 @@ return [
     'switching_filiale' => 'Váltás...',
     'filiale_error' => 'Hiba a fiók létrehozása közben',
     'no_filialen' => 'Nincsenek elérhető fiókok',
+
+    // Filiale Limit
+    'more_filialen_title' => 'Több fiókra van szüksége?',
+    'more_filialen_desc' => 'Elérte a fiókok maximális számát. Lépjen velünk kapcsolatba további fiókok feloldásához!',
+    'filiale_limit_info' => 'Jelenleg',
+    'filialen' => 'Fiók',
+    'contact_email' => 'E-mail',
+    'contact_email_placeholder' => 'Az Ön e-mail címe',
+    'contact_phone' => 'Telefon',
+    'contact_phone_placeholder' => 'Az Ön telefonszáma',
+    'contact_message' => 'Üzenet (opcionális)',
+    'contact_message_placeholder' => 'Hány fiókra van szüksége?',
+    'contact_required' => 'Kérjük, adjon meg egy e-mail címet vagy telefonszámot',
+    'send_request' => 'Kérés küldése',
+    'sending' => 'Küldés...',
+    'request_sent' => 'Kérés sikeresen elküldve!',
+    'sent' => 'Elküldve',
+    'send_error' => 'Hiba a küldéskor',
+    'add_new_filiale' => 'Új fiók hozzáadása',
+    'filiale_city' => 'Város',
+    'filiale_city_placeholder' => 'pl. Budapest',
+    'filiale_plz' => 'Irányítószám',
+    'filiale_plz_placeholder' => 'pl. 1010',
+    'filiale_name_placeholder' => 'pl. Budapest 1. fiók',
+    'name_required' => 'A név megadása kötelező',
+    'saving' => 'Mentés...',
+    'save' => 'Mentés',
+    'cancel' => 'Mégse',
+    'save_error' => 'Hiba a mentéskor',
+    'switch_error' => 'Hiba a váltáskor',
 
     // ============================================
     // LEGAL PAGES

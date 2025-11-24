@@ -61,10 +61,20 @@ class PPV_Rewards_Management {
             true
         );
 
+        // 📡 Ably config
+        $ably_config = null;
+        if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+            $ably_config = [
+                'key' => PPV_Ably::get_key(),
+                'channel' => 'store-' . self::get_store_id()
+            ];
+        }
+
         $payload = [
             'base'   => esc_url(rest_url('ppv/v1/')),
             'nonce'  => wp_create_nonce('wp_rest'),
-            'store_id' => self::get_store_id()
+            'store_id' => self::get_store_id(),
+            'ably' => $ably_config
         ];
 
         wp_add_inline_script(
@@ -143,22 +153,13 @@ class PPV_Rewards_Management {
             return [];
         }
 
-        // 🔍 First check if this store has a parent (meaning we're in a filiale)
-        $parent_id = $wpdb->get_var($wpdb->prepare(
-            "SELECT parent_store_id FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
-            $vendor_store_id
-        ));
-
-        // If we're in a filiale, use the parent as the main vendor
-        $main_vendor_id = $parent_id ? intval($parent_id) : $vendor_store_id;
-
-        // Get all stores: parent + all children
+        // Get all stores: parent + children
         $filialen = $wpdb->get_results($wpdb->prepare("
             SELECT id, name, company_name, address, city, plz
             FROM {$wpdb->prefix}ppv_stores
             WHERE id = %d OR parent_store_id = %d
             ORDER BY (id = %d) DESC, name ASC
-        ", $main_vendor_id, $main_vendor_id, $main_vendor_id));
+        ", $vendor_store_id, $vendor_store_id, $vendor_store_id));
 
         return $filialen ?: [];
     }
@@ -388,6 +389,17 @@ class PPV_Rewards_Management {
             $msg = class_exists('PPV_Lang') ? PPV_Lang::t('rewards_saved') : 'Jutalmazás mentve.';
         }
 
+        // 📡 Ably: Notify real-time about new reward
+        if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+            foreach ($target_stores as $target_id) {
+                PPV_Ably::trigger_reward_update($target_id, [
+                    'action' => 'created',
+                    'title' => $title,
+                    'required_points' => $points,
+                ]);
+            }
+        }
+
         return new WP_REST_Response([
             'success' => true,
             'message' => '✅ ' . $msg,
@@ -447,6 +459,16 @@ class PPV_Rewards_Management {
             ['%d', '%d']
         );
 
+        // 📡 Ably: Notify real-time about updated reward
+        if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+            PPV_Ably::trigger_reward_update($store_id, [
+                'action' => 'updated',
+                'reward_id' => $id,
+                'title' => $title,
+                'required_points' => $points,
+            ]);
+        }
+
         $msg = class_exists('PPV_Lang') ? PPV_Lang::t('rewards_updated') : 'Jutalmazás frissítve.';
         return new WP_REST_Response([
             'success' => true,
@@ -475,6 +497,14 @@ class PPV_Rewards_Management {
             "{$wpdb->prefix}ppv_rewards",
             ['id' => $id, 'store_id' => $store_id]
         );
+
+        // 📡 Ably: Notify real-time about deleted reward
+        if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+            PPV_Ably::trigger_reward_update($store_id, [
+                'action' => 'deleted',
+                'reward_id' => $id,
+            ]);
+        }
 
         $msg = class_exists('PPV_Lang') ? PPV_Lang::t('rewards_deleted') : 'Jutalmazás törölve.';
         return new WP_REST_Response([

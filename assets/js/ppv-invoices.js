@@ -1,36 +1,48 @@
 /**
  * PunktePass – Invoice Management Frontend
- * Version: 1.0
+ * Version: 1.1 - IIFE + DEBUG mode
  * ✅ Single & Collective invoices
  * ✅ Modal workflow
  * ✅ Email sending
  */
 
-console.log("✅ PPV Invoices JS v1.0 loaded");
+(function() {
+  'use strict';
 
-document.addEventListener("DOMContentLoaded", function () {
+  // Script guard - prevent duplicate loading with Turbo.js
+  if (window.PPV_INVOICES_LOADED) { return; }
+  window.PPV_INVOICES_LOADED = true;
 
-  const base = ppv_invoices?.rest_url || "/wp-json/ppv/v1/";
+  // ✅ DEBUG mode - set to true for verbose logging
+  const PPV_DEBUG = false;
+  const ppvLog = (...args) => { if (PPV_DEBUG) console.log(...args); };
+  const ppvWarn = (...args) => { if (PPV_DEBUG) console.warn(...args); };
 
-  // ============================================================
-  // 🏪 FILIALE SUPPORT: Store ID Detection
-  // ============================================================
-  let storeID = 0;
+  ppvLog("✅ PPV Invoices JS v1.1 loaded");
 
-  // ALWAYS prioritize window.PPV_STORE_ID over sessionStorage
-  if (window.PPV_STORE_ID && Number(window.PPV_STORE_ID) > 0) {
-    storeID = Number(window.PPV_STORE_ID);
-    console.log(`✅ [INVOICES] Using window.PPV_STORE_ID: ${storeID}`);
-    // Clear sessionStorage if it differs
-    const cachedStoreId = sessionStorage.getItem("ppv_store_id");
-    if (cachedStoreId && Number(cachedStoreId) !== storeID) {
-      console.log(`🔄 [INVOICES] Store ID changed: ${cachedStoreId} -> ${storeID}`);
-      sessionStorage.removeItem("ppv_store_id");
+  document.addEventListener("DOMContentLoaded", function () {
+
+    const base = ppv_invoices?.rest_url || "/wp-json/ppv/v1/";
+
+    // ============================================================
+    // 🏪 FILIALE SUPPORT: Store ID Detection
+    // ============================================================
+    let storeID = 0;
+
+    // ALWAYS prioritize window.PPV_STORE_ID over sessionStorage
+    if (window.PPV_STORE_ID && Number(window.PPV_STORE_ID) > 0) {
+      storeID = Number(window.PPV_STORE_ID);
+      ppvLog(`✅ [INVOICES] Using window.PPV_STORE_ID: ${storeID}`);
+      // Clear sessionStorage if it differs
+      const cachedStoreId = sessionStorage.getItem("ppv_store_id");
+      if (cachedStoreId && Number(cachedStoreId) !== storeID) {
+        ppvLog(`🔄 [INVOICES] Store ID changed: ${cachedStoreId} -> ${storeID}`);
+        sessionStorage.removeItem("ppv_store_id");
+      }
+    } else {
+      storeID = Number(sessionStorage.getItem("ppv_store_id") || 0) || 1;
+      ppvWarn(`⚠️ [INVOICES] window.PPV_STORE_ID not set, using sessionStorage: ${storeID}`);
     }
-  } else {
-    storeID = Number(sessionStorage.getItem("ppv_store_id") || 0) || 1;
-    console.warn(`⚠️ [INVOICES] window.PPV_STORE_ID not set, using sessionStorage: ${storeID}`);
-  }
 
   if (storeID > 0) {
     sessionStorage.setItem("ppv_store_id", storeID);
@@ -200,7 +212,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
       } catch (err) {
-        console.error(err);
+        ppvLog('[INVOICES] Error:', err);
         resultBox.innerHTML = `<p style="color: var(--ppv-danger);">❌ Serverfehler</p>`;
         showToast('Serverfehler', 'error');
       } finally {
@@ -331,7 +343,7 @@ document.addEventListener("DOMContentLoaded", function () {
           }
         }
       } catch (err) {
-        console.error(err);
+        ppvLog('[INVOICES] Preview error:', err);
         previewBox.innerHTML = `<p style="color: var(--ppv-danger);">❌ Fehler beim Laden</p>`;
       }
     });
@@ -378,7 +390,7 @@ document.addEventListener("DOMContentLoaded", function () {
           showToast(json.message, 'error');
         }
       } catch (err) {
-        console.error(err);
+        ppvLog('[INVOICES] Collective error:', err);
         resultBox.innerHTML = `<p style="color: var(--ppv-danger);">❌ Serverfehler</p>`;
       } finally {
         btn.disabled = false;
@@ -453,7 +465,7 @@ document.addEventListener("DOMContentLoaded", function () {
           showToast(json.message, 'error');
         }
       } catch (err) {
-        console.error(err);
+        ppvLog('[INVOICES] Email error:', err);
         resultBox.innerHTML = `<p style="color: var(--ppv-danger);">❌ Serverfehler</p>`;
       } finally {
         btn.disabled = false;
@@ -464,4 +476,6 @@ document.addEventListener("DOMContentLoaded", function () {
     document.body.appendChild(modal);
   }
 
-});
+  }); // End DOMContentLoaded
+
+})(); // End IIFE

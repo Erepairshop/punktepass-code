@@ -22,10 +22,10 @@ $store_url = esc_url(home_url('/store/' . $store_key));
 if (class_exists('PPV_QR_Generator')) {
     $qr_data = PPV_QR_Generator::generate_qr($store);
     $qr_img = is_array($qr_data) ? ($qr_data['img'] ?? '') : $qr_data;
-    error_log('🌀 Teilen QR generated internally for store_id=' . $store->id);
+    ppv_log('🌀 Teilen QR generated internally for store_id=' . $store->id);
 } else {
     $qr_img = 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=' . rawurlencode($store_url);
-    error_log('⚠️ Fallback external QR API used for store_id=' . $store->id);
+    ppv_log('⚠️ Fallback external QR API used for store_id=' . $store->id);
 }
 
 

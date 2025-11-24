@@ -32,11 +32,11 @@ class PPV_My_Points {
         
         if (file_exists($file)) {
             $strings = include($file);
-            error_log("✅ [PPV_My_Points] Loaded {$lang} from: {$file}");
+            ppv_log("✅ [PPV_My_Points] Loaded {$lang} from: {$file}");
             return is_array($strings) ? $strings : [];
         }
 
-        error_log("⚠️ [PPV_My_Points] Lang file not found: {$file}");
+        ppv_log("⚠️ [PPV_My_Points] Lang file not found: {$file}");
         return [];
     }
 
@@ -44,9 +44,9 @@ class PPV_My_Points {
      *  🔹 ENQUEUE SCRIPTS + INLINE STRINGS
      * ============================================================ */
     public static function enqueue_assets() {
-        error_log("🔍 [PPV_My_Points::enqueue_assets] ========== START ==========");
-        error_log("🔍 [PPV_My_Points] Current URL: " . ($_SERVER['REQUEST_URI'] ?? 'N/A'));
-        error_log("🔍 [PPV_My_Points] User Agent: " . ($_SERVER['HTTP_USER_AGENT'] ?? 'N/A'));
+        ppv_log("🔍 [PPV_My_Points::enqueue_assets] ========== START ==========");
+        ppv_log("🔍 [PPV_My_Points] Current URL: " . ($_SERVER['REQUEST_URI'] ?? 'N/A'));
+        ppv_log("🔍 [PPV_My_Points] User Agent: " . ($_SERVER['HTTP_USER_AGENT'] ?? 'N/A'));
 
         // ✅ REMOVED shortcode check - load on all pages like user-dashboard
         // This fixes issues with Elementor/page builders where $post->post_content
@@ -55,22 +55,22 @@ class PPV_My_Points {
         // Start session
         if (session_status() === PHP_SESSION_NONE) {
             @session_start();
-            error_log("🔍 [PPV_My_Points] Session started");
+            ppv_log("🔍 [PPV_My_Points] Session started");
         } else {
-            error_log("🔍 [PPV_My_Points] Session already active");
+            ppv_log("🔍 [PPV_My_Points] Session already active");
         }
 
         // ✅ GET ACTIVE LANGUAGE (SAFE)
         $lang = sanitize_text_field($_GET['lang'] ?? '');
-        error_log("🔍 [PPV_My_Points] Lang from GET: " . ($lang ?: 'EMPTY'));
+        ppv_log("🔍 [PPV_My_Points] Lang from GET: " . ($lang ?: 'EMPTY'));
 
         if (!in_array($lang, ['de', 'hu', 'ro'], true)) {
             $lang = sanitize_text_field($_COOKIE['ppv_lang'] ?? '');
-            error_log("🔍 [PPV_My_Points] Lang from COOKIE: " . ($lang ?: 'EMPTY'));
+            ppv_log("🔍 [PPV_My_Points] Lang from COOKIE: " . ($lang ?: 'EMPTY'));
         }
         if (!in_array($lang, ['de', 'hu', 'ro'], true)) {
             $lang = sanitize_text_field($_SESSION['ppv_lang'] ?? 'de');
-            error_log("🔍 [PPV_My_Points] Lang from SESSION: " . ($lang ?: 'de'));
+            ppv_log("🔍 [PPV_My_Points] Lang from SESSION: " . ($lang ?: 'de'));
         }
         if (!in_array($lang, ['de', 'hu', 'ro'], true)) {
             $lang = 'de';
@@ -80,7 +80,7 @@ class PPV_My_Points {
         $_SESSION['ppv_lang'] = $lang;
         setcookie('ppv_lang', $lang, time() + 31536000, '/', '', false, true);
 
-        error_log("🌍 [PPV_My_Points] Active language: {$lang}");
+        ppv_log("🌍 [PPV_My_Points] Active language: {$lang}");
 
         // ============================================================
         // 📦 ENQUEUE SCRIPTS
@@ -96,11 +96,18 @@ class PPV_My_Points {
             true
         );
 
+        // 📡 ABLY: Load JS library if configured
+        $js_deps = ['jquery'];
+        if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+            wp_enqueue_script('ably-js', 'https://cdn.ably.com/lib/ably.min-1.js', [], '1.2', true);
+            $js_deps[] = 'ably-js';
+        }
+
         // My Points
         wp_enqueue_script(
             'ppv-my-points',
             PPV_PLUGIN_URL . 'assets/js/ppv-my-points.js',
-            ['jquery'],
+            $js_deps,
             time(),
             true
         );
@@ -108,17 +115,32 @@ class PPV_My_Points {
         // ============================================================
         // 🌍 INLINE: GLOBAL DATA
         // ============================================================
+
+        // Get user ID for Ably channel subscription
+        $user_id = 0;
+        if (!empty($_SESSION['ppv_user_id'])) {
+            $user_id = intval($_SESSION['ppv_user_id']);
+        }
+
         $global_data = [
-    'ajaxurl' => admin_url('admin-ajax.php'),
-    'nonce'   => wp_create_nonce('ppv_mypoints_nonce'),
-    'api_url' => rest_url('ppv/v1/mypoints'),  // ✅ CORRECT ENDPOINT!
-    'lang'    => $lang,
-];
-        error_log("🔍 [PPV_My_Points] Global data prepared:");
-        error_log("    - ajaxurl: " . $global_data['ajaxurl']);
-        error_log("    - api_url: " . $global_data['api_url']);
-        error_log("    - lang: " . $global_data['lang']);
-        error_log("    - nonce: " . substr($global_data['nonce'], 0, 10) . "...");
+            'ajaxurl' => admin_url('admin-ajax.php'),
+            'nonce'   => wp_create_nonce('ppv_mypoints_nonce'),
+            'api_url' => rest_url('ppv/v1/mypoints'),
+            'lang'    => $lang,
+            'uid'     => $user_id,
+        ];
+
+        // 📡 ABLY: Add config for real-time updates
+        if (class_exists('PPV_Ably') && PPV_Ably::is_enabled() && $user_id > 0) {
+            $global_data['ably'] = [
+                'key' => PPV_Ably::get_key(),
+            ];
+        }
+        ppv_log("🔍 [PPV_My_Points] Global data prepared:");
+        ppv_log("    - ajaxurl: " . $global_data['ajaxurl']);
+        ppv_log("    - api_url: " . $global_data['api_url']);
+        ppv_log("    - lang: " . $global_data['lang']);
+        ppv_log("    - nonce: " . substr($global_data['nonce'], 0, 10) . "...");
 
         wp_add_inline_script(
             'ppv-my-points',
@@ -130,7 +152,7 @@ class PPV_My_Points {
         // 🌍 INLINE: LANGUAGE STRINGS
         // ============================================================
         $strings = self::load_lang_file($lang);
-        error_log("🔍 [PPV_My_Points] Language strings loaded: " . count($strings) . " keys");
+        ppv_log("🔍 [PPV_My_Points] Language strings loaded: " . count($strings) . " keys");
 
         wp_add_inline_script(
             'ppv-my-points',
@@ -138,8 +160,8 @@ class PPV_My_Points {
             'before'
         );
 
-        error_log("✅ [PPV_My_Points] Inline scripts added, lang={$lang}, strings=" . count($strings));
-        error_log("🔍 [PPV_My_Points::enqueue_assets] ========== END ==========");
+        ppv_log("✅ [PPV_My_Points] Inline scripts added, lang={$lang}, strings=" . count($strings));
+        ppv_log("🔍 [PPV_My_Points::enqueue_assets] ========== END ==========");
     }
 
     /** ============================================================
@@ -160,7 +182,7 @@ class PPV_My_Points {
         $html = '<div id="ppv-my-points-app" data-lang="' . esc_attr($lang) . '"></div>';
         $html .= do_shortcode('[ppv_bottom_nav]');
 
-        error_log("✅ [PPV_My_Points] Shell rendered, lang={$lang}");
+        ppv_log("✅ [PPV_My_Points] Shell rendered, lang={$lang}");
 
         return $html;
     }
@@ -169,4 +191,4 @@ class PPV_My_Points {
 // Initialize
 PPV_My_Points::hooks();
 
-error_log("✅ [PPV_My_Points] Class loaded");
+ppv_log("✅ [PPV_My_Points] Class loaded");

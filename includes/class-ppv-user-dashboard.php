@@ -48,14 +48,37 @@ class PPV_User_Dashboard {
     }
 
     private static function get_safe_user_id() {
+        global $wpdb;
         self::ensure_session();
 
+        // Priority 1: Session ppv_user_id (already the correct ppv_users.id)
         if (!empty($_SESSION['ppv_user_id'])) {
             return intval($_SESSION['ppv_user_id']);
         }
 
+        // Priority 2: WordPress user - but we need to find the corresponding ppv_users.id!
         $wp_uid = get_current_user_id();
         if ($wp_uid > 0) {
+            // ✅ FIX: Lookup ppv_users.id by WordPress user's email
+            // WordPress user ID is NOT the same as ppv_users.id!
+            $wp_user = get_userdata($wp_uid);
+            if ($wp_user && $wp_user->user_email) {
+                $ppv_user_id = $wpdb->get_var($wpdb->prepare(
+                    "SELECT id FROM {$wpdb->prefix}ppv_users WHERE email = %s LIMIT 1",
+                    $wp_user->user_email
+                ));
+
+                if ($ppv_user_id) {
+                    // Cache in session for future requests
+                    $_SESSION['ppv_user_id'] = $ppv_user_id;
+                    ppv_log("✅ [PPV_Dashboard] get_safe_user_id: Mapped WP user #{$wp_uid} ({$wp_user->user_email}) to ppv_users.id={$ppv_user_id}");
+                    return intval($ppv_user_id);
+                } else {
+                    ppv_log("⚠️ [PPV_Dashboard] get_safe_user_id: WP user #{$wp_uid} ({$wp_user->user_email}) NOT FOUND in ppv_users table");
+                }
+            }
+            // Fallback: return WordPress user ID (but this may not have points!)
+            ppv_log("⚠️ [PPV_Dashboard] get_safe_user_id: Falling back to WP user ID #{$wp_uid} (may not have points)");
             return $wp_uid;
         }
 
@@ -129,10 +152,20 @@ class PPV_User_Dashboard {
             $wpdb->insert("{$prefix}ppv_tokens", [
                 'entity_type' => 'user',
                 'entity_id' => $uid,
+                'user_id' => $uid,  // ✅ FIX: Set both user_id AND entity_id
                 'token' => $token,
                 'created_at' => current_time('mysql'),
                 'expires_at' => date('Y-m-d H:i:s', strtotime('+30 days'))
             ]);
+
+            // 🔄 INVALIDATE QR CACHE when new token is created
+            // This ensures the QR image is regenerated with the new token
+            $qr_dir = WP_CONTENT_DIR . '/uploads/ppv_qr/';
+            $qr_file = $qr_dir . "user_{$uid}.png";
+            if (file_exists($qr_file)) {
+                @unlink($qr_file);
+                ppv_log("🔄 [PPV_Dashboard] QR cache invalidated for user {$uid} - new token created");
+            }
         }
 
         return $token;
@@ -171,7 +204,7 @@ class PPV_User_Dashboard {
 
         $response = wp_remote_get($qr_api, ['timeout' => 5]);
         if (is_wp_error($response)) {
-            error_log("🚫 [PPV_Dashboard] QR generation failed: " . $response->get_error_message());
+            ppv_log("🚫 [PPV_Dashboard] QR generation failed: " . $response->get_error_message());
             return '';
         }
 
@@ -238,7 +271,7 @@ private static function is_store_open($opening_hours) {
         return false;
     }
 
-    error_log("🕒 [Open Check] Day: {$day}, Time: {$current_time}, Data: " . json_encode($hours));
+    ppv_log("🕒 [Open Check] Day: {$day}, Time: {$current_time}, Data: " . json_encode($hours));
 
     // ✅ NEW FORMAT: Check if it's closed
     if (!isset($hours[$day])) {
@@ -253,7 +286,7 @@ private static function is_store_open($opening_hours) {
     }
     
     if (!empty($day_hours['closed'])) {
-        error_log("🕒 [Open Check] CLOSED flag set for {$day}");
+        ppv_log("🕒 [Open Check] CLOSED flag set for {$day}");
         return false;
     }
 
@@ -262,12 +295,12 @@ private static function is_store_open($opening_hours) {
     $bis = $day_hours['bis'] ?? '';
 
     if (empty($von) || empty($bis)) {
-        error_log("🕒 [Open Check] Empty hours for {$day}: von={$von}, bis={$bis}");
+        ppv_log("🕒 [Open Check] Empty hours for {$day}: von={$von}, bis={$bis}");
         return false;
     }
 
     $is_open = ($current_time >= $von && $current_time <= $bis);
-    error_log("🕒 [Open Check] {$day}: {$von}-{$bis}, Current: {$current_time}, Result: " . ($is_open ? 'NYITVA' : 'ZÁRVA'));
+    ppv_log("🕒 [Open Check] {$day}: {$von}-{$bis}, Current: {$current_time}, Result: " . ($is_open ? 'NYITVA' : 'ZÁRVA'));
     
     return $is_open;
 }
@@ -352,18 +385,18 @@ private static function get_today_hours($opening_hours) {
         $detection_source = 'default';
 
         // 🔍 DEBUG: Start detection
-        error_log("🔍 [PPV_Header] === USER TYPE DETECTION START === User ID: {$uid}");
+        ppv_log("🔍 [PPV_Header] === USER TYPE DETECTION START === User ID: {$uid}");
 
         // First try session
         if (!empty($_SESSION['ppv_user_type'])) {
             $user_type = $_SESSION['ppv_user_type'];
             $detection_source = 'session';
-            error_log("✅ [PPV_Header] User type from SESSION: '{$user_type}'");
+            ppv_log("✅ [PPV_Header] User type from SESSION: '{$user_type}'");
             
             // ✅ FIX: If session says 'user', double-check the DB!
             // (Session might be stale or incorrect)
             if (strtolower($user_type) === 'user') {
-                error_log("⚠️ [PPV_Header] Session says 'user', double-checking DB...");
+                ppv_log("⚠️ [PPV_Header] Session says 'user', double-checking DB...");
                 
                 $db_user_type = $wpdb->get_var($wpdb->prepare(
                     "SELECT user_type FROM {$wpdb->prefix}ppv_users WHERE id=%d LIMIT 1",
@@ -371,18 +404,18 @@ private static function get_today_hours($opening_hours) {
                 ));
                 
                 if ($db_user_type && strtolower($db_user_type) !== 'user') {
-                    error_log("✅ [PPV_Header] DB override! Changed from 'user' to '{$db_user_type}'");
+                    ppv_log("✅ [PPV_Header] DB override! Changed from 'user' to '{$db_user_type}'");
                     $user_type = $db_user_type;
                     $detection_source = 'ppv_users (override)';
                     $_SESSION['ppv_user_type'] = $db_user_type; // Update session!
                 } else {
-                    error_log("ℹ️ [PPV_Header] DB confirms: user type is 'user'");
+                    ppv_log("ℹ️ [PPV_Header] DB confirms: user type is 'user'");
                 }
             }
         } 
         // Then check ppv_users table
         else {
-            error_log("⚠️ [PPV_Header] Session empty, checking ppv_users table...");
+            ppv_log("⚠️ [PPV_Header] Session empty, checking ppv_users table...");
             
             $db_user_type = $wpdb->get_var($wpdb->prepare(
                 "SELECT user_type FROM {$wpdb->prefix}ppv_users WHERE id=%d LIMIT 1",
@@ -393,11 +426,11 @@ private static function get_today_hours($opening_hours) {
                 $user_type = $db_user_type;
                 $detection_source = 'ppv_users';
                 $_SESSION['ppv_user_type'] = $db_user_type; // Cache in session
-                error_log("✅ [PPV_Header] User type from ppv_users: '{$db_user_type}'");
+                ppv_log("✅ [PPV_Header] User type from ppv_users: '{$db_user_type}'");
             } 
             // Fallback: Check ppv_stores table (if user is store owner)
             else {
-                error_log("⚠️ [PPV_Header] Not found in ppv_users, checking ppv_stores...");
+                ppv_log("⚠️ [PPV_Header] Not found in ppv_users, checking ppv_stores...");
                 
                 $store_check = $wpdb->get_var($wpdb->prepare(
                     "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id=%d LIMIT 1",
@@ -408,9 +441,9 @@ private static function get_today_hours($opening_hours) {
                     $user_type = 'handler';
                     $detection_source = 'ppv_stores';
                     $_SESSION['ppv_user_type'] = 'handler';
-                    error_log("✅ [PPV_Header] User is store owner → Set as 'handler'");
+                    ppv_log("✅ [PPV_Header] User is store owner → Set as 'handler'");
                 } else {
-                    error_log("❌ [PPV_Header] User #{$uid} NOT FOUND in ppv_users OR ppv_stores!");
+                    ppv_log("❌ [PPV_Header] User #{$uid} NOT FOUND in ppv_users OR ppv_stores!");
                 }
             }
         }
@@ -421,20 +454,20 @@ private static function get_today_hours($opening_hours) {
         $is_handler = in_array($user_type_clean, $handler_types);
 
         // 🔍 DEBUG: Final result
-        error_log("🔍 [PPV_Header] === DETECTION RESULT ===");
-        error_log("   User ID: {$uid}");
-        error_log("   Raw type: '{$user_type}'");
-        error_log("   Clean type: '{$user_type_clean}'");
-        error_log("   Source: {$detection_source}");
-        error_log("   Is Handler: " . ($is_handler ? 'YES ✅' : 'NO ❌'));
-        error_log("   Valid handler types: " . implode(', ', $handler_types));
+        ppv_log("🔍 [PPV_Header] === DETECTION RESULT ===");
+        ppv_log("   User ID: {$uid}");
+        ppv_log("   Raw type: '{$user_type}'");
+        ppv_log("   Clean type: '{$user_type_clean}'");
+        ppv_log("   Source: {$detection_source}");
+        ppv_log("   Is Handler: " . ($is_handler ? 'YES ✅' : 'NO ❌'));
+        ppv_log("   Valid handler types: " . implode(', ', $handler_types));
         
         if ($is_handler) {
-            error_log("✅ [PPV_Header] WILL RENDER: User Dashboard + Scanner buttons");
+            ppv_log("✅ [PPV_Header] WILL RENDER: User Dashboard + Scanner buttons");
         } else {
-            error_log("ℹ️ [PPV_Header] WILL RENDER: Points + Rewards stats");
+            ppv_log("ℹ️ [PPV_Header] WILL RENDER: Points + Rewards stats");
         }
-        error_log("🔍 [PPV_Header] === DETECTION END ===");
+        ppv_log("🔍 [PPV_Header] === DETECTION END ===");
 
         // 5️⃣ Get user data
         $email = self::get_user_email($uid);
@@ -505,7 +538,7 @@ private static function get_today_hours($opening_hours) {
                 <?php endif; ?>
             </div>
             
-            <!-- Stats (USER only) -->
+            <!-- Stats (USER only) - Points only, rewards removed -->
             <?php if (!$is_handler): ?>
             <div class="ppv-header-stats">
                 <?php if (!empty($level_badge)): ?>
@@ -515,10 +548,6 @@ private static function get_today_hours($opening_hours) {
                 <div class="ppv-stat-mini">
                     <i class="ri-star-fill"></i>
                     <span id="ppv-global-points"><?php echo esc_html($stats['points']); ?></span>
-                </div>
-                <div class="ppv-stat-mini">
-                    <i class="ri-gift-fill"></i>
-                    <span id="ppv-global-rewards"><?php echo esc_html($stats['rewards']); ?></span>
                 </div>
             </div>
             <?php endif; ?>
@@ -694,9 +723,14 @@ private static function get_today_hours($opening_hours) {
 
             <?php if (!$is_handler): ?>
             // ============================================================
-            // POINTS POLLING (USER ONLY) - Only start if not already running
+            // POINTS SYNC (USER ONLY) - Ably on dashboard, polling fallback elsewhere
             // ============================================================
-            if (!window.PPV_HEADER_POLLING_ID) {
+            // Skip header polling if dashboard page (dashboard JS handles Ably sync)
+            if (document.getElementById('ppv-dashboard-root')) {
+                console.log('📡 [Header] Dashboard detected - Ably handles sync');
+            } else if (!window.PPV_HEADER_POLLING_ID) {
+                // Fallback polling for non-dashboard pages (30s interval)
+                console.log('🔄 [Header] Starting polling fallback (30s)');
                 window.PPV_HEADER_POLLING_ID = setInterval(async () => {
                     try {
                         const res = await fetch('<?php echo esc_url(rest_url('ppv/v1/user/points-poll')); ?>', {
@@ -714,7 +748,7 @@ private static function get_today_hours($opening_hours) {
                     } catch (e) {
                         // Silent fail
                     }
-                }, 5000);
+                }, 30000); // 30s polling on non-dashboard pages
             }
             <?php endif; ?>
         }
@@ -745,10 +779,23 @@ private static function get_today_hours($opening_hours) {
             null
         );
 
+        // 📡 ABLY: Load JS SDK from CDN if enabled
+        $dependencies = ['jquery'];
+        if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+            wp_enqueue_script(
+                'ably-js',
+                'https://cdn.ably.com/lib/ably.min-1.js',
+                [],
+                '1.2',
+                true
+            );
+            $dependencies[] = 'ably-js';
+        }
+
         wp_enqueue_script(
             'ppv-dashboard',
             PPV_PLUGIN_URL . 'assets/js/ppv-user-dashboard.js',
-            ['jquery'],
+            $dependencies,
             time(),
             true
         );
@@ -798,7 +845,7 @@ private static function get_today_hours($opening_hours) {
 
         self::cleanup_tokens($uid);
 
-        return [
+        $boot = [
             'uid' => $uid,
             'email' => $email,
             'lang' => $lang,
@@ -811,6 +858,15 @@ private static function get_today_hours($opening_hours) {
                 'store_default' => PPV_PLUGIN_URL . 'assets/img/store-default-logo.webp'
             ]
         ];
+
+        // 📡 ABLY: Add config for real-time updates
+        if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+            $boot['ably'] = [
+                'key' => PPV_Ably::get_key(),
+            ];
+        }
+
+        return $boot;
     }
 
 public static function render_dashboard() {
@@ -841,20 +897,24 @@ public static function render_dashboard() {
         'permission_callback' => ['PPV_Permissions', 'allow_anonymous'],
     ]);
 
-    error_log("✅ [PPV_Dashboard] REST routes registered (with points-detailed)");
+    ppv_log("✅ [PPV_Dashboard] REST routes registered (with points-detailed)");
 }
     
     public static function rest_poll_points(WP_REST_Request $request) {
         global $wpdb;
 
-        $user_id = get_current_user_id();
+        // ✅ FIX: Use helper methods for session + user ID (same as rest_get_detailed_points)
+        self::ensure_session();
 
-        if (!$user_id && !empty($_SESSION['ppv_user_id'])) {
-            $user_id = intval($_SESSION['ppv_user_id']);
+        // ✅ FORCE SESSION RESTORE (Google/Facebook/TikTok login)
+        if (class_exists('PPV_SessionBridge') && empty($_SESSION['ppv_user_id'])) {
+            PPV_SessionBridge::restore_from_token();
         }
 
+        $user_id = self::get_safe_user_id();
+
         if ($user_id <= 0) {
-            error_log("❌ [PPV_Dashboard] rest_poll_points: No user found");
+            ppv_log("❌ [PPV_Dashboard] rest_poll_points: No user found (WP=" . get_current_user_id() . ", SESSION=" . ($_SESSION['ppv_user_id'] ?? 'none') . ")");
             return new WP_REST_Response(['success' => false, 'points' => 0], 401);
         }
 
@@ -911,13 +971,13 @@ public static function render_dashboard() {
                 $response['error_type'] = $error_type; // Send error_type for client-side translation
                 $response['error_store'] = $recent_error->store_name ?: 'PunktePass';
                 $response['error_timestamp'] = $recent_error->created_at; // Add timestamp for tracking
-                error_log("⚠️ [PPV_Dashboard] rest_poll_points: User=$user_id has recent error: " . $recent_error->message . " (type: $error_type)");
+                ppv_log("⚠️ [PPV_Dashboard] rest_poll_points: User=$user_id has recent error: " . $recent_error->message . " (type: $error_type)");
             } else {
-                error_log("✅ [PPV_Dashboard] rest_poll_points: Error found but successful scan happened after, ignoring error");
+                ppv_log("✅ [PPV_Dashboard] rest_poll_points: Error found but successful scan happened after, ignoring error");
             }
         }
 
-        error_log("✅ [PPV_Dashboard] rest_poll_points: User=$user_id, Points=" . $stats['points'] . ", Store=" . ($last_store_name ?: 'none'));
+        ppv_log("✅ [PPV_Dashboard] rest_poll_points: User=$user_id, Points=" . $stats['points'] . ", Store=" . ($last_store_name ?: 'none'));
 
         return new WP_REST_Response($response, 200);
     }
@@ -931,13 +991,13 @@ public static function render_dashboard() {
     // ✅ FORCE SESSION RESTORE (Google/Facebook/TikTok login)
     if (class_exists('PPV_SessionBridge') && empty($_SESSION['ppv_user_id'])) {
         PPV_SessionBridge::restore_from_token();
-        error_log("🔄 [PPV_Dashboard] Forced session restore from token");
+        ppv_log("🔄 [PPV_Dashboard] Forced session restore from token");
     }
 
     $user_id = self::get_safe_user_id();
 
     if ($user_id <= 0) {
-        error_log("❌ [PPV_Dashboard] No user found (WP_user=" . get_current_user_id() . ", SESSION=" . ($_SESSION['ppv_user_id'] ?? 'none') . ")");
+        ppv_log("❌ [PPV_Dashboard] No user found (WP_user=" . get_current_user_id() . ", SESSION=" . ($_SESSION['ppv_user_id'] ?? 'none') . ")");
         return new WP_REST_Response([
             'success' => false,
             'message' => 'Not authenticated',
@@ -1112,7 +1172,7 @@ public static function render_dashboard() {
 
    public static function rest_stores_optimized(WP_REST_Request $request) {
     global $wpdb;
-    error_log("🛰️ [REST DEBUG] rest_stores_optimized START");
+    ppv_log("🛰️ [REST DEBUG] rest_stores_optimized START");
 
     $prefix = $wpdb->prefix;
 
@@ -1120,8 +1180,9 @@ public static function render_dashboard() {
     $user_lng = floatval($request->get_param('lng'));
     $max_distance = floatval($request->get_param('max_distance') ?? 10);
 
-    // ✅ Cache kulcs
-    $cache_key = 'ppv_stores_list_' . md5("{$user_lat}_{$user_lng}_{$max_distance}");
+    // ✅ Cache kulcs - now includes VIP version for cache invalidation
+    $vip_version = wp_cache_get('ppv_vip_version') ?: '1';
+    $cache_key = 'ppv_stores_list_' . md5("{$user_lat}_{$user_lng}_{$max_distance}_{$vip_version}");
     $cached = wp_cache_get($cache_key);
     if ($cached !== false) {
         return new WP_REST_Response($cached, 200);
@@ -1129,10 +1190,15 @@ public static function render_dashboard() {
 
     // ✅ Alap lekérdezés – csak aktív boltok
     // ✅ FIX: Added 'country' field for currency symbol display
+    // ✅ FIX: Added VIP fields for shop card display
     $stores = $wpdb->get_results("
         SELECT id, company_name, address, city, plz, latitude, longitude,
                phone, website, logo, qr_logo, opening_hours, description,
-               gallery, facebook, instagram, tiktok, country
+               gallery, facebook, instagram, tiktok, country,
+               vip_fix_enabled, vip_fix_bronze, vip_fix_silver, vip_fix_gold, vip_fix_platinum,
+               vip_streak_enabled, vip_streak_count, vip_streak_type,
+               vip_streak_bronze, vip_streak_silver, vip_streak_gold, vip_streak_platinum,
+               vip_daily_enabled, vip_daily_bronze, vip_daily_silver, vip_daily_gold, vip_daily_platinum
         FROM {$prefix}ppv_stores
         WHERE active = 1
         ORDER BY company_name ASC
@@ -1142,12 +1208,97 @@ public static function render_dashboard() {
         return new WP_REST_Response([], 200);
     }
 
+    ppv_log("🛰️ [REST DEBUG] stores count: " . count($stores));
+
+    // ✅ SQL OPTIMIZATION: Batch fetch all rewards and campaigns in 2 queries instead of N*2
+    $store_ids = array_map(function($s) { return (int)$s->id; }, $stores);
+    $store_ids_str = implode(',', $store_ids);
+
+    // ✅ Batch query for ALL rewards
+    $all_rewards = [];
+    if (!empty($store_ids_str)) {
+        $rewards_query = "
+            SELECT store_id, id, title, required_points, points_given,
+                   action_type, action_value, currency, description
+            FROM {$prefix}ppv_rewards
+            WHERE store_id IN ({$store_ids_str})
+              AND required_points > 0
+            ORDER BY store_id, required_points ASC
+        ";
+        $rewards_raw = $wpdb->get_results($rewards_query);
+
+        // Group by store_id (limit 5 per store)
+        $rewards_count = [];
+        foreach ($rewards_raw as $r) {
+            $sid = (int)$r->store_id;
+            if (!isset($rewards_count[$sid])) $rewards_count[$sid] = 0;
+            if ($rewards_count[$sid] >= 5) continue;
+
+            if (!isset($all_rewards[$sid])) $all_rewards[$sid] = [];
+            $all_rewards[$sid][] = [
+                'id' => (int)$r->id,
+                'title' => $r->title,
+                'description' => $r->description,
+                'required_points' => (int)$r->required_points,
+                'points_given' => (int)$r->points_given,
+                'action_type' => $r->action_type,
+                'action_value' => $r->action_value,
+                'currency' => $r->currency
+            ];
+            $rewards_count[$sid]++;
+        }
+    }
+
+    // ✅ Batch query for ALL campaigns
+    $all_campaigns = [];
+    if (!empty($store_ids_str)) {
+        $campaigns_query = "
+            SELECT store_id, id, title, start_date, end_date, campaign_type,
+                   discount_percent, extra_points, multiplier,
+                   min_purchase, fixed_amount, required_points,
+                   free_product, free_product_value, points_given, description
+            FROM {$prefix}ppv_campaigns
+            WHERE store_id IN ({$store_ids_str})
+              AND status = 'active'
+              AND start_date <= CURDATE()
+              AND end_date >= CURDATE()
+            ORDER BY store_id, start_date ASC
+        ";
+        $campaigns_raw = $wpdb->get_results($campaigns_query);
+
+        // Group by store_id (limit 5 per store)
+        $campaigns_count = [];
+        foreach ($campaigns_raw as $c) {
+            $sid = (int)$c->store_id;
+            if (!isset($campaigns_count[$sid])) $campaigns_count[$sid] = 0;
+            if ($campaigns_count[$sid] >= 5) continue;
+
+            if (!isset($all_campaigns[$sid])) $all_campaigns[$sid] = [];
+            $all_campaigns[$sid][] = [
+                'id' => (int)$c->id,
+                'title' => $c->title,
+                'start_date' => $c->start_date,
+                'end_date' => $c->end_date,
+                'campaign_type' => $c->campaign_type,
+                'discount_percent' => (float)$c->discount_percent,
+                'extra_points' => (int)$c->extra_points,
+                'multiplier' => (int)$c->multiplier,
+                'min_purchase' => (float)$c->min_purchase,
+                'fixed_amount' => (float)$c->fixed_amount,
+                'required_points' => (int)$c->required_points,
+                'free_product' => $c->free_product,
+                'free_product_value' => (float)$c->free_product_value,
+                'points_given' => (int)$c->points_given,
+                'description' => $c->description
+            ];
+            $campaigns_count[$sid]++;
+        }
+    }
+
+    ppv_log("✅ [REST DEBUG] Batch loaded " . count($all_rewards) . " store rewards, " . count($all_campaigns) . " store campaigns");
+
     $result = [];
-    error_log("🛰️ [REST DEBUG] stores count: " . count($stores));
-
     foreach ($stores as $store) {
-            error_log("🏪 [REST DEBUG] Store: {$store->company_name} (ID: {$store->id})");
-
         $lat = floatval($store->latitude);
         $lng = floatval($store->longitude);
 
@@ -1169,76 +1320,47 @@ public static function render_dashboard() {
             if (is_array($decoded)) $gallery_images = array_slice($decoded, 0, 6);
         }
 
-        // ✅ Rewards quick & safe
-        $rewards = [];
-        $rws = $wpdb->get_results($wpdb->prepare("
-    SELECT 
-        id, 
-        title, 
-        required_points, 
-        points_given,      -- ✅ új mező
-        action_type, 
-        action_value, 
-        currency, 
-        description
-    FROM {$prefix}ppv_rewards
-    WHERE store_id = %d 
-      AND required_points > 0
-    ORDER BY required_points ASC 
-    LIMIT 5
-", $store->id));
+        // ✅ Get rewards from batch-loaded data
+        $rewards = $all_rewards[(int)$store->id] ?? [];
 
-if ($rws) {
-    foreach ($rws as $r) {
-        $rewards[] = [
-            'id' => (int)$r->id,
-            'title' => $r->title,
-            'description' => $r->description,
-            'required_points' => (int)$r->required_points,
-            'points_given' => (int)$r->points_given, // ✅ hozzáadva
-            'action_type' => $r->action_type,
-            'action_value' => $r->action_value,
-            'currency' => $r->currency
-        ];
-    }
-}
+        // ✅ Get campaigns from batch-loaded data
+        $campaigns = $all_campaigns[(int)$store->id] ?? [];
+        // ✅ Build VIP object (only if at least one VIP type is enabled)
+        $vip = null;
+        $has_vip = (
+            !empty($store->vip_fix_enabled) ||
+            !empty($store->vip_streak_enabled) ||
+            !empty($store->vip_daily_enabled)
+        );
 
+        if ($has_vip) {
+            $vip = [
+                'fix' => !empty($store->vip_fix_enabled) ? [
+                    'enabled' => true,
+                    'bronze' => (int)($store->vip_fix_bronze ?? 1),
+                    'silver' => (int)($store->vip_fix_silver ?? 2),
+                    'gold' => (int)($store->vip_fix_gold ?? 3),
+                    'platinum' => (int)($store->vip_fix_platinum ?? 5),
+                ] : null,
+                'streak' => !empty($store->vip_streak_enabled) ? [
+                    'enabled' => true,
+                    'count' => (int)($store->vip_streak_count ?? 10),
+                    'type' => $store->vip_streak_type ?? 'fixed',
+                    'bronze' => (int)($store->vip_streak_bronze ?? 1),
+                    'silver' => (int)($store->vip_streak_silver ?? 2),
+                    'gold' => (int)($store->vip_streak_gold ?? 3),
+                    'platinum' => (int)($store->vip_streak_platinum ?? 5),
+                ] : null,
+                'daily' => !empty($store->vip_daily_enabled) ? [
+                    'enabled' => true,
+                    'bronze' => (int)($store->vip_daily_bronze ?? 5),
+                    'silver' => (int)($store->vip_daily_silver ?? 10),
+                    'gold' => (int)($store->vip_daily_gold ?? 20),
+                    'platinum' => (int)($store->vip_daily_platinum ?? 30),
+                ] : null,
+            ];
+        }
 
-        // ✅ Campaigns - TELJES ADAT!
-$campaigns = [];
-$camps = $wpdb->get_results($wpdb->prepare("
-    SELECT id, title, start_date, end_date, campaign_type, 
-           discount_percent, extra_points, multiplier, 
-           min_purchase, fixed_amount, required_points,
-           free_product, free_product_value, points_given, description
-    FROM {$prefix}ppv_campaigns
-    WHERE store_id = %d
-      AND status = 'active'
-      AND start_date <= CURDATE()
-      AND end_date >= CURDATE()
-    ORDER BY start_date ASC LIMIT 5
-", $store->id));
-if ($camps) {
-    foreach ($camps as $c) {
-        $campaigns[] = [
-            'id' => (int)$c->id,
-            'title' => $c->title,
-            'start_date' => $c->start_date,
-            'end_date' => $c->end_date,
-            'campaign_type' => $c->campaign_type,
-            'discount_percent' => (float)$c->discount_percent,
-            'extra_points' => (int)$c->extra_points,
-            'multiplier' => (int)$c->multiplier,
-            'min_purchase' => (float)$c->min_purchase,
-            'fixed_amount' => (float)$c->fixed_amount,
-            'required_points' => (int)$c->required_points,
-            'free_product' => $c->free_product,
-            'free_product_value' => (float)$c->free_product_value,
-            'points_given' => (int)$c->points_given,
-            'description' => $c->description
-        ];
-    }
-}
         $result[] = [
             'id' => (int)$store->id,
             'company_name' => $store->company_name,
@@ -1251,17 +1373,20 @@ if ($camps) {
             'open_now' => $is_open,
             'open_hours_today' => $today_hours,
             'phone' => $store->phone,
-            'website' => $store->website,
-            'logo' => $store->logo,
-            'gallery' => $gallery_images,
+            'website' => esc_url($store->website),
+            // ✅ FIX: Validate logo URL - return null if empty/invalid
+            'logo' => (!empty($store->logo) && $store->logo !== 'null') ? esc_url($store->logo) : null,
+            'gallery' => array_map('esc_url', $gallery_images),
             'country' => $store->country ?? 'DE', // ✅ FIX: Added for currency symbol
             'social' => [
-                'facebook' => $store->facebook ?: null,
-                'instagram' => $store->instagram ?: null,
-                'tiktok' => $store->tiktok ?: null
+                // ✅ FIX: Escape social media URLs
+                'facebook' => !empty($store->facebook) ? esc_url($store->facebook) : null,
+                'instagram' => !empty($store->instagram) ? esc_url($store->instagram) : null,
+                'tiktok' => !empty($store->tiktok) ? esc_url($store->tiktok) : null
             ],
             'rewards' => $rewards,
-            'campaigns' => $campaigns
+            'campaigns' => $campaigns,
+            'vip' => $vip  // ✅ NEW: VIP bonus info
         ];
     }
 

@@ -33,6 +33,8 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
             add_action('wp_ajax_nopriv_ppv_auto_save_profile', [__CLASS__, 'ajax_auto_save_profile']); // ✅ PPV session auth
             add_action('wp_ajax_ppv_delete_gallery_image', [__CLASS__, 'ajax_delete_gallery_image']);
             add_action('wp_ajax_nopriv_ppv_delete_gallery_image', [__CLASS__, 'ajax_delete_gallery_image']); // ✅ PPV session auth
+            add_action('wp_ajax_ppv_reset_trusted_device', [__CLASS__, 'ajax_reset_trusted_device']);
+            add_action('wp_ajax_nopriv_ppv_reset_trusted_device', [__CLASS__, 'ajax_reset_trusted_device']); // ✅ PPV session auth
         }
 
         // ==================== AUTH CHECK ====================
@@ -129,7 +131,13 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
                 return;
             }
 
-            wp_enqueue_style('ppv-theme-light', PPV_PLUGIN_URL . 'assets/css/ppv-theme-light.css', [], filemtime(PPV_PLUGIN_DIR . 'assets/css/ppv-theme-light.css'));
+            // 🔹 ALWAYS USE LIGHT CSS (contains all dark mode styles via body.ppv-dark selectors)
+            wp_enqueue_style(
+                'ppv-theme-light',
+                PPV_PLUGIN_URL . 'assets/css/ppv-theme-light.css',
+                [],
+                filemtime(PPV_PLUGIN_DIR . 'assets/css/ppv-theme-light.css')
+            );
             // Google Maps JS API
 if (defined('PPV_GOOGLE_MAPS_KEY') && PPV_GOOGLE_MAPS_KEY) {
     wp_enqueue_script(
@@ -155,6 +163,14 @@ wp_localize_script('pp-profile-lite-i18n', 'ppv_profile', [
         public static function render_form() {
             self::ensure_session();
 
+            // ✅ FIX: Send no-cache headers to bypass server-level caching (LiteSpeed, Cloudflare, etc.)
+            if (!headers_sent()) {
+                header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+                header('Cache-Control: post-check=0, pre-check=0', false);
+                header('Pragma: no-cache');
+                header('Expires: Thu, 01 Jan 1970 00:00:00 GMT');
+            }
+
             // ✅ SCANNER USERS: Don't show profile/onboarding page
             if (class_exists('PPV_Permissions') && PPV_Permissions::is_scanner_user()) {
                 echo '<div class="ppv-alert ppv-alert-info" style="padding: 20px; text-align: center;">
@@ -172,6 +188,9 @@ wp_localize_script('pp-profile-lite-i18n', 'ppv_profile', [
 
             ob_start();
             ?>
+            <!-- ✅ Disable Turbo cache for this page to ensure fresh data after save -->
+            <meta name="turbo-cache-control" content="no-cache">
+
             <div class="ppv-profile-container">
                 <div class="ppv-profile-header">
                     <div class="ppv-header-left">
@@ -453,7 +472,8 @@ if (!empty($store->gallery)) {
     if (is_array($gallery)) {
         foreach ($gallery as $image_url) {
             echo '<div class="ppv-gallery-item" style="position: relative; display: inline-block; width: 100%;">';
-            echo '<img src="' . esc_url($image_url) . '" alt="Gallery" style="width: 100%; height: auto; border-radius: 4px;">';
+            // ✅ OPTIMIZED: Added loading="lazy" for performance
+            echo '<img src="' . esc_url($image_url) . '" alt="Gallery" loading="lazy" style="width: 100%; height: auto; border-radius: 4px;">';
             echo '<button type="button" class="ppv-gallery-delete-btn" data-image-url="' . esc_attr($image_url) . '" style="position: absolute; top: -10px; right: -10px; background: red; color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-size: 18px; padding: 0; line-height: 1;">×</button>';
             echo '</div>';
         }
@@ -603,13 +623,19 @@ if (!empty($store->gallery)) {
             return ob_get_clean();
         }
 
+
         private static function get_current_store() {
             global $wpdb;
+
+            // ✅ FIX: Flush WordPress object cache to ensure fresh data
+            wp_cache_flush();
+            $wpdb->flush();
 
             // 🏪 FILIALE SUPPORT: Use session-aware store ID
             $store_id = self::get_store_id();
             if ($store_id) {
-                return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1", $store_id));
+                // SQL_NO_CACHE ensures MySQL doesn't return cached results
+                return $wpdb->get_row($wpdb->prepare("SELECT SQL_NO_CACHE * FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1", $store_id));
             }
 
             // Fallback: GET parameter (admin use)
@@ -629,6 +655,8 @@ if (!empty($store->gallery)) {
         }
 
 public static function ajax_save_profile() {
+    global $wpdb; // ✅ FIX: Declare $wpdb at the start of the function
+
     if (!isset($_POST[self::NONCE_NAME])) {
         wp_send_json_error(['msg' => 'Nonce missing']);
     }
@@ -654,29 +682,44 @@ public static function ajax_save_profile() {
     $upload_dir = wp_upload_dir();
     $gallery_files = [];
 
+    // ✅ FIX: Get existing store data to preserve logo/gallery if not uploading new
+    $existing_store = $wpdb->get_row($wpdb->prepare(
+        "SELECT logo, gallery FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
+        $store_id
+    ));
+
     // Logo upload
     if (!empty($_FILES['logo']['name'])) {
         $tmp_file = $_FILES['logo']['tmp_name'];
         $filename = basename($_FILES['logo']['name']);
         $new_file = $upload_dir['path'] . '/' . $filename;
-        
+
         if (move_uploaded_file($tmp_file, $new_file)) {
             $_POST['logo'] = $upload_dir['url'] . '/' . $filename;
         }
+    } else {
+        // ✅ FIX: Preserve existing logo if no new upload
+        $_POST['logo'] = $existing_store->logo ?? '';
     }
 
     // Gallery upload
     if (!empty($_FILES['gallery']['name'][0])) {
+        // ✅ FIX: Get existing gallery to merge with new uploads
+        $existing_gallery = json_decode($existing_store->gallery ?? '[]', true) ?: [];
+
         foreach ($_FILES['gallery']['name'] as $key => $filename) {
             if ($_FILES['gallery']['error'][$key] === UPLOAD_ERR_OK) {
                 $tmp_file = $_FILES['gallery']['tmp_name'][$key];
                 $new_file = $upload_dir['path'] . '/' . basename($filename);
-                
+
                 if (move_uploaded_file($tmp_file, $new_file)) {
                     $gallery_files[] = $upload_dir['url'] . '/' . basename($filename);
                 }
             }
         }
+
+        // ✅ FIX: Merge new uploads with existing gallery (append new images)
+        $gallery_files = array_merge($existing_gallery, $gallery_files);
     }
 
 
@@ -712,9 +755,11 @@ public static function ajax_save_profile() {
         'address' => sanitize_text_field($_POST['address'] ?? ''),
         'plz' => sanitize_text_field($_POST['plz'] ?? ''),
         'city' => sanitize_text_field($_POST['city'] ?? ''),
-        
-        
-        
+
+        // ✅ COMPANY FIELDS (were missing!)
+        'company_name' => sanitize_text_field($_POST['company_name'] ?? ''),
+        'contact_person' => sanitize_text_field($_POST['contact_person'] ?? ''),
+
         // ✅ ÚJ MEZŐK:
         'tax_id' => sanitize_text_field($_POST['tax_id'] ?? ''),
         'is_taxable' => !empty($_POST['is_taxable']) ? 1 : 0,
@@ -734,12 +779,10 @@ public static function ajax_save_profile() {
         'timezone' => sanitize_text_field($_POST['timezone'] ?? 'Europe/Berlin'),
         'updated_at' => current_time('mysql'),
         'logo' => sanitize_text_field($_POST['logo'] ?? ''),
-'gallery' => !empty($gallery_files) ? json_encode($gallery_files) : ($_POST['gallery'] ?? ''),
+// ✅ FIX: Preserve existing gallery if no new uploads
+        'gallery' => !empty($gallery_files) ? json_encode($gallery_files) : ($existing_store->gallery ?? ''),
     'opening_hours' => json_encode($opening_hours),  // ← ADD THIS!
 ];
-
-
-    global $wpdb;
 
 // ✅ Format specifierek az összes mezőhöz
 $format_specs = [
@@ -752,6 +795,8 @@ $format_specs = [
     '%s',  // address
     '%s',  // plz
     '%s',  // city
+    '%s',  // company_name (was missing!)
+    '%s',  // contact_person (was missing!)
     '%s',  // tax_id
     '%d',  // is_taxable
     '%s',  // phone
@@ -767,12 +812,14 @@ $format_specs = [
     '%d',  // maintenance_mode
     '%s',  // maintenance_message
     '%s',  // timezone
+    '%s',  // updated_at (was missing!)
     '%s',  // logo
     '%s',  // gallery
+    '%s',  // opening_hours (was missing!)
 ];
 
-error_log("💾 [DEBUG] Saving store ID: {$store_id}");
-error_log("💾 [DEBUG] Country: " . ($update_data['country'] ?? 'NULL'));
+ppv_log("💾 [DEBUG] Saving store ID: {$store_id}");
+ppv_log("💾 [DEBUG] Country: " . ($update_data['country'] ?? 'NULL'));
 
 $result = $wpdb->update(
     $wpdb->prefix . 'ppv_stores',
@@ -782,10 +829,20 @@ $result = $wpdb->update(
     ['%d']
 );
 
-error_log("💾 [DEBUG] Update result: " . ($result !== false ? 'OK' : 'FAILED'));
+ppv_log("💾 [DEBUG] Update result: " . ($result !== false ? 'OK' : 'FAILED'));
 
     if ($result !== false) {
-        wp_send_json_success(['msg' => PPV_Lang::t('profile_saved_success'), 'store_id' => $store_id]);
+        // ✅ FIX: Return updated store data so JS can refresh form fields without reload
+        $updated_store = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
+            $store_id
+        ));
+
+        wp_send_json_success([
+            'msg' => PPV_Lang::t('profile_saved_success'),
+            'store_id' => $store_id,
+            'store' => $updated_store  // ✅ This enables updateFormFields() in JS
+        ]);
     } else {
         wp_send_json_error(['msg' => PPV_Lang::t('profile_save_error')]);
     }
@@ -956,7 +1013,7 @@ if (empty($address) || empty($city) || empty($country)) {
     // ✅ JOBB FORMÁTUM (vessző, ország)
     $full_address = "{$address}, {$plz} {$city}, {$country_name}";
     
-    error_log("🔍 [PPV_GEOCODE] Keresés: {$full_address}");
+    ppv_log("🔍 [PPV_GEOCODE] Keresés: {$full_address}");
 
     $google_api_key = defined('PPV_GOOGLE_MAPS_KEY') ? PPV_GOOGLE_MAPS_KEY : '';
 
@@ -965,7 +1022,7 @@ if (empty($address) || empty($city) || empty($country)) {
 // 1️⃣ GOOGLE MAPS GEOCODING (Erőteljes keresés)
 // ============================================================
 if ($google_api_key) {
-    error_log("🔍 [PPV_GEOCODE] Google Maps API keresés iniciálva");
+    ppv_log("🔍 [PPV_GEOCODE] Google Maps API keresés iniciálva");
     
     // Több keresési variáns
     $search_variants = [
@@ -976,7 +1033,7 @@ if ($google_api_key) {
     ];
 
     foreach ($search_variants as $search_query) {
-        error_log("  → Variáns: {$search_query}");
+        ppv_log("  → Variáns: {$search_query}");
         
         $url = 'https://maps.googleapis.com/maps/api/geocode/json';
         $response = wp_remote_get(
@@ -992,7 +1049,7 @@ if ($google_api_key) {
         if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
             $data = json_decode(wp_remote_retrieve_body($response), true);
             
-            error_log("  ✓ Status: " . ($data['status'] ?? 'unknown'));
+            ppv_log("  ✓ Status: " . ($data['status'] ?? 'unknown'));
 
             if ($data['status'] === 'OK' && !empty($data['results'])) {
                 $first = $data['results'][0];
@@ -1009,7 +1066,7 @@ if ($google_api_key) {
                     }
                 }
 
-                error_log("✅ [PPV_GEOCODE] Google Maps MEGTALÁLTA: {$lat}, {$lon} ({$detected_country})");
+                ppv_log("✅ [PPV_GEOCODE] Google Maps MEGTALÁLTA: {$lat}, {$lon} ({$detected_country})");
 
                 wp_send_json_success([
                     'lat' => round($lat, 4),
@@ -1023,11 +1080,11 @@ if ($google_api_key) {
         }
     }
     
-error_log("⚠️ [PPV_GEOCODE] Google Maps utca: NINCS TALÁLAT - fallback városra");
+ppv_log("⚠️ [PPV_GEOCODE] Google Maps utca: NINCS TALÁLAT - fallback városra");
 
 // FALLBACK: Csak város keresése
 $city_search = "{$city}, {$country_name}";
-error_log("🔍 [PPV_GEOCODE] Fallback keresés: {$city_search}");
+ppv_log("🔍 [PPV_GEOCODE] Fallback keresés: {$city_search}");
 
 $url = 'https://maps.googleapis.com/maps/api/geocode/json';
 $response = wp_remote_get(
@@ -1057,7 +1114,7 @@ if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 2
             }
         }
 
-        error_log("✅ [PPV_GEOCODE] Város MEGTALÁLVA: {$lat}, {$lon}");
+        ppv_log("✅ [PPV_GEOCODE] Város MEGTALÁLVA: {$lat}, {$lon}");
 
         // 🔴 FONTOS: flag hogy manuálisra kell váltani
         wp_send_json_success([
@@ -1072,7 +1129,7 @@ if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 2
     }
 }
 
-error_log("❌ [PPV_GEOCODE] Város sem találva!");
+ppv_log("❌ [PPV_GEOCODE] Város sem találva!");
 }
 
 
@@ -1095,7 +1152,7 @@ $search_variants = [
 ];
 
 foreach ($search_variants as $idx => $search_query) {
-    error_log("🔍 [PPV_GEOCODE] Keresési variáns #" . ($idx + 1) . ": {$search_query}");
+    ppv_log("🔍 [PPV_GEOCODE] Keresési variáns #" . ($idx + 1) . ": {$search_query}");
     
     $url = 'https://nominatim.openstreetmap.org/search';
     $response = wp_remote_get(
@@ -1119,7 +1176,7 @@ foreach ($search_variants as $idx => $search_query) {
     if (!is_wp_error($response)) {
         $results = json_decode(wp_remote_retrieve_body($response), true);
         
-        error_log("📍 [PPV_GEOCODE] Variáns #" . ($idx + 1) . " találatok: " . count($results ?? []) . "");
+        ppv_log("📍 [PPV_GEOCODE] Variáns #" . ($idx + 1) . " találatok: " . count($results ?? []) . "");
         
         if (!empty($results)) {
             // Legjobb találat: házszámos street vagy épület
@@ -1164,8 +1221,8 @@ foreach ($search_variants as $idx => $search_query) {
                     }
                 }
 
-                error_log("✅ [PPV_GEOCODE] Nominatim MEGTALÁLVA (variáns #" . ($idx + 1) . "): {$lat}, {$lon} ({$detected_country})");
-                error_log("   Display: " . ($best['display_name'] ?? 'N/A'));
+                ppv_log("✅ [PPV_GEOCODE] Nominatim MEGTALÁLVA (variáns #" . ($idx + 1) . "): {$lat}, {$lon} ({$detected_country})");
+                ppv_log("   Display: " . ($best['display_name'] ?? 'N/A'));
 
                 wp_send_json_success([
                     'lat' => round($lat, 4),
@@ -1183,12 +1240,49 @@ foreach ($search_variants as $idx => $search_query) {
     usleep(500000);
 }
 
-error_log("❌ [PPV_GEOCODE] Egyik variáns sem találta meg: {$full_address}");
+ppv_log("❌ [PPV_GEOCODE] Egyik variáns sem találta meg: {$full_address}");
 wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan írni (pl. teljes utcanévvel).']);
 }
+
+        /**
+         * ============================================================
+         * 🔒 RESET TRUSTED DEVICE FINGERPRINT
+         * ============================================================
+         */
+        public static function ajax_reset_trusted_device() {
+            self::ensure_session();
+
+            $auth = self::check_auth();
+            if (!$auth['valid']) {
+                wp_send_json_error(['message' => 'Nincs jogosultság']);
+                return;
+            }
+
+            $store_id = self::get_store_id();
+            if (!$store_id) {
+                wp_send_json_error(['message' => 'Store not found']);
+                return;
+            }
+
+            global $wpdb;
+
+            // Reset the trusted device fingerprint
+            $result = $wpdb->update(
+                "{$wpdb->prefix}ppv_stores",
+                ['trusted_device_fingerprint' => null],
+                ['id' => $store_id]
+            );
+
+            if ($result !== false) {
+                ppv_log("[PPV_DEVICES] Trusted device reset for store #{$store_id}");
+                wp_send_json_success(['message' => 'Megbízható eszköz visszaállítva']);
+            } else {
+                wp_send_json_error(['message' => 'Hiba történt']);
+            }
+        }
     }
-    
-    
+
+
 
     PPV_Profile_Lite_i18n::hooks();
 }

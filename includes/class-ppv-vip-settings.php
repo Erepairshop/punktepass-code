@@ -123,19 +123,70 @@ class PPV_VIP_Settings {
     }
 
     /** ============================================================
+     *  🏢 GET ALL FILIALEN FOR HANDLER
+     * ============================================================ */
+    public static function get_handler_filialen() {
+        global $wpdb;
+
+        // Get the base store ID (not filiale-specific)
+        $base_store_id = null;
+
+        if (!empty($_SESSION['ppv_store_id'])) {
+            $base_store_id = intval($_SESSION['ppv_store_id']);
+        } elseif (!empty($_SESSION['ppv_vendor_store_id'])) {
+            $base_store_id = intval($_SESSION['ppv_vendor_store_id']);
+        } elseif (!empty($GLOBALS['ppv_active_store_id'])) {
+            $base_store_id = intval($GLOBALS['ppv_active_store_id']);
+        }
+
+        if (!$base_store_id) {
+            // Try DB fallback
+            $uid = get_current_user_id();
+            if ($uid > 0) {
+                $base_store_id = $wpdb->get_var($wpdb->prepare(
+                    "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id=%d LIMIT 1",
+                    $uid
+                ));
+            }
+        }
+
+        if (!$base_store_id) {
+            return [];
+        }
+
+        // Get all stores: parent + children
+        $filialen = $wpdb->get_results($wpdb->prepare("
+            SELECT id, name, company_name, address, city, plz
+            FROM {$wpdb->prefix}ppv_stores
+            WHERE id = %d OR parent_store_id = %d
+            ORDER BY (id = %d) DESC, name ASC
+        ", $base_store_id, $base_store_id, $base_store_id));
+
+        return $filialen ?: [];
+    }
+
+    /** ============================================================
      *  📡 REST: Get VIP Settings (Extended)
      * ============================================================ */
     public static function rest_get_settings(WP_REST_Request $request) {
         global $wpdb;
 
-        $store_id = self::get_store_id();
+        // Check for filiale_id parameter
+        $filiale_param = $request->get_param('filiale_id');
+        if ($filiale_param && $filiale_param !== 'all') {
+            // Use specific filiale
+            $store_id = intval($filiale_param);
+        } else {
+            // Use default store
+            $store_id = self::get_store_id();
+        }
+
         if (!$store_id) {
             return new WP_REST_Response(['success' => false, 'msg' => 'Store not found'], 403);
         }
 
         $store = $wpdb->get_row($wpdb->prepare(
             "SELECT
-                vip_enabled, vip_bronze_bonus, vip_silver_bonus, vip_gold_bonus, vip_platinum_bonus,
                 vip_fix_enabled, vip_fix_bronze, vip_fix_silver, vip_fix_gold, vip_fix_platinum,
                 vip_streak_enabled, vip_streak_count, vip_streak_type,
                 vip_streak_bronze, vip_streak_silver, vip_streak_gold, vip_streak_platinum,
@@ -151,14 +202,7 @@ class PPV_VIP_Settings {
         return new WP_REST_Response([
             'success' => true,
             'data' => [
-                // 1. Percentage bonus (Bronze is new, starts at 100 lifetime points)
-                'vip_enabled' => (bool) ($store->vip_enabled ?? 0),
-                'vip_bronze_bonus' => intval($store->vip_bronze_bonus ?? 3),
-                'vip_silver_bonus' => intval($store->vip_silver_bonus ?? 5),
-                'vip_gold_bonus' => intval($store->vip_gold_bonus ?? 10),
-                'vip_platinum_bonus' => intval($store->vip_platinum_bonus ?? 20),
-
-                // 2. Fixed point bonus
+                // 1. Fixed point bonus
                 'vip_fix_enabled' => (bool) ($store->vip_fix_enabled ?? 0),
                 'vip_fix_bronze' => intval($store->vip_fix_bronze ?? 1),
                 'vip_fix_silver' => intval($store->vip_fix_silver ?? 2),
@@ -190,7 +234,16 @@ class PPV_VIP_Settings {
     public static function rest_save_settings(WP_REST_Request $request) {
         global $wpdb;
 
-        $store_id = self::get_store_id();
+        // Check for filiale_id parameter
+        $filiale_param = $request->get_param('filiale_id');
+        if ($filiale_param && $filiale_param !== 'all') {
+            // Save to specific filiale
+            $store_id = intval($filiale_param);
+        } else {
+            // Use default store
+            $store_id = self::get_store_id();
+        }
+
         if (!$store_id) {
             return new WP_REST_Response(['success' => false, 'msg' => 'Store not found'], 403);
         }
@@ -203,14 +256,7 @@ class PPV_VIP_Settings {
             return max($min, min($max, intval($request->get_param($key) ?? $default)));
         };
 
-        // 1. Percentage bonus values (Bronze → Silver → Gold → Platinum)
-        $vip_enabled = (bool) $request->get_param('vip_enabled');
-        $bronze_pct = $getInt('vip_bronze_bonus', 3, 0, 100);
-        $silver_pct = $getInt('vip_silver_bonus', 5, 0, 100);
-        $gold_pct = $getInt('vip_gold_bonus', 10, 0, 100);
-        $platinum_pct = $getInt('vip_platinum_bonus', 20, 0, 100);
-
-        // 2. Fixed point bonus values
+        // 1. Fixed point bonus values
         $fix_enabled = (bool) $request->get_param('vip_fix_enabled');
         $fix_bronze = $getInt('vip_fix_bronze', 1, 0, 1000);
         $fix_silver = $getInt('vip_fix_silver', 2, 0, 1000);
@@ -240,19 +286,16 @@ class PPV_VIP_Settings {
         $errors = [];
         $error_messages = [
             'de' => [
-                'pct' => 'Prozent-Bonus: Die Werte müssen aufsteigend sein (Bronze ≤ Silber ≤ Gold ≤ Platin)',
                 'fix' => 'Fixpunkte-Bonus: Die Werte müssen aufsteigend sein (Bronze ≤ Silber ≤ Gold ≤ Platin)',
                 'streak' => 'X. Scan Bonus: Die Werte müssen aufsteigend sein (Bronze ≤ Silber ≤ Gold ≤ Platin)',
                 'daily' => 'Erster Scan des Tages: Die Werte müssen aufsteigend sein (Bronze ≤ Silber ≤ Gold ≤ Platin)',
             ],
             'hu' => [
-                'pct' => 'Százalékos bónusz: Az értékeknek növekvő sorrendben kell lenniük (Bronz ≤ Ezüst ≤ Arany ≤ Platina)',
                 'fix' => 'Fix pont bónusz: Az értékeknek növekvő sorrendben kell lenniük (Bronz ≤ Ezüst ≤ Arany ≤ Platina)',
                 'streak' => 'X. scan bónusz: Az értékeknek növekvő sorrendben kell lenniük (Bronz ≤ Ezüst ≤ Arany ≤ Platina)',
                 'daily' => 'Első napi scan: Az értékeknek növekvő sorrendben kell lenniük (Bronz ≤ Ezüst ≤ Arany ≤ Platina)',
             ],
             'ro' => [
-                'pct' => 'Bonus procentual: Valorile trebuie să fie în ordine crescătoare (Bronz ≤ Argint ≤ Aur ≤ Platină)',
                 'fix' => 'Bonus puncte fixe: Valorile trebuie să fie în ordine crescătoare (Bronz ≤ Argint ≤ Aur ≤ Platină)',
                 'streak' => 'Bonus scanare X: Valorile trebuie să fie în ordine crescătoare (Bronz ≤ Argint ≤ Aur ≤ Platină)',
                 'daily' => 'Prima scanare zilnică: Valorile trebuie să fie în ordine crescătoare (Bronz ≤ Argint ≤ Aur ≤ Platină)',
@@ -261,9 +304,6 @@ class PPV_VIP_Settings {
         $err = $error_messages[$lang] ?? $error_messages['de'];
 
         // Check ascending order for each enabled bonus type (Bronze ≤ Silver ≤ Gold ≤ Platinum)
-        if ($vip_enabled && !($bronze_pct <= $silver_pct && $silver_pct <= $gold_pct && $gold_pct <= $platinum_pct)) {
-            $errors[] = $err['pct'];
-        }
         if ($fix_enabled && !($fix_bronze <= $fix_silver && $fix_silver <= $fix_gold && $fix_gold <= $fix_platinum)) {
             $errors[] = $err['fix'];
         }
@@ -282,23 +322,17 @@ class PPV_VIP_Settings {
             ], 400);
         }
 
-        // Save to database (with Bronze columns)
+        // Save to database
         $result = $wpdb->update(
             $wpdb->prefix . 'ppv_stores',
             [
-                // 1. Percentage (Bronze → Silver → Gold → Platinum)
-                'vip_enabled' => $vip_enabled ? 1 : 0,
-                'vip_bronze_bonus' => $bronze_pct,
-                'vip_silver_bonus' => $silver_pct,
-                'vip_gold_bonus' => $gold_pct,
-                'vip_platinum_bonus' => $platinum_pct,
-                // 2. Fixed
+                // 1. Fixed
                 'vip_fix_enabled' => $fix_enabled ? 1 : 0,
                 'vip_fix_bronze' => $fix_bronze,
                 'vip_fix_silver' => $fix_silver,
                 'vip_fix_gold' => $fix_gold,
                 'vip_fix_platinum' => $fix_platinum,
-                // 3. Streak
+                // 2. Streak
                 'vip_streak_enabled' => $streak_enabled ? 1 : 0,
                 'vip_streak_count' => $streak_count,
                 'vip_streak_type' => $streak_type,
@@ -306,7 +340,7 @@ class PPV_VIP_Settings {
                 'vip_streak_silver' => $streak_silver,
                 'vip_streak_gold' => $streak_gold,
                 'vip_streak_platinum' => $streak_platinum,
-                // 4. Daily
+                // 3. Daily
                 'vip_daily_enabled' => $daily_enabled ? 1 : 0,
                 'vip_daily_bronze' => $daily_bronze,
                 'vip_daily_silver' => $daily_silver,
@@ -314,16 +348,21 @@ class PPV_VIP_Settings {
                 'vip_daily_platinum' => $daily_platinum,
             ],
             ['id' => $store_id],
-            ['%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%s', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d'],
+            ['%d', '%d', '%d', '%d', '%d', '%d', '%d', '%s', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d'],
             ['%d']
         );
 
         if ($result === false) {
-            error_log("❌ [PPV_VIP] Failed to save VIP settings for store {$store_id}");
+            ppv_log("❌ [PPV_VIP] Failed to save VIP settings for store {$store_id}");
             return new WP_REST_Response(['success' => false, 'msg' => 'Database error'], 500);
         }
 
-        error_log("✅ [PPV_VIP] Extended VIP settings saved: store={$store_id}");
+        // ✅ CACHE INVALIDATION: Increment VIP version to invalidate store list cache
+        $current_version = wp_cache_get('ppv_vip_version') ?: 1;
+        wp_cache_set('ppv_vip_version', $current_version + 1);
+        ppv_log("🔄 [PPV_VIP] Cache invalidated: VIP version incremented to " . ($current_version + 1));
+
+        ppv_log("✅ [PPV_VIP] Extended VIP settings saved: store={$store_id}");
 
         return new WP_REST_Response(['success' => true, 'msg' => 'VIP settings saved'], 200);
     }
@@ -337,6 +376,10 @@ class PPV_VIP_Settings {
             return '<div class="ppv-error">Not authorized. Please log in.</div>';
         }
 
+        // Get filialen for dropdown
+        $filialen = self::get_handler_filialen();
+        $has_multiple_filialen = count($filialen) > 1;
+
         // Get current language
         $lang = isset($_COOKIE['ppv_lang']) ? sanitize_text_field($_COOKIE['ppv_lang']) : 'de';
 
@@ -345,6 +388,7 @@ class PPV_VIP_Settings {
             'de' => [
                 'title' => 'VIP Bonus-Punkte',
                 'subtitle' => 'Gib deinen treuen Kunden extra Punkte basierend auf ihrem Level!',
+                'all_branches' => 'Alle Filialen',
                 'bronze_label' => 'Bronze',
                 'silver_label' => 'Silber',
                 'gold_label' => 'Gold',
@@ -354,10 +398,6 @@ class PPV_VIP_Settings {
                 'error' => 'Fehler beim Speichern',
 
                 // Bonus type cards
-                'pct_title' => 'Prozent-Bonus',
-                'pct_desc' => 'Jeder Scan bringt X% extra Punkte',
-                'pct_suffix' => '% extra',
-
                 'fix_title' => 'Fixpunkte-Bonus',
                 'fix_desc' => 'Jeder Scan bringt X extra Punkte',
                 'fix_suffix' => ' Punkte',
@@ -378,18 +418,18 @@ class PPV_VIP_Settings {
                 'preview_title' => 'Live-Vorschau',
                 'preview_scenario' => 'Szenario: 100 Punkte Scan, 10. Besuch heute, erster Scan heute',
                 'preview_base' => 'Basis-Punkte',
-                'preview_pct' => 'Prozent-Bonus',
                 'preview_fix' => 'Fixpunkte',
                 'preview_streak' => 'X. Scan Bonus',
                 'preview_daily' => 'Erster Scan',
                 'preview_total' => 'Gesamt',
 
                 // Validation
-                'validation_error' => 'Die Werte müssen aufsteigend sein: Silber ≤ Gold ≤ Platin',
+                'validation_error' => 'Die Werte müssen aufsteigend sein: Bronze ≤ Silber ≤ Gold ≤ Platin',
             ],
             'hu' => [
                 'title' => 'VIP Bónusz Pontok',
                 'subtitle' => 'Adj extra pontokat a hűséges vásárlóidnak a szintjük alapján!',
+                'all_branches' => 'Összes filiale',
                 'bronze_label' => 'Bronz',
                 'silver_label' => 'Ezüst',
                 'gold_label' => 'Arany',
@@ -399,10 +439,6 @@ class PPV_VIP_Settings {
                 'error' => 'Mentési hiba',
 
                 // Bonus type cards
-                'pct_title' => 'Százalékos Bónusz',
-                'pct_desc' => 'Minden scan X% extra pontot hoz',
-                'pct_suffix' => '% extra',
-
                 'fix_title' => 'Fix Pont Bónusz',
                 'fix_desc' => 'Minden scan X extra pontot hoz',
                 'fix_suffix' => ' pont',
@@ -423,18 +459,18 @@ class PPV_VIP_Settings {
                 'preview_title' => 'Élő Előnézet',
                 'preview_scenario' => 'Forgatókönyv: 100 pontos scan, 10. látogatás ma, első scan ma',
                 'preview_base' => 'Alap pontok',
-                'preview_pct' => 'Százalék bónusz',
                 'preview_fix' => 'Fix pont',
                 'preview_streak' => 'X. scan bónusz',
                 'preview_daily' => 'Első scan',
                 'preview_total' => 'Összesen',
 
                 // Validation
-                'validation_error' => 'Az értékeknek növekvő sorrendben kell lenniük: Ezüst ≤ Arany ≤ Platina',
+                'validation_error' => 'Az értékeknek növekvő sorrendben kell lenniük: Bronz ≤ Ezüst ≤ Arany ≤ Platina',
             ],
             'ro' => [
                 'title' => 'Puncte Bonus VIP',
                 'subtitle' => 'Oferă puncte extra clienților fideli în funcție de nivelul lor!',
+                'all_branches' => 'Toate filialele',
                 'bronze_label' => 'Bronz',
                 'silver_label' => 'Argint',
                 'gold_label' => 'Aur',
@@ -444,10 +480,6 @@ class PPV_VIP_Settings {
                 'error' => 'Eroare la salvare',
 
                 // Bonus type cards
-                'pct_title' => 'Bonus Procentual',
-                'pct_desc' => 'Fiecare scanare aduce X% puncte extra',
-                'pct_suffix' => '% extra',
-
                 'fix_title' => 'Bonus Puncte Fixe',
                 'fix_desc' => 'Fiecare scanare aduce X puncte extra',
                 'fix_suffix' => ' puncte',
@@ -468,18 +500,18 @@ class PPV_VIP_Settings {
                 'preview_title' => 'Previzualizare Live',
                 'preview_scenario' => 'Scenariu: scanare 100 puncte, a 10-a vizită azi, prima scanare azi',
                 'preview_base' => 'Puncte de bază',
-                'preview_pct' => 'Bonus procentual',
                 'preview_fix' => 'Puncte fixe',
                 'preview_streak' => 'Bonus scanare X',
                 'preview_daily' => 'Prima scanare',
                 'preview_total' => 'Total',
 
                 // Validation
-                'validation_error' => 'Valorile trebuie să fie în ordine crescătoare: Argint ≤ Aur ≤ Platină',
+                'validation_error' => 'Valorile trebuie să fie în ordine crescătoare: Bronz ≤ Argint ≤ Aur ≤ Platină',
             ],
         ][$lang] ?? [
             'title' => 'VIP Bonus-Punkte',
             'subtitle' => 'Gib deinen treuen Kunden extra Punkte basierend auf ihrem Level!',
+            'all_branches' => 'Alle Filialen',
             'bronze_label' => 'Bronze',
             'silver_label' => 'Silber',
             'gold_label' => 'Gold',
@@ -487,9 +519,6 @@ class PPV_VIP_Settings {
             'save_btn' => 'Einstellungen speichern',
             'saved' => 'Gespeichert!',
             'error' => 'Fehler beim Speichern',
-            'pct_title' => 'Prozent-Bonus',
-            'pct_desc' => 'Jeder Scan bringt X% extra Punkte',
-            'pct_suffix' => '% extra',
             'fix_title' => 'Fixpunkte-Bonus',
             'fix_desc' => 'Jeder Scan bringt X extra Punkte',
             'fix_suffix' => ' Punkte',
@@ -506,12 +535,11 @@ class PPV_VIP_Settings {
             'preview_title' => 'Live-Vorschau',
             'preview_scenario' => 'Szenario: 100 Punkte Scan, 10. Besuch heute, erster Scan heute',
             'preview_base' => 'Basis-Punkte',
-            'preview_pct' => 'Prozent-Bonus',
             'preview_fix' => 'Fixpunkte',
             'preview_streak' => 'X. Scan Bonus',
             'preview_daily' => 'Erster Scan',
             'preview_total' => 'Gesamt',
-            'validation_error' => 'Die Werte müssen aufsteigend sein: Silber ≤ Gold ≤ Platin',
+            'validation_error' => 'Die Werte müssen aufsteigend sein: Bronze ≤ Silber ≤ Gold ≤ Platin',
         ];
 
         ob_start();
@@ -520,6 +548,19 @@ class PPV_VIP_Settings {
             <div class="ppv-vip-header">
                 <h2><i class="ri-vip-crown-fill"></i> <?php echo esc_html($T['title']); ?></h2>
                 <p class="ppv-vip-subtitle"><?php echo esc_html($T['subtitle']); ?></p>
+                <?php if ($has_multiple_filialen): ?>
+                <div class="ppv-vip-filiale-selector" style="margin-top: 15px;">
+                    <select id="ppv-vip-filiale" class="ppv-select">
+                        <option value="all"><?php echo esc_html($T['all_branches']); ?></option>
+                        <?php foreach ($filialen as $filiale): ?>
+                            <option value="<?php echo esc_attr($filiale->id); ?>">
+                                <?php echo esc_html($filiale->name ?: $filiale->company_name); ?>
+                                <?php if ($filiale->city): ?> – <?php echo esc_html($filiale->city); ?><?php endif; ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <?php endif; ?>
             </div>
 
             <div class="ppv-vip-form">

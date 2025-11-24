@@ -67,6 +67,10 @@
         const saveBtn = document.getElementById('ppv-vip-save');
         const statusEl = document.getElementById('ppv-vip-status');
 
+        // Filiale selector
+        const filialeSelect = document.getElementById('ppv-vip-filiale');
+        let currentFilialeId = filialeSelect?.value || 'all';
+
         // Current preview level
         let currentPreviewLevel = 'gold';
 
@@ -82,7 +86,13 @@
                 return;
             }
 
-            fetch(window.ppv_vip.base + 'vip/settings', {
+            // Build URL with filiale_id parameter
+            let url = window.ppv_vip.base + 'vip/settings';
+            if (currentFilialeId && currentFilialeId !== 'all') {
+                url += '?filiale_id=' + encodeURIComponent(currentFilialeId);
+            }
+
+            fetch(url, {
                 method: 'GET',
                 headers: {
                     'X-WP-Nonce': window.ppv_vip.nonce
@@ -324,6 +334,15 @@
             });
         });
 
+        // Filiale change listener - reload settings for selected filiale
+        if (filialeSelect) {
+            filialeSelect.addEventListener('change', () => {
+                currentFilialeId = filialeSelect.value;
+                console.log('✅ [VIP] Filiale changed to:', currentFilialeId);
+                loadSettings();
+            });
+        }
+
         // ═══════════════════════════════════════════════════════════
         // SAVE SETTINGS
         // ═══════════════════════════════════════════════════════════
@@ -356,6 +375,11 @@
 
             // Language
             formData.append('lang', lang);
+
+            // Filiale ID
+            if (currentFilialeId && currentFilialeId !== 'all') {
+                formData.append('filiale_id', currentFilialeId);
+            }
 
             // 1. Fixed
             formData.append('vip_fix_enabled', fixEnabled?.checked ? '1' : '0');

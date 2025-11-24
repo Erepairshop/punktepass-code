@@ -41,7 +41,7 @@ class PPV_Logout {
 
         // ✅ CRITICAL: No output before redirect!
         if (headers_sent($file, $line)) {
-            error_log("❌ [PPV_Logout] Headers already sent in {$file}:{$line}");
+            ppv_log("❌ [PPV_Logout] Headers already sent in {$file}:{$line}");
             // Try JavaScript redirect as fallback
             echo '<script>window.location.href="' . home_url('/login') . '";</script>';
             exit;
@@ -51,7 +51,7 @@ class PPV_Logout {
         $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
         $domain = str_replace('www.', '', $host);
         
-        error_log("🚪 [PPV_Logout] Starting logout - Domain: {$domain}");
+        ppv_log("🚪 [PPV_Logout] Starting logout - Domain: {$domain}");
 
         // 1️⃣ WP logout
         if (is_user_logged_in()) {
@@ -62,7 +62,7 @@ class PPV_Logout {
         if (session_status() === PHP_SESSION_ACTIVE) {
             $_SESSION = [];
             session_destroy();
-            error_log("✅ [PPV_Logout] Session destroyed");
+            ppv_log("✅ [PPV_Logout] Session destroyed");
         } elseif (session_status() === PHP_SESSION_NONE) {
             @session_start();
             $_SESSION = [];
@@ -100,7 +100,7 @@ class PPV_Logout {
             }
         }
 
-        error_log("✅ [PPV_Logout] Cookies cleared");
+        ppv_log("✅ [PPV_Logout] Cookies cleared");
 
         // 4️⃣ SAFE Redirect (NO wp_safe_redirect - causes issues!)
         $redirect_url = home_url('/login');
@@ -116,7 +116,7 @@ class PPV_Logout {
         header('Expires: Wed, 11 Jan 1984 05:00:00 GMT');
         header('Location: ' . $redirect_url, true, 302);
         
-        error_log("✅ [PPV_Logout] Redirecting to: {$redirect_url}");
+        ppv_log("✅ [PPV_Logout] Redirecting to: {$redirect_url}");
         
         exit;
     }

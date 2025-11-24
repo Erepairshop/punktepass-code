@@ -19,6 +19,9 @@ class PPV_QR {
         add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
         add_action('rest_api_init', [__CLASS__, 'register_rest_routes']);
         add_action('wp_ajax_ppv_switch_filiale', [__CLASS__, 'ajax_switch_filiale']);
+        // Ably auth endpoint for token requests (both logged-in and guest users)
+        add_action('wp_ajax_ppv_ably_auth', [__CLASS__, 'ajax_ably_auth']);
+        add_action('wp_ajax_nopriv_ppv_ably_auth', [__CLASS__, 'ajax_ably_auth']);
     }
 
     // ============================================================
@@ -92,6 +95,49 @@ class PPV_QR {
         }
 
         return null;
+    }
+
+    /** ============================================================
+     *  🏢 GET ALL FILIALEN FOR HANDLER
+     * ============================================================ */
+    public static function get_handler_filialen() {
+        global $wpdb;
+
+        // Get the base store ID (not filiale-specific)
+        $base_store_id = null;
+
+        if (!empty($_SESSION['ppv_store_id'])) {
+            $base_store_id = intval($_SESSION['ppv_store_id']);
+        } elseif (!empty($_SESSION['ppv_vendor_store_id'])) {
+            $base_store_id = intval($_SESSION['ppv_vendor_store_id']);
+        } elseif (!empty($GLOBALS['ppv_active_store_id'])) {
+            $base_store_id = intval($GLOBALS['ppv_active_store_id']);
+        }
+
+        if (!$base_store_id) {
+            // Try DB fallback
+            $uid = get_current_user_id();
+            if ($uid > 0) {
+                $base_store_id = $wpdb->get_var($wpdb->prepare(
+                    "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id=%d LIMIT 1",
+                    $uid
+                ));
+            }
+        }
+
+        if (!$base_store_id) {
+            return [];
+        }
+
+        // Get all stores: parent + children
+        $filialen = $wpdb->get_results($wpdb->prepare("
+            SELECT id, name, company_name, address, city, plz
+            FROM {$wpdb->prefix}ppv_stores
+            WHERE id = %d OR parent_store_id = %d
+            ORDER BY (id = %d) DESC, name ASC
+        ", $base_store_id, $base_store_id, $base_store_id));
+
+        return $filialen ?: [];
     }
 
     private static function validate_store($store_key) {
@@ -260,21 +306,94 @@ class PPV_QR {
             'metadata' => $metadata,
             'created_at' => current_time('mysql')
         ]);
+
+        // ✅ Return the log ID for scan_id generation
+        return $wpdb->insert_id;
     }
 
     private static function decode_user_from_qr($qr) {
+        global $wpdb;
         if (empty($qr)) return false;
+
+        // ✅ FIX: Look up user by TOKEN from ppv_tokens.entity_id
+        // The QR may contain wrong user_id, but ppv_tokens.entity_id is source of truth
 
         if (strpos($qr, 'PPU') === 0) {
             $body = substr($qr, 3);
-            if (preg_match('/^(\d+)/', $body, $m)) {
-                return intval($m[1]);
+
+            // ✅ FIX: Token is ALWAYS 16 characters - take LAST 16 chars
+            // This fixes the bug when token starts with digit (e.g. "5SEmtXSebxC0kwd3")
+            // Old regex would incorrectly parse "PPU35SEmtXSebxC0kwd3" as user_id=35
+            if (strlen($body) >= 16) {
+                $token_from_qr = substr($body, -16); // Last 16 chars = token
+                $uid_from_qr = intval(substr($body, 0, -16)); // Everything before = user_id (for logging only)
+
+                // Look up entity_id directly from ppv_tokens by token
+                $token_entity_id = $wpdb->get_var($wpdb->prepare("
+                    SELECT entity_id
+                    FROM {$wpdb->prefix}ppv_tokens
+                    WHERE token=%s AND entity_type='user' AND expires_at > NOW()
+                    LIMIT 1
+                ", $token_from_qr));
+
+                if ($token_entity_id) {
+                    if ($uid_from_qr != $token_entity_id) {
+                        ppv_log("⚠️ [PPV_QR] decode_user_from_qr: QR user_id mismatch! QR={$uid_from_qr}, token_entity_id={$token_entity_id} - using token_entity_id");
+                    }
+                    return intval($token_entity_id);
+                }
+
+                // Fallback to QR user_id if token not found (legacy support)
+                ppv_log("⚠️ [PPV_QR] decode_user_from_qr: Token not found in DB, falling back to QR user_id={$uid_from_qr}");
+                return $uid_from_qr;
             }
         }
 
         if (strpos($qr, 'PPUSER-') === 0) {
             $parts = explode('-', $qr);
-            return intval($parts[1] ?? 0);
+            $uid_from_qr = intval($parts[1] ?? 0);
+            $token_from_qr = $parts[2] ?? '';
+
+            if (!empty($token_from_qr)) {
+                // ✨ NEW: Check if this is a TIMED token (16+ chars)
+                if (strlen($token_from_qr) >= 16) {
+                    // Validate timed token from transient
+                    $cache_key = "ppv_timed_qr_{$uid_from_qr}";
+                    $qr_data = get_transient($cache_key);
+
+                    if (!$qr_data) {
+                        // Token expired or doesn't exist
+                        ppv_log("⚠️ [PPV_QR] Timed QR expired or invalid for user {$uid_from_qr}");
+                        return false;
+                    }
+
+                    if ($qr_data['token'] !== $token_from_qr) {
+                        // Token mismatch - potential fraud attempt
+                        ppv_log("⚠️ [PPV_QR] Timed QR token mismatch for user {$uid_from_qr} - fraud attempt?");
+                        return false;
+                    }
+
+                    // ✅ Valid timed token
+                    ppv_log("✅ [PPV_QR] Valid timed QR for user {$uid_from_qr}");
+                    return intval($uid_from_qr);
+                }
+
+                // Original 10-char token → validate from database
+                $actual_user_id = $wpdb->get_var($wpdb->prepare("
+                    SELECT id FROM {$wpdb->prefix}ppv_users
+                    WHERE qr_token=%s AND active=1
+                    LIMIT 1
+                ", $token_from_qr));
+
+                if ($actual_user_id) {
+                    if ($uid_from_qr != $actual_user_id) {
+                        ppv_log("⚠️ [PPV_QR] decode_user_from_qr (PPUSER): QR user_id mismatch! QR={$uid_from_qr}, actual={$actual_user_id} - using actual");
+                    }
+                    return intval($actual_user_id);
+                }
+            }
+
+            return $uid_from_qr;
         }
 
         return false;
@@ -324,7 +443,13 @@ class PPV_QR {
 
         // Only enqueue camera scanner JS for handlers/scanners
         if ($is_handler) {
-            wp_enqueue_script('ppv-qr', PPV_PLUGIN_URL . 'assets/js/ppv-qr.js', ['jquery'], time(), true);
+            // Load Ably JS library if configured
+            if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+                wp_enqueue_script('ably-js', 'https://cdn.ably.com/lib/ably.min-1.js', [], '1.2', true);
+                wp_enqueue_script('ppv-qr', PPV_PLUGIN_URL . 'assets/js/ppv-qr.js', ['jquery', 'ably-js'], time(), true);
+            } else {
+                wp_enqueue_script('ppv-qr', PPV_PLUGIN_URL . 'assets/js/ppv-qr.js', ['jquery'], time(), true);
+            }
 
             $lang = sanitize_text_field($_COOKIE['ppv_lang'] ?? '');
             if (empty($lang) || !in_array($lang, ['de', 'hu', 'ro'])) {
@@ -394,10 +519,20 @@ class PPV_QR {
                 ));
             }
 
-            wp_localize_script('ppv-qr', 'PPV_STORE_DATA', [
+            // Build store data with optional Ably config
+            $store_data = [
                 'store_id' => intval($store_id),
                 'store_key' => $store_key ?: '',
-            ]);
+            ];
+
+            // Add Ably config if enabled
+            if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+                $store_data['ably'] = [
+                    'key' => PPV_Ably::get_key(),
+                ];
+            }
+
+            wp_localize_script('ppv-qr', 'PPV_STORE_DATA', $store_data);
 
             wp_enqueue_script('ppv-hidden-scan', PPV_PLUGIN_URL . 'assets/js/ppv-hidden-scan.js', [], time(), true);
 
@@ -425,7 +560,7 @@ class PPV_QR {
         }
 
         // 🔍 DEBUG: Log session before permission check
-        error_log("🔍 [QR_CENTER] SESSION CHECK: " . json_encode([
+        ppv_log("🔍 [QR_CENTER] SESSION CHECK: " . json_encode([
             'ppv_user_id' => $_SESSION['ppv_user_id'] ?? 'NOT_SET',
             'ppv_user_type' => $_SESSION['ppv_user_type'] ?? 'NOT_SET',
             'ppv_store_id' => $_SESSION['ppv_store_id'] ?? 'NOT_SET',
@@ -435,12 +570,12 @@ class PPV_QR {
 
         $auth_check = PPV_Permissions::check_handler();
         if (is_wp_error($auth_check)) {
-            error_log("❌ [QR_CENTER] check_handler() FAILED: " . $auth_check->get_error_message());
+            ppv_log("❌ [QR_CENTER] check_handler() FAILED: " . $auth_check->get_error_message());
             return '<div class="ppv-error" style="padding: 20px; text-align: center; color: #ff5252;">
                 ❌ Zugriff verweigert. Nur für Händler und Scanner.
             </div>';
         }
-        error_log("✅ [QR_CENTER] check_handler() PASSED");
+        ppv_log("✅ [QR_CENTER] check_handler() PASSED");
 
         $lang = sanitize_text_field($_COOKIE['ppv_lang'] ?? '');
         if (empty($lang) || !in_array($lang, ['de', 'hu', 'ro'])) {
@@ -516,11 +651,23 @@ class PPV_QR {
 
         <script>
         jQuery(document).ready(function($){
+            // Restore saved tab on page load
+            var savedTab = localStorage.getItem('ppv_active_tab');
+            if (savedTab && $(".ppv-tab[data-tab='" + savedTab + "']").length) {
+                $(".ppv-tab").removeClass("active");
+                $(".ppv-tab[data-tab='" + savedTab + "']").addClass("active");
+                $(".ppv-tab-content").removeClass("active");
+                $("#tab-" + savedTab).addClass("active");
+            }
+
+            // Save tab on click
             $(".ppv-tab").on("click", function(){
+                var tabName = $(this).data("tab");
+                localStorage.setItem('ppv_active_tab', tabName);
                 $(".ppv-tab").removeClass("active");
                 $(this).addClass("active");
                 $(".ppv-tab-content").removeClass("active");
-                $("#tab-" + $(this).data("tab")).addClass("active");
+                $("#tab-" + tabName).addClass("active");
             });
         });
         </script>
@@ -853,11 +1000,11 @@ class PPV_QR {
         }
 
         if (!$current_filiale_id) {
-            error_log("⚠️ [PPV_QR] render_filiale_switcher: No store_id found in session");
+            ppv_log("⚠️ [PPV_QR] render_filiale_switcher: No store_id found in session");
             return; // No store in session
         }
 
-        error_log("🏪 [PPV_QR] render_filiale_switcher: current_filiale_id={$current_filiale_id}");
+        ppv_log("🏪 [PPV_QR] render_filiale_switcher: current_filiale_id={$current_filiale_id}");
 
         // Get parent store ID (if current is a filiale, get its parent; otherwise it's the parent)
         $parent_id = $wpdb->get_var($wpdb->prepare(
@@ -943,6 +1090,48 @@ class PPV_QR {
             </div>
         </div>
 
+        <!-- Contact Modal for Filiale Limit Reached -->
+        <div id="ppv-filiale-contact-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; align-items: center; justify-content: center;">
+            <div style="background: #1a1a2e; padding: 30px; border-radius: 15px; max-width: 500px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
+                <h3 style="margin-top: 0; color: #fff;"><i class="ri-building-line"></i> <?php echo self::t('more_filialen_title', 'Mehr Filialen benötigt?'); ?></h3>
+
+                <p style="color: #ccc; font-size: 14px; margin-bottom: 20px;">
+                    <?php echo self::t('more_filialen_desc', 'Sie haben das Maximum an Filialen erreicht. Kontaktieren Sie uns, um weitere Filialen freizuschalten!'); ?>
+                </p>
+
+                <div id="ppv-filiale-limit-info" style="background: rgba(255,82,82,0.1); border: 1px solid rgba(255,82,82,0.3); border-radius: 8px; padding: 12px; margin-bottom: 20px;">
+                    <span style="color: #ff5252; font-size: 13px;"><i class="ri-information-line"></i> <span id="ppv-filiale-limit-text"></span></span>
+                </div>
+
+                <label style="display: block; margin-bottom: 5px; color: #ccc; font-size: 14px;">
+                    <?php echo self::t('contact_email', 'E-Mail'); ?>
+                </label>
+                <input type="email" id="ppv-contact-email" class="ppv-input" placeholder="<?php echo esc_attr(self::t('contact_email_placeholder', 'Ihre E-Mail-Adresse')); ?>" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #0f0f1e; color: #fff; margin-bottom: 15px;">
+
+                <label style="display: block; margin-bottom: 5px; color: #ccc; font-size: 14px;">
+                    <?php echo self::t('contact_phone', 'Telefon'); ?>
+                </label>
+                <input type="tel" id="ppv-contact-phone" class="ppv-input" placeholder="<?php echo esc_attr(self::t('contact_phone_placeholder', 'Ihre Telefonnummer')); ?>" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #0f0f1e; color: #fff; margin-bottom: 15px;">
+
+                <label style="display: block; margin-bottom: 5px; color: #ccc; font-size: 14px;">
+                    <?php echo self::t('contact_message', 'Nachricht (optional)'); ?>
+                </label>
+                <textarea id="ppv-contact-message" class="ppv-input" placeholder="<?php echo esc_attr(self::t('contact_message_placeholder', 'Wie viele Filialen benötigen Sie?')); ?>" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #0f0f1e; color: #fff; margin-bottom: 15px; min-height: 80px; resize: vertical;"></textarea>
+
+                <div id="ppv-contact-error" style="display: none; color: #ff5252; font-size: 13px; margin-bottom: 10px;"></div>
+                <div id="ppv-contact-success" style="display: none; color: #4caf50; font-size: 13px; margin-bottom: 10px;"></div>
+
+                <div style="display: flex; gap: 10px;">
+                    <button id="ppv-send-contact-btn" class="ppv-btn" style="flex: 1; padding: 12px;">
+                        📧 <?php echo self::t('send_request', 'Anfrage senden'); ?>
+                    </button>
+                    <button id="ppv-cancel-contact-btn" class="ppv-btn-outline" style="flex: 1; padding: 12px;">
+                        ❌ <?php echo self::t('cancel', 'Abbrechen'); ?>
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <script>
         jQuery(document).ready(function($){
             // Switch filiale on dropdown change
@@ -982,18 +1171,108 @@ class PPV_QR {
             // Store original value for rollback
             $('#ppv-filiale-select').data('original-value', $('#ppv-filiale-select').val());
 
-            // Show add filiale modal
+            // Show add filiale modal (check limit first)
             $('#ppv-add-filiale-btn').on('click', function(){
-                $('#ppv-add-filiale-modal').fadeIn(200).css('display', 'flex');
-                $('#ppv-new-filiale-name').val('').focus();
-                $('#ppv-new-filiale-city').val('');
-                $('#ppv-new-filiale-plz').val('');
-                $('#ppv-add-filiale-error').hide();
+                const $btn = $(this);
+                $btn.prop('disabled', true);
+
+                // Check filiale limit first
+                $.ajax({
+                    url: '<?php echo admin_url('admin-ajax.php'); ?>',
+                    type: 'POST',
+                    data: {
+                        action: 'ppv_check_filiale_limit',
+                        parent_store_id: <?php echo intval($parent_id); ?>
+                    },
+                    success: function(response) {
+                        $btn.prop('disabled', false);
+
+                        if (response.success && response.data.can_add) {
+                            // Can add more - show add modal
+                            $('#ppv-add-filiale-modal').fadeIn(200).css('display', 'flex');
+                            $('#ppv-new-filiale-name').val('').focus();
+                            $('#ppv-new-filiale-city').val('');
+                            $('#ppv-new-filiale-plz').val('');
+                            $('#ppv-add-filiale-error').hide();
+                        } else {
+                            // Limit reached - show contact modal
+                            const current = response.data?.current || 1;
+                            const max = response.data?.max || 1;
+                            $('#ppv-filiale-limit-text').text('<?php echo esc_js(self::t('filiale_limit_info', 'Aktuell')); ?>: ' + current + ' / ' + max + ' <?php echo esc_js(self::t('filialen', 'Filialen')); ?>');
+                            $('#ppv-filiale-contact-modal').fadeIn(200).css('display', 'flex');
+                            $('#ppv-contact-email').val('').focus();
+                            $('#ppv-contact-phone').val('');
+                            $('#ppv-contact-message').val('');
+                            $('#ppv-contact-error').hide();
+                            $('#ppv-contact-success').hide();
+                        }
+                    },
+                    error: function() {
+                        $btn.prop('disabled', false);
+                        // On error, just show the add modal (server will check limit again)
+                        $('#ppv-add-filiale-modal').fadeIn(200).css('display', 'flex');
+                        $('#ppv-new-filiale-name').val('').focus();
+                    }
+                });
             });
 
-            // Hide modal
+            // Hide add filiale modal
             $('#ppv-cancel-filiale-btn').on('click', function(){
                 $('#ppv-add-filiale-modal').fadeOut(200);
+            });
+
+            // Hide contact modal
+            $('#ppv-cancel-contact-btn').on('click', function(){
+                $('#ppv-filiale-contact-modal').fadeOut(200);
+            });
+
+            // Send contact request
+            $('#ppv-send-contact-btn').on('click', function(){
+                const email = $('#ppv-contact-email').val().trim();
+                const phone = $('#ppv-contact-phone').val().trim();
+                const message = $('#ppv-contact-message').val().trim();
+                const $btn = $(this);
+                const $error = $('#ppv-contact-error');
+                const $success = $('#ppv-contact-success');
+
+                $error.hide();
+                $success.hide();
+
+                if (!email && !phone) {
+                    $error.text('<?php echo esc_js(self::t('contact_required', 'Bitte geben Sie eine E-Mail oder Telefonnummer an')); ?>').show();
+                    return;
+                }
+
+                $btn.prop('disabled', true).text('<?php echo esc_js(self::t('sending', 'Senden...')); ?>');
+
+                $.ajax({
+                    url: '<?php echo admin_url('admin-ajax.php'); ?>',
+                    type: 'POST',
+                    data: {
+                        action: 'ppv_request_more_filialen',
+                        parent_store_id: <?php echo intval($parent_id); ?>,
+                        contact_email: email,
+                        contact_phone: phone,
+                        message: message
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            $success.text(response.data?.msg || '<?php echo esc_js(self::t('request_sent', 'Anfrage erfolgreich gesendet!')); ?>').show();
+                            $btn.text('✅ <?php echo esc_js(self::t('sent', 'Gesendet')); ?>');
+                            setTimeout(function(){
+                                $('#ppv-filiale-contact-modal').fadeOut(200);
+                                $btn.prop('disabled', false).html('📧 <?php echo esc_js(self::t('send_request', 'Anfrage senden')); ?>');
+                            }, 2000);
+                        } else {
+                            $error.text(response.data?.msg || '<?php echo esc_js(self::t('send_error', 'Fehler beim Senden')); ?>').show();
+                            $btn.prop('disabled', false).html('📧 <?php echo esc_js(self::t('send_request', 'Anfrage senden')); ?>');
+                        }
+                    },
+                    error: function() {
+                        $error.text('<?php echo esc_js(self::t('network_error', 'Netzwerkfehler')); ?>').show();
+                        $btn.prop('disabled', false).html('📧 <?php echo esc_js(self::t('send_request', 'Anfrage senden')); ?>');
+                    }
+                });
             });
 
             // Save new filiale
@@ -1028,8 +1307,22 @@ class PPV_QR {
                         if (response.success) {
                             location.reload();
                         } else {
-                            $error.text(response.data?.msg || '<?php echo esc_js(self::t('save_error', 'Fehler beim Speichern')); ?>').show();
-                            $btn.prop('disabled', false).html('✅ <?php echo esc_js(self::t('save', 'Speichern')); ?>');
+                            // Check if limit was reached
+                            if (response.data?.limit_reached) {
+                                // Close add modal and show contact modal
+                                $('#ppv-add-filiale-modal').fadeOut(200);
+                                const current = response.data?.current || 1;
+                                const max = response.data?.max || 1;
+                                $('#ppv-filiale-limit-text').text('<?php echo esc_js(self::t('filiale_limit_info', 'Aktuell')); ?>: ' + current + ' / ' + max + ' <?php echo esc_js(self::t('filialen', 'Filialen')); ?>');
+                                setTimeout(function(){
+                                    $('#ppv-filiale-contact-modal').fadeIn(200).css('display', 'flex');
+                                    $('#ppv-contact-email').val('').focus();
+                                }, 200);
+                                $btn.prop('disabled', false).html('✅ <?php echo esc_js(self::t('save', 'Speichern')); ?>');
+                            } else {
+                                $error.text(response.data?.msg || '<?php echo esc_js(self::t('save_error', 'Fehler beim Speichern')); ?>').show();
+                                $btn.prop('disabled', false).html('✅ <?php echo esc_js(self::t('save', 'Speichern')); ?>');
+                            }
                         }
                     },
                     error: function() {
@@ -1047,11 +1340,24 @@ class PPV_QR {
     // 🎯 KAMPAGNEN - KOMPLETT FORMA
     // ============================================================
     public static function render_campaigns() {
+        // Get filialen for dropdown
+        $filialen = self::get_handler_filialen();
+        $has_multiple_filialen = count($filialen) > 1;
         ?>
         <div class="ppv-campaigns glass-section">
             <div class="ppv-campaign-header">
                 <h3><i class="ri-focus-3-line"></i> <?php echo self::t('campaigns_title', 'Kampagnen'); ?></h3>
                 <div class="ppv-campaign-controls">
+                    <?php if ($has_multiple_filialen): ?>
+                    <select id="ppv-campaign-filiale" class="ppv-filter ppv-filiale-select">
+                        <option value="all"><?php echo self::t('all_branches', 'Összes filiale'); ?></option>
+                        <?php foreach ($filialen as $fil): ?>
+                            <option value="<?php echo intval($fil->id); ?>">
+                                <?php echo esc_html($fil->company_name ?: $fil->name ?: 'Filiale #' . $fil->id); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <?php endif; ?>
                     <select id="ppv-campaign-filter" class="ppv-filter">
                         <option value="all">📋 <?php echo self::t('camp_filter_all', 'Alle'); ?></option>
                         <option value="active">🟢 <?php echo self::t('camp_filter_active', 'Aktive'); ?></option>
@@ -1392,7 +1698,7 @@ class PPV_QR {
         $_SESSION['ppv_current_filiale_id'] = $filiale_id;
 
         // Optional: Log the switch
-        error_log("✅ [PPV_QR] Filiale switched to ID: {$filiale_id}");
+        ppv_log("✅ [PPV_QR] Filiale switched to ID: {$filiale_id}");
 
         wp_send_json_success(['message' => 'Filiale gewechselt']);
     }
@@ -1449,6 +1755,13 @@ class PPV_QR {
             'permission_callback' => ['PPV_Permissions', 'check_handler'],
         ]);
 
+        // ✅ CSV Export endpoint
+        register_rest_route('punktepass/v1', '/pos/export-csv', [
+            'methods' => 'GET',
+            'callback' => [__CLASS__, 'rest_export_csv'],
+            'permission_callback' => ['PPV_Permissions', 'check_handler'],
+        ]);
+
         register_rest_route('punktepass/v1', '/strings', [
             'methods' => 'GET',
             'callback' => [__CLASS__, 'rest_get_strings'],
@@ -1484,6 +1797,13 @@ class PPV_QR {
         $store_key = sanitize_text_field($data['store_key'] ?? '');
         $campaign_id = intval($data['campaign_id'] ?? 0);
 
+        // GPS data from scanner (optional)
+        $scan_lat = isset($data['latitude']) ? floatval($data['latitude']) : null;
+        $scan_lng = isset($data['longitude']) ? floatval($data['longitude']) : null;
+
+        // Device fingerprint for fraud detection
+        $device_fingerprint = sanitize_text_field($data['device_fingerprint'] ?? '');
+
         if (empty($qr_code) || empty($store_key)) {
             return new WP_REST_Response([
                 'success' => false,
@@ -1506,7 +1826,7 @@ class PPV_QR {
         }
 
         // 🔍 DEBUG: Log store_id resolution
-        error_log("🔍 [PPV_QR rest_process_scan] Store ID resolution: " . json_encode([
+        ppv_log("🔍 [PPV_QR rest_process_scan] Store ID resolution: " . json_encode([
             'session_store_object' => $session_store ? 'EXISTS' : 'NULL',
             'session_store_id' => $session_store->id ?? 'NULL',
             'validated_store_id' => $store->id ?? 'NULL',
@@ -1514,7 +1834,7 @@ class PPV_QR {
         ]));
 
         if ($store_id === 0) {
-            error_log("❌ [PPV_QR] CRITICAL: store_id is 0! This should not happen!");
+            ppv_log("❌ [PPV_QR] CRITICAL: store_id is 0! This should not happen!");
             return new WP_REST_Response([
                 'success' => false,
                 'message' => '❌ Invalid store_id (0)'
@@ -1537,7 +1857,145 @@ class PPV_QR {
             $response_data = $rate_check['response']->get_data();
             $error_type = $response_data['error_type'] ?? null;
             self::insert_log($store_id, $user_id, $response_data['message'] ?? '⚠️ Rate limit', 'error', $error_type);
+
+            // Get user info for error response
+            $user_info = $wpdb->get_row($wpdb->prepare("
+                SELECT first_name, last_name, email, avatar
+                FROM {$wpdb->prefix}ppv_users WHERE id = %d
+            ", $user_id));
+            $customer_name = trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
+            $store_name = $wpdb->get_var($wpdb->prepare(
+                "SELECT name FROM {$wpdb->prefix}ppv_stores WHERE id=%d LIMIT 1",
+                $store_id
+            ));
+
+            // ✅ Generate unique scan_id for error deduplication
+            $error_scan_id = "err-{$store_id}-{$user_id}-" . time();
+
+            // 📡 ABLY: Notify BOTH user AND store (POS) about the error
+            if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+                // Notify user dashboard
+                PPV_Ably::trigger_user_points($user_id, [
+                    'success' => false,
+                    'error_type' => $error_type,
+                    'message' => $response_data['message'] ?? '⚠️ Rate limit',
+                    'store_name' => $store_name ?? 'PunktePass',
+                ]);
+
+                // ✅ FIX: Also notify POS (store channel) so error appears in scan list
+                PPV_Ably::trigger_scan($store_id, [
+                    'scan_id' => $error_scan_id, // ✅ Include scan_id for deduplication
+                    'user_id' => $user_id,
+                    'customer_name' => $customer_name ?: null,
+                    'email' => $user_info->email ?? null,
+                    'avatar' => $user_info->avatar ?? null,
+                    'message' => $response_data['message'] ?? '⚠️ Rate limit',
+                    'points' => '0',
+                    'date_short' => date('d.m.'),
+                    'time_short' => date('H:i'),
+                    'success' => false,
+                    'error_type' => $error_type,
+                ]);
+            }
+
+            // ✅ Include user info in HTTP response for immediate UI display
+            $rate_check['response']->set_data(array_merge($response_data, [
+                'scan_id' => $error_scan_id, // ✅ Include scan_id for deduplication
+                'user_id' => $user_id,
+                'customer_name' => $customer_name ?: null,
+                'email' => $user_info->email ?? null,
+                'avatar' => $user_info->avatar ?? null,
+            ]));
+
             return $rate_check['response'];
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // DEVICE FINGERPRINT CHECK (Fraud Detection)
+        // First scan = trusted device, different device = EMAIL notify (but allow)
+        // ═══════════════════════════════════════════════════════════
+        if (class_exists('PPV_Scan_Monitoring') && !empty($device_fingerprint)) {
+            $device_check = PPV_Scan_Monitoring::validate_device_fingerprint($store_id, $device_fingerprint);
+
+            if (!$device_check['valid'] && $device_check['reason'] === 'different_device') {
+                // Different device detected - send email alert but ALLOW scan
+                $ip_address = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
+                $ip_address = sanitize_text_field(explode(',', $ip_address)[0]);
+
+                PPV_Scan_Monitoring::send_fraud_alert_email('different_device', $store_id, $user_id, [
+                    'current_fp' => $device_check['current_fp'],
+                    'trusted_fp' => $device_check['trusted_fp'],
+                    'ip_address' => $ip_address
+                ]);
+
+                ppv_log("[PPV_QR] ⚠️ DIFFERENT DEVICE (SCAN ALLOWED): user={$user_id}, store={$store_id}");
+                // Scan continues - just notification sent
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // GPS DISTANCE CHECK (Fraud Detection)
+        // Under 10km: log only, allow scan
+        // Over 10km: CREATE PENDING SCAN (admin must approve)
+        // ═══════════════════════════════════════════════════════════
+        if (class_exists('PPV_Scan_Monitoring') && ($scan_lat || $scan_lng)) {
+            $gps_check = PPV_Scan_Monitoring::validate_scan_location($store_id, $scan_lat, $scan_lng);
+
+            if (!$gps_check['valid']) {
+                $reason = $gps_check['reason'] ?? 'gps_distance';
+                $distance = $gps_check['distance'] ?? null;
+
+                // Check if distance exceeds 10km threshold
+                if ($distance && PPV_Scan_Monitoring::should_be_pending($distance)) {
+                    // ═══════════════════════════════════════════════════════════
+                    // 10km+ DISTANCE: Create PENDING scan, don't add points yet
+                    // User sees toast, admin must approve
+                    // ═══════════════════════════════════════════════════════════
+                    $pending_id = PPV_Scan_Monitoring::create_pending_scan(
+                        $store_id,
+                        $user_id,
+                        1, // Default 1 point (could calculate actual points)
+                        $scan_lat,
+                        $scan_lng,
+                        $distance,
+                        $device_fingerprint
+                    );
+
+                    ppv_log("[PPV_QR] 📋 PENDING SCAN created: user={$user_id}, store={$store_id}, distance={$distance}m, pending_id={$pending_id}");
+
+                    // Get user info for response
+                    $user_info = $wpdb->get_row($wpdb->prepare("
+                        SELECT first_name, last_name, email, avatar
+                        FROM {$wpdb->prefix}ppv_users WHERE id = %d
+                    ", $user_id));
+                    $customer_name = trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
+
+                    // Return PENDING response (not error, not success)
+                    return new WP_REST_Response([
+                        'success' => false,
+                        'is_pending' => true,
+                        'pending_id' => $pending_id,
+                        'message' => '⏳ Scan függőben - admin jóváhagyásra vár',
+                        'user_id' => $user_id,
+                        'customer_name' => $customer_name ?: null,
+                        'email' => $user_info->email ?? null,
+                        'avatar' => $user_info->avatar ?? null,
+                        'points' => 1,
+                        'distance_km' => round($distance / 1000, 1),
+                        'store_name' => $store->name ?? 'PunktePass'
+                    ], 200); // 200 OK - not an error, just pending
+                }
+
+                // Under 10km: just log, allow scan to continue
+                PPV_Scan_Monitoring::log_suspicious_scan($store_id, $user_id, $scan_lat, $scan_lng, $gps_check);
+
+                if ($reason === 'wrong_country') {
+                    ppv_log("[PPV_QR] ⚠️ SUSPICIOUS: Country mismatch (SCAN ALLOWED): user={$user_id}, store={$store_id}, store_country={$gps_check['store_country']}, scan_country={$gps_check['scan_country']}");
+                } else {
+                    ppv_log("[PPV_QR] ⚠️ SUSPICIOUS: GPS distance exceeded (SCAN ALLOWED): user={$user_id}, store={$store_id}, distance={$distance}m");
+                }
+                // Scan continues - admin can review suspicious scans in WP admin
+            }
         }
 
         // ═══════════════════════════════════════════════════════════
@@ -1556,7 +2014,7 @@ class PPV_QR {
             if ($campaign_points) {
                 $points_add = intval($campaign_points);
                 $points_source = 'campaign';
-                error_log("🎯 [PPV_QR] Campaign points applied: campaign_id={$campaign_id}, points={$points_add}");
+                ppv_log("🎯 [PPV_QR] Campaign points applied: campaign_id={$campaign_id}, points={$points_add}");
             }
         }
 
@@ -1567,7 +2025,7 @@ class PPV_QR {
             if (class_exists('PPV_Filiale')) {
                 $reward_store_id = PPV_Filiale::get_parent_id($store_id);
                 if ($reward_store_id !== $store_id) {
-                    error_log("🏪 [PPV_QR] Reward lookup: Using PARENT store {$reward_store_id} instead of filiale {$store_id}");
+                    ppv_log("🏪 [PPV_QR] Reward lookup: Using PARENT store {$reward_store_id} instead of filiale {$store_id}");
                 }
             }
 
@@ -1580,13 +2038,13 @@ class PPV_QR {
             if ($reward_points && intval($reward_points) > 0) {
                 $points_add = intval($reward_points);
                 $points_source = 'reward';
-                error_log("🎁 [PPV_QR] Reward base points applied: reward_store_id={$reward_store_id}, points_given={$points_add}");
+                ppv_log("🎁 [PPV_QR] Reward base points applied: reward_store_id={$reward_store_id}, points_given={$points_add}");
             }
         }
 
         // 3. If neither exists, notify merchant to configure
         if ($points_add === 0) {
-            error_log("⚠️ [PPV_QR] No points configured: store_id={$store_id}, campaign_id={$campaign_id}");
+            ppv_log("⚠️ [PPV_QR] No points configured: store_id={$store_id}, campaign_id={$campaign_id}");
             return new WP_REST_Response([
                 'success' => false,
                 'message' => '⚠️ Keine Punkte konfiguriert. Bitte Prämie oder Kampagne einrichten.',
@@ -1622,14 +2080,13 @@ class PPV_QR {
             if (class_exists('PPV_Filiale')) {
                 $vip_store_id = PPV_Filiale::get_parent_id($store_id);
                 if ($vip_store_id !== $store_id) {
-                    error_log("🏪 [PPV_QR] VIP settings: Using PARENT store {$vip_store_id} instead of filiale {$store_id}");
+                    ppv_log("🏪 [PPV_QR] VIP settings: Using PARENT store {$vip_store_id} instead of filiale {$store_id}");
                 }
             }
 
             // Get all VIP settings for this store (or parent store)
             $vip_settings = $wpdb->get_row($wpdb->prepare("
                 SELECT
-                    vip_enabled, vip_bronze_bonus, vip_silver_bonus, vip_gold_bonus, vip_platinum_bonus,
                     vip_fix_enabled, vip_fix_bronze, vip_fix_silver, vip_fix_gold, vip_fix_platinum,
                     vip_streak_enabled, vip_streak_count, vip_streak_type,
                     vip_streak_bronze, vip_streak_silver, vip_streak_gold, vip_streak_platinum,
@@ -1638,8 +2095,7 @@ class PPV_QR {
             ", $vip_store_id));
 
             // 🔍 DEBUG: Log VIP settings
-            error_log("🔍 [PPV_QR] VIP settings for store {$vip_store_id}: " . json_encode([
-                'vip_enabled' => $vip_settings->vip_enabled ?? 'NULL',
+            ppv_log("🔍 [PPV_QR] VIP settings for store {$vip_store_id}: " . json_encode([
                 'vip_fix_enabled' => $vip_settings->vip_fix_enabled ?? 'NULL',
                 'vip_fix_bronze' => $vip_settings->vip_fix_bronze ?? 'NULL',
                 'vip_daily_enabled' => $vip_settings->vip_daily_enabled ?? 'NULL',
@@ -1651,7 +2107,7 @@ class PPV_QR {
                 $base_points = $points_add;
 
                 // 🔍 DEBUG: Log user level
-                error_log("🔍 [PPV_QR] User VIP level: user_id={$user_id}, level=" . ($user_level ?? 'NULL (Starter - no VIP)'));
+                ppv_log("🔍 [PPV_QR] User VIP level: user_id={$user_id}, level=" . ($user_level ?? 'NULL (Starter - no VIP)'));
 
                 // Helper to get level-specific value (returns 0 for Starter/null)
                 $getLevelValue = function($bronze, $silver, $gold, $platinum) use ($user_level) {
@@ -1665,20 +2121,7 @@ class PPV_QR {
                     }
                 };
 
-                // 1. PERCENTAGE BONUS
-                if ($vip_settings->vip_enabled && $user_level !== null) {
-                    $bonus_percent = $getLevelValue(
-                        $vip_settings->vip_bronze_bonus ?? 3,
-                        $vip_settings->vip_silver_bonus,
-                        $vip_settings->vip_gold_bonus,
-                        $vip_settings->vip_platinum_bonus
-                    );
-                    if ($bonus_percent > 0) {
-                        $vip_bonus_details['pct'] = (int)round($base_points * ($bonus_percent / 100));
-                    }
-                }
-
-                // 2. FIXED POINT BONUS
+                // 1. FIXED POINT BONUS
                 if ($vip_settings->vip_fix_enabled && $user_level !== null) {
                     $fix_bonus = $getLevelValue(
                         $vip_settings->vip_fix_bronze ?? 1,
@@ -1717,7 +2160,7 @@ class PPV_QR {
                                 $vip_bonus_details['streak'] = $base_points * 2;
                             }
 
-                            error_log("🔥 [PPV_QR] Streak bonus triggered! Scan #{$next_scan_number} (every {$streak_count})");
+                            ppv_log("🔥 [PPV_QR] Streak bonus triggered! Scan #{$next_scan_number} (every {$streak_count})");
                         }
                     }
                 }
@@ -1738,7 +2181,7 @@ class PPV_QR {
                             $vip_settings->vip_daily_gold,
                             $vip_settings->vip_daily_platinum
                         );
-                        error_log("☀️ [PPV_QR] First daily scan bonus applied for user {$user_id}");
+                        ppv_log("☀️ [PPV_QR] First daily scan bonus applied for user {$user_id}");
                     }
                 }
 
@@ -1747,7 +2190,7 @@ class PPV_QR {
 
                 if ($vip_bonus_applied > 0) {
                     $points_add += $vip_bonus_applied;
-                    error_log("✅ [PPV_QR] VIP bonuses applied: level={$user_level}, pct=+{$vip_bonus_details['pct']}, fix=+{$vip_bonus_details['fix']}, streak=+{$vip_bonus_details['streak']}, daily=+{$vip_bonus_details['daily']}, total_bonus={$vip_bonus_applied}, total_points={$points_add}");
+                    ppv_log("✅ [PPV_QR] VIP bonuses applied: level={$user_level}, pct=+{$vip_bonus_details['pct']}, fix=+{$vip_bonus_details['fix']}, streak=+{$vip_bonus_details['streak']}, daily=+{$vip_bonus_details['daily']}, total_bonus={$vip_bonus_applied}, total_points={$points_add}");
                 }
             }
         }
@@ -1773,7 +2216,10 @@ class PPV_QR {
         $log_msg = $vip_bonus_applied > 0
             ? "+{$points_add} " . self::t('points', 'Punkte') . " (VIP: +{$vip_bonus_applied})"
             : "+{$points_add} " . self::t('points', 'Punkte');
-        self::insert_log($store_id, $user_id, $log_msg, 'qr_scan');
+        $log_id = self::insert_log($store_id, $user_id, $log_msg, 'qr_scan');
+
+        // ✅ Generate unique scan_id for deduplication
+        $scan_id = "scan-{$store_id}-{$user_id}-{$log_id}";
 
         // Get store name for response
         $store_name = $wpdb->get_var($wpdb->prepare(
@@ -1781,12 +2227,57 @@ class PPV_QR {
             $store_id
         ));
 
+        // ✅ Get user info for response AND Ably notification
+        $user_info = $wpdb->get_row($wpdb->prepare("
+            SELECT first_name, last_name, email, avatar
+            FROM {$wpdb->prefix}ppv_users WHERE id = %d
+        ", $user_id));
+        $customer_name = trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
+
+        // 📡 ABLY: Send real-time notification (non-blocking)
+        if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+            PPV_Ably::trigger_scan($store_id, [
+                'scan_id' => $scan_id, // ✅ Include scan_id for deduplication
+                'user_id' => $user_id,
+                'customer_name' => $customer_name ?: null,
+                'email' => $user_info->email ?? null,
+                'avatar' => $user_info->avatar ?? null,
+                'message' => $log_msg,
+                'points' => (string)$points_add,
+                'vip_bonus' => $vip_bonus_applied,
+                'date_short' => date('d.m.'),
+                'time_short' => date('H:i'),
+                'success' => true,
+            ]);
+
+            // 📡 ABLY: Also notify user's dashboard of points update
+            // ✅ FIX: Query from ppv_points table (not ppv_qr_scans!)
+            $total_points = (int) $wpdb->get_var($wpdb->prepare(
+                "SELECT COALESCE(SUM(points), 0) FROM {$wpdb->prefix}ppv_points WHERE user_id = %d",
+                $user_id
+            ));
+            $total_rewards = (int) $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_reward_log WHERE user_id = %d",
+                $user_id
+            ));
+
+            PPV_Ably::trigger_user_points($user_id, [
+                'points_added' => $points_add,
+                'total_points' => $total_points,
+                'total_rewards' => $total_rewards,
+                'store_name' => $store_name ?? 'PunktePass',
+                'vip_bonus' => $vip_bonus_applied,
+                'success' => true,
+            ]);
+        }
+
         // Build response message with VIP info
         $vip_suffix = $vip_bonus_applied > 0 ? " (VIP-Bonus: +{$vip_bonus_applied})" : '';
         $success_msg = "✅ +{$points_add} " . self::t('points', 'Punkte') . $vip_suffix;
 
         return new WP_REST_Response([
             'success' => true,
+            'scan_id' => $scan_id, // ✅ Include scan_id for deduplication
             'message' => $success_msg,
             'user_id' => $user_id,
             'store_id' => $store_id,
@@ -1795,7 +2286,11 @@ class PPV_QR {
             'campaign_id' => $campaign_id ?: null,
             'vip_bonus' => $vip_bonus_applied,
             'vip_bonus_details' => $vip_bonus_details,
-            'time' => current_time('mysql')
+            'time' => current_time('mysql'),
+            // ✅ Include customer info for immediate UI display
+            'customer_name' => $customer_name ?: null,
+            'email' => $user_info->email ?? null,
+            'avatar' => $user_info->avatar ?? null,
         ], 200);
     }
 
@@ -1813,12 +2308,188 @@ class PPV_QR {
 
         $store_id = intval($session_store->id);
 
-        return new WP_REST_Response($wpdb->get_results($wpdb->prepare("
-            SELECT created_at, user_id, message
-            FROM {$wpdb->prefix}ppv_pos_log
-            WHERE store_id=%d
-            ORDER BY id DESC LIMIT 15
-        ", $store_id)), 200);
+        // ✅ FIX: Get logs from ppv_users table (NOT WordPress users!)
+        // ✅ FIX: Include log ID for unique scan_id generation
+        $logs = $wpdb->get_results($wpdb->prepare("
+            SELECT
+                l.id AS log_id,
+                l.created_at,
+                l.user_id,
+                l.message,
+                l.type,
+                u.email,
+                u.first_name,
+                u.last_name,
+                u.avatar
+            FROM {$wpdb->prefix}ppv_pos_log l
+            LEFT JOIN {$wpdb->prefix}ppv_users u ON l.user_id = u.id
+            WHERE l.store_id=%d
+            ORDER BY l.id DESC LIMIT 15
+        ", $store_id));
+
+        // Format response for JS with detailed info
+        $formatted = array_map(function($log) use ($store_id) {
+            $created = strtotime($log->created_at);
+
+            // Extract points from message (e.g., "+5 Punkte" → 5)
+            $points = '-';
+            if (preg_match('/\+(\d+)/', $log->message, $m)) {
+                $points = $m[1];
+            }
+
+            // Build display: Name > Email > #ID
+            $first = trim($log->first_name ?? '');
+            $last = trim($log->last_name ?? '');
+            $full_name = trim("$first $last");
+            $email = $log->email ?? '';
+
+            return [
+                'scan_id' => "log-{$store_id}-{$log->log_id}", // ✅ Unique ID for deduplication
+                'user_id' => $log->user_id,
+                'customer_name' => $full_name ?: null,
+                'email' => $email ?: null,
+                'avatar' => $log->avatar ?: null,
+                'message' => $log->message,
+                'date_short' => date('d.m.', $created),
+                'time_short' => date('H:i', $created),
+                'points' => $points,
+                'success' => ($log->type === 'qr_scan'),
+            ];
+        }, $logs);
+
+        return new WP_REST_Response($formatted, 200);
+    }
+
+    // ============================================================
+    // 📥 REST: EXPORT CSV
+    // ============================================================
+    public static function rest_export_csv(WP_REST_Request $r) {
+        global $wpdb;
+
+        // 🏪 Get store from session
+        $session_store = self::get_session_aware_store_id($r);
+        if (!$session_store || !isset($session_store->id)) {
+            return new WP_REST_Response(['error' => 'Invalid store'], 400);
+        }
+
+        $store_id = intval($session_store->id);
+        $period = sanitize_text_field($r->get_param('period') ?: 'today');
+        $date_param = sanitize_text_field($r->get_param('date') ?: '');
+
+        // Build date filter
+        $date_filter = '';
+        $filename_suffix = '';
+
+        if ($period === 'today' || ($period === 'date' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $date_param))) {
+            $target_date = $period === 'today' ? date('Y-m-d') : $date_param;
+            $date_filter = $wpdb->prepare(" AND DATE(l.created_at) = %s", $target_date);
+            $filename_suffix = $target_date;
+        } elseif ($period === 'month' && preg_match('/^\d{4}-\d{2}$/', $date_param)) {
+            $date_filter = $wpdb->prepare(" AND DATE_FORMAT(l.created_at, '%%Y-%%m') = %s", $date_param);
+            $filename_suffix = $date_param;
+        } else {
+            // Default: today
+            $date_filter = $wpdb->prepare(" AND DATE(l.created_at) = %s", date('Y-m-d'));
+            $filename_suffix = date('Y-m-d');
+        }
+
+        // Get logs for CSV
+        $logs = $wpdb->get_results($wpdb->prepare("
+            SELECT
+                l.created_at,
+                l.user_id,
+                l.message,
+                l.type,
+                u.email,
+                u.first_name,
+                u.last_name
+            FROM {$wpdb->prefix}ppv_pos_log l
+            LEFT JOIN {$wpdb->prefix}ppv_users u ON l.user_id = u.id
+            WHERE l.store_id = %d {$date_filter}
+            ORDER BY l.created_at DESC
+            LIMIT 1000
+        ", $store_id));
+
+        // Build CSV
+        $csv_lines = [];
+        $csv_lines[] = 'Datum,Zeit,Kunde,Email,Punkte,Status,Nachricht';
+
+        foreach ($logs as $log) {
+            $created = strtotime($log->created_at);
+            $date = date('d.m.Y', $created);
+            $time = date('H:i:s', $created);
+
+            $first = trim($log->first_name ?? '');
+            $last = trim($log->last_name ?? '');
+            $customer = trim("$first $last") ?: 'Unbekannt';
+            $email = $log->email ?: '-';
+
+            // Extract points from message
+            $points = '-';
+            if (preg_match('/\+(\d+)/', $log->message, $m)) {
+                $points = $m[1];
+            }
+
+            $status = $log->type === 'qr_scan' ? 'OK' : 'Fehler';
+            $message = str_replace([',', "\n", "\r"], [';', ' ', ' '], $log->message);
+
+            $csv_lines[] = sprintf('"%s","%s","%s","%s","%s","%s","%s"',
+                $date, $time, $customer, $email, $points, $status, $message
+            );
+        }
+
+        $csv_content = implode("\n", $csv_lines);
+        $store_name = sanitize_title($session_store->name ?? 'pos');
+        $filename = "pos-{$store_name}-{$filename_suffix}.csv";
+
+        return new WP_REST_Response([
+            'success' => true,
+            'csv' => $csv_content,
+            'filename' => $filename,
+            'rows' => count($logs)
+        ], 200);
+    }
+
+    // ============================================================
+    // 📡 ABLY: Auth endpoint for token requests
+    // ============================================================
+    public static function ajax_ably_auth() {
+        // Get store from POS token
+        $store_key = isset($_SERVER['HTTP_PPV_POS_TOKEN'])
+            ? sanitize_text_field($_SERVER['HTTP_PPV_POS_TOKEN'])
+            : '';
+
+        if (empty($store_key)) {
+            wp_send_json_error('Unauthorized', 401);
+        }
+
+        $store = self::get_store_by_key($store_key);
+        if (!$store) {
+            wp_send_json_error('Invalid store', 401);
+        }
+
+        // Validate channel matches store
+        $channel_name = sanitize_text_field($_POST['channel_name'] ?? '');
+        $socket_id = sanitize_text_field($_POST['socket_id'] ?? '');
+
+        // Channel format: store-{store_id}
+        $expected_channel = 'store-' . intval($store->id);
+        if ($channel_name !== $expected_channel) {
+            wp_send_json_error('Channel mismatch', 403);
+        }
+
+        // Check if Ably is configured
+        if (!class_exists('PPV_Ably') || !PPV_Ably::is_enabled()) {
+            wp_send_json_error('Ably not configured', 500);
+        }
+
+        // Generate Ably token request
+        $token_request = PPV_Ably::create_token_request('store-' . $store->id);
+        if (!$token_request) {
+            wp_send_json_error('Token request failed', 500);
+        }
+
+        wp_send_json($token_request);
     }
 
     // ============================================================
@@ -1953,10 +2624,21 @@ class PPV_QR {
         // ✅ DEBUG: Log fields before insert
 
         $wpdb->insert("{$prefix}ppv_campaigns", $fields);
+        $campaign_id = $wpdb->insert_id;
 
         // ✅ DEBUG: Check if insert succeeded
         if ($wpdb->last_error) {
         } else {
+        }
+
+        // 📡 Ably: Notify real-time about new campaign
+        if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+            PPV_Ably::trigger_campaign_update($store->id, [
+                'action' => 'created',
+                'campaign_id' => $campaign_id,
+                'title' => $fields['title'],
+                'campaign_type' => $fields['campaign_type'],
+            ]);
         }
 
         return new WP_REST_Response([
@@ -1976,35 +2658,63 @@ class PPV_QR {
             $r->get_header('ppv-pos-token') ?? $r->get_param('store_key') ?? ''
         );
 
-        // 🏪 FILIALE SUPPORT: Use session-aware store ID lookup
-        $store = self::get_session_aware_store_id($store_key);
+        // 🏢 FILIALE SUPPORT: Check filiale_id parameter
+        $filiale_param = $r->get_param('filiale_id');
 
-        if (!$store) {
+        // Get all filialen for this handler
+        $filialen = self::get_handler_filialen();
+
+        // Determine which store IDs to query
+        if ($filiale_param === 'all' || empty($filiale_param)) {
+            // All filialen
+            $store_ids = array_map(function($f) { return intval($f->id); }, $filialen);
+        } else {
+            // Single filiale selected - verify it belongs to handler
+            $filiale_id = intval($filiale_param);
+            $valid_ids = array_map(function($f) { return intval($f->id); }, $filialen);
+            if (in_array($filiale_id, $valid_ids)) {
+                $store_ids = [$filiale_id];
+            } else {
+                // Fallback to session-aware store
+                $store = self::get_session_aware_store_id($store_key);
+                $store_ids = $store ? [$store->id] : [];
+            }
+        }
+
+        if (empty($store_ids)) {
             return new WP_REST_Response([
                 'success' => false,
                 'message' => 'Token hiányzik vagy ismeretlen bolt'
             ], 400);
         }
 
+        // Build IN clause for multiple stores
+        $placeholders = implode(',', array_fill(0, count($store_ids), '%d'));
+
         $rows = $wpdb->get_results($wpdb->prepare("
-            SELECT id, title, start_date, end_date, campaign_type, multiplier,
-                   extra_points, discount_percent, min_purchase, fixed_amount, status,
-                   required_points, free_product, free_product_value, points_given
-            FROM {$wpdb->prefix}ppv_campaigns
-            WHERE store_id=%d ORDER BY start_date DESC
-        ", $store->id));
+            SELECT c.id, c.title, c.start_date, c.end_date, c.campaign_type, c.multiplier,
+                   c.extra_points, c.discount_percent, c.min_purchase, c.fixed_amount, c.status,
+                   c.required_points, c.free_product, c.free_product_value, c.points_given, c.store_id,
+                   s.company_name as store_name
+            FROM {$wpdb->prefix}ppv_campaigns c
+            LEFT JOIN {$wpdb->prefix}ppv_stores s ON c.store_id = s.id
+            WHERE c.store_id IN ($placeholders) ORDER BY c.start_date DESC
+        ", $store_ids));
 
         if (empty($rows)) {
             return new WP_REST_Response([], 200);
         }
 
+        // Get country from first store (all filialen should have same country)
         $store_country = $wpdb->get_var($wpdb->prepare(
             "SELECT country FROM {$wpdb->prefix}ppv_stores WHERE id=%d LIMIT 1",
-            $store->id
+            $store_ids[0]
         ));
 
         $today = date('Y-m-d');
-        $data = array_map(function ($r) use ($today, $store_country) {
+        $show_store_name = count($store_ids) > 1; // Show store name when viewing all filialen
+
+        $data = array_map(function ($r) use ($today, $store_country, $show_store_name) {
             if ($today < $r->start_date) {
                 $state = 'upcoming';
             } elseif ($today > $r->end_date) {
@@ -2013,7 +2723,7 @@ class PPV_QR {
                 $state = 'active';
             }
 
-            return [
+            $item = [
                 'id' => intval($r->id),
                 'title' => $r->title,
                 'start_date' => $r->start_date,
@@ -2030,8 +2740,16 @@ class PPV_QR {
                 'points_given' => intval($r->points_given ?? 1),
                 'status' => $r->status,
                 'state' => $state,
-                'country' => $store_country
+                'country' => $store_country,
+                'store_id' => intval($r->store_id ?? 0)
             ];
+
+            // Add store name when showing all filialen
+            if ($show_store_name && !empty($r->store_name)) {
+                $item['store_name'] = $r->store_name;
+            }
+
+            return $item;
         }, $rows);
 
         return new WP_REST_Response($data, 200);
@@ -2069,6 +2787,14 @@ class PPV_QR {
         ]);
 
         self::insert_log($store->id, 0, "Kampány törölve: ID {$id}", 'campaign_delete');
+
+        // 📡 Ably: Notify real-time about deleted campaign
+        if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+            PPV_Ably::trigger_campaign_update($store->id, [
+                'action' => 'deleted',
+                'campaign_id' => $id,
+            ]);
+        }
 
         return new WP_REST_Response([
             'success' => true,
@@ -2158,6 +2884,16 @@ class PPV_QR {
         ]);
 
         self::insert_log($store->id, 0, "Kampány frissítve: ID {$id}", 'campaign_update');
+
+        // 📡 Ably: Notify real-time about updated campaign
+        if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+            PPV_Ably::trigger_campaign_update($store->id, [
+                'action' => 'updated',
+                'campaign_id' => $id,
+                'title' => $fields['title'],
+                'campaign_type' => $fields['campaign_type'],
+            ]);
+        }
 
         return new WP_REST_Response([
             'success' => true,

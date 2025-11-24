@@ -11,20 +11,42 @@ if (!defined('ABSPATH')) exit;
 // ========================================
 // 🔧 CORE CONSTANTS
 // ========================================
-define('PPV_VERSION', '1.0.2');
+define('PPV_VERSION', '1.0.4');
 define('PPV_PLUGIN_FILE', __FILE__);
 define('PPV_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('PPV_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('PPV_CSS_LOCKDOWN', true);
 
 // ========================================
+// 🐛 DEBUG MODE - SET TO false FOR PRODUCTION!
+// ========================================
+define('PPV_DEBUG', false);
+
+/**
+ * Global debug logger - only logs when PPV_DEBUG is true
+ */
+function ppv_log($msg) {
+    if (defined('PPV_DEBUG') && PPV_DEBUG) {
+        error_log($msg);
+    }
+}
+
+// ========================================
+// 📡 ABLY REAL-TIME CONFIG
+// ========================================
+define('PPV_ABLY_API_KEY', 'jKxtxA.r58iZQ:6SXOogAhhlFxnOsDxOAfX5KYWYcbtKbHNnNvIYmcuqQ');
+
+// ========================================
 // 🔐 SESSION INIT (Early Priority)
 // ========================================
-add_action('init', function () {
-    if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
-        @session_start();
-    }
-}, 1);
+// ✅ REMOVED: Session is now handled by PPV_SessionBridge with proper cookie params
+// Having duplicate session_start() with priority 1 caused race condition where
+// session could start with default PHP settings instead of custom domain/lifetime
+// add_action('init', function () {
+//     if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+//         @session_start();
+//     }
+// }, 1);
 
 // ========================================
 // 🔒 SECURITY HEADERS (PWA-compatible)
@@ -247,6 +269,11 @@ $core_modules = [
      'includes/class-ppv-legal.php',
      'includes/class-ppv-user-level.php',
      'includes/class-ppv-vip-settings.php',
+     'includes/class-ppv-ably.php',
+     'includes/class-ppv-scan-monitoring.php',
+     'includes/admin/class-ppv-admin-suspicious-scans.php',
+     'includes/admin/class-ppv-admin-pending-scans.php',
+    'includes/admin/class-ppv-admin-devices.php',
 
 ];
 
@@ -394,11 +421,9 @@ add_action('wp_enqueue_scripts', function() {
         }
     }
     
-    // 🔹 NORMAL USER = USER THEME PREFERENCE
-    $theme = $_COOKIE['ppv_theme'] ?? 'dark';
-    $file = $theme === 'light' ? 'ppv-theme-light.css' : 'ppv-theme-dark.css';
-    
-    wp_enqueue_style('ppv-theme', PPV_PLUGIN_URL . 'assets/css/' . $file, [], PPV_VERSION);
+    // 🔹 ALWAYS USE LIGHT CSS (contains all dark mode styles via body.ppv-dark selectors)
+    // Theme switching is handled via body class (ppv-light/ppv-dark) by theme-loader.js
+    wp_enqueue_style('ppv-theme-light', PPV_PLUGIN_URL . 'assets/css/ppv-theme-light.css', [], PPV_VERSION);
 }, 100);
 
 /**
@@ -450,8 +475,7 @@ add_action('wp_enqueue_scripts', function() {
     if (empty($wp_styles->queue)) return;
     
 $whitelist = [
-    'ppv-theme-dark',
-    'ppv-theme-light',
+    'ppv-theme-light',  // Single unified theme CSS (contains both light/dark styles)
     'ppv-handler',      // Handler theme (light/dark)
     'ppv-handler-light',
     'ppv-handler-dark',

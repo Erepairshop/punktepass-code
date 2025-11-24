@@ -22,7 +22,7 @@ class PPV_POS_Diagnostic {
         $is_pos = str_contains($uri, 'pos-admin') || (isset($_POST['action']) && str_contains($_POST['action'], 'ppv_pos_'));
 
         if ($is_pos) {
-            error_log("🚫 [POS DIAG] session letiltva (POS context detected)");
+            ppv_log("🚫 [POS DIAG] session letiltva (POS context detected)");
             return;
         }
 
@@ -38,7 +38,7 @@ class PPV_POS_Diagnostic {
                     'samesite' => 'Lax'
                 ]);
                 @session_start();
-                error_log("✅ [POS DIAG] Session started (domain={$domain}, ID=" . session_id() . ")");
+                ppv_log("✅ [POS DIAG] Session started (domain={$domain}, ID=" . session_id() . ")");
             }
         }
     }
@@ -47,7 +47,7 @@ class PPV_POS_Diagnostic {
      * 🧩 AJAX Diagnostic Endpoint
      */
     public static function ajax_diagnostic() {
-        error_log("📡 [POS DIAG] AJAX diagnostic request received");
+        ppv_log("📡 [POS DIAG] AJAX diagnostic request received");
 
         wp_send_json_success([
             'session_id' => session_id(),

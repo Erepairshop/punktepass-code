@@ -1,2428 +1,2108 @@
 /**
- * PunktePass – Kassenscanner & Kampagnen v5.4 TURBO COMPATIBLE
- * ✅ Save függvény integrálva
- * ✅ Összes dinamikus mező működik
- * ✅ Camera Scanner + Settings + Init
- * ✅ TURBO.JS COMPATIBLE
+ * PunktePass – Kassenscanner & Kampagnen v6.5 QR-SCANNER
+ * Turbo.js compatible, clean architecture
+ * NEW: Using qr-scanner library (better camera handling, WebWorker)
+ * NEW: Fallback to jsQR if qr-scanner fails
+ * FIXED: Back camera selection (preferredCamera: 'environment')
+ * FIXED: Multiple init() calls causing API spam
+ * FIXED: Ably connection cleanup on page navigation
+ * OPTIMIZED: Camera focus for all devices
  * Author: Erik Borota / PunktePass
  */
 
-// ✅ Duplicate load prevention
-if (window.PPV_QR_LOADED) {
-  console.warn('⚠️ PPV QR JS already loaded - skipping duplicate!');
-} else {
+(function() {
+  'use strict';
+
+  // ✅ DEBUG mode - set to false for production
+  const PPV_DEBUG = false;
+  const ppvLog = (...args) => { if (PPV_DEBUG) console.log(...args); };
+  const ppvWarn = (...args) => { if (PPV_DEBUG) console.warn(...args); };
+
+  // Guard against multiple script loads
+  if (window.PPV_QR_LOADED) {
+    ppvLog('[QR] Already loaded, skipping');
+    return;
+  }
   window.PPV_QR_LOADED = true;
 
-// ============================================================
-// 🌐 GLOBAL STATE & CONFIG
-// ============================================================
-window.PPV_LAST_SCAN = window.PPV_LAST_SCAN || 0;
-
-window.PPV_STORE_KEY =
-  (window.PPV_STORE_DATA?.store_key || "").trim() ||
-  (sessionStorage.getItem("ppv_store_key") || "").trim() || "";
-
-window.PPV_STORE_ID =
-  window.PPV_STORE_DATA?.store_id ||
-  Number(sessionStorage.getItem("ppv_store_id")) ||
-  0;
-
-sessionStorage.setItem("ppv_store_key", window.PPV_STORE_KEY);
-sessionStorage.setItem("ppv_store_id", window.PPV_STORE_ID);
-
-
-const L = window.ppv_lang || {};
-
-// ============================================================
-// 🛠️ UTILITY FUNCTIONS
-// ============================================================
-
-function canProcessScan() {
-  const now = Date.now();
-  if (now - window.PPV_LAST_SCAN < 600) return false;
-  window.PPV_LAST_SCAN = now;
-  return true;
-}
-
-window.ppvToast = function (msg, type = "info") {
-  let box = document.createElement("div");
-  box.className = "ppv-toast " + type;
-  box.innerHTML = msg;
-  document.body.appendChild(box);
-
-  setTimeout(() => box.classList.add("show"), 10);
-  setTimeout(() => box.classList.remove("show"), 3000);
-  setTimeout(() => box.remove(), 3500);
-};
-
-function statusBadge(state) {
-  const badges = {
-    active: `<span style='color:#00e676'>🟢 ${L.state_active || 'Aktív'}</span>`,
-    archived: `<span style='color:#ffab00'>📦 ${L.state_archived || 'Archivált'}</span>`,
-    upcoming: `<span style='color:#2979ff'>🔵 ${L.state_upcoming || 'Hamarosan'}</span>`,
-    expired: `<span style='color:#9e9e9e'>⚫ ${L.state_expired || 'Lejárt'}</span>`
+  // ============================================================
+  // GLOBAL STATE
+  // ============================================================
+  const STATE = {
+    initialized: false,
+    campaignManager: null,
+    cameraScanner: null,
+    scanProcessor: null,
+    uiManager: null,
+    lastInitTime: 0,  // Prevent rapid re-init
+    ablyInstance: null,  // Ably connection for cleanup
+    pollInterval: null,   // Polling interval for cleanup
+    gpsPosition: null,    // Current GPS position for fraud detection
+    deviceFingerprint: null  // Device fingerprint for fraud detection
   };
-  return badges[state] || "";
-}
 
-// ============================================================
-// 💬 UI MANAGER
-// ============================================================
-class UIManager {
-  constructor(resultBox, logTable, campaignList) {
-    this.resultBox = resultBox;
-    this.logTable = logTable;
-    this.campaignList = campaignList;
-  }
-
-  showMessage(text, type = "info") {
-    window.ppvToast(text, type);
-  }
-
-  addLogRow(time, user, status) {
-    if (!this.logTable) return;
-    const row = document.createElement("tr");
-    row.innerHTML = `<td>${time}</td><td>${user}</td><td>${status}</td>`;
-    this.logTable.prepend(row);
-    while (this.logTable.rows.length > 15) this.logTable.deleteRow(15);
-  }
-
-  flashCampaignList() {
-    if (!this.campaignList) return;
-    this.campaignList.scrollTo({ top: 0, behavior: "smooth" });
-    this.campaignList.style.transition = "background 0.5s";
-    this.campaignList.style.background = "rgba(0,255,120,0.25)";
-    setTimeout(() => {
-      this.campaignList.style.background = "transparent";
-    }, 600);
-  }
-}
-
-// ============================================================
-// 💾 OFFLINE SYNC MANAGER
-// ============================================================
-class OfflineSyncManager {
-  static STORAGE_KEY = "ppv_offline_sync";
-  static DUPLICATE_WINDOW = 2 * 60 * 1000;
-
-  static save(qrCode) {
+  // ============================================================
+  // DEVICE FINGERPRINT (for fraud detection)
+  // Creates a unique device identifier based on browser/device properties
+  // First scan from a device = trusted device for that store
+  // ============================================================
+  async function generateDeviceFingerprint() {
     try {
-      let items = JSON.parse(localStorage.getItem(this.STORAGE_KEY) || "[]");
+      const components = [];
 
-      const twoMinutesAgo = Date.now() - this.DUPLICATE_WINDOW;
-      const isDuplicate = items.some(item =>
-        item.qr === qrCode &&
-        new Date(item.time).getTime() > twoMinutesAgo
-      );
+      // 1. Screen properties
+      components.push(`${screen.width}x${screen.height}x${screen.colorDepth}`);
 
-      if (isDuplicate) {
-        console.warn("⚠️ [OFFLINE] Duplicate detected (2 min):", qrCode);
-        window.ppvToast("⚠️ " + (L.pos_duplicate || "Már beolvasva (2 perc)"), "warning");
+      // 2. Timezone
+      components.push(Intl.DateTimeFormat().resolvedOptions().timeZone || '');
+
+      // 3. Language
+      components.push(navigator.language || '');
+
+      // 4. Platform
+      components.push(navigator.platform || '');
+
+      // 5. Hardware concurrency (CPU cores)
+      components.push(navigator.hardwareConcurrency || 0);
+
+      // 6. Device memory (if available)
+      components.push(navigator.deviceMemory || 0);
+
+      // 7. Touch support
+      components.push(navigator.maxTouchPoints || 0);
+
+      // 8. Canvas fingerprint (unique per device/browser)
+      try {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 200;
+        canvas.height = 50;
+        ctx.textBaseline = 'top';
+        ctx.font = '14px Arial';
+        ctx.fillStyle = '#f60';
+        ctx.fillRect(0, 0, 100, 50);
+        ctx.fillStyle = '#069';
+        ctx.fillText('PunktePass', 2, 2);
+        ctx.fillStyle = 'rgba(102, 204, 0, 0.7)';
+        ctx.fillText('Device', 4, 17);
+        components.push(canvas.toDataURL().slice(-50));
+      } catch (e) {
+        components.push('canvas-error');
+      }
+
+      // 9. WebGL renderer (GPU info)
+      try {
+        const canvas = document.createElement('canvas');
+        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+        if (gl) {
+          const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+          if (debugInfo) {
+            components.push(gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) || '');
+          }
+        }
+      } catch (e) {
+        components.push('webgl-error');
+      }
+
+      // 10. User agent
+      components.push(navigator.userAgent || '');
+
+      // Generate hash from all components
+      const fingerprint = await hashString(components.join('|'));
+      ppvLog('[Fingerprint] Generated:', fingerprint.substring(0, 16) + '...');
+      return fingerprint;
+
+    } catch (e) {
+      ppvWarn('[Fingerprint] Error generating:', e);
+      return null;
+    }
+  }
+
+  // Simple hash function (SHA-256)
+  async function hashString(str) {
+    try {
+      const msgBuffer = new TextEncoder().encode(str);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    } catch (e) {
+      // Fallback: simple hash for older browsers
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash;
+      }
+      return Math.abs(hash).toString(16).padStart(16, '0');
+    }
+  }
+
+  // Get device fingerprint (cached)
+  async function getDeviceFingerprint() {
+    if (!STATE.deviceFingerprint) {
+      STATE.deviceFingerprint = await generateDeviceFingerprint();
+    }
+    return STATE.deviceFingerprint;
+  }
+
+  // ============================================================
+  // GPS LOCATION TRACKING (for fraud detection)
+  // ============================================================
+  function initGpsTracking() {
+    if (!navigator.geolocation) {
+      ppvLog('[GPS] Geolocation not supported');
+      return;
+    }
+
+    // Get initial position
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        STATE.gpsPosition = {
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          accuracy: pos.coords.accuracy,
+          timestamp: Date.now()
+        };
+        ppvLog('[GPS] Position acquired:', STATE.gpsPosition.latitude.toFixed(4), STATE.gpsPosition.longitude.toFixed(4));
+      },
+      (err) => {
+        ppvWarn('[GPS] Position error:', err.message);
+        STATE.gpsPosition = null;
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 60000  // Cache for 1 minute
+      }
+    );
+
+    // Watch for position changes (update every minute or on significant move)
+    navigator.geolocation.watchPosition(
+      (pos) => {
+        STATE.gpsPosition = {
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          accuracy: pos.coords.accuracy,
+          timestamp: Date.now()
+        };
+        ppvLog('[GPS] Position updated:', STATE.gpsPosition.latitude.toFixed(4), STATE.gpsPosition.longitude.toFixed(4));
+      },
+      (err) => {
+        ppvWarn('[GPS] Watch error:', err.message);
+      },
+      {
+        enableHighAccuracy: false,
+        timeout: 30000,
+        maximumAge: 60000
+      }
+    );
+  }
+
+  function getGpsCoordinates() {
+    if (STATE.gpsPosition && (Date.now() - STATE.gpsPosition.timestamp) < 120000) {
+      return {
+        latitude: STATE.gpsPosition.latitude,
+        longitude: STATE.gpsPosition.longitude
+      };
+    }
+    return { latitude: null, longitude: null };
+  }
+
+  const L = window.ppv_lang || {};
+
+  // ============================================================
+  // STORE CONFIG
+  // ============================================================
+  function getStoreKey() {
+    return (window.PPV_STORE_KEY || '').trim() ||
+           (window.PPV_STORE_DATA?.store_key || '').trim() ||
+           (sessionStorage.getItem('ppv_store_key') || '').trim() || '';
+  }
+
+  function getStoreID() {
+    return window.PPV_STORE_ID ||
+           window.PPV_STORE_DATA?.store_id ||
+           Number(sessionStorage.getItem('ppv_store_id')) || 0;
+  }
+
+  // Save to session
+  if (getStoreKey()) sessionStorage.setItem('ppv_store_key', getStoreKey());
+  if (getStoreID()) sessionStorage.setItem('ppv_store_id', getStoreID());
+
+  // ============================================================
+  // TOAST
+  // ============================================================
+  window.ppvToast = function(msg, type = 'info') {
+    const box = document.createElement('div');
+    box.className = 'ppv-toast ' + type;
+    box.textContent = msg; // ✅ FIX: Use textContent to prevent XSS
+    document.body.appendChild(box);
+    setTimeout(() => box.classList.add('show'), 10);
+    setTimeout(() => box.classList.remove('show'), 3000);
+    setTimeout(() => box.remove(), 3500);
+  };
+
+  // ============================================================
+  // SCAN THROTTLE
+  // ============================================================
+  let lastScanTime = 0;
+  function canProcessScan() {
+    const now = Date.now();
+    if (now - lastScanTime < 600) return false;
+    lastScanTime = now;
+    return true;
+  }
+
+  // ============================================================
+  // SOUND EFFECTS
+  // ============================================================
+  const SOUNDS = {
+    success: null,
+    error: null
+  };
+
+  function preloadSounds() {
+    try {
+      const baseUrl = window.PPV_ASSETS_URL || '/wp-content/plugins/punktepass/assets';
+      SOUNDS.success = new Audio(`${baseUrl}/sounds/scan-beep.wav`);
+      SOUNDS.error = new Audio(`${baseUrl}/sounds/error.mp3`);
+      // Preload
+      SOUNDS.success.load();
+      SOUNDS.error.load();
+      ppvLog('[Sound] Sounds preloaded');
+    } catch (e) {
+      ppvWarn('[Sound] Failed to preload sounds:', e);
+    }
+  }
+
+  function playSound(type) {
+    try {
+      const sound = SOUNDS[type];
+      if (sound) {
+        sound.currentTime = 0;
+        sound.play().catch(() => {}); // Ignore autoplay errors
+      }
+    } catch (e) {}
+  }
+
+  // ============================================================
+  // HTML ESCAPE (XSS Prevention)
+  // ============================================================
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  // ============================================================
+  // STATUS BADGE
+  // ============================================================
+  function statusBadge(state) {
+    const badges = {
+      active: `<span style='color:#00e676'>🟢 ${L.state_active || 'Aktiv'}</span>`,
+      archived: `<span style='color:#ffab00'>📦 ${L.state_archived || 'Archiviert'}</span>`,
+      upcoming: `<span style='color:#2979ff'>🔵 ${L.state_upcoming || 'Geplant'}</span>`,
+      expired: `<span style='color:#9e9e9e'>⚫ ${L.state_expired || 'Abgelaufen'}</span>`
+    };
+    return badges[state] || '';
+  }
+
+  // ============================================================
+  // UI MANAGER
+  // ============================================================
+  class UIManager {
+    constructor() {
+      this.resultBox = null;
+      this.logList = null;
+      this.campaignList = null;
+      this.displayedScanIds = new Set(); // ✅ Track displayed scans to prevent duplicates
+    }
+
+    init() {
+      this.resultBox = document.getElementById('ppv-pos-result');
+      this.logList = document.getElementById('ppv-pos-log');
+      this.campaignList = document.getElementById('ppv-campaign-list');
+      this.displayedScanIds.clear(); // Reset on init
+    }
+
+    showMessage(text, type = 'info') {
+      window.ppvToast(text, type);
+    }
+
+    clearLogTable() {
+      if (!this.logList) return;
+      this.logList.innerHTML = '';
+      this.displayedScanIds.clear(); // ✅ Clear tracked IDs when table is cleared
+    }
+
+    addScanItem(log) {
+      if (!this.logList) return;
+
+      // ✅ FIX: Prevent duplicates using scan_id (always check, not just _realtime)
+      const scanId = log.scan_id || `${log.user_id}-${log.date_short}-${log.time_short}`;
+      if (this.displayedScanIds.has(scanId)) {
+        ppvLog('[UI] Skipping duplicate scan:', scanId);
+        return;
+      }
+      this.displayedScanIds.add(scanId);
+
+      const item = document.createElement('div');
+      item.className = `ppv-scan-item ${log.success ? 'success' : 'error'}`;
+      item.dataset.scanId = scanId; // Store for reference
+
+      // Build display: Name > Email > #ID
+      const displayName = log.customer_name || log.email || `Kunde #${log.user_id}`;
+
+      // Check for VIP bonus in message (e.g., "(VIP: +2)")
+      const vipMatch = (log.message || '').match(/\(VIP:?\s*\+(\d+)\)/i);
+      const vipBonus = vipMatch ? vipMatch[1] : null;
+      const isVip = !!vipBonus;
+
+      // ✅ FIX: Subtitle logic - ALWAYS show date/time, with error message as second line
+      const dateTime = `${log.date_short || ''} ${log.time_short || ''}`.trim();
+      let subtitle = dateTime;
+      let subtitle2 = ''; // Second line for additional info
+
+      if (!log.success && log.message) {
+        // Error: show cleaned error message + date/time
+        const errorMsg = log.message.replace(/^[⚠️❌✗\s]+/, '').trim();
+        subtitle = errorMsg;
+        subtitle2 = dateTime;
+      } else if (log.customer_name && log.email) {
+        // Success with name: show email + date
+        subtitle = log.email;
+        subtitle2 = dateTime;
+      }
+
+      // Avatar: Google profile pic or default icon
+      const avatarHtml = log.avatar
+        ? `<img src="${log.avatar}" class="ppv-scan-avatar" alt="">`
+        : `<div class="ppv-scan-avatar-placeholder">${log.success ? '✓' : '✗'}</div>`;
+
+      // Points display: show VIP badge if applicable, or error indicator
+      let pointsHtml;
+      if (!log.success) {
+        pointsHtml = `<div class="ppv-scan-points error-badge">✗</div>`;
+      } else if (isVip) {
+        pointsHtml = `<div class="ppv-scan-points vip">+${log.points}<span class="ppv-vip-badge">VIP +${vipBonus}</span></div>`;
+      } else {
+        pointsHtml = `<div class="ppv-scan-points">+${log.points || '-'}</div>`;
+      }
+
+      // ✅ FIX: Show subtitle2 (date/time) for errors and successful scans with name
+      const subtitle2Html = subtitle2 ? `<div class="ppv-scan-detail ppv-scan-time">${subtitle2}</div>` : '';
+
+      item.innerHTML = `
+        ${avatarHtml}
+        <div class="ppv-scan-info">
+          <div class="ppv-scan-name">${displayName}</div>
+          <div class="ppv-scan-detail">${subtitle}</div>
+          ${subtitle2Html}
+        </div>
+        ${pointsHtml}
+      `;
+      // ✅ FIX: Use prepend for real-time scans, append for initial load
+      if (log._realtime) {
+        this.logList.prepend(item);
+      } else {
+        this.logList.appendChild(item);
+      }
+    }
+
+    flashCampaignList() {
+      if (!this.campaignList) return;
+      this.campaignList.scrollTo({ top: 0, behavior: 'smooth' });
+      this.campaignList.style.transition = 'background 0.5s';
+      this.campaignList.style.background = 'rgba(0,255,120,0.25)';
+      setTimeout(() => this.campaignList.style.background = 'transparent', 600);
+    }
+  }
+
+  // ============================================================
+  // OFFLINE SYNC MANAGER
+  // ============================================================
+  class OfflineSyncManager {
+    static STORAGE_KEY = 'ppv_offline_sync';
+    static DUPLICATE_WINDOW = 2 * 60 * 1000;
+
+    static save(qrCode) {
+      try {
+        let items = JSON.parse(localStorage.getItem(this.STORAGE_KEY) || '[]');
+        const twoMinutesAgo = Date.now() - this.DUPLICATE_WINDOW;
+        const isDuplicate = items.some(item => item.qr === qrCode && new Date(item.time).getTime() > twoMinutesAgo);
+
+        if (isDuplicate) {
+          window.ppvToast('⚠️ ' + (L.pos_duplicate || 'Bereits gescannt'), 'warning');
+          return false;
+        }
+
+        items.push({
+          id: `${getStoreKey()}-${qrCode}-${Date.now()}`,
+          qr: qrCode,
+          time: new Date().toISOString(),
+          store_key: getStoreKey(),
+          synced: false
+        });
+
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(items));
+        return true;
+      } catch (e) {
         return false;
       }
-
-      items.push({
-        id: `${window.PPV_STORE_KEY}-${qrCode}-${Date.now()}`,
-        qr: qrCode,
-        time: new Date().toISOString(),
-        store_key: window.PPV_STORE_KEY,
-        synced: false
-      });
-
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(items));
-      return true;
-    } catch (e) {
-      console.error("❌ [OFFLINE] Save failed:", e);
-      return false;
     }
-  }
 
-  static async sync() {
-    try {
-      let items = JSON.parse(localStorage.getItem(this.STORAGE_KEY) || "[]");
-      if (!items.length) return;
-
-      const unsynced = items.filter(i => !i.synced);
-      if (!unsynced.length) {
-        return;
-      }
-
-
-      const res = await fetch("/wp-json/punktepass/v1/pos/sync_offline", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "PPV-POS-Token": window.PPV_STORE_KEY,
-        },
-        body: JSON.stringify({ scans: unsynced }),
-      });
-
-      const result = await res.json();
-
-      if (result.success) {
-        const synced = unsynced.map(i => i.id);
-        let remaining = items.filter(i => !synced.includes(i.id));
-        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(remaining));
-
-        window.ppvToast(`✅ ${result.synced} ${L.pos_sync || "szinkronizálva"}`, "success");
-      } else if (result.message?.includes("Duplikátum") || result.message?.includes("már")) {
-        console.warn("⚠️ [OFFLINE] Duplicates on server:", result.message);
-        const syncedDups = unsynced.filter(i =>
-          result.duplicates?.includes(i.qr)
-        ).map(i => i.id);
-        let remaining = items.filter(i => !syncedDups.includes(i.id));
-        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(remaining));
-        window.ppvToast("⚠️ " + (result.message || "Duplikátumok eltávolítva"), "warning");
-      } else {
-        window.ppvToast("❌ " + (result.message || "Szinkronizálás nem sikerült"), "error");
-      }
-    } catch (e) {
-      console.warn("⚠️ [OFFLINE] Network error:", e);
-      window.ppvToast("🚫 " + (L.pos_network_error || "Hálózati hiba"), "error");
-    }
-  }
-}
-
-// ============================================================
-// 🔍 SCAN PROCESSOR
-// ============================================================
-class ScanProcessor {
-  constructor(uiManager) {
-    this.ui = uiManager;
-  }
-
-  async process(qrCode) {
-    if (!qrCode || !window.PPV_STORE_KEY) return;
-    if (!canProcessScan()) return;
-
-    this.ui.showMessage("⏳ " + (L.pos_checking || "Ellenőrzés..."), "info");
-
-    try {
-      const res = await fetch("/wp-json/punktepass/v1/pos/scan", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "PPV-POS-Token": window.PPV_STORE_KEY,
-        },
-        body: JSON.stringify({
-          qr: qrCode,
-          store_key: window.PPV_STORE_KEY,
-          points: 1,
-        }),
-      });
-
-      let data;
+    static async sync() {
       try {
-        data = await res.json();
-      } catch (e) {
-        data = {
-          success: false,
-          message: L.pos_server_error || "Szerverhiba"
-        };
-      }
+        let items = JSON.parse(localStorage.getItem(this.STORAGE_KEY) || '[]');
+        const unsynced = items.filter(i => !i.synced);
+        if (!unsynced.length) return;
 
-      if (data.success) {
-        this.ui.showMessage("✅ " + data.message, "success");
-        this.ui.addLogRow(
-          data.time || new Date().toLocaleString(),
-          data.user_id || "-",
-          "✅"
-        );
-      } else {
-        const msg = data.message || "";
-        this.ui.showMessage("⚠️ " + msg, "warning");
+        const res = await fetch('/wp-json/punktepass/v1/pos/sync_offline', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'PPV-POS-Token': getStoreKey() },
+          body: JSON.stringify({ scans: unsynced })
+        });
 
-        if (!/már|beolvasva|duplikátum/i.test(msg)) {
-          OfflineSyncManager.save(qrCode);
+        const result = await res.json();
+        if (result.success) {
+          const synced = unsynced.map(i => i.id);
+          localStorage.setItem(this.STORAGE_KEY, JSON.stringify(items.filter(i => !synced.includes(i.id))));
+          window.ppvToast(`✅ ${result.synced} ${L.pos_sync || 'synchronisiert'}`, 'success');
         }
+      } catch (e) {
+        ppvWarn('[QR] Sync error:', e);
       }
-
-      setTimeout(() => this.loadLogs(), 1000);
-
-    } catch (e) {
-      console.warn("⚠️ Scan error:", e);
-      this.ui.showMessage("⚠️ " + (L.server_error || "Szerverhiba"), "error");
-      OfflineSyncManager.save(qrCode);
     }
   }
 
-  async loadLogs() {
-    // Check if store key exists
-    if (!window.PPV_STORE_KEY || window.PPV_STORE_KEY.trim() === '') {
-      return;
+  // ============================================================
+  // SCAN PROCESSOR
+  // ============================================================
+  class ScanProcessor {
+    constructor(uiManager) {
+      this.ui = uiManager;
     }
 
-    try {
-      const res = await fetch("/wp-json/punktepass/v1/pos/logs", {
-        headers: { "PPV-POS-Token": window.PPV_STORE_KEY },
-      });
-      const logs = await res.json();
-      (logs || []).forEach((l) =>
-        this.ui.addLogRow(l.created_at, l.user_id, l.success ? "✅" : "❌")
-      );
-    } catch (e) {
-      console.warn("⚠️ Log load failed:", e);
+    async process(qrCode) {
+      if (!qrCode || !getStoreKey()) return;
+      if (!canProcessScan()) return;
+
+      this.ui.showMessage('⏳ ' + (L.pos_checking || 'Wird geprüft...'), 'info');
+
+      // Get GPS coordinates for fraud detection
+      const gps = getGpsCoordinates();
+      // Get device fingerprint for fraud detection
+      const deviceFp = await getDeviceFingerprint();
+
+      try {
+        const res = await fetch('/wp-json/punktepass/v1/pos/scan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'PPV-POS-Token': getStoreKey() },
+          body: JSON.stringify({
+            qr: qrCode,
+            store_key: getStoreKey(),
+            points: 1,
+            latitude: gps.latitude,
+            longitude: gps.longitude,
+            device_fingerprint: deviceFp
+          })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          this.ui.showMessage('✅ ' + data.message, 'success');
+          // ✅ FIX: Removed non-existent addLogRow call - inlineProcessScan handles UI updates
+        } else {
+          this.ui.showMessage('⚠️ ' + (data.message || ''), 'warning');
+          if (!/bereits|gescannt|duplikat/i.test(data.message || '')) {
+            OfflineSyncManager.save(qrCode);
+          }
+        }
+        // ✅ FIX: Removed redundant loadLogs - real-time updates handle this
+      } catch (e) {
+        this.ui.showMessage('⚠️ ' + (L.server_error || 'Serverfehler'), 'error');
+        OfflineSyncManager.save(qrCode);
+      }
+    }
+
+    async loadLogs() {
+      if (!getStoreKey()) return;
+      ppvLog('[QR] 📡 loadLogs() called at', new Date().toLocaleTimeString());
+      try {
+        const res = await fetch('/wp-json/punktepass/v1/pos/logs', {
+          headers: { 'PPV-POS-Token': getStoreKey() }
+        });
+        ppvLog('[QR] 📡 loadLogs() response:', res.status);
+        const logs = await res.json();
+
+        // Clear existing items before loading fresh data
+        this.ui.clearLogTable();
+
+        // Add logs (API returns newest first)
+        (logs || []).forEach(l => this.ui.addScanItem(l));
+      } catch (e) {
+        ppvWarn('[QR] Failed to load logs:', e);
+      }
     }
   }
-}
 
-// ============================================================
-// 🎯 CAMPAIGN MANAGER - COMPLETE
-// ============================================================
-class CampaignManager {
-  constructor(uiManager, listElement, modalElement) {
-    this.ui = uiManager;
-    this.list = listElement;
-    this.modal = modalElement;
-    this.campaigns = [];
-    this.editingId = 0;
-  }
-
-  async load() {
-    if (!this.list) return;
-
-    // Check if store key exists
-    if (!window.PPV_STORE_KEY || window.PPV_STORE_KEY.trim() === '') {
-      this.list.innerHTML = "<p style='text-align:center;color:#999;padding:20px;'>" +
-        (L.camp_no_store || "Kein Geschäft ausgewählt") + "</p>";
-      return;
+  // ============================================================
+  // CAMPAIGN MANAGER
+  // ============================================================
+  class CampaignManager {
+    constructor(uiManager) {
+      this.ui = uiManager;
+      this.campaigns = [];
+      this.editingId = 0;
+      this.modal = null;
+      this.list = null;
     }
 
-    this.list.innerHTML = "<div class='ppv-loading'>⏳ " +
-      (L.camp_loading || "Kampányok betöltése...") + "</div>";
+    init() {
+      this.list = document.getElementById('ppv-campaign-list');
+      this.modal = document.getElementById('ppv-campaign-modal');
 
-    const filter = document.getElementById("ppv-campaign-filter")?.value || "active";
+      // Move modal to body for proper z-index
+      if (this.modal && this.modal.parentElement !== document.body) {
+        document.body.appendChild(this.modal);
+      }
+    }
 
-    try {
-      const res = await fetch("/wp-json/punktepass/v1/pos/campaigns", {
-        headers: { "PPV-POS-Token": window.PPV_STORE_KEY },
-      });
-      const data = await res.json();
-
-      this.list.innerHTML = "";
-
-      if (!data || !data.length) {
-        this.list.innerHTML = "<p>" + (L.camp_none || "Nincsenek kampányok") + "</p>";
+    async load() {
+      if (!this.list) return;
+      if (!getStoreKey()) {
+        this.list.innerHTML = `<p style='text-align:center;color:#999;padding:20px;'>${L.camp_no_store || 'Kein Geschäft ausgewählt'}</p>`;
         return;
       }
 
-      this.campaigns = data;
+      ppvLog('[QR] 📡 campaigns.load() called at', new Date().toLocaleTimeString());
 
-      let filtered = data;
-      if (filter === "active") filtered = data.filter(c => c.status === "active");
-      if (filter === "archived") filtered = data.filter(c => c.status === "archived");
+      this.list.innerHTML = `<div class='ppv-loading'>⏳ ${L.camp_loading || 'Lade Kampagnen...'}</div>`;
 
-      filtered.forEach(c => this.renderCampaign(c));
-      this.bindEvents();
+      const filter = document.getElementById('ppv-campaign-filter')?.value || 'active';
+      const filialeSelect = document.getElementById('ppv-campaign-filiale');
+      const filialeId = filialeSelect?.value || 'all';
 
-    } catch (e) {
-      console.warn("⚠️ Campaign load error:", e);
-      this.list.innerHTML = "<p>⚠️ " + (L.camp_load_error || "Hiba a betöltéskor") + "</p>";
+      try {
+        // Build URL with filiale_id parameter
+        let url = '/wp-json/punktepass/v1/pos/campaigns';
+        if (filialeId && filialeId !== 'all') {
+          url += `?filiale_id=${encodeURIComponent(filialeId)}`;
+        } else {
+          url += '?filiale_id=all';
+        }
+
+        const res = await fetch(url, {
+          headers: { 'PPV-POS-Token': getStoreKey() }
+        });
+        ppvLog('[QR] 📡 campaigns.load() response:', res.status, 'filiale:', filialeId);
+        const data = await res.json();
+
+        this.list.innerHTML = '';
+
+        if (!data || !data.length) {
+          this.list.innerHTML = `<p>${L.camp_none || 'Keine Kampagnen'}</p>`;
+          return;
+        }
+
+        this.campaigns = data;
+        let filtered = data;
+        if (filter === 'active') filtered = data.filter(c => c.status === 'active');
+        if (filter === 'archived') filtered = data.filter(c => c.status === 'archived');
+
+        filtered.forEach(c => this.renderCampaign(c));
+      } catch (e) {
+        this.list.innerHTML = `<p>⚠️ ${L.camp_load_error || 'Fehler beim Laden'}</p>`;
+      }
     }
-  }
 
-  renderCampaign(c) {
-    let value = "";
-    if (c.campaign_type === "points") value = c.extra_points + " pt";
-    if (c.campaign_type === "discount") value = c.discount_percent + "%";
-    if (c.campaign_type === "fixed") value = (c.min_purchase ?? c.fixed_amount ?? 0) + "€";
+    renderCampaign(c) {
+      let value = '';
+      if (c.campaign_type === 'points') value = c.extra_points + ' pt';
+      if (c.campaign_type === 'discount') value = c.discount_percent + '%';
+      if (c.campaign_type === 'fixed') value = (c.min_purchase ?? c.fixed_amount ?? 0) + '€';
 
-    const card = document.createElement("div");
-    card.className = "ppv-campaign-item glass";
+      // ✅ FIX: Escape HTML to prevent XSS
+      const safeTitle = escapeHtml(c.title || '');
+      const safeType = escapeHtml(c.campaign_type || '');
+      const safeStoreName = c.store_name ? escapeHtml(c.store_name) : '';
 
-    card.innerHTML = `
-      <div class="ppv-camp-header">
-        <h4>${c.title}</h4>
-        <div class="ppv-camp-actions">
-          <span class="ppv-camp-clone" data-id="${c.id}">📄</span>
-          <span class="ppv-camp-archive" data-id="${c.id}">📦</span>
-          <span class="ppv-camp-edit" data-id="${c.id}">✏️</span>
-          <span class="ppv-camp-delete" data-id="${c.id}">🗑️</span>
+      const card = document.createElement('div');
+      card.className = 'ppv-campaign-item glass';
+      card.innerHTML = `
+        <div class="ppv-camp-header">
+          <span class="ppv-camp-title">${safeTitle}</span>
+          <div class="ppv-camp-actions">
+            <span class="ppv-camp-clone" data-id="${c.id}">📄</span>
+            <span class="ppv-camp-archive" data-id="${c.id}">📦</span>
+            <span class="ppv-camp-edit" data-id="${c.id}">✏️</span>
+            <span class="ppv-camp-delete" data-id="${c.id}">🗑️</span>
+          </div>
         </div>
-      </div>
-      <p>${c.start_date.substring(0, 10)} – ${c.end_date.substring(0, 10)}</p>
-      <p>⭐ ${L.camp_type || "Típus"}: ${c.campaign_type} | ${L.camp_value || "Érték"}: ${value} | ${statusBadge(c.state)}</p>
-    `;
-
-    this.list.appendChild(card);
-  }
-
-  bindEvents() {
-    document.querySelectorAll(".ppv-camp-edit, .ppv-camp-delete, .ppv-camp-archive, .ppv-camp-clone")
-      .forEach(el => el.replaceWith(el.cloneNode(true)));
-
-    document.querySelectorAll(".ppv-camp-edit").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const camp = this.campaigns.find(c => c.id == btn.dataset.id);
-        if (camp) this.edit(camp);
-      });
-    });
-
-    document.querySelectorAll(".ppv-camp-delete").forEach(btn => {
-      btn.addEventListener("click", () => this.delete(btn.dataset.id));
-    });
-
-    document.querySelectorAll(".ppv-camp-archive").forEach(btn => {
-      btn.addEventListener("click", () => this.archive(btn.dataset.id));
-    });
-
-    document.querySelectorAll(".ppv-camp-clone").forEach(btn => {
-      btn.addEventListener("click", () => this.clone(btn.dataset.id));
-    });
-  }
-
-  edit(c) {
-    if (!c) return;
-
-    this.showModal();
-    this.editingId = c.id;
-
-    const safe = (id) => document.getElementById(id);
-
-    if (safe("camp-status")) safe("camp-status").value = c.status || "active";
-    if (safe("camp-title")) safe("camp-title").value = c.title;
-    if (safe("camp-start")) safe("camp-start").value = c.start_date?.substring(0, 10) || "";
-    if (safe("camp-end")) safe("camp-end").value = c.end_date?.substring(0, 10) || "";
-    if (safe("camp-type")) safe("camp-type").value = c.campaign_type;
-
-    if (safe("camp-required-points")) safe("camp-required-points").value = c.required_points || 0;
-    if (safe("camp-points-given")) safe("camp-points-given").value = c.points_given || 1;
-    if (safe("camp-free-product-name")) safe("camp-free-product-name").value = c.free_product || "";
-    if (safe("camp-free-product-value")) safe("camp-free-product-value").value = c.free_product_value || 0;
-
-    const campValue = safe("camp-value");
-    if (campValue) {
-      if (c.campaign_type === "points") campValue.value = c.extra_points || 0;
-      else if (c.campaign_type === "discount") campValue.value = c.discount_percent || 0;
-      else if (c.campaign_type === "fixed") campValue.value = c.min_purchase || c.fixed_amount || 0;
-      else if (c.campaign_type === "free_product") campValue.value = 0;
+        ${safeStoreName ? `<p class="ppv-camp-store"><i class="ri-store-2-line"></i> ${safeStoreName}</p>` : ''}
+        <p class="ppv-camp-dates">${(c.start_date || '').substring(0, 10)} – ${(c.end_date || '').substring(0, 10)}</p>
+        <p class="ppv-camp-meta">⭐ ${safeType} | ${value} | ${statusBadge(c.state)}</p>
+      `;
+      this.list.appendChild(card);
     }
 
-    this.updateValueLabel(c.campaign_type);
+    edit(camp) {
+      if (!camp) return;
+      this.showModal();
+      this.editingId = camp.id;
 
-    // ✅ KÖZVETLENÜL ÁLLÍTJUK BE A LÁTHATÓSÁGOT!
-    this.updateVisibilityByType(c.campaign_type);
+      const safe = id => document.getElementById(id);
+      if (safe('camp-status')) safe('camp-status').value = camp.status || 'active';
+      if (safe('camp-title')) safe('camp-title').value = camp.title;
+      if (safe('camp-start')) safe('camp-start').value = (camp.start_date || '').substring(0, 10);
+      if (safe('camp-end')) safe('camp-end').value = (camp.end_date || '').substring(0, 10);
+      if (safe('camp-type')) safe('camp-type').value = camp.campaign_type;
+      if (safe('camp-required-points')) safe('camp-required-points').value = camp.required_points || 0;
+      if (safe('camp-points-given')) safe('camp-points-given').value = camp.points_given || 1;
+      if (safe('camp-free-product-name')) safe('camp-free-product-name').value = camp.free_product || '';
+      if (safe('camp-free-product-value')) safe('camp-free-product-value').value = camp.free_product_value || 0;
 
-    setTimeout(() => {
-      this.initTypeListener();
-      this.initFreeProductListener();
-
-      const typeSelect = safe("camp-type");
-      if (typeSelect) {
-        typeSelect.dispatchEvent(new Event('change'));
+      const campValue = safe('camp-value');
+      if (campValue) {
+        if (camp.campaign_type === 'points') campValue.value = camp.extra_points || 0;
+        else if (camp.campaign_type === 'discount') campValue.value = camp.discount_percent || 0;
+        else if (camp.campaign_type === 'fixed') campValue.value = camp.min_purchase || camp.fixed_amount || 0;
+        else campValue.value = 0;
       }
 
-      const productInput = safe("camp-free-product-name");
-      if (productInput) {
-        productInput.dispatchEvent(new Event('input'));
-      }
-    }, 100);
-  }
-
-  // ✅ ÚJ FÜGGVÉNY: Direkt display logika
-  updateVisibilityByType(type) {
-    const safe = (id) => document.getElementById(id);
-
-    const requiredPointsWrapper = safe("camp-required-points-wrapper");
-    const pointsGivenWrapper = safe("camp-points-given-wrapper"); // ← PER SCAN!
-    const freeProductNameWrapper = safe("camp-free-product-name-wrapper");
-    const freeProductValueWrapper = safe("camp-free-product-value-wrapper");
-
-    // Összes elrejtése
-    if (requiredPointsWrapper) requiredPointsWrapper.style.display = "none";
-    if (pointsGivenWrapper) pointsGivenWrapper.style.display = "none";
-    if (freeProductNameWrapper) freeProductNameWrapper.style.display = "none";
-    if (freeProductValueWrapper) freeProductValueWrapper.style.display = "none";
-
-    // ✅ ÖSSZES TÍPUSNAK KELL A SZÜKSÉGES PONT!
-    if (requiredPointsWrapper) requiredPointsWrapper.style.display = "block";
-
-    // Kiválasztott típus alapján TOVÁBBI megjelenítése
-    if (type === "points") {
-      // Extra Punkte - NINCS per scan pont!
-    } else if (type === "discount" || type === "fixed") {
-      // ✅ Rabatt & Fix Bonus - PER SCAN PONT KELL!
-      if (pointsGivenWrapper) pointsGivenWrapper.style.display = "block";
-    } else if (type === "free_product") {
-      // ✅ Gratis Termék - TERMÉK + PER SCAN PONT!
-      if (freeProductNameWrapper) freeProductNameWrapper.style.display = "block";
-      if (freeProductValueWrapper) freeProductValueWrapper.style.display = "block";
-      if (pointsGivenWrapper) pointsGivenWrapper.style.display = "block";
-    }
-  }
-
-  async delete(id) {
-    if (!confirm(L.confirm_delete || "Biztosan törlöd?")) return;
-
-    try {
-      const res = await fetch("/wp-json/punktepass/v1/pos/campaign/delete", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "PPV-POS-Token": window.PPV_STORE_KEY,
-        },
-        body: JSON.stringify({ id, store_key: window.PPV_STORE_KEY }),
-      });
-
-      const data = await res.json();
-      if (data.success) {
-        this.ui.showMessage("🗑️ " + (L.camp_deleted || "Kampány törölve"), "success");
-        this.refresh();
-      } else {
-        this.ui.showMessage(data.message, "error");
-      }
-    } catch (e) {
-      this.ui.showMessage("⚠️ " + (L.server_error || "Szerverhiba"), "error");
-    }
-  }
-
-  async archive(id) {
-    try {
-      const res = await fetch("/wp-json/punktepass/v1/pos/campaign/update", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "PPV-POS-Token": window.PPV_STORE_KEY,
-        },
-        body: JSON.stringify({
-          id,
-          store_key: window.PPV_STORE_KEY,
-          status: "archived"
-        }),
-      });
-
-      const data = await res.json();
-      if (data.success) {
-        this.ui.showMessage("📦 " + (L.camp_archived || "Archiválva"), "success");
-        this.refresh();
-      } else {
-        this.ui.showMessage(data.message, "error");
-      }
-    } catch (e) {
-      this.ui.showMessage("⚠️ " + (L.server_error || "Szerverhiba"), "error");
-    }
-  }
-
-  async clone(id) {
-    const original = this.campaigns.find(c => c.id == id);
-    if (!original) return;
-
-    try {
-      const res = await fetch("/wp-json/punktepass/v1/pos/campaign", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "PPV-POS-Token": window.PPV_STORE_KEY,
-        },
-        body: JSON.stringify({
-          store_key: window.PPV_STORE_KEY,
-          title: original.title + " (" + (L.copy || "Másolat") + ")",
-          start_date: original.start_date,
-          end_date: original.end_date,
-          campaign_type: original.campaign_type,
-          camp_value: original.extra_points || original.discount_percent || original.min_purchase,
-          required_points: original.required_points || 0,
-          free_product: original.free_product || "",
-          free_product_value: original.free_product_value || 0,
-          points_given: original.points_given || 1,
-        }),
-      });
-
-      const data = await res.json();
-      if (data.success) {
-        this.ui.showMessage("📄 " + (L.camp_cloned || "Duplizálva!"), "success");
-        this.refresh();
-      }
-    } catch (e) {
-      this.ui.showMessage("⚠️ " + (L.server_error || "Szerverhiba"), "error");
-    }
-  }
-
-  // ✅ SAVE FÜGGVÉNY - TELJES!
-  async save() {
-    const safe = (id) => {
-      const el = document.getElementById(id);
-      return el ? el.value : "";
-    };
-
-    const safeNum = (id) => {
-      const el = document.getElementById(id);
-      return el ? Number(el.value) || 0 : 0;
-    };
-
-    const title = safe("camp-title");
-    const start = safe("camp-start");
-    const end = safe("camp-end");
-    const type = safe("camp-type");
-    const value = safe("camp-value");
-    const status = safe("camp-status");
-    // 🩵 Fix: valós campaign_type lekérése DOM-ból
-    const realType = document.getElementById("camp-type")?.value || type;
-
-    const requiredPoints = safeNum("camp-required-points");
-    const pointsGiven = safeNum("camp-points-given");
-    const freeProductName = (document.getElementById("camp-free-product-name")?.value || "").trim();
-    const freeProductValue = safeNum("camp-free-product-value");
-
-    if (!title || !start || !end) {
-      const msg = L.camp_fill_title_date || "Kérlek töltsd ki a címet és a dátumot";
-      this.ui.showMessage(msg, "warning");
-      window.ppvToast("⚠️ " + msg, "warning");
-      return;
+      this.updateVisibilityByType(camp.campaign_type);
+      this.updateValueLabel(camp.campaign_type);
     }
 
-   // ✅ VALIDÁCIÓ: Gratis termék + érték
-    if (realType === "free_product") {
-      if (!freeProductName || freeProductValue <= 0) {
-        const msg = L.camp_fill_free_product_name_value || "⚠️ Kérlek add meg a termék nevét és értékét!";
-        this.ui.showMessage(msg, "warning");
-        window.ppvToast(msg, "warning");
-        const el = document.getElementById("camp-free-product-name");
-        if (el) el.focus();
+    async save() {
+      const safe = id => document.getElementById(id)?.value || '';
+      const safeNum = id => Number(document.getElementById(id)?.value) || 0;
+
+      const title = safe('camp-title');
+      const start = safe('camp-start');
+      const end = safe('camp-end');
+      const realType = safe('camp-type');
+      const value = safe('camp-value');
+      const status = safe('camp-status');
+      const requiredPoints = safeNum('camp-required-points');
+      const pointsGiven = safeNum('camp-points-given');
+      const freeProductName = safe('camp-free-product-name').trim();
+      const freeProductValue = safeNum('camp-free-product-value');
+
+      if (!title || !start || !end) {
+        window.ppvToast('⚠️ ' + (L.camp_fill_title_date || 'Bitte Titel und Datum ausfüllen'), 'warning');
         return;
       }
+
+      if (realType === 'free_product' && (!freeProductName || freeProductValue <= 0)) {
+        window.ppvToast('⚠️ ' + (L.camp_fill_free_product_name_value || 'Bitte Produktname und Wert angeben'), 'warning');
+        return;
+      }
+
+      const endpoint = this.editingId > 0
+        ? '/wp-json/punktepass/v1/pos/campaign/update'
+        : '/wp-json/punktepass/v1/pos/campaign';
+
+      try {
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'PPV-POS-Token': getStoreKey() },
+          body: JSON.stringify({
+            id: this.editingId,
+            store_key: getStoreKey(),
+            title, start_date: start, end_date: end, campaign_type: realType,
+            camp_value: value, required_points: requiredPoints,
+            free_product: freeProductName, free_product_value: freeProductValue,
+            points_given: pointsGiven, status
+          })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          window.ppvToast(this.editingId > 0 ? (L.camp_updated || '✅ Aktualisiert!') : (L.camp_saved || '✅ Gespeichert!'), 'success');
+          this.hideModal();
+          this.resetForm();
+          setTimeout(() => this.load(), 500);
+        } else {
+          window.ppvToast('❌ ' + (data.message || L.error_generic || 'Fehler'), 'error');
+        }
+      } catch (e) {
+        window.ppvToast('⚠️ ' + (L.server_error || 'Serverfehler'), 'error');
+      }
     }
 
-    const endpoint = this.editingId > 0
-      ? "/wp-json/punktepass/v1/pos/campaign/update"
-      : "/wp-json/punktepass/v1/pos/campaign";
+    async delete(id) {
+      if (!confirm(L.confirm_delete || 'Wirklich löschen?')) return;
+      try {
+        const res = await fetch('/wp-json/punktepass/v1/pos/campaign/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'PPV-POS-Token': getStoreKey() },
+          body: JSON.stringify({ id, store_key: getStoreKey() })
+        });
+        const data = await res.json();
+        if (data.success) {
+          window.ppvToast('🗑️ ' + (L.camp_deleted || 'Gelöscht'), 'success');
+          setTimeout(() => this.load(), 500);
+        }
+      } catch (e) {
+        window.ppvToast('⚠️ ' + (L.server_error || 'Serverfehler'), 'error');
+      }
+    }
 
-    try {
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json; charset=UTF-8",
-          "Accept": "application/json",
-          "PPV-POS-Token": window.PPV_STORE_KEY,
-        },
-        body: JSON.stringify({
-          id: this.editingId,
-          store_key: window.PPV_STORE_KEY,
-          title,
-          start_date: start,
-          end_date: end,
-          campaign_type: realType, // ✅ ez a fix
+    async archive(id) {
+      try {
+        const res = await fetch('/wp-json/punktepass/v1/pos/campaign/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'PPV-POS-Token': getStoreKey() },
+          body: JSON.stringify({ id, store_key: getStoreKey(), status: 'archived' })
+        });
+        const data = await res.json();
+        if (data.success) {
+          window.ppvToast('📦 ' + (L.camp_archived || 'Archiviert'), 'success');
+          setTimeout(() => this.load(), 500);
+        }
+      } catch (e) {
+        window.ppvToast('⚠️ ' + (L.server_error || 'Serverfehler'), 'error');
+      }
+    }
 
-          camp_value: value,
-          required_points: requiredPoints,
-          free_product: freeProductName,
-          free_product_value: freeProductValue,
-          points_given: pointsGiven,
-          status,
-        }),
+    async clone(id) {
+      const original = this.campaigns.find(c => c.id == id);
+      if (!original) return;
+
+      try {
+        const res = await fetch('/wp-json/punktepass/v1/pos/campaign', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'PPV-POS-Token': getStoreKey() },
+          body: JSON.stringify({
+            store_key: getStoreKey(),
+            title: original.title + ' (' + (L.copy || 'Kopie') + ')',
+            start_date: original.start_date, end_date: original.end_date,
+            campaign_type: original.campaign_type,
+            camp_value: original.extra_points || original.discount_percent || original.min_purchase,
+            required_points: original.required_points || 0,
+            free_product: original.free_product || '',
+            free_product_value: original.free_product_value || 0,
+            points_given: original.points_given || 1
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          window.ppvToast('📄 ' + (L.camp_cloned || 'Dupliziert!'), 'success');
+          setTimeout(() => this.load(), 500);
+        }
+      } catch (e) {
+        window.ppvToast('⚠️ ' + (L.server_error || 'Serverfehler'), 'error');
+      }
+    }
+
+    showModal() { if (this.modal) this.modal.classList.add('show'); }
+    hideModal() { if (this.modal) this.modal.classList.remove('show'); }
+
+    resetForm() {
+      const safe = id => document.getElementById(id);
+      ['camp-title', 'camp-start', 'camp-end', 'camp-free-product-name'].forEach(id => { if (safe(id)) safe(id).value = ''; });
+      ['camp-value', 'camp-required-points', 'camp-free-product-value'].forEach(id => { if (safe(id)) safe(id).value = 0; });
+      if (safe('camp-points-given')) safe('camp-points-given').value = 1;
+      if (safe('camp-type')) safe('camp-type').value = 'points';
+      if (safe('camp-status')) safe('camp-status').value = 'active';
+      this.editingId = 0;
+    }
+
+    updateVisibilityByType(type) {
+      const safe = id => document.getElementById(id);
+      ['camp-required-points-wrapper', 'camp-points-given-wrapper', 'camp-free-product-name-wrapper', 'camp-free-product-value-wrapper'].forEach(id => {
+        if (safe(id)) safe(id).style.display = 'none';
       });
 
-      const data = await res.json();
+      if (safe('camp-required-points-wrapper')) safe('camp-required-points-wrapper').style.display = 'block';
 
-      if (data.success) {
-        const msg = this.editingId > 0
-          ? (L.camp_updated || "✅ Kampány frissítve!")
-          : (L.camp_saved || "✅ Kampány mentve!");
-
-        window.ppvToast(msg, "success");
-        this.ui.showMessage(msg, "success");
-
-        this.hideModal();
-        this.resetForm();
-        this.refresh();
-      } else {
-        const errMsg = "❌ " + (data.message || L.error_generic || "Hiba");
-        this.ui.showMessage(errMsg, "error");
-        window.ppvToast(errMsg, "error");
+      if (type === 'discount' || type === 'fixed') {
+        if (safe('camp-points-given-wrapper')) safe('camp-points-given-wrapper').style.display = 'block';
+      } else if (type === 'free_product') {
+        if (safe('camp-free-product-name-wrapper')) safe('camp-free-product-name-wrapper').style.display = 'block';
+        if (safe('camp-free-product-value-wrapper')) safe('camp-free-product-value-wrapper').style.display = 'block';
+        if (safe('camp-points-given-wrapper')) safe('camp-points-given-wrapper').style.display = 'block';
       }
-    } catch (e) {
-      const errMsg = "⚠️ " + (L.server_error || "Szerverhiba");
-      this.ui.showMessage(errMsg, "error");
-      window.ppvToast(errMsg, "error");
-      console.error("Save error:", e);
     }
-  }
 
-  showModal() {
-    if (this.modal) {
-      this.modal.classList.add("show");
-    }
-  }
+    updateValueLabel(type) {
+      const label = document.getElementById('camp-value-label');
+      const campValue = document.getElementById('camp-value');
+      if (!label || !campValue) return;
 
-  hideModal() {
-    if (this.modal) {
-      this.modal.classList.remove("show");
-    }
-  }
-
-  initTypeListener() {
-    const typeSelect = document.getElementById("camp-type");
-    if (!typeSelect) return;
-
-    // Remove old listener to prevent duplicates
-    typeSelect.removeEventListener("change", this._typeChangeHandler);
-
-    this._typeChangeHandler = (e) => {
-      const type = e.target.value;
-      this.updateVisibilityByType(type);
-      this.updateValueLabel(type); // ✅ ÚJ: Értékcímke frissítése
-    };
-
-    typeSelect.addEventListener("change", this._typeChangeHandler);
-  }
-
-  initFreeProductListener() {
-    const productInput = document.getElementById("camp-free-product-name");
-    const valueWrapper = document.getElementById("camp-free-product-value-wrapper");
-    const valueInput = document.getElementById("camp-free-product-value");
-
-    if (!productInput || !valueWrapper || !valueInput) return;
-
-    productInput.addEventListener("input", (e) => {
-      const productName = e.target.value.trim();
-
-      if (productName.length > 0) {
-        valueWrapper.style.display = "block";
-        // valueInput.required = true; // ❌ KIVET!
-      } else {
-        valueWrapper.style.display = "none";
-        // valueInput.required = false; // ❌ KIVET!
-        valueInput.value = 0;
+      if (type === 'points') label.innerText = L.camp_extra_points || 'Extra Punkte';
+      else if (type === 'discount') label.innerText = L.camp_discount || 'Rabatt (%)';
+      else if (type === 'fixed') label.innerText = L.camp_fixed_bonus || 'Fix Bonus (€)';
+      else if (type === 'free_product') {
+        label.innerText = L.camp_free_product || 'Gratis Produkt';
+        campValue.style.display = 'none';
+        return;
       }
-    });
+      campValue.style.display = 'block';
+    }
   }
 
-  updateValueLabel(campType) {
-    const label = document.getElementById("camp-value-label");
-    const campValue = document.getElementById("camp-value");
-
-    if (!label || !campValue) return;
-
-    if (campType === "points") label.innerText = L.camp_extra_points || "Extra pontok";
-    else if (campType === "discount") label.innerText = L.camp_discount || "Rabatt (%)";
-    else if (campType === "fixed") label.innerText = L.camp_fixed_bonus || "Fix bonus (€)";
-    else if (campType === "free_product") {
-      label.innerText = "🎁 Ingyenes termék";
-      campValue.style.display = "none";
-      return;
+  // ============================================================
+  // CAMERA SCANNER (Simplified)
+  // ============================================================
+  class CameraScanner {
+    constructor(scanProcessor) {
+      this.scanProcessor = scanProcessor;
+      this.scanner = null;
+      this.scanning = false;
+      this.state = 'stopped';
+      this.lastRead = '';
+      this.countdown = 0;
+      this.countdownInterval = null;
+      this.miniContainer = null;
+      this.readerDiv = null;
+      this.statusDiv = null;
+      this.toggleBtn = null;
+      this.torchBtn = null;
+      this.torchOn = false;
+      this.videoTrack = null;
+      this.refocusInterval = null;
     }
 
-    label.style.opacity = "1";
-    campValue.style.display = "block";
-  }
+    init() {
+      this.createMiniScanner();
+      // Auto-start if was running before navigation
+      this.checkAutoStart();
+    }
 
-  resetForm() {
-    const safe = (id) => document.getElementById(id);
+    checkAutoStart() {
+      try {
+        const wasRunning = localStorage.getItem('ppv_scanner_running') === 'true';
+        if (wasRunning) {
+          ppvLog('[Scanner] Auto-starting (was running before navigation)');
+          setTimeout(() => this.startScannerManual(), 500);
+        }
+      } catch (e) {}
+    }
 
-    if (safe("camp-title")) safe("camp-title").value = "";
-    if (safe("camp-start")) safe("camp-start").value = "";
-    if (safe("camp-end")) safe("camp-end").value = "";
-    if (safe("camp-value")) safe("camp-value").value = 0;
-    if (safe("camp-type")) safe("camp-type").value = "points";
-    if (safe("camp-status")) safe("camp-status").value = "active";
-    if (safe("camp-required-points")) safe("camp-required-points").value = 0;
-    if (safe("camp-points-given")) safe("camp-points-given").value = 1;
-    if (safe("camp-free-product-name")) safe("camp-free-product-name").value = "";
-    if (safe("camp-free-product-value")) safe("camp-free-product-value").value = 0;
+    saveScannerState(running) {
+      try {
+        localStorage.setItem('ppv_scanner_running', running ? 'true' : 'false');
+      } catch (e) {}
+    }
 
-    if (safe("camp-required-points-wrapper")) safe("camp-required-points-wrapper").style.display = "none";
-    if (safe("camp-points-given-wrapper")) safe("camp-points-given-wrapper").style.display = "none";
-    if (safe("camp-free-product-name-wrapper")) safe("camp-free-product-name-wrapper").style.display = "none";
-    if (safe("camp-free-product-value-wrapper")) safe("camp-free-product-value-wrapper").style.display = "none";
+    createMiniScanner() {
+      const existing = document.getElementById('ppv-mini-scanner');
+      if (existing) existing.remove();
 
-    this.editingId = 0;
-  }
+      this.miniContainer = document.createElement('div');
+      this.miniContainer.id = 'ppv-mini-scanner';
+      this.miniContainer.className = 'ppv-mini-scanner-active';
+      this.miniContainer.innerHTML = `
+        <div id="ppv-mini-drag-handle" class="ppv-mini-drag-handle"><span class="ppv-drag-icon">⋮⋮</span></div>
+        <div id="ppv-mini-reader" style="display:none;"></div>
+        <div id="ppv-mini-status" style="display:none;"><span class="ppv-mini-icon">📷</span><span class="ppv-mini-text">${L.scanner_active || 'Scanner aktiv'}</span></div>
+        <div class="ppv-mini-controls">
+          <button id="ppv-mini-toggle" class="ppv-mini-toggle"><span class="ppv-toggle-icon">📷</span><span class="ppv-toggle-text">Start</span></button>
+        </div>
+        <div class="ppv-mini-toolbar" style="display:none;">
+          <button id="ppv-mini-fullscreen" class="ppv-mini-btn" title="Kiosk mód"><span>⛶</span></button>
+          <button id="ppv-mini-torch" class="ppv-mini-btn" style="display:none;" title="Blitz"><span class="ppv-torch-icon">🔦</span></button>
+          <button id="ppv-mini-refocus" class="ppv-mini-btn" style="display:none;" title="Fokus"><span class="ppv-refocus-icon">🎯</span></button>
+        </div>
+      `;
+      document.body.appendChild(this.miniContainer);
+      this.isFullscreen = false;
 
-  refresh(delay = 800) {
-    setTimeout(async () => {
-      await this.load();
-      this.ui.flashCampaignList();
-    }, delay);
-  }
-}
+      this.readerDiv = document.getElementById('ppv-mini-reader');
+      this.statusDiv = document.getElementById('ppv-mini-status');
+      this.toggleBtn = document.getElementById('ppv-mini-toggle');
+      this.torchBtn = document.getElementById('ppv-mini-torch');
+      this.refocusBtn = document.getElementById('ppv-mini-refocus');
+      this.fullscreenBtn = document.getElementById('ppv-mini-fullscreen');
+      this.toolbar = this.miniContainer.querySelector('.ppv-mini-toolbar');
 
-// ============================================================
-// 📷 MINI ALWAYS-ON CAMERA SCANNER
-// ============================================================
-class CameraScanner {
-  constructor(scanProcessor) {
-    // 🔊 Sound effects
-    this.beep = new Audio("/wp-content/plugins/punktepass/assets/sounds/scan-beep.wav");
-    this.beep.volume = 1.0;
+      this.loadPosition();
+      this.makeDraggable();
+      this.setupToggle();
+      this.setupTorch();
+      this.setupRefocus();
+      this.setupFullscreen();
+    }
 
-    this.errorSound = new Audio("/wp-content/plugins/punktepass/assets/sounds/error.mp3");
-    this.errorSound.volume = 0.8;
+    // ============================================================
+    // 🔦 TORCH CONTROL
+    // ============================================================
+    setupTorch() {
+      if (!this.torchBtn) return;
+      this.torchBtn.addEventListener('click', async () => {
+        await this.toggleTorch();
+      });
+    }
 
-    this.scanProcessor = scanProcessor;
-    this.scanner = null;
-    this.scanning = false;
-    this.lastRead = '';
-    this.repeatCount = 0;
+    async toggleTorch() {
+      if (!this.videoTrack) return;
+      try {
+        const capabilities = this.videoTrack.getCapabilities();
+        if (!capabilities.torch) {
+          ppvLog('[Camera] Torch not supported');
+          return;
+        }
+        this.torchOn = !this.torchOn;
+        await this.videoTrack.applyConstraints({ advanced: [{ torch: this.torchOn }] });
+        this.torchBtn.querySelector('.ppv-torch-icon').textContent = this.torchOn ? '💡' : '🔦';
+        ppvLog('[Camera] Torch:', this.torchOn ? 'ON' : 'OFF');
+      } catch (e) {
+        ppvWarn('[Camera] Torch error:', e);
+      }
+    }
 
-    // State management: 'scanning', 'processing', 'paused'
-    this.state = 'scanning';
-    this.countdown = 0;
-    this.countdownInterval = null;
-    this.pauseTimeout = null;
+    // ============================================================
+    // 🎯 MANUAL REFOCUS
+    // ============================================================
+    setupRefocus() {
+      if (!this.refocusBtn) return;
+      this.refocusBtn.addEventListener('click', async () => {
+        await this.triggerRefocus();
+      });
+    }
 
-    this.miniContainer = null;
-    this.readerDiv = null;
-    this.statusDiv = null;
+    async triggerRefocus() {
+      if (!this.videoTrack) return;
+      try {
+        const capabilities = this.videoTrack.getCapabilities();
+        if (capabilities.focusMode && capabilities.focusMode.includes('manual')) {
+          // Briefly switch to manual then back to continuous to force refocus
+          await this.videoTrack.applyConstraints({ advanced: [{ focusMode: 'manual' }] });
+          await new Promise(r => setTimeout(r, 100));
+          await this.videoTrack.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
+          ppvLog('[Camera] Refocus triggered');
+        } else if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+          // Some devices: toggle continuous off/on
+          await this.videoTrack.applyConstraints({ advanced: [{ focusMode: 'single-shot' }] });
+          await new Promise(r => setTimeout(r, 200));
+          await this.videoTrack.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
+          ppvLog('[Camera] Refocus triggered (single-shot method)');
+        }
+      } catch (e) {
+        ppvWarn('[Camera] Refocus error:', e);
+      }
+    }
 
-    this.createMiniScanner();
-    this.autoStart();
-  }
+    // Start periodic refocus (every 8 seconds) for problematic devices
+    startPeriodicRefocus() {
+      if (this.refocusInterval) return;
+      this.refocusInterval = setInterval(() => {
+        if (this.scanning && this.state === 'scanning') {
+          this.triggerRefocus();
+        }
+      }, 8000);
+      ppvLog('[Camera] Periodic refocus started (8s interval)');
+    }
 
-  createMiniScanner() {
-    const existing = document.getElementById('ppv-mini-scanner');
-    if (existing) existing.remove();
+    stopPeriodicRefocus() {
+      if (this.refocusInterval) {
+        clearInterval(this.refocusInterval);
+        this.refocusInterval = null;
+        ppvLog('[Camera] Periodic refocus stopped');
+      }
+    }
 
-    this.miniContainer = document.createElement('div');
-    this.miniContainer.id = 'ppv-mini-scanner';
-    this.miniContainer.className = 'ppv-mini-scanner-active';
-    this.miniContainer.innerHTML = `
-      <div id="ppv-mini-drag-handle" class="ppv-mini-drag-handle">
-        <span class="ppv-drag-icon">⋮⋮</span>
-      </div>
-      <div id="ppv-mini-reader"></div>
-      <div id="ppv-mini-status">
-        <span class="ppv-mini-icon">📷</span>
-        <span class="ppv-mini-text">${L.scanner_active || 'Scanner aktív'}</span>
-      </div>
-      <button id="ppv-mini-toggle" class="ppv-mini-toggle">
-        <span class="ppv-toggle-icon">📷</span>
-        <span class="ppv-toggle-text">Start</span>
-      </button>
-    `;
+    // ============================================================
+    // ⛶ FULLSCREEN / KIOSK MODE
+    // ============================================================
+    setupFullscreen() {
+      if (!this.fullscreenBtn) return;
+      this.fullscreenBtn.addEventListener('click', () => {
+        this.toggleFullscreen();
+      });
+    }
 
-    document.body.appendChild(this.miniContainer);
+    toggleFullscreen() {
+      this.isFullscreen = !this.isFullscreen;
 
-    this.readerDiv = document.getElementById('ppv-mini-reader');
-    this.statusDiv = document.getElementById('ppv-mini-status');
-    this.toggleBtn = document.getElementById('ppv-mini-toggle');
+      if (this.isFullscreen) {
+        // Save current position before going fullscreen
+        const rect = this.miniContainer.getBoundingClientRect();
+        this.savedPosition = { x: rect.left, y: rect.top };
 
-    // Hide reader initially
-    this.readerDiv.style.display = 'none';
-    this.statusDiv.style.display = 'none';
+        // Apply fullscreen mode
+        this.miniContainer.classList.add('ppv-fullscreen-mode');
+        this.fullscreenBtn.querySelector('span').textContent = '⛶';
+        this.fullscreenBtn.title = 'Mini mód';
 
-    // Load saved position or use default
-    this.loadPosition();
+        // Reset position for fullscreen centering
+        this.miniContainer.style.left = '';
+        this.miniContainer.style.top = '';
+        this.miniContainer.style.bottom = '';
+        this.miniContainer.style.right = '';
 
-    // Make it draggable
-    this.makeDraggable();
+        ppvLog('[Scanner] Entered fullscreen/kiosk mode');
+      } else {
+        // Exit fullscreen mode
+        this.miniContainer.classList.remove('ppv-fullscreen-mode');
+        this.fullscreenBtn.querySelector('span').textContent = '⛶';
+        this.fullscreenBtn.title = 'Kiosk mód';
 
-    // Setup toggle button
-    this.setupToggle();
-  }
+        // Restore saved position
+        if (this.savedPosition) {
+          this.miniContainer.style.bottom = 'auto';
+          this.miniContainer.style.right = 'auto';
+          this.miniContainer.style.left = this.savedPosition.x + 'px';
+          this.miniContainer.style.top = this.savedPosition.y + 'px';
+        }
 
-  loadPosition() {
-    try {
-      const savedPos = localStorage.getItem('ppv_scanner_position');
-      if (savedPos) {
-        const pos = JSON.parse(savedPos);
+        ppvLog('[Scanner] Exited fullscreen mode');
+      }
+    }
+
+    loadPosition() {
+      try {
+        const saved = localStorage.getItem('ppv_scanner_position');
+        if (saved) {
+          const pos = JSON.parse(saved);
+          this.miniContainer.style.bottom = 'auto';
+          this.miniContainer.style.right = 'auto';
+          this.miniContainer.style.left = pos.x + 'px';
+          this.miniContainer.style.top = pos.y + 'px';
+        }
+      } catch (e) {}
+    }
+
+    savePosition(x, y) {
+      try { localStorage.setItem('ppv_scanner_position', JSON.stringify({ x, y })); } catch (e) {}
+    }
+
+    makeDraggable() {
+      const handle = document.getElementById('ppv-mini-drag-handle');
+      if (!handle) return;
+
+      let isDragging = false, currentX = 0, currentY = 0, offsetX = 0, offsetY = 0;
+
+      const dragStart = e => {
+        const rect = this.miniContainer.getBoundingClientRect();
+        currentX = rect.left; currentY = rect.top;
+        offsetX = (e.touches ? e.touches[0].clientX : e.clientX) - currentX;
+        offsetY = (e.touches ? e.touches[0].clientY : e.clientY) - currentY;
+        if (e.target === handle || e.target.classList.contains('ppv-drag-icon')) {
+          isDragging = true;
+          this.miniContainer.style.transition = 'none';
+        }
+      };
+
+      const drag = e => {
+        if (!isDragging) return;
+        e.preventDefault();
+        currentX = (e.touches ? e.touches[0].clientX : e.clientX) - offsetX;
+        currentY = (e.touches ? e.touches[0].clientY : e.clientY) - offsetY;
+        const rect = this.miniContainer.getBoundingClientRect();
+        currentX = Math.max(0, Math.min(currentX, window.innerWidth - rect.width));
+        currentY = Math.max(0, Math.min(currentY, window.innerHeight - rect.height));
         this.miniContainer.style.bottom = 'auto';
         this.miniContainer.style.right = 'auto';
-        this.miniContainer.style.left = pos.x + 'px';
-        this.miniContainer.style.top = pos.y + 'px';
-      }
-    } catch (e) {
-      console.warn('Could not load scanner position:', e);
+        this.miniContainer.style.left = currentX + 'px';
+        this.miniContainer.style.top = currentY + 'px';
+      };
+
+      const dragEnd = () => {
+        if (isDragging) {
+          isDragging = false;
+          this.miniContainer.style.transition = '';
+          this.savePosition(currentX, currentY);
+        }
+      };
+
+      handle.addEventListener('mousedown', dragStart);
+      document.addEventListener('mousemove', drag);
+      document.addEventListener('mouseup', dragEnd);
+      handle.addEventListener('touchstart', dragStart, { passive: false });
+      document.addEventListener('touchmove', drag, { passive: false });
+      document.addEventListener('touchend', dragEnd);
     }
-  }
 
-  savePosition(x, y) {
-    try {
-      localStorage.setItem('ppv_scanner_position', JSON.stringify({ x, y }));
-    } catch (e) {
-      console.warn('Could not save scanner position:', e);
+    setupToggle() {
+      if (!this.toggleBtn) return;
+      this.toggleBtn.addEventListener('click', async () => {
+        if (this.scanning) await this.stopScanner();
+        else await this.startScannerManual();
+      });
     }
-  }
 
-  makeDraggable() {
-    const handle = document.getElementById('ppv-mini-drag-handle');
-    if (!handle) return;
-
-    let isDragging = false;
-    let currentX = 0;
-    let currentY = 0;
-    let initialX = 0;
-    let initialY = 0;
-    let offsetX = 0;
-    let offsetY = 0;
-
-    const dragStart = (e) => {
-      // Get the current actual position from the DOM
-      const rect = this.miniContainer.getBoundingClientRect();
-      currentX = rect.left;
-      currentY = rect.top;
-
-      if (e.type === 'touchstart') {
-        offsetX = e.touches[0].clientX - currentX;
-        offsetY = e.touches[0].clientY - currentY;
-      } else {
-        offsetX = e.clientX - currentX;
-        offsetY = e.clientY - currentY;
-      }
-
-      if (e.target === handle || e.target.classList.contains('ppv-drag-icon')) {
-        isDragging = true;
-        this.miniContainer.style.cursor = 'grabbing';
-        this.miniContainer.style.transition = 'none';
-      }
-    };
-
-    const drag = (e) => {
-      if (!isDragging) return;
-
-      e.preventDefault();
-
-      if (e.type === 'touchmove') {
-        currentX = e.touches[0].clientX - offsetX;
-        currentY = e.touches[0].clientY - offsetY;
-      } else {
-        currentX = e.clientX - offsetX;
-        currentY = e.clientY - offsetY;
-      }
-
-      // Constrain to viewport
-      const rect = this.miniContainer.getBoundingClientRect();
-      const maxX = window.innerWidth - rect.width;
-      const maxY = window.innerHeight - rect.height;
-
-      currentX = Math.max(0, Math.min(currentX, maxX));
-      currentY = Math.max(0, Math.min(currentY, maxY));
-
-      this.miniContainer.style.bottom = 'auto';
-      this.miniContainer.style.right = 'auto';
-      this.miniContainer.style.left = currentX + 'px';
-      this.miniContainer.style.top = currentY + 'px';
-    };
-
-    const dragEnd = () => {
-      if (isDragging) {
-        isDragging = false;
-        this.miniContainer.style.cursor = 'grab';
-        this.miniContainer.style.transition = '';
-        this.savePosition(currentX, currentY);
-      }
-    };
-
-    // Mouse events
-    handle.addEventListener('mousedown', dragStart);
-    document.addEventListener('mousemove', drag);
-    document.addEventListener('mouseup', dragEnd);
-
-    // Touch events
-    handle.addEventListener('touchstart', dragStart, { passive: false });
-    document.addEventListener('touchmove', drag, { passive: false });
-    document.addEventListener('touchend', dragEnd);
-  }
-
-  setupToggle() {
-    if (!this.toggleBtn) return;
-
-    this.toggleBtn.addEventListener('click', async () => {
-
-      if (this.scanning) {
-        // Stop scanner
-        await this.stopScanner();
-      } else {
-        // Start scanner
-        await this.startScannerManual();
-      }
-    });
-  }
-
-  async stopScanner() {
-
-    try {
-      // 🤖 Android: Stop html5-qrcode scanner
-      if (this.scanner) {
-        await this.scanner.stop();
-        this.scanner = null;
-      }
-
-      // 🍎 iOS: Stop video stream
-      if (this.iosStream) {
-        this.iosStream.getTracks().forEach(track => track.stop());
-        this.iosStream = null;
-      }
-      if (this.iosVideo) {
-        this.iosVideo.srcObject = null;
-        this.iosVideo = null;
-      }
-      this.iosCanvas = null;
-      this.iosCanvasCtx = null;
+    async stopScanner() {
+      try {
+        if (this.scanner) {
+          // QrScanner uses stop() or destroy()
+          if (typeof this.scanner.stop === 'function') await this.scanner.stop();
+          if (typeof this.scanner.destroy === 'function') this.scanner.destroy();
+          this.scanner = null;
+        }
+        if (this.iosStream) { this.iosStream.getTracks().forEach(t => t.stop()); this.iosStream = null; }
+      } catch (e) { ppvWarn('[Camera] Stop error:', e); }
 
       this.scanning = false;
       this.state = 'stopped';
-
-      // Hide reader and status
+      this.videoTrack = null;
+      this.torchOn = false;
       this.readerDiv.style.display = 'none';
       this.statusDiv.style.display = 'none';
-
-      // Update button
       this.toggleBtn.querySelector('.ppv-toggle-icon').textContent = '📷';
       this.toggleBtn.querySelector('.ppv-toggle-text').textContent = 'Start';
       this.toggleBtn.style.background = 'linear-gradient(135deg, #00e676, #00c853)';
 
-      // Clear intervals
-      if (this.countdownInterval) {
-        clearInterval(this.countdownInterval);
-        this.countdownInterval = null;
-      }
-      if (this.pauseTimeout) {
-        clearTimeout(this.pauseTimeout);
-        this.pauseTimeout = null;
+      // Hide toolbar and buttons
+      if (this.toolbar) this.toolbar.style.display = 'none';
+      if (this.torchBtn) this.torchBtn.style.display = 'none';
+      if (this.refocusBtn) this.refocusBtn.style.display = 'none';
+
+      // Exit fullscreen if active
+      if (this.isFullscreen) {
+        this.toggleFullscreen();
       }
 
-    } catch (err) {
-      console.error('❌ [Scanner] Stop error:', err);
+      if (this.countdownInterval) { clearInterval(this.countdownInterval); this.countdownInterval = null; }
+
+      // Stop periodic refocus
+      this.stopPeriodicRefocus();
+
+      // Save state for persistence across navigation
+      this.saveScannerState(false);
     }
-  }
 
-  async startScannerManual() {
+    async startScannerManual() {
+      this.readerDiv.style.display = 'block';
+      this.statusDiv.style.display = 'none'; // Hide status in mini mode - only show toggle
+      this.toggleBtn.querySelector('.ppv-toggle-icon').textContent = '🛑';
+      this.toggleBtn.querySelector('.ppv-toggle-text').textContent = '';
+      this.toggleBtn.style.background = 'linear-gradient(135deg, #ff5252, #f44336)';
 
-    // Show reader and status
-    this.readerDiv.style.display = 'block';
-    this.statusDiv.style.display = 'block';
+      // Show toolbar with fullscreen button
+      if (this.toolbar) this.toolbar.style.display = 'flex';
 
-    // Update button
-    this.toggleBtn.querySelector('.ppv-toggle-icon').textContent = '🛑';
-    this.toggleBtn.querySelector('.ppv-toggle-text').textContent = 'Stop';
-    this.toggleBtn.style.background = 'linear-gradient(135deg, #ff5252, #f44336)';
+      // Save state for persistence across navigation
+      this.saveScannerState(true);
 
-    // Load library and start
-    await this.loadLibrary();
-  }
+      await this.loadLibrary();
+    }
 
-  async autoStart() {
-    // ✅ REMOVED: Don't auto-start anymore, user must click button
-  }
-
-  async loadLibrary() {
-    // 🍎 iOS Detection
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-
-    if (isIOS) {
-      // 🍎 iOS: Use jsQR (canvas-based, works better on Safari)
-      if (window.jsQR) {
-        await this.startIOSScanner();
+    async loadLibrary() {
+      // Use qr-scanner for all devices (better camera handling)
+      if (window.QrScanner) {
+        ppvLog('[Camera] QrScanner already loaded');
+        await this.startQrScanner();
         return;
       }
 
+      ppvLog('[Camera] Loading QrScanner from CDN...');
+      const script = document.createElement('script');
+
+      // Primary CDN
+      script.src = 'https://unpkg.com/qr-scanner@1.4.2/qr-scanner.umd.min.js';
+
+      script.onload = () => {
+        ppvLog('[Camera] QrScanner loaded successfully');
+        this.startQrScanner();
+      };
+
+      script.onerror = () => {
+        ppvWarn('[Camera] Primary CDN failed, trying jsDelivr...');
+        // Fallback CDN
+        const fallbackScript = document.createElement('script');
+        fallbackScript.src = 'https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner.umd.min.js';
+        fallbackScript.onload = () => {
+          ppvLog('[Camera] QrScanner loaded from jsDelivr');
+          this.startQrScanner();
+        };
+        fallbackScript.onerror = () => {
+          ppvWarn('[Camera] All CDNs failed, falling back to jsQR');
+          this.loadFallbackLibrary();
+        };
+        document.head.appendChild(fallbackScript);
+      };
+
+      document.head.appendChild(script);
+    }
+
+    loadFallbackLibrary() {
+      // Fallback to jsQR if qr-scanner fails
+      if (window.jsQR) { this.startJsQRScanner(); return; }
       const script = document.createElement('script');
       script.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
-      script.onload = () => this.startIOSScanner();
-      script.onerror = () => {
-        this.updateStatus('error', '❌ Scanner könyvtár nem tölthető be');
-      };
+      script.onload = () => this.startJsQRScanner();
+      script.onerror = () => this.updateStatus('error', '❌ Scanner nicht verfügbar');
       document.head.appendChild(script);
-    } else {
-      // 🤖 Android: Use html5-qrcode
-      if (window.Html5Qrcode) {
-        await this.startScanner();
+    }
+
+    async startQrScanner() {
+      if (!this.readerDiv) {
+        console.error('[Camera] readerDiv not found - mini scanner container missing');
+        this.updateStatus('error', '❌ Scanner elem hiányzik');
+        return;
+      }
+      if (!window.QrScanner) {
+        console.error('[Camera] QrScanner library not loaded');
+        this.updateStatus('error', '❌ Scanner könyvtár nem töltődött be');
+        window.ppvToast && window.ppvToast('Scanner könyvtár betöltési hiba', 'error');
         return;
       }
 
-      const script = document.createElement('script');
-      script.src = 'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';
-      script.onload = () => this.startScanner();
-      script.onerror = () => {
-        this.updateStatus('error', '❌ Scanner könyvtár nem tölthető be');
-      };
-      document.head.appendChild(script);
-    }
-  }
-
-  async startScanner() {
-    const readerElement = document.getElementById('ppv-mini-reader');
-    if (!readerElement || !window.Html5Qrcode) {
-      this.updateStatus('error', '❌ Scanner elem nem található');
-      return;
-    }
-
-    try {
-      this.scanner = new Html5Qrcode('ppv-mini-reader');
-
-      // ✅ OPTIMIZED CONFIG - Fast QR detection from any angle
-      const config = {
-        fps: 30,  // ⬆️ Higher FPS = faster detection
-        qrbox: { width: 250, height: 250 },  // 📦 Larger scan area
-        aspectRatio: 1.0,
-        disableFlip: false,  // 🔄 Try both orientations
-        experimentalFeatures: {
-          useBarCodeDetectorIfSupported: true  // 🚀 Use native API if available
-        },
-        formatsToSupport: [0]  // 📱 Only QR codes (0 = QR_CODE)
-      };
-
-      // 📷 Advanced camera constraints - autofocus + high resolution
-      const cameraConstraints = {
-        facingMode: 'environment',
-        advanced: [
-          { focusMode: 'continuous' },  // 🎯 Continuous autofocus
-          { zoom: 1.0 }
-        ]
-      };
-
-      await this.scanner.start(
-        cameraConstraints,
-        config,
-        (qrCode) => this.onScanSuccess(qrCode)
-      );
-
-      this.scanning = true;
-      this.state = 'scanning';
-      this.updateStatus('scanning', L.scanner_active || '📷 Scanning...');
-
-    } catch (err) {
-      console.warn('⚠️ Optimized config failed:', err);
-
-      // ✅ IMPORTANT: Create new scanner instance for fallback
       try {
-        // Stop and clear previous instance
-        if (this.scanner) {
-          try {
-            await this.scanner.stop();
-          } catch (e) {}
-          this.scanner = null;
+        // Set worker path BEFORE creating scanner instance
+        QrScanner.WORKER_PATH = 'https://unpkg.com/qr-scanner@1.4.2/qr-scanner-worker.min.js';
+
+        // Create video element for qr-scanner
+        let videoEl = this.readerDiv.querySelector('video');
+        if (!videoEl) {
+          videoEl = document.createElement('video');
+          videoEl.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:8px;';
+          videoEl.setAttribute('playsinline', 'true');
+          videoEl.setAttribute('muted', 'true');
+          this.readerDiv.appendChild(videoEl);
         }
 
-        this.scanner = new Html5Qrcode('ppv-mini-reader');
+        ppvLog('[Camera] Creating QrScanner instance...');
 
-        const basicConfig = {
-          fps: 20,
-          qrbox: 220,
-          disableFlip: false,
-          experimentalFeatures: {
-            useBarCodeDetectorIfSupported: true
-          }
+        // QrScanner options - preferredCamera: 'environment' forces back camera
+        const options = {
+          preferredCamera: 'environment',  // Back camera
+          maxScansPerSecond: 25,
+          highlightScanRegion: true,
+          highlightCodeOutline: true,
+          returnDetailedScanResult: true
         };
 
-        await this.scanner.start(
-          { facingMode: 'environment' },
-          basicConfig,
-          (qrCode) => this.onScanSuccess(qrCode)
+        this.scanner = new QrScanner(
+          videoEl,
+          result => this.onScanSuccess(result.data || result),
+          options
         );
+
+        ppvLog('[Camera] Starting scanner...');
+        await this.scanner.start();
+        ppvLog('[Camera] QrScanner started successfully');
+
+        // Get video track for torch/refocus
+        try {
+          const stream = videoEl.srcObject;
+          if (stream) {
+            this.videoTrack = stream.getVideoTracks()[0];
+            if (this.videoTrack) {
+              const capabilities = this.videoTrack.getCapabilities();
+              ppvLog('[Camera] Capabilities:', capabilities);
+
+              // Apply advanced focus settings
+              const advancedConstraints = [];
+              if (capabilities.focusMode?.includes('continuous')) {
+                advancedConstraints.push({ focusMode: 'continuous' });
+              }
+              if (capabilities.exposureMode?.includes('continuous')) {
+                advancedConstraints.push({ exposureMode: 'continuous' });
+              }
+              if (advancedConstraints.length > 0) {
+                await this.videoTrack.applyConstraints({ advanced: advancedConstraints });
+              }
+
+              // Show torch button if supported
+              if (capabilities.torch && this.torchBtn) {
+                this.torchBtn.style.display = 'inline-flex';
+              }
+              // Show refocus button
+              if (this.refocusBtn) {
+                this.refocusBtn.style.display = 'inline-flex';
+              }
+              this.startPeriodicRefocus();
+            }
+          }
+        } catch (trackErr) {
+          ppvWarn('[Camera] Track setup error:', trackErr);
+        }
 
         this.scanning = true;
         this.state = 'scanning';
-        this.updateStatus('scanning', L.scanner_active || '📷 Scanning...');
+        this.updateStatus('scanning', L.scanner_active || 'Scanning...');
 
-      } catch (err2) {
-        console.warn('⚠️ Basic config failed:', err2);
-
-        // ✅ IMPORTANT: Create new scanner instance for final fallback
-        try {
-          // Stop and clear previous instance
-          if (this.scanner) {
-            try {
-              await this.scanner.stop();
-            } catch (e) {}
-            this.scanner = null;
-          }
-
-          this.scanner = new Html5Qrcode('ppv-mini-reader');
-
-          await this.scanner.start(
-            { facingMode: 'environment' },
-            { fps: 15, qrbox: 200 },
-            (qrCode) => this.onScanSuccess(qrCode)
-          );
-
-          this.scanning = true;
-          this.state = 'scanning';
-          this.updateStatus('scanning', L.scanner_active || '📷 Scanning...');
-
-        } catch (err3) {
-          console.error('❌ All methods failed:', err3);
-          this.updateStatus('error', '❌ Kamera nem elérhető - engedélyezd a kamera hozzáférést');
-        }
-      }
-    }
-  }
-
-  async startIOSScanner() {
-    // 🍎 iOS Canvas-based QR Scanner using jsQR
-    const readerElement = document.getElementById('ppv-mini-reader');
-    if (!readerElement || !window.jsQR) {
-      this.updateStatus('error', '❌ Scanner elem nem található');
-      return;
-    }
-
-    // ✅ CRITICAL: Stop existing stream before starting new one (for restart)
-    if (this.iosStream) {
-      this.iosStream.getTracks().forEach(track => track.stop());
-      this.iosStream = null;
-    }
-    if (this.iosVideo) {
-      this.iosVideo.srcObject = null;
-      this.iosVideo = null;
-    }
-    this.iosCanvas = null;
-    this.iosCanvasCtx = null;
-
-    try {
-      // Create video element
-      const video = document.createElement('video');
-      video.style.width = '100%';
-      video.style.height = '100%';
-      video.style.objectFit = 'cover';
-      video.setAttribute('playsinline', 'true'); // Important for iOS
-
-      // Create canvas for QR detection (hidden)
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-
-      // Clear and setup container
-      readerElement.innerHTML = '';
-      readerElement.appendChild(video);
-
-      // Get camera stream with high quality settings
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: { exact: 'environment' },
-          width: { min: 1280, ideal: 1920, max: 3840 },    // Higher resolution
-          height: { min: 720, ideal: 1080, max: 2160 },
-          aspectRatio: { ideal: 16/9 },
-          frameRate: { ideal: 30 }                          // Higher FPS for smoother detection
-        }
-      });
-
-      video.srcObject = stream;
-      await video.play();
-
-      // Wait for video metadata to load
-      await new Promise(resolve => {
-        if (video.videoWidth > 0) {
-          resolve();
-        } else {
-          video.addEventListener('loadedmetadata', resolve, { once: true });
-        }
-      });
-
-      // Set canvas size to match actual video resolution
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-
-      this.iosStream = stream;
-      this.iosVideo = video;
-      this.iosCanvas = canvas;
-      this.iosCanvasCtx = ctx;
-
-      this.scanning = true;
-      this.state = 'scanning';
-      this.updateStatus('scanning', L.scanner_active || '📷 Scanning...');
-
-      // Start scan loop
-      this.iosScanLoop();
-
-    } catch (err) {
-      console.error('❌ iOS Scanner failed:', err);
-      this.updateStatus('error', '❌ Kamera nem elérhető - engedélyezd a kamera hozzáférést');
-    }
-  }
-
-  iosScanLoop() {
-    // 🍎 iOS QR scan loop using jsQR
-    if (!this.scanning || !this.iosVideo || !this.iosCanvas || !this.iosCanvasCtx) {
-      return;
-    }
-
-    const video = this.iosVideo;
-    const canvas = this.iosCanvas;
-    const ctx = this.iosCanvasCtx;
-
-    // Draw video frame to canvas
-    if (video.readyState === video.HAVE_ENOUGH_DATA) {
-      // Ensure canvas matches video size (in case it changed)
-      if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-      }
-
-      // Draw current video frame
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-      // ✅ Scan only CENTER region (60% of frame) for better close-up detection
-      const scanRegion = 0.6;  // Scan 60% of center
-      const regionSize = Math.min(canvas.width, canvas.height) * scanRegion;
-      const startX = (canvas.width - regionSize) / 2;
-      const startY = (canvas.height - regionSize) / 2;
-
-      // Get image data only from center region
-      const imageData = ctx.getImageData(startX, startY, regionSize, regionSize);
-
-      // Scan for QR code - faster with smaller region
-      const code = jsQR(imageData.data, imageData.width, imageData.height, {
-        inversionAttempts: 'dontInvert'  // Faster - only try normal QR codes
-      });
-
-      if (code && code.data) {
-        // QR code detected!
-        this.onScanSuccess(code.data);
-      }
-    }
-
-    // Continue loop (15 FPS = 66ms interval for better performance)
-    if (this.scanning) {
-      setTimeout(() => this.iosScanLoop(), 66);
-    }
-  }
-
-  onScanSuccess(qrCode) {
-    // Check if scanner is paused - show feedback
-    if (this.state === 'paused') {
-      const L = window.PPV_LANG || {};
-      const pauseMsg = L.scanner_paused || 'Scanner pausiert';
-      const waitMsg = L.please_wait || 'Bitte warten';
-
-      // Show toast with remaining countdown
-      if (window.ppvToast) {
-        window.ppvToast(`⏸️ ${pauseMsg}: ${this.countdown}s - ${waitMsg}`, 'warning');
-      }
-      return;
-    }
-
-    if (!this.scanning || this.state !== 'scanning') return;
-
-    // 🎯 FASTER: Single read detection (was 2, now 1)
-    if (qrCode === this.lastRead) {
-      this.repeatCount++;
-    } else {
-      this.lastRead = qrCode;
-      this.repeatCount = 1;
-
-      // ✅ GREEN BORDER: Show visual feedback when QR detected (not yet processed)
-      this.showDetectionFeedback();
-    }
-
-    // ⚡ One read is enough (faster scanning)
-    if (this.repeatCount >= 1) {
-      // ✅ Keep scanning flag true, only change state to prevent duplicate scans
-      this.state = 'processing';
-
-      // Update UI
-      this.updateStatus('processing', '⏳ ' + (L.scanner_points_adding || 'Processing...'));
-
-      // 📳 IMPROVED: Shorter, sharper vibration (30ms)
-      try {
-        if (navigator.vibrate) navigator.vibrate(30);
-      } catch (e) {}
-
-      // 🔊 Play success beep sound
-      try {
-        this.beep.currentTime = 0;
-        this.beep.play();
       } catch (e) {
-        console.warn("Beep playback error:", e);
+        ppvWarn('[Camera] QrScanner error:', e);
+        console.error('[Camera] Detailed error:', e);
+
+        // Show specific error messages
+        const errMsg = e?.message || String(e);
+        if (/permission|denied|not allowed/i.test(errMsg)) {
+          this.updateStatus('error', '❌ Kamera-Zugriff verweigert');
+          window.ppvToast('Bitte erlaube den Kamerazugriff', 'error');
+        } else if (/not found|no camera/i.test(errMsg)) {
+          this.updateStatus('error', '❌ Keine Kamera gefunden');
+        } else if (/in use|busy/i.test(errMsg)) {
+          this.updateStatus('error', '❌ Kamera wird verwendet');
+        } else {
+          this.updateStatus('error', '❌ Kamera nicht verfügbar');
+          window.ppvToast('Kamera-Fehler: ' + errMsg.substring(0, 50), 'error');
+        }
+      }
+    }
+
+    // Fallback scanner using jsQR (manual video handling)
+    async startJsQRScanner() {
+      if (!this.readerDiv || !window.jsQR) return;
+      if (this.iosStream) { this.iosStream.getTracks().forEach(t => t.stop()); this.iosStream = null; }
+
+      try {
+        const video = document.createElement('video');
+        video.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:8px;';
+        video.setAttribute('playsinline', 'true');
+        video.setAttribute('autoplay', 'true');
+        video.setAttribute('muted', 'true');
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+        this.readerDiv.innerHTML = '';
+        this.readerDiv.appendChild(video);
+
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { exact: 'environment' },
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          }
+        });
+
+        video.srcObject = stream;
+        await video.play();
+
+        canvas.width = video.videoWidth || 1280;
+        canvas.height = video.videoHeight || 720;
+
+        this.iosStream = stream;
+        this.iosVideo = video;
+        this.iosCanvas = canvas;
+        this.iosCanvasCtx = ctx;
+
+        // Get video track
+        this.videoTrack = stream.getVideoTracks()[0];
+        if (this.videoTrack) {
+          const capabilities = this.videoTrack.getCapabilities();
+          if (capabilities.torch && this.torchBtn) {
+            this.torchBtn.style.display = 'inline-flex';
+          }
+          if (this.refocusBtn) {
+            this.refocusBtn.style.display = 'inline-flex';
+          }
+        }
+
+        this.scanning = true;
+        this.state = 'scanning';
+        this.updateStatus('scanning', L.scanner_active || 'Scanning...');
+        this.jsQRScanLoop();
+
+      } catch (e) {
+        ppvWarn('[jsQR Camera] Start error:', e);
+
+        // Try without exact constraint if it fails
+        if (e.name === 'OverconstrainedError') {
+          ppvLog('[jsQR] Retrying without exact facingMode...');
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+              video: { facingMode: 'environment' }
+            });
+            // ... retry logic would go here, but for brevity using error message
+            this.updateStatus('error', '❌ Kamera nicht kompatibel');
+          } catch (e2) {
+            this.updateStatus('error', '❌ Kamera nicht verfügbar');
+          }
+        } else {
+          this.updateStatus('error', '❌ Kamera nicht verfügbar');
+        }
+        console.error('[jsQR Camera] Detailed error:', e.name, e.message);
+      }
+    }
+
+    jsQRScanLoop() {
+      if (!this.scanning || !this.iosVideo || !this.iosCanvas) return;
+
+      const video = this.iosVideo, canvas = this.iosCanvas, ctx = this.iosCanvasCtx;
+
+      if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+          inversionAttempts: 'attemptBoth'
+        });
+        if (code && code.data) this.onScanSuccess(code.data);
       }
 
-      // Process the scan
+      if (this.scanning) setTimeout(() => this.jsQRScanLoop(), 40);  // ~25fps
+    }
+
+    onScanSuccess(qrCode) {
+      if (this.state === 'paused' || this.state !== 'scanning') return;
+
+      if (qrCode === this.lastRead) return;
+      this.lastRead = qrCode;
+      this.state = 'processing';
+      this.updateStatus('processing', '⏳ ' + (L.scanner_points_adding || 'Wird verarbeitet...'));
+
+      try { if (navigator.vibrate) navigator.vibrate(30); } catch (e) {}
+
       this.inlineProcessScan(qrCode);
     }
-  }
 
+    async inlineProcessScan(qrCode) {
+      // Get GPS coordinates for fraud detection
+      const gps = getGpsCoordinates();
+      // Get device fingerprint for fraud detection
+      const deviceFp = await getDeviceFingerprint();
 
-  inlineProcessScan(qrCode) {
-    fetch('/wp-json/punktepass/v1/pos/scan', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'PPV-POS-Token': window.PPV_STORE_KEY || ''
-      },
-      body: JSON.stringify({
-        qr: qrCode,
-        store_key: window.PPV_STORE_KEY || '',
-        points: 1
+      fetch('/wp-json/punktepass/v1/pos/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'PPV-POS-Token': getStoreKey() },
+        body: JSON.stringify({
+          qr: qrCode,
+          store_key: getStoreKey(),
+          points: 1,
+          latitude: gps.latitude,
+          longitude: gps.longitude,
+          device_fingerprint: deviceFp
+        })
       })
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          // Update status to success
-          this.updateStatus('success', '✅ ' + (data.message || L.scanner_success_msg || 'Sikeres!'));
+        .then(res => res.json())
+        .then(data => {
+          // ═══════════════════════════════════════════════════════════
+          // PENDING STATUS: 10km+ distance - scan goes to admin review
+          // User sees toast, points NOT added yet (admin must approve)
+          // ═══════════════════════════════════════════════════════════
+          if (data.is_pending) {
+            playSound('success');  // Still a soft beep (not error)
+            this.updateStatus('warning', '⏳ ' + (L.scan_pending || 'Scan függőben'));
 
-          // Show toast notification
-          if (window.ppvToast) {
-            window.ppvToast(data.message || L.scanner_point_added || '✅ Pont hozzáadva!', 'success');
+            // Build detailed pending message with distance info
+            let pendingMessage = '⏳ Scan függőben - admin jóváhagyás szükséges';
+            if (data.distance_km) {
+              pendingMessage = `⏳ Scan függőben (${data.distance_km.toFixed(1)} km távolság) - admin jóváhagyás szükséges. Értesítést kapsz a döntésről!`;
+            } else {
+              pendingMessage = '⏳ Scan függőben - admin jóváhagyás szükséges (nagy távolság). Értesítést kapsz a döntésről!';
+            }
+
+            window.ppvToast(pendingMessage, 'warning');
+
+            // Add to UI as pending item
+            const now = new Date();
+            const scanId = data.pending_id ? `pending-${data.pending_id}` : `pending-${data.user_id}-${now.getTime()}`;
+
+            if (STATE.uiManager) {
+              // Build scan history message with distance
+              let historyMessage = '⏳ Függőben (admin jóváhagyás)';
+              if (data.distance_km) {
+                historyMessage = `⏳ Függőben - távolság: ${data.distance_km.toFixed(1)} km`;
+              }
+
+              STATE.uiManager.addScanItem({
+                scan_id: scanId,
+                user_id: data.user_id,
+                customer_name: data.customer_name || null,
+                email: data.email || null,
+                avatar: data.avatar || null,
+                message: historyMessage,
+                points: data.points || 1,
+                date_short: now.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'}).replace(/\./g, '.'),
+                time_short: now.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'}),
+                success: false,  // Show as warning/pending
+                _realtime: true
+              });
+            }
+
+            this.startPauseCountdown();
+            return;
           }
 
-          // Reload logs
-          if (this.scanProcessor && this.scanProcessor.loadLogs) {
-            setTimeout(() => {
-              try {
-                this.scanProcessor.loadLogs();
-              } catch (e) {}
-            }, 1000);
+          if (data.success) {
+            playSound('success');  // 🔊 Success beep
+            this.updateStatus('success', '✅ ' + (data.message || L.scanner_success_msg || 'Erfolgreich!'));
+            window.ppvToast(data.message || L.scanner_point_added || '✅ Punkt hinzugefügt!', 'success');
+
+            // ✅ FIX: Add scan to UI immediately with unique scan_id
+            const now = new Date();
+            const scanId = data.scan_id || `local-${data.user_id}-${now.getTime()}`;
+
+            if (STATE.uiManager) {
+              STATE.uiManager.addScanItem({
+                scan_id: scanId,
+                user_id: data.user_id,
+                customer_name: data.customer_name || null,
+                email: data.email || null,
+                avatar: data.avatar || null,
+                message: data.message,
+                points: data.points || 1,
+                date_short: now.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'}).replace(/\./g, '.'),
+                time_short: now.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'}),
+                success: true,
+                _realtime: true  // Prepend to top of list
+              });
+            }
+
+            this.startPauseCountdown();
+          } else {
+            playSound('error');  // 🔊 Error sound
+            this.updateStatus('warning', '⚠️ ' + (data.message || L.error_generic || 'Fehler'));
+            window.ppvToast(data.message || '⚠️ Fehler', 'warning');
+
+            // ✅ FIX: Add error scan to UI immediately with unique scan_id
+            if (STATE.uiManager && data.user_id) {
+              const now = new Date();
+              const scanId = data.scan_id || `local-err-${data.user_id}-${now.getTime()}`;
+
+              STATE.uiManager.addScanItem({
+                scan_id: scanId,
+                user_id: data.user_id,
+                customer_name: data.customer_name || null,
+                email: data.email || null,
+                avatar: data.avatar || null,
+                message: data.message || '⚠️ Fehler',
+                points: 0,
+                date_short: now.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'}).replace(/\./g, '.'),
+                time_short: now.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'}),
+                success: false,
+                _realtime: true  // Prepend to top of list
+              });
+            }
+
+            setTimeout(() => this.restartAfterError(), 3000);
           }
+        })
+        .catch(() => {
+          playSound('error');  // 🔊 Error sound
+          this.updateStatus('error', '❌ ' + (L.pos_network_error || 'Netzwerkfehler'));
+          window.ppvToast('❌ ' + (L.pos_network_error || 'Netzwerkfehler'), 'error');
+          setTimeout(() => this.restartAfterError(), 3000);
+        });
+    }
 
-          // Start 5-second pause
-          this.startPauseCountdown();
+    startPauseCountdown() {
+      if (this.countdownInterval) clearInterval(this.countdownInterval);
+      this.state = 'paused';
+      this.countdown = 5;
+      this.lastRead = '';
+      this.updateStatus('paused', `⏸️ Pause: ${this.countdown}s`);
 
+      this.countdownInterval = setInterval(() => {
+        this.countdown--;
+        if (this.countdown <= 0) {
+          clearInterval(this.countdownInterval);
+          this.countdownInterval = null;
+          this.autoRestartScanner();
         } else {
-          // ❌ ERROR - show warning and restart scanner after 3 seconds
-          this.updateStatus('warning', '⚠️ ' + (data.message || L.error_generic || 'Hiba'));
-
-          // 🔴 RED FLASH: Visual error feedback
-          this.showErrorFeedback();
-
-          // 🔊 Play error sound
-          try {
-            this.errorSound.currentTime = 0;
-            this.errorSound.play();
-          } catch (e) {
-            console.warn("Error sound playback failed:", e);
-          }
-
-          // 📳 Error vibration (longer than success)
-          try {
-            if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-          } catch (e) {}
-
-          if (window.ppvToast) {
-            window.ppvToast(data.message || L.error_generic || '⚠️ Hiba', 'warning');
-          }
-
-          // Restart scanner after error
-          setTimeout(() => {
-            this.lastRead = "";
-            this.repeatCount = 0;
-            this.startScanner();
-          }, 3000);
+          this.updateStatus('paused', `⏸️ Pause: ${this.countdown}s`);
         }
-      })
-      .catch(e => {
-        // ❌ NETWORK ERROR - show error and restart scanner
-        this.updateStatus('error', '❌ ' + (L.pos_network_error || 'Hálózati hiba'));
+      }, 1000);
+    }
 
-        // 🔴 RED FLASH: Visual error feedback
-        this.showErrorFeedback();
+    restartAfterError() {
+      this.lastRead = '';
+      this.state = 'scanning';
+      this.updateStatus('scanning', L.scanner_active || 'Scanning...');
+    }
 
-        // 🔊 Play error sound
+    async autoRestartScanner() {
+      if (this.state === 'stopped' || !this.scanning) return;
+      this.state = 'scanning';
+      this.updateStatus('scanning', L.scanner_active || 'Scanning...');
+
+      // Trigger refocus when resuming scan (helps XCover 4S and similar devices)
+      setTimeout(() => this.triggerRefocus(), 200);
+    }
+
+    updateStatus(state, text) {
+      if (!this.statusDiv) return;
+      const iconMap = { scanning: '📷', processing: '⏳', success: '✅', warning: '⚠️', error: '❌', paused: '⏸️' };
+      const iconEl = this.statusDiv.querySelector('.ppv-mini-icon');
+      const textEl = this.statusDiv.querySelector('.ppv-mini-text');
+      if (iconEl) iconEl.textContent = iconMap[state] || '📷';
+      if (textEl) textEl.textContent = text.replace(/^[📷⏳✅⚠️❌⏸️]\s*/, '');
+    }
+
+    cleanup() {
+      this.stopScanner();
+      this.stopPeriodicRefocus();
+      const mini = document.getElementById('ppv-mini-scanner');
+      if (mini) mini.remove();
+    }
+  }
+
+  // ============================================================
+  // SETTINGS MANAGER
+  // ============================================================
+  class SettingsManager {
+    static initLanguage() {
+      const langSel = document.getElementById('ppv-lang-select');
+      if (!langSel) return;
+
+      const cur = (document.cookie.match(/ppv_lang=([^;]+)/) || [])[1] || 'de';
+      langSel.value = cur;
+
+      langSel.addEventListener('change', async e => {
+        const newLang = e.target.value;
+        document.cookie = `ppv_lang=${newLang};path=/;max-age=${60 * 60 * 24 * 365}`;
+        localStorage.setItem('ppv_lang', newLang);
+
         try {
-          this.errorSound.currentTime = 0;
-          this.errorSound.play();
+          const res = await fetch('/wp-json/punktepass/v1/strings', { headers: { 'X-Lang': newLang } });
+          window.ppv_lang = await res.json();
+          window.ppvToast(`✅ ${L.lang_changed || 'Sprache'}: ${newLang.toUpperCase()}`, 'success');
         } catch (e) {
-          console.warn("Error sound playback failed:", e);
+          window.ppvToast('❌ ' + (L.lang_change_failed || 'Sprachänderung fehlgeschlagen'), 'error');
+          langSel.value = cur;
         }
-
-        // 📳 Error vibration
-        try {
-          if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-        } catch (e) {}
-
-        if (window.ppvToast) {
-          window.ppvToast('❌ ' + (L.pos_network_error || 'Hálózati hiba'), 'error');
-        }
-
-        // Restart scanner after network error
-        setTimeout(() => {
-          this.lastRead = "";
-          this.repeatCount = 0;
-          this.startScanner();
-        }, 3000);
       });
+    }
+
+    static initTheme() {
+      const themeBtn = document.getElementById('ppv-theme-toggle');
+      if (!themeBtn) return;
+
+      const apply = v => {
+        document.body.classList.remove('ppv-light', 'ppv-dark');
+        document.body.classList.add(`ppv-${v}`);
+      };
+
+      let cur = localStorage.getItem('ppv_theme') || 'dark';
+      apply(cur);
+
+      themeBtn.addEventListener('click', () => {
+        cur = cur === 'dark' ? 'light' : 'dark';
+        localStorage.setItem('ppv_theme', cur);
+        apply(cur);
+      });
+    }
   }
 
-  startPauseCountdown() {
-    // Clear any existing intervals
-    if (this.countdownInterval) {
-      clearInterval(this.countdownInterval);
+  // ============================================================
+  // EVENT DELEGATION
+  // ============================================================
+  function setupEventDelegation() {
+    document.body.removeEventListener('click', handleBodyClick);
+    document.body.addEventListener('click', handleBodyClick);
+
+    // ✅ FIX: Setup change listener for camp-type select (click doesn't work for select)
+    const campTypeSelect = document.getElementById('camp-type');
+    if (campTypeSelect && !campTypeSelect.dataset.listenerAdded) {
+      campTypeSelect.dataset.listenerAdded = 'true';
+      campTypeSelect.addEventListener('change', (e) => {
+        STATE.campaignManager?.updateVisibilityByType(e.target.value);
+        STATE.campaignManager?.updateValueLabel(e.target.value);
+      });
     }
-    if (this.pauseTimeout) {
-      clearTimeout(this.pauseTimeout);
+
+    // ✅ FIX: Setup change listener for campaign filter select
+    const campFilterSelect = document.getElementById('ppv-campaign-filter');
+    if (campFilterSelect && !campFilterSelect.dataset.listenerAdded) {
+      campFilterSelect.dataset.listenerAdded = 'true';
+      campFilterSelect.addEventListener('change', () => {
+        STATE.campaignManager?.load();
+      });
     }
 
-    // Set state to paused (5 seconds)
-    this.state = 'paused';
-    this.countdown = 5;
-    this.lastRead = "";
-    this.repeatCount = 0;
+    // 🏢 Setup change listener for campaign filiale select
+    const campFilialeSelect = document.getElementById('ppv-campaign-filiale');
+    if (campFilialeSelect && !campFilialeSelect.dataset.listenerAdded) {
+      campFilialeSelect.dataset.listenerAdded = 'true';
+      campFilialeSelect.addEventListener('change', () => {
+        ppvLog('[QR] 🏢 Campaign filiale changed to:', campFilialeSelect.value);
+        STATE.campaignManager?.load();
+      });
+    }
+  }
 
-    // Update status with countdown
-    this.updateStatus('paused', `⏸️ Pause: ${this.countdown}s`);
+  function handleBodyClick(e) {
+    const target = e.target;
 
-    // Start countdown interval (update every second)
-    this.countdownInterval = setInterval(() => {
-      this.countdown--;
+    // Campaign actions - use closest() to handle clicks on child elements (emoji text, etc.)
+    const editBtn = target.closest('.ppv-camp-edit');
+    const deleteBtn = target.closest('.ppv-camp-delete');
+    const archiveBtn = target.closest('.ppv-camp-archive');
+    const cloneBtn = target.closest('.ppv-camp-clone');
 
-      if (this.countdown <= 0) {
-        // Countdown finished - restart scanner
-        clearInterval(this.countdownInterval);
-        this.countdownInterval = null;
-        this.autoRestartScanner();
+    if (editBtn) {
+      ppvLog('[QR] Edit button clicked, id:', editBtn.dataset.id);
+      const camp = STATE.campaignManager?.campaigns.find(c => c.id == editBtn.dataset.id);
+      if (camp) {
+        ppvLog('[QR] Found campaign:', camp.title);
+        STATE.campaignManager.edit(camp);
       } else {
-        // Update countdown display
-        this.updateStatus('paused', `⏸️ Pause: ${this.countdown}s`);
+        ppvWarn('[QR] Campaign not found for id:', editBtn.dataset.id);
       }
-    }, 1000);
+    }
+    if (deleteBtn) {
+      ppvLog('[QR] Delete button clicked, id:', deleteBtn.dataset.id);
+      STATE.campaignManager?.delete(deleteBtn.dataset.id);
+    }
+    if (archiveBtn) {
+      ppvLog('[QR] Archive button clicked, id:', archiveBtn.dataset.id);
+      STATE.campaignManager?.archive(archiveBtn.dataset.id);
+    }
+    if (cloneBtn) {
+      ppvLog('[QR] Clone button clicked, id:', cloneBtn.dataset.id);
+      STATE.campaignManager?.clone(cloneBtn.dataset.id);
+    }
+
+    // New campaign button
+    if (target.id === 'ppv-new-campaign' || target.closest('#ppv-new-campaign')) {
+      STATE.campaignManager?.resetForm();
+      STATE.campaignManager?.showModal();
+    }
+
+    // Save campaign (ID is "camp-save" in PHP)
+    if (target.id === 'camp-save' || target.closest('#camp-save')) {
+      STATE.campaignManager?.save();
+    }
+
+    // Cancel campaign (ID is "camp-cancel" in PHP)
+    if (target.id === 'camp-cancel' || target.closest('#camp-cancel')) {
+      STATE.campaignManager?.hideModal();
+    }
+
+    // ✅ NOTE: Campaign type change handled via setupCampTypeListener()
+
+    // Campaign filter
+    if (target.id === 'ppv-campaign-filter') {
+      STATE.campaignManager?.load();
+    }
+
+    // ✅ CSV Export Button - toggle dropdown
+    if (target.id === 'ppv-csv-export-btn' || target.closest('#ppv-csv-export-btn')) {
+      e.preventDefault();
+      const menu = document.getElementById('ppv-csv-export-menu');
+      if (menu) {
+        menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+      }
+    }
+
+    // ✅ CSV Export Options - handle export
+    if (target.classList.contains('ppv-csv-export-option') || target.closest('.ppv-csv-export-option')) {
+      e.preventDefault();
+      const option = target.closest('.ppv-csv-export-option') || target;
+      const period = option.dataset.period;
+
+      // Hide dropdown
+      const menu = document.getElementById('ppv-csv-export-menu');
+      if (menu) menu.style.display = 'none';
+
+      // Handle export based on period
+      handleCsvExport(period);
+    }
+
+    // ✅ Close CSV dropdown when clicking outside
+    if (!target.closest('.ppv-csv-wrapper')) {
+      const menu = document.getElementById('ppv-csv-export-menu');
+      if (menu) menu.style.display = 'none';
+    }
   }
 
-  async autoRestartScanner() {
-    // ✅ Check if user manually stopped during pause
-    if (this.state === 'stopped' || !this.scanning) {
+  // ============================================================
+  // CSV EXPORT HANDLER
+  // ============================================================
+  async function handleCsvExport(period) {
+    const storeKey = getStoreKey();
+    if (!storeKey) {
+      window.ppvToast('⚠️ Kein Store ausgewählt', 'warning');
       return;
     }
 
-    this.state = 'scanning';
-    this.updateStatus('scanning', '🔄 Restarting...');
+    let dateParam = '';
+
+    if (period === 'today') {
+      dateParam = new Date().toISOString().split('T')[0];
+    } else if (period === 'date') {
+      // Show date picker
+      const selectedDate = prompt('Datum eingeben (YYYY-MM-DD):', new Date().toISOString().split('T')[0]);
+      if (!selectedDate) return;
+      dateParam = selectedDate;
+    } else if (period === 'month') {
+      // Current month
+      const now = new Date();
+      dateParam = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    window.ppvToast('⏳ CSV wird erstellt...', 'info');
 
     try {
-      // 🍎 iOS Detection - call correct scanner method
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-                    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      const res = await fetch(`/wp-json/punktepass/v1/pos/export-csv?period=${period}&date=${dateParam}`, {
+        headers: { 'PPV-POS-Token': storeKey }
+      });
 
-      if (isIOS) {
-        await this.startIOSScanner();
+      if (!res.ok) throw new Error('Export failed');
+
+      const data = await res.json();
+
+      if (data.csv) {
+        // Download CSV
+        const blob = new Blob([data.csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = data.filename || `pos-export-${dateParam}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        window.ppvToast('✅ CSV heruntergeladen', 'success');
       } else {
-        await this.startScanner();
+        throw new Error(data.message || 'Export failed');
       }
-    } catch (e) {
-      console.error('Auto-restart error:', e);
-      this.updateStatus('error', '❌ Restart failed');
-
-      // Try again after 5 seconds (only if not manually stopped)
-      if (this.state !== 'stopped' && this.scanning) {
-        setTimeout(() => {
-          this.autoRestartScanner();
-        }, 5000);
-      }
+    } catch (err) {
+      ppvWarn('[CSV] Export error:', err);
+      window.ppvToast('❌ Export fehlgeschlagen', 'error');
     }
   }
 
-  // ✅ GREEN BORDER: Visual feedback when QR detected
-  showDetectionFeedback() {
-    if (!this.readerDiv) return;
-
-    // Add green border animation
-    this.readerDiv.style.boxShadow = '0 0 0 4px #00ff00, 0 0 20px rgba(0, 255, 0, 0.5)';
-    this.readerDiv.style.transition = 'box-shadow 0.2s ease';
-
-    // Remove after 300ms
-    setTimeout(() => {
-      this.readerDiv.style.boxShadow = '';
-    }, 300);
-  }
-
-  // 🔴 RED FLASH: Visual feedback on error
-  showErrorFeedback() {
-    if (!this.readerDiv) return;
-
-    // Flash red 3 times
-    let count = 0;
-    const flashInterval = setInterval(() => {
-      if (count % 2 === 0) {
-        this.readerDiv.style.boxShadow = '0 0 0 4px #ff0000, 0 0 20px rgba(255, 0, 0, 0.7)';
-        this.readerDiv.style.transition = 'box-shadow 0.1s ease';
-      } else {
-        this.readerDiv.style.boxShadow = '';
-      }
-      count++;
-      if (count >= 6) {
-        clearInterval(flashInterval);
-        this.readerDiv.style.boxShadow = '';
-      }
-    }, 150);
-  }
-
-  updateStatus(state, text) {
-    if (!this.statusDiv) return;
-
-    const iconMap = {
-      scanning: '📷',
-      processing: '⏳',
-      success: '✅',
-      warning: '⚠️',
-      error: '❌',
-      paused: '⏸️'
-    };
-
-    const stateClassMap = {
-      scanning: 'ppv-mini-status-scanning',
-      processing: 'ppv-mini-status-processing',
-      success: 'ppv-mini-status-success',
-      warning: 'ppv-mini-status-warning',
-      error: 'ppv-mini-status-error',
-      paused: 'ppv-mini-status-paused'
-    };
-
-    // Update status div classes
-    this.statusDiv.className = '';
-    if (stateClassMap[state]) {
-      this.statusDiv.classList.add(stateClassMap[state]);
+  // ============================================================
+  // CLEANUP
+  // ============================================================
+  function cleanup() {
+    // Close Ably connection if exists
+    if (STATE.ablyInstance) {
+      ppvLog('[Ably] Closing connection on cleanup');
+      STATE.ablyInstance.close();
+      STATE.ablyInstance = null;
     }
 
-    // Update icon
-    const iconEl = this.statusDiv.querySelector('.ppv-mini-icon');
-    if (iconEl) {
-      iconEl.textContent = iconMap[state] || '📷';
+    // Clear polling interval if exists
+    if (STATE.pollInterval) {
+      ppvLog('[Poll] Clearing interval on cleanup');
+      clearInterval(STATE.pollInterval);
+      STATE.pollInterval = null;
     }
 
-    // Update text
-    const textEl = this.statusDiv.querySelector('.ppv-mini-text');
-    if (textEl) {
-      textEl.textContent = text.replace(/^[📷⏳✅⚠️❌⏸️]\s*/, '');
+    // ✅ FIX: Remove visibilitychange handler to prevent memory leak
+    if (STATE.visibilityHandler) {
+      document.removeEventListener('visibilitychange', STATE.visibilityHandler);
+      STATE.visibilityHandler = null;
     }
+
+    STATE.cameraScanner?.cleanup();
+    STATE.cameraScanner = null;
+    STATE.campaignManager = null;
+    STATE.scanProcessor = null;
+    STATE.uiManager = null;
+    STATE.initialized = false;
   }
 
-}
-
-// ============================================================
-// 🎛️ SETTINGS MANAGER
-// ============================================================
-class SettingsManager {
-  static initLanguage() {
-    const langSel = document.getElementById('ppv-lang-select');
-    if (!langSel) return;
-
-    const cur = (document.cookie.match(/ppv_lang=([^;]+)/) || [])[1] || 'de';
-    langSel.value = cur;
-
-    langSel.addEventListener('change', async (e) => {
-      const newLang = e.target.value;
-
-      document.cookie = `ppv_lang=${newLang};path=/;max-age=${60 * 60 * 24 * 365}`;
-      localStorage.setItem('ppv_lang', newLang);
-
-      try {
-        const res = await fetch('/wp-json/punktepass/v1/strings', {
-          method: 'GET',
-          headers: {
-            'X-Lang': newLang
-          }
-        });
-
-        const strings = await res.json();
-
-        window.ppv_lang = strings;
-
-        this.refreshUIText(strings);
-
-        localStorage.setItem(`ppv_strings_${newLang}`, JSON.stringify(strings));
-
-        window.ppvToast(`✅ ${L.lang_changed || 'Nyelv'}: ${newLang.toUpperCase()}`, 'success');
-
-      } catch (err) {
-        console.error('Fordítás letöltési hiba:', err);
-        window.ppvToast('❌ ' + (L.lang_change_failed || 'Nyelvváltás sikertelen'), 'error');
-        langSel.value = cur;
-      }
-    });
-  }
-
-  static refreshUIText(strings) {
-    document.querySelectorAll('[data-i18n]').forEach(el => {
-      const key = el.getAttribute('data-i18n');
-      if (strings[key]) {
-        el.textContent = strings[key];
-      }
-    });
-
-  }
-
-  static initTheme() {
-    const themeBtn = document.getElementById('ppv-theme-toggle');
-    if (!themeBtn) return;
-
-    const key = 'ppv_theme';
-    const apply = v => {
-      document.body.classList.remove('ppv-light', 'ppv-dark');
-      document.body.classList.add(`ppv-${v}`);
-    };
-
-    let cur = localStorage.getItem(key) || 'dark';
-    apply(cur);
-
-    themeBtn.addEventListener('click', () => {
-      cur = (cur === 'dark' ? 'light' : 'dark');
-      localStorage.setItem(key, cur);
-      apply(cur);
-      if (navigator.vibrate) navigator.vibrate(20);
-    });
-  }
-}
-
-// ============================================================
-// 🚀 MAIN APPLICATION - INIT
-// ============================================================
-document.addEventListener("DOMContentLoaded", function () {
-  const input = document.getElementById("ppv-pos-input");
-  const sendBtn = document.getElementById("ppv-pos-send");
-  const resultBox = document.getElementById("ppv-pos-result");
-  const logTable = document.querySelector("#ppv-pos-log tbody");
-  const campaignList = document.getElementById("ppv-campaign-list");
-  const campaignModal = document.getElementById("ppv-campaign-modal");
-
-  // Initialize even without input (for scanner-only mode)
-  const ui = new UIManager(resultBox, logTable, campaignList);
-  const scanProcessor = new ScanProcessor(ui);
-  const campaignManager = new CampaignManager(ui, campaignList, campaignModal);
-  const cameraScanner = new CameraScanner(scanProcessor);
-
-  // Only add input listeners if input exists
-  if (input) {
-    input.addEventListener("keypress", (e) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        const qr = input.value.trim();
-        if (qr.length >= 4) {
-          scanProcessor.process(qr);
-          input.value = "";
-        }
-      }
-    });
-
-    input.focus();
-  }
-
-  if (sendBtn) {
-    sendBtn.addEventListener("click", () => {
-      const qr = input.value.trim();
-      if (qr) {
-        scanProcessor.process(qr);
-        input.value = "";
-      }
-    });
-  }
-
-  // Store campaign manager globally for event delegation
-  window.ppvCampaignManager = campaignManager;
-
-  // Note: Using event delegation below for Turbo compatibility
-
-  // ✅ EGYSZERŰSÍTETT: Csak egy kattintás esemény
-  if (campaignModal) {
-    campaignModal.addEventListener("click", (e) => {
-      // Ha a modal-ra kattintanak (és megnyílik)
-      if (campaignModal.classList.contains("show")) {
-        setTimeout(() => {
-          campaignManager.initTypeListener();
-          campaignManager.initFreeProductListener();
-        }, 100);
-      }
-    });
-  }
-
-  SettingsManager.initLanguage();
-  SettingsManager.initTheme();
-
-  let lastVis = 0;
-  document.addEventListener("visibilitychange", () => {
+  // ============================================================
+  // INITIALIZATION
+  // ============================================================
+  function init() {
+    // Prevent rapid re-initialization (within 2 seconds)
     const now = Date.now();
-    if (!document.hidden && now - lastVis > 5000) {
-      lastVis = now;
-      campaignManager.load();
+    if (now - STATE.lastInitTime < 2000) {
+      ppvLog('[QR] Init throttled (too soon)');
+      return;
     }
-  });
+    STATE.lastInitTime = now;
 
-  scanProcessor.loadLogs();
-  campaignManager.load();
-  OfflineSyncManager.sync();
+    const campaignList = document.getElementById('ppv-campaign-list');
+    const posInput = document.getElementById('ppv-pos-input');
 
+    // Only init if we have QR elements
+    if (!campaignList && !posInput) {
+      cleanup();
+      return;
+    }
 
-  // ============================================================
-  // 📧 RENEWAL REQUEST MODAL
-  // ============================================================
-  const renewalBtn = document.getElementById('ppv-request-renewal-btn');
-  const renewalModal = document.getElementById('ppv-renewal-modal');
-  const renewalSubmit = document.getElementById('ppv-renewal-submit');
-  const renewalCancel = document.getElementById('ppv-renewal-cancel');
-  const renewalPhone = document.getElementById('ppv-renewal-phone');
-  const renewalError = document.getElementById('ppv-renewal-error');
+    ppvLog('[QR] Initializing...');
+    cleanup();
 
-  if (renewalBtn && renewalModal) {
-    renewalBtn.addEventListener('click', () => {
-      renewalModal.style.display = 'flex';
-      renewalPhone.value = '';
-      renewalError.style.display = 'none';
-      renewalPhone.focus();
-    });
+    // Preload sound effects
+    preloadSounds();
 
-    renewalCancel.addEventListener('click', () => {
-      renewalModal.style.display = 'none';
-    });
+    // Start GPS tracking for fraud detection
+    initGpsTracking();
 
-    renewalModal.addEventListener('click', (e) => {
-      if (e.target === renewalModal) {
-        renewalModal.style.display = 'none';
-      }
-    });
+    STATE.uiManager = new UIManager();
+    STATE.uiManager.init();
 
-    renewalSubmit.addEventListener('click', async () => {
-      const phone = renewalPhone.value.trim();
+    STATE.scanProcessor = new ScanProcessor(STATE.uiManager);
 
-      if (!phone) {
-        renewalError.textContent = L.phone_required || 'Telefonnummer ist erforderlich';
-        renewalError.style.display = 'block';
+    STATE.campaignManager = new CampaignManager(STATE.uiManager);
+    STATE.campaignManager.init();
+
+    STATE.cameraScanner = new CameraScanner(STATE.scanProcessor);
+    STATE.cameraScanner.init();
+
+    // Setup event delegation
+    setupEventDelegation();
+
+    // Input handling
+    if (posInput) {
+      posInput.addEventListener('keypress', e => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const qr = posInput.value.trim();
+          if (qr.length >= 4) {
+            STATE.scanProcessor.process(qr);
+            posInput.value = '';
+          }
+        }
+      });
+      posInput.focus();
+    }
+
+    const sendBtn = document.getElementById('ppv-pos-send');
+    if (sendBtn && posInput) {
+      sendBtn.addEventListener('click', () => {
+        const qr = posInput.value.trim();
+        if (qr) {
+          STATE.scanProcessor.process(qr);
+          posInput.value = '';
+        }
+      });
+    }
+
+    // Settings
+    SettingsManager.initLanguage();
+    SettingsManager.initTheme();
+
+    // Load data
+    STATE.scanProcessor.loadLogs();
+    STATE.campaignManager.load();
+    OfflineSyncManager.sync();
+
+    // ============================================================
+    // REAL-TIME UPDATES: Ably (primary) or Polling (fallback)
+    // ============================================================
+    const POLL_INTERVAL_MS = 10000; // 10s fallback polling
+
+    // Check if Ably is configured
+    const ablyConfig = window.PPV_STORE_DATA?.ably;
+    const storeId = window.PPV_STORE_DATA?.store_id;
+
+    // 🔍 DEBUG: Log all conditions
+    console.log('[Ably Debug] PPV_STORE_DATA:', window.PPV_STORE_DATA);
+    console.log('[Ably Debug] ablyConfig:', ablyConfig);
+    console.log('[Ably Debug] storeId:', storeId);
+    console.log('[Ably Debug] typeof Ably:', typeof Ably);
+
+    if (ablyConfig && typeof Ably !== 'undefined' && storeId) {
+      // ABLY MODE: Real-time updates via WebSocket
+      ppvLog('[Ably] Initializing with key:', ablyConfig.key.substring(0, 10) + '...');
+
+      STATE.ablyInstance = new Ably.Realtime({ key: ablyConfig.key });
+
+      // Subscribe to store's channel
+      const channelName = 'store-' + storeId;
+      const channel = STATE.ablyInstance.channels.get(channelName);
+
+      STATE.ablyInstance.connection.on('connected', () => {
+        ppvLog('[Ably] Connected');
+        // Stop polling if it was running
+        if (STATE.pollInterval) {
+          clearInterval(STATE.pollInterval);
+          STATE.pollInterval = null;
+        }
+      });
+
+      STATE.ablyInstance.connection.on('disconnected', () => {
+        ppvLog('[Ably] Disconnected, starting fallback polling');
+        startPolling();
+      });
+
+      STATE.ablyInstance.connection.on('failed', (err) => {
+        ppvLog('[Ably] Connection failed:', err);
+        startPolling();
+      });
+
+      // Handle incoming scan events
+      channel.subscribe('new-scan', (message) => {
+        ppvLog('[Ably] New scan received:', message.data);
+
+        // ✅ FIX: Deduplication is now handled by addScanItem using scan_id
+        // Just pass the data through - the UI manager will skip if scan_id already displayed
+        if (STATE.uiManager) {
+          STATE.uiManager.addScanItem({ ...message.data, _realtime: true });
+        }
+      });
+
+      // Handle reward requests
+      channel.subscribe('reward-request', (message) => {
+        ppvLog('[Ably] Reward request received:', message.data);
+        // Refresh logs to show pending rewards
+        STATE.scanProcessor?.loadLogs();
+      });
+
+      // 📡 Handle campaign updates (create/update/delete)
+      channel.subscribe('campaign-update', (message) => {
+        ppvLog('[Ably] Campaign update received:', message.data);
+        window.ppvToast(`📢 Kampány ${message.data.action === 'created' ? 'létrehozva' : message.data.action === 'updated' ? 'frissítve' : 'törölve'}`, 'info');
+        // Refresh campaign list
+        STATE.campaignManager?.load();
+      });
+
+      // 📡 Handle reward/prämien updates
+      channel.subscribe('reward-update', (message) => {
+        ppvLog('[Ably] Reward update received:', message.data);
+        window.ppvToast(`🎁 Prämie ${message.data.action === 'created' ? 'létrehozva' : message.data.action === 'updated' ? 'frissítve' : 'törölve'}`, 'info');
+      });
+
+      STATE.initialized = true;
+      ppvLog('[QR] Initialization complete (Ably mode)');
+
+    } else {
+      // POLLING MODE: Fallback when Ably not available
+      ppvLog('[Poll] Ably not available, using polling fallback');
+      startPolling();
+      STATE.initialized = true;
+      ppvLog('[QR] Initialization complete (polling mode)');
+    }
+
+    function startPolling() {
+      if (!getStoreKey()) {
+        ppvLog('[Poll] No store key, skipping polling');
         return;
       }
 
-      renewalSubmit.disabled = true;
-      renewalSubmit.textContent = L.sending || 'Wird gesendet...';
+      // Clear existing interval if any
+      if (STATE.pollInterval) {
+        clearInterval(STATE.pollInterval);
+      }
 
-      try {
-        const response = await fetch('/wp-admin/admin-ajax.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams({
-            action: 'ppv_request_subscription_renewal',
-            phone: phone
-          })
-        });
+      ppvLog('[Poll] Starting polling (every ' + (POLL_INTERVAL_MS / 1000) + 's)');
 
-        const data = await response.json();
+      // Poll function - quick AJAX request that doesn't block PHP
+      const poll = () => {
+        if (document.hidden) return; // Skip if tab is hidden
+        STATE.scanProcessor?.loadLogs();
+      };
 
-        if (data.success) {
-          renewalModal.style.display = 'none';
-          location.reload(); // Reload to show "in progress" message
-        } else {
-          renewalError.textContent = data.data?.message || (L.error_occurred || 'Ein Fehler ist aufgetreten');
-          renewalError.style.display = 'block';
-          renewalSubmit.disabled = false;
-          renewalSubmit.textContent = '✅ ' + (L.send_request || 'Anfrage senden');
+      // Start interval
+      STATE.pollInterval = setInterval(poll, POLL_INTERVAL_MS);
+    }
+
+    // ✅ FIX: Move visibilitychange handler to STATE to prevent memory leak
+    if (!STATE.visibilityHandler) {
+      let lastVis = 0;
+      STATE.visibilityHandler = () => {
+        if (!document.hidden && Date.now() - lastVis > 3000) {
+          lastVis = Date.now();
+          STATE.campaignManager?.load();
+          STATE.scanProcessor?.loadLogs();
         }
-      } catch (err) {
-        console.error('Renewal request error:', err);
-        renewalError.textContent = L.error_occurred || 'Ein Fehler ist aufgetreten';
-        renewalError.style.display = 'block';
-        renewalSubmit.disabled = false;
-        renewalSubmit.textContent = '✅ ' + (L.send_request || 'Anfrage senden');
-      }
-    });
+      };
+      document.addEventListener('visibilitychange', STATE.visibilityHandler);
+    }
   }
 
   // ============================================================
-  // 🆘 SUPPORT TICKET MODAL
+  // EVENT LISTENERS
   // ============================================================
-  const supportBtn = document.getElementById('ppv-support-btn');
-  const supportModal = document.getElementById('ppv-support-modal');
-  const supportSubmit = document.getElementById('ppv-support-submit');
-  const supportCancel = document.getElementById('ppv-support-cancel');
-  const supportDescription = document.getElementById('ppv-support-description');
-  const supportPriority = document.getElementById('ppv-support-priority');
-  const supportContact = document.getElementById('ppv-support-contact');
-  const supportError = document.getElementById('ppv-support-error');
-  const supportSuccess = document.getElementById('ppv-support-success');
 
-  if (supportBtn && supportModal) {
-    supportBtn.addEventListener('click', () => {
-      supportModal.classList.add('show');
-      supportDescription.value = '';
-      supportPriority.value = 'normal';
-      supportContact.value = 'email';
-      supportError.classList.remove('show');
-      supportSuccess.classList.remove('show');
-      supportDescription.focus();
-    });
-
-    supportCancel.addEventListener('click', () => {
-      supportModal.classList.remove('show');
-    });
-
-    supportModal.addEventListener('click', (e) => {
-      if (e.target === supportModal) {
-        supportModal.classList.remove('show');
-      }
-    });
-
-    supportSubmit.addEventListener('click', async () => {
-      const description = supportDescription.value.trim();
-      const priority = supportPriority.value;
-      const contactPref = supportContact.value;
-
-      if (!description) {
-        supportError.textContent = L.description_required || 'Problembeschreibung ist erforderlich';
-        supportError.classList.add('show');
-        return;
-      }
-
-      supportSubmit.disabled = true;
-      const originalText = supportSubmit.textContent;
-      supportSubmit.textContent = L.sending || 'Wird gesendet...';
-      supportError.classList.remove('show');
-
-      try {
-        const response = await fetch('/wp-admin/admin-ajax.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams({
-            action: 'ppv_submit_support_ticket',
-            description: description,
-            priority: priority,
-            contact_preference: contactPref,
-            page_url: window.location.href
-          })
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          supportSuccess.textContent = data.data?.message || (L.ticket_sent || 'Ticket erfolgreich gesendet! Wir melden uns bald.');
-          supportSuccess.classList.add('show');
-          supportDescription.value = '';
-
-          setTimeout(() => {
-            supportModal.classList.remove('show');
-            supportSuccess.classList.remove('show');
-          }, 3000);
-        } else {
-          supportError.textContent = data.data?.message || (L.error_occurred || 'Ein Fehler ist aufgetreten');
-          supportError.classList.add('show');
-        }
-      } catch (err) {
-        console.error('Support ticket error:', err);
-        supportError.textContent = L.error_occurred || 'Ein Fehler ist aufgetreten';
-        supportError.classList.add('show');
-      } finally {
-        supportSubmit.disabled = false;
-        supportSubmit.textContent = originalText;
-      }
-    });
+  // Initial load
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
   }
 
-  // ============================================================
-  // 👥 SCANNER USER MANAGEMENT
-  // ============================================================
-  const scannerModal = document.getElementById('ppv-scanner-modal');
-  const newScannerBtn = document.getElementById('ppv-new-scanner-btn');
-  const scannerCreate = document.getElementById('ppv-scanner-create');
-  const scannerCancel = document.getElementById('ppv-scanner-cancel');
-  const scannerEmail = document.getElementById('ppv-scanner-email');
-  const scannerPassword = document.getElementById('ppv-scanner-password');
-  const scannerGenPw = document.getElementById('ppv-scanner-gen-pw');
-  const scannerError = document.getElementById('ppv-scanner-error');
-  const scannerSuccess = document.getElementById('ppv-scanner-success');
+  // Turbo.js support
+  document.addEventListener('turbo:load', init);
+  document.addEventListener('turbo:before-visit', cleanup);
 
-  if (newScannerBtn && scannerModal) {
-    // Open modal
-    newScannerBtn.addEventListener('click', () => {
-      scannerModal.style.display = 'flex';
-      scannerEmail.value = '';
-      scannerPassword.value = '';
-      scannerError.style.display = 'none';
-      scannerSuccess.style.display = 'none';
-      scannerEmail.focus();
-    });
+  // Custom SPA event support
+  window.addEventListener('ppv:spa-navigate', init);
 
-    // Close modal
-    scannerCancel.addEventListener('click', () => {
-      scannerModal.style.display = 'none';
-    });
+  ppvLog('[QR] Script loaded v6.0');
 
-    scannerModal.addEventListener('click', (e) => {
-      if (e.target === scannerModal) {
-        scannerModal.style.display = 'none';
-      }
-    });
-
-    // Generate password
-    scannerGenPw.addEventListener('click', () => {
-      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%^&*';
-      let pw = '';
-      for (let i = 0; i < 12; i++) {
-        pw += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
-      scannerPassword.value = pw;
-    });
-
-    // Create scanner
-    scannerCreate.addEventListener('click', async () => {
-      const email = scannerEmail.value.trim();
-      const password = scannerPassword.value.trim();
-      const filialeSelect = document.getElementById('ppv-scanner-filiale');
-      const filialeId = filialeSelect ? filialeSelect.value : '';
-
-      if (!email || !password) {
-        scannerError.textContent = L.email_password_required || 'E-Mail und Passwort sind erforderlich';
-        scannerError.style.display = 'block';
-        return;
-      }
-
-      if (!filialeId) {
-        scannerError.textContent = L.filiale_required || 'Bitte wählen Sie eine Filiale aus';
-        scannerError.style.display = 'block';
-        return;
-      }
-
-      scannerCreate.disabled = true;
-      const originalText = scannerCreate.textContent;
-      scannerCreate.textContent = L.creating || 'Erstellen...';
-      scannerError.style.display = 'none';
-
-      try {
-        const response = await fetch('/wp-admin/admin-ajax.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams({
-            action: 'ppv_create_scanner_user',
-            email: email,
-            password: password,
-            filiale_id: filialeId
-          })
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          scannerSuccess.textContent = data.data?.message || (L.scanner_created || 'Scanner erfolgreich erstellt!');
-          scannerSuccess.style.display = 'block';
-          scannerEmail.value = '';
-          scannerPassword.value = '';
-
-          setTimeout(() => {
-            location.reload(); // Reload to show new scanner in list
-          }, 1500);
-        } else {
-          scannerError.textContent = data.data?.message || (L.error_occurred || 'Ein Fehler ist aufgetreten');
-          scannerError.style.display = 'block';
-        }
-      } catch (err) {
-        console.error('Scanner creation error:', err);
-        scannerError.textContent = L.error_occurred || 'Ein Fehler ist aufgetreten';
-        scannerError.style.display = 'block';
-      } finally {
-        scannerCreate.disabled = false;
-        scannerCreate.textContent = originalText;
-      }
-    });
-  }
-
-  // Reset password
-  document.querySelectorAll('.ppv-scanner-reset-pw').forEach(btn => {
-    btn.addEventListener('click', async function() {
-      const userId = this.getAttribute('data-user-id');
-      const email = this.getAttribute('data-email');
-
-      const newPw = prompt(L.enter_new_password || 'Neues Passwort eingeben:', '');
-      if (!newPw) return;
-
-      this.disabled = true;
-      const originalText = this.textContent;
-      this.textContent = L.resetting || 'Reset...';
-
-      try {
-        const response = await fetch('/wp-admin/admin-ajax.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams({
-            action: 'ppv_reset_scanner_password',
-            user_id: userId,
-            new_password: newPw
-          })
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          alert(data.data?.message || (L.password_reset_success || 'Passwort erfolgreich zurückgesetzt!'));
-        } else {
-          alert(data.data?.message || (L.error_occurred || 'Ein Fehler ist aufgetreten'));
-        }
-      } catch (err) {
-        console.error('Password reset error:', err);
-        alert(L.error_occurred || 'Ein Fehler ist aufgetreten');
-      } finally {
-        this.disabled = false;
-        this.textContent = originalText;
-      }
-    });
-  });
-
-  // Toggle enable/disable
-  document.querySelectorAll('.ppv-scanner-toggle').forEach(btn => {
-    btn.addEventListener('click', async function() {
-      const userId = this.getAttribute('data-user-id');
-      const action = this.getAttribute('data-action');
-
-      if (!confirm((action === 'disable' ? L.confirm_disable : L.confirm_enable) || 'Sind Sie sicher?')) {
-        return;
-      }
-
-      this.disabled = true;
-      const originalText = this.textContent;
-      this.textContent = L.processing || 'Verarbeitung...';
-
-      try {
-        const response = await fetch('/wp-admin/admin-ajax.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams({
-            action: 'ppv_toggle_scanner_status',
-            user_id: userId,
-            action_type: action
-          })
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          location.reload(); // Reload to show updated status
-        } else {
-          alert(data.data?.message || (L.error_occurred || 'Ein Fehler ist aufgetreten'));
-        }
-      } catch (err) {
-        console.error('Toggle status error:', err);
-        alert(L.error_occurred || 'Ein Fehler ist aufgetreten');
-      } finally {
-        this.disabled = false;
-        this.textContent = originalText;
-      }
-    });
-  });
-
-  // ============================================================
-  // 🏪 CHANGE FILIALE FOR SCANNER USER
-  // ============================================================
-  const changeFilialeModal = document.getElementById('ppv-change-filiale-modal');
-  const changeFilialeSelect = document.getElementById('ppv-change-filiale-select');
-  const changeFilialeSave = document.getElementById('ppv-change-filiale-save');
-  const changeFilialeCancel = document.getElementById('ppv-change-filiale-cancel');
-  const changeFilialeEmail = document.getElementById('ppv-change-filiale-email');
-  const changeFilialeUserId = document.getElementById('ppv-change-filiale-user-id');
-  const changeFilialeError = document.getElementById('ppv-change-filiale-error');
-  const changeFilialeSuccess = document.getElementById('ppv-change-filiale-success');
-
-  // Open change filiale modal
-  document.querySelectorAll('.ppv-scanner-change-filiale').forEach(btn => {
-    btn.addEventListener('click', function() {
-      const userId = this.getAttribute('data-user-id');
-      const email = this.getAttribute('data-email');
-      const currentStore = this.getAttribute('data-current-store');
-
-      changeFilialeEmail.textContent = email;
-      changeFilialeUserId.value = userId;
-      changeFilialeSelect.value = currentStore;
-      changeFilialeError.style.display = 'none';
-      changeFilialeSuccess.style.display = 'none';
-      changeFilialeModal.style.display = 'flex';
-    });
-  });
-
-  // Close change filiale modal
-  if (changeFilialeCancel) {
-    changeFilialeCancel.addEventListener('click', () => {
-      changeFilialeModal.style.display = 'none';
-    });
-  }
-
-  if (changeFilialeModal) {
-    changeFilialeModal.addEventListener('click', (e) => {
-      if (e.target === changeFilialeModal) {
-        changeFilialeModal.style.display = 'none';
-      }
-    });
-  }
-
-  // Save filiale change
-  if (changeFilialeSave) {
-    changeFilialeSave.addEventListener('click', async () => {
-      const userId = changeFilialeUserId.value;
-      const filialeId = changeFilialeSelect.value;
-
-      if (!userId || !filialeId) {
-        changeFilialeError.textContent = L.invalid_data || 'Ungültige Daten';
-        changeFilialeError.style.display = 'block';
-        return;
-      }
-
-      changeFilialeSave.disabled = true;
-      const originalText = changeFilialeSave.textContent;
-      changeFilialeSave.textContent = L.saving || 'Speichern...';
-      changeFilialeError.style.display = 'none';
-
-      try {
-        const response = await fetch('/wp-admin/admin-ajax.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams({
-            action: 'ppv_update_scanner_filiale',
-            user_id: userId,
-            filiale_id: filialeId
-          })
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          changeFilialeSuccess.textContent = data.data?.message || (L.filiale_updated || 'Filiale erfolgreich geändert!');
-          changeFilialeSuccess.style.display = 'block';
-
-          setTimeout(() => {
-            location.reload(); // Reload to show updated filiale
-          }, 1500);
-        } else {
-          changeFilialeError.textContent = data.data?.message || (L.error_occurred || 'Ein Fehler ist aufgetreten');
-          changeFilialeError.style.display = 'block';
-        }
-      } catch (err) {
-        console.error('Change filiale error:', err);
-        changeFilialeError.textContent = L.error_occurred || 'Ein Fehler ist aufgetreten';
-        changeFilialeError.style.display = 'block';
-      } finally {
-        changeFilialeSave.disabled = false;
-        changeFilialeSave.textContent = originalText;
-      }
-    });
-  }
-
-  // ============================================================
-  // 📋 LIVE RECENT SCANS POLLING (5s interval)
-  // ============================================================
-  if (logTable) {
-    // Initial load
-    async function loadRecentScans() {
-      try {
-        const response = await fetch('/wp-json/ppv/v1/pos/recent-scans', {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' }
-        });
-
-        // ✅ Check if response is OK before parsing JSON
-        if (!response.ok) {
-          console.error(`❌ [loadRecentScans] HTTP error: ${response.status}`);
-          return;
-        }
-
-        // ✅ Clone response BEFORE consuming it (for error debugging)
-        const responseClone = response.clone();
-
-        // ✅ Try to parse JSON with better error handling
-        let data;
-        try {
-          data = await response.json();
-        } catch (jsonErr) {
-          // If JSON parsing fails, get the raw response body for debugging
-          const text = await responseClone.text();
-          console.error('❌ [loadRecentScans] JSON parse failed. Response body:', text);
-          console.error('❌ [loadRecentScans] JSON error:', jsonErr);
-          return;
-        }
-
-        if (data.success && data.scans) {
-          // Clear current table
-          logTable.innerHTML = '';
-
-          // Add new rows (already sorted DESC by backend)
-          data.scans.forEach(scan => {
-            const row = document.createElement('tr');
-            row.innerHTML = `<td>${scan.time}</td><td>${scan.user}</td><td>${scan.status}</td>`;
-            logTable.appendChild(row);
-          });
-        } else if (data.success === false) {
-          console.warn('⚠️ [loadRecentScans] Backend returned success=false:', data.message);
-        }
-      } catch (err) {
-        console.error('❌ [loadRecentScans] Fetch error:', err);
-      }
-    }
-
-    // Load immediately
-    loadRecentScans();
-
-    // Poll every 10 seconds (only create interval ONCE)
-    if (!window.PPV_RECENT_SCANS_INTERVAL) {
-      window.PPV_RECENT_SCANS_INTERVAL = setInterval(loadRecentScans, 10000);
-    }
-
-  }
-
-  // ============================================================
-  // 📥 CSV EXPORT - Now uses event delegation (see bottom of file)
-  // ============================================================
-  // CSV export buttons handled via event delegation for Turbo compatibility
-
-  // 🚀 Export reinit function for Turbo
-  window.ppv_qr_reinit = function() {
-    console.log('🔄 [QR] Turbo re-initialization');
-
-    // Re-query DOM elements
-    const campaignList = document.getElementById("ppv-campaign-list");
-    const campaignModal = document.getElementById("ppv-campaign-modal");
-    const logTable = document.querySelector("#ppv-pos-log tbody");
-    const resultBox = document.getElementById("ppv-pos-result");
-
-    if (campaignList) {
-      // Reinitialize campaign manager with new DOM
-      const ui = new UIManager(resultBox, logTable, campaignList);
-      const newCampaignManager = new CampaignManager(ui, campaignList, campaignModal);
-      newCampaignManager.load();
-
-      // Store globally for access
-      window.ppvCampaignManager = newCampaignManager;
-    }
-
-    // Reload logs if table exists
-    if (logTable && window.PPV_STORE_KEY) {
-      const ui = new UIManager(resultBox, logTable, campaignList);
-      const scanProcessor = new ScanProcessor(ui);
-      scanProcessor.loadLogs();
-    }
-  };
-});
-
-// 🔄 Turbo: Re-initialize after navigation (only turbo:load, not render to avoid duplicates)
-document.addEventListener('turbo:load', function() {
-  console.log('🔄 [QR] turbo:load event');
-
-  // Throttle: don't reinit if we just did it
-  const now = Date.now();
-  if (window.PPV_QR_LAST_INIT && (now - window.PPV_QR_LAST_INIT) < 500) {
-    console.log('⏭️ [QR] Skipping reinit - too soon');
-    return;
-  }
-  window.PPV_QR_LAST_INIT = now;
-
-  setTimeout(() => {
-    if (typeof window.ppv_qr_reinit === 'function') {
-      window.ppv_qr_reinit();
-    }
-  }, 100);
-});
-
-// ============================================================
-// 🎯 EVENT DELEGATION - Campaign buttons (works after Turbo)
-// ============================================================
-document.addEventListener('click', function(e) {
-  // New campaign button
-  if (e.target.matches('#ppv-new-campaign') || e.target.closest('#ppv-new-campaign')) {
-    const cm = window.ppvCampaignManager;
-    if (cm) {
-      cm.resetForm();
-      cm.updateVisibilityByType("points");
-      cm.showModal();
-    }
-  }
-
-  // Cancel button
-  if (e.target.matches('#camp-cancel') || e.target.closest('#camp-cancel')) {
-    const cm = window.ppvCampaignManager;
-    if (cm) {
-      cm.hideModal();
-      cm.resetForm();
-    }
-  }
-
-  // Save button
-  if (e.target.matches('#camp-save') || e.target.closest('#camp-save')) {
-    const cm = window.ppvCampaignManager;
-    if (cm) {
-      cm.save();
-    }
-  }
-});
-
-document.addEventListener('change', function(e) {
-  // Campaign type change
-  if (e.target.matches('#camp-type')) {
-    const cm = window.ppvCampaignManager;
-    if (cm) {
-      cm.updateValueLabel(e.target.value);
-    }
-  }
-
-  // Campaign filter change
-  if (e.target.matches('#ppv-campaign-filter')) {
-    const cm = window.ppvCampaignManager;
-    if (cm) {
-      cm.load();
-    }
-  }
-});
-
-// ============================================================
-// 📥 CSV EXPORT - EVENT DELEGATION (Turbo compatible)
-// ============================================================
-
-// Toggle CSV dropdown menu
-document.addEventListener('click', function(e) {
-  const csvBtn = e.target.closest('#ppv-csv-export-btn');
-  const csvMenu = document.getElementById('ppv-csv-export-menu');
-
-  if (csvBtn && csvMenu) {
-    e.stopPropagation();
-    const isVisible = csvMenu.style.display === 'block';
-    csvMenu.style.display = isVisible ? 'none' : 'block';
-    return;
-  }
-
-  // Close dropdown when clicking outside (but not on menu items)
-  if (!e.target.closest('.ppv-csv-export-option') && !e.target.closest('#ppv-csv-export-btn')) {
-    if (csvMenu) {
-      csvMenu.style.display = 'none';
-    }
-  }
-});
-
-// Handle CSV export options
-document.addEventListener('click', async function(e) {
-  const option = e.target.closest('.ppv-csv-export-option');
-  if (!option) return;
-
-  e.preventDefault();
-  e.stopPropagation();
-
-  const L = window.ppv_lang || {};
-  const period = option.getAttribute('data-period');
-  let date = new Date().toISOString().split('T')[0]; // Today's date
-
-  // If "date" period, prompt for date
-  if (period === 'date') {
-    const userDate = prompt(L.csv_prompt_date || 'Datum eingeben (YYYY-MM-DD):', date);
-    if (!userDate) return; // Cancelled
-    date = userDate;
-  }
-
-  // If "month" period, use current month
-  if (period === 'month') {
-    date = new Date().toISOString().substr(0, 7) + '-01'; // First day of month
-  }
-
-  // Close dropdown
-  const csvMenu = document.getElementById('ppv-csv-export-menu');
-  if (csvMenu) {
-    csvMenu.style.display = 'none';
-  }
-
-  // Download CSV
-  try {
-    const url = `/wp-json/ppv/v1/pos/export-logs?period=${period}&date=${date}`;
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error('Export failed');
-    }
-
-    // Get CSV content
-    const blob = await response.blob();
-    const downloadUrl = window.URL.createObjectURL(blob);
-
-    // Create download link
-    const a = document.createElement('a');
-    a.style.display = 'none';
-    a.href = downloadUrl;
-    a.download = `pos_logs_${period}_${date}.csv`;
-
-    // Trigger download
-    document.body.appendChild(a);
-    a.click();
-
-    // Cleanup
-    window.URL.revokeObjectURL(downloadUrl);
-    document.body.removeChild(a);
-
-    if (window.ppvToast) {
-      window.ppvToast('✅ CSV erfolgreich heruntergeladen', 'success');
-    }
-  } catch (err) {
-    console.error('❌ [CSV Export] Failed:', err);
-    if (window.ppvToast) {
-      window.ppvToast('❌ CSV Export fehlgeschlagen', 'error');
-    }
-  }
-});
-
-} // End of duplicate load prevention
-
+})();

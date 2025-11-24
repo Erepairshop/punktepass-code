@@ -291,6 +291,8 @@ return [
   'show_qr_in_store' => 'Arată codul tău QR personal în magazin',
   'show_qr_code' => 'Afișează codul QR',
   'show_this_code_to_collect' => 'Arată acest cod în magazin pentru a colecta puncte.',
+  'your_punktepass_qr' => 'Codul tău PunktePass QR',
+  'qr_daily_limit_warning' => 'Doar 1 scanare pe zi este permisă per magazin!',
   'stores_near_you' => 'Magazine în apropiere',
   'store_list_auto_update' => 'Lista se actualizează automat în funcție de poziția ta.' ,
   // === MyPoints REST-kompatibilis kulcsok (română) ===
@@ -519,6 +521,7 @@ return [
     'tab_contact' => 'Contact & Social',
     'tab_preview' => 'Previzualizare',
     'tab_settings' => 'Setări',
+    'tab_devices' => 'Dispozitive',
     
     // ========== GENERAL TAB ==========
     'general_info' => 'Informații Generale',
@@ -925,6 +928,8 @@ return [
 'err_invalid_qr' => '❌ QR invalid',
 'err_already_scanned_today' => '⚠️ Deja scanat astăzi',
 'err_duplicate_scan' => '⚠️ Deja scanat. Vă rugăm așteptați.',
+'err_gps_distance' => 'Scanarea nu este posibilă - prea departe de locație',
+'err_wrong_country' => 'Scanarea nu este posibilă - țară greșită detectată',
 'log_point_added' => '1 punct adaugat',
 'scan_success' => '✅ 1 punct adaugat',
 'offline_synced' => '✅ Sincronizat offline',
@@ -1115,6 +1120,7 @@ return [
     'onboarding_reset_error' => 'A apărut o eroare!',
 
     // Filiale (Filiale)
+    'all_branches' => 'Toate filialele',
     'filiale_switcher' => 'Selectați filiala',
     'add_filiale' => 'Filială nouă',
     'main_location' => 'Locație principală',
@@ -1132,6 +1138,36 @@ return [
     'switching_filiale' => 'Comutare...',
     'filiale_error' => 'Eroare la crearea filialei',
     'no_filialen' => 'Nicio filială disponibilă',
+
+    // Filiale Limit
+    'more_filialen_title' => 'Aveți nevoie de mai multe filiale?',
+    'more_filialen_desc' => 'Ați atins limita maximă de filiale. Contactați-ne pentru a debloca filiale suplimentare!',
+    'filiale_limit_info' => 'Actual',
+    'filialen' => 'Filiale',
+    'contact_email' => 'E-mail',
+    'contact_email_placeholder' => 'Adresa dvs. de e-mail',
+    'contact_phone' => 'Telefon',
+    'contact_phone_placeholder' => 'Numărul dvs. de telefon',
+    'contact_message' => 'Mesaj (opțional)',
+    'contact_message_placeholder' => 'Câte filiale aveți nevoie?',
+    'contact_required' => 'Vă rugăm să introduceți un e-mail sau număr de telefon',
+    'send_request' => 'Trimite cererea',
+    'sending' => 'Se trimite...',
+    'request_sent' => 'Cerere trimisă cu succes!',
+    'sent' => 'Trimis',
+    'send_error' => 'Eroare la trimitere',
+    'add_new_filiale' => 'Adaugă filială nouă',
+    'filiale_city' => 'Oraș',
+    'filiale_city_placeholder' => 'ex. București',
+    'filiale_plz' => 'Cod poștal',
+    'filiale_plz_placeholder' => 'ex. 010101',
+    'filiale_name_placeholder' => 'ex. Filiala București 1',
+    'name_required' => 'Numele este obligatoriu',
+    'saving' => 'Se salvează...',
+    'save' => 'Salvează',
+    'cancel' => 'Anulează',
+    'save_error' => 'Eroare la salvare',
+    'switch_error' => 'Eroare la comutare',
 
     // ============================================
     // LEGAL PAGES

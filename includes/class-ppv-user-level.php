@@ -145,7 +145,7 @@ class PPV_User_Level {
         $level = self::get_level($user_id);
         $has_vip = self::has_vip($user_id);
 
-        error_log("🔍 [PPV_User_Level] VIP check: user_id={$user_id}, lifetime_points={$lifetime}, level={$level}, has_vip=" . ($has_vip ? 'YES' : 'NO'));
+        ppv_log("🔍 [PPV_User_Level] VIP check: user_id={$user_id}, lifetime_points={$lifetime}, level={$level}, has_vip=" . ($has_vip ? 'YES' : 'NO'));
 
         if (!$has_vip) {
             return null; // No VIP bonus for Starter
@@ -290,7 +290,7 @@ class PPV_User_Level {
         ));
 
         if ($result !== false) {
-            error_log("✅ [PPV_User_Level] Added {$points} lifetime points to user {$user_id}");
+            ppv_log("✅ [PPV_User_Level] Added {$points} lifetime points to user {$user_id}");
         }
 
         return $result !== false;

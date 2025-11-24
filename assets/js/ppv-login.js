@@ -1,17 +1,49 @@
 /**
  * PunktePass - Premium Login JavaScript
  * Google OAuth + Form Handling + Animations
+ * ✅ Session expired return URL support
  * Author: Erik Borota / PunktePass
  */
 
 (function($) {
     'use strict';
-    
+
     // Wait for DOM
     $(document).ready(function() {
         initLogin();
     });
-    
+
+    /**
+     * Get return URL (from session expired redirect)
+     */
+    function getReturnUrl() {
+        const returnUrl = sessionStorage.getItem('ppv_return_url');
+        if (returnUrl && returnUrl !== '/login' && returnUrl !== '/signup') {
+            return returnUrl;
+        }
+        return null;
+    }
+
+    /**
+     * Clear return URL after use
+     */
+    function clearReturnUrl() {
+        sessionStorage.removeItem('ppv_return_url');
+    }
+
+    /**
+     * Get final redirect URL (return URL or server provided)
+     */
+    function getFinalRedirectUrl(serverRedirect) {
+        const returnUrl = getReturnUrl();
+        if (returnUrl) {
+            clearReturnUrl();
+            console.log('🔐 [Login] Redirecting to saved return URL:', returnUrl);
+            return returnUrl;
+        }
+        return serverRedirect;
+    }
+
     /**
      * Initialize Login System
      */
@@ -23,6 +55,19 @@ function initLogin() {
         initTikTokLogin();
         initFormSubmit();
         initLanguageSwitcher();
+        showSessionExpiredMessage();
+    }
+
+    /**
+     * Show message if redirected from session expiry
+     */
+    function showSessionExpiredMessage() {
+        const returnUrl = getReturnUrl();
+        if (returnUrl) {
+            console.log('🔐 [Login] User redirected from session expiry, return URL:', returnUrl);
+            // Optional: Show info message
+            // showAlert('Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.', 'info');
+        }
     }
     
     /**
@@ -174,7 +219,7 @@ function initLogin() {
                 if (res.success) {
                     showAlert(res.data.message, 'success');
                     setTimeout(function() {
-                        window.location.href = res.data.redirect;
+                        window.location.href = getFinalRedirectUrl(res.data.redirect);
                     }, 1000);
                 } else {
                     showAlert(res.data.message, 'error');
@@ -252,21 +297,21 @@ function initLogin() {
                 success: function(res) {
                     if (res.success) {
                         showAlert(res.data.message, 'success');
-                        
+
                         // Add success animation
                         $form.css({
                             'opacity': '0.5',
                             'pointer-events': 'none'
                         });
-                        
-                        // Redirect
+
+                        // Redirect (use return URL if available)
                         setTimeout(function() {
-                            window.location.href = res.data.redirect;
+                            window.location.href = getFinalRedirectUrl(res.data.redirect);
                         }, 1000);
                     } else {
                         showAlert(res.data.message, 'error');
                         resetSubmitButton($btn, $btnText, $btnLoader);
-                        
+
                         // Shake animation
                         $form.css('animation', 'shake 0.5s');
                         setTimeout(function() {
@@ -411,7 +456,7 @@ function initLogin() {
                 if (res.success) {
                     showAlert(res.data.message, 'success');
                     setTimeout(function() {
-                        window.location.href = res.data.redirect;
+                        window.location.href = getFinalRedirectUrl(res.data.redirect);
                     }, 1000);
                 } else {
                     showAlert(res.data.message, 'error');
@@ -503,7 +548,7 @@ function initLogin() {
                     if (res.success) {
                         showAlert(res.data.message, 'success');
                         setTimeout(function() {
-                            window.location.href = res.data.redirect;
+                            window.location.href = getFinalRedirectUrl(res.data.redirect);
                         }, 1000);
                     } else {
                         showAlert(res.data.message, 'error');

@@ -354,12 +354,15 @@ if (window.PPV_REWARDS_LOADED) {
     return `${day}.${month}.${year} ${hours}:${mins}`;
   }
 
-  document.addEventListener("DOMContentLoaded", function () {
-
+  /* ============================================================
+   * 🚀 MAIN INITIALIZATION FUNCTION
+   * Called on both DOMContentLoaded and turbo:load
+   * ============================================================ */
+  function initRewardsPage() {
     /* ============================================================
      * 🔑 BASE + TOKEN + STORE
      * ============================================================ */
-    console.log('📦 [REWARDS] DOMContentLoaded fired');
+    console.log('📦 [REWARDS] initRewardsPage() called');
 
     const base = window.ppv_rewards_rest?.base || "/wp-json/ppv/v1/";
     let storeID = 0;
@@ -393,9 +396,16 @@ if (window.PPV_REWARDS_LOADED) {
     if (window.PPV_STORE_KEY)
       sessionStorage.setItem("ppv_store_key", window.PPV_STORE_KEY);
 
+    // 🔄 FRESH DOM QUERIES - important for Turbo navigation!
     const redeemList = document.getElementById("ppv-redeem-list");
     const logList = document.getElementById("ppv-log-list");
     const monthlyReceiptBtn = document.getElementById("ppv-monthly-receipt-btn");
+
+    // Skip if this page doesn't have the rewards elements
+    if (!redeemList) {
+      console.log('📦 [REWARDS] No ppv-redeem-list found, skipping initialization');
+      return;
+    }
 
     console.log(`📦 [REWARDS] base: ${base}, storeID: ${storeID}`);
 
@@ -456,8 +466,8 @@ if (window.PPV_REWARDS_LOADED) {
         // ⏳ PENDING SECTION
         if (pending.length > 0) {
           const pendingTitle = document.createElement('h4');
-          pendingTitle.textContent = L.redeem_pending_section || '⏳ Offene Einlösungen';
-          pendingTitle.style.cssText = 'margin: 20px 0 15px; font-size: 16px;';
+          pendingTitle.className = 'ppv-section-title ppv-section-pending';
+          pendingTitle.innerHTML = `<i class="ri-time-line"></i> ${L.redeem_pending_section || 'Offene Einlösungen'}`;
           redeemList.appendChild(pendingTitle);
 
           pending.forEach((r) => {
@@ -477,26 +487,34 @@ if (window.PPV_REWARDS_LOADED) {
             card.dataset.id = r.id;
             
             card.innerHTML = `
-              <strong>${escapeHtml(r.reward_title || 'Belohnung')}</strong>
-              <small>👤 ${escapeHtml(r.user_email || 'Unbekannt')}</small>
-              
+              <div class="ppv-redeem-header">
+                <div class="ppv-redeem-icon">
+                  <i class="ri-gift-line"></i>
+                </div>
+                <div class="ppv-redeem-title-wrap">
+                  <strong>${escapeHtml(r.reward_title || 'Belohnung')}</strong>
+                  <span class="ppv-redeem-user"><i class="ri-user-line"></i> ${escapeHtml(r.user_email || 'Unbekannt')}</span>
+                </div>
+                <span class="ppv-status-badge status-pending"><i class="ri-time-line"></i> Offen</span>
+              </div>
+
               <div class="ppv-redeem-meta">
                 <span class="ppv-redeem-meta-item">
                   <i class="ri-star-fill"></i>
-                  ${r.points_spent || 0} ${L.redeem_points || 'Punkte'}
+                  <span>${r.points_spent || 0} ${L.redeem_points || 'Punkte'}</span>
                 </span>
                 <span class="ppv-redeem-meta-item">
-                  <i class="ri-time-line"></i>
-                  ${formatDate(r.redeemed_at)}
+                  <i class="ri-calendar-line"></i>
+                  <span>${formatDate(r.redeemed_at)}</span>
                 </span>
               </div>
-              
+
               <div class="ppv-redeem-actions">
                 <button class="ppv-approve" data-id="${r.id}">
-                  ✅ ${L.redeem_btn_approve || 'Bestätigen'}
+                  <i class="ri-check-line"></i> ${L.redeem_btn_approve || 'Bestätigen'}
                 </button>
                 <button class="ppv-reject" data-id="${r.id}">
-                  ❌ ${L.redeem_btn_reject || 'Ablehnen'}
+                  <i class="ri-close-line"></i> ${L.redeem_btn_reject || 'Ablehnen'}
                 </button>
               </div>
             `;
@@ -508,8 +526,8 @@ if (window.PPV_REWARDS_LOADED) {
         // ✅ APPROVED SECTION
         if (approved.length > 0) {
           const approvedTitle = document.createElement('h4');
-          approvedTitle.textContent = L.redeem_approved_section || '✅ Bestätigte Einlösungen';
-          approvedTitle.style.cssText = 'margin: 30px 0 15px; font-size: 16px;';
+          approvedTitle.className = 'ppv-section-title ppv-section-approved';
+          approvedTitle.innerHTML = `<i class="ri-checkbox-circle-line"></i> ${L.redeem_approved_section || 'Bestätigte Einlösungen'}`;
           redeemList.appendChild(approvedTitle);
 
           approved.forEach((r) => {
@@ -517,29 +535,37 @@ if (window.PPV_REWARDS_LOADED) {
             card.className = `ppv-redeem-item status-approved`;
             card.dataset.status = 'approved';
             card.dataset.id = r.id;
-            
+
             const amount = parseFloat(r.actual_amount || r.points_spent || 0);
-            
+
             card.innerHTML = `
-              <strong>${escapeHtml(r.reward_title || 'Belohnung')}</strong>
-              <small>👤 ${escapeHtml(r.user_email || 'Unbekannt')}</small>
-              
+              <div class="ppv-redeem-header">
+                <div class="ppv-redeem-icon approved">
+                  <i class="ri-checkbox-circle-fill"></i>
+                </div>
+                <div class="ppv-redeem-title-wrap">
+                  <strong>${escapeHtml(r.reward_title || 'Belohnung')}</strong>
+                  <span class="ppv-redeem-user"><i class="ri-user-line"></i> ${escapeHtml(r.user_email || 'Unbekannt')}</span>
+                </div>
+                <span class="ppv-status-badge status-approved"><i class="ri-check-line"></i> ${L.redeem_status_approved || 'Bestätigt'}</span>
+              </div>
+
               <div class="ppv-redeem-meta">
                 <span class="ppv-redeem-meta-item">
                   <i class="ri-star-fill"></i>
-                  ${r.points_spent || 0} ${L.redeem_points || 'Punkte'}
+                  <span>${r.points_spent || 0} ${L.redeem_points || 'Punkte'}</span>
                 </span>
                 <span class="ppv-redeem-meta-item">
-                  <i class="ri-euro-line"></i>
-                  ${amount} EUR
+                  <i class="ri-money-euro-circle-line"></i>
+                  <span>${amount} EUR</span>
                 </span>
                 <span class="ppv-redeem-meta-item">
-                  <i class="ri-checkbox-circle-line"></i>
-                  ✅ ${L.redeem_status_approved || 'Bestätigt'}
+                  <i class="ri-calendar-check-line"></i>
+                  <span>${formatDate(r.redeemed_at)}</span>
                 </span>
               </div>
             `;
-            
+
             redeemList.appendChild(card);
           });
         }
@@ -598,27 +624,28 @@ if (window.PPV_REWARDS_LOADED) {
         logList.innerHTML = '';
 
         json.items.forEach((item) => {
-          const statusBadge = item.status === 'approved' 
-            ? `✅ ${L.redeem_status_approved || 'Bestätigt'}`
-            : `❌ ${L.redeem_status_rejected || 'Abgelehnt'}`;
-          const statusColor = item.status === 'approved' ? '#10b981' : '#ef4444';
+          const isApproved = item.status === 'approved';
 
           const logItem = document.createElement('div');
-          logItem.className = 'ppv-log-item';
-          logItem.style.cssText = `
-            padding: 10px; 
-            margin-bottom: 8px; 
-            background: #f5f5f5; 
-            border-left: 3px solid ${statusColor};
-            border-radius: 4px;
-            font-size: 12px;
-          `;
+          logItem.className = `ppv-log-item ${isApproved ? 'log-approved' : 'log-rejected'}`;
 
           logItem.innerHTML = `
-            <strong>${escapeHtml(item.user_email)}</strong>
-            <span style="float: right; color: ${statusColor};">${statusBadge}</span>
-            <br>
-            <small>${item.points_spent} ${L.redeem_points || 'Punkte'} • ${formatDate(item.redeemed_at)}</small>
+            <div class="ppv-log-left">
+              <div class="ppv-log-icon ${isApproved ? 'approved' : 'rejected'}">
+                <i class="${isApproved ? 'ri-checkbox-circle-fill' : 'ri-close-circle-fill'}"></i>
+              </div>
+              <div class="ppv-log-info">
+                <span class="ppv-log-email">${escapeHtml(item.user_email)}</span>
+                <span class="ppv-log-details">
+                  <i class="ri-star-line"></i> ${item.points_spent} ${L.redeem_points || 'Punkte'}
+                  <span class="ppv-log-separator">•</span>
+                  <i class="ri-time-line"></i> ${formatDate(item.redeemed_at)}
+                </span>
+              </div>
+            </div>
+            <span class="ppv-log-status ${isApproved ? 'approved' : 'rejected'}">
+              ${isApproved ? (L.redeem_status_approved || 'Bestätigt') : (L.redeem_status_rejected || 'Abgelehnt')}
+            </span>
           `;
 
           logList.appendChild(logItem);
@@ -952,12 +979,94 @@ showToast("📄 Monatsbeleg wird heruntergeladen!", "success");
       });
     }
 
-    // ✅ Auto-refresh minden 10 másodpercben
-    setInterval(() => {
+    // 📡 ABLY: Real-time updates for reward requests
+    const config = window.ppv_rewards_rest || {};
+    if (config.ably && config.ably.key && window.Ably) {
+      console.log('📡 [REWARDS] Initializing Ably real-time...');
+
+      // Cleanup previous Ably instance if exists (for Turbo navigation)
+      if (window.PPV_REWARDS_ABLY) {
+        window.PPV_REWARDS_ABLY.close();
+        window.PPV_REWARDS_ABLY = null;
+      }
+
+      const ably = new Ably.Realtime({ key: config.ably.key });
+
+      // Store for cleanup
+      window.PPV_REWARDS_ABLY = ably;
+
+      const channel = ably.channels.get(config.ably.channel);
+
+      ably.connection.on('connected', () => {
+        console.log('📡 [REWARDS] Connected to store channel');
+      });
+
+      // 🎁 Handle new reward request from user
+      channel.subscribe('reward-request', (message) => {
+        const data = message.data;
+        console.log('📡 [REWARDS] New reward request received:', data);
+
+        // Refresh the list
+        loadRedeemRequests();
+
+        // Show notification
+        notificationSystem.notifyNewRedeem({
+          id: data.redeem_id,
+          first_name: data.customer_name?.split(' ')[0] || '',
+          last_name: data.customer_name?.split(' ').slice(1).join(' ') || '',
+          reward_title: data.reward_title,
+          points_spent: data.points_spent,
+        });
+      });
+
+      // 🎯 Handle scan events too (for Letzte Scans)
+      channel.subscribe('new-scan', (message) => {
+        console.log('📡 [REWARDS] New scan received:', message.data);
+        loadRecentLogs();
+      });
+
+      console.log('📡 [REWARDS] Ably initialized - polling disabled');
+    } else {
+      // Fallback: Auto-refresh every 30 seconds (only set once)
+      if (!window.PPV_REWARDS_POLLING) {
+        console.log('🔄 [REWARDS] Using polling fallback (30s)');
+        window.PPV_REWARDS_POLLING = setInterval(() => {
+          // Use global reload function which gets updated on each init
+          if (typeof window.ppv_rewards_reload === 'function') {
+            const currentRedeemList = document.getElementById("ppv-redeem-list");
+            if (currentRedeemList) {
+              window.ppv_rewards_reload();
+            }
+          }
+        }, 30000);
+      } else {
+        console.log('🔄 [REWARDS] Polling already active, skipping');
+      }
+    }
+
+    // Expose reload function for polling (updated each init)
+    window.ppv_rewards_reload = function() {
+      console.log('📦 [REWARDS] Reloading data...');
       loadRedeemRequests();
       loadRecentLogs();
-    }, 10000);
-    
+    };
+
     console.log("✅ [REWARDS] Initialization complete!");
+  }
+
+  // 🚀 CALL INIT ON DOMContentLoaded
+  document.addEventListener("DOMContentLoaded", function () {
+    console.log('📦 [REWARDS] DOMContentLoaded fired');
+    initRewardsPage();
+  });
+
+  // 🚀 Re-initialize on Turbo navigation
+  document.addEventListener('turbo:load', () => {
+    // Only reinitialize if we're on a page with the redeem list
+    const redeemList = document.getElementById("ppv-redeem-list");
+    if (redeemList) {
+      console.log('📦 [REWARDS] turbo:load detected, reinitializing...');
+      initRewardsPage();
+    }
   });
 }

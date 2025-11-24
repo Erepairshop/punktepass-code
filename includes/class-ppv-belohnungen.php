@@ -44,7 +44,7 @@ class PPV_Belohnungen {
 
         // Debug log if using default (missing translation)
         if ($value === $default && $default !== '') {
-            error_log("⚠️ [PPV_Belohnungen] Missing translation key '{$key}' for lang '{$lang}', using default: {$default}");
+            ppv_log("⚠️ [PPV_Belohnungen] Missing translation key '{$key}' for lang '{$lang}', using default: {$default}");
         }
 
         return $value ?: $key;
@@ -154,7 +154,7 @@ class PPV_Belohnungen {
         $_SESSION['ppv_lang'] = $lang;
         setcookie('ppv_lang', $lang, time() + 31536000, '/', '', false, true);
 
-        error_log("🌍 [PPV_Belohnungen] Active language: {$lang}");
+        ppv_log("🌍 [PPV_Belohnungen] Active language: {$lang}");
 
         wp_enqueue_script(
             'ppv-theme-loader',
@@ -189,11 +189,22 @@ class PPV_Belohnungen {
             true
         );
 
+        // 📡 Ably config for user channel
+        $ably_config = null;
+        if (is_user_logged_in() && class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+            $user_id = get_current_user_id();
+            $ably_config = [
+                'key' => PPV_Ably::get_key(),
+                'channel' => 'user-' . $user_id
+            ];
+        }
+
         $data = [
             'base_url' => esc_url(rest_url('ppv/v1/')),
             'nonce'    => wp_create_nonce('wp_rest'),
             'lang'     => $lang,
             'debug'    => defined('WP_DEBUG') && WP_DEBUG,
+            'ably'     => $ably_config,
         ];
         wp_add_inline_script(
             'ppv-belohnungen',
@@ -236,8 +247,9 @@ class PPV_Belohnungen {
         }
 
         if (!$user_id) {
-            $msg = self::get_label('no_login', $lang, 'Kérjük, hogy jelentkezz be');
-            return '<div class="ppv-notice-error">⚠️ ' . esc_html($msg) . '</div>';
+            // This should not happen (global redirect handles it), but just in case
+            $login_url = home_url('/einloggen/');
+            return '<script>window.location.href = "' . esc_js($login_url) . '";</script>';
         }
 
         $points = (int)$wpdb->get_var($wpdb->prepare("
@@ -512,9 +524,38 @@ class PPV_Belohnungen {
             $wpdb->query('COMMIT');
             update_option('ppv_last_redeem_update', time());
 
+            $redeem_id = $wpdb->insert_id;
+
+            // 📡 ABLY: Notify POS about new reward request
+            if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+                // Get user info
+                $user_info = $wpdb->get_row($wpdb->prepare("
+                    SELECT first_name, last_name, email, avatar
+                    FROM {$wpdb->prefix}ppv_users WHERE id = %d
+                ", $user_id));
+
+                // Get reward title
+                $reward_title = $wpdb->get_var($wpdb->prepare("
+                    SELECT title FROM {$wpdb->prefix}ppv_rewards WHERE id = %d
+                ", $reward_id));
+
+                $customer_name = trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
+
+                PPV_Ably::trigger_reward_request($reward->store_id, [
+                    'redeem_id' => $redeem_id,
+                    'user_id' => $user_id,
+                    'customer_name' => $customer_name ?: ($user_info->email ?? 'Kunde'),
+                    'avatar' => $user_info->avatar ?? null,
+                    'reward_id' => $reward_id,
+                    'reward_title' => $reward_title,
+                    'points_spent' => $reward->required_points,
+                    'time' => date('H:i'),
+                ]);
+            }
+
             return new WP_REST_Response([
                 'success' => true,
-                'redeem_id' => $wpdb->insert_id
+                'redeem_id' => $redeem_id
             ], 200);
 
         } catch (Exception $e) {

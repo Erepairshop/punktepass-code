@@ -19,4 +19,13 @@ jQuery(document).ready(function ($) {
   }).on("touchend mouseup", function () {
     $(this).removeClass("touch");
   });
+
+  // Force full page refresh on nav click (no Turbo)
+  $(".ppv-bottom-nav .nav-item").on("click", function (e) {
+    e.preventDefault();
+    const href = $(this).attr("href");
+    if (href) {
+      window.location.href = href;
+    }
+  });
 });

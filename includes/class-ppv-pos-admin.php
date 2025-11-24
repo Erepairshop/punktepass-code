@@ -69,7 +69,7 @@ public static function hooks_loader() {
     add_action('plugins_loaded', function () {
 
         PPV_POS_Admin::hooks();
-        error_log("✅ PPV_POS_Admin (Frontend) aktiv – Shortcode [ppv_pos_admin]");
+        ppv_log("✅ PPV_POS_Admin (Frontend) aktiv – Shortcode [ppv_pos_admin]");
 
         // ============================================================
         // 🧠 POS Session Auto-Fix (ensure global state)
@@ -77,15 +77,15 @@ public static function hooks_loader() {
         add_action('wp', function () {
             if (session_status() !== PHP_SESSION_ACTIVE && !headers_sent()) {
                 @session_start();
-                error_log("✅ [PPV_POS_Admin] Session started safely (moved to wp hook).");
+                ppv_log("✅ [PPV_POS_Admin] Session started safely (moved to wp hook).");
             } else {
-                error_log("⚠️ [PPV_POS_Admin] Session skipped – headers sent or already active.");
+                ppv_log("⚠️ [PPV_POS_Admin] Session skipped – headers sent or already active.");
             }
 // 🔄 Token → Session Sync (if cookie exists)
     if (!isset($_SESSION['ppv_is_pos']) && !empty($_COOKIE['ppv_pos_token'])) {
         $_SESSION['ppv_is_pos'] = true;
         $_SESSION['ppv_active_store'] = intval($_COOKIE['ppv_store_id'] ?? 9);
-        error_log("🧩 [PPV_POS_Admin] Session restored from cookie token.");
+        ppv_log("🧩 [PPV_POS_Admin] Session restored from cookie token.");
     }
             $sid = intval($_SESSION['ppv_active_store'] ?? 0);
             $is_pos_raw = $_SESSION['ppv_is_pos'] ?? false;
@@ -96,9 +96,9 @@ public static function hooks_loader() {
             if ($is_pos && $sid > 0) {
                 $GLOBALS['ppv_is_pos'] = true;
                 $GLOBALS['ppv_active_store'] = $sid;
-                error_log("✅ [PPV_POS_SESSION_FIX] POS aktiv | Store={$sid}");
+                ppv_log("✅ [PPV_POS_SESSION_FIX] POS aktiv | Store={$sid}");
             } else {
-                error_log("⚠️ [PPV_POS_SESSION_FIX] Keine gültige POS-Session gefunden | sid={$sid}, raw=" . json_encode($is_pos_raw));
+                ppv_log("⚠️ [PPV_POS_SESSION_FIX] Keine gültige POS-Session gefunden | sid={$sid}, raw=" . json_encode($is_pos_raw));
             }
         }, 1);
     });
@@ -213,7 +213,7 @@ public static function render_shortcode() {
  * REST API VÉGPONTOK
  * ============================================================ */
 add_action('rest_api_init', function() {
-    error_log("🧩 [PPV_POS_Admin] register_rest_route aktiválva");
+    ppv_log("🧩 [PPV_POS_Admin] register_rest_route aktiválva");
 
 
     register_rest_route('ppv/v1', '/pos/login', [
@@ -225,7 +225,7 @@ add_action('rest_api_init', function() {
             if (class_exists('PPV_Permissions')) {
                 $rate_check = PPV_Permissions::check_rate_limit('pos_login', 5, 900);
                 if (is_wp_error($rate_check)) {
-                    error_log("🚫 [POS_Login] Rate limit exceeded for IP: " . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'));
+                    ppv_log("🚫 [POS_Login] Rate limit exceeded for IP: " . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'));
                     return new WP_REST_Response([
                         'success' => false,
                         'message' => $rate_check->get_error_message()
@@ -251,7 +251,7 @@ add_action('rest_api_init', function() {
                 if (class_exists('PPV_Permissions')) {
                     PPV_Permissions::increment_rate_limit('pos_login', 900);
                 }
-                error_log("❌ [POS_Login] Ungültiger PIN für IP: " . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'));
+                ppv_log("❌ [POS_Login] Ungültiger PIN für IP: " . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'));
                 return new WP_REST_Response(['success' => false, 'message' => 'Ungültiger PIN.'], 401);
             }
 
@@ -276,7 +276,7 @@ add_action('rest_api_init', function() {
             $GLOBALS['ppv_is_pos'] = true;
             $GLOBALS['ppv_active_store'] = $store->id;
 
-            error_log("✅ [POS_Login] Erfolgreich | Store={$store->company_name} (ID={$store->id})");
+            ppv_log("✅ [POS_Login] Erfolgreich | Store={$store->company_name} (ID={$store->id})");
 
             return new WP_REST_Response([
                 'success' => true,
