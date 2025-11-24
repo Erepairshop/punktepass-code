@@ -585,11 +585,23 @@ class PPV_QR {
 
         <script>
         jQuery(document).ready(function($){
+            // Restore saved tab on page load
+            var savedTab = localStorage.getItem('ppv_active_tab');
+            if (savedTab && $(".ppv-tab[data-tab='" + savedTab + "']").length) {
+                $(".ppv-tab").removeClass("active");
+                $(".ppv-tab[data-tab='" + savedTab + "']").addClass("active");
+                $(".ppv-tab-content").removeClass("active");
+                $("#tab-" + savedTab).addClass("active");
+            }
+
+            // Save tab on click
             $(".ppv-tab").on("click", function(){
+                var tabName = $(this).data("tab");
+                localStorage.setItem('ppv_active_tab', tabName);
                 $(".ppv-tab").removeClass("active");
                 $(this).addClass("active");
                 $(".ppv-tab-content").removeClass("active");
-                $("#tab-" + $(this).data("tab")).addClass("active");
+                $("#tab-" + tabName).addClass("active");
             });
         });
         </script>
