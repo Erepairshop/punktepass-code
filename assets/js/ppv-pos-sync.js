@@ -104,6 +104,38 @@
   /** 🖱️ Manueller Sync Button */
   $(document).on("click", "#ppv-sync-btn", () => syncOfflineScans(true));
 
+  /** 📍 GPS Position für Fraud Detection */
+  let gpsPosition = null;
+
+  function initGpsTracking() {
+    if (!navigator.geolocation) return;
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        gpsPosition = { latitude: pos.coords.latitude, longitude: pos.coords.longitude, ts: Date.now() };
+        console.log("📍 GPS acquired:", gpsPosition.latitude.toFixed(4), gpsPosition.longitude.toFixed(4));
+      },
+      () => { gpsPosition = null; },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    );
+
+    navigator.geolocation.watchPosition(
+      (pos) => { gpsPosition = { latitude: pos.coords.latitude, longitude: pos.coords.longitude, ts: Date.now() }; },
+      () => {},
+      { enableHighAccuracy: false, timeout: 30000, maximumAge: 60000 }
+    );
+  }
+
+  function getGps() {
+    if (gpsPosition && (Date.now() - gpsPosition.ts) < 120000) {
+      return { latitude: gpsPosition.latitude, longitude: gpsPosition.longitude };
+    }
+    return { latitude: null, longitude: null };
+  }
+
+  // Start GPS tracking on load
+  initGpsTracking();
+
   /** 🎯 POS Scan Handler */
   $(document).on("ppv:scan", async function(e, scanData) {
     if (!scanData || !scanData.qr || !POS_TOKEN) {
@@ -117,6 +149,9 @@
       return;
     }
 
+    // Get GPS for fraud detection
+    const gps = getGps();
+
     try {
       const res = await fetch("/wp-json/punktepass/v1/pos/scan", {
         method: "POST",
@@ -127,7 +162,9 @@
         body: JSON.stringify({
           qr: scanData.qr,
           store_key: POS_TOKEN,
-          points_add: scanData.points_add || 1
+          points_add: scanData.points_add || 1,
+          latitude: gps.latitude,
+          longitude: gps.longitude
         })
       });
 

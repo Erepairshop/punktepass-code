@@ -35,6 +35,12 @@
             this.bindOnboardingReset();
 
             this.updateUI();
+
+            // ✅ Restore tab from URL hash (e.g. #tab-contact)
+            if (window.location.hash?.startsWith('#tab-')) {
+                const tabName = window.location.hash.replace('#tab-', '');
+                this.switchTab(tabName);
+            }
         }
 
         // ==================== ONBOARDING RESET ====================
@@ -268,11 +274,23 @@
                     document.getElementById('ppv-last-updated').textContent =
                         `${this.t('last_updated')}: ${new Date().toLocaleString()}`;
 
-                    // ✅ Frissítjük a form mezőket a backend válasz alapján (nem kell reload!)
+                    // ✅ Frissítjük a form mezőket és reload cache-bust URL-lel
                     console.log('📥 [Profile] Store data:', data.data?.store);
                     if (data.data?.store) {
                         console.log('✅ [Profile] Updating form fields with:', data.data.store);
                         this.updateFormFields(data.data.store);
+
+                        // ✅ Force reload with cache-bust parameter + preserve current tab
+                        setTimeout(() => {
+                            const url = new URL(window.location.href);
+                            url.searchParams.set('_t', Date.now());
+                            // Save current active tab to hash
+                            const activeTab = document.querySelector('.ppv-tab-btn.active');
+                            if (activeTab?.dataset.tab) {
+                                url.hash = 'tab-' + activeTab.dataset.tab;
+                            }
+                            window.location.replace(url.toString());
+                        }, 800);
                     } else {
                         console.warn('⚠️ [Profile] No store data in response!');
                     }

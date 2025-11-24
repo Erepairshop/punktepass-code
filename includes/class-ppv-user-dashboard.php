@@ -538,7 +538,7 @@ private static function get_today_hours($opening_hours) {
                 <?php endif; ?>
             </div>
             
-            <!-- Stats (USER only) -->
+            <!-- Stats (USER only) - Points only, rewards removed -->
             <?php if (!$is_handler): ?>
             <div class="ppv-header-stats">
                 <?php if (!empty($level_badge)): ?>
@@ -548,10 +548,6 @@ private static function get_today_hours($opening_hours) {
                 <div class="ppv-stat-mini">
                     <i class="ri-star-fill"></i>
                     <span id="ppv-global-points"><?php echo esc_html($stats['points']); ?></span>
-                </div>
-                <div class="ppv-stat-mini">
-                    <i class="ri-gift-fill"></i>
-                    <span id="ppv-global-rewards"><?php echo esc_html($stats['rewards']); ?></span>
                 </div>
             </div>
             <?php endif; ?>
@@ -1184,8 +1180,9 @@ public static function render_dashboard() {
     $user_lng = floatval($request->get_param('lng'));
     $max_distance = floatval($request->get_param('max_distance') ?? 10);
 
-    // ✅ Cache kulcs
-    $cache_key = 'ppv_stores_list_' . md5("{$user_lat}_{$user_lng}_{$max_distance}");
+    // ✅ Cache kulcs - now includes VIP version for cache invalidation
+    $vip_version = wp_cache_get('ppv_vip_version') ?: '1';
+    $cache_key = 'ppv_stores_list_' . md5("{$user_lat}_{$user_lng}_{$max_distance}_{$vip_version}");
     $cached = wp_cache_get($cache_key);
     if ($cached !== false) {
         return new WP_REST_Response($cached, 200);
@@ -1193,10 +1190,15 @@ public static function render_dashboard() {
 
     // ✅ Alap lekérdezés – csak aktív boltok
     // ✅ FIX: Added 'country' field for currency symbol display
+    // ✅ FIX: Added VIP fields for shop card display
     $stores = $wpdb->get_results("
         SELECT id, company_name, address, city, plz, latitude, longitude,
                phone, website, logo, qr_logo, opening_hours, description,
-               gallery, facebook, instagram, tiktok, country
+               gallery, facebook, instagram, tiktok, country,
+               vip_fix_enabled, vip_fix_bronze, vip_fix_silver, vip_fix_gold, vip_fix_platinum,
+               vip_streak_enabled, vip_streak_count, vip_streak_type,
+               vip_streak_bronze, vip_streak_silver, vip_streak_gold, vip_streak_platinum,
+               vip_daily_enabled, vip_daily_bronze, vip_daily_silver, vip_daily_gold, vip_daily_platinum
         FROM {$prefix}ppv_stores
         WHERE active = 1
         ORDER BY company_name ASC
@@ -1206,12 +1208,97 @@ public static function render_dashboard() {
         return new WP_REST_Response([], 200);
     }
 
-    $result = [];
     ppv_log("🛰️ [REST DEBUG] stores count: " . count($stores));
 
-    foreach ($stores as $store) {
-            ppv_log("🏪 [REST DEBUG] Store: {$store->company_name} (ID: {$store->id})");
+    // ✅ SQL OPTIMIZATION: Batch fetch all rewards and campaigns in 2 queries instead of N*2
+    $store_ids = array_map(function($s) { return (int)$s->id; }, $stores);
+    $store_ids_str = implode(',', $store_ids);
 
+    // ✅ Batch query for ALL rewards
+    $all_rewards = [];
+    if (!empty($store_ids_str)) {
+        $rewards_query = "
+            SELECT store_id, id, title, required_points, points_given,
+                   action_type, action_value, currency, description
+            FROM {$prefix}ppv_rewards
+            WHERE store_id IN ({$store_ids_str})
+              AND required_points > 0
+            ORDER BY store_id, required_points ASC
+        ";
+        $rewards_raw = $wpdb->get_results($rewards_query);
+
+        // Group by store_id (limit 5 per store)
+        $rewards_count = [];
+        foreach ($rewards_raw as $r) {
+            $sid = (int)$r->store_id;
+            if (!isset($rewards_count[$sid])) $rewards_count[$sid] = 0;
+            if ($rewards_count[$sid] >= 5) continue;
+
+            if (!isset($all_rewards[$sid])) $all_rewards[$sid] = [];
+            $all_rewards[$sid][] = [
+                'id' => (int)$r->id,
+                'title' => $r->title,
+                'description' => $r->description,
+                'required_points' => (int)$r->required_points,
+                'points_given' => (int)$r->points_given,
+                'action_type' => $r->action_type,
+                'action_value' => $r->action_value,
+                'currency' => $r->currency
+            ];
+            $rewards_count[$sid]++;
+        }
+    }
+
+    // ✅ Batch query for ALL campaigns
+    $all_campaigns = [];
+    if (!empty($store_ids_str)) {
+        $campaigns_query = "
+            SELECT store_id, id, title, start_date, end_date, campaign_type,
+                   discount_percent, extra_points, multiplier,
+                   min_purchase, fixed_amount, required_points,
+                   free_product, free_product_value, points_given, description
+            FROM {$prefix}ppv_campaigns
+            WHERE store_id IN ({$store_ids_str})
+              AND status = 'active'
+              AND start_date <= CURDATE()
+              AND end_date >= CURDATE()
+            ORDER BY store_id, start_date ASC
+        ";
+        $campaigns_raw = $wpdb->get_results($campaigns_query);
+
+        // Group by store_id (limit 5 per store)
+        $campaigns_count = [];
+        foreach ($campaigns_raw as $c) {
+            $sid = (int)$c->store_id;
+            if (!isset($campaigns_count[$sid])) $campaigns_count[$sid] = 0;
+            if ($campaigns_count[$sid] >= 5) continue;
+
+            if (!isset($all_campaigns[$sid])) $all_campaigns[$sid] = [];
+            $all_campaigns[$sid][] = [
+                'id' => (int)$c->id,
+                'title' => $c->title,
+                'start_date' => $c->start_date,
+                'end_date' => $c->end_date,
+                'campaign_type' => $c->campaign_type,
+                'discount_percent' => (float)$c->discount_percent,
+                'extra_points' => (int)$c->extra_points,
+                'multiplier' => (int)$c->multiplier,
+                'min_purchase' => (float)$c->min_purchase,
+                'fixed_amount' => (float)$c->fixed_amount,
+                'required_points' => (int)$c->required_points,
+                'free_product' => $c->free_product,
+                'free_product_value' => (float)$c->free_product_value,
+                'points_given' => (int)$c->points_given,
+                'description' => $c->description
+            ];
+            $campaigns_count[$sid]++;
+        }
+    }
+
+    ppv_log("✅ [REST DEBUG] Batch loaded " . count($all_rewards) . " store rewards, " . count($all_campaigns) . " store campaigns");
+
+    $result = [];
+    foreach ($stores as $store) {
         $lat = floatval($store->latitude);
         $lng = floatval($store->longitude);
 
@@ -1233,76 +1320,47 @@ public static function render_dashboard() {
             if (is_array($decoded)) $gallery_images = array_slice($decoded, 0, 6);
         }
 
-        // ✅ Rewards quick & safe
-        $rewards = [];
-        $rws = $wpdb->get_results($wpdb->prepare("
-    SELECT 
-        id, 
-        title, 
-        required_points, 
-        points_given,      -- ✅ új mező
-        action_type, 
-        action_value, 
-        currency, 
-        description
-    FROM {$prefix}ppv_rewards
-    WHERE store_id = %d 
-      AND required_points > 0
-    ORDER BY required_points ASC 
-    LIMIT 5
-", $store->id));
+        // ✅ Get rewards from batch-loaded data
+        $rewards = $all_rewards[(int)$store->id] ?? [];
 
-if ($rws) {
-    foreach ($rws as $r) {
-        $rewards[] = [
-            'id' => (int)$r->id,
-            'title' => $r->title,
-            'description' => $r->description,
-            'required_points' => (int)$r->required_points,
-            'points_given' => (int)$r->points_given, // ✅ hozzáadva
-            'action_type' => $r->action_type,
-            'action_value' => $r->action_value,
-            'currency' => $r->currency
-        ];
-    }
-}
+        // ✅ Get campaigns from batch-loaded data
+        $campaigns = $all_campaigns[(int)$store->id] ?? [];
+        // ✅ Build VIP object (only if at least one VIP type is enabled)
+        $vip = null;
+        $has_vip = (
+            !empty($store->vip_fix_enabled) ||
+            !empty($store->vip_streak_enabled) ||
+            !empty($store->vip_daily_enabled)
+        );
 
+        if ($has_vip) {
+            $vip = [
+                'fix' => !empty($store->vip_fix_enabled) ? [
+                    'enabled' => true,
+                    'bronze' => (int)($store->vip_fix_bronze ?? 1),
+                    'silver' => (int)($store->vip_fix_silver ?? 2),
+                    'gold' => (int)($store->vip_fix_gold ?? 3),
+                    'platinum' => (int)($store->vip_fix_platinum ?? 5),
+                ] : null,
+                'streak' => !empty($store->vip_streak_enabled) ? [
+                    'enabled' => true,
+                    'count' => (int)($store->vip_streak_count ?? 10),
+                    'type' => $store->vip_streak_type ?? 'fixed',
+                    'bronze' => (int)($store->vip_streak_bronze ?? 1),
+                    'silver' => (int)($store->vip_streak_silver ?? 2),
+                    'gold' => (int)($store->vip_streak_gold ?? 3),
+                    'platinum' => (int)($store->vip_streak_platinum ?? 5),
+                ] : null,
+                'daily' => !empty($store->vip_daily_enabled) ? [
+                    'enabled' => true,
+                    'bronze' => (int)($store->vip_daily_bronze ?? 5),
+                    'silver' => (int)($store->vip_daily_silver ?? 10),
+                    'gold' => (int)($store->vip_daily_gold ?? 20),
+                    'platinum' => (int)($store->vip_daily_platinum ?? 30),
+                ] : null,
+            ];
+        }
 
-        // ✅ Campaigns - TELJES ADAT!
-$campaigns = [];
-$camps = $wpdb->get_results($wpdb->prepare("
-    SELECT id, title, start_date, end_date, campaign_type, 
-           discount_percent, extra_points, multiplier, 
-           min_purchase, fixed_amount, required_points,
-           free_product, free_product_value, points_given, description
-    FROM {$prefix}ppv_campaigns
-    WHERE store_id = %d
-      AND status = 'active'
-      AND start_date <= CURDATE()
-      AND end_date >= CURDATE()
-    ORDER BY start_date ASC LIMIT 5
-", $store->id));
-if ($camps) {
-    foreach ($camps as $c) {
-        $campaigns[] = [
-            'id' => (int)$c->id,
-            'title' => $c->title,
-            'start_date' => $c->start_date,
-            'end_date' => $c->end_date,
-            'campaign_type' => $c->campaign_type,
-            'discount_percent' => (float)$c->discount_percent,
-            'extra_points' => (int)$c->extra_points,
-            'multiplier' => (int)$c->multiplier,
-            'min_purchase' => (float)$c->min_purchase,
-            'fixed_amount' => (float)$c->fixed_amount,
-            'required_points' => (int)$c->required_points,
-            'free_product' => $c->free_product,
-            'free_product_value' => (float)$c->free_product_value,
-            'points_given' => (int)$c->points_given,
-            'description' => $c->description
-        ];
-    }
-}
         $result[] = [
             'id' => (int)$store->id,
             'company_name' => $store->company_name,
@@ -1315,17 +1373,20 @@ if ($camps) {
             'open_now' => $is_open,
             'open_hours_today' => $today_hours,
             'phone' => $store->phone,
-            'website' => $store->website,
-            'logo' => $store->logo,
-            'gallery' => $gallery_images,
+            'website' => esc_url($store->website),
+            // ✅ FIX: Validate logo URL - return null if empty/invalid
+            'logo' => (!empty($store->logo) && $store->logo !== 'null') ? esc_url($store->logo) : null,
+            'gallery' => array_map('esc_url', $gallery_images),
             'country' => $store->country ?? 'DE', // ✅ FIX: Added for currency symbol
             'social' => [
-                'facebook' => $store->facebook ?: null,
-                'instagram' => $store->instagram ?: null,
-                'tiktok' => $store->tiktok ?: null
+                // ✅ FIX: Escape social media URLs
+                'facebook' => !empty($store->facebook) ? esc_url($store->facebook) : null,
+                'instagram' => !empty($store->instagram) ? esc_url($store->instagram) : null,
+                'tiktok' => !empty($store->tiktok) ? esc_url($store->tiktok) : null
             ],
             'rewards' => $rewards,
-            'campaigns' => $campaigns
+            'campaigns' => $campaigns,
+            'vip' => $vip  // ✅ NEW: VIP bonus info
         ];
     }
 

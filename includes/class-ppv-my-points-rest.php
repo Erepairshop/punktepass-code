@@ -220,6 +220,22 @@ if (class_exists('PPV_Lang')) {
                 ORDER BY p.created DESC LIMIT 50
             ");
 
+            // 🏆 TIER LEVEL INFO - User's current level and progress to next
+            if (class_exists('PPV_User_Level')) {
+                $data['tier'] = PPV_User_Level::get_user_level_info($user_id, $active_lang ?? 'de');
+
+                // All tier thresholds for display
+                $data['tiers'] = [
+                    'starter'  => ['min' => 0,    'max' => 99,   'name' => PPV_User_Level::LEVELS['starter']['name_' . ($active_lang ?? 'de')] ?? 'Starter'],
+                    'bronze'   => ['min' => 100,  'max' => 499,  'name' => PPV_User_Level::LEVELS['bronze']['name_' . ($active_lang ?? 'de')] ?? 'Bronze'],
+                    'silver'   => ['min' => 500,  'max' => 999,  'name' => PPV_User_Level::LEVELS['silver']['name_' . ($active_lang ?? 'de')] ?? 'Silber'],
+                    'gold'     => ['min' => 1000, 'max' => 1999, 'name' => PPV_User_Level::LEVELS['gold']['name_' . ($active_lang ?? 'de')] ?? 'Gold'],
+                    'platinum' => ['min' => 2000, 'max' => 999999, 'name' => PPV_User_Level::LEVELS['platinum']['name_' . ($active_lang ?? 'de')] ?? 'Platin'],
+                ];
+
+                ppv_log("🏆 [PPV_MyPoints_REST] Tier info: level=" . ($data['tier']['level'] ?? 'unknown') . ", progress=" . ($data['tier']['progress'] ?? 0) . "%");
+            }
+
 // 🌍 Nyelv betöltése, ha még nem történt meg
 $headers = function_exists('getallheaders') ? getallheaders() : [];
 $header_lang = $headers['X-PPV-Lang'] ?? '';

@@ -43,6 +43,15 @@
 
   --header-height: 64px;
   --bottom-nav-height: 72px;
+
+  /* ✅ VIP Level Colors - Consolidated for reuse */
+  --pp-vip-bronze: #CD7F32;
+  --pp-vip-silver: #C0C0C0;
+  --pp-vip-silver-dark: #808080;
+  --pp-vip-gold: #FFD700;
+  --pp-vip-gold-dark: #DAA520;
+  --pp-vip-platinum: #A0B2C6;
+  --pp-vip-platinum-dark: #6B7280;
 }
 
 /* ============================================================
@@ -1002,10 +1011,11 @@ body {
   color: var(--color-text);
 }
 
-.ppv-preview-item.bronze { border-top: 3px solid #CD7F32; }
-.ppv-preview-item.silver { border-top: 3px solid #C0C0C0; }
-.ppv-preview-item.gold { border-top: 3px solid #FFD700; }
-.ppv-preview-item.platinum { border-top: 3px solid #A0B2C6; }
+/* ✅ OPTIMIZED: Using CSS variables for preview items */
+.ppv-preview-item.bronze { border-top: 3px solid var(--pp-vip-bronze); }
+.ppv-preview-item.silver { border-top: 3px solid var(--pp-vip-silver); }
+.ppv-preview-item.gold { border-top: 3px solid var(--pp-vip-gold); }
+.ppv-preview-item.platinum { border-top: 3px solid var(--pp-vip-platinum); }
 
 /* Actions */
 .ppv-vip-actions {
@@ -1175,10 +1185,11 @@ body {
   letter-spacing: 0.5px;
 }
 
-.ppv-vip-level-input.bronze > label { color: #CD7F32; }
-.ppv-vip-level-input.silver > label { color: #808080; }
-.ppv-vip-level-input.gold > label { color: #DAA520; }
-.ppv-vip-level-input.platinum > label { color: #6B7280; }
+/* ✅ OPTIMIZED: Using CSS variables for VIP level inputs */
+.ppv-vip-level-input.bronze > label { color: var(--pp-vip-bronze); }
+.ppv-vip-level-input.silver > label { color: var(--pp-vip-silver-dark); }
+.ppv-vip-level-input.gold > label { color: var(--pp-vip-gold-dark); }
+.ppv-vip-level-input.platinum > label { color: var(--pp-vip-platinum-dark); }
 
 .ppv-input-group {
   display: flex;

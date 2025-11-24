@@ -110,6 +110,92 @@
 }
 
 /* ==========================================================================
+   🌙 DARK THEME ROOT VARIABLES (Optimized v2.0)
+   ========================================================================== */
+body.ppv-dark,
+[data-theme="dark"] {
+    /* Brand Colors - Enhanced Neon Cyan */
+    --pp-primary: #00d4ff;
+    --pp-primary-dark: #00a8cc;
+    --pp-primary-darker: #0088a8;
+    --pp-primary-light: #4de5ff;
+    --pp-primary-lighter: #99f0ff;
+    --pp-primary-glow: rgba(0, 212, 255, 0.40);
+
+    /* Secondary - Vibrant Teal */
+    --pp-secondary: #00d9a3;
+    --pp-secondary-dark: #00a878;
+    --pp-secondary-light: #70ffce;
+    --pp-secondary-glow: rgba(0, 217, 163, 0.35);
+
+    /* Accent - Electric Purple */
+    --pp-accent: #a855f7;
+    --pp-accent-dark: #8b5cf6;
+    --pp-accent-light: #d8b4fe;
+    --pp-accent-glow: rgba(168, 85, 247, 0.35);
+
+    /* States - Brighter for dark bg */
+    --pp-success: #22c55e;
+    --pp-success-light: #4ade80;
+    --pp-warning: #fbbf24;
+    --pp-warning-light: #fcd34d;
+    --pp-danger: #f87171;
+    --pp-danger-light: #fca5a5;
+    --pp-info: #38bdf8;
+
+    /* Dark Surfaces - Deep Navy */
+    --pp-bg: #0a0f1a;
+    --pp-bg-2: #0f172a;
+    --pp-bg-3: #1a2744;
+    --pp-bg-warm: linear-gradient(180deg, #0a0f1a 0%, #0f172a 50%, #141e33 100%);
+
+    --pp-surface: #141e33;
+    --pp-surface-soft: #1a2744;
+    --pp-surface-glass: rgba(20, 30, 51, 0.88);
+    --pp-surface-elevated: #1e3048;
+
+    /* Text - High Contrast */
+    --pp-text: #f1f5f9;
+    --pp-text-2: #e2e8f0;
+    --pp-text-3: #94a3b8;
+    --pp-text-muted: #64748b;
+    --pp-text-inverse: #0a0f1a;
+
+    /* Header - Darker */
+    --pp-header-bg: linear-gradient(135deg, #070c14 0%, #0a0f1a 100%);
+    --pp-header-dark: #030508;
+
+    /* Borders - Cyan Glow */
+    --pp-border: rgba(0, 212, 255, 0.28);
+    --pp-border-soft: rgba(0, 212, 255, 0.14);
+    --pp-border-strong: rgba(0, 212, 255, 0.50);
+    --pp-border-glass: rgba(0, 212, 255, 0.20);
+
+    /* Shadows - Enhanced Depth + Glow */
+    --pp-shadow-xs: 0 1px 3px rgba(0,0,0,0.35);
+    --pp-shadow-sm: 0 2px 8px rgba(0,0,0,0.50);
+    --pp-shadow: 0 4px 16px rgba(0,0,0,0.60);
+    --pp-shadow-md: 0 8px 24px rgba(0,0,0,0.55);
+    --pp-shadow-lg: 0 12px 32px rgba(0,0,0,0.70);
+    --pp-shadow-xl: 0 20px 48px rgba(0,0,0,0.75);
+    --pp-shadow-glow: 0 0 24px rgba(0,212,255,0.40);
+    --pp-shadow-glow-lg: 0 0 48px rgba(0,212,255,0.50);
+    --pp-shadow-inner: inset 0 2px 4px rgba(0,0,0,0.25);
+
+    /* Glassmorphism - Dark */
+    --pp-glass: blur(16px) saturate(180%);
+    --pp-glass-heavy: blur(24px) saturate(200%);
+    --pp-glass-light: blur(8px) saturate(150%);
+
+    /* Gradients - Dark Neon */
+    --gradient-primary: linear-gradient(135deg, #00d4ff 0%, #00a8cc 100%);
+    --gradient-secondary: linear-gradient(135deg, #00d9a3 0%, #00a878 100%);
+    --gradient-accent: linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%);
+    --gradient-card: linear-gradient(145deg, #1a2744 0%, #141e33 100%);
+    --gradient-shimmer: linear-gradient(90deg, transparent, rgba(0,212,255,0.25), transparent);
+}
+
+/* ==========================================================================
    🌍 GLOBAL RESET & BASE
    ========================================================================== */
 *, *::before, *::after {
@@ -199,7 +285,7 @@ body.ppv-user-dashboard {
     max-width: 900px;
     width: 100%;
     margin: 0 auto;
-    padding: 20px;
+    padding: 16px;
     animation: appFadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -459,6 +545,33 @@ body.ppv-user-dashboard {
     opacity: 1;
     visibility: visible;
     transform: scale(1);
+}
+
+/* QR Warning Banner */
+.ppv-qr-warning {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border: 1px solid #f59e0b;
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);
+}
+
+.ppv-qr-warning-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.ppv-qr-warning-text {
+    font-size: 13px;
+    font-weight: 600;
+    color: #92400e;
+    line-height: 1.3;
+    text-align: left;
 }
 
 /* QR Modal Title */
@@ -2137,9 +2250,9 @@ body, h1, h2, h3, h4, h5, h6 {
     display: none !important;
 }
 
-/* Remove empty space where logo was */
+/* Match dark theme spacing */
 .ppv-header-left {
-    gap: 6px !important;
+    gap: 12px !important;
 }
 /* FIX THEME SWITCH ICON VISIBILITY */
 .ppv-theme-btn-mini i {
@@ -2472,10 +2585,17 @@ html, body {
   display: none;
   padding: 24px;
   background: var(--color-card);
-  border: 1px solid var(--color-border);
+  border: none; /* ✅ FIX: Remove nested border - parent glass-card already has border */
   border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
+  box-shadow: none; /* ✅ FIX: Remove nested shadow */
   animation: fadeIn 0.3s ease;
+}
+
+/* ✅ FIX: Remove nested borders from glass-section inside tab content */
+.ppv-tab-content .glass-section {
+  border: none;
+  box-shadow: none;
+  background: transparent;
 }
 
 .ppv-tab-content.active {
@@ -3284,10 +3404,6 @@ html, body {
 
 /* Toggle Button */
 .ppv-mini-toggle {
-  position: absolute;
-  bottom: 8px;
-  left: 50%;
-  transform: translateX(-50%);
   background: linear-gradient(135deg, #00e676, #00c853);
   color: #fff;
   border: none;
@@ -3301,16 +3417,15 @@ html, body {
   display: flex;
   align-items: center;
   gap: 6px;
-  z-index: 11;
 }
 
 .ppv-mini-toggle:hover {
-  transform: translateX(-50%) translateY(-2px);
+  transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 230, 118, 0.4);
 }
 
 .ppv-mini-toggle:active {
-  transform: translateX(-50%) translateY(0);
+  transform: translateY(0);
   box-shadow: 0 1px 4px rgba(0, 230, 118, 0.2);
 }
 
@@ -3322,6 +3437,74 @@ html, body {
 .ppv-toggle-text {
   font-size: 11px;
   white-space: nowrap;
+}
+
+/* Controls container (torch, refocus, toggle) */
+.ppv-mini-controls {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 11;
+}
+
+/* Torch button */
+.ppv-mini-torch {
+  background: linear-gradient(135deg, #ffab00, #ff8f00);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(255, 171, 0, 0.3);
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+}
+
+.ppv-mini-torch:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 171, 0, 0.4);
+}
+
+.ppv-mini-torch:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(255, 171, 0, 0.2);
+}
+
+/* Refocus button */
+.ppv-mini-refocus {
+  background: linear-gradient(135deg, #2196f3, #1976d2);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+}
+
+.ppv-mini-refocus:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
+}
+
+.ppv-mini-refocus:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(33, 150, 243, 0.2);
 }
 
 /* Pulse animation for scanning state */
@@ -3372,6 +3555,176 @@ html, body {
 }
 
 /* ============================================================
+   📱 MINI SCANNER TOOLBAR & FULLSCREEN
+   ============================================================ */
+
+/* Modern toolbar - vertical bar on right side */
+.ppv-mini-toolbar {
+  position: absolute;
+  top: 28px;
+  right: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 15;
+  opacity: 0.85;
+  transition: opacity 0.2s ease;
+}
+
+.ppv-mini-toolbar:hover {
+  opacity: 1;
+}
+
+/* Modern button style */
+.ppv-mini-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+}
+
+.ppv-mini-btn:hover {
+  background: rgba(0, 168, 204, 0.8);
+  transform: scale(1.1);
+}
+
+.ppv-mini-btn:active {
+  transform: scale(0.95);
+}
+
+/* ⛶ FULLSCREEN / KIOSK MODE */
+#ppv-mini-scanner.ppv-fullscreen-mode {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  width: 90vw !important;
+  max-width: 500px !important;
+  height: auto !important;
+  min-height: 400px !important;
+  border-radius: 20px !important;
+  z-index: 99999 !important;
+  animation: none !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3),
+              0 0 100px rgba(0, 168, 204, 0.2) !important;
+}
+
+#ppv-mini-scanner.ppv-fullscreen-mode #ppv-mini-reader {
+  height: 350px !important;
+}
+
+#ppv-mini-scanner.ppv-fullscreen-mode .ppv-mini-drag-handle {
+  display: none;
+}
+
+#ppv-mini-scanner.ppv-fullscreen-mode #ppv-mini-reader {
+  margin-top: 0;
+  border-radius: 20px 20px 0 0;
+}
+
+#ppv-mini-scanner.ppv-fullscreen-mode .ppv-mini-controls {
+  padding: 12px;
+}
+
+#ppv-mini-scanner.ppv-fullscreen-mode .ppv-mini-toggle {
+  position: relative;
+  bottom: auto;
+  left: auto;
+  transform: none;
+  width: 100%;
+  padding: 14px 20px;
+  font-size: 16px;
+  border-radius: 12px;
+}
+
+#ppv-mini-scanner.ppv-fullscreen-mode .ppv-mini-toolbar {
+  top: 10px;
+  right: 10px;
+  flex-direction: row;
+  gap: 8px;
+}
+
+#ppv-mini-scanner.ppv-fullscreen-mode .ppv-mini-btn {
+  width: 36px;
+  height: 36px;
+  font-size: 18px;
+}
+
+/* Fullscreen overlay background */
+#ppv-mini-scanner.ppv-fullscreen-mode::before {
+  content: '';
+  position: fixed;
+  top: -100vh;
+  left: -100vw;
+  width: 300vw;
+  height: 300vh;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: -1;
+  pointer-events: auto;
+}
+
+/* Mini mode: compact toggle button only */
+#ppv-mini-scanner:not(.ppv-fullscreen-mode) .ppv-mini-toggle {
+  padding: 6px 10px;
+  font-size: 14px;
+}
+
+#ppv-mini-scanner:not(.ppv-fullscreen-mode) .ppv-toggle-text:empty {
+  display: none;
+}
+
+/* QR Scanner scan region highlight - Fullscreen centered & larger */
+#ppv-mini-scanner.ppv-fullscreen-mode .scan-region-highlight {
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  width: 280px !important;
+  height: 280px !important;
+}
+
+#ppv-mini-scanner.ppv-fullscreen-mode .scan-region-highlight svg {
+  width: 280px !important;
+  height: 280px !important;
+}
+
+#ppv-mini-scanner.ppv-fullscreen-mode .scan-region-highlight-svg {
+  width: 280px !important;
+  height: 280px !important;
+}
+
+/* Code outline when detected */
+#ppv-mini-scanner.ppv-fullscreen-mode .code-outline-highlight {
+  stroke: #00e676 !important;
+  stroke-width: 4 !important;
+}
+
+/* Mini mode - smaller scan region */
+#ppv-mini-scanner:not(.ppv-fullscreen-mode) .scan-region-highlight {
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  width: 100px !important;
+  height: 100px !important;
+}
+
+#ppv-mini-scanner:not(.ppv-fullscreen-mode) .scan-region-highlight svg,
+#ppv-mini-scanner:not(.ppv-fullscreen-mode) .scan-region-highlight-svg {
+  width: 100px !important;
+  height: 100px !important;
+}
+
+/* ============================================================
    🎭 TAB CONTENT VISIBILITY
    ============================================================ */
 
@@ -3418,12 +3771,9 @@ body.ppv-light #ppv-global-header.ppv-compact-header::before {
     opacity: 0.65;
 }
 
-/* LOGO – optional highlight */
+/* LOGO – same as dark theme, no extra padding */
 body.ppv-light #ppv-global-header .ppv-header-logo-tiny {
-    background: rgba(0, 180, 255, 0.05) !important;
-    padding: 6px;
-    border-radius: 10px;
-    box-shadow: 0 2px 6px rgba(0,150,255,0.08);
+    /* No extra background/padding to match dark theme spacing */
 }
 
 /* Email text – good contrast */
@@ -3432,18 +3782,18 @@ body.ppv-light .ppv-user-email {
     font-weight: 600;
 }
 
-/* MINI STATS */
+/* MINI STATS - same size as dark theme */
 body.ppv-light .ppv-stat-mini {
     background: rgba(0, 150, 200, 0.12) !important;
     border: 1px solid rgba(0, 150, 200, 0.3) !important;
     color: #0077aa !important;
-    padding: 7px 14px !important;
-    border-radius: 8px !important;
+    padding: 4px 8px !important;
+    border-radius: 6px !important;
     font-size: 12px !important;
     font-weight: 700 !important;
     display: flex !important;
     align-items: center !important;
-    gap: 6px !important;
+    gap: 4px !important;
 }
 
 body.ppv-light .ppv-stat-mini span {
@@ -3781,57 +4131,64 @@ body.ppv-light .ppv-theme-btn-mini {
 }
 
 /* =====================================================================================
-   HEADER: TITLE + TOTAL POINTS
+   HEADER: TITLE + TOTAL POINTS (Compact App Style)
 ===================================================================================== */
 
 .ppv-points-header {
     text-align: center;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
 }
 
 .ppv-points-header h2 {
     font-family: 'Poppins', sans-serif;
-    font-size: 26px;
-    font-weight: 800;
+    font-size: 20px;
+    font-weight: 700;
     color: var(--pp-primary-dark);
-    margin-bottom: 12px;
+    margin-bottom: 10px;
 }
 
 .ppv-points-summary {
-    background: var(--pp-surface);
-    border: 1px solid var(--pp-border);
-    border-radius: var(--pp-radius-lg);
-    padding: 20px;
+    background: linear-gradient(135deg, var(--pp-primary) 0%, var(--pp-accent) 100%);
+    border: none;
+    border-radius: 16px;
+    padding: 16px 20px;
     width: 100%;
-    max-width: 260px;
-    margin: 0 auto 10px;
-    box-shadow: var(--pp-shadow);
+    max-width: 220px;
+    margin: 0 auto 8px;
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.25);
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
+    justify-content: center;
+    gap: 12px;
 }
 
 .ppv-points-summary i {
-    font-size: 38px;
-    color: var(--pp-primary);
-    margin-bottom: 6px;
+    font-size: 28px;
+    color: #fff;
+    margin-bottom: 0;
+    opacity: 0.9;
 }
 
 .ppv-points-summary .big {
-    font-size: 38px;
+    font-size: 32px;
     font-weight: 800;
-    color: var(--pp-primary-dark);
+    color: #fff;
+    line-height: 1;
 }
 
 .ppv-points-summary .label {
-    font-size: 14px;
-    color: var(--pp-text-muted);
-    margin-top: 4px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.85);
+    margin-top: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .ppv-motivation {
-    font-size: 14px;
-    color: var(--pp-text-2);
+    font-size: 13px;
+    color: var(--pp-text-3);
+    margin-top: 6px;
 }
 
 /* =====================================================================================
@@ -3842,239 +4199,346 @@ body.ppv-light .ppv-theme-btn-mini {
 }
 
 /* =====================================================================================
-   STATS GRID (3 cards)
+   STATS GRID (3 cards) - Compact App Style
 ===================================================================================== */
 
 .ppv-stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit,minmax(110px,1fr));
-    gap: 16px;
-    margin-bottom: 26px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
 }
 
 .ppv-stat-card {
     background: var(--pp-surface);
     border: 1px solid var(--pp-border-soft);
-    border-radius: var(--pp-radius);
-    padding: 16px;
+    border-radius: 12px;
+    padding: 12px 8px;
     text-align: center;
     box-shadow: var(--pp-shadow-sm);
-    transition: var(--pp-trans);
+    transition: all 0.2s ease;
 }
 
 .ppv-stat-card i {
-    font-size: 22px;
+    font-size: 18px;
     color: var(--pp-primary);
+    display: block;
+    margin-bottom: 4px;
 }
 
 .ppv-stat-card .label {
-    font-size: 13px;
+    font-size: 10px;
     color: var(--pp-text-muted);
-    margin-top: 6px;
+    margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
 }
 
 .ppv-stat-card .value {
-    font-size: 16px;
+    font-size: 13px;
     font-weight: 700;
     color: var(--pp-primary-dark);
-    margin-top: 4px;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.ppv-stat-card:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--pp-shadow);
+.ppv-stat-card:active {
+    transform: scale(0.97);
 }
 
 /* =====================================================================================
-   REWARDS BY STORE
+   REWARDS BY STORE - Compact App Style
 ===================================================================================== */
 
-.ppv-rewards-by-store h3 {
-    font-size: 18px;
-    font-weight: 800;
-    color: var(--pp-primary-dark);
+.ppv-rewards-by-store {
     margin-bottom: 16px;
+}
+
+.ppv-rewards-by-store h3 {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--pp-primary-dark);
+    margin-bottom: 10px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+}
+
+.ppv-rewards-by-store h3 i {
+    font-size: 16px;
+    color: var(--pp-primary);
 }
 
 .ppv-reward-card {
     background: var(--pp-surface);
-    border: 1px solid var(--pp-border);
-    border-radius: var(--pp-radius);
-    padding: 16px;
-    margin-bottom: 14px;
+    border: 1px solid var(--pp-border-soft);
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 10px;
     box-shadow: var(--pp-shadow-sm);
+    transition: all 0.2s ease;
+}
+
+.ppv-reward-card:active {
+    transform: scale(0.98);
 }
 
 .ppv-reward-card .reward-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-bottom: 8px;
 }
 
 .ppv-reward-card h4 {
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--pp-primary-dark);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--pp-text);
+    margin: 0;
 }
 
 .reward-points {
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 700;
     color: var(--pp-primary);
+    background: rgba(37, 99, 235, 0.08);
+    padding: 3px 8px;
+    border-radius: 6px;
 }
 
-/* Progress bar */
+/* Progress bar - compact */
 .reward-progress {
-    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 0;
 }
 
 .progress-bar {
-    width: 100%;
-    height: 10px;
+    flex: 1;
+    height: 6px;
     background: var(--pp-bg-3);
-    border-radius: 10px;
+    border-radius: 6px;
     overflow: hidden;
 }
 
 .progress-fill {
     height: 100%;
-    background: var(--pp-gradient-primary);
-    transition: width .4s ease;
+    background: linear-gradient(90deg, var(--pp-primary), var(--pp-accent));
+    border-radius: 6px;
+    transition: width 0.4s ease;
 }
 
 .progress-text {
-    font-size: 12px;
-    margin-top: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--pp-primary);
+    min-width: 32px;
     text-align: right;
-    color: var(--pp-primary-dark);
+}
+
+/* Reward Status */
+.reward-status {
+    margin-top: 8px;
+}
+
+.reward-status .remaining {
+    font-size: 11px;
+    color: var(--pp-text-muted);
 }
 
 /* Achieved */
 .ppv-reward-achieved {
     border-color: var(--pp-accent);
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(37, 99, 235, 0.05) 100%);
 }
 
 .ppv-btn-claim {
-    margin-top: 12px;
+    margin-top: 0;
     width: 100%;
-    background: var(--pp-gradient-primary);
+    background: linear-gradient(135deg, var(--pp-primary) 0%, var(--pp-accent) 100%);
     color: #fff;
     border: none;
-    padding: 12px;
-    border-radius: var(--pp-radius);
-    font-size: 14px;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 12px;
     font-weight: 700;
     cursor: pointer;
-    transition: var(--pp-trans);
+    transition: all 0.2s ease;
 }
 
-.ppv-btn-claim:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--pp-shadow);
+.ppv-btn-claim:active {
+    transform: scale(0.97);
 }
 
 /* =====================================================================================
-   TOP 3 STORES
+   TOP 3 STORES - Compact App Style
 ===================================================================================== */
 
-.ppv-top3 h3 {
-    font-size: 18px;
-    font-weight: 800;
-    color: var(--pp-primary-dark);
+.ppv-top3 {
     margin-bottom: 16px;
+}
+
+.ppv-top3 h3 {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--pp-primary-dark);
+    margin-bottom: 10px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+}
+
+.ppv-top3 h3 i {
+    font-size: 16px;
+    color: #FFD700;
 }
 
 .ppv-top3-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit,minmax(110px,1fr));
-    gap: 12px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
 }
 
 .ppv-top3-card {
     background: var(--pp-surface);
     border: 1px solid var(--pp-border-soft);
-    border-radius: var(--pp-radius);
-    padding: 16px;
+    border-radius: 10px;
+    padding: 10px 8px;
     text-align: center;
     box-shadow: var(--pp-shadow-sm);
+    transition: all 0.2s ease;
+}
+
+.ppv-top3-card:first-child {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.08) 0%, rgba(255, 193, 7, 0.05) 100%);
+    border-color: rgba(255, 215, 0, 0.3);
 }
 
 .ppv-top3-card i {
-    font-size: 22px;
-    color: var(--pp-primary-dark);
+    font-size: 18px;
+    color: var(--pp-primary);
+    display: block;
+    margin-bottom: 4px;
+}
+
+.ppv-top3-card:first-child i {
+    color: #FFD700;
 }
 
 .ppv-top3-card .rank {
-    display: block;
-    font-size: 14px;
+    display: inline-block;
+    font-size: 10px;
     font-weight: 700;
-    color: var(--pp-primary);
-    margin-top: 4px;
+    color: #fff;
+    background: var(--pp-primary);
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-bottom: 4px;
+}
+
+.ppv-top3-card:first-child .rank {
+    background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
 }
 
 .ppv-top3-card .name {
-    font-size: 14px;
+    font-size: 11px;
     color: var(--pp-text);
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .ppv-top3-card .score {
-    font-size: 12px;
-    color: var(--pp-primary-dark);
-    margin-top: 4px;
+    font-size: 10px;
+    color: var(--pp-primary);
+    font-weight: 600;
+    margin-top: 2px;
+    display: block;
 }
 
 /* =====================================================================================
-   RECENT ENTRIES (point list)
+   RECENT ENTRIES (point list) - Compact App Style
 ===================================================================================== */
 
+.ppv-points-list {
+    margin-bottom: 16px;
+}
+
 .ppv-points-list h3 {
-    font-size: 18px;
-    font-weight: 800;
+    font-size: 14px;
+    font-weight: 700;
     color: var(--pp-primary-dark);
-    margin-bottom: 14px;
+    margin-bottom: 10px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+}
+
+.ppv-points-list h3 i {
+    font-size: 16px;
+    color: var(--pp-primary);
 }
 
 .ppv-point-card {
     background: var(--pp-surface);
     border: 1px solid var(--pp-border-soft);
-    border-radius: var(--pp-radius);
-    padding: 16px;
+    border-radius: 10px;
+    padding: 10px 12px;
     display: flex;
     align-items: center;
-    gap: 14px;
-    margin-bottom: 12px;
+    gap: 10px;
+    margin-bottom: 8px;
     box-shadow: var(--pp-shadow-sm);
+    transition: all 0.2s ease;
+}
+
+.ppv-point-card:active {
+    transform: scale(0.98);
 }
 
 .ppv-point-card i {
-    font-size: 24px;
+    font-size: 20px;
     color: var(--pp-primary);
+    background: rgba(37, 99, 235, 0.08);
+    padding: 8px;
+    border-radius: 8px;
+}
+
+.ppv-point-card .info {
+    flex: 1;
+    min-width: 0;
 }
 
 .ppv-point-card .info strong {
-    color: var(--pp-primary-dark);
-    font-size: 14px;
+    color: var(--pp-text);
+    font-size: 12px;
+    font-weight: 600;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .ppv-point-card .info small {
     color: var(--pp-text-muted);
+    font-size: 10px;
     display: block;
-    margin-top: 2px;
+    margin-top: 1px;
 }
 
 .ppv-point-card .ppv-points {
     margin-left: auto;
-    color: var(--pp-primary-dark);
-    font-weight: 800;
+    color: #fff;
+    font-weight: 700;
+    font-size: 11px;
+    background: linear-gradient(135deg, var(--pp-primary) 0%, var(--pp-accent) 100%);
+    padding: 4px 10px;
+    border-radius: 6px;
+    white-space: nowrap;
 }
 
 /* =====================================================================================
@@ -4087,43 +4551,85 @@ body.ppv-light .ppv-theme-btn-mini {
 }
 
 /* =====================================================================================
-   RESPONSIVE
+   RESPONSIVE - Compact App Style
 ===================================================================================== */
 
 @media (max-width: 480px) {
-    .ppv-points-summary { max-width: 220px; }
+    .ppv-points-summary {
+        max-width: 200px;
+        padding: 12px 16px;
+    }
+
+    .ppv-points-summary .big {
+        font-size: 28px;
+    }
 
     .ppv-top3-grid,
     .ppv-stats-grid {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+    }
+
+    .ppv-stat-card {
+        padding: 10px 6px;
+    }
+
+    .ppv-stat-card i {
+        font-size: 16px;
+    }
+
+    .ppv-stat-card .value {
+        font-size: 11px;
     }
 
     .ppv-point-card {
+        padding: 8px 10px;
+        gap: 8px;
+    }
+
+    .ppv-point-card i {
+        font-size: 18px;
+        padding: 6px;
+    }
+
+    .ppv-tier-step .tier-dot {
+        width: 24px;
+        height: 24px;
+    }
+
+    .ppv-tier-step .tier-dot i {
+        font-size: 12px;
+    }
+
+    .ppv-tier-step .tier-name {
+        font-size: 8px;
+    }
+
+    .ppv-dashboard-inner {
         padding: 14px;
-        gap: 10px;
     }
 }
 /* ==========================================================================
-   PUNKTEPASS – ANALYTICS (v10.0 LIGHT THEME)
-   Harmonized with MyPoints v10.0 / Neon Blue PWA
+   PUNKTEPASS – ANALYTICS (v11.0 COMPACT APP STYLE)
+   Harmonized with MyPoints v11.0 / Neon Blue PWA
    ========================================================================== */
 
 :root {
-    --ppv-ana-bg: #f5f7fa;
-    --ppv-ana-card: #ffffff;
-    --ppv-ana-text: #111827;
-    --ppv-ana-text-light: #6b7280;
-    --ppv-ana-primary: #2563eb;
+    --ppv-ana-bg: transparent;
+    --ppv-ana-card: var(--pp-surface, #ffffff);
+    --ppv-ana-text: var(--pp-text, #111827);
+    --ppv-ana-text-light: var(--pp-text-muted, #6b7280);
+    --ppv-ana-primary: var(--pp-primary, #2563eb);
     --ppv-ana-primary-soft: rgba(37, 99, 235, 0.08);
-    --ppv-ana-border: #e5e7eb;
-    --ppv-ana-shadow: 0 4px 18px rgba(0, 0, 0, 0.06);
-    --ppv-ana-radius: 18px;
-    --ppv-ana-radius-sm: 12px;
+    --ppv-ana-border: var(--pp-border-soft, #e5e7eb);
+    --ppv-ana-shadow: var(--pp-shadow-sm, 0 2px 8px rgba(0, 0, 0, 0.04));
+    --ppv-ana-radius: 12px;
+    --ppv-ana-radius-sm: 10px;
 }
 
 /* WRAPPER --------------------------------------------------------------- */
 .ppv-analytics-wrapper {
-    padding: 1.2rem 1rem 2rem;
+    padding: 0;
     background: var(--ppv-ana-bg);
     color: var(--ppv-ana-text);
 }
@@ -4133,106 +4639,141 @@ body.ppv-light .ppv-theme-btn-mini {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1.2rem;
+    margin-bottom: 12px;
 }
 
 .ppv-analytics-header h3 {
-    font-size: 1.45rem;
+    font-size: 14px;
     font-weight: 700;
     display: flex;
     align-items: center;
-    gap: .4rem;
+    gap: 6px;
+    color: var(--pp-primary-dark, #1e40af);
+    margin: 0;
+}
+
+.ppv-analytics-header h3 i {
+    font-size: 16px;
+    color: var(--ppv-ana-primary);
 }
 
 .ppv-analytics-controls {
     display: flex;
     align-items: center;
-    gap: .5rem;
+    gap: 6px;
+}
+
+.ppv-analytics-controls label {
+    font-size: 11px;
+    color: var(--ppv-ana-text-light);
+    display: none;
 }
 
 .ppv-analytics-range-select {
-    padding: .45rem .7rem;
-    border-radius: var(--ppv-ana-radius-sm);
+    padding: 6px 10px;
+    border-radius: 8px;
     background: var(--ppv-ana-card);
     border: 1px solid var(--ppv-ana-border);
     box-shadow: var(--ppv-ana-shadow);
-    font-size: .9rem;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ppv-ana-text);
+    cursor: pointer;
 }
 
 /* SUMMARY CARDS -------------------------------------------------------- */
 .ppv-analytics-summary {
     display: grid;
-    grid-template-columns: repeat(2,1fr);
-    gap: .9rem;
-    margin-bottom: 1.5rem;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
 }
 
 .ppv-summary-card {
     background: var(--ppv-ana-card);
     box-shadow: var(--ppv-ana-shadow);
-    padding: 1rem;
+    padding: 10px;
     border-radius: var(--ppv-ana-radius);
+    border: 1px solid var(--ppv-ana-border);
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: .9rem;
+    text-align: center;
+    gap: 4px;
+    transition: all 0.2s ease;
+}
+
+.ppv-summary-card:active {
+    transform: scale(0.97);
 }
 
 .ppv-summary-card .card-icon {
-    width: 42px;
-    height: 42px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     background: var(--ppv-ana-primary-soft);
     color: var(--ppv-ana-primary);
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 1.3rem;
+    font-size: 14px;
+}
+
+.ppv-summary-card .card-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .ppv-summary-card .label {
-    font-size: .9rem;
+    font-size: 9px;
     color: var(--ppv-ana-text-light);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
 }
 
 .ppv-summary-card .value {
-    font-size: 1.4rem;
-    font-weight: 700;
-    line-height: 1.2;
+    font-size: 18px;
+    font-weight: 800;
+    line-height: 1.1;
+    color: var(--pp-primary-dark, #1e40af);
 }
 
 .ppv-summary-card .unit {
-    font-size: .75rem;
+    font-size: 9px;
     color: var(--ppv-ana-text-light);
 }
 
 /* SECTIONS ------------------------------------------------------------- */
 .ppv-analytics-section {
-    margin-bottom: 2rem;
+    margin-bottom: 16px;
 }
 
 .ppv-analytics-section h4 {
-    margin-bottom: .8rem;
-    font-size: 1.1rem;
+    margin-bottom: 8px;
+    font-size: 13px;
     font-weight: 700;
+    color: var(--pp-primary-dark, #1e40af);
 }
 
 /* CHART CONTAINERS ----------------------------------------------------- */
 .ppv-chart-container {
     width: 100%;
-    min-height: 220px;
+    min-height: 160px;
     background: var(--ppv-ana-card);
     border-radius: var(--ppv-ana-radius);
+    border: 1px solid var(--ppv-ana-border);
     box-shadow: var(--ppv-ana-shadow);
-    padding: 1rem;
+    padding: 10px;
 }
 
 .ppv-chart-pie {
-    min-height: 260px;
+    min-height: 180px;
 }
 
 /* SVG STYLING ---------------------------------------------------------- */
 .ppv-trend-chart text {
-    font-family: Inter, sans-serif;
+    font-family: 'Poppins', Inter, sans-serif;
 }
 
 .ppv-pie-chart path {
@@ -4244,39 +4785,56 @@ body.ppv-light .ppv-theme-btn-mini {
     cursor: pointer;
 }
 
+/* STORES BREAKDOWN ----------------------------------------------------- */
+.ppv-stores-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
 /* STORES LIST ---------------------------------------------------------- */
 .ppv-stores-list {
-    margin-top: 1rem;
+    margin-top: 0;
     display: grid;
-    gap: .8rem;
+    gap: 6px;
 }
 
 .ppv-store-item {
     display: grid;
     grid-template-columns: auto 1fr auto;
-    gap: .8rem;
+    gap: 8px;
     align-items: center;
     background: var(--ppv-ana-card);
-    padding: .8rem 1rem;
+    padding: 8px 10px;
     border-radius: var(--ppv-ana-radius-sm);
     border: 1px solid var(--ppv-ana-border);
     box-shadow: var(--ppv-ana-shadow);
+    transition: all 0.2s ease;
+}
+
+.ppv-store-item:active {
+    transform: scale(0.98);
 }
 
 .store-color {
-    width: 14px;
-    height: 14px;
-    border-radius: 4px;
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
 }
 
 .store-info .store-name {
     font-weight: 600;
-    font-size: .95rem;
+    font-size: 12px;
+    color: var(--ppv-ana-text);
 }
 
 .store-stats {
     color: var(--ppv-ana-text-light);
-    font-size: .8rem;
+    font-size: 10px;
+}
+
+.store-stats span {
+    margin-right: 2px;
 }
 
 .store-points {
@@ -4285,56 +4843,90 @@ body.ppv-light .ppv-theme-btn-mini {
 
 .store-points .points {
     font-weight: 700;
-    font-size: 1.1rem;
+    font-size: 13px;
+    color: var(--pp-primary-dark, #1e40af);
 }
 
 .store-points .percentage {
-    font-size: .75rem;
-    color: var(--ppv-ana-text-light);
+    font-size: 10px;
+    color: var(--ppv-ana-primary);
+    font-weight: 600;
 }
 
 /* BEST DAY ------------------------------------------------------------- */
 .ppv-best-day-card {
-    background: var(--ppv-ana-card);
-    padding: 1.2rem;
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 193, 7, 0.05) 100%);
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    padding: 12px;
     border-radius: var(--ppv-ana-radius);
     box-shadow: var(--ppv-ana-shadow);
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 10px;
+}
+
+.best-day-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .best-day-icon {
-    font-size: 2rem;
+    font-size: 24px;
 }
 
 .best-day-info .date {
-    font-size: 1rem;
+    font-size: 12px;
     font-weight: 600;
+    color: var(--ppv-ana-text);
 }
 
 .best-day-info .points {
-    font-size: .9rem;
+    font-size: 11px;
     color: var(--ppv-ana-text-light);
 }
 
 /* NO DATA -------------------------------------------------------------- */
 .ppv-analytics-wrapper p {
     color: var(--ppv-ana-text-light);
-    font-size: .9rem;
+    font-size: 11px;
     text-align: center;
-    margin-top: .8rem;
+    margin-top: 8px;
+    padding: 16px;
 }
 
 /* RESPONSIVE ----------------------------------------------------------- */
 @media (max-width: 480px) {
     .ppv-analytics-summary {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 6px;
+    }
+
+    .ppv-summary-card {
+        padding: 8px;
+    }
+
+    .ppv-summary-card .card-icon {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+
+    .ppv-summary-card .value {
+        font-size: 16px;
+    }
+
+    .ppv-chart-container {
+        min-height: 140px;
+        padding: 8px;
     }
 
     .ppv-store-item {
-        grid-template-columns: auto 1fr;
-        grid-template-rows: auto auto;
+        padding: 6px 8px;
+    }
+
+    .store-info .store-name {
+        font-size: 11px;
     }
 }
 
@@ -5037,15 +5629,15 @@ body.ppv-light .ppv-theme-btn-mini {
 }
 
 /* ==========================================================================
-   USER SETTINGS – DARK MODE
+   USER SETTINGS – DARK MODE (Optimized v2.0)
    ========================================================================== */
 body.ppv-dark .ppv-settings-wrapper {
-    background: #0a121c;
-    color: #f3f4f6;
+    background: var(--pp-bg);
+    color: var(--pp-text);
 }
 
 body.ppv-dark .ppv-header-bar h2 {
-    color: #f3f4f6;
+    color: var(--pp-text);
 }
 
 body.ppv-dark .ppv-avatar-block {
@@ -5053,70 +5645,86 @@ body.ppv-dark .ppv-avatar-block {
 }
 
 body.ppv-dark #ppv-avatar-preview {
-    background: #1e293b;
-    border-color: #667eea;
+    background: var(--pp-surface);
+    border-color: var(--pp-primary);
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.25);
 }
 
 body.ppv-dark .ppv-section {
-    background: #1e293b;
-    border-color: rgba(102, 126, 234, 0.2);
-    color: #f3f4f6;
+    background: var(--pp-surface);
+    border-color: var(--pp-border);
+    color: var(--pp-text);
+    box-shadow: var(--pp-shadow-sm);
 }
 
 body.ppv-dark .ppv-section h3 {
-    color: #f3f4f6;
+    color: var(--pp-text);
 }
 
 body.ppv-dark .ppv-section p {
-    color: #9ca3af;
+    color: var(--pp-text-3);
 }
 
 body.ppv-dark .ppv-section label {
-    color: #d1d5db;
+    color: var(--pp-text-2);
 }
 
 body.ppv-dark .ppv-form input[type="text"],
 body.ppv-dark .ppv-form input[type="email"],
 body.ppv-dark .ppv-form input[type="password"] {
-    background: #0f172a;
-    border-color: rgba(102, 126, 234, 0.3);
-    color: #f3f4f6;
+    background: var(--pp-bg-2);
+    border-color: var(--pp-border);
+    color: var(--pp-text);
+}
+
+body.ppv-dark .ppv-form input:focus {
+    border-color: var(--pp-primary);
+    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.15);
 }
 
 body.ppv-dark .ppv-form input::placeholder {
-    color: #6b7280;
+    color: var(--pp-text-muted);
 }
 
 body.ppv-dark .ppv-checkbox span {
-    color: #d1d5db;
+    color: var(--pp-text-2);
 }
 
 body.ppv-dark .neutral-btn {
-    background: rgba(102, 126, 234, 0.15);
-    color: #818cf8;
+    background: rgba(0, 212, 255, 0.12);
+    color: var(--pp-primary);
+    border: 1px solid var(--pp-border);
 }
 
 body.ppv-dark .neutral-btn:hover {
-    background: rgba(102, 126, 234, 0.25);
+    background: rgba(0, 212, 255, 0.22);
+    border-color: var(--pp-primary);
 }
 
 body.ppv-dark .ppv-modal-content {
-    background: #1e293b;
-    color: #f3f4f6;
+    background: var(--pp-surface);
+    color: var(--pp-text);
+    border: 1px solid var(--pp-border);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 212, 255, 0.15);
 }
 
 body.ppv-dark .ppv-modal-content h3 {
-    color: #f3f4f6;
+    color: var(--pp-text);
 }
 
 body.ppv-dark .ppv-modal-content p {
-    color: #9ca3af;
+    color: var(--pp-text-3);
 }
 
 body.ppv-dark .ppv-modal-form input {
-    background: #0f172a;
-    border-color: rgba(102, 126, 234, 0.3);
-    color: #f3f4f6;
+    background: var(--pp-bg-2);
+    border-color: var(--pp-border);
+    color: var(--pp-text);
+}
+
+body.ppv-dark .ppv-modal-form input:focus {
+    border-color: var(--pp-primary);
+    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.15);
 }
 
 /* ==========================================================================
@@ -5404,65 +6012,72 @@ ppv-app-root {
 }
 
 /* ──────────────────────────────────────────────────────────────────────
-   📊 POS LOG TABLE
+   📊 POS LOG TABLE - MODERN CARD STYLE
    ────────────────────────────────────────────────────────────────────── */
 .glass-table {
     width: 100%;
     border-collapse: separate;
-    border-spacing: 0;
-    background: var(--pp-surface);
-    border-radius: var(--pp-r-md);
-    overflow: hidden;
-    box-shadow: var(--pp-shadow-sm);
+    border-spacing: 0 8px;
+    background: transparent;
 }
 
 .glass-table thead {
-    background: linear-gradient(135deg, var(--pp-primary) 0%, var(--pp-primary-dark) 100%);
-    color: white;
+    background: transparent;
 }
 
 .glass-table thead th {
-    padding: 1rem;
+    padding: 0.75rem 1rem;
     text-align: left;
     font-weight: 600;
-    font-size: 0.9rem;
-    letter-spacing: 0.3px;
-    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--pp-text-3);
+    border: none;
 }
 
 .glass-table tbody tr {
-    border-bottom: 1px solid var(--pp-border-soft);
-    transition: var(--pp-trans-fast);
+    background: var(--pp-surface);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+    transition: all 0.2s ease;
 }
 
 .glass-table tbody tr:hover {
-    background: var(--pp-bg-2);
-}
-
-.glass-table tbody tr:last-child {
-    border-bottom: none;
+    background: var(--pp-surface);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 150, 255, 0.1), 0 2px 4px rgba(0, 0, 0, 0.08);
 }
 
 .glass-table tbody td {
-    padding: 0.875rem 1rem;
+    padding: 1rem 1rem;
     font-size: 0.9rem;
     color: var(--pp-text-2);
+    border: none;
+    background: transparent;
 }
 
 .glass-table tbody td:first-child {
+    border-radius: 12px 0 0 12px;
     font-weight: 600;
     color: var(--pp-text);
 }
 
+.glass-table tbody td:last-child {
+    border-radius: 0 12px 12px 0;
+}
+
 /* Log type badges */
 .glass-table .log-badge {
-    display: inline-block;
-    padding: 0.25rem 0.75rem;
-    border-radius: var(--pp-r-xs);
-    font-size: 0.8rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0.375rem 0.875rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.3px;
 }
 
 .log-badge.success {
@@ -5478,6 +6093,195 @@ ppv-app-root {
 .log-badge.info {
     background: rgba(0, 168, 204, 0.15);
     color: var(--pp-primary);
+}
+
+/* ============================================================
+   📋 POS SCAN ITEMS (Card-based log display) - LIGHT THEME
+   ============================================================ */
+
+.ppv-scan-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.95));
+    border: 1px solid rgba(0, 168, 204, 0.15);
+    border-radius: 12px;
+    margin-bottom: 8px;
+    transition: all 0.2s ease;
+}
+
+.ppv-scan-item:hover {
+    border-color: rgba(0, 168, 204, 0.3);
+    transform: translateY(-1px);
+    box-shadow: var(--pp-shadow-sm);
+}
+
+.ppv-scan-item.success {
+    border-left: 3px solid #10b981;
+}
+
+.ppv-scan-item.error {
+    border-left: 3px solid #ef4444;
+    background: linear-gradient(145deg, rgba(254, 242, 242, 0.95), rgba(248, 250, 252, 0.95));
+}
+
+/* Scan Avatar */
+.ppv-scan-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(0, 168, 204, 0.3);
+}
+
+.ppv-scan-avatar-placeholder {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.ppv-scan-item.success .ppv-scan-avatar-placeholder {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(6, 78, 59, 0.1));
+    color: #10b981;
+}
+
+.ppv-scan-item.error .ppv-scan-avatar-placeholder {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(127, 29, 29, 0.1));
+    color: #ef4444;
+}
+
+/* Scan Info */
+.ppv-scan-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.ppv-scan-name {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--pp-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ppv-scan-detail {
+    font-size: 12px;
+    color: var(--pp-text-3);
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ppv-scan-detail.ppv-scan-time {
+    font-size: 11px;
+    color: var(--pp-text-muted);
+    margin-top: 1px;
+    opacity: 0.8;
+}
+
+/* Scan Points */
+.ppv-scan-points {
+    font-weight: 700;
+    font-size: 16px;
+    color: #10b981;
+    padding: 4px 10px;
+    background: rgba(16, 185, 129, 0.1);
+    border-radius: 8px;
+    text-align: center;
+    min-width: 50px;
+}
+
+.ppv-scan-points.error-badge {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.ppv-scan-points.vip {
+    background: linear-gradient(135deg, rgba(147, 51, 234, 0.15), rgba(139, 92, 246, 0.1));
+    color: #8b5cf6;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.ppv-vip-badge {
+    font-size: 9px;
+    font-weight: 500;
+    color: #8b5cf6;
+    background: rgba(139, 92, 246, 0.15);
+    padding: 1px 4px;
+    border-radius: 4px;
+}
+
+/* ============================================================
+   📋 POS SCAN ITEMS - DARK THEME OVERRIDES
+   ============================================================ */
+
+body.ppv-dark .ppv-scan-item,
+[data-theme="dark"] .ppv-scan-item {
+    background: linear-gradient(145deg, rgba(26, 34, 45, 0.95), rgba(21, 27, 35, 0.95));
+    border-color: rgba(0, 212, 255, 0.15);
+}
+
+body.ppv-dark .ppv-scan-item:hover,
+[data-theme="dark"] .ppv-scan-item:hover {
+    border-color: rgba(0, 212, 255, 0.3);
+}
+
+body.ppv-dark .ppv-scan-item.error,
+[data-theme="dark"] .ppv-scan-item.error {
+    background: linear-gradient(145deg, rgba(127, 29, 29, 0.15), rgba(21, 27, 35, 0.95));
+}
+
+body.ppv-dark .ppv-scan-avatar,
+[data-theme="dark"] .ppv-scan-avatar {
+    border-color: rgba(0, 212, 255, 0.3);
+}
+
+body.ppv-dark .ppv-scan-item.success .ppv-scan-avatar-placeholder,
+[data-theme="dark"] .ppv-scan-item.success .ppv-scan-avatar-placeholder {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(6, 78, 59, 0.3));
+}
+
+body.ppv-dark .ppv-scan-item.error .ppv-scan-avatar-placeholder,
+[data-theme="dark"] .ppv-scan-item.error .ppv-scan-avatar-placeholder {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(127, 29, 29, 0.3));
+}
+
+body.ppv-dark .ppv-scan-name,
+[data-theme="dark"] .ppv-scan-name {
+    color: #f0f6fc;
+}
+
+body.ppv-dark .ppv-scan-detail,
+[data-theme="dark"] .ppv-scan-detail {
+    color: #8b949e;
+}
+
+body.ppv-dark .ppv-scan-detail.ppv-scan-time,
+[data-theme="dark"] .ppv-scan-detail.ppv-scan-time {
+    color: #6b7280;
+}
+
+body.ppv-dark .ppv-scan-points.vip,
+[data-theme="dark"] .ppv-scan-points.vip {
+    background: linear-gradient(135deg, rgba(147, 51, 234, 0.2), rgba(139, 92, 246, 0.15));
+    color: #a78bfa;
+}
+
+body.ppv-dark .ppv-vip-badge,
+[data-theme="dark"] .ppv-vip-badge {
+    color: #c4b5fd;
+    background: rgba(139, 92, 246, 0.2);
 }
 
 /* ──────────────────────────────────────────────────────────────────────
@@ -9326,87 +10130,87 @@ select.ppv-support-input {
    ────────────────────────────────────────────────────────────────────── */
 
 /* ██████████████████████████████████████████████████████████████████████████
-   🌙 DARK NEON THEME - Complete Dark Mode Override
+   🌙 DARK NEON THEME v2.0 - Optimized Dark Mode Override
    ██████████████████████████████████████████████████████████████████████████ */
 
 /* ==========================================================================
-   🎨 DARK THEME ROOT VARIABLES
+   🎨 DARK THEME ROOT VARIABLES (Optimized)
    ========================================================================== */
 body.ppv-dark {
-    /* 🌊 Neon Brand Colors */
+    /* 🌊 Enhanced Neon Cyan */
     --pp-primary: #00d4ff;
-    --pp-primary-dark: #00b8e6;
-    --pp-primary-darker: #0099cc;
-    --pp-primary-light: #33ddff;
-    --pp-primary-lighter: #66e6ff;
+    --pp-primary-dark: #00a8cc;
+    --pp-primary-darker: #0088a8;
+    --pp-primary-light: #4de5ff;
+    --pp-primary-lighter: #99f0ff;
     --pp-primary-glow: rgba(0, 212, 255, 0.45);
 
-    /* 🌿 Neon Secondary - Cyan/Teal */
-    --pp-secondary: #00ffc8;
-    --pp-secondary-dark: #00e6b4;
-    --pp-secondary-light: #33ffd4;
-    --pp-secondary-glow: rgba(0, 255, 200, 0.35);
+    /* 🌿 Vibrant Teal */
+    --pp-secondary: #00d9a3;
+    --pp-secondary-dark: #00a878;
+    --pp-secondary-light: #70ffce;
+    --pp-secondary-glow: rgba(0, 217, 163, 0.40);
 
-    /* 💜 Neon Accent - Electric Purple */
-    --pp-accent: #bf5af2;
-    --pp-accent-dark: #a347d1;
-    --pp-accent-light: #d17ff5;
-    --pp-accent-glow: rgba(191, 90, 242, 0.40);
+    /* 💜 Electric Purple */
+    --pp-accent: #a855f7;
+    --pp-accent-dark: #8b5cf6;
+    --pp-accent-light: #d8b4fe;
+    --pp-accent-glow: rgba(168, 85, 247, 0.40);
 
-    /* ✨ Status Colors - Neon */
-    --pp-success: #30d158;
+    /* ✨ Status Colors - Enhanced */
+    --pp-success: #22c55e;
     --pp-success-light: #4ade80;
-    --pp-warning: #ffd60a;
-    --pp-warning-light: #ffe066;
-    --pp-danger: #ff453a;
-    --pp-danger-light: #ff6b6b;
-    --pp-info: #0a84ff;
+    --pp-warning: #fbbf24;
+    --pp-warning-light: #fcd34d;
+    --pp-danger: #f87171;
+    --pp-danger-light: #fca5a5;
+    --pp-info: #38bdf8;
 
-    /* 🎨 Dark Surface Colors */
-    --pp-bg: #0a0e14;
-    --pp-bg-2: #0f1419;
-    --pp-bg-3: #151b23;
-    --pp-bg-warm: linear-gradient(135deg, #0a0e14 0%, #0f1419 50%, #101820 100%);
+    /* 🎨 Dark Surface Colors - Deep Navy */
+    --pp-bg: #0a0f1a;
+    --pp-bg-2: #0f172a;
+    --pp-bg-3: #1a2744;
+    --pp-bg-warm: linear-gradient(180deg, #0a0f1a 0%, #0f172a 50%, #141e33 100%);
 
-    --pp-surface: #151b23;
-    --pp-surface-soft: rgba(21, 27, 35, 0.92);
-    --pp-surface-glass: rgba(15, 20, 25, 0.85);
-    --pp-surface-elevated: #1a222d;
+    --pp-surface: #141e33;
+    --pp-surface-soft: #1a2744;
+    --pp-surface-glass: rgba(20, 30, 51, 0.90);
+    --pp-surface-elevated: #1e3048;
 
-    /* 📝 Text Hierarchy - Bright for dark bg */
-    --pp-text: #f0f6fc;
-    --pp-text-2: #c9d1d9;
-    --pp-text-3: #8b949e;
-    --pp-text-muted: #6e7681;
-    --pp-text-inverse: #0a0e14;
+    /* 📝 Text - High Contrast */
+    --pp-text: #f1f5f9;
+    --pp-text-2: #e2e8f0;
+    --pp-text-3: #94a3b8;
+    --pp-text-muted: #64748b;
+    --pp-text-inverse: #0a0f1a;
 
-    /* 🌙 Header Dark Neon */
-    --pp-header-bg: linear-gradient(135deg, #0a0e14 0%, #151b23 100%);
-    --pp-header-dark: #050709;
+    /* 🌙 Header - Deep Dark */
+    --pp-header-bg: linear-gradient(135deg, #070c14 0%, #0a0f1a 100%);
+    --pp-header-dark: #030508;
 
-    /* 🔲 Neon Borders */
-    --pp-border: rgba(0, 212, 255, 0.20);
-    --pp-border-soft: rgba(0, 212, 255, 0.10);
-    --pp-border-strong: rgba(0, 212, 255, 0.35);
-    --pp-border-glass: rgba(0, 212, 255, 0.15);
+    /* 🔲 Borders - Cyan Glow */
+    --pp-border: rgba(0, 212, 255, 0.28);
+    --pp-border-soft: rgba(0, 212, 255, 0.14);
+    --pp-border-strong: rgba(0, 212, 255, 0.50);
+    --pp-border-glass: rgba(0, 212, 255, 0.20);
 
-    /* ✨ Dark Shadows with Glow */
-    --pp-shadow-xs: 0 1px 2px rgba(0,0,0,0.3);
-    --pp-shadow-sm: 0 2px 8px rgba(0,0,0,0.4), 0 0 4px rgba(0, 212, 255, 0.05);
-    --pp-shadow: 0 4px 16px rgba(0,0,0,0.5), 0 0 8px rgba(0, 212, 255, 0.08);
-    --pp-shadow-md: 0 8px 24px rgba(0,0,0,0.5), 0 0 12px rgba(0, 212, 255, 0.10);
-    --pp-shadow-lg: 0 12px 32px rgba(0,0,0,0.6), 0 0 20px rgba(0, 212, 255, 0.12);
-    --pp-shadow-xl: 0 20px 48px rgba(0,0,0,0.7), 0 0 30px rgba(0, 212, 255, 0.15);
-    --pp-shadow-glow: 0 0 30px var(--pp-primary-glow);
-    --pp-shadow-glow-lg: 0 0 50px var(--pp-primary-glow);
+    /* ✨ Shadows - Enhanced Depth + Glow */
+    --pp-shadow-xs: 0 1px 3px rgba(0,0,0,0.35);
+    --pp-shadow-sm: 0 2px 8px rgba(0,0,0,0.50), 0 0 6px rgba(0, 212, 255, 0.08);
+    --pp-shadow: 0 4px 16px rgba(0,0,0,0.60), 0 0 10px rgba(0, 212, 255, 0.10);
+    --pp-shadow-md: 0 8px 24px rgba(0,0,0,0.55), 0 0 16px rgba(0, 212, 255, 0.12);
+    --pp-shadow-lg: 0 12px 32px rgba(0,0,0,0.70), 0 0 24px rgba(0, 212, 255, 0.15);
+    --pp-shadow-xl: 0 20px 48px rgba(0,0,0,0.75), 0 0 36px rgba(0, 212, 255, 0.18);
+    --pp-shadow-glow: 0 0 32px var(--pp-primary-glow);
+    --pp-shadow-glow-lg: 0 0 56px var(--pp-primary-glow);
 
     /* 🌈 Dark Neon Gradients */
-    --gradient-primary: linear-gradient(135deg, #00d4ff 0%, #00b8e6 100%);
-    --gradient-secondary: linear-gradient(135deg, #00ffc8 0%, #00e6b4 100%);
-    --gradient-accent: linear-gradient(135deg, #bf5af2 0%, #a347d1 100%);
-    --gradient-premium: linear-gradient(135deg, #00d4ff 0%, #bf5af2 50%, #ff2d55 100%);
-    --gradient-card: linear-gradient(145deg, #1a222d 0%, #151b23 100%);
-    --gradient-shimmer: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.15), transparent);
+    --gradient-primary: linear-gradient(135deg, #00d4ff 0%, #00a8cc 100%);
+    --gradient-secondary: linear-gradient(135deg, #00d9a3 0%, #00a878 100%);
+    --gradient-accent: linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%);
+    --gradient-premium: linear-gradient(135deg, #00d4ff 0%, #a855f7 50%, #ec4899 100%);
+    --gradient-card: linear-gradient(145deg, #1a2744 0%, #141e33 100%);
+    --gradient-shimmer: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.20), transparent);
 }
 
 /* ==========================================================================
@@ -9439,7 +10243,7 @@ body.ppv-dark #ppv-global-header.ppv-compact-header {
 }
 
 body.ppv-dark #ppv-global-header.ppv-compact-header::before {
-    background: linear-gradient(90deg, transparent, #00d4ff, #bf5af2, #00d4ff, transparent) !important;
+    background: linear-gradient(90deg, transparent, #00d4ff, #a855f7, #00d4ff, transparent) !important;
     opacity: 0.8;
 }
 
@@ -9579,18 +10383,18 @@ body.ppv-dark .ppv-nav-btn i {
 }
 
 body.ppv-dark .ppv-theme-btn-mini {
-    background: rgba(191, 90, 242, 0.12) !important;
-    border: 1px solid rgba(191, 90, 242, 0.25) !important;
+    background: rgba(168, 85, 247, 0.12) !important;
+    border: 1px solid rgba(168, 85, 247, 0.25) !important;
 }
 
 body.ppv-dark .ppv-theme-btn-mini:hover {
-    background: rgba(191, 90, 242, 0.22) !important;
-    box-shadow: 0 0 15px rgba(191, 90, 242, 0.3) !important;
+    background: rgba(168, 85, 247, 0.22) !important;
+    box-shadow: 0 0 15px rgba(168, 85, 247, 0.35) !important;
 }
 
 body.ppv-dark .ppv-theme-btn-mini i {
-    color: #bf5af2 !important;
-    text-shadow: 0 0 8px rgba(191, 90, 242, 0.5);
+    color: #a855f7 !important;
+    text-shadow: 0 0 8px rgba(168, 85, 247, 0.5);
 }
 
 body.ppv-dark .ppv-lang-mini {
@@ -9864,9 +10668,9 @@ body.ppv-dark .ppv-support-modal-content {
 body.ppv-dark .ppv-support-modal-content::before {
     background: linear-gradient(90deg,
         #00d4ff 0%,
-        #bf5af2 25%,
-        #00ffc8 50%,
-        #ffd60a 75%,
+        #a855f7 25%,
+        #00d9a3 50%,
+        #fbbf24 75%,
         #00d4ff 100%) !important;
 }
 
@@ -10028,7 +10832,7 @@ body.ppv-dark .ppv-qr-banner:hover {
 }
 
 body.ppv-dark .ppv-qr-banner::before {
-    background: linear-gradient(90deg, #00d4ff, #bf5af2, #00ffc8, #00d4ff) !important;
+    background: linear-gradient(90deg, #00d4ff, #a855f7, #00d9a3, #00d4ff) !important;
 }
 
 body.ppv-dark .ppv-qr-text h3 {
@@ -10739,6 +11543,51 @@ body.ppv-dark .ppv-campaign-header strong,
 [data-theme="dark"] .ppv-reward-header strong,
 [data-theme="dark"] .ppv-campaign-header strong {
     color: #e2e8f0 !important;
+}
+
+/* ==========================================================================
+   🌙 DARK MODE - Glass Table (Letzte Scans)
+   ========================================================================== */
+body.ppv-dark .glass-table tbody tr,
+[data-theme="dark"] .glass-table tbody tr {
+    background: rgba(255, 255, 255, 0.03) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+}
+
+body.ppv-dark .glass-table tbody tr:hover,
+[data-theme="dark"] .glass-table tbody tr:hover {
+    background: rgba(0, 230, 255, 0.05) !important;
+    box-shadow: 0 4px 16px rgba(0, 230, 255, 0.15) !important;
+}
+
+body.ppv-dark .glass-table tbody td:first-child,
+[data-theme="dark"] .glass-table tbody td:first-child {
+    color: #00e6ff !important;
+}
+
+body.ppv-dark .glass-table .log-badge.success,
+[data-theme="dark"] .glass-table .log-badge.success {
+    background: rgba(16, 185, 129, 0.2) !important;
+    color: #10b981 !important;
+}
+
+body.ppv-dark .glass-table .log-badge.error,
+[data-theme="dark"] .glass-table .log-badge.error {
+    background: rgba(239, 68, 68, 0.2) !important;
+    color: #ef4444 !important;
+}
+
+body.ppv-dark .glass-table .log-badge.pending,
+body.ppv-dark .glass-table .log-badge.info,
+[data-theme="dark"] .glass-table .log-badge.pending,
+[data-theme="dark"] .glass-table .log-badge.info {
+    background: rgba(251, 191, 36, 0.2) !important;
+    color: #fbbf24 !important;
+}
+
+body.ppv-dark .ppv-pos-title,
+[data-theme="dark"] .ppv-pos-title {
+    color: #00e6ff !important;
 }
 
 /* ██████████████████████████████████████████████████████████████████████████
@@ -11913,5 +12762,270 @@ body.dark-mode {
     .ppv-onboarding-modal-backdrop,
     .ppv-onboarding-sticky {
         display: none !important;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   🏆 TIER PROGRESS SECTION - MyPoints (Compact App Style)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.ppv-tier-progress-section {
+    background: var(--pp-surface);
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin: 16px 0;
+    box-shadow: var(--pp-shadow-sm);
+    text-align: center;
+    border: 1px solid var(--pp-border-soft);
+}
+
+.ppv-tier-progress-section h3 {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--pp-primary-dark);
+    margin-bottom: 12px;
+}
+
+.ppv-tier-progress-section h3 i {
+    font-size: 16px;
+    color: var(--tier-color, var(--pp-primary));
+}
+
+/* Current Tier Badge */
+.ppv-current-tier-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: linear-gradient(135deg, var(--tier-color) 0%, color-mix(in srgb, var(--tier-color) 80%, #000) 100%);
+    border-radius: 20px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    box-shadow: 0 3px 12px color-mix(in srgb, var(--tier-color) 35%, transparent);
+    margin-bottom: 10px;
+}
+
+.ppv-current-tier-badge i {
+    font-size: 16px;
+}
+
+/* Lifetime Points */
+.ppv-lifetime-points {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.ppv-lifetime-points .points-value {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--pp-primary);
+    line-height: 1;
+}
+
+.ppv-lifetime-points .points-label {
+    font-size: 11px;
+    color: var(--pp-text-muted);
+    margin-top: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+/* Progress Bar Container */
+.ppv-tier-progress-bar-container {
+    margin-bottom: 14px;
+}
+
+.ppv-tier-progress-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    font-size: 11px;
+    color: var(--pp-text-muted);
+}
+
+.ppv-tier-progress-info strong {
+    color: var(--pp-text);
+    font-size: 11px;
+}
+
+.ppv-tier-progress-bar {
+    height: 8px;
+    background: var(--pp-bg-3);
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+}
+
+.ppv-tier-progress-fill {
+    height: 100%;
+    border-radius: 8px;
+    transition: width 0.8s ease-out;
+    position: relative;
+}
+
+.ppv-tier-progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* Max Level Reached */
+.ppv-tier-max-level {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+    border-radius: 10px;
+    color: #333;
+    font-weight: 700;
+    font-size: 12px;
+    margin-bottom: 12px;
+}
+
+.ppv-tier-max-level i {
+    font-size: 16px;
+}
+
+/* Tier Steps - Compact */
+.ppv-tier-steps {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 2px;
+    margin-bottom: 12px;
+    padding: 0;
+}
+
+.ppv-tier-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    opacity: 0.35;
+    transition: all 0.3s ease;
+}
+
+.ppv-tier-step.active {
+    opacity: 1;
+}
+
+.ppv-tier-step.current {
+    transform: scale(1.05);
+}
+
+.ppv-tier-step .tier-dot {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--pp-bg-3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 4px;
+    transition: all 0.3s ease;
+}
+
+.ppv-tier-step.active .tier-dot {
+    background: var(--tier-color);
+    box-shadow: 0 2px 10px color-mix(in srgb, var(--tier-color) 35%, transparent);
+}
+
+.ppv-tier-step .tier-dot i {
+    font-size: 14px;
+    color: var(--pp-text-muted);
+}
+
+.ppv-tier-step.active .tier-dot i {
+    color: #fff;
+}
+
+.ppv-tier-step .tier-name {
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--pp-text-muted);
+    text-align: center;
+}
+
+.ppv-tier-step.active .tier-name {
+    color: var(--pp-text);
+}
+
+.ppv-tier-step .tier-points {
+    font-size: 8px;
+    color: var(--pp-text-muted);
+}
+
+/* Info Text */
+.ppv-tier-info-text {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    font-size: 10px;
+    color: var(--pp-text-muted);
+    background: var(--pp-bg-2);
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin: 0;
+}
+
+.ppv-tier-info-text i {
+    font-size: 12px;
+}
+
+.ppv-tier-info-text i {
+    color: var(--pp-primary);
+}
+
+/* Mobile Responsive */
+@media (max-width: 480px) {
+    .ppv-tier-progress-section {
+        padding: 16px;
+        margin: 12px 0;
+    }
+
+    .ppv-tier-step .tier-dot {
+        width: 32px;
+        height: 32px;
+    }
+
+    .ppv-tier-step .tier-dot i {
+        font-size: 1rem;
+    }
+
+    .ppv-tier-step .tier-name {
+        font-size: 0.6rem;
+    }
+
+    .ppv-tier-step .tier-points {
+        display: none;
+    }
+
+    .ppv-current-tier-badge {
+        padding: 10px 18px;
+        font-size: 1.1rem;
+    }
+
+    .ppv-lifetime-points .points-value {
+        font-size: 1.8rem;
     }
 }

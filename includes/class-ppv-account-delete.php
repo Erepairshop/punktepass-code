@@ -35,11 +35,10 @@ class PPV_Account_Delete {
             null
         );
 
-        // Load theme CSS based on user preference
-        $theme = isset($_COOKIE['ppv_theme']) ? sanitize_text_field($_COOKIE['ppv_theme']) : 'dark';
+        // 🔹 ALWAYS USE LIGHT CSS (contains all dark mode styles via body.ppv-dark selectors)
         wp_enqueue_style(
-            $theme === 'light' ? 'ppv-theme-light' : 'ppv-theme-dark',
-            PPV_PLUGIN_URL . 'assets/css/' . ($theme === 'light' ? 'ppv-theme-light.css' : 'ppv-theme-dark.css'),
+            'ppv-theme-light',
+            PPV_PLUGIN_URL . 'assets/css/ppv-theme-light.css',
             [],
             defined('PPV_VERSION') ? PPV_VERSION : time()
         );

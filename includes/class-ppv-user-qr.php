@@ -62,9 +62,15 @@ class PPV_User_QR {
 
         ob_start(); ?>
         <div class="ppv-user-qr glass-card">
-            <h2>🎟️ Dein PunktePass-QR</h2>
+            <h2>🎟️ <?php echo esc_html(PPV_Lang::t('your_punktepass_qr')); ?></h2>
+
+            <div class="ppv-qr-warning">
+                <span class="ppv-qr-warning-icon">⚠️</span>
+                <span class="ppv-qr-warning-text"><?php echo esc_html(PPV_Lang::t('qr_daily_limit_warning')); ?></span>
+            </div>
+
             <img src="<?php echo esc_url($qr_url); ?>" alt="Dein QR-Code" class="ppv-user-qr-img">
-            <p>Zeige diesen QR-Code im Geschäft, um Punkte zu sammeln.</p>
+            <p><?php echo esc_html(PPV_Lang::t('show_this_code_to_collect')); ?></p>
             <input type="text" readonly value="<?php echo esc_attr($qr_value); ?>" class="ppv-user-qr-value" onclick="this.select();">
         </div>
         <?php

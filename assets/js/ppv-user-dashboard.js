@@ -1,5 +1,5 @@
 /**
- * PunktePass – User Dashboard JS (v4.6 - Modern Icons Edition)
+ * PunktePass – User Dashboard JS (v4.8 - Geo Retry Edition)
  *
  * ✨ REQUIRED: Remix Icon CDN
  * Add this to your HTML <head>:
@@ -12,6 +12,8 @@
  * ✅ FULLY TRANSLATED: DE/HU/RO
  * ✅ MODERN ICONS: No emojis, pure icon fonts
  * 🚀 TURBO-COMPATIBLE: Re-initializes on navigation
+ * ✅ FIX: Geolocation timeout increased (2s→8s) for first-time users
+ * ✅ FIX: Auto-retry geo after 5s if first attempt fails (login redirect fix)
  */
 
 // 🚀 Global state for Turbo navigation cleanup
@@ -23,6 +25,175 @@ window.PPV_STORES_LOADING = false;
 window.PPV_POLLING_IN_PROGRESS = false; // ✅ FIX: Prevent concurrent poll calls
 window.PPV_SLIDER_FETCH_IN_PROGRESS = false; // ✅ FIX: Prevent concurrent slider fetches
 window.PPV_CURRENT_DISTANCE = 10; // ✅ FIX: Track current slider value
+
+// ✅ OPTIMIZATION: Translation object as top-level constant (created once, not per render)
+const PPV_TRANSLATIONS = {
+  de: {
+    welcome: "Willkommen bei PunktePass",
+    points: "Meine Punkte",
+    rewards: "Prämien",
+    collect_here: "Hier Punkte sammeln",
+    show_in_store: "Zeig deinen persönlichen QR-Code im Geschäft",
+    show_qr: "QR-Code anzeigen",
+    show_code_tip: "Zeig diesen Code im Geschäft, um Punkte zu sammeln.",
+    qr_daily_warning: "Pro Geschäft ist nur 1 Scan pro Tag möglich!",
+    how_to_use: "So verwendest du den Code",
+    qr_instruction_1: "1. Zeige diesen Code dem Kassierer",
+    qr_instruction_2: "2. Er scannt ihn mit seinem Terminal",
+    qr_instruction_3: "3. Du sammelst automatisch Punkte!",
+    nearby: "Geschäfte in deiner Nähe",
+    no_stores: "Keine Geschäfte gefunden",
+    route: "Route",
+    open: "Geöffnet",
+    closed: "Geschlossen",
+    dist_unknown: "Entfernung unbekannt",
+    call: "Anrufen",
+    website: "Webseite",
+    campaign: "Kampagne",
+    loading: "Lädt...",
+    km: "km",
+    distance_label: "Entfernung",
+    rewards_title: "Prämien",
+    campaigns_title: "Kampagnen:",
+    rewards_preview: "x Prämien",
+    campaigns_preview: "x Kampagnen",
+    gallery_label: "Galerie",
+    reward_label_required: "Erforderlich:",
+    reward_label_reward: "Prämie:",
+    reward_label_date: "Datum:",
+    reward_per_scan: "Pro Scan:",
+    discount_percent_text: "% Rabatt",
+    discount_fixed_text: "€ Rabatt",
+    points_multiplier_text: "x Punkte",
+    fixed_text: "€ Bonus",
+    free_product_text: "Kostenloses Produkt",
+    special_offer: "Speziales Angebot",
+    err_already_scanned_today: "⚠️ Heute bereits gescannt",
+    err_duplicate_scan: "⚠️ Bereits gescannt. Bitte warten.",
+    vip_title: "VIP Boni",
+    vip_fix_title: "Fixpunkte",
+    vip_streak_title: "X. Scan",
+    vip_daily_title: "1. Scan/Tag",
+    vip_bronze: "Bronze",
+    vip_silver: "Silber",
+    vip_gold: "Gold",
+    vip_platinum: "Platin",
+    vip_every: "Jeden",
+    vip_scan: "Scan",
+    vip_double: "2x Punkte",
+    vip_triple: "3x Punkte",
+  },
+  hu: {
+    welcome: "Üdv a PunktePassban",
+    points: "Pontjaim",
+    rewards: "Jutalmak",
+    collect_here: "Itt tudsz pontot gyűjteni",
+    show_in_store: "Mutasd a saját QR-kódod az üzletben",
+    show_qr: "QR-kód megjelenítése",
+    show_code_tip: "Mutasd ezt a kódot az üzletben a pontgyűjtéshez.",
+    qr_daily_warning: "Üzletenként naponta csak 1 beolvasás lehetséges!",
+    how_to_use: "Így használd a kódot",
+    qr_instruction_1: "1. Mutasd ezt a kódot a pénztárosnak",
+    qr_instruction_2: "2. Ő beolvassa a terminálba",
+    qr_instruction_3: "3. Automatikusan gyűjtesz pontot!",
+    nearby: "Közeli üzletek",
+    no_stores: "Nem található üzlet",
+    route: "Útvonal",
+    open: "Nyitva",
+    closed: "Zárva",
+    dist_unknown: "Ismeretlen távolság",
+    call: "Hívás",
+    website: "Weboldal",
+    campaign: "Kampány",
+    loading: "Betöltés...",
+    km: "km",
+    distance_label: "Távolság",
+    rewards_title: "Jutalmak",
+    campaigns_title: "Kampányok:",
+    rewards_preview: "x Jutalom",
+    campaigns_preview: "x Kampány",
+    gallery_label: "Galéria",
+    reward_label_required: "Szükséges:",
+    reward_label_reward: "Jutalom:",
+    reward_label_date: "Dátum:",
+    reward_per_scan: "Per Scan:",
+    discount_percent_text: "% engedmény",
+    discount_fixed_text: "€ engedmény",
+    points_multiplier_text: "x Pontok",
+    fixed_text: "€ Bonus",
+    free_product_text: "Ingyenes termék",
+    special_offer: "Különleges ajánlat",
+    err_already_scanned_today: "⚠️ Ma már beolvasva",
+    err_duplicate_scan: "⚠️ Már beolvasva. Kérlek várj.",
+    vip_title: "VIP Bónuszok",
+    vip_fix_title: "Fix pont",
+    vip_streak_title: "X. scan",
+    vip_daily_title: "1. scan/nap",
+    vip_bronze: "Bronz",
+    vip_silver: "Ezüst",
+    vip_gold: "Arany",
+    vip_platinum: "Platina",
+    vip_every: "Minden",
+    vip_scan: "scan",
+    vip_double: "2x Pont",
+    vip_triple: "3x Pont",
+  },
+  ro: {
+    welcome: "Bun venit la PunktePass",
+    points: "Punctele mele",
+    rewards: "Recompense",
+    collect_here: "Colectează puncte aici",
+    show_in_store: "Arată codul tău QR în magazin",
+    show_qr: "Afișează codul QR",
+    show_code_tip: "Arată acest cod în magazin pentru a colecta puncte.",
+    qr_daily_warning: "Doar 1 scanare pe zi este permisă per magazin!",
+    how_to_use: "Cum să folosești codul",
+    qr_instruction_1: "1. Arată acest cod casierului",
+    qr_instruction_2: "2. El îl scanează pe terminalul lui",
+    qr_instruction_3: "3. Colectezi automat puncte!",
+    nearby: "Magazine în apropiere",
+    no_stores: "Nu s-au găsit magazine",
+    route: "Rută",
+    open: "Deschis",
+    closed: "Închis",
+    dist_unknown: "Distanță necunoscută",
+    call: "Apelează",
+    website: "Site",
+    campaign: "Campanie",
+    loading: "Se încarcă...",
+    km: "km",
+    distance_label: "Distanță",
+    rewards_title: "Recompense",
+    campaigns_title: "Campanii:",
+    rewards_preview: "x Recompense",
+    campaigns_preview: "x Campanii",
+    gallery_label: "Galerie",
+    reward_label_required: "Necesar:",
+    reward_label_reward: "Recompensă:",
+    reward_label_date: "Dată:",
+    reward_per_scan: "Per Scan:",
+    discount_percent_text: "% Reducere",
+    discount_fixed_text: "€ Reducere",
+    points_multiplier_text: "x Puncte",
+    fixed_text: "€ Bonus",
+    free_product_text: "Produs gratuit",
+    special_offer: "Ofertă specială",
+    err_already_scanned_today: "⚠️ Deja scanat astăzi",
+    err_duplicate_scan: "⚠️ Deja scanat. Vă rugăm așteptați.",
+    vip_title: "Bonusuri VIP",
+    vip_fix_title: "Puncte fixe",
+    vip_streak_title: "Scan X",
+    vip_daily_title: "1. scan/zi",
+    vip_bronze: "Bronz",
+    vip_silver: "Argint",
+    vip_gold: "Aur",
+    vip_platinum: "Platină",
+    vip_every: "La fiecare",
+    vip_scan: "scanare",
+    vip_double: "2x Puncte",
+    vip_triple: "3x Puncte",
+  }
+};
 
 // 🧹 Cleanup function - call before navigation or re-init
 function cleanupPolling() {
@@ -70,140 +241,8 @@ async function initUserDashboard() {
   const API = (boot.api || "/wp-json/ppv/v1/").replace(/\/+$/, '/');
   const lang = boot.lang || 'de';
 
-  const T = {
-    de: {
-      welcome: "Willkommen bei PunktePass",
-      points: "Meine Punkte",
-      rewards: "Prämien",
-      collect_here: "Hier Punkte sammeln",
-      show_in_store: "Zeig deinen persönlichen QR-Code im Geschäft",
-      show_qr: "QR-Code anzeigen",
-      show_code_tip: "Zeig diesen Code im Geschäft, um Punkte zu sammeln.",
-      how_to_use: "So verwendest du den Code",
-      qr_instruction_1: "1. Zeige diesen Code dem Kassierer",
-      qr_instruction_2: "2. Er scannt ihn mit seinem Terminal",
-      qr_instruction_3: "3. Du sammelst automatisch Punkte!",
-      nearby: "Geschäfte in deiner Nähe",
-      no_stores: "Keine Geschäfte gefunden",
-      route: "Route",
-      open: "Geöffnet",
-      closed: "Geschlossen",
-      dist_unknown: "Entfernung unbekannt",
-      call: "Anrufen",
-      website: "Webseite",
-      campaign: "Kampagne",
-      loading: "Lädt...",
-      km: "km",
-      distance_label: "Entfernung",
-      // ✅ NEW - Store Card
-      rewards_title: "Prämien",
-      campaigns_title: "Kampagnen:",
-      rewards_preview: "x Prämien",
-      campaigns_preview: "x Kampagnen",
-      gallery_label: "Galerie",
-      reward_label_required: "Erforderlich:",
-      reward_label_reward: "Prämie:",
-      reward_label_date: "Datum:",
-      reward_per_scan: "Pro Scan:",
-      discount_percent_text: "% Rabatt",
-      discount_fixed_text: "€ Rabatt",
-      points_multiplier_text: "x Punkte",
-      fixed_text: "€ Bonus",
-      free_product_text: "Kostenloses Produkt",
-      special_offer: "Speziales Angebot",
-      // ✅ ERROR MESSAGES - Client-side translation
-      err_already_scanned_today: "⚠️ Heute bereits gescannt",
-      err_duplicate_scan: "⚠️ Bereits gescannt. Bitte warten.",
-    },
-    hu: {
-      welcome: "Üdv a PunktePassban",
-      points: "Pontjaim",
-      rewards: "Jutalmak",
-      collect_here: "Itt tudsz pontot gyűjteni",
-      show_in_store: "Mutasd a saját QR-kódod az üzletben",
-      show_qr: "QR-kód megjelenítése",
-      show_code_tip: "Mutasd ezt a kódot az üzletben a pontgyűjtéshez.",
-      how_to_use: "Így használd a kódot",
-      qr_instruction_1: "1. Mutasd ezt a kódot a pénztárosnak",
-      qr_instruction_2: "2. Ő beolvassa a terminálba",
-      qr_instruction_3: "3. Automatikusan gyűjtesz pontot!",
-      nearby: "Közeli üzletek",
-      no_stores: "Nem található üzlet",
-      route: "Útvonal",
-      open: "Nyitva",
-      closed: "Zárva",
-      dist_unknown: "Ismeretlen távolság",
-      call: "Hívás",
-      website: "Weboldal",
-      campaign: "Kampány",
-      loading: "Betöltés...",
-      km: "km",
-      distance_label: "Távolság",
-      // ✅ NEW - Store Card
-      rewards_title: "Jutalmak",
-      campaigns_title: "Kampányok:",
-      rewards_preview: "x Jutalom",
-      campaigns_preview: "x Kampány",
-      gallery_label: "Galéria",
-      reward_label_required: "Szükséges:",
-      reward_label_reward: "Jutalom:",
-      reward_label_date: "Dátum:",
-      reward_per_scan: "Per Scan:",
-      discount_percent_text: "% engedmény",
-      discount_fixed_text: "€ engedmény",
-      points_multiplier_text: "x Pontok",
-      fixed_text: "€ Bonus",
-      free_product_text: "Ingyenes termék",
-      special_offer: "Különleges ajánlat",
-      // ✅ ERROR MESSAGES - Client-side translation
-      err_already_scanned_today: "⚠️ Ma már beolvasva",
-      err_duplicate_scan: "⚠️ Már beolvasva. Kérlek várj.",
-    },
-    ro: {
-      welcome: "Bun venit la PunktePass",
-      points: "Punctele mele",
-      rewards: "Recompense",
-      collect_here: "Colectează puncte aici",
-      show_in_store: "Arată codul tău QR în magazin",
-      show_qr: "Afișează codul QR",
-      show_code_tip: "Arată acest cod în magazin pentru a colecta puncte.",
-      how_to_use: "Cum să folosești codul",
-      qr_instruction_1: "1. Arată acest cod casierului",
-      qr_instruction_2: "2. El îl scanează pe terminalul lui",
-      qr_instruction_3: "3. Colectezi automat puncte!",
-      nearby: "Magazine în apropiere",
-      no_stores: "Nu s-au găsit magazine",
-      route: "Rută",
-      open: "Deschis",
-      closed: "Închis",
-      dist_unknown: "Distanță necunoscută",
-      call: "Apelează",
-      website: "Site",
-      campaign: "Campanie",
-      loading: "Se încarcă...",
-      km: "km",
-      distance_label: "Distanță",
-      // ✅ NEW - Store Card
-      rewards_title: "Recompense",
-      campaigns_title: "Campanii:",
-      rewards_preview: "x Recompense",
-      campaigns_preview: "x Campanii",
-      gallery_label: "Galerie",
-      reward_label_required: "Necesar:",
-      reward_label_reward: "Recompensă:",
-      reward_label_date: "Dată:",
-      reward_per_scan: "Per Scan:",
-      discount_percent_text: "% Reducere",
-      discount_fixed_text: "€ Reducere",
-      points_multiplier_text: "x Puncte",
-      fixed_text: "€ Bonus",
-      free_product_text: "Produs gratuit",
-      special_offer: "Ofertă specială",
-      // ✅ ERROR MESSAGES - Client-side translation
-      err_already_scanned_today: "⚠️ Deja scanat astăzi",
-      err_duplicate_scan: "⚠️ Deja scanat. Vă rugăm așteptați.",
-    }
-  }[lang] || T.de;
+  // ✅ OPTIMIZATION: Use global constant instead of creating object each time
+  const T = PPV_TRANSLATIONS[lang] || PPV_TRANSLATIONS.de;
 
   const root = document.getElementById("ppv-dashboard-root");
   if (!root) return;
@@ -577,20 +616,22 @@ async function initUserDashboard() {
    * 🎨 MODERN ICONS - All Remix Icon ✅
    */
   const renderStoreCard = (store) => {
-    const logo = (store.logo && store.logo !== 'null')
+    // ✅ FIX: Better logo fallback - check for valid URL
+    const defaultLogo = boot.assets?.store_default || '/wp-content/plugins/punktepass/assets/img/store-default-logo.webp';
+    const logo = (store.logo && store.logo !== 'null' && store.logo.startsWith('http'))
         ? store.logo
-        : (boot.assets?.store_default || PPV_PLUGIN_URL + 'assets/img/store-default-logo.webp');
+        : defaultLogo;
 
     const distanceBadge = store.distance_km !== null ? `<span class="ppv-distance-badge"><i class="ri-map-pin-distance-line"></i> ${store.distance_km} ${T.km}</span>` : '';
     const statusBadge = store.open_now
       ? `<span class="ppv-status-badge ppv-open"><i class="ri-checkbox-blank-circle-fill"></i> ${T.open}</span>`
       : `<span class="ppv-status-badge ppv-closed"><i class="ri-checkbox-blank-circle-fill"></i> ${T.closed}</span>`;
 
-    // Gallery
+    // Gallery - ✅ OPTIMIZED: Added loading="lazy" for performance
     const galleryHTML = store.gallery && store.gallery.length > 0
       ? `<div class="ppv-gallery-thumbs">
            ${store.gallery.map((img, idx) => `
-             <img src="${img}" alt="${T.gallery_label}" class="ppv-gallery-thumb" data-index="${idx}">
+             <img src="${img}" alt="${T.gallery_label}" class="ppv-gallery-thumb" data-index="${idx}" loading="lazy">
            `).join('')}
          </div>`
       : '';
@@ -763,6 +804,82 @@ async function initUserDashboard() {
       </div>
     ` : '';
 
+    // ============================================================
+    // 👑 VIP BONUS SECTION - COMPACT GRID VERSION
+    // ============================================================
+    const vipHTML = store.vip ? (() => {
+      const vip = store.vip;
+      const rows = [];
+
+      // 1️⃣ FIX PONT BÓNUSZ - compact row
+      if (vip.fix && vip.fix.enabled) {
+        rows.push(`
+          <div class="ppv-vip-row">
+            <span class="ppv-vip-label"><i class="ri-add-circle-line"></i> ${T.vip_fix_title}</span>
+            <span class="ppv-vip-grid">
+              <span class="bronze" title="${T.vip_bronze}">+${vip.fix.bronze}</span>
+              <span class="silver" title="${T.vip_silver}">+${vip.fix.silver}</span>
+              <span class="gold" title="${T.vip_gold}">+${vip.fix.gold}</span>
+              <span class="platinum" title="${T.vip_platinum}">+${vip.fix.platinum}</span>
+            </span>
+          </div>
+        `);
+      }
+
+      // 2️⃣ STREAK BÓNUSZ - compact row
+      if (vip.streak && vip.streak.enabled) {
+        let streakValues = '';
+        if (vip.streak.type === 'double') {
+          streakValues = `<span class="ppv-vip-special">${T.vip_double}</span>`;
+        } else if (vip.streak.type === 'triple') {
+          streakValues = `<span class="ppv-vip-special">${T.vip_triple}</span>`;
+        } else {
+          streakValues = `
+            <span class="bronze" title="${T.vip_bronze}">+${vip.streak.bronze}</span>
+            <span class="silver" title="${T.vip_silver}">+${vip.streak.silver}</span>
+            <span class="gold" title="${T.vip_gold}">+${vip.streak.gold}</span>
+            <span class="platinum" title="${T.vip_platinum}">+${vip.streak.platinum}</span>
+          `;
+        }
+        rows.push(`
+          <div class="ppv-vip-row">
+            <span class="ppv-vip-label"><i class="ri-fire-line"></i> ${vip.streak.count}. scan</span>
+            <span class="ppv-vip-grid">${streakValues}</span>
+          </div>
+        `);
+      }
+
+      // 3️⃣ DAILY BÓNUSZ - compact row
+      if (vip.daily && vip.daily.enabled) {
+        rows.push(`
+          <div class="ppv-vip-row">
+            <span class="ppv-vip-label"><i class="ri-sun-line"></i> ${T.vip_daily_title}</span>
+            <span class="ppv-vip-grid">
+              <span class="bronze" title="${T.vip_bronze}">+${vip.daily.bronze}</span>
+              <span class="silver" title="${T.vip_silver}">+${vip.daily.silver}</span>
+              <span class="gold" title="${T.vip_gold}">+${vip.daily.gold}</span>
+              <span class="platinum" title="${T.vip_platinum}">+${vip.daily.platinum}</span>
+            </span>
+          </div>
+        `);
+      }
+
+      return rows.length ? `
+        <div class="ppv-store-vip-compact">
+          <div class="ppv-vip-header-row">
+            <span class="ppv-vip-title"><i class="ri-vip-crown-fill"></i> ${T.vip_title}</span>
+            <span class="ppv-vip-levels-header">
+              <span class="bronze" title="${T.vip_bronze}"><i class="ri-medal-line"></i></span>
+              <span class="silver" title="${T.vip_silver}"><i class="ri-medal-line"></i></span>
+              <span class="gold" title="${T.vip_gold}"><i class="ri-medal-fill"></i></span>
+              <span class="platinum" title="${T.vip_platinum}"><i class="ri-vip-crown-fill"></i></span>
+            </span>
+          </div>
+          ${rows.join('')}
+        </div>
+      ` : '';
+    })() : '';
+
     return `
       <div class="ppv-store-card-enhanced" data-store-id="${store.id}">
         <div class="ppv-store-header">
@@ -784,6 +901,11 @@ async function initUserDashboard() {
                   <i class="ri-megaphone-line"></i> ${store.campaigns.length} ${T.campaigns_preview}
                 </span>
               ` : ''}
+              ${store.vip ? `
+                <span class="ppv-preview-tag ppv-vip-tag">
+                  <i class="ri-vip-crown-fill"></i> VIP
+                </span>
+              ` : ''}
             </div>
           </div>
           <button class="ppv-toggle-btn" type="button">
@@ -800,6 +922,7 @@ async function initUserDashboard() {
           </div>
           ${rewardsHTML}
           ${campaignsHTML}
+          ${vipHTML}
           <div class="ppv-store-actions">
             <button class="ppv-action-btn ppv-route" data-lat="${store.latitude}" data-lng="${store.longitude}" type="button">
               <i class="ri-route-fill"></i> ${T.route}
@@ -1001,15 +1124,17 @@ async function initUserDashboard() {
     }
 
     // 1️⃣ Start geo request in background (non-blocking)
+    // ✅ FIX: Use longer timeout when no cached location (first-time users need time for permission prompt)
+    const geoTimeoutMs = (cachedLat && cachedLng) ? 2000 : 8000;
     const geoPromise = new Promise((resolve) => {
       if (!navigator.geolocation) {
         resolve(null);
         return;
       }
       const timeout = setTimeout(() => {
-        console.log('⏱️ [Geo] Timeout after 2s');
+        console.log(`⏱️ [Geo] Timeout after ${geoTimeoutMs/1000}s`);
         resolve(null);
-      }, 2000);
+      }, geoTimeoutMs);
 
       navigator.geolocation.getCurrentPosition(
         (p) => {
@@ -1020,11 +1145,12 @@ async function initUserDashboard() {
           console.log('📍 [Geo] Fresh position cached:', p.coords.latitude.toFixed(4), p.coords.longitude.toFixed(4));
           resolve(p);
         },
-        () => {
+        (err) => {
           clearTimeout(timeout);
+          console.log('⚠️ [Geo] Error:', err.code, err.message);
           resolve(null);
         },
-        { timeout: 2000, maximumAge: 600000 }
+        { timeout: geoTimeoutMs, maximumAge: 600000, enableHighAccuracy: false }
       );
     });
 
@@ -1058,20 +1184,110 @@ async function initUserDashboard() {
         if (freshPos?.coords) {
           const newLat = freshPos.coords.latitude;
           const newLng = freshPos.coords.longitude;
-          console.log('🔄 [Stores] Re-fetching with fresh geo...');
+          console.log('🔄 [Stores] Re-fetching with fresh geo:', newLat.toFixed(4), newLng.toFixed(4));
 
           // ✅ FIX: Use current slider distance value, not hardcoded 10
           const currentDist = window.PPV_CURRENT_DISTANCE || 10;
           const newUrl = API + `stores/list-optimized?lat=${newLat}&lng=${newLng}&max_distance=${currentDist}`;
-          const newRes = await fetch(newUrl, { cache: "no-store" });
-          if (newRes.ok) {
-            const newStores = await newRes.json();
-            if (Array.isArray(newStores) && newStores.length > 0) {
-              // ✅ FIX: Preserve slider value on re-render
-              renderStoreList(box, newStores, newLat, newLng, true);
-              console.log('✅ [Stores] Re-rendered with distance sorting');
+
+          try {
+            const newRes = await fetch(newUrl, { cache: "no-store" });
+            console.log('📡 [Stores] Re-fetch response:', newRes.status);
+
+            if (newRes.ok) {
+              const newStores = await newRes.json();
+              // Log distances from API
+              console.log('📦 [Stores] Got', newStores?.length || 0, 'stores. First 3 distances:',
+                newStores?.slice(0,3).map(s => `${s.company_name||s.name||'?'}: ${s.distance_km}km`).join(', '));
+
+              if (Array.isArray(newStores) && newStores.length > 0) {
+                // ✅ FIX: Get fresh DOM reference
+                const freshBox = document.getElementById('ppv-store-list');
+                console.log('🎯 [DOM] freshBox found:', !!freshBox, 'children before:', freshBox?.children?.length);
+
+                if (freshBox) {
+                  // ✅ FIX: Directly update innerHTML instead of calling renderStoreList
+                  const sliderHTML = `
+                    <div class="ppv-distance-filter">
+                      <label><i class="ri-ruler-line"></i> ${T.distance_label}: <span id="ppv-distance-value">${currentDist}</span> km</label>
+                      <input type="range" id="ppv-distance-slider" min="10" max="1000" value="${currentDist}" step="10">
+                      <div class="ppv-distance-labels"><span>10 km</span><span>1000 km</span></div>
+                    </div>
+                  `;
+                  const cardsHTML = newStores.map(renderStoreCard).join('');
+                  freshBox.innerHTML = sliderHTML + cardsHTML;
+                  console.log('🎯 [DOM] innerHTML updated, children after:', freshBox?.children?.length);
+
+                  initDistanceSlider(sliderHTML, newLat, newLng, currentDist);
+                  attachStoreListeners();
+                  console.log('✅ [Stores] Re-rendered with distance sorting');
+                } else {
+                  console.warn('⚠️ [Stores] Store list element not found for re-render');
+                }
+              } else {
+                console.warn('⚠️ [Stores] No stores returned from re-fetch');
+              }
             }
+          } catch (fetchErr) {
+            console.error('❌ [Stores] Re-fetch failed:', fetchErr.message);
           }
+        } else {
+          // ✅ FIX: Geo failed on first try - set up delayed retry
+          console.log('⏳ [Geo] First attempt failed, scheduling retry in 5s...');
+          setTimeout(async () => {
+            // Check if we got location in the meantime (from another source)
+            const retryLat = localStorage.getItem('ppv_user_lat');
+            const retryLng = localStorage.getItem('ppv_user_lng');
+            if (retryLat && retryLng) {
+              console.log('✅ [Geo] Found cached location on retry');
+              const currentDist = window.PPV_CURRENT_DISTANCE || 10;
+              const retryUrl = API + `stores/list-optimized?lat=${retryLat}&lng=${retryLng}&max_distance=${currentDist}`;
+              try {
+                const retryRes = await fetch(retryUrl, { cache: "no-store" });
+                if (retryRes.ok) {
+                  const retryStores = await retryRes.json();
+                  const currentBox = document.getElementById('ppv-store-list');
+                  if (currentBox && Array.isArray(retryStores) && retryStores.length > 0) {
+                    renderStoreList(currentBox, retryStores, parseFloat(retryLat), parseFloat(retryLng), true);
+                    console.log('✅ [Stores] Re-rendered on retry with distance sorting');
+                  }
+                }
+              } catch (e) {
+                console.log('⚠️ [Stores] Retry fetch failed:', e.message);
+              }
+              return;
+            }
+
+            // Try geo again
+            if (navigator.geolocation) {
+              console.log('🔄 [Geo] Retrying geolocation...');
+              navigator.geolocation.getCurrentPosition(
+                async (p) => {
+                  localStorage.setItem('ppv_user_lat', p.coords.latitude.toString());
+                  localStorage.setItem('ppv_user_lng', p.coords.longitude.toString());
+                  console.log('📍 [Geo] Retry succeeded:', p.coords.latitude.toFixed(4), p.coords.longitude.toFixed(4));
+
+                  const currentDist = window.PPV_CURRENT_DISTANCE || 10;
+                  const retryUrl = API + `stores/list-optimized?lat=${p.coords.latitude}&lng=${p.coords.longitude}&max_distance=${currentDist}`;
+                  try {
+                    const retryRes = await fetch(retryUrl, { cache: "no-store" });
+                    if (retryRes.ok) {
+                      const retryStores = await retryRes.json();
+                      const currentBox = document.getElementById('ppv-store-list');
+                      if (currentBox && Array.isArray(retryStores) && retryStores.length > 0) {
+                        renderStoreList(currentBox, retryStores, p.coords.latitude, p.coords.longitude, true);
+                        console.log('✅ [Stores] Re-rendered on geo retry with distance sorting');
+                      }
+                    }
+                  } catch (e) {
+                    console.log('⚠️ [Stores] Retry fetch failed:', e.message);
+                  }
+                },
+                (err) => console.log('⚠️ [Geo] Retry also failed:', err.message),
+                { timeout: 10000, maximumAge: 60000, enableHighAccuracy: false }
+              );
+            }
+          }, 5000);
         }
       }
 
@@ -1128,6 +1344,10 @@ async function initUserDashboard() {
             <i class="ri-close-line"></i>
           </button>
           <img src="${boot.qr_url || ''}" alt="My QR Code" class="ppv-qr-image">
+          <div class="ppv-qr-warning">
+            <span class="ppv-qr-warning-icon">⚠️</span>
+            <span class="ppv-qr-warning-text">${T.qr_daily_warning}</span>
+          </div>
           <p class="qr-info">
             <strong>${T.show_code_tip}</strong>
           </p>

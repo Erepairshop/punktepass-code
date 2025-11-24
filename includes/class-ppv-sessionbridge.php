@@ -20,18 +20,24 @@ class PPV_SessionBridge {
             ini_set('session.gc_maxlifetime', 2592000);  // 30 days
             ini_set('session.cookie_lifetime', 2592000); // 30 days
 
+            // ✅ FIX: Unified domain handling (remove www prefix for consistency)
+            $domain = '';
+            if (!empty($_SERVER['HTTP_HOST'])) {
+                $domain = str_replace('www.', '', $_SERVER['HTTP_HOST']);
+            }
+
             // ✅ Biztonságos cookie beállítások
             session_set_cookie_params([
                 'lifetime' => 2592000,  // 30 days
                 'path' => '/',
-                'domain' => '',
+                'domain' => $domain,    // ✅ FIX: Use consistent domain
                 'secure' => true,       // HTTPS only
                 'httponly' => true,     // No JavaScript access
                 'samesite' => 'Lax'     // CSRF protection
             ]);
 
             @session_start();
-            ppv_log("✅ [PPV_SessionBridge] Session started with 30-day lifetime");
+            ppv_log("✅ [PPV_SessionBridge] Session started with 30-day lifetime, domain={$domain}");
         }
     }
     
@@ -115,7 +121,9 @@ class PPV_SessionBridge {
             } else {
                 // ✅ FIX: Invalid token - töröljük a cookie-t hogy ne próbálkozzon újra
                 ppv_log("⚠️ [PPV_SessionBridge] Invalid user token (deleted or expired) - removing cookie");
-                setcookie('ppv_user_token', '', time() - 3600, '/', '', true, true);
+                // ✅ FIX: Use consistent domain for cookie deletion
+                $cookie_domain = !empty($_SERVER['HTTP_HOST']) ? str_replace('www.', '', $_SERVER['HTTP_HOST']) : '';
+                setcookie('ppv_user_token', '', time() - 3600, '/', $cookie_domain, true, true);
                 unset($_COOKIE['ppv_user_token']);
             }
         } else {
