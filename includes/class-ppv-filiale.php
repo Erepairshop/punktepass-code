@@ -18,18 +18,22 @@ class PPV_Filiale {
         add_action('wp_ajax_nopriv_ppv_switch_filiale', [__CLASS__, 'ajax_switch_filiale']);
         add_action('wp_ajax_ppv_get_filialen', [__CLASS__, 'ajax_get_filialen']);
         add_action('wp_ajax_nopriv_ppv_get_filialen', [__CLASS__, 'ajax_get_filialen']);
+        add_action('wp_ajax_ppv_check_filiale_limit', [__CLASS__, 'ajax_check_filiale_limit']);
+        add_action('wp_ajax_nopriv_ppv_check_filiale_limit', [__CLASS__, 'ajax_check_filiale_limit']);
+        add_action('wp_ajax_ppv_request_more_filialen', [__CLASS__, 'ajax_request_more_filialen']);
+        add_action('wp_ajax_nopriv_ppv_request_more_filialen', [__CLASS__, 'ajax_request_more_filialen']);
     }
 
     /**
-     * Ensure parent_store_id column exists in ppv_stores table
-     * Runs on every init but only adds column once
+     * Ensure parent_store_id and max_filialen columns exist in ppv_stores table
+     * Runs on every init but only adds columns once
      */
     public static function ensure_db_column() {
         global $wpdb;
 
         $table_name = $wpdb->prefix . 'ppv_stores';
 
-        // Check if column already exists
+        // Check if parent_store_id column already exists
         $column_exists = $wpdb->get_results($wpdb->prepare(
             "SELECT * FROM INFORMATION_SCHEMA.COLUMNS
              WHERE TABLE_SCHEMA = %s
@@ -39,12 +43,30 @@ class PPV_Filiale {
             $table_name
         ));
 
-        // Add column if it doesn't exist
+        // Add parent_store_id column if it doesn't exist
         if (empty($column_exists)) {
             $wpdb->query("
                 ALTER TABLE {$table_name}
                 ADD COLUMN parent_store_id BIGINT(20) UNSIGNED NULL DEFAULT NULL AFTER id,
                 ADD INDEX idx_parent_store (parent_store_id)
+            ");
+        }
+
+        // Check if max_filialen column already exists
+        $max_filialen_exists = $wpdb->get_results($wpdb->prepare(
+            "SELECT * FROM INFORMATION_SCHEMA.COLUMNS
+             WHERE TABLE_SCHEMA = %s
+             AND TABLE_NAME = %s
+             AND COLUMN_NAME = 'max_filialen'",
+            DB_NAME,
+            $table_name
+        ));
+
+        // Add max_filialen column if it doesn't exist (default: 1)
+        if (empty($max_filialen_exists)) {
+            $wpdb->query("
+                ALTER TABLE {$table_name}
+                ADD COLUMN max_filialen INT(11) UNSIGNED NOT NULL DEFAULT 1 AFTER parent_store_id
             ");
         }
     }
@@ -78,6 +100,50 @@ class PPV_Filiale {
             $parent_store_id,
             $parent_store_id
         ));
+    }
+
+    /**
+     * Get filiale count for a parent store (including parent itself)
+     */
+    public static function get_filiale_count($parent_store_id) {
+        global $wpdb;
+
+        return (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_stores
+             WHERE parent_store_id = %d OR id = %d",
+            $parent_store_id,
+            $parent_store_id
+        ));
+    }
+
+    /**
+     * Get max filialen allowed for a parent store
+     */
+    public static function get_max_filialen($parent_store_id) {
+        global $wpdb;
+
+        $max = $wpdb->get_var($wpdb->prepare(
+            "SELECT max_filialen FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
+            $parent_store_id
+        ));
+
+        // Default to 1 if not set
+        return $max ? (int) $max : 1;
+    }
+
+    /**
+     * Check if a new filiale can be added
+     * Returns: ['can_add' => bool, 'current' => int, 'max' => int]
+     */
+    public static function can_add_filiale($parent_store_id) {
+        $current = self::get_filiale_count($parent_store_id);
+        $max = self::get_max_filialen($parent_store_id);
+
+        return [
+            'can_add' => $current < $max,
+            'current' => $current,
+            'max' => $max
+        ];
     }
 
     /**
@@ -199,6 +265,18 @@ class PPV_Filiale {
 
         if (!$parent_store) {
             wp_send_json_error(['msg' => 'Parent store not found']);
+            return;
+        }
+
+        // Check filiale limit
+        $limit_info = self::can_add_filiale($parent_store_id);
+        if (!$limit_info['can_add']) {
+            wp_send_json_error([
+                'msg' => 'Filiale-Limit erreicht',
+                'limit_reached' => true,
+                'current' => $limit_info['current'],
+                'max' => $limit_info['max']
+            ]);
             return;
         }
 
@@ -361,6 +439,145 @@ class PPV_Filiale {
             'filialen' => $filialen,
             'current' => self::get_current_filiale()
         ]);
+    }
+
+    /**
+     * AJAX: Check filiale limit before showing add modal
+     */
+    public static function ajax_check_filiale_limit() {
+        // Start session if needed
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+
+        // Auth check
+        if (class_exists('PPV_Permissions')) {
+            $auth_check = PPV_Permissions::check_handler();
+            if (is_wp_error($auth_check)) {
+                wp_send_json_error(['msg' => 'Not authenticated']);
+                return;
+            }
+        }
+
+        $parent_store_id = intval($_POST['parent_store_id'] ?? 0);
+
+        if (!$parent_store_id) {
+            wp_send_json_error(['msg' => 'Missing parent store ID']);
+            return;
+        }
+
+        $limit_info = self::can_add_filiale($parent_store_id);
+
+        wp_send_json_success([
+            'can_add' => $limit_info['can_add'],
+            'current' => $limit_info['current'],
+            'max' => $limit_info['max']
+        ]);
+    }
+
+    /**
+     * AJAX: Request more filialen (send email to info@punktepass.de)
+     */
+    public static function ajax_request_more_filialen() {
+        // Start session if needed
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+
+        // Auth check
+        if (class_exists('PPV_Permissions')) {
+            $auth_check = PPV_Permissions::check_handler();
+            if (is_wp_error($auth_check)) {
+                wp_send_json_error(['msg' => 'Not authenticated']);
+                return;
+            }
+        }
+
+        global $wpdb;
+
+        $parent_store_id = intval($_POST['parent_store_id'] ?? 0);
+        $contact_email = sanitize_email($_POST['contact_email'] ?? '');
+        $contact_phone = sanitize_text_field($_POST['contact_phone'] ?? '');
+        $message = sanitize_textarea_field($_POST['message'] ?? '');
+
+        if (!$parent_store_id) {
+            wp_send_json_error(['msg' => 'Missing parent store ID']);
+            return;
+        }
+
+        if (empty($contact_email) && empty($contact_phone)) {
+            wp_send_json_error(['msg' => 'Bitte geben Sie eine E-Mail oder Telefonnummer an']);
+            return;
+        }
+
+        // Get store info
+        $store = $wpdb->get_row($wpdb->prepare(
+            "SELECT id, name, company_name, email, phone, city FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
+            $parent_store_id
+        ));
+
+        if (!$store) {
+            wp_send_json_error(['msg' => 'Store not found']);
+            return;
+        }
+
+        // Get current filiale count
+        $limit_info = self::can_add_filiale($parent_store_id);
+
+        // Build email
+        $to = 'info@punktepass.de';
+        $subject = 'Anfrage: Mehr Filialen - ' . ($store->company_name ?: $store->name);
+
+        $body = "Neue Anfrage für zusätzliche Filialen\n";
+        $body .= "=====================================\n\n";
+        $body .= "Handler Information:\n";
+        $body .= "- Store ID: {$store->id}\n";
+        $body .= "- Firma: " . ($store->company_name ?: $store->name) . "\n";
+        $body .= "- Stadt: {$store->city}\n";
+        $body .= "- Registrierte E-Mail: {$store->email}\n";
+        $body .= "- Registriertes Telefon: {$store->phone}\n\n";
+
+        $body .= "Aktuelle Filialen:\n";
+        $body .= "- Aktuell: {$limit_info['current']} Filiale(n)\n";
+        $body .= "- Maximum: {$limit_info['max']} Filiale(n)\n\n";
+
+        $body .= "Kontaktdaten für Rückruf:\n";
+        $body .= "- E-Mail: {$contact_email}\n";
+        $body .= "- Telefon: {$contact_phone}\n\n";
+
+        if (!empty($message)) {
+            $body .= "Nachricht:\n";
+            $body .= "----------\n";
+            $body .= $message . "\n\n";
+        }
+
+        $body .= "=====================================\n";
+        $body .= "Gesendet am: " . current_time('Y-m-d H:i:s') . "\n";
+
+        $headers = [
+            'Content-Type: text/plain; charset=UTF-8',
+            'From: PunktePass System <noreply@punktepass.de>'
+        ];
+
+        // Add reply-to if contact email provided
+        if (!empty($contact_email)) {
+            $headers[] = 'Reply-To: ' . $contact_email;
+        }
+
+        // Send email
+        $sent = wp_mail($to, $subject, $body, $headers);
+
+        if ($sent) {
+            error_log("[PPV_Filiale] More filialen request sent for store #{$parent_store_id}");
+            wp_send_json_success([
+                'msg' => 'Ihre Anfrage wurde erfolgreich gesendet. Wir melden uns bald bei Ihnen!'
+            ]);
+        } else {
+            error_log("[PPV_Filiale] Failed to send more filialen request for store #{$parent_store_id}");
+            wp_send_json_error([
+                'msg' => 'Fehler beim Senden der Anfrage. Bitte versuchen Sie es später erneut.'
+            ]);
+        }
     }
 }
 

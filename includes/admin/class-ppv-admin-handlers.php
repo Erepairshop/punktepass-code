@@ -15,6 +15,7 @@ class PPV_Admin_Handlers {
         add_action('admin_post_ppv_extend_subscription', [__CLASS__, 'handle_extend_subscription']);
         add_action('admin_post_ppv_mark_renewal_done', [__CLASS__, 'handle_mark_renewal_done']);
         add_action('admin_post_ppv_update_ticket_status', [__CLASS__, 'handle_update_ticket_status']);
+        add_action('admin_post_ppv_update_max_filialen', [__CLASS__, 'handle_update_max_filialen']);
     }
 
     // ============================================================
@@ -71,7 +72,7 @@ class PPV_Admin_Handlers {
     public static function render_handlers_page() {
         global $wpdb;
 
-        // Fetch all handlers/stores
+        // Fetch all handlers/stores (only parent stores, not filialen)
         $handlers = $wpdb->get_results("
             SELECT
                 s.id,
@@ -84,8 +85,11 @@ class PPV_Admin_Handlers {
                 s.subscription_status,
                 s.subscription_expires_at,
                 s.created_at,
-                s.active
+                s.active,
+                s.max_filialen,
+                (SELECT COUNT(*) FROM {$wpdb->prefix}ppv_stores WHERE parent_store_id = s.id) as filiale_count
             FROM {$wpdb->prefix}ppv_stores s
+            WHERE s.parent_store_id IS NULL
             ORDER BY s.id DESC
         ");
 
@@ -140,6 +144,7 @@ class PPV_Admin_Handlers {
                         <th>Name</th>
                         <th>E-Mail</th>
                         <th>Stadt</th>
+                        <th>Filialen</th>
                         <th>Trial Ende</th>
                         <th>Abo Ende</th>
                         <th>Status</th>
@@ -150,7 +155,7 @@ class PPV_Admin_Handlers {
                 <tbody>
                     <?php if (empty($handlers)): ?>
                         <tr>
-                            <td colspan="10">Keine Handler gefunden</td>
+                            <td colspan="11">Keine Handler gefunden</td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($handlers as $handler): ?>
@@ -196,6 +201,20 @@ class PPV_Admin_Handlers {
                                 <td><?php echo esc_html($handler->name); ?></td>
                                 <td><?php echo esc_html($handler->email); ?></td>
                                 <td><?php echo esc_html($handler->city); ?></td>
+                                <td>
+                                    <?php
+                                    $current_filialen = intval($handler->filiale_count) + 1; // +1 for parent
+                                    $max_filialen = intval($handler->max_filialen) ?: 1;
+                                    ?>
+                                    <form method="post" action="<?php echo admin_url('admin-post.php'); ?>" style="display: flex; align-items: center; gap: 5px;">
+                                        <?php wp_nonce_field('ppv_update_max_filialen', 'ppv_filialen_nonce'); ?>
+                                        <input type="hidden" name="action" value="ppv_update_max_filialen">
+                                        <input type="hidden" name="handler_id" value="<?php echo intval($handler->id); ?>">
+                                        <span style="color: #666; font-size: 11px;"><?php echo $current_filialen; ?>/</span>
+                                        <input type="number" name="max_filialen" value="<?php echo $max_filialen; ?>" min="1" max="100" style="width: 50px; padding: 2px 4px; font-size: 12px;">
+                                        <button type="submit" class="button button-small" style="padding: 0 6px; height: 24px; line-height: 22px;">💾</button>
+                                    </form>
+                                </td>
                                 <td>
                                     <?php
                                     if ($trial_end > 0) {
@@ -965,6 +984,41 @@ class PPV_Admin_Handlers {
         error_log("✅ [PPV_Support] Ticket #{$ticket_id} status updated to {$new_status}");
 
         wp_redirect(admin_url('admin.php?page=punktepass-support-tickets&success=status_updated'));
+        exit;
+    }
+
+    // ============================================================
+    // 🏪 UPDATE MAX FILIALEN
+    // ============================================================
+    public static function handle_update_max_filialen() {
+        if (!current_user_can('manage_options')) {
+            wp_die('Keine Berechtigung');
+        }
+
+        check_admin_referer('ppv_update_max_filialen', 'ppv_filialen_nonce');
+
+        global $wpdb;
+
+        $handler_id = intval($_POST['handler_id']);
+        $max_filialen = intval($_POST['max_filialen']);
+
+        // Ensure minimum of 1
+        if ($max_filialen < 1) {
+            $max_filialen = 1;
+        }
+
+        // Update max_filialen for the handler
+        $wpdb->update(
+            "{$wpdb->prefix}ppv_stores",
+            ['max_filialen' => $max_filialen],
+            ['id' => $handler_id],
+            ['%d'],
+            ['%d']
+        );
+
+        error_log("✅ [PPV_Admin] Max Filialen updated for Handler #{$handler_id} to {$max_filialen}");
+
+        wp_redirect(admin_url('admin.php?page=punktepass-admin&success=filialen_updated'));
         exit;
     }
 }
