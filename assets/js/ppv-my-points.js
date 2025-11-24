@@ -7,10 +7,10 @@
  */
 
 (() => {
-  const DEBUG = true;
+  const DEBUG = false; // ✅ FIX: Set to false for production
   let isOnline = navigator.onLine;
 
-  console.log('🟢 [PPV_MYPOINTS] Production script loaded');
+  // console.log removed for production
 
   /** ============================
    * 🌍 DEFAULT FALLBACK STRINGS (Offline)
