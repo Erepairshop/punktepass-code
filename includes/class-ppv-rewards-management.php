@@ -363,10 +363,16 @@ class PPV_Rewards_Management {
             align-items: center;
             gap: 16px;
             padding: 20px;
-            background: linear-gradient(135deg, rgba(0, 168, 204, 0.15) 0%, rgba(0, 168, 204, 0.05) 100%);
+            background: linear-gradient(135deg, rgba(0, 168, 204, 0.08) 0%, rgba(0, 168, 204, 0.02) 100%);
             border-radius: 16px;
-            border: 1px solid rgba(0, 168, 204, 0.2);
+            border: 1px solid rgba(0, 168, 204, 0.15);
             margin-bottom: 20px;
+        }
+
+        body.ppv-dark .ppv-rewards-header,
+        [data-theme="dark"] .ppv-rewards-header {
+            background: linear-gradient(135deg, rgba(0, 168, 204, 0.15) 0%, rgba(0, 168, 204, 0.05) 100%);
+            border: 1px solid rgba(0, 168, 204, 0.2);
         }
 
         .ppv-rewards-header-icon {
@@ -393,11 +399,21 @@ class PPV_Rewards_Management {
             margin: 0 0 4px 0;
             font-size: 1.5rem;
             font-weight: 700;
-            color: #e2e8f0;
+            color: var(--pp-text, #1e293b);
         }
 
         .ppv-rewards-store-name {
             font-size: 0.9rem;
+            color: var(--pp-text-2, #64748b);
+        }
+
+        /* Dark mode overrides */
+        body.ppv-dark .ppv-rewards-header-text h2,
+        [data-theme="dark"] .ppv-rewards-header-text h2 {
+            color: #e2e8f0;
+        }
+        body.ppv-dark .ppv-rewards-store-name,
+        [data-theme="dark"] .ppv-rewards-store-name {
             color: #94a3b8;
         }
 
@@ -428,12 +444,19 @@ class PPV_Rewards_Management {
 
         /* Form Wrapper */
         .ppv-reward-form-wrapper {
-            background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%);
+            background: var(--pp-surface, #ffffff);
             border-radius: 16px;
-            border: 1px solid rgba(0, 168, 204, 0.15);
+            border: 1px solid var(--pp-border, rgba(0, 168, 204, 0.15));
             padding: 24px;
             margin-bottom: 24px;
             animation: slideDown 0.3s ease-out;
+            box-shadow: var(--pp-shadow, 0 4px 16px rgba(0,0,0,0.06));
+        }
+
+        body.ppv-dark .ppv-reward-form-wrapper,
+        [data-theme="dark"] .ppv-reward-form-wrapper {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%);
+            border: 1px solid rgba(0, 168, 204, 0.15);
         }
 
         @keyframes slideDown {
@@ -471,7 +494,7 @@ class PPV_Rewards_Management {
             gap: 8px;
             font-size: 0.9rem;
             font-weight: 500;
-            color: #cbd5e1;
+            color: var(--pp-text-2, #475569);
         }
 
         .ppv-form-group label i {
@@ -483,10 +506,10 @@ class PPV_Rewards_Management {
         .ppv-form-group select,
         .ppv-form-group textarea {
             padding: 12px 16px;
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid rgba(0, 168, 204, 0.2);
+            background: var(--pp-bg-2, #f1f5f9);
+            border: 1px solid var(--pp-border, rgba(0, 168, 204, 0.15));
             border-radius: 10px;
-            color: #e2e8f0;
+            color: var(--pp-text, #1e293b);
             font-size: 0.95rem;
             transition: all 0.2s ease;
         }
@@ -501,7 +524,23 @@ class PPV_Rewards_Management {
 
         .ppv-form-group small {
             font-size: 0.8rem;
-            color: #64748b;
+            color: var(--pp-text-3, #64748b);
+        }
+
+        /* Dark mode - form elements */
+        body.ppv-dark .ppv-form-group label,
+        [data-theme="dark"] .ppv-form-group label {
+            color: #cbd5e1;
+        }
+        body.ppv-dark .ppv-form-group input,
+        body.ppv-dark .ppv-form-group select,
+        body.ppv-dark .ppv-form-group textarea,
+        [data-theme="dark"] .ppv-form-group input,
+        [data-theme="dark"] .ppv-form-group select,
+        [data-theme="dark"] .ppv-form-group textarea {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(0, 168, 204, 0.2);
+            color: #e2e8f0;
         }
 
         /* Campaign Section */
@@ -587,7 +626,7 @@ class PPV_Rewards_Management {
 
         .ppv-date-field label {
             font-size: 0.85rem;
-            color: #94a3b8;
+            color: var(--pp-text-2, #64748b);
             display: flex;
             align-items: center;
             gap: 6px;
@@ -595,9 +634,19 @@ class PPV_Rewards_Management {
 
         .ppv-date-field input {
             padding: 10px 14px;
-            background: rgba(0, 0, 0, 0.3);
+            background: var(--pp-bg-2, #f1f5f9);
             border: 1px solid rgba(249, 115, 22, 0.3);
             border-radius: 8px;
+            color: var(--pp-text, #1e293b);
+        }
+
+        body.ppv-dark .ppv-date-field label,
+        [data-theme="dark"] .ppv-date-field label {
+            color: #94a3b8;
+        }
+        body.ppv-dark .ppv-date-field input,
+        [data-theme="dark"] .ppv-date-field input {
+            background: rgba(0, 0, 0, 0.3);
             color: #e2e8f0;
         }
 
@@ -686,12 +735,17 @@ class PPV_Rewards_Management {
             gap: 10px;
             font-size: 1.1rem;
             font-weight: 600;
-            color: #e2e8f0;
+            color: var(--pp-text, #1e293b);
             margin: 0;
         }
 
         .ppv-rewards-list-header h3 i {
             color: #00a8cc;
+        }
+
+        body.ppv-dark .ppv-rewards-list-header h3,
+        [data-theme="dark"] .ppv-rewards-list-header h3 {
+            color: #e2e8f0;
         }
 
         .ppv-rewards-count {
@@ -745,9 +799,9 @@ class PPV_Rewards_Management {
             grid-column: 1 / -1;
             text-align: center;
             padding: 48px 24px;
-            background: linear-gradient(135deg, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.6) 100%);
+            background: var(--pp-bg-2, #f1f5f9);
             border-radius: 16px;
-            border: 1px dashed rgba(0, 168, 204, 0.2);
+            border: 1px dashed var(--pp-border, rgba(0, 168, 204, 0.2));
         }
 
         .ppv-empty-state i {
@@ -758,43 +812,72 @@ class PPV_Rewards_Management {
         }
 
         .ppv-empty-state p {
-            color: #94a3b8;
+            color: var(--pp-text-2, #64748b);
             font-size: 1rem;
+        }
+
+        body.ppv-dark .ppv-empty-state,
+        [data-theme="dark"] .ppv-empty-state {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.6) 100%);
+        }
+        body.ppv-dark .ppv-empty-state p,
+        [data-theme="dark"] .ppv-empty-state p {
+            color: #94a3b8;
         }
 
         /* Reward Card */
         .ppv-reward-card {
-            background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%);
+            background: var(--pp-surface, #ffffff);
             border-radius: 16px;
-            border: 1px solid rgba(0, 168, 204, 0.15);
+            border: 1px solid var(--pp-border, rgba(0, 168, 204, 0.15));
             overflow: hidden;
             transition: all 0.3s ease;
+            box-shadow: var(--pp-shadow-sm, 0 2px 8px rgba(0,0,0,0.05));
         }
 
         .ppv-reward-card:hover {
             transform: translateY(-4px);
-            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+            box-shadow: var(--pp-shadow-md, 0 8px 24px rgba(0,0,0,0.08));
             border-color: rgba(0, 168, 204, 0.3);
+        }
+
+        body.ppv-dark .ppv-reward-card,
+        [data-theme="dark"] .ppv-reward-card {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%);
+        }
+        body.ppv-dark .ppv-reward-card:hover,
+        [data-theme="dark"] .ppv-reward-card:hover {
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
         }
 
         .ppv-reward-card-header {
             padding: 16px 20px;
-            background: linear-gradient(135deg, rgba(0, 168, 204, 0.15) 0%, rgba(0, 168, 204, 0.05) 100%);
-            border-bottom: 1px solid rgba(0, 168, 204, 0.1);
+            background: linear-gradient(135deg, rgba(0, 168, 204, 0.1) 0%, rgba(0, 168, 204, 0.02) 100%);
+            border-bottom: 1px solid var(--pp-border, rgba(0, 168, 204, 0.1));
             display: flex;
             align-items: flex-start;
             justify-content: space-between;
             gap: 12px;
         }
 
+        body.ppv-dark .ppv-reward-card-header,
+        [data-theme="dark"] .ppv-reward-card-header {
+            background: linear-gradient(135deg, rgba(0, 168, 204, 0.15) 0%, rgba(0, 168, 204, 0.05) 100%);
+        }
+
         .ppv-reward-card-title {
             font-size: 1.1rem;
             font-weight: 600;
-            color: #e2e8f0;
+            color: var(--pp-text, #1e293b);
             margin: 0;
             display: flex;
             align-items: center;
             gap: 8px;
+        }
+
+        body.ppv-dark .ppv-reward-card-title,
+        [data-theme="dark"] .ppv-reward-card-title {
+            color: #e2e8f0;
         }
 
         .ppv-reward-campaign-badge {
@@ -815,10 +898,15 @@ class PPV_Rewards_Management {
         }
 
         .ppv-reward-description {
-            color: #94a3b8;
+            color: var(--pp-text-2, #64748b);
             font-size: 0.9rem;
             margin-bottom: 16px;
             line-height: 1.5;
+        }
+
+        body.ppv-dark .ppv-reward-description,
+        [data-theme="dark"] .ppv-reward-description {
+            color: #94a3b8;
         }
 
         .ppv-reward-stats {
@@ -833,9 +921,14 @@ class PPV_Rewards_Management {
             align-items: center;
             gap: 6px;
             padding: 8px 12px;
-            background: rgba(0, 0, 0, 0.2);
+            background: var(--pp-bg-2, #f1f5f9);
             border-radius: 8px;
             font-size: 0.85rem;
+        }
+
+        body.ppv-dark .ppv-reward-stat,
+        [data-theme="dark"] .ppv-reward-stat {
+            background: rgba(0, 0, 0, 0.2);
         }
 
         .ppv-reward-stat i {
@@ -843,16 +936,31 @@ class PPV_Rewards_Management {
         }
 
         .ppv-reward-stat.points {
+            color: #0096a8;
+            border: 1px solid rgba(0, 150, 168, 0.3);
+        }
+        body.ppv-dark .ppv-reward-stat.points,
+        [data-theme="dark"] .ppv-reward-stat.points {
             color: #00e6ff;
             border: 1px solid rgba(0, 230, 255, 0.2);
         }
 
         .ppv-reward-stat.bonus {
+            color: #059669;
+            border: 1px solid rgba(5, 150, 105, 0.3);
+        }
+        body.ppv-dark .ppv-reward-stat.bonus,
+        [data-theme="dark"] .ppv-reward-stat.bonus {
             color: #34d399;
             border: 1px solid rgba(52, 211, 153, 0.2);
         }
 
         .ppv-reward-stat.value {
+            color: #d97706;
+            border: 1px solid rgba(217, 119, 6, 0.3);
+        }
+        body.ppv-dark .ppv-reward-stat.value,
+        [data-theme="dark"] .ppv-reward-stat.value {
             color: #fbbf24;
             border: 1px solid rgba(251, 191, 36, 0.2);
         }
@@ -873,7 +981,7 @@ class PPV_Rewards_Management {
             display: flex;
             gap: 10px;
             padding-top: 16px;
-            border-top: 1px solid rgba(0, 168, 204, 0.1);
+            border-top: 1px solid var(--pp-border, rgba(0, 168, 204, 0.1));
         }
 
         .ppv-reward-btn {
@@ -892,13 +1000,19 @@ class PPV_Rewards_Management {
         }
 
         .ppv-reward-btn-edit {
-            background: rgba(0, 168, 204, 0.15);
-            color: #00d4ff;
+            background: rgba(0, 168, 204, 0.1);
+            color: #0088a8;
             border: 1px solid rgba(0, 168, 204, 0.3);
         }
 
         .ppv-reward-btn-edit:hover {
-            background: rgba(0, 168, 204, 0.25);
+            background: rgba(0, 168, 204, 0.2);
+        }
+
+        body.ppv-dark .ppv-reward-btn-edit,
+        [data-theme="dark"] .ppv-reward-btn-edit {
+            background: rgba(0, 168, 204, 0.15);
+            color: #00d4ff;
         }
 
         .ppv-reward-btn-delete {
@@ -909,6 +1023,156 @@ class PPV_Rewards_Management {
 
         .ppv-reward-btn-delete:hover {
             background: rgba(239, 68, 68, 0.2);
+        }
+
+        /* ============================================
+           📱 MOBILE RESPONSIVE - APP FEEL
+           ============================================ */
+        @media (max-width: 480px) {
+            .ppv-rewards-management-wrapper {
+                padding: 0;
+            }
+
+            .ppv-rewards-header {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 16px;
+                gap: 12px;
+            }
+
+            .ppv-rewards-header-icon {
+                width: 48px;
+                height: 48px;
+            }
+
+            .ppv-rewards-header-icon i {
+                font-size: 24px;
+            }
+
+            .ppv-rewards-header-text h2 {
+                font-size: 1.25rem;
+            }
+
+            .ppv-btn-add-reward {
+                width: 100%;
+                justify-content: center;
+                padding: 12px 16px;
+            }
+
+            .ppv-reward-form-wrapper {
+                padding: 16px;
+                margin: 0 0 16px 0;
+                border-radius: 12px;
+            }
+
+            .ppv-form-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+
+            .ppv-form-column {
+                gap: 12px;
+            }
+
+            .ppv-form-group input,
+            .ppv-form-group select,
+            .ppv-form-group textarea {
+                padding: 10px 14px;
+                font-size: 16px; /* Prevents iOS zoom */
+            }
+
+            .ppv-campaign-section {
+                margin-top: 16px;
+                padding: 14px;
+            }
+
+            .ppv-campaign-dates {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .ppv-filiale-selector {
+                margin-top: 16px;
+                padding: 14px;
+            }
+
+            .ppv-form-actions {
+                flex-direction: column;
+                gap: 10px;
+                margin-top: 16px;
+                padding-top: 16px;
+            }
+
+            .ppv-btn-save,
+            .ppv-btn-cancel {
+                width: 100%;
+                justify-content: center;
+                padding: 14px;
+            }
+
+            .ppv-rewards-list-header {
+                padding: 0;
+            }
+
+            .ppv-rewards-list-header h3 {
+                font-size: 1rem;
+            }
+
+            .ppv-rewards-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .ppv-reward-card {
+                border-radius: 12px;
+            }
+
+            .ppv-reward-card-header {
+                padding: 14px 16px;
+            }
+
+            .ppv-reward-card-title {
+                font-size: 1rem;
+            }
+
+            .ppv-reward-card-body {
+                padding: 16px;
+            }
+
+            .ppv-reward-stats {
+                gap: 8px;
+            }
+
+            .ppv-reward-stat {
+                padding: 6px 10px;
+                font-size: 0.8rem;
+            }
+
+            .ppv-reward-card-actions {
+                gap: 8px;
+                padding-top: 12px;
+            }
+
+            .ppv-reward-btn {
+                padding: 10px 12px;
+                font-size: 0.85rem;
+            }
+
+            .ppv-empty-state {
+                padding: 32px 16px;
+            }
+
+            .ppv-empty-state i {
+                font-size: 40px;
+            }
+
+            .ppv-empty-state p {
+                font-size: 0.9rem;
+            }
+
+            .ppv-loading-state {
+                padding: 32px;
+            }
         }
         </style>
 
