@@ -176,40 +176,25 @@ add_filter('rest_authentication_errors', function ($result) {
 
     // WP user auth
     if (is_user_logged_in()) {
-        error_log("✅ [REST_AUTH] WordPress user logged in: " . get_current_user_id());
         return true;
     }
 
-    // ✅ SESSION auth (Google/Facebook/TikTok login)
-    error_log("🔍 [REST_AUTH] Starting session auth check...");
-    error_log("🔍 [REST_AUTH] URI: " . ($_SERVER['REQUEST_URI'] ?? 'none'));
-    error_log("🔍 [REST_AUTH] ppv_user_token cookie: " . (isset($_COOKIE['ppv_user_token']) ? 'EXISTS (len=' . strlen($_COOKIE['ppv_user_token']) . ')' : 'MISSING'));
-    error_log("🔍 [REST_AUTH] Session status before: " . session_status() . " (1=disabled, 2=active, 3=none)");
-
+    // SESSION auth (Google/Facebook/TikTok login)
     // Start session and restore from token if needed
     if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
         @session_start();
-        error_log("🔍 [REST_AUTH] Session started, new status: " . session_status());
     }
-
-    error_log("🔍 [REST_AUTH] Session ID: " . (session_status() === PHP_SESSION_ACTIVE ? session_id() : 'NONE'));
-    error_log("🔍 [REST_AUTH] ppv_user_id in session BEFORE restore: " . ($_SESSION['ppv_user_id'] ?? 'EMPTY'));
-    error_log("🔍 [REST_AUTH] PPV_SessionBridge class exists: " . (class_exists('PPV_SessionBridge') ? 'YES' : 'NO'));
 
     // Restore session from ppv_user_token cookie
     if (class_exists('PPV_SessionBridge') && empty($_SESSION['ppv_user_id'])) {
-        error_log("🔄 [REST_AUTH] Calling PPV_SessionBridge::restore_from_token()...");
         PPV_SessionBridge::restore_from_token();
-        error_log("🔍 [REST_AUTH] ppv_user_id in session AFTER restore: " . ($_SESSION['ppv_user_id'] ?? 'STILL EMPTY'));
     }
 
     // Check if session has valid user_id
     if (!empty($_SESSION['ppv_user_id'])) {
-        error_log("✅ [REST_AUTH] Session user authenticated: user_id=" . $_SESSION['ppv_user_id']);
         return true;
     }
 
-    error_log("❌ [REST_AUTH] No authentication found - returning 401 error");
     return new WP_Error('rest_forbidden', __('Du bist leider nicht berechtigt, diese Aktion durchzuführen.'), ['status' => 401]);
 });
 
@@ -272,6 +257,9 @@ $core_modules = [
      'includes/class-ppv-ably.php',
      'includes/class-ppv-scan-monitoring.php',
      'includes/admin/class-ppv-admin-suspicious-scans.php',
+     'includes/admin/class-ppv-admin-suspicious-devices.php', // Admin panel for suspicious devices
+     'includes/class-ppv-user-qr.php', // Timed QR endpoint
+     'includes/class-ppv-device-fingerprint.php', // Device fingerprint for fraud prevention
 
 ];
 
@@ -292,27 +280,8 @@ if (str_contains($uri, 'pos') || str_contains($uri, 'kasse') || str_contains($ur
 // Load modules
 foreach ($core_modules as $module) {
     $path = PPV_PLUGIN_DIR . ltrim($module, '/');
-
-    // Debug: Log PPV_Permissions loading attempt
-    if (strpos($module, 'class-ppv-permissions') !== false) {
-        error_log("🔍 [Module Loader] Attempting to load: " . $module);
-        error_log("🔍 [Module Loader] Full path: " . $path);
-        error_log("🔍 [Module Loader] File exists: " . (file_exists($path) ? 'YES' : 'NO'));
-    }
-
     if (file_exists($path)) {
         require_once $path;
-
-        // Debug: Confirm loading
-        if (strpos($module, 'class-ppv-permissions') !== false) {
-            error_log("✅ [Module Loader] Successfully loaded: " . $module);
-            error_log("✅ [Module Loader] Class exists: " . (class_exists('PPV_Permissions') ? 'YES' : 'NO'));
-        }
-    } else {
-        // Debug: File not found
-        if (strpos($module, 'class-ppv-permissions') !== false) {
-            error_log("❌ [Module Loader] FILE NOT FOUND: " . $path);
-        }
     }
 }
 
@@ -519,6 +488,7 @@ if (class_exists('PPV_Bottom_Nav')) PPV_Bottom_Nav::hooks();
 if (class_exists('PPV_Logout')) PPV_Logout::hooks();
 if (class_exists('PPV_Account_Delete')) PPV_Account_Delete::hooks();
 if (class_exists('PPV_My_Points')) PPV_My_Points::hooks();  // ← ÚJ!
+if (class_exists('PPV_Device_Fingerprint')) PPV_Device_Fingerprint::hooks(); // Device fingerprint fraud prevention
 
 if (class_exists('PPV_Theme_Handler')) PPV_Theme_Handler::hooks();
 
@@ -543,7 +513,7 @@ add_action('wp_head', function () { ?>
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="PunktePass">
     <link rel="apple-touch-icon" href="<?php echo PPV_PLUGIN_URL; ?>assets/img/icons/icon-192.png">
-    <link rel="apple-touch-startup-image" href="<?php echo PPV_PLUGIN_URL; ?>assets/img/icons/icon-512.png">
+    <!-- ❌ REMOVED: apple-touch-startup-image - caused big logo flash on iOS -->
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <?php }, 1);
 
@@ -585,18 +555,37 @@ add_action('wp_footer', function() {
 
 
 // ========================================
-// ⚡ PWA SPLASH LOADER (Turbo-compatible)
+// ⚡ PWA SPLASH LOADER (Turbo-compatible) + iOS Flash Fix
 // ========================================
 add_action('wp_head', function() {
     if (ppv_is_login_page()) return; // Skip on login
     ?>
     <style>
-      html,body{margin:0;padding:0;background:#0b0f17;height:100%;}
-      #ppv-loader{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#0b0f17;z-index:999999;transition:opacity .4s ease;}
+      html,body{margin:0;padding:0;height:100%;}
+      /* ✅ FIX: Use CSS variables for background - prevents flash when theme CSS loads */
+      html{background:var(--pp-bg,#0b0f17);}
+      body{background:var(--pp-bg,#0b0f17);}
+
+      #ppv-loader{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--pp-bg,#0b0f17);z-index:999999;transition:opacity .4s ease;}
       #ppv-loader.fadeout{opacity:0;pointer-events:none;}
       #ppv-loader.hidden{display:none;}
       .ppv-spinner{width:60px;height:60px;border:5px solid rgba(0,191,255,0.25);border-top-color:#00bfff;border-radius:50%;animation:ppvspin 1s linear infinite;}
       @keyframes ppvspin{to{transform:rotate(360deg)}}
+
+      /* ✅ iOS Safari: Prevent flash during Turbo navigation */
+      @supports (-webkit-touch-callout: none) {
+        html.turbo-loading,
+        body.turbo-loading {
+          /* Keep current state stable during navigation */
+          background:var(--pp-bg,#0b0f17)!important;
+        }
+        /* Prevent content flash */
+        .turbo-loading #ppv-my-points-app,
+        .turbo-loading .ppv-dashboard-netto {
+          opacity:1!important;
+          visibility:visible!important;
+        }
+      }
     </style>
     <div id="ppv-loader" data-turbo-permanent><div class="ppv-spinner"></div></div>
     <script>
@@ -619,12 +608,20 @@ add_action('wp_head', function() {
           window.ppvLoaderInitialized = true;
         });
 
-        // 🚀 Turbo: Hide loader on navigation
+        // 🚀 Turbo: Prevent CSS flash on iOS Safari
         document.addEventListener("turbo:before-fetch-request", function() {
-          // Don't show big loader for Turbo - bottom nav has its own indicator
+          // Add turbo-loading class to html to trigger iOS-specific CSS
+          document.documentElement.classList.add("turbo-loading");
         });
         document.addEventListener("turbo:load", function() {
           loader.classList.add("fadeout", "hidden");
+          // Remove turbo-loading class
+          document.documentElement.classList.remove("turbo-loading");
+        });
+        document.addEventListener("turbo:render", function() {
+          // Ensure loader stays hidden after render
+          loader.classList.add("fadeout", "hidden");
+          document.documentElement.classList.remove("turbo-loading");
         });
       })();
     </script>

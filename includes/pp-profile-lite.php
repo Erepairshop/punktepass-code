@@ -33,6 +33,8 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
             add_action('wp_ajax_nopriv_ppv_auto_save_profile', [__CLASS__, 'ajax_auto_save_profile']); // ✅ PPV session auth
             add_action('wp_ajax_ppv_delete_gallery_image', [__CLASS__, 'ajax_delete_gallery_image']);
             add_action('wp_ajax_nopriv_ppv_delete_gallery_image', [__CLASS__, 'ajax_delete_gallery_image']); // ✅ PPV session auth
+            add_action('wp_ajax_ppv_reset_trusted_device', [__CLASS__, 'ajax_reset_trusted_device']);
+            add_action('wp_ajax_nopriv_ppv_reset_trusted_device', [__CLASS__, 'ajax_reset_trusted_device']); // ✅ PPV session auth
         }
 
         // ==================== AUTH CHECK ====================
@@ -620,6 +622,7 @@ if (!empty($store->gallery)) {
             <?php
             return ob_get_clean();
         }
+
 
         private static function get_current_store() {
             global $wpdb;
@@ -1240,9 +1243,46 @@ foreach ($search_variants as $idx => $search_query) {
 ppv_log("❌ [PPV_GEOCODE] Egyik variáns sem találta meg: {$full_address}");
 wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan írni (pl. teljes utcanévvel).']);
 }
+
+        /**
+         * ============================================================
+         * 🔒 RESET TRUSTED DEVICE FINGERPRINT
+         * ============================================================
+         */
+        public static function ajax_reset_trusted_device() {
+            self::ensure_session();
+
+            $auth = self::check_auth();
+            if (!$auth['valid']) {
+                wp_send_json_error(['message' => 'Nincs jogosultság']);
+                return;
+            }
+
+            $store_id = self::get_store_id();
+            if (!$store_id) {
+                wp_send_json_error(['message' => 'Store not found']);
+                return;
+            }
+
+            global $wpdb;
+
+            // Reset the trusted device fingerprint
+            $result = $wpdb->update(
+                "{$wpdb->prefix}ppv_stores",
+                ['trusted_device_fingerprint' => null],
+                ['id' => $store_id]
+            );
+
+            if ($result !== false) {
+                ppv_log("[PPV_DEVICES] Trusted device reset for store #{$store_id}");
+                wp_send_json_success(['message' => 'Megbízható eszköz visszaállítva']);
+            } else {
+                wp_send_json_error(['message' => 'Hiba történt']);
+            }
+        }
     }
-    
-    
+
+
 
     PPV_Profile_Lite_i18n::hooks();
 }

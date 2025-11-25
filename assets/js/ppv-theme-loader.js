@@ -277,6 +277,12 @@
       subtree: true,
     });
 
+    // ✅ FIX: Auto-disconnect after 10s if button never found (prevents memory leak)
+    setTimeout(() => {
+      observer.disconnect();
+      log('DEBUG', 'MutationObserver auto-disconnected after 10s timeout');
+    }, 10000);
+
     log('DEBUG', 'MutationObserver started');
   }
 

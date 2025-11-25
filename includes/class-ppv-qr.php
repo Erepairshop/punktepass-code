@@ -140,6 +140,76 @@ class PPV_QR {
         return $filialen ?: [];
     }
 
+    /** ============================================================
+     *  🕒 CHECK IF STORE IS OPEN (for scan validation)
+     *  Returns: ['open' => bool, 'hours' => string|null]
+     * ============================================================ */
+    private static function is_store_open_for_scan($store_id) {
+        global $wpdb;
+
+        // Get opening_hours from store
+        $opening_hours = $wpdb->get_var($wpdb->prepare(
+            "SELECT opening_hours FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
+            $store_id
+        ));
+
+        // If no opening hours set, assume always open (backwards compatibility)
+        if (empty($opening_hours)) {
+            return ['open' => true, 'hours' => null, 'reason' => 'no_hours_set'];
+        }
+
+        $hours = json_decode($opening_hours, true);
+        if (!is_array($hours)) {
+            return ['open' => true, 'hours' => null, 'reason' => 'invalid_json'];
+        }
+
+        // Get current day and time
+        $now = current_time('timestamp');
+        $day_map = [
+            'monday' => 'mo',
+            'tuesday' => 'di',
+            'wednesday' => 'mi',
+            'thursday' => 'do',
+            'friday' => 'fr',
+            'saturday' => 'sa',
+            'sunday' => 'so'
+        ];
+
+        $day_name = strtolower(date('l', $now));
+        $day = $day_map[$day_name] ?? 'mo';
+        $current_time = date('H:i', $now);
+
+        // Check if day exists in schedule
+        if (!isset($hours[$day])) {
+            return ['open' => false, 'hours' => null, 'reason' => 'day_not_set'];
+        }
+
+        $day_hours = $hours[$day];
+
+        // Check closed flag
+        if (!is_array($day_hours) || !empty($day_hours['closed'])) {
+            return ['open' => false, 'hours' => 'Geschlossen', 'reason' => 'closed_flag'];
+        }
+
+        // Extract opening times
+        $von = $day_hours['von'] ?? '';
+        $bis = $day_hours['bis'] ?? '';
+
+        if (empty($von) || empty($bis)) {
+            return ['open' => false, 'hours' => null, 'reason' => 'no_times'];
+        }
+
+        // Check if current time is within opening hours
+        $is_open = ($current_time >= $von && $current_time <= $bis);
+
+        return [
+            'open' => $is_open,
+            'hours' => "{$von} - {$bis}",
+            'current_time' => $current_time,
+            'reason' => $is_open ? 'within_hours' : 'outside_hours'
+        ];
+    }
+
     private static function validate_store($store_key) {
         $store = self::get_store_by_key($store_key);
 
@@ -1813,6 +1883,32 @@ class PPV_QR {
                 'success' => false,
                 'message' => '❌ Invalid store_id (0)'
             ], 400);
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // 🕒 OPENING HOURS CHECK - Block scans outside business hours
+        // ═══════════════════════════════════════════════════════════
+        $opening_check = self::is_store_open_for_scan($store_id);
+        if (!$opening_check['open']) {
+            $store_name = $wpdb->get_var($wpdb->prepare(
+                "SELECT name FROM {$wpdb->prefix}ppv_stores WHERE id=%d LIMIT 1",
+                $store_id
+            ));
+
+            ppv_log("⏰ [PPV_QR] BLOCKED: Scan outside opening hours - store_id={$store_id}, reason={$opening_check['reason']}, hours={$opening_check['hours']}, current={$opening_check['current_time']}");
+
+            // Log the blocked scan attempt
+            self::insert_log($store_id, 0, '⏰ Scan blocked - store closed', 'error', 'store_closed');
+
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => self::t('err_store_closed', '⏰ Az üzlet jelenleg zárva van'),
+                'detail' => self::t('err_store_closed_detail', 'Scan nem lehetséges nyitvatartási időn kívül'),
+                'store_name' => $store_name ?? 'PunktePass',
+                'opening_hours' => $opening_check['hours'],
+                'current_time' => $opening_check['current_time'] ?? date('H:i'),
+                'error_type' => 'store_closed'
+            ], 403);
         }
 
         $user_id = self::decode_user_from_qr($qr_code);

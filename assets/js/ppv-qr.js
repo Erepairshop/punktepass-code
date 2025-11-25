@@ -37,7 +37,8 @@
     lastInitTime: 0,  // Prevent rapid re-init
     ablyInstance: null,  // Ably connection for cleanup
     pollInterval: null,   // Polling interval for cleanup
-    gpsPosition: null     // Current GPS position for fraud detection
+    gpsPosition: null,     // Current GPS position for fraud detection
+    gpsWatchId: null       // GPS watch ID for cleanup
   };
 
   // ============================================================
@@ -72,7 +73,8 @@
     );
 
     // Watch for position changes (update every minute or on significant move)
-    navigator.geolocation.watchPosition(
+    // Store watch ID so we can stop it later
+    STATE.gpsWatchId = navigator.geolocation.watchPosition(
       (pos) => {
         STATE.gpsPosition = {
           latitude: pos.coords.latitude,
@@ -91,6 +93,15 @@
         maximumAge: 60000
       }
     );
+  }
+
+  // Stop GPS tracking
+  function stopGpsTracking() {
+    if (STATE.gpsWatchId !== null) {
+      navigator.geolocation.clearWatch(STATE.gpsWatchId);
+      STATE.gpsWatchId = null;
+      ppvLog('[GPS] Watch stopped');
+    }
   }
 
   function getGpsCoordinates() {
@@ -404,14 +415,50 @@
 
         if (data.success) {
           this.ui.showMessage('✅ ' + data.message, 'success');
-          // ✅ FIX: Removed non-existent addLogRow call - inlineProcessScan handles UI updates
+
+          // ✅ FIX: Add scan to UI immediately (same as inlineProcessScan)
+          const now = new Date();
+          const scanId = data.scan_id || `local-${data.user_id}-${now.getTime()}`;
+
+          this.ui.addScanItem({
+            scan_id: scanId,
+            user_id: data.user_id,
+            customer_name: data.customer_name || null,
+            email: data.email || null,
+            avatar: data.avatar || null,
+            message: data.message,
+            points: data.points || 1,
+            date_short: now.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'}).replace(/\./g, '.'),
+            time_short: now.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'}),
+            success: true,
+            _realtime: true  // Prepend to top of list
+          });
         } else {
           this.ui.showMessage('⚠️ ' + (data.message || ''), 'warning');
+
+          // ✅ FIX: Add error scan to UI immediately (always, even without user_id)
+          const now = new Date();
+          const oderId = data.user_id || 0;
+          const scanId = data.scan_id || `local-err-${oderId}-${now.getTime()}`;
+
+          this.ui.addScanItem({
+            scan_id: scanId,
+            user_id: oderId,
+            customer_name: data.customer_name || null,
+            email: data.email || null,
+            avatar: data.avatar || null,
+            message: data.message || '⚠️ Fehler',
+            points: 0,
+            date_short: now.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'}).replace(/\./g, '.'),
+            time_short: now.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'}),
+            success: false,
+            _realtime: true
+          });
+
           if (!/bereits|gescannt|duplikat/i.test(data.message || '')) {
             OfflineSyncManager.save(qrCode);
           }
         }
-        // ✅ FIX: Removed redundant loadLogs - real-time updates handle this
       } catch (e) {
         this.ui.showMessage('⚠️ ' + (L.server_error || 'Serverfehler'), 'error');
         OfflineSyncManager.save(qrCode);
@@ -1114,9 +1161,11 @@
         }
 
         // QrScanner options - preferredCamera: 'environment' forces back camera
+        // maxScansPerSecond: 3 - reduced to minimize console log spam
+        // (library logs "No QR code found" for every failed scan attempt)
         const options = {
           preferredCamera: 'environment',  // Back camera
-          maxScansPerSecond: 25,
+          maxScansPerSecond: 3,
           highlightScanRegion: true,
           highlightCodeOutline: true,
           returnDetailedScanResult: true
@@ -1294,7 +1343,6 @@
       this.state = 'processing';
       this.updateStatus('processing', '⏳ ' + (L.scanner_points_adding || 'Wird verarbeitet...'));
 
-      try { if (navigator.vibrate) navigator.vibrate(30); } catch (e) {}
 
       this.inlineProcessScan(qrCode);
     }
@@ -1347,14 +1395,15 @@
             this.updateStatus('warning', '⚠️ ' + (data.message || L.error_generic || 'Fehler'));
             window.ppvToast(data.message || '⚠️ Fehler', 'warning');
 
-            // ✅ FIX: Add error scan to UI immediately with unique scan_id
-            if (STATE.uiManager && data.user_id) {
+            // ✅ FIX: Add error scan to UI immediately (always, even without user_id)
+            if (STATE.uiManager) {
               const now = new Date();
-              const scanId = data.scan_id || `local-err-${data.user_id}-${now.getTime()}`;
+              const oderId = data.user_id || 0;
+              const scanId = data.scan_id || `local-err-${oderId}-${now.getTime()}`;
 
               STATE.uiManager.addScanItem({
                 scan_id: scanId,
-                user_id: data.user_id,
+                user_id: oderId,
                 customer_name: data.customer_name || null,
                 email: data.email || null,
                 avatar: data.avatar || null,
@@ -1679,6 +1728,9 @@
       STATE.visibilityHandler = null;
     }
 
+    // ✅ FIX: Stop GPS tracking to prevent battery drain
+    stopGpsTracking();
+
     STATE.cameraScanner?.cleanup();
     STATE.cameraScanner = null;
     STATE.campaignManager = null;
@@ -1792,6 +1844,7 @@
       const channel = STATE.ablyInstance.channels.get(channelName);
 
       STATE.ablyInstance.connection.on('connected', () => {
+        console.log('✅ [Ably] CONNECTED to channel: store-' + storeId);
         ppvLog('[Ably] Connected');
         // Stop polling if it was running
         if (STATE.pollInterval) {
@@ -1801,23 +1854,29 @@
       });
 
       STATE.ablyInstance.connection.on('disconnected', () => {
+        console.warn('⚠️ [Ably] DISCONNECTED - starting fallback polling');
         ppvLog('[Ably] Disconnected, starting fallback polling');
         startPolling();
       });
 
       STATE.ablyInstance.connection.on('failed', (err) => {
+        console.error('❌ [Ably] CONNECTION FAILED:', err);
         ppvLog('[Ably] Connection failed:', err);
         startPolling();
       });
 
       // Handle incoming scan events
       channel.subscribe('new-scan', (message) => {
+        console.log('📡 [Ably] NEW-SCAN EVENT RECEIVED:', message.data);
         ppvLog('[Ably] New scan received:', message.data);
 
         // ✅ FIX: Deduplication is now handled by addScanItem using scan_id
         // Just pass the data through - the UI manager will skip if scan_id already displayed
         if (STATE.uiManager) {
+          console.log('📡 [Ably] Adding scan to UI...');
           STATE.uiManager.addScanItem({ ...message.data, _realtime: true });
+        } else {
+          console.warn('📡 [Ably] STATE.uiManager is null!');
         }
       });
 

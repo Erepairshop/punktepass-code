@@ -33,9 +33,87 @@ wp_add_inline_script('ppv-scan', "window.ppvScan = {$__json};", 'before');
         ob_start();
         $store_id = isset($_GET['store']) ? intval($_GET['store']) : 0;
         $campaign_id = isset($_GET['campaign']) ? intval($_GET['campaign']) : 0;
+
+        // 🔍 Merchant setup checks (for store owners viewing scan page)
+        $merchant_warnings = [];
+        if ($store_id) {
+            global $wpdb;
+
+            // Get store data
+            $store = $wpdb->get_row($wpdb->prepare(
+                "SELECT id, latitude, longitude FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+                $store_id
+            ));
+
+            if ($store) {
+                // 🏪 FILIALE FIX: Get rewards from PARENT store if this is a filiale
+                $reward_store_id = $store_id;
+                if (class_exists('PPV_Filiale')) {
+                    $reward_store_id = PPV_Filiale::get_parent_id($store_id);
+                }
+
+                // Check 1: Prämie (reward) configured?
+                $has_reward = $wpdb->get_var($wpdb->prepare(
+                    "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_rewards WHERE store_id = %d AND points_given > 0",
+                    $reward_store_id
+                ));
+
+                if (!$has_reward) {
+                    $merchant_warnings[] = [
+                        'icon' => '🎁',
+                        'de' => 'Bitte richten Sie eine Prämie ein (Punkte pro Scan).',
+                        'hu' => 'Kérjük, állítson be egy prémiumot (pontok szkenneléskor).',
+                        'ro' => 'Vă rugăm să configurați o recompensă (puncte per scanare).'
+                    ];
+                }
+
+                // Check 2: Latitude/Longitude configured?
+                if (empty($store->latitude) || empty($store->longitude) ||
+                    floatval($store->latitude) == 0 || floatval($store->longitude) == 0) {
+                    $merchant_warnings[] = [
+                        'icon' => '📍',
+                        'de' => 'Bitte setzen Sie Ihren Standort im Profil: Klicken Sie auf "Auf Google suchen" und speichern Sie.',
+                        'hu' => 'Kérjük, állítsa be a pozícióját a profilban: Kattintson a "Google keresés" gombra, majd mentse.',
+                        'ro' => 'Vă rugăm să setați locația în profil: Faceți clic pe "Căutare Google" și salvați.'
+                    ];
+                }
+            }
+        }
+
+        // Get current language
+        $lang = 'de';
+        if (class_exists('PPV_Lang')) {
+            $lang = PPV_Lang::current();
+        }
         ?>
         <div class="ppv-scan-wrapper">
             <h2>📸 Punkte scannen</h2>
+
+            <?php if (!empty($merchant_warnings)): ?>
+                <div class="ppv-merchant-setup-warnings" style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+                    <h4 style="margin: 0 0 12px 0; color: #856404;">
+                        <?php
+                        if ($lang === 'hu') echo '⚠️ Beállítás szükséges';
+                        elseif ($lang === 'ro') echo '⚠️ Configurare necesară';
+                        else echo '⚠️ Einrichtung erforderlich';
+                        ?>
+                    </h4>
+                    <ul style="margin: 0; padding-left: 20px; color: #856404;">
+                        <?php foreach ($merchant_warnings as $warning): ?>
+                            <li style="margin-bottom: 8px;">
+                                <?php echo esc_html($warning['icon'] . ' ' . ($warning[$lang] ?? $warning['de'])); ?>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                    <p style="margin: 12px 0 0 0; font-size: 13px; color: #856404;">
+                        <?php
+                        if ($lang === 'hu') echo '👉 Menjen a Profil oldalra a beállításokhoz.';
+                        elseif ($lang === 'ro') echo '👉 Accesați pagina Profil pentru configurare.';
+                        else echo '👉 Gehen Sie zur Profilseite für die Einrichtung.';
+                        ?>
+                    </p>
+                </div>
+            <?php endif; ?>
 
             <?php if (!is_user_logged_in()): ?>
                 <p class="ppv-warning">⚠️ Bitte melde dich an, um Punkte zu sammeln.</p>

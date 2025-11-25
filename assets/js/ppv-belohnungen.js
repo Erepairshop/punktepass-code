@@ -328,9 +328,14 @@
 
     $container.html(html);
 
+    // ✅ FIX: Debounced search input (300ms delay)
+    let searchDebounce = null;
     $('#ppv-search-input').on('keyup', function() {
       const query = $(this).val().toLowerCase();
-      filterRewards(query, $('#ppv-store-filter').val());
+      if (searchDebounce) clearTimeout(searchDebounce);
+      searchDebounce = setTimeout(() => {
+        filterRewards(query, $('#ppv-store-filter').val());
+      }, 300);
     });
 
     $('#ppv-store-filter').on('change', function() {
@@ -568,7 +573,70 @@
     }
 
     log('DEBUG', `Next poll in ${nextInterval / 1000}s`);
-    setTimeout(() => startStatusPolling(), nextInterval);
+    // ✅ FIX: Store timeout ID for cleanup on navigation
+    pollingTimeoutId = setTimeout(() => startStatusPolling(), nextInterval);
+  }
+
+  /* ==========================================================
+   * 📡 ABLY REAL-TIME + POLLING FALLBACK
+   * ========================================================== */
+  let ablyInstance = null;
+  let pollingTimeoutId = null; // ✅ FIX: Track polling timeout for cleanup
+
+  function initRealtime() {
+    const ablyConfig = config.ably;
+
+    if (ablyConfig && ablyConfig.key && typeof Ably !== 'undefined') {
+      log('INFO', 'Initializing Ably real-time...');
+
+      // Cleanup previous instance
+      if (ablyInstance) {
+        ablyInstance.close();
+        ablyInstance = null;
+      }
+
+      ablyInstance = new Ably.Realtime({ key: ablyConfig.key });
+      const channel = ablyInstance.channels.get(ablyConfig.channel);
+
+      ablyInstance.connection.on('connected', () => {
+        log('INFO', 'Ably connected');
+        // Stop polling timer (but keep MAX_POLLS check)
+        pollCount = MAX_POLLS;
+      });
+
+      ablyInstance.connection.on('disconnected', () => {
+        log('INFO', 'Ably disconnected, resuming polling');
+        pollCount = 0;
+        startStatusPolling();
+      });
+
+      ablyInstance.connection.on('failed', (err) => {
+        log('ERROR', 'Ably failed:', err);
+        pollCount = 0;
+        startStatusPolling();
+      });
+
+      // 📡 Handle reward approved notifications
+      channel.subscribe('reward-approved', (message) => {
+        log('INFO', 'Reward approved received:', message.data);
+        const data = message.data;
+        const title = data.reward_title || 'Belohnung';
+        const msg = getLabel('reward_approved').replace('{title}', title);
+        showPopup(msg, 'success');
+      });
+
+      // 📡 Handle points update (when scanned)
+      channel.subscribe('points-update', (message) => {
+        log('INFO', 'Points update received:', message.data);
+        // Could refresh points display here if needed
+      });
+
+      log('INFO', 'Ably initialized');
+      return true;
+    }
+
+    log('INFO', 'Ably not available, using polling');
+    return false;
   }
 
   /* ==========================================================
@@ -695,5 +763,43 @@
     lastStatuses = {};
     initBelohnungen();
   });
+
+  /* ==========================================================
+   * 🧹 CLEANUP ON NAVIGATION (iOS Safari fix)
+   * ========================================================== */
+
+  function cleanupBelohnungen() {
+    log('INFO', '🧹 Cleaning up Belohnungen resources...');
+
+    // ✅ Close Ably connection
+    if (ablyInstance) {
+      try {
+        ablyInstance.close();
+        log('INFO', '🧹 Ably connection closed');
+      } catch (e) {
+        log('WARN', '🧹 Ably close error:', e);
+      }
+      ablyInstance = null;
+    }
+
+    // ✅ Clear polling timeout
+    if (pollingTimeoutId) {
+      clearTimeout(pollingTimeoutId);
+      pollingTimeoutId = null;
+      log('INFO', '🧹 Polling timeout cleared');
+    }
+
+    // ✅ Stop future polling
+    pollCount = MAX_POLLS;
+
+    // ✅ Reset state
+    lastStatuses = {};
+  }
+
+  // ✅ FIX: Cleanup BEFORE navigating away (critical for iOS Safari!)
+  document.addEventListener('turbo:before-visit', cleanupBelohnungen);
+
+  // ✅ FIX: Also cleanup before cache (helps with back/forward navigation)
+  document.addEventListener('turbo:before-cache', cleanupBelohnungen);
 
 })(jQuery);

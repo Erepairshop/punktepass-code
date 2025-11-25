@@ -1269,5 +1269,17 @@ return [
     'imprint_liability_links_text' => 'Unser Angebot enthält Links zu externen Websites Dritter, auf deren Inhalte wir keinen Einfluss haben. Für die Inhalte der verlinkten Seiten ist stets der jeweilige Anbieter verantwortlich.',
     'imprint_copyright_title' => 'Urheberrecht',
     'imprint_copyright_text' => 'Die durch die Seitenbetreiber erstellten Inhalte und Werke auf diesen Seiten unterliegen dem deutschen Urheberrecht. Die Vervielfältigung, Bearbeitung und Verbreitung außerhalb der Grenzen des Urheberrechtes bedürfen der schriftlichen Zustimmung des jeweiligen Autors.',
+
+    // ============================================================
+    // SCAN VALIDATION - OPENING HOURS
+    // ============================================================
+    'err_store_closed' => '⏰ Shop ist derzeit geschlossen',
+    'err_store_closed_detail' => 'Scan nicht möglich außerhalb der Öffnungszeiten',
+
+    // ============================================================
+    // DEVICE FINGERPRINT - ACCOUNT LIMIT
+    // ============================================================
+    'err_device_limit' => '⚠️ Gerätelimit erreicht',
+    'err_device_limit_detail' => 'Maximale Anzahl an Konten für dieses Gerät erreicht',
 ];
 

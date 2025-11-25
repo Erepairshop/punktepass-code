@@ -85,8 +85,34 @@ class PPV_Core {
 
             update_option('ppv_db_migration_version', '1.2');
         }
+
+        // Migration 1.3: Add device_fingerprints table for fraud prevention
+        if (version_compare($migration_version, '1.3', '<')) {
+            $table_fingerprints = $wpdb->prefix . 'ppv_device_fingerprints';
+
+            $sql = "CREATE TABLE IF NOT EXISTS {$table_fingerprints} (
+                id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+                fingerprint_hash VARCHAR(64) NOT NULL COMMENT 'SHA256 hash of device fingerprint',
+                user_id BIGINT(20) UNSIGNED NOT NULL COMMENT 'Associated user account',
+                ip_address VARCHAR(45) NULL COMMENT 'IP address at registration',
+                user_agent TEXT NULL COMMENT 'User agent string',
+                fingerprint_data JSON NULL COMMENT 'Raw fingerprint components for analysis',
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                last_seen_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                KEY idx_fingerprint (fingerprint_hash),
+                KEY idx_user (user_id),
+                KEY idx_created (created_at)
+            ) {$wpdb->get_charset_collate()};";
+
+            require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+            dbDelta($sql);
+
+            ppv_log("✅ [PPV_Core] ppv_device_fingerprints table created");
+            update_option('ppv_db_migration_version', '1.3');
+        }
     }
- 
+
     public static function init_session_bridge() {
         if (session_status() !== PHP_SESSION_ACTIVE && !headers_sent()) {
             @session_start();

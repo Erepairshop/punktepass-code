@@ -101,6 +101,7 @@ console.log("✅ [PPV_GLOBAL] v3.0 active (Turbo-compatible)");
     return originalXHROpen.call(this, method, url, ...rest);
   };
 
+  // ✅ FIX: Use { once: true } to auto-remove listener after firing (prevents memory leak)
   XMLHttpRequest.prototype.send = function(...args) {
     this.addEventListener('load', function() {
       if (this.status === 401) {
@@ -115,11 +116,9 @@ console.log("✅ [PPV_GLOBAL] v3.0 active (Turbo-compatible)");
           handle401();
         }
       }
-    });
+    }, { once: true }); // ← Auto-remove after firing
     return originalXHRSend.apply(this, args);
   };
-
-  console.log('🔐 [PPV_GLOBAL] 401 handler initialized');
 })();
 
 // 🚀 Turbo handles transitions now - removed beforeunload/pageshow opacity code

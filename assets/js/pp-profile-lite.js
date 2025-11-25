@@ -28,6 +28,13 @@
                 return;
             }
 
+            // ✅ FIX: Prevent duplicate event listener bindings on Turbo navigation
+            if (this.$form.dataset.ppvBound === 'true') {
+                console.log('[Profile] Already bound, skipping re-init');
+                return;
+            }
+            this.$form.dataset.ppvBound = 'true';
+
             this.bindTabs();
             this.bindFormInputs();
             this.bindFormSubmit();
