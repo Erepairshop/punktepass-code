@@ -573,13 +573,15 @@
     }
 
     log('DEBUG', `Next poll in ${nextInterval / 1000}s`);
-    setTimeout(() => startStatusPolling(), nextInterval);
+    // ✅ FIX: Store timeout ID for cleanup on navigation
+    pollingTimeoutId = setTimeout(() => startStatusPolling(), nextInterval);
   }
 
   /* ==========================================================
    * 📡 ABLY REAL-TIME + POLLING FALLBACK
    * ========================================================== */
   let ablyInstance = null;
+  let pollingTimeoutId = null; // ✅ FIX: Track polling timeout for cleanup
 
   function initRealtime() {
     const ablyConfig = config.ably;
@@ -700,5 +702,43 @@
     lastStatuses = {};
     initBelohnungen();
   });
+
+  /* ==========================================================
+   * 🧹 CLEANUP ON NAVIGATION (iOS Safari fix)
+   * ========================================================== */
+
+  function cleanupBelohnungen() {
+    log('INFO', '🧹 Cleaning up Belohnungen resources...');
+
+    // ✅ Close Ably connection
+    if (ablyInstance) {
+      try {
+        ablyInstance.close();
+        log('INFO', '🧹 Ably connection closed');
+      } catch (e) {
+        log('WARN', '🧹 Ably close error:', e);
+      }
+      ablyInstance = null;
+    }
+
+    // ✅ Clear polling timeout
+    if (pollingTimeoutId) {
+      clearTimeout(pollingTimeoutId);
+      pollingTimeoutId = null;
+      log('INFO', '🧹 Polling timeout cleared');
+    }
+
+    // ✅ Stop future polling
+    pollCount = MAX_POLLS;
+
+    // ✅ Reset state
+    lastStatuses = {};
+  }
+
+  // ✅ FIX: Cleanup BEFORE navigating away (critical for iOS Safari!)
+  document.addEventListener('turbo:before-visit', cleanupBelohnungen);
+
+  // ✅ FIX: Also cleanup before cache (helps with back/forward navigation)
+  document.addEventListener('turbo:before-cache', cleanupBelohnungen);
 
 })(jQuery);
