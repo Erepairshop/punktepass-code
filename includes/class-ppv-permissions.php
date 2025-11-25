@@ -518,6 +518,56 @@ class PPV_Permissions {
     }
 
     /**
+     * Check if user is logged in (PPV user or WP user)
+     * Used for endpoints that require any authenticated user (not just handlers)
+     *
+     * @return bool|WP_Error True if logged in, WP_Error otherwise
+     */
+    public static function check_logged_in_user() {
+        ppv_perm_log("🔍 [PPV_Permissions] check_logged_in_user() called");
+
+        // 0. Ensure session is started
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+            @session_start();
+        }
+
+        // 1. Check session authentication (PPV user)
+        if (!empty($_SESSION['ppv_user_id'])) {
+            ppv_perm_log("✅ [PPV_Permissions] check_logged_in_user() SUCCESS via SESSION");
+            return true;
+        }
+
+        // 2. Try to restore session from token
+        if (class_exists('PPV_SessionBridge')) {
+            PPV_SessionBridge::restore_from_token();
+            if (!empty($_SESSION['ppv_user_id'])) {
+                ppv_perm_log("✅ [PPV_Permissions] check_logged_in_user() SUCCESS via SESSION RESTORE");
+                return true;
+            }
+        }
+
+        // 3. Check token authentication
+        $token_user = self::get_user_from_token();
+        if ($token_user) {
+            ppv_perm_log("✅ [PPV_Permissions] check_logged_in_user() SUCCESS via TOKEN");
+            return true;
+        }
+
+        // 4. Check WordPress authentication
+        if (is_user_logged_in()) {
+            ppv_perm_log("✅ [PPV_Permissions] check_logged_in_user() SUCCESS via WORDPRESS");
+            return true;
+        }
+
+        ppv_perm_log("❌ [PPV_Permissions] check_logged_in_user() FAILED");
+        return new WP_Error(
+            'unauthorized',
+            'Bejelentkezés szükséges',
+            ['status' => 401]
+        );
+    }
+
+    /**
      * Check if current user is a scanner employee
      * Scanner users have limited access - only QR Center
      *

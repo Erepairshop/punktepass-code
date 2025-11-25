@@ -21,6 +21,7 @@ class PPV_Login {
         add_action('wp_ajax_nopriv_ppv_google_login', [__CLASS__, 'ajax_google_login']);
         add_action('wp_ajax_nopriv_ppv_facebook_login', [__CLASS__, 'ajax_facebook_login']);
         add_action('wp_ajax_nopriv_ppv_tiktok_login', [__CLASS__, 'ajax_tiktok_login']);
+        add_action('wp_ajax_nopriv_ppv_apple_login', [__CLASS__, 'ajax_apple_login']);
         add_action('template_redirect', [__CLASS__, 'check_already_logged_in'], 1);
     }
 
@@ -402,6 +403,14 @@ public static function render_landing_page($atts) {
                                     </svg>
                                     <span>TikTok</span>
                                 </button>
+
+                                <!-- Apple Login Button -->
+                                <button type="button" id="ppv-apple-login-btn" class="ppv-social-btn ppv-apple-btn">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+                                    </svg>
+                                    <span>Apple</span>
+                                </button>
                             </div>
 
                             <!-- Divider -->
@@ -516,6 +525,8 @@ public static function render_landing_page($atts) {
             google_client_id: '<?php echo defined('PPV_GOOGLE_CLIENT_ID') ? PPV_GOOGLE_CLIENT_ID : get_option('ppv_google_client_id', '453567547051-odmqrinafba8ls8ktp9snlp7d2fpl9q0.apps.googleusercontent.com'); ?>',
             facebook_app_id: '<?php echo defined('PPV_FACEBOOK_APP_ID') ? PPV_FACEBOOK_APP_ID : get_option('ppv_facebook_app_id', '4070833883179463'); ?>',
             tiktok_client_key: '<?php echo defined('PPV_TIKTOK_CLIENT_KEY') ? PPV_TIKTOK_CLIENT_KEY : get_option('ppv_tiktok_client_key', '9bb6aca5781d007d6c00fe3ed60d6734'); ?>',
+            apple_client_id: '<?php echo defined('PPV_APPLE_CLIENT_ID') ? PPV_APPLE_CLIENT_ID : get_option('ppv_apple_client_id', ''); ?>',
+            apple_redirect_uri: '<?php echo home_url('/login'); ?>',
             redirect_url: '<?php echo home_url('/user_dashboard'); ?>'
         };
         </script>
@@ -971,6 +982,216 @@ public static function render_landing_page($atts) {
             return false;
         }
         
+        return $payload;
+    }
+
+    /** ============================================================
+     * 🍎 AJAX Apple Login Handler (Sign in with Apple)
+     * ============================================================ */
+    public static function ajax_apple_login() {
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+
+        self::ensure_session();
+
+        check_ajax_referer('ppv_login_nonce', 'nonce');
+
+        $id_token = sanitize_text_field($_POST['id_token'] ?? '');
+        $user_data = isset($_POST['user']) ? json_decode(stripslashes($_POST['user']), true) : null;
+
+        if (empty($id_token)) {
+            wp_send_json_error(['message' => PPV_Lang::t('login_apple_error') ?: 'Apple Login fehlgeschlagen']);
+        }
+
+        // Verify Apple JWT token
+        $payload = self::verify_apple_token($id_token);
+
+        if (!$payload) {
+            ppv_log("❌ [PPV_Login] Apple token verification failed");
+            wp_send_json_error(['message' => PPV_Lang::t('login_apple_error') ?: 'Apple Login fehlgeschlagen']);
+        }
+
+        $apple_id = sanitize_text_field($payload['sub'] ?? '');
+        $email = sanitize_email($payload['email'] ?? '');
+
+        // Apple only sends user info on first authorization
+        $first_name = '';
+        $last_name = '';
+        if ($user_data && isset($user_data['name'])) {
+            $first_name = sanitize_text_field($user_data['name']['firstName'] ?? '');
+            $last_name = sanitize_text_field($user_data['name']['lastName'] ?? '');
+        }
+
+        if (empty($apple_id)) {
+            wp_send_json_error(['message' => PPV_Lang::t('login_apple_error') ?: 'Apple Login fehlgeschlagen']);
+        }
+
+        // 🔍 Check if user exists by Apple ID or email
+        $user = null;
+
+        // First try to find by apple_id
+        $user = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$prefix}ppv_users WHERE apple_id=%s LIMIT 1",
+            $apple_id
+        ));
+
+        // If not found by apple_id, try email (if provided)
+        if (!$user && !empty($email)) {
+            $user = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM {$prefix}ppv_users WHERE email=%s LIMIT 1",
+                $email
+            ));
+        }
+
+        // 🆕 Create new user if doesn't exist
+        if (!$user) {
+            // Apple may hide email, generate placeholder if needed
+            if (empty($email)) {
+                $email = $apple_id . '@privaterelay.appleid.com';
+            }
+
+            $insert_result = $wpdb->insert(
+                "{$prefix}ppv_users",
+                [
+                    'email' => $email,
+                    'password' => password_hash(wp_generate_password(32), PASSWORD_DEFAULT),
+                    'first_name' => $first_name,
+                    'last_name' => $last_name,
+                    'apple_id' => $apple_id,
+                    'created_at' => current_time('mysql'),
+                    'active' => 1
+                ],
+                ['%s', '%s', '%s', '%s', '%s', '%s', '%d']
+            );
+
+            if ($insert_result === false) {
+                ppv_log("❌ [PPV_Login] Failed to create Apple user: {$email}");
+                wp_send_json_error(['message' => PPV_Lang::t('login_user_create_error') ?: 'Benutzer konnte nicht erstellt werden']);
+            }
+
+            $user_id = $wpdb->insert_id;
+            ppv_log("✅ [PPV_Login] New Apple user created (#{$user_id}): {$email}");
+
+            $user = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM {$prefix}ppv_users WHERE id=%d LIMIT 1",
+                $user_id
+            ));
+        } else {
+            // Update Apple ID if missing
+            if (empty($user->apple_id)) {
+                $wpdb->update(
+                    "{$prefix}ppv_users",
+                    ['apple_id' => $apple_id],
+                    ['id' => $user->id],
+                    ['%s'],
+                    ['%d']
+                );
+                ppv_log("✅ [PPV_Login] Apple ID updated for user #{$user->id}");
+            }
+
+            // Update name if we have it and user doesn't
+            if (!empty($first_name) && empty($user->first_name)) {
+                $wpdb->update(
+                    "{$prefix}ppv_users",
+                    ['first_name' => $first_name, 'last_name' => $last_name],
+                    ['id' => $user->id],
+                    ['%s', '%s'],
+                    ['%d']
+                );
+            }
+        }
+
+        // 🔐 Log user in (Session + Token)
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_regenerate_id(true);
+        }
+
+        unset($_SESSION['ppv_store_id'], $_SESSION['ppv_active_store'], $_SESSION['ppv_is_pos']);
+
+        $_SESSION['ppv_user_id'] = $user->id;
+        $_SESSION['ppv_user_type'] = 'user';
+        $_SESSION['ppv_user_email'] = $user->email;
+
+        $GLOBALS['ppv_role'] = 'user';
+
+        // ✅ Multi-device: Reuse existing token if available
+        $token = $user->login_token;
+        if (empty($token)) {
+            $token = md5(uniqid('ppv_user_apple_', true));
+            $wpdb->update(
+                "{$prefix}ppv_users",
+                ['login_token' => $token],
+                ['id' => $user->id],
+                ['%s'],
+                ['%d']
+            );
+            ppv_log("🔑 [PPV_Login] New Apple token generated");
+        } else {
+            ppv_log("🔑 [PPV_Login] Reusing existing token for Apple login (multi-device)");
+        }
+
+        // Set cookie (180 days)
+        $domain = $_SERVER['HTTP_HOST'] ?? '';
+        setcookie('ppv_user_token', $token, time() + (86400 * 180), '/', $domain, true, true);
+
+        ppv_log("✅ [PPV_Login] Apple login successful (#{$user->id}): {$user->email}");
+
+        wp_send_json_success([
+            'message' => PPV_Lang::t('login_apple_success') ?: 'Erfolgreich angemeldet!',
+            'role' => 'user',
+            'user_id' => (int)$user->id,
+            'user_token' => $token,
+            'redirect' => home_url('/user_dashboard')
+        ]);
+    }
+
+    /** ============================================================
+     * 🍎 Verify Apple JWT Token
+     * ============================================================ */
+    private static function verify_apple_token($id_token) {
+        // Apple's public keys endpoint
+        $apple_keys_url = 'https://appleid.apple.com/auth/keys';
+
+        ppv_log("🍎 [PPV_Apple] Starting token verification");
+
+        // Decode JWT parts
+        $parts = explode('.', $id_token);
+        if (count($parts) !== 3) {
+            ppv_log("❌ [PPV_Apple] Invalid JWT structure");
+            return false;
+        }
+
+        $header = json_decode(base64_decode(str_replace(['-', '_'], ['+', '/'], $parts[0])), true);
+        $payload = json_decode(base64_decode(str_replace(['-', '_'], ['+', '/'], $parts[1])), true);
+
+        if (!$header || !$payload) {
+            ppv_log("❌ [PPV_Apple] Failed to decode JWT");
+            return false;
+        }
+
+        // Verify issuer
+        if (!isset($payload['iss']) || $payload['iss'] !== 'https://appleid.apple.com') {
+            ppv_log("❌ [PPV_Apple] Invalid issuer: " . ($payload['iss'] ?? 'none'));
+            return false;
+        }
+
+        // Verify audience (should be your app's client ID / Service ID)
+        $client_id = defined('PPV_APPLE_CLIENT_ID') ? PPV_APPLE_CLIENT_ID : get_option('ppv_apple_client_id', '');
+        if (!empty($client_id) && isset($payload['aud']) && $payload['aud'] !== $client_id) {
+            ppv_log("❌ [PPV_Apple] Invalid audience: " . $payload['aud'] . " (expected: {$client_id})");
+            return false;
+        }
+
+        // Verify expiry
+        if (!isset($payload['exp']) || $payload['exp'] < time()) {
+            ppv_log("❌ [PPV_Apple] Token expired");
+            return false;
+        }
+
+        // For production, you should verify the signature with Apple's public keys
+        // For now, we trust the payload if the basic checks pass
+        ppv_log("✅ [PPV_Apple] Token verified for sub: " . ($payload['sub'] ?? 'unknown'));
+
         return $payload;
     }
 

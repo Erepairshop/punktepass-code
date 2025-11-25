@@ -443,6 +443,39 @@ class PPV_QR {
             return $uid_from_qr;
         }
 
+        // ✅ PPQR- format: Timed QR codes from user dashboard (30 min validity)
+        // Format: PPQR-{user_id}-{timed_qr_token}
+        // Token is 32-char MD5 hash stored in ppv_users.timed_qr_token
+        if (strpos($qr, 'PPQR-') === 0) {
+            $parts = explode('-', $qr);
+            $uid_from_qr = intval($parts[1] ?? 0);
+            $token_from_qr = $parts[2] ?? '';
+
+            if (!empty($token_from_qr) && strlen($token_from_qr) === 32) {
+                // Look up user by timed_qr_token (must not be expired)
+                $actual_user_id = $wpdb->get_var($wpdb->prepare("
+                    SELECT id FROM {$wpdb->prefix}ppv_users
+                    WHERE timed_qr_token=%s AND timed_qr_expires > NOW() AND active=1
+                    LIMIT 1
+                ", $token_from_qr));
+
+                if ($actual_user_id) {
+                    if ($uid_from_qr != $actual_user_id) {
+                        ppv_log("⚠️ [PPV_QR] decode_user_from_qr (PPQR): QR user_id mismatch! QR={$uid_from_qr}, actual={$actual_user_id} - using actual");
+                    }
+                    return intval($actual_user_id);
+                } else {
+                    // Token not found or expired
+                    ppv_log("⚠️ [PPV_QR] decode_user_from_qr (PPQR): Timed QR token not found or expired for user_id={$uid_from_qr}");
+                    return false;
+                }
+            }
+
+            // Fallback to QR user_id if token format invalid
+            ppv_log("⚠️ [PPV_QR] decode_user_from_qr (PPQR): Invalid token format, falling back to user_id={$uid_from_qr}");
+            return $uid_from_qr;
+        }
+
         return false;
     }
 
@@ -1814,6 +1847,24 @@ class PPV_QR {
             'callback' => [__CLASS__, 'rest_get_strings'],
             'permission_callback' => ['PPV_Permissions', 'allow_anonymous'],
         ]);
+
+        // ════════════════════════════════════════════════════════════
+        // 🎁 REAL-TIME REDEMPTION ENDPOINTS
+        // ════════════════════════════════════════════════════════════
+
+        // User responds to redemption prompt (accept/decline)
+        register_rest_route('ppv/v1', '/redemption/user-response', [
+            'methods' => 'POST',
+            'callback' => [__CLASS__, 'rest_redemption_user_response'],
+            'permission_callback' => ['PPV_Permissions', 'check_logged_in_user'],
+        ]);
+
+        // Handler confirms or rejects redemption
+        register_rest_route('ppv/v1', '/redemption/handler-response', [
+            'methods' => 'POST',
+            'callback' => [__CLASS__, 'rest_redemption_handler_response'],
+            'permission_callback' => ['PPV_Permissions', 'check_handler'],
+        ]);
     }
 
     public static function rest_get_strings(WP_REST_Request $r) {
@@ -2279,6 +2330,114 @@ class PPV_QR {
         $vip_suffix = $vip_bonus_applied > 0 ? " (VIP-Bonus: +{$vip_bonus_applied})" : '';
         $success_msg = "✅ +{$points_add} " . self::t('points', 'Punkte') . $vip_suffix;
 
+        // ═══════════════════════════════════════════════════════════
+        // 🎁 REDEMPTION PROMPT: Check if user can redeem any rewards
+        // ═══════════════════════════════════════════════════════════
+        $redemption_prompt = null;
+
+        // Check if there's already a pending prompt (user chose "later" before)
+        $pending_prompt = $wpdb->get_row($wpdb->prepare("
+            SELECT id, token FROM {$wpdb->prefix}ppv_redemption_prompts
+            WHERE user_id = %d AND store_id = %d AND status = 'pending' AND expires_at > NOW()
+            ORDER BY created_at DESC LIMIT 1
+        ", $user_id, $store_id));
+
+        // Get user's current total points (after this scan)
+        $user_total_points = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COALESCE(SUM(points), 0) FROM {$wpdb->prefix}ppv_points WHERE user_id = %d",
+            $user_id
+        ));
+
+        // 🏪 FILIALE FIX: Get rewards from PARENT store if this is a filiale
+        $reward_store_id = $store_id;
+        if (class_exists('PPV_Filiale')) {
+            $reward_store_id = PPV_Filiale::get_parent_id($store_id);
+        }
+
+        // Find available rewards that user can redeem
+        $available_rewards = $wpdb->get_results($wpdb->prepare("
+            SELECT id, title, description, required_points, action_type, action_value, free_product_value
+            FROM {$wpdb->prefix}ppv_rewards
+            WHERE store_id = %d AND required_points <= %d AND required_points > 0
+            ORDER BY required_points DESC
+        ", $reward_store_id, $user_total_points));
+
+        if (!empty($available_rewards)) {
+            // User can redeem! Create or refresh prompt
+            $prompt_token = bin2hex(random_bytes(32));
+            $expires_at = date('Y-m-d H:i:s', strtotime('+60 seconds'));
+
+            // Convert rewards to array for JSON storage
+            $rewards_array = array_map(function($r) {
+                return [
+                    'id' => (int)$r->id,
+                    'title' => $r->title,
+                    'description' => $r->description,
+                    'required_points' => (int)$r->required_points,
+                    'action_type' => $r->action_type ?? 'info',
+                    'action_value' => floatval($r->action_value ?? 0),
+                    'free_product_value' => floatval($r->free_product_value ?? 0)
+                ];
+            }, $available_rewards);
+
+            // If there's an existing pending prompt, update it; otherwise create new
+            if ($pending_prompt) {
+                $wpdb->update(
+                    "{$wpdb->prefix}ppv_redemption_prompts",
+                    [
+                        'token' => $prompt_token,
+                        'available_rewards' => json_encode($rewards_array),
+                        'expires_at' => $expires_at,
+                        'created_at' => current_time('mysql')
+                    ],
+                    ['id' => $pending_prompt->id],
+                    ['%s', '%s', '%s', '%s'],
+                    ['%d']
+                );
+                $prompt_id = $pending_prompt->id;
+            } else {
+                $wpdb->insert(
+                    "{$wpdb->prefix}ppv_redemption_prompts",
+                    [
+                        'user_id' => $user_id,
+                        'store_id' => $store_id,
+                        'token' => $prompt_token,
+                        'available_rewards' => json_encode($rewards_array),
+                        'status' => 'pending',
+                        'created_at' => current_time('mysql'),
+                        'expires_at' => $expires_at
+                    ],
+                    ['%d', '%d', '%s', '%s', '%s', '%s', '%s']
+                );
+                $prompt_id = $wpdb->insert_id;
+            }
+
+            $redemption_prompt = [
+                'prompt_id' => $prompt_id,
+                'token' => $prompt_token,
+                'rewards' => $rewards_array,
+                'user_total_points' => $user_total_points,
+                'expires_at' => $expires_at,
+                'timeout_seconds' => 60
+            ];
+
+            ppv_log("🎁 [PPV_QR] Redemption prompt created: user={$user_id}, store={$store_id}, rewards=" . count($rewards_array) . ", points={$user_total_points}");
+
+            // 📡 ABLY: Send redemption prompt to user's dashboard
+            if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+                PPV_Ably::trigger_redemption_prompt($user_id, [
+                    'prompt_id' => $prompt_id,
+                    'token' => $prompt_token,
+                    'rewards' => $rewards_array,
+                    'user_total_points' => $user_total_points,
+                    'store_id' => $store_id,
+                    'store_name' => $store_name ?? 'PunktePass',
+                    'expires_at' => $expires_at,
+                    'timeout_seconds' => 60
+                ]);
+            }
+        }
+
         return new WP_REST_Response([
             'success' => true,
             'scan_id' => $scan_id, // ✅ Include scan_id for deduplication
@@ -2295,6 +2454,8 @@ class PPV_QR {
             'customer_name' => $customer_name ?: null,
             'email' => $user_info->email ?? null,
             'avatar' => $user_info->avatar ?? null,
+            // 🎁 Redemption prompt (if available)
+            'redemption_prompt' => $redemption_prompt,
         ], 200);
     }
 
@@ -2946,6 +3107,380 @@ class PPV_QR {
             'success' => true,
             'message' => self::t('archived_success', '📦 Archiválva')
         ], 200);
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // 🎁 REST: REAL-TIME REDEMPTION - USER RESPONSE
+    // User accepts or declines the redemption prompt
+    // ════════════════════════════════════════════════════════════════
+    public static function rest_redemption_user_response(WP_REST_Request $r) {
+        global $wpdb;
+
+        $data = $r->get_json_params();
+        $token = sanitize_text_field($data['token'] ?? '');
+        $action = sanitize_text_field($data['action'] ?? ''); // 'accept' or 'decline'
+        $selected_reward_id = intval($data['reward_id'] ?? 0);
+
+        if (empty($token) || !in_array($action, ['accept', 'decline'])) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => self::t('err_invalid_request', '❌ Ungültige Anfrage')
+            ], 400);
+        }
+
+        // Get the prompt
+        $prompt = $wpdb->get_row($wpdb->prepare("
+            SELECT * FROM {$wpdb->prefix}ppv_redemption_prompts
+            WHERE token = %s AND status = 'pending'
+            LIMIT 1
+        ", $token));
+
+        if (!$prompt) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => self::t('err_prompt_expired', '⏰ Anfrage abgelaufen')
+            ], 404);
+        }
+
+        // Check if expired
+        if (strtotime($prompt->expires_at) < time()) {
+            $wpdb->update(
+                "{$wpdb->prefix}ppv_redemption_prompts",
+                ['status' => 'expired'],
+                ['id' => $prompt->id],
+                ['%s'],
+                ['%d']
+            );
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => self::t('err_prompt_expired', '⏰ Anfrage abgelaufen')
+            ], 410);
+        }
+
+        // Verify user owns this prompt
+        $current_user_id = PPV_Permissions::get_current_user_id();
+        if ($current_user_id != $prompt->user_id) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => self::t('err_unauthorized', '❌ Nicht autorisiert')
+            ], 403);
+        }
+
+        if ($action === 'decline') {
+            // User chose "Later" - keep prompt for next scan
+            $wpdb->update(
+                "{$wpdb->prefix}ppv_redemption_prompts",
+                [
+                    'status' => 'user_declined',
+                    'user_response_at' => current_time('mysql')
+                ],
+                ['id' => $prompt->id],
+                ['%s', '%s'],
+                ['%d']
+            );
+
+            ppv_log("🎁 [PPV_QR] User declined redemption: user={$prompt->user_id}, store={$prompt->store_id}");
+
+            return new WP_REST_Response([
+                'success' => true,
+                'message' => self::t('redemption_later', '👍 Kein Problem! Beim nächsten Scan wieder.')
+            ], 200);
+        }
+
+        // User accepted - validate selected reward
+        $available_rewards = json_decode($prompt->available_rewards, true) ?: [];
+        $valid_reward = false;
+        $selected_reward = null;
+
+        foreach ($available_rewards as $reward) {
+            if ($reward['id'] == $selected_reward_id) {
+                $valid_reward = true;
+                $selected_reward = $reward;
+                break;
+            }
+        }
+
+        if (!$valid_reward) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => self::t('err_invalid_reward', '❌ Ungültige Prämie ausgewählt')
+            ], 400);
+        }
+
+        // Update prompt status
+        $wpdb->update(
+            "{$wpdb->prefix}ppv_redemption_prompts",
+            [
+                'status' => 'user_accepted',
+                'selected_reward_id' => $selected_reward_id,
+                'user_response_at' => current_time('mysql')
+            ],
+            ['id' => $prompt->id],
+            ['%s', '%d', '%s'],
+            ['%d']
+        );
+
+        ppv_log("🎁 [PPV_QR] User accepted redemption: user={$prompt->user_id}, store={$prompt->store_id}, reward={$selected_reward_id}");
+
+        // Get user info for handler notification
+        $user_info = $wpdb->get_row($wpdb->prepare("
+            SELECT first_name, last_name, email, avatar
+            FROM {$wpdb->prefix}ppv_users WHERE id = %d
+        ", $prompt->user_id));
+
+        $customer_name = trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
+
+        // Get store name
+        $store_name = $wpdb->get_var($wpdb->prepare(
+            "SELECT name FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+            $prompt->store_id
+        ));
+
+        // 📡 ABLY: Notify handler about redemption request
+        if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+            PPV_Ably::trigger_redemption_request($prompt->store_id, [
+                'prompt_id' => $prompt->id,
+                'token' => $token,
+                'user_id' => $prompt->user_id,
+                'customer_name' => $customer_name ?: ($user_info->email ?? 'Kunde'),
+                'email' => $user_info->email ?? null,
+                'avatar' => $user_info->avatar ?? null,
+                'reward_id' => $selected_reward_id,
+                'reward_title' => $selected_reward['title'],
+                'reward_points' => $selected_reward['required_points'],
+                'reward_type' => $selected_reward['action_type'] ?? 'info',
+                'reward_value' => floatval($selected_reward['action_value'] ?? 0),
+                'free_product_value' => floatval($selected_reward['free_product_value'] ?? 0),
+                'store_name' => $store_name ?? 'PunktePass',
+                'time' => date('H:i'),
+            ]);
+        }
+
+        return new WP_REST_Response([
+            'success' => true,
+            'message' => self::t('redemption_pending', '⏳ Warte auf Bestätigung vom Händler...'),
+            'status' => 'waiting_for_handler'
+        ], 200);
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // 🎁 REST: REAL-TIME REDEMPTION - HANDLER RESPONSE
+    // Handler approves or rejects the redemption
+    // ════════════════════════════════════════════════════════════════
+    public static function rest_redemption_handler_response(WP_REST_Request $r) {
+        global $wpdb;
+
+        $data = $r->get_json_params();
+        $token = sanitize_text_field($data['token'] ?? '');
+        $action = sanitize_text_field($data['action'] ?? ''); // 'approve' or 'reject'
+        $rejection_reason = sanitize_text_field($data['reason'] ?? '');
+        $purchase_amount = floatval($data['purchase_amount'] ?? 0); // 🆕 For percent type rewards
+
+        if (empty($token) || !in_array($action, ['approve', 'reject'])) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => self::t('err_invalid_request', '❌ Ungültige Anfrage')
+            ], 400);
+        }
+
+        // Get the prompt
+        $prompt = $wpdb->get_row($wpdb->prepare("
+            SELECT * FROM {$wpdb->prefix}ppv_redemption_prompts
+            WHERE token = %s AND status = 'user_accepted'
+            LIMIT 1
+        ", $token));
+
+        if (!$prompt) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => self::t('err_prompt_not_found', '❌ Anfrage nicht gefunden')
+            ], 404);
+        }
+
+        // Get selected reward details (including type and value for actual_amount calculation)
+        $reward = $wpdb->get_row($wpdb->prepare("
+            SELECT id, title, description, required_points, action_type, action_value, free_product_value
+            FROM {$wpdb->prefix}ppv_rewards
+            WHERE id = %d
+        ", $prompt->selected_reward_id));
+
+        if (!$reward) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => self::t('err_reward_not_found', '❌ Prämie nicht gefunden')
+            ], 404);
+        }
+
+        // Get user info
+        $user_info = $wpdb->get_row($wpdb->prepare("
+            SELECT first_name, last_name, email
+            FROM {$wpdb->prefix}ppv_users WHERE id = %d
+        ", $prompt->user_id));
+
+        $customer_name = trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
+
+        if ($action === 'reject') {
+            // Handler rejected
+            $wpdb->update(
+                "{$wpdb->prefix}ppv_redemption_prompts",
+                [
+                    'status' => 'handler_rejected',
+                    'handler_response_at' => current_time('mysql'),
+                    'rejection_reason' => $rejection_reason
+                ],
+                ['id' => $prompt->id],
+                ['%s', '%s', '%s'],
+                ['%d']
+            );
+
+            ppv_log("🎁 [PPV_QR] Handler rejected redemption: user={$prompt->user_id}, store={$prompt->store_id}, reason={$rejection_reason}");
+
+            // 📡 ABLY: Notify user about rejection
+            if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+                PPV_Ably::trigger_redemption_rejected($prompt->user_id, [
+                    'reward_title' => $reward->title,
+                    'reason' => $rejection_reason ?: self::t('rejection_default', 'Die Prämie ist derzeit nicht verfügbar'),
+                ]);
+            }
+
+            return new WP_REST_Response([
+                'success' => true,
+                'message' => '❌ Einlösung abgelehnt',
+                'customer_name' => $customer_name
+            ], 200);
+        }
+
+        // Handler approved - process the redemption
+        $wpdb->query('START TRANSACTION');
+
+        try {
+            // 1. Verify user still has enough points
+            $user_points = (int)$wpdb->get_var($wpdb->prepare(
+                "SELECT COALESCE(SUM(points), 0) FROM {$wpdb->prefix}ppv_points WHERE user_id = %d FOR UPDATE",
+                $prompt->user_id
+            ));
+
+            if ($user_points < $reward->required_points) {
+                $wpdb->query('ROLLBACK');
+                return new WP_REST_Response([
+                    'success' => false,
+                    'message' => self::t('err_not_enough_points', '❌ Nicht genügend Punkte')
+                ], 400);
+            }
+
+            // 2. Deduct points
+            $wpdb->insert("{$wpdb->prefix}ppv_points", [
+                'user_id' => $prompt->user_id,
+                'store_id' => $prompt->store_id,
+                'points' => -$reward->required_points,
+                'type' => 'redemption',
+                'created' => current_time('mysql')
+            ]);
+
+            // 🆕 3. Calculate actual_amount based on reward type
+            $actual_amount = null;
+            $action_type = $reward->action_type ?? 'info';
+            $action_value = floatval($reward->action_value ?? 0);
+            $free_product_value = floatval($reward->free_product_value ?? 0);
+
+            switch ($action_type) {
+                case 'percent':
+                    // % rabatt: actual_amount = purchase_amount * (action_value / 100)
+                    if ($purchase_amount > 0 && $action_value > 0) {
+                        $actual_amount = round($purchase_amount * ($action_value / 100), 2);
+                        ppv_log("💰 [PPV_QR] Percent discount: {$purchase_amount}€ × {$action_value}% = {$actual_amount}€");
+                    }
+                    break;
+
+                case 'fixed':
+                    // Fix rabatt: actual_amount = action_value
+                    if ($action_value > 0) {
+                        $actual_amount = $action_value;
+                        ppv_log("💰 [PPV_QR] Fixed discount: {$actual_amount}€");
+                    }
+                    break;
+
+                case 'free_product':
+                    // Gratis termék: actual_amount = free_product_value
+                    if ($free_product_value > 0) {
+                        $actual_amount = $free_product_value;
+                        ppv_log("💰 [PPV_QR] Free product value: {$actual_amount}€");
+                    }
+                    break;
+
+                default:
+                    // info/points típus: nincs konkrét euró érték
+                    ppv_log("💰 [PPV_QR] No actual_amount for type: {$action_type}");
+                    break;
+            }
+
+            // 4. Create redemption record with actual_amount
+            $redemption_data = [
+                'user_id' => $prompt->user_id,
+                'store_id' => $prompt->store_id,
+                'reward_id' => $reward->id,
+                'points_spent' => $reward->required_points,
+                'status' => 'approved',
+                'redeemed_at' => current_time('mysql')
+            ];
+
+            // Add actual_amount if calculated
+            if ($actual_amount !== null) {
+                $redemption_data['actual_amount'] = $actual_amount;
+            }
+
+            $wpdb->insert("{$wpdb->prefix}ppv_rewards_redeemed", $redemption_data);
+
+            // 4. Update prompt status
+            $wpdb->update(
+                "{$wpdb->prefix}ppv_redemption_prompts",
+                [
+                    'status' => 'completed',
+                    'handler_response_at' => current_time('mysql')
+                ],
+                ['id' => $prompt->id],
+                ['%s', '%s'],
+                ['%d']
+            );
+
+            $wpdb->query('COMMIT');
+
+            $amount_log = $actual_amount !== null ? ", actual_amount={$actual_amount}€" : '';
+            ppv_log("🎁 [PPV_QR] Handler approved redemption: user={$prompt->user_id}, store={$prompt->store_id}, reward={$reward->id}, points=-{$reward->required_points}{$amount_log}");
+
+            // 📡 ABLY: Notify user about approval
+            if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+                // Get new point balance
+                $new_balance = (int)$wpdb->get_var($wpdb->prepare(
+                    "SELECT COALESCE(SUM(points), 0) FROM {$wpdb->prefix}ppv_points WHERE user_id = %d",
+                    $prompt->user_id
+                ));
+
+                PPV_Ably::trigger_redemption_approved($prompt->user_id, [
+                    'reward_title' => $reward->title,
+                    'points_spent' => $reward->required_points,
+                    'new_balance' => $new_balance,
+                    'actual_amount' => $actual_amount,
+                ]);
+            }
+
+            return new WP_REST_Response([
+                'success' => true,
+                'message' => '✅ Einlösung bestätigt!',
+                'customer_name' => $customer_name,
+                'reward_title' => $reward->title,
+                'points_spent' => $reward->required_points,
+                'actual_amount' => $actual_amount
+            ], 200);
+
+        } catch (Exception $e) {
+            $wpdb->query('ROLLBACK');
+            ppv_log("❌ [PPV_QR] Redemption error: " . $e->getMessage());
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => '❌ Fehler bei der Einlösung'
+            ], 500);
+        }
     }
 }
 

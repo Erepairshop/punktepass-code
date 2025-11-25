@@ -1880,11 +1880,27 @@
         }
       });
 
-      // Handle reward requests
+      // Handle reward requests (legacy)
       channel.subscribe('reward-request', (message) => {
         ppvLog('[Ably] Reward request received:', message.data);
         // Refresh logs to show pending rewards
         STATE.scanProcessor?.loadLogs();
+      });
+
+      // ════════════════════════════════════════════════════════════════
+      // 🎁 REAL-TIME REDEMPTION REQUEST - New Feature
+      // Handler receives notification when user wants to redeem
+      // ════════════════════════════════════════════════════════════════
+      channel.subscribe('redemption-request', (message) => {
+        console.log('📡 [Ably] REDEMPTION REQUEST RECEIVED:', message.data);
+        showHandlerRedemptionModal(message.data);
+      });
+
+      // Handler: User cancelled redemption
+      channel.subscribe('redemption-cancelled', (message) => {
+        console.log('📡 [Ably] REDEMPTION CANCELLED:', message.data);
+        closeHandlerRedemptionModal();
+        window.ppvToast('❌ Kunde hat abgebrochen', 'info');
       });
 
       // 📡 Handle campaign updates (create/update/delete)
@@ -1946,6 +1962,247 @@
         }
       };
       document.addEventListener('visibilitychange', STATE.visibilityHandler);
+    }
+  }
+
+  // ============================================================
+  // 🎁 HANDLER REDEMPTION MODAL (New Feature)
+  // Shows confirmation dialog when user wants to redeem reward
+  // ============================================================
+  let activeRedemptionModal = null;
+  let activeRedemptionToken = null;
+
+  function showHandlerRedemptionModal(data) {
+    // Close any existing modal
+    closeHandlerRedemptionModal();
+
+    activeRedemptionToken = data.token;
+
+    // Create modal HTML
+    const modal = document.createElement('div');
+    modal.id = 'ppv-handler-redemption-modal';
+    modal.className = 'ppv-handler-redemption-modal';
+
+    // User info
+    const userName = escapeHtml(data.customer_name || data.user_name || data.user_email || `Kunde #${data.user_id}`);
+    const userEmail = data.email ? escapeHtml(data.email) : '';
+    const avatarHtml = data.avatar
+      ? `<img src="${escapeHtml(data.avatar)}" class="ppv-redemption-avatar" alt="">`
+      : `<div class="ppv-redemption-avatar-placeholder">👤</div>`;
+
+    // Reward info
+    const rewardTitle = escapeHtml(data.reward_title || 'Prämie');
+    const rewardPoints = data.reward_points || 0;
+    const currentPoints = data.current_points || 0;
+    const rewardType = data.reward_type || 'info';
+    const rewardValue = data.reward_value || 0;
+
+    // 🆕 Build purchase amount input for percent type rewards
+    const isPercentType = rewardType === 'discount_percent';
+    const purchaseAmountHtml = isPercentType ? `
+        <div class="ppv-redemption-purchase-amount" style="margin: 15px 0; padding: 15px; background: linear-gradient(135deg, #fff3e0, #ffe0b2); border-radius: 12px; border: 2px solid #ff9800;">
+          <label for="ppv-purchase-amount" style="display: block; margin-bottom: 8px; font-weight: 600; color: #e65100;">
+            <span style="font-size: 18px;">💰</span> Einkaufsbetrag eingeben:
+          </label>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <input type="number" id="ppv-purchase-amount"
+                   placeholder="0.00"
+                   min="0.01"
+                   step="0.01"
+                   style="flex: 1; padding: 12px 15px; font-size: 20px; font-weight: bold; border: 2px solid #ff9800; border-radius: 8px; text-align: right;"
+                   required>
+            <span style="font-size: 20px; font-weight: bold; color: #e65100;">€</span>
+          </div>
+          <p style="margin: 8px 0 0 0; font-size: 13px; color: #bf360c;">
+            ℹ️ Der Kunde erhält <strong>${rewardValue}% Rabatt</strong> auf diesen Betrag
+          </p>
+        </div>
+    ` : '';
+
+    // Show reward value info for other types
+    let rewardValueInfo = '';
+    if (rewardType === 'discount_fixed' && rewardValue > 0) {
+      rewardValueInfo = `<div style="color: #4caf50; font-weight: 600; margin-top: 5px;">💶 Wert: ${rewardValue}€ Rabatt</div>`;
+    } else if (rewardType === 'free_product' && data.free_product_value > 0) {
+      rewardValueInfo = `<div style="color: #4caf50; font-weight: 600; margin-top: 5px;">🎁 Wert: ${data.free_product_value}€</div>`;
+    } else if (isPercentType && rewardValue > 0) {
+      rewardValueInfo = `<div style="color: #ff9800; font-weight: 600; margin-top: 5px;">📊 ${rewardValue}% Rabatt</div>`;
+    }
+
+    modal.innerHTML = `
+      <div class="ppv-handler-redemption-content">
+        <div class="ppv-redemption-header">
+          <span class="ppv-redemption-icon">🎁</span>
+          <h3>Einlösung bestätigen</h3>
+        </div>
+
+        <div class="ppv-redemption-user-info">
+          ${avatarHtml}
+          <div class="ppv-redemption-user-details">
+            <div class="ppv-redemption-user-name">${userName}</div>
+            ${userEmail ? `<div class="ppv-redemption-user-email">${userEmail}</div>` : ''}
+          </div>
+        </div>
+
+        <div class="ppv-redemption-reward-info">
+          <div class="ppv-redemption-reward-title">${rewardTitle}</div>
+          ${rewardValueInfo}
+          <div class="ppv-redemption-reward-points">
+            <span class="ppv-redemption-cost">-${rewardPoints} Punkte</span>
+            <span class="ppv-redemption-balance">(Aktuell: ${currentPoints} Punkte)</span>
+          </div>
+        </div>
+
+        ${purchaseAmountHtml}
+
+        <div class="ppv-redemption-rejection-reason" style="display:none;">
+          <label for="ppv-rejection-reason">Ablehnungsgrund (optional):</label>
+          <input type="text" id="ppv-rejection-reason" placeholder="z.B. Prämie nicht verfügbar" maxlength="255">
+        </div>
+
+        <div class="ppv-redemption-actions">
+          <button class="ppv-btn ppv-btn-reject" id="ppv-handler-reject">
+            <span class="ppv-btn-icon">❌</span>
+            <span class="ppv-btn-text">Ablehnen</span>
+          </button>
+          <button class="ppv-btn ppv-btn-confirm" id="ppv-handler-confirm">
+            <span class="ppv-btn-icon">✅</span>
+            <span class="ppv-btn-text">Bestätigen</span>
+          </button>
+        </div>
+      </div>
+    `;
+
+    // Store reward type for later use
+    modal.dataset.rewardType = rewardType;
+    modal.dataset.rewardValue = rewardValue;
+    modal.dataset.freeProductValue = data.free_product_value || 0;
+
+    document.body.appendChild(modal);
+    activeRedemptionModal = modal;
+
+    // Play notification sound
+    playSound('success');
+
+    // Show modal with animation
+    requestAnimationFrame(() => {
+      modal.classList.add('show');
+    });
+
+    // Setup button handlers
+    const confirmBtn = modal.querySelector('#ppv-handler-confirm');
+    const rejectBtn = modal.querySelector('#ppv-handler-reject');
+    const rejectionReasonDiv = modal.querySelector('.ppv-redemption-rejection-reason');
+    const rejectionReasonInput = modal.querySelector('#ppv-rejection-reason');
+    const purchaseAmountInput = modal.querySelector('#ppv-purchase-amount');
+
+    let showingRejectionReason = false;
+
+    confirmBtn.addEventListener('click', async () => {
+      // 🆕 Check if percent type - require purchase amount
+      if (rewardType === 'discount_percent') {
+        const purchaseAmount = parseFloat(purchaseAmountInput?.value) || 0;
+        if (purchaseAmount <= 0) {
+          window.ppvToast('⚠️ Bitte Einkaufsbetrag eingeben!', 'warning');
+          purchaseAmountInput?.focus();
+          return;
+        }
+      }
+
+      confirmBtn.disabled = true;
+      confirmBtn.innerHTML = '<span class="ppv-btn-icon">⏳</span><span class="ppv-btn-text">Wird verarbeitet...</span>';
+
+      // 🆕 Get purchase amount for percent type
+      const purchaseAmount = rewardType === 'discount_percent' ? (parseFloat(purchaseAmountInput?.value) || 0) : null;
+      await handleHandlerResponse('approve', data.token, null, purchaseAmount);
+    });
+
+    rejectBtn.addEventListener('click', async () => {
+      if (!showingRejectionReason) {
+        // First click: show rejection reason input
+        showingRejectionReason = true;
+        rejectionReasonDiv.style.display = 'block';
+        rejectionReasonInput.focus();
+        rejectBtn.innerHTML = '<span class="ppv-btn-icon">❌</span><span class="ppv-btn-text">Jetzt ablehnen</span>';
+        return;
+      }
+
+      // Second click: actually reject
+      rejectBtn.disabled = true;
+      rejectBtn.innerHTML = '<span class="ppv-btn-icon">⏳</span><span class="ppv-btn-text">Wird verarbeitet...</span>';
+      const reason = rejectionReasonInput.value.trim() || 'Abgelehnt';
+      await handleHandlerResponse('reject', data.token, reason);
+    });
+  }
+
+  function closeHandlerRedemptionModal() {
+    if (activeRedemptionModal) {
+      activeRedemptionModal.classList.remove('show');
+      setTimeout(() => {
+        activeRedemptionModal?.remove();
+        activeRedemptionModal = null;
+        activeRedemptionToken = null;
+      }, 300);
+    }
+  }
+
+  async function handleHandlerResponse(action, token, reason, purchaseAmount = null) {
+    try {
+      const payload = {
+        token: token,
+        action: action // 'approve' or 'reject'
+      };
+
+      if (reason) {
+        payload.reason = reason;
+      }
+
+      // 🆕 Add purchase amount for percent type rewards
+      if (purchaseAmount !== null && purchaseAmount > 0) {
+        payload.purchase_amount = purchaseAmount;
+      }
+
+      const response = await fetch('/wp-json/ppv/v1/redemption/handler-response', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'PPV-POS-Token': getStoreKey()
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        if (action === 'approve') {
+          window.ppvToast('✅ Einlösung bestätigt!', 'success');
+          playSound('success');
+        } else {
+          window.ppvToast('❌ Einlösung abgelehnt', 'info');
+        }
+        closeHandlerRedemptionModal();
+      } else {
+        window.ppvToast('⚠️ ' + (data.message || 'Fehler'), 'error');
+        playSound('error');
+        // Re-enable buttons on error
+        const modal = document.getElementById('ppv-handler-redemption-modal');
+        if (modal) {
+          const confirmBtn = modal.querySelector('#ppv-handler-confirm');
+          const rejectBtn = modal.querySelector('#ppv-handler-reject');
+          if (confirmBtn) {
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = '<span class="ppv-btn-icon">✅</span><span class="ppv-btn-text">Bestätigen</span>';
+          }
+          if (rejectBtn) {
+            rejectBtn.disabled = false;
+            rejectBtn.innerHTML = '<span class="ppv-btn-icon">❌</span><span class="ppv-btn-text">Jetzt ablehnen</span>';
+          }
+        }
+      }
+    } catch (err) {
+      console.error('[Handler] Response error:', err);
+      window.ppvToast('⚠️ Netzwerkfehler', 'error');
+      playSound('error');
     }
   }
 

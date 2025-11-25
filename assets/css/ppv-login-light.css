@@ -363,6 +363,20 @@
     background: linear-gradient(135deg, #1a1a1a 0%, #ff2d68 50%, #7dd9e6 100%);
 }
 
+/* Apple Button */
+.ppv-apple-btn {
+    background: #000000;
+    color: white;
+}
+
+.ppv-apple-btn:hover {
+    background: #1a1a1a;
+}
+
+.ppv-apple-btn svg {
+    fill: white;
+}
+
 /* ============================================
    DIVIDER
    ============================================ */

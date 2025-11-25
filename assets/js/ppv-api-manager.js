@@ -1,13 +1,22 @@
 /**
- * PunktePass – Centralized API Manager v1.1
+ * PunktePass – Centralized API Manager v2.0
  *
  * This file MUST be loaded FIRST before all other PPV JS files!
  * Handles all API requests with:
  * - Request queue (max concurrent requests)
- * - 503 error retry logic
- * - Turbo.js navigation pause + queue clear
+ * - 503 error retry with EXPONENTIAL BACKOFF
+ * - Circuit breaker pattern (prevents server flooding)
+ * - Turbo.js navigation pause + smart queue clear
  * - Request deduplication
  * - Global throttling
+ * - Flag timeout auto-reset
+ *
+ * v2.0 Changes:
+ * - Exponential backoff (2s → 4s → 8s) instead of fixed 2s
+ * - Circuit breaker: stops requests after 5 consecutive failures
+ * - Longer Turbo pause (2500ms) to match retry timing
+ * - Smart queue clearing (once, not 3x)
+ * - Flag timeout system for polling/slider
  */
 
 (function() {
@@ -15,28 +24,31 @@
 
   // Prevent duplicate initialization
   if (window.PPV_API_MANAGER_LOADED) {
-    console.log('⏭️ [API Manager] Already loaded, skipping');
+    console.log('[API Manager] Already loaded, skipping');
     return;
   }
   window.PPV_API_MANAGER_LOADED = true;
 
-  console.log('✅ PPV API Manager v1.1 loaded');
+  console.log('PPV API Manager v2.0 loaded');
 
   // ============================================================
-  // 🔧 CONFIGURATION - More aggressive throttling
+  // CONFIGURATION - Optimized for stability
   // ============================================================
   const CONFIG = {
-    maxConcurrent: 1,           // ONLY 1 request at a time!
+    maxConcurrent: 1,           // Only 1 request at a time
     retryCount: 3,              // Retry attempts for 503
-    retryDelay: 2000,           // Delay between retries (ms)
+    retryDelayBase: 2000,       // Base delay for exponential backoff (ms)
     requestDelay: 300,          // Delay between queued requests (ms)
     dedupeWindow: 3000,         // Time window for duplicate detection (ms)
-    turboNavigationPause: 1000, // Pause requests during Turbo navigation (ms)
-    initialDelay: 500,          // Delay before first request after navigation
+    turboNavigationPause: 2500, // Pause during Turbo navigation (ms) - increased!
+    initialDelay: 800,          // Delay before first request after navigation
+    circuitBreakerThreshold: 5, // Consecutive failures before circuit opens
+    circuitBreakerResetTime: 30000, // Time to reset circuit breaker (ms)
+    flagTimeout: 15000,         // Auto-reset stuck flags after 15s
   };
 
   // ============================================================
-  // 🗄️ STATE
+  // STATE
   // ============================================================
   const state = {
     pending: 0,
@@ -44,24 +56,123 @@
     recentRequests: new Map(),  // For deduplication
     isPaused: false,
     pauseTimeout: null,
+    // Circuit breaker state
+    consecutiveFailures: 0,
+    circuitOpen: false,
+    circuitOpenTime: null,
+    // Navigation state
+    isNavigating: false,
+    queueCleared: false,  // Prevent multiple clears per navigation
   };
 
   // ============================================================
-  // 🚦 REQUEST QUEUE
+  // CIRCUIT BREAKER
+  // ============================================================
+  const circuitBreaker = {
+    recordSuccess() {
+      state.consecutiveFailures = 0;
+      if (state.circuitOpen) {
+        console.log('[API] Circuit breaker CLOSED - requests resuming');
+        state.circuitOpen = false;
+        state.circuitOpenTime = null;
+      }
+    },
+
+    recordFailure() {
+      state.consecutiveFailures++;
+      console.warn(`[API] Failure recorded (${state.consecutiveFailures}/${CONFIG.circuitBreakerThreshold})`);
+
+      if (state.consecutiveFailures >= CONFIG.circuitBreakerThreshold) {
+        console.error('[API] Circuit breaker OPEN - stopping requests for', CONFIG.circuitBreakerResetTime/1000, 's');
+        state.circuitOpen = true;
+        state.circuitOpenTime = Date.now();
+
+        // Auto-reset after timeout
+        setTimeout(() => {
+          if (state.circuitOpen) {
+            console.log('[API] Circuit breaker auto-reset');
+            state.circuitOpen = false;
+            state.circuitOpenTime = null;
+            state.consecutiveFailures = 0;
+            window.PPV_REQUEST_QUEUE.process();
+          }
+        }, CONFIG.circuitBreakerResetTime);
+      }
+    },
+
+    isOpen() {
+      if (!state.circuitOpen) return false;
+
+      // Check if enough time has passed to try again
+      const elapsed = Date.now() - state.circuitOpenTime;
+      if (elapsed >= CONFIG.circuitBreakerResetTime) {
+        state.circuitOpen = false;
+        state.circuitOpenTime = null;
+        state.consecutiveFailures = 0;
+        return false;
+      }
+
+      return true;
+    }
+  };
+
+  // ============================================================
+  // FLAG TIMEOUT MANAGER - Prevents stuck flags
+  // ============================================================
+  window.PPV_FLAG_TIMEOUTS = window.PPV_FLAG_TIMEOUTS || {};
+
+  window.PPV_SET_FLAG = function(flagName, value) {
+    window[flagName] = value;
+
+    // Clear existing timeout
+    if (window.PPV_FLAG_TIMEOUTS[flagName]) {
+      clearTimeout(window.PPV_FLAG_TIMEOUTS[flagName]);
+      delete window.PPV_FLAG_TIMEOUTS[flagName];
+    }
+
+    // Set auto-reset timeout if flag is true
+    if (value === true) {
+      window.PPV_FLAG_TIMEOUTS[flagName] = setTimeout(() => {
+        if (window[flagName] === true) {
+          console.warn(`[API] Auto-resetting stuck flag: ${flagName}`);
+          window[flagName] = false;
+        }
+        delete window.PPV_FLAG_TIMEOUTS[flagName];
+      }, CONFIG.flagTimeout);
+    }
+  };
+
+  window.PPV_CLEAR_FLAG = function(flagName) {
+    window[flagName] = false;
+    if (window.PPV_FLAG_TIMEOUTS[flagName]) {
+      clearTimeout(window.PPV_FLAG_TIMEOUTS[flagName]);
+      delete window.PPV_FLAG_TIMEOUTS[flagName];
+    }
+  };
+
+  // ============================================================
+  // REQUEST QUEUE
   // ============================================================
   window.PPV_REQUEST_QUEUE = {
     get pending() { return state.pending; },
     get queueLength() { return state.queue.length; },
+    get isCircuitOpen() { return circuitBreaker.isOpen(); },
 
     async add(fetchFn, options = {}) {
       const { priority = 0, key = null, skipDedupe = false } = options;
+
+      // Circuit breaker check
+      if (circuitBreaker.isOpen()) {
+        console.warn('[API] Circuit breaker open - request rejected');
+        return Promise.reject(new Error('Server temporarily unavailable'));
+      }
 
       // Deduplication check
       if (key && !skipDedupe) {
         const now = Date.now();
         const lastRequest = state.recentRequests.get(key);
         if (lastRequest && (now - lastRequest) < CONFIG.dedupeWindow) {
-          console.log(`⏭️ [API] Skipping duplicate: ${key}`);
+          console.log(`[API] Skipping duplicate: ${key}`);
           return Promise.resolve({ skipped: true, reason: 'duplicate' });
         }
         state.recentRequests.set(key, now);
@@ -77,7 +188,11 @@
     async process() {
       // Wait if paused (Turbo navigation)
       if (state.isPaused) {
-        console.log('⏸️ [API] Paused, waiting...');
+        return;
+      }
+
+      // Circuit breaker check
+      if (circuitBreaker.isOpen()) {
         return;
       }
 
@@ -91,8 +206,13 @@
 
       try {
         const result = await fetchFn();
+        circuitBreaker.recordSuccess();
         resolve(result);
       } catch (e) {
+        // Only record failure for server errors, not user aborts
+        if (e.name !== 'AbortError') {
+          circuitBreaker.recordFailure();
+        }
         reject(e);
       } finally {
         state.pending--;
@@ -103,12 +223,12 @@
 
     pause(duration = CONFIG.turboNavigationPause) {
       state.isPaused = true;
-      console.log(`⏸️ [API] Paused for ${duration}ms`);
+      console.log(`[API] Paused for ${duration}ms`);
 
       if (state.pauseTimeout) clearTimeout(state.pauseTimeout);
       state.pauseTimeout = setTimeout(() => {
         state.isPaused = false;
-        console.log('▶️ [API] Resumed');
+        console.log('[API] Resumed');
         this.process();
       }, duration);
     },
@@ -116,18 +236,34 @@
     resume() {
       if (state.pauseTimeout) clearTimeout(state.pauseTimeout);
       state.isPaused = false;
-      console.log('▶️ [API] Force resumed');
+      console.log('[API] Force resumed');
       this.process();
     },
 
     clear() {
+      const cleared = state.queue.length;
       state.queue = [];
-      console.log('🗑️ [API] Queue cleared');
+      if (cleared > 0) {
+        console.log(`[API] Queue cleared (${cleared} items)`);
+      }
     }
   };
 
   // ============================================================
-  // 🔄 GLOBAL FETCH WRAPPER
+  // EXPONENTIAL BACKOFF CALCULATOR
+  // ============================================================
+  const getRetryDelay = (attempt) => {
+    // attempt 0 = first retry = 2s
+    // attempt 1 = second retry = 4s
+    // attempt 2 = third retry = 8s
+    const delay = CONFIG.retryDelayBase * Math.pow(2, attempt);
+    // Add some jitter (0-500ms) to prevent thundering herd
+    const jitter = Math.random() * 500;
+    return delay + jitter;
+  };
+
+  // ============================================================
+  // GLOBAL FETCH WRAPPER
   // ============================================================
   window.ppvFetch = async function(url, options = {}, fetchOptions = {}) {
     const {
@@ -140,27 +276,29 @@
     // Generate deduplication key from URL if not provided
     const dedupeKey = key || `${options.method || 'GET'}:${url}`;
 
-    const doFetch = async (retriesLeft) => {
+    const doFetch = async (retriesLeft, attempt = 0) => {
       try {
         const res = await fetch(url, options);
 
-        // Handle 503 errors with retry
+        // Handle 503 errors with exponential backoff
         if (res.status === 503) {
           if (retriesLeft > 0) {
-            console.warn(`⚠️ [API] 503 error on ${url}, retrying in ${CONFIG.retryDelay}ms... (${retriesLeft} left)`);
-            await new Promise(r => setTimeout(r, CONFIG.retryDelay));
-            return doFetch(retriesLeft - 1);
+            const delay = getRetryDelay(attempt);
+            console.warn(`[API] 503 on ${url}, retry in ${Math.round(delay)}ms (${retriesLeft} left)`);
+            await new Promise(r => setTimeout(r, delay));
+            return doFetch(retriesLeft - 1, attempt + 1);
           }
-          console.error(`❌ [API] 503 error on ${url}, no retries left`);
+          console.error(`[API] 503 on ${url}, no retries left`);
           throw new Error('Server überlastet. Bitte Seite neu laden.');
         }
 
         return res;
       } catch (e) {
         if (retriesLeft > 0 && e.name !== 'AbortError') {
-          console.warn(`⚠️ [API] Network error on ${url}, retrying... (${retriesLeft} left)`);
-          await new Promise(r => setTimeout(r, CONFIG.retryDelay));
-          return doFetch(retriesLeft - 1);
+          const delay = getRetryDelay(attempt);
+          console.warn(`[API] Network error on ${url}, retry in ${Math.round(delay)}ms (${retriesLeft} left)`);
+          await new Promise(r => setTimeout(r, delay));
+          return doFetch(retriesLeft - 1, attempt + 1);
         }
         throw e;
       }
@@ -176,55 +314,54 @@
   window.apiFetch = window.ppvFetch;
 
   // ============================================================
-  // 🔄 TURBO.JS INTEGRATION - Aggressive queue management
+  // TURBO.JS INTEGRATION - Smart queue management
   // ============================================================
 
-  // Track navigation state
-  let isNavigating = false;
-
-  // CLEAR and PAUSE when Turbo starts navigation
-  document.addEventListener('turbo:before-visit', function() {
-    console.log('🔄 [API] Turbo navigation starting - CLEARING queue...');
-    isNavigating = true;
+  // SMART CLEAR: Only clear once per navigation cycle
+  const smartClear = () => {
+    if (state.queueCleared) return;
+    state.queueCleared = true;
     window.PPV_REQUEST_QUEUE.clear();
     window.PPV_REQUEST_QUEUE.pause(CONFIG.turboNavigationPause);
+  };
+
+  // Navigation starting - clear queue ONCE
+  document.addEventListener('turbo:before-visit', function() {
+    console.log('[API] Turbo navigation starting');
+    state.isNavigating = true;
+    state.queueCleared = false;  // Reset for new navigation
+    smartClear();
   });
 
-  // Also clear on turbo:before-render
+  // Page rendering - don't clear again, just ensure paused
   document.addEventListener('turbo:before-render', function() {
-    console.log('🔄 [API] Turbo rendering - clearing queue...');
-    window.PPV_REQUEST_QUEUE.clear();
-    window.PPV_REQUEST_QUEUE.pause(500);
+    if (!state.isPaused) {
+      window.PPV_REQUEST_QUEUE.pause(500);
+    }
   });
 
-  // Resume after navigation completes with LONGER delay
+  // Navigation complete - resume with delay
   document.addEventListener('turbo:load', function() {
-    console.log('🔄 [API] Turbo load complete - waiting before resume...');
-    isNavigating = false;
+    console.log('[API] Turbo load complete');
+    state.isNavigating = false;
+    state.queueCleared = false;
 
     // Long delay to let all JS initialize before allowing requests
     setTimeout(() => {
-      if (!isNavigating) {
-        console.log('▶️ [API] Resuming queue after navigation');
+      if (!state.isNavigating) {
+        console.log('[API] Resuming queue after navigation');
         window.PPV_REQUEST_QUEUE.resume();
       }
     }, CONFIG.initialDelay);
   });
 
-  // Clear queue on turbo:before-cache (user navigating away)
+  // Before caching - clear queue
   document.addEventListener('turbo:before-cache', function() {
-    console.log('🗑️ [API] Clearing queue before cache');
-    window.PPV_REQUEST_QUEUE.clear();
-  });
-
-  // Also handle turbo:visit for extra safety
-  document.addEventListener('turbo:visit', function() {
-    isNavigating = true;
     window.PPV_REQUEST_QUEUE.clear();
   });
 
   // ============================================================
-  // 🧹 CLEANUP - Remove old requests from deduplication map
+  // CLEANUP - Remove old requests from deduplication map
   // ============================================================
   setInterval(() => {
     const now = Date.now();
@@ -238,7 +375,7 @@
   }, 30000); // Clean up every 30 seconds
 
   // ============================================================
-  // 📊 DEBUG HELPERS
+  // DEBUG HELPERS
   // ============================================================
   window.PPV_API_DEBUG = {
     getState() {
@@ -246,19 +383,26 @@
         pending: state.pending,
         queueLength: state.queue.length,
         isPaused: state.isPaused,
+        isNavigating: state.isNavigating,
+        circuitOpen: state.circuitOpen,
+        consecutiveFailures: state.consecutiveFailures,
         recentRequestsCount: state.recentRequests.size,
         config: CONFIG
       };
     },
 
-    setMaxConcurrent(n) {
-      CONFIG.maxConcurrent = n;
-      console.log(`✅ [API] Max concurrent set to ${n}`);
+    resetCircuitBreaker() {
+      state.circuitOpen = false;
+      state.circuitOpenTime = null;
+      state.consecutiveFailures = 0;
+      console.log('[API] Circuit breaker manually reset');
     },
 
-    setRetryDelay(ms) {
-      CONFIG.retryDelay = ms;
-      console.log(`✅ [API] Retry delay set to ${ms}ms`);
+    setConfig(key, value) {
+      if (CONFIG.hasOwnProperty(key)) {
+        CONFIG[key] = value;
+        console.log(`[API] Config ${key} set to ${value}`);
+      }
     }
   };
 

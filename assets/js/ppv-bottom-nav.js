@@ -1,62 +1,150 @@
 /**
- * PunktePass – Bottom Nav (Active + Lang Sync)
- * FIX: Added throttle to prevent rapid clicks causing DB overload
- * FIX: User dashboard pages use Turbo (no full reload)
+ * PunktePass – Bottom Nav v3.0 (Turbo SPA Edition)
+ *
+ * Features:
+ * - Full Turbo.js SPA navigation (no page refresh between user pages)
+ * - Same-page navigation skip (prevents unnecessary re-renders)
+ * - Improved debounce and throttle
+ * - Global navigation state sync
+ * - Safari optimizations
+ *
+ * v3.0 Changes:
+ * - Skip navigation if already on target page
+ * - Smoother Turbo integration
+ * - Better Safari handling
  */
 jQuery(document).ready(function ($) {
-  console.log("✅ Bottom Nav aktiv");
+  console.log("PPV Bottom Nav v3.0 aktiv (Turbo SPA)");
 
   const currentPath = window.location.pathname.replace(/\/+$/, "");
-  let isNavigating = false; // Throttle flag
+  let lastClickTime = 0;
+
+  // Global navigation state (shared with other PPV scripts)
+  window.PPV_NAV_STATE = window.PPV_NAV_STATE || { isNavigating: false };
+
+  // Detect Safari
+  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  if (isSafari) {
+    console.log("[Nav] Safari detected - using optimized handlers");
+  }
 
   // User dashboard pages - these use Turbo for SPA navigation
   const userPages = ['/user_dashboard', '/meine-punkte', '/belohnungen', '/einstellungen', '/punkte'];
-  const isUserPage = userPages.some(p => currentPath === p || currentPath.startsWith(p + '/'));
 
-  $(".ppv-bottom-nav .nav-item").each(function () {
-    const href = $(this).attr("href").replace(/\/+$/, "");
-    if (currentPath === href) {
-      $(this).addClass("active");
-    }
+  const isUserPagePath = (path) => {
+    const cleanPath = path.replace(/\/+$/, "");
+    return userPages.some(p => cleanPath === p || cleanPath.startsWith(p + '/'));
+  };
+
+  const isUserPage = isUserPagePath(currentPath);
+
+  // Mark active nav item
+  const updateActiveNav = () => {
+    const path = window.location.pathname.replace(/\/+$/, "");
+    $(".ppv-bottom-nav .nav-item").each(function () {
+      const href = $(this).attr("href").replace(/\/+$/, "");
+      $(this).toggleClass("active", path === href);
+    });
+  };
+
+  updateActiveNav();
+
+  // Touch feedback (passive for performance)
+  $(".ppv-bottom-nav .nav-item").each(function() {
+    this.addEventListener("touchstart", function() {
+      $(this).addClass("touch");
+    }, { passive: true });
+
+    this.addEventListener("touchend", function() {
+      $(this).removeClass("touch");
+    }, { passive: true });
   });
 
-  // smooth icon hover feedback
-  $(".ppv-bottom-nav .nav-item").on("touchstart mousedown", function () {
+  $(".ppv-bottom-nav .nav-item").on("mousedown", function () {
     $(this).addClass("touch");
-  }).on("touchend mouseup", function () {
+  }).on("mouseup mouseleave", function () {
     $(this).removeClass("touch");
   });
 
   // Navigation click handler
-  // User pages: Let Turbo handle it (SPA-style, no reload)
-  // Other pages: Force full page refresh
   $(".ppv-bottom-nav .nav-item").on("click", function (e) {
     const href = $(this).attr("href");
     if (!href || href === '#') return;
 
-    // Block rapid clicks
-    if (isNavigating) {
+    const targetPath = href.replace(/\/+$/, "");
+    const currentPathNow = window.location.pathname.replace(/\/+$/, "");
+
+    // SKIP if already on the same page
+    if (targetPath === currentPathNow) {
+      console.log("[Nav] Already on this page, skipping navigation");
+      e.preventDefault();
+      // Just scroll to top instead
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    // Debounce rapid clicks (300ms)
+    const now = Date.now();
+    if (now - lastClickTime < 300) {
+      console.log("[Nav] Debounced rapid click");
+      e.preventDefault();
+      return;
+    }
+    lastClickTime = now;
+
+    // Block if navigation already in progress
+    if (window.PPV_NAV_STATE.isNavigating) {
+      console.log("[Nav] Navigation in progress, blocking");
       e.preventDefault();
       return;
     }
 
-    const targetPath = href.replace(/\/+$/, "");
-    const isTargetUserPage = userPages.some(p => targetPath === p || targetPath.startsWith(p + '/'));
+    const isTargetUserPage = isUserPagePath(targetPath);
 
-    // If we're on a user page AND going to a user page, let Turbo handle it
+    // User page to user page = Turbo SPA navigation
     if (isUserPage && isTargetUserPage) {
-      console.log("🚀 [Nav] Turbo navigation to:", href);
-      isNavigating = true;
+      console.log("[Nav] Turbo SPA navigation to:", href);
+      window.PPV_NAV_STATE.isNavigating = true;
       $(this).addClass("navigating");
-      // Don't preventDefault - let Turbo handle the click
-      setTimeout(() => { isNavigating = false; }, 1000);
+
+      // Reset navigation state after timeout (safety)
+      const throttleTime = isSafari ? 600 : 1000;
+      setTimeout(() => {
+        window.PPV_NAV_STATE.isNavigating = false;
+        $(".ppv-bottom-nav .nav-item").removeClass("navigating");
+      }, throttleTime);
+
+      // Let Turbo handle the navigation (don't preventDefault)
       return;
     }
 
-    // Otherwise, force full page refresh (old behavior)
+    // Non-user page or cross-type navigation = full page refresh
     e.preventDefault();
-    isNavigating = true;
+    window.PPV_NAV_STATE.isNavigating = true;
     $(this).addClass("navigating");
-    window.location.href = href;
+
+    if (isSafari) {
+      setTimeout(() => {
+        window.location.href = href;
+      }, 50);
+    } else {
+      window.location.href = href;
+    }
+  });
+
+  // Turbo event handlers
+  document.addEventListener('turbo:load', function() {
+    window.PPV_NAV_STATE.isNavigating = false;
+    $(".ppv-bottom-nav .nav-item").removeClass("navigating");
+    updateActiveNav();
+  });
+
+  document.addEventListener('turbo:before-visit', function() {
+    window.PPV_NAV_STATE.isNavigating = true;
+  });
+
+  // Handle browser back/forward buttons
+  window.addEventListener('popstate', function() {
+    setTimeout(updateActiveNav, 100);
   });
 });

@@ -1,7 +1,9 @@
 /**
- * PunktePass – SPA Navigation v3.1 (Lightning Mix)
- * Ultra-fast + Cache + Offline + Feedback
- * FIXED: Removed duplicate v2.0 code, added throttle to scroll, optimized prefetch
+ * PunktePass – SPA Utilities v4.0 (Turbo-Only)
+ * REMOVED: Custom navigation - Turbo.js handles all navigation now
+ * KEPT: Preloader, Toast, Scroll-restore, Offline detection
+ *
+ * v4.0: Complete navigation removal - Turbo.js is the only navigation handler
  * Author: PunktePass / Erik Borota
  */
 
@@ -9,11 +11,30 @@ document.addEventListener("DOMContentLoaded", () => {
   const root = document.querySelector("#ppv-app-root");
   if (!root) return;
 
-  const cache = new Map();
-  const cacheTime = JSON.parse(localStorage.getItem("spa_cache_time") || "{}");
-  let scrollThrottle = null; // Throttle for scroll events
+  console.log("✅ [SPA Utils] v4.0 - Turbo-only mode (no custom navigation)");
 
-  // ✅ Preloader
+  // ✅ Clean up old SPA cache from localStorage (one-time migration)
+  if (!localStorage.getItem("ppv_spa_cache_cleaned")) {
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.startsWith("http") || key === "spa_cache_time")) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach(k => localStorage.removeItem(k));
+    localStorage.setItem("ppv_spa_cache_cleaned", "1");
+    if (keysToRemove.length > 0) {
+      console.log("🧹 [SPA Utils] Cleaned " + keysToRemove.length + " old cache entries");
+    }
+  }
+
+  let scrollThrottle = null;
+
+  // ✅ Global navigation state (shared with ppv-bottom-nav.js)
+  window.PPV_NAV_STATE = window.PPV_NAV_STATE || { isNavigating: false };
+
+  // ✅ Preloader (only if not exists)
   if (!document.getElementById("ppv-preloader")) {
     const loader = document.createElement("div");
     loader.id = "ppv-preloader";
@@ -21,18 +42,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.body.appendChild(loader);
   }
 
-  // ✅ Fade helpers
-  const fadeOut = () => {
-    root.style.transition = "opacity 0.25s ease";
-    root.style.opacity = "0";
-    document.body.classList.add("ppv-loading");
-  };
-  const fadeIn = () => {
-    root.style.opacity = "1";
-    document.body.classList.remove("ppv-loading");
-  };
-
-  // ✅ Close QR modal before navigation (prevents flash)
+  // ✅ Close modals on Turbo navigation (prevents flash)
   const closeModals = () => {
     const modal = document.getElementById("ppv-user-qr");
     const overlay = document.getElementById("ppv-qr-overlay");
@@ -42,63 +52,14 @@ document.addEventListener("DOMContentLoaded", () => {
     document.body.style.overflow = "";
   };
 
-  // ✅ Menü intercept (with navigation guard)
-  let isNavigating = false;
-  document.querySelectorAll(".ppv-bottom-nav a").forEach(link => {
-    link.addEventListener("click", async e => {
-      e.preventDefault();
+  // ✅ Turbo event listeners for state sync
+  document.addEventListener('turbo:before-visit', () => {
+    closeModals();
+    window.PPV_NAV_STATE.isNavigating = true;
+  });
 
-      // Block rapid clicks
-      if (isNavigating) return;
-
-      // ✅ Close any open modals before navigation
-      closeModals();
-
-      const url = link.href;
-      if (!url || url === window.location.href) return;
-
-      isNavigating = true;
-      fadeOut();
-
-      let html = cache.get(url);
-      const now = Date.now();
-      const validCache = cacheTime[url] && now - cacheTime[url] < 60000;
-
-      if (!html && localStorage.getItem(url)) html = localStorage.getItem(url);
-      if (!validCache) {
-        try {
-          const res = await fetch(url, { headers: { "X-PPV-SPA": "1" } });
-          html = await res.text();
-          cache.set(url, html);
-          localStorage.setItem(url, html);
-          cacheTime[url] = now;
-          localStorage.setItem("spa_cache_time", JSON.stringify(cacheTime));
-        } catch {
-          showToast("⚠️ Offline-Modus aktiv", "warn");
-          isNavigating = false;
-        }
-      }
-
-      if (!html) {
-        isNavigating = false;
-        return fadeIn();
-      }
-
-      const dom = new DOMParser().parseFromString(html, "text/html");
-      const newRoot = dom.querySelector("#ppv-app-root");
-      if (newRoot) root.innerHTML = newRoot.innerHTML;
-
-      document.querySelectorAll(".ppv-bottom-nav a").forEach(a => a.classList.remove("active"));
-      link.classList.add("active");
-
-      window.history.pushState({}, "", url);
-      setTimeout(fadeIn, 80);
-      setTimeout(() => document.body.classList.add("ppv-loaded-flash"), 50);
-      setTimeout(() => document.body.classList.remove("ppv-loaded-flash"), 250);
-
-      // Reset navigation guard after transition
-      setTimeout(() => { isNavigating = false; }, 300);
-    });
+  document.addEventListener('turbo:load', () => {
+    window.PPV_NAV_STATE.isNavigating = false;
   });
 
   // ✅ Scroll-restore (THROTTLED - max 1x per 200ms)
@@ -109,14 +70,15 @@ document.addEventListener("DOMContentLoaded", () => {
       scrollThrottle = null;
     }, 200);
   });
+
   const scrollPos = sessionStorage.getItem("scroll_" + location.pathname);
   if (scrollPos) setTimeout(() => window.scrollTo(0, scrollPos), 100);
 
   // ✅ Offline / online toast
-  window.addEventListener("offline", () => showToast("⚠️ Offline-Modus aktiv", "warn"));
-  window.addEventListener("online", () => showToast("🔄 Verbindung wiederhergestellt", "ok"));
+  window.addEventListener("offline", () => showToast("Offline-Modus aktiv", "warn"));
+  window.addEventListener("online", () => showToast("Verbindung wiederhergestellt", "ok"));
 
-  // ✅ Toast rendszer
+  // ✅ Toast system
   function showToast(msg, type = "info") {
     const el = document.createElement("div");
     el.className = `ppv-toast ${type}`;
@@ -127,18 +89,6 @@ document.addEventListener("DOMContentLoaded", () => {
     setTimeout(() => el.remove(), 3000);
   }
 
-  // ✅ History back
-  window.addEventListener("popstate", async () => {
-    closeModals(); // ✅ Close modals before navigation
-    fadeOut();
-    try {
-      const res = await fetch(location.href);
-      const html = await res.text();
-      const dom = new DOMParser().parseFromString(html, "text/html");
-      const newRoot = dom.querySelector("#ppv-app-root");
-      if (newRoot) root.innerHTML = newRoot.innerHTML;
-    } finally {
-      fadeIn();
-    }
-  });
+  // Expose toast globally
+  window.ppvShowToast = showToast;
 });

@@ -18,6 +18,11 @@ define('PPV_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('PPV_CSS_LOCKDOWN', true);
 
 // ========================================
+// 🍎 APPLE SIGN IN CONFIG
+// ========================================
+define('PPV_APPLE_CLIENT_ID', 'de.punktepass');
+
+// ========================================
 // 🐛 DEBUG MODE - SET TO false FOR PRODUCTION!
 // ========================================
 define('PPV_DEBUG', false);

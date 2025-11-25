@@ -1,14 +1,21 @@
 /**
- * PunktePass – My Points (Production v2.0)
+ * PunktePass – My Points (Production v2.1)
  * ✅ String translations from PHP (window.ppv_lang)
  * ✅ getLabels() function
  * ✅ Offline fallback
  * ✅ Auto-translate on language change
+ * ✅ Safari performance fixes
  */
 
 (() => {
   const DEBUG = false; // ✅ FIX: Set to false for production
   let isOnline = navigator.onLine;
+
+  // 🍎 Safari detection
+  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  if (isSafari) {
+    console.log('🍎 [PPV_MYPOINTS] Safari detected - using optimized handlers');
+  }
 
   // ✅ OPTIMIZED: Conditional logging (only in DEBUG mode)
   const log = (...args) => { if (DEBUG) console.log(...args); };
@@ -219,12 +226,20 @@
     const body = document.body;
     body.classList.remove("ppv-user-dashboard");
     body.classList.add("ppv-app-mode", "ppv-my-points");
-    
+
     if (!isOnline) {
       body.classList.add("ppv-offline-mode");
     }
-    
-    void body.offsetHeight;
+
+    // 🍎 Safari fix: Force layout recalculation to prevent flash
+    if (isSafari) {
+      body.style.display = 'none';
+      void body.offsetHeight; // Force reflow
+      body.style.display = '';
+    } else {
+      void body.offsetHeight;
+    }
+
     setTimeout(() => window.scrollTo(0, 0), 50);
     log('✅ [PPV_MYPOINTS] Layout OK');
   }
@@ -821,10 +836,31 @@ function claimReward(storeId) {
   document.addEventListener('turbo:before-visit', () => {
     if (window.PPV_MYPOINTS_ABLY) {
       log('🧹 [PPV_MYPOINTS] Cleaning up Ably connection');
-      window.PPV_MYPOINTS_ABLY.close();
+      try {
+        // Safari needs explicit disconnect before close
+        if (isSafari && window.PPV_MYPOINTS_ABLY.connection) {
+          window.PPV_MYPOINTS_ABLY.connection.close();
+        }
+        window.PPV_MYPOINTS_ABLY.close();
+      } catch (e) {
+        // Ignore close errors
+      }
       window.PPV_MYPOINTS_ABLY = null;
     }
   });
+
+  // 🍎 Safari fix: Also cleanup on pagehide
+  if (isSafari) {
+    window.addEventListener('pagehide', () => {
+      if (window.PPV_MYPOINTS_ABLY) {
+        log('🍎 [PPV_MYPOINTS] Safari pagehide - cleanup');
+        try {
+          window.PPV_MYPOINTS_ABLY.close();
+        } catch (e) { /* ignore */ }
+        window.PPV_MYPOINTS_ABLY = null;
+      }
+    });
+  }
 
   /** ============================
    * 🧠 DEBUG
