@@ -379,10 +379,24 @@ class PPV_Rewards {
             WHERE store_id = %d AND status = 'approved' AND YEAR(redeemed_at) = YEAR(CURDATE()) AND MONTH(redeemed_at) = MONTH(CURDATE())
         ", $store_id));
 
-        // Total value this month
+        // Total value this month - calculated from reward type
+        // Priority: actual_amount (if set during redemption) → reward value based on type
+        $rewards_table = $wpdb->prefix . 'ppv_rewards';
         $wert = (float)$wpdb->get_var($wpdb->prepare("
-            SELECT COALESCE(SUM(COALESCE(actual_amount, points_spent, 0)), 0) FROM {$table}
-            WHERE store_id = %d AND status = 'approved' AND YEAR(redeemed_at) = YEAR(CURDATE()) AND MONTH(redeemed_at) = MONTH(CURDATE())
+            SELECT COALESCE(SUM(
+                CASE
+                    WHEN r.actual_amount IS NOT NULL AND r.actual_amount > 0 THEN r.actual_amount
+                    WHEN rw.action_type = 'discount_fixed' THEN COALESCE(rw.action_value, 0)
+                    WHEN rw.action_type = 'free_product' THEN COALESCE(rw.free_product_value, 0)
+                    WHEN rw.action_type = 'discount_percent' THEN COALESCE(r.actual_amount, 0)
+                    ELSE 0
+                END
+            ), 0)
+            FROM {$table} r
+            LEFT JOIN {$rewards_table} rw ON r.reward_id = rw.id
+            WHERE r.store_id = %d AND r.status = 'approved'
+            AND YEAR(r.redeemed_at) = YEAR(CURDATE())
+            AND MONTH(r.redeemed_at) = MONTH(CURDATE())
         ", $store_id));
 
         // Pending count
