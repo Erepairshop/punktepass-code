@@ -901,7 +901,16 @@
         }
     }
 
-    // Initialize
-    new PPVOnboarding();
+    // Initialize and store globally for cleanup
+    window.PPV_ONBOARDING_INSTANCE = new PPVOnboarding();
+
+    // ✅ FIX: Cleanup on navigation (iOS Safari fix)
+    document.addEventListener('turbo:before-visit', function() {
+        if (window.PPV_ONBOARDING_INSTANCE?.progressInterval) {
+            clearInterval(window.PPV_ONBOARDING_INSTANCE.progressInterval);
+            window.PPV_ONBOARDING_INSTANCE.progressInterval = null;
+            console.log('🧹 [ONBOARDING] Progress interval cleared');
+        }
+    });
 
 })(jQuery);
