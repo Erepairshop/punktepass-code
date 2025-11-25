@@ -343,11 +343,15 @@ class PPV_Rewards {
                         </div>
                     </div>
 
-                    <!-- Date-based Receipt Generator -->
+                    <!-- Date Range Receipt Generator -->
                     <div class="ppv-ea-receipt-generator">
-                        <h3><i class="ri-calendar-check-line"></i> Tagesbericht</h3>
-                        <div class="ppv-ea-receipt-form">
-                            <input type="date" id="ppv-ea-receipt-date" class="ppv-ea-select" value="<?php echo date('Y-m-d'); ?>">
+                        <h3><i class="ri-calendar-check-line"></i> Zeitraumbericht</h3>
+                        <div class="ppv-ea-receipt-form ppv-ea-date-range-form">
+                            <div class="ppv-ea-date-range">
+                                <input type="date" id="ppv-ea-receipt-date-from" class="ppv-ea-select" value="<?php echo date('Y-m-01'); ?>">
+                                <span class="ppv-ea-date-separator">bis</span>
+                                <input type="date" id="ppv-ea-receipt-date-to" class="ppv-ea-select" value="<?php echo date('Y-m-d'); ?>">
+                            </div>
                             <button id="ppv-ea-generate-date-receipt" class="ppv-ea-btn-primary">
                                 <i class="ri-file-add-line"></i> Erstellen
                             </button>
@@ -747,17 +751,21 @@ class PPV_Rewards {
     }
 
     /** ============================================================
-     *  REST: Generate Receipt for specific date
+     *  REST: Generate Receipt for date range (Zeitraumbericht)
      * ============================================================ */
     public static function rest_generate_date_receipt($request) {
-        global $wpdb;
-
         $data = $request->get_json_params();
         $store_id = self::get_store_id();
-        $date = sanitize_text_field($data['date'] ?? '');
+        $date_from = sanitize_text_field($data['date_from'] ?? '');
+        $date_to = sanitize_text_field($data['date_to'] ?? '');
 
-        if (!$store_id || !$date) {
+        if (!$store_id || !$date_from || !$date_to) {
             return new WP_REST_Response(['success' => false, 'message' => 'Ungültige Parameter'], 400);
+        }
+
+        // Validate date format
+        if (!strtotime($date_from) || !strtotime($date_to)) {
+            return new WP_REST_Response(['success' => false, 'message' => 'Ungültiges Datumsformat'], 400);
         }
 
         if (!class_exists('PPV_Expense_Receipt')) {
@@ -769,39 +777,19 @@ class PPV_Rewards {
             }
         }
 
-        // Get all approved redemptions for this date without receipt
-        $items = $wpdb->get_results($wpdb->prepare("
-            SELECT id FROM {$wpdb->prefix}ppv_rewards_redeemed
-            WHERE store_id = %d AND status = 'approved'
-            AND DATE(redeemed_at) = %s
-            AND (receipt_pdf_path IS NULL OR receipt_pdf_path = '')
-        ", $store_id, $date));
+        $receipt_path = PPV_Expense_Receipt::generate_date_range_receipt($store_id, $date_from, $date_to);
 
-        if (!$items || count($items) === 0) {
-            return new WP_REST_Response(['success' => false, 'message' => 'Keine Einlösungen ohne Beleg für dieses Datum'], 400);
+        if (!$receipt_path) {
+            return new WP_REST_Response(['success' => false, 'message' => 'Keine Einlösungen für diesen Zeitraum'], 400);
         }
 
-        $generated = 0;
-        $last_url = null;
-
-        foreach ($items as $item) {
-            $path = PPV_Expense_Receipt::generate_for_redeem($item->id);
-            if ($path) {
-                $generated++;
-                $upload = wp_upload_dir();
-                $last_url = $upload['baseurl'] . '/' . $path;
-            }
-        }
-
-        if ($generated === 0) {
-            return new WP_REST_Response(['success' => false, 'message' => 'Keine Belege konnten erstellt werden'], 400);
-        }
+        $upload = wp_upload_dir();
+        $receipt_url = $upload['baseurl'] . '/' . $receipt_path;
 
         return new WP_REST_Response([
             'success' => true,
-            'message' => sprintf('%d Beleg(e) erstellt', $generated),
-            'count' => $generated,
-            'receipt_url' => $last_url,
+            'message' => 'Zeitraumbericht erstellt',
+            'receipt_url' => $receipt_url,
         ], 200);
     }
 

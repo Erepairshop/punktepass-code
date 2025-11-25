@@ -15892,6 +15892,29 @@ body.ppv-dark .ppv-redemption-status.error,
     flex-wrap: wrap;
 }
 
+/* Date Range Form */
+.ppv-ea-date-range-form {
+    flex-direction: column;
+}
+
+.ppv-ea-date-range {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.ppv-ea-date-separator {
+    font-size: 14px;
+    color: var(--pp-text-muted, #64748b);
+    font-weight: 500;
+}
+
+.ppv-ea-date-range-form .ppv-ea-btn-primary {
+    align-self: flex-start;
+    margin-top: 4px;
+}
+
 .ppv-ea-select {
     flex: 1;
     min-width: 120px;

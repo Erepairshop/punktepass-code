@@ -378,6 +378,8 @@
       if (data.success && data.receipt_url) {
         showToast('Monatsbericht erstellt!', 'success');
         loadReceipts(); // Refresh list
+        // Direct download
+        downloadPdf(data.receipt_url);
       } else {
         showToast(data.message || 'Keine Einlösungen für diesen Zeitraum', 'error');
       }
@@ -392,10 +394,16 @@
 
   async function generateDateReceipt() {
     const btn = document.getElementById('ppv-ea-generate-date-receipt');
-    const dateInput = document.getElementById('ppv-ea-receipt-date');
-    const date = dateInput?.value;
+    const dateFrom = document.getElementById('ppv-ea-receipt-date-from')?.value;
+    const dateTo = document.getElementById('ppv-ea-receipt-date-to')?.value;
 
-    if (!date) return;
+    if (!dateFrom || !dateTo) return;
+
+    // Validate date range
+    if (dateFrom > dateTo) {
+      showToast('Startdatum muss vor Enddatum liegen', 'error');
+      return;
+    }
 
     btn.disabled = true;
     btn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Erstelle...';
@@ -404,15 +412,17 @@
       const res = await fetch(`${base}einloesungen/date-receipt`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date })
+        body: JSON.stringify({ date_from: dateFrom, date_to: dateTo })
       });
       const data = await res.json();
 
-      if (data.success) {
-        showToast(data.message || 'Belege erstellt!', 'success');
+      if (data.success && data.receipt_url) {
+        showToast(data.message || 'Zeitraumbericht erstellt!', 'success');
         loadReceipts(); // Refresh list
+        // Direct download
+        downloadPdf(data.receipt_url);
       } else {
-        showToast(data.message || 'Keine Einlösungen für dieses Datum', 'error');
+        showToast(data.message || 'Keine Einlösungen für diesen Zeitraum', 'error');
       }
     } catch (err) {
       console.error('[PPV_REWARDS_V2] Date receipt error:', err);
@@ -582,6 +592,17 @@
     const div = document.createElement('div');
     div.textContent = text || '';
     return div.innerHTML;
+  }
+
+  function downloadPdf(url) {
+    // Create hidden link and trigger download
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = url.split('/').pop();
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 
   function showToast(message, type = 'info') {
