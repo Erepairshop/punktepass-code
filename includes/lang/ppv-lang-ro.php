@@ -1269,4 +1269,83 @@ return [
     // ============================================================
     'err_device_limit' => '⚠️ Limită dispozitiv atinsă',
     'err_device_limit_detail' => 'Numărul maxim de conturi pentru acest dispozitiv a fost atins',
+
+    // ============================================================
+    // REWARDS / RĂSCUMPĂRĂRI
+    // ============================================================
+    'rewards_title' => 'Răscumpărări',
+    'rewards_login_required' => 'Vă rugăm să vă autentificați sau să activați magazinul.',
+    'rewards_store_not_found' => 'Magazin negăsit.',
+
+    // Stats
+    'rewards_stat_today' => 'Azi',
+    'rewards_stat_week' => 'Săptămână',
+    'rewards_stat_month' => 'Lună',
+    'rewards_stat_value' => 'Valoare',
+
+    // Tabs
+    'rewards_tab_pending' => 'În așteptare',
+    'rewards_tab_history' => 'Istoric',
+    'rewards_tab_receipts' => 'Documente',
+
+    // Filters
+    'rewards_filter_all' => 'Toate stările',
+    'rewards_filter_approved' => 'Aprobat',
+    'rewards_filter_cancelled' => 'Respins',
+
+    // Receipt generators
+    'rewards_monthly_report' => 'Raport lunar',
+    'rewards_period_report' => 'Raport perioadă',
+    'rewards_date_until' => 'până la',
+    'rewards_btn_create' => 'Creează',
+    'rewards_btn_creating' => 'Se creează...',
+
+    // Month names
+    'month_january' => 'Ianuarie',
+    'month_february' => 'Februarie',
+    'month_march' => 'Martie',
+    'month_april' => 'Aprilie',
+    'month_may' => 'Mai',
+    'month_june' => 'Iunie',
+    'month_july' => 'Iulie',
+    'month_august' => 'August',
+    'month_september' => 'Septembrie',
+    'month_october' => 'Octombrie',
+    'month_november' => 'Noiembrie',
+    'month_december' => 'Decembrie',
+
+    // Messages
+    'rewards_loading' => 'Se încarcă...',
+    'rewards_loading_receipts' => 'Se încarcă documentele...',
+    'rewards_no_pending' => 'Nicio răscumpărare în așteptare',
+    'rewards_no_history' => 'Nicio răscumpărare în istoric',
+    'rewards_no_receipts' => 'Încă nu există documente',
+    'rewards_empty_pending_hint' => 'Răscumpărările noi vor apărea aici automat',
+    'rewards_empty_history_hint' => 'Răscumpărările aprobate și respinse vor fi afișate aici',
+    'rewards_empty_receipts_hint' => 'Creați un raport lunar mai sus',
+
+    // Actions
+    'rewards_btn_approve' => 'Aprobă',
+    'rewards_btn_reject' => 'Respinge',
+    'rewards_status_approved' => 'Aprobat',
+    'rewards_status_cancelled' => 'Respins',
+    'rewards_status_pending' => 'În așteptare',
+
+    // Toast messages
+    'rewards_toast_approved' => 'Răscumpărare aprobată!',
+    'rewards_toast_rejected' => 'Răscumpărare respinsă',
+    'rewards_toast_error' => 'Eroare la procesare',
+    'rewards_toast_monthly_created' => 'Raport lunar creat!',
+    'rewards_toast_period_created' => 'Raport perioadă creat!',
+    'rewards_toast_no_data' => 'Nicio răscumpărare pentru această perioadă',
+    'rewards_toast_date_error' => 'Data de început trebuie să fie înainte de data de sfârșit',
+
+    // Receipt card
+    'rewards_receipt_download' => 'Descarcă',
+    'rewards_receipt_view' => 'Vizualizează',
+    'rewards_points' => 'Puncte',
+    'rewards_default_title' => 'Premiu',
+
+    // Notifications
+    'rewards_new_redemption' => 'Răscumpărare nouă!',
 ];

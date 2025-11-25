@@ -215,8 +215,13 @@ class PPV_Rewards {
         global $wpdb;
         $store_id = self::get_store_id();
 
+        // Translation helper
+        $t = function($key) {
+            return class_exists('PPV_Lang') ? PPV_Lang::t($key) : $key;
+        };
+
         if (!$store_id) {
-            return '<div class="ppv-warning"><i class="ri-error-warning-line"></i> Bitte anmelden oder Store aktivieren.</div>';
+            return '<div class="ppv-warning"><i class="ri-error-warning-line"></i> ' . esc_html($t('rewards_login_required')) . '</div>';
         }
 
         $store = $wpdb->get_row($wpdb->prepare(
@@ -225,12 +230,16 @@ class PPV_Rewards {
         ));
 
         if (!$store) {
-            return '<div class="ppv-warning"><i class="ri-error-warning-line"></i> Store nicht gefunden.</div>';
+            return '<div class="ppv-warning"><i class="ri-error-warning-line"></i> ' . esc_html($t('rewards_store_not_found')) . '</div>';
         }
 
         // Currency
         $currency_map = ['DE' => 'EUR', 'HU' => 'HUF', 'RO' => 'RON'];
         $currency = $currency_map[$store->country] ?? 'EUR';
+
+        // Month names from translations
+        $month_keys = ['month_january', 'month_february', 'month_march', 'month_april', 'month_may', 'month_june',
+                       'month_july', 'month_august', 'month_september', 'month_october', 'month_november', 'month_december'];
 
         ob_start();
         ?>
@@ -241,7 +250,7 @@ class PPV_Rewards {
             <!-- HEADER -->
             <div class="ppv-ea-header">
                 <div class="ppv-ea-header-left">
-                    <h1><i class="ri-exchange-funds-line"></i> Einlösungen</h1>
+                    <h1><i class="ri-exchange-funds-line"></i> <?php echo esc_html($t('rewards_title')); ?></h1>
                     <span class="ppv-ea-store-name"><?php echo esc_html($store->company_name); ?></span>
                 </div>
                 <div class="ppv-ea-header-right">
@@ -255,33 +264,33 @@ class PPV_Rewards {
             <div class="ppv-ea-stats" id="ppv-ea-stats">
                 <div class="ppv-ea-stat-card">
                     <span class="ppv-ea-stat-value" id="stat-heute">-</span>
-                    <span class="ppv-ea-stat-label">Heute</span>
+                    <span class="ppv-ea-stat-label"><?php echo esc_html($t('rewards_stat_today')); ?></span>
                 </div>
                 <div class="ppv-ea-stat-card">
                     <span class="ppv-ea-stat-value" id="stat-woche">-</span>
-                    <span class="ppv-ea-stat-label">Woche</span>
+                    <span class="ppv-ea-stat-label"><?php echo esc_html($t('rewards_stat_week')); ?></span>
                 </div>
                 <div class="ppv-ea-stat-card">
                     <span class="ppv-ea-stat-value" id="stat-monat">-</span>
-                    <span class="ppv-ea-stat-label">Monat</span>
+                    <span class="ppv-ea-stat-label"><?php echo esc_html($t('rewards_stat_month')); ?></span>
                 </div>
                 <div class="ppv-ea-stat-card ppv-ea-stat-wert">
                     <span class="ppv-ea-stat-value" id="stat-wert">-</span>
-                    <span class="ppv-ea-stat-label">Wert</span>
+                    <span class="ppv-ea-stat-label"><?php echo esc_html($t('rewards_stat_value')); ?></span>
                 </div>
             </div>
 
             <!-- TABS -->
             <div class="ppv-ea-tabs">
                 <button class="ppv-ea-tab active" data-tab="pending">
-                    <i class="ri-time-line"></i> Ausstehend
+                    <i class="ri-time-line"></i> <?php echo esc_html($t('rewards_tab_pending')); ?>
                     <span class="ppv-ea-tab-badge" id="pending-count">0</span>
                 </button>
                 <button class="ppv-ea-tab" data-tab="history">
-                    <i class="ri-history-line"></i> Verlauf
+                    <i class="ri-history-line"></i> <?php echo esc_html($t('rewards_tab_history')); ?>
                 </button>
                 <button class="ppv-ea-tab" data-tab="receipts">
-                    <i class="ri-file-list-3-line"></i> Belege
+                    <i class="ri-file-list-3-line"></i> <?php echo esc_html($t('rewards_tab_receipts')); ?>
                 </button>
             </div>
 
@@ -289,7 +298,7 @@ class PPV_Rewards {
             <div class="ppv-ea-tab-content active" id="tab-pending">
                 <div class="ppv-ea-list" id="ppv-ea-pending-list">
                     <div class="ppv-ea-loading">
-                        <i class="ri-loader-4-line ri-spin"></i> Lade...
+                        <i class="ri-loader-4-line ri-spin"></i> <?php echo esc_html($t('rewards_loading')); ?>
                     </div>
                 </div>
             </div>
@@ -298,15 +307,15 @@ class PPV_Rewards {
             <div class="ppv-ea-tab-content" id="tab-history">
                 <div class="ppv-ea-filter-bar">
                     <select id="ppv-ea-filter-status" class="ppv-ea-filter-select">
-                        <option value="all">Alle Status</option>
-                        <option value="approved">Bestätigt</option>
-                        <option value="cancelled">Abgelehnt</option>
+                        <option value="all"><?php echo esc_html($t('rewards_filter_all')); ?></option>
+                        <option value="approved"><?php echo esc_html($t('rewards_filter_approved')); ?></option>
+                        <option value="cancelled"><?php echo esc_html($t('rewards_filter_cancelled')); ?></option>
                     </select>
                     <input type="date" id="ppv-ea-filter-date" class="ppv-ea-filter-date">
                 </div>
                 <div class="ppv-ea-list" id="ppv-ea-history-list">
                     <div class="ppv-ea-loading">
-                        <i class="ri-loader-4-line ri-spin"></i> Lade...
+                        <i class="ri-loader-4-line ri-spin"></i> <?php echo esc_html($t('rewards_loading')); ?>
                     </div>
                 </div>
             </div>
@@ -317,16 +326,16 @@ class PPV_Rewards {
                 <div class="ppv-ea-receipt-generators">
                     <!-- Monthly Receipt Generator -->
                     <div class="ppv-ea-receipt-generator">
-                        <h3><i class="ri-calendar-line"></i> Monatsbericht</h3>
+                        <h3><i class="ri-calendar-line"></i> <?php echo esc_html($t('rewards_monthly_report')); ?></h3>
                         <div class="ppv-ea-receipt-form">
                             <select id="ppv-ea-receipt-month" class="ppv-ea-select">
                                 <?php
-                                $months = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
                                 $current_month = (int)date('n');
                                 for ($i = 1; $i <= 12; $i++):
                                     $selected = ($i === $current_month) ? 'selected' : '';
+                                    $month_name = $t($month_keys[$i-1]);
                                 ?>
-                                    <option value="<?php echo $i; ?>" <?php echo $selected; ?>><?php echo $months[$i-1]; ?></option>
+                                    <option value="<?php echo $i; ?>" <?php echo $selected; ?>><?php echo esc_html($month_name); ?></option>
                                 <?php endfor; ?>
                             </select>
                             <select id="ppv-ea-receipt-year" class="ppv-ea-select">
@@ -338,22 +347,22 @@ class PPV_Rewards {
                                 <?php endfor; ?>
                             </select>
                             <button id="ppv-ea-generate-receipt" class="ppv-ea-btn-primary">
-                                <i class="ri-file-add-line"></i> Erstellen
+                                <i class="ri-file-add-line"></i> <?php echo esc_html($t('rewards_btn_create')); ?>
                             </button>
                         </div>
                     </div>
 
                     <!-- Date Range Receipt Generator -->
                     <div class="ppv-ea-receipt-generator">
-                        <h3><i class="ri-calendar-check-line"></i> Zeitraumbericht</h3>
+                        <h3><i class="ri-calendar-check-line"></i> <?php echo esc_html($t('rewards_period_report')); ?></h3>
                         <div class="ppv-ea-receipt-form ppv-ea-date-range-form">
                             <div class="ppv-ea-date-range">
                                 <input type="date" id="ppv-ea-receipt-date-from" class="ppv-ea-select" value="<?php echo date('Y-m-01'); ?>">
-                                <span class="ppv-ea-date-separator">bis</span>
+                                <span class="ppv-ea-date-separator"><?php echo esc_html($t('rewards_date_until')); ?></span>
                                 <input type="date" id="ppv-ea-receipt-date-to" class="ppv-ea-select" value="<?php echo date('Y-m-d'); ?>">
                             </div>
                             <button id="ppv-ea-generate-date-receipt" class="ppv-ea-btn-primary">
-                                <i class="ri-file-add-line"></i> Erstellen
+                                <i class="ri-file-add-line"></i> <?php echo esc_html($t('rewards_btn_create')); ?>
                             </button>
                         </div>
                     </div>
@@ -362,7 +371,7 @@ class PPV_Rewards {
                 <!-- Receipts List -->
                 <div class="ppv-ea-receipts-list" id="ppv-ea-receipts-list">
                     <div class="ppv-ea-loading">
-                        <i class="ri-loader-4-line ri-spin"></i> Lade Belege...
+                        <i class="ri-loader-4-line ri-spin"></i> <?php echo esc_html($t('rewards_loading_receipts')); ?>
                     </div>
                 </div>
             </div>

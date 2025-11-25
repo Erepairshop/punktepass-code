@@ -1257,4 +1257,83 @@ return [
     // ============================================================
     'err_device_limit' => '⚠️ Eszközlimit elérve',
     'err_device_limit_detail' => 'Maximális fiókok száma ezen az eszközön elérve',
+
+    // ============================================================
+    // REWARDS / BEVÁLTÁSOK
+    // ============================================================
+    'rewards_title' => 'Beváltások',
+    'rewards_login_required' => 'Kérjük jelentkezzen be vagy aktiválja az üzletet.',
+    'rewards_store_not_found' => 'Üzlet nem található.',
+
+    // Stats
+    'rewards_stat_today' => 'Ma',
+    'rewards_stat_week' => 'Hét',
+    'rewards_stat_month' => 'Hónap',
+    'rewards_stat_value' => 'Érték',
+
+    // Tabs
+    'rewards_tab_pending' => 'Függőben',
+    'rewards_tab_history' => 'Előzmények',
+    'rewards_tab_receipts' => 'Bizonylatok',
+
+    // Filters
+    'rewards_filter_all' => 'Minden állapot',
+    'rewards_filter_approved' => 'Jóváhagyott',
+    'rewards_filter_cancelled' => 'Elutasított',
+
+    // Receipt generators
+    'rewards_monthly_report' => 'Havi jelentés',
+    'rewards_period_report' => 'Időszaki jelentés',
+    'rewards_date_until' => 'ig',
+    'rewards_btn_create' => 'Létrehozás',
+    'rewards_btn_creating' => 'Létrehozás...',
+
+    // Month names
+    'month_january' => 'Január',
+    'month_february' => 'Február',
+    'month_march' => 'Március',
+    'month_april' => 'Április',
+    'month_may' => 'Május',
+    'month_june' => 'Június',
+    'month_july' => 'Július',
+    'month_august' => 'Augusztus',
+    'month_september' => 'Szeptember',
+    'month_october' => 'Október',
+    'month_november' => 'November',
+    'month_december' => 'December',
+
+    // Messages
+    'rewards_loading' => 'Betöltés...',
+    'rewards_loading_receipts' => 'Bizonylatok betöltése...',
+    'rewards_no_pending' => 'Nincsenek függő beváltások',
+    'rewards_no_history' => 'Nincsenek előzmények',
+    'rewards_no_receipts' => 'Még nincsenek bizonylatok',
+    'rewards_empty_pending_hint' => 'Az új beváltások automatikusan megjelennek itt',
+    'rewards_empty_history_hint' => 'A jóváhagyott és elutasított beváltások itt jelennek meg',
+    'rewards_empty_receipts_hint' => 'Hozzon létre egy havi jelentést fent',
+
+    // Actions
+    'rewards_btn_approve' => 'Jóváhagyás',
+    'rewards_btn_reject' => 'Elutasítás',
+    'rewards_status_approved' => 'Jóváhagyott',
+    'rewards_status_cancelled' => 'Elutasított',
+    'rewards_status_pending' => 'Függőben',
+
+    // Toast messages
+    'rewards_toast_approved' => 'Beváltás jóváhagyva!',
+    'rewards_toast_rejected' => 'Beváltás elutasítva',
+    'rewards_toast_error' => 'Hiba a feldolgozás során',
+    'rewards_toast_monthly_created' => 'Havi jelentés létrehozva!',
+    'rewards_toast_period_created' => 'Időszaki jelentés létrehozva!',
+    'rewards_toast_no_data' => 'Nincsenek beváltások erre az időszakra',
+    'rewards_toast_date_error' => 'A kezdő dátumnak korábbinak kell lennie a záró dátumnál',
+
+    // Receipt card
+    'rewards_receipt_download' => 'Letöltés',
+    'rewards_receipt_view' => 'Megtekintés',
+    'rewards_points' => 'Pont',
+    'rewards_default_title' => 'Jutalom',
+
+    // Notifications
+    'rewards_new_redemption' => 'Új beváltás!',
 ];
