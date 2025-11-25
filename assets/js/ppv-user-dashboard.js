@@ -82,6 +82,10 @@ const PPV_TRANSLATIONS = {
     vip_scan: "Scan",
     vip_double: "2x Punkte",
     vip_triple: "3x Punkte",
+    qr_valid_for: "Gültig noch:",
+    qr_expired: "QR-Code abgelaufen",
+    qr_refresh: "Neuen QR-Code generieren",
+    qr_new_generated: "Neuer QR-Code (30 Min)",
   },
   hu: {
     welcome: "Üdv a PunktePassban",
@@ -137,6 +141,10 @@ const PPV_TRANSLATIONS = {
     vip_scan: "scan",
     vip_double: "2x Pont",
     vip_triple: "3x Pont",
+    qr_valid_for: "Érvényes még:",
+    qr_expired: "QR-kód lejárt",
+    qr_refresh: "Új QR-kód generálása",
+    qr_new_generated: "Új QR-kód (30 perc)",
   },
   ro: {
     welcome: "Bun venit la PunktePass",
@@ -192,11 +200,31 @@ const PPV_TRANSLATIONS = {
     vip_scan: "scanare",
     vip_double: "2x Puncte",
     vip_triple: "3x Puncte",
+    qr_valid_for: "Valid încă:",
+    qr_expired: "Cod QR expirat",
+    qr_refresh: "Generează cod QR nou",
+    qr_new_generated: "Cod QR nou (30 min)",
   }
 };
 
 // 🧹 Cleanup function - call before navigation or re-init
 function cleanupPolling() {
+  // ✅ FIX: Close Ably connection on navigation (iOS Safari fix)
+  if (window.PPV_ABLY_INSTANCE) {
+    try {
+      window.PPV_ABLY_INSTANCE.close();
+      console.log('🧹 [Ably] Connection closed');
+    } catch (e) {
+      // Ignore close errors
+    }
+    window.PPV_ABLY_INSTANCE = null;
+  }
+  // ✅ FIX: Clear QR countdown interval
+  if (window.PPV_QR_COUNTDOWN_INTERVAL) {
+    clearInterval(window.PPV_QR_COUNTDOWN_INTERVAL);
+    window.PPV_QR_COUNTDOWN_INTERVAL = null;
+    console.log('🧹 [QR] Countdown interval cleared');
+  }
   if (window.PPV_POLL_INTERVAL_ID) {
     clearInterval(window.PPV_POLL_INTERVAL_ID);
     window.PPV_POLL_INTERVAL_ID = null;
@@ -367,21 +395,26 @@ async function initUserDashboard() {
   };
 
   // ============================================================
-  // 🎫 MODERN QR TOGGLE (v2.0)
+  // 🎫 TIMED QR WITH COUNTDOWN (v3.0)
   // ============================================================
+
+  // ✅ FIX: Store globally for cleanup on navigation
+  window.PPV_QR_COUNTDOWN_INTERVAL = null;
+  let qrExpiresAt = null;
 
   const initQRToggle = () => {
     const btn = document.querySelector(".ppv-btn-qr");
     const modal = document.getElementById("ppv-user-qr");
     const overlay = document.getElementById("ppv-qr-overlay");
     const closeBtn = document.querySelector(".ppv-qr-close");
+    const refreshBtn = document.getElementById("ppv-qr-refresh-btn");
 
     if (!btn || !modal || !overlay) {
       console.warn("⚠️ [QR] Elements not found");
       return;
     }
 
-    const openQR = (e) => {
+    const openQR = async (e) => {
       if (e) {
         e.preventDefault();
         e.stopPropagation();
@@ -392,6 +425,9 @@ async function initUserDashboard() {
       document.body.style.overflow = "hidden";
       if (navigator.vibrate) navigator.vibrate(30);
       modal.offsetHeight;
+
+      // Load timed QR on open
+      await loadTimedQR();
     };
 
     const closeQR = () => {
@@ -410,11 +446,169 @@ async function initUserDashboard() {
       e.stopPropagation();
       closeQR();
     });
+
+    // Refresh button
+    if (refreshBtn) {
+      refreshBtn.addEventListener("click", async (e) => {
+        e.preventDefault();
+        await loadTimedQR(true);
+      });
+    }
+
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && modal.classList.contains("show")) closeQR();
     });
 
-    console.log("✅ [QR] Toggle initialized");
+    console.log("✅ [QR] Timed QR toggle initialized");
+  };
+
+  // ============================================================
+  // 🔄 LOAD TIMED QR FROM REST API
+  // ============================================================
+  const loadTimedQR = async (forceNew = false) => {
+    const qrImg = document.getElementById("ppv-qr-image");
+    const qrLoading = document.getElementById("ppv-qr-loading");
+    const qrDisplay = document.getElementById("ppv-qr-display");
+    const qrExpired = document.getElementById("ppv-qr-expired");
+    const qrStatus = document.getElementById("ppv-qr-status");
+
+    // Show loading
+    if (qrLoading) qrLoading.style.display = "flex";
+    if (qrDisplay) qrDisplay.style.display = "none";
+    if (qrExpired) qrExpired.style.display = "none";
+
+    try {
+      const res = await fetch(API + "user/generate-timed-qr", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: boot.uid })
+      });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const data = await res.json();
+
+      if (data.code) {
+        // Error response
+        showQRStatus("❌ " + (data.message || "Error"), "error");
+        return;
+      }
+
+      // Display QR
+      if (qrImg) qrImg.src = data.qr_url;
+      if (qrLoading) qrLoading.style.display = "none";
+      if (qrDisplay) qrDisplay.style.display = "block";
+      if (qrExpired) qrExpired.style.display = "none";
+
+      // Start countdown
+      startQRCountdown(data.expires_at);
+
+      // Status message
+      if (data.is_new) {
+        showQRStatus("✅ " + (T.qr_new_generated || "Neuer QR-Code (30 Min)"), "success");
+      } else {
+        const remainingMin = Math.floor(data.expires_in / 60);
+        showQRStatus(`✅ QR geladen (${remainingMin} Min)`, "success");
+      }
+
+      console.log("✅ [QR] Timed QR loaded, expires in", data.expires_in, "seconds");
+
+    } catch (err) {
+      console.error("❌ [QR] Load error:", err);
+      if (qrLoading) qrLoading.style.display = "none";
+      showQRStatus("❌ Netzwerkfehler", "error");
+    }
+  };
+
+  // ============================================================
+  // ⏱️ COUNTDOWN TIMER (30:00 → 00:00)
+  // ============================================================
+  const startQRCountdown = (expirationTimestamp) => {
+    qrExpiresAt = expirationTimestamp;
+
+    const timerEl = document.getElementById("ppv-qr-timer");
+    const timerValue = document.getElementById("ppv-qr-timer-value");
+
+    // Clear previous interval
+    if (window.PPV_QR_COUNTDOWN_INTERVAL) {
+      clearInterval(window.PPV_QR_COUNTDOWN_INTERVAL);
+    }
+
+    // Reset classes
+    if (timerEl) {
+      timerEl.classList.remove("ppv-timer-warning", "ppv-timer-critical");
+    }
+
+    // Update every second
+    window.PPV_QR_COUNTDOWN_INTERVAL = setInterval(() => {
+      const now = Math.floor(Date.now() / 1000);
+      const remaining = qrExpiresAt - now;
+
+      if (remaining <= 0) {
+        // QR expired
+        clearInterval(window.PPV_QR_COUNTDOWN_INTERVAL);
+        window.PPV_QR_COUNTDOWN_INTERVAL = null;
+        showQRExpired();
+        return;
+      }
+
+      // Format: MM:SS
+      const mins = Math.floor(remaining / 60);
+      const secs = remaining % 60;
+      const formatted = `${mins}:${secs.toString().padStart(2, "0")}`;
+
+      if (timerValue) {
+        timerValue.textContent = formatted;
+      }
+
+      // Warning at 5 minutes
+      if (remaining <= 300 && remaining > 60) {
+        if (timerEl) {
+          timerEl.classList.add("ppv-timer-warning");
+          timerEl.classList.remove("ppv-timer-critical");
+        }
+      }
+
+      // Critical at 1 minute
+      if (remaining <= 60) {
+        if (timerEl) {
+          timerEl.classList.add("ppv-timer-critical");
+          timerEl.classList.remove("ppv-timer-warning");
+        }
+      }
+    }, 1000);
+  };
+
+  // ============================================================
+  // 🔴 SHOW QR EXPIRED STATE
+  // ============================================================
+  const showQRExpired = () => {
+    const qrDisplay = document.getElementById("ppv-qr-display");
+    const qrExpired = document.getElementById("ppv-qr-expired");
+
+    if (qrDisplay) qrDisplay.style.display = "none";
+    if (qrExpired) qrExpired.style.display = "flex";
+
+    showQRStatus("⏰ " + (T.qr_expired || "QR abgelaufen"), "warning");
+  };
+
+  // ============================================================
+  // 📝 QR STATUS MESSAGE
+  // ============================================================
+  const showQRStatus = (message, type = "info") => {
+    const status = document.getElementById("ppv-qr-status");
+    if (!status) return;
+
+    status.textContent = message;
+    status.className = "ppv-qr-status ppv-status-" + type;
+
+    // Auto-clear after 4 seconds
+    setTimeout(() => {
+      if (status.textContent === message) {
+        status.textContent = "";
+        status.className = "ppv-qr-status";
+      }
+    }, 4000);
   };
 
   // ============================================================
@@ -604,7 +798,16 @@ async function initUserDashboard() {
       window.PPV_POLL_INTERVAL_ID = setInterval(pollPoints, interval);
     };
 
-    window.PPV_VISIBILITY_HANDLER = () => startPolling();
+    // ✅ FIX: Debounced visibility handler - only restart when visible, with 3s cooldown
+    let lastVisibilityChange = 0;
+    window.PPV_VISIBILITY_HANDLER = () => {
+      if (document.hidden) return; // Only act when becoming visible
+      const now = Date.now();
+      if (now - lastVisibilityChange < 3000) return; // 3s debounce
+      lastVisibilityChange = now;
+      console.log('👁️ [Visibility] Tab visible, restarting polling');
+      startPolling();
+    };
     document.addEventListener('visibilitychange', window.PPV_VISIBILITY_HANDLER);
 
     startPolling();
@@ -1154,11 +1357,26 @@ async function initUserDashboard() {
       );
     });
 
-    // 2️⃣ Fetch stores immediately with cached location (or without)
+    // 2️⃣ OPTIMIZED: Wait for geo first if no cached location, then fetch ONCE
     try {
+      // If no cached location, wait for geo promise first (max 8s)
+      if (!cachedLat && !cachedLng) {
+        console.log('⏳ [Stores] No cached location, waiting for geo first...');
+        const freshPos = await geoPromise;
+        if (freshPos?.coords) {
+          userLat = freshPos.coords.latitude;
+          userLng = freshPos.coords.longitude;
+          console.log('📍 [Stores] Got fresh geo:', userLat.toFixed(4), userLng.toFixed(4));
+        } else {
+          console.log('⚠️ [Stores] Geo failed/timeout, fetching without coordinates');
+        }
+      }
+
+      // Now make ONE fetch with best available coordinates
+      const currentDist = window.PPV_CURRENT_DISTANCE || 10;
       let url = API + 'stores/list-optimized';
       if (userLat && userLng) {
-        url += `?lat=${userLat}&lng=${userLng}&max_distance=10`;
+        url += `?lat=${userLat}&lng=${userLng}&max_distance=${currentDist}`;
       }
 
       console.log('🌐 [Stores] Fetching:', url);
@@ -1176,119 +1394,6 @@ async function initUserDashboard() {
         box.innerHTML = `<p class="ppv-no-stores"><i class="ri-store-3-line"></i> ${T.no_stores}</p>`;
       } else {
         renderStoreList(box, stores, userLat, userLng);
-      }
-
-      // 3️⃣ If we didn't have cached location, wait for geo and re-fetch
-      if (!cachedLat && !cachedLng) {
-        const freshPos = await geoPromise;
-        if (freshPos?.coords) {
-          const newLat = freshPos.coords.latitude;
-          const newLng = freshPos.coords.longitude;
-          console.log('🔄 [Stores] Re-fetching with fresh geo:', newLat.toFixed(4), newLng.toFixed(4));
-
-          // ✅ FIX: Use current slider distance value, not hardcoded 10
-          const currentDist = window.PPV_CURRENT_DISTANCE || 10;
-          const newUrl = API + `stores/list-optimized?lat=${newLat}&lng=${newLng}&max_distance=${currentDist}`;
-
-          try {
-            const newRes = await fetch(newUrl, { cache: "no-store" });
-            console.log('📡 [Stores] Re-fetch response:', newRes.status);
-
-            if (newRes.ok) {
-              const newStores = await newRes.json();
-              // Log distances from API
-              console.log('📦 [Stores] Got', newStores?.length || 0, 'stores. First 3 distances:',
-                newStores?.slice(0,3).map(s => `${s.company_name||s.name||'?'}: ${s.distance_km}km`).join(', '));
-
-              if (Array.isArray(newStores) && newStores.length > 0) {
-                // ✅ FIX: Get fresh DOM reference
-                const freshBox = document.getElementById('ppv-store-list');
-                console.log('🎯 [DOM] freshBox found:', !!freshBox, 'children before:', freshBox?.children?.length);
-
-                if (freshBox) {
-                  // ✅ FIX: Directly update innerHTML instead of calling renderStoreList
-                  const sliderHTML = `
-                    <div class="ppv-distance-filter">
-                      <label><i class="ri-ruler-line"></i> ${T.distance_label}: <span id="ppv-distance-value">${currentDist}</span> km</label>
-                      <input type="range" id="ppv-distance-slider" min="10" max="1000" value="${currentDist}" step="10">
-                      <div class="ppv-distance-labels"><span>10 km</span><span>1000 km</span></div>
-                    </div>
-                  `;
-                  const cardsHTML = newStores.map(renderStoreCard).join('');
-                  freshBox.innerHTML = sliderHTML + cardsHTML;
-                  console.log('🎯 [DOM] innerHTML updated, children after:', freshBox?.children?.length);
-
-                  initDistanceSlider(sliderHTML, newLat, newLng, currentDist);
-                  attachStoreListeners();
-                  console.log('✅ [Stores] Re-rendered with distance sorting');
-                } else {
-                  console.warn('⚠️ [Stores] Store list element not found for re-render');
-                }
-              } else {
-                console.warn('⚠️ [Stores] No stores returned from re-fetch');
-              }
-            }
-          } catch (fetchErr) {
-            console.error('❌ [Stores] Re-fetch failed:', fetchErr.message);
-          }
-        } else {
-          // ✅ FIX: Geo failed on first try - set up delayed retry
-          console.log('⏳ [Geo] First attempt failed, scheduling retry in 5s...');
-          setTimeout(async () => {
-            // Check if we got location in the meantime (from another source)
-            const retryLat = localStorage.getItem('ppv_user_lat');
-            const retryLng = localStorage.getItem('ppv_user_lng');
-            if (retryLat && retryLng) {
-              console.log('✅ [Geo] Found cached location on retry');
-              const currentDist = window.PPV_CURRENT_DISTANCE || 10;
-              const retryUrl = API + `stores/list-optimized?lat=${retryLat}&lng=${retryLng}&max_distance=${currentDist}`;
-              try {
-                const retryRes = await fetch(retryUrl, { cache: "no-store" });
-                if (retryRes.ok) {
-                  const retryStores = await retryRes.json();
-                  const currentBox = document.getElementById('ppv-store-list');
-                  if (currentBox && Array.isArray(retryStores) && retryStores.length > 0) {
-                    renderStoreList(currentBox, retryStores, parseFloat(retryLat), parseFloat(retryLng), true);
-                    console.log('✅ [Stores] Re-rendered on retry with distance sorting');
-                  }
-                }
-              } catch (e) {
-                console.log('⚠️ [Stores] Retry fetch failed:', e.message);
-              }
-              return;
-            }
-
-            // Try geo again
-            if (navigator.geolocation) {
-              console.log('🔄 [Geo] Retrying geolocation...');
-              navigator.geolocation.getCurrentPosition(
-                async (p) => {
-                  localStorage.setItem('ppv_user_lat', p.coords.latitude.toString());
-                  localStorage.setItem('ppv_user_lng', p.coords.longitude.toString());
-                  console.log('📍 [Geo] Retry succeeded:', p.coords.latitude.toFixed(4), p.coords.longitude.toFixed(4));
-
-                  const currentDist = window.PPV_CURRENT_DISTANCE || 10;
-                  const retryUrl = API + `stores/list-optimized?lat=${p.coords.latitude}&lng=${p.coords.longitude}&max_distance=${currentDist}`;
-                  try {
-                    const retryRes = await fetch(retryUrl, { cache: "no-store" });
-                    if (retryRes.ok) {
-                      const retryStores = await retryRes.json();
-                      const currentBox = document.getElementById('ppv-store-list');
-                      if (currentBox && Array.isArray(retryStores) && retryStores.length > 0) {
-                        renderStoreList(currentBox, retryStores, p.coords.latitude, p.coords.longitude, true);
-                        console.log('✅ [Stores] Re-rendered on geo retry with distance sorting');
-                      }
-                    }
-                  } catch (e) {
-                    console.log('⚠️ [Stores] Retry fetch failed:', e.message);
-                  }
-                },
-                (err) => console.log('⚠️ [Geo] Retry also failed:', err.message),
-                { timeout: 10000, maximumAge: 60000, enableHighAccuracy: false }
-              );
-            }
-          }, 5000);
-        }
       }
 
     } catch (e) {
@@ -1343,20 +1448,49 @@ async function initUserDashboard() {
           <button class="ppv-qr-close" type="button">
             <i class="ri-close-line"></i>
           </button>
-          <img src="${boot.qr_url || ''}" alt="My QR Code" class="ppv-qr-image">
-          <div class="ppv-qr-warning">
-            <span class="ppv-qr-warning-icon">⚠️</span>
-            <span class="ppv-qr-warning-text">${T.qr_daily_warning}</span>
+
+          <!-- Loading State -->
+          <div class="ppv-qr-loading" id="ppv-qr-loading" style="display: flex;">
+            <div class="ppv-spinner"></div>
+            <p>${T.loading || "Lädt..."}</p>
           </div>
-          <p class="qr-info">
-            <strong>${T.show_code_tip}</strong>
-          </p>
-          <div class="ppv-qr-instructions">
-            <strong><i class="ri-lightbulb-line"></i> ${T.how_to_use}:</strong><br>
-            ${T.qr_instruction_1}<br>
-            ${T.qr_instruction_2}<br>
-            ${T.qr_instruction_3}
+
+          <!-- QR Display -->
+          <div id="ppv-qr-display" style="display: none;">
+            <img src="" alt="My QR Code" class="ppv-qr-image" id="ppv-qr-image">
+
+            <!-- Countdown Timer -->
+            <div class="ppv-qr-timer" id="ppv-qr-timer">
+              <i class="ri-time-line"></i>
+              <span>${T.qr_valid_for || "Gültig noch:"} <strong id="ppv-qr-timer-value">--:--</strong></span>
+            </div>
+
+            <div class="ppv-qr-warning">
+              <span class="ppv-qr-warning-icon">⚠️</span>
+              <span class="ppv-qr-warning-text">${T.qr_daily_warning}</span>
+            </div>
+            <p class="qr-info">
+              <strong>${T.show_code_tip}</strong>
+            </p>
+            <div class="ppv-qr-instructions">
+              <strong><i class="ri-lightbulb-line"></i> ${T.how_to_use}:</strong><br>
+              ${T.qr_instruction_1}<br>
+              ${T.qr_instruction_2}<br>
+              ${T.qr_instruction_3}
+            </div>
           </div>
+
+          <!-- Expired State -->
+          <div class="ppv-qr-expired" id="ppv-qr-expired" style="display: none;">
+            <i class="ri-time-line" style="font-size: 48px; color: #f59e0b;"></i>
+            <p style="margin: 16px 0;">${T.qr_expired || "QR-Code abgelaufen"}</p>
+            <button class="ppv-btn-refresh" id="ppv-qr-refresh-btn" type="button">
+              <i class="ri-refresh-line"></i> ${T.qr_refresh || "Neuen QR-Code generieren"}
+            </button>
+          </div>
+
+          <!-- Status Message -->
+          <div class="ppv-qr-status" id="ppv-qr-status"></div>
         </div>
 
         <section class="ppv-store-section">

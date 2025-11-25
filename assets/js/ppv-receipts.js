@@ -1,16 +1,25 @@
 /**
  * PunktePass – Bizonylatok Verwaltung (Receipts Management)
- * Version: 2.0 FIXED - PDF DOWNLOAD MEGOLDVA
+ * Version: 2.3 - Element ID fix
  * ✅ Működő download funkcionalitás
  * ✅ Helyes JSON kezelés
+ * ✅ Auto-load on DOMContentLoaded + Turbo.js + Tab change
+ * ✅ FIX: Uses ppv-receipts-container (correct HTML element ID)
  */
 
-if (window.PPV_RECEIPTS_LOADED) {
-  console.warn('⚠️ PPV Receipts JS already loaded - skipping duplicate!');
-} else {
+(function() {
+  'use strict';
+
+  // Script guard - prevent duplicate loading with Turbo.js
+  if (window.PPV_RECEIPTS_LOADED) { return; }
   window.PPV_RECEIPTS_LOADED = true;
 
-  console.log("✅ PunktePass Bizonylatok JS v2.0 geladen");
+  // ✅ DEBUG mode - set to true for verbose logging
+  const PPV_DEBUG = false;
+  const ppvLog = (...args) => { if (PPV_DEBUG) console.log(...args); };
+  const ppvWarn = (...args) => { if (PPV_DEBUG) console.warn(...args); };
+
+  ppvLog("✅ PunktePass Bizonylatok JS v2.1 geladen");
 
   /* ============================================================
    * 🔑 BASE + TOKEN + STORE - GLOBAL
@@ -35,7 +44,7 @@ if (window.PPV_RECEIPTS_LOADED) {
   if (window.PPV_STORE_KEY)
     sessionStorage.setItem("ppv_store_key", window.PPV_STORE_KEY);
 
-  console.log(`📦 [RECEIPTS v2.0] Store ID: ${storeID}`);
+  ppvLog(`📦 [RECEIPTS v2.0] Store ID: ${storeID}`);
 
   /* ============================================================
    * 🧩 TOAST HELPER
@@ -80,17 +89,18 @@ if (window.PPV_RECEIPTS_LOADED) {
    * 📋 LOAD RECEIPTS - MAIN FUNCTION
    * ============================================================ */
   window.ppv_receipts_load = async function() {
-    console.log('📦 [RECEIPTS v2.0] ppv_receipts_load() called');
-    
-    const receiptsList = document.getElementById("ppv-receipts-list");
-    
+    ppvLog('📦 [RECEIPTS v2.3] ppv_receipts_load() called');
+
+    // ✅ FIX: Correct element ID is ppv-receipts-container (not ppv-receipts-list)
+    const receiptsList = document.getElementById("ppv-receipts-container") || document.getElementById("ppv-receipts-list");
+
     if (!receiptsList) {
-      console.error('❌ [RECEIPTS v2.0] receiptsList element not found!');
+      ppvLog('❌ [RECEIPTS v2.3] receiptsList element not found!');
       return;
     }
 
     const url = `${base}receipts/list?store_id=${storeID}`;
-    console.log(`📡 [RECEIPTS v2.0] Loading from: ${url}`);
+    ppvLog(`📡 [RECEIPTS v2.0] Loading from: ${url}`);
 
     receiptsList.innerHTML = '<div class="ppv-loading">📄 Bizonylatok betöltése...</div>';
 
@@ -105,17 +115,17 @@ if (window.PPV_RECEIPTS_LOADED) {
 
       const json = await res.json();
 
-      console.log(`📦 [RECEIPTS v2.0] Response success: ${json.success}, count: ${json.count}`);
+      ppvLog(`📦 [RECEIPTS v2.0] Response success: ${json.success}, count: ${json.count}`);
 
       if (!json?.success || !json?.items?.length) {
         receiptsList.innerHTML = '<div class="ppv-receipts-empty" style="padding: 30px; text-align: center; background: #f5f5f5; border-radius: 8px; color: #666;">📭 Nincs elérhető bizonylat</div>';
-        console.log('📦 [RECEIPTS v2.0] No receipts found');
+        ppvLog('📦 [RECEIPTS v2.0] No receipts found');
         return;
       }
 
       receiptsList.innerHTML = '';
 
-      console.log(`✅ [RECEIPTS v2.0] Loaded ${json.items.length} receipts`);
+      ppvLog(`✅ [RECEIPTS v2.0] Loaded ${json.items.length} receipts`);
 
       json.items.forEach((receipt) => {
         const card = createReceiptCard(receipt);
@@ -125,7 +135,7 @@ if (window.PPV_RECEIPTS_LOADED) {
       showToast(`✅ ${json.count} bizonylat betöltve`, 'success');
 
     } catch (err) {
-      console.error('❌ [RECEIPTS v2.0] Load error:', err);
+      ppvLog('❌ [RECEIPTS v2.0] Load error:', err);
       receiptsList.innerHTML = '<div class="ppv-error" style="padding: 20px; background: #fee; border-radius: 8px; color: #c33;">❌ Hiba az adatok betöltésekor</div>';
       showToast('❌ Betöltési hiba', 'error');
     }
@@ -200,7 +210,7 @@ if (window.PPV_RECEIPTS_LOADED) {
       e.preventDefault();
       e.stopPropagation();
       const receiptId = this.getAttribute('data-id');
-      console.log(`📥 [RECEIPTS v2.0] Download button clicked for receipt #${receiptId}`);
+      ppvLog(`📥 [RECEIPTS v2.0] Download button clicked for receipt #${receiptId}`);
       downloadReceipt(receiptId);
     });
 
@@ -211,7 +221,7 @@ if (window.PPV_RECEIPTS_LOADED) {
    * 📥 DOWNLOAD RECEIPT - MŰKÖDŐ VERZIÓ
    * ============================================================ */
   function downloadReceipt(receiptId) {
-    console.log(`📥 Download: #${receiptId}`);
+    ppvLog(`📥 Download: #${receiptId}`);
 
     if (!receiptId) {
         showToast('❌ Bizonylat ID hiányzik', 'error');
@@ -236,7 +246,8 @@ if (window.PPV_RECEIPTS_LOADED) {
    * 🔍 FILTER RECEIPTS
    * ============================================================ */
   window.ppv_receipts_filter = async function() {
-    const receiptsList = document.getElementById("ppv-receipts-list");
+    // ✅ FIX: Correct element ID
+    const receiptsList = document.getElementById("ppv-receipts-container") || document.getElementById("ppv-receipts-list");
     const searchInput = document.getElementById("ppv-receipt-search");
     const dateFromInput = document.getElementById("ppv-receipt-date-from");
     const dateToInput = document.getElementById("ppv-receipt-date-to");
@@ -247,7 +258,7 @@ if (window.PPV_RECEIPTS_LOADED) {
     const dateFrom = (dateFromInput?.value || '').trim();
     const dateTo = (dateToInput?.value || '').trim();
 
-    console.log(`🔍 [RECEIPTS v2.0] Filtering - search: "${search}", from: ${dateFrom}, to: ${dateTo}`);
+    ppvLog(`🔍 [RECEIPTS v2.0] Filtering - search: "${search}", from: ${dateFrom}, to: ${dateTo}`);
 
     receiptsList.innerHTML = '<div class="ppv-loading">🔍 Szűrés...</div>';
 
@@ -269,7 +280,7 @@ if (window.PPV_RECEIPTS_LOADED) {
 
       const json = await res.json();
 
-      console.log(`🔍 [RECEIPTS v2.0] Filter result - success: ${json.success}, count: ${json.count}`);
+      ppvLog(`🔍 [RECEIPTS v2.0] Filter result - success: ${json.success}, count: ${json.count}`);
 
       if (!json?.success || !json?.items?.length) {
         receiptsList.innerHTML = '<div class="ppv-receipts-empty" style="padding: 30px; text-align: center; background: #f5f5f5; border-radius: 8px; color: #666;">📭 Nem talált bizonylat</div>';
@@ -287,43 +298,76 @@ if (window.PPV_RECEIPTS_LOADED) {
       showToast(`✅ ${json.count} bizonylat találva`, 'success');
 
     } catch (err) {
-      console.error('❌ [RECEIPTS v2.0] Filter error:', err);
+      ppvLog('❌ [RECEIPTS v2.0] Filter error:', err);
       receiptsList.innerHTML = '<div class="ppv-error" style="padding: 20px; background: #fee; border-radius: 8px; color: #c33;">❌ Hiba a szűrés során</div>';
       showToast('❌ Szűrési hiba', 'error');
     }
   };
 
   /* ============================================================
-   * ⚡ EVENT LISTENERS SETUP
+   * ⚡ INIT FUNCTION
    * ============================================================ */
-  document.addEventListener('DOMContentLoaded', function() {
-    console.log('📦 [RECEIPTS v2.0] DOMContentLoaded - setting up event listeners');
+  function initReceipts() {
+    // ✅ FIX: Correct element ID is ppv-receipts-container (not ppv-receipts-list)
+    const receiptsList = document.getElementById("ppv-receipts-container") || document.getElementById("ppv-receipts-list");
 
-    setTimeout(() => {
-      const filterBtn = document.getElementById('ppv-receipt-filter-btn');
-      const searchInput = document.getElementById('ppv-receipt-search');
+    if (!receiptsList) {
+      ppvLog('📦 [RECEIPTS v2.3] No receipts container element on this page');
+      return;
+    }
 
-      if (filterBtn) {
-        filterBtn.addEventListener('click', (e) => {
+    ppvLog('📦 [RECEIPTS v2.2] Initializing...');
+
+    // Setup filter button
+    const filterBtn = document.getElementById('ppv-receipt-filter-btn');
+    const searchInput = document.getElementById('ppv-receipt-search');
+
+    if (filterBtn && !filterBtn.hasAttribute('data-ppv-bound')) {
+      filterBtn.setAttribute('data-ppv-bound', 'true');
+      filterBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.ppv_receipts_filter();
+      });
+      ppvLog('✅ [RECEIPTS v2.2] Filter button listener attached');
+    }
+
+    if (searchInput && !searchInput.hasAttribute('data-ppv-bound')) {
+      searchInput.setAttribute('data-ppv-bound', 'true');
+      searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
           e.preventDefault();
           window.ppv_receipts_filter();
-        });
-        console.log('✅ [RECEIPTS v2.0] Filter button listener attached');
-      }
+        }
+      });
+      ppvLog('✅ [RECEIPTS v2.2] Search input listener attached');
+    }
 
-      if (searchInput) {
-        searchInput.addEventListener('keypress', (e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            window.ppv_receipts_filter();
-          }
-        });
-        console.log('✅ [RECEIPTS v2.0] Search input listener attached');
-      }
+    // ✅ AUTO-LOAD RECEIPTS!
+    window.ppv_receipts_load();
+  }
 
-      console.log('✅ [RECEIPTS v2.0] Event listeners attached');
-    }, 100);
+  /* ============================================================
+   * ⚡ EVENT LISTENERS
+   * ============================================================ */
+
+  // Initial load
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => setTimeout(initReceipts, 100));
+  } else {
+    setTimeout(initReceipts, 100);
+  }
+
+  // Turbo.js support
+  document.addEventListener('turbo:load', () => setTimeout(initReceipts, 100));
+
+  // Tab change support - reinitialize when receipts/quittungen tab becomes visible
+  window.addEventListener('ppv:tab-change', function(e) {
+    if (e.detail?.tab === 'receipts' || e.detail?.tab === 'quittungen') {
+      ppvLog('[RECEIPTS v2.2] Tab activated, loading...');
+      setTimeout(initReceipts, 100);
+    }
   });
 
-  console.log("✅ [RECEIPTS v2.0] Ready!");
-}
+  ppvLog("✅ [RECEIPTS v2.2] Ready!");
+
+})(); // End IIFE

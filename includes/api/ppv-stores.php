@@ -34,9 +34,8 @@ class PPV_Stores_API {
         $lat = floatval($request->get_param('lat') ?? ($_GET['lat'] ?? 0));
         $lng = floatval($request->get_param('lng') ?? ($_GET['lng'] ?? 0));
 
-        /** 🔐 POS token logolás (ha van) */
+        /** 🔐 POS token check */
         $token = $request->get_header('ppv-pos-token') ?: ($_GET['pos_token'] ?? '');
-        if (!empty($token)) error_log("📡 [PPV_Stores_API] POS-token request");
 
         /** 🧠 Bolt + reward + nyitvatartás lekérés */
         $query = "

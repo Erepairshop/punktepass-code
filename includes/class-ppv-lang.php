@@ -101,15 +101,30 @@ if (!$lang && !empty($_GET['lang'])) {
             ppv_log("🌍 [PPV_Lang] Using session → {$lang}");
         }
 
-        // 5️⃣ Geo fallback
+        // 5️⃣ Geo fallback - OPTIMIZED: Session cache + short timeout
         if (!$lang) {
-            $ip  = $_SERVER['REMOTE_ADDR'] ?? '';
-            $geo = @json_decode(@file_get_contents("http://ip-api.com/json/{$ip}?fields=countryCode"), true);
-            $cc  = strtolower($geo['countryCode'] ?? '');
-            if ($cc === 'hu') $lang = 'hu';
-            elseif ($cc === 'ro') $lang = 'ro';
-            else $lang = 'de';
-            ppv_log("🌍 [PPV_Lang] Geo fallback → {$lang}");
+            // Check session cache first to avoid repeated HTTP calls
+            if (!empty($_SESSION['ppv_geo_lang'])) {
+                $lang = $_SESSION['ppv_geo_lang'];
+                ppv_log("🌍 [PPV_Lang] Geo from session cache → {$lang}");
+            } else {
+                // Default to German
+                $lang = 'de';
+
+                // Try geo lookup with 1 second timeout (non-blocking)
+                $ip = $_SERVER['REMOTE_ADDR'] ?? '';
+                if ($ip && $ip !== '127.0.0.1' && $ip !== '::1') {
+                    $ctx = stream_context_create(['http' => ['timeout' => 1]]);
+                    $geo = @json_decode(@file_get_contents("http://ip-api.com/json/{$ip}?fields=countryCode", false, $ctx), true);
+                    $cc = strtolower($geo['countryCode'] ?? '');
+                    if ($cc === 'hu') $lang = 'hu';
+                    elseif ($cc === 'ro') $lang = 'ro';
+                }
+
+                // Cache in session to avoid future HTTP calls
+                $_SESSION['ppv_geo_lang'] = $lang;
+                ppv_log("🌍 [PPV_Lang] Geo fallback → {$lang}");
+            }
         }
 
         self::$active = $lang;

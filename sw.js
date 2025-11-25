@@ -1,16 +1,16 @@
 // PunktePass PWA Service Worker
-// Version: 5.8 FIXED - Force CSS Refresh
-// ✅ Timeout protection
-// ✅ Safari compatible
+// Version: 5.9 - iOS Safari fix
+// ✅ Timeout protection (6s for iOS)
+// ✅ Safari compatible with retry
 // ✅ No POST blocking
 // ✅ Network-first for API calls
 // ✅ Fresh CSS/JS always
 // ✅ Login pages never cached
 // ✅ Force old cache deletion
 
-const CACHE_VERSION = "v5.8";
+const CACHE_VERSION = "v5.9";
 const CACHE_NAME = "punktepass-" + CACHE_VERSION;
-const API_CACHE = "punktepass-api-v5.8";
+const API_CACHE = "punktepass-api-v5.9";
 
 // Only cache critical files
 const ASSETS = [
@@ -81,10 +81,10 @@ self.addEventListener("fetch", e => {
     return;
   }
 
-  // ✅ API calls - Network first with timeout (3s)
-  if (url.pathname.startsWith("/wp-json/ppv/v1/") || 
+  // ✅ API calls - Network first with timeout (6s for iOS compatibility)
+  if (url.pathname.startsWith("/wp-json/ppv/v1/") ||
       url.pathname.startsWith("/wp-json/punktepass/v1/")) {
-    e.respondWith(networkFirstWithTimeout(req, 3000));
+    e.respondWith(networkFirstWithTimeout(req, 6000));
     return;
   }
 
@@ -201,17 +201,27 @@ async function cacheFirstImage(req) {
     return new Response('Image offline', { status: 503 });
   }
 }
-// Network first with TIMEOUT - for API calls (NO CACHE)
-async function networkFirstWithTimeout(req, timeout = 5000) {
+// Network first with TIMEOUT and RETRY - for API calls (NO CACHE)
+// iOS Safari fix: retry once on timeout/failure
+async function networkFirstWithTimeout(req, timeout = 6000) {
+  // First attempt
   try {
     const fresh = await fetchWithTimeout(req, timeout);
+    if (fresh.ok) return fresh;
+    // Non-ok response but not a timeout - return as-is
     return fresh;
   } catch (err) {
-    // offline fallback: never use old API cache
-    return new Response(
-      JSON.stringify({ success: false, message: 'API unavailable', offline: true }),
-      { status: 503, headers: { 'Content-Type': 'application/json' } }
-    );
+    // First attempt failed - retry once (iOS Safari often fails first request)
+    try {
+      const retry = await fetchWithTimeout(req, timeout);
+      return retry;
+    } catch (retryErr) {
+      // Both attempts failed - return offline response
+      return new Response(
+        JSON.stringify({ success: false, message: 'API unavailable', offline: true }),
+        { status: 503, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
   }
 }
 

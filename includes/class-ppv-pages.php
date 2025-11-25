@@ -12,9 +12,9 @@ public static function force_visible() {
     if (wp_is_mobile()) {
         echo '<style>
             @supports (-webkit-touch-callout: none) {
-                body.ppv-app-mode .elementor, 
-                body.ppv-app-mode .ppv-dashboard-netto, 
-                body.ppv-app-mode #ppv-my-points-wrapper {
+                body.ppv-app-mode .elementor,
+                body.ppv-app-mode .ppv-dashboard-netto,
+                body.ppv-app-mode #ppv-my-points-app {
                     display:block!important;
                     opacity:1!important;
                     visibility:visible!important;
@@ -22,7 +22,14 @@ public static function force_visible() {
                     overflow:auto!important;
                     -webkit-overflow-scrolling:touch!important;
                     z-index:2!important;
-                    background:transparent!important;
+                    background:var(--pp-bg,transparent)!important;
+                }
+                /* ✅ iOS: Prevent flash during Turbo page transitions */
+                body.ppv-app-mode.turbo-loading .ppv-dashboard-netto,
+                body.ppv-app-mode.turbo-loading #ppv-my-points-app {
+                    opacity:1!important;
+                    visibility:visible!important;
+                    transition:none!important;
                 }
             }
         </style>';

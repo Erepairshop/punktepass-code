@@ -2,8 +2,9 @@
 if (!defined('ABSPATH')) exit;
 
 /**
- * PunktePass – POS Device Management v1.0
+ * PunktePass – POS Device Management v1.1
  * ✅ Több eszköz támogatása boltanként
+ * ✅ KORLÁTLAN eszköz regisztráció (nincs limit)
  * ✅ REST API: list, register, update
  * Author: PunktePass (Erik Borota)
  */
@@ -50,7 +51,10 @@ class PPV_POS_Devices {
         return ['success' => true, 'devices' => $devices];
     }
 
-    /** Új eszköz regisztrálása */
+    /**
+     * Új eszköz regisztrálása
+     * KORLÁTLAN: Nincs eszköz szám limit - bármennyi eszközt regisztrálhat a bolt
+     */
     public static function register_device($request) {
         global $wpdb;
         $store_id = intval($request->get_param('store_id')) ?: ppv_store_id();

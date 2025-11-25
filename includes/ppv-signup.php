@@ -420,20 +420,48 @@ class PPV_Signup {
         </style>
 
         <script>
-        // User Type Toggle
-        document.addEventListener('DOMContentLoaded', function() {
-            const typeOptions = document.querySelectorAll('.ppv-type-option');
-            const hiddenInput = document.getElementById('ppv-user-type');
+        // User Type Toggle - wait for full page load
+        (function() {
+            function initTypeToggle() {
+                const typeOptions = document.querySelectorAll('.ppv-type-option');
+                const hiddenInput = document.getElementById('ppv-user-type');
 
-            typeOptions.forEach(option => {
-                option.addEventListener('click', function() {
-                    typeOptions.forEach(opt => opt.classList.remove('ppv-type-active'));
-                    this.classList.add('ppv-type-active');
-                    this.querySelector('input[type="radio"]').checked = true;
-                    hiddenInput.value = this.querySelector('input[type="radio"]').value;
+                if (!typeOptions.length || !hiddenInput) {
+                    console.warn('[PPV] Type toggle elements not found, retrying...');
+                    setTimeout(initTypeToggle, 100);
+                    return;
+                }
+
+                typeOptions.forEach(option => {
+                    option.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+
+                        // Remove active from all
+                        typeOptions.forEach(opt => opt.classList.remove('ppv-type-active'));
+
+                        // Add active to clicked
+                        this.classList.add('ppv-type-active');
+
+                        // Update radio and hidden input
+                        const radio = this.querySelector('input[type="radio"]');
+                        if (radio) {
+                            radio.checked = true;
+                            hiddenInput.value = radio.value;
+                            console.log('[PPV] User type changed to:', radio.value);
+                        }
+                    });
                 });
-            });
-        });
+
+                console.log('[PPV] Type toggle initialized');
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initTypeToggle);
+            } else {
+                initTypeToggle();
+            }
+        })();
         </script>
 
         <?php
@@ -545,6 +573,9 @@ class PPV_Signup {
         $store_id = null;
         if ($user_type === 'vendor') {
             $pos_token = md5(uniqid('pos_', true));
+            $store_key = bin2hex(random_bytes(32));
+            $qr_secret = bin2hex(random_bytes(16));
+            $pos_api_key = bin2hex(random_bytes(32));
             $trial_ends_at = date('Y-m-d H:i:s', strtotime('+30 days'));
 
             $store_result = $wpdb->insert(
@@ -554,13 +585,17 @@ class PPV_Signup {
                     'email' => $email,
                     'name' => 'Mein Geschäft',
                     'pos_token' => $pos_token,
+                    'store_key' => $store_key,
+                    'qr_secret' => $qr_secret,
+                    'pos_api_key' => $pos_api_key,
+                    'pos_enabled' => 1,
                     'trial_ends_at' => $trial_ends_at,
                     'subscription_status' => 'trial',
                     'active' => 1,
                     'created_at' => current_time('mysql'),
                     'updated_at' => current_time('mysql')
                 ],
-                ['%d', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s']
+                ['%d', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s', '%d', '%s', '%s']
             );
 
             if ($store_result !== false) {
@@ -710,6 +745,9 @@ class PPV_Signup {
             // HÄNDLER: Create store
             if ($user_type === 'vendor') {
                 $pos_token = md5(uniqid('pos_', true));
+                $store_key = bin2hex(random_bytes(32));
+                $qr_secret = bin2hex(random_bytes(16));
+                $pos_api_key = bin2hex(random_bytes(32));
                 $trial_ends_at = date('Y-m-d H:i:s', strtotime('+30 days'));
 
                 $store_result = $wpdb->insert(
@@ -719,13 +757,17 @@ class PPV_Signup {
                         'email' => $email,
                         'name' => trim($first_name . ' ' . $last_name) ?: 'Mein Geschäft',
                         'pos_token' => $pos_token,
+                        'store_key' => $store_key,
+                        'qr_secret' => $qr_secret,
+                        'pos_api_key' => $pos_api_key,
+                        'pos_enabled' => 1,
                         'trial_ends_at' => $trial_ends_at,
                         'subscription_status' => 'trial',
                         'active' => 1,
                         'created_at' => current_time('mysql'),
                         'updated_at' => current_time('mysql')
                     ],
-                    ['%d', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s']
+                    ['%d', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s', '%d', '%s', '%s']
                 );
 
                 if ($store_result !== false) {
