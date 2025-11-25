@@ -694,9 +694,6 @@ class PPV_QR {
                     <button class="ppv-tab" data-tab="rewards" id="ppv-tab-rewards">
                         <i class="ri-gift-line"></i> <?php echo self::t('tab_rewards', 'Prämien'); ?>
                     </button>
-                    <button class="ppv-tab" data-tab="campaigns" id="ppv-tab-campaigns">
-                        <i class="ri-focus-3-line"></i> <?php echo self::t('tab_campaigns', 'Kampagnen'); ?>
-                    </button>
                     <button class="ppv-tab" data-tab="scanner-users" id="ppv-tab-scanner-users">
                         <i class="ri-team-line"></i> <?php echo self::t('tab_scanner_users', 'Scanner Felhasználók'); ?>
                     </button>
@@ -715,11 +712,6 @@ class PPV_QR {
                 <!-- TAB CONTENT: PRÄMIEN -->
                 <div class="ppv-tab-content" id="tab-rewards">
                     <?php echo do_shortcode('[ppv_rewards_management]'); ?>
-                </div>
-
-                <!-- TAB CONTENT: KAMPAGNEN -->
-                <div class="ppv-tab-content" id="tab-campaigns">
-                    <?php self::render_campaigns(); ?>
                 </div>
 
                 <!-- TAB CONTENT: SCANNER FELHASZNÁLÓK -->

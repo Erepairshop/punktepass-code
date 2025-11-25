@@ -147,6 +147,8 @@ return [
     'rewards_form_none' => 'Keine Prämien.',
 'rewards_points_label' => 'Punkte',
 'rewards_points_given_label' => 'Punkte vergeben',
+'rewards_add_new' => 'Neue Prämie',
+'rewards_list_title' => 'Aktive Prämien',
 'rewards_btn_edit' => 'Bearbeiten',
 'rewards_btn_delete' => 'Löschen',
 'rewards_error_loading' => 'Fehler beim Laden',
@@ -166,7 +168,7 @@ return [
 'rewards_campaign_badge' => 'Kampagne',
 
     'rewards_login_required' => 'Bitte anmelden oder Shop aktivieren.',
-'rewards_title' => 'Prämienverwaltung – ',
+'rewards_title' => 'Prämien',
 'rewards_form_title' => 'Titel *',
 'rewards_form_title_placeholder' => 'z. B. 10% Rabatt',
 'rewards_form_title_helper' => 'Der Name der Prämie, den Kunden sehen',
@@ -823,6 +825,7 @@ return [
 
 'qrcamp_title' => 'Kassenscanner & Kampagnen',
 'tab_scanner' => 'Kassenscanner',
+'tab_vip' => 'VIP Einstellungen',
 'tab_rewards' => 'Prämien',
 'tab_campaigns' => 'Kampagnen',
 'camera_scanner_btn' => 'Kamera Scanner',

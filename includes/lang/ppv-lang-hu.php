@@ -176,8 +176,10 @@ return [
 'redeem_no_redeems_period' => 'Nem található beváltás ebben az időszakban',
     
     'rewards_form_none' => 'Nincsenek jutalmak.',
-'rewards_points_label' => 'Pontok',
+'rewards_points_label' => 'pont',
 'rewards_points_given_label' => 'Pontok adott',
+'rewards_add_new' => 'Új jutalom',
+'rewards_list_title' => 'Aktív jutalmak',
 'rewards_btn_edit' => 'Szerkesztés',
 'rewards_btn_delete' => 'Törlés',
 'rewards_error_loading' => 'Hiba a betöltéskor',
@@ -197,7 +199,7 @@ return [
 'rewards_campaign_badge' => 'Kampány',
 
     'rewards_login_required' => 'Kérlek jelentkezz be vagy aktiváld a boltot.',
-'rewards_title' => 'Jutalmak kezelése – ',
+'rewards_title' => 'Jutalmak',
 'rewards_form_title' => 'Cím *',
 'rewards_form_title_placeholder' => 'pl. 10% rabatt',
 'rewards_form_title_helper' => 'A prémium neve, amit az ügyfelek látnak',
@@ -798,6 +800,7 @@ return [
 
 'qrcamp_title' => 'Kasszascanner & Kampányok',
 'tab_scanner' => 'Kasszascanner',
+'tab_vip' => 'VIP Beállítások',
 'tab_rewards' => 'Jutalmak',
 'tab_campaigns' => 'Kampányok',
 'camera_scanner_btn' => 'Kamera Scanner',

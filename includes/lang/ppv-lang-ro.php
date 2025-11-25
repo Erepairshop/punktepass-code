@@ -183,8 +183,10 @@ return [
 
 
     'rewards_form_none' => 'Nicio recompensa.',
-'rewards_points_label' => 'Puncte',
+'rewards_points_label' => 'puncte',
 'rewards_points_given_label' => 'Puncte acordate',
+'rewards_add_new' => 'Recompensă nouă',
+'rewards_list_title' => 'Recompense active',
 'rewards_btn_edit' => 'Editeaza',
 'rewards_btn_delete' => 'Sterge',
 'rewards_error_loading' => 'Eroare la incarcare',
@@ -204,7 +206,7 @@ return [
 'rewards_campaign_badge' => 'Campanie',
 
     'rewards_login_required' => 'Te rog conecteaza-te sau activeaza magazinul.',
-'rewards_title' => 'Gestionare recompense – ',
+'rewards_title' => 'Recompense',
 'rewards_form_title' => 'Titlu *',
 'rewards_form_title_placeholder' => 'ex. 10% reducere',
 'rewards_form_title_helper' => 'Numele recompensei pe care il vad clientii',
@@ -811,6 +813,7 @@ return [
 
 'qrcamp_title' => 'Scanner de Casă & Campanii',
 'tab_scanner' => 'Scanner de Casă',
+'tab_vip' => 'Setări VIP',
 'tab_rewards' => 'Recompense',
 'tab_campaigns' => 'Campanii',
 'camera_scanner_btn' => 'Camera Scanner',
