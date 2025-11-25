@@ -521,7 +521,6 @@ return [
     'tab_contact' => 'Contact & Social',
     'tab_preview' => 'Previzualizare',
     'tab_settings' => 'Setări',
-    'tab_devices' => 'Dispozitive',
     
     // ========== GENERAL TAB ==========
     'general_info' => 'Informații Generale',
@@ -1258,4 +1257,16 @@ return [
     'imprint_liability_links_text' => 'Oferta noastră conține link-uri către site-uri web externe ale terților, asupra al căror conținut nu avem nicio influență. Furnizorul respectiv este întotdeauna responsabil pentru conținutul paginilor legate.',
     'imprint_copyright_title' => 'Drepturi de autor',
     'imprint_copyright_text' => 'Conținutul și lucrările create de operatorii site-ului pe aceste pagini sunt supuse legii germane a drepturilor de autor. Reproducerea, editarea și distribuirea în afara limitelor drepturilor de autor necesită acordul scris al autorului respectiv.',
+
+    // ============================================================
+    // SCAN VALIDATION - OPENING HOURS
+    // ============================================================
+    'err_store_closed' => '⏰ Magazinul este închis',
+    'err_store_closed_detail' => 'Scanarea nu este posibilă în afara programului',
+
+    // ============================================================
+    // DEVICE FINGERPRINT - ACCOUNT LIMIT
+    // ============================================================
+    'err_device_limit' => '⚠️ Limită dispozitiv atinsă',
+    'err_device_limit_detail' => 'Numărul maxim de conturi pentru acest dispozitiv a fost atins',
 ];

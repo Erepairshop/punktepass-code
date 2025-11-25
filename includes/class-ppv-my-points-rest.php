@@ -221,33 +221,23 @@ if (class_exists('PPV_Lang')) {
             ");
 
             // 🏆 TIER LEVEL INFO - User's current level and progress to next
+            // ✅ FIX: Use $lang from line 103 (was using undefined $active_lang)
             if (class_exists('PPV_User_Level')) {
-                $data['tier'] = PPV_User_Level::get_user_level_info($user_id, $active_lang ?? 'de');
+                $data['tier'] = PPV_User_Level::get_user_level_info($user_id, $lang);
 
                 // All tier thresholds for display
                 $data['tiers'] = [
-                    'starter'  => ['min' => 0,    'max' => 99,   'name' => PPV_User_Level::LEVELS['starter']['name_' . ($active_lang ?? 'de')] ?? 'Starter'],
-                    'bronze'   => ['min' => 100,  'max' => 499,  'name' => PPV_User_Level::LEVELS['bronze']['name_' . ($active_lang ?? 'de')] ?? 'Bronze'],
-                    'silver'   => ['min' => 500,  'max' => 999,  'name' => PPV_User_Level::LEVELS['silver']['name_' . ($active_lang ?? 'de')] ?? 'Silber'],
-                    'gold'     => ['min' => 1000, 'max' => 1999, 'name' => PPV_User_Level::LEVELS['gold']['name_' . ($active_lang ?? 'de')] ?? 'Gold'],
-                    'platinum' => ['min' => 2000, 'max' => 999999, 'name' => PPV_User_Level::LEVELS['platinum']['name_' . ($active_lang ?? 'de')] ?? 'Platin'],
+                    'starter'  => ['min' => 0,    'max' => 99,   'name' => PPV_User_Level::LEVELS['starter']['name_' . $lang] ?? 'Starter'],
+                    'bronze'   => ['min' => 100,  'max' => 499,  'name' => PPV_User_Level::LEVELS['bronze']['name_' . $lang] ?? 'Bronze'],
+                    'silver'   => ['min' => 500,  'max' => 999,  'name' => PPV_User_Level::LEVELS['silver']['name_' . $lang] ?? 'Silber'],
+                    'gold'     => ['min' => 1000, 'max' => 1999, 'name' => PPV_User_Level::LEVELS['gold']['name_' . $lang] ?? 'Gold'],
+                    'platinum' => ['min' => 2000, 'max' => 999999, 'name' => PPV_User_Level::LEVELS['platinum']['name_' . $lang] ?? 'Platin'],
                 ];
 
                 ppv_log("🏆 [PPV_MyPoints_REST] Tier info: level=" . ($data['tier']['level'] ?? 'unknown') . ", progress=" . ($data['tier']['progress'] ?? 0) . "%");
             }
 
-// 🌍 Nyelv betöltése, ha még nem történt meg
-$headers = function_exists('getallheaders') ? getallheaders() : [];
-$header_lang = $headers['X-PPV-Lang'] ?? '';
-$cookie_lang = $_COOKIE['ppv_lang'] ?? '';
-$session_lang = $_SESSION['ppv_lang'] ?? '';
-$active_lang = $header_lang ?: $cookie_lang ?: $session_lang ?: 'de';
-
-if (class_exists('PPV_Lang')) {
-    PPV_Lang::load($active_lang);
-    PPV_Lang::$active = $active_lang;
-    ppv_log("🌍 [PPV_MyPoints_REST] Lang forced before labels → {$active_lang}");
-}
+            // ✅ REMOVED duplicate lang load - lang is already loaded at line 103-112
 
             // 🔹 Nyelvi kulcsok a Dashboard mintájára
             $labels = [

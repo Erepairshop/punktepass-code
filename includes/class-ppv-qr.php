@@ -140,6 +140,76 @@ class PPV_QR {
         return $filialen ?: [];
     }
 
+    /** ============================================================
+     *  🕒 CHECK IF STORE IS OPEN (for scan validation)
+     *  Returns: ['open' => bool, 'hours' => string|null]
+     * ============================================================ */
+    private static function is_store_open_for_scan($store_id) {
+        global $wpdb;
+
+        // Get opening_hours from store
+        $opening_hours = $wpdb->get_var($wpdb->prepare(
+            "SELECT opening_hours FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
+            $store_id
+        ));
+
+        // If no opening hours set, assume always open (backwards compatibility)
+        if (empty($opening_hours)) {
+            return ['open' => true, 'hours' => null, 'reason' => 'no_hours_set'];
+        }
+
+        $hours = json_decode($opening_hours, true);
+        if (!is_array($hours)) {
+            return ['open' => true, 'hours' => null, 'reason' => 'invalid_json'];
+        }
+
+        // Get current day and time
+        $now = current_time('timestamp');
+        $day_map = [
+            'monday' => 'mo',
+            'tuesday' => 'di',
+            'wednesday' => 'mi',
+            'thursday' => 'do',
+            'friday' => 'fr',
+            'saturday' => 'sa',
+            'sunday' => 'so'
+        ];
+
+        $day_name = strtolower(date('l', $now));
+        $day = $day_map[$day_name] ?? 'mo';
+        $current_time = date('H:i', $now);
+
+        // Check if day exists in schedule
+        if (!isset($hours[$day])) {
+            return ['open' => false, 'hours' => null, 'reason' => 'day_not_set'];
+        }
+
+        $day_hours = $hours[$day];
+
+        // Check closed flag
+        if (!is_array($day_hours) || !empty($day_hours['closed'])) {
+            return ['open' => false, 'hours' => 'Geschlossen', 'reason' => 'closed_flag'];
+        }
+
+        // Extract opening times
+        $von = $day_hours['von'] ?? '';
+        $bis = $day_hours['bis'] ?? '';
+
+        if (empty($von) || empty($bis)) {
+            return ['open' => false, 'hours' => null, 'reason' => 'no_times'];
+        }
+
+        // Check if current time is within opening hours
+        $is_open = ($current_time >= $von && $current_time <= $bis);
+
+        return [
+            'open' => $is_open,
+            'hours' => "{$von} - {$bis}",
+            'current_time' => $current_time,
+            'reason' => $is_open ? 'within_hours' : 'outside_hours'
+        ];
+    }
+
     private static function validate_store($store_key) {
         $store = self::get_store_by_key($store_key);
 
@@ -355,30 +425,7 @@ class PPV_QR {
             $token_from_qr = $parts[2] ?? '';
 
             if (!empty($token_from_qr)) {
-                // ✨ NEW: Check if this is a TIMED token (16+ chars)
-                if (strlen($token_from_qr) >= 16) {
-                    // Validate timed token from transient
-                    $cache_key = "ppv_timed_qr_{$uid_from_qr}";
-                    $qr_data = get_transient($cache_key);
-
-                    if (!$qr_data) {
-                        // Token expired or doesn't exist
-                        ppv_log("⚠️ [PPV_QR] Timed QR expired or invalid for user {$uid_from_qr}");
-                        return false;
-                    }
-
-                    if ($qr_data['token'] !== $token_from_qr) {
-                        // Token mismatch - potential fraud attempt
-                        ppv_log("⚠️ [PPV_QR] Timed QR token mismatch for user {$uid_from_qr} - fraud attempt?");
-                        return false;
-                    }
-
-                    // ✅ Valid timed token
-                    ppv_log("✅ [PPV_QR] Valid timed QR for user {$uid_from_qr}");
-                    return intval($uid_from_qr);
-                }
-
-                // Original 10-char token → validate from database
+                // Look up actual user_id from ppv_users by qr_token
                 $actual_user_id = $wpdb->get_var($wpdb->prepare("
                     SELECT id FROM {$wpdb->prefix}ppv_users
                     WHERE qr_token=%s AND active=1
@@ -1801,9 +1848,6 @@ class PPV_QR {
         $scan_lat = isset($data['latitude']) ? floatval($data['latitude']) : null;
         $scan_lng = isset($data['longitude']) ? floatval($data['longitude']) : null;
 
-        // Device fingerprint for fraud detection
-        $device_fingerprint = sanitize_text_field($data['device_fingerprint'] ?? '');
-
         if (empty($qr_code) || empty($store_key)) {
             return new WP_REST_Response([
                 'success' => false,
@@ -1839,6 +1883,32 @@ class PPV_QR {
                 'success' => false,
                 'message' => '❌ Invalid store_id (0)'
             ], 400);
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // 🕒 OPENING HOURS CHECK - Block scans outside business hours
+        // ═══════════════════════════════════════════════════════════
+        $opening_check = self::is_store_open_for_scan($store_id);
+        if (!$opening_check['open']) {
+            $store_name = $wpdb->get_var($wpdb->prepare(
+                "SELECT name FROM {$wpdb->prefix}ppv_stores WHERE id=%d LIMIT 1",
+                $store_id
+            ));
+
+            ppv_log("⏰ [PPV_QR] BLOCKED: Scan outside opening hours - store_id={$store_id}, reason={$opening_check['reason']}, hours={$opening_check['hours']}, current={$opening_check['current_time']}");
+
+            // Log the blocked scan attempt
+            self::insert_log($store_id, 0, '⏰ Scan blocked - store closed', 'error', 'store_closed');
+
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => self::t('err_store_closed', '⏰ Az üzlet jelenleg zárva van'),
+                'detail' => self::t('err_store_closed_detail', 'Scan nem lehetséges nyitvatartási időn kívül'),
+                'store_name' => $store_name ?? 'PunktePass',
+                'opening_hours' => $opening_check['hours'],
+                'current_time' => $opening_check['current_time'] ?? date('H:i'),
+                'error_type' => 'store_closed'
+            ], 403);
         }
 
         $user_id = self::decode_user_from_qr($qr_code);
@@ -1911,88 +1981,22 @@ class PPV_QR {
         }
 
         // ═══════════════════════════════════════════════════════════
-        // DEVICE FINGERPRINT CHECK (Fraud Detection)
-        // First scan = trusted device, different device = EMAIL notify (but allow)
-        // ═══════════════════════════════════════════════════════════
-        if (class_exists('PPV_Scan_Monitoring') && !empty($device_fingerprint)) {
-            $device_check = PPV_Scan_Monitoring::validate_device_fingerprint($store_id, $device_fingerprint);
-
-            if (!$device_check['valid'] && $device_check['reason'] === 'different_device') {
-                // Different device detected - send email alert but ALLOW scan
-                $ip_address = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
-                $ip_address = sanitize_text_field(explode(',', $ip_address)[0]);
-
-                PPV_Scan_Monitoring::send_fraud_alert_email('different_device', $store_id, $user_id, [
-                    'current_fp' => $device_check['current_fp'],
-                    'trusted_fp' => $device_check['trusted_fp'],
-                    'ip_address' => $ip_address
-                ]);
-
-                ppv_log("[PPV_QR] ⚠️ DIFFERENT DEVICE (SCAN ALLOWED): user={$user_id}, store={$store_id}");
-                // Scan continues - just notification sent
-            }
-        }
-
-        // ═══════════════════════════════════════════════════════════
-        // GPS DISTANCE CHECK (Fraud Detection)
-        // Under 10km: log only, allow scan
-        // Over 10km: CREATE PENDING SCAN (admin must approve)
+        // GPS DISTANCE CHECK (Fraud Detection) - LOG ONLY, DON'T BLOCK
+        // Scan always goes through, suspicious cases logged for admin review
         // ═══════════════════════════════════════════════════════════
         if (class_exists('PPV_Scan_Monitoring') && ($scan_lat || $scan_lng)) {
             $gps_check = PPV_Scan_Monitoring::validate_scan_location($store_id, $scan_lat, $scan_lng);
 
             if (!$gps_check['valid']) {
-                $reason = $gps_check['reason'] ?? 'gps_distance';
-                $distance = $gps_check['distance'] ?? null;
-
-                // Check if distance exceeds 10km threshold
-                if ($distance && PPV_Scan_Monitoring::should_be_pending($distance)) {
-                    // ═══════════════════════════════════════════════════════════
-                    // 10km+ DISTANCE: Create PENDING scan, don't add points yet
-                    // User sees toast, admin must approve
-                    // ═══════════════════════════════════════════════════════════
-                    $pending_id = PPV_Scan_Monitoring::create_pending_scan(
-                        $store_id,
-                        $user_id,
-                        1, // Default 1 point (could calculate actual points)
-                        $scan_lat,
-                        $scan_lng,
-                        $distance,
-                        $device_fingerprint
-                    );
-
-                    ppv_log("[PPV_QR] 📋 PENDING SCAN created: user={$user_id}, store={$store_id}, distance={$distance}m, pending_id={$pending_id}");
-
-                    // Get user info for response
-                    $user_info = $wpdb->get_row($wpdb->prepare("
-                        SELECT first_name, last_name, email, avatar
-                        FROM {$wpdb->prefix}ppv_users WHERE id = %d
-                    ", $user_id));
-                    $customer_name = trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
-
-                    // Return PENDING response (not error, not success)
-                    return new WP_REST_Response([
-                        'success' => false,
-                        'is_pending' => true,
-                        'pending_id' => $pending_id,
-                        'message' => '⏳ Scan függőben - admin jóváhagyásra vár',
-                        'user_id' => $user_id,
-                        'customer_name' => $customer_name ?: null,
-                        'email' => $user_info->email ?? null,
-                        'avatar' => $user_info->avatar ?? null,
-                        'points' => 1,
-                        'distance_km' => round($distance / 1000, 1),
-                        'store_name' => $store->name ?? 'PunktePass'
-                    ], 200); // 200 OK - not an error, just pending
-                }
-
-                // Under 10km: just log, allow scan to continue
+                // Log suspicious scan for admin review - but allow scan to continue
                 PPV_Scan_Monitoring::log_suspicious_scan($store_id, $user_id, $scan_lat, $scan_lng, $gps_check);
+
+                $reason = $gps_check['reason'] ?? 'gps_distance';
 
                 if ($reason === 'wrong_country') {
                     ppv_log("[PPV_QR] ⚠️ SUSPICIOUS: Country mismatch (SCAN ALLOWED): user={$user_id}, store={$store_id}, store_country={$gps_check['store_country']}, scan_country={$gps_check['scan_country']}");
                 } else {
-                    ppv_log("[PPV_QR] ⚠️ SUSPICIOUS: GPS distance exceeded (SCAN ALLOWED): user={$user_id}, store={$store_id}, distance={$distance}m");
+                    ppv_log("[PPV_QR] ⚠️ SUSPICIOUS: GPS distance exceeded (SCAN ALLOWED): user={$user_id}, store={$store_id}, distance={$gps_check['distance']}m");
                 }
                 // Scan continues - admin can review suspicious scans in WP admin
             }

@@ -105,8 +105,6 @@ class PPV_API {
         $points   = intval($params['points'] ?? ($_GET['points'] ?? 0));
         $store_key = sanitize_text_field($params['store_key'] ?? ($_GET['store_key'] ?? ''));
 
-        error_log("📩 [/add-points] email={$email} | store_id={$store_id} | points={$points}");
-
         /** 🩵 Auto session restore via PPV_Session */
         if (class_exists('PPV_Session')) {
             $store = PPV_Session::current_store();
@@ -118,7 +116,6 @@ class PPV_API {
                     $_SESSION['ppv_is_pos'] = true;
                     $GLOBALS['ppv_active_store'] = $store;
                     $GLOBALS['ppv_is_pos'] = true;
-                    error_log("✅ [/add-points] Store auto-restored via key={$store_id}");
                 }
             }
         }

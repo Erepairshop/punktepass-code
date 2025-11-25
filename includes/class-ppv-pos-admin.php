@@ -38,14 +38,12 @@ public static function enqueue_assets() {
             true
         );
 
-        // 🔹 Régi lokalizáció (logout, log funkciókhoz)
-        $__data = is_array([
+        // 🔹 Régi lokalizáció (logout, log funkciókhoz) + Ably key
+        $__data = [
             'resturl' => trailingslashit(esc_url(rest_url('ppv/v1/'))),
             'nonce'   => wp_create_nonce('wp_rest'),
-        ] ?? null) ? [
-            'resturl' => trailingslashit(esc_url(rest_url('ppv/v1/'))),
-            'nonce'   => wp_create_nonce('wp_rest'),
-        ] : [];
+            'ably_key' => defined('PPV_ABLY_API_KEY') ? PPV_ABLY_API_KEY : '',
+        ];
 $__json = wp_json_encode($__data);
 wp_add_inline_script('ppv-pos-admin', "window.PPV_POS_ADMIN = {$__json};", 'before');
 

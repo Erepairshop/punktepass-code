@@ -1072,7 +1072,7 @@ public static function render_dashboard() {
     // ✅ ÚJ! BOLT-SPECIFIKUS REWARD TRACKING
     // 1️⃣ Megkeressük melyik boltokban gyűjtött pontot
     $stores_with_points = $wpdb->get_results($wpdb->prepare("
-        SELECT 
+        SELECT
             s.id as store_id,
             s.company_name as store_name,
             SUM(p.points) as total_points
@@ -1081,21 +1081,39 @@ public static function render_dashboard() {
         WHERE p.user_id = %d
         GROUP BY p.store_id
     ", $user_id));
-    
+
+    // ✅ OPTIMIZED: Batch load ALL rewards in 1 query instead of N queries
+    $all_rewards_map = [];
+    if (!empty($stores_with_points)) {
+        $store_ids = array_map(fn($s) => (int)$s->store_id, $stores_with_points);
+        $store_ids_str = implode(',', array_filter($store_ids));
+
+        if (!empty($store_ids_str)) {
+            $all_rewards_raw = $wpdb->get_results("
+                SELECT store_id, required_points
+                FROM {$prefix}ppv_rewards
+                WHERE store_id IN ({$store_ids_str}) AND required_points > 0
+                ORDER BY store_id, required_points ASC
+            ");
+
+            // Group by store_id
+            foreach ($all_rewards_raw as $r) {
+                $sid = (int)$r->store_id;
+                if (!isset($all_rewards_map[$sid])) $all_rewards_map[$sid] = [];
+                $all_rewards_map[$sid][] = $r;
+            }
+        }
+    }
+
     // 2️⃣ Minden bolthoz megkeressük a következő jutalmat
     $rewards_by_store = [];
-    
+
     foreach ($stores_with_points as $store) {
         $store_id = (int) $store->store_id;
         $store_points = (int) $store->total_points;
-        
-        // Lekérdezzük a bolt jutalmait
-        $store_rewards = $wpdb->get_results($wpdb->prepare("
-            SELECT required_points
-            FROM {$prefix}ppv_rewards
-            WHERE store_id = %d AND required_points > 0
-            ORDER BY required_points ASC
-        ", $store_id));
+
+        // ✅ OPTIMIZED: Use pre-loaded rewards instead of query per store
+        $store_rewards = $all_rewards_map[$store_id] ?? [];
         
         if (empty($store_rewards)) {
             continue; // Nincs jutalom ebben a boltban

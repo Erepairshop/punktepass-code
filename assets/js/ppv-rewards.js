@@ -1069,4 +1069,25 @@ showToast("📄 Monatsbeleg wird heruntergeladen!", "success");
       initRewardsPage();
     }
   });
+
+  // ✅ FIX: Cleanup on navigation (iOS Safari fix)
+  document.addEventListener('turbo:before-visit', function() {
+    // Clear polling interval
+    if (window.PPV_REWARDS_POLLING) {
+      clearInterval(window.PPV_REWARDS_POLLING);
+      window.PPV_REWARDS_POLLING = null;
+      console.log('🧹 [REWARDS] Polling interval cleared');
+    }
+
+    // Close Ably connection
+    if (window.PPV_REWARDS_ABLY) {
+      try {
+        window.PPV_REWARDS_ABLY.close();
+        console.log('🧹 [REWARDS] Ably connection closed');
+      } catch (e) {
+        // Ignore close errors
+      }
+      window.PPV_REWARDS_ABLY = null;
+    }
+  });
 }

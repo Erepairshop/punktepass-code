@@ -37,113 +37,9 @@
     lastInitTime: 0,  // Prevent rapid re-init
     ablyInstance: null,  // Ably connection for cleanup
     pollInterval: null,   // Polling interval for cleanup
-    gpsPosition: null,    // Current GPS position for fraud detection
-    deviceFingerprint: null  // Device fingerprint for fraud detection
+    gpsPosition: null,     // Current GPS position for fraud detection
+    gpsWatchId: null       // GPS watch ID for cleanup
   };
-
-  // ============================================================
-  // DEVICE FINGERPRINT (for fraud detection)
-  // Creates a unique device identifier based on browser/device properties
-  // First scan from a device = trusted device for that store
-  // ============================================================
-  async function generateDeviceFingerprint() {
-    try {
-      const components = [];
-
-      // 1. Screen properties
-      components.push(`${screen.width}x${screen.height}x${screen.colorDepth}`);
-
-      // 2. Timezone
-      components.push(Intl.DateTimeFormat().resolvedOptions().timeZone || '');
-
-      // 3. Language
-      components.push(navigator.language || '');
-
-      // 4. Platform
-      components.push(navigator.platform || '');
-
-      // 5. Hardware concurrency (CPU cores)
-      components.push(navigator.hardwareConcurrency || 0);
-
-      // 6. Device memory (if available)
-      components.push(navigator.deviceMemory || 0);
-
-      // 7. Touch support
-      components.push(navigator.maxTouchPoints || 0);
-
-      // 8. Canvas fingerprint (unique per device/browser)
-      try {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = 200;
-        canvas.height = 50;
-        ctx.textBaseline = 'top';
-        ctx.font = '14px Arial';
-        ctx.fillStyle = '#f60';
-        ctx.fillRect(0, 0, 100, 50);
-        ctx.fillStyle = '#069';
-        ctx.fillText('PunktePass', 2, 2);
-        ctx.fillStyle = 'rgba(102, 204, 0, 0.7)';
-        ctx.fillText('Device', 4, 17);
-        components.push(canvas.toDataURL().slice(-50));
-      } catch (e) {
-        components.push('canvas-error');
-      }
-
-      // 9. WebGL renderer (GPU info)
-      try {
-        const canvas = document.createElement('canvas');
-        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-        if (gl) {
-          const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
-          if (debugInfo) {
-            components.push(gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) || '');
-          }
-        }
-      } catch (e) {
-        components.push('webgl-error');
-      }
-
-      // 10. User agent
-      components.push(navigator.userAgent || '');
-
-      // Generate hash from all components
-      const fingerprint = await hashString(components.join('|'));
-      ppvLog('[Fingerprint] Generated:', fingerprint.substring(0, 16) + '...');
-      return fingerprint;
-
-    } catch (e) {
-      ppvWarn('[Fingerprint] Error generating:', e);
-      return null;
-    }
-  }
-
-  // Simple hash function (SHA-256)
-  async function hashString(str) {
-    try {
-      const msgBuffer = new TextEncoder().encode(str);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    } catch (e) {
-      // Fallback: simple hash for older browsers
-      let hash = 0;
-      for (let i = 0; i < str.length; i++) {
-        const char = str.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash = hash & hash;
-      }
-      return Math.abs(hash).toString(16).padStart(16, '0');
-    }
-  }
-
-  // Get device fingerprint (cached)
-  async function getDeviceFingerprint() {
-    if (!STATE.deviceFingerprint) {
-      STATE.deviceFingerprint = await generateDeviceFingerprint();
-    }
-    return STATE.deviceFingerprint;
-  }
 
   // ============================================================
   // GPS LOCATION TRACKING (for fraud detection)
@@ -177,7 +73,8 @@
     );
 
     // Watch for position changes (update every minute or on significant move)
-    navigator.geolocation.watchPosition(
+    // Store watch ID so we can stop it later
+    STATE.gpsWatchId = navigator.geolocation.watchPosition(
       (pos) => {
         STATE.gpsPosition = {
           latitude: pos.coords.latitude,
@@ -196,6 +93,15 @@
         maximumAge: 60000
       }
     );
+  }
+
+  // Stop GPS tracking
+  function stopGpsTracking() {
+    if (STATE.gpsWatchId !== null) {
+      navigator.geolocation.clearWatch(STATE.gpsWatchId);
+      STATE.gpsWatchId = null;
+      ppvLog('[GPS] Watch stopped');
+    }
   }
 
   function getGpsCoordinates() {
@@ -491,8 +397,6 @@
 
       // Get GPS coordinates for fraud detection
       const gps = getGpsCoordinates();
-      // Get device fingerprint for fraud detection
-      const deviceFp = await getDeviceFingerprint();
 
       try {
         const res = await fetch('/wp-json/punktepass/v1/pos/scan', {
@@ -503,8 +407,7 @@
             store_key: getStoreKey(),
             points: 1,
             latitude: gps.latitude,
-            longitude: gps.longitude,
-            device_fingerprint: deviceFp
+            longitude: gps.longitude
           })
         });
 
@@ -512,14 +415,50 @@
 
         if (data.success) {
           this.ui.showMessage('✅ ' + data.message, 'success');
-          // ✅ FIX: Removed non-existent addLogRow call - inlineProcessScan handles UI updates
+
+          // ✅ FIX: Add scan to UI immediately (same as inlineProcessScan)
+          const now = new Date();
+          const scanId = data.scan_id || `local-${data.user_id}-${now.getTime()}`;
+
+          this.ui.addScanItem({
+            scan_id: scanId,
+            user_id: data.user_id,
+            customer_name: data.customer_name || null,
+            email: data.email || null,
+            avatar: data.avatar || null,
+            message: data.message,
+            points: data.points || 1,
+            date_short: now.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'}).replace(/\./g, '.'),
+            time_short: now.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'}),
+            success: true,
+            _realtime: true  // Prepend to top of list
+          });
         } else {
           this.ui.showMessage('⚠️ ' + (data.message || ''), 'warning');
+
+          // ✅ FIX: Add error scan to UI immediately (always, even without user_id)
+          const now = new Date();
+          const oderId = data.user_id || 0;
+          const scanId = data.scan_id || `local-err-${oderId}-${now.getTime()}`;
+
+          this.ui.addScanItem({
+            scan_id: scanId,
+            user_id: oderId,
+            customer_name: data.customer_name || null,
+            email: data.email || null,
+            avatar: data.avatar || null,
+            message: data.message || '⚠️ Fehler',
+            points: 0,
+            date_short: now.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'}).replace(/\./g, '.'),
+            time_short: now.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'}),
+            success: false,
+            _realtime: true
+          });
+
           if (!/bereits|gescannt|duplikat/i.test(data.message || '')) {
             OfflineSyncManager.save(qrCode);
           }
         }
-        // ✅ FIX: Removed redundant loadLogs - real-time updates handle this
       } catch (e) {
         this.ui.showMessage('⚠️ ' + (L.server_error || 'Serverfehler'), 'error');
         OfflineSyncManager.save(qrCode);
@@ -1185,38 +1124,17 @@
     async loadLibrary() {
       // Use qr-scanner for all devices (better camera handling)
       if (window.QrScanner) {
-        ppvLog('[Camera] QrScanner already loaded');
         await this.startQrScanner();
         return;
       }
 
-      ppvLog('[Camera] Loading QrScanner from CDN...');
       const script = document.createElement('script');
-
-      // Primary CDN
       script.src = 'https://unpkg.com/qr-scanner@1.4.2/qr-scanner.umd.min.js';
-
-      script.onload = () => {
-        ppvLog('[Camera] QrScanner loaded successfully');
-        this.startQrScanner();
-      };
-
+      script.onload = () => this.startQrScanner();
       script.onerror = () => {
-        ppvWarn('[Camera] Primary CDN failed, trying jsDelivr...');
-        // Fallback CDN
-        const fallbackScript = document.createElement('script');
-        fallbackScript.src = 'https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner.umd.min.js';
-        fallbackScript.onload = () => {
-          ppvLog('[Camera] QrScanner loaded from jsDelivr');
-          this.startQrScanner();
-        };
-        fallbackScript.onerror = () => {
-          ppvWarn('[Camera] All CDNs failed, falling back to jsQR');
-          this.loadFallbackLibrary();
-        };
-        document.head.appendChild(fallbackScript);
+        ppvWarn('[Camera] qr-scanner failed to load, falling back to jsQR');
+        this.loadFallbackLibrary();
       };
-
       document.head.appendChild(script);
     }
 
@@ -1231,38 +1149,23 @@
     }
 
     async startQrScanner() {
-      if (!this.readerDiv) {
-        console.error('[Camera] readerDiv not found - mini scanner container missing');
-        this.updateStatus('error', '❌ Scanner elem hiányzik');
-        return;
-      }
-      if (!window.QrScanner) {
-        console.error('[Camera] QrScanner library not loaded');
-        this.updateStatus('error', '❌ Scanner könyvtár nem töltődött be');
-        window.ppvToast && window.ppvToast('Scanner könyvtár betöltési hiba', 'error');
-        return;
-      }
+      if (!this.readerDiv || !window.QrScanner) return;
 
       try {
-        // Set worker path BEFORE creating scanner instance
-        QrScanner.WORKER_PATH = 'https://unpkg.com/qr-scanner@1.4.2/qr-scanner-worker.min.js';
-
         // Create video element for qr-scanner
         let videoEl = this.readerDiv.querySelector('video');
         if (!videoEl) {
           videoEl = document.createElement('video');
           videoEl.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:8px;';
-          videoEl.setAttribute('playsinline', 'true');
-          videoEl.setAttribute('muted', 'true');
           this.readerDiv.appendChild(videoEl);
         }
 
-        ppvLog('[Camera] Creating QrScanner instance...');
-
         // QrScanner options - preferredCamera: 'environment' forces back camera
+        // maxScansPerSecond: 3 - reduced to minimize console log spam
+        // (library logs "No QR code found" for every failed scan attempt)
         const options = {
           preferredCamera: 'environment',  // Back camera
-          maxScansPerSecond: 25,
+          maxScansPerSecond: 3,
           highlightScanRegion: true,
           highlightCodeOutline: true,
           returnDetailedScanResult: true
@@ -1274,7 +1177,9 @@
           options
         );
 
-        ppvLog('[Camera] Starting scanner...');
+        // Set worker path for WebWorker (improves performance)
+        QrScanner.WORKER_PATH = 'https://unpkg.com/qr-scanner@1.4.2/qr-scanner-worker.min.js';
+
         await this.scanner.start();
         ppvLog('[Camera] QrScanner started successfully');
 
@@ -1438,16 +1343,13 @@
       this.state = 'processing';
       this.updateStatus('processing', '⏳ ' + (L.scanner_points_adding || 'Wird verarbeitet...'));
 
-      try { if (navigator.vibrate) navigator.vibrate(30); } catch (e) {}
 
       this.inlineProcessScan(qrCode);
     }
 
-    async inlineProcessScan(qrCode) {
+    inlineProcessScan(qrCode) {
       // Get GPS coordinates for fraud detection
       const gps = getGpsCoordinates();
-      // Get device fingerprint for fraud detection
-      const deviceFp = await getDeviceFingerprint();
 
       fetch('/wp-json/punktepass/v1/pos/scan', {
         method: 'POST',
@@ -1457,60 +1359,11 @@
           store_key: getStoreKey(),
           points: 1,
           latitude: gps.latitude,
-          longitude: gps.longitude,
-          device_fingerprint: deviceFp
+          longitude: gps.longitude
         })
       })
         .then(res => res.json())
         .then(data => {
-          // ═══════════════════════════════════════════════════════════
-          // PENDING STATUS: 10km+ distance - scan goes to admin review
-          // User sees toast, points NOT added yet (admin must approve)
-          // ═══════════════════════════════════════════════════════════
-          if (data.is_pending) {
-            playSound('success');  // Still a soft beep (not error)
-            this.updateStatus('warning', '⏳ ' + (L.scan_pending || 'Scan függőben'));
-
-            // Build detailed pending message with distance info
-            let pendingMessage = '⏳ Scan függőben - admin jóváhagyás szükséges';
-            if (data.distance_km) {
-              pendingMessage = `⏳ Scan függőben (${data.distance_km.toFixed(1)} km távolság) - admin jóváhagyás szükséges. Értesítést kapsz a döntésről!`;
-            } else {
-              pendingMessage = '⏳ Scan függőben - admin jóváhagyás szükséges (nagy távolság). Értesítést kapsz a döntésről!';
-            }
-
-            window.ppvToast(pendingMessage, 'warning');
-
-            // Add to UI as pending item
-            const now = new Date();
-            const scanId = data.pending_id ? `pending-${data.pending_id}` : `pending-${data.user_id}-${now.getTime()}`;
-
-            if (STATE.uiManager) {
-              // Build scan history message with distance
-              let historyMessage = '⏳ Függőben (admin jóváhagyás)';
-              if (data.distance_km) {
-                historyMessage = `⏳ Függőben - távolság: ${data.distance_km.toFixed(1)} km`;
-              }
-
-              STATE.uiManager.addScanItem({
-                scan_id: scanId,
-                user_id: data.user_id,
-                customer_name: data.customer_name || null,
-                email: data.email || null,
-                avatar: data.avatar || null,
-                message: historyMessage,
-                points: data.points || 1,
-                date_short: now.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'}).replace(/\./g, '.'),
-                time_short: now.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'}),
-                success: false,  // Show as warning/pending
-                _realtime: true
-              });
-            }
-
-            this.startPauseCountdown();
-            return;
-          }
-
           if (data.success) {
             playSound('success');  // 🔊 Success beep
             this.updateStatus('success', '✅ ' + (data.message || L.scanner_success_msg || 'Erfolgreich!'));
@@ -1542,14 +1395,15 @@
             this.updateStatus('warning', '⚠️ ' + (data.message || L.error_generic || 'Fehler'));
             window.ppvToast(data.message || '⚠️ Fehler', 'warning');
 
-            // ✅ FIX: Add error scan to UI immediately with unique scan_id
-            if (STATE.uiManager && data.user_id) {
+            // ✅ FIX: Add error scan to UI immediately (always, even without user_id)
+            if (STATE.uiManager) {
               const now = new Date();
-              const scanId = data.scan_id || `local-err-${data.user_id}-${now.getTime()}`;
+              const oderId = data.user_id || 0;
+              const scanId = data.scan_id || `local-err-${oderId}-${now.getTime()}`;
 
               STATE.uiManager.addScanItem({
                 scan_id: scanId,
-                user_id: data.user_id,
+                user_id: oderId,
                 customer_name: data.customer_name || null,
                 email: data.email || null,
                 avatar: data.avatar || null,
@@ -1874,6 +1728,9 @@
       STATE.visibilityHandler = null;
     }
 
+    // ✅ FIX: Stop GPS tracking to prevent battery drain
+    stopGpsTracking();
+
     STATE.cameraScanner?.cleanup();
     STATE.cameraScanner = null;
     STATE.campaignManager = null;
@@ -1987,6 +1844,7 @@
       const channel = STATE.ablyInstance.channels.get(channelName);
 
       STATE.ablyInstance.connection.on('connected', () => {
+        console.log('✅ [Ably] CONNECTED to channel: store-' + storeId);
         ppvLog('[Ably] Connected');
         // Stop polling if it was running
         if (STATE.pollInterval) {
@@ -1996,23 +1854,29 @@
       });
 
       STATE.ablyInstance.connection.on('disconnected', () => {
+        console.warn('⚠️ [Ably] DISCONNECTED - starting fallback polling');
         ppvLog('[Ably] Disconnected, starting fallback polling');
         startPolling();
       });
 
       STATE.ablyInstance.connection.on('failed', (err) => {
+        console.error('❌ [Ably] CONNECTION FAILED:', err);
         ppvLog('[Ably] Connection failed:', err);
         startPolling();
       });
 
       // Handle incoming scan events
       channel.subscribe('new-scan', (message) => {
+        console.log('📡 [Ably] NEW-SCAN EVENT RECEIVED:', message.data);
         ppvLog('[Ably] New scan received:', message.data);
 
         // ✅ FIX: Deduplication is now handled by addScanItem using scan_id
         // Just pass the data through - the UI manager will skip if scan_id already displayed
         if (STATE.uiManager) {
+          console.log('📡 [Ably] Adding scan to UI...');
           STATE.uiManager.addScanItem({ ...message.data, _realtime: true });
+        } else {
+          console.warn('📡 [Ably] STATE.uiManager is null!');
         }
       });
 
