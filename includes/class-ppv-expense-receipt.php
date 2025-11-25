@@ -673,8 +673,7 @@ HTML;
     }
 
     /**
-     * 💾 FÁJL MENTÉS - EGYSZERŰSÍTVE
-     * HTML-t PDF-ként menti el
+     * 💾 FÁJL MENTÉS - DOMPDF-el valódi PDF generálás
      */
     private static function save_receipt_file($html, $filename) {
         $upload_dir = wp_upload_dir();
@@ -690,15 +689,41 @@ HTML;
 
         $filepath = $receipts_dir . '/' . $filename;
 
-        // ✅ HTML-t egyszerűen fájlként mentjük
-        $bytes = file_put_contents($filepath, $html);
+        // ✅ DOMPDF betöltése és PDF generálás
+        try {
+            $dompdf_autoload = PPV_PLUGIN_DIR . 'libs/dompdf/vendor/autoload.php';
+            if (!file_exists($dompdf_autoload)) {
+                ppv_log("❌ [PPV_EXPENSE_RECEIPT] DOMPDF autoload nem található: {$dompdf_autoload}");
+                return false;
+            }
 
-        if ($bytes === false) {
-            ppv_log("❌ [PPV_EXPENSE_RECEIPT] Fájl írás sikertelen: {$filepath}");
+            require_once $dompdf_autoload;
+
+            $options = new \Dompdf\Options();
+            $options->set('isHtml5ParserEnabled', true);
+            $options->set('isRemoteEnabled', true);
+            $options->set('defaultFont', 'Arial');
+            $options->set('isPhpEnabled', false);
+
+            $dompdf = new \Dompdf\Dompdf($options);
+            $dompdf->loadHtml($html, 'UTF-8');
+            $dompdf->setPaper('A4', 'portrait');
+            $dompdf->render();
+
+            $pdf_content = $dompdf->output();
+            $bytes = file_put_contents($filepath, $pdf_content);
+
+            if ($bytes === false) {
+                ppv_log("❌ [PPV_EXPENSE_RECEIPT] PDF írás sikertelen: {$filepath}");
+                return false;
+            }
+
+            ppv_log("✅ [PPV_EXPENSE_RECEIPT] PDF mentve: {$filename} ({$bytes} bytes)");
+
+        } catch (\Exception $e) {
+            ppv_log("❌ [PPV_EXPENSE_RECEIPT] DOMPDF hiba: " . $e->getMessage());
             return false;
         }
-
-        ppv_log("✅ [PPV_EXPENSE_RECEIPT] Fájl mentve: {$filename} ({$bytes} bytes)");
 
         // Relatív útvonal visszaadása az adatbázisba
         return self::RECEIPTS_DIR . '/' . $filename;
