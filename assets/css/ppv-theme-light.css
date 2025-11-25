@@ -4246,6 +4246,62 @@ body.ppv-light .ppv-preview-item strong {
     color: #003049;
 }
 
+/* VIP Table - Light Theme */
+body.ppv-light .ppv-store-vip-table {
+    background: linear-gradient(135deg, rgba(217, 119, 6, 0.06) 0%, rgba(217, 119, 6, 0.02) 100%);
+    border-color: rgba(217, 119, 6, 0.2);
+}
+
+body.ppv-light .ppv-vip-table-title {
+    color: #d97706;
+}
+
+body.ppv-light .ppv-vip-mini-table thead tr {
+    border-bottom-color: rgba(217, 119, 6, 0.15);
+}
+
+body.ppv-light .ppv-vip-th.bronze { color: #b45309; }
+body.ppv-light .ppv-vip-th.silver { color: #64748b; }
+body.ppv-light .ppv-vip-th.gold { color: #d97706; }
+body.ppv-light .ppv-vip-th.platinum { color: #475569; }
+
+body.ppv-light .ppv-vip-table-row {
+    border-bottom-color: rgba(0, 0, 0, 0.05);
+}
+
+body.ppv-light .ppv-vip-label-cell {
+    color: #64748b;
+}
+
+body.ppv-light .ppv-vip-label-cell i {
+    color: #d97706;
+}
+
+body.ppv-light .ppv-vip-cell.bronze {
+    color: #b45309;
+    background: rgba(180, 83, 9, 0.08);
+}
+
+body.ppv-light .ppv-vip-cell.silver {
+    color: #64748b;
+    background: rgba(100, 116, 139, 0.08);
+}
+
+body.ppv-light .ppv-vip-cell.gold {
+    color: #d97706;
+    background: rgba(217, 119, 6, 0.08);
+}
+
+body.ppv-light .ppv-vip-cell.platinum {
+    color: #475569;
+    background: rgba(71, 85, 105, 0.08);
+}
+
+body.ppv-light .ppv-vip-cell.ppv-vip-multiplier {
+    color: #d97706;
+    background: rgba(217, 119, 6, 0.12);
+}
+
 body.ppv-light .ppv-btn-primary {
     background: #0088bb;
 }
