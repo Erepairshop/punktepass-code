@@ -377,7 +377,6 @@
 
       if (data.success && data.receipt_url) {
         showToast('Monatsbericht erstellt!', 'success');
-        window.open(data.receipt_url, '_blank');
         loadReceipts(); // Refresh list
       } else {
         showToast(data.message || 'Keine Einlösungen für diesen Zeitraum', 'error');
@@ -411,9 +410,6 @@
 
       if (data.success) {
         showToast(data.message || 'Belege erstellt!', 'success');
-        if (data.receipt_url) {
-          window.open(data.receipt_url, '_blank');
-        }
         loadReceipts(); // Refresh list
       } else {
         showToast(data.message || 'Keine Einlösungen für dieses Datum', 'error');
@@ -474,7 +470,7 @@
         <span class="ppv-ea-receipt-date">${date}</span>
       </div>
       ${receiptUrl ? `
-        <a href="${receiptUrl}" target="_blank" class="ppv-ea-receipt-download">
+        <a href="${receiptUrl}" download class="ppv-ea-receipt-download">
           <i class="ri-download-line"></i>
         </a>
       ` : `
@@ -504,8 +500,7 @@
       });
       const data = await res.json();
       if (data.success && data.receipt_url) {
-        showNotification('Beleg erstellt!', 'Wird heruntergeladen...');
-        window.open(data.receipt_url, '_blank');
+        showNotification('Beleg erstellt!', 'PDF gespeichert');
         loadReceipts(); // Refresh list
       } else {
         showNotification('Fehler', data.message || 'Beleg konnte nicht erstellt werden');
