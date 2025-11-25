@@ -233,6 +233,33 @@ class PPV_Rewards_Management {
                 <input type="number" name="points_given" id="reward-points-given" placeholder="<?php echo esc_attr(PPV_Lang::t('rewards_form_points_given_placeholder') ?: 'pl. 5'); ?>" min="0" required>
                 <small style="color: #999;">⭐ <?php echo esc_html(PPV_Lang::t('rewards_form_points_given_helper') ?: 'Ezek a pontok jutalmazzák az ügyfelet'); ?></small>
 
+                <!-- 📅 CAMPAIGN DATE FIELDS -->
+                <div class="ppv-campaign-section" style="margin-top: 15px; padding: 15px; background: rgba(255,165,0,0.1); border: 1px dashed rgba(255,165,0,0.3); border-radius: 8px;">
+                    <label style="font-weight: 600; color: #f97316; display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" name="is_campaign" id="reward-is-campaign" value="1" style="width: 18px; height: 18px;">
+                        <span><i class="ri-calendar-event-line"></i> <?php echo esc_html(PPV_Lang::t('rewards_form_campaign') ?: 'Kampány (időkorlátos)'); ?></span>
+                    </label>
+                    <small style="color: #999; margin-left: 26px; display: block; margin-bottom: 10px;">
+                        <?php echo esc_html(PPV_Lang::t('rewards_form_campaign_hint') ?: 'Csak adott időszakban érhető el'); ?>
+                    </small>
+
+                    <div id="campaign-date-fields" style="display: none; margin-top: 12px;">
+                        <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                            <div style="flex: 1; min-width: 150px;">
+                                <label style="font-size: 0.85em; color: #ccc;"><?php echo esc_html(PPV_Lang::t('rewards_form_start_date') ?: 'Kezdő dátum'); ?></label>
+                                <input type="date" name="start_date" id="reward-start-date" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.2); color: #fff;">
+                            </div>
+                            <div style="flex: 1; min-width: 150px;">
+                                <label style="font-size: 0.85em; color: #ccc;"><?php echo esc_html(PPV_Lang::t('rewards_form_end_date') ?: 'Befejező dátum'); ?></label>
+                                <input type="date" name="end_date" id="reward-end-date" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.2); color: #fff;">
+                            </div>
+                        </div>
+                        <small style="color: #f97316; margin-top: 8px; display: block;">
+                            <i class="ri-information-line"></i> <?php echo esc_html(PPV_Lang::t('rewards_form_campaign_dates_hint') ?: 'Hagyd üresen a kezdő dátumot ha azonnal aktív, vagy a befejezőt ha nincs lejárat'); ?>
+                        </small>
+                    </div>
+                </div>
+
                 <?php if ($has_multiple_filialen): ?>
                 <!-- 🏢 FILIALE SELECTOR -->
                 <div class="ppv-filiale-selector" style="margin-top: 15px; padding: 15px; background: rgba(0,230,255,0.1); border-radius: 8px;">
@@ -325,6 +352,11 @@ class PPV_Rewards_Management {
         $type     = sanitize_text_field($data['action_type'] ?? '');
         $value    = sanitize_text_field($data['action_value'] ?? '');
 
+        // 📅 Campaign fields
+        $is_campaign = !empty($data['is_campaign']) ? 1 : 0;
+        $start_date  = !empty($data['start_date']) ? sanitize_text_field($data['start_date']) : null;
+        $end_date    = !empty($data['end_date']) ? sanitize_text_field($data['end_date']) : null;
+
         // 🏢 Filiale options
         $target_store_id = sanitize_text_field($data['target_store_id'] ?? 'current');
         $apply_to_all = !empty($data['apply_to_all']);
@@ -376,6 +408,9 @@ class PPV_Rewards_Management {
                 'action_value'    => $value,
                 'currency'        => $currency,
                 'active'          => 1,  // FIX: Set active by default!
+                'start_date'      => $start_date,
+                'end_date'        => $end_date,
+                'is_campaign'     => $is_campaign,
                 'created_at'      => current_time('mysql')
             ]);
             $created_count++;
@@ -423,6 +458,11 @@ class PPV_Rewards_Management {
         $desc     = sanitize_textarea_field($data['description'] ?? '');
         $type     = sanitize_text_field($data['action_type'] ?? '');
         $value    = sanitize_text_field($data['action_value'] ?? '');
+
+        // 📅 Campaign fields
+        $is_campaign = !empty($data['is_campaign']) ? 1 : 0;
+        $start_date  = !empty($data['start_date']) ? sanitize_text_field($data['start_date']) : null;
+        $end_date    = !empty($data['end_date']) ? sanitize_text_field($data['end_date']) : null;
 
         // Currency automatikus
         $store = $wpdb->get_row($wpdb->prepare(
