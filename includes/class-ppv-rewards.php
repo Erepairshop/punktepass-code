@@ -380,15 +380,14 @@ class PPV_Rewards {
         ", $store_id));
 
         // Total value this month - calculated from reward type
-        // Priority: actual_amount (if set during redemption) → reward value based on type
+        // Priority: actual_amount (if set during redemption) → action_value from reward
+        // Note: For discount_percent, action_value is %, so we use actual_amount only
         $rewards_table = $wpdb->prefix . 'ppv_rewards';
         $wert = (float)$wpdb->get_var($wpdb->prepare("
             SELECT COALESCE(SUM(
                 CASE
                     WHEN r.actual_amount IS NOT NULL AND r.actual_amount > 0 THEN r.actual_amount
-                    WHEN rw.action_type = 'discount_fixed' THEN COALESCE(rw.action_value, 0)
-                    WHEN rw.action_type = 'free_product' THEN COALESCE(rw.free_product_value, 0)
-                    WHEN rw.action_type = 'discount_percent' THEN COALESCE(r.actual_amount, 0)
+                    WHEN rw.action_type IN ('discount_fixed', 'free_product') THEN CAST(COALESCE(rw.action_value, 0) AS DECIMAL(10,2))
                     ELSE 0
                 END
             ), 0)
