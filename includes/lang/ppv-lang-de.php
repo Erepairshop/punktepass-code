@@ -156,8 +156,15 @@ return [
 'rewards_confirm_delete' => 'Prämie wirklich löschen?',
 'rewards_deleted' => 'Gelöscht.',
 'rewards_error_delete' => 'Löschfehler',
-    
-    
+
+// 📅 Campaign fields
+'rewards_form_campaign' => 'Kampagne (zeitlich begrenzt)',
+'rewards_form_campaign_hint' => 'Nur in einem bestimmten Zeitraum verfügbar',
+'rewards_form_start_date' => 'Startdatum',
+'rewards_form_end_date' => 'Enddatum',
+'rewards_form_campaign_dates_hint' => 'Lasse das Startdatum leer, wenn sofort aktiv, oder das Enddatum, wenn es kein Ablaufdatum gibt',
+'rewards_campaign_badge' => 'Kampagne',
+
     'rewards_login_required' => 'Bitte anmelden oder Shop aktivieren.',
 'rewards_title' => 'Prämienverwaltung – ',
 'rewards_form_title' => 'Titel *',

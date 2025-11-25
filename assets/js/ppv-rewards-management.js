@@ -93,13 +93,27 @@ document.addEventListener("DOMContentLoaded", function () {
       
       listContainer.innerHTML = "";
       json.rewards.forEach((r) => {
-        console.log("  🎁 Prémium:", r.title, "Pontok:", r.required_points);
-        
+        console.log("  🎁 Prémium:", r.title, "Pontok:", r.required_points, "Kampány:", r.is_campaign);
+
+        // 📅 Campaign badge and date info
+        const isCampaign = r.is_campaign == 1;
+        const campaignBadge = isCampaign ? `<span style="background: linear-gradient(135deg, #f97316, #ea580c); color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; margin-left: 8px;">📅 ${L.rewards_campaign_badge || 'Kampány'}</span>` : '';
+
+        let dateInfo = '';
+        if (isCampaign && (r.start_date || r.end_date)) {
+          const startStr = r.start_date ? r.start_date : '∞';
+          const endStr = r.end_date ? r.end_date : '∞';
+          dateInfo = `<div style="margin-top: 8px; padding: 6px 10px; background: rgba(249,115,22,0.15); border-radius: 6px; font-size: 0.8rem; color: #f97316;">
+            <i class="ri-calendar-line"></i> ${startStr} → ${endStr}
+          </div>`;
+        }
+
         const card = document.createElement("div");
         card.className = "ppv-reward-item glass-card";
         card.innerHTML = `
-          <h4>${escapeHtml(r.title)}</h4>
+          <h4>${escapeHtml(r.title)}${campaignBadge}</h4>
           <p>${escapeHtml(r.description || "")}</p>
+          ${dateInfo}
           <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; flex-wrap: wrap; gap: 8px;">
             <small style="color:#00e6ff;"><strong>⭐ ${r.required_points} ${L.rewards_points_label || 'Pontok'}</strong></small>
             <small style="color:#999;">➕ ${r.points_given || 0} ${L.rewards_points_given_label || 'Pontok adott'}</small>
@@ -130,6 +144,11 @@ document.addEventListener("DOMContentLoaded", function () {
       const targetStoreSelect = document.getElementById("reward-target-store");
       const applyAllCheckbox = document.getElementById("reward-apply-all");
 
+      // 📅 Campaign fields
+      const isCampaignCheckbox = document.getElementById("reward-is-campaign");
+      const startDateInput = document.getElementById("reward-start-date");
+      const endDateInput = document.getElementById("reward-end-date");
+
       const body = {
         store_id: storeID,
         title: form.title.value.trim(),
@@ -140,6 +159,10 @@ document.addEventListener("DOMContentLoaded", function () {
         action_value: form.action_value.value.trim(),
         free_product: document.getElementById("reward-free-product-name")?.value.trim() || "",
         free_product_value: parseFloat(document.getElementById("reward-free-product-value")?.value || 0),
+        // 📅 Campaign options
+        is_campaign: isCampaignCheckbox?.checked ? 1 : 0,
+        start_date: startDateInput?.value || null,
+        end_date: endDateInput?.value || null,
         // 🏢 Filiale options
         target_store_id: targetStoreSelect?.value || "current",
         apply_to_all: applyAllCheckbox?.checked || false
@@ -206,6 +229,21 @@ document.addEventListener("DOMContentLoaded", function () {
           const freeProductValueInput = document.getElementById("reward-free-product-value");
           if (freeProductNameInput) freeProductNameInput.value = reward.free_product || "";
           if (freeProductValueInput) freeProductValueInput.value = reward.free_product_value || 0;
+
+          // 📅 Campaign fields
+          const isCampaignCheckbox = document.getElementById("reward-is-campaign");
+          const startDateInput = document.getElementById("reward-start-date");
+          const endDateInput = document.getElementById("reward-end-date");
+          const campaignDateFields = document.getElementById("campaign-date-fields");
+
+          if (isCampaignCheckbox) {
+            isCampaignCheckbox.checked = reward.is_campaign == 1;
+            if (campaignDateFields) {
+              campaignDateFields.style.display = reward.is_campaign == 1 ? "block" : "none";
+            }
+          }
+          if (startDateInput) startDateInput.value = reward.start_date || "";
+          if (endDateInput) endDateInput.value = reward.end_date || "";
 
           // Trigger field visibility update
           toggleRewardFields();
@@ -275,6 +313,24 @@ document.addEventListener("DOMContentLoaded", function () {
     const applyAllCheckbox = document.getElementById("reward-apply-all");
     if (targetStoreSelect) targetStoreSelect.value = "current";
     if (applyAllCheckbox) applyAllCheckbox.checked = false;
+
+    // 📅 Reset campaign fields
+    const isCampaignCheckbox = document.getElementById("reward-is-campaign");
+    const campaignDateFields = document.getElementById("campaign-date-fields");
+    if (isCampaignCheckbox) isCampaignCheckbox.checked = false;
+    if (campaignDateFields) campaignDateFields.style.display = "none";
+  }
+
+  /* ============================================================
+   * 📅 CAMPAIGN CHECKBOX TOGGLE
+   * ============================================================ */
+  const campaignCheckbox = document.getElementById("reward-is-campaign");
+  const campaignDateFieldsDiv = document.getElementById("campaign-date-fields");
+
+  if (campaignCheckbox && campaignDateFieldsDiv) {
+    campaignCheckbox.addEventListener("change", function() {
+      campaignDateFieldsDiv.style.display = this.checked ? "block" : "none";
+    });
   }
 
   /* ============================================================

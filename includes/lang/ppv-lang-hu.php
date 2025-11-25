@@ -187,7 +187,15 @@ return [
 'rewards_confirm_delete' => 'Biztosan törlöd a jutalmat?',
 'rewards_deleted' => 'Törölve.',
 'rewards_error_delete' => 'Törlési hiba',
-    
+
+// 📅 Kampány mezők
+'rewards_form_campaign' => 'Kampány (időkorlátos)',
+'rewards_form_campaign_hint' => 'Csak adott időszakban érhető el',
+'rewards_form_start_date' => 'Kezdő dátum',
+'rewards_form_end_date' => 'Befejező dátum',
+'rewards_form_campaign_dates_hint' => 'Hagyd üresen a kezdő dátumot ha azonnal aktív, vagy a befejezőt ha nincs lejárat',
+'rewards_campaign_badge' => 'Kampány',
+
     'rewards_login_required' => 'Kérlek jelentkezz be vagy aktiváld a boltot.',
 'rewards_title' => 'Jutalmak kezelése – ',
 'rewards_form_title' => 'Cím *',

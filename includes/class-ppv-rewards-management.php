@@ -490,13 +490,16 @@ class PPV_Rewards_Management {
                 'description'     => $desc,
                 'action_type'     => $type,
                 'action_value'    => $value,
-                'currency'        => $currency
+                'currency'        => $currency,
+                'start_date'      => $start_date,
+                'end_date'        => $end_date,
+                'is_campaign'     => $is_campaign
             ],
             [
                 'id'       => $id,
                 'store_id' => $store_id
             ],
-            ['%s', '%d', '%d', '%s', '%s', '%s', '%s'],
+            ['%s', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%d'],
             ['%d', '%d']
         );
 

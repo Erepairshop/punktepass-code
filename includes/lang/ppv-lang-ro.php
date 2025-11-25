@@ -194,8 +194,15 @@ return [
 'rewards_confirm_delete' => 'Sigur stergi recompensa?',
 'rewards_deleted' => 'Sters.',
 'rewards_error_delete' => 'Eroare de stergere',
-    
-    
+
+// 📅 Campanie
+'rewards_form_campaign' => 'Campanie (cu termen limitat)',
+'rewards_form_campaign_hint' => 'Disponibil doar intr-o anumita perioada',
+'rewards_form_start_date' => 'Data de inceput',
+'rewards_form_end_date' => 'Data de sfarsit',
+'rewards_form_campaign_dates_hint' => 'Lasa data de inceput goala daca este activa imediat, sau data de sfarsit daca nu expira',
+'rewards_campaign_badge' => 'Campanie',
+
     'rewards_login_required' => 'Te rog conecteaza-te sau activeaza magazinul.',
 'rewards_title' => 'Gestionare recompense – ',
 'rewards_form_title' => 'Titlu *',

@@ -14886,6 +14886,35 @@ body.ppv-dark .ppv-redemption-status.error,
     opacity: 0.65;
 }
 
+/* 📅 Campaign reward styles */
+.ppv-rw-reward-item.is-campaign {
+    position: relative;
+    background: linear-gradient(135deg, rgba(249,115,22,0.08) 0%, rgba(249,115,22,0.03) 100%);
+    border-color: rgba(249,115,22,0.25);
+}
+
+.ppv-rw-reward-item.is-campaign.is-ready {
+    background: linear-gradient(135deg, rgba(249,115,22,0.12) 0%, rgba(16,185,129,0.08) 100%);
+    border-color: rgba(249,115,22,0.3);
+}
+
+.ppv-rw-campaign-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    color: #f97316;
+    background: rgba(249,115,22,0.12);
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-bottom: 6px;
+}
+
+.ppv-rw-campaign-badge i {
+    font-size: 11px;
+}
+
 .ppv-rw-reward-row {
     display: flex;
     align-items: center;
