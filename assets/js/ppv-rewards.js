@@ -419,14 +419,16 @@
     const card = document.createElement('div');
     card.className = 'ppv-ea-receipt-card';
 
-    const userName = formatUserName(item);
+    // Format: Inv-YYYY-XXXX (e.g. Inv-2025-0109)
+    const year = item.redeemed_at ? new Date(item.redeemed_at).getFullYear() : new Date().getFullYear();
+    const invoiceNum = `Inv-${year}-${String(item.id).padStart(4, '0')}`;
     const date = formatDate(item.redeemed_at);
     const reward = item.reward_title || 'Belohnung';
     const receiptUrl = item.receipt_pdf_path ? `${baseUrl}/${item.receipt_pdf_path}` : null;
 
     card.innerHTML = `
       <div class="ppv-ea-receipt-info">
-        <span class="ppv-ea-receipt-user">${escapeHtml(userName)}</span>
+        <span class="ppv-ea-receipt-user">${escapeHtml(invoiceNum)}</span>
         <span class="ppv-ea-receipt-reward">${escapeHtml(reward)}</span>
         <span class="ppv-ea-receipt-date">${date}</span>
       </div>

@@ -613,6 +613,7 @@ class PPV_Rewards {
 
         $store_id = self::get_store_id();
 
+        // Show ALL approved redemptions, not just those with receipt_pdf_path
         $items = $wpdb->get_results($wpdb->prepare("
             SELECT
                 r.id,
@@ -627,7 +628,7 @@ class PPV_Rewards {
             FROM {$wpdb->prefix}ppv_rewards_redeemed r
             LEFT JOIN {$wpdb->prefix}ppv_rewards rw ON r.reward_id = rw.id
             LEFT JOIN {$wpdb->prefix}ppv_users u ON r.user_id = u.id
-            WHERE r.store_id = %d AND r.status = 'approved' AND r.receipt_pdf_path IS NOT NULL
+            WHERE r.store_id = %d AND r.status = 'approved'
             ORDER BY r.redeemed_at DESC
             LIMIT 50
         ", $store_id));
