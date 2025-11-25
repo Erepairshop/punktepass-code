@@ -209,6 +209,22 @@ const PPV_TRANSLATIONS = {
 
 // 🧹 Cleanup function - call before navigation or re-init
 function cleanupPolling() {
+  // ✅ FIX: Close Ably connection on navigation (iOS Safari fix)
+  if (window.PPV_ABLY_INSTANCE) {
+    try {
+      window.PPV_ABLY_INSTANCE.close();
+      console.log('🧹 [Ably] Connection closed');
+    } catch (e) {
+      // Ignore close errors
+    }
+    window.PPV_ABLY_INSTANCE = null;
+  }
+  // ✅ FIX: Clear QR countdown interval
+  if (window.PPV_QR_COUNTDOWN_INTERVAL) {
+    clearInterval(window.PPV_QR_COUNTDOWN_INTERVAL);
+    window.PPV_QR_COUNTDOWN_INTERVAL = null;
+    console.log('🧹 [QR] Countdown interval cleared');
+  }
   if (window.PPV_POLL_INTERVAL_ID) {
     clearInterval(window.PPV_POLL_INTERVAL_ID);
     window.PPV_POLL_INTERVAL_ID = null;
@@ -382,7 +398,8 @@ async function initUserDashboard() {
   // 🎫 TIMED QR WITH COUNTDOWN (v3.0)
   // ============================================================
 
-  let qrCountdownInterval = null;
+  // ✅ FIX: Store globally for cleanup on navigation
+  window.PPV_QR_COUNTDOWN_INTERVAL = null;
   let qrExpiresAt = null;
 
   const initQRToggle = () => {
@@ -513,8 +530,8 @@ async function initUserDashboard() {
     const timerValue = document.getElementById("ppv-qr-timer-value");
 
     // Clear previous interval
-    if (qrCountdownInterval) {
-      clearInterval(qrCountdownInterval);
+    if (window.PPV_QR_COUNTDOWN_INTERVAL) {
+      clearInterval(window.PPV_QR_COUNTDOWN_INTERVAL);
     }
 
     // Reset classes
@@ -523,13 +540,14 @@ async function initUserDashboard() {
     }
 
     // Update every second
-    qrCountdownInterval = setInterval(() => {
+    window.PPV_QR_COUNTDOWN_INTERVAL = setInterval(() => {
       const now = Math.floor(Date.now() / 1000);
       const remaining = qrExpiresAt - now;
 
       if (remaining <= 0) {
         // QR expired
-        clearInterval(qrCountdownInterval);
+        clearInterval(window.PPV_QR_COUNTDOWN_INTERVAL);
+        window.PPV_QR_COUNTDOWN_INTERVAL = null;
         showQRExpired();
         return;
       }
