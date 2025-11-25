@@ -111,6 +111,80 @@ class PPV_Core {
             ppv_log("✅ [PPV_Core] ppv_device_fingerprints table created");
             update_option('ppv_db_migration_version', '1.3');
         }
+
+        // Migration 1.4: Add redemption_prompts table for real-time reward redemption flow
+        if (version_compare($migration_version, '1.4', '<')) {
+            $table_redemption_prompts = $wpdb->prefix . 'ppv_redemption_prompts';
+
+            $sql = "CREATE TABLE IF NOT EXISTS {$table_redemption_prompts} (
+                id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+                user_id BIGINT(20) UNSIGNED NOT NULL COMMENT 'User who can redeem',
+                store_id BIGINT(20) UNSIGNED NOT NULL COMMENT 'Store where scan happened',
+                token VARCHAR(64) NOT NULL COMMENT 'Unique security token for this prompt',
+                selected_reward_id BIGINT(20) UNSIGNED NULL COMMENT 'Which reward user selected',
+                available_rewards JSON NULL COMMENT 'List of available rewards at prompt time',
+                status ENUM('pending', 'user_accepted', 'user_declined', 'handler_approved', 'handler_rejected', 'expired', 'completed') DEFAULT 'pending',
+                user_response_at DATETIME NULL COMMENT 'When user responded',
+                handler_response_at DATETIME NULL COMMENT 'When handler responded',
+                rejection_reason VARCHAR(255) NULL COMMENT 'Why handler rejected',
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                expires_at DATETIME NOT NULL COMMENT 'Prompt expires after 60 seconds',
+                PRIMARY KEY (id),
+                UNIQUE KEY token (token),
+                KEY idx_user_store (user_id, store_id),
+                KEY idx_status (status),
+                KEY idx_expires (expires_at)
+            ) {$wpdb->get_charset_collate()};";
+
+            require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+            dbDelta($sql);
+
+            ppv_log("✅ [PPV_Core] ppv_redemption_prompts table created for real-time redemption flow");
+            update_option('ppv_db_migration_version', '1.4');
+        }
+
+        // Migration 1.5: Add active column to rewards table if missing, then set all to active=1
+        if (version_compare($migration_version, '1.5', '<')) {
+            $rewards_table = $wpdb->prefix . 'ppv_rewards';
+
+            // Check if active column exists
+            $active_col = $wpdb->get_results("SHOW COLUMNS FROM {$rewards_table} LIKE 'active'");
+
+            if (empty($active_col)) {
+                // Add the active column with default value 1
+                $wpdb->query("ALTER TABLE {$rewards_table} ADD COLUMN active TINYINT(1) DEFAULT 1 COMMENT 'Is reward active'");
+                ppv_log("✅ [PPV_Core] Added 'active' column to ppv_rewards table");
+            }
+
+            // Set all NULL or 0 values to 1 (all existing rewards should be active)
+            $updated = $wpdb->query("
+                UPDATE {$rewards_table}
+                SET active = 1
+                WHERE active IS NULL OR active = 0
+            ");
+
+            if ($updated > 0) {
+                ppv_log("✅ [PPV_Core] Fixed {$updated} rewards → set to active=1");
+            }
+
+            update_option('ppv_db_migration_version', '1.5');
+        }
+
+        // Migration 1.6: Add apple_id column to ppv_users table for Sign in with Apple
+        if (version_compare($migration_version, '1.6', '<')) {
+            $users_table = $wpdb->prefix . 'ppv_users';
+
+            // Check if apple_id column exists
+            $apple_col = $wpdb->get_results("SHOW COLUMNS FROM {$users_table} LIKE 'apple_id'");
+
+            if (empty($apple_col)) {
+                $wpdb->query("ALTER TABLE {$users_table} ADD COLUMN apple_id VARCHAR(255) NULL COMMENT 'Apple Sign In user ID' AFTER google_id");
+                $wpdb->query("ALTER TABLE {$users_table} ADD INDEX idx_apple_id (apple_id)");
+                ppv_log("✅ [PPV_Core] Added 'apple_id' column to ppv_users table");
+            }
+
+            update_option('ppv_db_migration_version', '1.6');
+        }
     }
 
     public static function init_session_bridge() {

@@ -134,7 +134,7 @@ class PPV_Rewards_API {
         $rewards = $wpdb->get_results("
             SELECT id, title, required_points, action_type, action_value
             FROM {$wpdb->prefix}ppv_rewards
-            WHERE active=1
+            WHERE (active = 1 OR active IS NULL)
             ORDER BY required_points ASC
         ");
 

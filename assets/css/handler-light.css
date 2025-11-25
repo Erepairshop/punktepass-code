@@ -1463,3 +1463,314 @@ body {
     width: 100%;
   }
 }
+
+/* ============================================================
+   🎁 HANDLER REDEMPTION MODAL (Real-time reward redemption)
+   ============================================================ */
+.ppv-handler-redemption-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0);
+  backdrop-filter: blur(0);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+.ppv-handler-redemption-modal.show {
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  opacity: 1;
+  visibility: visible;
+}
+
+.ppv-handler-redemption-content {
+  width: 100%;
+  max-width: 420px;
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  padding: 28px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  transform: scale(0.9) translateY(20px);
+  transition: transform 0.3s ease;
+}
+
+.ppv-handler-redemption-modal.show .ppv-handler-redemption-content {
+  transform: scale(1) translateY(0);
+}
+
+/* Header */
+.ppv-redemption-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.ppv-redemption-icon {
+  font-size: 2rem;
+  animation: bounceGift 1s ease infinite;
+}
+
+@keyframes bounceGift {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+.ppv-redemption-header h3 {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0;
+}
+
+/* User Info */
+.ppv-redemption-user-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+  padding: 16px;
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-sm);
+}
+
+.ppv-redemption-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--color-primary);
+}
+
+.ppv-redemption-avatar-placeholder {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  color: white;
+}
+
+.ppv-redemption-user-details {
+  flex: 1;
+}
+
+.ppv-redemption-user-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 4px;
+}
+
+.ppv-redemption-user-email {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+
+/* Reward Info */
+.ppv-redemption-reward-info {
+  margin-bottom: 20px;
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(0, 168, 204, 0.1), rgba(0, 200, 180, 0.05));
+  border: 1px solid rgba(0, 168, 204, 0.2);
+  border-radius: var(--radius-sm);
+}
+
+.ppv-redemption-reward-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 8px;
+}
+
+.ppv-redemption-reward-points {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ppv-redemption-cost {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-error);
+}
+
+.ppv-redemption-balance {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+}
+
+/* Rejection Reason */
+.ppv-redemption-rejection-reason {
+  margin-bottom: 20px;
+  animation: slideIn 0.2s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 100px;
+  }
+}
+
+.ppv-redemption-rejection-reason label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin-bottom: 8px;
+}
+
+.ppv-redemption-rejection-reason input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 1rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+  transition: var(--transition);
+}
+
+.ppv-redemption-rejection-reason input:focus {
+  outline: none;
+  border-color: var(--color-error);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+/* Action Buttons */
+.ppv-redemption-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.ppv-redemption-actions .ppv-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 20px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.ppv-btn-confirm {
+  background: linear-gradient(135deg, var(--color-success), #059669);
+  color: white;
+}
+
+.ppv-btn-confirm:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+}
+
+.ppv-btn-reject {
+  background: var(--color-surface);
+  color: var(--color-error);
+  border: 2px solid var(--color-error) !important;
+}
+
+.ppv-btn-reject:hover:not(:disabled) {
+  background: var(--color-error);
+  color: white;
+  transform: translateY(-2px);
+}
+
+.ppv-redemption-actions .ppv-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.ppv-btn-icon {
+  font-size: 1.1rem;
+}
+
+.ppv-btn-text {
+  font-weight: 600;
+}
+
+/* Dark mode overrides */
+[data-theme="dark"] .ppv-handler-redemption-modal.show {
+  background: rgba(0, 0, 0, 0.75);
+}
+
+[data-theme="dark"] .ppv-handler-redemption-content {
+  background: #162233;
+  border: 1px solid rgba(0, 168, 204, 0.2);
+}
+
+[data-theme="dark"] .ppv-redemption-header {
+  border-bottom-color: rgba(0, 168, 204, 0.2);
+}
+
+[data-theme="dark"] .ppv-redemption-header h3 {
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .ppv-redemption-user-info {
+  background: #1e293b;
+}
+
+[data-theme="dark"] .ppv-redemption-user-name {
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .ppv-redemption-user-email {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .ppv-redemption-reward-info {
+  background: linear-gradient(135deg, rgba(0, 168, 204, 0.15), rgba(0, 200, 180, 0.08));
+  border-color: rgba(0, 168, 204, 0.3);
+}
+
+[data-theme="dark"] .ppv-redemption-reward-title {
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .ppv-redemption-rejection-reason label {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .ppv-redemption-rejection-reason input {
+  background: #1e293b;
+  border-color: rgba(0, 168, 204, 0.25);
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .ppv-btn-reject {
+  background: transparent;
+  border-color: #f87171 !important;
+  color: #f87171;
+}
+
+[data-theme="dark"] .ppv-btn-reject:hover:not(:disabled) {
+  background: #f87171;
+  color: white;
+}

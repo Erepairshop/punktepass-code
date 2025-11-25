@@ -1387,6 +1387,64 @@ body.ppv-user-dashboard {
     100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
 }
 
+/* 🟢 REDEMPTION SUCCESS TOAST - Green theme for approved redemptions (dark mode) */
+.ppv-point-toast.redemption_success .ppv-point-toast-inner {
+    background: rgba(20, 60, 30, 0.95);
+    border: 2px solid rgba(34, 197, 94, 0.5);
+    box-shadow: 0 8px 32px rgba(34, 197, 94, 0.3);
+}
+
+.ppv-point-toast.redemption_success .ppv-toast-icon {
+    color: #4ade80;
+    filter: drop-shadow(0 0 8px rgba(74, 222, 128, 0.4));
+}
+
+.ppv-point-toast.redemption_success .ppv-toast-text {
+    color: #bbf7d0;
+    line-height: 1.5;
+}
+
+.ppv-point-toast.redemption_success .ppv-toast-text strong {
+    color: #4ade80;
+}
+
+.ppv-point-toast.redemption_success .ppv-toast-text small {
+    display: block;
+    margin-top: 4px;
+    font-weight: 500;
+    opacity: 0.85;
+    font-size: 14px;
+}
+
+/* 🔴 REJECTION TOAST - Longer display, red theme (dark mode) */
+.ppv-point-toast.rejection .ppv-point-toast-inner {
+    background: rgba(60, 20, 20, 0.95);
+    border: 2px solid rgba(239, 68, 68, 0.5);
+    box-shadow: 0 8px 32px rgba(239, 68, 68, 0.3);
+}
+
+.ppv-point-toast.rejection .ppv-toast-icon {
+    color: #ef4444;
+    filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.4));
+}
+
+.ppv-point-toast.rejection .ppv-toast-text {
+    color: #fecaca;
+    line-height: 1.5;
+}
+
+.ppv-point-toast.rejection .ppv-toast-text strong {
+    color: #ef4444;
+}
+
+.ppv-point-toast.rejection .ppv-toast-text small {
+    display: block;
+    margin-top: 4px;
+    font-weight: 500;
+    opacity: 0.85;
+    font-size: 13px;
+}
+
 /* ==========================================================================
    🟦 BOTTOM NAVIGATION – PWA App Bar (iOS / Android)
    ========================================================================== */

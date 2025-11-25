@@ -375,6 +375,7 @@ class PPV_Rewards_Management {
                 'action_type'     => $type,
                 'action_value'    => $value,
                 'currency'        => $currency,
+                'active'          => 1,  // FIX: Set active by default!
                 'created_at'      => current_time('mysql')
             ]);
             $created_count++;

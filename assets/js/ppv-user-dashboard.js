@@ -1,30 +1,30 @@
 /**
- * PunktePass – User Dashboard JS (v4.8 - Geo Retry Edition)
+ * PunktePass – User Dashboard JS (v5.0 - Turbo SPA Edition)
  *
- * ✨ REQUIRED: Remix Icon CDN
+ * REQUIRED: Remix Icon CDN
  * Add this to your HTML <head>:
  * <link href="https://cdn.jsdelivr.net/npm/remixicon@4.0.0/fonts/remixicon.css" rel="stylesheet">
  *
- * 🎨 ICONS: All icons from Remix Icon (https://remixicon.com/)
- * ✅ FIXED: Toggle listener - Simple & Clean
- * ✅ REMOVED: Complex attachStoreCardListeners, flag system
- * ✅ KEPT: All other functionality
- * ✅ FULLY TRANSLATED: DE/HU/RO
- * ✅ MODERN ICONS: No emojis, pure icon fonts
- * 🚀 TURBO-COMPATIBLE: Re-initializes on navigation
- * ✅ FIX: Geolocation timeout increased (2s→8s) for first-time users
- * ✅ FIX: Auto-retry geo after 5s if first attempt fails (login redirect fix)
+ * ICONS: All icons from Remix Icon (https://remixicon.com/)
+ * TURBO-COMPATIBLE: Full SPA navigation support
+ *
+ * v5.0 Changes:
+ * - Uses PPV_SET_FLAG/PPV_CLEAR_FLAG for auto-reset stuck flags
+ * - Improved Turbo cleanup with AbortController
+ * - Better listener management
+ * - Enhanced error handling
  */
 
-// 🚀 Global state for Turbo navigation cleanup
+// Global state for Turbo navigation cleanup
 window.PPV_POLL_INTERVAL_ID = null;
 window.PPV_VISIBILITY_HANDLER = null;
 window.PPV_SLIDER_HANDLER = null;
 window.PPV_SLIDER_INITIALIZED = false;
 window.PPV_STORES_LOADING = false;
-window.PPV_POLLING_IN_PROGRESS = false; // ✅ FIX: Prevent concurrent poll calls
-window.PPV_SLIDER_FETCH_IN_PROGRESS = false; // ✅ FIX: Prevent concurrent slider fetches
-window.PPV_CURRENT_DISTANCE = 10; // ✅ FIX: Track current slider value
+window.PPV_POLLING_IN_PROGRESS = false;
+window.PPV_SLIDER_FETCH_IN_PROGRESS = false;
+window.PPV_CURRENT_DISTANCE = 10;
+window.PPV_ABORT_CONTROLLER = null; // For cancelling in-flight requests
 
 // ✅ OPTIMIZATION: Translation object as top-level constant (created once, not per render)
 const PPV_TRANSLATIONS = {
@@ -207,45 +207,83 @@ const PPV_TRANSLATIONS = {
   }
 };
 
-// 🧹 Cleanup function - call before navigation or re-init
+// 🍎 Safari detection
+const PPV_IS_SAFARI = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+if (PPV_IS_SAFARI) {
+  console.log('🍎 [Dashboard] Safari detected - using optimized cleanup');
+}
+
+// Cleanup function - call before navigation or re-init
+// v3.0: Uses PPV_CLEAR_FLAG for auto-reset, aborts in-flight requests
 function cleanupPolling() {
-  // ✅ FIX: Close Ably connection on navigation (iOS Safari fix)
+  console.log('[Cleanup] Starting...');
+
+  // Abort any in-flight fetch requests
+  if (window.PPV_ABORT_CONTROLLER) {
+    try {
+      window.PPV_ABORT_CONTROLLER.abort();
+      console.log('[Cleanup] Aborted in-flight requests');
+    } catch (e) { /* ignore */ }
+    window.PPV_ABORT_CONTROLLER = null;
+  }
+
+  // Close Ably connection (iOS Safari fix)
   if (window.PPV_ABLY_INSTANCE) {
     try {
+      if (PPV_IS_SAFARI && window.PPV_ABLY_INSTANCE.connection) {
+        window.PPV_ABLY_INSTANCE.connection.close();
+      }
       window.PPV_ABLY_INSTANCE.close();
-      console.log('🧹 [Ably] Connection closed');
-    } catch (e) {
-      // Ignore close errors
-    }
+      console.log('[Cleanup] Ably connection closed');
+    } catch (e) { /* ignore */ }
     window.PPV_ABLY_INSTANCE = null;
   }
-  // ✅ FIX: Clear QR countdown interval
+
+  // Clear QR countdown interval
   if (window.PPV_QR_COUNTDOWN_INTERVAL) {
     clearInterval(window.PPV_QR_COUNTDOWN_INTERVAL);
     window.PPV_QR_COUNTDOWN_INTERVAL = null;
-    console.log('🧹 [QR] Countdown interval cleared');
   }
+
+  // Clear polling interval
   if (window.PPV_POLL_INTERVAL_ID) {
     clearInterval(window.PPV_POLL_INTERVAL_ID);
     window.PPV_POLL_INTERVAL_ID = null;
-    console.log('🧹 [Polling] Interval cleared');
   }
+
+  // Clear header polling
+  if (window.PPV_HEADER_POLLING_ID) {
+    clearInterval(window.PPV_HEADER_POLLING_ID);
+    window.PPV_HEADER_POLLING_ID = null;
+  }
+
+  // Remove event listeners
   if (window.PPV_VISIBILITY_HANDLER) {
     document.removeEventListener('visibilitychange', window.PPV_VISIBILITY_HANDLER);
     window.PPV_VISIBILITY_HANDLER = null;
-    console.log('🧹 [Polling] Visibility listener removed');
   }
+
   if (window.PPV_SLIDER_HANDLER) {
     document.removeEventListener('input', window.PPV_SLIDER_HANDLER);
     window.PPV_SLIDER_HANDLER = null;
-    console.log('🧹 [Slider] Handler removed');
   }
-  window.PPV_POLLING_ACTIVE = false;
-  window.PPV_SLIDER_INITIALIZED = false;
-  window.PPV_STORES_LOADING = false;
-  window.PPV_POLLING_IN_PROGRESS = false;
-  window.PPV_SLIDER_FETCH_IN_PROGRESS = false;
+
+  // Reset all state flags using PPV_CLEAR_FLAG if available (auto-clears timeouts)
+  const clearFlag = window.PPV_CLEAR_FLAG || ((name) => { window[name] = false; });
+  clearFlag('PPV_POLLING_ACTIVE');
+  clearFlag('PPV_SLIDER_INITIALIZED');
+  clearFlag('PPV_STORES_LOADING');
+  clearFlag('PPV_POLLING_IN_PROGRESS');
+  clearFlag('PPV_SLIDER_FETCH_IN_PROGRESS');
+
   window.PPV_CURRENT_DISTANCE = 10;
+
+  // Safari: Force garbage collection hint
+  if (PPV_IS_SAFARI && typeof window.gc === 'function') {
+    try { window.gc(); } catch (e) { /* ignore */ }
+  }
+
+  console.log('[Cleanup] Complete');
 }
 
 // 🚀 Turbo-compatible initialization
@@ -391,6 +429,171 @@ async function initUserDashboard() {
     const globalRewardsEl = document.getElementById('ppv-global-rewards');
     if (globalRewardsEl) {
       globalRewardsEl.textContent = rewards;
+    }
+  };
+
+  // ════════════════════════════════════════════════════════════════
+  // 🎁 REDEMPTION MODAL SYSTEM (60 second timeout)
+  // ════════════════════════════════════════════════════════════════
+  let redemptionCountdownInterval = null;
+  let redemptionModalElement = null;
+
+  const showRedemptionModal = (data) => {
+    console.log('🎁 [Redemption] Showing modal with data:', data);
+
+    // Remove existing modal if present
+    closeRedemptionModal();
+
+    const { token, rewards, user_total_points, store_name, timeout_seconds } = data;
+    const timeoutSec = timeout_seconds || 60;
+
+    // Create modal HTML
+    const modal = document.createElement('div');
+    modal.id = 'ppv-redemption-modal';
+    modal.className = 'ppv-redemption-modal';
+    modal.innerHTML = `
+      <div class="ppv-redemption-overlay"></div>
+      <div class="ppv-redemption-container">
+        <div class="ppv-redemption-header">
+          <i class="ri-gift-2-fill" style="font-size: 48px; color: #34d399;"></i>
+          <h2>${lang === 'de' ? 'Punkte einlösen?' : lang === 'hu' ? 'Beváltod a pontjaid?' : 'Răscumperi punctele?'}</h2>
+          <p style="color: rgba(255,255,255,0.7);">${store_name || 'PunktePass'}</p>
+        </div>
+
+        <div class="ppv-redemption-timer">
+          <i class="ri-time-line"></i>
+          <span id="ppv-redemption-countdown">${timeoutSec}</span>s
+        </div>
+
+        <div class="ppv-redemption-points">
+          <span>${lang === 'de' ? 'Deine Punkte:' : lang === 'hu' ? 'Pontjaid:' : 'Punctele tale:'}</span>
+          <strong style="color: #00e6ff; font-size: 24px;">${user_total_points}</strong>
+        </div>
+
+        <div class="ppv-redemption-rewards">
+          <p style="margin-bottom: 12px; color: rgba(255,255,255,0.8);">${lang === 'de' ? 'Wähle eine Prämie:' : lang === 'hu' ? 'Válassz jutalmat:' : 'Alege o recompensă:'}</p>
+          ${rewards.map(r => `
+            <button class="ppv-reward-option" data-reward-id="${r.id}" data-points="${r.required_points}">
+              <div class="ppv-reward-option-info">
+                <strong>${escapeHtml(r.title)}</strong>
+                <span style="color: #fbbf24;">${r.required_points} ${lang === 'de' ? 'Punkte' : lang === 'hu' ? 'pont' : 'puncte'}</span>
+              </div>
+              <i class="ri-arrow-right-s-line"></i>
+            </button>
+          `).join('')}
+        </div>
+
+        <div class="ppv-redemption-actions">
+          <button class="ppv-btn-later" id="ppv-redemption-later">
+            <i class="ri-time-line"></i> ${lang === 'de' ? 'Später' : lang === 'hu' ? 'Később' : 'Mai târziu'}
+          </button>
+        </div>
+
+        <div class="ppv-redemption-waiting" id="ppv-redemption-waiting" style="display: none;">
+          <div class="ppv-spinner"></div>
+          <p>${lang === 'de' ? 'Warte auf Bestätigung vom Händler...' : lang === 'hu' ? 'Várakozás a kereskedő megerősítésére...' : 'Așteptând confirmarea comerciantului...'}</p>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+    redemptionModalElement = modal;
+
+    // Animate in
+    setTimeout(() => modal.classList.add('show'), 10);
+
+    // Start countdown
+    let remaining = timeoutSec;
+    const countdownEl = document.getElementById('ppv-redemption-countdown');
+
+    redemptionCountdownInterval = setInterval(() => {
+      remaining--;
+      if (countdownEl) countdownEl.textContent = remaining;
+
+      if (remaining <= 0) {
+        // Auto-decline on timeout
+        console.log('🎁 [Redemption] Timeout - auto-declining');
+        handleRedemptionResponse(token, 'decline', null);
+        closeRedemptionModal();
+      }
+    }, 1000);
+
+    // Event: Later button
+    document.getElementById('ppv-redemption-later').addEventListener('click', () => {
+      console.log('🎁 [Redemption] User chose later');
+      handleRedemptionResponse(token, 'decline', null);
+      closeRedemptionModal();
+    });
+
+    // Event: Reward selection
+    modal.querySelectorAll('.ppv-reward-option').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const rewardId = btn.dataset.rewardId;
+        console.log('🎁 [Redemption] User selected reward:', rewardId);
+
+        // Show waiting state
+        modal.querySelector('.ppv-redemption-rewards').style.display = 'none';
+        modal.querySelector('.ppv-redemption-actions').style.display = 'none';
+        modal.querySelector('.ppv-redemption-timer').style.display = 'none';
+        document.getElementById('ppv-redemption-waiting').style.display = 'flex';
+
+        // Stop countdown
+        if (redemptionCountdownInterval) {
+          clearInterval(redemptionCountdownInterval);
+          redemptionCountdownInterval = null;
+        }
+
+        handleRedemptionResponse(token, 'accept', rewardId);
+      });
+    });
+
+    // Vibrate on show
+    if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+  };
+
+  const closeRedemptionModal = () => {
+    if (redemptionCountdownInterval) {
+      clearInterval(redemptionCountdownInterval);
+      redemptionCountdownInterval = null;
+    }
+
+    if (redemptionModalElement) {
+      redemptionModalElement.classList.remove('show');
+      setTimeout(() => {
+        if (redemptionModalElement && redemptionModalElement.parentNode) {
+          redemptionModalElement.remove();
+        }
+        redemptionModalElement = null;
+      }, 300);
+    }
+  };
+
+  const handleRedemptionResponse = async (token, action, rewardId) => {
+    try {
+      const res = await fetch(API + 'redemption/user-response', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token,
+          action,
+          reward_id: rewardId
+        })
+      });
+
+      const data = await res.json();
+      console.log('🎁 [Redemption] Response:', data);
+
+      if (action === 'decline') {
+        closeRedemptionModal();
+        if (window.ppvShowPointToast && data.message) {
+          window.ppvShowPointToast('info', 0, 'PunktePass', data.message);
+        }
+      }
+      // If accept, we wait for Ably notification (redemption-approved/rejected)
+
+    } catch (err) {
+      console.error('🎁 [Redemption] Error:', err);
+      closeRedemptionModal();
     }
   };
 
@@ -663,13 +866,18 @@ async function initUserDashboard() {
       const data = message.data;
       console.log('📡 [Ably] Points update received:', data);
 
+      // Skip toast if redemption modal is open (to avoid interference)
+      const isRedemptionModalOpen = !!redemptionModalElement;
+
       if (data.success && data.points_added > 0) {
-        // Show success toast
-        if (window.ppvShowPointToast) {
+        // Show success toast only if redemption modal is NOT open
+        if (window.ppvShowPointToast && !isRedemptionModalOpen) {
           window.ppvShowPointToast('success', data.points_added, data.store_name || 'PunktePass');
+        } else if (isRedemptionModalOpen) {
+          console.log('📡 [Ably] Skipping points toast - redemption modal is open');
         }
 
-        // Update UI
+        // Update UI (always update points, even if modal is open)
         boot.points = data.total_points;
         updateGlobalPoints(data.total_points);
 
@@ -678,9 +886,9 @@ async function initUserDashboard() {
           updateGlobalRewards(data.total_rewards);
         }
       } else if (data.success === false) {
-        // Show error toast
+        // Show error toast (unless redemption modal is open)
         console.log('📡 [Ably] Scan error received:', data.error_type, data.message);
-        if (window.ppvShowPointToast) {
+        if (window.ppvShowPointToast && !isRedemptionModalOpen) {
           window.ppvShowPointToast('error', 0, data.store_name || 'PunktePass', data.message);
         }
       }
@@ -699,6 +907,51 @@ async function initUserDashboard() {
       if (data.new_points !== undefined) {
         boot.points = data.new_points;
         updateGlobalPoints(data.new_points);
+      }
+    });
+
+    // ════════════════════════════════════════════════════════════════
+    // 🎁 REAL-TIME REDEMPTION FLOW - New Feature
+    // ════════════════════════════════════════════════════════════════
+
+    // 🎁 Handle redemption prompt (user has enough points to redeem)
+    channel.subscribe('redemption-prompt', (message) => {
+      const data = message.data;
+      console.log('📡 [Ably] Redemption prompt received:', data);
+      showRedemptionModal(data);
+    });
+
+    // ✅ Handle redemption approved by handler
+    channel.subscribe('redemption-approved', (message) => {
+      const data = message.data;
+      console.log('📡 [Ably] Redemption approved:', data);
+
+      // Close waiting modal if open
+      closeRedemptionModal();
+
+      // Show redemption success toast with reward title
+      if (window.ppvShowPointToast) {
+        window.ppvShowPointToast('redemption_success', 0, data.reward_title || 'Prämie');
+      }
+
+      // Update points
+      if (data.new_balance !== undefined) {
+        boot.points = data.new_balance;
+        updateGlobalPoints(data.new_balance);
+      }
+    });
+
+    // ❌ Handle redemption rejected by handler
+    channel.subscribe('redemption-rejected', (message) => {
+      const data = message.data;
+      console.log('📡 [Ably] Redemption rejected:', data);
+
+      // Close waiting modal if open
+      closeRedemptionModal();
+
+      // Show rejection toast with clear message and reason (longer duration)
+      if (window.ppvShowPointToast) {
+        window.ppvShowPointToast('rejection', 0, data.reward_title || 'Prämie', data.reason || '');
       }
     });
 
@@ -730,10 +983,12 @@ async function initUserDashboard() {
       }
 
       if (window.PPV_POLLING_IN_PROGRESS) {
-        console.log('⏭️ [Polling] Already in progress, skipping');
+        console.log('[Polling] Already in progress, skipping');
         return;
       }
-      window.PPV_POLLING_IN_PROGRESS = true;
+      // Use PPV_SET_FLAG for auto-reset after timeout
+      const setFlag = window.PPV_SET_FLAG || ((name, val) => { window[name] = val; });
+      setFlag('PPV_POLLING_IN_PROGRESS', true);
 
       try {
         const res = await fetch(API + 'user/points-poll', {
@@ -785,9 +1040,10 @@ async function initUserDashboard() {
 
         if (isFirstPoll) isFirstPoll = false;
       } catch (e) {
-        console.warn(`⚠️ [Polling] Error:`, e.message);
+        console.warn('[Polling] Error:', e.message);
       } finally {
-        window.PPV_POLLING_IN_PROGRESS = false;
+        const clearFlag = window.PPV_CLEAR_FLAG || ((name) => { window[name] = false; });
+        clearFlag('PPV_POLLING_IN_PROGRESS');
       }
     };
 
@@ -1166,12 +1422,13 @@ async function initUserDashboard() {
 
       clearTimeout(sliderTimeout);
       sliderTimeout = setTimeout(async () => {
-        // ✅ FIX: Prevent concurrent slider fetches
+        // Prevent concurrent slider fetches
         if (window.PPV_SLIDER_FETCH_IN_PROGRESS) {
-          console.log('⏭️ [Slider] Fetch already in progress, skipping');
+          console.log('[Slider] Fetch already in progress, skipping');
           return;
         }
-        window.PPV_SLIDER_FETCH_IN_PROGRESS = true;
+        const setFlag = window.PPV_SET_FLAG || ((name, val) => { window[name] = val; });
+        setFlag('PPV_SLIDER_FETCH_IN_PROGRESS', true);
 
         let newUrl = API + 'stores/list-optimized';
         if (userLat && userLng) {
@@ -1200,10 +1457,10 @@ async function initUserDashboard() {
 
           console.log("✅ [Slider] Stores updated");
         } catch (err) {
-          console.error("❌ Filter error:", err);
+          console.error("[Slider] Filter error:", err);
         } finally {
-          // ✅ FIX: Always reset flag after fetch completes
-          window.PPV_SLIDER_FETCH_IN_PROGRESS = false;
+          const clearFlag = window.PPV_CLEAR_FLAG || ((name) => { window[name] = false; });
+          clearFlag('PPV_SLIDER_FETCH_IN_PROGRESS');
         }
       }, 500);
     };
@@ -1303,10 +1560,11 @@ async function initUserDashboard() {
 
     // Prevent duplicate loading
     if (window.PPV_STORES_LOADING) {
-      console.log('⏭️ [Stores] Already loading, skipping');
+      console.log('[Stores] Already loading, skipping');
       return;
     }
-    window.PPV_STORES_LOADING = true;
+    const setFlag = window.PPV_SET_FLAG || ((name, val) => { window[name] = val; });
+    setFlag('PPV_STORES_LOADING', true);
 
     const startTime = performance.now();
     console.log('🏪 [Stores] Starting store load...');
@@ -1401,8 +1659,9 @@ async function initUserDashboard() {
       box.innerHTML = `<p class="ppv-error"><i class="ri-error-warning-line"></i> ${T.no_stores}</p>`;
     }
 
-    window.PPV_STORES_LOADING = false;
-    console.log('🏁 [Stores] Done in', (performance.now() - startTime).toFixed(0), 'ms');
+    const clearFlag = window.PPV_CLEAR_FLAG || ((name) => { window[name] = false; });
+    clearFlag('PPV_STORES_LOADING');
+    console.log('[Stores] Done in', (performance.now() - startTime).toFixed(0), 'ms');
   };
 
   // Helper function to render store list (avoids duplicate code)
@@ -1533,15 +1792,35 @@ async function initUserDashboard() {
       console.log("✨ [ppvShowPointToast] Creating new toast");
 
       const L = {
-        de: { dup: "Heute bereits gescannt", err: "Offline", pend: "Verbindung...", add: "Punkt(e) von", from: "von" },
-        hu: { dup: "Ma már", err: "Offline", pend: "Kapcsolódás...", add: "pont a", from: "-tól/-től" },
-        ro: { dup: "Astăzi", err: "Offline", pend: "Conectare...", add: "punct de la", from: "de la" }
+        de: { dup: "Heute bereits gescannt", err: "Offline", pend: "Verbindung...", add: "Punkt(e) von", from: "von", rejected: "Einlösung abgelehnt", reason: "Grund", redeemed: "Einlösung bestätigt!" },
+        hu: { dup: "Ma már", err: "Offline", pend: "Kapcsolódás...", add: "pont a", from: "-tól/-től", rejected: "Beváltás elutasítva", reason: "Ok", redeemed: "Beváltás sikeres!" },
+        ro: { dup: "Astăzi", err: "Offline", pend: "Conectare...", add: "punct de la", from: "de la", rejected: "Răscumpărare respinsă", reason: "Motiv", redeemed: "Răscumpărare confirmată!" }
       }[lang] || L.de;
 
       let icon = '<i class="ri-emotion-happy-line"></i>', text = "";
       if (type === "duplicate") {
         icon = '<i class="ri-error-warning-line"></i>';
         text = L.dup;
+      }
+      else if (type === "redemption_success") {
+        // Special type for approved redemptions - shows reward title and success message
+        icon = '<i class="ri-gift-fill"></i>';
+        text = `<strong>✅ ${L.redeemed}</strong>`;
+        if (store && store !== 'Prämie' && store !== 'PunktePass') {
+          text += `<br><small>🎁 ${store}</small>`;
+        }
+      }
+      else if (type === "rejection") {
+        // Special type for redemption rejections - shows clear message with reason
+        icon = '<i class="ri-close-circle-fill"></i>';
+        const reasonText = errorMessage || '';
+        text = `<strong>❌ ${L.rejected}</strong>`;
+        if (reasonText) {
+          text += `<br><small>${L.reason}: ${reasonText}</small>`;
+        }
+        if (store && store !== 'Prämie' && store !== 'PunktePass') {
+          text += `<br><small>${store}</small>`;
+        }
       }
       else if (type === "error") {
         icon = '<i class="ri-close-circle-line"></i>';
@@ -1570,6 +1849,11 @@ async function initUserDashboard() {
       }, 30);
 
       if (type === "success" && navigator.vibrate) navigator.vibrate(40);
+      if (type === "redemption_success" && navigator.vibrate) navigator.vibrate([100, 50, 100]); // Double vibration for redemption success
+      if (type === "rejection" && navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 100]); // Triple vibration for rejection
+
+      // Duration: success/redemption_success=6500ms, rejection=8500ms (longer!), others=4500ms
+      const duration = (type === "success" || type === "redemption_success") ? 6500 : type === "rejection" ? 8500 : 4500;
 
       setTimeout(() => {
         toast.classList.remove("show");
@@ -1577,7 +1861,7 @@ async function initUserDashboard() {
           toast.remove();
           console.log("🗑️ [ppvShowPointToast] Toast removed after timeout");
         }, 400);
-      }, type === "success" ? 6500 : 4500);
+      }, duration);
     };
 
     // Wait for old toast to be removed before creating new one
@@ -1615,3 +1899,23 @@ document.addEventListener('turbo:before-render', function() {
 
 // 🚀 Turbo: Re-initialize after navigation (only turbo:load, not render to avoid double-init)
 document.addEventListener('turbo:load', initUserDashboard);
+
+// 🍎 Safari fix: Also cleanup on pagehide (Safari doesn't always fire turbo events)
+if (PPV_IS_SAFARI) {
+  window.addEventListener('pagehide', function() {
+    console.log('🍎 [Safari] Pagehide - cleaning up');
+    cleanupPolling();
+  });
+
+  // Safari fix: Cleanup when tab becomes hidden
+  document.addEventListener('visibilitychange', function() {
+    if (document.hidden) {
+      console.log('🍎 [Safari] Tab hidden - pausing operations');
+      // Don't fully cleanup, just pause polling to reduce memory pressure
+      if (window.PPV_POLL_INTERVAL_ID) {
+        clearInterval(window.PPV_POLL_INTERVAL_ID);
+        window.PPV_POLL_INTERVAL_ID = null;
+      }
+    }
+  });
+}

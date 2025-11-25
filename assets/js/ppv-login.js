@@ -53,6 +53,7 @@ function initLogin() {
         initGoogleLogin();
         initFacebookLogin();
         initTikTokLogin();
+        initAppleLogin();
         initFormSubmit();
         initLanguageSwitcher();
         showSessionExpiredMessage();
@@ -574,6 +575,129 @@ function initLogin() {
                 <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" fill="#69C9D0"/>
             </svg>
             <span>TikTok</span>
+        `);
+    }
+
+    /**
+     * 🍎 Initialize Apple Sign In
+     */
+    function initAppleLogin() {
+        const clientId = ppvLogin.apple_client_id;
+        const redirectUri = ppvLogin.apple_redirect_uri || window.location.origin + '/login';
+
+        if (!clientId) {
+            console.warn('🍎 Apple Client ID not configured');
+            $('#ppv-apple-login-btn').prop('disabled', true).css('opacity', '0.5');
+            return;
+        }
+
+        // Load Apple JS SDK if not already loaded
+        if (typeof AppleID === 'undefined') {
+            const script = document.createElement('script');
+            script.src = 'https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js';
+            script.onload = function() {
+                initAppleAuth(clientId, redirectUri);
+            };
+            document.head.appendChild(script);
+        } else {
+            initAppleAuth(clientId, redirectUri);
+        }
+    }
+
+    /**
+     * 🍎 Initialize Apple Auth after SDK loads
+     */
+    function initAppleAuth(clientId, redirectUri) {
+        try {
+            AppleID.auth.init({
+                clientId: clientId,
+                scope: 'name email',
+                redirectURI: redirectUri,
+                usePopup: true
+            });
+            console.log('🍎 Apple Sign In initialized');
+        } catch (error) {
+            console.error('🍎 Apple auth init error:', error);
+        }
+
+        // Button click handler
+        $('#ppv-apple-login-btn').on('click', async function() {
+            const $btn = $(this);
+
+            try {
+                // Show loading
+                $btn.prop('disabled', true).html('<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/></path></svg><span>Anmelden...</span>');
+
+                // Trigger Apple Sign In
+                const response = await AppleID.auth.signIn();
+                console.log('🍎 Apple response:', response);
+
+                // Send to backend
+                handleAppleResponse(response, $btn);
+
+            } catch (error) {
+                console.error('🍎 Apple Sign In error:', error);
+                if (error.error !== 'popup_closed_by_user') {
+                    showAlert('Apple Login fehlgeschlagen', 'error');
+                }
+                resetAppleButton($btn);
+            }
+        });
+    }
+
+    /**
+     * 🍎 Handle Apple Sign In Response
+     */
+    function handleAppleResponse(response, $btn) {
+        if (!response.authorization || !response.authorization.id_token) {
+            showAlert('Apple Login fehlgeschlagen', 'error');
+            resetAppleButton($btn);
+            return;
+        }
+
+        // Prepare data - user info is only available on first sign in
+        const data = {
+            action: 'ppv_apple_login',
+            nonce: ppvLogin.nonce,
+            id_token: response.authorization.id_token
+        };
+
+        // Add user info if available (first sign in only)
+        if (response.user) {
+            data.user = JSON.stringify(response.user);
+        }
+
+        $.ajax({
+            url: ppvLogin.ajaxurl,
+            type: 'POST',
+            data: data,
+            success: function(res) {
+                if (res.success) {
+                    showAlert(res.data.message, 'success');
+                    setTimeout(function() {
+                        window.location.href = getFinalRedirectUrl(res.data.redirect);
+                    }, 1000);
+                } else {
+                    showAlert(res.data.message || 'Apple Login fehlgeschlagen', 'error');
+                    resetAppleButton($btn);
+                }
+            },
+            error: function() {
+                showAlert('Verbindungsfehler. Bitte versuchen Sie es erneut.', 'error');
+                resetAppleButton($btn);
+            }
+        });
+    }
+
+    /**
+     * 🍎 Reset Apple Button
+     */
+    function resetAppleButton($btn) {
+        $btn.prop('disabled', false).html(`
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+            </svg>
+            <span>Apple</span>
         `);
     }
 

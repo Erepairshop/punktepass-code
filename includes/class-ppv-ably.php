@@ -191,6 +191,77 @@ class PPV_Ably {
         return self::publish($channel, 'reward-update', $data);
     }
 
+    // ============================================================
+    // 🎁 REAL-TIME REDEMPTION FLOW (New Feature)
+    // ============================================================
+
+    /**
+     * Prompt user to redeem rewards after scan
+     * Sent to user's channel when they have enough points
+     *
+     * @param int $user_id User ID
+     * @param array $data Prompt data (token, rewards list, expires_at, store info)
+     */
+    public static function trigger_redemption_prompt($user_id, $data) {
+        $channel = 'user-' . intval($user_id);
+        ppv_log("📡 [PPV_Ably] trigger_redemption_prompt: channel={$channel}, user_id={$user_id}, rewards=" . count($data['rewards'] ?? []));
+        return self::publish($channel, 'redemption-prompt', $data);
+    }
+
+    /**
+     * Notify handler that user wants to redeem
+     * Sent to store's channel when user accepts redemption prompt
+     *
+     * @param int $store_id Store ID
+     * @param array $data Request data (token, user info, selected reward, etc.)
+     */
+    public static function trigger_redemption_request($store_id, $data) {
+        $channel = 'store-' . intval($store_id);
+        ppv_log("📡 [PPV_Ably] trigger_redemption_request: channel={$channel}, store_id={$store_id}, user={$data['user_id']}");
+        return self::publish($channel, 'redemption-request', $data);
+    }
+
+    /**
+     * Notify user that handler approved their redemption
+     * Sent to user's channel after handler confirms
+     *
+     * @param int $user_id User ID
+     * @param array $data Approval data (reward title, points deducted, etc.)
+     */
+    public static function trigger_redemption_approved($user_id, $data) {
+        $channel = 'user-' . intval($user_id);
+        ppv_log("📡 [PPV_Ably] trigger_redemption_approved: channel={$channel}, user_id={$user_id}");
+        return self::publish($channel, 'redemption-approved', $data);
+    }
+
+    /**
+     * Notify user that handler rejected their redemption
+     * Sent to user's channel after handler rejects
+     *
+     * @param int $user_id User ID
+     * @param array $data Rejection data (reason, etc.)
+     */
+    public static function trigger_redemption_rejected($user_id, $data) {
+        $channel = 'user-' . intval($user_id);
+        ppv_log("📡 [PPV_Ably] trigger_redemption_rejected: channel={$channel}, user_id={$user_id}, reason={$data['reason']}");
+        return self::publish($channel, 'redemption-rejected', $data);
+    }
+
+    /**
+     * Notify handler that user declined/cancelled redemption prompt
+     * Sent to store's channel if handler was already waiting
+     *
+     * @param int $store_id Store ID
+     * @param array $data Cancellation data (user_id, token, etc.)
+     */
+    public static function trigger_redemption_cancelled($store_id, $data) {
+        $channel = 'store-' . intval($store_id);
+        ppv_log("📡 [PPV_Ably] trigger_redemption_cancelled: channel={$channel}, store_id={$store_id}");
+        return self::publish($channel, 'redemption-cancelled', $data);
+    }
+
+    // ============================================================
+
     /**
      * Create a token request for frontend authentication
      * This is used for Ably's token-based auth (more secure than exposing API key)
