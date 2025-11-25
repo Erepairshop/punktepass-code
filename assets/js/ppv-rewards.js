@@ -346,9 +346,14 @@
   // RECEIPTS
   // ============================================================
   function initReceiptGenerator() {
-    const btn = document.getElementById('ppv-ea-generate-receipt');
-    if (btn) {
-      btn.addEventListener('click', generateMonthlyReceipt);
+    const monthlyBtn = document.getElementById('ppv-ea-generate-receipt');
+    if (monthlyBtn) {
+      monthlyBtn.addEventListener('click', generateMonthlyReceipt);
+    }
+
+    const dateBtn = document.getElementById('ppv-ea-generate-date-receipt');
+    if (dateBtn) {
+      dateBtn.addEventListener('click', generateDateReceipt);
     }
   }
 
@@ -379,6 +384,42 @@
       }
     } catch (err) {
       console.error('[PPV_REWARDS_V2] Receipt error:', err);
+      showToast('Fehler beim Erstellen', 'error');
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ri-file-add-line"></i> Erstellen';
+  }
+
+  async function generateDateReceipt() {
+    const btn = document.getElementById('ppv-ea-generate-date-receipt');
+    const dateInput = document.getElementById('ppv-ea-receipt-date');
+    const date = dateInput?.value;
+
+    if (!date) return;
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Erstelle...';
+
+    try {
+      const res = await fetch(`${base}einloesungen/date-receipt`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        showToast(data.message || 'Belege erstellt!', 'success');
+        if (data.receipt_url) {
+          window.open(data.receipt_url, '_blank');
+        }
+        loadReceipts(); // Refresh list
+      } else {
+        showToast(data.message || 'Keine Einlösungen für dieses Datum', 'error');
+      }
+    } catch (err) {
+      console.error('[PPV_REWARDS_V2] Date receipt error:', err);
       showToast('Fehler beim Erstellen', 'error');
     }
 
@@ -436,10 +477,43 @@
         <a href="${receiptUrl}" target="_blank" class="ppv-ea-receipt-download">
           <i class="ri-download-line"></i>
         </a>
-      ` : ''}
+      ` : `
+        <button class="ppv-ea-receipt-generate" data-id="${item.id}" title="Beleg erstellen">
+          <i class="ri-file-add-line"></i>
+        </button>
+      `}
     `;
 
+    // Add click handler for generate button
+    const generateBtn = card.querySelector('.ppv-ea-receipt-generate');
+    if (generateBtn) {
+      generateBtn.addEventListener('click', () => generateSingleReceipt(item.id, baseUrl));
+    }
+
     return card;
+  }
+
+  // Generate single receipt
+  async function generateSingleReceipt(redeemId, baseUrl) {
+    const base = config.base || '/wp-json/ppv/v1/';
+    try {
+      const res = await fetch(`${base}einloesungen/generate-receipt`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ redeem_id: redeemId })
+      });
+      const data = await res.json();
+      if (data.success && data.receipt_url) {
+        showNotification('Beleg erstellt!', 'Wird heruntergeladen...');
+        window.open(data.receipt_url, '_blank');
+        loadReceipts(); // Refresh list
+      } else {
+        showNotification('Fehler', data.message || 'Beleg konnte nicht erstellt werden');
+      }
+    } catch (err) {
+      console.error('[PPV_REWARDS_V2] Generate receipt error:', err);
+      showNotification('Fehler', 'Netzwerkfehler');
+    }
   }
 
   // ============================================================

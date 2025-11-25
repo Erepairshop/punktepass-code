@@ -70,6 +70,20 @@ class PPV_Rewards {
             'permission_callback' => ['PPV_Permissions', 'check_handler']
         ]);
 
+        // Egyedi bizonylat generálás
+        register_rest_route('ppv/v1', '/einloesungen/generate-receipt', [
+            'methods'  => 'POST',
+            'callback' => [__CLASS__, 'rest_generate_single_receipt'],
+            'permission_callback' => ['PPV_Permissions', 'check_handler']
+        ]);
+
+        // Dátum szerinti bizonylat generálás
+        register_rest_route('ppv/v1', '/einloesungen/date-receipt', [
+            'methods'  => 'POST',
+            'callback' => [__CLASS__, 'rest_generate_date_receipt'],
+            'permission_callback' => ['PPV_Permissions', 'check_handler']
+        ]);
+
         // === LEGACY ENDPOINTS (backward compatibility) ===
         register_rest_route('ppv/v1', '/redeem/list', [
             'methods'  => 'GET',
@@ -299,31 +313,45 @@ class PPV_Rewards {
 
             <!-- TAB CONTENT: RECEIPTS -->
             <div class="ppv-ea-tab-content" id="tab-receipts">
-                <!-- Monthly Receipt Generator -->
-                <div class="ppv-ea-receipt-generator">
-                    <h3><i class="ri-calendar-line"></i> Monatsbericht erstellen</h3>
-                    <div class="ppv-ea-receipt-form">
-                        <select id="ppv-ea-receipt-month" class="ppv-ea-select">
-                            <?php
-                            $months = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
-                            $current_month = (int)date('n');
-                            for ($i = 1; $i <= 12; $i++):
-                                $selected = ($i === $current_month) ? 'selected' : '';
-                            ?>
-                                <option value="<?php echo $i; ?>" <?php echo $selected; ?>><?php echo $months[$i-1]; ?></option>
-                            <?php endfor; ?>
-                        </select>
-                        <select id="ppv-ea-receipt-year" class="ppv-ea-select">
-                            <?php
-                            $current_year = (int)date('Y');
-                            for ($y = $current_year; $y >= $current_year - 2; $y--):
-                            ?>
-                                <option value="<?php echo $y; ?>"><?php echo $y; ?></option>
-                            <?php endfor; ?>
-                        </select>
-                        <button id="ppv-ea-generate-receipt" class="ppv-ea-btn-primary">
-                            <i class="ri-file-add-line"></i> Erstellen
-                        </button>
+                <!-- Receipt Generators -->
+                <div class="ppv-ea-receipt-generators">
+                    <!-- Monthly Receipt Generator -->
+                    <div class="ppv-ea-receipt-generator">
+                        <h3><i class="ri-calendar-line"></i> Monatsbericht</h3>
+                        <div class="ppv-ea-receipt-form">
+                            <select id="ppv-ea-receipt-month" class="ppv-ea-select">
+                                <?php
+                                $months = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+                                $current_month = (int)date('n');
+                                for ($i = 1; $i <= 12; $i++):
+                                    $selected = ($i === $current_month) ? 'selected' : '';
+                                ?>
+                                    <option value="<?php echo $i; ?>" <?php echo $selected; ?>><?php echo $months[$i-1]; ?></option>
+                                <?php endfor; ?>
+                            </select>
+                            <select id="ppv-ea-receipt-year" class="ppv-ea-select">
+                                <?php
+                                $current_year = (int)date('Y');
+                                for ($y = $current_year; $y >= $current_year - 2; $y--):
+                                ?>
+                                    <option value="<?php echo $y; ?>"><?php echo $y; ?></option>
+                                <?php endfor; ?>
+                            </select>
+                            <button id="ppv-ea-generate-receipt" class="ppv-ea-btn-primary">
+                                <i class="ri-file-add-line"></i> Erstellen
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Date-based Receipt Generator -->
+                    <div class="ppv-ea-receipt-generator">
+                        <h3><i class="ri-calendar-check-line"></i> Tagesbericht</h3>
+                        <div class="ppv-ea-receipt-form">
+                            <input type="date" id="ppv-ea-receipt-date" class="ppv-ea-select" value="<?php echo date('Y-m-d'); ?>">
+                            <button id="ppv-ea-generate-date-receipt" class="ppv-ea-btn-primary">
+                                <i class="ri-file-add-line"></i> Erstellen
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -679,6 +707,101 @@ class PPV_Rewards {
             'success' => true,
             'message' => 'Monatsbericht erstellt',
             'receipt_url' => $receipt_url,
+        ], 200);
+    }
+
+    /** ============================================================
+     *  REST: Generate Single Receipt
+     * ============================================================ */
+    public static function rest_generate_single_receipt($request) {
+        $data = $request->get_json_params();
+        $redeem_id = intval($data['redeem_id'] ?? 0);
+
+        if (!$redeem_id) {
+            return new WP_REST_Response(['success' => false, 'message' => 'Keine Redeem-ID'], 400);
+        }
+
+        if (!class_exists('PPV_Expense_Receipt')) {
+            $file = PPV_PLUGIN_DIR . 'includes/class-ppv-expense-receipt.php';
+            if (file_exists($file)) {
+                require_once $file;
+            } else {
+                return new WP_REST_Response(['success' => false, 'message' => 'Receipt class not found'], 500);
+            }
+        }
+
+        $receipt_path = PPV_Expense_Receipt::generate_for_redeem($redeem_id);
+
+        if (!$receipt_path) {
+            return new WP_REST_Response(['success' => false, 'message' => 'Beleg konnte nicht erstellt werden'], 400);
+        }
+
+        $upload = wp_upload_dir();
+        $receipt_url = $upload['baseurl'] . '/' . $receipt_path;
+
+        return new WP_REST_Response([
+            'success' => true,
+            'message' => 'Beleg erstellt',
+            'receipt_url' => $receipt_url,
+        ], 200);
+    }
+
+    /** ============================================================
+     *  REST: Generate Receipt for specific date
+     * ============================================================ */
+    public static function rest_generate_date_receipt($request) {
+        global $wpdb;
+
+        $data = $request->get_json_params();
+        $store_id = self::get_store_id();
+        $date = sanitize_text_field($data['date'] ?? '');
+
+        if (!$store_id || !$date) {
+            return new WP_REST_Response(['success' => false, 'message' => 'Ungültige Parameter'], 400);
+        }
+
+        if (!class_exists('PPV_Expense_Receipt')) {
+            $file = PPV_PLUGIN_DIR . 'includes/class-ppv-expense-receipt.php';
+            if (file_exists($file)) {
+                require_once $file;
+            } else {
+                return new WP_REST_Response(['success' => false, 'message' => 'Receipt class not found'], 500);
+            }
+        }
+
+        // Get all approved redemptions for this date without receipt
+        $items = $wpdb->get_results($wpdb->prepare("
+            SELECT id FROM {$wpdb->prefix}ppv_rewards_redeemed
+            WHERE store_id = %d AND status = 'approved'
+            AND DATE(redeemed_at) = %s
+            AND (receipt_pdf_path IS NULL OR receipt_pdf_path = '')
+        ", $store_id, $date));
+
+        if (!$items || count($items) === 0) {
+            return new WP_REST_Response(['success' => false, 'message' => 'Keine Einlösungen ohne Beleg für dieses Datum'], 400);
+        }
+
+        $generated = 0;
+        $last_url = null;
+
+        foreach ($items as $item) {
+            $path = PPV_Expense_Receipt::generate_for_redeem($item->id);
+            if ($path) {
+                $generated++;
+                $upload = wp_upload_dir();
+                $last_url = $upload['baseurl'] . '/' . $path;
+            }
+        }
+
+        if ($generated === 0) {
+            return new WP_REST_Response(['success' => false, 'message' => 'Keine Belege konnten erstellt werden'], 400);
+        }
+
+        return new WP_REST_Response([
+            'success' => true,
+            'message' => sprintf('%d Beleg(e) erstellt', $generated),
+            'count' => $generated,
+            'receipt_url' => $last_url,
         ], 200);
     }
 
