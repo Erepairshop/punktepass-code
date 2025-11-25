@@ -15,6 +15,10 @@ class PPV_Analytics {
     this.DEBUG = false;
   }
 
+  // ✅ FIX: Conditional logging (only in DEBUG mode)
+  log(...args) { if (this.DEBUG) console.log(...args); }
+  warn(...args) { if (this.DEBUG) console.warn(...args); }
+
   /** ============================================================
    * 🌍 DEFAULT STRINGS (FALLBACK)
    * ============================================================ */
@@ -96,8 +100,8 @@ class PPV_Analytics {
     const serverLabels = window.ppv_lang || {};
     const defaults = this.getDefaultStrings()[lang] || this.getDefaultStrings().de;
     const merged = Object.assign({}, defaults, serverLabels);
-    
-    console.log(`🌍 [Analytics] Labels for ${lang}: ${Object.keys(merged).length} strings`);
+
+    this.log(`🌍 [Analytics] Labels for ${lang}: ${Object.keys(merged).length} strings`);
     return merged;
   }
 
@@ -107,18 +111,18 @@ class PPV_Analytics {
   async init(containerId = 'ppv-analytics-section') {
     this.container = document.getElementById(containerId);
     if (!this.container) {
-      console.warn('🚨 [Analytics] Container not found:', containerId);
+      this.warn('🚨 [Analytics] Container not found:', containerId);
       return;
     }
 
     // ✅ FIX: Prevent double initialization (causes duplicate API calls)
     if (this.container.dataset.analyticsInitialized === 'true') {
-      console.log('⏭️ [Analytics] Already initialized, skipping');
+      this.log('⏭️ [Analytics] Already initialized, skipping');
       return;
     }
     this.container.dataset.analyticsInitialized = 'true';
 
-    console.log('📊 [Analytics] Initializing...');
+    this.log('📊 [Analytics] Initializing...');
 
     try {
       // Fetch data
@@ -130,7 +134,7 @@ class PPV_Analytics {
       // Setup event listeners
       this.setupEventListeners();
 
-      console.log('✅ [Analytics] Ready');
+      this.log('✅ [Analytics] Ready');
     } catch (err) {
       console.error('❌ [Analytics] Error:', err);
       this.renderError(err.message);
@@ -141,63 +145,46 @@ class PPV_Analytics {
    * FETCH DATA FROM API
    * ============================================================ */
   async fetchData() {
-    console.log('📡 [Analytics] Fetching data...');
+    this.log('📡 [Analytics] Fetching data...');
 
     try {
       // Get language
       const lang = window.ppv_mypoints?.lang || 'de';
+      const headers = { 'X-PPV-Lang': lang };
 
-      // ✅ NE küldjünk WordPress nonce-t!
-      // Same fix as My Points - session-based auth, no WordPress nonce needed
-      console.log('📡 [Analytics] NOT sending X-WP-Nonce (using session-based auth)');
+      // ✅ FIX: Fetch ALL data in PARALLEL (was sequential - major performance issue!)
+      this.log('📡 [Analytics] Starting parallel fetch (3 requests)...');
+      const startTime = performance.now();
 
-      // Fetch trend data
-      const trendRes = await fetch(
-        `/wp-json/ppv/v1/analytics/trend?range=${this.range}`,
-        {
-          headers: {
-            'X-PPV-Lang': lang,
-          },
-          credentials: 'include',
-        }
-      );
+      const [trendRes, storesRes, summaryRes] = await Promise.all([
+        fetch(`/wp-json/ppv/v1/analytics/trend?range=${this.range}`, { headers, credentials: 'include' }),
+        fetch(`/wp-json/ppv/v1/analytics/stores?range=${this.range}`, { headers, credentials: 'include' }),
+        fetch('/wp-json/ppv/v1/analytics/summary', { headers, credentials: 'include' })
+      ]);
 
+      // Check responses
       if (!trendRes.ok) throw new Error('Trend fetch failed: ' + trendRes.status);
-      this.data = await trendRes.json();
-
-      // Fetch store breakdown
-      const storesRes = await fetch(
-        `/wp-json/ppv/v1/analytics/stores?range=${this.range}`,
-        {
-          headers: {
-            'X-PPV-Lang': lang,
-          },
-          credentials: 'include',
-        }
-      );
-
       if (!storesRes.ok) throw new Error('Stores fetch failed: ' + storesRes.status);
-      this.stores = await storesRes.json();
-
-      // Fetch summary
-      const summaryRes = await fetch(
-        '/wp-json/ppv/v1/analytics/summary',
-        {
-          headers: {
-            'X-PPV-Lang': lang,
-          },
-          credentials: 'include',
-        }
-      );
-
       if (!summaryRes.ok) throw new Error('Summary fetch failed: ' + summaryRes.status);
-      this.summary = await summaryRes.json();
 
-      console.log('✅ [Analytics] Data loaded');
+      // Parse JSON in parallel too
+      const [trendData, storesData, summaryData] = await Promise.all([
+        trendRes.json(),
+        storesRes.json(),
+        summaryRes.json()
+      ]);
+
+      this.data = trendData;
+      this.stores = storesData;
+      this.summary = summaryData;
+
+      const duration = Math.round(performance.now() - startTime);
+      this.log(`✅ [Analytics] Data loaded in ${duration}ms (parallel)`);
+
       if (this.DEBUG) {
-        console.log('📊 Trend:', this.data);
-        console.log('🏪 Stores:', this.stores);
-        console.log('📈 Summary:', this.summary);
+        this.log('📊 Trend:', this.data);
+        this.log('🏪 Stores:', this.stores);
+        this.log('📈 Summary:', this.summary);
       }
     } catch (err) {
       console.error('❌ [Analytics] Fetch error:', err);
@@ -619,7 +606,7 @@ class PPV_Analytics {
    * REFRESH DATA
    * ============================================================ */
   async refresh() {
-    console.log('🔄 [Analytics] Refreshing...');
+    this.log('🔄 [Analytics] Refreshing...');
     try {
       await this.fetchData();
       this.render();
@@ -661,11 +648,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // Only auto-init if section already has content (static HTML, not dynamic)
   if (section && section.innerHTML.trim() === '') {
     // Empty section - will be initialized by parent script (my-points.js)
-    console.log('📊 [Analytics] Container found but empty - waiting for parent init');
+    // (no log in production)
   } else if (section) {
     // Section has content - might be standalone page, auto-init
     window.ppv_analytics.init();
   }
 });
 
-console.log('✅ [Analytics] Script loaded v2.1 (double-init fix)');
+// v2.2: Parallel API calls + DEBUG-gated logging
