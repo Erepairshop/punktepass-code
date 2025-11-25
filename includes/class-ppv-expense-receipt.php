@@ -29,7 +29,7 @@ class PPV_Expense_Receipt {
 
         // 1️⃣ Beváltás adatainak lekérése
         $redeem = $wpdb->get_row($wpdb->prepare("
-            SELECT 
+            SELECT
                 r.id,
                 r.user_id,
                 r.store_id,
@@ -38,6 +38,8 @@ class PPV_Expense_Receipt {
                 r.actual_amount,
                 r.redeemed_at,
                 rw.title as reward_title,
+                rw.action_value,
+                rw.free_product_value,
                 u.email as user_email,
                 u.first_name,
                 u.last_name,
@@ -123,7 +125,7 @@ class PPV_Expense_Receipt {
 
         // 2️⃣ Beváltások lekérése a hónapra
         $items = $wpdb->get_results($wpdb->prepare("
-            SELECT 
+            SELECT
                 r.id,
                 r.user_id,
                 r.store_id,
@@ -134,7 +136,9 @@ class PPV_Expense_Receipt {
                 u.email AS user_email,
                 u.first_name,
                 u.last_name,
-                rw.title AS reward_title
+                rw.title AS reward_title,
+                rw.action_value,
+                rw.free_product_value
             FROM {$wpdb->prefix}ppv_rewards_redeemed r
             LEFT JOIN {$wpdb->prefix}ppv_users u ON r.user_id = u.id
             LEFT JOIN {$wpdb->prefix}ppv_rewards rw ON r.reward_id = rw.id
@@ -213,7 +217,16 @@ class PPV_Expense_Receipt {
 
         // ✅ HELYES DÁTUM FORMÁZÁS
         $receipt_num = date('Y-m-', strtotime($redeem['redeemed_at'])) . sprintf('%04d', $redeem['id']);
-        $amount = floatval($redeem['actual_amount'] ?? $redeem['points_spent'] ?? 0);
+
+        // ✅ Amount calculation: actual_amount → action_value → free_product_value → 0
+        $amount = 0;
+        if (!empty($redeem['actual_amount']) && floatval($redeem['actual_amount']) > 0) {
+            $amount = floatval($redeem['actual_amount']);
+        } elseif (!empty($redeem['action_value']) && $redeem['action_value'] !== '0') {
+            $amount = floatval($redeem['action_value']);
+        } elseif (!empty($redeem['free_product_value']) && floatval($redeem['free_product_value']) > 0) {
+            $amount = floatval($redeem['free_product_value']);
+        }
 
         if ($lang === 'RO') {
             return self::html_receipt_ro($redeem, $customer_name, $receipt_num, $amount);
@@ -434,7 +447,7 @@ HTML;
         $total_points = 0;
 
         foreach ($redeems as $r) {
-            $total_amount += floatval($r->actual_amount ?? $r->points_spent ?? 0);
+            $total_amount += self::calculate_item_amount($r);
             $total_points += intval($r->points_spent ?? 0);
         }
 
@@ -443,6 +456,22 @@ HTML;
         } else {
             return self::html_monthly_receipt_de($store, $redeems, $year, $month, $total_amount, $total_points);
         }
+    }
+
+    /**
+     * 💰 Amount calculation helper: actual_amount → action_value → free_product_value → 0
+     */
+    private static function calculate_item_amount($item) {
+        if (!empty($item->actual_amount) && floatval($item->actual_amount) > 0) {
+            return floatval($item->actual_amount);
+        }
+        if (!empty($item->action_value) && $item->action_value !== '0') {
+            return floatval($item->action_value);
+        }
+        if (!empty($item->free_product_value) && floatval($item->free_product_value) > 0) {
+            return floatval($item->free_product_value);
+        }
+        return 0;
     }
 
     /**
@@ -464,7 +493,7 @@ HTML;
             }
             $reward = htmlspecialchars($r->reward_title ?? 'Belohnung');
             $points = intval($r->points_spent ?? 0);
-            $amount = floatval($r->actual_amount ?? $r->points_spent ?? 0);
+            $amount = self::calculate_item_amount($r);
             $date = date('d.m.Y', strtotime($r->redeemed_at));
 
             $rows .= "<tr style=\"border-bottom: 1px solid #ddd;\">
@@ -559,11 +588,11 @@ HTML;
         foreach ($redeems as $r) {
             $customer = htmlspecialchars(trim(($r->first_name ?? '') . ' ' . ($r->last_name ?? '')));
             if (!$customer) {
-                $customer = htmlspecialchars($r->user_email ?? 'Unbekannt');
+                $customer = htmlspecialchars($r->user_email ?? 'Necunoscut');
             }
             $reward = htmlspecialchars($r->reward_title ?? 'Recompensă');
             $points = intval($r->points_spent ?? 0);
-            $amount = floatval($r->actual_amount ?? $r->points_spent ?? 0);
+            $amount = self::calculate_item_amount($r);
             $date = date('d.m.Y', strtotime($r->redeemed_at));
 
             $rows .= "<tr style=\"border-bottom: 1px solid #ddd;\">
