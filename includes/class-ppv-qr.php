@@ -2212,23 +2212,21 @@ class PPV_QR {
                     }
                 }
 
-                // 4. FIRST DAILY SCAN BONUS
+                // 4. FIRST SCAN EVER BONUS (one-time per store)
                 if ($vip_settings->vip_daily_enabled && $user_level !== null) {
-                    $today = date('Y-m-d');
-                    $already_scanned_today = (int)$wpdb->get_var($wpdb->prepare("
+                    $ever_scanned_here = (int)$wpdb->get_var($wpdb->prepare("
                         SELECT COUNT(*) FROM {$wpdb->prefix}ppv_points
                         WHERE user_id = %d AND store_id = %d AND type = 'qr_scan'
-                        AND DATE(created) = %s
-                    ", $user_id, $store_id, $today));
+                    ", $user_id, $store_id));
 
-                    if ($already_scanned_today === 0) {
+                    if ($ever_scanned_here === 0) {
                         $vip_bonus_details['daily'] = $getLevelValue(
                             $vip_settings->vip_daily_bronze ?? 5,
                             $vip_settings->vip_daily_silver,
                             $vip_settings->vip_daily_gold,
                             $vip_settings->vip_daily_platinum
                         );
-                        ppv_log("☀️ [PPV_QR] First daily scan bonus applied for user {$user_id}");
+                        ppv_log("🎉 [PPV_QR] First scan ever bonus applied for user {$user_id} at store {$store_id}");
                     }
                 }
 
