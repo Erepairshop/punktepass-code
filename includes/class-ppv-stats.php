@@ -1217,7 +1217,6 @@ class PPV_Stats {
                         <p class="ppv-loading-small"><?php echo esc_html($T['loading'] ?? 'Loading...'); ?></p>
                     </div>
                 </div>
-            </div>
             </div><!-- END TAB 1: OVERVIEW -->
 
             <!-- ═══════════════════════════════════════════════════════════ -->
