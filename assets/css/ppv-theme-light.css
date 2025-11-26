@@ -12843,6 +12843,97 @@ body.ppv-dark .ppv-bar-fill,
 }
 
 /* ==========================================================================
+   🌙 DARK MODE - Scanner Stats Table (Mitarbeiter)
+   ========================================================================== */
+body.ppv-dark .ppv-scanner-summary,
+[data-theme="dark"] .ppv-scanner-summary {
+    background: transparent !important;
+}
+
+body.ppv-dark .ppv-scanner-table,
+[data-theme="dark"] .ppv-scanner-table {
+    background: #162233 !important;
+    border-color: rgba(0, 212, 255, 0.20) !important;
+}
+
+body.ppv-dark .ppv-scanner-row,
+[data-theme="dark"] .ppv-scanner-row {
+    border-color: rgba(0, 212, 255, 0.12) !important;
+}
+
+body.ppv-dark .ppv-scanner-header,
+[data-theme="dark"] .ppv-scanner-header {
+    background: #0f172a !important;
+    color: #94a3b8 !important;
+}
+
+body.ppv-dark .ppv-scanner-cell,
+[data-theme="dark"] .ppv-scanner-cell {
+    color: #e2e8f0 !important;
+}
+
+body.ppv-dark .ppv-scanner-cell.ppv-scanner-total,
+[data-theme="dark"] .ppv-scanner-cell.ppv-scanner-total {
+    color: #00d4ff !important;
+}
+
+body.ppv-dark .ppv-scanner-row.ppv-scanner-untracked,
+[data-theme="dark"] .ppv-scanner-row.ppv-scanner-untracked {
+    background: rgba(0, 212, 255, 0.05) !important;
+    color: #64748b !important;
+}
+
+body.ppv-dark .ppv-no-data,
+[data-theme="dark"] .ppv-no-data {
+    background: #162233 !important;
+    border-color: rgba(0, 212, 255, 0.20) !important;
+    color: #64748b !important;
+}
+
+body.ppv-dark .ppv-section-desc,
+[data-theme="dark"] .ppv-section-desc {
+    color: #64748b !important;
+}
+
+/* ==========================================================================
+   🌙 DARK MODE - Stats Wrapper & Sections
+   ========================================================================== */
+body.ppv-dark .ppv-stats-wrapper,
+[data-theme="dark"] .ppv-stats-wrapper {
+    background: transparent !important;
+}
+
+body.ppv-dark .ppv-stats-section,
+[data-theme="dark"] .ppv-stats-section {
+    background: #162233 !important;
+    border: 1px solid rgba(0, 212, 255, 0.15) !important;
+    border-radius: 16px !important;
+    padding: 20px !important;
+    margin-bottom: 16px !important;
+}
+
+body.ppv-dark .ppv-stats-section h3,
+body.ppv-dark .ppv-section-title,
+[data-theme="dark"] .ppv-stats-section h3,
+[data-theme="dark"] .ppv-section-title {
+    color: #f1f5f9 !important;
+}
+
+body.ppv-dark .ppv-stat-label,
+[data-theme="dark"] .ppv-stat-label {
+    color: #94a3b8 !important;
+}
+
+body.ppv-dark .ppv-stat-value,
+[data-theme="dark"] .ppv-stat-value {
+    color: #00d4ff !important;
+    background: linear-gradient(135deg, #00d4ff 0%, #00a8cc 100%) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+}
+
+/* ==========================================================================
    🌙 DARK MODE - Glass Sections (QR Center, etc.)
    ========================================================================== */
 body.ppv-dark .glass-section,
@@ -14963,6 +15054,113 @@ body.ppv-dark #ppv-vip-status .ppv-success,
 body.ppv-dark #ppv-vip-status .ppv-error,
 [data-theme="dark"] #ppv-vip-status .ppv-error {
     color: #f85149 !important;
+}
+
+/* ==========================================================================
+   🌙 DARK MODE - VIP BONUS CARDS (Fixpunkte, X.Scan, Erster Scan)
+   ========================================================================== */
+body.ppv-dark .ppv-vip-card,
+[data-theme="dark"] .ppv-vip-card {
+    background: #162233 !important;
+    border-color: rgba(0, 212, 255, 0.20) !important;
+}
+
+body.ppv-dark .ppv-vip-card-header,
+[data-theme="dark"] .ppv-vip-card-header {
+    background: #0f172a !important;
+    border-color: rgba(0, 212, 255, 0.15) !important;
+}
+
+body.ppv-dark .ppv-card-title strong,
+[data-theme="dark"] .ppv-card-title strong {
+    color: #f1f5f9 !important;
+}
+
+body.ppv-dark .ppv-card-title small,
+[data-theme="dark"] .ppv-card-title small {
+    color: #64748b !important;
+}
+
+body.ppv-dark .ppv-card-title > i,
+[data-theme="dark"] .ppv-card-title > i {
+    background: rgba(0, 212, 255, 0.15) !important;
+    color: #00d4ff !important;
+}
+
+body.ppv-dark .ppv-vip-card-body,
+[data-theme="dark"] .ppv-vip-card-body {
+    background: #162233 !important;
+}
+
+body.ppv-dark .ppv-vip-level-input > label,
+[data-theme="dark"] .ppv-vip-level-input > label {
+    color: #94a3b8 !important;
+}
+
+body.ppv-dark .ppv-vip-level-input.bronze > label,
+[data-theme="dark"] .ppv-vip-level-input.bronze > label {
+    color: #CD7F32 !important;
+}
+
+body.ppv-dark .ppv-vip-level-input.silver > label,
+[data-theme="dark"] .ppv-vip-level-input.silver > label {
+    color: #C0C0C0 !important;
+}
+
+body.ppv-dark .ppv-vip-level-input.gold > label,
+[data-theme="dark"] .ppv-vip-level-input.gold > label {
+    color: #FFD700 !important;
+}
+
+body.ppv-dark .ppv-vip-level-input.platinum > label,
+[data-theme="dark"] .ppv-vip-level-input.platinum > label {
+    color: #A0B2C6 !important;
+}
+
+body.ppv-dark .ppv-input-group,
+[data-theme="dark"] .ppv-input-group {
+    background: #0f172a !important;
+    border-color: rgba(0, 212, 255, 0.20) !important;
+}
+
+body.ppv-dark .ppv-input-group input,
+[data-theme="dark"] .ppv-input-group input {
+    background: transparent !important;
+    color: #f1f5f9 !important;
+}
+
+body.ppv-dark .ppv-input-group span,
+[data-theme="dark"] .ppv-input-group span {
+    color: #64748b !important;
+}
+
+body.ppv-dark .ppv-streak-config,
+[data-theme="dark"] .ppv-streak-config {
+    background: #0f172a !important;
+    border-color: rgba(0, 212, 255, 0.15) !important;
+}
+
+body.ppv-dark .ppv-streak-config label,
+body.ppv-dark .ppv-streak-count label,
+body.ppv-dark .ppv-streak-type label,
+[data-theme="dark"] .ppv-streak-config label,
+[data-theme="dark"] .ppv-streak-count label,
+[data-theme="dark"] .ppv-streak-type label {
+    color: #94a3b8 !important;
+}
+
+body.ppv-dark .ppv-streak-config input,
+body.ppv-dark .ppv-streak-config select,
+[data-theme="dark"] .ppv-streak-config input,
+[data-theme="dark"] .ppv-streak-config select {
+    background: #162233 !important;
+    border-color: rgba(0, 212, 255, 0.20) !important;
+    color: #f1f5f9 !important;
+}
+
+body.ppv-dark .ppv-validation-error,
+[data-theme="dark"] .ppv-validation-error {
+    color: #f87171 !important;
 }
 
 /* ==========================================================================
