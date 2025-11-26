@@ -416,12 +416,32 @@ class PPV_Weekly_Report {
             ppv_log("📧 [Weekly Report TEST] Overriding email from {$original_email} to {$target_email}");
         }
 
+        // Get stats for debugging
+        $stats = self::get_store_stats($store_id);
+
         $result = self::send_report_for_store($store);
 
         if ($result) {
-            wp_send_json_success(['message' => 'Report sent to ' . $store->email]);
+            wp_send_json_success([
+                'message' => 'Report sent to ' . $store->email,
+                'store_id' => $store_id,
+                'email' => $store->email,
+                'stats' => $stats
+            ]);
         } else {
-            wp_send_json_error(['message' => 'Failed to send report']);
+            // Get more error info
+            global $phpmailer;
+            $error_info = '';
+            if (isset($phpmailer) && isset($phpmailer->ErrorInfo)) {
+                $error_info = $phpmailer->ErrorInfo;
+            }
+            wp_send_json_error([
+                'message' => 'Failed to send report',
+                'store_id' => $store_id,
+                'email' => $store->email,
+                'mail_error' => $error_info,
+                'stats' => $stats
+            ]);
         }
     }
 }
