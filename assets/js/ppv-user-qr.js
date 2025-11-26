@@ -28,16 +28,24 @@ document.addEventListener("DOMContentLoaded", async () => {
       showOfflineBanner();
       displayQR(cached);
       startCountdown(cached.expires_at);
-      showStatus("📱 Offline-Modus - Gespeicherter QR-Code", "warning");
-      return;
+
+      // Show appropriate status message
+      if (cached._imageNotCached) {
+        showStatus("⚠️ Offline - QR-Bild nicht im Cache", "warning");
+      } else if (cached._isExpired) {
+        showStatus("⏰ Offline - QR-Code abgelaufen (trotzdem anzeigbar)", "warning");
+      } else {
+        showStatus("📱 Offline-Modus - Gespeicherter QR-Code", "success");
+      }
     } else {
       showStatus("📡 Offline - Kein gespeicherter QR-Code", "error");
-      return;
+      hideLoading();
     }
+    // Don't return - still setup refresh button for when back online
+  } else {
+    // Load initial timed QR (only when online)
+    await loadTimedQR(userId);
   }
-
-  // Load initial timed QR
-  await loadTimedQR(userId);
 
   // Refresh button click handler
   const refreshBtn = document.getElementById("ppvBtnRefresh");
@@ -144,7 +152,20 @@ function displayQR(data) {
   const qrValue = document.getElementById("ppvQrValue");
   const qrDisplay = document.getElementById("ppvQrDisplay");
 
-  if (qrImg) qrImg.src = data.qr_url;
+  if (qrImg) {
+    // Handle image load error (e.g., offline with non-cached URL)
+    qrImg.onerror = function() {
+      // Show fallback with QR value
+      if (qrValue && data.qr_value) {
+        qrImg.style.display = 'none';
+        showStatus("⚠️ QR-Bild nicht verfügbar - Code: " + data.qr_value, "warning");
+      }
+    };
+    qrImg.onload = function() {
+      qrImg.style.display = 'block';
+    };
+    qrImg.src = data.qr_url;
+  }
   if (qrValue) qrValue.value = data.qr_value;
   if (qrDisplay) qrDisplay.style.display = "block";
 }
@@ -303,14 +324,19 @@ function loadFromCache(userId) {
 
     // Check if QR is expired
     if (data.expires_at <= now) {
-      console.log('📱 Cached QR expired');
       // Don't delete - still show expired QR with warning
       // User can still show it at the store
+      data._isExpired = true;
+    }
+
+    // Check if QR image is properly cached as base64
+    if (data.qr_url && !data.qr_url.startsWith('data:')) {
+      // Image is a URL, not base64 - won't work offline
+      data._imageNotCached = true;
     }
 
     return data;
   } catch (e) {
-    console.warn('Failed to load cached QR:', e);
     return null;
   }
 }
