@@ -1007,24 +1007,65 @@ return [
     'onb_welcome_step1' => 'Completeaza datele de baza ale magazinului',
     'onb_welcome_step2' => 'Creaza prima recompensa',
     'onb_welcome_time' => '⏱️ Aproximativ 3 minute',
-    'onb_welcome_btn_later' => '⏭️ Mai tarziu',
-    'onb_welcome_btn_start' => '🚀 Hai sa incepem!',
+    'onb_btn_later' => 'Mai tarziu',
+    'onb_btn_start' => 'Hai sa incepem!',
 
-    'onb_profile_step_title' => '1️⃣ Completeaza profilul',
-    'onb_profile_step_progress' => '50% (1/2)',
-    'onb_profile_subtitle' => 'Datele de baza ale magazinului',
-    'onb_profile_company_name' => 'Nume companie *',
-    'onb_profile_country' => 'Tara *',
-    'onb_profile_address' => 'Adresa *',
-    'onb_profile_city' => 'Oras *',
-    'onb_profile_zip' => 'Cod postal *',
-    'onb_profile_phone' => 'Telefon *',
-    'onb_profile_latitude' => 'Latitudine (Latitude)',
-    'onb_profile_longitude' => 'Longitudine (Longitude)',
-    'onb_profile_geocode_btn' => '🔍 Cauta coordonate',
-    'onb_profile_geocode_tip' => '💡 Optional: Putem gasi automat coordonatele GPS pe baza adresei',
-    'onb_btn_skip' => '⏭️ Sari peste',
-    'onb_btn_next' => '➡️ Urmatorul',
+    // Step indicator
+    'onb_step' => 'pas',
+
+    // Profile step - header
+    'onb_profile_step_title' => 'Date de baza magazin',
+    'onb_profile_step_subtitle' => 'Completeaza cele mai importante informatii despre magazinul tau',
+
+    // Sections
+    'onb_section_basic' => 'Date de baza',
+    'onb_section_address' => 'Adresa',
+    'onb_section_location' => 'Locatie pe harta',
+    'onb_section_hours' => 'Program',
+    'onb_section_timezone' => 'Fus orar',
+
+    // Basic fields
+    'onb_profile_shop_name' => 'Nume magazin',
+    'onb_profile_shop_name_placeholder' => 'ex. Cafeneaua Mea',
+    'onb_profile_shop_name_help' => 'Acest nume apare clientilor',
+    'onb_profile_company_name' => 'Nume companie',
+    'onb_profile_company_name_placeholder' => 'ex. SC Cafenea SRL',
+    'onb_profile_company_name_help' => 'Nume oficial companie (pentru facturare)',
+    'onb_profile_country' => 'Tara',
+    'onb_profile_country_placeholder' => 'Selecteaza...',
+
+    // Address fields
+    'onb_profile_address' => 'Strada, numar',
+    'onb_profile_address_placeholder' => 'ex. Strada Principala 12',
+    'onb_profile_city' => 'Oras',
+    'onb_profile_city_placeholder' => 'Bucuresti',
+    'onb_profile_zip' => 'Cod postal',
+    'onb_profile_zip_placeholder' => '010101',
+
+    // Map
+    'onb_profile_latitude' => 'Latitudine (Lat)',
+    'onb_profile_longitude' => 'Longitudine (Lng)',
+    'onb_profile_geocode_btn' => 'Cauta dupa adresa',
+    'onb_map_instructions' => 'Apasa pe harta pentru a marca locatia exacta a magazinului tau!',
+    'onb_map_selected' => 'Locatie selectata!',
+    'onb_map_fallback' => 'Se incarca harta...',
+    'onb_map_fallback_tip' => 'Foloseste butonul "Cauta dupa adresa"',
+    'onb_error_map' => '❌ Te rog marcheaza locatia magazinului pe harta!',
+
+    // Opening hours
+    'onb_quick_fill' => 'Completare rapida:',
+    'onb_hours_office' => '9-17',
+    'onb_hours_retail' => '8-20',
+    'onb_hours_gastro' => '10-22',
+    'onb_hours_nonstop' => '0-24',
+    'onb_hours_applied' => '✅ Program setat!',
+
+    // Timezone
+    'onb_timezone_help' => 'Programul si statisticile se bazeaza pe acest fus orar',
+
+    // Buttons
+    'onb_btn_skip' => 'Sari peste',
+    'onb_btn_next' => 'Urmatorul',
 
     'onb_reward_step_title' => '2️⃣ Creaza prima recompensa',
     'onb_reward_step_progress' => '100% (2/2)',

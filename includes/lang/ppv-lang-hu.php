@@ -996,24 +996,65 @@ return [
     'onb_welcome_step1' => 'Töltsd ki az üzlet alapadatait',
     'onb_welcome_step2' => 'Hozd létre az első prémiumot',
     'onb_welcome_time' => '⏱️ Körülbelül 3 perc',
-    'onb_welcome_btn_later' => '⏭️ Később',
-    'onb_welcome_btn_start' => '🚀 Kezdjük!',
+    'onb_btn_later' => 'Később',
+    'onb_btn_start' => 'Kezdjük!',
 
-    'onb_profile_step_title' => '1️⃣ Profil kitöltése',
-    'onb_profile_step_progress' => '50% (1/2)',
-    'onb_profile_subtitle' => 'A bolt alapadatai',
-    'onb_profile_company_name' => 'Cégnév *',
-    'onb_profile_country' => 'Ország *',
-    'onb_profile_address' => 'Cím *',
-    'onb_profile_city' => 'Város *',
-    'onb_profile_zip' => 'Irányítószám *',
-    'onb_profile_phone' => 'Telefon *',
-    'onb_profile_latitude' => 'Szélesség (Latitude)',
-    'onb_profile_longitude' => 'Hosszúság (Longitude)',
-    'onb_profile_geocode_btn' => '🔍 Koordinaten suchen',
-    'onb_profile_geocode_tip' => '💡 Opcionális: GPS koordinátákat automatikusan kereshetünk a cím alapján',
-    'onb_btn_skip' => '⏭️ Kihagyom',
-    'onb_btn_next' => '➡️ Következő',
+    // Step indicator
+    'onb_step' => 'lépés',
+
+    // Profile step - header
+    'onb_profile_step_title' => 'Üzlet Alapadatok',
+    'onb_profile_step_subtitle' => 'Töltsd ki az üzleted legfontosabb adatait',
+
+    // Sections
+    'onb_section_basic' => 'Alapadatok',
+    'onb_section_address' => 'Cím',
+    'onb_section_location' => 'Helyszín a térképen',
+    'onb_section_hours' => 'Nyitvatartás',
+    'onb_section_timezone' => 'Időzóna',
+
+    // Basic fields
+    'onb_profile_shop_name' => 'Üzlet neve',
+    'onb_profile_shop_name_placeholder' => 'pl. Teszt Kávézó',
+    'onb_profile_shop_name_help' => 'Ez jelenik meg az ügyfeleknek',
+    'onb_profile_company_name' => 'Cégnév',
+    'onb_profile_company_name_placeholder' => 'pl. Teszt Kft.',
+    'onb_profile_company_name_help' => 'Hivatalos cégnév (számlázáshoz)',
+    'onb_profile_country' => 'Ország',
+    'onb_profile_country_placeholder' => 'Válassz...',
+
+    // Address fields
+    'onb_profile_address' => 'Utca, házszám',
+    'onb_profile_address_placeholder' => 'pl. Fő utca 12.',
+    'onb_profile_city' => 'Város',
+    'onb_profile_city_placeholder' => 'Budapest',
+    'onb_profile_zip' => 'Ir.szám',
+    'onb_profile_zip_placeholder' => '1011',
+
+    // Map
+    'onb_profile_latitude' => 'Szélesség (Lat)',
+    'onb_profile_longitude' => 'Hosszúság (Lng)',
+    'onb_profile_geocode_btn' => 'Cím alapján keresés',
+    'onb_map_instructions' => 'Kattints a térképre az üzleted pontos helyének megjelöléséhez!',
+    'onb_map_selected' => 'Helyszín kiválasztva!',
+    'onb_map_fallback' => 'Térkép betöltése...',
+    'onb_map_fallback_tip' => 'Használd a "Cím alapján keresés" gombot',
+    'onb_error_map' => '❌ Kérlek jelöld meg az üzleted helyét a térképen!',
+
+    // Opening hours
+    'onb_quick_fill' => 'Gyors kitöltés:',
+    'onb_hours_office' => '9-17',
+    'onb_hours_retail' => '8-20',
+    'onb_hours_gastro' => '10-22',
+    'onb_hours_nonstop' => '0-24',
+    'onb_hours_applied' => '✅ Nyitvatartás beállítva!',
+
+    // Timezone
+    'onb_timezone_help' => 'A nyitvatartási idők és statisztikák ehhez igazodnak',
+
+    // Buttons
+    'onb_btn_skip' => 'Kihagyom',
+    'onb_btn_next' => 'Következő',
 
     'onb_reward_step_title' => '2️⃣ Első Prémium Létrehozása',
     'onb_reward_step_progress' => '100% (2/2)',
