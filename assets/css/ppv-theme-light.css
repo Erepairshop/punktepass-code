@@ -10284,6 +10284,205 @@ select.ppv-support-input {
     min-height: 100vh;
 }
 
+/* ============================================================
+   📑 STATS TABS - Navigation between sections
+   ============================================================ */
+.ppv-stats-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    padding: 4px;
+    background: var(--pp-surface);
+    border-radius: var(--pp-r-lg);
+    border: 1px solid var(--pp-border-soft);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.ppv-stats-tab {
+    flex: 1;
+    min-width: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 12px 16px;
+    border: none;
+    background: transparent;
+    color: var(--pp-text-2);
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: var(--pp-r-md);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.ppv-stats-tab i {
+    font-size: 16px;
+}
+
+.ppv-stats-tab:hover {
+    background: var(--pp-bg-hover);
+    color: var(--pp-text);
+}
+
+.ppv-stats-tab.active {
+    background: var(--pp-primary);
+    color: white;
+    box-shadow: 0 2px 8px rgba(var(--pp-primary-rgb), 0.3);
+}
+
+.ppv-stats-tab.active i {
+    color: white;
+}
+
+/* Tab Content */
+.ppv-stats-tab-content {
+    display: none;
+}
+
+.ppv-stats-tab-content.active {
+    display: block;
+    animation: ppv-fade-in 0.3s ease;
+}
+
+@keyframes ppv-fade-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================================
+   👤 SCANNER STATS - Employee Performance Table
+   ============================================================ */
+.ppv-scanner-summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.ppv-section-desc {
+    font-size: 13px;
+    color: var(--pp-text-muted);
+    margin: -8px 0 16px 0;
+}
+
+.ppv-scanner-table {
+    background: var(--pp-surface);
+    border-radius: var(--pp-r-lg);
+    border: 1px solid var(--pp-border-soft);
+    overflow: hidden;
+}
+
+.ppv-scanner-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+    gap: 8px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--pp-border-soft);
+    align-items: center;
+}
+
+.ppv-scanner-row:last-child {
+    border-bottom: none;
+}
+
+.ppv-scanner-header {
+    background: var(--pp-bg-2);
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--pp-text-muted);
+}
+
+.ppv-scanner-cell {
+    font-size: 13px;
+    color: var(--pp-text);
+    text-align: center;
+}
+
+.ppv-scanner-cell.ppv-scanner-name {
+    text-align: left;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.ppv-scanner-cell.ppv-scanner-total {
+    font-weight: 700;
+    color: var(--pp-primary);
+}
+
+/* Rank highlighting */
+.ppv-scanner-row.ppv-rank-1 {
+    background: linear-gradient(90deg, rgba(255, 215, 0, 0.1) 0%, transparent 100%);
+}
+
+.ppv-scanner-row.ppv-rank-2 {
+    background: linear-gradient(90deg, rgba(192, 192, 192, 0.1) 0%, transparent 100%);
+}
+
+.ppv-scanner-row.ppv-rank-3 {
+    background: linear-gradient(90deg, rgba(205, 127, 50, 0.1) 0%, transparent 100%);
+}
+
+/* Untracked scans row */
+.ppv-scanner-row.ppv-scanner-untracked {
+    background: var(--pp-bg-2);
+    color: var(--pp-text-muted);
+    font-style: italic;
+}
+
+.ppv-no-data {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--pp-text-muted);
+    font-size: 14px;
+    background: var(--pp-surface);
+    border-radius: var(--pp-r-lg);
+    border: 1px dashed var(--pp-border);
+}
+
+/* Mobile responsive for scanner table */
+@media (max-width: 640px) {
+    .ppv-stats-tabs {
+        gap: 4px;
+        padding: 3px;
+    }
+
+    .ppv-stats-tab {
+        padding: 10px 12px;
+        font-size: 12px;
+        min-width: 80px;
+    }
+
+    .ppv-stats-tab i {
+        display: none;
+    }
+
+    .ppv-scanner-summary {
+        grid-template-columns: 1fr;
+    }
+
+    .ppv-scanner-row {
+        grid-template-columns: 1.5fr 1fr 1fr 1fr;
+        padding: 10px 12px;
+        font-size: 12px;
+    }
+
+    .ppv-scanner-row .ppv-scanner-cell:nth-child(4) {
+        display: none; /* Hide month column on mobile */
+    }
+
+    .ppv-scanner-header .ppv-scanner-cell:nth-child(4) {
+        display: none;
+    }
+}
+
 /* Stats Main Title */
 .ppv-stats-title {
     display: flex;

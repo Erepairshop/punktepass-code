@@ -639,7 +639,135 @@ jQuery(document).ready(function($) {
         loadTrend();
         loadSpending();
         loadConversion();
+        loadScannerStats();
     });
+
+    // ============================================================
+    // 📑 TAB SWITCHING
+    // ============================================================
+    let scannerStatsLoaded = false;
+
+    $('.ppv-stats-tab').on('click', function() {
+        const tab = $(this).data('tab');
+        console.log(`📑 [Tab] Switching to: ${tab}`);
+
+        // Update tab buttons
+        $('.ppv-stats-tab').removeClass('active');
+        $(this).addClass('active');
+
+        // Update tab content
+        $('.ppv-stats-tab-content').removeClass('active');
+        $(`#ppv-tab-${tab}`).addClass('active');
+
+        // Load scanner stats on first view
+        if (tab === 'scanners' && !scannerStatsLoaded) {
+            loadScannerStats();
+            scannerStatsLoaded = true;
+        }
+    });
+
+    // ============================================================
+    // 👤 LOAD SCANNER STATS
+    // ============================================================
+    function loadScannerStats() {
+        console.log(`👤 [Scanner Stats] Loading... filiale: ${currentFilialeId}`);
+
+        const $loading = $('#ppv-scanner-stats-loading');
+        const $list = $('#ppv-scanner-list');
+
+        $loading.show();
+
+        $.ajax({
+            url: config.scanner_url,
+            method: 'GET',
+            data: { filiale_id: currentFilialeId },
+            headers: { 'X-WP-Nonce': nonce },
+            dataType: 'json',
+            cache: false,
+            success: function(res) {
+                $loading.hide();
+
+                if (res.success) {
+                    displayScannerStats(res);
+                    console.log("✅ [Scanner Stats] OK, scanners:", res.scanners?.length || 0);
+                } else {
+                    $list.html(`<p class="ppv-error-small">${T['error_loading'] || 'Error loading data'}</p>`);
+                }
+            },
+            error: function() {
+                $loading.hide();
+                $list.html(`<p class="ppv-error-small">${T['error_loading'] || 'Error loading data'}</p>`);
+            }
+        });
+    }
+
+    function displayScannerStats(data) {
+        const scanners = data.scanners || [];
+        const summary = data.summary || {};
+        const untracked = data.untracked || {};
+
+        // Update summary cards
+        $('#ppv-scanner-count').text(formatNumber(summary.scanner_count || 0));
+        $('#ppv-tracked-scans').text(formatNumber(summary.total_tracked || 0));
+        $('#ppv-untracked-scans').text(formatNumber(summary.total_untracked || 0));
+
+        // Build scanner list
+        const $list = $('#ppv-scanner-list');
+
+        if (scanners.length === 0) {
+            $list.html(`<p class="ppv-no-data">${T['no_scanner_data'] || 'Noch keine Scanner-Daten vorhanden.'}</p>`);
+            return;
+        }
+
+        let html = '<div class="ppv-scanner-table">';
+
+        // Table header
+        html += `
+            <div class="ppv-scanner-row ppv-scanner-header">
+                <div class="ppv-scanner-cell">${T['employee'] || 'Mitarbeiter'}</div>
+                <div class="ppv-scanner-cell">${T['today'] || 'Heute'}</div>
+                <div class="ppv-scanner-cell">${T['this_week'] || 'Woche'}</div>
+                <div class="ppv-scanner-cell">${T['this_month'] || 'Monat'}</div>
+                <div class="ppv-scanner-cell">${T['total'] || 'Gesamt'}</div>
+            </div>
+        `;
+
+        // Scanner rows
+        scanners.forEach((scanner, index) => {
+            const rankClass = index < 3 ? `ppv-rank-${index + 1}` : '';
+            const rankIcon = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
+
+            html += `
+                <div class="ppv-scanner-row ${rankClass}">
+                    <div class="ppv-scanner-cell ppv-scanner-name">
+                        ${rankIcon} ${escapeHtml(scanner.scanner_name)}
+                    </div>
+                    <div class="ppv-scanner-cell">${formatNumber(scanner.today_scans)}</div>
+                    <div class="ppv-scanner-cell">${formatNumber(scanner.week_scans)}</div>
+                    <div class="ppv-scanner-cell">${formatNumber(scanner.month_scans)}</div>
+                    <div class="ppv-scanner-cell ppv-scanner-total">${formatNumber(scanner.total_scans)}</div>
+                </div>
+            `;
+        });
+
+        // Untracked row (if any)
+        if (untracked.total_scans > 0) {
+            html += `
+                <div class="ppv-scanner-row ppv-scanner-untracked">
+                    <div class="ppv-scanner-cell ppv-scanner-name">
+                        ⚠️ ${T['untracked'] || 'Ohne Zuordnung'}
+                    </div>
+                    <div class="ppv-scanner-cell">${formatNumber(untracked.today_scans)}</div>
+                    <div class="ppv-scanner-cell">${formatNumber(untracked.week_scans)}</div>
+                    <div class="ppv-scanner-cell">-</div>
+                    <div class="ppv-scanner-cell ppv-scanner-total">${formatNumber(untracked.total_scans)}</div>
+                </div>
+            `;
+        }
+
+        html += '</div>';
+        $list.html(html);
+    }
 
     // ============================================================
     // 🚀 INIT
