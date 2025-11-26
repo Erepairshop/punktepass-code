@@ -1769,7 +1769,7 @@ class PPV_QR {
 
             // Show create scanner modal
             $('#ppv-new-scanner-btn').on('click', function(){
-                $('#ppv-scanner-modal').fadeIn(200).css('display', 'flex');
+                $('#ppv-scanner-modal').css('display', 'flex').hide().fadeIn(200);
                 $('#ppv-scanner-email').val('').focus();
                 $('#ppv-scanner-password').val('');
                 $('#ppv-scanner-error').hide();
@@ -1919,7 +1919,7 @@ class PPV_QR {
                 $('#ppv-change-filiale-select').val(currentStore);
                 $('#ppv-change-filiale-error').hide();
                 $('#ppv-change-filiale-success').hide();
-                $('#ppv-change-filiale-modal').fadeIn(200).css('display', 'flex');
+                $('#ppv-change-filiale-modal').css('display', 'flex').hide().fadeIn(200);
             });
 
             // Hide change filiale modal
