@@ -6864,6 +6864,15 @@ ppv-app-root {
     opacity: 0.8;
 }
 
+/* Scanner Info (who scanned) */
+.ppv-scan-detail.ppv-scan-scanner {
+    font-size: 10px;
+    color: var(--pp-primary);
+    margin-top: 2px;
+    opacity: 0.9;
+    font-style: italic;
+}
+
 /* Scan Points */
 .ppv-scan-points {
     font-weight: 700;

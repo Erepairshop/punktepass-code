@@ -131,9 +131,23 @@
            Number(sessionStorage.getItem('ppv_store_id')) || 0;
   }
 
+  // Get scanner ID (employee who is scanning)
+  function getScannerId() {
+    return window.PPV_STORE_DATA?.scanner_id ||
+           Number(sessionStorage.getItem('ppv_scanner_id')) || null;
+  }
+
+  // Get scanner name (email)
+  function getScannerName() {
+    return window.PPV_STORE_DATA?.scanner_name ||
+           sessionStorage.getItem('ppv_scanner_name') || null;
+  }
+
   // Save to session
   if (getStoreKey()) sessionStorage.setItem('ppv_store_key', getStoreKey());
   if (getStoreID()) sessionStorage.setItem('ppv_store_id', getStoreID());
+  if (getScannerId()) sessionStorage.setItem('ppv_scanner_id', getScannerId());
+  if (getScannerName()) sessionStorage.setItem('ppv_scanner_name', getScannerName());
 
   // ============================================================
   // TOAST
@@ -298,12 +312,19 @@
       // ✅ FIX: Show subtitle2 (date/time) for errors and successful scans with name
       const subtitle2Html = subtitle2 ? `<div class="ppv-scan-detail ppv-scan-time">${subtitle2}</div>` : '';
 
+      // 👤 Scanner info (who performed the scan)
+      const scannerName = log.scanner_name || null;
+      const scannerHtml = scannerName
+        ? `<div class="ppv-scan-detail ppv-scan-scanner">👤 ${scannerName}</div>`
+        : '';
+
       item.innerHTML = `
         ${avatarHtml}
         <div class="ppv-scan-info">
           <div class="ppv-scan-name">${displayName}</div>
           <div class="ppv-scan-detail">${subtitle}</div>
           ${subtitle2Html}
+          ${scannerHtml}
         </div>
         ${pointsHtml}
       `;
@@ -407,7 +428,9 @@
             store_key: getStoreKey(),
             points: 1,
             latitude: gps.latitude,
-            longitude: gps.longitude
+            longitude: gps.longitude,
+            scanner_id: getScannerId(),
+            scanner_name: getScannerName()
           })
         });
 
@@ -1359,7 +1382,9 @@
           store_key: getStoreKey(),
           points: 1,
           latitude: gps.latitude,
-          longitude: gps.longitude
+          longitude: gps.longitude,
+          scanner_id: getScannerId(),
+          scanner_name: getScannerName()
         })
       })
         .then(res => res.json())
