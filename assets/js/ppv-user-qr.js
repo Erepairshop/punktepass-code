@@ -136,8 +136,16 @@ async function loadTimedQR(userId, forceNew = false) {
       return;
     }
 
-    showStatus("❌ Netzwerkfehler beim Laden des QR-Codes", "error");
+    // No cache available
     hideLoading();
+    showOfflineBanner();
+
+    // Show helpful message based on offline status
+    if (!navigator.onLine) {
+      showStatus("📡 Offline - Bitte App einmal online laden, um QR-Code zu speichern", "error");
+    } else {
+      showStatus("❌ Netzwerkfehler - Bitte später erneut versuchen", "error");
+    }
   }
 }
 
@@ -286,17 +294,30 @@ async function cacheQRData(userId, data) {
   try {
     // Convert QR image to base64 for offline storage
     let qrBase64 = data.qr_url;
+    let cacheSuccess = false;
 
     // If it's not already a data URL, fetch and convert
     if (data.qr_url && !data.qr_url.startsWith('data:')) {
       try {
-        const response = await fetch(data.qr_url);
-        const blob = await response.blob();
-        qrBase64 = await blobToBase64(blob);
+        // Try fetching with CORS mode
+        const response = await fetch(data.qr_url, { mode: 'cors' });
+        if (response.ok) {
+          const blob = await response.blob();
+          qrBase64 = await blobToBase64(blob);
+          cacheSuccess = qrBase64.startsWith('data:');
+        }
       } catch (e) {
-        console.warn('Could not cache QR image:', e);
-        // Keep original URL as fallback
+        console.warn('Could not cache QR image (CORS?):', e);
+        // Try alternative: use Image element
+        try {
+          qrBase64 = await imageToBase64(data.qr_url);
+          cacheSuccess = qrBase64.startsWith('data:');
+        } catch (e2) {
+          console.warn('Image fallback also failed:', e2);
+        }
       }
+    } else {
+      cacheSuccess = true;
     }
 
     const cacheData = {
@@ -304,14 +325,42 @@ async function cacheQRData(userId, data) {
       qr_url: qrBase64,
       qr_value: data.qr_value,
       expires_at: data.expires_at,
-      cached_at: Math.floor(Date.now() / 1000)
+      cached_at: Math.floor(Date.now() / 1000),
+      is_base64: cacheSuccess
     };
 
     localStorage.setItem(QR_CACHE_KEY + '_' + userId, JSON.stringify(cacheData));
-    console.log('💾 QR cached for offline use');
+
+    if (cacheSuccess) {
+      console.log('💾 QR cached for offline use (base64)');
+    } else {
+      console.warn('⚠️ QR cached but image is URL only - offline display may not work');
+    }
   } catch (e) {
     console.warn('Failed to cache QR:', e);
   }
+}
+
+// Alternative method to convert image to base64 using canvas
+function imageToBase64(imgUrl) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = function() {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/png'));
+      } catch (e) {
+        reject(e);
+      }
+    };
+    img.onerror = reject;
+    img.src = imgUrl;
+  });
 }
 
 function loadFromCache(userId) {
