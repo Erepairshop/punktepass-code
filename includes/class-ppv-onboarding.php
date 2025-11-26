@@ -7,6 +7,14 @@
 
 if (!defined('ABSPATH')) exit;
 
+// DEBUG: Immediate file load check - this runs when file is included
+add_action('wp_head', function() {
+    echo "<!-- PPV_ONBOARDING FILE LOADED -->";
+}, 1);
+add_action('wp_footer', function() {
+    echo "<script>console.log('🟢 [PPV_ONBOARDING] FILE LOADED (top-level)');</script>";
+}, 1);
+
 if (!class_exists('PPV_Onboarding')) {
 
     class PPV_Onboarding {
