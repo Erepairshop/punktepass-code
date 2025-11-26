@@ -39,7 +39,7 @@
 | Inkonzisztens CSS változók | ~~keveredés~~ → egységes `--pp-primary` ✅ | ✅ |
 | Dark mode beágyazva light CSS-be | 18,000+ soros fájl, nehéz karbantartani | ⬜ |
 | Nincs `prefers-color-scheme` | Nem figyel a rendszer dark mode beállításra | ⬜ |
-| Tablet breakpoint hiányos | 640px-1024px között kevés stílus | ⬜ |
+| Tablet breakpoint hiányos | ~~hiányos~~ → 768-1024px breakpoint hozzáadva ✅ | ✅ |
 
 ### JavaScript
 | Probléma | Darabszám | Státusz |
@@ -47,12 +47,12 @@
 | Console.log hívások | ~~474 db~~ → 0 db ✅ | ✅ |
 | `var` használat | Több fájlban (helyett `const` / `let`) | ⬜ |
 | setInterval memory leak | 17 db interval nincs tisztítva | ⬜ |
-| Try/catch hiányzik | API hívásoknál sok helyen | ⬜ |
+| Try/catch hiányzik | ~~hiányzott~~ → 98 try blokk 27 fájlban ✅ | ✅ |
 
 ### Teljesítmény
 | Fájl | Méret | Javaslat | Státusz |
 |------|-------|----------|---------|
-| logo.png | 1.5MB | WebP-re cserélni (400KB) | ⬜ |
+| logo.png | 1.5MB | logo.webp (400KB) már létezik és használva ✅ | ✅ |
 | ppv-qr.js | 60KB+ | Darabolni kellene | ⬜ |
 | ppv-theme-light.css | 18KB | Critical CSS kivonni | ⬜ |
 
@@ -102,9 +102,9 @@
 
 ### ✨ Rövid táv (2-3 hét)
 - [x] ~~1. CSS változók egységesítése~~ ✅
-- [ ] 2. Képek optimalizálása (WebP)
-- [ ] 3. JS error handling javítása
-- [ ] 4. Tablet breakpointok
+- [x] ~~2. Képek optimalizálása (WebP)~~ ✅
+- [x] ~~3. JS error handling javítása~~ ✅
+- [x] ~~4. Tablet breakpointok~~ ✅
 
 ### 🎯 Közép táv (1 hónap)
 - [ ] 1. Dark mode refaktor

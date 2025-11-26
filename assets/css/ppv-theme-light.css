@@ -18480,3 +18480,176 @@ body.ppv-dark .ppv-redemption-status.error,
         justify-content: center;
     }
 }
+
+/* ==========================================================================
+   📱 TABLET BREAKPOINTS (768px - 1024px)
+   Added: 2025-11-26 - Better tablet support
+   ========================================================================== */
+
+/* Tablet landscape and small laptops */
+@media (min-width: 768px) and (max-width: 1024px) {
+    /* Main Dashboard Layout */
+    .ppv-dashboard-netto {
+        padding: 20px 24px;
+        max-width: 900px;
+    }
+
+    .ppv-dashboard-inner {
+        gap: 20px;
+    }
+
+    /* Stats Grid - 2 columns on tablet */
+    .ppv-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+
+    /* Store Cards - Better tablet layout */
+    .ppv-store-list {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+
+    .ppv-store-card-enhanced {
+        padding: 18px;
+    }
+
+    /* Rewards Grid */
+    .ppv-rewards-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 18px;
+    }
+
+    /* Points Header */
+    .ppv-points-header {
+        padding: 24px;
+    }
+
+    .ppv-points-header .big {
+        font-size: 48px;
+    }
+
+    /* Top 3 Grid */
+    .ppv-top3-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+    }
+
+    /* Tier Progress */
+    .ppv-tier-steps {
+        flex-wrap: nowrap;
+        gap: 12px;
+    }
+
+    .ppv-tier-step {
+        flex: 1;
+    }
+
+    /* My Points Tabs */
+    .ppv-mypoints-tabs {
+        gap: 12px;
+    }
+
+    .ppv-mypoints-tab {
+        padding: 14px 24px;
+        font-size: 15px;
+    }
+
+    /* Analytics */
+    .ppv-analytics-summary {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+    }
+
+    .ppv-summary-card {
+        padding: 18px;
+    }
+
+    .ppv-stores-breakdown {
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    /* Bottom Nav - Larger on tablet */
+    .ppv-bottom-nav {
+        max-width: 500px;
+        margin: 0 auto;
+        padding: 10px 20px;
+    }
+
+    .ppv-bottom-nav .nav-item {
+        padding: 10px 16px;
+    }
+
+    .ppv-bottom-nav .nav-icon {
+        font-size: 22px;
+    }
+
+    .ppv-bottom-nav .nav-label {
+        font-size: 12px;
+    }
+
+    /* Forms */
+    .ppv-form-group {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    /* Buttons */
+    .ppv-btn,
+    .ppv-btn-primary {
+        padding: 14px 28px;
+        font-size: 15px;
+    }
+
+    /* Modals */
+    .ppv-modal-content {
+        max-width: 600px;
+        padding: 28px;
+    }
+
+    /* QR Display */
+    .ppv-qr-display {
+        max-width: 350px;
+    }
+
+    /* Point Cards */
+    .ppv-point-card {
+        padding: 16px 18px;
+    }
+
+    /* Reward Cards */
+    .ppv-reward-card {
+        padding: 18px;
+    }
+}
+
+/* Tablet portrait specific adjustments */
+@media (min-width: 640px) and (max-width: 768px) {
+    .ppv-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .ppv-store-list {
+        grid-template-columns: 1fr;
+        max-width: 500px;
+        margin: 0 auto;
+    }
+
+    .ppv-analytics-summary {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .ppv-stores-breakdown {
+        grid-template-columns: 1fr;
+    }
+
+    .ppv-top3-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .ppv-tier-steps {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+}
