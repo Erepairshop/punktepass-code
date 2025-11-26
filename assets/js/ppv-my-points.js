@@ -423,11 +423,19 @@
    * ============================ */
   function renderPoints(container, json, lang, l) {
     log('🎨 renderPoints started');
-    
+
     const d = json.data || {};
     const total = d.total || 0;
     const next = d.remaining || 0;
     const progress = d.next_goal ? Math.min(100, ((d.next_goal - next) / d.next_goal) * 100) : 0;
+
+    // Tab labels
+    const tabLabels = {
+      de: { points: 'Meine Punkte', analytics: 'Analytics' },
+      hu: { points: 'Pontjaim', analytics: 'Statisztika' },
+      ro: { points: 'Punctele mele', analytics: 'Analiză' }
+    };
+    const tabs = tabLabels[lang] || tabLabels.de;
 
     // Offline banner
     const offlineBanner = isOnline ? '' : `
@@ -437,16 +445,14 @@
       </div>
     `;
 
-    // Build HTML with all strings from l (getLabels)
+    // Build HTML with TABS
     let html = offlineBanner + `
       <div class="ppv-dashboard-netto animate-in">
         <div class="ppv-dashboard-inner">
 
           <!-- HEADER -->
           <div class="ppv-points-header">
-
             <h2>${l.title}</h2>
-
             <div class="ppv-points-summary">
               <i class="ri-star-fill"></i>
               <span class="big">${total}</span>
@@ -458,48 +464,63 @@
           <!-- 🏆 TIER PROGRESS SECTION -->
           ${buildTierProgressHtml(d.tier, d.tiers, l, lang)}
 
-          <!-- ANALYTICS SECTION -->
-          <div id="ppv-analytics-section"></div>
+          <!-- 📑 TABS NAVIGATION -->
+          <div class="ppv-mypoints-tabs">
+            <button class="ppv-mypoints-tab active" data-tab="points">
+              <i class="ri-coins-fill"></i> ${tabs.points}
+            </button>
+            <button class="ppv-mypoints-tab" data-tab="analytics">
+              <i class="ri-bar-chart-2-fill"></i> ${tabs.analytics}
+            </button>
+          </div>
 
-          <!-- STATS GRID -->
-          <div class="ppv-stats-grid">
-            <div class="ppv-stat-card">
-              <i class="ri-line-chart-fill"></i>
-              <div class="label">${l.avg}</div>
-              <div class="value">${d.avg || 0}</div>
+          <!-- 📑 TAB CONTENT: POINTS -->
+          <div class="ppv-mypoints-tab-content active" id="ppv-tab-points">
+            <!-- STATS GRID -->
+            <div class="ppv-stats-grid">
+              <div class="ppv-stat-card">
+                <i class="ri-line-chart-fill"></i>
+                <div class="label">${l.avg}</div>
+                <div class="value">${d.avg || 0}</div>
+              </div>
+              <div class="ppv-stat-card">
+                <i class="ri-calendar-event-fill"></i>
+                <div class="label">${l.best_day}</div>
+                <div class="value">${d.top_day ? d.top_day.total + " • " + d.top_day.day : "-"}</div>
+              </div>
+              <div class="ppv-stat-card">
+                <i class="ri-store-2-fill"></i>
+                <div class="label">${l.top_store}</div>
+                <div class="value">${d.top_store ? d.top_store.store_name + " (" + d.top_store.total + ")" : "-"}</div>
+              </div>
             </div>
-            <div class="ppv-stat-card">
-              <i class="ri-calendar-event-fill"></i>
-              <div class="label">${l.best_day}</div>
-              <div class="value">${d.top_day ? d.top_day.total + " • " + d.top_day.day : "-"}</div>
+
+            <!-- REWARDS BY STORE -->
+            <div class="ppv-rewards-by-store">
+              <h3><i class="ri-store-2-fill"></i> ${l.rewards_by_store_title || 'Jutalmak boltok szerint'}</h3>
+              ${buildRewardsByStore(d.rewards_by_store || [], l)}
             </div>
-            <div class="ppv-stat-card">
-              <i class="ri-store-2-fill"></i>
-              <div class="label">${l.top_store}</div>
-              <div class="value">${d.top_store ? d.top_store.store_name + " (" + d.top_store.total + ")" : "-"}</div>
+
+            <!-- TOP 3 -->
+            <div class="ppv-top3">
+              <h3><i class="ri-trophy-fill"></i> ${l.top3}</h3>
+              <div class="ppv-top3-grid">
+                ${buildTop3Html(d.top3 || [], l)}
+              </div>
+            </div>
+
+            <!-- RECENT ACTIVITY -->
+            <div class="ppv-points-list">
+              <h3><i class="ri-time-fill"></i> ${l.recent}</h3>
+              ${buildEntriesHtml(d.entries || [], l)}
             </div>
           </div>
 
-         <!-- REWARDS BY STORE (ÚJ!) -->
-<div class="ppv-rewards-by-store">
-  <h3><i class="ri-store-2-fill"></i> ${l.rewards_by_store_title || 'Jutalmak boltok szerint'}</h3>
-  ${buildRewardsByStore(d.rewards_by_store || [], l)}
-</div>
-
-          <!-- TOP 3 -->
-          <div class="ppv-top3">
-            <h3><i class="ri-trophy-fill"></i> ${l.top3}</h3>
-            <div class="ppv-top3-grid">
-              ${buildTop3Html(d.top3 || [], l)}
-            </div>
+          <!-- 📑 TAB CONTENT: ANALYTICS -->
+          <div class="ppv-mypoints-tab-content" id="ppv-tab-analytics">
+            <div id="ppv-analytics-section"></div>
           </div>
 
-          <!-- RECENT ACTIVITY -->
-          <div class="ppv-points-list">
-            <h3><i class="ri-time-fill"></i> ${l.recent}</h3>
-            ${buildEntriesHtml(d.entries || [], l)}
-          </div>
-          
         </div>
       </div>
     `;
@@ -507,7 +528,10 @@
     container.innerHTML = html;
     log('✅ Render complete');
 
-    // Init analytics
+    // Init tab switching
+    initTabSwitching(container);
+
+    // Init analytics when tab is shown
     if (window.ppv_analytics) {
       setTimeout(() => {
         try {
@@ -518,6 +542,49 @@
         }
       }, 100);
     }
+  }
+
+  /** ============================
+   * 📑 TAB SWITCHING
+   * ============================ */
+  function initTabSwitching(container) {
+    const tabs = container.querySelectorAll('.ppv-mypoints-tab');
+    const contents = container.querySelectorAll('.ppv-mypoints-tab-content');
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const tabName = tab.dataset.tab;
+
+        // Update active tab
+        tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+
+        // Update active content
+        contents.forEach(c => c.classList.remove('active'));
+        const targetContent = container.querySelector(`#ppv-tab-${tabName}`);
+        if (targetContent) {
+          targetContent.classList.add('active');
+        }
+
+        // Save to localStorage
+        try {
+          localStorage.setItem('ppv_mypoints_tab', tabName);
+        } catch (e) {}
+
+        log(`📑 Tab switched to: ${tabName}`);
+      });
+    });
+
+    // Restore saved tab
+    try {
+      const savedTab = localStorage.getItem('ppv_mypoints_tab');
+      if (savedTab) {
+        const savedTabBtn = container.querySelector(`.ppv-mypoints-tab[data-tab="${savedTab}"]`);
+        if (savedTabBtn) {
+          savedTabBtn.click();
+        }
+      }
+    } catch (e) {}
   }
 
   /** ============================
