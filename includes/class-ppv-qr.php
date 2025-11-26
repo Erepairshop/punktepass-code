@@ -2833,7 +2833,10 @@ class PPV_QR {
                 l.created_at,
                 l.user_id,
                 l.message,
-                l.type,
+                l.status,
+                l.points_change,
+                l.reward_code,
+                l.ip_address,
                 u.email,
                 u.first_name,
                 u.last_name
@@ -2844,9 +2847,9 @@ class PPV_QR {
             LIMIT 1000
         ", $store_id));
 
-        // Build CSV
+        // Build CSV with BOM for Excel UTF-8 support
         $csv_lines = [];
-        $csv_lines[] = 'Datum,Zeit,Kunde,Email,Punkte,Status,Nachricht';
+        $csv_lines[] = 'Datum,Zeit,Kunde,Email,Punkte,Status,Prämie,IP,Nachricht';
 
         foreach ($logs as $log) {
             $created = strtotime($log->created_at);
@@ -2858,21 +2861,24 @@ class PPV_QR {
             $customer = trim("$first $last") ?: 'Unbekannt';
             $email = $log->email ?: '-';
 
-            // Extract points from message
-            $points = '-';
-            if (preg_match('/\+(\d+)/', $log->message, $m)) {
-                $points = $m[1];
-            }
+            // Use direct points_change field
+            $points = isset($log->points_change) && $log->points_change !== null
+                ? intval($log->points_change)
+                : '-';
 
-            $status = $log->type === 'qr_scan' ? 'OK' : 'Fehler';
-            $message = str_replace([',', "\n", "\r"], [';', ' ', ' '], $log->message);
+            // Use status field directly
+            $status = ($log->status === 'ok' || $log->status === 'success') ? 'OK' : ($log->status ?: '-');
+            $reward = $log->reward_code ?: '-';
+            $ip = $log->ip_address ?: '-';
+            $message = str_replace([',', "\n", "\r", '"'], [';', ' ', ' ', "'"], $log->message ?? '');
 
-            $csv_lines[] = sprintf('"%s","%s","%s","%s","%s","%s","%s"',
-                $date, $time, $customer, $email, $points, $status, $message
+            $csv_lines[] = sprintf('"%s","%s","%s","%s","%s","%s","%s","%s","%s"',
+                $date, $time, $customer, $email, $points, $status, $reward, $ip, $message
             );
         }
 
-        $csv_content = implode("\n", $csv_lines);
+        // Add BOM for Excel UTF-8 support (German umlauts)
+        $csv_content = "\xEF\xBB\xBF" . implode("\n", $csv_lines);
         $store_name = sanitize_title($session_store->name ?? 'pos');
         $filename = "pos-{$store_name}-{$filename_suffix}.csv";
 
