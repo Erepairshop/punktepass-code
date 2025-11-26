@@ -10,6 +10,31 @@
 (function() {
     'use strict';
 
+    // ============================================================
+    // 🚫 TURBO CACHE FIX - Prevent stale data on back navigation
+    // ============================================================
+    (function setupTurboCacheFix() {
+        // 1. Add meta tag to head (if not already there)
+        if (!document.querySelector('meta[name="turbo-cache-control"]')) {
+            const meta = document.createElement('meta');
+            meta.name = 'turbo-cache-control';
+            meta.content = 'no-cache';
+            document.head.appendChild(meta);
+            console.log('[Profile] 🚫 Turbo cache disabled via meta tag');
+        }
+
+        // 2. Prevent Turbo from caching this page snapshot
+        document.addEventListener('turbo:before-cache', function() {
+            // Check if we're on a profile page
+            const profileForm = document.getElementById('ppv-profile-form');
+            if (profileForm) {
+                console.log('[Profile] 🚫 Clearing form before Turbo cache');
+                // Mark form as not bound so it reinitializes on restore
+                profileForm.dataset.ppvBound = 'false';
+            }
+        }, { once: false });
+    })();
+
     class PPVProfileForm {
         constructor() {
             this.$form = document.getElementById('ppv-profile-form');
@@ -541,6 +566,14 @@
     // 🚀 Turbo: Re-init after navigation
     document.addEventListener('turbo:load', initProfileForm);
     document.addEventListener('turbo:render', initProfileForm);
+
+    // 🔄 Browser back/forward cache (bfcache) detection - force reload for fresh data
+    window.addEventListener('pageshow', function(event) {
+        if (event.persisted) {
+            console.log('[Profile] 🔄 Page restored from bfcache - reloading for fresh data');
+            window.location.reload();
+        }
+    });
 
 })();
 
