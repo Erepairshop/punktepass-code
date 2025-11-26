@@ -7,11 +7,24 @@
 
 if (!defined('ABSPATH')) exit;
 
+// DEBUG: Immediate file load check - this runs when file is included
+add_action('wp_head', function() {
+    echo "<!-- PPV_ONBOARDING FILE LOADED -->";
+}, 1);
+add_action('wp_footer', function() {
+    echo "<script>console.log('🟢 [PPV_ONBOARDING] FILE LOADED (top-level)');</script>";
+}, 1);
+
 if (!class_exists('PPV_Onboarding')) {
 
     class PPV_Onboarding {
 
         public static function hooks() {
+            // DEBUG: Add footer log to confirm hooks() runs
+            add_action('wp_footer', function() {
+                echo "<script>console.log('🔍 [PPV_ONBOARDING] hooks() was called - file loaded OK');</script>";
+            }, 1);
+
             // DB migration - ensure columns exist
             add_action('init', [__CLASS__, 'ensure_db_columns'], 5);
 
@@ -60,14 +73,29 @@ if (!class_exists('PPV_Onboarding')) {
          * Enqueue onboarding JS & localize config
          */
         public static function enqueue_assets() {
+            // DEBUG: Add inline console log to see if this method runs at all
+            add_action('wp_footer', function() {
+                $session_vars = json_encode([
+                    'ppv_store_id' => $_SESSION['ppv_store_id'] ?? null,
+                    'ppv_vendor_store_id' => $_SESSION['ppv_vendor_store_id'] ?? null,
+                    'ppv_current_filiale_id' => $_SESSION['ppv_current_filiale_id'] ?? null,
+                    'ppv_user_type' => $_SESSION['ppv_user_type'] ?? null,
+                ]);
+                echo "<script>console.log('🔍 [PPV_ONBOARDING_PHP] enqueue_assets() CALLED, session:', {$session_vars});</script>";
+            }, 1);
+
             // ✅ SCANNER USERS: Don't load onboarding
             if (class_exists('PPV_Permissions') && PPV_Permissions::is_scanner_user()) {
+                ppv_log("🔍 [PPV_ONBOARDING] Skip: Scanner user");
                 return;
             }
 
             // Csak bejelentkezett handler-eknek
             $auth = self::check_auth();
+            ppv_log("🔍 [PPV_ONBOARDING] Auth check: " . json_encode($auth));
+
             if (!$auth['valid'] || $auth['type'] !== 'ppv_stores') {
+                ppv_log("🔍 [PPV_ONBOARDING] Skip: Auth not valid or not ppv_stores type");
                 return;
             }
 
@@ -75,28 +103,66 @@ if (!class_exists('PPV_Onboarding')) {
             $store = self::get_store($store_id);
 
             if (!$store) {
+                ppv_log("🔍 [PPV_ONBOARDING] Skip: Store not found for ID={$store_id}");
                 return;
             }
 
             // ✅ ONLY SHOW FOR TRIAL STORES - Active stores don't need onboarding
             $subscription_status = $store->subscription_status ?? 'trial';
+            ppv_log("🔍 [PPV_ONBOARDING] Store #{$store_id} subscription_status='{$subscription_status}'");
+
             if ($subscription_status !== 'trial') {
                 // Active or other status - skip onboarding
+                ppv_log("🔍 [PPV_ONBOARDING] Skip: subscription_status is NOT 'trial'");
                 return;
             }
 
             // ⏰ Check if onboarding is postponed (8 hours delay)
             $postponed_until = $store->onboarding_postponed_until ?? null;
+            ppv_log("🔍 [PPV_ONBOARDING] postponed_until='{$postponed_until}', dismissed=" . ($store->onboarding_dismissed ?? 0) . ", completed=" . ($store->onboarding_completed ?? 0));
+
             if (!empty($postponed_until) && strtotime($postponed_until) > time()) {
                 // Still postponed - don't show onboarding
+                ppv_log("🔍 [PPV_ONBOARDING] Skip: Postponed until {$postponed_until}");
                 return;
             }
 
-            // Enqueue JS
+            ppv_log("✅ [PPV_ONBOARDING] LOADING onboarding for store #{$store_id}");
+
+            // DEBUG: Inline log to browser console
+            add_action('wp_footer', function() use ($store_id, $store, $subscription_status) {
+                echo "<script>console.log('🔍 [PPV_ONBOARDING_PHP] Store #{$store_id}, subscription_status={$subscription_status}, dismissed=" . ($store->onboarding_dismissed ?? 0) . ", completed=" . ($store->onboarding_completed ?? 0) . ", postponed=" . ($store->onboarding_postponed_until ?? 'null') . "');</script>";
+            }, 1);
+
+            // Enqueue Leaflet CSS & JS for interactive map
+            wp_enqueue_style(
+                'leaflet',
+                'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
+                [],
+                '1.9.4'
+            );
+            wp_enqueue_script(
+                'leaflet',
+                'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
+                [],
+                '1.9.4',
+                true
+            );
+
+            // Enqueue Ably shared manager if available
+            if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+                PPV_Ably::enqueue_scripts();
+            }
+
+            // Enqueue JS (depends on ably-manager if available)
+            $onboarding_deps = ['jquery', 'leaflet'];
+            if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+                $onboarding_deps[] = 'ppv-ably-manager';
+            }
             wp_enqueue_script(
                 'ppv-onboarding',
                 PPV_PLUGIN_URL . 'assets/js/ppv-onboarding.js',
-                ['jquery'],
+                $onboarding_deps,
                 filemtime(PPV_PLUGIN_DIR . 'assets/js/ppv-onboarding.js'),
                 true
             );
@@ -105,7 +171,7 @@ if (!class_exists('PPV_Onboarding')) {
             $progress = self::calculate_progress($store);
 
             // Config localize
-            wp_localize_script('ppv-onboarding', 'ppv_onboarding', [
+            $onboarding_config = [
                 'rest_url' => rest_url('ppv/v1/onboarding/'),
                 'nonce' => wp_create_nonce('wp_rest'),
                 'store_id' => $store_id,
@@ -114,7 +180,17 @@ if (!class_exists('PPV_Onboarding')) {
                 'welcome_shown' => (bool) ($store->onboarding_welcome_shown ?? 0),
                 'is_qr_center' => (strpos($_SERVER['REQUEST_URI'] ?? '', 'qr-center') !== false),
                 'sticky_hidden' => false
-            ]);
+            ];
+
+            // Add Ably config if available (for real-time updates)
+            if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+                $onboarding_config['ably'] = [
+                    'key' => PPV_Ably::get_key(),
+                    'channel' => 'store-' . $store_id
+                ];
+            }
+
+            wp_localize_script('ppv-onboarding', 'ppv_onboarding', $onboarding_config);
         }
 
         /**
@@ -233,23 +309,39 @@ if (!class_exists('PPV_Onboarding')) {
             global $wpdb;
 
             if ($step === 'profile_lite') {
+                // Prepare opening hours JSON
+                $opening_hours = [];
+                if (!empty($value['opening_hours']) && is_array($value['opening_hours'])) {
+                    foreach ($value['opening_hours'] as $day => $hours) {
+                        $opening_hours[sanitize_key($day)] = [
+                            'von' => sanitize_text_field($hours['von'] ?? ''),
+                            'bis' => sanitize_text_field($hours['bis'] ?? ''),
+                            'closed' => intval($hours['closed'] ?? 0)
+                        ];
+                    }
+                }
+
                 // Update profile fields
                 $wpdb->update(
                     $wpdb->prefix . 'ppv_stores',
                     [
-                        'name' => sanitize_text_field($value['company_name'] ?? ''),
+                        'name' => sanitize_text_field($value['shop_name'] ?? ''),
+                        'company_name' => sanitize_text_field($value['company_name'] ?? ''),
                         'country' => sanitize_text_field($value['country'] ?? 'HU'),
                         'address' => sanitize_text_field($value['address'] ?? ''),
                         'city' => sanitize_text_field($value['city'] ?? ''),
                         'plz' => sanitize_text_field($value['zip'] ?? ''),
-                        'phone' => sanitize_text_field($value['phone'] ?? ''),
                         'latitude' => floatval($value['latitude'] ?? 0),
                         'longitude' => floatval($value['longitude'] ?? 0),
+                        'timezone' => sanitize_text_field($value['timezone'] ?? 'Europe/Budapest'),
+                        'opening_hours' => json_encode($opening_hours),
                     ],
                     ['id' => $auth['store_id']],
-                    ['%s', '%s', '%s', '%s', '%s', '%s', '%f', '%f'],
+                    ['%s', '%s', '%s', '%s', '%s', '%s', '%f', '%f', '%s', '%s'],
                     ['%d']
                 );
+
+                ppv_log("✅ [PPV_ONBOARDING] Profile saved for store #{$auth['store_id']}");
             } elseif ($step === 'reward') {
                 // Create reward (prémium)
                 $wpdb->insert(
@@ -283,6 +375,11 @@ if (!class_exists('PPV_Onboarding')) {
             // Get updated progress
             $store = self::get_store($auth['store_id']);
             $progress = self::calculate_progress($store);
+
+            // 📡 Trigger Ably real-time update for onboarding progress
+            if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+                PPV_Ably::trigger_onboarding_progress($auth['store_id'], $progress);
+            }
 
             return rest_ensure_response([
                 'success' => true,
@@ -416,8 +513,24 @@ if (!class_exists('PPV_Onboarding')) {
          * Progress számítás
          */
         private static function calculate_progress($store) {
+            // Check if profile is complete:
+            // - Shop name (name)
+            // - Address (address + city)
+            // - Coordinates (latitude + longitude)
+            // - Opening hours
+            // - Timezone
+            $has_name = !empty($store->name);
+            $has_address = !empty($store->address) && !empty($store->city);
+            $has_coords = !empty($store->latitude) && !empty($store->longitude) &&
+                          floatval($store->latitude) != 0 && floatval($store->longitude) != 0;
+            $has_hours = !empty($store->opening_hours) && $store->opening_hours !== '[]' && $store->opening_hours !== '{}';
+            $has_timezone = !empty($store->timezone);
+
+            // Profile is complete only if ALL required fields are filled
+            $profile_complete = $has_name && $has_address && $has_coords && $has_hours && $has_timezone;
+
             $steps = [
-                'profile_lite' => !empty($store->name) && !empty($store->address),
+                'profile_lite' => $profile_complete,
                 'reward' => self::has_reward($store->id)
             ];
 
@@ -430,7 +543,15 @@ if (!class_exists('PPV_Onboarding')) {
                 'completed' => $completed,
                 'total' => $total,
                 'percentage' => $percentage,
-                'is_complete' => $percentage >= 100
+                'is_complete' => $percentage >= 100,
+                // Debug info
+                'profile_details' => [
+                    'has_name' => $has_name,
+                    'has_address' => $has_address,
+                    'has_coords' => $has_coords,
+                    'has_hours' => $has_hours,
+                    'has_timezone' => $has_timezone
+                ]
             ];
         }
 
@@ -464,6 +585,9 @@ if (!class_exists('PPV_Onboarding')) {
             if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
                 @session_start();
             }
+
+            // Debug: Session state
+            ppv_log("🔍 [PPV_ONBOARDING] check_auth() - session vars: ppv_current_filiale_id=" . ($_SESSION['ppv_current_filiale_id'] ?? 'EMPTY') . ", ppv_store_id=" . ($_SESSION['ppv_store_id'] ?? 'EMPTY') . ", ppv_vendor_store_id=" . ($_SESSION['ppv_vendor_store_id'] ?? 'EMPTY') . ", ppv_user_type=" . ($_SESSION['ppv_user_type'] ?? 'EMPTY'));
 
             // 🏪 FILIALE SUPPORT: Check ppv_current_filiale_id FIRST
             if (!empty($_SESSION['ppv_current_filiale_id'])) {

@@ -1,20 +1,22 @@
 /**
  * PunktePass – Prämien Management Frontend
- * Version: 1.1 – FIXED + DEBUG
+ * Version: 2.0 – MODERN DESIGN
  */
 
-console.log("✅ PPV Rewards Management JS v1.1 loaded");
+console.log("✅ PPV Rewards Management JS v2.0 loaded");
 
 document.addEventListener("DOMContentLoaded", function () {
 
   const base = ppv_rewards_mgmt?.base || "/wp-json/ppv/v1/";
   const storeID = ppv_rewards_mgmt?.store_id || window.PPV_STORE_ID || 0;
 
-
   const form = document.getElementById("ppv-reward-form");
+  const formWrapper = document.getElementById("ppv-reward-form-wrapper");
   const listContainer = document.getElementById("ppv-rewards-list");
   const saveBtn = document.getElementById("save-btn");
   const cancelBtn = document.getElementById("cancel-btn");
+  const toggleFormBtn = document.getElementById("ppv-toggle-form");
+  const rewardsCountEl = document.getElementById("ppv-rewards-count");
 
   console.log("🔧 Config:", { base, storeID, form, listContainer });
 
@@ -27,6 +29,19 @@ document.addEventListener("DOMContentLoaded", function () {
   let editID = 0;
 
   const L = window.ppv_lang || {};
+
+  /* ============================================================
+   * 🎯 TOGGLE FORM VISIBILITY
+   * ============================================================ */
+  if (toggleFormBtn && formWrapper) {
+    toggleFormBtn.addEventListener("click", function() {
+      const isVisible = formWrapper.style.display !== "none";
+      formWrapper.style.display = isVisible ? "none" : "block";
+      toggleFormBtn.innerHTML = isVisible
+        ? '<i class="ri-add-line"></i><span>' + (L.rewards_add_new || 'Új jutalom') + '</span>'
+        : '<i class="ri-close-line"></i><span>' + (L.rewards_form_cancel || 'Mégse') + '</span>';
+    });
+  }
 
   /* ============================================================
    * 🧩 TOAST HELPER
@@ -85,29 +100,97 @@ document.addEventListener("DOMContentLoaded", function () {
 
       if (!json?.rewards || json.rewards.length === 0) {
         console.log("ℹ️ Nincsenek prémiumok");
-        listContainer.innerHTML = "<p style='text-align:center;color:#999;'>ℹ️ " + (L.rewards_form_none || "Nincsenek jutalmak.") + "</p>";
+        if (rewardsCountEl) rewardsCountEl.textContent = "0";
+        listContainer.innerHTML = `
+          <div class="ppv-empty-state">
+            <i class="ri-gift-line"></i>
+            <p>${L.rewards_form_none || "Nincsenek jutalmak. Kattints az 'Új jutalom' gombra a létrehozáshoz!"}</p>
+          </div>
+        `;
         return;
       }
 
       console.log("✅ Prémiumok betöltve:", json.rewards.length);
-      
+
+      // Update rewards count
+      if (rewardsCountEl) {
+        rewardsCountEl.textContent = json.rewards.length;
+      }
+
       listContainer.innerHTML = "";
       json.rewards.forEach((r) => {
-        console.log("  🎁 Prémium:", r.title, "Pontok:", r.required_points);
-        
+        console.log("  🎁 Prémium:", r.title, "Pontok:", r.required_points, "Kampány:", r.is_campaign);
+
+        // 📅 Campaign badge and date info
+        const isCampaign = r.is_campaign == 1;
+        const campaignBadge = isCampaign
+          ? `<span class="ppv-reward-campaign-badge"><i class="ri-calendar-event-fill"></i> ${L.rewards_campaign_badge || 'Kampány'}</span>`
+          : '';
+
+        let dateInfo = '';
+        if (isCampaign && (r.start_date || r.end_date)) {
+          const startStr = r.start_date ? formatDate(r.start_date) : '∞';
+          const endStr = r.end_date ? formatDate(r.end_date) : '∞';
+          dateInfo = `<div class="ppv-reward-dates">
+            <i class="ri-calendar-line"></i> ${startStr} → ${endStr}
+          </div>`;
+        }
+
+        // Get action type label
+        const actionTypeLabels = {
+          'discount_percent': L.rewards_type_percent || 'Kedvezmény',
+          'discount_fixed': L.rewards_type_fixed || 'Fix kedvezmény',
+          'free_product': L.rewards_type_free || 'Ingyenes termék'
+        };
+        const actionLabel = actionTypeLabels[r.action_type] || r.action_type;
+
+        // Format value display
+        let valueDisplay = '';
+        if (r.action_type === 'discount_percent') {
+          valueDisplay = `${r.action_value}%`;
+        } else if (r.action_type === 'free_product') {
+          valueDisplay = r.free_product || L.rewards_free_product || 'Ingyenes';
+        } else {
+          valueDisplay = `${r.action_value} ${r.currency || 'EUR'}`;
+        }
+
         const card = document.createElement("div");
-        card.className = "ppv-reward-item glass-card";
+        card.className = "ppv-reward-card";
         card.innerHTML = `
-          <h4>${escapeHtml(r.title)}</h4>
-          <p>${escapeHtml(r.description || "")}</p>
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; flex-wrap: wrap; gap: 8px;">
-            <small style="color:#00e6ff;"><strong>⭐ ${r.required_points} ${L.rewards_points_label || 'Pontok'}</strong></small>
-            <small style="color:#999;">➕ ${r.points_given || 0} ${L.rewards_points_given_label || 'Pontok adott'}</small>
-            <small style="color:#999;">${r.action_type || ""}: ${r.action_value || ""} ${r.currency || ''}</small>
+          <div class="ppv-reward-card-header">
+            <h4 class="ppv-reward-card-title">
+              <i class="ri-gift-line"></i>
+              ${escapeHtml(r.title)}
+            </h4>
+            ${campaignBadge}
           </div>
-          <div style="display:flex; gap:8px; margin-top:12px;">
-            <button class="ppv-btn-outline ppv-edit" data-id="${r.id}" style="flex:1;">✏️ ${L.rewards_btn_edit || 'Szerkesztés'}</button>
-            <button class="ppv-btn-outline ppv-delete" data-id="${r.id}" style="flex:1; color:#ef4444; border-color:#ef4444;">🗑️ ${L.rewards_btn_delete || 'Törlés'}</button>
+          <div class="ppv-reward-card-body">
+            ${r.description ? `<p class="ppv-reward-description">${escapeHtml(r.description)}</p>` : ''}
+            ${dateInfo}
+            <div class="ppv-reward-stats">
+              <div class="ppv-reward-stat points">
+                <i class="ri-star-fill"></i>
+                <span>${r.required_points} ${L.rewards_points_label || 'pont'}</span>
+              </div>
+              <div class="ppv-reward-stat bonus">
+                <i class="ri-add-circle-fill"></i>
+                <span>+${r.points_given || 0}</span>
+              </div>
+              <div class="ppv-reward-stat value">
+                <i class="ri-price-tag-3-fill"></i>
+                <span>${valueDisplay}</span>
+              </div>
+            </div>
+            <div class="ppv-reward-card-actions">
+              <button class="ppv-reward-btn ppv-reward-btn-edit ppv-edit" data-id="${r.id}">
+                <i class="ri-edit-line"></i>
+                ${L.rewards_btn_edit || 'Szerkesztés'}
+              </button>
+              <button class="ppv-reward-btn ppv-reward-btn-delete ppv-delete" data-id="${r.id}">
+                <i class="ri-delete-bin-line"></i>
+                ${L.rewards_btn_delete || 'Törlés'}
+              </button>
+            </div>
           </div>
         `;
         listContainer.appendChild(card);
@@ -130,6 +213,11 @@ document.addEventListener("DOMContentLoaded", function () {
       const targetStoreSelect = document.getElementById("reward-target-store");
       const applyAllCheckbox = document.getElementById("reward-apply-all");
 
+      // 📅 Campaign fields
+      const isCampaignCheckbox = document.getElementById("reward-is-campaign");
+      const startDateInput = document.getElementById("reward-start-date");
+      const endDateInput = document.getElementById("reward-end-date");
+
       const body = {
         store_id: storeID,
         title: form.title.value.trim(),
@@ -140,6 +228,10 @@ document.addEventListener("DOMContentLoaded", function () {
         action_value: form.action_value.value.trim(),
         free_product: document.getElementById("reward-free-product-name")?.value.trim() || "",
         free_product_value: parseFloat(document.getElementById("reward-free-product-value")?.value || 0),
+        // 📅 Campaign options
+        is_campaign: isCampaignCheckbox?.checked ? 1 : 0,
+        start_date: startDateInput?.value || null,
+        end_date: endDateInput?.value || null,
         // 🏢 Filiale options
         target_store_id: targetStoreSelect?.value || "current",
         apply_to_all: applyAllCheckbox?.checked || false
@@ -207,13 +299,40 @@ document.addEventListener("DOMContentLoaded", function () {
           if (freeProductNameInput) freeProductNameInput.value = reward.free_product || "";
           if (freeProductValueInput) freeProductValueInput.value = reward.free_product_value || 0;
 
+          // 📅 Campaign fields
+          const isCampaignCheckbox = document.getElementById("reward-is-campaign");
+          const startDateInput = document.getElementById("reward-start-date");
+          const endDateInput = document.getElementById("reward-end-date");
+          const campaignDateFields = document.getElementById("campaign-date-fields");
+
+          if (isCampaignCheckbox) {
+            isCampaignCheckbox.checked = reward.is_campaign == 1;
+            if (campaignDateFields) {
+              if (reward.is_campaign == 1) {
+                campaignDateFields.classList.add("show");
+              } else {
+                campaignDateFields.classList.remove("show");
+              }
+            }
+          }
+          if (startDateInput) startDateInput.value = reward.start_date || "";
+          if (endDateInput) endDateInput.value = reward.end_date || "";
+
           // Trigger field visibility update
           toggleRewardFields();
 
-          saveBtn.textContent = "💾 " + (L.rewards_btn_update || 'Frissítés');
-          cancelBtn.style.display = "block";
-          
-          form.scrollIntoView({ behavior: "smooth" });
+          // Update button and show form
+          saveBtn.innerHTML = '<i class="ri-save-line"></i><span>' + (L.rewards_btn_update || 'Frissítés') + '</span>';
+
+          // Show form wrapper
+          if (formWrapper) {
+            formWrapper.style.display = "block";
+          }
+          if (toggleFormBtn) {
+            toggleFormBtn.innerHTML = '<i class="ri-close-line"></i><span>' + (L.rewards_form_cancel || 'Mégse') + '</span>';
+          }
+
+          formWrapper.scrollIntoView({ behavior: "smooth" });
         } else {
           console.error("❌ Prémium nem találva:", id);
         }
@@ -267,14 +386,43 @@ document.addEventListener("DOMContentLoaded", function () {
     editMode = false;
     editID = 0;
     form.reset();
-    saveBtn.textContent = "💾 " + (L.rewards_form_save || 'Mentés');
-    cancelBtn.style.display = "none";
+    saveBtn.innerHTML = '<i class="ri-save-line"></i><span>' + (L.rewards_form_save || 'Mentés') + '</span>';
 
     // 🏢 Reset filiale selector
     const targetStoreSelect = document.getElementById("reward-target-store");
     const applyAllCheckbox = document.getElementById("reward-apply-all");
     if (targetStoreSelect) targetStoreSelect.value = "current";
     if (applyAllCheckbox) applyAllCheckbox.checked = false;
+
+    // 📅 Reset campaign fields
+    const isCampaignCheckbox = document.getElementById("reward-is-campaign");
+    const campaignDateFields = document.getElementById("campaign-date-fields");
+    if (isCampaignCheckbox) isCampaignCheckbox.checked = false;
+    if (campaignDateFields) campaignDateFields.classList.remove("show");
+
+    // Hide form wrapper if not editing
+    if (formWrapper && !editMode) {
+      formWrapper.style.display = "none";
+      if (toggleFormBtn) {
+        toggleFormBtn.innerHTML = '<i class="ri-add-line"></i><span>' + (L.rewards_add_new || 'Új jutalom') + '</span>';
+      }
+    }
+  }
+
+  /* ============================================================
+   * 📅 CAMPAIGN CHECKBOX TOGGLE
+   * ============================================================ */
+  const campaignCheckbox = document.getElementById("reward-is-campaign");
+  const campaignDateFieldsDiv = document.getElementById("campaign-date-fields");
+
+  if (campaignCheckbox && campaignDateFieldsDiv) {
+    campaignCheckbox.addEventListener("change", function() {
+      if (this.checked) {
+        campaignDateFieldsDiv.classList.add("show");
+      } else {
+        campaignDateFieldsDiv.classList.remove("show");
+      }
+    });
   }
 
   /* ============================================================
@@ -284,6 +432,19 @@ document.addEventListener("DOMContentLoaded", function () {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  /* ============================================================
+   * 📅 FORMAT DATE
+   * ============================================================ */
+  function formatDate(dateStr) {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('hu-HU', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
   }
 
   /* ============================================================
@@ -336,39 +497,41 @@ document.addEventListener("DOMContentLoaded", function () {
   let pollInterval = null;
 
   function initRealtime() {
-    if (config.ably && config.ably.key && typeof Ably !== 'undefined') {
-      console.log('📡 [REWARDS-MGMT] Initializing Ably real-time...');
+    if (config.ably && config.ably.key && window.PPV_ABLY_MANAGER) {
+      console.log('📡 [REWARDS-MGMT] Initializing Ably via shared manager...');
 
-      const ably = new Ably.Realtime({ key: config.ably.key });
-      const channel = ably.channels.get(config.ably.channel);
+      const manager = window.PPV_ABLY_MANAGER;
 
-      ably.connection.on('connected', () => {
-        console.log('📡 [REWARDS-MGMT] Ably connected');
-        // Stop polling if running
-        if (pollInterval) {
-          clearInterval(pollInterval);
-          pollInterval = null;
+      // Initialize shared connection
+      if (!manager.init(config.ably)) {
+        console.log('📡 [REWARDS-MGMT] Shared manager init failed, using polling');
+        startPolling();
+        return;
+      }
+
+      // Listen for connection state changes
+      manager.onStateChange((state) => {
+        if (state === 'connected') {
+          console.log('📡 [REWARDS-MGMT] Ably connected via shared manager');
+          // Stop polling if running
+          if (pollInterval) {
+            clearInterval(pollInterval);
+            pollInterval = null;
+          }
+        } else if (state === 'disconnected' || state === 'failed') {
+          console.log('📡 [REWARDS-MGMT] Ably disconnected, starting polling');
+          startPolling();
         }
       });
 
-      ably.connection.on('disconnected', () => {
-        console.log('📡 [REWARDS-MGMT] Ably disconnected, starting polling');
-        startPolling();
-      });
-
-      ably.connection.on('failed', (err) => {
-        console.log('📡 [REWARDS-MGMT] Ably failed:', err);
-        startPolling();
-      });
-
-      // 📡 Handle reward updates
-      channel.subscribe('reward-update', (message) => {
+      // 📡 Handle reward updates via shared manager
+      manager.subscribe(config.ably.channel, 'reward-update', (message) => {
         console.log('📡 [REWARDS-MGMT] Reward update received:', message.data);
         showToast(`🎁 Prämie ${message.data.action === 'created' ? 'erstellt' : message.data.action === 'updated' ? 'aktualisiert' : 'gelöscht'}`, 'info');
         loadRewards();
-      });
+      }, 'rewards-mgmt');
 
-      console.log('📡 [REWARDS-MGMT] Ably initialized');
+      console.log('📡 [REWARDS-MGMT] Ably initialized via shared manager');
     } else {
       console.log('🔄 [REWARDS-MGMT] Ably not available, using polling');
       startPolling();

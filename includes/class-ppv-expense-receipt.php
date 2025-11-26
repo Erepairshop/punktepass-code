@@ -29,7 +29,7 @@ class PPV_Expense_Receipt {
 
         // 1️⃣ Beváltás adatainak lekérése
         $redeem = $wpdb->get_row($wpdb->prepare("
-            SELECT 
+            SELECT
                 r.id,
                 r.user_id,
                 r.store_id,
@@ -38,6 +38,8 @@ class PPV_Expense_Receipt {
                 r.actual_amount,
                 r.redeemed_at,
                 rw.title as reward_title,
+                rw.action_value,
+                rw.free_product_value,
                 u.email as user_email,
                 u.first_name,
                 u.last_name,
@@ -123,7 +125,7 @@ class PPV_Expense_Receipt {
 
         // 2️⃣ Beváltások lekérése a hónapra
         $items = $wpdb->get_results($wpdb->prepare("
-            SELECT 
+            SELECT
                 r.id,
                 r.user_id,
                 r.store_id,
@@ -134,7 +136,9 @@ class PPV_Expense_Receipt {
                 u.email AS user_email,
                 u.first_name,
                 u.last_name,
-                rw.title AS reward_title
+                rw.title AS reward_title,
+                rw.action_value,
+                rw.free_product_value
             FROM {$wpdb->prefix}ppv_rewards_redeemed r
             LEFT JOIN {$wpdb->prefix}ppv_users u ON r.user_id = u.id
             LEFT JOIN {$wpdb->prefix}ppv_rewards rw ON r.reward_id = rw.id
@@ -155,7 +159,7 @@ class PPV_Expense_Receipt {
 
         // 3️⃣ Nyelvválasztás a store country alapján
         $lang = strtoupper($store['country'] ?? 'DE');
-        if (!in_array($lang, ['DE', 'RO'])) {
+        if (!in_array($lang, ['DE', 'RO', 'HU'])) {
             $lang = 'DE';
         }
 
@@ -203,6 +207,113 @@ class PPV_Expense_Receipt {
     }
 
     /**
+     * ✅ IDŐSZAK BIZONYLAT GENERÁLÁS (Zeitraumbericht)
+     * Date range report - similar to monthly but with custom date range
+     */
+    public static function generate_date_range_receipt($store_id, $date_from, $date_to)
+    {
+        global $wpdb;
+
+        ppv_log("📅 [PPV_EXPENSE_RECEIPT] generate_date_range_receipt() called: store={$store_id}, from={$date_from}, to={$date_to}");
+
+        // 1️⃣ Store adatok lekérése
+        $store = $wpdb->get_row($wpdb->prepare("
+            SELECT id, company_name, address, plz, city, country, tax_id
+            FROM {$wpdb->prefix}ppv_stores
+            WHERE id = %d LIMIT 1
+        ", $store_id), ARRAY_A);
+
+        if (!$store) {
+            ppv_log("❌ [PPV_EXPENSE_RECEIPT] Store nem található: {$store_id}");
+            return false;
+        }
+
+        ppv_log("✅ [PPV_EXPENSE_RECEIPT] Store megtalálva: " . $store['company_name']);
+
+        // 2️⃣ Beváltások lekérése az időszakra
+        $items = $wpdb->get_results($wpdb->prepare("
+            SELECT
+                r.id,
+                r.user_id,
+                r.store_id,
+                r.reward_id,
+                r.points_spent,
+                r.actual_amount,
+                r.redeemed_at,
+                u.email AS user_email,
+                u.first_name,
+                u.last_name,
+                rw.title AS reward_title,
+                rw.action_value,
+                rw.free_product_value
+            FROM {$wpdb->prefix}ppv_rewards_redeemed r
+            LEFT JOIN {$wpdb->prefix}ppv_users u ON r.user_id = u.id
+            LEFT JOIN {$wpdb->prefix}ppv_rewards rw ON r.reward_id = rw.id
+            WHERE r.store_id = %d
+            AND r.status = 'approved'
+            AND DATE(r.redeemed_at) >= %s
+            AND DATE(r.redeemed_at) <= %s
+            ORDER BY r.redeemed_at ASC
+        ", $store_id, $date_from, $date_to));
+
+        if (!$items || count($items) === 0) {
+            ppv_log("⚠️ [PPV_EXPENSE_RECEIPT] Nincsenek beváltások: from={$date_from}, to={$date_to}");
+            return false;
+        }
+
+        $count = count($items);
+        ppv_log("✅ [PPV_EXPENSE_RECEIPT] {$count} beváltás találva");
+
+        // 3️⃣ Nyelvválasztás a store country alapján
+        $lang = strtoupper($store['country'] ?? 'DE');
+        if (!in_array($lang, ['DE', 'RO', 'HU'])) {
+            $lang = 'DE';
+        }
+
+        ppv_log("🌍 [PPV_EXPENSE_RECEIPT] Jezik: {$lang}");
+
+        // 4️⃣ HTML generálás (időszakra)
+        $html = self::generate_html_for_date_range($store, $items, $date_from, $date_to, $lang);
+
+        if (!$html) {
+            ppv_log("❌ [PPV_EXPENSE_RECEIPT] HTML generálás sikertelen");
+            return false;
+        }
+
+        ppv_log("✅ [PPV_EXPENSE_RECEIPT] HTML generálva (" . strlen($html) . " bytes)");
+
+        // 5️⃣ Könyvtár létrehozása
+        $upload = wp_upload_dir();
+        $dir = $upload['basedir'] . '/ppv_receipts/';
+
+        if (!is_dir($dir)) {
+            if (!wp_mkdir_p($dir)) {
+                ppv_log("❌ [PPV_EXPENSE_RECEIPT] Mappa létrehozás sikertelen: {$dir}");
+                return false;
+            }
+        }
+
+        ppv_log("✅ [PPV_EXPENSE_RECEIPT] Könyvtár OK: {$dir}");
+
+        // 6️⃣ Fájlnév és útvonal
+        $filename = sprintf("date-range-receipt-%d-%s-%s.html", $store_id, str_replace('-', '', $date_from), str_replace('-', '', $date_to));
+        $filepath = $dir . $filename;
+
+        // 7️⃣ HTML mentése fájlként
+        $bytes = file_put_contents($filepath, $html);
+
+        if ($bytes === false) {
+            ppv_log("❌ [PPV_EXPENSE_RECEIPT] Fájl írás sikertelen: {$filepath}");
+            return false;
+        }
+
+        ppv_log("✅ [PPV_EXPENSE_RECEIPT] Időszak bizonylat mentve: {$filename} ({$bytes} bytes)");
+
+        // ✅ Relatív útvonal visszaadása
+        return 'ppv_receipts/' . $filename;
+    }
+
+    /**
      * 🎨 HTML generálás EGYSZERI bizonylathoz
      */
     private static function generate_html_for_redeem($redeem, $lang) {
@@ -213,7 +324,16 @@ class PPV_Expense_Receipt {
 
         // ✅ HELYES DÁTUM FORMÁZÁS
         $receipt_num = date('Y-m-', strtotime($redeem['redeemed_at'])) . sprintf('%04d', $redeem['id']);
-        $amount = floatval($redeem['actual_amount'] ?? $redeem['points_spent'] ?? 0);
+
+        // ✅ Amount calculation: actual_amount → action_value → free_product_value → 0
+        $amount = 0;
+        if (!empty($redeem['actual_amount']) && floatval($redeem['actual_amount']) > 0) {
+            $amount = floatval($redeem['actual_amount']);
+        } elseif (!empty($redeem['action_value']) && $redeem['action_value'] !== '0') {
+            $amount = floatval($redeem['action_value']);
+        } elseif (!empty($redeem['free_product_value']) && floatval($redeem['free_product_value']) > 0) {
+            $amount = floatval($redeem['free_product_value']);
+        }
 
         if ($lang === 'RO') {
             return self::html_receipt_ro($redeem, $customer_name, $receipt_num, $amount);
@@ -223,101 +343,324 @@ class PPV_Expense_Receipt {
     }
 
     /**
-     * 🎨 HTML - Német verzió (DE)
+     * 🎨 HTML - Német verzió (DE) - Professional Design
      */
     private static function html_receipt_de($redeem, $customer_name, $receipt_num, $amount) {
-        $company = htmlspecialchars($redeem['company_name'] ?? 'Bolt');
+        $company = htmlspecialchars($redeem['company_name'] ?? 'Unternehmen');
         $address = htmlspecialchars($redeem['address'] ?? '');
         $plz = htmlspecialchars($redeem['plz'] ?? '');
         $city = htmlspecialchars($redeem['city'] ?? '');
         $tax_id = htmlspecialchars($redeem['tax_id'] ?? '');
-        $tax_id_html = $tax_id ? "<p><strong>Steuernummer:</strong> {$tax_id}</p>" : '';
-        
+
         $customer = htmlspecialchars($customer_name);
         $email = htmlspecialchars($redeem['user_email'] ?? '');
-        $reward = htmlspecialchars($redeem['reward_title'] ?? 'Belohnung');
+        $reward = htmlspecialchars($redeem['reward_title'] ?? 'Prämie');
         $points = intval($redeem['points_spent'] ?? 0);
-        $date = date('d.m.Y H:i', strtotime($redeem['redeemed_at']));
+        $date = date('d.m.Y', strtotime($redeem['redeemed_at']));
+        $time = date('H:i', strtotime($redeem['redeemed_at']));
+        $amount_formatted = number_format($amount, 2, ',', '.');
 
         return <<<HTML
 <!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Ausgabebeleg</title>
+    <title>Ausgabebeleg Nr. {$receipt_num}</title>
     <style>
-        * { margin: 0; padding: 0; }
-        body { font-family: Arial, sans-serif; padding: 20px; background: white; }
-        .receipt { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border: 1px solid #ddd; }
-        .header { border-bottom: 2px solid #333; padding-bottom: 15px; margin-bottom: 20px; }
-        .header h1 { font-size: 18px; font-weight: bold; margin-bottom: 5px; }
-        .header p { font-size: 12px; color: #666; }
-        .company-info { margin-bottom: 20px; }
-        .company-info p { margin: 3px 0; font-size: 13px; }
-        .receipt-num { background: #f0f0f0; padding: 10px; margin: 15px 0; font-size: 12px; }
-        .section { margin-bottom: 20px; padding: 12px; background: #f9f9f9; border-left: 3px solid #007bff; }
-        .section-title { font-weight: bold; font-size: 12px; margin-bottom: 8px; color: #333; }
-        .line { display: flex; justify-content: space-between; font-size: 12px; margin: 4px 0; }
-        .amount-section { background: white; border: 2px solid #333; padding: 15px; margin: 20px 0; text-align: center; }
-        .amount-section .label { font-size: 12px; color: #666; }
-        .amount-section .value { font-size: 24px; font-weight: bold; margin: 5px 0; }
-        .booking { background: #fff3cd; padding: 12px; margin: 15px 0; font-size: 11px; }
-        .disclaimer { background: #e8f4f8; padding: 10px; margin: 15px 0; font-size: 11px; }
-        .footer { text-align: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid #ddd; font-size: 11px; color: #666; }
+        @page { margin: 15mm; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            font-size: 11pt;
+            line-height: 1.4;
+            color: #2c3e50;
+            background: #fff;
+        }
+        .receipt {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 25px;
+        }
+
+        /* Header */
+        .header {
+            display: table;
+            width: 100%;
+            border-bottom: 3px solid #1a5276;
+            padding-bottom: 20px;
+            margin-bottom: 25px;
+        }
+        .header-left {
+            display: table-cell;
+            vertical-align: top;
+            width: 60%;
+        }
+        .header-right {
+            display: table-cell;
+            vertical-align: top;
+            text-align: right;
+            width: 40%;
+        }
+        .doc-title {
+            font-size: 22pt;
+            font-weight: 700;
+            color: #1a5276;
+            letter-spacing: -0.5px;
+            margin-bottom: 5px;
+        }
+        .doc-subtitle {
+            font-size: 10pt;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .doc-number {
+            font-size: 11pt;
+            color: #1a5276;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        .doc-date {
+            font-size: 10pt;
+            color: #7f8c8d;
+        }
+
+        /* Info Sections */
+        .info-grid {
+            display: table;
+            width: 100%;
+            margin-bottom: 25px;
+        }
+        .info-box {
+            display: table-cell;
+            width: 50%;
+            vertical-align: top;
+            padding-right: 15px;
+        }
+        .info-box:last-child {
+            padding-right: 0;
+            padding-left: 15px;
+        }
+        .info-label {
+            font-size: 8pt;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #95a5a6;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        .info-content {
+            background: #f8f9fa;
+            border-left: 3px solid #1a5276;
+            padding: 12px 15px;
+        }
+        .info-content p {
+            margin: 3px 0;
+            font-size: 10pt;
+        }
+        .info-content .name {
+            font-weight: 600;
+            font-size: 11pt;
+            color: #2c3e50;
+        }
+
+        /* Details Table */
+        .details-section {
+            margin: 25px 0;
+        }
+        .details-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .details-table th {
+            background: #1a5276;
+            color: #fff;
+            padding: 10px 12px;
+            text-align: left;
+            font-size: 9pt;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+        .details-table th:last-child {
+            text-align: right;
+        }
+        .details-table td {
+            padding: 12px;
+            border-bottom: 1px solid #ecf0f1;
+            font-size: 10pt;
+        }
+        .details-table td:last-child {
+            text-align: right;
+        }
+        .details-table .item-name {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .details-table .item-desc {
+            font-size: 9pt;
+            color: #7f8c8d;
+            margin-top: 3px;
+        }
+
+        /* Amount Box */
+        .amount-box {
+            background: linear-gradient(135deg, #1a5276 0%, #2980b9 100%);
+            color: #fff;
+            padding: 20px 25px;
+            margin: 25px 0;
+            display: table;
+            width: 100%;
+        }
+        .amount-label {
+            display: table-cell;
+            vertical-align: middle;
+            font-size: 10pt;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.9;
+        }
+        .amount-value {
+            display: table-cell;
+            vertical-align: middle;
+            text-align: right;
+            font-size: 28pt;
+            font-weight: 700;
+        }
+        .amount-currency {
+            font-size: 14pt;
+            opacity: 0.8;
+            margin-left: 5px;
+        }
+
+        /* Notes Section */
+        .notes-grid {
+            display: table;
+            width: 100%;
+            margin: 20px 0;
+        }
+        .note-box {
+            display: table-cell;
+            width: 50%;
+            vertical-align: top;
+            padding-right: 10px;
+        }
+        .note-box:last-child {
+            padding-right: 0;
+            padding-left: 10px;
+        }
+        .note-card {
+            padding: 12px 15px;
+            font-size: 9pt;
+        }
+        .note-card.booking {
+            background: #fef9e7;
+            border-left: 3px solid #f39c12;
+        }
+        .note-card.legal {
+            background: #eaf2f8;
+            border-left: 3px solid #3498db;
+        }
+        .note-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 9pt;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .note-card.booking .note-title { color: #d68910; }
+        .note-card.legal .note-title { color: #2874a6; }
+
+        /* Footer */
+        .footer {
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 1px solid #ecf0f1;
+            text-align: center;
+            font-size: 8pt;
+            color: #95a5a6;
+        }
+        .footer p { margin: 3px 0; }
     </style>
 </head>
 <body>
     <div class="receipt">
         <div class="header">
-            <h1>KIADÁSI BIZONYLAT</h1>
-            <p>AUSGABEBELEG – Loyalty Program Auszahlung</p>
+            <div class="header-left">
+                <div class="doc-title">Ausgabebeleg</div>
+                <div class="doc-subtitle">Kundenprämie · Treueprogramm</div>
+            </div>
+            <div class="header-right">
+                <div class="doc-number">Nr. {$receipt_num}</div>
+                <div class="doc-date">{$date} um {$time} Uhr</div>
+            </div>
         </div>
 
-        <div class="company-info">
-            <p><strong>Betrieb:</strong> {$company}</p>
-            <p><strong>Adresse:</strong> {$address}, {$plz} {$city}</p>
-            {$tax_id_html}
+        <div class="info-grid">
+            <div class="info-box">
+                <div class="info-label">Aussteller</div>
+                <div class="info-content">
+                    <p class="name">{$company}</p>
+                    <p>{$address}</p>
+                    <p>{$plz} {$city}</p>
+                    {$tax_id}
+                </div>
+            </div>
+            <div class="info-box">
+                <div class="info-label">Empfänger</div>
+                <div class="info-content">
+                    <p class="name">{$customer}</p>
+                    <p>{$email}</p>
+                    <p>Eingelöste Punkte: {$points}</p>
+                </div>
+            </div>
         </div>
 
-        <div class="receipt-num">
-            <div class="line"><span><strong>Datum:</strong></span><span>{$date}</span></div>
-            <div class="line"><span><strong>Belegnummer:</strong></span><span>{$receipt_num}</span></div>
+        <div class="details-section">
+            <table class="details-table">
+                <thead>
+                    <tr>
+                        <th>Beschreibung</th>
+                        <th>Betrag</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <div class="item-name">{$reward}</div>
+                            <div class="item-desc">Punkteeinlösung im Rahmen des Treueprogramms</div>
+                        </td>
+                        <td>{$amount_formatted} EUR</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
 
-        <div class="section">
-            <div class="section-title">📋 BESCHREIBUNG:</div>
-            <p style="margin: 5px 0; font-size: 12px;">Kundenrabatt - Punkteeinlösung</p>
-            <p style="margin: 5px 0; font-size: 11px; color: #666;">PunktePass Loyalty Programm</p>
+        <div class="amount-box">
+            <div class="amount-label">Gesamtbetrag</div>
+            <div class="amount-value">{$amount_formatted}<span class="amount-currency">EUR</span></div>
         </div>
 
-        <div class="section">
-            <div class="section-title">👤 KUNDE:</div>
-            <div class="line"><span>Name:</span><span>{$customer}</span></div>
-            <div class="line"><span>E-Mail:</span><span>{$email}</span></div>
-            <div class="line"><span>Punkte:</span><span>{$points} Punkte</span></div>
-            <div class="line"><span>Belohnung:</span><span>{$reward}</span></div>
-        </div>
-
-        <div class="amount-section">
-            <div class="label">BETRAG (Kundenbindung)</div>
-            <div class="value">{$amount} EUR</div>
-        </div>
-
-        <div class="booking">
-            <strong>📊 BUCHUNGSVORSCHLAG:</strong><br>
-            Soll: 4930 (Marketing / Kundenbindung)<br>
-            Haben: 1000 (Kasse)
-        </div>
-
-        <div class="disclaimer">
-            <strong>⚠️ WICHTIG:</strong><br>
-            KEINE UMSATZSTEUER<br>
-            Interne Vergütung – Nicht steuerbar
+        <div class="notes-grid">
+            <div class="note-box">
+                <div class="note-card booking">
+                    <div class="note-title">Buchungshinweis</div>
+                    <p>Soll: 4930 (Werbekosten)</p>
+                    <p>Haben: 1000 (Kasse)</p>
+                </div>
+            </div>
+            <div class="note-box">
+                <div class="note-card legal">
+                    <div class="note-title">Steuerhinweis</div>
+                    <p>Ohne Umsatzsteuer gem. § 1 UStG</p>
+                    <p>Interne Vergütung – nicht steuerbar</p>
+                </div>
+            </div>
         </div>
 
         <div class="footer">
-            <p>Dieses Dokument wurde automatisch von PunktePass generiert.</p>
-            <p>Für Rückfragen: info@punktepass.de</p>
+            <p>Dieses Dokument wurde automatisch erstellt und ist ohne Unterschrift gültig.</p>
+            <p>PunktePass Treueprogramm · www.punktepass.de</p>
         </div>
     </div>
 </body>
@@ -326,7 +669,7 @@ HTML;
     }
 
     /**
-     * 🎨 HTML - Román verzió (RO)
+     * 🎨 HTML - Román verzió (RO) - Professional Design
      */
     private static function html_receipt_ro($redeem, $customer_name, $receipt_num, $amount) {
         $company = htmlspecialchars($redeem['company_name'] ?? 'Societate');
@@ -334,90 +677,316 @@ HTML;
         $plz = htmlspecialchars($redeem['plz'] ?? '');
         $city = htmlspecialchars($redeem['city'] ?? '');
         $tax_id = htmlspecialchars($redeem['tax_id'] ?? '');
-        $tax_id_html = $tax_id ? "<p><strong>Cod fiscal:</strong> {$tax_id}</p>" : '';
-        
+
         $customer = htmlspecialchars($customer_name);
         $email = htmlspecialchars($redeem['user_email'] ?? '');
         $reward = htmlspecialchars($redeem['reward_title'] ?? 'Recompensă');
         $points = intval($redeem['points_spent'] ?? 0);
-        $date = date('d.m.Y H:i', strtotime($redeem['redeemed_at']));
+        $date = date('d.m.Y', strtotime($redeem['redeemed_at']));
+        $time = date('H:i', strtotime($redeem['redeemed_at']));
+        $amount_formatted = number_format($amount, 2, ',', '.');
 
         return <<<HTML
 <!DOCTYPE html>
 <html lang="ro">
 <head>
     <meta charset="UTF-8">
-    <title>Dispoziție de Cheltuieli</title>
+    <title>Dispoziție de Plată Nr. {$receipt_num}</title>
     <style>
-        * { margin: 0; padding: 0; }
-        body { font-family: Arial, sans-serif; padding: 20px; background: white; }
-        .receipt { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border: 1px solid #ddd; }
-        .header { border-bottom: 2px solid #333; padding-bottom: 15px; margin-bottom: 20px; }
-        .header h1 { font-size: 18px; font-weight: bold; margin-bottom: 5px; }
-        .company-info { margin-bottom: 20px; }
-        .company-info p { margin: 3px 0; font-size: 13px; }
-        .receipt-num { background: #f0f0f0; padding: 10px; margin: 15px 0; font-size: 12px; }
-        .section { margin-bottom: 20px; padding: 12px; background: #f9f9f9; border-left: 3px solid #007bff; }
-        .section-title { font-weight: bold; font-size: 12px; margin-bottom: 8px; color: #333; }
-        .line { display: flex; justify-content: space-between; font-size: 12px; margin: 4px 0; }
-        .amount-section { background: white; border: 2px solid #333; padding: 15px; margin: 20px 0; text-align: center; }
-        .amount-section .value { font-size: 24px; font-weight: bold; margin: 5px 0; }
-        .booking { background: #fff3cd; padding: 12px; margin: 15px 0; font-size: 11px; }
-        .disclaimer { background: #e8f4f8; padding: 10px; margin: 15px 0; font-size: 11px; }
-        .footer { text-align: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid #ddd; font-size: 11px; color: #666; }
+        @page { margin: 15mm; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            font-size: 11pt;
+            line-height: 1.4;
+            color: #2c3e50;
+            background: #fff;
+        }
+        .receipt {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 25px;
+        }
+
+        /* Header */
+        .header {
+            display: table;
+            width: 100%;
+            border-bottom: 3px solid #1a5276;
+            padding-bottom: 20px;
+            margin-bottom: 25px;
+        }
+        .header-left {
+            display: table-cell;
+            vertical-align: top;
+            width: 60%;
+        }
+        .header-right {
+            display: table-cell;
+            vertical-align: top;
+            text-align: right;
+            width: 40%;
+        }
+        .doc-title {
+            font-size: 22pt;
+            font-weight: 700;
+            color: #1a5276;
+            letter-spacing: -0.5px;
+            margin-bottom: 5px;
+        }
+        .doc-subtitle {
+            font-size: 10pt;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .doc-number {
+            font-size: 11pt;
+            color: #1a5276;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        .doc-date {
+            font-size: 10pt;
+            color: #7f8c8d;
+        }
+
+        /* Info Sections */
+        .info-grid {
+            display: table;
+            width: 100%;
+            margin-bottom: 25px;
+        }
+        .info-box {
+            display: table-cell;
+            width: 50%;
+            vertical-align: top;
+            padding-right: 15px;
+        }
+        .info-box:last-child {
+            padding-right: 0;
+            padding-left: 15px;
+        }
+        .info-label {
+            font-size: 8pt;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #95a5a6;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        .info-content {
+            background: #f8f9fa;
+            border-left: 3px solid #1a5276;
+            padding: 12px 15px;
+        }
+        .info-content p {
+            margin: 3px 0;
+            font-size: 10pt;
+        }
+        .info-content .name {
+            font-weight: 600;
+            font-size: 11pt;
+            color: #2c3e50;
+        }
+
+        /* Details Table */
+        .details-section {
+            margin: 25px 0;
+        }
+        .details-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .details-table th {
+            background: #1a5276;
+            color: #fff;
+            padding: 10px 12px;
+            text-align: left;
+            font-size: 9pt;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+        .details-table th:last-child {
+            text-align: right;
+        }
+        .details-table td {
+            padding: 12px;
+            border-bottom: 1px solid #ecf0f1;
+            font-size: 10pt;
+        }
+        .details-table td:last-child {
+            text-align: right;
+        }
+        .details-table .item-name {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .details-table .item-desc {
+            font-size: 9pt;
+            color: #7f8c8d;
+            margin-top: 3px;
+        }
+
+        /* Amount Box */
+        .amount-box {
+            background: linear-gradient(135deg, #1a5276 0%, #2980b9 100%);
+            color: #fff;
+            padding: 20px 25px;
+            margin: 25px 0;
+            display: table;
+            width: 100%;
+        }
+        .amount-label {
+            display: table-cell;
+            vertical-align: middle;
+            font-size: 10pt;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.9;
+        }
+        .amount-value {
+            display: table-cell;
+            vertical-align: middle;
+            text-align: right;
+            font-size: 28pt;
+            font-weight: 700;
+        }
+        .amount-currency {
+            font-size: 14pt;
+            opacity: 0.8;
+            margin-left: 5px;
+        }
+
+        /* Notes Section */
+        .notes-grid {
+            display: table;
+            width: 100%;
+            margin: 20px 0;
+        }
+        .note-box {
+            display: table-cell;
+            width: 50%;
+            vertical-align: top;
+            padding-right: 10px;
+        }
+        .note-box:last-child {
+            padding-right: 0;
+            padding-left: 10px;
+        }
+        .note-card {
+            padding: 12px 15px;
+            font-size: 9pt;
+        }
+        .note-card.booking {
+            background: #fef9e7;
+            border-left: 3px solid #f39c12;
+        }
+        .note-card.legal {
+            background: #eaf2f8;
+            border-left: 3px solid #3498db;
+        }
+        .note-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 9pt;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .note-card.booking .note-title { color: #d68910; }
+        .note-card.legal .note-title { color: #2874a6; }
+
+        /* Footer */
+        .footer {
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 1px solid #ecf0f1;
+            text-align: center;
+            font-size: 8pt;
+            color: #95a5a6;
+        }
+        .footer p { margin: 3px 0; }
     </style>
 </head>
 <body>
     <div class="receipt">
         <div class="header">
-            <h1>DISPOZIȚIE DE CHELTUIELI</h1>
-            <p>Bon de consum intern – Program de fidelizare</p>
+            <div class="header-left">
+                <div class="doc-title">Dispoziție de Plată</div>
+                <div class="doc-subtitle">Recompensă Client · Program Fidelizare</div>
+            </div>
+            <div class="header-right">
+                <div class="doc-number">Nr. {$receipt_num}</div>
+                <div class="doc-date">{$date} ora {$time}</div>
+            </div>
         </div>
 
-        <div class="company-info">
-            <p><strong>Societate:</strong> {$company}</p>
-            <p><strong>Adresă:</strong> {$address}, {$plz} {$city}</p>
-            {$tax_id_html}
+        <div class="info-grid">
+            <div class="info-box">
+                <div class="info-label">Emitent</div>
+                <div class="info-content">
+                    <p class="name">{$company}</p>
+                    <p>{$address}</p>
+                    <p>{$plz} {$city}</p>
+                    {$tax_id}
+                </div>
+            </div>
+            <div class="info-box">
+                <div class="info-label">Beneficiar</div>
+                <div class="info-content">
+                    <p class="name">{$customer}</p>
+                    <p>{$email}</p>
+                    <p>Puncte utilizate: {$points}</p>
+                </div>
+            </div>
         </div>
 
-        <div class="receipt-num">
-            <div class="line"><span><strong>Data:</strong></span><span>{$date}</span></div>
-            <div class="line"><span><strong>Nr. Dispoziție:</strong></span><span>{$receipt_num}</span></div>
+        <div class="details-section">
+            <table class="details-table">
+                <thead>
+                    <tr>
+                        <th>Descriere</th>
+                        <th>Valoare</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <div class="item-name">{$reward}</div>
+                            <div class="item-desc">Utilizare puncte din programul de fidelizare</div>
+                        </td>
+                        <td>{$amount_formatted} RON</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
 
-        <div class="section">
-            <div class="section-title">📋 DESCRIERE:</div>
-            <p style="margin: 5px 0; font-size: 12px;">Rambursare puncte program fidelizare</p>
-            <p style="margin: 5px 0; font-size: 11px; color: #666;">Program PunktePass</p>
+        <div class="amount-box">
+            <div class="amount-label">Suma Totală</div>
+            <div class="amount-value">{$amount_formatted}<span class="amount-currency">RON</span></div>
         </div>
 
-        <div class="section">
-            <div class="section-title">👤 CLIENT BENEFICIAR:</div>
-            <div class="line"><span>Nume:</span><span>{$customer}</span></div>
-            <div class="line"><span>E-Mail:</span><span>{$email}</span></div>
-            <div class="line"><span>Puncte folosite:</span><span>{$points} Puncte</span></div>
-            <div class="line"><span>Recompensă:</span><span>{$reward}</span></div>
-        </div>
-
-        <div class="amount-section">
-            <div class="label">SUMA TOTALĂ</div>
-            <div class="value">{$amount} RON</div>
-        </div>
-
-        <div class="booking">
-            <strong>📊 ÎNREGISTRARE CONTABILĂ SUGERATĂ:</strong><br>
-            Debit: 623 (Cheltuieli marketing)<br>
-            Credit: 5311 (Casa în lei)
-        </div>
-
-        <div class="disclaimer">
-            <strong>⚠️ IMPORTANT:</strong><br>
-            FĂRĂ TVA<br>
-            Operațiune internă, neimpozabilă
+        <div class="notes-grid">
+            <div class="note-box">
+                <div class="note-card booking">
+                    <div class="note-title">Înregistrare Contabilă</div>
+                    <p>Debit: 623 (Cheltuieli cu publicitatea)</p>
+                    <p>Credit: 5311 (Casa în lei)</p>
+                </div>
+            </div>
+            <div class="note-box">
+                <div class="note-card legal">
+                    <div class="note-title">Mențiuni Fiscale</div>
+                    <p>Operațiune fără TVA</p>
+                    <p>Consum intern – neimpozabil</p>
+                </div>
+            </div>
         </div>
 
         <div class="footer">
-            <p>Acest document a fost generat automat de PunktePass.</p>
+            <p>Document generat automat, valabil fără semnătură.</p>
+            <p>Program PunktePass · www.punktepass.de</p>
             <p>Pentru întrebări: info@punktepass.de</p>
         </div>
     </div>
@@ -434,27 +1003,51 @@ HTML;
         $total_points = 0;
 
         foreach ($redeems as $r) {
-            $total_amount += floatval($r->actual_amount ?? $r->points_spent ?? 0);
+            $total_amount += self::calculate_item_amount($r);
             $total_points += intval($r->points_spent ?? 0);
         }
 
         if ($lang === 'RO') {
             return self::html_monthly_receipt_ro($store, $redeems, $year, $month, $total_amount, $total_points);
+        } elseif ($lang === 'HU') {
+            return self::html_monthly_receipt_hu($store, $redeems, $year, $month, $total_amount, $total_points);
         } else {
             return self::html_monthly_receipt_de($store, $redeems, $year, $month, $total_amount, $total_points);
         }
     }
 
     /**
-     * 🎨 HTML - Havi bizonylat NÉMET verzió
+     * 💰 Amount calculation helper: actual_amount → action_value → free_product_value → 0
+     */
+    private static function calculate_item_amount($item) {
+        if (!empty($item->actual_amount) && floatval($item->actual_amount) > 0) {
+            return floatval($item->actual_amount);
+        }
+        if (!empty($item->action_value) && $item->action_value !== '0') {
+            return floatval($item->action_value);
+        }
+        if (!empty($item->free_product_value) && floatval($item->free_product_value) > 0) {
+            return floatval($item->free_product_value);
+        }
+        return 0;
+    }
+
+    /**
+     * 🎨 HTML - Havi bizonylat NÉMET verzió - Professional Design
      */
     private static function html_monthly_receipt_de($store, $redeems, $year, $month, $total_amount, $total_points) {
-        $company = htmlspecialchars($store['company_name'] ?? 'Bolt');
+        $company = htmlspecialchars($store['company_name'] ?? 'Unternehmen');
         $address = htmlspecialchars($store['address'] ?? '');
         $plz = htmlspecialchars($store['plz'] ?? '');
         $city = htmlspecialchars($store['city'] ?? '');
-        $month_str = date('F Y', mktime(0, 0, 0, $month, 1, $year));
+        $tax_id = htmlspecialchars($store['tax_id'] ?? '');
+
+        // German month names
+        $german_months = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+        $month_str = $german_months[$month - 1] . ' ' . $year;
         $count = count($redeems);
+        $total_formatted = number_format($total_amount, 2, ',', '.');
+        $receipt_num = sprintf('%d-%02d-M', $year, $month);
 
         $rows = '';
         foreach ($redeems as $r) {
@@ -462,17 +1055,18 @@ HTML;
             if (!$customer) {
                 $customer = htmlspecialchars($r->user_email ?? 'Unbekannt');
             }
-            $reward = htmlspecialchars($r->reward_title ?? 'Belohnung');
+            $reward = htmlspecialchars($r->reward_title ?? 'Prämie');
             $points = intval($r->points_spent ?? 0);
-            $amount = floatval($r->actual_amount ?? $r->points_spent ?? 0);
+            $amount = self::calculate_item_amount($r);
+            $amount_fmt = number_format($amount, 2, ',', '.');
             $date = date('d.m.Y', strtotime($r->redeemed_at));
 
-            $rows .= "<tr style=\"border-bottom: 1px solid #ddd;\">
-                <td style=\"padding: 8px; font-size: 11px;\">{$date}</td>
-                <td style=\"padding: 8px; font-size: 11px;\">{$customer}</td>
-                <td style=\"padding: 8px; font-size: 11px;\">{$reward}</td>
-                <td style=\"padding: 8px; font-size: 11px; text-align: right;\">{$points}</td>
-                <td style=\"padding: 8px; font-size: 11px; text-align: right;\">{$amount} EUR</td>
+            $rows .= "<tr>
+                <td>{$date}</td>
+                <td>{$customer}</td>
+                <td>{$reward}</td>
+                <td class=\"num\">{$points}</td>
+                <td class=\"num\">{$amount_fmt}</td>
             </tr>";
         }
 
@@ -481,62 +1075,258 @@ HTML;
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Monatlicher Ausgabebeleg</title>
+    <title>Monatsabrechnung {$month_str}</title>
     <style>
-        * { margin: 0; padding: 0; }
-        body { font-family: Arial, sans-serif; padding: 20px; background: white; }
-        .receipt { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border: 1px solid #ddd; }
-        .header { border-bottom: 2px solid #333; padding-bottom: 15px; margin-bottom: 20px; }
-        .header h1 { font-size: 18px; font-weight: bold; }
-        .company-info { margin-bottom: 20px; }
-        .company-info p { margin: 3px 0; font-size: 13px; }
-        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-        th { background: #007bff; color: white; padding: 10px; text-align: left; font-size: 12px; font-weight: bold; }
-        .total-row { background: #f9f9f9; font-weight: bold; }
-        .booking { background: #fff3cd; padding: 12px; margin: 15px 0; font-size: 11px; }
-        .disclaimer { background: #e8f4f8; padding: 10px; margin: 15px 0; font-size: 11px; }
-        .footer { text-align: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid #ddd; font-size: 11px; color: #666; }
+        @page { margin: 15mm; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            font-size: 10pt;
+            line-height: 1.4;
+            color: #2c3e50;
+            background: #fff;
+        }
+        .receipt {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            display: table;
+            width: 100%;
+            border-bottom: 3px solid #1a5276;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        .header-left {
+            display: table-cell;
+            vertical-align: top;
+            width: 60%;
+        }
+        .header-right {
+            display: table-cell;
+            vertical-align: top;
+            text-align: right;
+            width: 40%;
+        }
+        .doc-title {
+            font-size: 20pt;
+            font-weight: 700;
+            color: #1a5276;
+            margin-bottom: 3px;
+        }
+        .doc-subtitle {
+            font-size: 9pt;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .doc-number {
+            font-size: 10pt;
+            color: #1a5276;
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+        .doc-period {
+            font-size: 11pt;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        /* Company Info */
+        .company-box {
+            background: #f8f9fa;
+            border-left: 3px solid #1a5276;
+            padding: 12px 15px;
+            margin-bottom: 20px;
+        }
+        .company-box p {
+            margin: 2px 0;
+            font-size: 9pt;
+        }
+        .company-box .name {
+            font-weight: 600;
+            font-size: 10pt;
+            color: #2c3e50;
+        }
+
+        /* Table */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 9pt;
+        }
+        .data-table thead th {
+            background: #1a5276;
+            color: #fff;
+            padding: 8px 10px;
+            text-align: left;
+            font-size: 8pt;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+        .data-table thead th.num {
+            text-align: right;
+        }
+        .data-table tbody td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        .data-table tbody td.num {
+            text-align: right;
+            font-family: 'Courier New', monospace;
+        }
+        .data-table tbody tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        /* Summary Row */
+        .summary-row {
+            display: table;
+            width: 100%;
+            background: linear-gradient(135deg, #1a5276 0%, #2980b9 100%);
+            color: #fff;
+            padding: 12px 15px;
+            margin: 15px 0;
+        }
+        .summary-label {
+            display: table-cell;
+            vertical-align: middle;
+            font-size: 9pt;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .summary-value {
+            display: table-cell;
+            vertical-align: middle;
+            text-align: right;
+            font-size: 18pt;
+            font-weight: 700;
+        }
+        .summary-currency {
+            font-size: 10pt;
+            opacity: 0.8;
+            margin-left: 3px;
+        }
+        .summary-details {
+            font-size: 8pt;
+            opacity: 0.8;
+            margin-top: 3px;
+        }
+
+        /* Notes */
+        .notes-row {
+            display: table;
+            width: 100%;
+            margin: 15px 0;
+        }
+        .note-cell {
+            display: table-cell;
+            width: 50%;
+            vertical-align: top;
+            padding-right: 8px;
+        }
+        .note-cell:last-child {
+            padding-right: 0;
+            padding-left: 8px;
+        }
+        .note-box {
+            padding: 10px 12px;
+            font-size: 8pt;
+        }
+        .note-box.booking {
+            background: #fef9e7;
+            border-left: 3px solid #f39c12;
+        }
+        .note-box.legal {
+            background: #eaf2f8;
+            border-left: 3px solid #3498db;
+        }
+        .note-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .note-box.booking .note-title { color: #d68910; }
+        .note-box.legal .note-title { color: #2874a6; }
+
+        /* Footer */
+        .footer {
+            margin-top: 20px;
+            padding-top: 10px;
+            border-top: 1px solid #ecf0f1;
+            text-align: center;
+            font-size: 7pt;
+            color: #95a5a6;
+        }
     </style>
 </head>
 <body>
     <div class="receipt">
         <div class="header">
-            <h1>MONATLICHER AUSGABEBELEG</h1>
-            <p>Sammelabrechnung – PunktePass Loyalty Program</p>
+            <div class="header-left">
+                <div class="doc-title">Monatsabrechnung</div>
+                <div class="doc-subtitle">Sammelbeleg Kundenprämien</div>
+            </div>
+            <div class="header-right">
+                <div class="doc-number">Nr. {$receipt_num}</div>
+                <div class="doc-period">{$month_str}</div>
+            </div>
         </div>
 
-        <div class="company-info">
-            <p><strong>Betrieb:</strong> {$company}</p>
-            <p><strong>Adresse:</strong> {$address}, {$plz} {$city}</p>
-            <p><strong>Zeitraum:</strong> {$month_str}</p>
+        <div class="company-box">
+            <p class="name">{$company}</p>
+            <p>{$address}, {$plz} {$city}</p>
+            {$tax_id}
         </div>
 
-        <table>
-            <thead><tr><th>Datum</th><th>Kunde</th><th>Belohnung</th><th style="text-align: right;">Punkte</th><th style="text-align: right;">Betrag</th></tr></thead>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Datum</th>
+                    <th>Kunde</th>
+                    <th>Prämie</th>
+                    <th class="num">Punkte</th>
+                    <th class="num">Betrag (EUR)</th>
+                </tr>
+            </thead>
             <tbody>
                 {$rows}
-                <tr class="total-row">
-                    <td colspan="3" style="padding: 10px; text-align: right;">GESAMT ({$count} Einlösungen):</td>
-                    <td style="padding: 10px; text-align: right;">{$total_points}</td>
-                    <td style="padding: 10px; text-align: right;">{$total_amount} EUR</td>
-                </tr>
             </tbody>
         </table>
 
-        <div class="booking">
-            <strong>📊 BUCHUNGSVORSCHLAG:</strong><br>
-            Soll: 4930 (Marketing / Kundenbindung)<br>
-            Haben: 1000 (Kasse)
+        <div class="summary-row">
+            <div class="summary-label">
+                Gesamtbetrag
+                <div class="summary-details">{$count} Einlösungen · {$total_points} Punkte</div>
+            </div>
+            <div class="summary-value">{$total_formatted}<span class="summary-currency">EUR</span></div>
         </div>
 
-        <div class="disclaimer">
-            <strong>⚠️ WICHTIG:</strong><br>
-            KEINE UMSATZSTEUER<br>
-            Interne Vergütung – Nicht steuerbar
+        <div class="notes-row">
+            <div class="note-cell">
+                <div class="note-box booking">
+                    <div class="note-title">Buchungshinweis</div>
+                    <p>Soll: 4930 (Werbekosten)</p>
+                    <p>Haben: 1000 (Kasse)</p>
+                </div>
+            </div>
+            <div class="note-cell">
+                <div class="note-box legal">
+                    <div class="note-title">Steuerhinweis</div>
+                    <p>Ohne Umsatzsteuer gem. § 1 UStG</p>
+                    <p>Interne Vergütung – nicht steuerbar</p>
+                </div>
+            </div>
         </div>
 
         <div class="footer">
-            <p>Dieses Dokument wurde automatisch von PunktePass generiert.</p>
+            <p>Automatisch erstellt · PunktePass Treueprogramm · www.punktepass.de</p>
         </div>
     </div>
 </body>
@@ -545,33 +1335,40 @@ HTML;
     }
 
     /**
-     * 🎨 HTML - Havi bizonylat ROMÁN verzió
+     * 🎨 HTML - Havi bizonylat ROMÁN verzió - Professional Design
      */
     private static function html_monthly_receipt_ro($store, $redeems, $year, $month, $total_amount, $total_points) {
         $company = htmlspecialchars($store['company_name'] ?? 'Societate');
         $address = htmlspecialchars($store['address'] ?? '');
         $plz = htmlspecialchars($store['plz'] ?? '');
         $city = htmlspecialchars($store['city'] ?? '');
-        $month_str = date('F Y', mktime(0, 0, 0, $month, 1, $year));
+        $tax_id = htmlspecialchars($store['tax_id'] ?? '');
+
+        // Romanian month names
+        $romanian_months = ['Ianuarie', 'Februarie', 'Martie', 'Aprilie', 'Mai', 'Iunie', 'Iulie', 'August', 'Septembrie', 'Octombrie', 'Noiembrie', 'Decembrie'];
+        $month_str = $romanian_months[$month - 1] . ' ' . $year;
         $count = count($redeems);
+        $total_formatted = number_format($total_amount, 2, ',', '.');
+        $receipt_num = sprintf('%d-%02d-L', $year, $month);
 
         $rows = '';
         foreach ($redeems as $r) {
             $customer = htmlspecialchars(trim(($r->first_name ?? '') . ' ' . ($r->last_name ?? '')));
             if (!$customer) {
-                $customer = htmlspecialchars($r->user_email ?? 'Unbekannt');
+                $customer = htmlspecialchars($r->user_email ?? 'Necunoscut');
             }
             $reward = htmlspecialchars($r->reward_title ?? 'Recompensă');
             $points = intval($r->points_spent ?? 0);
-            $amount = floatval($r->actual_amount ?? $r->points_spent ?? 0);
+            $amount = self::calculate_item_amount($r);
+            $amount_fmt = number_format($amount, 2, ',', '.');
             $date = date('d.m.Y', strtotime($r->redeemed_at));
 
-            $rows .= "<tr style=\"border-bottom: 1px solid #ddd;\">
-                <td style=\"padding: 8px; font-size: 11px;\">{$date}</td>
-                <td style=\"padding: 8px; font-size: 11px;\">{$customer}</td>
-                <td style=\"padding: 8px; font-size: 11px;\">{$reward}</td>
-                <td style=\"padding: 8px; font-size: 11px; text-align: right;\">{$points}</td>
-                <td style=\"padding: 8px; font-size: 11px; text-align: right;\">{$amount} RON</td>
+            $rows .= "<tr>
+                <td>{$date}</td>
+                <td>{$customer}</td>
+                <td>{$reward}</td>
+                <td class=\"num\">{$points}</td>
+                <td class=\"num\">{$amount_fmt}</td>
             </tr>";
         }
 
@@ -580,62 +1377,258 @@ HTML;
 <html lang="ro">
 <head>
     <meta charset="UTF-8">
-    <title>Dispoziție Lunară de Cheltuieli</title>
+    <title>Situație Lunară {$month_str}</title>
     <style>
-        * { margin: 0; padding: 0; }
-        body { font-family: Arial, sans-serif; padding: 20px; background: white; }
-        .receipt { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border: 1px solid #ddd; }
-        .header { border-bottom: 2px solid #333; padding-bottom: 15px; margin-bottom: 20px; }
-        .header h1 { font-size: 18px; font-weight: bold; }
-        .company-info { margin-bottom: 20px; }
-        .company-info p { margin: 3px 0; font-size: 13px; }
-        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-        th { background: #007bff; color: white; padding: 10px; text-align: left; font-size: 12px; font-weight: bold; }
-        .total-row { background: #f9f9f9; font-weight: bold; }
-        .booking { background: #fff3cd; padding: 12px; margin: 15px 0; font-size: 11px; }
-        .disclaimer { background: #e8f4f8; padding: 10px; margin: 15px 0; font-size: 11px; }
-        .footer { text-align: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid #ddd; font-size: 11px; color: #666; }
+        @page { margin: 15mm; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            font-size: 10pt;
+            line-height: 1.4;
+            color: #2c3e50;
+            background: #fff;
+        }
+        .receipt {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            display: table;
+            width: 100%;
+            border-bottom: 3px solid #1a5276;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        .header-left {
+            display: table-cell;
+            vertical-align: top;
+            width: 60%;
+        }
+        .header-right {
+            display: table-cell;
+            vertical-align: top;
+            text-align: right;
+            width: 40%;
+        }
+        .doc-title {
+            font-size: 20pt;
+            font-weight: 700;
+            color: #1a5276;
+            margin-bottom: 3px;
+        }
+        .doc-subtitle {
+            font-size: 9pt;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .doc-number {
+            font-size: 10pt;
+            color: #1a5276;
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+        .doc-period {
+            font-size: 11pt;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        /* Company Info */
+        .company-box {
+            background: #f8f9fa;
+            border-left: 3px solid #1a5276;
+            padding: 12px 15px;
+            margin-bottom: 20px;
+        }
+        .company-box p {
+            margin: 2px 0;
+            font-size: 9pt;
+        }
+        .company-box .name {
+            font-weight: 600;
+            font-size: 10pt;
+            color: #2c3e50;
+        }
+
+        /* Table */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 9pt;
+        }
+        .data-table thead th {
+            background: #1a5276;
+            color: #fff;
+            padding: 8px 10px;
+            text-align: left;
+            font-size: 8pt;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+        .data-table thead th.num {
+            text-align: right;
+        }
+        .data-table tbody td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        .data-table tbody td.num {
+            text-align: right;
+            font-family: 'Courier New', monospace;
+        }
+        .data-table tbody tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        /* Summary Row */
+        .summary-row {
+            display: table;
+            width: 100%;
+            background: linear-gradient(135deg, #1a5276 0%, #2980b9 100%);
+            color: #fff;
+            padding: 12px 15px;
+            margin: 15px 0;
+        }
+        .summary-label {
+            display: table-cell;
+            vertical-align: middle;
+            font-size: 9pt;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .summary-value {
+            display: table-cell;
+            vertical-align: middle;
+            text-align: right;
+            font-size: 18pt;
+            font-weight: 700;
+        }
+        .summary-currency {
+            font-size: 10pt;
+            opacity: 0.8;
+            margin-left: 3px;
+        }
+        .summary-details {
+            font-size: 8pt;
+            opacity: 0.8;
+            margin-top: 3px;
+        }
+
+        /* Notes */
+        .notes-row {
+            display: table;
+            width: 100%;
+            margin: 15px 0;
+        }
+        .note-cell {
+            display: table-cell;
+            width: 50%;
+            vertical-align: top;
+            padding-right: 8px;
+        }
+        .note-cell:last-child {
+            padding-right: 0;
+            padding-left: 8px;
+        }
+        .note-box {
+            padding: 10px 12px;
+            font-size: 8pt;
+        }
+        .note-box.booking {
+            background: #fef9e7;
+            border-left: 3px solid #f39c12;
+        }
+        .note-box.legal {
+            background: #eaf2f8;
+            border-left: 3px solid #3498db;
+        }
+        .note-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .note-box.booking .note-title { color: #d68910; }
+        .note-box.legal .note-title { color: #2874a6; }
+
+        /* Footer */
+        .footer {
+            margin-top: 20px;
+            padding-top: 10px;
+            border-top: 1px solid #ecf0f1;
+            text-align: center;
+            font-size: 7pt;
+            color: #95a5a6;
+        }
     </style>
 </head>
 <body>
     <div class="receipt">
         <div class="header">
-            <h1>DISPOZIȚIE LUNARĂ DE CHELTUIELI</h1>
-            <p>Situație rezumativă – Program PunktePass</p>
+            <div class="header-left">
+                <div class="doc-title">Situație Lunară</div>
+                <div class="doc-subtitle">Centralizator Recompense Clienți</div>
+            </div>
+            <div class="header-right">
+                <div class="doc-number">Nr. {$receipt_num}</div>
+                <div class="doc-period">{$month_str}</div>
+            </div>
         </div>
 
-        <div class="company-info">
-            <p><strong>Societate:</strong> {$company}</p>
-            <p><strong>Adresă:</strong> {$address}, {$plz} {$city}</p>
-            <p><strong>Perioada:</strong> {$month_str}</p>
+        <div class="company-box">
+            <p class="name">{$company}</p>
+            <p>{$address}, {$plz} {$city}</p>
+            {$tax_id}
         </div>
 
-        <table>
-            <thead><tr><th>Data</th><th>Client</th><th>Recompensă</th><th style="text-align: right;">Puncte</th><th style="text-align: right;">Suma</th></tr></thead>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Client</th>
+                    <th>Recompensă</th>
+                    <th class="num">Puncte</th>
+                    <th class="num">Valoare (RON)</th>
+                </tr>
+            </thead>
             <tbody>
                 {$rows}
-                <tr class="total-row">
-                    <td colspan="3" style="padding: 10px; text-align: right;">TOTAL ({$count} Rambursări):</td>
-                    <td style="padding: 10px; text-align: right;">{$total_points}</td>
-                    <td style="padding: 10px; text-align: right;">{$total_amount} RON</td>
-                </tr>
             </tbody>
         </table>
 
-        <div class="booking">
-            <strong>📊 ÎNREGISTRARE CONTABILĂ SUGERATĂ:</strong><br>
-            Debit: 623 (Cheltuieli marketing)<br>
-            Credit: 5311 (Casa în lei)
+        <div class="summary-row">
+            <div class="summary-label">
+                Suma Totală
+                <div class="summary-details">{$count} utilizări · {$total_points} puncte</div>
+            </div>
+            <div class="summary-value">{$total_formatted}<span class="summary-currency">RON</span></div>
         </div>
 
-        <div class="disclaimer">
-            <strong>⚠️ IMPORTANT:</strong><br>
-            FĂRĂ TVA<br>
-            Operațiune internă, neimpozabilă
+        <div class="notes-row">
+            <div class="note-cell">
+                <div class="note-box booking">
+                    <div class="note-title">Înregistrare Contabilă</div>
+                    <p>Debit: 623 (Cheltuieli cu publicitatea)</p>
+                    <p>Credit: 5311 (Casa în lei)</p>
+                </div>
+            </div>
+            <div class="note-cell">
+                <div class="note-box legal">
+                    <div class="note-title">Mențiuni Fiscale</div>
+                    <p>Operațiune fără TVA</p>
+                    <p>Consum intern – neimpozabil</p>
+                </div>
+            </div>
         </div>
 
         <div class="footer">
-            <p>Acest document a fost generat automat de PunktePass.</p>
+            <p>Document generat automat · Program PunktePass · www.punktepass.de</p>
         </div>
     </div>
 </body>
@@ -644,8 +1637,7 @@ HTML;
     }
 
     /**
-     * 💾 FÁJL MENTÉS - EGYSZERŰSÍTVE
-     * HTML-t PDF-ként menti el
+     * 💾 FÁJL MENTÉS - DOMPDF-el valódi PDF generálás
      */
     private static function save_receipt_file($html, $filename) {
         $upload_dir = wp_upload_dir();
@@ -661,15 +1653,41 @@ HTML;
 
         $filepath = $receipts_dir . '/' . $filename;
 
-        // ✅ HTML-t egyszerűen fájlként mentjük
-        $bytes = file_put_contents($filepath, $html);
+        // ✅ DOMPDF betöltése és PDF generálás
+        try {
+            $dompdf_autoload = PPV_PLUGIN_DIR . 'libs/dompdf/vendor/autoload.php';
+            if (!file_exists($dompdf_autoload)) {
+                ppv_log("❌ [PPV_EXPENSE_RECEIPT] DOMPDF autoload nem található: {$dompdf_autoload}");
+                return false;
+            }
 
-        if ($bytes === false) {
-            ppv_log("❌ [PPV_EXPENSE_RECEIPT] Fájl írás sikertelen: {$filepath}");
+            require_once $dompdf_autoload;
+
+            $options = new \Dompdf\Options();
+            $options->set('isHtml5ParserEnabled', true);
+            $options->set('isRemoteEnabled', true);
+            $options->set('defaultFont', 'Arial');
+            $options->set('isPhpEnabled', false);
+
+            $dompdf = new \Dompdf\Dompdf($options);
+            $dompdf->loadHtml($html, 'UTF-8');
+            $dompdf->setPaper('A4', 'portrait');
+            $dompdf->render();
+
+            $pdf_content = $dompdf->output();
+            $bytes = file_put_contents($filepath, $pdf_content);
+
+            if ($bytes === false) {
+                ppv_log("❌ [PPV_EXPENSE_RECEIPT] PDF írás sikertelen: {$filepath}");
+                return false;
+            }
+
+            ppv_log("✅ [PPV_EXPENSE_RECEIPT] PDF mentve: {$filename} ({$bytes} bytes)");
+
+        } catch (\Exception $e) {
+            ppv_log("❌ [PPV_EXPENSE_RECEIPT] DOMPDF hiba: " . $e->getMessage());
             return false;
         }
-
-        ppv_log("✅ [PPV_EXPENSE_RECEIPT] Fájl mentve: {$filename} ({$bytes} bytes)");
 
         // Relatív útvonal visszaadása az adatbázisba
         return self::RECEIPTS_DIR . '/' . $filename;
@@ -685,5 +1703,1109 @@ HTML;
 
         $upload_dir = wp_upload_dir();
         return $upload_dir['baseurl'] . '/' . $receipt_path;
+    }
+
+    /**
+     * 🎨 HTML generálás IDŐSZAK bizonylathoz (Zeitraumbericht)
+     */
+    private static function generate_html_for_date_range($store, $redeems, $date_from, $date_to, $lang) {
+        $total_amount = 0;
+        $total_points = 0;
+
+        foreach ($redeems as $r) {
+            $total_amount += self::calculate_item_amount($r);
+            $total_points += intval($r->points_spent ?? 0);
+        }
+
+        if ($lang === 'RO') {
+            return self::html_date_range_receipt_ro($store, $redeems, $date_from, $date_to, $total_amount, $total_points);
+        } elseif ($lang === 'HU') {
+            return self::html_date_range_receipt_hu($store, $redeems, $date_from, $date_to, $total_amount, $total_points);
+        } else {
+            return self::html_date_range_receipt_de($store, $redeems, $date_from, $date_to, $total_amount, $total_points);
+        }
+    }
+
+    /**
+     * 🎨 HTML - Időszak bizonylat NÉMET verzió - Professional Design
+     */
+    private static function html_date_range_receipt_de($store, $redeems, $date_from, $date_to, $total_amount, $total_points) {
+        $company = htmlspecialchars($store['company_name'] ?? 'Unternehmen');
+        $address = htmlspecialchars($store['address'] ?? '');
+        $plz = htmlspecialchars($store['plz'] ?? '');
+        $city = htmlspecialchars($store['city'] ?? '');
+        $tax_id = htmlspecialchars($store['tax_id'] ?? '');
+
+        // Date range formatting
+        $from_formatted = date('d.m.Y', strtotime($date_from));
+        $to_formatted = date('d.m.Y', strtotime($date_to));
+        $period_str = $from_formatted . ' - ' . $to_formatted;
+        $count = count($redeems);
+        $total_formatted = number_format($total_amount, 2, ',', '.');
+        $receipt_num = sprintf('ZR-%s-%s', str_replace('-', '', $date_from), str_replace('-', '', $date_to));
+
+        $rows = '';
+        foreach ($redeems as $r) {
+            $customer = htmlspecialchars(trim(($r->first_name ?? '') . ' ' . ($r->last_name ?? '')));
+            if (!$customer) {
+                $customer = htmlspecialchars($r->user_email ?? 'Unbekannt');
+            }
+            $reward = htmlspecialchars($r->reward_title ?? 'Prämie');
+            $points = intval($r->points_spent ?? 0);
+            $amount = self::calculate_item_amount($r);
+            $amount_fmt = number_format($amount, 2, ',', '.');
+            $row_date = date('d.m.Y', strtotime($r->redeemed_at));
+
+            $rows .= "<tr>
+                <td>{$row_date}</td>
+                <td>{$customer}</td>
+                <td>{$reward}</td>
+                <td class=\"num\">{$points}</td>
+                <td class=\"num\">{$amount_fmt}</td>
+            </tr>";
+        }
+
+        $generated_date = date('d.m.Y H:i');
+
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Zeitraumbericht {$period_str}</title>
+    <style>
+        @page { margin: 15mm; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            font-size: 10pt;
+            line-height: 1.4;
+            color: #2c3e50;
+            background: #fff;
+        }
+        .receipt {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            display: table;
+            width: 100%;
+            border-bottom: 3px solid #1a5276;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        .header-left {
+            display: table-cell;
+            vertical-align: top;
+            width: 60%;
+        }
+        .header-right {
+            display: table-cell;
+            vertical-align: top;
+            text-align: right;
+            width: 40%;
+        }
+        .doc-title {
+            font-size: 20pt;
+            font-weight: 700;
+            color: #1a5276;
+            margin-bottom: 3px;
+        }
+        .doc-subtitle {
+            font-size: 9pt;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .doc-number {
+            font-size: 10pt;
+            color: #1a5276;
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+        .doc-period {
+            font-size: 11pt;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        /* Company Info */
+        .company-box {
+            background: #f8f9fa;
+            border-left: 3px solid #1a5276;
+            padding: 12px 15px;
+            margin-bottom: 20px;
+        }
+        .company-box p {
+            margin: 2px 0;
+            font-size: 9pt;
+        }
+        .company-box .name {
+            font-weight: 600;
+            font-size: 10pt;
+            color: #2c3e50;
+        }
+
+        /* Table */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 9pt;
+        }
+        .data-table thead th {
+            background: #1a5276;
+            color: #fff;
+            padding: 8px 10px;
+            text-align: left;
+            font-size: 8pt;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+        .data-table thead th.num {
+            text-align: right;
+        }
+        .data-table tbody td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        .data-table tbody td.num {
+            text-align: right;
+            font-family: 'Courier New', monospace;
+        }
+        .data-table tbody tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        /* Summary Row */
+        .summary-row {
+            display: table;
+            width: 100%;
+            background: linear-gradient(135deg, #1a5276 0%, #2980b9 100%);
+            color: #fff;
+            padding: 12px 15px;
+            margin: 15px 0;
+        }
+        .summary-label {
+            display: table-cell;
+            vertical-align: middle;
+            font-size: 9pt;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .summary-value {
+            display: table-cell;
+            vertical-align: middle;
+            text-align: right;
+            font-size: 18pt;
+            font-weight: 700;
+        }
+        .summary-currency {
+            font-size: 10pt;
+            opacity: 0.8;
+            margin-left: 3px;
+        }
+        .summary-details {
+            font-size: 8pt;
+            opacity: 0.8;
+            margin-top: 3px;
+        }
+
+        /* Notes */
+        .notes-row {
+            display: table;
+            width: 100%;
+            margin: 15px 0;
+        }
+        .note-cell {
+            display: table-cell;
+            width: 50%;
+            vertical-align: top;
+            padding-right: 8px;
+        }
+        .note-cell:last-child {
+            padding-right: 0;
+            padding-left: 8px;
+        }
+        .note-box {
+            padding: 10px 12px;
+            font-size: 8pt;
+        }
+        .note-box.booking {
+            background: #fef9e7;
+            border-left: 3px solid #f39c12;
+        }
+        .note-box.legal {
+            background: #eaf2f8;
+            border-left: 3px solid #3498db;
+        }
+        .note-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .note-box.booking .note-title { color: #d68910; }
+        .note-box.legal .note-title { color: #2874a6; }
+
+        /* Footer */
+        .footer {
+            margin-top: 20px;
+            padding-top: 10px;
+            border-top: 1px solid #ecf0f1;
+            text-align: center;
+            font-size: 7pt;
+            color: #95a5a6;
+        }
+    </style>
+</head>
+<body>
+    <div class="receipt">
+        <div class="header">
+            <div class="header-left">
+                <div class="doc-title">Zeitraumbericht</div>
+                <div class="doc-subtitle">Sammelbeleg Kundenprämien</div>
+            </div>
+            <div class="header-right">
+                <div class="doc-number">Nr. {$receipt_num}</div>
+                <div class="doc-period">{$period_str}</div>
+            </div>
+        </div>
+
+        <div class="company-box">
+            <p class="name">{$company}</p>
+            <p>{$address}, {$plz} {$city}</p>
+            {$tax_id}
+        </div>
+
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Datum</th>
+                    <th>Kunde</th>
+                    <th>Prämie</th>
+                    <th class="num">Punkte</th>
+                    <th class="num">Wert (€)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {$rows}
+            </tbody>
+        </table>
+
+        <div class="summary-row">
+            <div class="summary-label">
+                Gesamtsumme<br>
+                <span class="summary-details">{$count} Einlösungen · {$total_points} Punkte</span>
+            </div>
+            <div class="summary-value">
+                {$total_formatted}<span class="summary-currency">€</span>
+            </div>
+        </div>
+
+        <div class="notes-row">
+            <div class="note-cell">
+                <div class="note-box booking">
+                    <div class="note-title">📋 Buchungshinweis</div>
+                    Werbeaufwand oder Kundenbindungskosten
+                </div>
+            </div>
+            <div class="note-cell">
+                <div class="note-box legal">
+                    <div class="note-title">⚖️ Rechtlicher Hinweis</div>
+                    Kundenprämien gemäß § 4 Nr. 5 UStG umsatzsteuerfrei
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            Erstellt am: {$generated_date} · PunktePass Loyalty System
+        </div>
+    </div>
+</body>
+</html>
+HTML;
+    }
+
+    /**
+     * 🎨 HTML - Időszak bizonylat ROMÁN verzió
+     */
+    private static function html_date_range_receipt_ro($store, $redeems, $date_from, $date_to, $total_amount, $total_points) {
+        $company = htmlspecialchars($store['company_name'] ?? 'Companie');
+        $address = htmlspecialchars($store['address'] ?? '');
+        $plz = htmlspecialchars($store['plz'] ?? '');
+        $city = htmlspecialchars($store['city'] ?? '');
+        $tax_id = htmlspecialchars($store['tax_id'] ?? '');
+
+        // Date range formatting
+        $from_formatted = date('d.m.Y', strtotime($date_from));
+        $to_formatted = date('d.m.Y', strtotime($date_to));
+        $period_str = $from_formatted . ' - ' . $to_formatted;
+        $count = count($redeems);
+        $total_formatted = number_format($total_amount, 2, ',', '.');
+        $receipt_num = sprintf('RP-%s-%s', str_replace('-', '', $date_from), str_replace('-', '', $date_to));
+
+        $rows = '';
+        foreach ($redeems as $r) {
+            $customer = htmlspecialchars(trim(($r->first_name ?? '') . ' ' . ($r->last_name ?? '')));
+            if (!$customer) {
+                $customer = htmlspecialchars($r->user_email ?? 'Necunoscut');
+            }
+            $reward = htmlspecialchars($r->reward_title ?? 'Premiu');
+            $points = intval($r->points_spent ?? 0);
+            $amount = self::calculate_item_amount($r);
+            $amount_fmt = number_format($amount, 2, ',', '.');
+            $row_date = date('d.m.Y', strtotime($r->redeemed_at));
+
+            $rows .= "<tr>
+                <td>{$row_date}</td>
+                <td>{$customer}</td>
+                <td>{$reward}</td>
+                <td class=\"num\">{$points}</td>
+                <td class=\"num\">{$amount_fmt}</td>
+            </tr>";
+        }
+
+        $generated_date = date('d.m.Y H:i');
+
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <title>Raport Perioadă {$period_str}</title>
+    <style>
+        @page { margin: 15mm; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            font-size: 10pt;
+            line-height: 1.4;
+            color: #2c3e50;
+            background: #fff;
+        }
+        .receipt {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            display: table;
+            width: 100%;
+            border-bottom: 3px solid #1a5276;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        .header-left {
+            display: table-cell;
+            vertical-align: top;
+            width: 60%;
+        }
+        .header-right {
+            display: table-cell;
+            vertical-align: top;
+            text-align: right;
+            width: 40%;
+        }
+        .doc-title {
+            font-size: 20pt;
+            font-weight: 700;
+            color: #1a5276;
+            margin-bottom: 3px;
+        }
+        .doc-subtitle {
+            font-size: 9pt;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .doc-number {
+            font-size: 10pt;
+            color: #1a5276;
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+        .doc-period {
+            font-size: 11pt;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .company-box {
+            background: #f8f9fa;
+            border-left: 3px solid #1a5276;
+            padding: 12px 15px;
+            margin-bottom: 20px;
+        }
+        .company-box p {
+            margin: 2px 0;
+            font-size: 9pt;
+        }
+        .company-box .name {
+            font-weight: 600;
+            font-size: 10pt;
+            color: #2c3e50;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 9pt;
+        }
+        .data-table thead th {
+            background: #1a5276;
+            color: #fff;
+            padding: 8px 10px;
+            text-align: left;
+            font-size: 8pt;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+        .data-table thead th.num {
+            text-align: right;
+        }
+        .data-table tbody td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        .data-table tbody td.num {
+            text-align: right;
+            font-family: 'Courier New', monospace;
+        }
+        .data-table tbody tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        .summary-row {
+            display: table;
+            width: 100%;
+            background: linear-gradient(135deg, #1a5276 0%, #2980b9 100%);
+            color: #fff;
+            padding: 12px 15px;
+            margin: 15px 0;
+        }
+        .summary-label {
+            display: table-cell;
+            vertical-align: middle;
+            font-size: 9pt;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .summary-value {
+            display: table-cell;
+            vertical-align: middle;
+            text-align: right;
+            font-size: 18pt;
+            font-weight: 700;
+        }
+        .summary-currency {
+            font-size: 10pt;
+            opacity: 0.8;
+            margin-left: 3px;
+        }
+        .summary-details {
+            font-size: 8pt;
+            opacity: 0.8;
+            margin-top: 3px;
+        }
+        .footer {
+            margin-top: 20px;
+            padding-top: 10px;
+            border-top: 1px solid #ecf0f1;
+            text-align: center;
+            font-size: 7pt;
+            color: #95a5a6;
+        }
+    </style>
+</head>
+<body>
+    <div class="receipt">
+        <div class="header">
+            <div class="header-left">
+                <div class="doc-title">Raport Perioadă</div>
+                <div class="doc-subtitle">Document Colectiv Premii Clienți</div>
+            </div>
+            <div class="header-right">
+                <div class="doc-number">Nr. {$receipt_num}</div>
+                <div class="doc-period">{$period_str}</div>
+            </div>
+        </div>
+
+        <div class="company-box">
+            <p class="name">{$company}</p>
+            <p>{$address}, {$plz} {$city}</p>
+            {$tax_id}
+        </div>
+
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Client</th>
+                    <th>Premiu</th>
+                    <th class="num">Puncte</th>
+                    <th class="num">Valoare (€)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {$rows}
+            </tbody>
+        </table>
+
+        <div class="summary-row">
+            <div class="summary-label">
+                Total<br>
+                <span class="summary-details">{$count} răscumpărări · {$total_points} puncte</span>
+            </div>
+            <div class="summary-value">
+                {$total_formatted}<span class="summary-currency">€</span>
+            </div>
+        </div>
+
+        <div class="footer">
+            Generat: {$generated_date} · PunktePass Loyalty System
+        </div>
+    </div>
+</body>
+</html>
+HTML;
+    }
+
+    /**
+     * 🎨 HTML - Időszak bizonylat MAGYAR verzió
+     */
+    private static function html_date_range_receipt_hu($store, $redeems, $date_from, $date_to, $total_amount, $total_points) {
+        $company = htmlspecialchars($store['company_name'] ?? 'Vállalkozás');
+        $address = htmlspecialchars($store['address'] ?? '');
+        $plz = htmlspecialchars($store['plz'] ?? '');
+        $city = htmlspecialchars($store['city'] ?? '');
+        $tax_id = htmlspecialchars($store['tax_id'] ?? '');
+
+        // Date range formatting
+        $from_formatted = date('Y.m.d', strtotime($date_from));
+        $to_formatted = date('Y.m.d', strtotime($date_to));
+        $period_str = $from_formatted . ' - ' . $to_formatted;
+        $count = count($redeems);
+        $total_formatted = number_format($total_amount, 0, ',', ' ');
+        $receipt_num = sprintf('IJ-%s-%s', str_replace('-', '', $date_from), str_replace('-', '', $date_to));
+
+        $rows = '';
+        foreach ($redeems as $r) {
+            $customer = htmlspecialchars(trim(($r->first_name ?? '') . ' ' . ($r->last_name ?? '')));
+            if (!$customer) {
+                $customer = htmlspecialchars($r->user_email ?? 'Ismeretlen');
+            }
+            $reward = htmlspecialchars($r->reward_title ?? 'Jutalom');
+            $points = intval($r->points_spent ?? 0);
+            $amount = self::calculate_item_amount($r);
+            $amount_fmt = number_format($amount, 0, ',', ' ');
+            $row_date = date('Y.m.d', strtotime($r->redeemed_at));
+
+            $rows .= "<tr>
+                <td>{$row_date}</td>
+                <td>{$customer}</td>
+                <td>{$reward}</td>
+                <td class=\"num\">{$points}</td>
+                <td class=\"num\">{$amount_fmt}</td>
+            </tr>";
+        }
+
+        $generated_date = date('Y.m.d H:i');
+
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <title>Időszaki jelentés {$period_str}</title>
+    <style>
+        @page { margin: 15mm; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            font-size: 10pt;
+            line-height: 1.4;
+            color: #2c3e50;
+            background: #fff;
+        }
+        .receipt {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            display: table;
+            width: 100%;
+            border-bottom: 3px solid #1a5276;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        .header-left {
+            display: table-cell;
+            vertical-align: top;
+            width: 60%;
+        }
+        .header-right {
+            display: table-cell;
+            vertical-align: top;
+            text-align: right;
+            width: 40%;
+        }
+        .doc-title {
+            font-size: 20pt;
+            font-weight: 700;
+            color: #1a5276;
+            margin-bottom: 3px;
+        }
+        .doc-subtitle {
+            font-size: 9pt;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .doc-number {
+            font-size: 10pt;
+            color: #1a5276;
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+        .doc-period {
+            font-size: 11pt;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .company-box {
+            background: #f8f9fa;
+            border-left: 3px solid #1a5276;
+            padding: 12px 15px;
+            margin-bottom: 20px;
+        }
+        .company-box p {
+            margin: 2px 0;
+            font-size: 9pt;
+        }
+        .company-box .name {
+            font-weight: 600;
+            font-size: 10pt;
+            color: #2c3e50;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 9pt;
+        }
+        .data-table thead th {
+            background: #1a5276;
+            color: #fff;
+            padding: 8px 10px;
+            text-align: left;
+            font-size: 8pt;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+        .data-table thead th.num {
+            text-align: right;
+        }
+        .data-table tbody td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        .data-table tbody td.num {
+            text-align: right;
+            font-family: 'Courier New', monospace;
+        }
+        .data-table tbody tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        .summary-row {
+            display: table;
+            width: 100%;
+            background: linear-gradient(135deg, #1a5276 0%, #2980b9 100%);
+            color: #fff;
+            padding: 12px 15px;
+            margin: 15px 0;
+        }
+        .summary-label {
+            display: table-cell;
+            vertical-align: middle;
+            font-size: 9pt;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .summary-value {
+            display: table-cell;
+            vertical-align: middle;
+            text-align: right;
+            font-size: 18pt;
+            font-weight: 700;
+        }
+        .summary-currency {
+            font-size: 10pt;
+            opacity: 0.8;
+            margin-left: 3px;
+        }
+        .summary-details {
+            font-size: 8pt;
+            opacity: 0.8;
+            margin-top: 3px;
+        }
+        .footer {
+            margin-top: 20px;
+            padding-top: 10px;
+            border-top: 1px solid #ecf0f1;
+            text-align: center;
+            font-size: 7pt;
+            color: #95a5a6;
+        }
+    </style>
+</head>
+<body>
+    <div class="receipt">
+        <div class="header">
+            <div class="header-left">
+                <div class="doc-title">Időszaki jelentés</div>
+                <div class="doc-subtitle">Összesített jutalom bizonylat</div>
+            </div>
+            <div class="header-right">
+                <div class="doc-number">Sz. {$receipt_num}</div>
+                <div class="doc-period">{$period_str}</div>
+            </div>
+        </div>
+
+        <div class="company-box">
+            <p class="name">{$company}</p>
+            <p>{$address}, {$plz} {$city}</p>
+            {$tax_id}
+        </div>
+
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Dátum</th>
+                    <th>Ügyfél</th>
+                    <th>Jutalom</th>
+                    <th class="num">Pont</th>
+                    <th class="num">Érték (Ft)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {$rows}
+            </tbody>
+        </table>
+
+        <div class="summary-row">
+            <div class="summary-label">
+                Összesen<br>
+                <span class="summary-details">{$count} beváltás · {$total_points} pont</span>
+            </div>
+            <div class="summary-value">
+                {$total_formatted}<span class="summary-currency">Ft</span>
+            </div>
+        </div>
+
+        <div class="footer">
+            Készült: {$generated_date} · PunktePass Loyalty System
+        </div>
+    </div>
+</body>
+</html>
+HTML;
+    }
+
+    /**
+     * 🎨 HTML - Havi bizonylat MAGYAR verzió
+     */
+    private static function html_monthly_receipt_hu($store, $redeems, $year, $month, $total_amount, $total_points) {
+        $company = htmlspecialchars($store['company_name'] ?? 'Vállalkozás');
+        $address = htmlspecialchars($store['address'] ?? '');
+        $plz = htmlspecialchars($store['plz'] ?? '');
+        $city = htmlspecialchars($store['city'] ?? '');
+        $tax_id = htmlspecialchars($store['tax_id'] ?? '');
+
+        // Hungarian month names
+        $hungarian_months = ['Január', 'Február', 'Március', 'Április', 'Május', 'Június', 'Július', 'Augusztus', 'Szeptember', 'Október', 'November', 'December'];
+        $month_str = $year . '. ' . $hungarian_months[$month - 1];
+        $count = count($redeems);
+        $total_formatted = number_format($total_amount, 0, ',', ' ');
+        $receipt_num = sprintf('%d-%02d-H', $year, $month);
+
+        $rows = '';
+        foreach ($redeems as $r) {
+            $customer = htmlspecialchars(trim(($r->first_name ?? '') . ' ' . ($r->last_name ?? '')));
+            if (!$customer) {
+                $customer = htmlspecialchars($r->user_email ?? 'Ismeretlen');
+            }
+            $reward = htmlspecialchars($r->reward_title ?? 'Jutalom');
+            $points = intval($r->points_spent ?? 0);
+            $amount = self::calculate_item_amount($r);
+            $amount_fmt = number_format($amount, 0, ',', ' ');
+            $date = date('Y.m.d', strtotime($r->redeemed_at));
+
+            $rows .= "<tr>
+                <td>{$date}</td>
+                <td>{$customer}</td>
+                <td>{$reward}</td>
+                <td class=\"num\">{$points}</td>
+                <td class=\"num\">{$amount_fmt}</td>
+            </tr>";
+        }
+
+        $generated_date = date('Y.m.d H:i');
+
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <title>Havi elszámolás {$month_str}</title>
+    <style>
+        @page { margin: 15mm; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            font-size: 10pt;
+            line-height: 1.4;
+            color: #2c3e50;
+            background: #fff;
+        }
+        .receipt {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            display: table;
+            width: 100%;
+            border-bottom: 3px solid #1a5276;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        .header-left {
+            display: table-cell;
+            vertical-align: top;
+            width: 60%;
+        }
+        .header-right {
+            display: table-cell;
+            vertical-align: top;
+            text-align: right;
+            width: 40%;
+        }
+        .doc-title {
+            font-size: 20pt;
+            font-weight: 700;
+            color: #1a5276;
+            margin-bottom: 3px;
+        }
+        .doc-subtitle {
+            font-size: 9pt;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .doc-number {
+            font-size: 10pt;
+            color: #1a5276;
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+        .doc-period {
+            font-size: 11pt;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .company-box {
+            background: #f8f9fa;
+            border-left: 3px solid #1a5276;
+            padding: 12px 15px;
+            margin-bottom: 20px;
+        }
+        .company-box p {
+            margin: 2px 0;
+            font-size: 9pt;
+        }
+        .company-box .name {
+            font-weight: 600;
+            font-size: 10pt;
+            color: #2c3e50;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 9pt;
+        }
+        .data-table thead th {
+            background: #1a5276;
+            color: #fff;
+            padding: 8px 10px;
+            text-align: left;
+            font-size: 8pt;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+        .data-table thead th.num {
+            text-align: right;
+        }
+        .data-table tbody td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        .data-table tbody td.num {
+            text-align: right;
+            font-family: 'Courier New', monospace;
+        }
+        .data-table tbody tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        .summary-row {
+            display: table;
+            width: 100%;
+            background: linear-gradient(135deg, #1a5276 0%, #2980b9 100%);
+            color: #fff;
+            padding: 12px 15px;
+            margin: 15px 0;
+        }
+        .summary-label {
+            display: table-cell;
+            vertical-align: middle;
+            font-size: 9pt;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .summary-value {
+            display: table-cell;
+            vertical-align: middle;
+            text-align: right;
+            font-size: 18pt;
+            font-weight: 700;
+        }
+        .summary-currency {
+            font-size: 10pt;
+            opacity: 0.8;
+            margin-left: 3px;
+        }
+        .summary-details {
+            font-size: 8pt;
+            opacity: 0.8;
+            margin-top: 3px;
+        }
+        .notes-row {
+            display: table;
+            width: 100%;
+            margin: 15px 0;
+        }
+        .note-cell {
+            display: table-cell;
+            width: 50%;
+            vertical-align: top;
+            padding-right: 8px;
+        }
+        .note-cell:last-child {
+            padding-right: 0;
+            padding-left: 8px;
+        }
+        .note-box {
+            padding: 10px 12px;
+            font-size: 8pt;
+        }
+        .note-box.booking {
+            background: #fef9e7;
+            border-left: 3px solid #f39c12;
+        }
+        .note-box.legal {
+            background: #eaf2f8;
+            border-left: 3px solid #3498db;
+        }
+        .note-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .note-box.booking .note-title { color: #d68910; }
+        .note-box.legal .note-title { color: #2874a6; }
+        .footer {
+            margin-top: 20px;
+            padding-top: 10px;
+            border-top: 1px solid #ecf0f1;
+            text-align: center;
+            font-size: 7pt;
+            color: #95a5a6;
+        }
+    </style>
+</head>
+<body>
+    <div class="receipt">
+        <div class="header">
+            <div class="header-left">
+                <div class="doc-title">Havi elszámolás</div>
+                <div class="doc-subtitle">Összesített jutalom bizonylat</div>
+            </div>
+            <div class="header-right">
+                <div class="doc-number">Sz. {$receipt_num}</div>
+                <div class="doc-period">{$month_str}</div>
+            </div>
+        </div>
+
+        <div class="company-box">
+            <p class="name">{$company}</p>
+            <p>{$address}, {$plz} {$city}</p>
+            {$tax_id}
+        </div>
+
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Dátum</th>
+                    <th>Ügyfél</th>
+                    <th>Jutalom</th>
+                    <th class="num">Pont</th>
+                    <th class="num">Érték (Ft)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {$rows}
+            </tbody>
+        </table>
+
+        <div class="summary-row">
+            <div class="summary-label">
+                Összesen<br>
+                <span class="summary-details">{$count} beváltás · {$total_points} pont</span>
+            </div>
+            <div class="summary-value">
+                {$total_formatted}<span class="summary-currency">Ft</span>
+            </div>
+        </div>
+
+        <div class="notes-row">
+            <div class="note-cell">
+                <div class="note-box booking">
+                    <div class="note-title">📋 Könyvelési megjegyzés</div>
+                    Reklámköltség vagy ügyfélmegtartási költség
+                </div>
+            </div>
+            <div class="note-cell">
+                <div class="note-box legal">
+                    <div class="note-title">⚖️ Jogi megjegyzés</div>
+                    Ügyféljutalmak a hatályos jogszabályok szerint
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            Készült: {$generated_date} · PunktePass Loyalty System
+        </div>
+    </div>
+</body>
+</html>
+HTML;
     }
 }

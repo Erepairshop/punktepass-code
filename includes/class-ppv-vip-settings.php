@@ -288,17 +288,17 @@ class PPV_VIP_Settings {
             'de' => [
                 'fix' => 'Fixpunkte-Bonus: Die Werte müssen aufsteigend sein (Bronze ≤ Silber ≤ Gold ≤ Platin)',
                 'streak' => 'X. Scan Bonus: Die Werte müssen aufsteigend sein (Bronze ≤ Silber ≤ Gold ≤ Platin)',
-                'daily' => 'Erster Scan des Tages: Die Werte müssen aufsteigend sein (Bronze ≤ Silber ≤ Gold ≤ Platin)',
+                'daily' => 'Erster Scan: Die Werte müssen aufsteigend sein (Bronze ≤ Silber ≤ Gold ≤ Platin)',
             ],
             'hu' => [
                 'fix' => 'Fix pont bónusz: Az értékeknek növekvő sorrendben kell lenniük (Bronz ≤ Ezüst ≤ Arany ≤ Platina)',
                 'streak' => 'X. scan bónusz: Az értékeknek növekvő sorrendben kell lenniük (Bronz ≤ Ezüst ≤ Arany ≤ Platina)',
-                'daily' => 'Első napi scan: Az értékeknek növekvő sorrendben kell lenniük (Bronz ≤ Ezüst ≤ Arany ≤ Platina)',
+                'daily' => 'Első scan: Az értékeknek növekvő sorrendben kell lenniük (Bronz ≤ Ezüst ≤ Arany ≤ Platina)',
             ],
             'ro' => [
                 'fix' => 'Bonus puncte fixe: Valorile trebuie să fie în ordine crescătoare (Bronz ≤ Argint ≤ Aur ≤ Platină)',
                 'streak' => 'Bonus scanare X: Valorile trebuie să fie în ordine crescătoare (Bronz ≤ Argint ≤ Aur ≤ Platină)',
-                'daily' => 'Prima scanare zilnică: Valorile trebuie să fie în ordine crescătoare (Bronz ≤ Argint ≤ Aur ≤ Platină)',
+                'daily' => 'Prima scanare: Valorile trebuie să fie în ordine crescătoare (Bronz ≤ Argint ≤ Aur ≤ Platină)',
             ],
         ];
         $err = $error_messages[$lang] ?? $error_messages['de'];
@@ -410,13 +410,13 @@ class PPV_VIP_Settings {
                 'streak_type_double' => 'Doppelt',
                 'streak_type_triple' => 'Dreifach',
 
-                'daily_title' => 'Erster Scan des Tages',
-                'daily_desc' => 'Erster täglicher Besuch bringt extra Punkte',
+                'daily_title' => 'Erster Scan',
+                'daily_desc' => 'Einmaliger Bonus beim ersten Besuch im Geschäft',
                 'daily_suffix' => ' Punkte',
 
                 // Preview
                 'preview_title' => 'Live-Vorschau',
-                'preview_scenario' => 'Szenario: 100 Punkte Scan, 10. Besuch heute, erster Scan heute',
+                'preview_scenario' => 'Szenario: 100 Punkte Scan, 10. Besuch, erster Besuch im Geschäft',
                 'preview_base' => 'Basis-Punkte',
                 'preview_fix' => 'Fixpunkte',
                 'preview_streak' => 'X. Scan Bonus',
@@ -451,13 +451,13 @@ class PPV_VIP_Settings {
                 'streak_type_double' => 'Dupla',
                 'streak_type_triple' => 'Tripla',
 
-                'daily_title' => 'Első Napi Scan',
-                'daily_desc' => 'Az első napi látogatás extra pontot hoz',
+                'daily_title' => 'Első Scan',
+                'daily_desc' => 'Egyszeri bónusz az első látogatáskor',
                 'daily_suffix' => ' pont',
 
                 // Preview
                 'preview_title' => 'Élő Előnézet',
-                'preview_scenario' => 'Forgatókönyv: 100 pontos scan, 10. látogatás ma, első scan ma',
+                'preview_scenario' => 'Forgatókönyv: 100 pontos scan, 10. látogatás, első látogatás a boltban',
                 'preview_base' => 'Alap pontok',
                 'preview_fix' => 'Fix pont',
                 'preview_streak' => 'X. scan bónusz',
@@ -492,13 +492,13 @@ class PPV_VIP_Settings {
                 'streak_type_double' => 'Dublu',
                 'streak_type_triple' => 'Triplu',
 
-                'daily_title' => 'Prima Scanare Zilnică',
-                'daily_desc' => 'Prima vizită zilnică aduce puncte extra',
+                'daily_title' => 'Prima Scanare',
+                'daily_desc' => 'Bonus unic la prima vizită în magazin',
                 'daily_suffix' => ' puncte',
 
                 // Preview
                 'preview_title' => 'Previzualizare Live',
-                'preview_scenario' => 'Scenariu: scanare 100 puncte, a 10-a vizită azi, prima scanare azi',
+                'preview_scenario' => 'Scenariu: scanare 100 puncte, a 10-a vizită, prima vizită în magazin',
                 'preview_base' => 'Puncte de bază',
                 'preview_fix' => 'Puncte fixe',
                 'preview_streak' => 'Bonus scanare X',

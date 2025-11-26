@@ -393,11 +393,6 @@ private static function render_tab_general($store) {
             <label data-i18n="description"><?php echo esc_html(PPV_Lang::t('description')); ?></label>
             <textarea name="description"><?php echo esc_textarea($store->description ?? ''); ?></textarea>
         </div>
-
-        <!-- LOGOUT LINK -->
-        <div class="ppv-form-group">
-            <?php echo do_shortcode('[ppv_logout_link]'); ?>
-        </div>
     </div>
     <?php
     return ob_get_clean();
@@ -633,9 +628,16 @@ if (!empty($store->gallery)) {
 
             // 🏪 FILIALE SUPPORT: Use session-aware store ID
             $store_id = self::get_store_id();
+
+            ppv_log("📖 [DEBUG] get_current_store() - store_id: {$store_id}");
+            ppv_log("📖 [DEBUG] Session ppv_store_id: " . ($_SESSION['ppv_store_id'] ?? 'NULL'));
+            ppv_log("📖 [DEBUG] Session ppv_current_filiale_id: " . ($_SESSION['ppv_current_filiale_id'] ?? 'NULL'));
+
             if ($store_id) {
                 // SQL_NO_CACHE ensures MySQL doesn't return cached results
-                return $wpdb->get_row($wpdb->prepare("SELECT SQL_NO_CACHE * FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1", $store_id));
+                $store = $wpdb->get_row($wpdb->prepare("SELECT SQL_NO_CACHE * FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1", $store_id));
+                ppv_log("📖 [DEBUG] Loaded store name: " . ($store->name ?? 'NULL'));
+                return $store;
             }
 
             // Fallback: GET parameter (admin use)
@@ -820,6 +822,9 @@ $format_specs = [
 
 ppv_log("💾 [DEBUG] Saving store ID: {$store_id}");
 ppv_log("💾 [DEBUG] Country: " . ($update_data['country'] ?? 'NULL'));
+ppv_log("💾 [DEBUG] Store Name: " . ($update_data['name'] ?? 'NULL'));
+ppv_log("💾 [DEBUG] Session store_id: " . ($_SESSION['ppv_store_id'] ?? 'NULL'));
+ppv_log("💾 [DEBUG] Session filiale_id: " . ($_SESSION['ppv_current_filiale_id'] ?? 'NULL'));
 
 $result = $wpdb->update(
     $wpdb->prefix . 'ppv_stores',
@@ -829,7 +834,8 @@ $result = $wpdb->update(
     ['%d']
 );
 
-ppv_log("💾 [DEBUG] Update result: " . ($result !== false ? 'OK' : 'FAILED'));
+ppv_log("💾 [DEBUG] Update result: " . ($result !== false ? 'OK (rows: ' . $result . ')' : 'FAILED'));
+ppv_log("💾 [DEBUG] Last SQL error: " . $wpdb->last_error);
 
     if ($result !== false) {
         // ✅ FIX: Return updated store data so JS can refresh form fields without reload

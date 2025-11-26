@@ -779,17 +779,11 @@ private static function get_today_hours($opening_hours) {
             null
         );
 
-        // 📡 ABLY: Load JS SDK from CDN if enabled
+        // 📡 ABLY: Load JS SDK + shared manager if enabled
         $dependencies = ['jquery'];
         if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
-            wp_enqueue_script(
-                'ably-js',
-                'https://cdn.ably.com/lib/ably.min-1.js',
-                [],
-                '1.2',
-                true
-            );
-            $dependencies[] = 'ably-js';
+            PPV_Ably::enqueue_scripts();
+            $dependencies[] = 'ppv-ably-manager';
         }
 
         wp_enqueue_script(
@@ -1237,7 +1231,7 @@ public static function render_dashboard() {
     if (!empty($store_ids_str)) {
         $rewards_query = "
             SELECT store_id, id, title, required_points, points_given,
-                   action_type, action_value, currency, description
+                   action_type, action_value, currency, description, end_date
             FROM {$prefix}ppv_rewards
             WHERE store_id IN ({$store_ids_str})
               AND required_points > 0
@@ -1261,7 +1255,8 @@ public static function render_dashboard() {
                 'points_given' => (int)$r->points_given,
                 'action_type' => $r->action_type,
                 'action_value' => $r->action_value,
-                'currency' => $r->currency
+                'currency' => $r->currency,
+                'end_date' => $r->end_date
             ];
             $rewards_count[$sid]++;
         }

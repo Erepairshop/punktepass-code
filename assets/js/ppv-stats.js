@@ -639,7 +639,311 @@ jQuery(document).ready(function($) {
         loadTrend();
         loadSpending();
         loadConversion();
+        loadScannerStats();
     });
+
+    // ============================================================
+    // 📑 TAB SWITCHING
+    // ============================================================
+    let scannerStatsLoaded = false;
+
+    $('.ppv-stats-tab').on('click', function() {
+        const tab = $(this).data('tab');
+        console.log(`📑 [Tab] Switching to: ${tab}`);
+
+        // Update tab buttons
+        $('.ppv-stats-tab').removeClass('active');
+        $(this).addClass('active');
+
+        // Update tab content
+        $('.ppv-stats-tab-content').removeClass('active');
+        $(`#ppv-tab-${tab}`).addClass('active');
+
+        // Load scanner stats on first view
+        if (tab === 'scanners' && !scannerStatsLoaded) {
+            loadScannerStats();
+            scannerStatsLoaded = true;
+        }
+
+        // Load suspicious scans on first view
+        if (tab === 'suspicious' && !suspiciousStatsLoaded) {
+            loadSuspiciousScans();
+            suspiciousStatsLoaded = true;
+        }
+    });
+
+    // ============================================================
+    // ⚠️ SUSPICIOUS SCANS
+    // ============================================================
+    let suspiciousStatsLoaded = false;
+
+    // Status filter change
+    $('#ppv-suspicious-status').on('change', function() {
+        loadSuspiciousScans();
+    });
+
+    function loadSuspiciousScans() {
+        if (!config.suspicious_url) {
+            console.log("⚠️ [Suspicious] No URL configured");
+            return;
+        }
+
+        const status = $('#ppv-suspicious-status').val() || 'new';
+        console.log(`⚠️ [Suspicious] Loading status: ${status}`);
+
+        const $loading = $('#ppv-suspicious-loading');
+        const $list = $('#ppv-suspicious-list');
+
+        $loading.show();
+
+        $.ajax({
+            url: config.suspicious_url,
+            method: 'GET',
+            data: { status: status },
+            headers: { 'X-WP-Nonce': nonce },
+            dataType: 'json',
+            cache: false,
+            success: function(res) {
+                $loading.hide();
+
+                if (res.success) {
+                    displaySuspiciousScans(res);
+                    updateSuspiciousBadge(res.counts);
+                    console.log("✅ [Suspicious] OK, scans:", res.scans?.length || 0);
+                } else {
+                    $list.html(`<p class="ppv-error-small">${T['error_loading'] || 'Error loading data'}</p>`);
+                }
+            },
+            error: function() {
+                $loading.hide();
+                $list.html(`<p class="ppv-error-small">${T['error_loading'] || 'Error loading data'}</p>`);
+            }
+        });
+    }
+
+    function displaySuspiciousScans(data) {
+        const scans = data.scans || [];
+        const counts = data.counts || {};
+        const $list = $('#ppv-suspicious-list');
+
+        if (scans.length === 0) {
+            $list.html(`<p class="ppv-no-data">${T['no_suspicious_scans'] || 'Keine verdächtigen Scans vorhanden.'}</p>`);
+            return;
+        }
+
+        let html = '<div class="ppv-suspicious-table">';
+
+        // Table header
+        html += `
+            <div class="ppv-suspicious-row ppv-suspicious-header">
+                <div class="ppv-suspicious-cell">${T['user'] || 'Benutzer'}</div>
+                <div class="ppv-suspicious-cell">${T['distance'] || 'Entfernung'}</div>
+                <div class="ppv-suspicious-cell">${T['status'] || 'Status'}</div>
+                <div class="ppv-suspicious-cell">${T['date'] || 'Datum'}</div>
+                <div class="ppv-suspicious-cell">${T['actions'] || 'Aktionen'}</div>
+            </div>
+        `;
+
+        // Scan rows
+        scans.forEach(scan => {
+            const statusClass = scan.status === 'new' ? 'ppv-status-warning' :
+                               scan.status === 'reviewed' ? 'ppv-status-info' :
+                               scan.status === 'dismissed' ? 'ppv-status-success' : '';
+
+            const statusLabel = {
+                'new': T['status_new'] || 'Neu',
+                'reviewed': T['status_reviewed'] || 'Überprüft',
+                'dismissed': T['status_dismissed'] || 'Abgewiesen',
+                'blocked': T['status_blocked'] || 'Gesperrt'
+            }[scan.status] || scan.status;
+
+            const dateFormatted = new Date(scan.created_at).toLocaleString('de-DE', {
+                day: '2-digit', month: '2-digit', year: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            });
+
+            html += `
+                <div class="ppv-suspicious-row ${scan.status === 'new' ? 'ppv-row-highlight' : ''}">
+                    <div class="ppv-suspicious-cell ppv-user-info">
+                        <strong>${escapeHtml(scan.user_name)}</strong>
+                        ${scan.user_email ? `<br><small>${escapeHtml(scan.user_email)}</small>` : ''}
+                    </div>
+                    <div class="ppv-suspicious-cell ppv-distance">
+                        <span class="ppv-distance-value">${scan.distance_km} km</span>
+                    </div>
+                    <div class="ppv-suspicious-cell">
+                        <span class="ppv-status-badge ${statusClass}">${statusLabel}</span>
+                    </div>
+                    <div class="ppv-suspicious-cell ppv-date">
+                        ${dateFormatted}
+                    </div>
+                    <div class="ppv-suspicious-cell ppv-actions">
+                        <a href="${scan.maps_link}" target="_blank" class="ppv-btn-small" title="${T['view_on_map'] || 'Auf Karte anzeigen'}">
+                            <i class="ri-map-pin-line"></i>
+                        </a>
+                        <button class="ppv-btn-small ppv-btn-review-request" data-scan-id="${scan.id}" data-user-name="${escapeHtml(scan.user_name)}" title="${T['request_review'] || 'Admin Überprüfung anfordern'}">
+                            <i class="ri-mail-send-line"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+
+        html += '</div>';
+        $list.html(html);
+    }
+
+    function updateSuspiciousBadge(counts) {
+        const newCount = counts?.new || 0;
+        const $badge = $('#ppv-suspicious-badge');
+
+        if (newCount > 0) {
+            $badge.text(newCount).show();
+        } else {
+            $badge.hide();
+        }
+    }
+
+    // ============================================================
+    // 📧 REQUEST ADMIN REVIEW
+    // ============================================================
+    $(document).on('click', '.ppv-btn-review-request', function() {
+        const $btn = $(this);
+        const scanId = $btn.data('scan-id');
+        const userName = $btn.data('user-name');
+
+        if ($btn.hasClass('ppv-btn-disabled')) return;
+
+        const confirmMsg = T['confirm_review_request'] || `Admin Überprüfung für "${userName}" anfordern?`;
+        if (!confirm(confirmMsg)) return;
+
+        $btn.addClass('ppv-btn-disabled').find('i').removeClass('ri-mail-send-line').addClass('ri-loader-4-line ri-spin');
+
+        $.ajax({
+            url: config.review_request_url || (config.ajax_url.replace('/stats', '/stats/request-review')),
+            method: 'POST',
+            data: JSON.stringify({ scan_id: scanId }),
+            contentType: 'application/json',
+            headers: { 'X-WP-Nonce': nonce },
+            success: function(res) {
+                if (res.success) {
+                    alert(T['review_requested'] || '✅ Admin Überprüfung wurde angefordert!');
+                    $btn.find('i').removeClass('ri-loader-4-line ri-spin').addClass('ri-check-line');
+                    $btn.addClass('ppv-btn-success');
+                } else {
+                    alert(T['review_request_failed'] || '❌ Fehler: ' + (res.error || 'Unbekannter Fehler'));
+                    $btn.removeClass('ppv-btn-disabled').find('i').removeClass('ri-loader-4-line ri-spin').addClass('ri-mail-send-line');
+                }
+            },
+            error: function() {
+                alert(T['review_request_failed'] || '❌ Netzwerkfehler');
+                $btn.removeClass('ppv-btn-disabled').find('i').removeClass('ri-loader-4-line ri-spin').addClass('ri-mail-send-line');
+            }
+        });
+    });
+
+    // ============================================================
+    // 👤 LOAD SCANNER STATS
+    // ============================================================
+    function loadScannerStats() {
+        console.log(`👤 [Scanner Stats] Loading... filiale: ${currentFilialeId}`);
+
+        const $loading = $('#ppv-scanner-stats-loading');
+        const $list = $('#ppv-scanner-list');
+
+        $loading.show();
+
+        $.ajax({
+            url: config.scanner_url,
+            method: 'GET',
+            data: { filiale_id: currentFilialeId },
+            headers: { 'X-WP-Nonce': nonce },
+            dataType: 'json',
+            cache: false,
+            success: function(res) {
+                $loading.hide();
+
+                if (res.success) {
+                    displayScannerStats(res);
+                    console.log("✅ [Scanner Stats] OK, scanners:", res.scanners?.length || 0);
+                } else {
+                    $list.html(`<p class="ppv-error-small">${T['error_loading'] || 'Error loading data'}</p>`);
+                }
+            },
+            error: function() {
+                $loading.hide();
+                $list.html(`<p class="ppv-error-small">${T['error_loading'] || 'Error loading data'}</p>`);
+            }
+        });
+    }
+
+    function displayScannerStats(data) {
+        const scanners = data.scanners || [];
+        const summary = data.summary || {};
+        const untracked = data.untracked || {};
+
+        // Update summary cards
+        $('#ppv-scanner-count').text(formatNumber(summary.scanner_count || 0));
+        $('#ppv-tracked-scans').text(formatNumber(summary.total_tracked || 0));
+        $('#ppv-untracked-scans').text(formatNumber(summary.total_untracked || 0));
+
+        // Build scanner list
+        const $list = $('#ppv-scanner-list');
+
+        if (scanners.length === 0) {
+            $list.html(`<p class="ppv-no-data">${T['no_scanner_data'] || 'Noch keine Scanner-Daten vorhanden.'}</p>`);
+            return;
+        }
+
+        let html = '<div class="ppv-scanner-table">';
+
+        // Table header
+        html += `
+            <div class="ppv-scanner-row ppv-scanner-header">
+                <div class="ppv-scanner-cell">${T['employee'] || 'Mitarbeiter'}</div>
+                <div class="ppv-scanner-cell">${T['today'] || 'Heute'}</div>
+                <div class="ppv-scanner-cell">${T['this_week'] || 'Woche'}</div>
+                <div class="ppv-scanner-cell">${T['this_month'] || 'Monat'}</div>
+                <div class="ppv-scanner-cell">${T['total'] || 'Gesamt'}</div>
+            </div>
+        `;
+
+        // Scanner rows
+        scanners.forEach((scanner, index) => {
+            const rankClass = index < 3 ? `ppv-rank-${index + 1}` : '';
+            const rankIcon = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
+
+            html += `
+                <div class="ppv-scanner-row ${rankClass}">
+                    <div class="ppv-scanner-cell ppv-scanner-name">
+                        ${rankIcon} ${escapeHtml(scanner.scanner_name)}
+                    </div>
+                    <div class="ppv-scanner-cell">${formatNumber(scanner.today_scans)}</div>
+                    <div class="ppv-scanner-cell">${formatNumber(scanner.week_scans)}</div>
+                    <div class="ppv-scanner-cell">${formatNumber(scanner.month_scans)}</div>
+                    <div class="ppv-scanner-cell ppv-scanner-total">${formatNumber(scanner.total_scans)}</div>
+                </div>
+            `;
+        });
+
+        // Untracked row (if any)
+        if (untracked.total_scans > 0) {
+            html += `
+                <div class="ppv-scanner-row ppv-scanner-untracked">
+                    <div class="ppv-scanner-cell ppv-scanner-name">
+                        ⚠️ ${T['untracked'] || 'Ohne Zuordnung'}
+                    </div>
+                    <div class="ppv-scanner-cell">${formatNumber(untracked.today_scans)}</div>
+                    <div class="ppv-scanner-cell">${formatNumber(untracked.week_scans)}</div>
+                    <div class="ppv-scanner-cell">-</div>
+                    <div class="ppv-scanner-cell ppv-scanner-total">${formatNumber(untracked.total_scans)}</div>
+                </div>
+            `;
+        }
+
+        html += '</div>';
+        $list.html(html);
+    }
 
     // ============================================================
     // 🚀 INIT
@@ -665,6 +969,27 @@ jQuery(document).ready(function($) {
     loadTrend();
     loadSpending();
     loadConversion();
+
+    // Check URL for tab parameter (e.g., ?tab=suspicious)
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabParam = urlParams.get('tab');
+    if (tabParam) {
+        console.log(`📑 [Stats] Opening tab from URL: ${tabParam}`);
+        const $tabBtn = $(`.ppv-stats-tab[data-tab="${tabParam}"]`);
+        if ($tabBtn.length) {
+            $tabBtn.trigger('click');
+        }
+    }
+
+    // Also check for hash (e.g., #suspicious)
+    if (window.location.hash) {
+        const hashTab = window.location.hash.substring(1);
+        console.log(`📑 [Stats] Opening tab from hash: ${hashTab}`);
+        const $tabBtn = $(`.ppv-stats-tab[data-tab="${hashTab}"]`);
+        if ($tabBtn.length) {
+            $tabBtn.trigger('click');
+        }
+    }
 
     console.log("✅ [Stats COMPLETE] Ready!");
 });

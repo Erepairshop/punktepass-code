@@ -261,6 +261,7 @@ $core_modules = [
      'includes/class-ppv-vip-settings.php',
      'includes/class-ppv-ably.php',
      'includes/class-ppv-scan-monitoring.php',
+     'includes/class-ppv-weekly-report.php', // Weekly email reports to store owners
      'includes/admin/class-ppv-admin-suspicious-scans.php',
      'includes/admin/class-ppv-admin-suspicious-devices.php', // Admin panel for suspicious devices
      'includes/class-ppv-user-qr.php', // Timed QR endpoint

@@ -185,6 +185,25 @@ class PPV_Core {
 
             update_option('ppv_db_migration_version', '1.6');
         }
+
+        // Migration 1.7: Add campaign fields to ppv_rewards (unified rewards + campaigns)
+        if (version_compare($migration_version, '1.7', '<')) {
+            $rewards_table = $wpdb->prefix . 'ppv_rewards';
+
+            // Check if start_date column exists
+            $start_date_col = $wpdb->get_results("SHOW COLUMNS FROM {$rewards_table} LIKE 'start_date'");
+
+            if (empty($start_date_col)) {
+                $wpdb->query("ALTER TABLE {$rewards_table}
+                    ADD COLUMN start_date DATE NULL COMMENT 'Campaign start date (NULL = always active)' AFTER active,
+                    ADD COLUMN end_date DATE NULL COMMENT 'Campaign end date (NULL = no expiry)' AFTER start_date,
+                    ADD COLUMN is_campaign TINYINT(1) DEFAULT 0 COMMENT '1 = time-limited campaign, 0 = regular reward' AFTER end_date
+                ");
+                ppv_log("✅ [PPV_Core] Added campaign fields (start_date, end_date, is_campaign) to ppv_rewards table");
+            }
+
+            update_option('ppv_db_migration_version', '1.7');
+        }
     }
 
     public static function init_session_bridge() {

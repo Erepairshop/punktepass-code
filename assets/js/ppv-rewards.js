@@ -152,7 +152,7 @@
     const container = document.getElementById('ppv-ea-pending-list');
     if (!container) return;
 
-    container.innerHTML = '<div class="ppv-ea-loading"><i class="ri-loader-4-line ri-spin"></i> Lade...</div>';
+    container.innerHTML = '<div class="ppv-ea-loading"><i class="ri-loader-4-line ri-spin"></i> ' + (L.rewards_loading || 'Lade...') + '</div>';
 
     try {
       const res = await fetch(`${base}einloesungen/list?status=pending`);
@@ -167,13 +167,13 @@
         container.innerHTML = `
           <div class="ppv-ea-empty">
             <i class="ri-checkbox-circle-line"></i>
-            <p>Keine ausstehenden Einlösungen</p>
+            <p>${L.rewards_no_pending || 'Keine ausstehenden Einlösungen'}</p>
           </div>
         `;
       }
     } catch (err) {
       console.error('[PPV_REWARDS_V2] Pending error:', err);
-      container.innerHTML = '<div class="ppv-ea-error"><i class="ri-error-warning-line"></i> Fehler beim Laden</div>';
+      container.innerHTML = '<div class="ppv-ea-error"><i class="ri-error-warning-line"></i> ' + (L.rewards_toast_error || 'Fehler beim Laden') + '</div>';
     }
   }
 
@@ -188,7 +188,8 @@
     const userName = formatUserName(item);
     const date = formatDate(item.redeemed_at);
     const points = item.points_spent || 0;
-    const reward = item.reward_title || 'Belohnung';
+    const reward = item.reward_title || L.rewards_default_title || 'Belohnung';
+    const pointsLabel = L.rewards_points || 'Punkte';
 
     card.innerHTML = `
       <div class="ppv-ea-card-main">
@@ -200,15 +201,15 @@
           <span class="ppv-ea-card-reward"><i class="ri-gift-line"></i> ${escapeHtml(reward)}</span>
           <span class="ppv-ea-card-meta">
             <i class="ri-calendar-line"></i> ${date}
-            <span class="ppv-ea-card-points">-${points} Punkte</span>
+            <span class="ppv-ea-card-points">-${points} ${pointsLabel}</span>
           </span>
         </div>
       </div>
       <div class="ppv-ea-card-actions">
-        <button class="ppv-ea-btn-approve" data-id="${item.id}" title="Bestätigen">
+        <button class="ppv-ea-btn-approve" data-id="${item.id}" title="${L.rewards_btn_approve || 'Bestätigen'}">
           <i class="ri-check-line"></i>
         </button>
-        <button class="ppv-ea-btn-reject" data-id="${item.id}" title="Ablehnen">
+        <button class="ppv-ea-btn-reject" data-id="${item.id}" title="${L.rewards_btn_reject || 'Ablehnen'}">
           <i class="ri-close-line"></i>
         </button>
       </div>
@@ -250,21 +251,21 @@
             container.innerHTML = `
               <div class="ppv-ea-empty">
                 <i class="ri-checkbox-circle-line"></i>
-                <p>Keine ausstehenden Einlösungen</p>
+                <p>${L.rewards_no_pending || 'Keine ausstehenden Einlösungen'}</p>
               </div>
             `;
           }
         }, 300);
 
-        showToast(status === 'approved' ? 'Bestätigt!' : 'Abgelehnt', status === 'approved' ? 'success' : 'info');
+        showToast(status === 'approved' ? (L.rewards_toast_approved || 'Bestätigt!') : (L.rewards_toast_rejected || 'Abgelehnt'), status === 'approved' ? 'success' : 'info');
       } else {
-        showToast(data.message || 'Fehler', 'error');
+        showToast(data.message || L.rewards_toast_error || 'Fehler', 'error');
         btn.disabled = false;
         btn.innerHTML = status === 'approved' ? '<i class="ri-check-line"></i>' : '<i class="ri-close-line"></i>';
       }
     } catch (err) {
       console.error('[PPV_REWARDS_V2] Update error:', err);
-      showToast('Netzwerkfehler', 'error');
+      showToast(L.network_error || 'Netzwerkfehler', 'error');
       btn.disabled = false;
     }
   }
@@ -276,7 +277,7 @@
     const container = document.getElementById('ppv-ea-history-list');
     if (!container) return;
 
-    container.innerHTML = '<div class="ppv-ea-loading"><i class="ri-loader-4-line ri-spin"></i> Lade...</div>';
+    container.innerHTML = '<div class="ppv-ea-loading"><i class="ri-loader-4-line ri-spin"></i> ' + (L.rewards_loading || 'Lade...') + '</div>';
 
     const statusFilter = document.getElementById('ppv-ea-filter-status')?.value || 'all';
     const dateFilter = document.getElementById('ppv-ea-filter-date')?.value || '';
@@ -297,13 +298,13 @@
         container.innerHTML = `
           <div class="ppv-ea-empty">
             <i class="ri-history-line"></i>
-            <p>Keine Einträge gefunden</p>
+            <p>${L.rewards_no_history || 'Keine Einträge gefunden'}</p>
           </div>
         `;
       }
     } catch (err) {
       console.error('[PPV_REWARDS_V2] History error:', err);
-      container.innerHTML = '<div class="ppv-ea-error"><i class="ri-error-warning-line"></i> Fehler beim Laden</div>';
+      container.innerHTML = '<div class="ppv-ea-error"><i class="ri-error-warning-line"></i> ' + (L.rewards_toast_error || 'Fehler beim Laden') + '</div>';
     }
   }
 
@@ -317,8 +318,9 @@
     const userName = formatUserName(item);
     const date = formatDate(item.redeemed_at);
     const points = item.points_spent || 0;
-    const reward = item.reward_title || 'Belohnung';
+    const reward = item.reward_title || L.rewards_default_title || 'Belohnung';
     const receiptNum = `#${new Date(item.redeemed_at).getFullYear()}-${String(item.id).padStart(4, '0')}`;
+    const pointsLabel = L.rewards_points || 'Punkte';
 
     const statusIcon = item.status === 'approved' ? 'ri-checkbox-circle-fill' : 'ri-close-circle-fill';
     const statusClass = item.status === 'approved' ? 'approved' : 'cancelled';
@@ -330,10 +332,10 @@
         </div>
         <div class="ppv-ea-card-info">
           <span class="ppv-ea-card-user">${escapeHtml(userName)}</span>
-          <span class="ppv-ea-card-reward"><i class="ri-gift-line"></i> ${escapeHtml(reward)} <span class="ppv-ea-card-points">-${points} Punkte</span></span>
+          <span class="ppv-ea-card-reward"><i class="ri-gift-line"></i> ${escapeHtml(reward)} <span class="ppv-ea-card-points">-${points} ${pointsLabel}</span></span>
           <span class="ppv-ea-card-meta">
             <i class="ri-calendar-line"></i> ${date}
-            <span class="ppv-ea-card-beleg">Beleg: ${receiptNum}</span>
+            <span class="ppv-ea-card-beleg">${receiptNum}</span>
           </span>
         </div>
       </div>
@@ -346,9 +348,14 @@
   // RECEIPTS
   // ============================================================
   function initReceiptGenerator() {
-    const btn = document.getElementById('ppv-ea-generate-receipt');
-    if (btn) {
-      btn.addEventListener('click', generateMonthlyReceipt);
+    const monthlyBtn = document.getElementById('ppv-ea-generate-receipt');
+    if (monthlyBtn) {
+      monthlyBtn.addEventListener('click', generateMonthlyReceipt);
+    }
+
+    const dateBtn = document.getElementById('ppv-ea-generate-date-receipt');
+    if (dateBtn) {
+      dateBtn.addEventListener('click', generateDateReceipt);
     }
   }
 
@@ -360,7 +367,7 @@
     if (!month || !year) return;
 
     btn.disabled = true;
-    btn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Erstelle...';
+    btn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> ' + (L.rewards_btn_creating || 'Erstelle...');
 
     try {
       const res = await fetch(`${base}einloesungen/monthly-receipt`, {
@@ -371,26 +378,68 @@
       const data = await res.json();
 
       if (data.success && data.receipt_url) {
-        showToast('Monatsbericht erstellt!', 'success');
-        window.open(data.receipt_url, '_blank');
+        showToast(L.rewards_toast_monthly_created || 'Monatsbericht erstellt!', 'success');
         loadReceipts(); // Refresh list
+        // Direct download
+        downloadPdf(data.receipt_url);
       } else {
-        showToast(data.message || 'Keine Einlösungen für diesen Zeitraum', 'error');
+        showToast(data.message || L.rewards_toast_no_data || 'Keine Einlösungen für diesen Zeitraum', 'error');
       }
     } catch (err) {
       console.error('[PPV_REWARDS_V2] Receipt error:', err);
-      showToast('Fehler beim Erstellen', 'error');
+      showToast(L.rewards_toast_error || 'Fehler beim Erstellen', 'error');
     }
 
     btn.disabled = false;
-    btn.innerHTML = '<i class="ri-file-add-line"></i> Erstellen';
+    btn.innerHTML = '<i class="ri-file-add-line"></i> ' + (L.rewards_btn_create || 'Erstellen');
+  }
+
+  async function generateDateReceipt() {
+    const btn = document.getElementById('ppv-ea-generate-date-receipt');
+    const dateFrom = document.getElementById('ppv-ea-receipt-date-from')?.value;
+    const dateTo = document.getElementById('ppv-ea-receipt-date-to')?.value;
+
+    if (!dateFrom || !dateTo) return;
+
+    // Validate date range
+    if (dateFrom > dateTo) {
+      showToast(L.rewards_toast_date_error || 'Startdatum muss vor Enddatum liegen', 'error');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> ' + (L.rewards_btn_creating || 'Erstelle...');
+
+    try {
+      const res = await fetch(`${base}einloesungen/date-receipt`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date_from: dateFrom, date_to: dateTo })
+      });
+      const data = await res.json();
+
+      if (data.success && data.receipt_url) {
+        showToast(data.message || L.rewards_toast_period_created || 'Zeitraumbericht erstellt!', 'success');
+        loadReceipts(); // Refresh list
+        // Direct download
+        downloadPdf(data.receipt_url);
+      } else {
+        showToast(data.message || L.rewards_toast_no_data || 'Keine Einlösungen für diesen Zeitraum', 'error');
+      }
+    } catch (err) {
+      console.error('[PPV_REWARDS_V2] Date receipt error:', err);
+      showToast(L.rewards_toast_error || 'Fehler beim Erstellen', 'error');
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ri-file-add-line"></i> ' + (L.rewards_btn_create || 'Erstellen');
   }
 
   async function loadReceipts() {
     const container = document.getElementById('ppv-ea-receipts-list');
     if (!container) return;
 
-    container.innerHTML = '<div class="ppv-ea-loading"><i class="ri-loader-4-line ri-spin"></i> Lade Belege...</div>';
+    container.innerHTML = '<div class="ppv-ea-loading"><i class="ri-loader-4-line ri-spin"></i> ' + (L.rewards_loading_receipts || 'Lade Belege...') + '</div>';
 
     try {
       const res = await fetch(`${base}einloesungen/receipts`);
@@ -405,13 +454,13 @@
         container.innerHTML = `
           <div class="ppv-ea-empty">
             <i class="ri-file-list-3-line"></i>
-            <p>Keine Belege vorhanden</p>
+            <p>${L.rewards_no_receipts || 'Keine Belege vorhanden'}</p>
           </div>
         `;
       }
     } catch (err) {
       console.error('[PPV_REWARDS_V2] Receipts error:', err);
-      container.innerHTML = '<div class="ppv-ea-error"><i class="ri-error-warning-line"></i> Fehler beim Laden</div>';
+      container.innerHTML = '<div class="ppv-ea-error"><i class="ri-error-warning-line"></i> ' + (L.rewards_toast_error || 'Fehler beim Laden') + '</div>';
     }
   }
 
@@ -419,25 +468,59 @@
     const card = document.createElement('div');
     card.className = 'ppv-ea-receipt-card';
 
-    const userName = formatUserName(item);
+    // Format: Inv-YYYY-XXXX (e.g. Inv-2025-0109)
+    const year = item.redeemed_at ? new Date(item.redeemed_at).getFullYear() : new Date().getFullYear();
+    const invoiceNum = `Inv-${year}-${String(item.id).padStart(4, '0')}`;
     const date = formatDate(item.redeemed_at);
-    const reward = item.reward_title || 'Belohnung';
+    const reward = item.reward_title || L.rewards_default_title || 'Belohnung';
     const receiptUrl = item.receipt_pdf_path ? `${baseUrl}/${item.receipt_pdf_path}` : null;
 
     card.innerHTML = `
       <div class="ppv-ea-receipt-info">
-        <span class="ppv-ea-receipt-user">${escapeHtml(userName)}</span>
+        <span class="ppv-ea-receipt-user">${escapeHtml(invoiceNum)}</span>
         <span class="ppv-ea-receipt-reward">${escapeHtml(reward)}</span>
         <span class="ppv-ea-receipt-date">${date}</span>
       </div>
       ${receiptUrl ? `
-        <a href="${receiptUrl}" target="_blank" class="ppv-ea-receipt-download">
+        <a href="${receiptUrl}" download class="ppv-ea-receipt-download" title="${L.rewards_receipt_download || 'Herunterladen'}">
           <i class="ri-download-line"></i>
         </a>
-      ` : ''}
+      ` : `
+        <button class="ppv-ea-receipt-generate" data-id="${item.id}" title="${L.rewards_btn_create || 'Beleg erstellen'}">
+          <i class="ri-file-add-line"></i>
+        </button>
+      `}
     `;
 
+    // Add click handler for generate button
+    const generateBtn = card.querySelector('.ppv-ea-receipt-generate');
+    if (generateBtn) {
+      generateBtn.addEventListener('click', () => generateSingleReceipt(item.id, baseUrl));
+    }
+
     return card;
+  }
+
+  // Generate single receipt
+  async function generateSingleReceipt(redeemId, baseUrl) {
+    const base = config.base || '/wp-json/ppv/v1/';
+    try {
+      const res = await fetch(`${base}einloesungen/generate-receipt`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ redeem_id: redeemId })
+      });
+      const data = await res.json();
+      if (data.success && data.receipt_url) {
+        showNotification(L.rewards_toast_approved || 'Beleg erstellt!', 'PDF');
+        loadReceipts(); // Refresh list
+      } else {
+        showNotification(L.rewards_toast_error || 'Fehler', data.message || L.rewards_toast_error || 'Beleg konnte nicht erstellt werden');
+      }
+    } catch (err) {
+      console.error('[PPV_REWARDS_V2] Generate receipt error:', err);
+      showNotification(L.rewards_toast_error || 'Fehler', L.network_error || 'Netzwerkfehler');
+    }
   }
 
   // ============================================================
@@ -465,7 +548,7 @@
 
       channel.subscribe('reward-request', (message) => {
         console.log('[PPV_REWARDS_V2] New reward request:', message.data);
-        showNotification('Neue Einlösung!', message.data.reward_title || 'Belohnung');
+        showNotification(L.rewards_new_redemption || 'Neue Einlösung!', message.data.reward_title || L.rewards_default_title || 'Belohnung');
         loadStats();
         if (currentTab === 'pending') loadPending();
       });
@@ -511,6 +594,17 @@
     const div = document.createElement('div');
     div.textContent = text || '';
     return div.innerHTML;
+  }
+
+  function downloadPdf(url) {
+    // Create hidden link and trigger download
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = url.split('/').pop();
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 
   function showToast(message, type = 'info') {

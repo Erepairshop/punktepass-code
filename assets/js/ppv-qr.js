@@ -35,7 +35,7 @@
     scanProcessor: null,
     uiManager: null,
     lastInitTime: 0,  // Prevent rapid re-init
-    ablyInstance: null,  // Ably connection for cleanup
+    ablySubscriberId: null,  // Ably subscriber ID for cleanup (shared manager)
     pollInterval: null,   // Polling interval for cleanup
     gpsPosition: null,     // Current GPS position for fraud detection
     gpsWatchId: null       // GPS watch ID for cleanup
@@ -131,9 +131,23 @@
            Number(sessionStorage.getItem('ppv_store_id')) || 0;
   }
 
+  // Get scanner ID (employee who is scanning)
+  function getScannerId() {
+    return window.PPV_STORE_DATA?.scanner_id ||
+           Number(sessionStorage.getItem('ppv_scanner_id')) || null;
+  }
+
+  // Get scanner name (email)
+  function getScannerName() {
+    return window.PPV_STORE_DATA?.scanner_name ||
+           sessionStorage.getItem('ppv_scanner_name') || null;
+  }
+
   // Save to session
   if (getStoreKey()) sessionStorage.setItem('ppv_store_key', getStoreKey());
   if (getStoreID()) sessionStorage.setItem('ppv_store_id', getStoreID());
+  if (getScannerId()) sessionStorage.setItem('ppv_scanner_id', getScannerId());
+  if (getScannerName()) sessionStorage.setItem('ppv_scanner_name', getScannerName());
 
   // ============================================================
   // TOAST
@@ -298,12 +312,19 @@
       // ✅ FIX: Show subtitle2 (date/time) for errors and successful scans with name
       const subtitle2Html = subtitle2 ? `<div class="ppv-scan-detail ppv-scan-time">${subtitle2}</div>` : '';
 
+      // 👤 Scanner info (who performed the scan)
+      const scannerName = log.scanner_name || null;
+      const scannerHtml = scannerName
+        ? `<div class="ppv-scan-detail ppv-scan-scanner">👤 ${scannerName}</div>`
+        : '';
+
       item.innerHTML = `
         ${avatarHtml}
         <div class="ppv-scan-info">
           <div class="ppv-scan-name">${displayName}</div>
           <div class="ppv-scan-detail">${subtitle}</div>
           ${subtitle2Html}
+          ${scannerHtml}
         </div>
         ${pointsHtml}
       `;
@@ -407,7 +428,9 @@
             store_key: getStoreKey(),
             points: 1,
             latitude: gps.latitude,
-            longitude: gps.longitude
+            longitude: gps.longitude,
+            scanner_id: getScannerId(),
+            scanner_name: getScannerName()
           })
         });
 
@@ -1359,7 +1382,9 @@
           store_key: getStoreKey(),
           points: 1,
           latitude: gps.latitude,
-          longitude: gps.longitude
+          longitude: gps.longitude,
+          scanner_id: getScannerId(),
+          scanner_name: getScannerName()
         })
       })
         .then(res => res.json())
@@ -1708,11 +1733,11 @@
   // CLEANUP
   // ============================================================
   function cleanup() {
-    // Close Ably connection if exists
-    if (STATE.ablyInstance) {
-      ppvLog('[Ably] Closing connection on cleanup');
-      STATE.ablyInstance.close();
-      STATE.ablyInstance = null;
+    // Unsubscribe from Ably via shared manager
+    if (STATE.ablySubscriberId && window.PPV_ABLY_MANAGER) {
+      ppvLog('[Ably] Unsubscribing via shared manager on cleanup');
+      window.PPV_ABLY_MANAGER.unsubscribe(STATE.ablySubscriberId);
+      STATE.ablySubscriberId = null;
     }
 
     // Clear polling interval if exists
@@ -1753,9 +1778,10 @@
 
     const campaignList = document.getElementById('ppv-campaign-list');
     const posInput = document.getElementById('ppv-pos-input');
+    const posLog = document.getElementById('ppv-pos-log');
 
-    // Only init if we have QR elements
-    if (!campaignList && !posInput) {
+    // Only init if we have QR elements (pos-log is the main scanner table)
+    if (!campaignList && !posInput && !posLog) {
       cleanup();
       return;
     }
@@ -1831,42 +1857,49 @@
     console.log('[Ably Debug] PPV_STORE_DATA:', window.PPV_STORE_DATA);
     console.log('[Ably Debug] ablyConfig:', ablyConfig);
     console.log('[Ably Debug] storeId:', storeId);
-    console.log('[Ably Debug] typeof Ably:', typeof Ably);
+    console.log('[Ably Debug] PPV_ABLY_MANAGER:', !!window.PPV_ABLY_MANAGER);
 
-    if (ablyConfig && typeof Ably !== 'undefined' && storeId) {
-      // ABLY MODE: Real-time updates via WebSocket
-      ppvLog('[Ably] Initializing with key:', ablyConfig.key.substring(0, 10) + '...');
+    if (ablyConfig && window.PPV_ABLY_MANAGER && storeId) {
+      // ABLY MODE: Real-time updates via shared WebSocket manager
+      ppvLog('[Ably] Initializing via shared manager with key:', ablyConfig.key.substring(0, 10) + '...');
 
-      STATE.ablyInstance = new Ably.Realtime({ key: ablyConfig.key });
-
-      // Subscribe to store's channel
+      const manager = window.PPV_ABLY_MANAGER;
       const channelName = 'store-' + storeId;
-      const channel = STATE.ablyInstance.channels.get(channelName);
 
-      STATE.ablyInstance.connection.on('connected', () => {
-        console.log('✅ [Ably] CONNECTED to channel: store-' + storeId);
-        ppvLog('[Ably] Connected');
-        // Stop polling if it was running
-        if (STATE.pollInterval) {
-          clearInterval(STATE.pollInterval);
-          STATE.pollInterval = null;
+      // Initialize shared connection
+      if (!manager.init({ key: ablyConfig.key, channel: channelName })) {
+        ppvLog('[Ably] Failed to init shared manager, using polling');
+        startPolling();
+        STATE.initialized = true;
+        return;
+      }
+
+      // Listen for connection state changes
+      manager.onStateChange((state) => {
+        if (state === 'connected') {
+          console.log('✅ [Ably] CONNECTED via shared manager to channel: store-' + storeId);
+          ppvLog('[Ably] Connected via shared manager');
+          // Stop polling if it was running
+          if (STATE.pollInterval) {
+            clearInterval(STATE.pollInterval);
+            STATE.pollInterval = null;
+          }
+        } else if (state === 'disconnected') {
+          console.warn('⚠️ [Ably] DISCONNECTED - starting fallback polling');
+          ppvLog('[Ably] Disconnected, starting fallback polling');
+          startPolling();
+        } else if (state === 'failed') {
+          console.error('❌ [Ably] CONNECTION FAILED');
+          ppvLog('[Ably] Connection failed');
+          startPolling();
         }
       });
 
-      STATE.ablyInstance.connection.on('disconnected', () => {
-        console.warn('⚠️ [Ably] DISCONNECTED - starting fallback polling');
-        ppvLog('[Ably] Disconnected, starting fallback polling');
-        startPolling();
-      });
-
-      STATE.ablyInstance.connection.on('failed', (err) => {
-        console.error('❌ [Ably] CONNECTION FAILED:', err);
-        ppvLog('[Ably] Connection failed:', err);
-        startPolling();
-      });
+      // Subscribe to all events via shared manager (single subscriber ID for all)
+      STATE.ablySubscriberId = 'qr-center-' + storeId;
 
       // Handle incoming scan events
-      channel.subscribe('new-scan', (message) => {
+      manager.subscribe(channelName, 'new-scan', (message) => {
         console.log('📡 [Ably] NEW-SCAN EVENT RECEIVED:', message.data);
         ppvLog('[Ably] New scan received:', message.data);
 
@@ -1878,47 +1911,47 @@
         } else {
           console.warn('📡 [Ably] STATE.uiManager is null!');
         }
-      });
+      }, STATE.ablySubscriberId);
 
       // Handle reward requests (legacy)
-      channel.subscribe('reward-request', (message) => {
+      manager.subscribe(channelName, 'reward-request', (message) => {
         ppvLog('[Ably] Reward request received:', message.data);
         // Refresh logs to show pending rewards
         STATE.scanProcessor?.loadLogs();
-      });
+      }, STATE.ablySubscriberId);
 
       // ════════════════════════════════════════════════════════════════
       // 🎁 REAL-TIME REDEMPTION REQUEST - New Feature
       // Handler receives notification when user wants to redeem
       // ════════════════════════════════════════════════════════════════
-      channel.subscribe('redemption-request', (message) => {
+      manager.subscribe(channelName, 'redemption-request', (message) => {
         console.log('📡 [Ably] REDEMPTION REQUEST RECEIVED:', message.data);
         showHandlerRedemptionModal(message.data);
-      });
+      }, STATE.ablySubscriberId);
 
       // Handler: User cancelled redemption
-      channel.subscribe('redemption-cancelled', (message) => {
+      manager.subscribe(channelName, 'redemption-cancelled', (message) => {
         console.log('📡 [Ably] REDEMPTION CANCELLED:', message.data);
         closeHandlerRedemptionModal();
         window.ppvToast('❌ Kunde hat abgebrochen', 'info');
-      });
+      }, STATE.ablySubscriberId);
 
       // 📡 Handle campaign updates (create/update/delete)
-      channel.subscribe('campaign-update', (message) => {
+      manager.subscribe(channelName, 'campaign-update', (message) => {
         ppvLog('[Ably] Campaign update received:', message.data);
         window.ppvToast(`📢 Kampány ${message.data.action === 'created' ? 'létrehozva' : message.data.action === 'updated' ? 'frissítve' : 'törölve'}`, 'info');
         // Refresh campaign list
         STATE.campaignManager?.load();
-      });
+      }, STATE.ablySubscriberId);
 
       // 📡 Handle reward/prämien updates
-      channel.subscribe('reward-update', (message) => {
+      manager.subscribe(channelName, 'reward-update', (message) => {
         ppvLog('[Ably] Reward update received:', message.data);
         window.ppvToast(`🎁 Prämie ${message.data.action === 'created' ? 'létrehozva' : message.data.action === 'updated' ? 'frissítve' : 'törölve'}`, 'info');
-      });
+      }, STATE.ablySubscriberId);
 
       STATE.initialized = true;
-      ppvLog('[QR] Initialization complete (Ably mode)');
+      ppvLog('[QR] Initialization complete (Ably shared manager mode)');
 
     } else {
       // POLLING MODE: Fallback when Ably not available

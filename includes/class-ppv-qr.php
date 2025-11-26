@@ -343,7 +343,7 @@ class PPV_QR {
         return ['limited' => false];
     }
 
-    private static function insert_log($store_id, $user_id, $msg, $type = 'scan', $error_type = null) {
+    private static function insert_log($store_id, $user_id, $msg, $type = 'scan', $error_type = null, $scanner_id = null, $scanner_name = null) {
         global $wpdb;
 
         // Get IP address
@@ -362,6 +362,12 @@ class PPV_QR {
         // Add error_type to metadata if provided (for client-side translation)
         if ($error_type !== null) {
             $metadata_array['error_type'] = $error_type;
+        }
+
+        // Add scanner info to metadata (who performed the scan)
+        if ($scanner_id !== null) {
+            $metadata_array['scanner_id'] = $scanner_id;
+            $metadata_array['scanner_name'] = $scanner_name;
         }
 
         $metadata = json_encode($metadata_array);
@@ -523,10 +529,10 @@ class PPV_QR {
 
         // Only enqueue camera scanner JS for handlers/scanners
         if ($is_handler) {
-            // Load Ably JS library if configured
+            // Load Ably JS library + shared manager if configured
             if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
-                wp_enqueue_script('ably-js', 'https://cdn.ably.com/lib/ably.min-1.js', [], '1.2', true);
-                wp_enqueue_script('ppv-qr', PPV_PLUGIN_URL . 'assets/js/ppv-qr.js', ['jquery', 'ably-js'], time(), true);
+                PPV_Ably::enqueue_scripts(); // Enqueues ably-js + ppv-ably-manager
+                wp_enqueue_script('ppv-qr', PPV_PLUGIN_URL . 'assets/js/ppv-qr.js', ['jquery', 'ppv-ably-manager'], time(), true);
             } else {
                 wp_enqueue_script('ppv-qr', PPV_PLUGIN_URL . 'assets/js/ppv-qr.js', ['jquery'], time(), true);
             }
@@ -604,6 +610,14 @@ class PPV_QR {
                 'store_id' => intval($store_id),
                 'store_key' => $store_key ?: '',
             ];
+
+            // Add scanner info if this is a scanner user
+            if (!empty($_SESSION['ppv_user_type']) && $_SESSION['ppv_user_type'] === 'scanner' && !empty($_SESSION['ppv_user_id'])) {
+                $scanner_id = intval($_SESSION['ppv_user_id']);
+                $scanner_email = sanitize_email($_SESSION['ppv_user_email'] ?? '');
+                $store_data['scanner_id'] = $scanner_id;
+                $store_data['scanner_name'] = $scanner_email; // Use email as identifier
+            }
 
             // Add Ably config if enabled
             if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
@@ -694,9 +708,6 @@ class PPV_QR {
                     <button class="ppv-tab" data-tab="rewards" id="ppv-tab-rewards">
                         <i class="ri-gift-line"></i> <?php echo self::t('tab_rewards', 'Prämien'); ?>
                     </button>
-                    <button class="ppv-tab" data-tab="campaigns" id="ppv-tab-campaigns">
-                        <i class="ri-focus-3-line"></i> <?php echo self::t('tab_campaigns', 'Kampagnen'); ?>
-                    </button>
                     <button class="ppv-tab" data-tab="scanner-users" id="ppv-tab-scanner-users">
                         <i class="ri-team-line"></i> <?php echo self::t('tab_scanner_users', 'Scanner Felhasználók'); ?>
                     </button>
@@ -715,11 +726,6 @@ class PPV_QR {
                 <!-- TAB CONTENT: PRÄMIEN -->
                 <div class="ppv-tab-content" id="tab-rewards">
                     <?php echo do_shortcode('[ppv_rewards_management]'); ?>
-                </div>
-
-                <!-- TAB CONTENT: KAMPAGNEN -->
-                <div class="ppv-tab-content" id="tab-campaigns">
-                    <?php self::render_campaigns(); ?>
                 </div>
 
                 <!-- TAB CONTENT: SCANNER FELHASZNÁLÓK -->
@@ -1754,6 +1760,216 @@ class PPV_QR {
                 </div>
             </div>
         </div>
+
+        <script>
+        jQuery(document).ready(function($){
+            // ============================================================
+            // 👤 SCANNER USER MANAGEMENT
+            // ============================================================
+
+            // Show create scanner modal
+            $('#ppv-new-scanner-btn').on('click', function(){
+                $('#ppv-scanner-modal').css('display', 'flex').hide().fadeIn(200);
+                $('#ppv-scanner-email').val('').focus();
+                $('#ppv-scanner-password').val('');
+                $('#ppv-scanner-error').hide();
+                $('#ppv-scanner-success').hide();
+            });
+
+            // Hide create scanner modal
+            $('#ppv-scanner-cancel').on('click', function(){
+                $('#ppv-scanner-modal').fadeOut(200);
+            });
+
+            // Generate random password
+            $('#ppv-scanner-gen-pw').on('click', function(){
+                const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+                let pw = '';
+                for(let i = 0; i < 10; i++) pw += chars.charAt(Math.floor(Math.random() * chars.length));
+                $('#ppv-scanner-password').val(pw);
+            });
+
+            // Create scanner user
+            $('#ppv-scanner-create').on('click', function(){
+                const email = $('#ppv-scanner-email').val().trim();
+                const password = $('#ppv-scanner-password').val().trim();
+                const filialeId = $('#ppv-scanner-filiale').val();
+                const $btn = $(this);
+                const $error = $('#ppv-scanner-error');
+                const $success = $('#ppv-scanner-success');
+
+                if(!email || !password) {
+                    $error.text('<?php echo esc_js(self::t('err_fill_fields', 'Bitte alle Felder ausfüllen')); ?>').show();
+                    return;
+                }
+
+                $btn.prop('disabled', true).html('⏳ <?php echo esc_js(self::t('creating', 'Wird erstellt...')); ?>');
+                $error.hide();
+                $success.hide();
+
+                $.ajax({
+                    url: '<?php echo admin_url('admin-ajax.php'); ?>',
+                    type: 'POST',
+                    data: {
+                        action: 'ppv_create_scanner_user',
+                        email: email,
+                        password: password,
+                        filiale_id: filialeId,
+                        nonce: '<?php echo wp_create_nonce('ppv_scanner_nonce'); ?>'
+                    },
+                    success: function(response){
+                        if(response.success){
+                            $success.text('<?php echo esc_js(self::t('scanner_created', 'Scanner erfolgreich erstellt!')); ?>').show();
+                            setTimeout(function(){ location.reload(); }, 1500);
+                        } else {
+                            $error.text(response.data?.message || '<?php echo esc_js(self::t('create_error', 'Fehler beim Erstellen')); ?>').show();
+                            $btn.prop('disabled', false).html('✅ <?php echo esc_js(self::t('create', 'Létrehozás')); ?>');
+                        }
+                    },
+                    error: function(){
+                        $error.text('<?php echo esc_js(self::t('network_error', 'Netzwerkfehler')); ?>').show();
+                        $btn.prop('disabled', false).html('✅ <?php echo esc_js(self::t('create', 'Létrehozás')); ?>');
+                    }
+                });
+            });
+
+            // Toggle scanner active/disabled
+            $(document).on('click', '.ppv-scanner-toggle', function(){
+                const userId = $(this).data('user-id');
+                const action = $(this).data('action');
+                const $btn = $(this);
+
+                if(!confirm(action === 'disable'
+                    ? '<?php echo esc_js(self::t('confirm_disable', 'Scanner wirklich deaktivieren?')); ?>'
+                    : '<?php echo esc_js(self::t('confirm_enable', 'Scanner aktivieren?')); ?>'
+                )) return;
+
+                $btn.prop('disabled', true);
+
+                $.ajax({
+                    url: '<?php echo admin_url('admin-ajax.php'); ?>',
+                    type: 'POST',
+                    data: {
+                        action: 'ppv_toggle_scanner_status',
+                        user_id: userId,
+                        toggle_action: action,
+                        nonce: '<?php echo wp_create_nonce('ppv_scanner_nonce'); ?>'
+                    },
+                    success: function(response){
+                        if(response.success){
+                            location.reload();
+                        } else {
+                            alert(response.data?.message || '<?php echo esc_js(self::t('toggle_error', 'Fehler')); ?>');
+                            $btn.prop('disabled', false);
+                        }
+                    },
+                    error: function(){
+                        alert('<?php echo esc_js(self::t('network_error', 'Netzwerkfehler')); ?>');
+                        $btn.prop('disabled', false);
+                    }
+                });
+            });
+
+            // Reset scanner password
+            $(document).on('click', '.ppv-scanner-reset-pw', function(){
+                const userId = $(this).data('user-id');
+                const email = $(this).data('email');
+                const $btn = $(this);
+
+                const newPassword = prompt('<?php echo esc_js(self::t('enter_new_password', 'Neues Passwort eingeben für')); ?> ' + email + ':');
+                if(!newPassword || newPassword.length < 6) {
+                    if(newPassword !== null) alert('<?php echo esc_js(self::t('password_min_length', 'Passwort muss mindestens 6 Zeichen haben')); ?>');
+                    return;
+                }
+
+                $btn.prop('disabled', true);
+
+                $.ajax({
+                    url: '<?php echo admin_url('admin-ajax.php'); ?>',
+                    type: 'POST',
+                    data: {
+                        action: 'ppv_reset_scanner_password',
+                        user_id: userId,
+                        new_password: newPassword,
+                        nonce: '<?php echo wp_create_nonce('ppv_scanner_nonce'); ?>'
+                    },
+                    success: function(response){
+                        if(response.success){
+                            alert('<?php echo esc_js(self::t('password_reset_success', 'Passwort erfolgreich geändert!')); ?>');
+                        } else {
+                            alert(response.data?.message || '<?php echo esc_js(self::t('reset_error', 'Fehler beim Zurücksetzen')); ?>');
+                        }
+                        $btn.prop('disabled', false);
+                    },
+                    error: function(){
+                        alert('<?php echo esc_js(self::t('network_error', 'Netzwerkfehler')); ?>');
+                        $btn.prop('disabled', false);
+                    }
+                });
+            });
+
+            // Show change filiale modal
+            $(document).on('click', '.ppv-scanner-change-filiale', function(){
+                const userId = $(this).data('user-id');
+                const email = $(this).data('email');
+                const currentStore = $(this).data('current-store');
+
+                $('#ppv-change-filiale-user-id').val(userId);
+                $('#ppv-change-filiale-email').text(email);
+                $('#ppv-change-filiale-select').val(currentStore);
+                $('#ppv-change-filiale-error').hide();
+                $('#ppv-change-filiale-success').hide();
+                $('#ppv-change-filiale-modal').css('display', 'flex').hide().fadeIn(200);
+            });
+
+            // Hide change filiale modal
+            $('#ppv-change-filiale-cancel').on('click', function(){
+                $('#ppv-change-filiale-modal').fadeOut(200);
+            });
+
+            // Save filiale change
+            $('#ppv-change-filiale-save').on('click', function(){
+                const userId = $('#ppv-change-filiale-user-id').val();
+                const newFilialeId = $('#ppv-change-filiale-select').val();
+                const $btn = $(this);
+                const $error = $('#ppv-change-filiale-error');
+                const $success = $('#ppv-change-filiale-success');
+
+                $btn.prop('disabled', true).html('⏳ <?php echo esc_js(self::t('saving', 'Speichern...')); ?>');
+                $error.hide();
+                $success.hide();
+
+                $.ajax({
+                    url: '<?php echo admin_url('admin-ajax.php'); ?>',
+                    type: 'POST',
+                    data: {
+                        action: 'ppv_update_scanner_filiale',
+                        user_id: userId,
+                        new_filiale_id: newFilialeId,
+                        nonce: '<?php echo wp_create_nonce('ppv_scanner_nonce'); ?>'
+                    },
+                    success: function(response){
+                        if(response.success){
+                            $success.text('<?php echo esc_js(self::t('filiale_changed', 'Filiale erfolgreich geändert!')); ?>').show();
+                            setTimeout(function(){ location.reload(); }, 1500);
+                        } else {
+                            $error.text(response.data?.message || '<?php echo esc_js(self::t('change_error', 'Fehler beim Ändern')); ?>').show();
+                            $btn.prop('disabled', false).html('✅ <?php echo esc_js(self::t('save', 'Speichern')); ?>');
+                        }
+                    },
+                    error: function(){
+                        $error.text('<?php echo esc_js(self::t('network_error', 'Netzwerkfehler')); ?>').show();
+                        $btn.prop('disabled', false).html('✅ <?php echo esc_js(self::t('save', 'Speichern')); ?>');
+                    }
+                });
+            });
+
+            // Close modals on outside click
+            $('#ppv-scanner-modal, #ppv-change-filiale-modal').on('click', function(e){
+                if(e.target === this) $(this).fadeOut(200);
+            });
+        });
+        </script>
         <?php
     }
 
@@ -1899,6 +2115,10 @@ class PPV_QR {
         $scan_lat = isset($data['latitude']) ? floatval($data['latitude']) : null;
         $scan_lng = isset($data['longitude']) ? floatval($data['longitude']) : null;
 
+        // Scanner employee ID (who is scanning) - for accountability
+        $scanner_id = isset($data['scanner_id']) ? intval($data['scanner_id']) : null;
+        $scanner_name = isset($data['scanner_name']) ? sanitize_text_field($data['scanner_name']) : null;
+
         if (empty($qr_code) || empty($store_key)) {
             return new WP_REST_Response([
                 'success' => false,
@@ -1970,6 +2190,24 @@ class PPV_QR {
                 'store_name' => $store->name ?? 'PunktePass',
                 'error_type' => 'invalid_qr'
             ], 400);
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // 🚫 SELF-SCAN PROTECTION - Employees cannot scan their own QR
+        // ═══════════════════════════════════════════════════════════
+        if ($scanner_id !== null && $scanner_id > 0 && $scanner_id === $user_id) {
+            ppv_log("🚫 [PPV_QR] BLOCKED: Self-scan attempt! scanner_id={$scanner_id}, user_id={$user_id}");
+
+            // Log the blocked self-scan attempt
+            self::insert_log($store_id, $user_id, '🚫 Self-scan blocked', 'error', 'self_scan', $scanner_id, $scanner_name);
+
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => self::t('err_self_scan', '🚫 Eigenen QR-Code scannen nicht erlaubt'),
+                'detail' => self::t('err_self_scan_detail', 'Mitarbeiter können ihren eigenen QR-Code nicht scannen'),
+                'store_name' => $store->name ?? 'PunktePass',
+                'error_type' => 'self_scan'
+            ], 403);
         }
 
         $rate_check = self::check_rate_limit($user_id, $store_id);
@@ -2050,6 +2288,19 @@ class PPV_QR {
                     ppv_log("[PPV_QR] ⚠️ SUSPICIOUS: GPS distance exceeded (SCAN ALLOWED): user={$user_id}, store={$store_id}, distance={$gps_check['distance']}m");
                 }
                 // Scan continues - admin can review suspicious scans in WP admin
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // VELOCITY CHECK (Fraud Detection) - Same IP / Scan Frequency
+        // Logs and alerts admin if suspicious patterns detected
+        // ═══════════════════════════════════════════════════════════
+        if (class_exists('PPV_Scan_Monitoring')) {
+            $velocity_check = PPV_Scan_Monitoring::perform_velocity_check($store_id, $user_id);
+
+            if (!$velocity_check['passed']) {
+                ppv_log("[PPV_QR] ⚠️ VELOCITY ALERT: user={$user_id}, store={$store_id}, alerts=" . json_encode($velocity_check['alerts']));
+                // Scan continues - admin notified via email and suspicious_scans table
             }
         }
 
@@ -2220,23 +2471,21 @@ class PPV_QR {
                     }
                 }
 
-                // 4. FIRST DAILY SCAN BONUS
+                // 4. FIRST SCAN EVER BONUS (one-time per store)
                 if ($vip_settings->vip_daily_enabled && $user_level !== null) {
-                    $today = date('Y-m-d');
-                    $already_scanned_today = (int)$wpdb->get_var($wpdb->prepare("
+                    $ever_scanned_here = (int)$wpdb->get_var($wpdb->prepare("
                         SELECT COUNT(*) FROM {$wpdb->prefix}ppv_points
                         WHERE user_id = %d AND store_id = %d AND type = 'qr_scan'
-                        AND DATE(created) = %s
-                    ", $user_id, $store_id, $today));
+                    ", $user_id, $store_id));
 
-                    if ($already_scanned_today === 0) {
+                    if ($ever_scanned_here === 0) {
                         $vip_bonus_details['daily'] = $getLevelValue(
                             $vip_settings->vip_daily_bronze ?? 5,
                             $vip_settings->vip_daily_silver,
                             $vip_settings->vip_daily_gold,
                             $vip_settings->vip_daily_platinum
                         );
-                        ppv_log("☀️ [PPV_QR] First daily scan bonus applied for user {$user_id}");
+                        ppv_log("🎉 [PPV_QR] First scan ever bonus applied for user {$user_id} at store {$store_id}");
                     }
                 }
 
@@ -2271,7 +2520,7 @@ class PPV_QR {
         $log_msg = $vip_bonus_applied > 0
             ? "+{$points_add} " . self::t('points', 'Punkte') . " (VIP: +{$vip_bonus_applied})"
             : "+{$points_add} " . self::t('points', 'Punkte');
-        $log_id = self::insert_log($store_id, $user_id, $log_msg, 'qr_scan');
+        $log_id = self::insert_log($store_id, $user_id, $log_msg, 'qr_scan', null, $scanner_id, $scanner_name);
 
         // ✅ Generate unique scan_id for deduplication
         $scan_id = "scan-{$store_id}-{$user_id}-{$log_id}";
@@ -2303,6 +2552,8 @@ class PPV_QR {
                 'date_short' => date('d.m.'),
                 'time_short' => date('H:i'),
                 'success' => true,
+                'scanner_id' => $scanner_id,       // 👤 Who scanned (employee)
+                'scanner_name' => $scanner_name,   // 👤 Scanner email/name
             ]);
 
             // 📡 ABLY: Also notify user's dashboard of points update
@@ -2456,6 +2707,9 @@ class PPV_QR {
             'avatar' => $user_info->avatar ?? null,
             // 🎁 Redemption prompt (if available)
             'redemption_prompt' => $redemption_prompt,
+            // 👤 Scanner info (who performed the scan)
+            'scanner_id' => $scanner_id,
+            'scanner_name' => $scanner_name,
         ], 200);
     }
 
@@ -2475,6 +2729,7 @@ class PPV_QR {
 
         // ✅ FIX: Get logs from ppv_users table (NOT WordPress users!)
         // ✅ FIX: Include log ID for unique scan_id generation
+        // ✅ Include metadata for scanner info
         $logs = $wpdb->get_results($wpdb->prepare("
             SELECT
                 l.id AS log_id,
@@ -2482,6 +2737,7 @@ class PPV_QR {
                 l.user_id,
                 l.message,
                 l.type,
+                l.metadata,
                 u.email,
                 u.first_name,
                 u.last_name,
@@ -2508,6 +2764,17 @@ class PPV_QR {
             $full_name = trim("$first $last");
             $email = $log->email ?? '';
 
+            // Parse metadata for scanner info
+            $scanner_id = null;
+            $scanner_name = null;
+            if (!empty($log->metadata)) {
+                $meta = json_decode($log->metadata, true);
+                if (is_array($meta)) {
+                    $scanner_id = $meta['scanner_id'] ?? null;
+                    $scanner_name = $meta['scanner_name'] ?? null;
+                }
+            }
+
             return [
                 'scan_id' => "log-{$store_id}-{$log->log_id}", // ✅ Unique ID for deduplication
                 'user_id' => $log->user_id,
@@ -2519,6 +2786,8 @@ class PPV_QR {
                 'time_short' => date('H:i', $created),
                 'points' => $points,
                 'success' => ($log->type === 'qr_scan'),
+                'scanner_id' => $scanner_id,       // 👤 Who scanned
+                'scanner_name' => $scanner_name,   // 👤 Scanner email
             ];
         }, $logs);
 
@@ -2564,7 +2833,10 @@ class PPV_QR {
                 l.created_at,
                 l.user_id,
                 l.message,
-                l.type,
+                l.status,
+                l.points_change,
+                l.reward_code,
+                l.ip_address,
                 u.email,
                 u.first_name,
                 u.last_name
@@ -2575,9 +2847,9 @@ class PPV_QR {
             LIMIT 1000
         ", $store_id));
 
-        // Build CSV
+        // Build CSV with BOM for Excel UTF-8 support
         $csv_lines = [];
-        $csv_lines[] = 'Datum,Zeit,Kunde,Email,Punkte,Status,Nachricht';
+        $csv_lines[] = 'Datum,Zeit,Kunde,Email,Punkte,Status,Prämie,IP,Nachricht';
 
         foreach ($logs as $log) {
             $created = strtotime($log->created_at);
@@ -2589,21 +2861,24 @@ class PPV_QR {
             $customer = trim("$first $last") ?: 'Unbekannt';
             $email = $log->email ?: '-';
 
-            // Extract points from message
-            $points = '-';
-            if (preg_match('/\+(\d+)/', $log->message, $m)) {
-                $points = $m[1];
-            }
+            // Use direct points_change field
+            $points = isset($log->points_change) && $log->points_change !== null
+                ? intval($log->points_change)
+                : '-';
 
-            $status = $log->type === 'qr_scan' ? 'OK' : 'Fehler';
-            $message = str_replace([',', "\n", "\r"], [';', ' ', ' '], $log->message);
+            // Use status field directly
+            $status = ($log->status === 'ok' || $log->status === 'success') ? 'OK' : ($log->status ?: '-');
+            $reward = $log->reward_code ?: '-';
+            $ip = $log->ip_address ?: '-';
+            $message = str_replace([',', "\n", "\r", '"'], [';', ' ', ' ', "'"], $log->message ?? '');
 
-            $csv_lines[] = sprintf('"%s","%s","%s","%s","%s","%s","%s"',
-                $date, $time, $customer, $email, $points, $status, $message
+            $csv_lines[] = sprintf('"%s","%s","%s","%s","%s","%s","%s","%s","%s"',
+                $date, $time, $customer, $email, $points, $status, $reward, $ip, $message
             );
         }
 
-        $csv_content = implode("\n", $csv_lines);
+        // Add BOM for Excel UTF-8 support (German umlauts)
+        $csv_content = "\xEF\xBB\xBF" . implode("\n", $csv_lines);
         $store_name = sanitize_title($session_store->name ?? 'pos');
         $filename = "pos-{$store_name}-{$filename_suffix}.csv";
 
