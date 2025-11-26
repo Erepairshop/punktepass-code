@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
   if (!listContainer) {
-    console.error("❌ ppv-rewards-list container nem található!");
+    // Not a rewards management page, silently exit
     return;
   }
 

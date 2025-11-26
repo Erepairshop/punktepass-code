@@ -17,6 +17,13 @@
   // ✅ DEBUG MODE - Set to false in production to reduce console spam
   const PPV_SETTINGS_DEBUG = false;
 
+  // ✅ Conditional logger
+  function settingsLog(...args) {
+    if (PPV_SETTINGS_DEBUG) {
+      console.log(...args);
+    }
+  }
+
 // 🚀 Main initialization function
 function initUserSettings() {
   const $ = jQuery;
