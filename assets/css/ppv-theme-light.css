@@ -11235,6 +11235,132 @@ select.ppv-support-input {
     border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
+/* ========== TREND GRID (from JS) ========== */
+.ppv-trend-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+@media (max-width: 560px) {
+    .ppv-trend-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.ppv-trend-grid .ppv-trend-card {
+    background: var(--pp-surface);
+    border: 1px solid var(--pp-border-soft);
+    border-radius: var(--pp-r-md);
+    padding: 20px;
+    text-align: center;
+    transition: var(--pp-trans);
+}
+
+.ppv-trend-grid .ppv-trend-card h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--pp-text-3);
+    margin-bottom: 12px;
+}
+
+.ppv-trend-main {
+    font-family: 'Poppins', sans-serif;
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--pp-text);
+    margin-bottom: 8px;
+}
+
+.ppv-trend-compare {
+    font-size: 13px;
+    color: var(--pp-text-muted);
+    margin-bottom: 8px;
+}
+
+.ppv-trend-compare strong {
+    color: var(--pp-text-3);
+}
+
+.ppv-trend-percent {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 14px;
+    border-radius: var(--pp-r-full);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.ppv-trend-percent.up {
+    background: rgba(34, 197, 94, 0.12);
+    color: var(--pp-success);
+}
+
+.ppv-trend-percent.down {
+    background: rgba(239, 68, 68, 0.12);
+    color: var(--pp-danger);
+}
+
+/* ========== DAILY BREAKDOWN ========== */
+.ppv-daily-breakdown {
+    background: var(--pp-surface);
+    border: 1px solid var(--pp-border-soft);
+    border-radius: var(--pp-r-md);
+    padding: 20px;
+    margin-top: 16px;
+}
+
+.ppv-daily-breakdown h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--pp-text-3);
+    margin-bottom: 16px;
+}
+
+.ppv-daily-bars {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    height: 120px;
+    gap: 8px;
+}
+
+.ppv-daily-bar {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    position: relative;
+}
+
+.ppv-bar-fill {
+    width: 100%;
+    max-width: 40px;
+    background: linear-gradient(180deg, var(--pp-primary) 0%, var(--pp-primary-dark) 100%);
+    border-radius: var(--pp-r-xs) var(--pp-r-xs) 0 0;
+    margin-top: auto;
+    min-height: 4px;
+    transition: height 0.3s ease;
+}
+
+.ppv-day-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--pp-text-muted);
+    margin-top: 8px;
+}
+
+.ppv-day-count {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--pp-text);
+    position: absolute;
+    top: -20px;
+}
+
 /* ========== SPENDING SECTION ========== */
 .ppv-spending-grid {
     display: grid;
@@ -12647,6 +12773,73 @@ body.ppv-dark .ppv-stat-card .value,
 body.ppv-dark .ppv-stats-cards,
 [data-theme="dark"] .ppv-stats-cards {
     background: transparent !important;
+}
+
+/* ==========================================================================
+   🌙 DARK MODE - Trend Grid & Daily Breakdown
+   ========================================================================== */
+body.ppv-dark .ppv-trend-grid .ppv-trend-card,
+[data-theme="dark"] .ppv-trend-grid .ppv-trend-card {
+    background: #162233 !important;
+    border-color: rgba(0, 212, 255, 0.20) !important;
+}
+
+body.ppv-dark .ppv-trend-grid .ppv-trend-card h4,
+[data-theme="dark"] .ppv-trend-grid .ppv-trend-card h4 {
+    color: #94a3b8 !important;
+}
+
+body.ppv-dark .ppv-trend-main,
+[data-theme="dark"] .ppv-trend-main {
+    color: #f1f5f9 !important;
+}
+
+body.ppv-dark .ppv-trend-compare,
+[data-theme="dark"] .ppv-trend-compare {
+    color: #64748b !important;
+}
+
+body.ppv-dark .ppv-trend-compare strong,
+[data-theme="dark"] .ppv-trend-compare strong {
+    color: #94a3b8 !important;
+}
+
+body.ppv-dark .ppv-trend-percent.up,
+[data-theme="dark"] .ppv-trend-percent.up {
+    background: rgba(34, 197, 94, 0.15) !important;
+    color: #4ade80 !important;
+}
+
+body.ppv-dark .ppv-trend-percent.down,
+[data-theme="dark"] .ppv-trend-percent.down {
+    background: rgba(239, 68, 68, 0.15) !important;
+    color: #f87171 !important;
+}
+
+body.ppv-dark .ppv-daily-breakdown,
+[data-theme="dark"] .ppv-daily-breakdown {
+    background: #162233 !important;
+    border-color: rgba(0, 212, 255, 0.20) !important;
+}
+
+body.ppv-dark .ppv-daily-breakdown h4,
+[data-theme="dark"] .ppv-daily-breakdown h4 {
+    color: #94a3b8 !important;
+}
+
+body.ppv-dark .ppv-day-label,
+[data-theme="dark"] .ppv-day-label {
+    color: #64748b !important;
+}
+
+body.ppv-dark .ppv-day-count,
+[data-theme="dark"] .ppv-day-count {
+    color: #f1f5f9 !important;
+}
+
+body.ppv-dark .ppv-bar-fill,
+[data-theme="dark"] .ppv-bar-fill {
+    background: linear-gradient(180deg, #00d4ff 0%, #00a8cc 100%) !important;
 }
 
 /* ==========================================================================
