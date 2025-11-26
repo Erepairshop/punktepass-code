@@ -1810,15 +1810,15 @@ button .ri-loader-4-line,
 .ppv-bottom-nav {
     position: fixed;
     bottom: 12px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: calc(100% - 24px);
+    left: 12px;
+    right: 12px;
+    margin: 0 auto;
     max-width: 420px;
     height: 64px;
     display: flex;
     justify-content: space-around;
     align-items: center;
-    background: rgba(255, 255, 255, 0.85);
+    background: rgba(255, 255, 255, 0.92);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border: 1px solid rgba(255, 255, 255, 0.5);
@@ -1829,12 +1829,15 @@ button .ri-loader-4-line,
         inset 0 1px 0 rgba(255, 255, 255, 0.6);
     z-index: 999;
     padding: 0 8px;
+    isolation: isolate; /* Fix z-index stacking context */
 }
 
-/* iOS Safe Area Support - Adjust bottom position */
+/* iOS Safe Area Support */
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
     .ppv-bottom-nav {
         bottom: calc(12px + env(safe-area-inset-bottom));
+        left: calc(12px + env(safe-area-inset-left, 0px));
+        right: calc(12px + env(safe-area-inset-right, 0px));
     }
 }
 
@@ -1873,7 +1876,8 @@ button .ri-loader-4-line,
     background: linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, rgba(139, 92, 246, 0.1) 100%);
     border-radius: 14px;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: -1;
+    z-index: 0;
+    pointer-events: none;
 }
 
 /* Hover State */
@@ -1892,6 +1896,7 @@ button .ri-loader-4-line,
     transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     line-height: 1;
     position: relative;
+    z-index: 1;
 }
 
 /* Label Styling */
@@ -1905,6 +1910,8 @@ button .ri-loader-4-line,
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 64px;
+    position: relative;
+    z-index: 1;
 }
 
 /* ═══════════════════════════════════════════════════════════════
