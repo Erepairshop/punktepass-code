@@ -12445,6 +12445,99 @@ body.ppv-dark #ppv-analytics-section {
     border-radius: 18px !important;
 }
 
+/* ==========================================================================
+   🌙 DARK MODE - USER ANALYTICS (Punkt Analytik)
+   ========================================================================== */
+body.ppv-dark .ppv-analytics-wrapper,
+[data-theme="dark"] .ppv-analytics-wrapper {
+    background: transparent !important;
+    color: #f1f5f9 !important;
+}
+
+body.ppv-dark .ppv-analytics-header h3,
+[data-theme="dark"] .ppv-analytics-header h3 {
+    color: #00d4ff !important;
+}
+
+body.ppv-dark .ppv-analytics-header h3 i,
+[data-theme="dark"] .ppv-analytics-header h3 i {
+    color: #00d4ff !important;
+}
+
+body.ppv-dark .ppv-analytics-range-select,
+[data-theme="dark"] .ppv-analytics-range-select {
+    background: #162233 !important;
+    border-color: rgba(0, 212, 255, 0.20) !important;
+    color: #f1f5f9 !important;
+}
+
+body.ppv-dark .ppv-summary-card,
+[data-theme="dark"] .ppv-summary-card {
+    background: #162233 !important;
+    border-color: rgba(0, 212, 255, 0.20) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+}
+
+body.ppv-dark .ppv-summary-card .card-icon,
+[data-theme="dark"] .ppv-summary-card .card-icon {
+    background: rgba(0, 212, 255, 0.15) !important;
+    color: #00d4ff !important;
+}
+
+body.ppv-dark .ppv-summary-card .label,
+[data-theme="dark"] .ppv-summary-card .label {
+    color: #94a3b8 !important;
+}
+
+body.ppv-dark .ppv-summary-card .value,
+[data-theme="dark"] .ppv-summary-card .value {
+    color: #00d4ff !important;
+}
+
+body.ppv-dark .ppv-summary-card .unit,
+[data-theme="dark"] .ppv-summary-card .unit {
+    color: #64748b !important;
+}
+
+body.ppv-dark .ppv-analytics-section h4,
+[data-theme="dark"] .ppv-analytics-section h4 {
+    color: #00d4ff !important;
+}
+
+body.ppv-dark .ppv-chart-container,
+[data-theme="dark"] .ppv-chart-container {
+    background: #162233 !important;
+    border-color: rgba(0, 212, 255, 0.20) !important;
+}
+
+body.ppv-dark .ppv-chart-container .ppv-empty-state,
+body.ppv-dark .ppv-chart-container p,
+[data-theme="dark"] .ppv-chart-container .ppv-empty-state,
+[data-theme="dark"] .ppv-chart-container p {
+    color: #64748b !important;
+}
+
+body.ppv-dark .ppv-store-item,
+[data-theme="dark"] .ppv-store-item {
+    background: #162233 !important;
+    border-color: rgba(0, 212, 255, 0.15) !important;
+}
+
+body.ppv-dark .store-info .store-name,
+[data-theme="dark"] .store-info .store-name {
+    color: #f1f5f9 !important;
+}
+
+body.ppv-dark .store-stats,
+[data-theme="dark"] .store-stats {
+    color: #64748b !important;
+}
+
+body.ppv-dark .store-points .points,
+[data-theme="dark"] .store-points .points {
+    color: #00d4ff !important;
+}
+
 body.ppv-dark .ppv-offline-banner {
     background: rgba(255, 214, 10, 0.12) !important;
     border-color: rgba(255, 214, 10, 0.30) !important;
