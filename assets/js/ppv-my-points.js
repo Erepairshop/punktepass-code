@@ -14,7 +14,6 @@
   // 🍎 Safari detection
   const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
   if (isSafari) {
-    console.log('🍎 [PPV_MYPOINTS] Safari detected - using optimized handlers');
   }
 
   // ✅ OPTIMIZED: Conditional logging (only in DEBUG mode)
@@ -553,6 +552,8 @@
 
     tabs.forEach(tab => {
       tab.addEventListener('click', () => {
+        // 📳 Haptic feedback on tab switch
+        if (window.ppvHaptic) window.ppvHaptic('tap');
         const tabName = tab.dataset.tab;
 
         // Update active tab

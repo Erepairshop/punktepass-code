@@ -9,7 +9,6 @@
 
     // Singleton instance
     if (window.PPV_ABLY_MANAGER) {
-        console.log('📡 [ABLY_MANAGER] Already initialized');
         return;
     }
 
@@ -23,7 +22,6 @@
             this.reconnectAttempts = 0;
             this.maxReconnectAttempts = 5;
 
-            console.log('📡 [ABLY_MANAGER] Manager created');
         }
 
         /**
@@ -38,7 +36,6 @@
 
             // Already connected with same key
             if (this.instance && this.config && this.config.key === config.key) {
-                console.log('📡 [ABLY_MANAGER] Already connected, reusing connection');
                 return true;
             }
 
@@ -58,7 +55,6 @@
                 });
 
                 this.setupConnectionHandlers();
-                console.log('📡 [ABLY_MANAGER] Ably initialized');
                 return true;
             } catch (error) {
                 console.error('📡 [ABLY_MANAGER] Failed to initialize:', error);
@@ -73,7 +69,6 @@
             this.instance.connection.on('connected', () => {
                 this.connectionState = 'connected';
                 this.reconnectAttempts = 0;
-                console.log('📡 [ABLY_MANAGER] Connected');
                 this.notifyStateChange('connected');
             });
 
@@ -97,7 +92,6 @@
 
             this.instance.connection.on('closed', () => {
                 this.connectionState = 'closed';
-                console.log('📡 [ABLY_MANAGER] Connection closed');
                 this.notifyStateChange('closed');
             });
         }
@@ -118,7 +112,6 @@
             // Get or create channel
             if (!this.channels[channelName]) {
                 this.channels[channelName] = this.instance.channels.get(channelName);
-                console.log('📡 [ABLY_MANAGER] Channel created:', channelName);
             }
 
             const channel = this.channels[channelName];
@@ -133,7 +126,6 @@
             channel.subscribe(eventName, callback);
             this.subscribers[subKey].push({ channel: channelName, event: eventName, callback });
 
-            console.log(`📡 [ABLY_MANAGER] Subscribed: ${channelName}/${eventName} (${subKey})`);
             return subKey;
         }
 
@@ -150,7 +142,6 @@
                 const channel = this.channels[sub.channel];
                 if (channel) {
                     channel.unsubscribe(sub.event, sub.callback);
-                    console.log(`📡 [ABLY_MANAGER] Unsubscribed: ${sub.channel}/${sub.event}`);
                 }
             });
 
@@ -185,7 +176,6 @@
             if (this.channels[channelName]) {
                 this.channels[channelName].detach();
                 delete this.channels[channelName];
-                console.log(`📡 [ABLY_MANAGER] Channel detached: ${channelName}`);
             }
         }
 
@@ -239,7 +229,6 @@
          * Close connection and cleanup
          */
         close() {
-            console.log('📡 [ABLY_MANAGER] Closing connection...');
 
             // Unsubscribe all
             Object.keys(this.subscribers).forEach(subKey => {
@@ -261,7 +250,6 @@
             this.connectionState = 'closed';
             this._stateCallbacks = [];
 
-            console.log('📡 [ABLY_MANAGER] Connection closed');
         }
     }
 
@@ -272,7 +260,6 @@
     document.addEventListener('turbo:before-visit', function() {
         // Don't close - Turbo keeps the page alive
         // Just log that navigation is happening
-        console.log('📡 [ABLY_MANAGER] Turbo navigation detected');
     });
 
     // Cleanup on page unload
@@ -282,6 +269,5 @@
         }
     });
 
-    console.log('📡 [ABLY_MANAGER] Global manager ready');
 
 })();

@@ -12,11 +12,9 @@
 
 // ✅ Prevent duplicate loading
 if (window.PPV_REDEEM_ADMIN_LOADED) {
-  console.log('⏭️ [RedeemAdmin] Already loaded, skipping');
 } else {
   window.PPV_REDEEM_ADMIN_LOADED = true;
 
-console.log("🔥 PPV Rewards JS v4.4 geladen");
 
 // Use centralized API manager
 const ppvFetch = window.ppvFetch || window.apiFetch || fetch;
@@ -35,11 +33,9 @@ document.addEventListener("DOMContentLoaded", function () {
   // ALWAYS prioritize window.PPV_STORE_ID over sessionStorage
   if (window.PPV_STORE_ID && Number(window.PPV_STORE_ID) > 0) {
     storeId = Number(window.PPV_STORE_ID);
-    console.log(`✅ [REDEEM] Using window.PPV_STORE_ID: ${storeId}`);
     // Clear sessionStorage if it differs
     const cachedStoreId = sessionStorage.getItem("ppv_store_id");
     if (cachedStoreId && Number(cachedStoreId) !== storeId) {
-      console.log(`🔄 [REDEEM] Store ID changed: ${cachedStoreId} -> ${storeId}`);
       sessionStorage.removeItem("ppv_store_id");
     }
   } else {

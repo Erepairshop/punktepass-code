@@ -14,7 +14,6 @@
  * - Better Safari handling
  */
 jQuery(document).ready(function ($) {
-  console.log("PPV Bottom Nav v3.0 aktiv (Turbo SPA)");
 
   const currentPath = window.location.pathname.replace(/\/+$/, "");
   let lastClickTime = 0;
@@ -25,7 +24,6 @@ jQuery(document).ready(function ($) {
   // Detect Safari
   const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
   if (isSafari) {
-    console.log("[Nav] Safari detected - using optimized handlers");
   }
 
   // User dashboard pages - these use Turbo for SPA navigation
@@ -68,6 +66,9 @@ jQuery(document).ready(function ($) {
 
   // Navigation click handler
   $(".ppv-bottom-nav .nav-item").on("click", function (e) {
+    // 📳 Haptic feedback on navigation
+    if (window.ppvHaptic) window.ppvHaptic('tap');
+
     const href = $(this).attr("href");
     if (!href || href === '#') return;
 
@@ -76,7 +77,6 @@ jQuery(document).ready(function ($) {
 
     // SKIP if already on the same page
     if (targetPath === currentPathNow) {
-      console.log("[Nav] Already on this page, skipping navigation");
       e.preventDefault();
       // Just scroll to top instead
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -86,7 +86,6 @@ jQuery(document).ready(function ($) {
     // Debounce rapid clicks (300ms)
     const now = Date.now();
     if (now - lastClickTime < 300) {
-      console.log("[Nav] Debounced rapid click");
       e.preventDefault();
       return;
     }
@@ -94,7 +93,6 @@ jQuery(document).ready(function ($) {
 
     // Block if navigation already in progress
     if (window.PPV_NAV_STATE.isNavigating) {
-      console.log("[Nav] Navigation in progress, blocking");
       e.preventDefault();
       return;
     }
@@ -103,7 +101,6 @@ jQuery(document).ready(function ($) {
 
     // User page to user page = Turbo SPA navigation
     if (isUserPage && isTargetUserPage) {
-      console.log("[Nav] Turbo SPA navigation to:", href);
       window.PPV_NAV_STATE.isNavigating = true;
       $(this).addClass("navigating");
 

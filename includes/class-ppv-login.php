@@ -572,7 +572,8 @@ public static function render_landing_page($atts) {
         $email = sanitize_email($_POST['email'] ?? '');
         $password = $_POST['password'] ?? '';
         $remember = isset($_POST['remember']) && $_POST['remember'] === 'true';
-        
+        $fingerprint = sanitize_text_field($_POST['device_fingerprint'] ?? '');
+
         if (empty($email) || empty($password)) {
             wp_send_json_error(['message' => PPV_Lang::t('login_error_empty')]);
         }
@@ -616,8 +617,13 @@ public static function render_landing_page($atts) {
             $expire = $remember ? time() + (86400 * 180) : time() + (86400 * 30);
             setcookie('ppv_user_token', $token, $expire, '/', $domain, true, true);
 
+            // 📱 Track login fingerprint
+            if (!empty($fingerprint) && class_exists('PPV_Device_Fingerprint')) {
+                PPV_Device_Fingerprint::track_login($user->id, $fingerprint, 'password');
+            }
+
             ppv_log("✅ [PPV_Login] User logged in (#{$user->id})");
-            
+
             wp_send_json_success([
                 'message' => PPV_Lang::t('login_success'),
                 'role' => 'user',
@@ -730,8 +736,13 @@ public static function render_landing_page($atts) {
             $domain = $_SERVER['HTTP_HOST'] ?? '';
             setcookie('ppv_user_token', $token, time() + (86400 * 180), '/', $domain, true, true);
 
+            // 📱 Track login fingerprint (handler)
+            if (!empty($fingerprint) && class_exists('PPV_Device_Fingerprint')) {
+                PPV_Device_Fingerprint::track_login($user_id, $fingerprint, 'password');
+            }
+
             ppv_log("✅ [PPV_Login] Handler login success!");
-            
+
             wp_send_json_success([
                 'message' => PPV_Lang::t('login_success'),
                 'role' => 'handler',
@@ -809,6 +820,11 @@ public static function render_landing_page($atts) {
             $domain = $_SERVER['HTTP_HOST'] ?? '';
             setcookie('ppv_user_token', $token, time() + (86400 * 180), '/', $domain, true, true);
 
+            // 📱 Track login fingerprint (scanner)
+            if (!empty($fingerprint) && class_exists('PPV_Device_Fingerprint')) {
+                PPV_Device_Fingerprint::track_login($scanner_user->id, $fingerprint, 'password');
+            }
+
             ppv_log("✅ [PPV_Login] Scanner login success: user_id={$scanner_user->id}, store_id={$handler_store->id}");
 
             wp_send_json_success([
@@ -836,7 +852,8 @@ public static function render_landing_page($atts) {
         check_ajax_referer('ppv_login_nonce', 'nonce');
         
         $credential = sanitize_text_field($_POST['credential'] ?? '');
-        
+        $fingerprint = sanitize_text_field($_POST['device_fingerprint'] ?? '');
+
         if (empty($credential)) {
             wp_send_json_error(['message' => PPV_Lang::t('login_google_error')]);
         }
@@ -940,8 +957,13 @@ public static function render_landing_page($atts) {
         $domain = $_SERVER['HTTP_HOST'] ?? '';
         setcookie('ppv_user_token', $token, time() + (86400 * 180), '/', $domain, true, true);
 
+        // 📱 Track login fingerprint (Google)
+        if (!empty($fingerprint) && class_exists('PPV_Device_Fingerprint')) {
+            PPV_Device_Fingerprint::track_login($user->id, $fingerprint, 'google');
+        }
+
         ppv_log("✅ [PPV_Login] Google login successful (#{$user->id}): {$email}");
-        
+
         wp_send_json_success([
             'message' => PPV_Lang::t('login_google_success'),
             'role' => 'user',
@@ -950,7 +972,7 @@ public static function render_landing_page($atts) {
             'redirect' => home_url('/user_dashboard')
         ]);
     }
-    
+
     /** ============================================================
      * 🔹 Verify Google JWT Token
      * ============================================================ */
@@ -998,6 +1020,7 @@ public static function render_landing_page($atts) {
 
         $id_token = sanitize_text_field($_POST['id_token'] ?? '');
         $user_data = isset($_POST['user']) ? json_decode(stripslashes($_POST['user']), true) : null;
+        $fingerprint = sanitize_text_field($_POST['device_fingerprint'] ?? '');
 
         if (empty($id_token)) {
             wp_send_json_error(['message' => PPV_Lang::t('login_apple_error') ?: 'Apple Login fehlgeschlagen']);
@@ -1134,6 +1157,11 @@ public static function render_landing_page($atts) {
         $domain = $_SERVER['HTTP_HOST'] ?? '';
         setcookie('ppv_user_token', $token, time() + (86400 * 180), '/', $domain, true, true);
 
+        // 📱 Track login fingerprint (Apple)
+        if (!empty($fingerprint) && class_exists('PPV_Device_Fingerprint')) {
+            PPV_Device_Fingerprint::track_login($user->id, $fingerprint, 'google'); // Using 'google' as login_type for social logins
+        }
+
         ppv_log("✅ [PPV_Login] Apple login successful (#{$user->id}): {$user->email}");
 
         wp_send_json_success([
@@ -1207,6 +1235,7 @@ public static function render_landing_page($atts) {
         check_ajax_referer('ppv_login_nonce', 'nonce');
 
         $access_token = sanitize_text_field($_POST['access_token'] ?? '');
+        $fingerprint = sanitize_text_field($_POST['device_fingerprint'] ?? '');
 
         if (empty($access_token)) {
             wp_send_json_error(['message' => 'Facebook Login fehlgeschlagen']);
@@ -1310,6 +1339,11 @@ public static function render_landing_page($atts) {
         $domain = $_SERVER['HTTP_HOST'] ?? '';
         setcookie('ppv_user_token', $token, time() + (86400 * 180), '/', $domain, true, true);
 
+        // 📱 Track login fingerprint (Facebook)
+        if (!empty($fingerprint) && class_exists('PPV_Device_Fingerprint')) {
+            PPV_Device_Fingerprint::track_login($user->id, $fingerprint, 'google');
+        }
+
         ppv_log("✅ [PPV_Login] Facebook login successful (#{$user->id}): {$email}");
 
         wp_send_json_success([
@@ -1333,6 +1367,7 @@ public static function render_landing_page($atts) {
         check_ajax_referer('ppv_login_nonce', 'nonce');
 
         $code = sanitize_text_field($_POST['code'] ?? '');
+        $fingerprint = sanitize_text_field($_POST['device_fingerprint'] ?? '');
 
         if (empty($code)) {
             wp_send_json_error(['message' => 'TikTok Login fehlgeschlagen']);
@@ -1432,6 +1467,11 @@ public static function render_landing_page($atts) {
         // Set cookie
         $domain = $_SERVER['HTTP_HOST'] ?? '';
         setcookie('ppv_user_token', $token, time() + (86400 * 180), '/', $domain, true, true);
+
+        // 📱 Track login fingerprint (TikTok)
+        if (!empty($fingerprint) && class_exists('PPV_Device_Fingerprint')) {
+            PPV_Device_Fingerprint::track_login($user->id, $fingerprint, 'google');
+        }
 
         ppv_log("✅ [PPV_Login] TikTok login successful (#{$user->id}): {$tiktok_id}");
 

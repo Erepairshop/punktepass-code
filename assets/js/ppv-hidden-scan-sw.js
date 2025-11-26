@@ -6,12 +6,10 @@
 // ⛔ DISABLED - Not in use
 
 self.addEventListener("install", (e) => {
-  console.log("⏭️ HiddenScan SW installed (DISABLED)");
   self.skipWaiting();
 });
 
 self.addEventListener("activate", (e) => {
-  console.log("⏭️ HiddenScan SW active (DISABLED)");
   return self.clients.claim();
 });
 
@@ -20,7 +18,6 @@ self.addEventListener("activate", (e) => {
 // ============================================================
 self.addEventListener("message", async (e) => {
   // ⛔ DISABLED - Not in use
-  console.log("⏭️ HiddenScan SW message ignored (DISABLED)");
   return;
 
   const data = e.data || {};
@@ -30,7 +27,6 @@ self.addEventListener("message", async (e) => {
   const storeKey = data.store_key || "";
   const lang = data.lang || "de";
 
-  console.log("📨 SW received QR:", code);
 
   try {
     // --- POS Scan REST hívás ---
@@ -44,7 +40,6 @@ self.addEventListener("message", async (e) => {
     });
 
     const result = await res.json();
-    console.log("📡 SW → PunktePass result:", result);
 
     // --- csak siker esetén broadcast ---
     if (result.success) {
@@ -60,7 +55,6 @@ self.addEventListener("message", async (e) => {
       try {
         const bc = new BroadcastChannel("punktepass_scans");
         bc.postMessage(payload);
-        console.log("📡 BroadcastChannel sent:", payload);
         bc.close();
       } catch (err) {
         console.warn("⚠️ BroadcastChannel failed:", err);
@@ -72,7 +66,6 @@ self.addEventListener("message", async (e) => {
         client.postMessage(payload);
       }
 
-      console.log("📢 Relay sent to", allClients.length, "clients");
 
       // 3️⃣ ✅ Force relay – minden tabnak, még uncontrolled esetben is
       try {
@@ -85,7 +78,6 @@ self.addEventListener("message", async (e) => {
             source: "HiddenScanForce",
           });
         }
-        console.log("💬 Forced relay broadcast to", all.length, "tabs:", payload);
       } catch (err) {
         console.warn("⚠️ Forced relay failed:", err);
       }

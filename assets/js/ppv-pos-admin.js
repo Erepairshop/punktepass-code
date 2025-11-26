@@ -8,7 +8,6 @@
 
 jQuery(document).ready(function ($) {
 
-  console.log("✅ PPV POS Admin (REST) JS aktiv");
 
   const $loginView = $("#ppv-pos-login");
   const $dashboardView = $("#ppv-pos-dashboard");
@@ -23,7 +22,6 @@ jQuery(document).ready(function ($) {
    * ============================================================ */
   const existingToken = localStorage.getItem(TOKEN_KEY);
   if (existingToken) {
-    console.log("🔁 Vorherige Session erkannt");
     showDashboard();
     loadStatus(existingToken);
   }
@@ -61,7 +59,6 @@ jQuery(document).ready(function ($) {
         localStorage.setItem("ppv_active_store", currentStoreId);
         document.cookie = "ppv_pos_token=" + token + "; path=/; max-age=" + 60 * 60 * 6 + "; SameSite=Lax";
 
-        console.log("🍪 POS Token als Cookie gesetzt:", token);
         $msgLogin.text("✅ Erfolgreich angemeldet!");
 
         setTimeout(() => {
@@ -85,7 +82,6 @@ jQuery(document).ready(function ($) {
    * ============================================================ */
   async function loadStatus(token) {
     const store_id = localStorage.getItem("ppv_active_store") || 1;
-    console.log("📡 POS Stats anfordern:", store_id);
 
     try {
       const res = await $.ajax({
@@ -142,7 +138,6 @@ jQuery(document).ready(function ($) {
         data: { token },
         headers: { "X-WP-Nonce": PPV_POS_ADMIN.nonce },
       });
-      console.log("🚪 POS erfolgreich abgemeldet:", token);
     } catch (err) {
       console.warn("⚠️ Logout-Fehler (ignoriert):", err);
     }
@@ -238,7 +233,6 @@ jQuery(document).ready(function ($) {
       return;
     }
 
-    console.log("📡 Hole Filialen mit Token:", token);
 
     try {
       const response = await fetch(base + "pos/stores?token=" + encodeURIComponent(token), {
@@ -246,7 +240,6 @@ jQuery(document).ready(function ($) {
         headers: { "X-WP-Nonce": PPV_POS_ADMIN.nonce },
       });
       const result = await response.json();
-      console.log("📦 Store response:", result);
 
       if (!result.success || !Array.isArray(result.data) || result.data.length === 0) {
         dropdown.innerHTML = "<option>Keine Stores gefunden</option>";
@@ -262,7 +255,6 @@ jQuery(document).ready(function ($) {
         localStorage.setItem("ppv_active_store", result.data[0].id);
       }
 
-      console.log("✅ Stores erfolgreich geladen:", result.data.length);
     } catch (e) {
       console.error("❌ Fehler beim Laden der Stores:", e);
       dropdown.innerHTML = "<option>Fehler beim Laden</option>";
@@ -271,7 +263,6 @@ jQuery(document).ready(function ($) {
     dropdown.addEventListener("change", (e) => {
       const storeId = e.target.value;
       localStorage.setItem("ppv_active_store", storeId);
-      console.log("Aktiver Store:", storeId);
       const token = localStorage.getItem("ppv_pos_token");
       if (token) loadStatus(token);
     });
@@ -287,7 +278,6 @@ jQuery(document).ready(function ($) {
       const dashboardVisible = $("#ppv-pos-dashboard").is(":visible");
       if (token && dashboardVisible) {
         clearInterval(checkReady);
-        console.log("🟢 Token & Dashboard OK → initStoreSelector()");
         initStoreSelector();
         setTimeout(() => loadStatus(token), 600);
 
@@ -342,7 +332,6 @@ jQuery(document).ready(function ($) {
     ablyChannel = ablyInstance.channels.get(channelName);
 
     ablyInstance.connection.on('connected', () => {
-      console.log("📡 [POS Admin] Ably connected to channel:", channelName);
     });
 
     ablyInstance.connection.on('failed', (err) => {
@@ -351,7 +340,6 @@ jQuery(document).ready(function ($) {
 
     // 🎯 Subscribe to new-scan events
     ablyChannel.subscribe('new-scan', (message) => {
-      console.log("📡 [POS Admin] New scan received via Ably:", message.data);
 
       // Refresh stats immediately
       const token = localStorage.getItem(TOKEN_KEY);
@@ -372,12 +360,10 @@ jQuery(document).ready(function ($) {
 
     // Subscribe to other relevant events
     ablyChannel.subscribe('reward-request', (message) => {
-      console.log("📡 [POS Admin] Reward request received:", message.data);
       const token = localStorage.getItem(TOKEN_KEY);
       if (token) loadStatus(token);
     });
 
-    console.log("✅ [POS Admin] Ably real-time initialized for store:", storeId);
   }
 
   // Cleanup on page unload
@@ -390,7 +376,6 @@ jQuery(document).ready(function ($) {
 
   // Re-init Ably when store changes
   $(document).on('change', '#ppv-store-selector', function() {
-    console.log("🔄 [POS Admin] Store changed, reinitializing Ably...");
     setTimeout(initAblyRealtime, 500);
   });
 

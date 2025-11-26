@@ -48,7 +48,6 @@
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(scans));
     showStatus("📦 Scan offline gespeichert", "orange");
-    console.log("📦 Offline gespeichert:", data);
   }
 
   /** 🔄 Synchronisation wenn online */
@@ -113,7 +112,6 @@
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         gpsPosition = { latitude: pos.coords.latitude, longitude: pos.coords.longitude, ts: Date.now() };
-        console.log("📍 GPS acquired:", gpsPosition.latitude.toFixed(4), gpsPosition.longitude.toFixed(4));
       },
       () => { gpsPosition = null; },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
@@ -171,8 +169,12 @@
       const result = await res.json();
 
       if (result.success) {
+        // 📳 Haptic feedback on scan success
+        if (window.ppvHaptic) window.ppvHaptic('scan');
         showStatus(result.message || "✅ Scan erfolgreich", "green");
       } else {
+        // 📳 Haptic feedback on error
+        if (window.ppvHaptic) window.ppvHaptic('error');
         showStatus(result.message || "⚠️ Scan-Fehler – lokal gespeichert", "red");
         await saveOfflineScan(scanData);
       }

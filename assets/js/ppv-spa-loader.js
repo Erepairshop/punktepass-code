@@ -11,7 +11,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const root = document.querySelector("#ppv-app-root");
   if (!root) return;
 
-  console.log("✅ [SPA Utils] v4.0 - Turbo-only mode (no custom navigation)");
 
   // ✅ Clean up old SPA cache from localStorage (one-time migration)
   if (!localStorage.getItem("ppv_spa_cache_cleaned")) {
@@ -25,7 +24,6 @@ document.addEventListener("DOMContentLoaded", () => {
     keysToRemove.forEach(k => localStorage.removeItem(k));
     localStorage.setItem("ppv_spa_cache_cleaned", "1");
     if (keysToRemove.length > 0) {
-      console.log("🧹 [SPA Utils] Cleaned " + keysToRemove.length + " old cache entries");
     }
   }
 

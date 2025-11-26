@@ -24,12 +24,10 @@
 
   // Prevent duplicate initialization
   if (window.PPV_API_MANAGER_LOADED) {
-    console.log('[API Manager] Already loaded, skipping');
     return;
   }
   window.PPV_API_MANAGER_LOADED = true;
 
-  console.log('PPV API Manager v2.0 loaded');
 
   // ============================================================
   // CONFIGURATION - Optimized for stability
@@ -72,7 +70,6 @@
     recordSuccess() {
       state.consecutiveFailures = 0;
       if (state.circuitOpen) {
-        console.log('[API] Circuit breaker CLOSED - requests resuming');
         state.circuitOpen = false;
         state.circuitOpenTime = null;
       }
@@ -90,7 +87,6 @@
         // Auto-reset after timeout
         setTimeout(() => {
           if (state.circuitOpen) {
-            console.log('[API] Circuit breaker auto-reset');
             state.circuitOpen = false;
             state.circuitOpenTime = null;
             state.consecutiveFailures = 0;
@@ -172,7 +168,6 @@
         const now = Date.now();
         const lastRequest = state.recentRequests.get(key);
         if (lastRequest && (now - lastRequest) < CONFIG.dedupeWindow) {
-          console.log(`[API] Skipping duplicate: ${key}`);
           return Promise.resolve({ skipped: true, reason: 'duplicate' });
         }
         state.recentRequests.set(key, now);
@@ -223,12 +218,10 @@
 
     pause(duration = CONFIG.turboNavigationPause) {
       state.isPaused = true;
-      console.log(`[API] Paused for ${duration}ms`);
 
       if (state.pauseTimeout) clearTimeout(state.pauseTimeout);
       state.pauseTimeout = setTimeout(() => {
         state.isPaused = false;
-        console.log('[API] Resumed');
         this.process();
       }, duration);
     },
@@ -236,7 +229,6 @@
     resume() {
       if (state.pauseTimeout) clearTimeout(state.pauseTimeout);
       state.isPaused = false;
-      console.log('[API] Force resumed');
       this.process();
     },
 
@@ -244,7 +236,6 @@
       const cleared = state.queue.length;
       state.queue = [];
       if (cleared > 0) {
-        console.log(`[API] Queue cleared (${cleared} items)`);
       }
     }
   };
@@ -327,7 +318,6 @@
 
   // Navigation starting - clear queue ONCE
   document.addEventListener('turbo:before-visit', function() {
-    console.log('[API] Turbo navigation starting');
     state.isNavigating = true;
     state.queueCleared = false;  // Reset for new navigation
     smartClear();
@@ -342,14 +332,12 @@
 
   // Navigation complete - resume with delay
   document.addEventListener('turbo:load', function() {
-    console.log('[API] Turbo load complete');
     state.isNavigating = false;
     state.queueCleared = false;
 
     // Long delay to let all JS initialize before allowing requests
     setTimeout(() => {
       if (!state.isNavigating) {
-        console.log('[API] Resuming queue after navigation');
         window.PPV_REQUEST_QUEUE.resume();
       }
     }, CONFIG.initialDelay);
@@ -395,13 +383,11 @@
       state.circuitOpen = false;
       state.circuitOpenTime = null;
       state.consecutiveFailures = 0;
-      console.log('[API] Circuit breaker manually reset');
     },
 
     setConfig(key, value) {
       if (CONFIG.hasOwnProperty(key)) {
         CONFIG[key] = value;
-        console.log(`[API] Config ${key} set to ${value}`);
       }
     }
   };

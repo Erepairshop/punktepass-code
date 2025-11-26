@@ -61,7 +61,7 @@ wp_add_inline_script('ppv-user-signup', "window.ppv_user_signup = {$__json};", '
             <p><button type="submit" class="ppv-btn">Registrieren</button></p>
             <p style="text-align:center;">oder</p>
             <p style="text-align:center;">
-                <a href="<?php echo esc_url($google_url); ?>" class="ppv-btn" style="background:#4285F4;">
+                <a href="<?php echo esc_url($google_url); ?>" id="ppv_google_login_btn" class="ppv-btn" style="background:#4285F4;">
                     Mit Google anmelden
                 </a>
             </p>
@@ -111,13 +111,23 @@ wp_add_inline_script('ppv-user-signup', "window.ppv_user_signup = {$__json};", '
                                 const $text = $('#ppv_device_warning_text');
                                 const $submitBtn = $('#ppv_user_form button[type="submit"]');
 
-                                if (res.accounts >= res.limit) {
+                                if (res.blocked) {
+                                    // 🚫 BLOCKED DEVICE - Admin blocked this device
+                                    deviceBlocked = true;
+                                    $warning.css({ display: 'block', background: '#fee2e2', border: '1px solid #ef4444', color: '#991b1b' });
+                                    $icon.text('🚫 ');
+                                    $text.text(res.message || 'Dieses Gerät wurde gesperrt. Registrierung nicht möglich.');
+                                    $submitBtn.prop('disabled', true).css({ opacity: 0.5, cursor: 'not-allowed' });
+                                    $('#ppv_google_login_btn').css({ opacity: 0.5, cursor: 'not-allowed', pointerEvents: 'none' });
+                                } else if (res.accounts >= res.limit) {
                                     // 🔴 BLOCKED - Max accounts reached
                                     deviceBlocked = true;
                                     $warning.css({ display: 'block', background: '#fee2e2', border: '1px solid #ef4444', color: '#991b1b' });
                                     $icon.text('🚫 ');
                                     $text.text('Maximale Konten für dieses Gerät erreicht (' + res.accounts + '/' + res.limit + '). Registrierung nicht möglich.');
                                     $submitBtn.prop('disabled', true).css({ opacity: 0.5, cursor: 'not-allowed' });
+                                    // 📱 Also disable Google login button
+                                    $('#ppv_google_login_btn').css({ opacity: 0.5, cursor: 'not-allowed', pointerEvents: 'none' });
                                 } else if (res.accounts > 0) {
                                     // 🟡 WARNING - Has accounts but can still register
                                     $warning.css({ display: 'block', background: '#fef3c7', border: '1px solid #f59e0b', color: '#92400e' });
@@ -130,6 +140,21 @@ wp_add_inline_script('ppv-user-signup', "window.ppv_user_signup = {$__json};", '
                     });
                 });
             }
+
+            // 📱 Intercept Google login to pass fingerprint
+            $('#ppv_google_login_btn').on('click', function(e) {
+                if (deviceBlocked) {
+                    e.preventDefault();
+                    $('#ppv_user_msg').html('🚫 <strong>Registrierung blockiert.</strong> Maximale Konten für dieses Gerät erreicht.');
+                    return false;
+                }
+                if (deviceFingerprint) {
+                    e.preventDefault();
+                    const baseUrl = $(this).attr('href');
+                    const separator = baseUrl.includes('?') ? '&' : '?';
+                    window.location.href = baseUrl + separator + 'device_fp=' + encodeURIComponent(deviceFingerprint);
+                }
+            });
 
             $('#ppv_user_form').on('submit', function(e){
                 // Block submit if device limit reached
@@ -253,6 +278,12 @@ public static function ajax_register_user() {
 
         // 1️⃣ Start OAuth
         if (isset($_GET['ppv_google_start'])) {
+            // 📱 Save device fingerprint to cookie before Google redirect
+            if (!empty($_GET['device_fp'])) {
+                setcookie('ppv_device_fp_temp', sanitize_text_field($_GET['device_fp']), time() + 600,
+                    COOKIEPATH ?: '/', COOKIE_DOMAIN ?: '', is_ssl(), true);
+            }
+
             $params = [
                 'client_id'     => PPV_GOOGLE_CLIENT_ID,
                 'redirect_uri'  => home_url('/user_dashboard/?ppv_google_callback=1'),
@@ -294,27 +325,58 @@ public static function ajax_register_user() {
                 $last  = $name_parts[1] ?? '';
 
                 $exists = $wpdb->get_var($wpdb->prepare("SELECT id FROM $table WHERE email=%s", $email));
-     if (!$exists) {
-    // 🔹 QR token generálás a Google-regisztrált felhasználónak
-    $qr_token = wp_generate_password(10, false, false);
 
-    $wpdb->insert($table, [
-        'email'      => $email,
-        'google_id'  => $google_id,
-        'first_name' => $first,
-        'last_name'  => $last,
-        'avatar'     => $avatar,
-        'qr_token'   => $qr_token,  // ✅ QR mező hozzáadva
-        'active'     => 1,
-        'created_at' => current_time('mysql'),
-        'updated_at' => current_time('mysql')
-    ]);
+                // 📱 Get device fingerprint from temp cookie
+                $fingerprint = isset($_COOKIE['ppv_device_fp_temp']) ? sanitize_text_field($_COOKIE['ppv_device_fp_temp']) : '';
 
-    $user_id = $wpdb->insert_id;
-    ppv_log("✅ Neuer Google-User mit QR erstellt (ID={$user_id}, Email={$email})");
-} else {
-    $user_id = $exists;
-}
+                // 📱 Check device limit for NEW registrations
+                if (!$exists && !empty($fingerprint) && class_exists('PPV_Device_Fingerprint')) {
+                    $device_check = PPV_Device_Fingerprint::check_device_limit($fingerprint);
+                    if (!$device_check['allowed']) {
+                        ppv_log("⚠️ [Google Signup] Device limit reached: fingerprint={$fingerprint}, accounts={$device_check['accounts']}");
+                        // Clear temp cookie
+                        setcookie('ppv_device_fp_temp', '', time() - 3600, COOKIEPATH ?: '/', COOKIE_DOMAIN ?: '', is_ssl(), true);
+                        wp_redirect(home_url('/user_dashboard?login=device_limit'));
+                        exit;
+                    }
+                }
+
+                if (!$exists) {
+                    // 🔹 QR token generálás a Google-regisztrált felhasználónak
+                    $qr_token = wp_generate_password(10, false, false);
+
+                    $wpdb->insert($table, [
+                        'email'      => $email,
+                        'google_id'  => $google_id,
+                        'first_name' => $first,
+                        'last_name'  => $last,
+                        'avatar'     => $avatar,
+                        'qr_token'   => $qr_token,
+                        'active'     => 1,
+                        'created_at' => current_time('mysql'),
+                        'updated_at' => current_time('mysql')
+                    ]);
+
+                    $user_id = $wpdb->insert_id;
+
+                    // 📱 Store device fingerprint for NEW Google registration
+                    if (!empty($fingerprint) && class_exists('PPV_Device_Fingerprint')) {
+                        PPV_Device_Fingerprint::store_fingerprint($user_id, $fingerprint);
+                        ppv_log("📱 [Google Signup] Fingerprint stored for new user ID={$user_id}");
+                    }
+
+                    ppv_log("✅ Neuer Google-User mit QR erstellt (ID={$user_id}, Email={$email}, FP=" . ($fingerprint ? 'YES' : 'NO') . ")");
+                } else {
+                    $user_id = $exists;
+
+                    // 📱 Track login fingerprint for EXISTING users
+                    if (!empty($fingerprint) && class_exists('PPV_Device_Fingerprint')) {
+                        PPV_Device_Fingerprint::track_login($user_id, $fingerprint);
+                    }
+                }
+
+                // 📱 Clear temp fingerprint cookie
+                setcookie('ppv_device_fp_temp', '', time() - 3600, COOKIEPATH ?: '/', COOKIE_DOMAIN ?: '', is_ssl(), true);
 
 
                 setcookie('ppv_user_id', $user_id, time() + (86400*14),

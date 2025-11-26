@@ -18,11 +18,74 @@ class PPV_Device_Fingerprint {
     // Maximum accounts allowed per device
     const MAX_ACCOUNTS_PER_DEVICE = 2;
 
+    // Login tracking table name suffix
+    const LOGIN_TABLE = 'ppv_device_logins';
+
+    // Blocked devices table name suffix
+    const BLOCKED_TABLE = 'ppv_blocked_devices';
+
     /**
      * Register hooks
      */
     public static function hooks() {
         add_action('rest_api_init', [__CLASS__, 'register_routes']);
+        add_action('admin_init', [__CLASS__, 'run_migrations']);
+    }
+
+    /**
+     * Run database migrations for new tables
+     */
+    public static function run_migrations() {
+        global $wpdb;
+
+        $migration_version = get_option('ppv_device_migration_version', '0');
+
+        // Migration 1.0: Add login tracking table
+        if (version_compare($migration_version, '1.0', '<')) {
+            $table_logins = $wpdb->prefix . self::LOGIN_TABLE;
+
+            $sql = "CREATE TABLE IF NOT EXISTS {$table_logins} (
+                id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+                fingerprint_hash VARCHAR(64) NOT NULL,
+                user_id BIGINT(20) UNSIGNED NOT NULL,
+                ip_address VARCHAR(45) NULL,
+                user_agent TEXT NULL,
+                login_type ENUM('password', 'google', 'cookie') DEFAULT 'password',
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                KEY idx_fingerprint (fingerprint_hash),
+                KEY idx_user (user_id),
+                KEY idx_created (created_at)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
+
+            require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+            dbDelta($sql);
+
+            ppv_log("✅ [PPV_Device_Fingerprint] Login tracking table created");
+            update_option('ppv_device_migration_version', '1.0');
+            $migration_version = '1.0';
+        }
+
+        // Migration 1.1: Add blocked devices table
+        if (version_compare($migration_version, '1.1', '<')) {
+            $table_blocked = $wpdb->prefix . self::BLOCKED_TABLE;
+
+            $sql = "CREATE TABLE IF NOT EXISTS {$table_blocked} (
+                id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+                fingerprint_hash VARCHAR(64) NOT NULL,
+                reason TEXT NULL,
+                blocked_by BIGINT(20) UNSIGNED NULL COMMENT 'WP user ID who blocked',
+                blocked_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                UNIQUE KEY idx_fingerprint (fingerprint_hash)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
+
+            require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+            dbDelta($sql);
+
+            ppv_log("✅ [PPV_Device_Fingerprint] Blocked devices table created");
+            update_option('ppv_device_migration_version', '1.1');
+        }
     }
 
     /**
@@ -59,20 +122,34 @@ class PPV_Device_Fingerprint {
             // No fingerprint provided - allow registration (fallback)
             return new WP_REST_Response([
                 'allowed' => true,
+                'blocked' => false,
                 'accounts' => 0,
                 'limit' => self::MAX_ACCOUNTS_PER_DEVICE
             ], 200);
         }
 
         $fingerprint_hash = self::hash_fingerprint($fingerprint);
-        $account_count = self::get_account_count($fingerprint_hash);
 
+        // 🚫 Check if device is blocked
+        if (self::is_device_blocked($fingerprint_hash)) {
+            ppv_log("🚫 [Device Check] BLOCKED device attempted registration: fingerprint_hash={$fingerprint_hash}");
+            return new WP_REST_Response([
+                'allowed' => false,
+                'blocked' => true,
+                'accounts' => 0,
+                'limit' => self::MAX_ACCOUNTS_PER_DEVICE,
+                'message' => 'Dieses Gerät wurde gesperrt.'
+            ], 200);
+        }
+
+        $account_count = self::get_account_count($fingerprint_hash);
         $allowed = $account_count < self::MAX_ACCOUNTS_PER_DEVICE;
 
         ppv_log("📱 [Device Check] fingerprint_hash={$fingerprint_hash}, accounts={$account_count}, allowed=" . ($allowed ? 'YES' : 'NO'));
 
         return new WP_REST_Response([
             'allowed' => $allowed,
+            'blocked' => false,
             'accounts' => $account_count,
             'limit' => self::MAX_ACCOUNTS_PER_DEVICE
         ], 200);
@@ -138,18 +215,30 @@ class PPV_Device_Fingerprint {
      * Check device limit during registration (called from PHP)
      *
      * @param string $fingerprint Raw fingerprint string
-     * @return array ['allowed' => bool, 'accounts' => int]
+     * @return array ['allowed' => bool, 'accounts' => int, 'blocked' => bool]
      */
     public static function check_device_limit($fingerprint) {
         if (empty($fingerprint) || strlen($fingerprint) < 16) {
-            return ['allowed' => true, 'accounts' => 0, 'limit' => self::MAX_ACCOUNTS_PER_DEVICE];
+            return ['allowed' => true, 'accounts' => 0, 'limit' => self::MAX_ACCOUNTS_PER_DEVICE, 'blocked' => false];
         }
 
         $fingerprint_hash = self::hash_fingerprint($fingerprint);
+
+        // 🚫 Check if device is blocked
+        if (self::is_device_blocked($fingerprint_hash)) {
+            return [
+                'allowed' => false,
+                'blocked' => true,
+                'accounts' => 0,
+                'limit' => self::MAX_ACCOUNTS_PER_DEVICE
+            ];
+        }
+
         $account_count = self::get_account_count($fingerprint_hash);
 
         return [
             'allowed' => $account_count < self::MAX_ACCOUNTS_PER_DEVICE,
+            'blocked' => false,
             'accounts' => $account_count,
             'limit' => self::MAX_ACCOUNTS_PER_DEVICE
         ];
@@ -291,5 +380,238 @@ class PPV_Device_Fingerprint {
             ORDER BY account_count DESC, last_seen DESC
             LIMIT 100
         ");
+    }
+
+    // ========================================
+    // 📱 LOGIN TRACKING METHODS
+    // ========================================
+
+    /**
+     * Track a login event for a user
+     *
+     * @param int $user_id
+     * @param string $fingerprint Raw fingerprint
+     * @param string $login_type 'password', 'google', or 'cookie'
+     * @return bool Success
+     */
+    public static function track_login($user_id, $fingerprint, $login_type = 'password') {
+        global $wpdb;
+
+        if (empty($fingerprint) || $user_id <= 0) {
+            return false;
+        }
+
+        $fingerprint_hash = self::hash_fingerprint($fingerprint);
+        $ip_address = self::get_client_ip();
+        $user_agent = sanitize_text_field($_SERVER['HTTP_USER_AGENT'] ?? '');
+
+        $result = $wpdb->insert(
+            $wpdb->prefix . self::LOGIN_TABLE,
+            [
+                'fingerprint_hash' => $fingerprint_hash,
+                'user_id' => $user_id,
+                'ip_address' => $ip_address,
+                'user_agent' => $user_agent,
+                'login_type' => $login_type,
+                'created_at' => current_time('mysql')
+            ],
+            ['%s', '%d', '%s', '%s', '%s', '%s']
+        );
+
+        ppv_log("📱 [Login Track] user_id={$user_id}, type={$login_type}, hash={$fingerprint_hash}, ip={$ip_address}");
+
+        return (bool) $result;
+    }
+
+    /**
+     * Get login history for a user
+     *
+     * @param int $user_id
+     * @param int $limit
+     * @return array
+     */
+    public static function get_user_login_history($user_id, $limit = 50) {
+        global $wpdb;
+
+        return $wpdb->get_results($wpdb->prepare("
+            SELECT * FROM {$wpdb->prefix}" . self::LOGIN_TABLE . "
+            WHERE user_id = %d
+            ORDER BY created_at DESC
+            LIMIT %d
+        ", $user_id, $limit));
+    }
+
+    /**
+     * Get login history for a device (fingerprint)
+     *
+     * @param string $fingerprint_hash
+     * @param int $limit
+     * @return array
+     */
+    public static function get_device_login_history($fingerprint_hash, $limit = 50) {
+        global $wpdb;
+
+        return $wpdb->get_results($wpdb->prepare("
+            SELECT l.*, u.email, u.first_name, u.last_name
+            FROM {$wpdb->prefix}" . self::LOGIN_TABLE . " l
+            LEFT JOIN {$wpdb->prefix}ppv_users u ON l.user_id = u.id
+            WHERE l.fingerprint_hash = %s
+            ORDER BY l.created_at DESC
+            LIMIT %d
+        ", $fingerprint_hash, $limit));
+    }
+
+    /**
+     * Get recent logins across all devices (admin dashboard)
+     *
+     * @param int $limit
+     * @return array
+     */
+    public static function get_recent_logins($limit = 100) {
+        global $wpdb;
+
+        return $wpdb->get_results($wpdb->prepare("
+            SELECT l.*, u.email, u.first_name, u.last_name
+            FROM {$wpdb->prefix}" . self::LOGIN_TABLE . " l
+            LEFT JOIN {$wpdb->prefix}ppv_users u ON l.user_id = u.id
+            ORDER BY l.created_at DESC
+            LIMIT %d
+        ", $limit));
+    }
+
+    // ========================================
+    // 🚫 DEVICE BLOCKING METHODS
+    // ========================================
+
+    /**
+     * Check if a device is blocked
+     *
+     * @param string $fingerprint_hash SHA256 hash of fingerprint
+     * @return bool
+     */
+    public static function is_device_blocked($fingerprint_hash) {
+        global $wpdb;
+
+        $table = $wpdb->prefix . self::BLOCKED_TABLE;
+
+        // Check if table exists
+        if ($wpdb->get_var("SHOW TABLES LIKE '{$table}'") !== $table) {
+            return false;
+        }
+
+        return (bool) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$table} WHERE fingerprint_hash = %s",
+            $fingerprint_hash
+        ));
+    }
+
+    /**
+     * Check if a raw fingerprint is blocked
+     *
+     * @param string $fingerprint Raw fingerprint
+     * @return bool
+     */
+    public static function is_fingerprint_blocked($fingerprint) {
+        if (empty($fingerprint)) {
+            return false;
+        }
+        return self::is_device_blocked(self::hash_fingerprint($fingerprint));
+    }
+
+    /**
+     * Block a device
+     *
+     * @param string $fingerprint_hash SHA256 hash
+     * @param string $reason Optional reason
+     * @param int $blocked_by WP user ID who blocked (optional)
+     * @return bool Success
+     */
+    public static function block_device($fingerprint_hash, $reason = '', $blocked_by = null) {
+        global $wpdb;
+
+        // Check if already blocked
+        if (self::is_device_blocked($fingerprint_hash)) {
+            ppv_log("🚫 [Block Device] Already blocked: {$fingerprint_hash}");
+            return true;
+        }
+
+        $result = $wpdb->insert(
+            $wpdb->prefix . self::BLOCKED_TABLE,
+            [
+                'fingerprint_hash' => $fingerprint_hash,
+                'reason' => $reason,
+                'blocked_by' => $blocked_by ?: get_current_user_id(),
+                'blocked_at' => current_time('mysql')
+            ],
+            ['%s', '%s', '%d', '%s']
+        );
+
+        ppv_log("🚫 [Block Device] " . ($result ? 'SUCCESS' : 'FAILED') . ": hash={$fingerprint_hash}, reason={$reason}");
+
+        return (bool) $result;
+    }
+
+    /**
+     * Unblock a device
+     *
+     * @param string $fingerprint_hash SHA256 hash
+     * @return bool Success
+     */
+    public static function unblock_device($fingerprint_hash) {
+        global $wpdb;
+
+        $result = $wpdb->delete(
+            $wpdb->prefix . self::BLOCKED_TABLE,
+            ['fingerprint_hash' => $fingerprint_hash],
+            ['%s']
+        );
+
+        ppv_log("✅ [Unblock Device] " . ($result ? 'SUCCESS' : 'NOT FOUND') . ": hash={$fingerprint_hash}");
+
+        return (bool) $result;
+    }
+
+    /**
+     * Get all blocked devices (admin use)
+     *
+     * @return array
+     */
+    public static function get_blocked_devices() {
+        global $wpdb;
+
+        $table = $wpdb->prefix . self::BLOCKED_TABLE;
+
+        // Check if table exists
+        if ($wpdb->get_var("SHOW TABLES LIKE '{$table}'") !== $table) {
+            return [];
+        }
+
+        return $wpdb->get_results("
+            SELECT
+                bd.*,
+                wu.display_name as blocked_by_name,
+                (SELECT COUNT(DISTINCT user_id) FROM {$wpdb->prefix}ppv_device_fingerprints WHERE fingerprint_hash = bd.fingerprint_hash) as account_count,
+                (SELECT GROUP_CONCAT(DISTINCT user_id) FROM {$wpdb->prefix}ppv_device_fingerprints WHERE fingerprint_hash = bd.fingerprint_hash) as user_ids
+            FROM {$table} bd
+            LEFT JOIN {$wpdb->users} wu ON bd.blocked_by = wu.ID
+            ORDER BY bd.blocked_at DESC
+        ");
+    }
+
+    /**
+     * Get block info for a device
+     *
+     * @param string $fingerprint_hash
+     * @return object|null
+     */
+    public static function get_block_info($fingerprint_hash) {
+        global $wpdb;
+
+        return $wpdb->get_row($wpdb->prepare("
+            SELECT bd.*, wu.display_name as blocked_by_name
+            FROM {$wpdb->prefix}" . self::BLOCKED_TABLE . " bd
+            LEFT JOIN {$wpdb->users} wu ON bd.blocked_by = wu.ID
+            WHERE bd.fingerprint_hash = %s
+        ", $fingerprint_hash));
     }
 }

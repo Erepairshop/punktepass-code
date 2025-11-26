@@ -6,7 +6,6 @@
 (function() {
   'use strict';
 
-  console.log('[PPV_REWARDS_V2] Loading...');
 
   const config = window.ppv_rewards_config || {};
   const base = config.base || '/wp-json/ppv/v1/';
@@ -24,12 +23,10 @@
     if (!container) return;
 
     if (container.dataset.initialized === 'true') {
-      console.log('[PPV_REWARDS_V2] Already initialized');
       return;
     }
     container.dataset.initialized = 'true';
 
-    console.log('[PPV_REWARDS_V2] Initializing...', { storeId, base });
 
     // Load initial data
     loadStats();
@@ -50,7 +47,6 @@
     // Setup real-time
     initRealtime();
 
-    console.log('[PPV_REWARDS_V2] Ready');
   }
 
   // ============================================================
@@ -60,6 +56,8 @@
     const tabs = document.querySelectorAll('.ppv-ea-tab');
     tabs.forEach(tab => {
       tab.addEventListener('click', () => {
+        // 📳 Haptic feedback on tab switch
+        if (window.ppvHaptic) window.ppvHaptic('tap');
         const targetTab = tab.dataset.tab;
         if (targetTab === currentTab) return;
 
@@ -91,6 +89,8 @@
     const btn = document.getElementById('ppv-ea-refresh');
     if (btn) {
       btn.addEventListener('click', () => {
+        // 📳 Haptic feedback on refresh
+        if (window.ppvHaptic) window.ppvHaptic('button');
         btn.classList.add('spinning');
         loadStats();
 
@@ -239,6 +239,8 @@
       const data = await res.json();
 
       if (data.success) {
+        // 📳 Haptic feedback on success
+        if (window.ppvHaptic) window.ppvHaptic(status === 'approved' ? 'success' : 'warning');
         // Animate card removal
         card.classList.add('ppv-ea-card-fade-out');
         setTimeout(() => {
@@ -259,6 +261,8 @@
 
         showToast(status === 'approved' ? (L.rewards_toast_approved || 'Bestätigt!') : (L.rewards_toast_rejected || 'Abgelehnt'), status === 'approved' ? 'success' : 'info');
       } else {
+        // 📳 Haptic feedback on error
+        if (window.ppvHaptic) window.ppvHaptic('error');
         showToast(data.message || L.rewards_toast_error || 'Fehler', 'error');
         btn.disabled = false;
         btn.innerHTML = status === 'approved' ? '<i class="ri-check-line"></i>' : '<i class="ri-close-line"></i>';
@@ -528,13 +532,11 @@
   // ============================================================
   function initRealtime() {
     if (config.ably && config.ably.key && typeof Ably !== 'undefined') {
-      console.log('[PPV_REWARDS_V2] Initializing Ably...');
 
       const ably = new Ably.Realtime({ key: config.ably.key });
       const channel = ably.channels.get(config.ably.channel);
 
       ably.connection.on('connected', () => {
-        console.log('[PPV_REWARDS_V2] Ably connected');
         if (pollInterval) {
           clearInterval(pollInterval);
           pollInterval = null;
@@ -542,26 +544,22 @@
       });
 
       ably.connection.on('disconnected', () => {
-        console.log('[PPV_REWARDS_V2] Ably disconnected');
         startPolling();
       });
 
       channel.subscribe('reward-request', (message) => {
-        console.log('[PPV_REWARDS_V2] New reward request:', message.data);
         showNotification(L.rewards_new_redemption || 'Neue Einlösung!', message.data.reward_title || L.rewards_default_title || 'Belohnung');
         loadStats();
         if (currentTab === 'pending') loadPending();
       });
 
     } else {
-      console.log('[PPV_REWARDS_V2] Ably not available, using polling');
       startPolling();
     }
   }
 
   function startPolling() {
     if (pollInterval) return;
-    console.log('[PPV_REWARDS_V2] Starting polling (30s)');
     pollInterval = setInterval(() => {
       loadStats();
       if (currentTab === 'pending') loadPending();

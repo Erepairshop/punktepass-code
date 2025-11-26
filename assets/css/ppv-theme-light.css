@@ -260,6 +260,89 @@ body.ppv-dark,
 }
 
 /* ==========================================================================
+   🌙 AUTO DARK MODE (System Preference Detection)
+   Added: 2025-11-26 - Respects OS/Browser dark mode setting
+   ========================================================================== */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        /* Brand Colors - Enhanced Neon Cyan */
+        --pp-primary: #00d4ff;
+        --pp-primary-dark: #00a8cc;
+        --pp-primary-darker: #0088a8;
+        --pp-primary-light: #4de5ff;
+        --pp-primary-lighter: #99f0ff;
+        --pp-primary-glow: rgba(0, 212, 255, 0.40);
+
+        /* Secondary - Vibrant Teal */
+        --pp-secondary: #00d9a3;
+        --pp-secondary-dark: #00a878;
+        --pp-secondary-light: #70ffce;
+        --pp-secondary-glow: rgba(0, 217, 163, 0.35);
+
+        /* Accent - Electric Purple */
+        --pp-accent: #a855f7;
+        --pp-accent-dark: #8b5cf6;
+        --pp-accent-light: #c084fc;
+        --pp-accent-glow: rgba(168, 85, 247, 0.35);
+
+        /* Status Colors - Neon Dark */
+        --pp-success: #4ade80;
+        --pp-success-light: #86efac;
+        --pp-warning: #fbbf24;
+        --pp-warning-light: #fcd34d;
+        --pp-danger: #f87171;
+        --pp-danger-light: #fca5a5;
+        --pp-info: #60a5fa;
+
+        /* Surface Colors - Deep Dark Blue */
+        --pp-bg: #0a0f1a;
+        --pp-bg-2: #0d1321;
+        --pp-bg-3: #141e33;
+        --pp-bg-warm: linear-gradient(135deg, #0a0f1a 0%, #0d1321 50%, #111827 100%);
+
+        --pp-surface: #141e33;
+        --pp-surface-soft: rgba(20, 30, 51, 0.95);
+        --pp-surface-glass: rgba(20, 30, 51, 0.85);
+        --pp-surface-elevated: #1a2744;
+
+        /* Text - High Contrast */
+        --pp-text: #f1f5f9;
+        --pp-text-2: #e2e8f0;
+        --pp-text-3: #cbd5e1;
+        --pp-text-muted: #94a3b8;
+        --pp-text-inverse: #0f172a;
+
+        /* Header */
+        --pp-header-bg: linear-gradient(135deg, #0a0f1a 0%, #141e33 100%);
+        --pp-header-dark: #050810;
+
+        /* Borders - Subtle Glow */
+        --pp-border: rgba(0, 212, 255, 0.15);
+        --pp-border-soft: rgba(0, 212, 255, 0.10);
+        --pp-border-strong: rgba(0, 212, 255, 0.30);
+        --pp-border-glass: rgba(0, 212, 255, 0.12);
+
+        /* Shadows - Deep */
+        --pp-shadow-xs: 0 1px 2px rgba(0,0,0,0.30);
+        --pp-shadow-sm: 0 2px 8px rgba(0,0,0,0.50);
+        --pp-shadow: 0 4px 16px rgba(0,0,0,0.60);
+        --pp-shadow-md: 0 8px 24px rgba(0,0,0,0.55);
+        --pp-shadow-lg: 0 12px 32px rgba(0,0,0,0.70);
+        --pp-shadow-xl: 0 20px 48px rgba(0,0,0,0.75);
+        --pp-shadow-glow: 0 0 24px rgba(0,212,255,0.40);
+        --pp-shadow-glow-lg: 0 0 48px rgba(0,212,255,0.50);
+        --pp-shadow-inner: inset 0 2px 4px rgba(0,0,0,0.25);
+
+        /* Gradients - Dark Neon */
+        --gradient-primary: linear-gradient(135deg, #00d4ff 0%, #00a8cc 100%);
+        --gradient-secondary: linear-gradient(135deg, #00d9a3 0%, #00a878 100%);
+        --gradient-accent: linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%);
+        --gradient-card: linear-gradient(145deg, #1a2744 0%, #141e33 100%);
+        --gradient-shimmer: linear-gradient(90deg, transparent, rgba(0,212,255,0.25), transparent);
+    }
+}
+
+/* ==========================================================================
    🌍 GLOBAL RESET & BASE
    ========================================================================== */
 *, *::before, *::after {
@@ -640,6 +723,32 @@ body.ppv-user-dashboard {
 }
 
 /* ==========================================================================
+   ⏳ BUTTON LOADING STATE
+   ========================================================================== */
+
+.ppv-btn-loading {
+    pointer-events: none;
+    opacity: 0.85;
+    cursor: wait !important;
+}
+
+.ppv-btn-loading i {
+    animation: ppv-spin 0.8s linear infinite;
+}
+
+/* RemixIcon spin class */
+.ri-spin {
+    animation: ppv-spin 0.8s linear infinite;
+}
+
+/* Inline spinner for buttons */
+button .ri-loader-4-line,
+.ppv-btn .ri-loader-4-line,
+.btn .ri-loader-4-line {
+    animation: ppv-spin 0.8s linear infinite;
+}
+
+/* ==========================================================================
    🎫 QR MODAL OVERLAY - Premium Glassmorphism
    ========================================================================== */
 
@@ -795,6 +904,39 @@ body.ppv-user-dashboard {
         font-size: 12px;
         padding: 8px 12px;
     }
+}
+
+/* Offline QR Banner */
+.ppv-offline-qr-banner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 16px;
+    margin-bottom: 12px;
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(249, 115, 22, 0.1) 100%);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    border-radius: 12px;
+    color: #d97706;
+    font-size: 13px;
+    font-weight: 600;
+    animation: ppv-offline-pulse 2s ease-in-out infinite;
+}
+
+.ppv-offline-qr-banner i {
+    font-size: 18px;
+}
+
+@keyframes ppv-offline-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* Dark mode offline banner */
+body.ppv-dark .ppv-offline-qr-banner {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(249, 115, 22, 0.15) 100%);
+    border-color: rgba(245, 158, 11, 0.4);
+    color: #fbbf24;
 }
 
 /* ==========================================================================
@@ -990,6 +1132,28 @@ body.ppv-user-dashboard {
     background: rgba(245, 158, 11, 0.1);
     color: #d97706;
     border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+/* QR Display Container */
+.ppv-qr-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+/* QR Actions (Refresh Button) */
+.ppv-qr-actions {
+    margin-top: 15px;
+    display: flex;
+    justify-content: center;
+}
+
+/* Expired Icon */
+.ppv-qr-expired-icon {
+    font-size: 48px;
+    color: #ef4444;
+    margin-bottom: 12px;
 }
 
 /* ==========================================================================
@@ -1695,123 +1859,256 @@ body.ppv-user-dashboard {
 }
 
 /* ==========================================================================
-   🟦 BOTTOM NAVIGATION – Premium PWA App Bar (iOS / Android Style)
+   🟦 BOTTOM NAVIGATION – Modern Floating App Bar (2024 Design)
    ========================================================================== */
 
 .ppv-bottom-nav {
     position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 76px;
+    bottom: 12px;
+    left: 12px;
+    right: 12px;
+    margin: 0 auto;
+    max-width: 420px;
+    height: 64px;
     display: flex;
     justify-content: space-around;
     align-items: center;
     background: rgba(255, 255, 255, 0.92);
-    backdrop-filter: var(--pp-glass-heavy);
-    -webkit-backdrop-filter: var(--pp-glass-heavy);
-    border-top: 1px solid rgba(14, 165, 233, 0.08);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 20px;
     box-shadow:
-        0 -8px 32px rgba(0, 0, 0, 0.06),
-        0 -2px 8px rgba(0, 0, 0, 0.04);
+        0 8px 32px rgba(0, 0, 0, 0.12),
+        0 2px 8px rgba(0, 0, 0, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6);
     z-index: 999;
     padding: 0 8px;
-    padding-bottom: env(safe-area-inset-bottom, 0);
+    isolation: isolate; /* Fix z-index stacking context */
 }
 
 /* iOS Safe Area Support */
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
     .ppv-bottom-nav {
-        height: calc(76px + env(safe-area-inset-bottom));
-        padding-bottom: env(safe-area-inset-bottom);
+        bottom: calc(12px + env(safe-area-inset-bottom));
+        left: calc(12px + env(safe-area-inset-left, 0px));
+        right: calc(12px + env(safe-area-inset-right, 0px));
     }
 }
 
+/* Nav Items Container */
 .ppv-bottom-nav .nav-item {
     flex: 1;
-    max-width: 80px;
+    max-width: 72px;
+    min-width: 56px;
     text-align: center;
-    color: var(--pp-text-muted);
+    color: #64748b;
     font-size: 10px;
-    font-weight: 600;
+    font-weight: 500;
     text-decoration: none;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
+    justify-content: center;
+    gap: 2px;
     cursor: pointer;
-    transition: var(--pp-trans);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     padding: 8px 4px;
-    border-radius: var(--pp-r-sm);
+    border-radius: 14px;
     position: relative;
+    -webkit-tap-highlight-color: transparent;
 }
 
+/* Icon Background Pill for Active State */
 .ppv-bottom-nav .nav-item::before {
     content: '';
     position: absolute;
-    top: 4px;
+    top: 50%;
     left: 50%;
-    transform: translateX(-50%) scaleX(0);
-    width: 32px;
-    height: 3px;
-    background: var(--gradient-primary);
-    border-radius: var(--pp-r-full);
-    transition: var(--pp-trans);
-    opacity: 0;
+    transform: translate(-50%, -50%) scale(0);
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, rgba(139, 92, 246, 0.1) 100%);
+    border-radius: 14px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 0;
+    pointer-events: none;
 }
 
+/* Hover State */
 .ppv-bottom-nav .nav-item:hover {
     color: var(--pp-primary);
-    background: rgba(14, 165, 233, 0.06);
 }
 
+.ppv-bottom-nav .nav-item:hover::before {
+    transform: translate(-50%, -50%) scale(1);
+    background: rgba(14, 165, 233, 0.08);
+}
+
+/* Icon Styling */
 .ppv-bottom-nav .nav-item i {
-    font-size: 24px;
-    transition: var(--pp-trans-bounce);
+    font-size: 22px;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     line-height: 1;
+    position: relative;
+    z-index: 1;
 }
 
+/* Label Styling */
 .ppv-bottom-nav .nav-item span {
     font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.2px;
-    transition: var(--pp-trans);
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 0.8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 64px;
+    position: relative;
+    z-index: 1;
 }
 
-/* Active State - Premium Highlight */
+/* ═══════════════════════════════════════════════════════════════
+   ACTIVE STATE - Premium Animated
+   ═══════════════════════════════════════════════════════════════ */
+
 .ppv-bottom-nav .nav-item.active {
     color: var(--pp-primary);
 }
 
 .ppv-bottom-nav .nav-item.active::before {
-    transform: translateX(-50%) scaleX(1);
-    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.18) 0%, rgba(139, 92, 246, 0.12) 100%);
 }
 
 .ppv-bottom-nav .nav-item.active i {
-    transform: scale(1.15) translateY(-2px);
+    transform: scale(1.1) translateY(-1px);
     color: var(--pp-primary);
-    filter: drop-shadow(0 4px 8px var(--pp-primary-glow));
+    filter: drop-shadow(0 2px 8px rgba(14, 165, 233, 0.4));
 }
 
 .ppv-bottom-nav .nav-item.active span {
-    font-weight: 700;
-    color: var(--pp-primary-dark);
+    font-weight: 600;
+    color: var(--pp-primary);
+    opacity: 1;
 }
 
-/* Ripple effect on tap */
-.ppv-bottom-nav .nav-item:active {
-    transform: scale(0.95);
-}
+/* ═══════════════════════════════════════════════════════════════
+   TAP / TOUCH STATES
+   ═══════════════════════════════════════════════════════════════ */
 
-.ppv-bottom-nav .nav-item:active i {
-    transform: scale(1.1);
-}
-
-/* Touch feedback */
+.ppv-bottom-nav .nav-item:active,
 .ppv-bottom-nav .nav-item.touch {
+    transform: scale(0.92);
+}
+
+.ppv-bottom-nav .nav-item:active i,
+.ppv-bottom-nav .nav-item.touch i {
     transform: scale(0.95);
-    opacity: 0.8;
+}
+
+/* Ripple Effect */
+.ppv-bottom-nav .nav-item::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: radial-gradient(circle, rgba(14, 165, 233, 0.3) 0%, transparent 70%);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    transition: width 0.4s ease, height 0.4s ease, opacity 0.4s ease;
+    pointer-events: none;
+}
+
+.ppv-bottom-nav .nav-item:active::after {
+    width: 60px;
+    height: 60px;
+    opacity: 1;
+    transition: width 0s, height 0s, opacity 0s;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BADGE SUPPORT (Notifications)
+   ═══════════════════════════════════════════════════════════════ */
+
+.ppv-bottom-nav .nav-item .nav-badge {
+    position: absolute;
+    top: 4px;
+    right: calc(50% - 18px);
+    min-width: 16px;
+    height: 16px;
+    padding: 0 5px;
+    background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+    color: white;
+    font-size: 9px;
+    font-weight: 700;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(244, 63, 94, 0.4);
+    animation: ppv-badge-pulse 2s ease-in-out infinite;
+}
+
+@keyframes ppv-badge-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   NAVIGATING STATE (During page transitions)
+   ═══════════════════════════════════════════════════════════════ */
+
+.ppv-bottom-nav .nav-item.navigating i {
+    animation: ppv-nav-loading 0.6s ease-in-out infinite;
+}
+
+@keyframes ppv-nav-loading {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.9); }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RESPONSIVE ADJUSTMENTS
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Smaller screens */
+@media (max-width: 380px) {
+    .ppv-bottom-nav {
+        width: calc(100% - 16px);
+        bottom: 8px;
+        height: 60px;
+        border-radius: 16px;
+    }
+
+    .ppv-bottom-nav .nav-item {
+        max-width: 64px;
+        min-width: 48px;
+    }
+
+    .ppv-bottom-nav .nav-item i {
+        font-size: 20px;
+    }
+
+    .ppv-bottom-nav .nav-item span {
+        font-size: 9px;
+    }
+}
+
+/* Tablet / Larger phones */
+@media (min-width: 500px) {
+    .ppv-bottom-nav {
+        max-width: 360px;
+        border-radius: 24px;
+    }
+
+    .ppv-bottom-nav .nav-item::before {
+        border-radius: 16px;
+    }
 }
 
 /* ==========================================================================
@@ -2681,9 +2978,9 @@ body, h1, h2, h3, h4, h5, h6 {
    🌐 ROOT VARIABLES
    ============================================================ */
 :root {
-  --color-primary: #00b8e6;
-  --color-primary-dark: #0088b0;
-  --color-primary-light: rgba(0, 184, 230, 0.1);
+  --pp-primary: #00b8e6;
+  --pp-primary-dark: #0088b0;
+  --pp-primary-light: rgba(0, 184, 230, 0.1);
   --color-success: #10b981;
   --color-error: #ef4444;
   --color-warning: #f59e0b;
@@ -2850,14 +3147,14 @@ html, body {
 
 .ppv-lang-btn:hover {
   background: var(--color-bg-light);
-  border-color: var(--color-primary);
+  border-color: var(--pp-primary);
   color: var(--color-text);
 }
 
 .ppv-lang-btn.active {
-  background: var(--color-primary);
+  background: var(--pp-primary);
   color: white;
-  border-color: var(--color-primary);
+  border-color: var(--pp-primary);
   box-shadow: 0 0 12px rgba(0, 184, 230, 0.3);
 }
 
@@ -3253,8 +3550,8 @@ html, body {
 }
 
 .ppv-file-input:hover {
-  border-color: var(--color-primary);
-  background: var(--color-primary-light);
+  border-color: var(--pp-primary);
+  background: var(--pp-primary-light);
   box-shadow: var(--shadow-sm);
 }
 
@@ -3387,8 +3684,8 @@ html, body {
 
 .ppv-social-preview:hover {
   transform: scale(1.1);
-  background: var(--color-primary-light);
-  border-color: var(--color-primary);
+  background: var(--pp-primary-light);
+  border-color: var(--pp-primary);
 }
 
 /* ============================================================
@@ -3708,7 +4005,7 @@ html, body {
 .ppv-btn:focus-visible,
 .ppv-lang-btn:focus-visible,
 .ppv-tab-btn:focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid var(--pp-primary);
   outline-offset: 2px;
 }
 
@@ -3716,7 +4013,7 @@ html, body {
    ✨ UTILITIES
    ============================================================ */
 ::selection {
-  background: var(--color-primary-light);
+  background: var(--pp-primary-light);
   color: var(--color-text);
 }
 
@@ -3725,16 +4022,16 @@ html, body {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-primary-light);
+  background: var(--pp-primary-light);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, var(--color-primary), #0088b0);
+  background: linear-gradient(135deg, var(--pp-primary), #0088b0);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #0088b0, var(--color-primary));
+  background: linear-gradient(135deg, #0088b0, var(--pp-primary));
 }
 
 .ppv-distance-filter label {
@@ -6434,7 +6731,7 @@ body.ppv-dark .ppv-mypoints-tab.active {
 .ppv-modal-inner select:focus,
 .ppv-modal-inner textarea:focus {
     outline: none;
-    border-color: var(--ppv-primary, #6366f1);
+    border-color: var(--pp-primary, #6366f1);
     box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
@@ -12018,34 +12315,52 @@ body.ppv-dark .ppv-route:hover {
 }
 
 /* ==========================================================================
-   📱 DARK BOTTOM NAVIGATION
+   📱 DARK BOTTOM NAVIGATION - Modern Floating
    ========================================================================== */
 body.ppv-dark .ppv-bottom-nav {
-    background: linear-gradient(180deg, rgba(10, 14, 20, 0.95), rgba(5, 7, 9, 0.98)) !important;
-    border-top: 1px solid rgba(0, 212, 255, 0.15) !important;
+    background: rgba(15, 20, 30, 0.9) !important;
+    border: 1px solid rgba(0, 212, 255, 0.15) !important;
     box-shadow:
-        0 -4px 20px rgba(0, 0, 0, 0.5),
-        0 0 30px rgba(0, 212, 255, 0.08) !important;
+        0 8px 32px rgba(0, 0, 0, 0.5),
+        0 0 40px rgba(0, 212, 255, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
 }
 
-body.ppv-dark .ppv-nav-item {
-    color: #6e7681 !important;
+body.ppv-dark .ppv-bottom-nav .nav-item {
+    color: #6b7280 !important;
 }
 
-body.ppv-dark .ppv-nav-item:hover {
-    color: #c9d1d9 !important;
-}
-
-body.ppv-dark .ppv-nav-item.active {
+body.ppv-dark .ppv-bottom-nav .nav-item:hover {
     color: #00d4ff !important;
 }
 
-body.ppv-dark .ppv-nav-item.active::before {
-    background: linear-gradient(180deg, rgba(0, 212, 255, 0.25), transparent) !important;
+body.ppv-dark .ppv-bottom-nav .nav-item:hover::before {
+    background: rgba(0, 212, 255, 0.1) !important;
 }
 
-body.ppv-dark .ppv-nav-item.active i {
-    text-shadow: 0 0 12px rgba(0, 212, 255, 0.6);
+body.ppv-dark .ppv-bottom-nav .nav-item.active {
+    color: #00d4ff !important;
+}
+
+body.ppv-dark .ppv-bottom-nav .nav-item.active::before {
+    background: linear-gradient(135deg, rgba(0, 212, 255, 0.2) 0%, rgba(139, 92, 246, 0.15) 100%) !important;
+}
+
+body.ppv-dark .ppv-bottom-nav .nav-item.active i {
+    filter: drop-shadow(0 2px 12px rgba(0, 212, 255, 0.5)) !important;
+}
+
+body.ppv-dark .ppv-bottom-nav .nav-item.active span {
+    color: #00d4ff !important;
+}
+
+body.ppv-dark .ppv-bottom-nav .nav-item::after {
+    background: radial-gradient(circle, rgba(0, 212, 255, 0.3) 0%, transparent 70%) !important;
+}
+
+body.ppv-dark .ppv-bottom-nav .nav-badge {
+    background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%) !important;
+    box-shadow: 0 2px 8px rgba(244, 63, 94, 0.5) !important;
 }
 
 /* ==========================================================================
@@ -18477,6 +18792,179 @@ body.ppv-dark .ppv-redemption-status.error,
     }
 
     .ppv-ea-btn-primary {
+        justify-content: center;
+    }
+}
+
+/* ==========================================================================
+   📱 TABLET BREAKPOINTS (768px - 1024px)
+   Added: 2025-11-26 - Better tablet support
+   ========================================================================== */
+
+/* Tablet landscape and small laptops */
+@media (min-width: 768px) and (max-width: 1024px) {
+    /* Main Dashboard Layout */
+    .ppv-dashboard-netto {
+        padding: 20px 24px;
+        max-width: 900px;
+    }
+
+    .ppv-dashboard-inner {
+        gap: 20px;
+    }
+
+    /* Stats Grid - 2 columns on tablet */
+    .ppv-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+
+    /* Store Cards - Better tablet layout */
+    .ppv-store-list {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+
+    .ppv-store-card-enhanced {
+        padding: 18px;
+    }
+
+    /* Rewards Grid */
+    .ppv-rewards-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 18px;
+    }
+
+    /* Points Header */
+    .ppv-points-header {
+        padding: 24px;
+    }
+
+    .ppv-points-header .big {
+        font-size: 48px;
+    }
+
+    /* Top 3 Grid */
+    .ppv-top3-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+    }
+
+    /* Tier Progress */
+    .ppv-tier-steps {
+        flex-wrap: nowrap;
+        gap: 12px;
+    }
+
+    .ppv-tier-step {
+        flex: 1;
+    }
+
+    /* My Points Tabs */
+    .ppv-mypoints-tabs {
+        gap: 12px;
+    }
+
+    .ppv-mypoints-tab {
+        padding: 14px 24px;
+        font-size: 15px;
+    }
+
+    /* Analytics */
+    .ppv-analytics-summary {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+    }
+
+    .ppv-summary-card {
+        padding: 18px;
+    }
+
+    .ppv-stores-breakdown {
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    /* Bottom Nav - Larger on tablet */
+    .ppv-bottom-nav {
+        max-width: 500px;
+        margin: 0 auto;
+        padding: 10px 20px;
+    }
+
+    .ppv-bottom-nav .nav-item {
+        padding: 10px 16px;
+    }
+
+    .ppv-bottom-nav .nav-icon {
+        font-size: 22px;
+    }
+
+    .ppv-bottom-nav .nav-label {
+        font-size: 12px;
+    }
+
+    /* Forms */
+    .ppv-form-group {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    /* Buttons */
+    .ppv-btn,
+    .ppv-btn-primary {
+        padding: 14px 28px;
+        font-size: 15px;
+    }
+
+    /* Modals */
+    .ppv-modal-content {
+        max-width: 600px;
+        padding: 28px;
+    }
+
+    /* QR Display */
+    .ppv-qr-display {
+        max-width: 350px;
+    }
+
+    /* Point Cards */
+    .ppv-point-card {
+        padding: 16px 18px;
+    }
+
+    /* Reward Cards */
+    .ppv-reward-card {
+        padding: 18px;
+    }
+}
+
+/* Tablet portrait specific adjustments */
+@media (min-width: 640px) and (max-width: 768px) {
+    .ppv-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .ppv-store-list {
+        grid-template-columns: 1fr;
+        max-width: 500px;
+        margin: 0 auto;
+    }
+
+    .ppv-analytics-summary {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .ppv-stores-breakdown {
+        grid-template-columns: 1fr;
+    }
+
+    .ppv-top3-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .ppv-tier-steps {
+        flex-wrap: wrap;
         justify-content: center;
     }
 }

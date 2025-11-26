@@ -145,8 +145,6 @@
     });
     document.body.appendChild(dbg);
 
-    const oldLog = console.log;
-    console.log = function (...args) {
       const line = document.createElement("div");
       line.textContent = args.join(" ");
       dbg.appendChild(line);

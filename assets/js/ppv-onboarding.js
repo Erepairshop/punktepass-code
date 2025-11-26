@@ -16,7 +16,6 @@
     const L = window.ppv_lang || {};
     const config = window.ppv_onboarding;
 
-    console.log('✅ PPV Onboarding JS loaded', config);
 
     class PPVOnboarding {
         constructor() {
@@ -37,7 +36,6 @@
         init() {
             // Ha már completed vagy dismissed, ne csináljunk semmit
             if (this.progress.is_complete || this.config.dismissed) {
-                console.log('🎯 Onboarding already complete or dismissed');
                 return;
             }
 
@@ -57,7 +55,6 @@
                     this.initAbly();
                 } else {
                     // Fallback: Progress polling - 15 másodpercenként
-                    console.log('📡 [ONBOARDING] Ably not available, using polling fallback');
                     this.progressInterval = setInterval(() => this.refreshProgress(), 15000);
                 }
             });
@@ -67,7 +64,6 @@
          *  📡 ABLY REAL-TIME INITIALIZATION (uses shared manager)
          * ============================================================ */
         initAbly() {
-            console.log('📡 [ONBOARDING] Initializing Ably via shared manager...');
 
             const manager = window.PPV_ABLY_MANAGER;
 
@@ -81,7 +77,6 @@
             // Listen for connection state changes
             manager.onStateChange((state) => {
                 if (state === 'connected') {
-                    console.log('📡 [ONBOARDING] Ably connected via shared manager');
                     // Stop polling if running
                     if (this.progressInterval) {
                         clearInterval(this.progressInterval);
@@ -98,7 +93,6 @@
                 this.config.ably.channel,
                 'onboarding-progress',
                 (message) => {
-                    console.log('📡 [ONBOARDING] Received progress update via Ably:', message.data);
                     this.handleProgressUpdate(message.data);
                 },
                 'onboarding'
@@ -939,7 +933,6 @@
 
             // ✅ Ha dismissed, ne mutassuk
             if (this.config.dismissed) {
-                console.log('⏭️ Progress card not shown - dismissed');
                 return;
             }
 
@@ -1095,7 +1088,6 @@
         refreshProgress() {
             // ✅ Skip refresh if dismissed
             if (this.config.dismissed) {
-                console.log('⏭️ Onboarding dismissed, skipping refresh');
                 return;
             }
 
@@ -1126,7 +1118,6 @@
                 },
                 data: JSON.stringify({}),
                 success: (response) => {
-                    console.log('⏰ Onboarding postponed until:', response.postponed_until);
                     this.showToast(L.onb_postponed || '⏰ 8 óra múlva emlékeztetünk!', 'info');
                 },
                 error: () => {
@@ -1148,7 +1139,6 @@
                 },
                 data: JSON.stringify({ type: type }),
                 success: (response) => {
-                    console.log('✅ Onboarding dismissed successfully');
                     if (callback) callback();
                 },
                 error: () => {
@@ -1173,7 +1163,6 @@
             if (this.ablySubscriberId && window.PPV_ABLY_MANAGER) {
                 window.PPV_ABLY_MANAGER.unsubscribe(this.ablySubscriberId);
                 this.ablySubscriberId = null;
-                console.log('📡 [ONBOARDING] Unsubscribed from Ably');
             }
 
             $('.ppv-onboarding-progress-card').fadeOut(300, function() { $(this).remove(); });
@@ -1239,13 +1228,11 @@
             if (window.PPV_ONBOARDING_INSTANCE.progressInterval) {
                 clearInterval(window.PPV_ONBOARDING_INSTANCE.progressInterval);
                 window.PPV_ONBOARDING_INSTANCE.progressInterval = null;
-                console.log('🧹 [ONBOARDING] Progress interval cleared');
             }
             // Unsubscribe from Ably (don't close - shared manager handles connection)
             if (window.PPV_ONBOARDING_INSTANCE.ablySubscriberId && window.PPV_ABLY_MANAGER) {
                 window.PPV_ABLY_MANAGER.unsubscribe(window.PPV_ONBOARDING_INSTANCE.ablySubscriberId);
                 window.PPV_ONBOARDING_INSTANCE.ablySubscriberId = null;
-                console.log('🧹 [ONBOARDING] Ably subscription cleaned up');
             }
         }
     });

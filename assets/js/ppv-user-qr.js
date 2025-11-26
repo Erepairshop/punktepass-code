@@ -1,31 +1,63 @@
 /**
  * PunktePass – Timed QR with 30min Countdown
  * REST API + Auto Countdown + Refresh on Expiry
+ * ✅ Offline Support - Cache QR for offline viewing
  */
 
-console.log("✅ PunktePass Timed QR JS active");
-
+const QR_CACHE_KEY = 'ppv_qr_cache';
 let countdownInterval = null;
 let expiresAt = null;
+let currentUserId = null;
 
 document.addEventListener("DOMContentLoaded", async () => {
   const qrBox = document.querySelector(".ppv-user-qr");
   if (!qrBox) return;
 
   const userId = qrBox.getAttribute("data-user-id");
+  currentUserId = userId;
   if (!userId) {
     showStatus("⚠️ User ID fehlt", "error");
     return;
   }
 
-  // Load initial timed QR
-  await loadTimedQR(userId);
+  // Check online status
+  if (!navigator.onLine) {
+    // Try to load from cache when offline
+    const cached = loadFromCache(userId);
+    if (cached) {
+      showOfflineBanner();
+      displayQR(cached);
+      startCountdown(cached.expires_at);
+
+      // Show appropriate status message
+      if (cached._imageNotCached) {
+        showStatus("⚠️ Offline - QR-Bild nicht im Cache", "warning");
+      } else if (cached._isExpired) {
+        showStatus("⏰ Offline - QR-Code abgelaufen (trotzdem anzeigbar)", "warning");
+      } else {
+        showStatus("📱 Offline-Modus - Gespeicherter QR-Code", "success");
+      }
+    } else {
+      showStatus("📡 Offline - Kein gespeicherter QR-Code", "error");
+      hideLoading();
+    }
+    // Don't return - still setup refresh button for when back online
+  } else {
+    // Load initial timed QR (only when online)
+    await loadTimedQR(userId);
+  }
 
   // Refresh button click handler
   const refreshBtn = document.getElementById("ppvBtnRefresh");
   if (refreshBtn) {
     refreshBtn.addEventListener("click", async () => {
+      // 📳 Haptic feedback on refresh
+      if (window.ppvHaptic) window.ppvHaptic('button');
+      // ⏳ Show loading state
+      if (window.ppvBtnLoading) window.ppvBtnLoading(refreshBtn, true);
       await loadTimedQR(userId, true);
+      // ⏳ Restore button
+      if (window.ppvBtnLoading) window.ppvBtnLoading(refreshBtn, false);
     });
   }
 
@@ -34,6 +66,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (qrValueInput) {
     qrValueInput.addEventListener("click", (e) => {
       navigator.clipboard.writeText(e.target.value);
+      // 📳 Haptic feedback on copy
+      if (window.ppvHaptic) window.ppvHaptic('success');
       showStatus("📋 QR-Code kopiert!", "success");
     });
   }
@@ -72,6 +106,15 @@ async function loadTimedQR(userId, forceNew = false) {
     // Start countdown
     startCountdown(data.expires_at);
 
+    // 💾 Cache QR for offline use (convert image to base64)
+    cacheQRData(userId, data);
+
+    // 📳 Haptic feedback on QR load success
+    if (window.ppvHaptic) window.ppvHaptic('scan');
+
+    // Hide offline banner if visible
+    hideOfflineBanner();
+
     // Status message
     if (data.is_new) {
       showStatus("✅ Neuer QR-Code generiert (30 Min. gültig)", "success");
@@ -82,8 +125,27 @@ async function loadTimedQR(userId, forceNew = false) {
 
   } catch (err) {
     console.error("QR Load Error:", err);
-    showStatus("❌ Netzwerkfehler beim Laden des QR-Codes", "error");
+
+    // 📱 Offline fallback - try to load cached QR
+    const cached = loadFromCache(userId);
+    if (cached) {
+      showOfflineBanner();
+      displayQR(cached);
+      startCountdown(cached.expires_at);
+      showStatus("📱 Offline - Gespeicherter QR-Code wird angezeigt", "warning");
+      return;
+    }
+
+    // No cache available
     hideLoading();
+    showOfflineBanner();
+
+    // Show helpful message based on offline status
+    if (!navigator.onLine) {
+      showStatus("📡 Offline - Bitte App einmal online laden, um QR-Code zu speichern", "error");
+    } else {
+      showStatus("❌ Netzwerkfehler - Bitte später erneut versuchen", "error");
+    }
   }
 }
 
@@ -98,7 +160,20 @@ function displayQR(data) {
   const qrValue = document.getElementById("ppvQrValue");
   const qrDisplay = document.getElementById("ppvQrDisplay");
 
-  if (qrImg) qrImg.src = data.qr_url;
+  if (qrImg) {
+    // Handle image load error (e.g., offline with non-cached URL)
+    qrImg.onerror = function() {
+      // Show fallback with QR value
+      if (qrValue && data.qr_value) {
+        qrImg.style.display = 'none';
+        showStatus("⚠️ QR-Bild nicht verfügbar - Code: " + data.qr_value, "warning");
+      }
+    };
+    qrImg.onload = function() {
+      qrImg.style.display = 'block';
+    };
+    qrImg.src = data.qr_url;
+  }
   if (qrValue) qrValue.value = data.qr_value;
   if (qrDisplay) qrDisplay.style.display = "block";
 }
@@ -210,3 +285,162 @@ function showStatus(message, type = "info") {
     }
   }, 4000);
 }
+
+// ═══════════════════════════════════════════════════════════════
+// 💾 OFFLINE CACHE FUNCTIONS
+// ═══════════════════════════════════════════════════════════════
+
+async function cacheQRData(userId, data) {
+  try {
+    // Convert QR image to base64 for offline storage
+    let qrBase64 = data.qr_url;
+    let cacheSuccess = false;
+
+    // If it's not already a data URL, fetch and convert
+    if (data.qr_url && !data.qr_url.startsWith('data:')) {
+      try {
+        // Try fetching with CORS mode
+        const response = await fetch(data.qr_url, { mode: 'cors' });
+        if (response.ok) {
+          const blob = await response.blob();
+          qrBase64 = await blobToBase64(blob);
+          cacheSuccess = qrBase64.startsWith('data:');
+        }
+      } catch (e) {
+        console.warn('Could not cache QR image (CORS?):', e);
+        // Try alternative: use Image element
+        try {
+          qrBase64 = await imageToBase64(data.qr_url);
+          cacheSuccess = qrBase64.startsWith('data:');
+        } catch (e2) {
+          console.warn('Image fallback also failed:', e2);
+        }
+      }
+    } else {
+      cacheSuccess = true;
+    }
+
+    const cacheData = {
+      user_id: userId,
+      qr_url: qrBase64,
+      qr_value: data.qr_value,
+      expires_at: data.expires_at,
+      cached_at: Math.floor(Date.now() / 1000),
+      is_base64: cacheSuccess
+    };
+
+    localStorage.setItem(QR_CACHE_KEY + '_' + userId, JSON.stringify(cacheData));
+
+    if (cacheSuccess) {
+      console.log('💾 QR cached for offline use (base64)');
+    } else {
+      console.warn('⚠️ QR cached but image is URL only - offline display may not work');
+    }
+  } catch (e) {
+    console.warn('Failed to cache QR:', e);
+  }
+}
+
+// Alternative method to convert image to base64 using canvas
+function imageToBase64(imgUrl) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = function() {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/png'));
+      } catch (e) {
+        reject(e);
+      }
+    };
+    img.onerror = reject;
+    img.src = imgUrl;
+  });
+}
+
+function loadFromCache(userId) {
+  try {
+    const cached = localStorage.getItem(QR_CACHE_KEY + '_' + userId);
+    if (!cached) return null;
+
+    const data = JSON.parse(cached);
+    const now = Math.floor(Date.now() / 1000);
+
+    // Check if QR is expired
+    if (data.expires_at <= now) {
+      // Don't delete - still show expired QR with warning
+      // User can still show it at the store
+      data._isExpired = true;
+    }
+
+    // Check if QR image is properly cached as base64
+    if (data.qr_url && !data.qr_url.startsWith('data:')) {
+      // Image is a URL, not base64 - won't work offline
+      data._imageNotCached = true;
+    }
+
+    return data;
+  } catch (e) {
+    return null;
+  }
+}
+
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 📡 OFFLINE BANNER
+// ═══════════════════════════════════════════════════════════════
+
+function showOfflineBanner() {
+  // Check if banner already exists
+  if (document.getElementById('ppvOfflineBanner')) return;
+
+  const banner = document.createElement('div');
+  banner.id = 'ppvOfflineBanner';
+  banner.className = 'ppv-offline-qr-banner';
+  banner.innerHTML = `
+    <i class="ri-wifi-off-line"></i>
+    <span>Offline-Modus</span>
+  `;
+
+  const qrBox = document.querySelector('.ppv-user-qr');
+  if (qrBox) {
+    qrBox.insertBefore(banner, qrBox.firstChild);
+  }
+}
+
+function hideOfflineBanner() {
+  const banner = document.getElementById('ppvOfflineBanner');
+  if (banner) banner.remove();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 🌐 ONLINE/OFFLINE EVENT LISTENERS
+// ═══════════════════════════════════════════════════════════════
+
+window.addEventListener('online', () => {
+  console.log('🟢 Back online');
+  hideOfflineBanner();
+  // Reload QR when back online
+  if (currentUserId) {
+    loadTimedQR(currentUserId);
+  }
+});
+
+window.addEventListener('offline', () => {
+  console.log('🔴 Went offline');
+  showOfflineBanner();
+  showStatus("📡 Offline - QR-Code weiterhin verfügbar", "warning");
+});

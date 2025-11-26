@@ -6,13 +6,11 @@
  */
 
 // ⛔ DISABLED - Script not in use
-console.log('⏭️ [HiddenScan] Disabled - not in use');
 if (true) { /* DISABLED */ } else {
 
  // 🔹 Service Worker regisztrálása háttérmódhoz
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register(PPV_SCAN_DATA.plugin_url + 'assets/js/ppv-hidden-scan-sw.js')
-    .then(reg => console.log('✅ HiddenScan SW registered', reg))
     .catch(err => console.error('❌ SW register failed', err));
 }
 
@@ -46,7 +44,6 @@ document.addEventListener("keydown", (e) => {
 });
 
 async function ppvSendScan(code) {
-  console.log("📡 HiddenScan →", code);
   // Ha van aktív Service Worker, küldjük neki is a scan-t
 if (navigator.serviceWorker && navigator.serviceWorker.controller) {
   navigator.serviceWorker.controller.postMessage({
@@ -69,7 +66,6 @@ if (navigator.serviceWorker && navigator.serviceWorker.controller) {
     });
 
     const data = await res.json();
-    console.log("✅ PunktePass response:", data);
 
     if (data.success) {
       ppvShowToast(data.message || "✅ Erfolgreich gescannt", "success");
