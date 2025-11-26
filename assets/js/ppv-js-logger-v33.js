@@ -6,6 +6,7 @@
 (() => {
   // ✅ DEBUG mode - set to true for verbose logging
   const PPV_DEBUG = false;
+  const ppvLog = (...args) => { if (PPV_DEBUG) console.log(...args); };
 
   ppvLog("🧠 PPV JS Logger v4.0 aktiv");
 

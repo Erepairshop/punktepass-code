@@ -15,6 +15,7 @@
 
   // ✅ DEBUG mode - set to false for production
   const PPV_DEBUG = false;
+  const ppvLog = (...args) => { if (PPV_DEBUG) console.log(...args); };
   const ppvWarn = (...args) => { if (PPV_DEBUG) console.warn(...args); };
 
   // Guard against multiple script loads

@@ -17,6 +17,7 @@
   }
 
   // ✅ OPTIMIZED: Conditional logging (only in DEBUG mode)
+  const log = (...args) => { if (DEBUG) console.log(...args); };
   const warn = (...args) => { if (DEBUG) console.warn(...args); };
   const error = (...args) => console.error(...args); // Always log errors
 
