@@ -1778,9 +1778,10 @@
 
     const campaignList = document.getElementById('ppv-campaign-list');
     const posInput = document.getElementById('ppv-pos-input');
+    const posLog = document.getElementById('ppv-pos-log');
 
-    // Only init if we have QR elements
-    if (!campaignList && !posInput) {
+    // Only init if we have QR elements (pos-log is the main scanner table)
+    if (!campaignList && !posInput && !posLog) {
       cleanup();
       return;
     }
