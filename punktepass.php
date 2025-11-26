@@ -39,7 +39,17 @@ function ppv_log($msg) {
 // ========================================
 // 📡 ABLY REAL-TIME CONFIG
 // ========================================
-define('PPV_ABLY_API_KEY', 'jKxtxA.r58iZQ:6SXOogAhhlFxnOsDxOAfX5KYWYcbtKbHNnNvIYmcuqQ');
+// Ably API key - loaded from environment variable or wp-config.php constant
+// To set: define('PPV_ABLY_API_KEY', 'your-key-here'); in wp-config.php
+// Or set PPV_ABLY_API_KEY environment variable
+if (!defined('PPV_ABLY_API_KEY')) {
+    $ably_key = getenv('PPV_ABLY_API_KEY');
+    if ($ably_key) {
+        define('PPV_ABLY_API_KEY', $ably_key);
+    } else {
+        define('PPV_ABLY_API_KEY', ''); // Must be configured in wp-config.php or environment
+    }
+}
 
 // ========================================
 // 🔐 SESSION INIT (Early Priority)

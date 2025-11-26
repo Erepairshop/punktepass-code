@@ -63,9 +63,15 @@ class PPV_Admin_Pending_Scans {
             <h1>📋 Függő Scanek (10km+ távolság)</h1>
             <p>Ezek a scanek <strong>10km-nél távolabbról</strong> érkeztek. A pontok csak admin jóváhagyás után kerülnek jóváírásra.</p>
 
-            <?php if (isset($_GET['success'])): ?>
+            <?php
+            $success_msg = isset($_GET['success']) ? sanitize_text_field($_GET['success']) : '';
+            if ($success_msg === 'approved'): ?>
                 <div class="notice notice-success is-dismissible">
-                    <p><?php echo $_GET['success'] === 'approved' ? '✅ Scan jóváhagyva, pontok hozzáadva!' : '❌ Scan elutasítva.'; ?></p>
+                    <p>✅ Scan jóváhagyva, pontok hozzáadva!</p>
+                </div>
+            <?php elseif ($success_msg === 'rejected'): ?>
+                <div class="notice notice-warning is-dismissible">
+                    <p>❌ Scan elutasítva.</p>
                 </div>
             <?php endif; ?>
 

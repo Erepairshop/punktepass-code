@@ -1,6 +1,6 @@
 # PunktePass - Feladatlista
 
-> Utolsó frissítés: 2024-11-26
+> Utolsó frissítés: 2025-11-26
 
 ---
 
@@ -18,16 +18,16 @@
 ## 🔴 KRITIKUS JAVÍTANDÓK
 
 ### 1. Biztonsági problémák
-- [ ] Ably API kulcs kiszedése env változóba (`punktepass.php:42`)
-- [ ] XSS sebezhetőség javítása admin oldalon (`class-ppv-admin-pending-scans.php`)
+- [x] ~~Ably API kulcs kiszedése env változóba (`punktepass.php:42`)~~ ✅
+- [x] ~~XSS sebezhetőség javítása admin oldalon (`class-ppv-admin-pending-scans.php`)~~ ✅
 - [ ] Form inputok sanitizálása (`pp-profile-loader.php`)
 
 ### 2. Elavult fájlok törlése
-- [ ] `includes/class-ppv-scanner.old.php`
-- [ ] `includes/class-ppv-pos-gateway.old.php`
-- [ ] `assets/js/ppv-scanner.old.js`
-- [ ] `assets/css/ppv-theme-dark.css` (üres)
-- [ ] `assets/css/theme-dark-new.css` (üres)
+- [x] ~~`includes/class-ppv-scanner.old.php`~~ ✅
+- [x] ~~`includes/class-ppv-pos-gateway.old.php`~~ ✅
+- [x] ~~`assets/js/ppv-scanner.old.js`~~ ✅
+- [x] ~~`assets/css/ppv-theme-dark.css` (üres)~~ ✅
+- [x] ~~`assets/css/theme-dark-new.css` (üres)~~ ✅
 
 ---
 
@@ -95,9 +95,9 @@
 ## ⚡ PRIORITÁSI SORREND
 
 ### 🔥 Azonnal (1 hét)
-- [ ] 1. Ably API kulcs kiszedése
-- [ ] 2. XSS fix admin oldalon
-- [ ] 3. Elavult fájlok törlése
+- [x] ~~1. Ably API kulcs kiszedése~~ ✅
+- [x] ~~2. XSS fix admin oldalon~~ ✅
+- [x] ~~3. Elavult fájlok törlése~~ ✅
 - [ ] 4. Console.log-ok eltávolítása
 
 ### ✨ Rövid táv (2-3 hét)
