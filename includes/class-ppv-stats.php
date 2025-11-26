@@ -992,11 +992,11 @@ class PPV_Stats {
                 ss.id,
                 ss.user_id,
                 ss.store_id,
-                ss.distance_km,
-                ss.user_lat,
-                ss.user_lng,
-                ss.store_lat,
-                ss.store_lng,
+                ss.distance_meters,
+                ss.scan_latitude,
+                ss.scan_longitude,
+                ss.store_latitude,
+                ss.store_longitude,
                 ss.status,
                 ss.created_at,
                 u.first_name,
@@ -1058,10 +1058,10 @@ class PPV_Stats {
                 'user_name' => $user_name,
                 'user_email' => $scan->user_email ?? '',
                 'store_name' => $scan->store_name ?? 'Store #' . $scan->store_id,
-                'distance_km' => round(floatval($scan->distance_km), 2),
+                'distance_km' => round(floatval($scan->distance_meters) / 1000, 2),
                 'status' => $scan->status,
                 'created_at' => $scan->created_at,
-                'maps_link' => "https://www.google.com/maps?q={$scan->user_lat},{$scan->user_lng}"
+                'maps_link' => "https://www.google.com/maps?q={$scan->scan_latitude},{$scan->scan_longitude}"
             ];
         }
 
