@@ -284,6 +284,9 @@ html, body {
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
     font-feature-settings: 'kern' 1, 'liga' 1;
+    /* PWA: Disable pull-to-refresh / overscroll bounce */
+    overscroll-behavior: none;
+    overscroll-behavior-y: none;
 }
 
 /* Selection Style */
@@ -4629,8 +4632,15 @@ body.ppv-light .ppv-theme-btn-mini {
 #ppv-my-points-app {
     width: 100%;
     min-height: calc(100vh - 72px);
+    height: 100%;
     background: var(--pp-bg);
     padding-bottom: 90px;
+    /* PWA scroll fix */
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    touch-action: pan-y;
 }
 
 .ppv-dashboard-netto {
