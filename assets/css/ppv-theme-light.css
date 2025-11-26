@@ -1804,123 +1804,249 @@ button .ri-loader-4-line,
 }
 
 /* ==========================================================================
-   🟦 BOTTOM NAVIGATION – Premium PWA App Bar (iOS / Android Style)
+   🟦 BOTTOM NAVIGATION – Modern Floating App Bar (2024 Design)
    ========================================================================== */
 
 .ppv-bottom-nav {
     position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 76px;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 24px);
+    max-width: 420px;
+    height: 64px;
     display: flex;
     justify-content: space-around;
     align-items: center;
-    background: rgba(255, 255, 255, 0.92);
-    backdrop-filter: var(--pp-glass-heavy);
-    -webkit-backdrop-filter: var(--pp-glass-heavy);
-    border-top: 1px solid rgba(14, 165, 233, 0.08);
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 20px;
     box-shadow:
-        0 -8px 32px rgba(0, 0, 0, 0.06),
-        0 -2px 8px rgba(0, 0, 0, 0.04);
+        0 8px 32px rgba(0, 0, 0, 0.12),
+        0 2px 8px rgba(0, 0, 0, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6);
     z-index: 999;
     padding: 0 8px;
-    padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
-/* iOS Safe Area Support */
+/* iOS Safe Area Support - Adjust bottom position */
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
     .ppv-bottom-nav {
-        height: calc(76px + env(safe-area-inset-bottom));
-        padding-bottom: env(safe-area-inset-bottom);
+        bottom: calc(12px + env(safe-area-inset-bottom));
     }
 }
 
+/* Nav Items Container */
 .ppv-bottom-nav .nav-item {
     flex: 1;
-    max-width: 80px;
+    max-width: 72px;
+    min-width: 56px;
     text-align: center;
-    color: var(--pp-text-muted);
+    color: #64748b;
     font-size: 10px;
-    font-weight: 600;
+    font-weight: 500;
     text-decoration: none;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
+    justify-content: center;
+    gap: 2px;
     cursor: pointer;
-    transition: var(--pp-trans);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     padding: 8px 4px;
-    border-radius: var(--pp-r-sm);
+    border-radius: 14px;
     position: relative;
+    -webkit-tap-highlight-color: transparent;
 }
 
+/* Icon Background Pill for Active State */
 .ppv-bottom-nav .nav-item::before {
     content: '';
     position: absolute;
-    top: 4px;
+    top: 50%;
     left: 50%;
-    transform: translateX(-50%) scaleX(0);
-    width: 32px;
-    height: 3px;
-    background: var(--gradient-primary);
-    border-radius: var(--pp-r-full);
-    transition: var(--pp-trans);
-    opacity: 0;
+    transform: translate(-50%, -50%) scale(0);
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, rgba(139, 92, 246, 0.1) 100%);
+    border-radius: 14px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: -1;
 }
 
+/* Hover State */
 .ppv-bottom-nav .nav-item:hover {
     color: var(--pp-primary);
-    background: rgba(14, 165, 233, 0.06);
 }
 
+.ppv-bottom-nav .nav-item:hover::before {
+    transform: translate(-50%, -50%) scale(1);
+    background: rgba(14, 165, 233, 0.08);
+}
+
+/* Icon Styling */
 .ppv-bottom-nav .nav-item i {
-    font-size: 24px;
-    transition: var(--pp-trans-bounce);
+    font-size: 22px;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     line-height: 1;
+    position: relative;
 }
 
+/* Label Styling */
 .ppv-bottom-nav .nav-item span {
     font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.2px;
-    transition: var(--pp-trans);
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 0.8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 64px;
 }
 
-/* Active State - Premium Highlight */
+/* ═══════════════════════════════════════════════════════════════
+   ACTIVE STATE - Premium Animated
+   ═══════════════════════════════════════════════════════════════ */
+
 .ppv-bottom-nav .nav-item.active {
     color: var(--pp-primary);
 }
 
 .ppv-bottom-nav .nav-item.active::before {
-    transform: translateX(-50%) scaleX(1);
-    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.18) 0%, rgba(139, 92, 246, 0.12) 100%);
 }
 
 .ppv-bottom-nav .nav-item.active i {
-    transform: scale(1.15) translateY(-2px);
+    transform: scale(1.1) translateY(-1px);
     color: var(--pp-primary);
-    filter: drop-shadow(0 4px 8px var(--pp-primary-glow));
+    filter: drop-shadow(0 2px 8px rgba(14, 165, 233, 0.4));
 }
 
 .ppv-bottom-nav .nav-item.active span {
-    font-weight: 700;
-    color: var(--pp-primary-dark);
+    font-weight: 600;
+    color: var(--pp-primary);
+    opacity: 1;
 }
 
-/* Ripple effect on tap */
-.ppv-bottom-nav .nav-item:active {
-    transform: scale(0.95);
-}
+/* ═══════════════════════════════════════════════════════════════
+   TAP / TOUCH STATES
+   ═══════════════════════════════════════════════════════════════ */
 
-.ppv-bottom-nav .nav-item:active i {
-    transform: scale(1.1);
-}
-
-/* Touch feedback */
+.ppv-bottom-nav .nav-item:active,
 .ppv-bottom-nav .nav-item.touch {
+    transform: scale(0.92);
+}
+
+.ppv-bottom-nav .nav-item:active i,
+.ppv-bottom-nav .nav-item.touch i {
     transform: scale(0.95);
-    opacity: 0.8;
+}
+
+/* Ripple Effect */
+.ppv-bottom-nav .nav-item::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: radial-gradient(circle, rgba(14, 165, 233, 0.3) 0%, transparent 70%);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    transition: width 0.4s ease, height 0.4s ease, opacity 0.4s ease;
+    pointer-events: none;
+}
+
+.ppv-bottom-nav .nav-item:active::after {
+    width: 60px;
+    height: 60px;
+    opacity: 1;
+    transition: width 0s, height 0s, opacity 0s;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BADGE SUPPORT (Notifications)
+   ═══════════════════════════════════════════════════════════════ */
+
+.ppv-bottom-nav .nav-item .nav-badge {
+    position: absolute;
+    top: 4px;
+    right: calc(50% - 18px);
+    min-width: 16px;
+    height: 16px;
+    padding: 0 5px;
+    background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+    color: white;
+    font-size: 9px;
+    font-weight: 700;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(244, 63, 94, 0.4);
+    animation: ppv-badge-pulse 2s ease-in-out infinite;
+}
+
+@keyframes ppv-badge-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   NAVIGATING STATE (During page transitions)
+   ═══════════════════════════════════════════════════════════════ */
+
+.ppv-bottom-nav .nav-item.navigating i {
+    animation: ppv-nav-loading 0.6s ease-in-out infinite;
+}
+
+@keyframes ppv-nav-loading {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.9); }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RESPONSIVE ADJUSTMENTS
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Smaller screens */
+@media (max-width: 380px) {
+    .ppv-bottom-nav {
+        width: calc(100% - 16px);
+        bottom: 8px;
+        height: 60px;
+        border-radius: 16px;
+    }
+
+    .ppv-bottom-nav .nav-item {
+        max-width: 64px;
+        min-width: 48px;
+    }
+
+    .ppv-bottom-nav .nav-item i {
+        font-size: 20px;
+    }
+
+    .ppv-bottom-nav .nav-item span {
+        font-size: 9px;
+    }
+}
+
+/* Tablet / Larger phones */
+@media (min-width: 500px) {
+    .ppv-bottom-nav {
+        max-width: 360px;
+        border-radius: 24px;
+    }
+
+    .ppv-bottom-nav .nav-item::before {
+        border-radius: 16px;
+    }
 }
 
 /* ==========================================================================
@@ -12127,34 +12253,52 @@ body.ppv-dark .ppv-route:hover {
 }
 
 /* ==========================================================================
-   📱 DARK BOTTOM NAVIGATION
+   📱 DARK BOTTOM NAVIGATION - Modern Floating
    ========================================================================== */
 body.ppv-dark .ppv-bottom-nav {
-    background: linear-gradient(180deg, rgba(10, 14, 20, 0.95), rgba(5, 7, 9, 0.98)) !important;
-    border-top: 1px solid rgba(0, 212, 255, 0.15) !important;
+    background: rgba(15, 20, 30, 0.9) !important;
+    border: 1px solid rgba(0, 212, 255, 0.15) !important;
     box-shadow:
-        0 -4px 20px rgba(0, 0, 0, 0.5),
-        0 0 30px rgba(0, 212, 255, 0.08) !important;
+        0 8px 32px rgba(0, 0, 0, 0.5),
+        0 0 40px rgba(0, 212, 255, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
 }
 
-body.ppv-dark .ppv-nav-item {
-    color: #6e7681 !important;
+body.ppv-dark .ppv-bottom-nav .nav-item {
+    color: #6b7280 !important;
 }
 
-body.ppv-dark .ppv-nav-item:hover {
-    color: #c9d1d9 !important;
-}
-
-body.ppv-dark .ppv-nav-item.active {
+body.ppv-dark .ppv-bottom-nav .nav-item:hover {
     color: #00d4ff !important;
 }
 
-body.ppv-dark .ppv-nav-item.active::before {
-    background: linear-gradient(180deg, rgba(0, 212, 255, 0.25), transparent) !important;
+body.ppv-dark .ppv-bottom-nav .nav-item:hover::before {
+    background: rgba(0, 212, 255, 0.1) !important;
 }
 
-body.ppv-dark .ppv-nav-item.active i {
-    text-shadow: 0 0 12px rgba(0, 212, 255, 0.6);
+body.ppv-dark .ppv-bottom-nav .nav-item.active {
+    color: #00d4ff !important;
+}
+
+body.ppv-dark .ppv-bottom-nav .nav-item.active::before {
+    background: linear-gradient(135deg, rgba(0, 212, 255, 0.2) 0%, rgba(139, 92, 246, 0.15) 100%) !important;
+}
+
+body.ppv-dark .ppv-bottom-nav .nav-item.active i {
+    filter: drop-shadow(0 2px 12px rgba(0, 212, 255, 0.5)) !important;
+}
+
+body.ppv-dark .ppv-bottom-nav .nav-item.active span {
+    color: #00d4ff !important;
+}
+
+body.ppv-dark .ppv-bottom-nav .nav-item::after {
+    background: radial-gradient(circle, rgba(0, 212, 255, 0.3) 0%, transparent 70%) !important;
+}
+
+body.ppv-dark .ppv-bottom-nav .nav-badge {
+    background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%) !important;
+    box-shadow: 0 2px 8px rgba(244, 63, 94, 0.5) !important;
 }
 
 /* ==========================================================================
