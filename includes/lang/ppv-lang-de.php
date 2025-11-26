@@ -937,6 +937,7 @@ return [
 'confirm_request_remove' => 'Eine Löschungsanfrage für dieses Gerät wird an den Admin gesendet. Fortfahren?',
 'removal_request_sent' => 'Löschungsanfrage gesendet! Der Admin wird per E-Mail benachrichtigt.',
 'device_not_allowed' => 'Dieses Gerät ist nicht für den Scanner registriert. Bitte registrieren Sie es im Tab "Geräte".',
+'device_register_first' => 'Bitte registrieren Sie zuerst ein Gerät im Tab "Geräte", bevor Sie den Scanner verwenden können.',
 'device_blocked_title' => 'Gerät nicht registriert',
 'device_blocked_hint' => 'Gehen Sie zum Tab "Geräte" um dieses Gerät zu registrieren.',
 'close' => 'Schließen',

@@ -1172,15 +1172,21 @@
         const data = await response.json();
         ppvLog('[Scanner] Device check result:', data);
 
-        // Allow if: registered OR no devices registered yet (first device)
+        // Allow only if device is registered
         if (data.can_use_scanner) {
           return { allowed: true };
         }
 
-        // Not allowed - device limit reached and this device is not registered
+        // Not allowed - device not registered
+        let message;
+        if (data.device_count === 0) {
+          message = L.device_register_first || 'Bitte registrieren Sie zuerst ein Gerät im Tab "Geräte", bevor Sie den Scanner verwenden können.';
+        } else {
+          message = L.device_not_allowed || 'Dieses Gerät ist nicht für den Scanner registriert. Bitte registrieren Sie es im Tab "Geräte".';
+        }
         return {
           allowed: false,
-          message: L.device_not_allowed || 'Dieses Gerät ist nicht für den Scanner registriert. Bitte registrieren Sie es im Tab "Készülékek".'
+          message: message
         };
       } catch (e) {
         ppvWarn('[Scanner] Device check error:', e);

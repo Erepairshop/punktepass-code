@@ -925,6 +925,7 @@ return [
 'confirm_request_remove' => 'O cerere de ștergere pentru acest dispozitiv va fi trimisă adminului. Continuați?',
 'removal_request_sent' => 'Cerere de ștergere trimisă! Adminul a fost notificat prin e-mail.',
 'device_not_allowed' => 'Acest dispozitiv nu este înregistrat pentru scanner. Vă rugăm să îl înregistrați în tab-ul "Dispozitive".',
+'device_register_first' => 'Vă rugăm să înregistrați mai întâi un dispozitiv în tab-ul "Dispozitive", înainte de a putea utiliza scannerul.',
 'device_blocked_title' => 'Dispozitiv neînregistrat',
 'device_blocked_hint' => 'Mergeți la tab-ul "Dispozitive" pentru a înregistra acest dispozitiv.',
 'close' => 'Închide',

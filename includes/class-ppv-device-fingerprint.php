@@ -932,8 +932,8 @@ class PPV_Device_Fingerprint {
         $is_registered = self::is_device_registered_for_user($parent_store_id, $fingerprint_hash);
         $device_count = self::get_user_device_count($parent_store_id);
 
-        // Allow scanner if: registered OR no devices registered yet (first device)
-        $can_use_scanner = $is_registered || $device_count === 0;
+        // Allow scanner only if device is registered
+        $can_use_scanner = $is_registered;
 
         // Update last_used_at if registered
         if ($is_registered) {

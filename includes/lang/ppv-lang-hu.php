@@ -912,6 +912,7 @@ return [
 'confirm_request_remove' => 'Törlési kérelem küldése az adminnak erre a készülékre. Folytatja?',
 'removal_request_sent' => 'Törlési kérelem elküldve! Az admin e-mailben értesítve lett.',
 'device_not_allowed' => 'Ez a készülék nincs regisztrálva a scannerhez. Kérjük, regisztrálja a "Készülékek" fülön.',
+'device_register_first' => 'Kérjük, először regisztráljon egy készüléket a "Készülékek" fülön, mielőtt használhatná a scannert.',
 'device_blocked_title' => 'Készülék nincs regisztrálva',
 'device_blocked_hint' => 'Menjen a "Készülékek" fülre a készülék regisztrálásához.',
 'close' => 'Bezárás',
