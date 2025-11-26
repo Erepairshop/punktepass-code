@@ -12,6 +12,11 @@ if (!class_exists('PPV_Onboarding')) {
     class PPV_Onboarding {
 
         public static function hooks() {
+            // DEBUG: Add footer log to confirm hooks() runs
+            add_action('wp_footer', function() {
+                echo "<script>console.log('🔍 [PPV_ONBOARDING] hooks() was called - file loaded OK');</script>";
+            }, 1);
+
             // DB migration - ensure columns exist
             add_action('init', [__CLASS__, 'ensure_db_columns'], 5);
 
