@@ -1214,19 +1214,22 @@
           return result.visitorId;
         }
 
-        // Fallback fingerprint
+        // Fallback fingerprint (must be at least 16 chars)
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         ctx.textBaseline = 'top';
         ctx.font = '14px Arial';
         ctx.fillText('fingerprint', 0, 0);
-        const data = canvas.toDataURL() + navigator.userAgent + screen.width + screen.height;
-        let hash = 0;
+        const data = canvas.toDataURL() + navigator.userAgent + screen.width + screen.height + navigator.language + (new Date()).getTimezoneOffset();
+        let hash1 = 0, hash2 = 0;
         for (let i = 0; i < data.length; i++) {
-          hash = ((hash << 5) - hash) + data.charCodeAt(i);
-          hash = hash & hash;
+          hash1 = ((hash1 << 5) - hash1) + data.charCodeAt(i);
+          hash1 = hash1 & hash1;
+          hash2 = ((hash2 << 7) - hash2) + data.charCodeAt(i);
+          hash2 = hash2 & hash2;
         }
-        return 'fp_' + Math.abs(hash).toString(16);
+        // Combine hashes to ensure at least 16 characters
+        return 'fp_' + Math.abs(hash1).toString(16).padStart(8, '0') + Math.abs(hash2).toString(16).padStart(8, '0');
       } catch (e) {
         ppvWarn('[Scanner] Fingerprint error:', e);
         return null;
