@@ -184,153 +184,408 @@
                     <div class="ppv-progress-bar">
                         <div class="ppv-progress-fill" style="width: 50%"></div>
                     </div>
-                    <div class="ppv-progress-text">50% (1/2)</div>
+                    <div class="ppv-progress-text">1/2 ${L.onb_step || 'lépés'}</div>
                 </div>
 
-                <h3>${L.onb_profile_step_title || '1️⃣ Üzlet Alapadatok'}</h3>
+                <div class="ppv-wizard-header">
+                    <div class="ppv-wizard-icon">🏪</div>
+                    <h3>${L.onb_profile_step_title || 'Üzlet Alapadatok'}</h3>
+                    <p class="ppv-wizard-subtitle">${L.onb_profile_step_subtitle || 'Töltsd ki az üzleted legfontosabb adatait'}</p>
+                </div>
 
                 <form class="ppv-wizard-form" id="ppv-profile-form">
-                    <div class="ppv-form-group">
-                        <label>${L.onb_profile_company_name || 'Shop név'} *</label>
-                        <input type="text" name="company_name" required placeholder="${L.onb_profile_company_name_placeholder || 'pl. Teszt Kávézó'}">
-                    </div>
-
-                    <div class="ppv-form-group">
-                        <label>${L.onb_profile_country || 'Ország'} *</label>
-                        <select name="country" required>
-                            <option value="">${L.onb_profile_country_placeholder || 'Válassz országot...'}</option>
-                            <option value="HU">${L.country_hu || 'Magyarország'}</option>
-                            <option value="AT">${L.country_at || 'Ausztria'}</option>
-                            <option value="DE">${L.country_de || 'Németország'}</option>
-                            <option value="SK">${L.country_sk || 'Szlovákia'}</option>
-                            <option value="RO">${L.country_ro || 'Románia'}</option>
-                            <option value="HR">${L.country_hr || 'Horvátország'}</option>
-                            <option value="SI">${L.country_si || 'Szlovénia'}</option>
-                        </select>
-                    </div>
-
-                    <div class="ppv-form-group">
-                        <label>${L.onb_profile_address || 'Cím'} *</label>
-                        <input type="text" name="address" required placeholder="${L.onb_profile_address_placeholder || 'pl. Fő utca 12.'}">
-                    </div>
-
-                    <div class="ppv-form-row">
-                        <div class="ppv-form-group">
-                            <label>${L.onb_profile_city || 'Város'} *</label>
-                            <input type="text" name="city" required placeholder="${L.onb_profile_city_placeholder || 'pl. Budapest'}">
+                    <!-- SECTION: Alapadatok -->
+                    <div class="ppv-form-section">
+                        <div class="ppv-section-title">
+                            <span class="ppv-section-icon">📋</span>
+                            ${L.onb_section_basic || 'Alapadatok'}
                         </div>
 
-                        <div class="ppv-form-group">
-                            <label>${L.onb_profile_zip || 'Irányítószám'} *</label>
-                            <input type="text" name="zip" required placeholder="${L.onb_profile_zip_placeholder || 'pl. 1011'}">
-                        </div>
-                    </div>
-
-                    <div class="ppv-form-group">
-                        <label>${L.onb_profile_phone || 'Telefon'} *</label>
-                        <input type="tel" name="phone" required placeholder="${L.onb_profile_phone_placeholder || 'pl. +36 30 123 4567'}">
-                    </div>
-
-                    <div class="ppv-form-group">
-                        <label>${L.onb_profile_coordinates || 'Ortskoordinaten'}</label>
-                        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                            <div style="flex: 1;">
-                                <label style="font-size: 12px; color: #999;">${L.onb_profile_latitude || 'Breitengrad (Latitude)'}</label>
-                                <input type="text" name="latitude" placeholder="pl. 47.5000" pattern="-?[0-9]+\\.?[0-9]*">
-                            </div>
-                            <div style="flex: 1;">
-                                <label style="font-size: 12px; color: #999;">${L.onb_profile_longitude || 'Längengrad (Longitude)'}</label>
-                                <input type="text" name="longitude" placeholder="pl. 19.0400" pattern="-?[0-9]+\\.?[0-9]*">
+                        <div class="ppv-form-row">
+                            <div class="ppv-form-group ppv-form-group-wide">
+                                <label>${L.onb_profile_shop_name || 'Üzlet neve'} <span class="required">*</span></label>
+                                <input type="text" name="shop_name" required placeholder="${L.onb_profile_shop_name_placeholder || 'pl. Teszt Kávézó'}">
+                                <small>${L.onb_profile_shop_name_help || 'Ez jelenik meg az ügyfeleknek'}</small>
                             </div>
                         </div>
-                        <button type="button" class="ppv-btn ppv-btn-secondary" id="ppv-geocode-btn" style="width: 100%;">
-                            ${L.onb_profile_geocode_btn || '🔍 Koordinaten suchen'}
+
+                        <div class="ppv-form-row">
+                            <div class="ppv-form-group">
+                                <label>${L.onb_profile_company_name || 'Cégnév'}</label>
+                                <input type="text" name="company_name" placeholder="${L.onb_profile_company_name_placeholder || 'pl. Teszt Kft.'}">
+                                <small>${L.onb_profile_company_name_help || 'Hivatalos cégnév (számlázáshoz)'}</small>
+                            </div>
+                            <div class="ppv-form-group">
+                                <label>${L.onb_profile_country || 'Ország'} <span class="required">*</span></label>
+                                <select name="country" required>
+                                    <option value="">${L.onb_profile_country_placeholder || 'Válassz...'}</option>
+                                    <option value="HU">🇭🇺 ${L.country_hu || 'Magyarország'}</option>
+                                    <option value="DE">🇩🇪 ${L.country_de || 'Németország'}</option>
+                                    <option value="AT">🇦🇹 ${L.country_at || 'Ausztria'}</option>
+                                    <option value="RO">🇷🇴 ${L.country_ro || 'Románia'}</option>
+                                    <option value="SK">🇸🇰 ${L.country_sk || 'Szlovákia'}</option>
+                                    <option value="HR">🇭🇷 ${L.country_hr || 'Horvátország'}</option>
+                                    <option value="SI">🇸🇮 ${L.country_si || 'Szlovénia'}</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION: Cím -->
+                    <div class="ppv-form-section">
+                        <div class="ppv-section-title">
+                            <span class="ppv-section-icon">📍</span>
+                            ${L.onb_section_address || 'Cím'}
+                        </div>
+
+                        <div class="ppv-form-group">
+                            <label>${L.onb_profile_address || 'Utca, házszám'} <span class="required">*</span></label>
+                            <input type="text" name="address" required placeholder="${L.onb_profile_address_placeholder || 'pl. Fő utca 12.'}">
+                        </div>
+
+                        <div class="ppv-form-row ppv-form-row-3">
+                            <div class="ppv-form-group">
+                                <label>${L.onb_profile_zip || 'Ir.szám'} <span class="required">*</span></label>
+                                <input type="text" name="zip" required placeholder="${L.onb_profile_zip_placeholder || '1011'}">
+                            </div>
+                            <div class="ppv-form-group ppv-form-group-wide">
+                                <label>${L.onb_profile_city || 'Város'} <span class="required">*</span></label>
+                                <input type="text" name="city" required placeholder="${L.onb_profile_city_placeholder || 'Budapest'}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION: Térkép & Koordináták -->
+                    <div class="ppv-form-section">
+                        <div class="ppv-section-title">
+                            <span class="ppv-section-icon">🗺️</span>
+                            ${L.onb_section_location || 'Helyszín a térképen'} <span class="required">*</span>
+                        </div>
+
+                        <div class="ppv-map-container">
+                            <div id="ppv-onboarding-map" class="ppv-onboarding-map"></div>
+                            <div class="ppv-map-instructions">
+                                <span class="ppv-map-icon">👆</span>
+                                ${L.onb_map_instructions || 'Kattints a térképre az üzleted pontos helyének megjelöléséhez!'}
+                            </div>
+                        </div>
+
+                        <div class="ppv-form-row">
+                            <div class="ppv-form-group">
+                                <label>${L.onb_profile_latitude || 'Szélesség (Lat)'}</label>
+                                <input type="text" name="latitude" id="onb-latitude" placeholder="47.5000" readonly>
+                            </div>
+                            <div class="ppv-form-group">
+                                <label>${L.onb_profile_longitude || 'Hosszúság (Lng)'}</label>
+                                <input type="text" name="longitude" id="onb-longitude" placeholder="19.0400" readonly>
+                            </div>
+                        </div>
+
+                        <button type="button" class="ppv-btn ppv-btn-secondary ppv-btn-block" id="ppv-geocode-btn">
+                            <span class="btn-icon">🔍</span>
+                            ${L.onb_profile_geocode_btn || 'Cím alapján keresés'}
                         </button>
-                        <small style="color: #999; margin-top: 5px; display: block;">
-                            ${L.onb_profile_geocode_tip || '💡 Opcionális: GPS koordinátákat automatikusan kereshetünk a cím alapján'}
-                        </small>
+                    </div>
+
+                    <!-- SECTION: Nyitvatartás -->
+                    <div class="ppv-form-section">
+                        <div class="ppv-section-title">
+                            <span class="ppv-section-icon">🕐</span>
+                            ${L.onb_section_hours || 'Nyitvatartás'} <span class="required">*</span>
+                        </div>
+
+                        <div class="ppv-opening-hours-grid">
+                            ${this.renderOpeningHoursInputs()}
+                        </div>
+
+                        <div class="ppv-quick-hours">
+                            <span>${L.onb_quick_fill || 'Gyors kitöltés:'}</span>
+                            <button type="button" class="ppv-chip" data-hours="9-17">${L.onb_hours_office || '9-17'}</button>
+                            <button type="button" class="ppv-chip" data-hours="8-20">${L.onb_hours_retail || '8-20'}</button>
+                            <button type="button" class="ppv-chip" data-hours="10-22">${L.onb_hours_gastro || '10-22'}</button>
+                            <button type="button" class="ppv-chip" data-hours="0-24">${L.onb_hours_nonstop || '0-24'}</button>
+                        </div>
+                    </div>
+
+                    <!-- SECTION: Időzóna -->
+                    <div class="ppv-form-section">
+                        <div class="ppv-section-title">
+                            <span class="ppv-section-icon">🌍</span>
+                            ${L.onb_section_timezone || 'Időzóna'} <span class="required">*</span>
+                        </div>
+
+                        <div class="ppv-form-group">
+                            <select name="timezone" required>
+                                <option value="Europe/Budapest">🇭🇺 Budapest (CET/CEST)</option>
+                                <option value="Europe/Berlin">🇩🇪 Berlin (CET/CEST)</option>
+                                <option value="Europe/Vienna">🇦🇹 Bécs (CET/CEST)</option>
+                                <option value="Europe/Bucharest">🇷🇴 Bukarest (EET/EEST)</option>
+                                <option value="Europe/Bratislava">🇸🇰 Pozsony (CET/CEST)</option>
+                                <option value="Europe/Zagreb">🇭🇷 Zágráb (CET/CEST)</option>
+                                <option value="Europe/Ljubljana">🇸🇮 Ljubljana (CET/CEST)</option>
+                            </select>
+                            <small>${L.onb_timezone_help || 'A nyitvatartási idők és statisztikák ehhez igazodnak'}</small>
+                        </div>
                     </div>
                 </form>
 
                 <div class="ppv-modal-actions">
-                    <button type="button" class="ppv-btn ppv-btn-secondary" data-action="skip">${L.onb_btn_skip || '⏭️ Kihagyom'}</button>
-                    <button type="button" class="ppv-btn ppv-btn-primary" data-action="next">${L.onb_btn_next || '➡️ Következő'}</button>
+                    <button type="button" class="ppv-btn ppv-btn-secondary" data-action="skip">
+                        ${L.onb_btn_skip || 'Kihagyom'}
+                    </button>
+                    <button type="button" class="ppv-btn ppv-btn-primary" data-action="next">
+                        ${L.onb_btn_next || 'Következő'} <span class="btn-arrow">→</span>
+                    </button>
                 </div>
             `);
 
             content.html(html);
 
-            // Koordináták keresés
-            content.on('click', '#ppv-geocode-btn', (e) => {
-                e.preventDefault();
-                const address = content.find('[name="address"]').val();
-                const city = content.find('[name="city"]').val();
-                const zip = content.find('[name="zip"]').val();
-                const country = content.find('[name="country"]').val();
+            // Initialize map
+            this.initOnboardingMap(content);
 
-                if (!address || !city) {
-                    this.showToast(L.onb_error_address || '❌ Kérlek add meg a címet és várost először!', 'error');
-                    return;
-                }
-
-                const btn = $(e.target);
-                btn.prop('disabled', true).text(L.onb_state_searching || '🔍 Keresés...');
-
-                $.ajax({
-                    url: this.config.rest_url + 'geocode',
-                    method: 'POST',
-                    contentType: 'application/json',
-                    headers: {
-                        'X-WP-Nonce': this.config.nonce
-                    },
-                    data: JSON.stringify({ address, city, zip, country }),
-                    success: (response) => {
-                        if (response.success && response.lat && response.lng) {
-                            content.find('[name="latitude"]').val(response.lat.toFixed(4));
-                            content.find('[name="longitude"]').val(response.lng.toFixed(4));
-                            this.showToast(L.onb_success_geocode || '✅ Koordináták megtalálva!', 'success');
-                        } else {
-                            this.showToast(L.onb_error_not_found || '❌ Nem találtunk koordinátákat', 'error');
-                        }
-                    },
-                    error: () => {
-                        this.showToast(L.onb_error_geocoding || '❌ Geocoding hiba', 'error');
-                    },
-                    complete: () => {
-                        btn.prop('disabled', false).text(L.onb_profile_geocode_btn || '🔍 Koordinaten suchen');
-                    }
-                });
+            // Quick hours buttons
+            content.on('click', '.ppv-chip[data-hours]', (e) => {
+                const hours = $(e.target).data('hours');
+                this.applyQuickHours(content, hours);
             });
 
-            // Next gomb
+            // Geocode button
+            content.on('click', '#ppv-geocode-btn', (e) => {
+                e.preventDefault();
+                this.geocodeAddress(content);
+            });
+
+            // Next button
             content.on('click', '[data-action="next"]', (e) => {
                 e.preventDefault();
                 const form = content.find('#ppv-profile-form')[0];
+
+                // Check required fields
+                const lat = content.find('[name="latitude"]').val();
+                const lng = content.find('[name="longitude"]').val();
+
+                if (!lat || !lng) {
+                    this.showToast(L.onb_error_map || '❌ Kérlek jelöld meg az üzleted helyét a térképen!', 'error');
+                    return;
+                }
 
                 if (!form.checkValidity()) {
                     form.reportValidity();
                     return;
                 }
 
+                // Collect opening hours
+                const opening_hours = this.collectOpeningHours(content);
+
                 const data = {
+                    shop_name: content.find('[name="shop_name"]').val(),
                     company_name: content.find('[name="company_name"]').val(),
                     country: content.find('[name="country"]').val(),
                     address: content.find('[name="address"]').val(),
                     city: content.find('[name="city"]').val(),
                     zip: content.find('[name="zip"]').val(),
-                    phone: content.find('[name="phone"]').val(),
-                    latitude: content.find('[name="latitude"]').val() || null,
-                    longitude: content.find('[name="longitude"]').val() || null
+                    latitude: parseFloat(lat),
+                    longitude: parseFloat(lng),
+                    timezone: content.find('[name="timezone"]').val(),
+                    opening_hours: opening_hours
                 };
 
                 this.saveWizardStep('profile_lite', data, modal);
             });
 
-            // Skip gomb
+            // Skip button
             content.on('click', '[data-action="skip"]', () => {
                 this.wizardStep = 1;
                 this.renderWizardStep(modal);
             });
+        }
+
+        /** ============================================================
+         *  🗺️ INTERACTIVE MAP
+         * ============================================================ */
+        initOnboardingMap(content) {
+            const mapContainer = content.find('#ppv-onboarding-map')[0];
+            if (!mapContainer) return;
+
+            // Default center (Budapest)
+            const defaultLat = 47.4979;
+            const defaultLng = 19.0402;
+
+            // Check if Leaflet is available
+            if (typeof L !== 'undefined' && L.map) {
+                this.onbMap = L.map(mapContainer).setView([defaultLat, defaultLng], 13);
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap'
+                }).addTo(this.onbMap);
+
+                this.onbMarker = null;
+
+                // Click handler
+                this.onbMap.on('click', (e) => {
+                    const lat = e.latlng.lat.toFixed(4);
+                    const lng = e.latlng.lng.toFixed(4);
+
+                    content.find('[name="latitude"]').val(lat);
+                    content.find('[name="longitude"]').val(lng);
+
+                    if (this.onbMarker) {
+                        this.onbMarker.setLatLng(e.latlng);
+                    } else {
+                        this.onbMarker = L.marker(e.latlng).addTo(this.onbMap);
+                    }
+
+                    content.find('.ppv-map-instructions').addClass('success').html(
+                        '<span class="ppv-map-icon">✅</span> ' + (window.ppv_lang?.onb_map_selected || 'Helyszín kiválasztva!')
+                    );
+                });
+
+                // Invalidate size after modal animation
+                setTimeout(() => this.onbMap.invalidateSize(), 300);
+            } else {
+                // Fallback: Simple placeholder with manual input
+                $(mapContainer).html(`
+                    <div class="ppv-map-fallback">
+                        <p>🗺️ ${window.ppv_lang?.onb_map_fallback || 'Térkép betöltése...'}</p>
+                        <p><small>${window.ppv_lang?.onb_map_fallback_tip || 'Használd a "Cím alapján keresés" gombot'}</small></p>
+                    </div>
+                `);
+                content.find('[name="latitude"], [name="longitude"]').prop('readonly', false);
+            }
+        }
+
+        /** ============================================================
+         *  🔍 GEOCODE ADDRESS
+         * ============================================================ */
+        geocodeAddress(content) {
+            const address = content.find('[name="address"]').val();
+            const city = content.find('[name="city"]').val();
+            const zip = content.find('[name="zip"]').val();
+            const country = content.find('[name="country"]').val();
+
+            if (!address || !city) {
+                this.showToast(window.ppv_lang?.onb_error_address || '❌ Add meg a címet és várost először!', 'error');
+                return;
+            }
+
+            const btn = content.find('#ppv-geocode-btn');
+            btn.prop('disabled', true).html('<span class="btn-icon">⏳</span> ' + (window.ppv_lang?.onb_state_searching || 'Keresés...'));
+
+            $.ajax({
+                url: this.config.rest_url + 'geocode',
+                method: 'POST',
+                contentType: 'application/json',
+                headers: { 'X-WP-Nonce': this.config.nonce },
+                data: JSON.stringify({ address, city, zip, country }),
+                success: (response) => {
+                    if (response.success && response.lat && response.lng) {
+                        const lat = response.lat.toFixed(4);
+                        const lng = response.lng.toFixed(4);
+
+                        content.find('[name="latitude"]').val(lat);
+                        content.find('[name="longitude"]').val(lng);
+
+                        // Update map
+                        if (this.onbMap) {
+                            const latlng = [response.lat, response.lng];
+                            this.onbMap.setView(latlng, 16);
+
+                            if (this.onbMarker) {
+                                this.onbMarker.setLatLng(latlng);
+                            } else {
+                                this.onbMarker = L.marker(latlng).addTo(this.onbMap);
+                            }
+                        }
+
+                        content.find('.ppv-map-instructions').addClass('success').html(
+                            '<span class="ppv-map-icon">✅</span> ' + (window.ppv_lang?.onb_map_selected || 'Helyszín kiválasztva!')
+                        );
+
+                        this.showToast(window.ppv_lang?.onb_success_geocode || '✅ Koordináták megtalálva!', 'success');
+                    } else {
+                        this.showToast(window.ppv_lang?.onb_error_not_found || '❌ Cím nem található', 'error');
+                    }
+                },
+                error: () => {
+                    this.showToast(window.ppv_lang?.onb_error_geocoding || '❌ Geocoding hiba', 'error');
+                },
+                complete: () => {
+                    btn.prop('disabled', false).html('<span class="btn-icon">🔍</span> ' + (window.ppv_lang?.onb_profile_geocode_btn || 'Cím alapján keresés'));
+                }
+            });
+        }
+
+        /** ============================================================
+         *  🕐 OPENING HOURS HELPERS
+         * ============================================================ */
+        renderOpeningHoursInputs() {
+            const days = [
+                { key: 'mo', label: window.ppv_lang?.monday || 'Hétfő' },
+                { key: 'di', label: window.ppv_lang?.tuesday || 'Kedd' },
+                { key: 'mi', label: window.ppv_lang?.wednesday || 'Szerda' },
+                { key: 'do', label: window.ppv_lang?.thursday || 'Csütörtök' },
+                { key: 'fr', label: window.ppv_lang?.friday || 'Péntek' },
+                { key: 'sa', label: window.ppv_lang?.saturday || 'Szombat' },
+                { key: 'so', label: window.ppv_lang?.sunday || 'Vasárnap' }
+            ];
+
+            return days.map(day => `
+                <div class="ppv-hour-row" data-day="${day.key}">
+                    <span class="ppv-day-label">${day.label}</span>
+                    <div class="ppv-hour-inputs">
+                        <input type="time" name="hours_${day.key}_von" value="09:00">
+                        <span class="ppv-hour-sep">–</span>
+                        <input type="time" name="hours_${day.key}_bis" value="17:00">
+                    </div>
+                    <label class="ppv-closed-checkbox">
+                        <input type="checkbox" name="hours_${day.key}_closed">
+                        <span>${window.ppv_lang?.closed || 'Zárva'}</span>
+                    </label>
+                </div>
+            `).join('');
+        }
+
+        applyQuickHours(content, preset) {
+            const [open, close] = preset.split('-');
+            const openTime = open.padStart(2, '0') + ':00';
+            const closeTime = close.padStart(2, '0') + ':00';
+
+            ['mo', 'di', 'mi', 'do', 'fr'].forEach(day => {
+                content.find(`[name="hours_${day}_von"]`).val(openTime);
+                content.find(`[name="hours_${day}_bis"]`).val(closeTime);
+                content.find(`[name="hours_${day}_closed"]`).prop('checked', false);
+            });
+
+            // Weekend closed by default for office hours
+            if (preset === '9-17') {
+                ['sa', 'so'].forEach(day => {
+                    content.find(`[name="hours_${day}_closed"]`).prop('checked', true);
+                });
+            } else {
+                ['sa', 'so'].forEach(day => {
+                    content.find(`[name="hours_${day}_von"]`).val(openTime);
+                    content.find(`[name="hours_${day}_bis"]`).val(closeTime);
+                    content.find(`[name="hours_${day}_closed"]`).prop('checked', false);
+                });
+            }
+
+            this.showToast(window.ppv_lang?.onb_hours_applied || '✅ Nyitvatartás beállítva!', 'success');
+        }
+
+        collectOpeningHours(content) {
+            const days = ['mo', 'di', 'mi', 'do', 'fr', 'sa', 'so'];
+            const hours = {};
+
+            days.forEach(day => {
+                hours[day] = {
+                    von: content.find(`[name="hours_${day}_von"]`).val(),
+                    bis: content.find(`[name="hours_${day}_bis"]`).val(),
+                    closed: content.find(`[name="hours_${day}_closed"]`).is(':checked') ? 1 : 0
+                };
+            });
+
+            return hours;
         }
 
         /** ============================================================

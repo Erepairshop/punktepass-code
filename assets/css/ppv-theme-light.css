@@ -13931,6 +13931,286 @@ body.dark-mode {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   🏪 WIZARD HEADER - Modern Design
+   ═══════════════════════════════════════════════════════════════════════════ */
+.ppv-wizard-header {
+    text-align: center;
+    margin-bottom: 28px;
+}
+
+.ppv-wizard-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 16px;
+    background: var(--ppv-onb-gradient-primary);
+    border-radius: var(--ppv-onb-radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    box-shadow: 0 8px 24px var(--ppv-onb-primary-glow);
+}
+
+.ppv-wizard-header h3 {
+    margin-bottom: 8px !important;
+    text-align: center;
+}
+
+.ppv-wizard-subtitle {
+    color: var(--ppv-onb-text-2);
+    font-size: 14px;
+    margin: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   📋 FORM SECTIONS - Modern Card Design
+   ═══════════════════════════════════════════════════════════════════════════ */
+.ppv-form-section {
+    background: var(--ppv-onb-surface-2);
+    border: 1px solid var(--ppv-onb-border);
+    border-radius: var(--ppv-onb-radius-md);
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.ppv-section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--ppv-onb-text);
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--ppv-onb-border);
+}
+
+.ppv-section-icon {
+    font-size: 18px;
+}
+
+.ppv-section-title .required {
+    color: var(--ppv-onb-danger);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* Required Field Star */
+.ppv-form-group label .required {
+    color: var(--ppv-onb-danger);
+    margin-left: 2px;
+}
+
+/* Form Group Small Text */
+.ppv-form-group small {
+    display: block;
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--ppv-onb-text-3);
+}
+
+/* Wide Form Group */
+.ppv-form-group-wide {
+    flex: 2;
+}
+
+/* 3 Column Layout */
+.ppv-form-row-3 {
+    grid-template-columns: 1fr 2fr;
+}
+
+/* Remove label icons in onboarding form sections */
+.ppv-form-section .ppv-form-group label::before {
+    display: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   🗺️ MAP CONTAINER - Interactive Location Picker
+   ═══════════════════════════════════════════════════════════════════════════ */
+.ppv-map-container {
+    position: relative;
+    margin-bottom: 16px;
+}
+
+.ppv-onboarding-map {
+    width: 100%;
+    height: 200px;
+    border-radius: var(--ppv-onb-radius-md);
+    border: 2px solid var(--ppv-onb-border);
+    background: var(--ppv-onb-surface);
+    overflow: hidden;
+}
+
+.ppv-map-instructions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(139, 92, 246, 0.08));
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: var(--ppv-onb-radius-sm);
+    margin-top: 10px;
+    font-size: 13px;
+    color: var(--ppv-onb-text-2);
+    text-align: center;
+}
+
+.ppv-map-instructions.success {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(34, 197, 94, 0.08));
+    border-color: rgba(16, 185, 129, 0.3);
+    color: var(--ppv-onb-secondary);
+}
+
+.ppv-map-icon {
+    font-size: 18px;
+}
+
+.ppv-map-fallback {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--ppv-onb-text-3);
+    text-align: center;
+    padding: 20px;
+}
+
+/* Block Button */
+.ppv-btn-block {
+    width: 100%;
+    justify-content: center;
+}
+
+.ppv-btn .btn-icon {
+    margin-right: 4px;
+}
+
+.ppv-btn .btn-arrow {
+    margin-left: 4px;
+    transition: transform 0.2s;
+}
+
+.ppv-btn:hover .btn-arrow {
+    transform: translateX(3px);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   🕐 OPENING HOURS GRID - Compact Design
+   ═══════════════════════════════════════════════════════════════════════════ */
+.ppv-opening-hours-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.ppv-hour-row {
+    display: grid;
+    grid-template-columns: 90px 1fr auto;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 12px;
+    background: var(--ppv-onb-surface);
+    border: 1px solid var(--ppv-onb-border);
+    border-radius: var(--ppv-onb-radius-sm);
+    transition: var(--ppv-onb-trans-fast);
+}
+
+.ppv-hour-row:hover {
+    border-color: var(--ppv-onb-primary);
+}
+
+.ppv-day-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ppv-onb-text);
+}
+
+.ppv-hour-inputs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ppv-hour-inputs input[type="time"] {
+    width: 100px;
+    padding: 8px 10px;
+    font-size: 13px;
+    border: 1px solid var(--ppv-onb-border);
+    border-radius: var(--ppv-onb-radius-sm);
+    background: var(--ppv-onb-surface);
+    color: var(--ppv-onb-text);
+}
+
+.ppv-hour-inputs input[type="time"]:focus {
+    outline: none;
+    border-color: var(--ppv-onb-primary);
+    box-shadow: 0 0 0 2px var(--ppv-onb-primary-glow);
+}
+
+.ppv-hour-sep {
+    color: var(--ppv-onb-text-3);
+    font-weight: 500;
+}
+
+.ppv-closed-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--ppv-onb-text-2);
+    white-space: nowrap;
+}
+
+.ppv-closed-checkbox input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--ppv-onb-danger);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ⚡ QUICK HOURS CHIPS
+   ═══════════════════════════════════════════════════════════════════════════ */
+.ppv-quick-hours {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px dashed var(--ppv-onb-border);
+}
+
+.ppv-quick-hours > span {
+    font-size: 12px;
+    color: var(--ppv-onb-text-3);
+    font-weight: 500;
+}
+
+.ppv-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 14px;
+    background: var(--ppv-onb-surface);
+    border: 1px solid var(--ppv-onb-border);
+    border-radius: var(--ppv-onb-radius-full);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ppv-onb-text);
+    cursor: pointer;
+    transition: var(--ppv-onb-trans-fast);
+}
+
+.ppv-chip:hover {
+    background: var(--ppv-onb-primary);
+    border-color: var(--ppv-onb-primary);
+    color: white;
+    transform: translateY(-1px);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    📱 RESPONSIVE DESIGN - ONBOARDING
    ═══════════════════════════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
@@ -13950,7 +14230,8 @@ body.dark-mode {
         font-size: 20px;
     }
 
-    .ppv-onboarding-modal .ppv-form-row {
+    .ppv-onboarding-modal .ppv-form-row,
+    .ppv-onboarding-modal .ppv-form-row-3 {
         grid-template-columns: 1fr;
     }
 
@@ -13989,6 +14270,44 @@ body.dark-mode {
     .ppv-modal-icon::after {
         width: 38px;
         height: 38px;
+    }
+
+    /* Opening hours responsive */
+    .ppv-hour-row {
+        grid-template-columns: 70px 1fr;
+        gap: 8px;
+    }
+
+    .ppv-closed-checkbox {
+        grid-column: span 2;
+        justify-content: flex-end;
+    }
+
+    .ppv-hour-inputs input[type="time"] {
+        width: 85px;
+        padding: 6px 8px;
+        font-size: 12px;
+    }
+
+    /* Form sections responsive */
+    .ppv-form-section {
+        padding: 16px;
+    }
+
+    .ppv-section-title {
+        font-size: 14px;
+    }
+
+    /* Map responsive */
+    .ppv-onboarding-map {
+        height: 180px;
+    }
+
+    /* Wizard header responsive */
+    .ppv-wizard-icon {
+        width: 56px;
+        height: 56px;
+        font-size: 28px;
     }
 }
 

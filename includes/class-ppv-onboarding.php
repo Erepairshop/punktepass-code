@@ -134,11 +134,26 @@ if (!class_exists('PPV_Onboarding')) {
                 echo "<script>console.log('🔍 [PPV_ONBOARDING_PHP] Store #{$store_id}, subscription_status={$subscription_status}, dismissed=" . ($store->onboarding_dismissed ?? 0) . ", completed=" . ($store->onboarding_completed ?? 0) . ", postponed=" . ($store->onboarding_postponed_until ?? 'null') . "');</script>";
             }, 1);
 
+            // Enqueue Leaflet CSS & JS for interactive map
+            wp_enqueue_style(
+                'leaflet',
+                'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
+                [],
+                '1.9.4'
+            );
+            wp_enqueue_script(
+                'leaflet',
+                'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
+                [],
+                '1.9.4',
+                true
+            );
+
             // Enqueue JS
             wp_enqueue_script(
                 'ppv-onboarding',
                 PPV_PLUGIN_URL . 'assets/js/ppv-onboarding.js',
-                ['jquery'],
+                ['jquery', 'leaflet'],
                 filemtime(PPV_PLUGIN_DIR . 'assets/js/ppv-onboarding.js'),
                 true
             );
@@ -275,23 +290,39 @@ if (!class_exists('PPV_Onboarding')) {
             global $wpdb;
 
             if ($step === 'profile_lite') {
+                // Prepare opening hours JSON
+                $opening_hours = [];
+                if (!empty($value['opening_hours']) && is_array($value['opening_hours'])) {
+                    foreach ($value['opening_hours'] as $day => $hours) {
+                        $opening_hours[sanitize_key($day)] = [
+                            'von' => sanitize_text_field($hours['von'] ?? ''),
+                            'bis' => sanitize_text_field($hours['bis'] ?? ''),
+                            'closed' => intval($hours['closed'] ?? 0)
+                        ];
+                    }
+                }
+
                 // Update profile fields
                 $wpdb->update(
                     $wpdb->prefix . 'ppv_stores',
                     [
-                        'name' => sanitize_text_field($value['company_name'] ?? ''),
+                        'name' => sanitize_text_field($value['shop_name'] ?? ''),
+                        'company_name' => sanitize_text_field($value['company_name'] ?? ''),
                         'country' => sanitize_text_field($value['country'] ?? 'HU'),
                         'address' => sanitize_text_field($value['address'] ?? ''),
                         'city' => sanitize_text_field($value['city'] ?? ''),
                         'plz' => sanitize_text_field($value['zip'] ?? ''),
-                        'phone' => sanitize_text_field($value['phone'] ?? ''),
                         'latitude' => floatval($value['latitude'] ?? 0),
                         'longitude' => floatval($value['longitude'] ?? 0),
+                        'timezone' => sanitize_text_field($value['timezone'] ?? 'Europe/Budapest'),
+                        'opening_hours' => json_encode($opening_hours),
                     ],
                     ['id' => $auth['store_id']],
-                    ['%s', '%s', '%s', '%s', '%s', '%s', '%f', '%f'],
+                    ['%s', '%s', '%s', '%s', '%s', '%s', '%f', '%f', '%s', '%s'],
                     ['%d']
                 );
+
+                ppv_log("✅ [PPV_ONBOARDING] Profile saved for store #{$auth['store_id']}");
             } elseif ($step === 'reward') {
                 // Create reward (prémium)
                 $wpdb->insert(
@@ -458,8 +489,24 @@ if (!class_exists('PPV_Onboarding')) {
          * Progress számítás
          */
         private static function calculate_progress($store) {
+            // Check if profile is complete:
+            // - Shop name (name)
+            // - Address (address + city)
+            // - Coordinates (latitude + longitude)
+            // - Opening hours
+            // - Timezone
+            $has_name = !empty($store->name);
+            $has_address = !empty($store->address) && !empty($store->city);
+            $has_coords = !empty($store->latitude) && !empty($store->longitude) &&
+                          floatval($store->latitude) != 0 && floatval($store->longitude) != 0;
+            $has_hours = !empty($store->opening_hours) && $store->opening_hours !== '[]' && $store->opening_hours !== '{}';
+            $has_timezone = !empty($store->timezone);
+
+            // Profile is complete only if ALL required fields are filled
+            $profile_complete = $has_name && $has_address && $has_coords && $has_hours && $has_timezone;
+
             $steps = [
-                'profile_lite' => !empty($store->name) && !empty($store->address),
+                'profile_lite' => $profile_complete,
                 'reward' => self::has_reward($store->id)
             ];
 
@@ -472,7 +519,15 @@ if (!class_exists('PPV_Onboarding')) {
                 'completed' => $completed,
                 'total' => $total,
                 'percentage' => $percentage,
-                'is_complete' => $percentage >= 100
+                'is_complete' => $percentage >= 100,
+                // Debug info
+                'profile_details' => [
+                    'has_name' => $has_name,
+                    'has_address' => $has_address,
+                    'has_coords' => $has_coords,
+                    'has_hours' => $has_hours,
+                    'has_timezone' => $has_timezone
+                ]
             ];
         }
 
