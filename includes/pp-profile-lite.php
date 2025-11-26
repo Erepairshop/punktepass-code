@@ -393,11 +393,6 @@ private static function render_tab_general($store) {
             <label data-i18n="description"><?php echo esc_html(PPV_Lang::t('description')); ?></label>
             <textarea name="description"><?php echo esc_textarea($store->description ?? ''); ?></textarea>
         </div>
-
-        <!-- LOGOUT LINK -->
-        <div class="ppv-form-group">
-            <?php echo do_shortcode('[ppv_logout_link]'); ?>
-        </div>
     </div>
     <?php
     return ob_get_clean();
