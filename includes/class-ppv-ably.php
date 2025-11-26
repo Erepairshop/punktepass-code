@@ -9,6 +9,32 @@
 class PPV_Ably {
 
     private static $api_key;
+    private static $manager_enqueued = false;
+
+    /**
+     * Enqueue Ably SDK and shared manager (call this before any Ably-using script)
+     * This ensures a single shared connection is used across all scripts
+     */
+    public static function enqueue_scripts() {
+        // Only enqueue once per page
+        if (self::$manager_enqueued) {
+            return;
+        }
+
+        // Enqueue Ably SDK from CDN
+        wp_enqueue_script('ably-js', 'https://cdn.ably.com/lib/ably.min-1.js', [], '1.2', true);
+
+        // Enqueue our shared manager (after Ably SDK)
+        wp_enqueue_script(
+            'ppv-ably-manager',
+            PPV_PLUGIN_URL . 'assets/js/ppv-ably-manager.js',
+            ['ably-js'],
+            filemtime(PPV_PLUGIN_DIR . 'assets/js/ppv-ably-manager.js'),
+            true
+        );
+
+        self::$manager_enqueued = true;
+    }
 
     /**
      * Initialize Ably credentials from constants
@@ -258,6 +284,19 @@ class PPV_Ably {
         $channel = 'store-' . intval($store_id);
         ppv_log("📡 [PPV_Ably] trigger_redemption_cancelled: channel={$channel}, store_id={$store_id}");
         return self::publish($channel, 'redemption-cancelled', $data);
+    }
+
+    /**
+     * Publish onboarding progress update for a store
+     * Sent to store's channel when onboarding steps are completed
+     *
+     * @param int $store_id Store ID
+     * @param array $data Progress data (steps, percentage, is_complete, etc.)
+     */
+    public static function trigger_onboarding_progress($store_id, $data) {
+        $channel = 'store-' . intval($store_id);
+        ppv_log("📡 [PPV_Ably] trigger_onboarding_progress: channel={$channel}, store_id={$store_id}, percentage={$data['percentage']}%");
+        return self::publish($channel, 'onboarding-progress', $data);
     }
 
     // ============================================================

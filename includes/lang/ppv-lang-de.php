@@ -1019,24 +1019,71 @@ return [
     'onb_welcome_step1' => 'Fülle die Geschäfts-Basisdaten aus',
     'onb_welcome_step2' => 'Erstelle die erste Prämie',
     'onb_welcome_time' => '⏱️ Etwa 3 Minuten',
-    'onb_welcome_btn_later' => '⏭️ Später',
-    'onb_welcome_btn_start' => '🚀 Los geht\'s!',
+    'onb_btn_later' => 'Später',
+    'onb_btn_start' => 'Los geht\'s!',
 
-    'onb_profile_step_title' => '1️⃣ Profil ausfüllen',
-    'onb_profile_step_progress' => '50% (1/2)',
-    'onb_profile_subtitle' => 'Die Geschäfts-Basisdaten',
-    'onb_profile_company_name' => 'Firmenname *',
-    'onb_profile_country' => 'Land *',
-    'onb_profile_address' => 'Adresse *',
-    'onb_profile_city' => 'Stadt *',
-    'onb_profile_zip' => 'Postleitzahl *',
-    'onb_profile_phone' => 'Telefon *',
-    'onb_profile_latitude' => 'Breitengrad (Latitude)',
-    'onb_profile_longitude' => 'Längengrad (Longitude)',
-    'onb_profile_geocode_btn' => '🔍 Koordinaten suchen',
-    'onb_profile_geocode_tip' => '💡 Optional: Wir können automatisch GPS-Koordinaten basierend auf der Adresse finden',
-    'onb_btn_skip' => '⏭️ Überspringen',
-    'onb_btn_next' => '➡️ Weiter',
+    // Step indicator
+    'onb_step' => 'Schritt',
+
+    // Profile step - header
+    'onb_profile_step_title' => 'Geschäfts-Grunddaten',
+    'onb_profile_step_subtitle' => 'Fülle die wichtigsten Informationen zu deinem Geschäft aus',
+
+    // Sections
+    'onb_section_basic' => 'Grunddaten',
+    'onb_section_address' => 'Adresse',
+    'onb_section_location' => 'Standort auf der Karte',
+    'onb_section_hours' => 'Öffnungszeiten',
+    'onb_section_timezone' => 'Zeitzone',
+
+    // Basic fields
+    'onb_profile_shop_name' => 'Geschäftsname',
+    'onb_profile_shop_name_placeholder' => 'z.B. Café Sonnenschein',
+    'onb_profile_shop_name_help' => 'Dieser Name wird den Kunden angezeigt',
+    'onb_profile_company_name' => 'Firmenname',
+    'onb_profile_company_name_placeholder' => 'z.B. Sonnenschein GmbH',
+    'onb_profile_company_name_help' => 'Offizieller Firmenname (für Rechnungen)',
+    'onb_profile_country' => 'Land',
+    'onb_profile_country_placeholder' => 'Auswählen...',
+
+    // Address fields
+    'onb_profile_address' => 'Straße, Hausnummer',
+    'onb_profile_address_placeholder' => 'z.B. Hauptstraße 12',
+    'onb_profile_city' => 'Stadt',
+    'onb_profile_city_placeholder' => 'Berlin',
+    'onb_profile_zip' => 'PLZ',
+    'onb_profile_zip_placeholder' => '10115',
+
+    // Map
+    'onb_profile_latitude' => 'Breitengrad (Lat)',
+    'onb_profile_longitude' => 'Längengrad (Lng)',
+    'onb_profile_geocode_btn' => 'Nach Adresse suchen',
+    'onb_map_instructions' => 'Klicke auf die Karte, um den genauen Standort deines Geschäfts zu markieren!',
+    'onb_map_selected' => 'Standort ausgewählt!',
+    'onb_map_fallback' => 'Karte wird geladen...',
+    'onb_map_fallback_tip' => 'Nutze den Button "Nach Adresse suchen"',
+    'onb_error_map' => '❌ Bitte markiere den Standort auf der Karte!',
+
+    // Opening hours
+    'onb_quick_fill' => 'Schnellauswahl:',
+    'onb_hours_office' => '9-17',
+    'onb_hours_retail' => '8-20',
+    'onb_hours_gastro' => '10-22',
+    'onb_hours_nonstop' => '0-24',
+    'onb_hours_applied' => '✅ Öffnungszeiten übernommen!',
+
+    // Timezone
+    'onb_timezone_help' => 'Öffnungszeiten und Statistiken richten sich nach dieser Zeitzone',
+
+    // Buttons
+    'onb_btn_skip' => 'Überspringen',
+    'onb_btn_next' => 'Weiter',
+    'onb_btn_continue' => 'Fortsetzen',
+
+    // Progress card (dashboard widget)
+    'onb_progress_title' => 'Erste Einrichtung',
+    'onb_progress_step_profile' => 'Profildaten ausfüllen',
+    'onb_progress_step_reward' => 'Erste Prämie',
 
     'onb_reward_step_title' => '2️⃣ Erste Prämie erstellen',
     'onb_reward_step_progress' => '100% (2/2)',

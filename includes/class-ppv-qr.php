@@ -529,10 +529,10 @@ class PPV_QR {
 
         // Only enqueue camera scanner JS for handlers/scanners
         if ($is_handler) {
-            // Load Ably JS library if configured
+            // Load Ably JS library + shared manager if configured
             if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
-                wp_enqueue_script('ably-js', 'https://cdn.ably.com/lib/ably.min-1.js', [], '1.2', true);
-                wp_enqueue_script('ppv-qr', PPV_PLUGIN_URL . 'assets/js/ppv-qr.js', ['jquery', 'ably-js'], time(), true);
+                PPV_Ably::enqueue_scripts(); // Enqueues ably-js + ppv-ably-manager
+                wp_enqueue_script('ppv-qr', PPV_PLUGIN_URL . 'assets/js/ppv-qr.js', ['jquery', 'ppv-ably-manager'], time(), true);
             } else {
                 wp_enqueue_script('ppv-qr', PPV_PLUGIN_URL . 'assets/js/ppv-qr.js', ['jquery'], time(), true);
             }
@@ -1760,6 +1760,216 @@ class PPV_QR {
                 </div>
             </div>
         </div>
+
+        <script>
+        jQuery(document).ready(function($){
+            // ============================================================
+            // 👤 SCANNER USER MANAGEMENT
+            // ============================================================
+
+            // Show create scanner modal
+            $('#ppv-new-scanner-btn').on('click', function(){
+                $('#ppv-scanner-modal').css('display', 'flex').hide().fadeIn(200);
+                $('#ppv-scanner-email').val('').focus();
+                $('#ppv-scanner-password').val('');
+                $('#ppv-scanner-error').hide();
+                $('#ppv-scanner-success').hide();
+            });
+
+            // Hide create scanner modal
+            $('#ppv-scanner-cancel').on('click', function(){
+                $('#ppv-scanner-modal').fadeOut(200);
+            });
+
+            // Generate random password
+            $('#ppv-scanner-gen-pw').on('click', function(){
+                const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+                let pw = '';
+                for(let i = 0; i < 10; i++) pw += chars.charAt(Math.floor(Math.random() * chars.length));
+                $('#ppv-scanner-password').val(pw);
+            });
+
+            // Create scanner user
+            $('#ppv-scanner-create').on('click', function(){
+                const email = $('#ppv-scanner-email').val().trim();
+                const password = $('#ppv-scanner-password').val().trim();
+                const filialeId = $('#ppv-scanner-filiale').val();
+                const $btn = $(this);
+                const $error = $('#ppv-scanner-error');
+                const $success = $('#ppv-scanner-success');
+
+                if(!email || !password) {
+                    $error.text('<?php echo esc_js(self::t('err_fill_fields', 'Bitte alle Felder ausfüllen')); ?>').show();
+                    return;
+                }
+
+                $btn.prop('disabled', true).html('⏳ <?php echo esc_js(self::t('creating', 'Wird erstellt...')); ?>');
+                $error.hide();
+                $success.hide();
+
+                $.ajax({
+                    url: '<?php echo admin_url('admin-ajax.php'); ?>',
+                    type: 'POST',
+                    data: {
+                        action: 'ppv_create_scanner_user',
+                        email: email,
+                        password: password,
+                        filiale_id: filialeId,
+                        nonce: '<?php echo wp_create_nonce('ppv_scanner_nonce'); ?>'
+                    },
+                    success: function(response){
+                        if(response.success){
+                            $success.text('<?php echo esc_js(self::t('scanner_created', 'Scanner erfolgreich erstellt!')); ?>').show();
+                            setTimeout(function(){ location.reload(); }, 1500);
+                        } else {
+                            $error.text(response.data?.message || '<?php echo esc_js(self::t('create_error', 'Fehler beim Erstellen')); ?>').show();
+                            $btn.prop('disabled', false).html('✅ <?php echo esc_js(self::t('create', 'Létrehozás')); ?>');
+                        }
+                    },
+                    error: function(){
+                        $error.text('<?php echo esc_js(self::t('network_error', 'Netzwerkfehler')); ?>').show();
+                        $btn.prop('disabled', false).html('✅ <?php echo esc_js(self::t('create', 'Létrehozás')); ?>');
+                    }
+                });
+            });
+
+            // Toggle scanner active/disabled
+            $(document).on('click', '.ppv-scanner-toggle', function(){
+                const userId = $(this).data('user-id');
+                const action = $(this).data('action');
+                const $btn = $(this);
+
+                if(!confirm(action === 'disable'
+                    ? '<?php echo esc_js(self::t('confirm_disable', 'Scanner wirklich deaktivieren?')); ?>'
+                    : '<?php echo esc_js(self::t('confirm_enable', 'Scanner aktivieren?')); ?>'
+                )) return;
+
+                $btn.prop('disabled', true);
+
+                $.ajax({
+                    url: '<?php echo admin_url('admin-ajax.php'); ?>',
+                    type: 'POST',
+                    data: {
+                        action: 'ppv_toggle_scanner_status',
+                        user_id: userId,
+                        toggle_action: action,
+                        nonce: '<?php echo wp_create_nonce('ppv_scanner_nonce'); ?>'
+                    },
+                    success: function(response){
+                        if(response.success){
+                            location.reload();
+                        } else {
+                            alert(response.data?.message || '<?php echo esc_js(self::t('toggle_error', 'Fehler')); ?>');
+                            $btn.prop('disabled', false);
+                        }
+                    },
+                    error: function(){
+                        alert('<?php echo esc_js(self::t('network_error', 'Netzwerkfehler')); ?>');
+                        $btn.prop('disabled', false);
+                    }
+                });
+            });
+
+            // Reset scanner password
+            $(document).on('click', '.ppv-scanner-reset-pw', function(){
+                const userId = $(this).data('user-id');
+                const email = $(this).data('email');
+                const $btn = $(this);
+
+                const newPassword = prompt('<?php echo esc_js(self::t('enter_new_password', 'Neues Passwort eingeben für')); ?> ' + email + ':');
+                if(!newPassword || newPassword.length < 6) {
+                    if(newPassword !== null) alert('<?php echo esc_js(self::t('password_min_length', 'Passwort muss mindestens 6 Zeichen haben')); ?>');
+                    return;
+                }
+
+                $btn.prop('disabled', true);
+
+                $.ajax({
+                    url: '<?php echo admin_url('admin-ajax.php'); ?>',
+                    type: 'POST',
+                    data: {
+                        action: 'ppv_reset_scanner_password',
+                        user_id: userId,
+                        new_password: newPassword,
+                        nonce: '<?php echo wp_create_nonce('ppv_scanner_nonce'); ?>'
+                    },
+                    success: function(response){
+                        if(response.success){
+                            alert('<?php echo esc_js(self::t('password_reset_success', 'Passwort erfolgreich geändert!')); ?>');
+                        } else {
+                            alert(response.data?.message || '<?php echo esc_js(self::t('reset_error', 'Fehler beim Zurücksetzen')); ?>');
+                        }
+                        $btn.prop('disabled', false);
+                    },
+                    error: function(){
+                        alert('<?php echo esc_js(self::t('network_error', 'Netzwerkfehler')); ?>');
+                        $btn.prop('disabled', false);
+                    }
+                });
+            });
+
+            // Show change filiale modal
+            $(document).on('click', '.ppv-scanner-change-filiale', function(){
+                const userId = $(this).data('user-id');
+                const email = $(this).data('email');
+                const currentStore = $(this).data('current-store');
+
+                $('#ppv-change-filiale-user-id').val(userId);
+                $('#ppv-change-filiale-email').text(email);
+                $('#ppv-change-filiale-select').val(currentStore);
+                $('#ppv-change-filiale-error').hide();
+                $('#ppv-change-filiale-success').hide();
+                $('#ppv-change-filiale-modal').css('display', 'flex').hide().fadeIn(200);
+            });
+
+            // Hide change filiale modal
+            $('#ppv-change-filiale-cancel').on('click', function(){
+                $('#ppv-change-filiale-modal').fadeOut(200);
+            });
+
+            // Save filiale change
+            $('#ppv-change-filiale-save').on('click', function(){
+                const userId = $('#ppv-change-filiale-user-id').val();
+                const newFilialeId = $('#ppv-change-filiale-select').val();
+                const $btn = $(this);
+                const $error = $('#ppv-change-filiale-error');
+                const $success = $('#ppv-change-filiale-success');
+
+                $btn.prop('disabled', true).html('⏳ <?php echo esc_js(self::t('saving', 'Speichern...')); ?>');
+                $error.hide();
+                $success.hide();
+
+                $.ajax({
+                    url: '<?php echo admin_url('admin-ajax.php'); ?>',
+                    type: 'POST',
+                    data: {
+                        action: 'ppv_update_scanner_filiale',
+                        user_id: userId,
+                        new_filiale_id: newFilialeId,
+                        nonce: '<?php echo wp_create_nonce('ppv_scanner_nonce'); ?>'
+                    },
+                    success: function(response){
+                        if(response.success){
+                            $success.text('<?php echo esc_js(self::t('filiale_changed', 'Filiale erfolgreich geändert!')); ?>').show();
+                            setTimeout(function(){ location.reload(); }, 1500);
+                        } else {
+                            $error.text(response.data?.message || '<?php echo esc_js(self::t('change_error', 'Fehler beim Ändern')); ?>').show();
+                            $btn.prop('disabled', false).html('✅ <?php echo esc_js(self::t('save', 'Speichern')); ?>');
+                        }
+                    },
+                    error: function(){
+                        $error.text('<?php echo esc_js(self::t('network_error', 'Netzwerkfehler')); ?>').show();
+                        $btn.prop('disabled', false).html('✅ <?php echo esc_js(self::t('save', 'Speichern')); ?>');
+                    }
+                });
+            });
+
+            // Close modals on outside click
+            $('#ppv-scanner-modal, #ppv-change-filiale-modal').on('click', function(e){
+                if(e.target === this) $(this).fadeOut(200);
+            });
+        });
+        </script>
         <?php
     }
 
@@ -2078,6 +2288,19 @@ class PPV_QR {
                     ppv_log("[PPV_QR] ⚠️ SUSPICIOUS: GPS distance exceeded (SCAN ALLOWED): user={$user_id}, store={$store_id}, distance={$gps_check['distance']}m");
                 }
                 // Scan continues - admin can review suspicious scans in WP admin
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // VELOCITY CHECK (Fraud Detection) - Same IP / Scan Frequency
+        // Logs and alerts admin if suspicious patterns detected
+        // ═══════════════════════════════════════════════════════════
+        if (class_exists('PPV_Scan_Monitoring')) {
+            $velocity_check = PPV_Scan_Monitoring::perform_velocity_check($store_id, $user_id);
+
+            if (!$velocity_check['passed']) {
+                ppv_log("[PPV_QR] ⚠️ VELOCITY ALERT: user={$user_id}, store={$store_id}, alerts=" . json_encode($velocity_check['alerts']));
+                // Scan continues - admin notified via email and suspicious_scans table
             }
         }
 
@@ -2610,7 +2833,10 @@ class PPV_QR {
                 l.created_at,
                 l.user_id,
                 l.message,
-                l.type,
+                l.status,
+                l.points_change,
+                l.reward_code,
+                l.ip_address,
                 u.email,
                 u.first_name,
                 u.last_name
@@ -2621,9 +2847,9 @@ class PPV_QR {
             LIMIT 1000
         ", $store_id));
 
-        // Build CSV
+        // Build CSV with BOM for Excel UTF-8 support
         $csv_lines = [];
-        $csv_lines[] = 'Datum,Zeit,Kunde,Email,Punkte,Status,Nachricht';
+        $csv_lines[] = 'Datum,Zeit,Kunde,Email,Punkte,Status,Prämie,IP,Nachricht';
 
         foreach ($logs as $log) {
             $created = strtotime($log->created_at);
@@ -2635,21 +2861,24 @@ class PPV_QR {
             $customer = trim("$first $last") ?: 'Unbekannt';
             $email = $log->email ?: '-';
 
-            // Extract points from message
-            $points = '-';
-            if (preg_match('/\+(\d+)/', $log->message, $m)) {
-                $points = $m[1];
-            }
+            // Use direct points_change field
+            $points = isset($log->points_change) && $log->points_change !== null
+                ? intval($log->points_change)
+                : '-';
 
-            $status = $log->type === 'qr_scan' ? 'OK' : 'Fehler';
-            $message = str_replace([',', "\n", "\r"], [';', ' ', ' '], $log->message);
+            // Use status field directly
+            $status = ($log->status === 'ok' || $log->status === 'success') ? 'OK' : ($log->status ?: '-');
+            $reward = $log->reward_code ?: '-';
+            $ip = $log->ip_address ?: '-';
+            $message = str_replace([',', "\n", "\r", '"'], [';', ' ', ' ', "'"], $log->message ?? '');
 
-            $csv_lines[] = sprintf('"%s","%s","%s","%s","%s","%s","%s"',
-                $date, $time, $customer, $email, $points, $status, $message
+            $csv_lines[] = sprintf('"%s","%s","%s","%s","%s","%s","%s","%s","%s"',
+                $date, $time, $customer, $email, $points, $status, $reward, $ip, $message
             );
         }
 
-        $csv_content = implode("\n", $csv_lines);
+        // Add BOM for Excel UTF-8 support (German umlauts)
+        $csv_content = "\xEF\xBB\xBF" . implode("\n", $csv_lines);
         $store_name = sanitize_title($session_store->name ?? 'pos');
         $filename = "pos-{$store_name}-{$filename_suffix}.csv";
 

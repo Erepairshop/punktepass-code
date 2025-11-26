@@ -781,6 +781,9 @@ jQuery(document).ready(function($) {
                         <a href="${scan.maps_link}" target="_blank" class="ppv-btn-small" title="${T['view_on_map'] || 'Auf Karte anzeigen'}">
                             <i class="ri-map-pin-line"></i>
                         </a>
+                        <button class="ppv-btn-small ppv-btn-review-request" data-scan-id="${scan.id}" data-user-name="${escapeHtml(scan.user_name)}" title="${T['request_review'] || 'Admin Überprüfung anfordern'}">
+                            <i class="ri-mail-send-line"></i>
+                        </button>
                     </div>
                 </div>
             `;
@@ -800,6 +803,44 @@ jQuery(document).ready(function($) {
             $badge.hide();
         }
     }
+
+    // ============================================================
+    // 📧 REQUEST ADMIN REVIEW
+    // ============================================================
+    $(document).on('click', '.ppv-btn-review-request', function() {
+        const $btn = $(this);
+        const scanId = $btn.data('scan-id');
+        const userName = $btn.data('user-name');
+
+        if ($btn.hasClass('ppv-btn-disabled')) return;
+
+        const confirmMsg = T['confirm_review_request'] || `Admin Überprüfung für "${userName}" anfordern?`;
+        if (!confirm(confirmMsg)) return;
+
+        $btn.addClass('ppv-btn-disabled').find('i').removeClass('ri-mail-send-line').addClass('ri-loader-4-line ri-spin');
+
+        $.ajax({
+            url: config.review_request_url || (config.ajax_url.replace('/stats', '/stats/request-review')),
+            method: 'POST',
+            data: JSON.stringify({ scan_id: scanId }),
+            contentType: 'application/json',
+            headers: { 'X-WP-Nonce': nonce },
+            success: function(res) {
+                if (res.success) {
+                    alert(T['review_requested'] || '✅ Admin Überprüfung wurde angefordert!');
+                    $btn.find('i').removeClass('ri-loader-4-line ri-spin').addClass('ri-check-line');
+                    $btn.addClass('ppv-btn-success');
+                } else {
+                    alert(T['review_request_failed'] || '❌ Fehler: ' + (res.error || 'Unbekannter Fehler'));
+                    $btn.removeClass('ppv-btn-disabled').find('i').removeClass('ri-loader-4-line ri-spin').addClass('ri-mail-send-line');
+                }
+            },
+            error: function() {
+                alert(T['review_request_failed'] || '❌ Netzwerkfehler');
+                $btn.removeClass('ppv-btn-disabled').find('i').removeClass('ri-loader-4-line ri-spin').addClass('ri-mail-send-line');
+            }
+        });
+    });
 
     // ============================================================
     // 👤 LOAD SCANNER STATS

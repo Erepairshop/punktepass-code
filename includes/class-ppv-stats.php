@@ -212,6 +212,12 @@ class PPV_Stats {
             'permission_callback' => [__CLASS__, 'check_handler_permission']
         ]);
 
+        register_rest_route('punktepass/v1', '/stats/request-review', [
+            'methods' => 'POST',
+            'callback' => [__CLASS__, 'rest_request_review'],
+            'permission_callback' => [__CLASS__, 'check_handler_permission']
+        ]);
+
         ppv_log("✅ [PPV_Stats] ALL REST routes OK");
     }
 
@@ -992,11 +998,11 @@ class PPV_Stats {
                 ss.id,
                 ss.user_id,
                 ss.store_id,
-                ss.distance_km,
-                ss.user_lat,
-                ss.user_lng,
-                ss.store_lat,
-                ss.store_lng,
+                ss.distance_meters,
+                ss.scan_latitude,
+                ss.scan_longitude,
+                ss.store_latitude,
+                ss.store_longitude,
                 ss.status,
                 ss.created_at,
                 u.first_name,
@@ -1058,10 +1064,10 @@ class PPV_Stats {
                 'user_name' => $user_name,
                 'user_email' => $scan->user_email ?? '',
                 'store_name' => $scan->store_name ?? 'Store #' . $scan->store_id,
-                'distance_km' => round(floatval($scan->distance_km), 2),
+                'distance_km' => round(floatval($scan->distance_meters) / 1000, 2),
                 'status' => $scan->status,
                 'created_at' => $scan->created_at,
-                'maps_link' => "https://www.google.com/maps?q={$scan->user_lat},{$scan->user_lng}"
+                'maps_link' => "https://www.google.com/maps?q={$scan->scan_latitude},{$scan->scan_longitude}"
             ];
         }
 
@@ -1072,6 +1078,106 @@ class PPV_Stats {
             'scans' => $formatted,
             'counts' => $counts
         ], 200, ['Cache-Control' => 'no-store']);
+    }
+
+    // ========================================
+    // 📧 REST: REQUEST ADMIN REVIEW (sends email)
+    // ========================================
+    public static function rest_request_review($req) {
+        global $wpdb;
+
+        ppv_log("📧 [Request Review] Start");
+
+        $body = json_decode($req->get_body(), true);
+        $scan_id = intval($body['scan_id'] ?? 0);
+
+        if (!$scan_id) {
+            return new WP_REST_Response(['success' => false, 'error' => 'Missing scan_id'], 400);
+        }
+
+        $store_id = self::get_handler_store_id();
+        if (!$store_id) {
+            return new WP_REST_Response(['success' => false, 'error' => 'No store'], 403);
+        }
+
+        // Get scan details
+        $table_suspicious = $wpdb->prefix . 'ppv_suspicious_scans';
+        $table_users = $wpdb->prefix . 'ppv_users';
+        $table_stores = $wpdb->prefix . 'ppv_stores';
+
+        $scan = $wpdb->get_row($wpdb->prepare("
+            SELECT
+                ss.*,
+                u.first_name, u.last_name, u.email as user_email,
+                s.company_name as store_name
+            FROM {$table_suspicious} ss
+            LEFT JOIN {$table_users} u ON ss.user_id = u.id
+            LEFT JOIN {$table_stores} s ON ss.store_id = s.id
+            WHERE ss.id = %d
+        ", $scan_id));
+
+        if (!$scan) {
+            return new WP_REST_Response(['success' => false, 'error' => 'Scan not found'], 404);
+        }
+
+        // Get requesting store info
+        $requesting_store = $wpdb->get_row($wpdb->prepare(
+            "SELECT company_name, email FROM {$table_stores} WHERE id = %d",
+            $store_id
+        ));
+
+        // Build email
+        $user_name = trim(($scan->first_name ?? '') . ' ' . ($scan->last_name ?? '')) ?: 'User #' . $scan->user_id;
+        $distance_km = round($scan->distance_meters / 1000, 2);
+        $maps_link = "https://www.google.com/maps?q={$scan->scan_latitude},{$scan->scan_longitude}";
+        $admin_link = admin_url("admin.php?page=ppv-suspicious&scan_id={$scan_id}");
+
+        $subject = "🚨 PunktePass: Admin Überprüfung angefordert - {$user_name}";
+
+        $message = "
+<h2>🚨 Admin Überprüfung angefordert</h2>
+
+<p><strong>Angefordert von:</strong> {$requesting_store->company_name}</p>
+
+<h3>Verdächtiger Scan Details:</h3>
+<table style='border-collapse: collapse; width: 100%;'>
+    <tr><td style='padding: 8px; border: 1px solid #ddd;'><strong>Benutzer:</strong></td><td style='padding: 8px; border: 1px solid #ddd;'>{$user_name}</td></tr>
+    <tr><td style='padding: 8px; border: 1px solid #ddd;'><strong>Email:</strong></td><td style='padding: 8px; border: 1px solid #ddd;'>{$scan->user_email}</td></tr>
+    <tr><td style='padding: 8px; border: 1px solid #ddd;'><strong>Shop:</strong></td><td style='padding: 8px; border: 1px solid #ddd;'>{$scan->store_name}</td></tr>
+    <tr><td style='padding: 8px; border: 1px solid #ddd;'><strong>Entfernung:</strong></td><td style='padding: 8px; border: 1px solid #ddd;'><span style='color: red; font-weight: bold;'>{$distance_km} km</span></td></tr>
+    <tr><td style='padding: 8px; border: 1px solid #ddd;'><strong>Status:</strong></td><td style='padding: 8px; border: 1px solid #ddd;'>{$scan->status}</td></tr>
+    <tr><td style='padding: 8px; border: 1px solid #ddd;'><strong>Datum:</strong></td><td style='padding: 8px; border: 1px solid #ddd;'>{$scan->created_at}</td></tr>
+    <tr><td style='padding: 8px; border: 1px solid #ddd;'><strong>IP Adresse:</strong></td><td style='padding: 8px; border: 1px solid #ddd;'>{$scan->ip_address}</td></tr>
+</table>
+
+<p style='margin-top: 20px;'>
+    <a href='{$maps_link}' style='background: #0073aa; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; margin-right: 10px;'>📍 Auf Karte anzeigen</a>
+    <a href='{$admin_link}' style='background: #d63638; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;'>🔧 Im Admin prüfen</a>
+</p>
+";
+
+        $headers = [
+            'Content-Type: text/html; charset=UTF-8',
+            'From: PunktePass <noreply@punktepass.de>'
+        ];
+
+        // Send email to admin
+        $sent = wp_mail('info@punktepass.de', $subject, $message, $headers);
+
+        if ($sent) {
+            // Update scan status to indicate review was requested
+            $wpdb->update(
+                $table_suspicious,
+                ['admin_notes' => "Review angefordert von Store {$store_id} am " . current_time('mysql')],
+                ['id' => $scan_id]
+            );
+
+            ppv_log("✅ [Request Review] Email sent for scan {$scan_id}");
+            return new WP_REST_Response(['success' => true, 'message' => 'Email sent'], 200);
+        } else {
+            ppv_log("❌ [Request Review] Email failed for scan {$scan_id}");
+            return new WP_REST_Response(['success' => false, 'error' => 'Email failed'], 500);
+        }
     }
 
     // ========================================

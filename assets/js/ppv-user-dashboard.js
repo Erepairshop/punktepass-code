@@ -831,7 +831,7 @@ async function initUserDashboard() {
     window.PPV_POLLING_ACTIVE = true;
 
     // 📡 Try Ably first for real-time updates
-    if (boot.ably && boot.ably.key && window.Ably) {
+    if (boot.ably && boot.ably.key && window.PPV_ABLY_MANAGER) {
       initAblySync();
     } else {
       console.log('🔄 [Sync] Ably not available, using polling fallback');
@@ -839,33 +839,36 @@ async function initUserDashboard() {
     }
   };
 
-  // 📡 ABLY REAL-TIME SYNC
+  // 📡 ABLY REAL-TIME SYNC (via shared manager)
   const initAblySync = () => {
-    console.log('📡 [Ably] Initializing real-time sync...');
+    console.log('📡 [Ably] Initializing real-time sync via shared manager...');
     console.log('📡 [Ably Debug] boot.uid:', boot.uid);
 
-    const ably = new Ably.Realtime({ key: boot.ably.key });
-
-    // Store for cleanup
-    window.PPV_ABLY_INSTANCE = ably;
-
-    // Subscribe to user's channel
+    const manager = window.PPV_ABLY_MANAGER;
     const channelName = 'user-' + boot.uid;
-    console.log('📡 [Ably Debug] Subscribing to channel:', channelName);
-    const channel = ably.channels.get(channelName);
 
-    ably.connection.on('connected', () => {
-      console.log('📡 [Ably] Connected to user channel:', channelName);
-    });
-
-    ably.connection.on('failed', (err) => {
-      console.warn('📡 [Ably] Connection failed, falling back to polling', err);
-      ably.close();
+    // Initialize shared connection
+    if (!manager.init({ key: boot.ably.key, channel: channelName })) {
+      console.warn('📡 [Ably] Shared manager init failed, falling back to polling');
       initPollingSync();
+      return;
+    }
+
+    // Store subscriber ID for cleanup
+    window.PPV_DASHBOARD_ABLY_SUB = 'user-dashboard-' + boot.uid;
+
+    // Listen for connection state changes
+    manager.onStateChange((state) => {
+      if (state === 'connected') {
+        console.log('📡 [Ably] Connected via shared manager to user channel:', channelName);
+      } else if (state === 'failed') {
+        console.warn('📡 [Ably] Connection failed, falling back to polling');
+        initPollingSync();
+      }
     });
 
     // 🎯 Handle points update event
-    channel.subscribe('points-update', (message) => {
+    manager.subscribe(channelName, 'points-update', (message) => {
       const data = message.data;
       console.log('📡 [Ably] Points update received:', data);
 
@@ -895,10 +898,10 @@ async function initUserDashboard() {
           window.ppvShowPointToast('error', 0, data.store_name || 'PunktePass', data.message);
         }
       }
-    });
+    }, window.PPV_DASHBOARD_ABLY_SUB);
 
     // 🎁 Handle reward approved event
-    channel.subscribe('reward-approved', (message) => {
+    manager.subscribe(channelName, 'reward-approved', (message) => {
       const data = message.data;
       console.log('📡 [Ably] Reward approved:', data);
 
@@ -911,21 +914,21 @@ async function initUserDashboard() {
         boot.points = data.new_points;
         updateGlobalPoints(data.new_points);
       }
-    });
+    }, window.PPV_DASHBOARD_ABLY_SUB);
 
     // ════════════════════════════════════════════════════════════════
     // 🎁 REAL-TIME REDEMPTION FLOW - New Feature
     // ════════════════════════════════════════════════════════════════
 
     // 🎁 Handle redemption prompt (user has enough points to redeem)
-    channel.subscribe('redemption-prompt', (message) => {
+    manager.subscribe(channelName, 'redemption-prompt', (message) => {
       const data = message.data;
       console.log('📡 [Ably] Redemption prompt received:', data);
       showRedemptionModal(data);
-    });
+    }, window.PPV_DASHBOARD_ABLY_SUB);
 
     // ✅ Handle redemption approved by handler
-    channel.subscribe('redemption-approved', (message) => {
+    manager.subscribe(channelName, 'redemption-approved', (message) => {
       const data = message.data;
       console.log('📡 [Ably] Redemption approved:', data);
 
@@ -942,10 +945,10 @@ async function initUserDashboard() {
         boot.points = data.new_balance;
         updateGlobalPoints(data.new_balance);
       }
-    });
+    }, window.PPV_DASHBOARD_ABLY_SUB);
 
     // ❌ Handle redemption rejected by handler
-    channel.subscribe('redemption-rejected', (message) => {
+    manager.subscribe(channelName, 'redemption-rejected', (message) => {
       const data = message.data;
       console.log('📡 [Ably] Redemption rejected:', data);
 
@@ -956,12 +959,12 @@ async function initUserDashboard() {
       if (window.ppvShowPointToast) {
         window.ppvShowPointToast('rejection', 0, data.reward_title || 'Prämie', data.reason || '');
       }
-    });
+    }, window.PPV_DASHBOARD_ABLY_SUB);
 
-    // Cleanup on page unload
+    // Cleanup on page unload (unsubscribe only, manager handles connection)
     window.addEventListener('beforeunload', () => {
-      if (window.PPV_ABLY_INSTANCE) {
-        window.PPV_ABLY_INSTANCE.close();
+      if (window.PPV_DASHBOARD_ABLY_SUB && window.PPV_ABLY_MANAGER) {
+        window.PPV_ABLY_MANAGER.unsubscribe(window.PPV_DASHBOARD_ABLY_SUB);
       }
     });
   };
