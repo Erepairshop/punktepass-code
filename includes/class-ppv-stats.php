@@ -954,25 +954,40 @@ class PPV_Stats {
         // Get store IDs for this handler
         $store_ids = self::get_store_ids_for_query(null);
 
+        ppv_log("⚠️ [Suspicious Scans] Store IDs: " . json_encode($store_ids));
+
         if (empty($store_ids)) {
-            return new WP_REST_Response(['success' => false, 'error' => 'No store'], 403);
+            // Fallback: try to get from session
+            $handler_store_id = self::get_handler_store_id();
+            ppv_log("⚠️ [Suspicious Scans] Fallback handler_store_id: " . $handler_store_id);
+
+            if ($handler_store_id) {
+                $store_ids = [$handler_store_id];
+                // Also include filialen
+                $filialen_ids = $wpdb->get_col($wpdb->prepare(
+                    "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE parent_store_id = %d",
+                    $handler_store_id
+                ));
+                $store_ids = array_merge($store_ids, $filialen_ids);
+                ppv_log("⚠️ [Suspicious Scans] With filialen: " . json_encode($store_ids));
+            }
+        }
+
+        if (empty($store_ids)) {
+            return new WP_REST_Response(['success' => false, 'error' => 'No store', 'debug' => 'store_ids empty'], 403);
         }
 
         $status_filter = sanitize_text_field($req->get_param('status') ?? 'new');
-        $placeholders = implode(',', array_fill(0, count($store_ids), '%d'));
 
         $table_suspicious = $wpdb->prefix . 'ppv_suspicious_scans';
         $table_users = $wpdb->prefix . 'ppv_users';
         $table_stores = $wpdb->prefix . 'ppv_stores';
 
-        // Build WHERE clause
-        $where_status = '';
-        if ($status_filter !== 'all') {
-            $where_status = $wpdb->prepare(" AND ss.status = %s", $status_filter);
-        }
-
         // Get suspicious scans for this store
-        $scans = $wpdb->get_results($wpdb->prepare("
+        // Build the query with proper escaping
+        $store_ids_escaped = implode(',', array_map('intval', $store_ids));
+
+        $query = "
             SELECT
                 ss.id,
                 ss.user_id,
@@ -991,11 +1006,20 @@ class PPV_Stats {
             FROM {$table_suspicious} ss
             LEFT JOIN {$table_users} u ON ss.user_id = u.id
             LEFT JOIN {$table_stores} s ON ss.store_id = s.id
-            WHERE ss.store_id IN ({$placeholders})
-            {$where_status}
-            ORDER BY ss.created_at DESC
-            LIMIT 100
-        ", $store_ids));
+            WHERE ss.store_id IN ({$store_ids_escaped})
+        ";
+
+        if ($status_filter !== 'all') {
+            $query .= $wpdb->prepare(" AND ss.status = %s", $status_filter);
+        }
+
+        $query .= " ORDER BY ss.created_at DESC LIMIT 100";
+
+        ppv_log("⚠️ [Suspicious Scans] Query: " . $query);
+
+        $scans = $wpdb->get_results($query);
+
+        ppv_log("⚠️ [Suspicious Scans] Found " . count($scans) . " scans");
 
         // Count by status
         $counts = [
@@ -1005,12 +1029,13 @@ class PPV_Stats {
             'all' => 0
         ];
 
-        $count_results = $wpdb->get_results($wpdb->prepare("
+        $count_query = "
             SELECT status, COUNT(*) as cnt
             FROM {$table_suspicious}
-            WHERE store_id IN ({$placeholders})
+            WHERE store_id IN ({$store_ids_escaped})
             GROUP BY status
-        ", $store_ids));
+        ";
+        $count_results = $wpdb->get_results($count_query);
 
         foreach ($count_results as $row) {
             if (isset($counts[$row->status])) {
