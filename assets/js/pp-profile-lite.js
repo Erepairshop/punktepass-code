@@ -551,9 +551,8 @@
         initProfileForm();
     }
 
-    // 🚀 Turbo: Re-init after navigation
+    // 🚀 Turbo: Re-init after navigation (only turbo:load, not render to avoid double-init)
     document.addEventListener('turbo:load', initProfileForm);
-    document.addEventListener('turbo:render', initProfileForm);
 
     // 🔄 Browser back/forward cache (bfcache) detection - force reload for fresh data
     window.addEventListener('pageshow', function(event) {
@@ -907,12 +906,8 @@ if (document.readyState === 'loading') {
   initManualMapButton();
 }
 
-// 🚀 Turbo: Re-init after navigation
+// 🚀 Turbo: Re-init after navigation (only turbo:load, not render to avoid double-init)
 document.addEventListener('turbo:load', () => {
-  initGeocodingFeatures();
-  initManualMapButton();
-});
-document.addEventListener('turbo:render', () => {
   initGeocodingFeatures();
   initManualMapButton();
 });

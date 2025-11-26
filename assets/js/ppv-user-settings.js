@@ -270,16 +270,8 @@ function initUserSettings() {
 // Initialize on jQuery ready
 jQuery(document).ready(initUserSettings);
 
-// 🚀 Turbo-compatible: Re-initialize after navigation
+// 🚀 Turbo-compatible: Re-initialize after navigation (only turbo:load, not render to avoid double-init)
 document.addEventListener("turbo:load", function() {
-  const wrapper = document.querySelector('.ppv-settings-wrapper');
-  if (wrapper) {
-    wrapper.dataset.initialized = 'false';
-  }
-  initUserSettings();
-});
-
-document.addEventListener("turbo:render", function() {
   const wrapper = document.querySelector('.ppv-settings-wrapper');
   if (wrapper) {
     wrapper.dataset.initialized = 'false';

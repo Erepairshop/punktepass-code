@@ -644,14 +644,8 @@
     init();
   }
 
-  // Turbo support
+  // Turbo support (only turbo:load, not render to avoid double-init)
   document.addEventListener('turbo:load', () => {
-    const container = document.querySelector('.ppv-einloesungen-admin');
-    if (container) container.dataset.initialized = 'false';
-    init();
-  });
-
-  document.addEventListener('turbo:render', () => {
     const container = document.querySelector('.ppv-einloesungen-admin');
     if (container) container.dataset.initialized = 'false';
     init();
