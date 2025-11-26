@@ -254,11 +254,13 @@ class PPV_Weekly_Report {
             $scanner_html = '<p style="color: #6b7280; font-style: italic;">' . $T['no_scanner_data'] . '</p>';
         }
 
-        // Suspicious scans warning
+        // Suspicious scans warning with link to admin
         $suspicious_html = '';
         if ($stats['suspicious'] > 0) {
+            $suspicious_url = site_url('/wp-admin/admin.php?page=punktepass-suspicious-scans&scan_status=new');
             $suspicious_html = '<div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 12px; margin: 15px 0; border-radius: 4px;">
                 <strong>⚠️ ' . $T['suspicious_scans'] . ':</strong> ' . $stats['suspicious'] . '
+                <a href="' . esc_url($suspicious_url) . '" style="margin-left: 10px; color: #d97706; text-decoration: underline;">' . $T['view_details'] . ' →</a>
             </div>';
         }
 
@@ -352,6 +354,7 @@ class PPV_Weekly_Report {
                 'top_employees' => 'Top Mitarbeiter',
                 'no_scanner_data' => 'Keine Mitarbeiter-Daten vorhanden',
                 'suspicious_scans' => 'Verdächtige Scans',
+                'view_details' => 'Anzeigen',
                 'summary_text' => 'Diese Woche: %s Scans, %s Punkte eingelöst',
                 'footer_text' => 'Dieser Bericht wird automatisch jeden Montag versendet.',
             ],
@@ -364,6 +367,7 @@ class PPV_Weekly_Report {
                 'top_employees' => 'Top alkalmazottak',
                 'no_scanner_data' => 'Nincs alkalmazott adat',
                 'suspicious_scans' => 'Gyanús scanek',
+                'view_details' => 'Megtekintés',
                 'summary_text' => 'Ezen a héten: %s scan, %s pont beváltva',
                 'footer_text' => 'Ez a jelentés automatikusan kerül kiküldésre minden hétfőn.',
             ],
@@ -376,6 +380,7 @@ class PPV_Weekly_Report {
                 'top_employees' => 'Top angajați',
                 'no_scanner_data' => 'Nu există date despre angajați',
                 'suspicious_scans' => 'Scanări suspecte',
+                'view_details' => 'Vizualizare',
                 'summary_text' => 'Săptămâna aceasta: %s scanări, %s puncte răscumpărate',
                 'footer_text' => 'Acest raport este trimis automat în fiecare luni.',
             ],
