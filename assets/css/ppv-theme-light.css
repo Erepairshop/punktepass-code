@@ -1134,6 +1134,28 @@ body.ppv-dark .ppv-offline-qr-banner {
     border: 1px solid rgba(245, 158, 11, 0.3);
 }
 
+/* QR Display Container */
+.ppv-qr-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+/* QR Actions (Refresh Button) */
+.ppv-qr-actions {
+    margin-top: 15px;
+    display: flex;
+    justify-content: center;
+}
+
+/* Expired Icon */
+.ppv-qr-expired-icon {
+    font-size: 48px;
+    color: #ef4444;
+    margin-bottom: 12px;
+}
+
 /* ==========================================================================
    📘 QR INSTRUCTIONS BOX - Premium Card
    ========================================================================== */

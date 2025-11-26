@@ -131,11 +131,8 @@ class PPV_User_QR {
             return '<p style="text-align:center;">⚠️ Kein QR-Code gefunden.</p>';
         }
 
-        $qr_value = "PPUSER-{$user->id}-{$user->qr_token}";
-        $qr_url = 'https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=' . urlencode($qr_value);
-
         ob_start(); ?>
-        <div class="ppv-user-qr glass-card">
+        <div class="ppv-user-qr glass-card" data-user-id="<?php echo esc_attr($user_id); ?>">
             <h2>🎟️ <?php echo esc_html(PPV_Lang::t('your_punktepass_qr')); ?></h2>
 
             <div class="ppv-qr-warning">
@@ -143,9 +140,41 @@ class PPV_User_QR {
                 <span class="ppv-qr-warning-text"><?php echo esc_html(PPV_Lang::t('qr_daily_limit_warning')); ?></span>
             </div>
 
-            <img src="<?php echo esc_url($qr_url); ?>" alt="Dein QR-Code" class="ppv-user-qr-img">
-            <p><?php echo esc_html(PPV_Lang::t('show_this_code_to_collect')); ?></p>
-            <input type="text" readonly value="<?php echo esc_attr($qr_value); ?>" class="ppv-user-qr-value" onclick="this.select();">
+            <!-- Loading State -->
+            <div id="ppvQrLoading" class="ppv-qr-loading">
+                <i class="ri-loader-4-line ri-spin ppv-qr-spinner"></i>
+                <p>QR-Code wird geladen...</p>
+            </div>
+
+            <!-- QR Display (hidden initially, shown by JS) -->
+            <div id="ppvQrDisplay" class="ppv-qr-display" style="display:none;">
+                <img id="ppvQrImg" src="" alt="Dein QR-Code" class="ppv-user-qr-img">
+
+                <!-- Timer -->
+                <div id="ppvQrTimer" class="ppv-qr-timer">
+                    <i class="ri-time-line"></i>
+                    <span id="ppvTimerValue">30:00</span>
+                </div>
+
+                <p><?php echo esc_html(PPV_Lang::t('show_this_code_to_collect')); ?></p>
+                <input type="text" id="ppvQrValue" readonly value="" class="ppv-user-qr-value" title="Klicken zum Kopieren">
+            </div>
+
+            <!-- Expired State -->
+            <div id="ppvQrExpired" class="ppv-qr-expired" style="display:none;">
+                <i class="ri-time-line ppv-qr-expired-icon"></i>
+                <p>QR-Code abgelaufen</p>
+            </div>
+
+            <!-- Status Message -->
+            <div id="ppvQrStatus" class="ppv-user-qr-status"></div>
+
+            <!-- Refresh Button -->
+            <div class="ppv-qr-actions">
+                <button id="ppvBtnRefresh" class="ppv-btn ppv-btn-secondary ppv-btn-sm">
+                    <i class="ri-refresh-line"></i> Aktualisieren
+                </button>
+            </div>
         </div>
         <?php
         return ob_get_clean();
