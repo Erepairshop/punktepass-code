@@ -3002,8 +3002,8 @@ html, body {
 .ppv-form-group textarea,
 .ppv-form-group select {
   padding: 12px 14px;
-  background: var(--pp-bg-2, #f8fafc);
-  border: 1px solid var(--pp-border, #e2e8f0);
+  background: #ffffff;
+  border: 2px solid #c7d2dd;
   border-radius: var(--pp-r-sm, 8px);
   font-size: 14px;
   color: var(--pp-text, #1e293b);
@@ -3517,15 +3517,19 @@ html, body {
   }
 
   .ppv-tabs-nav {
-    gap: 0;
+    gap: 2px;
     margin-bottom: 16px;
+    padding-bottom: 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .ppv-tab-btn {
-    padding: 10px 14px;
-    font-size: 12px;
-    flex: 1;
-    justify-content: center;
+    padding: 10px 12px;
+    font-size: 11px;
+    flex: none;
+    white-space: nowrap;
+    border-bottom-width: 2px;
   }
 
   .ppv-tab-content {
