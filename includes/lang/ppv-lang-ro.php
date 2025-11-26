@@ -790,6 +790,11 @@ return [
 'latitude' => 'Latitudine',
 'longitude' => 'Longitudine',
 'geocode_button' => 'Cauta Coordonate (După Adresă)',
+'manual_map_button' => 'Manual pe hartă',
+'map_modal_title' => 'Marchează locația pe hartă',
+'map_modal_click' => 'Click pe hartă',
+'map_modal_cancel' => 'Anulare',
+'map_modal_confirm' => 'Confirm',
 
 'err_unknown_store' => '❌ Magazin necunoscut',
 'err_rate_limited' => '⚠️ Prea multe scanari. Te rog asteapta!',

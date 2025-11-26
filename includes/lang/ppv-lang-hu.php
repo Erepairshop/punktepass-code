@@ -777,6 +777,11 @@ return [
 'latitude' => 'Szélesség (Latitude)',
 'longitude' => 'Hosszúság (Longitude)',
 'geocode_button' => 'Koordináták keresése (Cím alapján)',
+'manual_map_button' => 'Manuálisan a térképen',
+'map_modal_title' => 'Jelöld meg a helyet a térképen',
+'map_modal_click' => 'Kattints a térképre',
+'map_modal_cancel' => 'Mégse',
+'map_modal_confirm' => 'Elfogadom',
 
 'err_unknown_store' => '❌ Ismeretlen bolt',
 'err_rate_limited' => '⚠️ Túl sok scan. Kérlek várj!',

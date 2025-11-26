@@ -802,6 +802,11 @@ return [
 'latitude' => 'Breitengrad (Latitude)',
 'longitude' => 'Längengrad (Longitude)',
 'geocode_button' => 'Koordinaten suchen (Nach Adresse)',
+'manual_map_button' => 'Manuell auf der Karte',
+'map_modal_title' => 'Markiere den Ort auf der Karte',
+'map_modal_click' => 'Klicke auf die Karte',
+'map_modal_cancel' => 'Abbrechen',
+'map_modal_confirm' => 'Bestätigen',
 
 'err_unknown_store' => '❌ Unbekannter Shop',
 'err_rate_limited' => '⚠️ Zu viele Scans. Bitte warten.',
