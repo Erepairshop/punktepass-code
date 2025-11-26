@@ -15164,6 +15164,118 @@ body.ppv-dark .ppv-validation-error,
 }
 
 /* ==========================================================================
+   🌙 DARK MODE - VIP PREVIEW SECTION (Bronze/Silber/Gold/Platin)
+   ========================================================================== */
+body.ppv-dark .ppv-vip-preview-extended,
+[data-theme="dark"] .ppv-vip-preview-extended {
+    background: #162233 !important;
+    border-color: rgba(0, 212, 255, 0.20) !important;
+}
+
+body.ppv-dark .ppv-vip-preview-extended h4,
+[data-theme="dark"] .ppv-vip-preview-extended h4 {
+    color: #f1f5f9 !important;
+}
+
+body.ppv-dark .ppv-vip-preview-extended h4 i,
+[data-theme="dark"] .ppv-vip-preview-extended h4 i {
+    color: #00d4ff !important;
+}
+
+body.ppv-dark .ppv-preview-scenario,
+[data-theme="dark"] .ppv-preview-scenario {
+    color: #64748b !important;
+}
+
+body.ppv-dark .ppv-preview-level,
+[data-theme="dark"] .ppv-preview-level {
+    background: #0f172a !important;
+    border-color: rgba(0, 212, 255, 0.20) !important;
+    color: #94a3b8 !important;
+}
+
+body.ppv-dark .ppv-preview-level:hover,
+[data-theme="dark"] .ppv-preview-level:hover {
+    border-color: #00d4ff !important;
+    color: #00d4ff !important;
+}
+
+body.ppv-dark .ppv-preview-level.active,
+[data-theme="dark"] .ppv-preview-level.active {
+    color: #0f172a !important;
+}
+
+body.ppv-dark .ppv-preview-breakdown,
+[data-theme="dark"] .ppv-preview-breakdown {
+    background: transparent !important;
+}
+
+body.ppv-dark .ppv-preview-row,
+[data-theme="dark"] .ppv-preview-row {
+    border-color: rgba(0, 212, 255, 0.15) !important;
+}
+
+body.ppv-dark .ppv-preview-row span,
+[data-theme="dark"] .ppv-preview-row span {
+    color: #94a3b8 !important;
+}
+
+body.ppv-dark .ppv-preview-row strong,
+[data-theme="dark"] .ppv-preview-row strong {
+    color: #4ade80 !important;
+}
+
+body.ppv-dark .ppv-preview-row.ppv-preview-total,
+[data-theme="dark"] .ppv-preview-row.ppv-preview-total {
+    border-top-color: rgba(0, 212, 255, 0.30) !important;
+}
+
+body.ppv-dark .ppv-preview-row.ppv-preview-total span,
+[data-theme="dark"] .ppv-preview-row.ppv-preview-total span {
+    color: #f1f5f9 !important;
+}
+
+body.ppv-dark .ppv-preview-row.ppv-preview-total strong,
+[data-theme="dark"] .ppv-preview-row.ppv-preview-total strong {
+    color: #00d4ff !important;
+}
+
+/* ==========================================================================
+   🌙 DARK MODE - SPENDING & CONVERSION GRIDS (Stats Erweitert)
+   ========================================================================== */
+body.ppv-dark .ppv-spending-item,
+[data-theme="dark"] .ppv-spending-item {
+    background: #162233 !important;
+    border-color: rgba(0, 212, 255, 0.20) !important;
+}
+
+body.ppv-dark .ppv-spending-label,
+[data-theme="dark"] .ppv-spending-label {
+    color: #94a3b8 !important;
+}
+
+body.ppv-dark .ppv-spending-value,
+[data-theme="dark"] .ppv-spending-value {
+    color: #00d4ff !important;
+}
+
+body.ppv-dark .ppv-conversion-item,
+[data-theme="dark"] .ppv-conversion-item {
+    background: #162233 !important;
+    border-color: rgba(0, 212, 255, 0.20) !important;
+}
+
+body.ppv-dark .ppv-conversion-label,
+[data-theme="dark"] .ppv-conversion-label {
+    color: #94a3b8 !important;
+}
+
+body.ppv-dark .ppv-conversion-value,
+[data-theme="dark"] .ppv-conversion-value {
+    color: #00d4ff !important;
+}
+
+/* ==========================================================================
    🎁 REDEMPTION MODAL - Real-time reward redemption flow (NEW)
    Both User Dashboard Modal and Handler POS Modal
    ========================================================================== */
