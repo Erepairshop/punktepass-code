@@ -389,8 +389,14 @@ class PPV_Weekly_Report {
      * Optional: target_email to override destination
      */
     public static function ajax_test_report() {
-        if (!current_user_can('administrator')) {
-            wp_send_json_error(['message' => 'Unauthorized']);
+        ppv_log("📧 [Weekly Report TEST] AJAX called, user ID: " . get_current_user_id() . ", can admin: " . (current_user_can('manage_options') ? 'yes' : 'no'));
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error([
+                'message' => 'Unauthorized',
+                'user_id' => get_current_user_id(),
+                'is_admin' => current_user_can('manage_options')
+            ]);
         }
 
         $store_id = intval($_POST['store_id'] ?? 0);
