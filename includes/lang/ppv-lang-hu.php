@@ -1269,6 +1269,12 @@ return [
     'err_store_closed_detail' => 'Scan nem lehetséges nyitvatartási időn kívül',
 
     // ============================================================
+    // SCAN VALIDATION - SELF-SCAN PROTECTION
+    // ============================================================
+    'err_self_scan' => '🚫 Saját QR kód beolvasása nem engedélyezett',
+    'err_self_scan_detail' => 'Az alkalmazottak nem olvashatják be a saját QR kódjukat',
+
+    // ============================================================
     // DEVICE FINGERPRINT - ACCOUNT LIMIT
     // ============================================================
     'err_device_limit' => '⚠️ Eszközlimit elérve',

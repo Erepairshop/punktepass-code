@@ -1280,6 +1280,12 @@ return [
     'err_store_closed_detail' => 'Scanarea nu este posibilă în afara programului',
 
     // ============================================================
+    // SCAN VALIDATION - SELF-SCAN PROTECTION
+    // ============================================================
+    'err_self_scan' => '🚫 Scanarea propriului cod QR nu este permisă',
+    'err_self_scan_detail' => 'Angajații nu își pot scana propriul cod QR',
+
+    // ============================================================
     // DEVICE FINGERPRINT - ACCOUNT LIMIT
     // ============================================================
     'err_device_limit' => '⚠️ Limită dispozitiv atinsă',

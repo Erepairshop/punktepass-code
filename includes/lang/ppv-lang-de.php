@@ -1292,6 +1292,12 @@ return [
     'err_store_closed_detail' => 'Scan nicht möglich außerhalb der Öffnungszeiten',
 
     // ============================================================
+    // SCAN VALIDATION - SELF-SCAN PROTECTION
+    // ============================================================
+    'err_self_scan' => '🚫 Eigenen QR-Code scannen nicht erlaubt',
+    'err_self_scan_detail' => 'Mitarbeiter können ihren eigenen QR-Code nicht scannen',
+
+    // ============================================================
     // DEVICE FINGERPRINT - ACCOUNT LIMIT
     // ============================================================
     'err_device_limit' => '⚠️ Gerätelimit erreicht',

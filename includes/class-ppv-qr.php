@@ -1982,6 +1982,24 @@ class PPV_QR {
             ], 400);
         }
 
+        // ═══════════════════════════════════════════════════════════
+        // 🚫 SELF-SCAN PROTECTION - Employees cannot scan their own QR
+        // ═══════════════════════════════════════════════════════════
+        if ($scanner_id !== null && $scanner_id > 0 && $scanner_id === $user_id) {
+            ppv_log("🚫 [PPV_QR] BLOCKED: Self-scan attempt! scanner_id={$scanner_id}, user_id={$user_id}");
+
+            // Log the blocked self-scan attempt
+            self::insert_log($store_id, $user_id, '🚫 Self-scan blocked', 'error', 'self_scan', $scanner_id, $scanner_name);
+
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => self::t('err_self_scan', '🚫 Eigenen QR-Code scannen nicht erlaubt'),
+                'detail' => self::t('err_self_scan_detail', 'Mitarbeiter können ihren eigenen QR-Code nicht scannen'),
+                'store_name' => $store->name ?? 'PunktePass',
+                'error_type' => 'self_scan'
+            ], 403);
+        }
+
         $rate_check = self::check_rate_limit($user_id, $store_id);
         if ($rate_check['limited']) {
             // Log the rate limit error with error_type for client-side translation
