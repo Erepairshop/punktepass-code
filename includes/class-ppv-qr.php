@@ -2194,20 +2194,29 @@ class PPV_QR {
                     });
                     const data = await response.json();
                     deviceCheckResult = data;
+                    console.log('[Devices] API response:', data);
 
-                    if (data.is_registered) {
+                    // Handle API errors (401, etc.)
+                    if (data.success === false || typeof data.device_count === 'undefined') {
+                        // Auth error or API error - allow registration as fallback
+                        console.warn('[Devices] API error or not authenticated, showing register button');
+                        $('#ppv-device-status').html('<span style="color: #2196f3;">📱 <?php echo esc_js(self::t('no_devices_yet', 'Noch keine Geräte registriert. Registrieren Sie dieses Gerät.')); ?></span>');
+                        $('#ppv-register-device-btn').show();
+                        $('#ppv-device-registered-badge').hide();
+                        $('#ppv-request-add-btn').hide();
+                    } else if (data.is_registered) {
                         // Device is registered
                         $('#ppv-device-status').html('<span style="color: #4caf50;">✅ <?php echo esc_js(self::t('device_is_registered', 'Dieses Gerät ist registriert und kann den Scanner verwenden.')); ?></span>');
                         $('#ppv-device-registered-badge').show();
                         $('#ppv-register-device-btn').hide();
                         $('#ppv-request-add-btn').hide();
-                    } else if (data.device_count === 0) {
+                    } else if (parseInt(data.device_count, 10) === 0) {
                         // No devices yet - can register
                         $('#ppv-device-status').html('<span style="color: #2196f3;">📱 <?php echo esc_js(self::t('no_devices_yet', 'Noch keine Geräte registriert. Registrieren Sie dieses Gerät.')); ?></span>');
                         $('#ppv-register-device-btn').show();
                         $('#ppv-device-registered-badge').hide();
                         $('#ppv-request-add-btn').hide();
-                    } else if (data.device_count < data.max_devices) {
+                    } else if (parseInt(data.device_count, 10) < parseInt(data.max_devices, 10)) {
                         // Can add more devices
                         $('#ppv-device-status').html('<span style="color: #ff9800;">⚠️ <?php echo esc_js(self::t('device_not_registered', 'Dieses Gerät ist nicht registriert.')); ?></span>');
                         $('#ppv-register-device-btn').show();
