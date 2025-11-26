@@ -1066,6 +1066,12 @@ return [
     // Buttons
     'onb_btn_skip' => 'Sari peste',
     'onb_btn_next' => 'Urmatorul',
+    'onb_btn_continue' => 'Continua',
+
+    // Progress card (dashboard widget)
+    'onb_progress_title' => 'Configurare initiala',
+    'onb_progress_step_profile' => 'Completeaza profilul',
+    'onb_progress_step_reward' => 'Prima recompensa',
 
     'onb_reward_step_title' => '2️⃣ Creaza prima recompensa',
     'onb_reward_step_progress' => '100% (2/2)',

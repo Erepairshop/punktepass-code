@@ -1055,6 +1055,12 @@ return [
     // Buttons
     'onb_btn_skip' => 'Kihagyom',
     'onb_btn_next' => 'Következő',
+    'onb_btn_continue' => 'Folytatás',
+
+    // Progress card (dashboard widget)
+    'onb_progress_title' => 'Kezdeti Beállítások',
+    'onb_progress_step_profile' => 'Profil adatok kitöltve',
+    'onb_progress_step_reward' => 'Első prémium',
 
     'onb_reward_step_title' => '2️⃣ Első Prémium Létrehozása',
     'onb_reward_step_progress' => '100% (2/2)',

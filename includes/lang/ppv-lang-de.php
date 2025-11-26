@@ -1078,6 +1078,12 @@ return [
     // Buttons
     'onb_btn_skip' => 'Überspringen',
     'onb_btn_next' => 'Weiter',
+    'onb_btn_continue' => 'Fortsetzen',
+
+    // Progress card (dashboard widget)
+    'onb_progress_title' => 'Erste Einrichtung',
+    'onb_progress_step_profile' => 'Profildaten ausfüllen',
+    'onb_progress_step_reward' => 'Erste Prämie',
 
     'onb_reward_step_title' => '2️⃣ Erste Prämie erstellen',
     'onb_reward_step_progress' => '100% (2/2)',
