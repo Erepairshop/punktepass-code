@@ -36,7 +36,7 @@
 ### CSS/Styling
 | Probléma | Hatás | Státusz |
 |----------|-------|---------|
-| Inkonzisztens CSS változók | `--pp-primary`, `--color-primary`, `--ppv-primary` keveredik | ⬜ |
+| Inkonzisztens CSS változók | ~~keveredés~~ → egységes `--pp-primary` ✅ | ✅ |
 | Dark mode beágyazva light CSS-be | 18,000+ soros fájl, nehéz karbantartani | ⬜ |
 | Nincs `prefers-color-scheme` | Nem figyel a rendszer dark mode beállításra | ⬜ |
 | Tablet breakpoint hiányos | 640px-1024px között kevés stílus | ⬜ |
@@ -101,7 +101,7 @@
 - [x] ~~4. Console.log-ok eltávolítása~~ ✅
 
 ### ✨ Rövid táv (2-3 hét)
-- [ ] 1. CSS változók egységesítése
+- [x] ~~1. CSS változók egységesítése~~ ✅
 - [ ] 2. Képek optimalizálása (WebP)
 - [ ] 3. JS error handling javítása
 - [ ] 4. Tablet breakpointok

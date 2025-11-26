@@ -9,9 +9,9 @@
    ============================================ */
 :root {
     /* Colors */
-    --ppv-primary: #0066FF;
-    --ppv-primary-hover: #0052CC;
-    --ppv-primary-light: #E6F0FF;
+    --pp-primary: #0066FF;
+    --pp-primary-hover: #0052CC;
+    --pp-primary-light: #E6F0FF;
     --ppv-bg: #F8F9FB;
     --ppv-card: #FFFFFF;
     --ppv-text: #1A1A1A;
@@ -122,7 +122,7 @@
 }
 
 .ppv-lang-btn.active {
-    background: var(--ppv-primary);
+    background: var(--pp-primary);
     color: white;
 }
 
@@ -221,7 +221,7 @@
 }
 
 .ppv-feature-card:hover {
-    border-color: var(--ppv-primary-light);
+    border-color: var(--pp-primary-light);
     box-shadow: var(--shadow-md);
     transform: translateY(-4px);
 }
@@ -229,13 +229,13 @@
 .ppv-feature-icon {
     width: 56px;
     height: 56px;
-    background: var(--ppv-primary-light);
+    background: var(--pp-primary-light);
     border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
     margin-bottom: 16px;
-    color: var(--ppv-primary);
+    color: var(--pp-primary);
 }
 
 .ppv-feature-card h3 {
@@ -445,8 +445,8 @@
 .ppv-form-group input:focus {
     outline: none;
     background: var(--ppv-card);
-    border-color: var(--ppv-primary);
-    box-shadow: 0 0 0 3px var(--ppv-primary-light);
+    border-color: var(--pp-primary);
+    box-shadow: 0 0 0 3px var(--pp-primary-light);
 }
 
 .ppv-form-group input::placeholder {
@@ -506,12 +506,12 @@
 .ppv-checkbox input[type="checkbox"] {
     width: 18px;
     height: 18px;
-    accent-color: var(--ppv-primary);
+    accent-color: var(--pp-primary);
     cursor: pointer;
 }
 
 .ppv-checkbox a {
-    color: var(--ppv-primary);
+    color: var(--pp-primary);
     text-decoration: none;
 }
 
@@ -521,14 +521,14 @@
 
 .ppv-forgot-link {
     font-size: 14px;
-    color: var(--ppv-primary);
+    color: var(--pp-primary);
     text-decoration: none;
     font-weight: 500;
     transition: var(--transition);
 }
 
 .ppv-forgot-link:hover {
-    color: var(--ppv-primary-hover);
+    color: var(--pp-primary-hover);
     text-decoration: underline;
 }
 
@@ -538,7 +538,7 @@
 .ppv-submit-btn {
     width: 100%;
     padding: 12px 24px;
-    background: var(--ppv-primary);
+    background: var(--pp-primary);
     color: white;
     border: none;
     border-radius: var(--radius-sm);
@@ -556,7 +556,7 @@
 }
 
 .ppv-submit-btn:hover:not(:disabled) {
-    background: var(--ppv-primary-hover);
+    background: var(--pp-primary-hover);
     box-shadow: var(--shadow-md);
     transform: translateY(-1px);
 }
@@ -615,14 +615,14 @@
 }
 
 .ppv-register-link a {
-    color: var(--ppv-primary);
+    color: var(--pp-primary);
     text-decoration: none;
     font-weight: 600;
     transition: var(--transition);
 }
 
 .ppv-register-link a:hover {
-    color: var(--ppv-primary-hover);
+    color: var(--pp-primary-hover);
     text-decoration: underline;
 }
 
@@ -715,6 +715,6 @@
 .ppv-submit-btn:focus-visible,
 .ppv-forgot-link:focus-visible,
 .ppv-register-link a:focus-visible {
-    outline: 2px solid var(--ppv-primary);
+    outline: 2px solid var(--pp-primary);
     outline-offset: 2px;
 }
