@@ -5080,6 +5080,8 @@ body.ppv-light .ppv-camp-actions span:hover {
 @media (max-width: 480px) {
     .ppv-store-vip-table {
         padding: 8px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
     }
 
     .ppv-vip-table-title {
@@ -5087,28 +5089,36 @@ body.ppv-light .ppv-camp-actions span:hover {
         margin-bottom: 6px;
     }
 
+    .ppv-vip-mini-table {
+        min-width: 280px;
+    }
+
     .ppv-vip-th-label {
-        width: 28%;
+        width: 70px;
+        min-width: 70px;
         padding: 4px 2px;
     }
 
     .ppv-vip-th {
-        width: 18%;
-        padding: 4px 1px;
+        width: 50px;
+        min-width: 50px;
+        padding: 4px 2px;
     }
 
     .ppv-vip-th i {
-        font-size: 10px;
-        margin-bottom: 0;
+        font-size: 11px;
+        margin-bottom: 1px;
     }
 
     .ppv-vip-th span {
-        display: none;
+        display: block;
+        font-size: 8px;
     }
 
     .ppv-vip-label-cell {
-        padding: 5px 2px;
+        padding: 6px 2px;
         font-size: 9px;
+        min-width: 70px;
     }
 
     .ppv-vip-label-cell i {
@@ -5117,13 +5127,14 @@ body.ppv-light .ppv-camp-actions span:hover {
     }
 
     .ppv-vip-cell {
-        padding: 5px 1px;
-        font-size: 9px;
+        padding: 6px 2px;
+        font-size: 10px;
+        min-width: 50px;
     }
 
     .ppv-vip-cell.ppv-vip-multiplier {
-        font-size: 8px;
-        padding: 5px 2px;
+        font-size: 9px;
+        padding: 6px 2px;
     }
 }
 
