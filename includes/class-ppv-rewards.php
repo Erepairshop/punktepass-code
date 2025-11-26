@@ -170,11 +170,11 @@ class PPV_Rewards {
         wp_enqueue_style('google-fonts-inter', 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap', [], null);
         wp_enqueue_style('remix-icon', 'https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css', [], '3.5.0');
 
-        // Ably (if enabled)
+        // Ably (if enabled) - use shared manager
         $dependencies = [];
         if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
-            wp_enqueue_script('ably-js', 'https://cdn.ably.com/lib/ably.min-1.js', [], '1.2', true);
-            $dependencies[] = 'ably-js';
+            PPV_Ably::enqueue_scripts();
+            $dependencies[] = 'ppv-ably-manager';
         }
 
         // Main JS

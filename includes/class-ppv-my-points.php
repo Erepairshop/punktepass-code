@@ -96,11 +96,11 @@ class PPV_My_Points {
             true
         );
 
-        // 📡 ABLY: Load JS library if configured
+        // 📡 ABLY: Load JS library + shared manager if configured
         $js_deps = ['jquery'];
         if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
-            wp_enqueue_script('ably-js', 'https://cdn.ably.com/lib/ably.min-1.js', [], '1.2', true);
-            $js_deps[] = 'ably-js';
+            PPV_Ably::enqueue_scripts();
+            $js_deps[] = 'ppv-ably-manager';
         }
 
         // My Points

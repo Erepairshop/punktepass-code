@@ -779,17 +779,11 @@ private static function get_today_hours($opening_hours) {
             null
         );
 
-        // 📡 ABLY: Load JS SDK from CDN if enabled
+        // 📡 ABLY: Load JS SDK + shared manager if enabled
         $dependencies = ['jquery'];
         if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
-            wp_enqueue_script(
-                'ably-js',
-                'https://cdn.ably.com/lib/ably.min-1.js',
-                [],
-                '1.2',
-                true
-            );
-            $dependencies[] = 'ably-js';
+            PPV_Ably::enqueue_scripts();
+            $dependencies[] = 'ppv-ably-manager';
         }
 
         wp_enqueue_script(

@@ -529,10 +529,10 @@ class PPV_QR {
 
         // Only enqueue camera scanner JS for handlers/scanners
         if ($is_handler) {
-            // Load Ably JS library if configured
+            // Load Ably JS library + shared manager if configured
             if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
-                wp_enqueue_script('ably-js', 'https://cdn.ably.com/lib/ably.min-1.js', [], '1.2', true);
-                wp_enqueue_script('ppv-qr', PPV_PLUGIN_URL . 'assets/js/ppv-qr.js', ['jquery', 'ably-js'], time(), true);
+                PPV_Ably::enqueue_scripts(); // Enqueues ably-js + ppv-ably-manager
+                wp_enqueue_script('ppv-qr', PPV_PLUGIN_URL . 'assets/js/ppv-qr.js', ['jquery', 'ppv-ably-manager'], time(), true);
             } else {
                 wp_enqueue_script('ppv-qr', PPV_PLUGIN_URL . 'assets/js/ppv-qr.js', ['jquery'], time(), true);
             }

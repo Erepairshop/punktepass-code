@@ -29,8 +29,7 @@
             };
             this.celebrationShown = false; // ✅ Initialize flag
             this.progressInterval = null; // ✅ Store interval ID for cleanup
-            this.ablyInstance = null; // ✅ Store Ably instance for cleanup
-            this.ablyChannel = null; // ✅ Store Ably channel for cleanup
+            this.ablySubscriberId = null; // ✅ Store Ably subscriber ID for cleanup
 
             this.init();
         }
@@ -54,7 +53,7 @@
                 // ❌ Sticky Reminder eltávolítva - nem kell
 
                 // 📡 Try Ably real-time first, fallback to polling
-                if (this.config.ably && this.config.ably.key && typeof Ably !== 'undefined') {
+                if (this.config.ably && this.config.ably.key && window.PPV_ABLY_MANAGER) {
                     this.initAbly();
                 } else {
                     // Fallback: Progress polling - 15 másodpercenként
@@ -65,42 +64,45 @@
         }
 
         /** ============================================================
-         *  📡 ABLY REAL-TIME INITIALIZATION
+         *  📡 ABLY REAL-TIME INITIALIZATION (uses shared manager)
          * ============================================================ */
         initAbly() {
-            console.log('📡 [ONBOARDING] Initializing Ably real-time...');
+            console.log('📡 [ONBOARDING] Initializing Ably via shared manager...');
 
-            this.ablyInstance = new Ably.Realtime({ key: this.config.ably.key });
+            const manager = window.PPV_ABLY_MANAGER;
 
-            this.ablyInstance.connection.on('connected', () => {
-                console.log('📡 [ONBOARDING] Ably connected to channel:', this.config.ably.channel);
+            // Initialize shared connection
+            if (!manager.init(this.config.ably)) {
+                console.warn('📡 [ONBOARDING] Failed to init Ably, using polling');
+                this.startPollingFallback();
+                return;
+            }
 
-                // Stop any polling if running
-                if (this.progressInterval) {
-                    clearInterval(this.progressInterval);
-                    this.progressInterval = null;
-                    console.log('📡 [ONBOARDING] Polling stopped (Ably connected)');
+            // Listen for connection state changes
+            manager.onStateChange((state) => {
+                if (state === 'connected') {
+                    console.log('📡 [ONBOARDING] Ably connected via shared manager');
+                    // Stop polling if running
+                    if (this.progressInterval) {
+                        clearInterval(this.progressInterval);
+                        this.progressInterval = null;
+                    }
+                } else if (state === 'failed' || state === 'suspended') {
+                    console.warn('⚠️ [ONBOARDING] Ably connection issue, starting polling fallback');
+                    this.startPollingFallback();
                 }
             });
 
-            this.ablyInstance.connection.on('failed', () => {
-                console.warn('⚠️ [ONBOARDING] Ably connection failed, starting polling fallback');
-                this.startPollingFallback();
-            });
-
-            this.ablyInstance.connection.on('disconnected', () => {
-                console.warn('⚠️ [ONBOARDING] Ably disconnected, starting polling fallback');
-                this.startPollingFallback();
-            });
-
-            // Subscribe to store's channel
-            this.ablyChannel = this.ablyInstance.channels.get(this.config.ably.channel);
-
-            // Listen for onboarding-progress events
-            this.ablyChannel.subscribe('onboarding-progress', (message) => {
-                console.log('📡 [ONBOARDING] Received progress update via Ably:', message.data);
-                this.handleProgressUpdate(message.data);
-            });
+            // Subscribe to onboarding-progress events via shared manager
+            this.ablySubscriberId = manager.subscribe(
+                this.config.ably.channel,
+                'onboarding-progress',
+                (message) => {
+                    console.log('📡 [ONBOARDING] Received progress update via Ably:', message.data);
+                    this.handleProgressUpdate(message.data);
+                },
+                'onboarding'
+            );
         }
 
         startPollingFallback() {
@@ -1167,12 +1169,11 @@
                 this.progressInterval = null;
             }
 
-            // ✅ Close Ably connection to prevent memory leak
-            if (this.ablyInstance) {
-                this.ablyInstance.close();
-                this.ablyInstance = null;
-                this.ablyChannel = null;
-                console.log('📡 [ONBOARDING] Ably connection closed');
+            // ✅ Unsubscribe from Ably via shared manager
+            if (this.ablySubscriberId && window.PPV_ABLY_MANAGER) {
+                window.PPV_ABLY_MANAGER.unsubscribe(this.ablySubscriberId);
+                this.ablySubscriberId = null;
+                console.log('📡 [ONBOARDING] Unsubscribed from Ably');
             }
 
             $('.ppv-onboarding-progress-card').fadeOut(300, function() { $(this).remove(); });
@@ -1240,12 +1241,11 @@
                 window.PPV_ONBOARDING_INSTANCE.progressInterval = null;
                 console.log('🧹 [ONBOARDING] Progress interval cleared');
             }
-            // Close Ably connection
-            if (window.PPV_ONBOARDING_INSTANCE.ablyInstance) {
-                window.PPV_ONBOARDING_INSTANCE.ablyInstance.close();
-                window.PPV_ONBOARDING_INSTANCE.ablyInstance = null;
-                window.PPV_ONBOARDING_INSTANCE.ablyChannel = null;
-                console.log('🧹 [ONBOARDING] Ably connection closed');
+            // Unsubscribe from Ably (don't close - shared manager handles connection)
+            if (window.PPV_ONBOARDING_INSTANCE.ablySubscriberId && window.PPV_ABLY_MANAGER) {
+                window.PPV_ABLY_MANAGER.unsubscribe(window.PPV_ONBOARDING_INSTANCE.ablySubscriberId);
+                window.PPV_ONBOARDING_INSTANCE.ablySubscriberId = null;
+                console.log('🧹 [ONBOARDING] Ably subscription cleaned up');
             }
         }
     });

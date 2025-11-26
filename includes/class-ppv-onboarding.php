@@ -149,11 +149,20 @@ if (!class_exists('PPV_Onboarding')) {
                 true
             );
 
-            // Enqueue JS
+            // Enqueue Ably shared manager if available
+            if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+                PPV_Ably::enqueue_scripts();
+            }
+
+            // Enqueue JS (depends on ably-manager if available)
+            $onboarding_deps = ['jquery', 'leaflet'];
+            if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+                $onboarding_deps[] = 'ppv-ably-manager';
+            }
             wp_enqueue_script(
                 'ppv-onboarding',
                 PPV_PLUGIN_URL . 'assets/js/ppv-onboarding.js',
-                ['jquery', 'leaflet'],
+                $onboarding_deps,
                 filemtime(PPV_PLUGIN_DIR . 'assets/js/ppv-onboarding.js'),
                 true
             );

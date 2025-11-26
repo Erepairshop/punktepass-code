@@ -497,39 +497,41 @@ document.addEventListener("DOMContentLoaded", function () {
   let pollInterval = null;
 
   function initRealtime() {
-    if (config.ably && config.ably.key && typeof Ably !== 'undefined') {
-      console.log('📡 [REWARDS-MGMT] Initializing Ably real-time...');
+    if (config.ably && config.ably.key && window.PPV_ABLY_MANAGER) {
+      console.log('📡 [REWARDS-MGMT] Initializing Ably via shared manager...');
 
-      const ably = new Ably.Realtime({ key: config.ably.key });
-      const channel = ably.channels.get(config.ably.channel);
+      const manager = window.PPV_ABLY_MANAGER;
 
-      ably.connection.on('connected', () => {
-        console.log('📡 [REWARDS-MGMT] Ably connected');
-        // Stop polling if running
-        if (pollInterval) {
-          clearInterval(pollInterval);
-          pollInterval = null;
+      // Initialize shared connection
+      if (!manager.init(config.ably)) {
+        console.log('📡 [REWARDS-MGMT] Shared manager init failed, using polling');
+        startPolling();
+        return;
+      }
+
+      // Listen for connection state changes
+      manager.onStateChange((state) => {
+        if (state === 'connected') {
+          console.log('📡 [REWARDS-MGMT] Ably connected via shared manager');
+          // Stop polling if running
+          if (pollInterval) {
+            clearInterval(pollInterval);
+            pollInterval = null;
+          }
+        } else if (state === 'disconnected' || state === 'failed') {
+          console.log('📡 [REWARDS-MGMT] Ably disconnected, starting polling');
+          startPolling();
         }
       });
 
-      ably.connection.on('disconnected', () => {
-        console.log('📡 [REWARDS-MGMT] Ably disconnected, starting polling');
-        startPolling();
-      });
-
-      ably.connection.on('failed', (err) => {
-        console.log('📡 [REWARDS-MGMT] Ably failed:', err);
-        startPolling();
-      });
-
-      // 📡 Handle reward updates
-      channel.subscribe('reward-update', (message) => {
+      // 📡 Handle reward updates via shared manager
+      manager.subscribe(config.ably.channel, 'reward-update', (message) => {
         console.log('📡 [REWARDS-MGMT] Reward update received:', message.data);
         showToast(`🎁 Prämie ${message.data.action === 'created' ? 'erstellt' : message.data.action === 'updated' ? 'aktualisiert' : 'gelöscht'}`, 'info');
         loadRewards();
-      });
+      }, 'rewards-mgmt');
 
-      console.log('📡 [REWARDS-MGMT] Ably initialized');
+      console.log('📡 [REWARDS-MGMT] Ably initialized via shared manager');
     } else {
       console.log('🔄 [REWARDS-MGMT] Ably not available, using polling');
       startPolling();

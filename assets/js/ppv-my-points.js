@@ -839,27 +839,37 @@ function claimReward(storeId) {
 }
 
   /** ============================
-   * 📡 ABLY REAL-TIME SYNC
+   * 📡 ABLY REAL-TIME SYNC (via shared manager)
    * ============================ */
   function initAblySync() {
     const cfg = window.ppv_mypoints;
-    if (!cfg?.ably?.key || !cfg?.uid || typeof Ably === 'undefined') {
+    if (!cfg?.ably?.key || !cfg?.uid || !window.PPV_ABLY_MANAGER) {
       log('🔄 [PPV_MYPOINTS] Ably not available, no real-time updates');
       return;
     }
 
-    log('📡 [PPV_MYPOINTS] Initializing Ably for user:', cfg.uid);
+    log('📡 [PPV_MYPOINTS] Initializing Ably via shared manager for user:', cfg.uid);
 
-    const ably = new Ably.Realtime({ key: cfg.ably.key });
+    const manager = window.PPV_ABLY_MANAGER;
     const channelName = 'user-' + cfg.uid;
-    const channel = ably.channels.get(channelName);
 
-    ably.connection.on('connected', () => {
-      log('📡 [PPV_MYPOINTS] Ably connected to channel:', channelName);
+    // Initialize shared connection
+    if (!manager.init({ key: cfg.ably.key, channel: channelName })) {
+      log('📡 [PPV_MYPOINTS] Shared manager init failed');
+      return;
+    }
+
+    // Store subscriber ID for cleanup
+    window.PPV_MYPOINTS_ABLY_SUB = 'mypoints-' + cfg.uid;
+
+    manager.onStateChange((state) => {
+      if (state === 'connected') {
+        log('📡 [PPV_MYPOINTS] Ably connected via shared manager to channel:', channelName);
+      }
     });
 
     // Handle points update - refresh the whole page data
-    channel.subscribe('points-update', (message) => {
+    manager.subscribe(channelName, 'points-update', (message) => {
       const data = message.data;
       log('📡 [PPV_MYPOINTS] Points update received:', data);
 
@@ -893,37 +903,25 @@ function claimReward(storeId) {
           window.ppvShowPointToast('error', 0, data.store_name || 'PunktePass', data.message);
         }
       }
-    });
-
-    // Store for cleanup on navigation
-    window.PPV_MYPOINTS_ABLY = ably;
+    }, window.PPV_MYPOINTS_ABLY_SUB);
   }
 
-  // Cleanup Ably on navigation
+  // Cleanup Ably subscription on navigation (manager handles connection)
   document.addEventListener('turbo:before-visit', () => {
-    if (window.PPV_MYPOINTS_ABLY) {
-      log('🧹 [PPV_MYPOINTS] Cleaning up Ably connection');
-      try {
-        // Safari needs explicit disconnect before close
-        if (isSafari && window.PPV_MYPOINTS_ABLY.connection) {
-          window.PPV_MYPOINTS_ABLY.connection.close();
-        }
-        window.PPV_MYPOINTS_ABLY.close();
-      } catch (e) {
-        // Ignore close errors
-      }
-      window.PPV_MYPOINTS_ABLY = null;
+    if (window.PPV_MYPOINTS_ABLY_SUB && window.PPV_ABLY_MANAGER) {
+      log('🧹 [PPV_MYPOINTS] Cleaning up Ably subscription');
+      window.PPV_ABLY_MANAGER.unsubscribe(window.PPV_MYPOINTS_ABLY_SUB);
+      window.PPV_MYPOINTS_ABLY_SUB = null;
     }
   });
 
   // 🍎 Safari fix: Also cleanup on pagehide
   if (isSafari) {
     window.addEventListener('pagehide', () => {
-      if (window.PPV_MYPOINTS_ABLY) {
-        log('🍎 [PPV_MYPOINTS] Safari pagehide - cleanup');
-        try {
-          window.PPV_MYPOINTS_ABLY.close();
-        } catch (e) { /* ignore */ }
+      if (window.PPV_MYPOINTS_ABLY_SUB && window.PPV_ABLY_MANAGER) {
+        log('🍎 [PPV_MYPOINTS] Safari pagehide - cleanup subscription');
+        window.PPV_ABLY_MANAGER.unsubscribe(window.PPV_MYPOINTS_ABLY_SUB);
+        window.PPV_MYPOINTS_ABLY_SUB = null;
         window.PPV_MYPOINTS_ABLY = null;
       }
     });
