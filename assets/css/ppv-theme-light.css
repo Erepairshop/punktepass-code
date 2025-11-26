@@ -2993,51 +2993,53 @@ html, body {
   gap: 4px;
 }
 
-.ppv-form-group input[type="text"],
-.ppv-form-group input[type="email"],
-.ppv-form-group input[type="tel"],
-.ppv-form-group input[type="url"],
-.ppv-form-group input[type="time"],
-.ppv-form-group input[type="number"],
-.ppv-form-group textarea,
-.ppv-form-group select {
+/* Profile form inputs - specific selector to override later rules */
+.ppv-profile-form .ppv-form-group input[type="text"],
+.ppv-profile-form .ppv-form-group input[type="email"],
+.ppv-profile-form .ppv-form-group input[type="tel"],
+.ppv-profile-form .ppv-form-group input[type="url"],
+.ppv-profile-form .ppv-form-group input[type="time"],
+.ppv-profile-form .ppv-form-group input[type="number"],
+.ppv-profile-form .ppv-form-group textarea,
+.ppv-profile-form .ppv-form-group select {
   padding: 12px 14px;
   background: #ffffff;
-  border: 2px solid #c7d2dd;
+  border: 2px solid #b0bec5;
   border-radius: var(--pp-r-sm, 8px);
   font-size: 14px;
   color: var(--pp-text, #1e293b);
   transition: all 0.2s ease;
   font-family: inherit;
+  width: 100%;
 }
 
-.ppv-form-group input[type="text"]:focus,
-.ppv-form-group input[type="email"]:focus,
-.ppv-form-group input[type="tel"]:focus,
-.ppv-form-group input[type="url"]:focus,
-.ppv-form-group input[type="time"]:focus,
-.ppv-form-group input[type="number"]:focus,
-.ppv-form-group textarea:focus,
-.ppv-form-group select:focus {
+.ppv-profile-form .ppv-form-group input[type="text"]:focus,
+.ppv-profile-form .ppv-form-group input[type="email"]:focus,
+.ppv-profile-form .ppv-form-group input[type="tel"]:focus,
+.ppv-profile-form .ppv-form-group input[type="url"]:focus,
+.ppv-profile-form .ppv-form-group input[type="time"]:focus,
+.ppv-profile-form .ppv-form-group input[type="number"]:focus,
+.ppv-profile-form .ppv-form-group textarea:focus,
+.ppv-profile-form .ppv-form-group select:focus {
   outline: none;
-  background: var(--pp-surface, #fff);
+  background: #ffffff;
   border-color: var(--pp-primary);
-  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.12);
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15);
 }
 
-.ppv-form-group input::placeholder,
-.ppv-form-group textarea::placeholder {
-  color: var(--pp-text-muted, #94a3b8);
+.ppv-profile-form .ppv-form-group input::placeholder,
+.ppv-profile-form .ppv-form-group textarea::placeholder {
+  color: #9ca3af;
 }
 
-.ppv-form-group textarea {
+.ppv-profile-form .ppv-form-group textarea {
   resize: vertical;
   min-height: 100px;
   font-family: inherit;
 }
 
-.ppv-form-group input.ppv-invalid,
-.ppv-form-group textarea.ppv-invalid {
+.ppv-profile-form .ppv-form-group input.ppv-invalid,
+.ppv-profile-form .ppv-form-group textarea.ppv-invalid {
   border-color: var(--pp-danger, #ef4444);
   background-color: rgba(239, 68, 68, 0.05);
 }
