@@ -10,6 +10,7 @@ class PPV_Admin_Suspicious_Devices {
     public static function init() {
         add_action('admin_menu', [__CLASS__, 'add_admin_submenu'], 21);
         add_action('admin_post_ppv_block_device', [__CLASS__, 'handle_block_device']);
+        add_action('admin_post_ppv_unblock_device', [__CLASS__, 'handle_unblock_device']);
     }
 
     /**
@@ -138,6 +139,15 @@ class PPV_Admin_Suspicious_Devices {
                     <p>✅ Nincs gyanús eszköz! Minden rendben.</p>
                 </div>
             <?php else: ?>
+                <?php
+                // Show success/error messages
+                if (isset($_GET['blocked']) && $_GET['blocked'] == '1') {
+                    echo '<div class="notice notice-success is-dismissible"><p>🚫 Eszköz sikeresen blokkolva!</p></div>';
+                }
+                if (isset($_GET['unblocked']) && $_GET['unblocked'] == '1') {
+                    echo '<div class="notice notice-success is-dismissible"><p>✅ Eszköz blokkolása feloldva!</p></div>';
+                }
+                ?>
                 <table class="wp-list-table widefat fixed striped" style="margin-top: 20px;">
                     <thead>
                         <tr>
@@ -148,6 +158,7 @@ class PPV_Admin_Suspicious_Devices {
                             <th>Utolsó IP</th>
                             <th>Első regisztráció</th>
                             <th>Utolsó regisztráció</th>
+                            <th style="width: 120px;">Művelet</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -157,6 +168,13 @@ class PPV_Admin_Suspicious_Devices {
                             $risk_color = $risk_level === 'high' ? '#dc3545' : '#ffc107';
                             $risk_icon = $risk_level === 'high' ? '🔴' : '🟡';
 
+                            // Check if device is blocked
+                            $is_blocked = class_exists('PPV_Device_Fingerprint') && PPV_Device_Fingerprint::is_device_blocked($device->fingerprint_hash);
+                            if ($is_blocked) {
+                                $risk_icon = '🚫';
+                                $risk_color = '#000';
+                            }
+
                             // Get user details from pre-loaded map (OPTIMIZED - no N+1)
                             $users = [];
                             foreach ($user_ids as $uid) {
@@ -165,13 +183,26 @@ class PPV_Admin_Suspicious_Devices {
                                     $users[] = $users_map[$uid];
                                 }
                             }
+
+                            // Build block/unblock URL
+                            $block_url = wp_nonce_url(
+                                admin_url('admin-post.php?action=ppv_block_device&hash=' . urlencode($device->fingerprint_hash)),
+                                'ppv_block_device_' . $device->fingerprint_hash
+                            );
+                            $unblock_url = wp_nonce_url(
+                                admin_url('admin-post.php?action=ppv_unblock_device&hash=' . urlencode($device->fingerprint_hash)),
+                                'ppv_unblock_device_' . $device->fingerprint_hash
+                            );
                         ?>
-                        <tr>
+                        <tr style="<?php echo $is_blocked ? 'background: #f8d7da;' : ''; ?>">
                             <td style="text-align: center; font-size: 20px;"><?php echo $risk_icon; ?></td>
                             <td>
                                 <code style="font-size: 11px; background: #f0f0f0; padding: 2px 6px; border-radius: 3px;">
                                     <?php echo esc_html(substr($device->fingerprint_hash, 0, 16) . '...'); ?>
                                 </code>
+                                <?php if ($is_blocked): ?>
+                                    <br><span style="color: #721c24; font-size: 11px; font-weight: bold;">BLOKKOLT</span>
+                                <?php endif; ?>
                             </td>
                             <td>
                                 <span style="background: <?php echo $risk_color; ?>; color: #fff; padding: 3px 10px; border-radius: 12px; font-weight: bold;">
@@ -194,6 +225,20 @@ class PPV_Admin_Suspicious_Devices {
                             </td>
                             <td><?php echo esc_html(date('Y-m-d H:i', strtotime($device->first_seen))); ?></td>
                             <td><?php echo esc_html(date('Y-m-d H:i', strtotime($device->last_seen))); ?></td>
+                            <td>
+                                <?php if ($is_blocked): ?>
+                                    <a href="<?php echo esc_url($unblock_url); ?>" class="button button-small"
+                                       onclick="return confirm('Biztosan feloldod a blokkolást?');">
+                                        ✅ Feloldás
+                                    </a>
+                                <?php else: ?>
+                                    <a href="<?php echo esc_url($block_url); ?>" class="button button-small"
+                                       style="background: #dc3545; color: #fff; border-color: #dc3545;"
+                                       onclick="return confirm('Biztosan blokkolod ezt az eszközt? Nem tud majd regisztrálni.');">
+                                        🚫 Blokkolás
+                                    </a>
+                                <?php endif; ?>
+                            </td>
                         </tr>
                         <?php endforeach; ?>
                     </tbody>
@@ -219,11 +264,66 @@ class PPV_Admin_Suspicious_Devices {
     }
 
     /**
-     * Handle device blocking (future feature)
+     * Handle device blocking
      */
     public static function handle_block_device() {
-        // TODO: Implement device blocking
+        $hash = sanitize_text_field($_GET['hash'] ?? '');
+
+        if (empty($hash)) {
+            wp_redirect(admin_url('admin.php?page=punktepass-suspicious-devices&error=missing_hash'));
+            exit;
+        }
+
+        // Verify nonce
+        if (!wp_verify_nonce($_GET['_wpnonce'] ?? '', 'ppv_block_device_' . $hash)) {
+            wp_redirect(admin_url('admin.php?page=punktepass-suspicious-devices&error=invalid_nonce'));
+            exit;
+        }
+
+        // Check permissions
+        if (!current_user_can('manage_options')) {
+            wp_redirect(admin_url('admin.php?page=punktepass-suspicious-devices&error=no_permission'));
+            exit;
+        }
+
+        // Block the device
+        if (class_exists('PPV_Device_Fingerprint')) {
+            PPV_Device_Fingerprint::block_device($hash, 'Blocked from admin panel', get_current_user_id());
+        }
+
         wp_redirect(admin_url('admin.php?page=punktepass-suspicious-devices&blocked=1'));
+        exit;
+    }
+
+    /**
+     * Handle device unblocking
+     */
+    public static function handle_unblock_device() {
+        $hash = sanitize_text_field($_GET['hash'] ?? '');
+
+        if (empty($hash)) {
+            wp_redirect(admin_url('admin.php?page=punktepass-suspicious-devices&error=missing_hash'));
+            exit;
+        }
+
+        // Verify nonce
+        if (!wp_verify_nonce($_GET['_wpnonce'] ?? '', 'ppv_unblock_device_' . $hash)) {
+            wp_redirect(admin_url('admin.php?page=punktepass-suspicious-devices&error=invalid_nonce'));
+            exit;
+        }
+
+        // Check permissions
+        if (!current_user_can('manage_options')) {
+            wp_redirect(admin_url('admin.php?page=punktepass-suspicious-devices&error=no_permission'));
+            exit;
+        }
+
+        // Unblock the device
+        if (class_exists('PPV_Device_Fingerprint')) {
+            PPV_Device_Fingerprint::unblock_device($hash);
+        }
+
+        wp_redirect(admin_url('admin.php?page=punktepass-suspicious-devices&unblocked=1'));
         exit;
     }
 }

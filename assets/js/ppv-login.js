@@ -8,10 +8,54 @@
 (function($) {
     'use strict';
 
+    // 📱 Global device fingerprint (loaded async)
+    let deviceFingerprint = '';
+
     // Wait for DOM
     $(document).ready(function() {
         initLogin();
+        initFingerprintJS();
     });
+
+    /**
+     * 📱 Initialize FingerprintJS for device tracking
+     */
+    function initFingerprintJS() {
+        // Load FingerprintJS from CDN if not already loaded
+        if (typeof FingerprintJS === 'undefined') {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@4/dist/fp.min.js';
+            script.onload = function() {
+                loadFingerprint();
+            };
+            document.head.appendChild(script);
+        } else {
+            loadFingerprint();
+        }
+    }
+
+    /**
+     * 📱 Load device fingerprint
+     */
+    function loadFingerprint() {
+        if (typeof FingerprintJS !== 'undefined') {
+            FingerprintJS.load().then(fp => {
+                fp.get().then(result => {
+                    deviceFingerprint = result.visitorId;
+                    console.log('📱 Device fingerprint loaded for login tracking');
+                });
+            }).catch(err => {
+                console.warn('📱 FingerprintJS error:', err);
+            });
+        }
+    }
+
+    /**
+     * 📱 Get current fingerprint (for AJAX calls)
+     */
+    function getDeviceFingerprint() {
+        return deviceFingerprint || '';
+    }
 
     /**
      * Get return URL (from session expired redirect)
@@ -212,7 +256,8 @@ function initLogin() {
             data: {
                 action: 'ppv_google_login',
                 nonce: ppvLogin.nonce,
-                credential: response.credential
+                credential: response.credential,
+                device_fingerprint: getDeviceFingerprint()
             },
             success: function(res) {
                 if (res.success) {
@@ -291,7 +336,8 @@ function initLogin() {
                     nonce: ppvLogin.nonce,
                     email: email,
                     password: password,
-                    remember: remember
+                    remember: remember,
+                    device_fingerprint: getDeviceFingerprint()
                 },
                 success: function(res) {
                     if (res.success) {
@@ -443,7 +489,8 @@ function initLogin() {
             data: {
                 action: 'ppv_facebook_login',
                 nonce: ppvLogin.nonce,
-                access_token: accessToken
+                access_token: accessToken,
+                device_fingerprint: getDeviceFingerprint()
             },
             success: function(res) {
                 if (res.success) {
@@ -535,7 +582,8 @@ function initLogin() {
                 data: {
                     action: 'ppv_tiktok_login',
                     nonce: ppvLogin.nonce,
-                    code: code
+                    code: code,
+                    device_fingerprint: getDeviceFingerprint()
                 },
                 success: function(res) {
                     if (res.success) {
@@ -649,7 +697,8 @@ function initLogin() {
         const data = {
             action: 'ppv_apple_login',
             nonce: ppvLogin.nonce,
-            id_token: response.authorization.id_token
+            id_token: response.authorization.id_token,
+            device_fingerprint: getDeviceFingerprint()
         };
 
         // Add user info if available (first sign in only)
