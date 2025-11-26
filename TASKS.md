@@ -38,7 +38,7 @@
 |----------|-------|---------|
 | Inkonzisztens CSS változók | ~~keveredés~~ → egységes `--pp-primary` ✅ | ✅ |
 | Dark mode beágyazva light CSS-be | 18,000+ soros fájl, nehéz karbantartani | ⬜ |
-| Nincs `prefers-color-scheme` | Nem figyel a rendszer dark mode beállításra | ⬜ |
+| Nincs `prefers-color-scheme` | ~~hiányzott~~ → auto dark mode támogatás ✅ | ✅ |
 | Tablet breakpoint hiányos | ~~hiányos~~ → 768-1024px breakpoint hozzáadva ✅ | ✅ |
 
 ### JavaScript
@@ -107,10 +107,10 @@
 - [x] ~~4. Tablet breakpointok~~ ✅
 
 ### 🎯 Közép táv (1 hónap)
-- [ ] 1. Dark mode refaktor
-- [ ] 2. Nagy JS fájlok darabolása
-- [ ] 3. API rate limiting
-- [ ] 4. Offline support alapok
+- [x] ~~1. Dark mode refaktor~~ ✅ (prefers-color-scheme hozzáadva)
+- [ ] 2. Nagy JS fájlok darabolása (ppv-qr.js 84KB, dashboard 72KB - refaktor szükséges)
+- [x] ~~3. API rate limiting~~ ✅ (már implementálva class-ppv-permissions.php)
+- [x] ~~4. Offline support alapok~~ ✅ (Service Worker v5.9 működik)
 
 ### 🚀 Hosszú táv (roadmap)
 - [ ] 1. Push notifications

@@ -260,6 +260,89 @@ body.ppv-dark,
 }
 
 /* ==========================================================================
+   🌙 AUTO DARK MODE (System Preference Detection)
+   Added: 2025-11-26 - Respects OS/Browser dark mode setting
+   ========================================================================== */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        /* Brand Colors - Enhanced Neon Cyan */
+        --pp-primary: #00d4ff;
+        --pp-primary-dark: #00a8cc;
+        --pp-primary-darker: #0088a8;
+        --pp-primary-light: #4de5ff;
+        --pp-primary-lighter: #99f0ff;
+        --pp-primary-glow: rgba(0, 212, 255, 0.40);
+
+        /* Secondary - Vibrant Teal */
+        --pp-secondary: #00d9a3;
+        --pp-secondary-dark: #00a878;
+        --pp-secondary-light: #70ffce;
+        --pp-secondary-glow: rgba(0, 217, 163, 0.35);
+
+        /* Accent - Electric Purple */
+        --pp-accent: #a855f7;
+        --pp-accent-dark: #8b5cf6;
+        --pp-accent-light: #c084fc;
+        --pp-accent-glow: rgba(168, 85, 247, 0.35);
+
+        /* Status Colors - Neon Dark */
+        --pp-success: #4ade80;
+        --pp-success-light: #86efac;
+        --pp-warning: #fbbf24;
+        --pp-warning-light: #fcd34d;
+        --pp-danger: #f87171;
+        --pp-danger-light: #fca5a5;
+        --pp-info: #60a5fa;
+
+        /* Surface Colors - Deep Dark Blue */
+        --pp-bg: #0a0f1a;
+        --pp-bg-2: #0d1321;
+        --pp-bg-3: #141e33;
+        --pp-bg-warm: linear-gradient(135deg, #0a0f1a 0%, #0d1321 50%, #111827 100%);
+
+        --pp-surface: #141e33;
+        --pp-surface-soft: rgba(20, 30, 51, 0.95);
+        --pp-surface-glass: rgba(20, 30, 51, 0.85);
+        --pp-surface-elevated: #1a2744;
+
+        /* Text - High Contrast */
+        --pp-text: #f1f5f9;
+        --pp-text-2: #e2e8f0;
+        --pp-text-3: #cbd5e1;
+        --pp-text-muted: #94a3b8;
+        --pp-text-inverse: #0f172a;
+
+        /* Header */
+        --pp-header-bg: linear-gradient(135deg, #0a0f1a 0%, #141e33 100%);
+        --pp-header-dark: #050810;
+
+        /* Borders - Subtle Glow */
+        --pp-border: rgba(0, 212, 255, 0.15);
+        --pp-border-soft: rgba(0, 212, 255, 0.10);
+        --pp-border-strong: rgba(0, 212, 255, 0.30);
+        --pp-border-glass: rgba(0, 212, 255, 0.12);
+
+        /* Shadows - Deep */
+        --pp-shadow-xs: 0 1px 2px rgba(0,0,0,0.30);
+        --pp-shadow-sm: 0 2px 8px rgba(0,0,0,0.50);
+        --pp-shadow: 0 4px 16px rgba(0,0,0,0.60);
+        --pp-shadow-md: 0 8px 24px rgba(0,0,0,0.55);
+        --pp-shadow-lg: 0 12px 32px rgba(0,0,0,0.70);
+        --pp-shadow-xl: 0 20px 48px rgba(0,0,0,0.75);
+        --pp-shadow-glow: 0 0 24px rgba(0,212,255,0.40);
+        --pp-shadow-glow-lg: 0 0 48px rgba(0,212,255,0.50);
+        --pp-shadow-inner: inset 0 2px 4px rgba(0,0,0,0.25);
+
+        /* Gradients - Dark Neon */
+        --gradient-primary: linear-gradient(135deg, #00d4ff 0%, #00a8cc 100%);
+        --gradient-secondary: linear-gradient(135deg, #00d9a3 0%, #00a878 100%);
+        --gradient-accent: linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%);
+        --gradient-card: linear-gradient(145deg, #1a2744 0%, #141e33 100%);
+        --gradient-shimmer: linear-gradient(90deg, transparent, rgba(0,212,255,0.25), transparent);
+    }
+}
+
+/* ==========================================================================
    🌍 GLOBAL RESET & BASE
    ========================================================================== */
 *, *::before, *::after {
