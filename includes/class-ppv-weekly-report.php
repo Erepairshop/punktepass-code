@@ -386,6 +386,7 @@ class PPV_Weekly_Report {
 
     /**
      * AJAX handler for testing (admin only)
+     * Optional: target_email to override destination
      */
     public static function ajax_test_report() {
         if (!current_user_can('administrator')) {
@@ -405,6 +406,14 @@ class PPV_Weekly_Report {
 
         if (!$store) {
             wp_send_json_error(['message' => 'Store not found']);
+        }
+
+        // Optional: override email for testing
+        $target_email = sanitize_email($_POST['target_email'] ?? '');
+        if (!empty($target_email) && is_email($target_email)) {
+            $original_email = $store->email;
+            $store->email = $target_email;
+            ppv_log("📧 [Weekly Report TEST] Overriding email from {$original_email} to {$target_email}");
         }
 
         $result = self::send_report_for_store($store);
