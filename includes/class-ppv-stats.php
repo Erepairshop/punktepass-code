@@ -200,6 +200,18 @@ class PPV_Stats {
             'permission_callback' => [__CLASS__, 'check_handler_permission']
         ]);
 
+        register_rest_route('punktepass/v1', '/stats/scanners', [
+            'methods' => 'GET',
+            'callback' => [__CLASS__, 'rest_scanner_stats'],
+            'permission_callback' => [__CLASS__, 'check_handler_permission']
+        ]);
+
+        register_rest_route('punktepass/v1', '/stats/suspicious', [
+            'methods' => 'GET',
+            'callback' => [__CLASS__, 'rest_suspicious_scans'],
+            'permission_callback' => [__CLASS__, 'check_handler_permission']
+        ]);
+
         ppv_log("✅ [PPV_Stats] ALL REST routes OK");
     }
 
@@ -236,6 +248,8 @@ class PPV_Stats {
             'spending_url' => esc_url(rest_url('punktepass/v1/stats/spending')),
             'conversion_url' => esc_url(rest_url('punktepass/v1/stats/conversion')),
             'export_adv_url' => esc_url(rest_url('punktepass/v1/stats/export-advanced')),
+            'scanner_url' => esc_url(rest_url('punktepass/v1/stats/scanners')),
+            'suspicious_url' => esc_url(rest_url('punktepass/v1/stats/suspicious')),
             'nonce' => wp_create_nonce('wp_rest'),
             'store_id' => intval($store_id ?? 0),
             'filialen' => $filialen,
@@ -833,6 +847,234 @@ class PPV_Stats {
     }
 
     // ========================================
+    // 👤 REST: SCANNER STATS (Employee Scan Counts)
+    // ========================================
+    public static function rest_scanner_stats($req) {
+        global $wpdb;
+
+        ppv_log("👤 [Scanner Stats] Start");
+
+        // Get filiale parameter from request
+        $filiale_param = $req->get_param('filiale_id');
+        $store_ids = self::get_store_ids_for_query($filiale_param);
+
+        if (empty($store_ids)) {
+            return new WP_REST_Response(['success' => false, 'error' => 'No store'], 403);
+        }
+
+        $placeholders = implode(',', array_fill(0, count($store_ids), '%d'));
+        $table_log = $wpdb->prefix . 'ppv_pos_log';
+        $table_users = $wpdb->prefix . 'ppv_users';
+        $today = current_time('Y-m-d');
+        $week_start = date('Y-m-d', strtotime('monday this week', strtotime($today)));
+        $month_start = date('Y-m-01', strtotime($today));
+
+        // Get all scans with scanner info from metadata (JSON)
+        // We extract scanner_id from the JSON metadata column
+        $scanner_stats = $wpdb->get_results($wpdb->prepare("
+            SELECT
+                JSON_UNQUOTE(JSON_EXTRACT(l.metadata, '$.scanner_id')) as scanner_id,
+                JSON_UNQUOTE(JSON_EXTRACT(l.metadata, '$.scanner_name')) as scanner_name,
+                COUNT(*) as total_scans,
+                SUM(CASE WHEN DATE(l.created_at) = %s THEN 1 ELSE 0 END) as today_scans,
+                SUM(CASE WHEN DATE(l.created_at) >= %s THEN 1 ELSE 0 END) as week_scans,
+                SUM(CASE WHEN DATE(l.created_at) >= %s THEN 1 ELSE 0 END) as month_scans,
+                MIN(l.created_at) as first_scan,
+                MAX(l.created_at) as last_scan
+            FROM {$table_log} l
+            WHERE l.store_id IN ({$placeholders})
+              AND l.type = 'qr_scan'
+              AND JSON_EXTRACT(l.metadata, '$.scanner_id') IS NOT NULL
+            GROUP BY scanner_id, scanner_name
+            ORDER BY total_scans DESC
+        ", array_merge([$today, $week_start, $month_start], $store_ids)));
+
+        // Format results
+        $scanners_formatted = [];
+        foreach ($scanner_stats as $scanner) {
+            if (empty($scanner->scanner_id) || $scanner->scanner_id === 'null') {
+                continue; // Skip entries without scanner_id
+            }
+
+            $scanners_formatted[] = [
+                'scanner_id' => intval($scanner->scanner_id),
+                'scanner_name' => $scanner->scanner_name ?: 'Scanner #' . $scanner->scanner_id,
+                'total_scans' => intval($scanner->total_scans),
+                'today_scans' => intval($scanner->today_scans),
+                'week_scans' => intval($scanner->week_scans),
+                'month_scans' => intval($scanner->month_scans),
+                'first_scan' => $scanner->first_scan,
+                'last_scan' => $scanner->last_scan,
+            ];
+        }
+
+        // Also get scans without scanner_id (legacy/untracked)
+        $untracked_scans = $wpdb->get_row($wpdb->prepare("
+            SELECT
+                COUNT(*) as total_scans,
+                SUM(CASE WHEN DATE(created_at) = %s THEN 1 ELSE 0 END) as today_scans,
+                SUM(CASE WHEN DATE(created_at) >= %s THEN 1 ELSE 0 END) as week_scans
+            FROM {$table_log}
+            WHERE store_id IN ({$placeholders})
+              AND type = 'qr_scan'
+              AND (JSON_EXTRACT(metadata, '$.scanner_id') IS NULL
+                   OR JSON_EXTRACT(metadata, '$.scanner_id') = 'null')
+        ", array_merge([$today, $week_start], $store_ids)));
+
+        // Summary totals
+        $total_tracked = array_sum(array_column($scanners_formatted, 'total_scans'));
+        $total_untracked = intval($untracked_scans->total_scans ?? 0);
+
+        ppv_log("✅ [Scanner Stats] Complete: " . count($scanners_formatted) . " scanners found");
+
+        return new WP_REST_Response([
+            'success' => true,
+            'scanners' => $scanners_formatted,
+            'summary' => [
+                'total_tracked' => $total_tracked,
+                'total_untracked' => $total_untracked,
+                'scanner_count' => count($scanners_formatted),
+            ],
+            'untracked' => [
+                'total_scans' => $total_untracked,
+                'today_scans' => intval($untracked_scans->today_scans ?? 0),
+                'week_scans' => intval($untracked_scans->week_scans ?? 0),
+            ]
+        ], 200, ['Cache-Control' => 'no-store']);
+    }
+
+    // ========================================
+    // ⚠️ REST: SUSPICIOUS SCANS (for store owners)
+    // ========================================
+    public static function rest_suspicious_scans($req) {
+        global $wpdb;
+
+        ppv_log("⚠️ [Suspicious Scans] Start");
+
+        // Get store IDs for this handler
+        $store_ids = self::get_store_ids_for_query(null);
+
+        ppv_log("⚠️ [Suspicious Scans] Store IDs: " . json_encode($store_ids));
+
+        if (empty($store_ids)) {
+            // Fallback: try to get from session
+            $handler_store_id = self::get_handler_store_id();
+            ppv_log("⚠️ [Suspicious Scans] Fallback handler_store_id: " . $handler_store_id);
+
+            if ($handler_store_id) {
+                $store_ids = [$handler_store_id];
+                // Also include filialen
+                $filialen_ids = $wpdb->get_col($wpdb->prepare(
+                    "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE parent_store_id = %d",
+                    $handler_store_id
+                ));
+                $store_ids = array_merge($store_ids, $filialen_ids);
+                ppv_log("⚠️ [Suspicious Scans] With filialen: " . json_encode($store_ids));
+            }
+        }
+
+        if (empty($store_ids)) {
+            return new WP_REST_Response(['success' => false, 'error' => 'No store', 'debug' => 'store_ids empty'], 403);
+        }
+
+        $status_filter = sanitize_text_field($req->get_param('status') ?? 'new');
+
+        $table_suspicious = $wpdb->prefix . 'ppv_suspicious_scans';
+        $table_users = $wpdb->prefix . 'ppv_users';
+        $table_stores = $wpdb->prefix . 'ppv_stores';
+
+        // Get suspicious scans for this store
+        // Build the query with proper escaping
+        $store_ids_escaped = implode(',', array_map('intval', $store_ids));
+
+        $query = "
+            SELECT
+                ss.id,
+                ss.user_id,
+                ss.store_id,
+                ss.distance_km,
+                ss.user_lat,
+                ss.user_lng,
+                ss.store_lat,
+                ss.store_lng,
+                ss.status,
+                ss.created_at,
+                u.first_name,
+                u.last_name,
+                u.email as user_email,
+                s.company_name as store_name
+            FROM {$table_suspicious} ss
+            LEFT JOIN {$table_users} u ON ss.user_id = u.id
+            LEFT JOIN {$table_stores} s ON ss.store_id = s.id
+            WHERE ss.store_id IN ({$store_ids_escaped})
+        ";
+
+        if ($status_filter !== 'all') {
+            $query .= $wpdb->prepare(" AND ss.status = %s", $status_filter);
+        }
+
+        $query .= " ORDER BY ss.created_at DESC LIMIT 100";
+
+        ppv_log("⚠️ [Suspicious Scans] Query: " . $query);
+
+        $scans = $wpdb->get_results($query);
+
+        ppv_log("⚠️ [Suspicious Scans] Found " . count($scans) . " scans");
+
+        // Count by status
+        $counts = [
+            'new' => 0,
+            'reviewed' => 0,
+            'dismissed' => 0,
+            'all' => 0
+        ];
+
+        $count_query = "
+            SELECT status, COUNT(*) as cnt
+            FROM {$table_suspicious}
+            WHERE store_id IN ({$store_ids_escaped})
+            GROUP BY status
+        ";
+        $count_results = $wpdb->get_results($count_query);
+
+        foreach ($count_results as $row) {
+            if (isset($counts[$row->status])) {
+                $counts[$row->status] = intval($row->cnt);
+            }
+            $counts['all'] += intval($row->cnt);
+        }
+
+        // Format results
+        $formatted = [];
+        foreach ($scans as $scan) {
+            $user_name = trim(($scan->first_name ?? '') . ' ' . ($scan->last_name ?? ''));
+            if (empty($user_name)) {
+                $user_name = 'User #' . $scan->user_id;
+            }
+
+            $formatted[] = [
+                'id' => intval($scan->id),
+                'user_id' => intval($scan->user_id),
+                'user_name' => $user_name,
+                'user_email' => $scan->user_email ?? '',
+                'store_name' => $scan->store_name ?? 'Store #' . $scan->store_id,
+                'distance_km' => round(floatval($scan->distance_km), 2),
+                'status' => $scan->status,
+                'created_at' => $scan->created_at,
+                'maps_link' => "https://www.google.com/maps?q={$scan->user_lat},{$scan->user_lng}"
+            ];
+        }
+
+        ppv_log("✅ [Suspicious Scans] Found " . count($formatted) . " scans");
+
+        return new WP_REST_Response([
+            'success' => true,
+            'scans' => $formatted,
+            'counts' => $counts
+        ], 200, ['Cache-Control' => 'no-store']);
+    }
+
+    // ========================================
     // 🎨 RENDER DASHBOARD
     // ✅ JAVÍTÁS 2: Removed get_translations() call
     // ✅ JAVÍTÁS 3: Translations integration
@@ -857,7 +1099,23 @@ class PPV_Stats {
         ob_start(); ?>
 
         <div class="ppv-stats-wrapper">
-            <h2 class="ppv-stats-title">📊 <?php echo esc_html($T['statistics'] ?? 'Statistics'); ?></h2>
+
+            <!-- TABS NAVIGATION -->
+            <div class="ppv-stats-tabs">
+                <button class="ppv-stats-tab active" data-tab="overview">
+                    <i class="ri-bar-chart-box-line"></i> <?php echo esc_html($T['overview'] ?? 'Übersicht'); ?>
+                </button>
+                <button class="ppv-stats-tab" data-tab="advanced">
+                    <i class="ri-line-chart-line"></i> <?php echo esc_html($T['advanced'] ?? 'Erweitert'); ?>
+                </button>
+                <button class="ppv-stats-tab" data-tab="scanners">
+                    <i class="ri-team-line"></i> <?php echo esc_html($T['scanner_stats'] ?? 'Mitarbeiter'); ?>
+                </button>
+                <button class="ppv-stats-tab" data-tab="suspicious" id="ppv-tab-suspicious-btn">
+                    <i class="ri-alarm-warning-line"></i> <?php echo esc_html($T['suspicious_scans'] ?? 'Verdächtige Scans'); ?>
+                    <span class="ppv-badge-count" id="ppv-suspicious-badge" style="display:none;"></span>
+                </button>
+            </div>
 
             <!-- BASIC STATS SECTION -->
             <div class="ppv-stats-loading" id="ppv-stats-loading" style="display:none;">
@@ -869,7 +1127,10 @@ class PPV_Stats {
                 <p>❌ <?php echo esc_html($T['error_loading_data'] ?? 'Error loading data'); ?></p>
             </div>
 
-            <div class="ppv-stats-content">
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <!-- TAB 1: OVERVIEW -->
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <div class="ppv-stats-tab-content active" id="ppv-tab-overview">
                 <div class="ppv-stats-controls">
                     <div class="ppv-stats-filters">
                         <?php if ($has_multiple_filialen): ?>
@@ -957,43 +1218,109 @@ class PPV_Stats {
                     </div>
                 </div>
             </div>
+            </div><!-- END TAB 1: OVERVIEW -->
 
-            <!-- ADVANCED STATS SECTION -->
-            <hr style="margin: 2rem 0; opacity: 0.2;">
-
-            <h2 class="ppv-stats-title">📈 <?php echo esc_html($T['advanced_statistics'] ?? 'Advanced Statistics'); ?></h2>
-
-            <!-- TREND -->
-            <div class="ppv-stats-section">
-                <h3 class="ppv-section-title">📊 <?php echo esc_html($T['trend'] ?? 'Trend'); ?></h3>
-                <div id="ppv-trend" class="ppv-loading-small"><?php echo esc_html($T['loading'] ?? 'Loading...'); ?></div>
-            </div>
-
-            <!-- SPENDING -->
-            <div class="ppv-stats-section">
-                <h3 class="ppv-section-title">💰 <?php echo esc_html($T['rewards_spending'] ?? 'Rewards Spending'); ?></h3>
-                <div id="ppv-spending" class="ppv-loading-small"><?php echo esc_html($T['loading'] ?? 'Loading...'); ?></div>
-            </div>
-
-            <!-- CONVERSION -->
-            <div class="ppv-stats-section">
-                <h3 class="ppv-section-title">📊 <?php echo esc_html($T['conversion_rate'] ?? 'Conversion Rate'); ?></h3>
-                <div id="ppv-conversion" class="ppv-loading-small"><?php echo esc_html($T['loading'] ?? 'Loading...'); ?></div>
-            </div>
-
-            <!-- ADVANCED EXPORT -->
-            <div class="ppv-stats-section">
-                <h3 class="ppv-section-title">📥 <?php echo esc_html($T['advanced_export'] ?? 'Advanced Export'); ?></h3>
-                <div class="ppv-export-advanced-controls">
-                    <select id="ppv-export-format">
-                        <option value="detailed"><?php echo esc_html($T['detailed_user_email'] ?? 'Detailed (User + Email)'); ?></option>
-                        <option value="summary"><?php echo esc_html($T['summary_daily'] ?? 'Summary (Daily)'); ?></option>
-                    </select>
-                    <button id="ppv-export-advanced" class="ppv-export-btn">
-                        <i class="ri-download-line"></i> <?php echo esc_html($T['download'] ?? 'Download'); ?>
-                    </button>
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <!-- TAB 2: ADVANCED -->
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <div class="ppv-stats-tab-content" id="ppv-tab-advanced">
+                <!-- TREND -->
+                <div class="ppv-stats-section">
+                    <h3 class="ppv-section-title">📊 <?php echo esc_html($T['trend'] ?? 'Trend'); ?></h3>
+                    <div id="ppv-trend" class="ppv-loading-small"><?php echo esc_html($T['loading'] ?? 'Loading...'); ?></div>
                 </div>
-            </div>
+
+                <!-- SPENDING -->
+                <div class="ppv-stats-section">
+                    <h3 class="ppv-section-title">💰 <?php echo esc_html($T['rewards_spending'] ?? 'Rewards Spending'); ?></h3>
+                    <div id="ppv-spending" class="ppv-loading-small"><?php echo esc_html($T['loading'] ?? 'Loading...'); ?></div>
+                </div>
+
+                <!-- CONVERSION -->
+                <div class="ppv-stats-section">
+                    <h3 class="ppv-section-title">📊 <?php echo esc_html($T['conversion_rate'] ?? 'Conversion Rate'); ?></h3>
+                    <div id="ppv-conversion" class="ppv-loading-small"><?php echo esc_html($T['loading'] ?? 'Loading...'); ?></div>
+                </div>
+
+                <!-- ADVANCED EXPORT -->
+                <div class="ppv-stats-section">
+                    <h3 class="ppv-section-title">📥 <?php echo esc_html($T['advanced_export'] ?? 'Advanced Export'); ?></h3>
+                    <div class="ppv-export-advanced-controls">
+                        <select id="ppv-export-format">
+                            <option value="detailed"><?php echo esc_html($T['detailed_user_email'] ?? 'Detailed (User + Email)'); ?></option>
+                            <option value="summary"><?php echo esc_html($T['summary_daily'] ?? 'Summary (Daily)'); ?></option>
+                        </select>
+                        <button id="ppv-export-advanced" class="ppv-export-btn">
+                            <i class="ri-download-line"></i> <?php echo esc_html($T['download'] ?? 'Download'); ?>
+                        </button>
+                    </div>
+                </div>
+            </div><!-- END TAB 2: ADVANCED -->
+
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <!-- TAB 3: SCANNER STATS (Employee Performance) -->
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <div class="ppv-stats-tab-content" id="ppv-tab-scanners">
+                <div class="ppv-stats-section">
+                    <h3 class="ppv-section-title">👤 <?php echo esc_html($T['employee_scans'] ?? 'Mitarbeiter Scans'); ?></h3>
+                    <p class="ppv-section-desc"><?php echo esc_html($T['employee_scans_desc'] ?? 'Übersicht welcher Mitarbeiter wie viele Scans durchgeführt hat.'); ?></p>
+
+                    <div id="ppv-scanner-stats-loading" class="ppv-loading-small" style="display:none;">
+                        <?php echo esc_html($T['loading'] ?? 'Loading...'); ?>
+                    </div>
+
+                    <!-- Scanner Summary Cards -->
+                    <div class="ppv-scanner-summary" id="ppv-scanner-summary">
+                        <div class="ppv-stat-card">
+                            <span class="ppv-stat-label"><?php echo esc_html($T['total_scanners'] ?? 'Scanner gesamt'); ?></span>
+                            <span class="ppv-stat-value" id="ppv-scanner-count">0</span>
+                        </div>
+                        <div class="ppv-stat-card">
+                            <span class="ppv-stat-label"><?php echo esc_html($T['tracked_scans'] ?? 'Erfasste Scans'); ?></span>
+                            <span class="ppv-stat-value" id="ppv-tracked-scans">0</span>
+                        </div>
+                        <div class="ppv-stat-card">
+                            <span class="ppv-stat-label"><?php echo esc_html($T['untracked_scans'] ?? 'Ohne Scanner'); ?></span>
+                            <span class="ppv-stat-value" id="ppv-untracked-scans">0</span>
+                        </div>
+                    </div>
+
+                    <!-- Scanner List -->
+                    <div class="ppv-scanner-list" id="ppv-scanner-list">
+                        <p class="ppv-no-data"><?php echo esc_html($T['no_scanner_data'] ?? 'Noch keine Scanner-Daten vorhanden. Sobald Mitarbeiter Scans durchführen, erscheinen hier die Statistiken.'); ?></p>
+                    </div>
+                </div>
+            </div><!-- END TAB 3: SCANNER STATS -->
+
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <!-- TAB 4: SUSPICIOUS SCANS -->
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <div class="ppv-stats-tab-content" id="ppv-tab-suspicious">
+                <div class="ppv-stats-section">
+                    <h3 class="ppv-section-title">⚠️ <?php echo esc_html($T['suspicious_scans'] ?? 'Verdächtige Scans'); ?></h3>
+                    <p class="ppv-section-desc"><?php echo esc_html($T['suspicious_desc'] ?? 'Scans die aus verdächtiger Entfernung durchgeführt wurden.'); ?></p>
+
+                    <!-- Status filter -->
+                    <div class="ppv-suspicious-filters" style="margin-bottom: 15px;">
+                        <select id="ppv-suspicious-status" class="ppv-select">
+                            <option value="new"><?php echo esc_html($T['status_new'] ?? 'Neu'); ?></option>
+                            <option value="reviewed"><?php echo esc_html($T['status_reviewed'] ?? 'Überprüft'); ?></option>
+                            <option value="dismissed"><?php echo esc_html($T['status_dismissed'] ?? 'Abgewiesen'); ?></option>
+                            <option value="all"><?php echo esc_html($T['status_all'] ?? 'Alle'); ?></option>
+                        </select>
+                    </div>
+
+                    <div id="ppv-suspicious-loading" class="ppv-loading-small" style="display:none;">
+                        <?php echo esc_html($T['loading'] ?? 'Loading...'); ?>
+                    </div>
+
+                    <!-- Suspicious scans list -->
+                    <div class="ppv-suspicious-list" id="ppv-suspicious-list">
+                        <p class="ppv-no-data"><?php echo esc_html($T['no_suspicious_scans'] ?? 'Keine verdächtigen Scans vorhanden.'); ?></p>
+                    </div>
+                </div>
+            </div><!-- END TAB 4: SUSPICIOUS SCANS -->
+
         </div>
 
         <?php

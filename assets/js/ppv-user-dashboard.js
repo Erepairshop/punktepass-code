@@ -73,7 +73,7 @@ const PPV_TRANSLATIONS = {
     vip_title: "VIP Boni",
     vip_fix_title: "Fixpunkte",
     vip_streak_title: "X. Scan",
-    vip_daily_title: "1. Scan/Tag",
+    vip_daily_title: "Erster Scan",
     vip_bronze: "Bronze",
     vip_silver: "Silber",
     vip_gold: "Gold",
@@ -86,6 +86,7 @@ const PPV_TRANSLATIONS = {
     qr_expired: "QR-Code abgelaufen",
     qr_refresh: "Neuen QR-Code generieren",
     qr_new_generated: "Neuer QR-Code (30 Min)",
+    reward_valid_until: "Gültig bis:",
   },
   hu: {
     welcome: "Üdv a PunktePassban",
@@ -132,7 +133,7 @@ const PPV_TRANSLATIONS = {
     vip_title: "VIP Bónuszok",
     vip_fix_title: "Fix pont",
     vip_streak_title: "X. scan",
-    vip_daily_title: "1. scan/nap",
+    vip_daily_title: "Első scan",
     vip_bronze: "Bronz",
     vip_silver: "Ezüst",
     vip_gold: "Arany",
@@ -145,6 +146,7 @@ const PPV_TRANSLATIONS = {
     qr_expired: "QR-kód lejárt",
     qr_refresh: "Új QR-kód generálása",
     qr_new_generated: "Új QR-kód (30 perc)",
+    reward_valid_until: "Érvényes:",
   },
   ro: {
     welcome: "Bun venit la PunktePass",
@@ -191,7 +193,7 @@ const PPV_TRANSLATIONS = {
     vip_title: "Bonusuri VIP",
     vip_fix_title: "Puncte fixe",
     vip_streak_title: "Scan X",
-    vip_daily_title: "1. scan/zi",
+    vip_daily_title: "Primul scan",
     vip_bronze: "Bronz",
     vip_silver: "Argint",
     vip_gold: "Aur",
@@ -204,6 +206,7 @@ const PPV_TRANSLATIONS = {
     qr_expired: "Cod QR expirat",
     qr_refresh: "Generează cod QR nou",
     qr_new_generated: "Cod QR nou (30 min)",
+    reward_valid_until: "Valid până:",
   }
 };
 
@@ -1126,6 +1129,9 @@ async function initUserDashboard() {
               rewardText = `${r.action_value} ${r.currency || 'pont'}`;
             }
 
+            // Format end_date if available
+            const endDateFormatted = r.end_date ? r.end_date.substring(0, 10).split('-').reverse().join('.') : null;
+
             return `
             <div class="ppv-reward-mini">
               <div class="ppv-reward-header">
@@ -1145,6 +1151,12 @@ async function initUserDashboard() {
                   <span class="ppv-reward-label"><i class="ri-coins-line"></i> ${T.reward_per_scan}</span>
                   <span class="ppv-reward-value"><strong style="color:#00e6ff;">+${r.points_given || 0} pont</strong></span>
                 </div>
+                ${endDateFormatted ? `
+                <div class="ppv-reward-row">
+                  <span class="ppv-reward-label"><i class="ri-calendar-line"></i> ${T.reward_valid_until}</span>
+                  <span class="ppv-reward-value"><strong style="color: #fbbf24;">${endDateFormatted}</strong></span>
+                </div>
+                ` : ''}
               </div>
             </div>
             `;
@@ -1264,77 +1276,82 @@ async function initUserDashboard() {
     ` : '';
 
     // ============================================================
-    // 👑 VIP BONUS SECTION - COMPACT GRID VERSION
+    // 👑 VIP BONUS SECTION - CLEAN TABLE VERSION
     // ============================================================
     const vipHTML = store.vip ? (() => {
       const vip = store.vip;
       const rows = [];
 
-      // 1️⃣ FIX PONT BÓNUSZ - compact row
+      // 1️⃣ FIX PONT BÓNUSZ
       if (vip.fix && vip.fix.enabled) {
         rows.push(`
-          <div class="ppv-vip-row">
-            <span class="ppv-vip-label"><i class="ri-add-circle-line"></i> ${T.vip_fix_title}</span>
-            <span class="ppv-vip-grid">
-              <span class="bronze" title="${T.vip_bronze}">+${vip.fix.bronze}</span>
-              <span class="silver" title="${T.vip_silver}">+${vip.fix.silver}</span>
-              <span class="gold" title="${T.vip_gold}">+${vip.fix.gold}</span>
-              <span class="platinum" title="${T.vip_platinum}">+${vip.fix.platinum}</span>
-            </span>
-          </div>
+          <tr class="ppv-vip-table-row">
+            <td class="ppv-vip-label-cell"><i class="ri-add-circle-line"></i> ${T.vip_fix_title}</td>
+            <td class="ppv-vip-cell bronze">+${vip.fix.bronze}</td>
+            <td class="ppv-vip-cell silver">+${vip.fix.silver}</td>
+            <td class="ppv-vip-cell gold">+${vip.fix.gold}</td>
+            <td class="ppv-vip-cell platinum">+${vip.fix.platinum}</td>
+          </tr>
         `);
       }
 
-      // 2️⃣ STREAK BÓNUSZ - compact row
+      // 2️⃣ STREAK BÓNUSZ
       if (vip.streak && vip.streak.enabled) {
-        let streakValues = '';
-        if (vip.streak.type === 'double') {
-          streakValues = `<span class="ppv-vip-special">${T.vip_double}</span>`;
-        } else if (vip.streak.type === 'triple') {
-          streakValues = `<span class="ppv-vip-special">${T.vip_triple}</span>`;
+        const isMultiplier = vip.streak.type === 'double' || vip.streak.type === 'triple';
+        const multiplierText = vip.streak.type === 'double' ? T.vip_double : T.vip_triple;
+
+        if (isMultiplier) {
+          rows.push(`
+            <tr class="ppv-vip-table-row">
+              <td class="ppv-vip-label-cell"><i class="ri-fire-line"></i> ${vip.streak.count}. scan</td>
+              <td class="ppv-vip-cell ppv-vip-multiplier" colspan="4">${multiplierText}</td>
+            </tr>
+          `);
         } else {
-          streakValues = `
-            <span class="bronze" title="${T.vip_bronze}">+${vip.streak.bronze}</span>
-            <span class="silver" title="${T.vip_silver}">+${vip.streak.silver}</span>
-            <span class="gold" title="${T.vip_gold}">+${vip.streak.gold}</span>
-            <span class="platinum" title="${T.vip_platinum}">+${vip.streak.platinum}</span>
-          `;
+          rows.push(`
+            <tr class="ppv-vip-table-row">
+              <td class="ppv-vip-label-cell"><i class="ri-fire-line"></i> ${vip.streak.count}. scan</td>
+              <td class="ppv-vip-cell bronze">+${vip.streak.bronze}</td>
+              <td class="ppv-vip-cell silver">+${vip.streak.silver}</td>
+              <td class="ppv-vip-cell gold">+${vip.streak.gold}</td>
+              <td class="ppv-vip-cell platinum">+${vip.streak.platinum}</td>
+            </tr>
+          `);
         }
-        rows.push(`
-          <div class="ppv-vip-row">
-            <span class="ppv-vip-label"><i class="ri-fire-line"></i> ${vip.streak.count}. scan</span>
-            <span class="ppv-vip-grid">${streakValues}</span>
-          </div>
-        `);
       }
 
-      // 3️⃣ DAILY BÓNUSZ - compact row
+      // 3️⃣ DAILY BÓNUSZ
       if (vip.daily && vip.daily.enabled) {
         rows.push(`
-          <div class="ppv-vip-row">
-            <span class="ppv-vip-label"><i class="ri-sun-line"></i> ${T.vip_daily_title}</span>
-            <span class="ppv-vip-grid">
-              <span class="bronze" title="${T.vip_bronze}">+${vip.daily.bronze}</span>
-              <span class="silver" title="${T.vip_silver}">+${vip.daily.silver}</span>
-              <span class="gold" title="${T.vip_gold}">+${vip.daily.gold}</span>
-              <span class="platinum" title="${T.vip_platinum}">+${vip.daily.platinum}</span>
-            </span>
-          </div>
+          <tr class="ppv-vip-table-row">
+            <td class="ppv-vip-label-cell"><i class="ri-sun-line"></i> ${T.vip_daily_title}</td>
+            <td class="ppv-vip-cell bronze">+${vip.daily.bronze}</td>
+            <td class="ppv-vip-cell silver">+${vip.daily.silver}</td>
+            <td class="ppv-vip-cell gold">+${vip.daily.gold}</td>
+            <td class="ppv-vip-cell platinum">+${vip.daily.platinum}</td>
+          </tr>
         `);
       }
 
       return rows.length ? `
-        <div class="ppv-store-vip-compact">
-          <div class="ppv-vip-header-row">
-            <span class="ppv-vip-title"><i class="ri-vip-crown-fill"></i> ${T.vip_title}</span>
-            <span class="ppv-vip-levels-header">
-              <span class="bronze" title="${T.vip_bronze}"><i class="ri-medal-line"></i></span>
-              <span class="silver" title="${T.vip_silver}"><i class="ri-medal-line"></i></span>
-              <span class="gold" title="${T.vip_gold}"><i class="ri-medal-fill"></i></span>
-              <span class="platinum" title="${T.vip_platinum}"><i class="ri-vip-crown-fill"></i></span>
-            </span>
+        <div class="ppv-store-vip-table">
+          <div class="ppv-vip-table-title">
+            <i class="ri-vip-crown-fill"></i> ${T.vip_title}
           </div>
-          ${rows.join('')}
+          <table class="ppv-vip-mini-table">
+            <thead>
+              <tr>
+                <th class="ppv-vip-th-label"></th>
+                <th class="ppv-vip-th bronze"><i class="ri-medal-line"></i><span>${T.vip_bronze}</span></th>
+                <th class="ppv-vip-th silver"><i class="ri-medal-line"></i><span>${T.vip_silver}</span></th>
+                <th class="ppv-vip-th gold"><i class="ri-medal-fill"></i><span>${T.vip_gold}</span></th>
+                <th class="ppv-vip-th platinum"><i class="ri-vip-crown-fill"></i><span>${T.vip_platinum}</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.join('')}
+            </tbody>
+          </table>
         </div>
       ` : '';
     })() : '';
@@ -1353,11 +1370,6 @@ async function initUserDashboard() {
               ${store.rewards && store.rewards.length > 0 ? `
                 <span class="ppv-preview-tag ppv-reward-tag">
                   <i class="ri-gift-line"></i> ${store.rewards.length} ${T.rewards_preview}
-                </span>
-              ` : ''}
-              ${store.campaigns && store.campaigns.length > 0 ? `
-                <span class="ppv-preview-tag ppv-campaign-tag">
-                  <i class="ri-megaphone-line"></i> ${store.campaigns.length} ${T.campaigns_preview}
                 </span>
               ` : ''}
               ${store.vip ? `
@@ -1380,7 +1392,6 @@ async function initUserDashboard() {
             <span class="ppv-address"><i class="ri-map-pin-line"></i> ${escapeHtml(store.address || '')} ${store.plz || ''} ${store.city || ''}</span>
           </div>
           ${rewardsHTML}
-          ${campaignsHTML}
           ${vipHTML}
           <div class="ppv-store-actions">
             <button class="ppv-action-btn ppv-route" data-lat="${store.latitude}" data-lng="${store.longitude}" type="button">

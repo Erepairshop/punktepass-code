@@ -266,12 +266,22 @@ class PPV_Belohnungen {
             $rewards = [];
 
             if ($is_active) {
+                // 📅 Filter by campaign dates: show regular rewards + active campaigns
+                $today = date('Y-m-d');
                 $rewards = $wpdb->get_results($wpdb->prepare("
-                    SELECT id, title, description, required_points
+                    SELECT id, title, description, required_points, is_campaign, start_date, end_date
                     FROM {$wpdb->prefix}ppv_rewards
                     WHERE store_id = %d AND (active = 1 OR active IS NULL)
-                    ORDER BY required_points ASC
-                ", $store->store_id));
+                    AND (
+                        is_campaign = 0 OR is_campaign IS NULL
+                        OR (
+                            is_campaign = 1
+                            AND (start_date IS NULL OR start_date <= %s)
+                            AND (end_date IS NULL OR end_date >= %s)
+                        )
+                    )
+                    ORDER BY is_campaign DESC, required_points ASC
+                ", $store->store_id, $today, $today));
             }
 
             // Include store even if it has no rewards - show store with points
@@ -417,8 +427,18 @@ class PPV_Belohnungen {
                                         $progress = min(100, ($user_store_points / max(1, $required)) * 100);
                                         $is_ready = $user_store_points >= $required;
                                         $missing = max(0, $required - $user_store_points);
+                                        $is_campaign = !empty($reward->is_campaign);
+                                        $end_date_str = $reward->end_date ? date('d.m', strtotime($reward->end_date)) : null;
                                     ?>
-                                        <div class="ppv-rw-reward-item <?php echo $is_ready ? 'is-ready' : 'is-locked'; ?>">
+                                        <div class="ppv-rw-reward-item <?php echo $is_ready ? 'is-ready' : 'is-locked'; ?> <?php echo $is_campaign ? 'is-campaign' : ''; ?>">
+                                            <?php if ($is_campaign): ?>
+                                                <div class="ppv-rw-campaign-badge">
+                                                    <i class="ri-calendar-event-line"></i>
+                                                    <?php if ($end_date_str): ?>
+                                                        <span><?php echo esc_html($end_date_str); ?></span>
+                                                    <?php endif; ?>
+                                                </div>
+                                            <?php endif; ?>
                                             <div class="ppv-rw-reward-row">
                                                 <div class="ppv-rw-reward-main">
                                                     <span class="ppv-rw-reward-title"><?php echo esc_html($reward->title); ?></span>

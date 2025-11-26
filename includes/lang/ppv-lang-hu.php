@@ -176,8 +176,10 @@ return [
 'redeem_no_redeems_period' => 'Nem található beváltás ebben az időszakban',
     
     'rewards_form_none' => 'Nincsenek jutalmak.',
-'rewards_points_label' => 'Pontok',
+'rewards_points_label' => 'pont',
 'rewards_points_given_label' => 'Pontok adott',
+'rewards_add_new' => 'Új jutalom',
+'rewards_list_title' => 'Aktív jutalmak',
 'rewards_btn_edit' => 'Szerkesztés',
 'rewards_btn_delete' => 'Törlés',
 'rewards_error_loading' => 'Hiba a betöltéskor',
@@ -187,9 +189,17 @@ return [
 'rewards_confirm_delete' => 'Biztosan törlöd a jutalmat?',
 'rewards_deleted' => 'Törölve.',
 'rewards_error_delete' => 'Törlési hiba',
-    
+
+// 📅 Kampány mezők
+'rewards_form_campaign' => 'Kampány (időkorlátos)',
+'rewards_form_campaign_hint' => 'Csak adott időszakban érhető el',
+'rewards_form_start_date' => 'Kezdő dátum',
+'rewards_form_end_date' => 'Befejező dátum',
+'rewards_form_campaign_dates_hint' => 'Hagyd üresen a kezdő dátumot ha azonnal aktív, vagy a befejezőt ha nincs lejárat',
+'rewards_campaign_badge' => 'Kampány',
+
     'rewards_login_required' => 'Kérlek jelentkezz be vagy aktiváld a boltot.',
-'rewards_title' => 'Jutalmak kezelése – ',
+'rewards_title' => 'Jutalmak',
 'rewards_form_title' => 'Cím *',
 'rewards_form_title_placeholder' => 'pl. 10% rabatt',
 'rewards_form_title_helper' => 'A prémium neve, amit az ügyfelek látnak',
@@ -767,6 +777,11 @@ return [
 'latitude' => 'Szélesség (Latitude)',
 'longitude' => 'Hosszúság (Longitude)',
 'geocode_button' => 'Koordináták keresése (Cím alapján)',
+'manual_map_button' => 'Manuálisan a térképen',
+'map_modal_title' => 'Jelöld meg a helyet a térképen',
+'map_modal_click' => 'Kattints a térképre',
+'map_modal_cancel' => 'Mégse',
+'map_modal_confirm' => 'Elfogadom',
 
 'err_unknown_store' => '❌ Ismeretlen bolt',
 'err_rate_limited' => '⚠️ Túl sok scan. Kérlek várj!',
@@ -790,6 +805,7 @@ return [
 
 'qrcamp_title' => 'Kasszascanner & Kampányok',
 'tab_scanner' => 'Kasszascanner',
+'tab_vip' => 'VIP Beállítások',
 'tab_rewards' => 'Jutalmak',
 'tab_campaigns' => 'Kampányok',
 'camera_scanner_btn' => 'Kamera Scanner',
@@ -1253,8 +1269,93 @@ return [
     'err_store_closed_detail' => 'Scan nem lehetséges nyitvatartási időn kívül',
 
     // ============================================================
+    // SCAN VALIDATION - SELF-SCAN PROTECTION
+    // ============================================================
+    'err_self_scan' => '🚫 Saját QR kód beolvasása nem engedélyezett',
+    'err_self_scan_detail' => 'Az alkalmazottak nem olvashatják be a saját QR kódjukat',
+
+    // ============================================================
     // DEVICE FINGERPRINT - ACCOUNT LIMIT
     // ============================================================
     'err_device_limit' => '⚠️ Eszközlimit elérve',
     'err_device_limit_detail' => 'Maximális fiókok száma ezen az eszközön elérve',
+
+    // ============================================================
+    // REWARDS / BEVÁLTÁSOK
+    // ============================================================
+    'rewards_title' => 'Beváltások',
+    'rewards_login_required' => 'Kérjük jelentkezzen be vagy aktiválja az üzletet.',
+    'rewards_store_not_found' => 'Üzlet nem található.',
+
+    // Stats
+    'rewards_stat_today' => 'Ma',
+    'rewards_stat_week' => 'Hét',
+    'rewards_stat_month' => 'Hónap',
+    'rewards_stat_value' => 'Érték',
+
+    // Tabs
+    'rewards_tab_pending' => 'Függőben',
+    'rewards_tab_history' => 'Előzmények',
+    'rewards_tab_receipts' => 'Bizonylatok',
+
+    // Filters
+    'rewards_filter_all' => 'Minden állapot',
+    'rewards_filter_approved' => 'Jóváhagyott',
+    'rewards_filter_cancelled' => 'Elutasított',
+
+    // Receipt generators
+    'rewards_monthly_report' => 'Havi jelentés',
+    'rewards_period_report' => 'Időszaki jelentés',
+    'rewards_date_until' => 'ig',
+    'rewards_btn_create' => 'Létrehozás',
+    'rewards_btn_creating' => 'Létrehozás...',
+
+    // Month names
+    'month_january' => 'Január',
+    'month_february' => 'Február',
+    'month_march' => 'Március',
+    'month_april' => 'Április',
+    'month_may' => 'Május',
+    'month_june' => 'Június',
+    'month_july' => 'Július',
+    'month_august' => 'Augusztus',
+    'month_september' => 'Szeptember',
+    'month_october' => 'Október',
+    'month_november' => 'November',
+    'month_december' => 'December',
+
+    // Messages
+    'rewards_loading' => 'Betöltés...',
+    'rewards_loading_receipts' => 'Bizonylatok betöltése...',
+    'rewards_no_pending' => 'Nincsenek függő beváltások',
+    'rewards_no_history' => 'Nincsenek előzmények',
+    'rewards_no_receipts' => 'Még nincsenek bizonylatok',
+    'rewards_empty_pending_hint' => 'Az új beváltások automatikusan megjelennek itt',
+    'rewards_empty_history_hint' => 'A jóváhagyott és elutasított beváltások itt jelennek meg',
+    'rewards_empty_receipts_hint' => 'Hozzon létre egy havi jelentést fent',
+
+    // Actions
+    'rewards_btn_approve' => 'Jóváhagyás',
+    'rewards_btn_reject' => 'Elutasítás',
+    'rewards_status_approved' => 'Jóváhagyott',
+    'rewards_status_cancelled' => 'Elutasított',
+    'rewards_status_pending' => 'Függőben',
+
+    // Toast messages
+    'rewards_toast_approved' => 'Beváltás jóváhagyva!',
+    'rewards_toast_rejected' => 'Beváltás elutasítva',
+    'rewards_toast_error' => 'Hiba a feldolgozás során',
+    'rewards_toast_monthly_created' => 'Havi jelentés létrehozva!',
+    'rewards_toast_period_created' => 'Időszaki jelentés létrehozva!',
+    'rewards_toast_no_data' => 'Nincsenek beváltások erre az időszakra',
+    'rewards_toast_date_error' => 'A kezdő dátumnak korábbinak kell lennie a záró dátumnál',
+
+    // Receipt card
+    'rewards_receipt_download' => 'Letöltés',
+    'rewards_receipt_view' => 'Megtekintés',
+    'rewards_points' => 'Pont',
+    'rewards_default_title' => 'Jutalom',
+
+    // Notifications
+    'rewards_new_redemption' => 'Új beváltás!',
 ];

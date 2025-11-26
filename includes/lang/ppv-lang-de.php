@@ -147,6 +147,8 @@ return [
     'rewards_form_none' => 'Keine Prämien.',
 'rewards_points_label' => 'Punkte',
 'rewards_points_given_label' => 'Punkte vergeben',
+'rewards_add_new' => 'Neue Prämie',
+'rewards_list_title' => 'Aktive Prämien',
 'rewards_btn_edit' => 'Bearbeiten',
 'rewards_btn_delete' => 'Löschen',
 'rewards_error_loading' => 'Fehler beim Laden',
@@ -156,10 +158,17 @@ return [
 'rewards_confirm_delete' => 'Prämie wirklich löschen?',
 'rewards_deleted' => 'Gelöscht.',
 'rewards_error_delete' => 'Löschfehler',
-    
-    
+
+// 📅 Campaign fields
+'rewards_form_campaign' => 'Kampagne (zeitlich begrenzt)',
+'rewards_form_campaign_hint' => 'Nur in einem bestimmten Zeitraum verfügbar',
+'rewards_form_start_date' => 'Startdatum',
+'rewards_form_end_date' => 'Enddatum',
+'rewards_form_campaign_dates_hint' => 'Lasse das Startdatum leer, wenn sofort aktiv, oder das Enddatum, wenn es kein Ablaufdatum gibt',
+'rewards_campaign_badge' => 'Kampagne',
+
     'rewards_login_required' => 'Bitte anmelden oder Shop aktivieren.',
-'rewards_title' => 'Prämienverwaltung – ',
+'rewards_title' => 'Prämien',
 'rewards_form_title' => 'Titel *',
 'rewards_form_title_placeholder' => 'z. B. 10% Rabatt',
 'rewards_form_title_helper' => 'Der Name der Prämie, den Kunden sehen',
@@ -793,6 +802,11 @@ return [
 'latitude' => 'Breitengrad (Latitude)',
 'longitude' => 'Längengrad (Longitude)',
 'geocode_button' => 'Koordinaten suchen (Nach Adresse)',
+'manual_map_button' => 'Manuell auf der Karte',
+'map_modal_title' => 'Markiere den Ort auf der Karte',
+'map_modal_click' => 'Klicke auf die Karte',
+'map_modal_cancel' => 'Abbrechen',
+'map_modal_confirm' => 'Bestätigen',
 
 'err_unknown_store' => '❌ Unbekannter Shop',
 'err_rate_limited' => '⚠️ Zu viele Scans. Bitte warten.',
@@ -816,6 +830,7 @@ return [
 
 'qrcamp_title' => 'Kassenscanner & Kampagnen',
 'tab_scanner' => 'Kassenscanner',
+'tab_vip' => 'VIP Einstellungen',
 'tab_rewards' => 'Prämien',
 'tab_campaigns' => 'Kampagnen',
 'camera_scanner_btn' => 'Kamera Scanner',
@@ -1277,9 +1292,94 @@ return [
     'err_store_closed_detail' => 'Scan nicht möglich außerhalb der Öffnungszeiten',
 
     // ============================================================
+    // SCAN VALIDATION - SELF-SCAN PROTECTION
+    // ============================================================
+    'err_self_scan' => '🚫 Eigenen QR-Code scannen nicht erlaubt',
+    'err_self_scan_detail' => 'Mitarbeiter können ihren eigenen QR-Code nicht scannen',
+
+    // ============================================================
     // DEVICE FINGERPRINT - ACCOUNT LIMIT
     // ============================================================
     'err_device_limit' => '⚠️ Gerätelimit erreicht',
     'err_device_limit_detail' => 'Maximale Anzahl an Konten für dieses Gerät erreicht',
+
+    // ============================================================
+    // REWARDS / EINLÖSUNGEN
+    // ============================================================
+    'rewards_title' => 'Einlösungen',
+    'rewards_login_required' => 'Bitte anmelden oder Store aktivieren.',
+    'rewards_store_not_found' => 'Store nicht gefunden.',
+
+    // Stats
+    'rewards_stat_today' => 'Heute',
+    'rewards_stat_week' => 'Woche',
+    'rewards_stat_month' => 'Monat',
+    'rewards_stat_value' => 'Wert',
+
+    // Tabs
+    'rewards_tab_pending' => 'Ausstehend',
+    'rewards_tab_history' => 'Verlauf',
+    'rewards_tab_receipts' => 'Belege',
+
+    // Filters
+    'rewards_filter_all' => 'Alle Status',
+    'rewards_filter_approved' => 'Bestätigt',
+    'rewards_filter_cancelled' => 'Abgelehnt',
+
+    // Receipt generators
+    'rewards_monthly_report' => 'Monatsbericht',
+    'rewards_period_report' => 'Zeitraumbericht',
+    'rewards_date_until' => 'bis',
+    'rewards_btn_create' => 'Erstellen',
+    'rewards_btn_creating' => 'Erstelle...',
+
+    // Month names
+    'month_january' => 'Januar',
+    'month_february' => 'Februar',
+    'month_march' => 'März',
+    'month_april' => 'April',
+    'month_may' => 'Mai',
+    'month_june' => 'Juni',
+    'month_july' => 'Juli',
+    'month_august' => 'August',
+    'month_september' => 'September',
+    'month_october' => 'Oktober',
+    'month_november' => 'November',
+    'month_december' => 'Dezember',
+
+    // Messages
+    'rewards_loading' => 'Lade...',
+    'rewards_loading_receipts' => 'Lade Belege...',
+    'rewards_no_pending' => 'Keine ausstehenden Einlösungen',
+    'rewards_no_history' => 'Keine Einlösungen im Verlauf',
+    'rewards_no_receipts' => 'Noch keine Belege vorhanden',
+    'rewards_empty_pending_hint' => 'Neue Einlösungen erscheinen hier automatisch',
+    'rewards_empty_history_hint' => 'Bestätigte und abgelehnte Einlösungen werden hier angezeigt',
+    'rewards_empty_receipts_hint' => 'Erstellen Sie einen Monatsbericht oben',
+
+    // Actions
+    'rewards_btn_approve' => 'Bestätigen',
+    'rewards_btn_reject' => 'Ablehnen',
+    'rewards_status_approved' => 'Bestätigt',
+    'rewards_status_cancelled' => 'Abgelehnt',
+    'rewards_status_pending' => 'Ausstehend',
+
+    // Toast messages
+    'rewards_toast_approved' => 'Einlösung bestätigt!',
+    'rewards_toast_rejected' => 'Einlösung abgelehnt',
+    'rewards_toast_error' => 'Fehler bei der Verarbeitung',
+    'rewards_toast_monthly_created' => 'Monatsbericht erstellt!',
+    'rewards_toast_period_created' => 'Zeitraumbericht erstellt!',
+    'rewards_toast_no_data' => 'Keine Einlösungen für diesen Zeitraum',
+    'rewards_toast_date_error' => 'Startdatum muss vor Enddatum liegen',
+
+    // Receipt card
+    'rewards_receipt_download' => 'Herunterladen',
+    'rewards_receipt_view' => 'Ansehen',
+    'rewards_points' => 'Punkte',
+    'rewards_default_title' => 'Belohnung',
+
+    // Notifications
+    'rewards_new_redemption' => 'Neue Einlösung!',
 ];
 

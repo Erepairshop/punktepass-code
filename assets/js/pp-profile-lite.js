@@ -516,6 +516,13 @@ window.showMapPreview = showMapPreview;
 // ============================================================
 
 function openInteractiveMap(defaultLat, defaultLng) {
+  // Get translations
+  const L = window.ppv_profile?.strings || {};
+  const mapTitle = L.map_modal_title || 'Jelöld meg a helyet a térképen';
+  const mapClick = L.map_modal_click || 'Kattints a térképre';
+  const mapCancel = L.map_modal_cancel || 'Mégse';
+  const mapConfirm = L.map_modal_confirm || 'Elfogadom';
+
   // Modal HTML
   const modalHTML = `
     <div id="ppv-map-modal" style="
@@ -546,7 +553,7 @@ function openInteractiveMap(defaultLat, defaultLng) {
           justify-content: space-between;
           align-items: center;
         ">
-          <h2 style="margin: 0; font-size: 1.3rem;">🗺️ Jelöld meg a helyet a térképen</h2>
+          <h2 style="margin: 0; font-size: 1.3rem;">🗺️ ${mapTitle}</h2>
           <button onclick="window.closeInteractiveMap()" style="
             background: none;
             border: none;
@@ -575,7 +582,7 @@ function openInteractiveMap(defaultLat, defaultLng) {
           gap: 1rem;
         ">
           <p style="margin: 0; color: #666; font-size: 0.9rem;">
-            📍 <strong id="ppv-coord-display">Kattints a térképre</strong>
+            📍 <strong id="ppv-coord-display">${mapClick}</strong>
           </p>
           <div style="display: flex; gap: 0.75rem;">
             <button onclick="window.closeInteractiveMap()" style="
@@ -585,7 +592,7 @@ function openInteractiveMap(defaultLat, defaultLng) {
               border-radius: 6px;
               cursor: pointer;
               font-weight: 600;
-            ">Mégse</button>
+            ">${mapCancel}</button>
             <button onclick="window.confirmInteractiveMap()" style="
               padding: 0.75rem 1.5rem;
               border: none;
@@ -594,7 +601,7 @@ function openInteractiveMap(defaultLat, defaultLng) {
               border-radius: 6px;
               cursor: pointer;
               font-weight: 600;
-            ">✅ Elfogadom</button>
+            ">✅ ${mapConfirm}</button>
           </div>
         </div>
       </div>
@@ -781,9 +788,10 @@ function initManualMapButton() {
   const geocodeBtn = document.getElementById('ppv-geocode-btn');
   if (geocodeBtn && !geocodeBtn.dataset.manualBtnAdded) {
     geocodeBtn.dataset.manualBtnAdded = 'true';
+    const L = window.ppv_profile?.strings || {};
     const manualBtn = document.createElement('button');
     manualBtn.type = 'button';
-    manualBtn.textContent = '🗺️ Manuálisan a térképen';
+    manualBtn.textContent = '🗺️ ' + (L.manual_map_button || 'Manuálisan a térképen');
     manualBtn.style.cssText = `
       width: 100%;
       margin-top: 10px;

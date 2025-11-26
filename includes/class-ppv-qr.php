@@ -343,7 +343,7 @@ class PPV_QR {
         return ['limited' => false];
     }
 
-    private static function insert_log($store_id, $user_id, $msg, $type = 'scan', $error_type = null) {
+    private static function insert_log($store_id, $user_id, $msg, $type = 'scan', $error_type = null, $scanner_id = null, $scanner_name = null) {
         global $wpdb;
 
         // Get IP address
@@ -362,6 +362,12 @@ class PPV_QR {
         // Add error_type to metadata if provided (for client-side translation)
         if ($error_type !== null) {
             $metadata_array['error_type'] = $error_type;
+        }
+
+        // Add scanner info to metadata (who performed the scan)
+        if ($scanner_id !== null) {
+            $metadata_array['scanner_id'] = $scanner_id;
+            $metadata_array['scanner_name'] = $scanner_name;
         }
 
         $metadata = json_encode($metadata_array);
@@ -605,6 +611,14 @@ class PPV_QR {
                 'store_key' => $store_key ?: '',
             ];
 
+            // Add scanner info if this is a scanner user
+            if (!empty($_SESSION['ppv_user_type']) && $_SESSION['ppv_user_type'] === 'scanner' && !empty($_SESSION['ppv_user_id'])) {
+                $scanner_id = intval($_SESSION['ppv_user_id']);
+                $scanner_email = sanitize_email($_SESSION['ppv_user_email'] ?? '');
+                $store_data['scanner_id'] = $scanner_id;
+                $store_data['scanner_name'] = $scanner_email; // Use email as identifier
+            }
+
             // Add Ably config if enabled
             if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
                 $store_data['ably'] = [
@@ -694,9 +708,6 @@ class PPV_QR {
                     <button class="ppv-tab" data-tab="rewards" id="ppv-tab-rewards">
                         <i class="ri-gift-line"></i> <?php echo self::t('tab_rewards', 'Prämien'); ?>
                     </button>
-                    <button class="ppv-tab" data-tab="campaigns" id="ppv-tab-campaigns">
-                        <i class="ri-focus-3-line"></i> <?php echo self::t('tab_campaigns', 'Kampagnen'); ?>
-                    </button>
                     <button class="ppv-tab" data-tab="scanner-users" id="ppv-tab-scanner-users">
                         <i class="ri-team-line"></i> <?php echo self::t('tab_scanner_users', 'Scanner Felhasználók'); ?>
                     </button>
@@ -715,11 +726,6 @@ class PPV_QR {
                 <!-- TAB CONTENT: PRÄMIEN -->
                 <div class="ppv-tab-content" id="tab-rewards">
                     <?php echo do_shortcode('[ppv_rewards_management]'); ?>
-                </div>
-
-                <!-- TAB CONTENT: KAMPAGNEN -->
-                <div class="ppv-tab-content" id="tab-campaigns">
-                    <?php self::render_campaigns(); ?>
                 </div>
 
                 <!-- TAB CONTENT: SCANNER FELHASZNÁLÓK -->
@@ -1899,6 +1905,10 @@ class PPV_QR {
         $scan_lat = isset($data['latitude']) ? floatval($data['latitude']) : null;
         $scan_lng = isset($data['longitude']) ? floatval($data['longitude']) : null;
 
+        // Scanner employee ID (who is scanning) - for accountability
+        $scanner_id = isset($data['scanner_id']) ? intval($data['scanner_id']) : null;
+        $scanner_name = isset($data['scanner_name']) ? sanitize_text_field($data['scanner_name']) : null;
+
         if (empty($qr_code) || empty($store_key)) {
             return new WP_REST_Response([
                 'success' => false,
@@ -1970,6 +1980,24 @@ class PPV_QR {
                 'store_name' => $store->name ?? 'PunktePass',
                 'error_type' => 'invalid_qr'
             ], 400);
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // 🚫 SELF-SCAN PROTECTION - Employees cannot scan their own QR
+        // ═══════════════════════════════════════════════════════════
+        if ($scanner_id !== null && $scanner_id > 0 && $scanner_id === $user_id) {
+            ppv_log("🚫 [PPV_QR] BLOCKED: Self-scan attempt! scanner_id={$scanner_id}, user_id={$user_id}");
+
+            // Log the blocked self-scan attempt
+            self::insert_log($store_id, $user_id, '🚫 Self-scan blocked', 'error', 'self_scan', $scanner_id, $scanner_name);
+
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => self::t('err_self_scan', '🚫 Eigenen QR-Code scannen nicht erlaubt'),
+                'detail' => self::t('err_self_scan_detail', 'Mitarbeiter können ihren eigenen QR-Code nicht scannen'),
+                'store_name' => $store->name ?? 'PunktePass',
+                'error_type' => 'self_scan'
+            ], 403);
         }
 
         $rate_check = self::check_rate_limit($user_id, $store_id);
@@ -2220,23 +2248,21 @@ class PPV_QR {
                     }
                 }
 
-                // 4. FIRST DAILY SCAN BONUS
+                // 4. FIRST SCAN EVER BONUS (one-time per store)
                 if ($vip_settings->vip_daily_enabled && $user_level !== null) {
-                    $today = date('Y-m-d');
-                    $already_scanned_today = (int)$wpdb->get_var($wpdb->prepare("
+                    $ever_scanned_here = (int)$wpdb->get_var($wpdb->prepare("
                         SELECT COUNT(*) FROM {$wpdb->prefix}ppv_points
                         WHERE user_id = %d AND store_id = %d AND type = 'qr_scan'
-                        AND DATE(created) = %s
-                    ", $user_id, $store_id, $today));
+                    ", $user_id, $store_id));
 
-                    if ($already_scanned_today === 0) {
+                    if ($ever_scanned_here === 0) {
                         $vip_bonus_details['daily'] = $getLevelValue(
                             $vip_settings->vip_daily_bronze ?? 5,
                             $vip_settings->vip_daily_silver,
                             $vip_settings->vip_daily_gold,
                             $vip_settings->vip_daily_platinum
                         );
-                        ppv_log("☀️ [PPV_QR] First daily scan bonus applied for user {$user_id}");
+                        ppv_log("🎉 [PPV_QR] First scan ever bonus applied for user {$user_id} at store {$store_id}");
                     }
                 }
 
@@ -2271,7 +2297,7 @@ class PPV_QR {
         $log_msg = $vip_bonus_applied > 0
             ? "+{$points_add} " . self::t('points', 'Punkte') . " (VIP: +{$vip_bonus_applied})"
             : "+{$points_add} " . self::t('points', 'Punkte');
-        $log_id = self::insert_log($store_id, $user_id, $log_msg, 'qr_scan');
+        $log_id = self::insert_log($store_id, $user_id, $log_msg, 'qr_scan', null, $scanner_id, $scanner_name);
 
         // ✅ Generate unique scan_id for deduplication
         $scan_id = "scan-{$store_id}-{$user_id}-{$log_id}";
@@ -2303,6 +2329,8 @@ class PPV_QR {
                 'date_short' => date('d.m.'),
                 'time_short' => date('H:i'),
                 'success' => true,
+                'scanner_id' => $scanner_id,       // 👤 Who scanned (employee)
+                'scanner_name' => $scanner_name,   // 👤 Scanner email/name
             ]);
 
             // 📡 ABLY: Also notify user's dashboard of points update
@@ -2456,6 +2484,9 @@ class PPV_QR {
             'avatar' => $user_info->avatar ?? null,
             // 🎁 Redemption prompt (if available)
             'redemption_prompt' => $redemption_prompt,
+            // 👤 Scanner info (who performed the scan)
+            'scanner_id' => $scanner_id,
+            'scanner_name' => $scanner_name,
         ], 200);
     }
 
@@ -2475,6 +2506,7 @@ class PPV_QR {
 
         // ✅ FIX: Get logs from ppv_users table (NOT WordPress users!)
         // ✅ FIX: Include log ID for unique scan_id generation
+        // ✅ Include metadata for scanner info
         $logs = $wpdb->get_results($wpdb->prepare("
             SELECT
                 l.id AS log_id,
@@ -2482,6 +2514,7 @@ class PPV_QR {
                 l.user_id,
                 l.message,
                 l.type,
+                l.metadata,
                 u.email,
                 u.first_name,
                 u.last_name,
@@ -2508,6 +2541,17 @@ class PPV_QR {
             $full_name = trim("$first $last");
             $email = $log->email ?? '';
 
+            // Parse metadata for scanner info
+            $scanner_id = null;
+            $scanner_name = null;
+            if (!empty($log->metadata)) {
+                $meta = json_decode($log->metadata, true);
+                if (is_array($meta)) {
+                    $scanner_id = $meta['scanner_id'] ?? null;
+                    $scanner_name = $meta['scanner_name'] ?? null;
+                }
+            }
+
             return [
                 'scan_id' => "log-{$store_id}-{$log->log_id}", // ✅ Unique ID for deduplication
                 'user_id' => $log->user_id,
@@ -2519,6 +2563,8 @@ class PPV_QR {
                 'time_short' => date('H:i', $created),
                 'points' => $points,
                 'success' => ($log->type === 'qr_scan'),
+                'scanner_id' => $scanner_id,       // 👤 Who scanned
+                'scanner_name' => $scanner_name,   // 👤 Scanner email
             ];
         }, $logs);
 
