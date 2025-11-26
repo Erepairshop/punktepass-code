@@ -555,10 +555,13 @@ body.ppv-user-dashboard {
    🔘 QR BUTTON - Premium CTA with Shimmer
    ========================================================================== */
 
-.ppv-btn-qr {
+.ppv-btn-qr,
+.ppv-btn-qr:link,
+.ppv-btn-qr:visited,
+.ppv-btn-qr:focus {
     background: linear-gradient(135deg, #00d4ff 0%, #00b8e6 50%, #00a8cc 100%);
     background-size: 200% 200%;
-    color: #ffffff;
+    color: #ffffff !important;
     padding: 16px 36px;
     border-radius: 14px;
     font-size: 15px;
@@ -566,6 +569,7 @@ body.ppv-user-dashboard {
     font-weight: 800;
     letter-spacing: 0.5px;
     text-transform: uppercase;
+    text-decoration: none !important;
     cursor: pointer;
     border: none;
     white-space: nowrap;
@@ -587,6 +591,7 @@ body.ppv-user-dashboard {
 
 .ppv-btn-qr:hover {
     transform: translateY(-4px) scale(1.03);
+    color: #ffffff !important;
     box-shadow:
         0 12px 36px rgba(0, 168, 204, 0.45),
         0 6px 16px rgba(0, 0, 0, 0.15),
@@ -6030,7 +6035,10 @@ body.ppv-dark .ppv-mypoints-tab.active {
 }
 
 /* BUTTONS ------------------------------------------------------------------ */
-.ppv-redeem-btn {
+.ppv-redeem-btn,
+.ppv-redeem-btn:link,
+.ppv-redeem-btn:visited,
+.ppv-redeem-btn:focus {
     margin-top: .4rem;
     padding: .7rem;
     border: none;
@@ -6038,7 +6046,8 @@ body.ppv-dark .ppv-mypoints-tab.active {
     font-size: .95rem;
     font-weight: 600;
     background: var(--ppv-r-primary);
-    color: white;
+    color: white !important;
+    text-decoration: none !important;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -6048,6 +6057,7 @@ body.ppv-dark .ppv-mypoints-tab.active {
 
 .ppv-redeem-btn:hover {
     background: #1d4ed8;
+    color: white !important;
 }
 
 .ppv-redeem-btn.disabled {
@@ -17258,7 +17268,10 @@ body.ppv-dark .ppv-redemption-status.error,
 }
 
 /* QR Button (Compact) */
-.ppv-rw-btn-qr {
+.ppv-rw-btn-qr,
+.ppv-rw-btn-qr:link,
+.ppv-rw-btn-qr:visited,
+.ppv-rw-btn-qr:focus {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -17267,10 +17280,10 @@ body.ppv-dark .ppv-redemption-status.error,
     margin-top: 14px;
     background: linear-gradient(135deg, #00d4ff 0%, #00a8cc 50%, #0891b2 100%);
     background-size: 200% 200%;
-    color: #fff;
+    color: #ffffff !important;
     font-size: 14px;
     font-weight: 800;
-    text-decoration: none;
+    text-decoration: none !important;
     border-radius: 50px;
     box-shadow:
         0 6px 20px rgba(0, 168, 204, 0.35),
@@ -17314,7 +17327,7 @@ body.ppv-dark .ppv-redemption-status.error,
         0 10px 30px rgba(0, 168, 204, 0.45),
         0 0 40px rgba(0, 212, 255, 0.15),
         inset 0 1px 0 rgba(255, 255, 255, 0.3);
-    color: #fff;
+    color: #ffffff !important;
 }
 
 .ppv-rw-btn-qr:active {
