@@ -169,8 +169,12 @@
       const result = await res.json();
 
       if (result.success) {
+        // 📳 Haptic feedback on scan success
+        if (window.ppvHaptic) window.ppvHaptic('scan');
         showStatus(result.message || "✅ Scan erfolgreich", "green");
       } else {
+        // 📳 Haptic feedback on error
+        if (window.ppvHaptic) window.ppvHaptic('error');
         showStatus(result.message || "⚠️ Scan-Fehler – lokal gespeichert", "red");
         await saveOfflineScan(scanData);
       }

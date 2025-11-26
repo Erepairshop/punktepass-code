@@ -552,6 +552,8 @@
 
     tabs.forEach(tab => {
       tab.addEventListener('click', () => {
+        // 📳 Haptic feedback on tab switch
+        if (window.ppvHaptic) window.ppvHaptic('tap');
         const tabName = tab.dataset.tab;
 
         // Update active tab

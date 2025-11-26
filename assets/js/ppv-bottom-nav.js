@@ -66,6 +66,9 @@ jQuery(document).ready(function ($) {
 
   // Navigation click handler
   $(".ppv-bottom-nav .nav-item").on("click", function (e) {
+    // 📳 Haptic feedback on navigation
+    if (window.ppvHaptic) window.ppvHaptic('tap');
+
     const href = $(this).attr("href");
     if (!href || href === '#') return;
 

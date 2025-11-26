@@ -56,6 +56,8 @@
     const tabs = document.querySelectorAll('.ppv-ea-tab');
     tabs.forEach(tab => {
       tab.addEventListener('click', () => {
+        // 📳 Haptic feedback on tab switch
+        if (window.ppvHaptic) window.ppvHaptic('tap');
         const targetTab = tab.dataset.tab;
         if (targetTab === currentTab) return;
 
@@ -87,6 +89,8 @@
     const btn = document.getElementById('ppv-ea-refresh');
     if (btn) {
       btn.addEventListener('click', () => {
+        // 📳 Haptic feedback on refresh
+        if (window.ppvHaptic) window.ppvHaptic('button');
         btn.classList.add('spinning');
         loadStats();
 
@@ -235,6 +239,8 @@
       const data = await res.json();
 
       if (data.success) {
+        // 📳 Haptic feedback on success
+        if (window.ppvHaptic) window.ppvHaptic(status === 'approved' ? 'success' : 'warning');
         // Animate card removal
         card.classList.add('ppv-ea-card-fade-out');
         setTimeout(() => {
@@ -255,6 +261,8 @@
 
         showToast(status === 'approved' ? (L.rewards_toast_approved || 'Bestätigt!') : (L.rewards_toast_rejected || 'Abgelehnt'), status === 'approved' ? 'success' : 'info');
       } else {
+        // 📳 Haptic feedback on error
+        if (window.ppvHaptic) window.ppvHaptic('error');
         showToast(data.message || L.rewards_toast_error || 'Fehler', 'error');
         btn.disabled = false;
         btn.innerHTML = status === 'approved' ? '<i class="ri-check-line"></i>' : '<i class="ri-close-line"></i>';

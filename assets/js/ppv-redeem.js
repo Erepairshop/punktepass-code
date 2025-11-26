@@ -48,7 +48,8 @@ jQuery(document).ready(function ($) {
    * ============================================================ */
   function offlineCheck() {
     if (!navigator.onLine) {
-      showToast("📡 Offline – Redeem später versuchen", "error");
+      const msg = window.ppvErrorMsg ? window.ppvErrorMsg('offline') : "📡 Offline – Redeem später versuchen";
+      showToast(msg, "error");
       return true;
     }
     return false;
@@ -59,6 +60,8 @@ jQuery(document).ready(function ($) {
    * 💳 REWARD EINLÖSEN (POS)
    * ============================================================ */
   $(document).on("click", ".ppv-pos-redeem-btn", async function () {
+    // 📳 Haptic feedback on button press
+    if (window.ppvHaptic) window.ppvHaptic('button');
 
     const btn = $(this);
     const rewardID = Number(btn.data("id"));
@@ -71,7 +74,8 @@ jQuery(document).ready(function ($) {
 
     if (offlineCheck()) return;
 
-    btn.prop("disabled", true).text("⏳ ...");
+    // ⏳ Show loading state
+    if (window.ppvBtnLoading) window.ppvBtnLoading(btn, true);
 
     try {
       const res = await fetch("/wp-json/punktepass/v1/pos/redeem", {
@@ -90,6 +94,8 @@ jQuery(document).ready(function ($) {
       const json = await res.json();
 
       if (json?.success) {
+        // 📳 Haptic feedback on success
+        if (window.ppvHaptic) window.ppvHaptic('reward');
         showToast(json.message || "✅ Erfolgreich eingelöst.", "success");
 
         if (json.new_balance !== undefined) {
@@ -99,14 +105,20 @@ jQuery(document).ready(function ($) {
         setTimeout(() => location.reload(), 1200);
 
       } else {
+        // 📳 Haptic feedback on error
+        if (window.ppvHaptic) window.ppvHaptic('error');
         showToast(json?.message || "⚠️ Fehler beim Einlösen.", "error");
-        btn.prop("disabled", false).text("💳 Einlösen");
+        // ⏳ Restore button
+        if (window.ppvBtnLoading) window.ppvBtnLoading(btn, false, "💳 Einlösen");
       }
 
     } catch (err) {
       console.error("❌ Redeem Fehlschlag:", err);
-      showToast("⚠️ Serverfehler!", "error");
-      btn.prop("disabled", false).text("💳 Einlösen");
+      // 💬 User-friendly error message
+      const errMsg = window.ppvErrorMsg ? window.ppvErrorMsg(err) : "⚠️ Serverfehler!";
+      showToast(errMsg, "error");
+      // ⏳ Restore button
+      if (window.ppvBtnLoading) window.ppvBtnLoading(btn, false, "💳 Einlösen");
     }
   });
 

@@ -146,3 +146,213 @@ document.addEventListener("DOMContentLoaded", () => {
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.ready
 }
+
+// ============================================================
+// 📳 GLOBAL HAPTIC FEEDBACK UTILITY
+// ============================================================
+// Usage: window.ppvHaptic('tap') / ('success') / ('error') / ('warning')
+// ============================================================
+
+window.ppvHaptic = (function() {
+  // Check if vibration is supported
+  const supportsVibration = 'vibrate' in navigator;
+
+  // Vibration patterns (in milliseconds)
+  const patterns = {
+    tap: 30,                    // Light tap for buttons
+    button: 50,                 // Medium for important buttons
+    success: [50, 30, 50],      // Double tap for success
+    error: [100, 50, 100, 50, 100], // Triple for errors
+    warning: [80, 40, 80],      // Medium double for warnings
+    scan: [30, 20, 30, 20, 50], // QR scan success pattern
+    reward: [50, 30, 80, 30, 100], // Celebration for rewards
+  };
+
+  return function(type = 'tap') {
+    if (!supportsVibration) return false;
+
+    const pattern = patterns[type] || patterns.tap;
+
+    try {
+      navigator.vibrate(pattern);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  };
+})();
+
+// ============================================================
+// ⏳ GLOBAL BUTTON LOADING STATE UTILITY
+// ============================================================
+// Usage: window.ppvBtnLoading(btn, true) / (btn, false, 'Original Text')
+// ============================================================
+
+window.ppvBtnLoading = (function() {
+  const originalStates = new WeakMap();
+
+  return function(btn, loading = true, restoreText = null) {
+    if (!btn) return;
+
+    // Handle jQuery objects
+    const el = btn.jquery ? btn[0] : btn;
+    if (!el) return;
+
+    if (loading) {
+      // Save original state
+      originalStates.set(el, {
+        html: el.innerHTML,
+        disabled: el.disabled,
+        width: el.offsetWidth
+      });
+
+      // Set fixed width to prevent layout shift
+      el.style.minWidth = el.offsetWidth + 'px';
+
+      // Show spinner
+      el.innerHTML = '<i class="ri-loader-4-line ri-spin"></i>';
+      el.disabled = true;
+      el.classList.add('ppv-btn-loading');
+
+    } else {
+      // Restore original state
+      const original = originalStates.get(el);
+      if (original) {
+        el.innerHTML = restoreText || original.html;
+        el.disabled = original.disabled;
+        el.style.minWidth = '';
+        originalStates.delete(el);
+      } else if (restoreText) {
+        el.innerHTML = restoreText;
+        el.disabled = false;
+      }
+      el.classList.remove('ppv-btn-loading');
+    }
+  };
+})();
+
+// ============================================================
+// 💬 GLOBAL USER-FRIENDLY ERROR MESSAGES
+// ============================================================
+// Usage: window.ppvErrorMsg('network') / ('offline') / ('auth') / (errorObj)
+// ============================================================
+
+window.ppvErrorMsg = (function() {
+  // Get current language from HTML or fallback
+  const getLang = () => {
+    const htmlLang = document.documentElement.lang || 'de';
+    return ['de', 'hu', 'ro'].includes(htmlLang) ? htmlLang : 'de';
+  };
+
+  // User-friendly error messages
+  const messages = {
+    de: {
+      network: 'Verbindungsproblem. Bitte überprüfe deine Internetverbindung.',
+      offline: 'Du bist offline. Bitte verbinde dich mit dem Internet.',
+      auth: 'Sitzung abgelaufen. Bitte melde dich erneut an.',
+      forbidden: 'Du hast keine Berechtigung für diese Aktion.',
+      not_found: 'Die angeforderte Ressource wurde nicht gefunden.',
+      server: 'Ein Serverfehler ist aufgetreten. Bitte versuche es später erneut.',
+      timeout: 'Die Anfrage hat zu lange gedauert. Bitte versuche es erneut.',
+      invalid_data: 'Ungültige Daten. Bitte überprüfe deine Eingabe.',
+      rate_limit: 'Zu viele Anfragen. Bitte warte einen Moment.',
+      scan_duplicate: 'Dieser QR-Code wurde bereits gescannt.',
+      scan_expired: 'Der QR-Code ist abgelaufen. Bitte generiere einen neuen.',
+      insufficient_points: 'Nicht genügend Punkte für diese Aktion.',
+      unknown: 'Ein unerwarteter Fehler ist aufgetreten.',
+      try_again: 'Bitte versuche es erneut.',
+    },
+    hu: {
+      network: 'Kapcsolati hiba. Kérlek ellenőrizd az internetkapcsolatod.',
+      offline: 'Offline vagy. Kérlek csatlakozz az internethez.',
+      auth: 'A munkamenet lejárt. Kérlek jelentkezz be újra.',
+      forbidden: 'Nincs jogosultságod ehhez a művelethez.',
+      not_found: 'A kért erőforrás nem található.',
+      server: 'Szerverhiba történt. Kérlek próbáld újra később.',
+      timeout: 'A kérés túl sokáig tartott. Kérlek próbáld újra.',
+      invalid_data: 'Érvénytelen adatok. Kérlek ellenőrizd a bevitelt.',
+      rate_limit: 'Túl sok kérés. Kérlek várj egy pillanatot.',
+      scan_duplicate: 'Ez a QR-kód már be lett szkennelve.',
+      scan_expired: 'A QR-kód lejárt. Kérlek generálj egy újat.',
+      insufficient_points: 'Nincs elég pontod ehhez a művelethez.',
+      unknown: 'Váratlan hiba történt.',
+      try_again: 'Kérlek próbáld újra.',
+    },
+    ro: {
+      network: 'Problemă de conexiune. Te rugăm să verifici conexiunea la internet.',
+      offline: 'Ești offline. Te rugăm să te conectezi la internet.',
+      auth: 'Sesiunea a expirat. Te rugăm să te autentifici din nou.',
+      forbidden: 'Nu ai permisiunea pentru această acțiune.',
+      not_found: 'Resursa solicitată nu a fost găsită.',
+      server: 'A apărut o eroare de server. Te rugăm să încerci mai târziu.',
+      timeout: 'Cererea a durat prea mult. Te rugăm să încerci din nou.',
+      invalid_data: 'Date invalide. Te rugăm să verifici intrarea.',
+      rate_limit: 'Prea multe cereri. Te rugăm să aștepți un moment.',
+      scan_duplicate: 'Acest cod QR a fost deja scanat.',
+      scan_expired: 'Codul QR a expirat. Te rugăm să generezi unul nou.',
+      insufficient_points: 'Nu ai suficiente puncte pentru această acțiune.',
+      unknown: 'A apărut o eroare neașteptată.',
+      try_again: 'Te rugăm să încerci din nou.',
+    }
+  };
+
+  // Map HTTP status codes to error types
+  const statusMap = {
+    400: 'invalid_data',
+    401: 'auth',
+    403: 'forbidden',
+    404: 'not_found',
+    408: 'timeout',
+    429: 'rate_limit',
+    500: 'server',
+    502: 'server',
+    503: 'server',
+    504: 'timeout'
+  };
+
+  return function(errorOrType, fallbackMsg = null) {
+    const lang = getLang();
+    const langMsgs = messages[lang] || messages.de;
+
+    // If it's a string error type
+    if (typeof errorOrType === 'string') {
+      return langMsgs[errorOrType] || fallbackMsg || langMsgs.unknown;
+    }
+
+    // If it's an Error object
+    if (errorOrType instanceof Error) {
+      const msg = errorOrType.message?.toLowerCase() || '';
+
+      // Check for network errors
+      if (msg.includes('network') || msg.includes('fetch') || msg.includes('connection')) {
+        return navigator.onLine ? langMsgs.network : langMsgs.offline;
+      }
+
+      // Check for timeout
+      if (msg.includes('timeout') || msg.includes('aborted')) {
+        return langMsgs.timeout;
+      }
+
+      // Return server message if it's a user-friendly message already
+      if (errorOrType.message && !msg.includes('http') && msg.length < 100) {
+        return errorOrType.message;
+      }
+
+      return fallbackMsg || langMsgs.unknown;
+    }
+
+    // If it's an HTTP response or status code
+    if (typeof errorOrType === 'number') {
+      const type = statusMap[errorOrType];
+      return type ? langMsgs[type] : langMsgs.server;
+    }
+
+    // If it's a response object
+    if (errorOrType && errorOrType.status) {
+      const type = statusMap[errorOrType.status];
+      return type ? langMsgs[type] : langMsgs.server;
+    }
+
+    return fallbackMsg || langMsgs.unknown;
+  };
+})();

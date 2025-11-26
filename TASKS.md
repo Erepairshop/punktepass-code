@@ -126,9 +126,9 @@
 
 - [ ] **Skeleton loading** - 30 perc munka, profi hatás
 - [ ] **Pull-to-refresh** - iOS/Android feeling
-- [ ] **Haptic feedback** - `navigator.vibrate()` gombokra
-- [ ] **Better error messages** - felhasználóbarát hibaüzenetek
-- [ ] **Loading states** - minden gombra spinner
+- [x] ~~**Haptic feedback**~~ - `window.ppvHaptic()` utility + 7 fájlban implementálva ✅
+- [x] ~~**Better error messages**~~ - `window.ppvErrorMsg()` 3 nyelven (de/hu/ro) ✅
+- [x] ~~**Loading states**~~ - `window.ppvBtnLoading()` utility + CSS ✅
 
 ---
 

@@ -723,6 +723,32 @@ body.ppv-user-dashboard {
 }
 
 /* ==========================================================================
+   ⏳ BUTTON LOADING STATE
+   ========================================================================== */
+
+.ppv-btn-loading {
+    pointer-events: none;
+    opacity: 0.85;
+    cursor: wait !important;
+}
+
+.ppv-btn-loading i {
+    animation: ppv-spin 0.8s linear infinite;
+}
+
+/* RemixIcon spin class */
+.ri-spin {
+    animation: ppv-spin 0.8s linear infinite;
+}
+
+/* Inline spinner for buttons */
+button .ri-loader-4-line,
+.ppv-btn .ri-loader-4-line,
+.btn .ri-loader-4-line {
+    animation: ppv-spin 0.8s linear infinite;
+}
+
+/* ==========================================================================
    🎫 QR MODAL OVERLAY - Premium Glassmorphism
    ========================================================================== */
 

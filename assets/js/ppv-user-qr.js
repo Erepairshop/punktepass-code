@@ -24,7 +24,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   const refreshBtn = document.getElementById("ppvBtnRefresh");
   if (refreshBtn) {
     refreshBtn.addEventListener("click", async () => {
+      // 📳 Haptic feedback on refresh
+      if (window.ppvHaptic) window.ppvHaptic('button');
+      // ⏳ Show loading state
+      if (window.ppvBtnLoading) window.ppvBtnLoading(refreshBtn, true);
       await loadTimedQR(userId, true);
+      // ⏳ Restore button
+      if (window.ppvBtnLoading) window.ppvBtnLoading(refreshBtn, false);
     });
   }
 
@@ -33,6 +39,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (qrValueInput) {
     qrValueInput.addEventListener("click", (e) => {
       navigator.clipboard.writeText(e.target.value);
+      // 📳 Haptic feedback on copy
+      if (window.ppvHaptic) window.ppvHaptic('success');
       showStatus("📋 QR-Code kopiert!", "success");
     });
   }
@@ -70,6 +78,9 @@ async function loadTimedQR(userId, forceNew = false) {
 
     // Start countdown
     startCountdown(data.expires_at);
+
+    // 📳 Haptic feedback on QR load success
+    if (window.ppvHaptic) window.ppvHaptic('scan');
 
     // Status message
     if (data.is_new) {
