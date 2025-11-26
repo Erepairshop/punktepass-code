@@ -5076,6 +5076,57 @@ body.ppv-light .ppv-camp-actions span:hover {
     font-size: 11px;
 }
 
+/* VIP Table - Mobile Compact */
+@media (max-width: 480px) {
+    .ppv-store-vip-table {
+        padding: 8px;
+    }
+
+    .ppv-vip-table-title {
+        font-size: 11px;
+        margin-bottom: 6px;
+    }
+
+    .ppv-vip-th-label {
+        width: 28%;
+        padding: 4px 2px;
+    }
+
+    .ppv-vip-th {
+        width: 18%;
+        padding: 4px 1px;
+    }
+
+    .ppv-vip-th i {
+        font-size: 10px;
+        margin-bottom: 0;
+    }
+
+    .ppv-vip-th span {
+        display: none;
+    }
+
+    .ppv-vip-label-cell {
+        padding: 5px 2px;
+        font-size: 9px;
+    }
+
+    .ppv-vip-label-cell i {
+        font-size: 9px;
+        margin-right: 2px;
+    }
+
+    .ppv-vip-cell {
+        padding: 5px 1px;
+        font-size: 9px;
+    }
+
+    .ppv-vip-cell.ppv-vip-multiplier {
+        font-size: 8px;
+        padding: 5px 2px;
+    }
+}
+
 /* VIP Tag in preview */
 .ppv-preview-tag.ppv-vip-tag {
     background: linear-gradient(135deg, rgba(251, 191, 36, 0.25) 0%, rgba(251, 191, 36, 0.15) 100%);
