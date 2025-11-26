@@ -24,7 +24,6 @@
   // ============================================================
   function log(level, msg, data = '') {
     if (level === 'DEBUG' && !DEBUG) return;
-    console.log(`[PPV_THEME_v2] ${level}`, msg, data ? data : '');
   }
 
   // ============================================================

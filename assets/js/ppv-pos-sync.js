@@ -48,7 +48,6 @@
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(scans));
     showStatus("📦 Scan offline gespeichert", "orange");
-    console.log("📦 Offline gespeichert:", data);
   }
 
   /** 🔄 Synchronisation wenn online */
@@ -113,7 +112,6 @@
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         gpsPosition = { latitude: pos.coords.latitude, longitude: pos.coords.longitude, ts: Date.now() };
-        console.log("📍 GPS acquired:", gpsPosition.latitude.toFixed(4), gpsPosition.longitude.toFixed(4));
       },
       () => { gpsPosition = null; },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }

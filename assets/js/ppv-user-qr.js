@@ -3,7 +3,6 @@
  * REST API + Auto Countdown + Refresh on Expiry
  */
 
-console.log("✅ PunktePass Timed QR JS active");
 
 let countdownInterval = null;
 let expiresAt = null;

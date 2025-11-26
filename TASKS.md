@@ -44,7 +44,7 @@
 ### JavaScript
 | Probléma | Darabszám | Státusz |
 |----------|-----------|---------|
-| Console.log hívások | 474 db (törölni production-ból) | ⬜ |
+| Console.log hívások | ~~474 db~~ → 0 db ✅ | ✅ |
 | `var` használat | Több fájlban (helyett `const` / `let`) | ⬜ |
 | setInterval memory leak | 17 db interval nincs tisztítva | ⬜ |
 | Try/catch hiányzik | API hívásoknál sok helyen | ⬜ |
@@ -98,7 +98,7 @@
 - [x] ~~1. Ably API kulcs kiszedése~~ ✅
 - [x] ~~2. XSS fix admin oldalon~~ ✅
 - [x] ~~3. Elavult fájlok törlése~~ ✅
-- [ ] 4. Console.log-ok eltávolítása
+- [x] ~~4. Console.log-ok eltávolítása~~ ✅
 
 ### ✨ Rövid táv (2-3 hét)
 - [ ] 1. CSS változók egységesítése

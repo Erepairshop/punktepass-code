@@ -20,7 +20,6 @@
             meta.name = 'turbo-cache-control';
             meta.content = 'no-cache';
             document.head.appendChild(meta);
-            console.log('[Profile] 🚫 Turbo cache disabled via meta tag');
         }
 
         // 2. Prevent Turbo from caching this page snapshot
@@ -28,7 +27,6 @@
             // Check if we're on a profile page
             const profileForm = document.getElementById('ppv-profile-form');
             if (profileForm) {
-                console.log('[Profile] 🚫 Clearing form before Turbo cache');
                 // Mark form as not bound so it reinitializes on restore
                 profileForm.dataset.ppvBound = 'false';
             }
@@ -55,7 +53,6 @@
 
             // ✅ FIX: Prevent duplicate event listener bindings on Turbo navigation
             if (this.$form.dataset.ppvBound === 'true') {
-                console.log('[Profile] Already bound, skipping re-init');
                 return;
             }
             this.$form.dataset.ppvBound = 'true';
@@ -63,8 +60,6 @@
             // ✅ DEBUG: Log current form data to verify correct store loaded
             const storeIdInput = this.$form.querySelector('[name="store_id"]');
             const storeNameInput = this.$form.querySelector('[name="store_name"]');
-            console.log('🏪 [Profile] Init - Store ID:', storeIdInput?.value);
-            console.log('🏪 [Profile] Init - Store Name:', storeNameInput?.value);
 
             // ✅ Check if we just saved and verify data matches
             const lastSave = sessionStorage.getItem('ppv_last_save');
@@ -73,9 +68,6 @@
                     const saveData = JSON.parse(lastSave);
                     const timeDiff = Date.now() - saveData.timestamp;
                     if (timeDiff < 10000) { // Within 10 seconds
-                        console.log('📋 [Profile] Last save was', Math.round(timeDiff/1000), 'seconds ago');
-                        console.log('📋 [Profile] Saved store_id:', saveData.store_id, 'Current:', storeIdInput?.value);
-                        console.log('📋 [Profile] Saved name:', saveData.store_name, 'Current:', storeNameInput?.value);
                         if (saveData.store_name !== storeNameInput?.value) {
                             console.warn('⚠️ [Profile] MISMATCH! Saved name differs from current form!');
                         }
@@ -329,7 +321,6 @@
             })
             .then(r => r.json())
             .then(data => {
-                console.log('📥 [Profile] Save response:', data);
 
                 // ✅ Re-enable submit button
                 const submitBtn = document.getElementById('ppv-submit-btn');
@@ -347,11 +338,8 @@
                         `${this.t('last_updated')}: ${new Date().toLocaleString()}`;
 
                     // ✅ Frissítjük a form mezőket és reload cache-bust URL-lel
-                    console.log('📥 [Profile] Store data:', data.data?.store);
-                    console.log('📥 [Profile] Store ID saved:', data.data?.store_id);
 
                     if (data.data?.store) {
-                        console.log('✅ [Profile] Updating form fields with:', data.data.store);
                         this.updateFormFields(data.data.store);
 
                         // ✅ FIX: Store success in sessionStorage to verify after reload
@@ -570,7 +558,6 @@
     // 🔄 Browser back/forward cache (bfcache) detection - force reload for fresh data
     window.addEventListener('pageshow', function(event) {
         if (event.persisted) {
-            console.log('[Profile] 🔄 Page restored from bfcache - reloading for fresh data');
             window.location.reload();
         }
     });

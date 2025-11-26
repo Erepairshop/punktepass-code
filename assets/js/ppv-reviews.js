@@ -1,6 +1,5 @@
 jQuery(document).ready(function($){
 
-  console.log("✅ PPV Reviews JS loaded");
 
   // Új review
   $(document).on('submit','.ppv-review-form',function(e){
@@ -13,9 +12,7 @@ jQuery(document).ready(function($){
       rating: form.find('[name=rating]:checked').val(),
       comment: form.find('[name=comment]').val()
     };
-    console.log("Submitting review:", data);
     $.post(ppvReviews.ajaxurl,data,function(resp){
-      console.log("Review response:", resp);
       if(resp.success){ location.reload(); }
       else { alert(resp.data.msg); }
     });
@@ -31,9 +28,7 @@ jQuery(document).ready(function($){
       review_id: form.find('[name=review_id]').val(),
       reply: form.find('[name=reply]').val()
     };
-    console.log("Submitting reply:", data);
     $.post(ppvReviews.ajaxurl,data,function(resp){
-      console.log("Reply response:", resp);
       if(resp.success){ location.reload(); }
       else { alert(resp.data.msg); }
     });
@@ -48,9 +43,7 @@ jQuery(document).ready(function($){
       nonce: ppvReviews.nonce,
       review_id: btn.data('id')
     };
-    console.log("Submitting helpful:", data);
     $.post(ppvReviews.ajaxurl,data,function(resp){
-      console.log("Helpful response:", resp);
       if(resp.success){
         var match = btn.text().match(/\d+/);
         if(match){

@@ -15,7 +15,6 @@
 
   // ✅ DEBUG mode - set to false for production
   const PPV_DEBUG = false;
-  const ppvLog = (...args) => { if (PPV_DEBUG) console.log(...args); };
   const ppvWarn = (...args) => { if (PPV_DEBUG) console.warn(...args); };
 
   // Guard against multiple script loads
@@ -1854,10 +1853,6 @@
     const storeId = window.PPV_STORE_DATA?.store_id;
 
     // 🔍 DEBUG: Log all conditions
-    console.log('[Ably Debug] PPV_STORE_DATA:', window.PPV_STORE_DATA);
-    console.log('[Ably Debug] ablyConfig:', ablyConfig);
-    console.log('[Ably Debug] storeId:', storeId);
-    console.log('[Ably Debug] PPV_ABLY_MANAGER:', !!window.PPV_ABLY_MANAGER);
 
     if (ablyConfig && window.PPV_ABLY_MANAGER && storeId) {
       // ABLY MODE: Real-time updates via shared WebSocket manager
@@ -1877,7 +1872,6 @@
       // Listen for connection state changes
       manager.onStateChange((state) => {
         if (state === 'connected') {
-          console.log('✅ [Ably] CONNECTED via shared manager to channel: store-' + storeId);
           ppvLog('[Ably] Connected via shared manager');
           // Stop polling if it was running
           if (STATE.pollInterval) {
@@ -1900,13 +1894,11 @@
 
       // Handle incoming scan events
       manager.subscribe(channelName, 'new-scan', (message) => {
-        console.log('📡 [Ably] NEW-SCAN EVENT RECEIVED:', message.data);
         ppvLog('[Ably] New scan received:', message.data);
 
         // ✅ FIX: Deduplication is now handled by addScanItem using scan_id
         // Just pass the data through - the UI manager will skip if scan_id already displayed
         if (STATE.uiManager) {
-          console.log('📡 [Ably] Adding scan to UI...');
           STATE.uiManager.addScanItem({ ...message.data, _realtime: true });
         } else {
           console.warn('📡 [Ably] STATE.uiManager is null!');
@@ -1925,13 +1917,11 @@
       // Handler receives notification when user wants to redeem
       // ════════════════════════════════════════════════════════════════
       manager.subscribe(channelName, 'redemption-request', (message) => {
-        console.log('📡 [Ably] REDEMPTION REQUEST RECEIVED:', message.data);
         showHandlerRedemptionModal(message.data);
       }, STATE.ablySubscriberId);
 
       // Handler: User cancelled redemption
       manager.subscribe(channelName, 'redemption-cancelled', (message) => {
-        console.log('📡 [Ably] REDEMPTION CANCELLED:', message.data);
         closeHandlerRedemptionModal();
         window.ppvToast('❌ Kunde hat abgebrochen', 'info');
       }, STATE.ablySubscriberId);

@@ -7,7 +7,6 @@ jQuery(document).ready(function ($) {
 
         $('#ppv_vendor_msg').html('⏳ Registrierung läuft...');
 
-        console.log('➡️ AJAX Senden an: ', ppv_vendor_signup.ajax_url);
 
         $.ajax({
             url: ppv_vendor_signup.ajax_url,
@@ -16,7 +15,6 @@ jQuery(document).ready(function ($) {
             contentType: false,
             processData: false,
             success: function (response) {
-                console.log('⬅️ Antwort:', response);
                 if (response.success) {
                     $('#ppv_vendor_msg').html('✅ ' + response.data.msg);
                     setTimeout(() => window.location.href = response.data.redirect, 1200);
@@ -25,7 +23,6 @@ jQuery(document).ready(function ($) {
                 }
             },
             error: function (xhr) {
-                console.log('⚠️ AJAX Fehler:', xhr);
                 $('#ppv_vendor_msg').html('⚠️ Serverfehler. Bitte später versuchen.');
             }
         });

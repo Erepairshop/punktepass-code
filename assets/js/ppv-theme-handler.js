@@ -63,7 +63,6 @@ document.addEventListener("DOMContentLoaded", () => {
     document.head.appendChild(link);
 
     if (logoEl) updateLogo(logoEl, t);
-    console.log("🎨 Theme aktiv:", t);
   }
 
   /** ============================
@@ -89,7 +88,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // Ha tényleg váltani kell
   const cleanSrc = logoEl.src.split("?")[0];
   if (cleanSrc.endsWith(newSrc)) {
-    console.log("ℹ️ Logo already active:", newSrc);
     return;
   }
 
@@ -106,7 +104,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const img = new Image();
     img.onload = () => {
       logoEl.style.opacity = "1";
-      console.log("✅ Logo refreshed:", freshSrc);
     };
     img.src = freshSrc; // ez indítja az új letöltést
   }, 200);
@@ -206,11 +203,8 @@ document.addEventListener("DOMContentLoaded", () => {
  * ============================ */
 document.addEventListener("DOMContentLoaded", () => {
   const logo = document.querySelector("#ppv-logo img, .ppv-logo img");
-  console.log("🧠 [PPV_THEME_DEBUG] DOM loaded, theme:", document.body.dataset.theme);
-  console.log("🧠 [PPV_THEME_DEBUG] Found logo element:", logo ? logo.src : "❌ none");
 
   const observer = new MutationObserver(() => {
-    console.log("🎨 [PPV_THEME_DEBUG] Theme changed →", document.body.dataset.theme);
     const currentLogo = document.querySelector("#ppv-logo img, .ppv-logo img");
     const currentTheme = document.body.dataset.theme || "light";
     if (currentLogo) updateLogo(currentTheme);
@@ -223,7 +217,6 @@ document.addEventListener("DOMContentLoaded", () => {
 document.addEventListener("ppv-theme-changed", () => {
   const activeTheme = document.body.dataset.theme || "light";
   updateLogo(activeTheme);
-  console.log("🎨 [PPV_THEME_DEBUG] Logo updated for theme:", activeTheme);
 });
 
 

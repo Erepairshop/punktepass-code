@@ -17,7 +17,6 @@
         if (wrapper.dataset.initialized === 'true') return;
         wrapper.dataset.initialized = 'true';
 
-        console.log('✅ [VIP] Extended VIP Settings JS initialized');
 
         const T = window.ppv_vip_translations || {};
         const lang = wrapper.dataset.lang || 'de';
@@ -131,7 +130,6 @@
                     updateStreakTypeVisibility();
                     updatePreview();
 
-                    console.log('✅ [VIP] Extended settings loaded:', s);
                 }
             })
             .catch(err => {
@@ -322,11 +320,9 @@
         });
 
         // Preview level selector
-        console.log('✅ [VIP] Preview level buttons found:', previewLevelButtons.length);
         previewLevelButtons.forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
-                console.log('✅ [VIP] Preview level clicked:', btn.dataset.level);
                 previewLevelButtons.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 currentPreviewLevel = btn.dataset.level;
@@ -338,7 +334,6 @@
         if (filialeSelect) {
             filialeSelect.addEventListener('change', () => {
                 currentFilialeId = filialeSelect.value;
-                console.log('✅ [VIP] Filiale changed to:', currentFilialeId);
                 loadSettings();
             });
         }
@@ -347,11 +342,9 @@
         // SAVE SETTINGS
         // ═══════════════════════════════════════════════════════════
 
-        console.log('✅ [VIP] Save button found:', !!saveBtn);
         if (saveBtn) {
             saveBtn.addEventListener('click', (e) => {
                 e.preventDefault();
-                console.log('✅ [VIP] Save button clicked');
                 saveSettings();
             });
         }
@@ -419,7 +412,6 @@
                 if (data.success) {
                     statusEl.innerHTML = '<span class="ppv-success">' + (T.saved || 'Saved!') + '</span>';
                     setTimeout(() => { statusEl.innerHTML = ''; }, 3000);
-                    console.log('✅ [VIP] Extended settings saved');
                 } else {
                     // Show error message (may contain newlines)
                     const errorMsg = data.msg || T.error || 'Error';

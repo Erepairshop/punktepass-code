@@ -4,7 +4,6 @@
  * Verzió: 2.0 (session + lang + auto refresh)
  */
 
-console.log("🧩 PunktePass Bridge v2 aktiv");
 
 // 🔹 Token kezelés automatikusan (ha a PHP még nem adott)
 if (!window.ppvAuthToken && typeof ppv_bridge_user !== "undefined" && ppv_bridge_user.is_logged) {
@@ -18,7 +17,6 @@ if (!window.ppvAuthToken && typeof ppv_bridge_user !== "undefined" && ppv_bridge
   .then(j => {
     if (j.token) {
       window.ppvAuthToken = j.token;
-      console.log("✅ Neuer Token gesetzt:", j.token.substring(0,10)+"…");
     }
   })
   .catch(e => console.error("❌ Token-Erstellung fehlgeschlagen:", e));
@@ -49,7 +47,6 @@ const PPVBridge = {
 
   async check() {
     const data = await this.get("bridge");
-    console.log("🧠 Bridge check:", data);
     if (data.error) {
       alert("Bridge-Fehler: " + data.msg);
     } else if (data.session === "none") {
@@ -78,13 +75,11 @@ document.addEventListener("DOMContentLoaded", () => {
 // ✅ Service Worker & Install Prompt
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').then(reg => {
-    console.log('🟢 PunktePass SW ready:', reg.scope);
   }).catch(err => console.error('❌ SW Error:', err));
 }
 
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   window.deferredPrompt = e;
-  console.log('📲 PunktePass install prompt available');
 });
 

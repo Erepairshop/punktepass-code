@@ -4,7 +4,6 @@
  * Kompatibel: class-ppv-rewards.php v5.0
  */
 
-console.log("✅ PunktePass Rewards+Redeem JS v5.0 aktiv");
 
 document.addEventListener("DOMContentLoaded", function () {
   const base = ppv_rewards_rest.base;
@@ -17,11 +16,9 @@ document.addEventListener("DOMContentLoaded", function () {
   // ALWAYS prioritize window.PPV_STORE_ID over sessionStorage
   if (window.PPV_STORE_ID && Number(window.PPV_STORE_ID) > 0) {
     storeID = Number(window.PPV_STORE_ID);
-    console.log(`✅ [REWARDS-ADMIN] Using window.PPV_STORE_ID: ${storeID}`);
     // Clear sessionStorage if it differs
     const cachedStoreId = sessionStorage.getItem("ppv_store_id");
     if (cachedStoreId && Number(cachedStoreId) !== storeID) {
-      console.log(`🔄 [REWARDS-ADMIN] Store ID changed: ${cachedStoreId} -> ${storeID}`);
       sessionStorage.removeItem("ppv_store_id");
     }
   } else {
@@ -295,19 +292,16 @@ tabButtons.forEach((btn) => {
 
   function startPolling() {
     if (pollInterval) return;
-    console.log('🔄 [REWARDS-ADMIN] Starting polling (15s interval)');
     pollInterval = setInterval(checkNewRedeems, 15000);
   }
 
   function initRealtime() {
     if (config.ably && config.ably.key && typeof Ably !== 'undefined') {
-      console.log('📡 [REWARDS-ADMIN] Initializing Ably real-time...');
 
       const ably = new Ably.Realtime({ key: config.ably.key });
       const channel = ably.channels.get(config.ably.channel);
 
       ably.connection.on('connected', () => {
-        console.log('📡 [REWARDS-ADMIN] Ably connected');
         if (pollInterval) {
           clearInterval(pollInterval);
           pollInterval = null;
@@ -315,18 +309,15 @@ tabButtons.forEach((btn) => {
       });
 
       ably.connection.on('disconnected', () => {
-        console.log('📡 [REWARDS-ADMIN] Ably disconnected, starting polling');
         startPolling();
       });
 
       ably.connection.on('failed', (err) => {
-        console.log('📡 [REWARDS-ADMIN] Ably failed:', err);
         startPolling();
       });
 
       // 📡 Handle reward requests
       channel.subscribe('reward-request', (message) => {
-        console.log('📡 [REWARDS-ADMIN] Reward request received:', message.data);
         showPopupNotification(`🎁 Neue Einlösung: ${message.data.reward_title || 'Belohnung'}`);
         loadRedeems();
         loadRedeemLog();
@@ -334,14 +325,11 @@ tabButtons.forEach((btn) => {
 
       // 📡 Handle reward updates (CRUD)
       channel.subscribe('reward-update', (message) => {
-        console.log('📡 [REWARDS-ADMIN] Reward update received:', message.data);
         showToast(`🎁 Prämie ${message.data.action === 'created' ? 'erstellt' : message.data.action === 'updated' ? 'aktualisiert' : 'gelöscht'}`, 'info');
         loadRewards();
       });
 
-      console.log('📡 [REWARDS-ADMIN] Ably initialized');
     } else {
-      console.log('🔄 [REWARDS-ADMIN] Ably not available, using polling');
       startPolling();
     }
   }

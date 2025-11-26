@@ -38,7 +38,6 @@
         const returnUrl = getReturnUrl();
         if (returnUrl) {
             clearReturnUrl();
-            console.log('🔐 [Login] Redirecting to saved return URL:', returnUrl);
             return returnUrl;
         }
         return serverRedirect;
@@ -65,7 +64,6 @@ function initLogin() {
     function showSessionExpiredMessage() {
         const returnUrl = getReturnUrl();
         if (returnUrl) {
-            console.log('🔐 [Login] User redirected from session expiry, return URL:', returnUrl);
             // Optional: Show info message
             // showAlert('Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.', 'info');
         }
@@ -386,21 +384,15 @@ function initLogin() {
         }
 
         // Debug: Show full ppvLogin object
-        console.log('🔍 ppvLogin object:', ppvLogin);
-        console.log('🔍 facebook_app_id value:', ppvLogin.facebook_app_id);
-        console.log('🔍 facebook_app_id type:', typeof ppvLogin.facebook_app_id);
-        console.log('🔍 facebook_app_id length:', ppvLogin.facebook_app_id ? ppvLogin.facebook_app_id.length : 0);
 
         const appId = ppvLogin.facebook_app_id;
 
         if (!appId || appId === '') {
             console.warn('⚠️ Facebook App ID is empty');
-            console.log('🔍 Checking if defined in wp-config.php...');
             $('#ppv-facebook-login-btn').prop('disabled', true).css('opacity', '0.5');
             return;
         }
 
-        console.log('✅ Facebook App ID found:', appId.substring(0, 5) + '...');
 
         // Load Facebook SDK
         window.fbAsyncInit = function() {
@@ -615,7 +607,6 @@ function initLogin() {
                 redirectURI: redirectUri,
                 usePopup: true
             });
-            console.log('🍎 Apple Sign In initialized');
         } catch (error) {
             console.error('🍎 Apple auth init error:', error);
         }
@@ -630,7 +621,6 @@ function initLogin() {
 
                 // Trigger Apple Sign In
                 const response = await AppleID.auth.signIn();
-                console.log('🍎 Apple response:', response);
 
                 // Send to backend
                 handleAppleResponse(response, $btn);

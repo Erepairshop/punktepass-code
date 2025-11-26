@@ -7,7 +7,6 @@
 (function() {
   'use strict';
 
-  console.log('[PPV_REWARDS_V3.1] Loaded');
 
   // Global functions for inline onclick handlers
   window.ppvToggleStore = function(header) {
@@ -43,12 +42,10 @@
     if (!container) return;
 
     if (container.dataset.initialized === 'true') {
-      console.log('[PPV_REWARDS_V3.1] Already initialized');
       return;
     }
     container.dataset.initialized = 'true';
 
-    console.log('[PPV_REWARDS_V3.1] Initializing...');
 
     // Initialize first store as open
     initAccordion();
@@ -59,7 +56,6 @@
     // Animate elements
     animateOnLoad();
 
-    console.log('[PPV_REWARDS_V3.1] Ready');
   }
 
   function initAccordion() {

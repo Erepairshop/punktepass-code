@@ -5,7 +5,6 @@
  * ✅ Global 401 handler - automatikus login redirect
  */
 
-console.log("✅ [PPV_GLOBAL] v3.0 active (Turbo-compatible)");
 
 // ============================================================
 // 🔐 GLOBAL 401 HANDLER - Session expired redirect
@@ -146,6 +145,4 @@ document.addEventListener("DOMContentLoaded", () => {
 // 🔹 Service Worker státusz
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.ready
-    .then(() => console.log("🟢 [PPV_SW] ready"))
-    .catch(() => console.log("⚠️ [PPV_SW] not active"));
 }

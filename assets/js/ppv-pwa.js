@@ -23,16 +23,13 @@
 
   if (isStandalone) {
     document.body.classList.add("ppv-app-mode");
-    console.log("📱 [PWA] Standalone mode detected");
   } else {
-    console.log("🌐 [PWA] Browser mode");
   }
 
   // Listen for display mode changes (user installs PWA while using)
   window.matchMedia("(display-mode: standalone)").addEventListener('change', (e) => {
     if (e.matches) {
       document.body.classList.add("ppv-app-mode");
-      console.log("📱 [PWA] Switched to standalone mode");
     }
   });
 

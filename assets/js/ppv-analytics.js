@@ -16,7 +16,6 @@ class PPV_Analytics {
   }
 
   // ✅ FIX: Conditional logging (only in DEBUG mode)
-  log(...args) { if (this.DEBUG) console.log(...args); }
   warn(...args) { if (this.DEBUG) console.warn(...args); }
 
   /** ============================================================

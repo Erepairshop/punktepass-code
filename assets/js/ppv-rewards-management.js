@@ -3,7 +3,6 @@
  * Version: 2.0 – MODERN DESIGN
  */
 
-console.log("✅ PPV Rewards Management JS v2.0 loaded");
 
 document.addEventListener("DOMContentLoaded", function () {
 
@@ -18,7 +17,6 @@ document.addEventListener("DOMContentLoaded", function () {
   const toggleFormBtn = document.getElementById("ppv-toggle-form");
   const rewardsCountEl = document.getElementById("ppv-rewards-count");
 
-  console.log("🔧 Config:", { base, storeID, form, listContainer });
 
   if (!listContainer) {
     console.error("❌ ppv-rewards-list container nem található!");
@@ -81,16 +79,13 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     const url = `${base}rewards/list?store_id=${storeID}`;
-    console.log("📡 Fetch URL:", url);
     
     listContainer.innerHTML = "<div class='ppv-loading'>⏳ " + (L.rewards_list_loading || "Betöltés...") + "</div>";
 
     try {
       const res = await fetch(url);
-      console.log("📨 Response status:", res.status, res.statusText);
       
       const json = await res.json();
-      console.log("📦 Response JSON:", json);
 
       if (!json?.success) {
         console.warn("⚠️ API nem sikeres:", json?.message);
@@ -99,7 +94,6 @@ document.addEventListener("DOMContentLoaded", function () {
       }
 
       if (!json?.rewards || json.rewards.length === 0) {
-        console.log("ℹ️ Nincsenek prémiumok");
         if (rewardsCountEl) rewardsCountEl.textContent = "0";
         listContainer.innerHTML = `
           <div class="ppv-empty-state">
@@ -110,7 +104,6 @@ document.addEventListener("DOMContentLoaded", function () {
         return;
       }
 
-      console.log("✅ Prémiumok betöltve:", json.rewards.length);
 
       // Update rewards count
       if (rewardsCountEl) {
@@ -119,7 +112,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
       listContainer.innerHTML = "";
       json.rewards.forEach((r) => {
-        console.log("  🎁 Prémium:", r.title, "Pontok:", r.required_points, "Kampány:", r.is_campaign);
 
         // 📅 Campaign badge and date info
         const isCampaign = r.is_campaign == 1;
@@ -237,7 +229,6 @@ document.addEventListener("DOMContentLoaded", function () {
         apply_to_all: applyAllCheckbox?.checked || false
       };
 
-      console.log("💾 Save body:", body);
 
       const endpoint = editMode ? "rewards/update" : "rewards/save";
       if (editMode) body.id = editID;
@@ -249,10 +240,8 @@ document.addEventListener("DOMContentLoaded", function () {
           body: JSON.stringify(body)
         });
 
-        console.log("📨 Save response status:", res.status);
 
         const json = await res.json();
-        console.log("✅ Save response:", json);
 
         showToast(json.message || (L.rewards_saved || "✅ Mentve."), "success");
         
@@ -272,17 +261,14 @@ document.addEventListener("DOMContentLoaded", function () {
   document.body.addEventListener("click", async (e) => {
     if (e.target.classList.contains("ppv-edit")) {
       const id = e.target.dataset.id;
-      console.log("✏️ Edit ID:", id);
       
       try {
         const res = await fetch(`${base}rewards/list?store_id=${storeID}`);
         const json = await res.json();
-        console.log("📦 Edit fetch response:", json);
 
         const reward = json.rewards.find(r => r.id == id);
         
         if (reward) {
-          console.log("✏️ Editing:", reward);
           editMode = true;
           editID = reward.id;
           
@@ -351,7 +337,6 @@ document.addEventListener("DOMContentLoaded", function () {
       if (!confirm(L.rewards_confirm_delete || "Biztosan törlöd a jutalmat?")) return;
       
       const id = e.target.dataset.id;
-      console.log("🗑️ Delete ID:", id);
 
       try {
         const res = await fetch(`${base}rewards/delete`, {
@@ -360,10 +345,8 @@ document.addEventListener("DOMContentLoaded", function () {
           body: JSON.stringify({ store_id: storeID, id })
         });
 
-        console.log("📨 Delete response status:", res.status);
 
         const json = await res.json();
-        console.log("✅ Delete response:", json);
 
         showToast(json.message || (L.rewards_deleted || "🗑️ Törölve."), "success");
         loadRewards();
@@ -498,13 +481,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function initRealtime() {
     if (config.ably && config.ably.key && window.PPV_ABLY_MANAGER) {
-      console.log('📡 [REWARDS-MGMT] Initializing Ably via shared manager...');
 
       const manager = window.PPV_ABLY_MANAGER;
 
       // Initialize shared connection
       if (!manager.init(config.ably)) {
-        console.log('📡 [REWARDS-MGMT] Shared manager init failed, using polling');
         startPolling();
         return;
       }
@@ -512,35 +493,29 @@ document.addEventListener("DOMContentLoaded", function () {
       // Listen for connection state changes
       manager.onStateChange((state) => {
         if (state === 'connected') {
-          console.log('📡 [REWARDS-MGMT] Ably connected via shared manager');
           // Stop polling if running
           if (pollInterval) {
             clearInterval(pollInterval);
             pollInterval = null;
           }
         } else if (state === 'disconnected' || state === 'failed') {
-          console.log('📡 [REWARDS-MGMT] Ably disconnected, starting polling');
           startPolling();
         }
       });
 
       // 📡 Handle reward updates via shared manager
       manager.subscribe(config.ably.channel, 'reward-update', (message) => {
-        console.log('📡 [REWARDS-MGMT] Reward update received:', message.data);
         showToast(`🎁 Prämie ${message.data.action === 'created' ? 'erstellt' : message.data.action === 'updated' ? 'aktualisiert' : 'gelöscht'}`, 'info');
         loadRewards();
       }, 'rewards-mgmt');
 
-      console.log('📡 [REWARDS-MGMT] Ably initialized via shared manager');
     } else {
-      console.log('🔄 [REWARDS-MGMT] Ably not available, using polling');
       startPolling();
     }
   }
 
   function startPolling() {
     if (pollInterval) return; // Already polling
-    console.log('🔄 [REWARDS-MGMT] Starting polling (30s interval)');
     pollInterval = setInterval(() => {
       if (listContainer) {
         loadRewards();
@@ -551,7 +526,6 @@ document.addEventListener("DOMContentLoaded", function () {
   /* ============================================================
    * 🚀 INIT
    * ============================================================ */
-  console.log("🚀 Initializing rewards management...");
   loadRewards();
   initRealtime();
 });

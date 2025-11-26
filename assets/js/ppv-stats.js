@@ -6,7 +6,6 @@
  */
 
 jQuery(document).ready(function($) {
-    console.log("📊 [Stats COMPLETE JS v3.0] Loaded");
 
     // ============================================================
     // 🔧 CONFIG + TRANSLATIONS
@@ -38,7 +37,6 @@ jQuery(document).ready(function($) {
     // Current filiale selection
     let currentFilialeId = 'all';
 
-    console.log("✅ [Stats] Config OK, filialen:", config.filialen?.length || 0);
 
     // ============================================================
     // 🛡️ HELPERS
@@ -72,7 +70,6 @@ jQuery(document).ready(function($) {
     // 📊 LOAD BASIC STATS (1-3)
     // ============================================================
     function loadBasicStats(range = 'week') {
-        console.log(`📊 [Basic Stats] Loading range: ${range}, filiale: ${currentFilialeId}`);
 
         $loading.show();
         $error.hide();
@@ -86,7 +83,6 @@ jQuery(document).ready(function($) {
             dataType: 'json',
             cache: false,
             success: function(res) {
-                console.log("✅ [Basic] Response OK");
 
                 if (!res || !res.success) {
                     showError(res.error || T['error_loading_data'] || 'Server error');
@@ -114,7 +110,6 @@ jQuery(document).ready(function($) {
     // 🎨 UPDATE BASIC STATS
     // ============================================================
     function updateBasicStats(data) {
-        console.log("🎨 [Basic] Updating");
 
         // Main stats cards
         $('#ppv-stat-daily').text(formatNumber(data.daily || 0));
@@ -137,7 +132,6 @@ jQuery(document).ready(function($) {
         // Peak hours
         updatePeakHours(data.peak_hours || []);
 
-        console.log("✅ [Basic] Updated");
     }
 
     // ============================================================
@@ -177,7 +171,6 @@ jQuery(document).ready(function($) {
         });
 
         $container.html(html);
-        console.log("✅ [Top5] Updated");
     }
 
     // ============================================================
@@ -209,7 +202,6 @@ jQuery(document).ready(function($) {
         });
 
         $container.html(html);
-        console.log("✅ [Peak] Updated");
     }
 
     // ============================================================
@@ -288,7 +280,6 @@ jQuery(document).ready(function($) {
                 }
             });
 
-            console.log("✅ [Chart] OK");
         } catch (e) {
             console.error("❌ [Chart] Error:", e.message);
         }
@@ -298,7 +289,6 @@ jQuery(document).ready(function($) {
     // 4️⃣ LOAD TREND
     // ============================================================
     function loadTrend() {
-        console.log(`📈 [Trend] Loading... filiale: ${currentFilialeId}`);
 
         $.ajax({
             url: config.trend_url,
@@ -310,7 +300,6 @@ jQuery(document).ready(function($) {
             success: function(res) {
                 if (res.success) {
                     displayTrend(res);
-                    console.log("✅ [Trend] OK");
                 }
             },
             error: function() {
@@ -373,7 +362,6 @@ jQuery(document).ready(function($) {
     // 5️⃣ LOAD SPENDING
     // ============================================================
     function loadSpending() {
-        console.log(`💰 [Spending] Loading... filiale: ${currentFilialeId}`);
 
         $.ajax({
             url: config.spending_url,
@@ -385,7 +373,6 @@ jQuery(document).ready(function($) {
             success: function(res) {
                 if (res.success) {
                     displaySpending(res);
-                    console.log("✅ [Spending] OK");
                 }
             },
             error: function() {
@@ -460,7 +447,6 @@ jQuery(document).ready(function($) {
     // 6️⃣ LOAD CONVERSION
     // ============================================================
     function loadConversion() {
-        console.log(`📊 [Conversion] Loading... filiale: ${currentFilialeId}`);
 
         $.ajax({
             url: config.conversion_url,
@@ -472,7 +458,6 @@ jQuery(document).ready(function($) {
             success: function(res) {
                 if (res.success) {
                     displayConversion(res);
-                    console.log("✅ [Conversion] OK");
                 }
             },
             error: function() {
@@ -539,7 +524,6 @@ jQuery(document).ready(function($) {
     // ============================================================
     $exportAdvBtn.on('click', function() {
         const format = $exportFormatSelect.val() || 'detailed';
-        console.log(`📥 [Export Advanced] Format: ${format}`);
 
         const $btn = $(this);
         const txt = $btn.text();
@@ -565,7 +549,6 @@ jQuery(document).ready(function($) {
                     link.click();
                     document.body.removeChild(link);
 
-                    console.log("✅ [Export Advanced] Downloaded");
                 }
             },
             error: function() {
@@ -582,7 +565,6 @@ jQuery(document).ready(function($) {
     // ============================================================
     $exportBtn.on('click', function() {
         const range = $rangeSelect.val();
-        console.log(`📥 [Export Basic] Range: ${range}`);
 
         const $btn = $(this);
         const txt = $btn.html();
@@ -631,7 +613,6 @@ jQuery(document).ready(function($) {
     // ============================================================
     $filialeSelect.on('change', function() {
         currentFilialeId = $(this).val();
-        console.log(`🏢 [Filiale] Changed to: ${currentFilialeId}`);
 
         // Reload all stats with new filiale
         const range = $rangeSelect.val();
@@ -649,7 +630,6 @@ jQuery(document).ready(function($) {
 
     $('.ppv-stats-tab').on('click', function() {
         const tab = $(this).data('tab');
-        console.log(`📑 [Tab] Switching to: ${tab}`);
 
         // Update tab buttons
         $('.ppv-stats-tab').removeClass('active');
@@ -684,12 +664,10 @@ jQuery(document).ready(function($) {
 
     function loadSuspiciousScans() {
         if (!config.suspicious_url) {
-            console.log("⚠️ [Suspicious] No URL configured");
             return;
         }
 
         const status = $('#ppv-suspicious-status').val() || 'new';
-        console.log(`⚠️ [Suspicious] Loading status: ${status}`);
 
         const $loading = $('#ppv-suspicious-loading');
         const $list = $('#ppv-suspicious-list');
@@ -709,7 +687,6 @@ jQuery(document).ready(function($) {
                 if (res.success) {
                     displaySuspiciousScans(res);
                     updateSuspiciousBadge(res.counts);
-                    console.log("✅ [Suspicious] OK, scans:", res.scans?.length || 0);
                 } else {
                     $list.html(`<p class="ppv-error-small">${T['error_loading'] || 'Error loading data'}</p>`);
                 }
@@ -846,7 +823,6 @@ jQuery(document).ready(function($) {
     // 👤 LOAD SCANNER STATS
     // ============================================================
     function loadScannerStats() {
-        console.log(`👤 [Scanner Stats] Loading... filiale: ${currentFilialeId}`);
 
         const $loading = $('#ppv-scanner-stats-loading');
         const $list = $('#ppv-scanner-list');
@@ -865,7 +841,6 @@ jQuery(document).ready(function($) {
 
                 if (res.success) {
                     displayScannerStats(res);
-                    console.log("✅ [Scanner Stats] OK, scanners:", res.scanners?.length || 0);
                 } else {
                     $list.html(`<p class="ppv-error-small">${T['error_loading'] || 'Error loading data'}</p>`);
                 }
@@ -948,7 +923,6 @@ jQuery(document).ready(function($) {
     // ============================================================
     // 🚀 INIT
     // ============================================================
-    console.log("🚀 [Stats COMPLETE] Initializing...");
 
     if (!config.ajax_url) {
         console.error("❌ Config invalid!");
@@ -957,7 +931,6 @@ jQuery(document).ready(function($) {
 
     // Check if user has a store (is a handler/merchant)
     if (!config.store_id || config.store_id === 0) {
-        console.log("ℹ️ [Stats] No store ID - stats not available for this user");
         $loading.hide();
         $content.hide();
         $error.show().find('p').html('ℹ️ ' + (T['no_store_access'] || 'Statistics only available for merchants'));
@@ -974,7 +947,6 @@ jQuery(document).ready(function($) {
     const urlParams = new URLSearchParams(window.location.search);
     const tabParam = urlParams.get('tab');
     if (tabParam) {
-        console.log(`📑 [Stats] Opening tab from URL: ${tabParam}`);
         const $tabBtn = $(`.ppv-stats-tab[data-tab="${tabParam}"]`);
         if ($tabBtn.length) {
             $tabBtn.trigger('click');
@@ -984,12 +956,10 @@ jQuery(document).ready(function($) {
     // Also check for hash (e.g., #suspicious)
     if (window.location.hash) {
         const hashTab = window.location.hash.substring(1);
-        console.log(`📑 [Stats] Opening tab from hash: ${hashTab}`);
         const $tabBtn = $(`.ppv-stats-tab[data-tab="${hashTab}"]`);
         if ($tabBtn.length) {
             $tabBtn.trigger('click');
         }
     }
 
-    console.log("✅ [Stats COMPLETE] Ready!");
 });

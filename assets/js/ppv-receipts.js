@@ -16,7 +16,6 @@
 
   // ✅ DEBUG mode - set to true for verbose logging
   const PPV_DEBUG = false;
-  const ppvLog = (...args) => { if (PPV_DEBUG) console.log(...args); };
   const ppvWarn = (...args) => { if (PPV_DEBUG) console.warn(...args); };
 
   ppvLog("✅ PunktePass Bizonylatok JS v2.1 geladen");

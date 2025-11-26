@@ -2,7 +2,6 @@
  * PunktePass – User Settings v5.2
  * Avatar Upload • Modal System • Notifications • Privacy • Address
  * 🚀 Turbo-compatible
- * ✅ FIXED: Reduced console.log spam
  * Author: Erik Borota / PunktePass
  */
 
@@ -17,7 +16,6 @@
 
   // ✅ DEBUG MODE - Set to false in production to reduce console spam
   const PPV_SETTINGS_DEBUG = false;
-  const settingsLog = (...args) => { if (PPV_SETTINGS_DEBUG) console.log(...args); };
 
 // 🚀 Main initialization function
 function initUserSettings() {
@@ -121,7 +119,6 @@ function initUserSettings() {
     formData.append("avatar", file);
     formData.append("nonce", window.ppv_user_settings.nonce);
 
-    console.log("📤 [Avatar] Uploading to:", window.ppv_user_settings.ajax_url);
 
     $.ajax({
       url: window.ppv_user_settings.ajax_url,
@@ -130,7 +127,6 @@ function initUserSettings() {
       contentType: false,
       data: formData,
       success: (res) => {
-        console.log("📥 [Avatar] Response:", res);
         if (res.success && res.data.url) {
           $("#ppv-avatar-preview").attr("src", res.data.url);
           showToast(T.avatar_updated, "success");

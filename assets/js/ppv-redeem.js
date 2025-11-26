@@ -7,7 +7,6 @@
  * ✅ Tiszta UI + toast
  */
 
-console.log("✅ PunktePass POS Redeem JS v5.0 aktiv");
 
 jQuery(document).ready(function ($) {
 

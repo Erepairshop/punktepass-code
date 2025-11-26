@@ -14,11 +14,9 @@
   // 🍎 Safari detection
   const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
   if (isSafari) {
-    console.log('🍎 [PPV_MYPOINTS] Safari detected - using optimized handlers');
   }
 
   // ✅ OPTIMIZED: Conditional logging (only in DEBUG mode)
-  const log = (...args) => { if (DEBUG) console.log(...args); };
   const warn = (...args) => { if (DEBUG) console.warn(...args); };
   const error = (...args) => console.error(...args); // Always log errors
 
