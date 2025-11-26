@@ -254,10 +254,10 @@ class PPV_Weekly_Report {
             $scanner_html = '<p style="color: #6b7280; font-style: italic;">' . $T['no_scanner_data'] . '</p>';
         }
 
-        // Suspicious scans warning with link to admin
+        // Suspicious scans warning with link to stats page
         $suspicious_html = '';
         if ($stats['suspicious'] > 0) {
-            $suspicious_url = site_url('/wp-admin/admin.php?page=punktepass-suspicious-scans&scan_status=new');
+            $suspicious_url = site_url('/statistik?tab=suspicious');
             $suspicious_html = '<div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 12px; margin: 15px 0; border-radius: 4px;">
                 <strong>⚠️ ' . $T['suspicious_scans'] . ':</strong> ' . $stats['suspicious'] . '
                 <a href="' . esc_url($suspicious_url) . '" style="margin-left: 10px; color: #d97706; text-decoration: underline;">' . $T['view_details'] . ' →</a>

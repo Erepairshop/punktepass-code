@@ -206,6 +206,12 @@ class PPV_Stats {
             'permission_callback' => [__CLASS__, 'check_handler_permission']
         ]);
 
+        register_rest_route('punktepass/v1', '/stats/suspicious', [
+            'methods' => 'GET',
+            'callback' => [__CLASS__, 'rest_suspicious_scans'],
+            'permission_callback' => [__CLASS__, 'check_handler_permission']
+        ]);
+
         ppv_log("✅ [PPV_Stats] ALL REST routes OK");
     }
 
@@ -243,6 +249,7 @@ class PPV_Stats {
             'conversion_url' => esc_url(rest_url('punktepass/v1/stats/conversion')),
             'export_adv_url' => esc_url(rest_url('punktepass/v1/stats/export-advanced')),
             'scanner_url' => esc_url(rest_url('punktepass/v1/stats/scanners')),
+            'suspicious_url' => esc_url(rest_url('punktepass/v1/stats/suspicious')),
             'nonce' => wp_create_nonce('wp_rest'),
             'store_id' => intval($store_id ?? 0),
             'filialen' => $filialen,
@@ -937,6 +944,112 @@ class PPV_Stats {
     }
 
     // ========================================
+    // ⚠️ REST: SUSPICIOUS SCANS (for store owners)
+    // ========================================
+    public static function rest_suspicious_scans($req) {
+        global $wpdb;
+
+        ppv_log("⚠️ [Suspicious Scans] Start");
+
+        // Get store IDs for this handler
+        $store_ids = self::get_store_ids_for_query(null);
+
+        if (empty($store_ids)) {
+            return new WP_REST_Response(['success' => false, 'error' => 'No store'], 403);
+        }
+
+        $status_filter = sanitize_text_field($req->get_param('status') ?? 'new');
+        $placeholders = implode(',', array_fill(0, count($store_ids), '%d'));
+
+        $table_suspicious = $wpdb->prefix . 'ppv_suspicious_scans';
+        $table_users = $wpdb->prefix . 'ppv_users';
+        $table_stores = $wpdb->prefix . 'ppv_stores';
+
+        // Build WHERE clause
+        $where_status = '';
+        if ($status_filter !== 'all') {
+            $where_status = $wpdb->prepare(" AND ss.status = %s", $status_filter);
+        }
+
+        // Get suspicious scans for this store
+        $scans = $wpdb->get_results($wpdb->prepare("
+            SELECT
+                ss.id,
+                ss.user_id,
+                ss.store_id,
+                ss.distance_km,
+                ss.user_lat,
+                ss.user_lng,
+                ss.store_lat,
+                ss.store_lng,
+                ss.status,
+                ss.created_at,
+                u.first_name,
+                u.last_name,
+                u.email as user_email,
+                s.company_name as store_name
+            FROM {$table_suspicious} ss
+            LEFT JOIN {$table_users} u ON ss.user_id = u.id
+            LEFT JOIN {$table_stores} s ON ss.store_id = s.id
+            WHERE ss.store_id IN ({$placeholders})
+            {$where_status}
+            ORDER BY ss.created_at DESC
+            LIMIT 100
+        ", $store_ids));
+
+        // Count by status
+        $counts = [
+            'new' => 0,
+            'reviewed' => 0,
+            'dismissed' => 0,
+            'all' => 0
+        ];
+
+        $count_results = $wpdb->get_results($wpdb->prepare("
+            SELECT status, COUNT(*) as cnt
+            FROM {$table_suspicious}
+            WHERE store_id IN ({$placeholders})
+            GROUP BY status
+        ", $store_ids));
+
+        foreach ($count_results as $row) {
+            if (isset($counts[$row->status])) {
+                $counts[$row->status] = intval($row->cnt);
+            }
+            $counts['all'] += intval($row->cnt);
+        }
+
+        // Format results
+        $formatted = [];
+        foreach ($scans as $scan) {
+            $user_name = trim(($scan->first_name ?? '') . ' ' . ($scan->last_name ?? ''));
+            if (empty($user_name)) {
+                $user_name = 'User #' . $scan->user_id;
+            }
+
+            $formatted[] = [
+                'id' => intval($scan->id),
+                'user_id' => intval($scan->user_id),
+                'user_name' => $user_name,
+                'user_email' => $scan->user_email ?? '',
+                'store_name' => $scan->store_name ?? 'Store #' . $scan->store_id,
+                'distance_km' => round(floatval($scan->distance_km), 2),
+                'status' => $scan->status,
+                'created_at' => $scan->created_at,
+                'maps_link' => "https://www.google.com/maps?q={$scan->user_lat},{$scan->user_lng}"
+            ];
+        }
+
+        ppv_log("✅ [Suspicious Scans] Found " . count($formatted) . " scans");
+
+        return new WP_REST_Response([
+            'success' => true,
+            'scans' => $formatted,
+            'counts' => $counts
+        ], 200, ['Cache-Control' => 'no-store']);
+    }
+
+    // ========================================
     // 🎨 RENDER DASHBOARD
     // ✅ JAVÍTÁS 2: Removed get_translations() call
     // ✅ JAVÍTÁS 3: Translations integration
@@ -972,6 +1085,10 @@ class PPV_Stats {
                 </button>
                 <button class="ppv-stats-tab" data-tab="scanners">
                     <i class="ri-team-line"></i> <?php echo esc_html($T['scanner_stats'] ?? 'Mitarbeiter'); ?>
+                </button>
+                <button class="ppv-stats-tab" data-tab="suspicious" id="ppv-tab-suspicious-btn">
+                    <i class="ri-alarm-warning-line"></i> <?php echo esc_html($T['suspicious_scans'] ?? 'Verdächtige Scans'); ?>
+                    <span class="ppv-badge-count" id="ppv-suspicious-badge" style="display:none;"></span>
                 </button>
             </div>
 
@@ -1149,6 +1266,35 @@ class PPV_Stats {
                     </div>
                 </div>
             </div><!-- END TAB 3: SCANNER STATS -->
+
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <!-- TAB 4: SUSPICIOUS SCANS -->
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <div class="ppv-stats-tab-content" id="ppv-tab-suspicious">
+                <div class="ppv-stats-section">
+                    <h3 class="ppv-section-title">⚠️ <?php echo esc_html($T['suspicious_scans'] ?? 'Verdächtige Scans'); ?></h3>
+                    <p class="ppv-section-desc"><?php echo esc_html($T['suspicious_desc'] ?? 'Scans die aus verdächtiger Entfernung durchgeführt wurden.'); ?></p>
+
+                    <!-- Status filter -->
+                    <div class="ppv-suspicious-filters" style="margin-bottom: 15px;">
+                        <select id="ppv-suspicious-status" class="ppv-select">
+                            <option value="new"><?php echo esc_html($T['status_new'] ?? 'Neu'); ?></option>
+                            <option value="reviewed"><?php echo esc_html($T['status_reviewed'] ?? 'Überprüft'); ?></option>
+                            <option value="dismissed"><?php echo esc_html($T['status_dismissed'] ?? 'Abgewiesen'); ?></option>
+                            <option value="all"><?php echo esc_html($T['status_all'] ?? 'Alle'); ?></option>
+                        </select>
+                    </div>
+
+                    <div id="ppv-suspicious-loading" class="ppv-loading-small" style="display:none;">
+                        <?php echo esc_html($T['loading'] ?? 'Loading...'); ?>
+                    </div>
+
+                    <!-- Suspicious scans list -->
+                    <div class="ppv-suspicious-list" id="ppv-suspicious-list">
+                        <p class="ppv-no-data"><?php echo esc_html($T['no_suspicious_scans'] ?? 'Keine verdächtigen Scans vorhanden.'); ?></p>
+                    </div>
+                </div>
+            </div><!-- END TAB 4: SUSPICIOUS SCANS -->
 
         </div>
 

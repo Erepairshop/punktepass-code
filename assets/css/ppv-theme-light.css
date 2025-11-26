@@ -10483,6 +10483,177 @@ select.ppv-support-input {
     }
 }
 
+/* ============================================================
+   ⚠️ SUSPICIOUS SCANS - Table Styles
+   ============================================================ */
+.ppv-suspicious-filters {
+    margin-bottom: 16px;
+}
+
+.ppv-suspicious-filters select {
+    padding: 8px 12px;
+    border-radius: var(--pp-r-md);
+    border: 1px solid var(--pp-border);
+    background: var(--pp-surface);
+    color: var(--pp-text);
+    font-size: 13px;
+}
+
+.ppv-suspicious-table {
+    background: var(--pp-surface);
+    border-radius: var(--pp-r-lg);
+    border: 1px solid var(--pp-border-soft);
+    overflow: hidden;
+}
+
+.ppv-suspicious-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1.2fr 0.8fr;
+    gap: 8px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--pp-border-soft);
+    align-items: center;
+}
+
+.ppv-suspicious-row:last-child {
+    border-bottom: none;
+}
+
+.ppv-suspicious-row.ppv-suspicious-header {
+    background: var(--pp-bg-2);
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--pp-text-muted);
+}
+
+.ppv-suspicious-row.ppv-row-highlight {
+    background: rgba(245, 158, 11, 0.1);
+}
+
+.ppv-suspicious-cell {
+    font-size: 13px;
+    color: var(--pp-text);
+}
+
+.ppv-suspicious-cell.ppv-user-info {
+    line-height: 1.4;
+}
+
+.ppv-suspicious-cell.ppv-user-info small {
+    color: var(--pp-text-muted);
+    font-size: 11px;
+}
+
+.ppv-suspicious-cell.ppv-distance {
+    text-align: center;
+}
+
+.ppv-distance-value {
+    display: inline-block;
+    padding: 4px 10px;
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border-radius: var(--pp-r-sm);
+    font-weight: 600;
+    font-size: 12px;
+}
+
+.ppv-status-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: var(--pp-r-sm);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.ppv-status-badge.ppv-status-warning {
+    background: rgba(245, 158, 11, 0.15);
+    color: #d97706;
+}
+
+.ppv-status-badge.ppv-status-info {
+    background: rgba(59, 130, 246, 0.15);
+    color: #2563eb;
+}
+
+.ppv-status-badge.ppv-status-success {
+    background: rgba(16, 185, 129, 0.15);
+    color: #059669;
+}
+
+.ppv-suspicious-cell.ppv-date {
+    font-size: 12px;
+    color: var(--pp-text-muted);
+}
+
+.ppv-suspicious-cell.ppv-actions {
+    text-align: center;
+}
+
+.ppv-btn-small {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--pp-r-md);
+    background: var(--pp-bg-2);
+    color: var(--pp-text);
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.ppv-btn-small:hover {
+    background: var(--pp-primary);
+    color: white;
+}
+
+.ppv-btn-small i {
+    font-size: 16px;
+}
+
+/* Badge count for tab */
+.ppv-badge-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    margin-left: 6px;
+    background: #ef4444;
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    border-radius: 9px;
+}
+
+/* Mobile responsive for suspicious table */
+@media (max-width: 640px) {
+    .ppv-suspicious-row {
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+        padding: 10px 12px;
+    }
+
+    .ppv-suspicious-row.ppv-suspicious-header {
+        display: none;
+    }
+
+    .ppv-suspicious-cell.ppv-date {
+        grid-column: 1 / -1;
+        text-align: left;
+        font-size: 11px;
+    }
+
+    .ppv-suspicious-cell.ppv-actions {
+        text-align: right;
+    }
+}
+
 /* Stats Main Title */
 .ppv-stats-title {
     display: flex;
