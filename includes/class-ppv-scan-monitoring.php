@@ -860,6 +860,241 @@ class PPV_Scan_Monitoring {
     public static function should_be_pending($distance) {
         return $distance !== null && $distance > self::PENDING_DISTANCE_THRESHOLD;
     }
+
+    // ═══════════════════════════════════════════════════════════════
+    // VELOCITY CHECKS - Fraud Detection
+    // ═══════════════════════════════════════════════════════════════
+
+    /**
+     * Check for same IP with different users (potential fraud)
+     * Returns suspicious if same IP used by multiple users within time window
+     */
+    public static function check_ip_velocity($store_id, $user_id, $ip_address, $time_window_minutes = 60) {
+        global $wpdb;
+
+        if (empty($ip_address)) {
+            return ['suspicious' => false, 'reason' => 'no_ip'];
+        }
+
+        // Count different users from same IP in the time window
+        $time_threshold = date('Y-m-d H:i:s', strtotime("-{$time_window_minutes} minutes"));
+
+        $different_users = $wpdb->get_var($wpdb->prepare("
+            SELECT COUNT(DISTINCT user_id)
+            FROM {$wpdb->prefix}ppv_points
+            WHERE store_id = %d
+              AND created >= %s
+              AND user_id != %d
+        ", $store_id, $time_threshold, $user_id));
+
+        // Also check in suspicious scans log for IP
+        $ip_in_suspicious = $wpdb->get_var($wpdb->prepare("
+            SELECT COUNT(DISTINCT user_id)
+            FROM {$wpdb->prefix}ppv_suspicious_scans
+            WHERE store_id = %d
+              AND ip_address = %s
+              AND created_at >= %s
+              AND user_id != %d
+        ", $store_id, $ip_address, $time_threshold, $user_id));
+
+        $total_different_users = intval($different_users) + intval($ip_in_suspicious);
+
+        if ($total_different_users >= 2) {
+            ppv_log("[PPV_Scan_Monitoring] 🚨 IP VELOCITY: Same IP {$ip_address} used by {$total_different_users}+ different users at store #{$store_id}");
+            return [
+                'suspicious' => true,
+                'reason' => 'same_ip_multiple_users',
+                'ip_address' => $ip_address,
+                'different_users_count' => $total_different_users,
+                'time_window' => $time_window_minutes
+            ];
+        }
+
+        return ['suspicious' => false];
+    }
+
+    /**
+     * Check for too many scans in short time (scan flooding)
+     * Returns suspicious if user has too many scans within time window
+     */
+    public static function check_scan_frequency($store_id, $user_id, $max_scans = 5, $time_window_minutes = 10) {
+        global $wpdb;
+
+        $time_threshold = date('Y-m-d H:i:s', strtotime("-{$time_window_minutes} minutes"));
+
+        // Count scans by this user at this store in time window
+        $scan_count = $wpdb->get_var($wpdb->prepare("
+            SELECT COUNT(*)
+            FROM {$wpdb->prefix}ppv_points
+            WHERE store_id = %d
+              AND user_id = %d
+              AND created >= %s
+        ", $store_id, $user_id, $time_threshold));
+
+        if (intval($scan_count) >= $max_scans) {
+            ppv_log("[PPV_Scan_Monitoring] 🚨 SCAN FREQUENCY: User #{$user_id} has {$scan_count} scans in {$time_window_minutes} min at store #{$store_id}");
+            return [
+                'suspicious' => true,
+                'reason' => 'too_many_scans',
+                'scan_count' => intval($scan_count),
+                'max_allowed' => $max_scans,
+                'time_window' => $time_window_minutes
+            ];
+        }
+
+        return ['suspicious' => false];
+    }
+
+    /**
+     * Full velocity check - combines IP and frequency checks
+     * Call this during scan processing
+     */
+    public static function perform_velocity_check($store_id, $user_id, $ip_address = null) {
+        $results = [
+            'passed' => true,
+            'alerts' => []
+        ];
+
+        // Get IP if not provided
+        if (empty($ip_address)) {
+            $ip_address = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
+            $ip_address = sanitize_text_field(explode(',', $ip_address)[0]);
+        }
+
+        // Check 1: Same IP, different users
+        $ip_check = self::check_ip_velocity($store_id, $user_id, $ip_address);
+        if ($ip_check['suspicious']) {
+            $results['passed'] = false;
+            $results['alerts'][] = $ip_check;
+        }
+
+        // Check 2: Scan frequency (too many scans)
+        $freq_check = self::check_scan_frequency($store_id, $user_id);
+        if ($freq_check['suspicious']) {
+            $results['passed'] = false;
+            $results['alerts'][] = $freq_check;
+        }
+
+        // If any alerts, log and notify
+        if (!$results['passed']) {
+            self::log_velocity_alert($store_id, $user_id, $ip_address, $results['alerts']);
+        }
+
+        return $results;
+    }
+
+    /**
+     * Log velocity alert to suspicious scans table
+     */
+    private static function log_velocity_alert($store_id, $user_id, $ip_address, $alerts) {
+        global $wpdb;
+
+        $user_agent = sanitize_text_field($_SERVER['HTTP_USER_AGENT'] ?? '');
+
+        foreach ($alerts as $alert) {
+            $reason = $alert['reason'] ?? 'velocity_check';
+
+            $wpdb->insert(
+                $wpdb->prefix . 'ppv_suspicious_scans',
+                [
+                    'store_id' => $store_id,
+                    'user_id' => $user_id,
+                    'scan_latitude' => null,
+                    'scan_longitude' => null,
+                    'store_latitude' => null,
+                    'store_longitude' => null,
+                    'distance_meters' => null,
+                    'reason' => $reason,
+                    'status' => 'new',
+                    'admin_notes' => json_encode($alert),
+                    'ip_address' => $ip_address,
+                    'user_agent' => $user_agent,
+                    'created_at' => current_time('mysql')
+                ],
+                ['%d', '%d', '%f', '%f', '%f', '%f', '%d', '%s', '%s', '%s', '%s', '%s', '%s']
+            );
+        }
+
+        // Send email alert
+        self::send_velocity_alert_email($store_id, $user_id, $ip_address, $alerts);
+    }
+
+    /**
+     * Send email alert for velocity violations
+     */
+    private static function send_velocity_alert_email($store_id, $user_id, $ip_address, $alerts) {
+        global $wpdb;
+
+        // Get store and user info
+        $store = $wpdb->get_row($wpdb->prepare(
+            "SELECT name, company_name, city FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+            $store_id
+        ));
+
+        $user = $wpdb->get_row($wpdb->prepare(
+            "SELECT first_name, last_name, email FROM {$wpdb->prefix}ppv_users WHERE id = %d",
+            $user_id
+        ));
+
+        $store_name = $store->company_name ?: $store->name ?: "Store #{$store_id}";
+        $user_name = trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')) ?: "User #{$user_id}";
+        $user_email = $user->email ?? 'N/A';
+
+        $subject = "🚨 PunktePass VELOCITY ALERT - {$store_name}";
+
+        $body = "
+<h2 style='color: #d63638;'>🚨 Velocity Alert - Verdächtige Aktivität!</h2>
+
+<p><strong>Shop:</strong> {$store_name}</p>
+<p><strong>Stadt:</strong> " . ($store->city ?? 'N/A') . "</p>
+
+<hr>
+
+<h3>Benutzer:</h3>
+<p><strong>Name:</strong> {$user_name}</p>
+<p><strong>Email:</strong> {$user_email}</p>
+<p><strong>IP Adresse:</strong> {$ip_address}</p>
+
+<hr>
+
+<h3>Erkannte Probleme:</h3>
+<ul>
+";
+
+        foreach ($alerts as $alert) {
+            if ($alert['reason'] === 'same_ip_multiple_users') {
+                $body .= "<li style='color: #d63638;'><strong>⚠️ Gleiche IP, verschiedene Benutzer:</strong> {$alert['different_users_count']} verschiedene Benutzer von derselben IP in {$alert['time_window']} Minuten</li>";
+            }
+            if ($alert['reason'] === 'too_many_scans') {
+                $body .= "<li style='color: #d63638;'><strong>⚠️ Zu viele Scans:</strong> {$alert['scan_count']} Scans in {$alert['time_window']} Minuten (max: {$alert['max_allowed']})</li>";
+            }
+        }
+
+        $body .= "
+</ul>
+
+<p style='margin-top: 20px;'>
+    <a href='" . admin_url('admin.php?page=ppv-suspicious') . "' style='background: #d63638; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;'>🔧 Im Admin prüfen</a>
+</p>
+
+<p style='color: #666; font-size: 12px; margin-top: 30px;'>
+    Zeitpunkt: " . current_time('Y-m-d H:i:s') . "
+</p>
+";
+
+        $headers = [
+            'Content-Type: text/html; charset=UTF-8',
+            'From: PunktePass System <noreply@punktepass.de>'
+        ];
+
+        $sent = wp_mail(self::FRAUD_ALERT_EMAIL, $subject, $body, $headers);
+
+        if ($sent) {
+            ppv_log("[PPV_Scan_Monitoring] 📧 Velocity alert email sent for store #{$store_id}");
+        }
+
+        return $sent;
+    }
 }
 
 PPV_Scan_Monitoring::hooks();

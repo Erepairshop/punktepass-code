@@ -2082,6 +2082,19 @@ class PPV_QR {
         }
 
         // ═══════════════════════════════════════════════════════════
+        // VELOCITY CHECK (Fraud Detection) - Same IP / Scan Frequency
+        // Logs and alerts admin if suspicious patterns detected
+        // ═══════════════════════════════════════════════════════════
+        if (class_exists('PPV_Scan_Monitoring')) {
+            $velocity_check = PPV_Scan_Monitoring::perform_velocity_check($store_id, $user_id);
+
+            if (!$velocity_check['passed']) {
+                ppv_log("[PPV_QR] ⚠️ VELOCITY ALERT: user={$user_id}, store={$store_id}, alerts=" . json_encode($velocity_check['alerts']));
+                // Scan continues - admin notified via email and suspicious_scans table
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════
         // BASE POINTS: Campaign OR Reward (Prämien) points_given
         // ═══════════════════════════════════════════════════════════
         $points_add = 0;
