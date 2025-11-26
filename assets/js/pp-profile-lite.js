@@ -35,6 +35,30 @@
             }
             this.$form.dataset.ppvBound = 'true';
 
+            // ✅ DEBUG: Log current form data to verify correct store loaded
+            const storeIdInput = this.$form.querySelector('[name="store_id"]');
+            const storeNameInput = this.$form.querySelector('[name="store_name"]');
+            console.log('🏪 [Profile] Init - Store ID:', storeIdInput?.value);
+            console.log('🏪 [Profile] Init - Store Name:', storeNameInput?.value);
+
+            // ✅ Check if we just saved and verify data matches
+            const lastSave = sessionStorage.getItem('ppv_last_save');
+            if (lastSave) {
+                try {
+                    const saveData = JSON.parse(lastSave);
+                    const timeDiff = Date.now() - saveData.timestamp;
+                    if (timeDiff < 10000) { // Within 10 seconds
+                        console.log('📋 [Profile] Last save was', Math.round(timeDiff/1000), 'seconds ago');
+                        console.log('📋 [Profile] Saved store_id:', saveData.store_id, 'Current:', storeIdInput?.value);
+                        console.log('📋 [Profile] Saved name:', saveData.store_name, 'Current:', storeNameInput?.value);
+                        if (saveData.store_name !== storeNameInput?.value) {
+                            console.warn('⚠️ [Profile] MISMATCH! Saved name differs from current form!');
+                        }
+                    }
+                    sessionStorage.removeItem('ppv_last_save');
+                } catch(e) {}
+            }
+
             this.bindTabs();
             this.bindFormInputs();
             this.bindFormSubmit();
@@ -266,13 +290,29 @@
 
             this.updateStatus(this.t('saving'));
 
+            // ✅ Disable form submit button to prevent double-submit
+            const submitBtn = document.getElementById('ppv-submit-btn');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '⏳ ' + this.t('saving');
+            }
+
             fetch(`${this.ajaxUrl}?action=ppv_save_profile`, {
                 method: 'POST',
-                body: formData
+                body: formData,
+                keepalive: true  // ✅ FIX: Ensures request completes even if user navigates away
             })
             .then(r => r.json())
             .then(data => {
                 console.log('📥 [Profile] Save response:', data);
+
+                // ✅ Re-enable submit button
+                const submitBtn = document.getElementById('ppv-submit-btn');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '💾 <span>' + this.t('save') + '</span>';
+                }
+
                 if (data.success) {
                     this.showAlert(this.t('profile_saved_success'), 'success');
                     this.updateStatus(this.t('saved'));
@@ -283,9 +323,18 @@
 
                     // ✅ Frissítjük a form mezőket és reload cache-bust URL-lel
                     console.log('📥 [Profile] Store data:', data.data?.store);
+                    console.log('📥 [Profile] Store ID saved:', data.data?.store_id);
+
                     if (data.data?.store) {
                         console.log('✅ [Profile] Updating form fields with:', data.data.store);
                         this.updateFormFields(data.data.store);
+
+                        // ✅ FIX: Store success in sessionStorage to verify after reload
+                        sessionStorage.setItem('ppv_last_save', JSON.stringify({
+                            timestamp: Date.now(),
+                            store_id: data.data.store_id,
+                            store_name: data.data.store?.name
+                        }));
 
                         // ✅ Force reload with cache-bust parameter + preserve current tab
                         setTimeout(() => {
@@ -296,8 +345,13 @@
                             if (activeTab?.dataset.tab) {
                                 url.hash = 'tab-' + activeTab.dataset.tab;
                             }
-                            window.location.replace(url.toString());
-                        }, 800);
+                            // ✅ FIX: Use Turbo.visit with action: "replace" to bypass cache
+                            if (typeof Turbo !== 'undefined' && Turbo.visit) {
+                                Turbo.visit(url.toString(), { action: 'replace' });
+                            } else {
+                                window.location.replace(url.toString());
+                            }
+                        }, 500);
                     } else {
                         console.warn('⚠️ [Profile] No store data in response!');
                     }
@@ -307,6 +361,13 @@
                 }
             })
             .catch(err => {
+                console.error('❌ [Profile] Save error:', err);
+                // ✅ Re-enable submit button on error
+                const submitBtn = document.getElementById('ppv-submit-btn');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '💾 <span>' + this.t('save') + '</span>';
+                }
                 this.showAlert(this.t('profile_save_error'), 'error');
                 this.updateStatus(this.t('error'));
             });
