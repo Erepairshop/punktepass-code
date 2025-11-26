@@ -15238,7 +15238,8 @@ body.dark-mode {
     }
 
     .ppv-tier-step .tier-points {
-        display: none;
+        display: block;
+        font-size: 7px;
     }
 
     .ppv-current-tier-badge {
