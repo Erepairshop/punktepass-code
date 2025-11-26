@@ -423,31 +423,61 @@ body.ppv-user-dashboard {
 .ppv-qr-banner {
     display: flex;
     align-items: center;
-    gap: 18px;
-    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-    border: 1px solid var(--pp-border);
-    border-radius: var(--pp-r-xl);
-    padding: 24px;
+    gap: 20px;
+    background: linear-gradient(135deg,
+        rgba(255, 255, 255, 0.95) 0%,
+        rgba(248, 250, 252, 0.90) 50%,
+        rgba(240, 249, 255, 0.95) 100%);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(0, 168, 204, 0.15);
+    border-radius: 20px;
+    padding: 28px 32px;
     margin: 20px 0 28px;
-    box-shadow: var(--pp-shadow-md);
-    transition: var(--pp-trans);
+    box-shadow:
+        0 8px 32px rgba(0, 168, 204, 0.08),
+        0 4px 16px rgba(0, 0, 0, 0.04),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     cursor: pointer;
     animation: slideInQR 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
 }
 
-/* Subtle gradient border effect */
+/* Animated gradient border effect */
 .ppv-qr-banner::before {
     content: '';
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
-    height: 4px;
-    background: var(--gradient-premium);
+    bottom: 0;
+    border-radius: 20px;
+    padding: 2px;
+    background: linear-gradient(135deg,
+        #00d4ff 0%,
+        #00a8cc 25%,
+        #0088a8 50%,
+        #00a8cc 75%,
+        #00d4ff 100%);
+    background-size: 300% 300%;
+    -webkit-mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+    mask-composite: exclude;
     opacity: 0;
-    transition: var(--pp-trans);
+    transition: opacity 0.4s ease;
+    animation: lightBorderGlow 4s ease infinite;
+}
+
+@keyframes lightBorderGlow {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
 }
 
 @keyframes slideInQR {
@@ -462,13 +492,17 @@ body.ppv-user-dashboard {
 }
 
 .ppv-qr-banner:hover {
-    transform: translateY(-4px);
-    border-color: var(--pp-primary-light);
-    box-shadow: var(--pp-shadow-lg), var(--pp-shadow-glow);
+    transform: translateY(-6px);
+    border-color: rgba(0, 168, 204, 0.25);
+    box-shadow:
+        0 16px 48px rgba(0, 168, 204, 0.15),
+        0 8px 24px rgba(0, 0, 0, 0.08),
+        0 0 40px rgba(0, 212, 255, 0.10),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 .ppv-qr-banner:hover::before {
-    opacity: 1;
+    opacity: 0.8;
 }
 
 /* Left text block */
@@ -481,13 +515,25 @@ body.ppv-user-dashboard {
 }
 
 .ppv-qr-text i {
-    font-size: 44px;
-    background: var(--gradient-primary);
+    font-size: 52px;
+    background: linear-gradient(135deg, #00d4ff 0%, #00a8cc 50%, #0088a8 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    filter: drop-shadow(0 4px 8px var(--pp-primary-glow));
+    filter: drop-shadow(0 4px 12px rgba(0, 168, 204, 0.35));
     flex-shrink: 0;
+    animation: qrIconFloat 3s ease-in-out infinite;
+}
+
+@keyframes qrIconFloat {
+    0%, 100% {
+        transform: translateY(0) rotate(0deg);
+        filter: drop-shadow(0 4px 12px rgba(0, 168, 204, 0.35));
+    }
+    50% {
+        transform: translateY(-4px) rotate(2deg);
+        filter: drop-shadow(0 8px 20px rgba(0, 168, 204, 0.45));
+    }
 }
 
 .ppv-qr-text h3 {
@@ -510,51 +556,82 @@ body.ppv-user-dashboard {
    ========================================================================== */
 
 .ppv-btn-qr {
-    background: var(--gradient-primary);
-    color: var(--pp-text-inverse);
-    padding: 14px 28px;
-    border-radius: var(--pp-r-md);
-    font-size: 14px;
+    background: linear-gradient(135deg, #00d4ff 0%, #00b8e6 50%, #00a8cc 100%);
+    background-size: 200% 200%;
+    color: #ffffff;
+    padding: 16px 36px;
+    border-radius: 14px;
+    font-size: 15px;
     font-family: 'Poppins', sans-serif;
-    font-weight: 700;
-    letter-spacing: 0.3px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
     cursor: pointer;
     border: none;
     white-space: nowrap;
-    box-shadow: var(--pp-shadow), 0 4px 16px var(--pp-primary-glow);
+    box-shadow:
+        0 6px 24px rgba(0, 168, 204, 0.35),
+        0 3px 8px rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
     position: relative;
     overflow: hidden;
-    transition: var(--pp-trans);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     flex-shrink: 0;
+    animation: btnLightGradient 3s ease infinite;
+}
+
+@keyframes btnLightGradient {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
 }
 
 .ppv-btn-qr:hover {
-    transform: translateY(-3px) scale(1.02);
-    box-shadow: var(--pp-shadow-lg), 0 8px 24px var(--pp-primary-glow);
+    transform: translateY(-4px) scale(1.03);
+    box-shadow:
+        0 12px 36px rgba(0, 168, 204, 0.45),
+        0 6px 16px rgba(0, 0, 0, 0.15),
+        0 0 40px rgba(0, 212, 255, 0.20),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
 .ppv-btn-qr:active {
-    transform: translateY(-1px) scale(0.98);
+    transform: translateY(-2px) scale(0.98);
+    box-shadow:
+        0 4px 16px rgba(0, 168, 204, 0.30),
+        0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 /* Shimmer overlay */
 .ppv-btn-qr::before {
     content: '';
     position: absolute;
-    inset: -60%;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
     background: linear-gradient(
-        45deg,
+        90deg,
         transparent,
-        rgba(255,255,255,0.35),
+        rgba(255, 255, 255, 0.4),
         transparent
     );
-    transform: rotate(45deg);
-    animation: shimmerButton 3s infinite;
+    transition: left 0.6s ease;
 }
 
-@keyframes shimmerButton {
-    from { transform: translate(-120%, -120%) rotate(45deg); }
-    to   { transform: translate(120%, 120%) rotate(45deg); }
+.ppv-btn-qr:hover::before {
+    left: 100%;
+}
+
+/* Button icon animation */
+.ppv-btn-qr i {
+    margin-right: 8px;
+    font-size: 16px;
+    animation: btnIconPulse 2s ease-in-out infinite;
+}
+
+@keyframes btnIconPulse {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(3px); }
 }
 
 /* ==========================================================================
