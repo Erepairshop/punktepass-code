@@ -17,6 +17,13 @@
   // ✅ DEBUG MODE - Set to false in production to reduce console spam
   const PPV_SETTINGS_DEBUG = false;
 
+  // ✅ Conditional logger
+  function settingsLog(...args) {
+    if (PPV_SETTINGS_DEBUG) {
+      console.log(...args);
+    }
+  }
+
 // 🚀 Main initialization function
 function initUserSettings() {
   const $ = jQuery;
@@ -263,16 +270,8 @@ function initUserSettings() {
 // Initialize on jQuery ready
 jQuery(document).ready(initUserSettings);
 
-// 🚀 Turbo-compatible: Re-initialize after navigation
+// 🚀 Turbo-compatible: Re-initialize after navigation (only turbo:load, not render to avoid double-init)
 document.addEventListener("turbo:load", function() {
-  const wrapper = document.querySelector('.ppv-settings-wrapper');
-  if (wrapper) {
-    wrapper.dataset.initialized = 'false';
-  }
-  initUserSettings();
-});
-
-document.addEventListener("turbo:render", function() {
   const wrapper = document.querySelector('.ppv-settings-wrapper');
   if (wrapper) {
     wrapper.dataset.initialized = 'false';

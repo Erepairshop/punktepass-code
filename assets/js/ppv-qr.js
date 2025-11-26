@@ -1129,6 +1129,14 @@
     }
 
     async startScannerManual() {
+      // 📱 CHECK DEVICE REGISTRATION BEFORE STARTING SCANNER
+      const deviceCheck = await this.checkDeviceAllowed();
+      if (!deviceCheck.allowed) {
+        // Device not allowed - show warning and don't start scanner
+        this.showDeviceBlockedMessage(deviceCheck.message);
+        return;
+      }
+
       this.readerDiv.style.display = 'block';
       this.statusDiv.style.display = 'none'; // Hide status in mini mode - only show toggle
       this.toggleBtn.querySelector('.ppv-toggle-icon').textContent = '🛑';
@@ -1142,6 +1150,156 @@
       this.saveScannerState(true);
 
       await this.loadLibrary();
+    }
+
+    /**
+     * 📱 Check if current device is allowed to use scanner
+     */
+    async checkDeviceAllowed() {
+      try {
+        const fingerprint = await this.getDeviceFingerprint();
+        if (!fingerprint) {
+          // No fingerprint - block scanner (require device registration)
+          ppvWarn('[Scanner] No fingerprint available - blocking scanner');
+          return {
+            allowed: false,
+            message: L.device_register_first || 'Bitte registrieren Sie zuerst ein Gerät im Tab "Geräte", bevor Sie den Scanner verwenden können.'
+          };
+        }
+
+        const response = await fetch('/wp-json/punktepass/v1/user-devices/check', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fingerprint: fingerprint })
+        });
+
+        const data = await response.json();
+        ppvLog('[Scanner] Device check result:', data);
+
+        // Allow only if device is registered
+        if (data.can_use_scanner) {
+          return { allowed: true };
+        }
+
+        // Not allowed - device not registered
+        let message;
+        if (data.device_count === 0) {
+          message = L.device_register_first || 'Bitte registrieren Sie zuerst ein Gerät im Tab "Geräte", bevor Sie den Scanner verwenden können.';
+        } else {
+          message = L.device_not_allowed || 'Dieses Gerät ist nicht für den Scanner registriert. Bitte registrieren Sie es im Tab "Geräte".';
+        }
+        return {
+          allowed: false,
+          message: message
+        };
+      } catch (e) {
+        ppvWarn('[Scanner] Device check error:', e);
+        // On error, block scanner (strict mode - require device registration)
+        return {
+          allowed: false,
+          message: L.device_register_first || 'Bitte registrieren Sie zuerst ein Gerät im Tab "Geräte", bevor Sie den Scanner verwenden können.'
+        };
+      }
+    }
+
+    /**
+     * Get device fingerprint for scanner check
+     */
+    async getDeviceFingerprint() {
+      try {
+        // Try FingerprintJS if loaded
+        if (window.FingerprintJS) {
+          const fp = await FingerprintJS.load();
+          const result = await fp.get();
+          return result.visitorId;
+        }
+
+        // Fallback fingerprint (must be at least 16 chars)
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        ctx.textBaseline = 'top';
+        ctx.font = '14px Arial';
+        ctx.fillText('fingerprint', 0, 0);
+        const data = canvas.toDataURL() + navigator.userAgent + screen.width + screen.height + navigator.language + (new Date()).getTimezoneOffset();
+        let hash1 = 0, hash2 = 0;
+        for (let i = 0; i < data.length; i++) {
+          hash1 = ((hash1 << 5) - hash1) + data.charCodeAt(i);
+          hash1 = hash1 & hash1;
+          hash2 = ((hash2 << 7) - hash2) + data.charCodeAt(i);
+          hash2 = hash2 & hash2;
+        }
+        // Combine hashes to ensure at least 16 characters
+        return 'fp_' + Math.abs(hash1).toString(16).padStart(8, '0') + Math.abs(hash2).toString(16).padStart(8, '0');
+      } catch (e) {
+        ppvWarn('[Scanner] Fingerprint error:', e);
+        return null;
+      }
+    }
+
+    /**
+     * Show device blocked message
+     */
+    showDeviceBlockedMessage(message) {
+      // Create a visual overlay message
+      const overlay = document.createElement('div');
+      overlay.id = 'ppv-device-blocked-overlay';
+      overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        z-index: 99999;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+        box-sizing: border-box;
+      `;
+
+      overlay.innerHTML = `
+        <div style="background: #1a1a2e; padding: 30px; border-radius: 20px; max-width: 400px; text-align: center; border: 2px solid #f44336;">
+          <div style="font-size: 64px; margin-bottom: 20px;">🚫</div>
+          <h3 style="color: #f44336; margin: 0 0 15px 0; font-size: 20px;">
+            ${L.device_blocked_title || 'Gerät nicht registriert'}
+          </h3>
+          <p style="color: #ccc; font-size: 14px; line-height: 1.6; margin: 0 0 20px 0;">
+            ${message}
+          </p>
+          <p style="color: #ff9800; font-size: 13px; margin: 0 0 20px 0;">
+            <i class="ri-information-line"></i>
+            ${L.device_blocked_hint || 'Gehen Sie zum Tab "Készülékek" um dieses Gerät zu registrieren.'}
+          </p>
+          <button id="ppv-close-device-blocked" style="
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+          ">${L.close || 'Schließen'}</button>
+        </div>
+      `;
+
+      document.body.appendChild(overlay);
+
+      // Close button handler
+      document.getElementById('ppv-close-device-blocked').addEventListener('click', () => {
+        overlay.remove();
+      });
+
+      // Click outside to close
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+          overlay.remove();
+        }
+      });
+
+      // Also show toast
+      window.ppvToast(L.device_not_registered || '🚫 Gerät nicht registriert', 'error');
     }
 
     async loadLibrary() {

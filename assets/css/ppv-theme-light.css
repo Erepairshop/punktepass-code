@@ -13207,6 +13207,415 @@ body.ppv-dark .ppv-info-hint > i {
 }
 
 /* ==========================================================================
+   🎁 DARK REWARDS V3 (Modern Belohnungen Page)
+   ========================================================================== */
+
+/* Container */
+body.ppv-dark .ppv-rewards-v3 {
+    background: linear-gradient(180deg, #0d1117 0%, #161b22 30%, #1a2028 100%) !important;
+}
+
+/* Hero Section */
+body.ppv-dark .ppv-rw-hero {
+    background: linear-gradient(135deg,
+        rgba(26, 34, 45, 0.95) 0%,
+        rgba(21, 27, 35, 0.90) 100%) !important;
+    border: 1px solid rgba(0, 212, 255, 0.15) !important;
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.4),
+        0 4px 16px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+}
+
+body.ppv-dark .ppv-rw-hero::before {
+    background: linear-gradient(90deg, #00d4ff, #00a8cc, #10b981) !important;
+}
+
+body.ppv-dark .ppv-rw-hero-left h1 {
+    color: #f0f6fc !important;
+}
+
+body.ppv-dark .ppv-rw-hero-left p {
+    color: #8b949e !important;
+}
+
+/* Hero Points Badge */
+body.ppv-dark .ppv-rw-hero-points {
+    background: linear-gradient(135deg, #00d4ff 0%, #00a8cc 50%, #0891b2 100%) !important;
+    box-shadow:
+        0 6px 24px rgba(0, 212, 255, 0.35),
+        0 3px 8px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Progress Summary Cards */
+body.ppv-dark .ppv-rw-prog-card {
+    background: linear-gradient(135deg,
+        rgba(26, 34, 45, 0.95) 0%,
+        rgba(21, 27, 35, 0.90) 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    box-shadow:
+        0 4px 16px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+}
+
+body.ppv-dark .ppv-rw-prog-card:hover {
+    box-shadow:
+        0 8px 24px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+
+body.ppv-dark .ppv-rw-prog-card.ppv-rw-prog-ready {
+    border-left-color: #10b981 !important;
+    background: linear-gradient(135deg,
+        rgba(26, 34, 45, 0.95) 0%,
+        rgba(16, 185, 129, 0.10) 100%) !important;
+}
+
+body.ppv-dark .ppv-rw-prog-card.ppv-rw-prog-almost {
+    border-left-color: #f59e0b !important;
+    background: linear-gradient(135deg,
+        rgba(26, 34, 45, 0.95) 0%,
+        rgba(245, 158, 11, 0.10) 100%) !important;
+}
+
+body.ppv-dark .ppv-rw-prog-card.ppv-rw-prog-wip {
+    border-left-color: #00d4ff !important;
+    background: linear-gradient(135deg,
+        rgba(26, 34, 45, 0.95) 0%,
+        rgba(0, 212, 255, 0.10) 100%) !important;
+}
+
+body.ppv-dark .ppv-rw-prog-num {
+    color: #f0f6fc !important;
+}
+
+body.ppv-dark .ppv-rw-prog-card.ppv-rw-prog-ready .ppv-rw-prog-num {
+    color: #34d399 !important;
+}
+
+body.ppv-dark .ppv-rw-prog-card.ppv-rw-prog-almost .ppv-rw-prog-num {
+    color: #fbbf24 !important;
+}
+
+body.ppv-dark .ppv-rw-prog-card.ppv-rw-prog-wip .ppv-rw-prog-num {
+    color: #00d4ff !important;
+}
+
+body.ppv-dark .ppv-rw-prog-label {
+    color: #8b949e !important;
+}
+
+/* Store Filter Select */
+body.ppv-dark .ppv-rw-filter-select {
+    background: linear-gradient(135deg,
+        rgba(26, 34, 45, 0.98) 0%,
+        rgba(21, 27, 35, 0.95) 100%) !important;
+    border: 1px solid rgba(0, 212, 255, 0.20) !important;
+    color: #f0f6fc !important;
+    box-shadow:
+        0 4px 12px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2300d4ff'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
+}
+
+body.ppv-dark .ppv-rw-filter-select:focus {
+    border-color: #00d4ff !important;
+    box-shadow:
+        0 0 0 4px rgba(0, 212, 255, 0.15),
+        0 4px 16px rgba(0, 212, 255, 0.20) !important;
+}
+
+body.ppv-dark .ppv-rw-filter-select option {
+    background: #1a222b !important;
+    color: #f0f6fc !important;
+}
+
+/* Store Cards */
+body.ppv-dark .ppv-rw-store-card {
+    background: linear-gradient(135deg,
+        rgba(26, 34, 45, 0.98) 0%,
+        rgba(21, 27, 35, 0.95) 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    box-shadow:
+        0 4px 20px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+}
+
+body.ppv-dark .ppv-rw-store-card:hover {
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+
+body.ppv-dark .ppv-rw-store-card.has-ready {
+    border: 1px solid rgba(16, 185, 129, 0.30) !important;
+    background: linear-gradient(135deg,
+        rgba(26, 34, 45, 0.98) 0%,
+        rgba(16, 185, 129, 0.08) 100%) !important;
+}
+
+body.ppv-dark .ppv-rw-store-card.has-ready:hover {
+    box-shadow:
+        0 8px 32px rgba(16, 185, 129, 0.20),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Store Header */
+body.ppv-dark .ppv-rw-store-header::after {
+    background: linear-gradient(90deg,
+        transparent,
+        rgba(0, 212, 255, 0.20),
+        transparent) !important;
+}
+
+body.ppv-dark .ppv-rw-store-header:hover {
+    background: linear-gradient(135deg,
+        rgba(0, 212, 255, 0.08) 0%,
+        rgba(0, 168, 204, 0.05) 100%) !important;
+}
+
+body.ppv-dark .ppv-rw-store-logo {
+    background: #21262d !important;
+    border: 2px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+body.ppv-dark .ppv-rw-store-logo-placeholder {
+    box-shadow: 0 4px 16px rgba(0, 212, 255, 0.25) !important;
+}
+
+body.ppv-dark .ppv-rw-store-info h3 {
+    color: #f0f6fc !important;
+}
+
+body.ppv-dark .ppv-rw-store-points {
+    color: #00d4ff !important;
+}
+
+body.ppv-dark .ppv-rw-store-points i {
+    color: #fbbf24 !important;
+}
+
+body.ppv-dark .ppv-rw-chevron {
+    color: #8b949e !important;
+}
+
+/* Ready Badge */
+body.ppv-dark .ppv-rw-ready-badge {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.40) !important;
+}
+
+/* Reward Items */
+body.ppv-dark .ppv-rw-reward-item {
+    background: linear-gradient(135deg,
+        rgba(0, 212, 255, 0.08) 0%,
+        rgba(0, 168, 204, 0.04) 100%) !important;
+    border: 1px solid rgba(0, 212, 255, 0.12) !important;
+}
+
+body.ppv-dark .ppv-rw-reward-item:hover {
+    background: linear-gradient(135deg,
+        rgba(0, 212, 255, 0.12) 0%,
+        rgba(0, 168, 204, 0.08) 100%) !important;
+    box-shadow: 0 4px 16px rgba(0, 212, 255, 0.15) !important;
+}
+
+body.ppv-dark .ppv-rw-reward-item.is-ready {
+    background: linear-gradient(135deg,
+        rgba(16, 185, 129, 0.15) 0%,
+        rgba(16, 185, 129, 0.08) 100%) !important;
+    border-color: rgba(16, 185, 129, 0.30) !important;
+}
+
+body.ppv-dark .ppv-rw-reward-item.is-ready:hover {
+    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.20) !important;
+}
+
+body.ppv-dark .ppv-rw-reward-item.is-locked {
+    opacity: 0.60 !important;
+}
+
+/* Campaign Rewards */
+body.ppv-dark .ppv-rw-reward-item.is-campaign {
+    background: linear-gradient(135deg, rgba(249,115,22,0.12) 0%, rgba(249,115,22,0.05) 100%) !important;
+    border-color: rgba(249,115,22,0.30) !important;
+}
+
+body.ppv-dark .ppv-rw-reward-item.is-campaign.is-ready {
+    background: linear-gradient(135deg, rgba(249,115,22,0.15) 0%, rgba(16,185,129,0.10) 100%) !important;
+}
+
+body.ppv-dark .ppv-rw-campaign-badge {
+    color: #fb923c !important;
+    background: rgba(249,115,22,0.18) !important;
+}
+
+/* Reward Title & Points */
+body.ppv-dark .ppv-rw-reward-title {
+    color: #f0f6fc !important;
+}
+
+body.ppv-dark .ppv-rw-reward-pts {
+    color: #8b949e !important;
+    background: rgba(255,255,255,0.08) !important;
+}
+
+/* Badge Need */
+body.ppv-dark .ppv-rw-badge-need {
+    color: #f87171 !important;
+    background: linear-gradient(135deg,
+        rgba(239, 68, 68, 0.18) 0%,
+        rgba(239, 68, 68, 0.10) 100%) !important;
+    border: 1px solid rgba(239, 68, 68, 0.25) !important;
+}
+
+/* Progress Bar */
+body.ppv-dark .ppv-rw-progress {
+    background: rgba(0, 212, 255, 0.15) !important;
+}
+
+body.ppv-dark .ppv-rw-progress-bar {
+    background: linear-gradient(90deg, #00d4ff, #00a8cc, #10b981) !important;
+}
+
+body.ppv-dark .ppv-rw-reward-item.is-ready .ppv-rw-progress-bar {
+    background: linear-gradient(90deg, #10b981, #059669, #10b981) !important;
+}
+
+/* QR Button - keeps gradient, just enhance glow */
+body.ppv-dark .ppv-rw-btn-qr,
+body.ppv-dark .ppv-rw-btn-qr:link,
+body.ppv-dark .ppv-rw-btn-qr:visited {
+    box-shadow:
+        0 6px 20px rgba(0, 212, 255, 0.40),
+        inset 0 1px 0 rgba(255, 255, 255, 0.20) !important;
+}
+
+body.ppv-dark .ppv-rw-btn-qr:hover {
+    box-shadow:
+        0 10px 30px rgba(0, 212, 255, 0.50),
+        0 0 40px rgba(0, 212, 255, 0.20),
+        inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+}
+
+/* How It Works Section */
+body.ppv-dark .ppv-rw-howto {
+    background: linear-gradient(145deg, rgba(26, 34, 45, 0.95), rgba(21, 27, 35, 0.95)) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+}
+
+body.ppv-dark .ppv-rw-howto-header:hover {
+    background: rgba(0, 212, 255, 0.08) !important;
+}
+
+body.ppv-dark .ppv-rw-howto-header h3 {
+    color: #f0f6fc !important;
+}
+
+body.ppv-dark .ppv-rw-howto-header h3 i {
+    color: #fbbf24 !important;
+}
+
+body.ppv-dark .ppv-rw-step {
+    background: rgba(0, 212, 255, 0.08) !important;
+}
+
+body.ppv-dark .ppv-rw-step .step-num {
+    background: linear-gradient(135deg, #00d4ff 0%, #00a8cc 100%) !important;
+}
+
+body.ppv-dark .ppv-rw-step > span:last-child {
+    color: #c9d1d9 !important;
+}
+
+/* Empty State */
+body.ppv-dark .ppv-rw-empty {
+    background: linear-gradient(145deg, rgba(26, 34, 45, 0.95), rgba(21, 27, 35, 0.95)) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+}
+
+body.ppv-dark .ppv-rw-empty > i {
+    color: #00d4ff !important;
+}
+
+body.ppv-dark .ppv-rw-empty h3 {
+    color: #f0f6fc !important;
+}
+
+body.ppv-dark .ppv-rw-empty p {
+    color: #8b949e !important;
+}
+
+/* History Section */
+body.ppv-dark .ppv-rw-history {
+    background: linear-gradient(145deg, rgba(26, 34, 45, 0.95), rgba(21, 27, 35, 0.95)) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+}
+
+body.ppv-dark .ppv-rw-history h3 {
+    color: #f0f6fc !important;
+}
+
+body.ppv-dark .ppv-rw-history h3 i {
+    color: #00d4ff !important;
+}
+
+body.ppv-dark .ppv-rw-history-item {
+    background: rgba(0, 212, 255, 0.08) !important;
+}
+
+body.ppv-dark .ppv-rw-history-title {
+    color: #f0f6fc !important;
+}
+
+body.ppv-dark .ppv-rw-history-store {
+    color: #8b949e !important;
+}
+
+body.ppv-dark .ppv-rw-history-pts {
+    color: #f87171 !important;
+}
+
+body.ppv-dark .ppv-rw-history-date {
+    color: #6e7681 !important;
+}
+
+/* Info Box */
+body.ppv-dark .ppv-rw-info-box {
+    background: linear-gradient(145deg, rgba(0, 212, 255, 0.12), rgba(8, 145, 178, 0.10)) !important;
+    border: 1px solid rgba(0, 212, 255, 0.25) !important;
+}
+
+body.ppv-dark .ppv-rw-info-box i {
+    color: #00d4ff !important;
+}
+
+body.ppv-dark .ppv-rw-info-box p {
+    color: #c9d1d9 !important;
+}
+
+/* No Rewards Message */
+body.ppv-dark .ppv-rw-no-rewards {
+    color: #8b949e !important;
+}
+
+body.ppv-dark .ppv-rw-no-rewards i {
+    color: #6e7681 !important;
+}
+
+/* Hero QR Button */
+body.ppv-dark .ppv-rw-hero-qr {
+    background: linear-gradient(135deg, #00d4ff 0%, #00a8cc 100%) !important;
+    box-shadow: 0 4px 12px rgba(0, 212, 255, 0.35) !important;
+}
+
+body.ppv-dark .ppv-rw-hero-qr:hover {
+    box-shadow: 0 6px 16px rgba(0, 212, 255, 0.45) !important;
+}
+
+/* ==========================================================================
    📑 DARK TABS NAVIGATION (Handler pages)
    ========================================================================== */
 body.ppv-dark .ppv-tabs-nav {

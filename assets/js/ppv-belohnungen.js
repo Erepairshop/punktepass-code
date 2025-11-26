@@ -127,14 +127,8 @@
     init();
   }
 
-  // Turbo support
+  // Turbo support (only turbo:load, not render to avoid double-init)
   document.addEventListener('turbo:load', function() {
-    const container = document.querySelector('.ppv-rewards-v3');
-    if (container) container.dataset.initialized = 'false';
-    init();
-  });
-
-  document.addEventListener('turbo:render', function() {
     const container = document.querySelector('.ppv-rewards-v3');
     if (container) container.dataset.initialized = 'false';
     init();

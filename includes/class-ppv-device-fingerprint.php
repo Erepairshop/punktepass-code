@@ -24,6 +24,15 @@ class PPV_Device_Fingerprint {
     // Blocked devices table name suffix
     const BLOCKED_TABLE = 'ppv_blocked_devices';
 
+    // User registered devices table
+    const USER_DEVICES_TABLE = 'ppv_user_devices';
+
+    // Device approval requests table
+    const DEVICE_REQUESTS_TABLE = 'ppv_device_requests';
+
+    // Maximum devices per user (store owner)
+    const MAX_DEVICES_PER_USER = 2;
+
     /**
      * Register hooks
      */
@@ -85,6 +94,65 @@ class PPV_Device_Fingerprint {
 
             ppv_log("✅ [PPV_Device_Fingerprint] Blocked devices table created");
             update_option('ppv_device_migration_version', '1.1');
+            $migration_version = '1.1';
+        }
+
+        // Migration 1.2: Add user devices table (for scanner device registration)
+        if (version_compare($migration_version, '1.2', '<')) {
+            $table_user_devices = $wpdb->prefix . self::USER_DEVICES_TABLE;
+
+            $sql = "CREATE TABLE IF NOT EXISTS {$table_user_devices} (
+                id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+                store_id BIGINT(20) UNSIGNED NOT NULL COMMENT 'Store owner ID',
+                fingerprint_hash VARCHAR(64) NOT NULL,
+                device_name VARCHAR(255) NULL COMMENT 'User-friendly device name',
+                user_agent TEXT NULL,
+                ip_address VARCHAR(45) NULL,
+                registered_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                last_used_at DATETIME NULL,
+                status ENUM('active', 'pending_removal') DEFAULT 'active',
+                PRIMARY KEY (id),
+                UNIQUE KEY idx_store_fingerprint (store_id, fingerprint_hash),
+                KEY idx_store (store_id),
+                KEY idx_fingerprint (fingerprint_hash)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
+
+            require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+            dbDelta($sql);
+
+            ppv_log("✅ [PPV_Device_Fingerprint] User devices table created");
+            update_option('ppv_device_migration_version', '1.2');
+            $migration_version = '1.2';
+        }
+
+        // Migration 1.3: Add device requests table (for admin approval)
+        if (version_compare($migration_version, '1.3', '<')) {
+            $table_requests = $wpdb->prefix . self::DEVICE_REQUESTS_TABLE;
+
+            $sql = "CREATE TABLE IF NOT EXISTS {$table_requests} (
+                id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+                store_id BIGINT(20) UNSIGNED NOT NULL,
+                fingerprint_hash VARCHAR(64) NOT NULL,
+                request_type ENUM('add', 'remove') NOT NULL,
+                device_name VARCHAR(255) NULL,
+                user_agent TEXT NULL,
+                ip_address VARCHAR(45) NULL,
+                approval_token VARCHAR(64) NOT NULL,
+                status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+                requested_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                processed_at DATETIME NULL,
+                processed_by VARCHAR(100) NULL,
+                PRIMARY KEY (id),
+                UNIQUE KEY idx_token (approval_token),
+                KEY idx_store (store_id),
+                KEY idx_status (status)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
+
+            require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+            dbDelta($sql);
+
+            ppv_log("✅ [PPV_Device_Fingerprint] Device requests table created");
+            update_option('ppv_device_migration_version', '1.3');
         }
     }
 
@@ -103,6 +171,59 @@ class PPV_Device_Fingerprint {
         register_rest_route('punktepass/v1', '/device/register', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'rest_register_device'],
+            'permission_callback' => '__return_true'
+        ]);
+
+        // ========================================
+        // 📱 USER DEVICE MANAGEMENT ROUTES
+        // ========================================
+
+        // Get user's registered devices
+        register_rest_route('punktepass/v1', '/user-devices/list', [
+            'methods' => 'GET',
+            'callback' => [__CLASS__, 'rest_get_user_devices'],
+            'permission_callback' => '__return_true'
+        ]);
+
+        // Register current device for user
+        register_rest_route('punktepass/v1', '/user-devices/register', [
+            'methods' => 'POST',
+            'callback' => [__CLASS__, 'rest_register_user_device'],
+            'permission_callback' => '__return_true'
+        ]);
+
+        // Check if current device is registered for user
+        register_rest_route('punktepass/v1', '/user-devices/check', [
+            'methods' => 'POST',
+            'callback' => [__CLASS__, 'rest_check_user_device'],
+            'permission_callback' => '__return_true'
+        ]);
+
+        // Request device removal (needs admin approval)
+        register_rest_route('punktepass/v1', '/user-devices/request-remove', [
+            'methods' => 'POST',
+            'callback' => [__CLASS__, 'rest_request_device_removal'],
+            'permission_callback' => '__return_true'
+        ]);
+
+        // Request adding new device (when limit reached)
+        register_rest_route('punktepass/v1', '/user-devices/request-add', [
+            'methods' => 'POST',
+            'callback' => [__CLASS__, 'rest_request_device_add'],
+            'permission_callback' => '__return_true'
+        ]);
+
+        // Admin approval endpoint (via email link)
+        register_rest_route('punktepass/v1', '/user-devices/approve/(?P<token>[a-zA-Z0-9]+)', [
+            'methods' => 'GET',
+            'callback' => [__CLASS__, 'rest_approve_device_request'],
+            'permission_callback' => '__return_true'
+        ]);
+
+        // Admin rejection endpoint (via email link)
+        register_rest_route('punktepass/v1', '/user-devices/reject/(?P<token>[a-zA-Z0-9]+)', [
+            'methods' => 'GET',
+            'callback' => [__CLASS__, 'rest_reject_device_request'],
             'permission_callback' => '__return_true'
         ]);
     }
@@ -613,5 +734,625 @@ class PPV_Device_Fingerprint {
             LEFT JOIN {$wpdb->users} wu ON bd.blocked_by = wu.ID
             WHERE bd.fingerprint_hash = %s
         ", $fingerprint_hash));
+    }
+
+    // ========================================
+    // 📱 USER DEVICE MANAGEMENT METHODS
+    // ========================================
+
+    /**
+     * Get store ID from session (helper)
+     */
+    private static function get_session_store_id() {
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+
+        // Check for filiale first
+        if (!empty($_SESSION['ppv_current_filiale_id'])) {
+            return intval($_SESSION['ppv_current_filiale_id']);
+        }
+        if (!empty($_SESSION['ppv_store_id'])) {
+            return intval($_SESSION['ppv_store_id']);
+        }
+        if (!empty($_SESSION['ppv_vendor_store_id'])) {
+            return intval($_SESSION['ppv_vendor_store_id']);
+        }
+
+        return 0;
+    }
+
+    /**
+     * Get parent store ID (for device registration - always use parent)
+     */
+    private static function get_parent_store_id($store_id) {
+        global $wpdb;
+
+        if ($store_id <= 0) return 0;
+
+        $parent_id = $wpdb->get_var($wpdb->prepare(
+            "SELECT COALESCE(parent_store_id, id) FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
+            $store_id
+        ));
+
+        return $parent_id ? intval($parent_id) : $store_id;
+    }
+
+    /**
+     * REST: Get user's registered devices
+     */
+    public static function rest_get_user_devices(WP_REST_Request $request) {
+        $store_id = self::get_session_store_id();
+
+        if ($store_id <= 0) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Nicht authentifiziert'
+            ], 401);
+        }
+
+        // Always use parent store for device management
+        $parent_store_id = self::get_parent_store_id($store_id);
+        $devices = self::get_user_devices($parent_store_id);
+
+        return new WP_REST_Response([
+            'success' => true,
+            'devices' => $devices,
+            'max_devices' => self::MAX_DEVICES_PER_USER,
+            'can_add_more' => count($devices) < self::MAX_DEVICES_PER_USER
+        ], 200);
+    }
+
+    /**
+     * REST: Register current device for user
+     */
+    public static function rest_register_user_device(WP_REST_Request $request) {
+        global $wpdb;
+
+        $store_id = self::get_session_store_id();
+
+        if ($store_id <= 0) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Nicht authentifiziert'
+            ], 401);
+        }
+
+        $data = $request->get_json_params();
+        $fingerprint = sanitize_text_field($data['fingerprint'] ?? '');
+        $device_name = sanitize_text_field($data['device_name'] ?? 'Unbenanntes Gerät');
+
+        if (empty($fingerprint) || strlen($fingerprint) < 16) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Ungültiger Fingerprint'
+            ], 400);
+        }
+
+        $fingerprint_hash = self::hash_fingerprint($fingerprint);
+        $parent_store_id = self::get_parent_store_id($store_id);
+
+        // Check if already registered
+        $existing = $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM {$wpdb->prefix}" . self::USER_DEVICES_TABLE . " WHERE store_id = %d AND fingerprint_hash = %s",
+            $parent_store_id, $fingerprint_hash
+        ));
+
+        if ($existing) {
+            // Update last_used_at
+            $wpdb->update(
+                $wpdb->prefix . self::USER_DEVICES_TABLE,
+                ['last_used_at' => current_time('mysql')],
+                ['id' => $existing],
+                ['%s'],
+                ['%d']
+            );
+
+            return new WP_REST_Response([
+                'success' => true,
+                'message' => 'Gerät bereits registriert',
+                'already_registered' => true
+            ], 200);
+        }
+
+        // Check device limit
+        $device_count = self::get_user_device_count($parent_store_id);
+        if ($device_count >= self::MAX_DEVICES_PER_USER) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Gerätelimit erreicht. Bitte Admin-Genehmigung anfordern.',
+                'limit_reached' => true,
+                'device_count' => $device_count,
+                'max_devices' => self::MAX_DEVICES_PER_USER
+            ], 200);
+        }
+
+        // Register the device
+        $ip_address = self::get_client_ip();
+        $user_agent = sanitize_text_field($_SERVER['HTTP_USER_AGENT'] ?? '');
+
+        $result = $wpdb->insert(
+            $wpdb->prefix . self::USER_DEVICES_TABLE,
+            [
+                'store_id' => $parent_store_id,
+                'fingerprint_hash' => $fingerprint_hash,
+                'device_name' => $device_name,
+                'user_agent' => $user_agent,
+                'ip_address' => $ip_address,
+                'registered_at' => current_time('mysql'),
+                'last_used_at' => current_time('mysql'),
+                'status' => 'active'
+            ],
+            ['%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s']
+        );
+
+        if ($result) {
+            ppv_log("📱 [User Device] Registered: store_id={$parent_store_id}, hash={$fingerprint_hash}");
+            return new WP_REST_Response([
+                'success' => true,
+                'message' => 'Gerät erfolgreich registriert',
+                'device_id' => $wpdb->insert_id
+            ], 200);
+        }
+
+        return new WP_REST_Response([
+            'success' => false,
+            'message' => 'Fehler bei der Registrierung'
+        ], 500);
+    }
+
+    /**
+     * REST: Check if current device is registered
+     */
+    public static function rest_check_user_device(WP_REST_Request $request) {
+        $store_id = self::get_session_store_id();
+
+        if ($store_id <= 0) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Nicht authentifiziert'
+            ], 401);
+        }
+
+        $data = $request->get_json_params();
+        $fingerprint = sanitize_text_field($data['fingerprint'] ?? '');
+
+        if (empty($fingerprint) || strlen($fingerprint) < 16) {
+            return new WP_REST_Response([
+                'success' => true,
+                'is_registered' => false,
+                'can_use_scanner' => false, // Block scanner - require device registration
+                'device_count' => 0,
+                'max_devices' => self::MAX_DEVICES_PER_USER,
+                'message' => 'Kein Fingerprint'
+            ], 200);
+        }
+
+        $fingerprint_hash = self::hash_fingerprint($fingerprint);
+        $parent_store_id = self::get_parent_store_id($store_id);
+
+        $is_registered = self::is_device_registered_for_user($parent_store_id, $fingerprint_hash);
+        $device_count = self::get_user_device_count($parent_store_id);
+
+        // Allow scanner only if device is registered
+        $can_use_scanner = $is_registered;
+
+        // Update last_used_at if registered
+        if ($is_registered) {
+            global $wpdb;
+            $wpdb->update(
+                $wpdb->prefix . self::USER_DEVICES_TABLE,
+                ['last_used_at' => current_time('mysql')],
+                ['store_id' => $parent_store_id, 'fingerprint_hash' => $fingerprint_hash],
+                ['%s'],
+                ['%d', '%s']
+            );
+        }
+
+        return new WP_REST_Response([
+            'success' => true,
+            'is_registered' => $is_registered,
+            'can_use_scanner' => $can_use_scanner,
+            'device_count' => $device_count,
+            'max_devices' => self::MAX_DEVICES_PER_USER
+        ], 200);
+    }
+
+    /**
+     * REST: Request device removal (needs admin approval)
+     */
+    public static function rest_request_device_removal(WP_REST_Request $request) {
+        global $wpdb;
+
+        $store_id = self::get_session_store_id();
+
+        if ($store_id <= 0) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Nicht authentifiziert'
+            ], 401);
+        }
+
+        $data = $request->get_json_params();
+        $device_id = intval($data['device_id'] ?? 0);
+
+        if ($device_id <= 0) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Ungültige Geräte-ID'
+            ], 400);
+        }
+
+        $parent_store_id = self::get_parent_store_id($store_id);
+
+        // Get device info
+        $device = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}" . self::USER_DEVICES_TABLE . " WHERE id = %d AND store_id = %d",
+            $device_id, $parent_store_id
+        ));
+
+        if (!$device) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Gerät nicht gefunden'
+            ], 404);
+        }
+
+        // Create approval request
+        $result = self::create_device_request($parent_store_id, $device->fingerprint_hash, 'remove', $device->device_name);
+
+        if ($result['success']) {
+            return new WP_REST_Response([
+                'success' => true,
+                'message' => 'Löschungsanfrage gesendet. Admin-Genehmigung erforderlich.'
+            ], 200);
+        }
+
+        return new WP_REST_Response([
+            'success' => false,
+            'message' => $result['message'] ?? 'Fehler beim Erstellen der Anfrage'
+        ], 500);
+    }
+
+    /**
+     * REST: Request adding new device (when limit reached)
+     */
+    public static function rest_request_device_add(WP_REST_Request $request) {
+        $store_id = self::get_session_store_id();
+
+        if ($store_id <= 0) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Nicht authentifiziert'
+            ], 401);
+        }
+
+        $data = $request->get_json_params();
+        $fingerprint = sanitize_text_field($data['fingerprint'] ?? '');
+        $device_name = sanitize_text_field($data['device_name'] ?? 'Neues Gerät');
+
+        if (empty($fingerprint) || strlen($fingerprint) < 16) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Ungültiger Fingerprint'
+            ], 400);
+        }
+
+        $fingerprint_hash = self::hash_fingerprint($fingerprint);
+        $parent_store_id = self::get_parent_store_id($store_id);
+
+        // Create approval request
+        $result = self::create_device_request($parent_store_id, $fingerprint_hash, 'add', $device_name);
+
+        if ($result['success']) {
+            return new WP_REST_Response([
+                'success' => true,
+                'message' => 'Anfrage für neues Gerät gesendet. Admin-Genehmigung erforderlich.'
+            ], 200);
+        }
+
+        return new WP_REST_Response([
+            'success' => false,
+            'message' => $result['message'] ?? 'Fehler beim Erstellen der Anfrage'
+        ], 500);
+    }
+
+    /**
+     * REST: Approve device request (via email link)
+     */
+    public static function rest_approve_device_request(WP_REST_Request $request) {
+        global $wpdb;
+
+        $token = sanitize_text_field($request->get_param('token'));
+
+        if (empty($token)) {
+            return self::render_approval_page('error', 'Ungültiger Token');
+        }
+
+        $req = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}" . self::DEVICE_REQUESTS_TABLE . " WHERE approval_token = %s AND status = 'pending'",
+            $token
+        ));
+
+        if (!$req) {
+            return self::render_approval_page('error', 'Anfrage nicht gefunden oder bereits verarbeitet');
+        }
+
+        // Process the request
+        if ($req->request_type === 'add') {
+            // Add the device
+            $ip_address = self::get_client_ip();
+            $wpdb->insert(
+                $wpdb->prefix . self::USER_DEVICES_TABLE,
+                [
+                    'store_id' => $req->store_id,
+                    'fingerprint_hash' => $req->fingerprint_hash,
+                    'device_name' => $req->device_name,
+                    'user_agent' => $req->user_agent,
+                    'ip_address' => $ip_address,
+                    'registered_at' => current_time('mysql'),
+                    'status' => 'active'
+                ],
+                ['%d', '%s', '%s', '%s', '%s', '%s', '%s']
+            );
+            ppv_log("📱 [Device Approved] ADD: store_id={$req->store_id}, hash={$req->fingerprint_hash}");
+        } else {
+            // Remove the device
+            $wpdb->delete(
+                $wpdb->prefix . self::USER_DEVICES_TABLE,
+                ['store_id' => $req->store_id, 'fingerprint_hash' => $req->fingerprint_hash],
+                ['%d', '%s']
+            );
+            ppv_log("📱 [Device Approved] REMOVE: store_id={$req->store_id}, hash={$req->fingerprint_hash}");
+        }
+
+        // Mark request as approved
+        $wpdb->update(
+            $wpdb->prefix . self::DEVICE_REQUESTS_TABLE,
+            [
+                'status' => 'approved',
+                'processed_at' => current_time('mysql'),
+                'processed_by' => 'admin_link'
+            ],
+            ['id' => $req->id],
+            ['%s', '%s', '%s'],
+            ['%d']
+        );
+
+        $action = $req->request_type === 'add' ? 'hinzugefügt' : 'entfernt';
+        return self::render_approval_page('success', "Gerät erfolgreich {$action}!");
+    }
+
+    /**
+     * REST: Reject device request (via email link)
+     */
+    public static function rest_reject_device_request(WP_REST_Request $request) {
+        global $wpdb;
+
+        $token = sanitize_text_field($request->get_param('token'));
+
+        if (empty($token)) {
+            return self::render_approval_page('error', 'Ungültiger Token');
+        }
+
+        $req = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}" . self::DEVICE_REQUESTS_TABLE . " WHERE approval_token = %s AND status = 'pending'",
+            $token
+        ));
+
+        if (!$req) {
+            return self::render_approval_page('error', 'Anfrage nicht gefunden oder bereits verarbeitet');
+        }
+
+        // Mark request as rejected
+        $wpdb->update(
+            $wpdb->prefix . self::DEVICE_REQUESTS_TABLE,
+            [
+                'status' => 'rejected',
+                'processed_at' => current_time('mysql'),
+                'processed_by' => 'admin_link'
+            ],
+            ['id' => $req->id],
+            ['%s', '%s', '%s'],
+            ['%d']
+        );
+
+        ppv_log("📱 [Device Rejected] type={$req->request_type}, store_id={$req->store_id}");
+
+        return self::render_approval_page('info', 'Anfrage wurde abgelehnt.');
+    }
+
+    /**
+     * Render approval result page
+     */
+    private static function render_approval_page($type, $message) {
+        $colors = [
+            'success' => '#4caf50',
+            'error' => '#f44336',
+            'info' => '#2196f3'
+        ];
+        $icons = [
+            'success' => '✅',
+            'error' => '❌',
+            'info' => 'ℹ️'
+        ];
+
+        $color = $colors[$type] ?? '#999';
+        $icon = $icons[$type] ?? '📱';
+
+        $html = "<!DOCTYPE html><html><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
+        <title>PunktePass - Geräteverwaltung</title>
+        <style>body{font-family:Arial,sans-serif;background:#0f0f1e;color:#fff;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;}
+        .card{background:#1a1a2e;padding:40px;border-radius:15px;text-align:center;max-width:400px;box-shadow:0 10px 40px rgba(0,0,0,0.5);}
+        .icon{font-size:48px;margin-bottom:20px;}
+        .message{font-size:18px;color:{$color};margin-bottom:20px;}
+        .close-btn{background:{$color};color:#fff;border:none;padding:12px 30px;border-radius:8px;cursor:pointer;font-size:16px;}
+        </style></head><body>
+        <div class='card'>
+            <div class='icon'>{$icon}</div>
+            <div class='message'>{$message}</div>
+            <button class='close-btn' onclick='window.close()'>Schließen</button>
+        </div>
+        </body></html>";
+
+        return new WP_REST_Response($html, 200, ['Content-Type' => 'text/html; charset=UTF-8']);
+    }
+
+    // ========================================
+    // 📱 USER DEVICE HELPER METHODS
+    // ========================================
+
+    /**
+     * Get all registered devices for a store
+     */
+    public static function get_user_devices($store_id) {
+        global $wpdb;
+
+        return $wpdb->get_results($wpdb->prepare("
+            SELECT id, device_name, fingerprint_hash, user_agent, ip_address, registered_at, last_used_at, status
+            FROM {$wpdb->prefix}" . self::USER_DEVICES_TABLE . "
+            WHERE store_id = %d AND status = 'active'
+            ORDER BY registered_at DESC
+        ", $store_id));
+    }
+
+    /**
+     * Get device count for a store
+     */
+    public static function get_user_device_count($store_id) {
+        global $wpdb;
+
+        return (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->prefix}" . self::USER_DEVICES_TABLE . " WHERE store_id = %d AND status = 'active'",
+            $store_id
+        ));
+    }
+
+    /**
+     * Check if a device is registered for a user
+     */
+    public static function is_device_registered_for_user($store_id, $fingerprint_hash) {
+        global $wpdb;
+
+        return (bool) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->prefix}" . self::USER_DEVICES_TABLE . " WHERE store_id = %d AND fingerprint_hash = %s AND status = 'active'",
+            $store_id, $fingerprint_hash
+        ));
+    }
+
+    /**
+     * Create device approval request and send email
+     */
+    private static function create_device_request($store_id, $fingerprint_hash, $type, $device_name) {
+        global $wpdb;
+
+        // Check for existing pending request
+        $existing = $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM {$wpdb->prefix}" . self::DEVICE_REQUESTS_TABLE . "
+             WHERE store_id = %d AND fingerprint_hash = %s AND request_type = %s AND status = 'pending'",
+            $store_id, $fingerprint_hash, $type
+        ));
+
+        if ($existing) {
+            return [
+                'success' => false,
+                'message' => 'Es gibt bereits eine ausstehende Anfrage für dieses Gerät'
+            ];
+        }
+
+        // Generate approval token
+        $token = wp_generate_password(32, false);
+        $ip_address = self::get_client_ip();
+        $user_agent = sanitize_text_field($_SERVER['HTTP_USER_AGENT'] ?? '');
+
+        // Insert request
+        $result = $wpdb->insert(
+            $wpdb->prefix . self::DEVICE_REQUESTS_TABLE,
+            [
+                'store_id' => $store_id,
+                'fingerprint_hash' => $fingerprint_hash,
+                'request_type' => $type,
+                'device_name' => $device_name,
+                'user_agent' => $user_agent,
+                'ip_address' => $ip_address,
+                'approval_token' => $token,
+                'status' => 'pending',
+                'requested_at' => current_time('mysql')
+            ],
+            ['%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s']
+        );
+
+        if (!$result) {
+            return ['success' => false, 'message' => 'Datenbankfehler'];
+        }
+
+        // Send email to admin
+        self::send_device_request_email($store_id, $type, $device_name, $token);
+
+        ppv_log("📱 [Device Request] Created: type={$type}, store_id={$store_id}, token={$token}");
+
+        return ['success' => true, 'token' => $token];
+    }
+
+    /**
+     * Send device request email to admin
+     */
+    private static function send_device_request_email($store_id, $type, $device_name, $token) {
+        global $wpdb;
+
+        // Get store info
+        $store = $wpdb->get_row($wpdb->prepare(
+            "SELECT name, email FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
+            $store_id
+        ));
+
+        $store_name = $store->name ?? "Store #{$store_id}";
+        $store_email = $store->email ?? '';
+
+        // Admin email
+        $admin_email = get_option('admin_email');
+
+        $type_text = $type === 'add' ? 'Neues Gerät hinzufügen' : 'Gerät entfernen';
+        $site_url = site_url();
+
+        $approve_url = "{$site_url}/wp-json/punktepass/v1/user-devices/approve/{$token}";
+        $reject_url = "{$site_url}/wp-json/punktepass/v1/user-devices/reject/{$token}";
+
+        $subject = "[PunktePass] Geräte-Anfrage: {$type_text} - {$store_name}";
+
+        $message = "
+        <html>
+        <head><style>
+            body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }
+            .card { background: #fff; padding: 30px; border-radius: 10px; max-width: 500px; margin: 0 auto; }
+            h2 { color: #333; margin-top: 0; }
+            .info { background: #f0f0f0; padding: 15px; border-radius: 8px; margin: 20px 0; }
+            .btn { display: inline-block; padding: 12px 25px; border-radius: 8px; text-decoration: none; color: #fff; margin-right: 10px; }
+            .btn-approve { background: #4caf50; }
+            .btn-reject { background: #f44336; }
+        </style></head>
+        <body>
+        <div class='card'>
+            <h2>📱 Geräte-Anfrage</h2>
+            <p><strong>Aktion:</strong> {$type_text}</p>
+            <div class='info'>
+                <p><strong>Geschäft:</strong> {$store_name}</p>
+                <p><strong>Gerätename:</strong> {$device_name}</p>
+                <p><strong>Zeitpunkt:</strong> " . current_time('d.m.Y H:i') . "</p>
+            </div>
+            <p>Bitte bestätigen oder ablehnen:</p>
+            <a href='{$approve_url}' class='btn btn-approve'>✅ Genehmigen</a>
+            <a href='{$reject_url}' class='btn btn-reject'>❌ Ablehnen</a>
+        </div>
+        </body>
+        </html>";
+
+        $headers = [
+            'Content-Type: text/html; charset=UTF-8',
+            'From: PunktePass <noreply@punktepass.de>'
+        ];
+
+        wp_mail($admin_email, $subject, $message, $headers);
+        ppv_log("📧 [Device Email] Sent to {$admin_email} for store_id={$store_id}");
     }
 }
