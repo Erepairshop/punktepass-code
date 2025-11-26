@@ -60,14 +60,29 @@ if (!class_exists('PPV_Onboarding')) {
          * Enqueue onboarding JS & localize config
          */
         public static function enqueue_assets() {
+            // DEBUG: Add inline console log to see if this method runs at all
+            add_action('wp_footer', function() {
+                $session_vars = json_encode([
+                    'ppv_store_id' => $_SESSION['ppv_store_id'] ?? null,
+                    'ppv_vendor_store_id' => $_SESSION['ppv_vendor_store_id'] ?? null,
+                    'ppv_current_filiale_id' => $_SESSION['ppv_current_filiale_id'] ?? null,
+                    'ppv_user_type' => $_SESSION['ppv_user_type'] ?? null,
+                ]);
+                echo "<script>console.log('🔍 [PPV_ONBOARDING_PHP] enqueue_assets() CALLED, session:', {$session_vars});</script>";
+            }, 1);
+
             // ✅ SCANNER USERS: Don't load onboarding
             if (class_exists('PPV_Permissions') && PPV_Permissions::is_scanner_user()) {
+                ppv_log("🔍 [PPV_ONBOARDING] Skip: Scanner user");
                 return;
             }
 
             // Csak bejelentkezett handler-eknek
             $auth = self::check_auth();
+            ppv_log("🔍 [PPV_ONBOARDING] Auth check: " . json_encode($auth));
+
             if (!$auth['valid'] || $auth['type'] !== 'ppv_stores') {
+                ppv_log("🔍 [PPV_ONBOARDING] Skip: Auth not valid or not ppv_stores type");
                 return;
             }
 
@@ -75,22 +90,36 @@ if (!class_exists('PPV_Onboarding')) {
             $store = self::get_store($store_id);
 
             if (!$store) {
+                ppv_log("🔍 [PPV_ONBOARDING] Skip: Store not found for ID={$store_id}");
                 return;
             }
 
             // ✅ ONLY SHOW FOR TRIAL STORES - Active stores don't need onboarding
             $subscription_status = $store->subscription_status ?? 'trial';
+            ppv_log("🔍 [PPV_ONBOARDING] Store #{$store_id} subscription_status='{$subscription_status}'");
+
             if ($subscription_status !== 'trial') {
                 // Active or other status - skip onboarding
+                ppv_log("🔍 [PPV_ONBOARDING] Skip: subscription_status is NOT 'trial'");
                 return;
             }
 
             // ⏰ Check if onboarding is postponed (8 hours delay)
             $postponed_until = $store->onboarding_postponed_until ?? null;
+            ppv_log("🔍 [PPV_ONBOARDING] postponed_until='{$postponed_until}', dismissed=" . ($store->onboarding_dismissed ?? 0) . ", completed=" . ($store->onboarding_completed ?? 0));
+
             if (!empty($postponed_until) && strtotime($postponed_until) > time()) {
                 // Still postponed - don't show onboarding
+                ppv_log("🔍 [PPV_ONBOARDING] Skip: Postponed until {$postponed_until}");
                 return;
             }
+
+            ppv_log("✅ [PPV_ONBOARDING] LOADING onboarding for store #{$store_id}");
+
+            // DEBUG: Inline log to browser console
+            add_action('wp_footer', function() use ($store_id, $store, $subscription_status) {
+                echo "<script>console.log('🔍 [PPV_ONBOARDING_PHP] Store #{$store_id}, subscription_status={$subscription_status}, dismissed=" . ($store->onboarding_dismissed ?? 0) . ", completed=" . ($store->onboarding_completed ?? 0) . ", postponed=" . ($store->onboarding_postponed_until ?? 'null') . "');</script>";
+            }, 1);
 
             // Enqueue JS
             wp_enqueue_script(
@@ -464,6 +493,9 @@ if (!class_exists('PPV_Onboarding')) {
             if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
                 @session_start();
             }
+
+            // Debug: Session state
+            ppv_log("🔍 [PPV_ONBOARDING] check_auth() - session vars: ppv_current_filiale_id=" . ($_SESSION['ppv_current_filiale_id'] ?? 'EMPTY') . ", ppv_store_id=" . ($_SESSION['ppv_store_id'] ?? 'EMPTY') . ", ppv_vendor_store_id=" . ($_SESSION['ppv_vendor_store_id'] ?? 'EMPTY') . ", ppv_user_type=" . ($_SESSION['ppv_user_type'] ?? 'EMPTY'));
 
             // 🏪 FILIALE SUPPORT: Check ppv_current_filiale_id FIRST
             if (!empty($_SESSION['ppv_current_filiale_id'])) {
