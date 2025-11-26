@@ -921,7 +921,9 @@ class PPV_Device_Fingerprint {
             return new WP_REST_Response([
                 'success' => true,
                 'is_registered' => false,
-                'can_use_scanner' => true, // Allow if no fingerprint (fallback)
+                'can_use_scanner' => false, // Block scanner - require device registration
+                'device_count' => 0,
+                'max_devices' => self::MAX_DEVICES_PER_USER,
                 'message' => 'Kein Fingerprint'
             ], 200);
         }

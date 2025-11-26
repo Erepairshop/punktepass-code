@@ -1159,8 +1159,12 @@
       try {
         const fingerprint = await this.getDeviceFingerprint();
         if (!fingerprint) {
-          // No fingerprint - allow (fallback)
-          return { allowed: true };
+          // No fingerprint - block scanner (require device registration)
+          ppvWarn('[Scanner] No fingerprint available - blocking scanner');
+          return {
+            allowed: false,
+            message: L.device_register_first || 'Bitte registrieren Sie zuerst ein Gerät im Tab "Geräte", bevor Sie den Scanner verwenden können.'
+          };
         }
 
         const response = await fetch('/wp-json/punktepass/v1/user-devices/check', {
@@ -1190,8 +1194,11 @@
         };
       } catch (e) {
         ppvWarn('[Scanner] Device check error:', e);
-        // On error, allow scanner (don't block due to network issues)
-        return { allowed: true };
+        // On error, block scanner (strict mode - require device registration)
+        return {
+          allowed: false,
+          message: L.device_register_first || 'Bitte registrieren Sie zuerst ein Gerät im Tab "Geräte", bevor Sie den Scanner verwenden können.'
+        };
       }
     }
 
