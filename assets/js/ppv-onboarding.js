@@ -29,6 +29,8 @@
             };
             this.celebrationShown = false; // ✅ Initialize flag
             this.progressInterval = null; // ✅ Store interval ID for cleanup
+            this.ablyInstance = null; // ✅ Store Ably instance for cleanup
+            this.ablyChannel = null; // ✅ Store Ably channel for cleanup
 
             this.init();
         }
@@ -51,9 +53,71 @@
 
                 // ❌ Sticky Reminder eltávolítva - nem kell
 
-                // Progress polling - 15 másodpercenként (store ID for cleanup)
-                this.progressInterval = setInterval(() => this.refreshProgress(), 15000);
+                // 📡 Try Ably real-time first, fallback to polling
+                if (this.config.ably && this.config.ably.key && typeof Ably !== 'undefined') {
+                    this.initAbly();
+                } else {
+                    // Fallback: Progress polling - 15 másodpercenként
+                    console.log('📡 [ONBOARDING] Ably not available, using polling fallback');
+                    this.progressInterval = setInterval(() => this.refreshProgress(), 15000);
+                }
             });
+        }
+
+        /** ============================================================
+         *  📡 ABLY REAL-TIME INITIALIZATION
+         * ============================================================ */
+        initAbly() {
+            console.log('📡 [ONBOARDING] Initializing Ably real-time...');
+
+            this.ablyInstance = new Ably.Realtime({ key: this.config.ably.key });
+
+            this.ablyInstance.connection.on('connected', () => {
+                console.log('📡 [ONBOARDING] Ably connected to channel:', this.config.ably.channel);
+
+                // Stop any polling if running
+                if (this.progressInterval) {
+                    clearInterval(this.progressInterval);
+                    this.progressInterval = null;
+                    console.log('📡 [ONBOARDING] Polling stopped (Ably connected)');
+                }
+            });
+
+            this.ablyInstance.connection.on('failed', () => {
+                console.warn('⚠️ [ONBOARDING] Ably connection failed, starting polling fallback');
+                this.startPollingFallback();
+            });
+
+            this.ablyInstance.connection.on('disconnected', () => {
+                console.warn('⚠️ [ONBOARDING] Ably disconnected, starting polling fallback');
+                this.startPollingFallback();
+            });
+
+            // Subscribe to store's channel
+            this.ablyChannel = this.ablyInstance.channels.get(this.config.ably.channel);
+
+            // Listen for onboarding-progress events
+            this.ablyChannel.subscribe('onboarding-progress', (message) => {
+                console.log('📡 [ONBOARDING] Received progress update via Ably:', message.data);
+                this.handleProgressUpdate(message.data);
+            });
+        }
+
+        startPollingFallback() {
+            if (!this.progressInterval) {
+                this.progressInterval = setInterval(() => this.refreshProgress(), 15000);
+            }
+        }
+
+        handleProgressUpdate(progressData) {
+            this.progress = progressData;
+            this.renderProgressCard();
+
+            // Ha közben elérte a 100%-ot
+            if (this.progress.is_complete && !this.celebrationShown) {
+                this.celebrationShown = true;
+                this.showCelebrationModal();
+            }
         }
 
         /** ============================================================
@@ -1103,6 +1167,14 @@
                 this.progressInterval = null;
             }
 
+            // ✅ Close Ably connection to prevent memory leak
+            if (this.ablyInstance) {
+                this.ablyInstance.close();
+                this.ablyInstance = null;
+                this.ablyChannel = null;
+                console.log('📡 [ONBOARDING] Ably connection closed');
+            }
+
             $('.ppv-onboarding-progress-card').fadeOut(300, function() { $(this).remove(); });
             $('.ppv-onboarding-sticky').fadeOut(300, function() { $(this).remove(); });
         }
@@ -1161,10 +1233,20 @@
 
     // ✅ FIX: Cleanup on navigation (iOS Safari fix)
     document.addEventListener('turbo:before-visit', function() {
-        if (window.PPV_ONBOARDING_INSTANCE?.progressInterval) {
-            clearInterval(window.PPV_ONBOARDING_INSTANCE.progressInterval);
-            window.PPV_ONBOARDING_INSTANCE.progressInterval = null;
-            console.log('🧹 [ONBOARDING] Progress interval cleared');
+        if (window.PPV_ONBOARDING_INSTANCE) {
+            // Clear polling interval
+            if (window.PPV_ONBOARDING_INSTANCE.progressInterval) {
+                clearInterval(window.PPV_ONBOARDING_INSTANCE.progressInterval);
+                window.PPV_ONBOARDING_INSTANCE.progressInterval = null;
+                console.log('🧹 [ONBOARDING] Progress interval cleared');
+            }
+            // Close Ably connection
+            if (window.PPV_ONBOARDING_INSTANCE.ablyInstance) {
+                window.PPV_ONBOARDING_INSTANCE.ablyInstance.close();
+                window.PPV_ONBOARDING_INSTANCE.ablyInstance = null;
+                window.PPV_ONBOARDING_INSTANCE.ablyChannel = null;
+                console.log('🧹 [ONBOARDING] Ably connection closed');
+            }
         }
     });
 

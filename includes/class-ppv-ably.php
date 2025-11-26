@@ -260,6 +260,19 @@ class PPV_Ably {
         return self::publish($channel, 'redemption-cancelled', $data);
     }
 
+    /**
+     * Publish onboarding progress update for a store
+     * Sent to store's channel when onboarding steps are completed
+     *
+     * @param int $store_id Store ID
+     * @param array $data Progress data (steps, percentage, is_complete, etc.)
+     */
+    public static function trigger_onboarding_progress($store_id, $data) {
+        $channel = 'store-' . intval($store_id);
+        ppv_log("📡 [PPV_Ably] trigger_onboarding_progress: channel={$channel}, store_id={$store_id}, percentage={$data['percentage']}%");
+        return self::publish($channel, 'onboarding-progress', $data);
+    }
+
     // ============================================================
 
     /**

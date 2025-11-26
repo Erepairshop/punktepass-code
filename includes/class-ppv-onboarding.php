@@ -162,7 +162,7 @@ if (!class_exists('PPV_Onboarding')) {
             $progress = self::calculate_progress($store);
 
             // Config localize
-            wp_localize_script('ppv-onboarding', 'ppv_onboarding', [
+            $onboarding_config = [
                 'rest_url' => rest_url('ppv/v1/onboarding/'),
                 'nonce' => wp_create_nonce('wp_rest'),
                 'store_id' => $store_id,
@@ -171,7 +171,17 @@ if (!class_exists('PPV_Onboarding')) {
                 'welcome_shown' => (bool) ($store->onboarding_welcome_shown ?? 0),
                 'is_qr_center' => (strpos($_SERVER['REQUEST_URI'] ?? '', 'qr-center') !== false),
                 'sticky_hidden' => false
-            ]);
+            ];
+
+            // Add Ably config if available (for real-time updates)
+            if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+                $onboarding_config['ably'] = [
+                    'key' => PPV_Ably::get_key(),
+                    'channel' => 'store-' . $store_id
+                ];
+            }
+
+            wp_localize_script('ppv-onboarding', 'ppv_onboarding', $onboarding_config);
         }
 
         /**
@@ -356,6 +366,11 @@ if (!class_exists('PPV_Onboarding')) {
             // Get updated progress
             $store = self::get_store($auth['store_id']);
             $progress = self::calculate_progress($store);
+
+            // 📡 Trigger Ably real-time update for onboarding progress
+            if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+                PPV_Ably::trigger_onboarding_progress($auth['store_id'], $progress);
+            }
 
             return rest_ensure_response([
                 'success' => true,
