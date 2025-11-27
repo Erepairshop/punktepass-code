@@ -272,6 +272,7 @@ $core_modules = [
      'includes/class-ppv-ably.php',
      'includes/class-ppv-scan-monitoring.php',
      'includes/class-ppv-weekly-report.php', // Weekly email reports to store owners
+     'includes/class-ppv-google-review-request.php', // Automated Google review requests
      'includes/admin/class-ppv-admin-suspicious-scans.php',
      'includes/admin/class-ppv-admin-suspicious-devices.php', // Admin panel for suspicious devices
      'includes/class-ppv-user-qr.php', // Timed QR endpoint
