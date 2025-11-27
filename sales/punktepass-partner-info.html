@@ -892,8 +892,88 @@
                     <li>Ein-Klick QR-Code für schnelles Punktesammeln</li>
                     <li>Übersicht aller verfügbaren Prämien</li>
                     <li>Kompletter Verlauf aller Transaktionen</li>
-                    <li>Push-Benachrichtigungen für Aktionen</li>
                 </ul>
+            </div>
+        </section>
+
+        <!-- ADVERTISING BENEFIT - NEW SECTION -->
+        <section class="section" style="margin: 60px 0;">
+            <h2 class="section-title">
+                <span class="icon">📢</span>
+                Kostenlose Werbung für Ihr Geschäft
+            </h2>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center;">
+                <!-- Left: Text -->
+                <div>
+                    <h3 style="color: #f1f5f9; font-size: 22px; margin-bottom: 15px;">Ihr Geschäft wird entdeckt!</h3>
+                    <p style="color: #94a3b8; font-size: 16px; line-height: 1.7; margin-bottom: 20px;">
+                        Sobald Sie bei PunktePass registriert sind, erscheint Ihr Geschäft automatisch in der App aller PunktePass-Nutzer in Ihrer Umgebung – <strong style="color: #4ade80;">sortiert nach Entfernung!</strong>
+                    </p>
+                    <p style="color: #94a3b8; font-size: 16px; line-height: 1.7; margin-bottom: 20px;">
+                        Jeder Nutzer sieht Ihr Logo, Ihre Prämien, Kampagnen und VIP-Angebote. Sie können sogar direkt zu Ihnen navigieren!
+                    </p>
+                    <div style="background: rgba(14, 165, 233, 0.1); border: 1px solid rgba(14, 165, 233, 0.3); border-radius: 12px; padding: 20px;">
+                        <h4 style="color: #00e6ff; margin: 0 0 12px 0;"><i>📍</i> Was Nutzer in Ihrer Nähe sehen:</h4>
+                        <ul style="color: #cbd5e1; font-size: 14px; margin: 0; padding-left: 20px; line-height: 1.8;">
+                            <li><strong style="color: #fff;">Ihr Logo & Geschäftsname</strong></li>
+                            <li><strong style="color: #4ade80;">Öffnungsstatus</strong> (Geöffnet/Geschlossen)</li>
+                            <li><strong style="color: #fbbf24;">Ihre Prämien</strong> mit Punkteangaben</li>
+                            <li><strong style="color: #a855f7;">Ihre Kampagnen</strong> und Aktionen</li>
+                            <li><strong style="color: #38bdf8;">VIP-Bonusprogramm</strong></li>
+                            <li><strong style="color: #f87171;">Navigation</strong> – direkter Routenplaner</li>
+                            <li><strong style="color: #00e6ff;">Kontakt</strong> – Anrufen & Website</li>
+                            <li><strong style="color: #ec4899;">Social Media</strong> – Facebook, Instagram, TikTok</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Right: Mini mockup of nearby stores -->
+                <div style="background: linear-gradient(135deg, #1e293b, #0f172a); border-radius: 24px; padding: 20px; border: 1px solid rgba(255,255,255,0.1);">
+                    <div style="background: #0f172a; border-radius: 12px; padding: 15px; margin-bottom: 15px;">
+                        <div style="font-size: 14px; color: #64748b; margin-bottom: 10px;"><i>📍</i> Geschäfte in deiner Nähe</div>
+                        <input type="range" style="width: 100%; accent-color: #00e6ff;" value="30" disabled>
+                        <div style="display: flex; justify-content: space-between; font-size: 11px; color: #475569;">
+                            <span>10 km</span><span>1000 km</span>
+                        </div>
+                    </div>
+
+                    <!-- Store Card 1 - Main highlight (your store) -->
+                    <div style="background: linear-gradient(135deg, rgba(0, 230, 255, 0.1), rgba(14, 165, 233, 0.05)); border: 1px solid rgba(0, 230, 255, 0.3); border-radius: 16px; padding: 15px; margin-bottom: 12px;">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+                            <div style="width: 50px; height: 50px; background: linear-gradient(135deg, #3b82f6, #1d4ed8); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px;">☕</div>
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; color: #f1f5f9; font-size: 15px;">Ihr Café</div>
+                                <div style="display: flex; gap: 8px; margin-top: 4px;">
+                                    <span style="background: #22c55e; color: white; padding: 2px 8px; border-radius: 10px; font-size: 10px;">Geöffnet</span>
+                                    <span style="background: rgba(0,230,255,0.2); color: #00e6ff; padding: 2px 8px; border-radius: 10px; font-size: 10px;">📍 0.3 km</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                            <span style="background: rgba(251,191,36,0.2); color: #fbbf24; padding: 3px 8px; border-radius: 8px; font-size: 11px;">🎁 3 Prämien</span>
+                            <span style="background: rgba(168,85,247,0.2); color: #a855f7; padding: 3px 8px; border-radius: 8px; font-size: 11px;">👑 VIP</span>
+                        </div>
+                    </div>
+
+                    <!-- Store Card 2 - Other store (faded) -->
+                    <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 15px; opacity: 0.5;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 50px; height: 50px; background: #374151; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px;">🍕</div>
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; color: #94a3b8; font-size: 15px;">Pizzeria Roma</div>
+                                <div style="display: flex; gap: 8px; margin-top: 4px;">
+                                    <span style="background: #dc2626; color: white; padding: 2px 8px; border-radius: 10px; font-size: 10px;">Geschlossen</span>
+                                    <span style="background: rgba(255,255,255,0.1); color: #64748b; padding: 2px 8px; border-radius: 10px; font-size: 10px;">📍 1.2 km</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="text-align: center; margin-top: 15px;">
+                        <span style="color: #4ade80; font-size: 13px; font-weight: 600;">✅ Ihr Geschäft ganz oben – weil Sie am nächsten sind!</span>
+                    </div>
+                </div>
             </div>
         </section>
 
