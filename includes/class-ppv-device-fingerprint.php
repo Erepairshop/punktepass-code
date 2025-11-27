@@ -1533,8 +1533,9 @@ class PPV_Device_Fingerprint {
             'From: PunktePass <noreply@punktepass.de>'
         ];
 
-        wp_mail($admin_email, $subject, $message, $headers);
-        ppv_log("📧 [Device Email] Sent to {$admin_email} for store_id={$store_id}");
+        ppv_log("📧 [Device Email] Attempting to send to: {$admin_email}");
+        $sent = wp_mail($admin_email, $subject, $message, $headers);
+        ppv_log("📧 [Device Email] Result: " . ($sent ? 'SUCCESS' : 'FAILED') . " - to={$admin_email}, store_id={$store_id}");
     }
 
     // ========================================
@@ -1724,7 +1725,8 @@ class PPV_Device_Fingerprint {
             'From: PunktePass <noreply@punktepass.de>'
         ];
 
-        wp_mail($admin_email, $subject, $message, $headers);
-        ppv_log("📧 [Mobile Scanner Email] Sent to {$admin_email} for store_id={$store_id}");
+        ppv_log("📧 [Mobile Scanner Email] Attempting to send to: {$admin_email}");
+        $sent = wp_mail($admin_email, $subject, $message, $headers);
+        ppv_log("📧 [Mobile Scanner Email] Result: " . ($sent ? 'SUCCESS' : 'FAILED') . " - to={$admin_email}, store_id={$store_id}");
     }
 }
