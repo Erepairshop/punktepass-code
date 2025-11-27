@@ -39,6 +39,7 @@ class PPV_Device_Fingerprint {
     public static function hooks() {
         add_action('rest_api_init', [__CLASS__, 'register_routes']);
         add_action('admin_init', [__CLASS__, 'run_migrations']);
+        add_action('init', [__CLASS__, 'run_migrations']); // Also run on init for standalone admin
     }
 
     /**
@@ -46,6 +47,11 @@ class PPV_Device_Fingerprint {
      */
     public static function run_migrations() {
         global $wpdb;
+
+        // Prevent running multiple times in same request
+        static $already_run = false;
+        if ($already_run) return;
+        $already_run = true;
 
         $migration_version = get_option('ppv_device_migration_version', '0');
 
