@@ -2189,6 +2189,7 @@ class PPV_QR {
                 }
 
                 try {
+                    console.log('[Devices] 🔍 Checking with fingerprint:', currentFingerprint);
                     const response = await fetch('/wp-json/punktepass/v1/user-devices/check', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -2197,6 +2198,12 @@ class PPV_QR {
                     const data = await response.json();
                     deviceCheckResult = data;
                     console.log('[Devices] API response:', data);
+                    if (data.debug) {
+                        console.log('[Devices] 📊 DEBUG INFO:');
+                        console.log('  - Current hash:', data.debug.current_hash);
+                        console.log('  - Registered hashes:', data.debug.registered_hashes);
+                        console.log('  - Store ID:', data.debug.store_id);
+                    }
 
                     // Handle API errors (401, etc.)
                     if (data.success === false || typeof data.device_count === 'undefined') {

@@ -931,15 +931,28 @@ class PPV_Device_Fingerprint {
         $fingerprint_hash = self::hash_fingerprint($fingerprint);
         $parent_store_id = self::get_parent_store_id($store_id);
 
+        // Debug: Log the check
+        ppv_log("📱 [Device Check] store_id={$store_id}, parent_store_id={$parent_store_id}, fp_hash=" . substr($fingerprint_hash, 0, 16) . "...");
+
+        // Get all registered hashes for comparison
+        global $wpdb;
+        $registered_hashes = $wpdb->get_col($wpdb->prepare(
+            "SELECT fingerprint_hash FROM {$wpdb->prefix}" . self::USER_DEVICES_TABLE . " WHERE store_id = %d AND status = 'active'",
+            $parent_store_id
+        ));
+
+        ppv_log("📱 [Device Check] Registered hashes: " . json_encode(array_map(fn($h) => substr($h, 0, 16) . '...', $registered_hashes)));
+
         $is_registered = self::is_device_registered_for_user($parent_store_id, $fingerprint_hash);
         $device_count = self::get_user_device_count($parent_store_id);
+
+        ppv_log("📱 [Device Check] is_registered=" . ($is_registered ? 'YES' : 'NO') . ", device_count={$device_count}");
 
         // Allow scanner only if device is registered
         $can_use_scanner = $is_registered;
 
         // Update last_used_at if registered
         if ($is_registered) {
-            global $wpdb;
             $wpdb->update(
                 $wpdb->prefix . self::USER_DEVICES_TABLE,
                 ['last_used_at' => current_time('mysql')],
@@ -954,7 +967,13 @@ class PPV_Device_Fingerprint {
             'is_registered' => $is_registered,
             'can_use_scanner' => $can_use_scanner,
             'device_count' => $device_count,
-            'max_devices' => self::MAX_DEVICES_PER_USER
+            'max_devices' => self::MAX_DEVICES_PER_USER,
+            // Debug info
+            'debug' => [
+                'current_hash' => substr($fingerprint_hash, 0, 16) . '...',
+                'registered_hashes' => array_map(fn($h) => substr($h, 0, 16) . '...', $registered_hashes),
+                'store_id' => $parent_store_id
+            ]
         ], 200);
     }
 
