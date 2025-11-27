@@ -483,6 +483,14 @@ class PPV_ROI_Calculator {
 
             <div class="results">
                 <div class="result-item">
+                    <span class="result-icon">📍</span>
+                    <div class="result-content">
+                        <div class="result-title"><?php echo esc_html($t['discovery_title']); ?></div>
+                        <div class="result-value highlight">+<span id="discovery-count">5</span> <?php echo esc_html($t['new_customers']); ?></div>
+                    </div>
+                </div>
+
+                <div class="result-item">
                     <span class="result-icon">👋</span>
                     <div class="result-content">
                         <div class="result-title"><?php echo esc_html($t['comeback_title']); ?></div>
@@ -581,6 +589,7 @@ class PPV_ROI_Calculator {
         // Calculator Logic
         const slider = document.getElementById('customer-slider');
         const customerCount = document.getElementById('customer-count');
+        const discoveryCount = document.getElementById('discovery-count');
         const comebackCount = document.getElementById('comeback-count');
         const birthdayCount = document.getElementById('birthday-count');
         const vipPercent = document.getElementById('vip-percent');
@@ -614,6 +623,11 @@ class PPV_ROI_Calculator {
         function calculate() {
             const customers = parseInt(slider.value);
 
+            // Store Discovery: New customers who find the store in the app
+            // Based on local PunktePass users seeing the store card
+            // ~5% of customer base as potential new discovery (conservative estimate)
+            const discovery = Math.round(customers * 0.05) + 3; // minimum 3 new customers
+
             // Comeback: ~10-15% of inactive customers return
             const comeback = Math.round(customers * 0.12);
 
@@ -623,11 +637,12 @@ class PPV_ROI_Calculator {
             // VIP: Additional 20% frequency increase (already shown as %)
             const vip = 20;
 
-            // Total extra visits
-            const total = comeback + birthday + Math.round(customers * 0.05);
+            // Total extra visits (discovery + comeback + birthday + vip frequency boost)
+            const total = discovery + comeback + birthday + Math.round(customers * 0.05);
 
             // Update UI with animation
             animateNumber(customerCount, customers);
+            animateNumber(discoveryCount, discovery);
             animateNumber(comebackCount, comeback);
             animateNumber(birthdayCount, birthday);
             animateNumber(totalExtra, total);
@@ -670,6 +685,8 @@ class PPV_ROI_Calculator {
                 'customers_unit' => 'Kunden',
                 'visits_unit' => 'Besuche',
                 'results_title' => 'Ihre Vorteile',
+                'discovery_title' => 'App-Entdeckung',
+                'new_customers' => 'Neukunden',
                 'comeback_title' => 'Comeback-Kampagne',
                 'birthday_title' => 'Geburtstags-Bonus',
                 'vip_title' => 'VIP-Programm',
@@ -700,6 +717,8 @@ class PPV_ROI_Calculator {
                 'customers_unit' => 'vásárló',
                 'visits_unit' => 'látogatás',
                 'results_title' => 'Az Ön előnyei',
+                'discovery_title' => 'App felfedezés',
+                'new_customers' => 'új vásárló',
                 'comeback_title' => 'Comeback kampány',
                 'birthday_title' => 'Születésnapi bónusz',
                 'vip_title' => 'VIP program',
@@ -730,6 +749,8 @@ class PPV_ROI_Calculator {
                 'customers_unit' => 'clienți',
                 'visits_unit' => 'vizite',
                 'results_title' => 'Avantajele dvs.',
+                'discovery_title' => 'Descoperire în App',
+                'new_customers' => 'clienți noi',
                 'comeback_title' => 'Campanie Comeback',
                 'birthday_title' => 'Bonus ziua de naștere',
                 'vip_title' => 'Program VIP',
