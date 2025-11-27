@@ -3,7 +3,7 @@ if (!defined('ABSPATH')) exit;
 
 /**
  * PunktePass – User Settings
- * Version: 4.0 – PWA + Avatar + LangSync + Neon UI
+ * Version: 5.0 – PPV Users Table Support + Birthday
  * Author: PunktePass / Erik Borota
  */
 
@@ -17,19 +17,27 @@ class PPV_User_Settings {
         add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
         add_action('wp_ajax_ppv_save_user_settings', [__CLASS__, 'ajax_save_settings']);
         add_action('wp_ajax_nopriv_ppv_save_user_settings', [__CLASS__, 'ajax_save_settings']);
-        // ✅ Avatar upload needs nopriv for PunktePass session users
         add_action('wp_ajax_ppv_upload_avatar', [__CLASS__, 'ajax_upload_avatar']);
         add_action('wp_ajax_nopriv_ppv_upload_avatar', [__CLASS__, 'ajax_upload_avatar']);
         add_action('wp_ajax_ppv_logout_all_devices', [__CLASS__, 'ajax_logout_all_devices']);
+        add_action('wp_ajax_nopriv_ppv_logout_all_devices', [__CLASS__, 'ajax_logout_all_devices']);
         add_action('wp_ajax_ppv_delete_account', [__CLASS__, 'ajax_delete_account']);
+        add_action('wp_ajax_nopriv_ppv_delete_account', [__CLASS__, 'ajax_delete_account']);
     }
 
     /** ============================================================
-     *  🔹 Session / Token Bridge
+     *  🔹 Session / Token Bridge - Get PPV User ID
      * ============================================================ */
-    private static function ensure_user_context() {
+    private static function get_ppv_user_id() {
         if (session_status() === PHP_SESSION_NONE) @session_start();
-        if (!is_user_logged_in() && isset($_SESSION['ppv_user_token'])) {
+
+        // Check session first
+        if (!empty($_SESSION['ppv_user_id'])) {
+            return intval($_SESSION['ppv_user_id']);
+        }
+
+        // Try to get from token
+        if (!empty($_SESSION['ppv_user_token'])) {
             global $wpdb;
             $token = sanitize_text_field($_SESSION['ppv_user_token']);
             $user_id = $wpdb->get_var($wpdb->prepare(
@@ -38,47 +46,67 @@ class PPV_User_Settings {
             ));
             if ($user_id) {
                 $_SESSION['ppv_user_id'] = intval($user_id);
-                $GLOBALS['ppv_active_user'] = intval($user_id);
+                return intval($user_id);
             }
         }
+
+        // Try login_token from cookie
+        if (!empty($_COOKIE['ppv_user_token'])) {
+            global $wpdb;
+            $token = sanitize_text_field($_COOKIE['ppv_user_token']);
+            $user_id = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}ppv_users WHERE login_token=%s LIMIT 1",
+                $token
+            ));
+            if ($user_id) {
+                $_SESSION['ppv_user_id'] = intval($user_id);
+                return intval($user_id);
+            }
+        }
+
+        return 0;
+    }
+
+    /** ============================================================
+     *  🔹 Get PPV User Data
+     * ============================================================ */
+    private static function get_ppv_user($user_id) {
+        global $wpdb;
+        return $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}ppv_users WHERE id=%d LIMIT 1",
+            $user_id
+        ));
     }
 
     /** ============================================================
      *  🔹 Nyelvi rendszer integráció
      * ============================================================ */
-private static function t($key) {
-    // Start session if not started
-    if (session_status() === PHP_SESSION_NONE) {
-        @session_start();
-    }
-
-    // ✅ Get language from session (set by enqueue_assets)
-    $lang_code = $_SESSION['ppv_lang'] ?? 'de';
-    $file = PPV_PLUGIN_DIR . "includes/lang/ppv-lang-{$lang_code}.php";
-
-    // ha létezik a fájl és return-nel tér vissza
-    if (file_exists($file)) {
-        $translations = include $file;
-        if (is_array($translations) && isset($translations[$key])) {
-            return esc_html($translations[$key]);
+    private static function t($key) {
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
         }
+
+        $lang_code = $_SESSION['ppv_lang'] ?? 'de';
+        $file = PPV_PLUGIN_DIR . "includes/lang/ppv-lang-{$lang_code}.php";
+
+        if (file_exists($file)) {
+            $translations = include $file;
+            if (is_array($translations) && isset($translations[$key])) {
+                return esc_html($translations[$key]);
+            }
+        }
+
+        return esc_html($key);
     }
-
-    // fallback
-    return esc_html($key);
-}
-
 
     /** ============================================================
      *  🔹 Asset betöltés
      * ============================================================ */
     public static function enqueue_assets() {
-        // Start session for language detection
         if (session_status() === PHP_SESSION_NONE) {
             @session_start();
         }
 
-        // ✅ GET ACTIVE LANGUAGE (same logic as ppv-my-points)
         $lang = sanitize_text_field($_GET['lang'] ?? '');
         if (!in_array($lang, ['de', 'hu', 'ro'], true)) {
             $lang = sanitize_text_field($_COOKIE['ppv_lang'] ?? '');
@@ -90,7 +118,6 @@ private static function t($key) {
             $lang = 'de';
         }
 
-        // Save to session + cookie
         $_SESSION['ppv_lang'] = $lang;
         setcookie('ppv_lang', $lang, time() + 31536000, '/', '', false, true);
 
@@ -112,11 +139,9 @@ private static function t($key) {
      *  🔹 Avatar feltöltés
      * ============================================================ */
     public static function ajax_upload_avatar() {
-        // ✅ Nonce ellenőrzés
         check_ajax_referer('ppv_user_settings_nonce', 'nonce');
 
-        self::ensure_user_context();
-        $user_id = get_current_user_id() ?: intval($_SESSION['ppv_user_id'] ?? 0);
+        $user_id = self::get_ppv_user_id();
 
         if (!$user_id) {
             wp_send_json_error(['msg' => self::t('not_logged_in')]);
@@ -128,16 +153,13 @@ private static function t($key) {
             return;
         }
 
-        // ✅ Fájl típus ellenőrzés
         $allowed_types = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-        $file_type = wp_check_filetype($_FILES['avatar']['name']);
 
         if (!in_array($_FILES['avatar']['type'], $allowed_types)) {
             wp_send_json_error(['msg' => self::t('upload_failed') . ' (invalid type)']);
             return;
         }
 
-        // ✅ Méret ellenőrzés (max 4MB)
         if ($_FILES['avatar']['size'] > 4 * 1024 * 1024) {
             wp_send_json_error(['msg' => self::t('upload_failed') . ' (file too large)']);
             return;
@@ -154,7 +176,14 @@ private static function t($key) {
         }
 
         if (isset($upload['url'])) {
-            update_user_meta($user_id, 'ppv_avatar', esc_url($upload['url']));
+            global $wpdb;
+            $wpdb->update(
+                $wpdb->prefix . 'ppv_users',
+                ['avatar_url' => esc_url($upload['url'])],
+                ['id' => $user_id],
+                ['%s'],
+                ['%d']
+            );
             wp_send_json_success(['url' => $upload['url']]);
             return;
         }
@@ -163,58 +192,134 @@ private static function t($key) {
     }
 
     /** ============================================================
-     *  🔹 AJAX mentés
+     *  🔹 AJAX mentés - PPV Users Table
      * ============================================================ */
     public static function ajax_save_settings() {
         check_ajax_referer('ppv_user_settings_nonce', 'nonce');
-        self::ensure_user_context();
-        $user_id = get_current_user_id() ?: intval($_SESSION['ppv_user_id'] ?? 0);
-        if (!$user_id) wp_send_json_error(['msg' => self::t('not_logged_in')]);
 
-        // alapadatok
+        $user_id = self::get_ppv_user_id();
+        if (!$user_id) {
+            wp_send_json_error(['msg' => self::t('not_logged_in')]);
+            return;
+        }
+
+        global $wpdb;
+        $table = $wpdb->prefix . 'ppv_users';
+
+        // Get current user for password verification if changing password
+        $current_user = self::get_ppv_user($user_id);
+        if (!$current_user) {
+            wp_send_json_error(['msg' => self::t('not_logged_in')]);
+            return;
+        }
+
+        // Build update data array
+        $update_data = [];
+        $update_format = [];
+
+        // Display name
         if (isset($_POST['name'])) {
-            wp_update_user(['ID' => $user_id, 'display_name' => sanitize_text_field($_POST['name'])]);
+            $update_data['display_name'] = sanitize_text_field($_POST['name']);
+            $update_format[] = '%s';
         }
+
+        // Email (validate)
         if (isset($_POST['email']) && is_email($_POST['email'])) {
-            wp_update_user(['ID' => $user_id, 'user_email' => sanitize_email($_POST['email'])]);
+            $new_email = sanitize_email($_POST['email']);
+            // Check if email is already used by another user
+            $existing = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$table} WHERE email=%s AND id!=%d LIMIT 1",
+                $new_email,
+                $user_id
+            ));
+            if (!$existing) {
+                $update_data['email'] = $new_email;
+                $update_format[] = '%s';
+            }
         }
 
-        // jelszó
-        if (!empty($_POST['new_password']) && $_POST['new_password'] === $_POST['confirm_password']) {
-            wp_set_password($_POST['new_password'], $user_id);
+        // Birthday
+        if (isset($_POST['birthday'])) {
+            $birthday = sanitize_text_field($_POST['birthday']);
+            if (empty($birthday)) {
+                $update_data['birthday'] = null;
+                $update_format[] = '%s';
+            } elseif (preg_match('/^\d{4}-\d{2}-\d{2}$/', $birthday)) {
+                $update_data['birthday'] = $birthday;
+                $update_format[] = '%s';
+            }
         }
 
-        // Értesítési beállítások
-        if (isset($_POST['email_notifications'])) {
-            update_user_meta($user_id, 'ppv_email_notifications', $_POST['email_notifications'] === 'true' ? '1' : '0');
-        }
-        if (isset($_POST['push_notifications'])) {
-            update_user_meta($user_id, 'ppv_push_notifications', $_POST['push_notifications'] === 'true' ? '1' : '0');
-        }
-        if (isset($_POST['promo_notifications'])) {
-            update_user_meta($user_id, 'ppv_promo_notifications', $_POST['promo_notifications'] === 'true' ? '1' : '0');
-        }
-
-        // Privacy beállítások
-        if (isset($_POST['profile_visible'])) {
-            update_user_meta($user_id, 'ppv_profile_visible', $_POST['profile_visible'] === 'true' ? '1' : '0');
-        }
-        if (isset($_POST['marketing_emails'])) {
-            update_user_meta($user_id, 'ppv_marketing_emails', $_POST['marketing_emails'] === 'true' ? '1' : '0');
-        }
-        if (isset($_POST['data_sharing'])) {
-            update_user_meta($user_id, 'ppv_data_sharing', $_POST['data_sharing'] === 'true' ? '1' : '0');
-        }
-
-        // Cím
+        // Address fields
         if (isset($_POST['address'])) {
-            update_user_meta($user_id, 'ppv_address', sanitize_text_field($_POST['address']));
+            $update_data['address'] = sanitize_text_field($_POST['address']);
+            $update_format[] = '%s';
         }
         if (isset($_POST['city'])) {
-            update_user_meta($user_id, 'ppv_city', sanitize_text_field($_POST['city']));
+            $update_data['city'] = sanitize_text_field($_POST['city']);
+            $update_format[] = '%s';
         }
         if (isset($_POST['zip'])) {
-            update_user_meta($user_id, 'ppv_zip', sanitize_text_field($_POST['zip']));
+            $update_data['zip'] = sanitize_text_field($_POST['zip']);
+            $update_format[] = '%s';
+        }
+
+        // Notification settings
+        if (isset($_POST['email_notifications'])) {
+            $update_data['email_notifications'] = $_POST['email_notifications'] === 'true' ? 1 : 0;
+            $update_format[] = '%d';
+        }
+        if (isset($_POST['push_notifications'])) {
+            $update_data['push_notifications'] = $_POST['push_notifications'] === 'true' ? 1 : 0;
+            $update_format[] = '%d';
+        }
+        if (isset($_POST['promo_notifications'])) {
+            $update_data['promo_notifications'] = $_POST['promo_notifications'] === 'true' ? 1 : 0;
+            $update_format[] = '%d';
+        }
+
+        // Privacy settings
+        if (isset($_POST['profile_visible'])) {
+            $update_data['profile_visible'] = $_POST['profile_visible'] === 'true' ? 1 : 0;
+            $update_format[] = '%d';
+        }
+        if (isset($_POST['marketing_emails'])) {
+            $update_data['marketing_emails'] = $_POST['marketing_emails'] === 'true' ? 1 : 0;
+            $update_format[] = '%d';
+        }
+        if (isset($_POST['data_sharing'])) {
+            $update_data['data_sharing'] = $_POST['data_sharing'] === 'true' ? 1 : 0;
+            $update_format[] = '%d';
+        }
+
+        // Password change
+        if (!empty($_POST['new_password']) && $_POST['new_password'] === $_POST['confirm_password']) {
+            $new_password = $_POST['new_password'];
+            if (strlen($new_password) >= 6) {
+                $update_data['password'] = password_hash($new_password, PASSWORD_DEFAULT);
+                $update_format[] = '%s';
+            }
+        }
+
+        // Update timestamp
+        $update_data['updated_at'] = current_time('mysql');
+        $update_format[] = '%s';
+
+        // Perform update
+        if (!empty($update_data)) {
+            $result = $wpdb->update(
+                $table,
+                $update_data,
+                ['id' => $user_id],
+                $update_format,
+                ['%d']
+            );
+
+            if ($result === false) {
+                ppv_log("❌ [PPV_User_Settings] Update failed: " . $wpdb->last_error);
+                wp_send_json_error(['msg' => self::t('profile_save_error')]);
+                return;
+            }
         }
 
         wp_send_json_success(['msg' => self::t('settings_saved')]);
@@ -225,16 +330,26 @@ private static function t($key) {
      * ============================================================ */
     public static function ajax_logout_all_devices() {
         check_ajax_referer('ppv_user_settings_nonce', 'nonce');
-        self::ensure_user_context();
-        $user_id = get_current_user_id() ?: intval($_SESSION['ppv_user_id'] ?? 0);
-        if (!$user_id) wp_send_json_error(['msg' => self::t('not_logged_in')]);
 
-        // WordPress sessions törlése
-        $sessions = WP_Session_Tokens::get_instance($user_id);
-        $sessions->destroy_all();
+        $user_id = self::get_ppv_user_id();
+        if (!$user_id) {
+            wp_send_json_error(['msg' => self::t('not_logged_in')]);
+            return;
+        }
 
-        // PunktePass sessions törlése
         global $wpdb;
+
+        // Generate new login token to invalidate all existing sessions
+        $new_token = md5(uniqid('ppv_logout_', true));
+        $wpdb->update(
+            $wpdb->prefix . 'ppv_users',
+            ['login_token' => $new_token],
+            ['id' => $user_id],
+            ['%s'],
+            ['%d']
+        );
+
+        // Delete from sessions table if exists
         $wpdb->delete($wpdb->prefix . 'ppv_user_sessions', ['user_id' => $user_id]);
 
         wp_send_json_success(['msg' => self::t('all_devices_logged_out')]);
@@ -245,31 +360,41 @@ private static function t($key) {
      * ============================================================ */
     public static function ajax_delete_account() {
         check_ajax_referer('ppv_user_settings_nonce', 'nonce');
-        self::ensure_user_context();
-        $user_id = get_current_user_id() ?: intval($_SESSION['ppv_user_id'] ?? 0);
-        if (!$user_id) wp_send_json_error(['msg' => self::t('not_logged_in')]);
 
-        $password = sanitize_text_field($_POST['password'] ?? '');
-        $user = get_userdata($user_id);
-
-        // Jelszó ellenőrzés
-        if (!wp_check_password($password, $user->user_pass, $user_id)) {
-            wp_send_json_error(['msg' => self::t('wrong_password')]);
+        $user_id = self::get_ppv_user_id();
+        if (!$user_id) {
+            wp_send_json_error(['msg' => self::t('not_logged_in')]);
+            return;
         }
 
-        // User törlése
-        require_once ABSPATH . 'wp-admin/includes/user.php';
+        $password = sanitize_text_field($_POST['password'] ?? '');
+        $user = self::get_ppv_user($user_id);
+
+        if (!$user) {
+            wp_send_json_error(['msg' => self::t('not_logged_in')]);
+            return;
+        }
+
+        // Verify password
+        if (!password_verify($password, $user->password)) {
+            wp_send_json_error(['msg' => self::t('wrong_password')]);
+            return;
+        }
+
         global $wpdb;
 
-        // PunktePass adatok törlése
+        // Delete user data
         $wpdb->delete($wpdb->prefix . 'ppv_users', ['id' => $user_id]);
         $wpdb->delete($wpdb->prefix . 'ppv_points', ['user_id' => $user_id]);
+        $wpdb->delete($wpdb->prefix . 'ppv_user_sessions', ['user_id' => $user_id]);
 
-        // WordPress user törlése
-        wp_delete_user($user_id);
+        // Clear session
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_destroy();
+        }
 
-        // Session törlése
-        session_destroy();
+        // Clear cookies
+        setcookie('ppv_user_token', '', time() - 3600, '/');
 
         wp_send_json_success(['msg' => self::t('account_deleted'), 'redirect' => home_url()]);
     }
@@ -278,38 +403,50 @@ private static function t($key) {
      *  🔹 Oldal renderelése
      * ============================================================ */
     public static function render_settings_page() {
-        self::ensure_user_context();
+        $user_id = self::get_ppv_user_id();
+        if (!$user_id) {
+            return '<div class="ppv-notice">'.self::t('login_required').'</div>';
+        }
 
-        $user_id = get_current_user_id() ?: intval($_SESSION['ppv_user_id'] ?? 0);
-        if (!$user_id) return '<div class="ppv-notice">'.self::t('login_required').'</div>';
+        $user = self::get_ppv_user($user_id);
+        if (!$user) {
+            return '<div class="ppv-notice">'.self::t('login_required').'</div>';
+        }
 
-        $user = get_userdata($user_id);
-        $avatar = get_user_meta($user_id, 'ppv_avatar', true) ?: PPV_PLUGIN_URL.'assets/img/default-avatar.svg';
+        // Avatar
+        $avatar = !empty($user->avatar_url) ? $user->avatar_url : PPV_PLUGIN_URL.'assets/img/default-avatar.svg';
 
-        // ✅ Get language from session (already set by enqueue_assets)
+        // Display name
+        $display_name = !empty($user->display_name) ? $user->display_name : '';
+        if (empty($display_name) && !empty($user->first_name)) {
+            $display_name = trim($user->first_name . ' ' . ($user->last_name ?? ''));
+        }
+
+        // Language
         $lang = $_SESSION['ppv_lang'] ?? 'de';
-
         ppv_log("🔍 [PPV_User_Settings::render] Using language: {$lang}");
 
-        // Értesítési beállítások
-        $email_notif = get_user_meta($user_id, 'ppv_email_notifications', true) !== '0';
-        $push_notif = get_user_meta($user_id, 'ppv_push_notifications', true) !== '0';
-        $promo_notif = get_user_meta($user_id, 'ppv_promo_notifications', true) !== '0';
+        // Notification settings (default to 1 if null)
+        $email_notif = isset($user->email_notifications) ? (bool)$user->email_notifications : true;
+        $push_notif = isset($user->push_notifications) ? (bool)$user->push_notifications : true;
+        $promo_notif = isset($user->promo_notifications) ? (bool)$user->promo_notifications : true;
 
-        // Privacy
-        $profile_visible = get_user_meta($user_id, 'ppv_profile_visible', true) !== '0';
-        $marketing = get_user_meta($user_id, 'ppv_marketing_emails', true) !== '0';
-        $data_sharing = get_user_meta($user_id, 'ppv_data_sharing', true) !== '0';
+        // Privacy settings
+        $profile_visible = isset($user->profile_visible) ? (bool)$user->profile_visible : true;
+        $marketing = isset($user->marketing_emails) ? (bool)$user->marketing_emails : true;
+        $data_sharing = isset($user->data_sharing) ? (bool)$user->data_sharing : false;
 
-        // Cím
-        $address = get_user_meta($user_id, 'ppv_address', true);
-        $city = get_user_meta($user_id, 'ppv_city', true);
-        $zip = get_user_meta($user_id, 'ppv_zip', true);
+        // Birthday
+        $birthday = $user->birthday ?? '';
+
+        // Address
+        $address = $user->address ?? '';
+        $city = $user->city ?? '';
+        $zip = $user->zip ?? '';
 
         ob_start(); ?>
         <div class="ppv-settings-wrapper">
             <div class="ppv-header-bar">
-                
                 <h2><i class="ri-settings-4-line"></i> <?php echo self::t('my_settings'); ?></h2>
             </div>
 
@@ -325,9 +462,12 @@ private static function t($key) {
                 <div class="ppv-section">
                     <h3><i class="ri-user-line"></i> <?php echo self::t('personal_data'); ?></h3>
                     <label><?php echo self::t('name'); ?></label>
-                    <input type="text" name="name" value="<?php echo esc_attr($user->display_name); ?>">
+                    <input type="text" name="name" value="<?php echo esc_attr($display_name); ?>">
                     <label><?php echo self::t('email'); ?></label>
-                    <input type="email" name="email" value="<?php echo esc_attr($user->user_email); ?>">
+                    <input type="email" name="email" value="<?php echo esc_attr($user->email); ?>">
+                    <label><?php echo self::t('birthday'); ?></label>
+                    <input type="date" name="birthday" value="<?php echo esc_attr($birthday); ?>" max="<?php echo date('Y-m-d'); ?>">
+                    <p class="ppv-field-hint"><?php echo self::t('birthday_hint'); ?></p>
                 </div>
 
                 <!-- Password -->
@@ -337,7 +477,7 @@ private static function t($key) {
                     <input type="password" name="confirm_password" placeholder="<?php echo self::t('repeat_password'); ?>">
                 </div>
 
-                <!-- Címkezelés -->
+                <!-- Address -->
                 <div class="ppv-section">
                     <h3><i class="ri-map-pin-line"></i> <?php echo self::t('address'); ?></h3>
                     <label><?php echo self::t('street_address'); ?></label>
@@ -355,7 +495,7 @@ private static function t($key) {
                     </div>
                 </div>
 
-                <!-- Értesítések -->
+                <!-- Notifications -->
                 <div class="ppv-section">
                     <h3><i class="ri-notification-3-line"></i> <?php echo self::t('notifications'); ?></h3>
 
@@ -432,15 +572,11 @@ private static function t($key) {
             </div>
         </div>
         <?php
-$content = ob_get_clean();
-$content .= do_shortcode('[ppv_bottom_nav]');
-return $content;
-
-
+        $content = ob_get_clean();
+        $content .= do_shortcode('[ppv_bottom_nav]');
+        return $content;
     }
-    
+
 }
-
-
 
 PPV_User_Settings::hooks();

@@ -6551,7 +6551,8 @@ body.ppv-dark .ppv-mypoints-tab.active {
 /* FORM INPUTS ----------------------------------------------------------- */
 .ppv-form input[type="text"],
 .ppv-form input[type="email"],
-.ppv-form input[type="password"] {
+.ppv-form input[type="password"],
+.ppv-form input[type="date"] {
     width: 100%;
     padding: .7rem .9rem;
     font-size: .95rem;
@@ -6560,6 +6561,15 @@ body.ppv-dark .ppv-mypoints-tab.active {
     border-radius: var(--ppv-s-radius-sm);
     background: #fff;
     box-shadow: var(--ppv-s-shadow);
+}
+
+/* Field hint text */
+.ppv-field-hint {
+    font-size: .8rem;
+    color: var(--ppv-s-text-light);
+    margin-top: -.5rem;
+    margin-bottom: .8rem;
+    opacity: 0.8;
 }
 
 .ppv-form-row {
@@ -6816,10 +6826,15 @@ body.ppv-dark .ppv-section label {
 
 body.ppv-dark .ppv-form input[type="text"],
 body.ppv-dark .ppv-form input[type="email"],
-body.ppv-dark .ppv-form input[type="password"] {
+body.ppv-dark .ppv-form input[type="password"],
+body.ppv-dark .ppv-form input[type="date"] {
     background: var(--pp-bg-2);
     border-color: var(--pp-border);
     color: var(--pp-text);
+}
+
+body.ppv-dark .ppv-field-hint {
+    color: var(--pp-text-muted);
 }
 
 body.ppv-dark .ppv-form input:focus {
@@ -12598,7 +12613,8 @@ body.ppv-dark .ppv-support-btn-cancel:hover {
    ========================================================================== */
 body.ppv-dark .ppv-form input[type="text"],
 body.ppv-dark .ppv-form input[type="email"],
-body.ppv-dark .ppv-form input[type="password"] {
+body.ppv-dark .ppv-form input[type="password"],
+body.ppv-dark .ppv-form input[type="date"] {
     background: rgba(21, 27, 35, 0.9) !important;
     border: 1px solid rgba(0, 212, 255, 0.20) !important;
     color: #f0f6fc !important;

@@ -345,6 +345,8 @@ return [
   'personal_data' => 'Date personale',
   'name' => 'Nume',
   'email' => 'Adresă de e-mail',
+  'birthday' => 'Ziua de naștere',
+  'birthday_hint' => 'Adaugă ziua ta de naștere pentru a primi un bonus special!',
   'change_password' => 'Schimbă parola',
   'new_password' => 'Parolă nouă',
   'repeat_password' => 'Confirmă parola',
