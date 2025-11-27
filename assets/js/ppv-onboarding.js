@@ -24,7 +24,8 @@
             this.wizardStep = 0;
             this.wizardData = {
                 profile_lite: {},
-                reward: {}
+                reward: {},
+                device: {}
             };
             this.celebrationShown = false; // ✅ Initialize flag
             this.progressInterval = null; // ✅ Store interval ID for cleanup
@@ -957,6 +958,7 @@
                     <div class="ppv-progress-steps">
                         ${this.renderProgressStep('profile_lite', L.onb_progress_step_profile || 'Profil adatok kitöltve', this.progress.steps.profile_lite)}
                         ${this.renderProgressStep('reward', L.onb_progress_step_reward || 'Első prémium', this.progress.steps.reward)}
+                        ${this.renderProgressStep('device', L.onb_progress_step_device || 'Eszköz regisztrálva', this.progress.steps.device)}
                     </div>
 
                     <div class="ppv-progress-actions">
@@ -1026,6 +1028,20 @@
                 // Wizard megnyitása második lépésre
                 this.wizardStep = 1;
                 this.showWizardModal();
+            } else if (step === 'device') {
+                // Eszköz regisztrálás - átirányítás az eszköz kezelés tabra
+                const qrCenterUrl = '/qr-center/?tab=devices';
+                if (window.location.pathname.includes('qr-center')) {
+                    // Ha már QR centeren vagyunk, váltás a tab-ra
+                    const devicesTab = document.querySelector('[data-tab="devices"]');
+                    if (devicesTab) {
+                        devicesTab.click();
+                    } else {
+                        window.location.href = qrCenterUrl;
+                    }
+                } else {
+                    window.location.href = qrCenterUrl;
+                }
             }
         }
 
