@@ -12,17 +12,45 @@
             background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
             color: #e2e8f0;
             line-height: 1.5;
-            font-size: 12px;
+            font-size: 14px;
         }
         @media print {
             body { background: white; color: #1e293b; font-size: 10px; }
             .container { padding: 10px; }
-            .no-print { display: none; }
+            .no-print, .lang-switcher { display: none; }
         }
         .container { max-width: 900px; margin: 0 auto; padding: 20px; }
 
+        /* Language Switcher */
+        .lang-switcher {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            z-index: 1000;
+            display: flex;
+            gap: 5px;
+            background: rgba(15, 23, 42, 0.95);
+            padding: 6px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+        }
+        .lang-btn {
+            padding: 6px 12px;
+            border: none;
+            background: transparent;
+            color: #94a3b8;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .lang-btn:hover { background: rgba(255,255,255,0.1); color: #e2e8f0; }
+        .lang-btn.active { background: linear-gradient(135deg, #0ea5e9, #0284c7); color: white; }
+
         /* Header - Compact */
-        .header { text-align: center; padding: 25px 0; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 25px; }
+        .header { text-align: center; padding: 25px 0; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 25px; padding-top: 60px; }
         .logo { width: 120px; margin-bottom: 10px; }
         .tagline { font-size: 16px; font-weight: 300; color: #94a3b8; margin-bottom: 8px; }
         .hero-title { font-size: 26px; font-weight: 800; background: linear-gradient(135deg, #0ea5e9, #22d3ee); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 5px; }
@@ -30,8 +58,8 @@
 
         /* Section - Compact */
         .section { margin-bottom: 25px; }
-        .section-title { font-size: 16px; font-weight: 700; color: #f1f5f9; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
-        .section-title .icon { width: 28px; height: 28px; background: linear-gradient(135deg, #0ea5e9, #0284c7); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+        .section-title { font-size: 16px; font-weight: 700; color: #f1f5f9; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .section-title .icon { width: 28px; height: 28px; background: linear-gradient(135deg, #0ea5e9, #0284c7); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
 
         /* Comparison - 2 columns compact */
         .comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
@@ -42,7 +70,7 @@
         .comparison-card.problem h3 { color: #f87171; }
         .comparison-card.solution h3 { color: #4ade80; }
         .comparison-card ul { list-style: none; }
-        .comparison-card li { padding: 3px 0; padding-left: 18px; position: relative; color: #cbd5e1; font-size: 11px; }
+        .comparison-card li { padding: 4px 0; padding-left: 20px; position: relative; color: #cbd5e1; font-size: 12px; }
         .comparison-card.problem li::before { content: "✗"; position: absolute; left: 0; color: #f87171; font-weight: bold; }
         .comparison-card.solution li::before { content: "✓"; position: absolute; left: 0; color: #4ade80; font-weight: bold; }
 
@@ -50,126 +78,255 @@
         .how-it-works { display: flex; justify-content: space-between; gap: 10px; margin: 20px 0; }
         .step { flex: 1; text-align: center; position: relative; }
         .step:not(:last-child)::after { content: "→"; position: absolute; right: -8px; top: 18px; color: #0ea5e9; font-size: 16px; }
-        .step-number { width: 36px; height: 36px; background: linear-gradient(135deg, #0ea5e9, #0284c7); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800; color: white; margin: 0 auto 6px; }
-        .step h4 { font-size: 11px; font-weight: 600; color: #f1f5f9; margin-bottom: 3px; }
-        .step p { font-size: 10px; color: #94a3b8; }
+        .step-number { width: 40px; height: 40px; background: linear-gradient(135deg, #0ea5e9, #0284c7); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; color: white; margin: 0 auto 8px; }
+        .step h4 { font-size: 12px; font-weight: 600; color: #f1f5f9; margin-bottom: 4px; }
+        .step p { font-size: 11px; color: #94a3b8; }
 
         /* Features Grid - 5 columns compact */
         .features-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
         .feature-card { background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02)); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 12px; text-align: center; }
-        .feature-icon { width: 32px; height: 32px; background: linear-gradient(135deg, #0ea5e9, #0284c7); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; margin: 0 auto 8px; }
-        .feature-card h3 { font-size: 10px; font-weight: 600; color: #f1f5f9; margin-bottom: 4px; }
-        .feature-card p { font-size: 9px; color: #94a3b8; line-height: 1.3; }
+        .feature-icon { width: 36px; height: 36px; background: linear-gradient(135deg, #0ea5e9, #0284c7); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; margin: 0 auto 8px; }
+        .feature-card h3 { font-size: 11px; font-weight: 600; color: #f1f5f9; margin-bottom: 4px; }
+        .feature-card p { font-size: 10px; color: #94a3b8; line-height: 1.3; }
 
         /* Security Grid - 3 columns compact */
         .security-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
         .security-card { background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.05)); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 10px; padding: 12px; }
-        .security-card .icon { font-size: 18px; margin-bottom: 6px; }
-        .security-card h4 { color: #f87171; font-size: 11px; margin-bottom: 5px; }
-        .security-card p { color: #cbd5e1; font-size: 10px; line-height: 1.3; }
+        .security-card .icon { font-size: 20px; margin-bottom: 6px; }
+        .security-card h4 { color: #f87171; font-size: 12px; margin-bottom: 5px; }
+        .security-card p { color: #cbd5e1; font-size: 11px; line-height: 1.3; }
 
         /* Stats - Compact inline */
-        .stats-grid { display: flex; justify-content: space-around; gap: 15px; margin: 15px 0; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 12px; }
-        .stat-card { text-align: center; }
-        .stat-value { font-size: 22px; font-weight: 800; background: linear-gradient(135deg, #0ea5e9, #22d3ee); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-        .stat-label { font-size: 10px; color: #94a3b8; }
+        .stats-grid { display: flex; justify-content: space-around; gap: 15px; margin: 15px 0; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 12px; flex-wrap: wrap; }
+        .stat-card { text-align: center; min-width: 80px; }
+        .stat-value { font-size: 24px; font-weight: 800; background: linear-gradient(135deg, #0ea5e9, #22d3ee); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .stat-label { font-size: 11px; color: #94a3b8; }
 
         /* Trust - 3 columns compact */
         .trust-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
         .trust-card { background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 12px; text-align: center; }
-        .trust-icon { font-size: 24px; margin-bottom: 6px; }
-        .trust-card h4 { font-size: 11px; font-weight: 600; color: #f1f5f9; margin-bottom: 4px; }
-        .trust-card p { font-size: 10px; color: #94a3b8; }
+        .trust-icon { font-size: 28px; margin-bottom: 6px; }
+        .trust-card h4 { font-size: 12px; font-weight: 600; color: #f1f5f9; margin-bottom: 4px; }
+        .trust-card p { font-size: 11px; color: #94a3b8; }
 
         /* Pricing - Compact */
         .pricing-section { background: linear-gradient(135deg, rgba(14, 165, 233, 0.1), rgba(34, 211, 238, 0.05)); border: 2px solid rgba(14, 165, 233, 0.3); border-radius: 16px; padding: 20px; text-align: center; margin: 20px 0; }
-        .pricing-title { font-size: 18px; font-weight: 800; color: #f1f5f9; margin-bottom: 5px; }
-        .pricing-subtitle { font-size: 11px; color: #94a3b8; margin-bottom: 12px; }
+        .pricing-title { font-size: 20px; font-weight: 800; color: #f1f5f9; margin-bottom: 5px; }
+        .pricing-subtitle { font-size: 12px; color: #94a3b8; margin-bottom: 12px; }
         .pricing-box { display: inline-block; background: rgba(0,0,0,0.3); border-radius: 12px; padding: 15px 30px; margin-bottom: 12px; }
-        .pricing-trial { background: linear-gradient(135deg, #22c55e, #16a34a); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-size: 14px; font-weight: 700; margin-bottom: 5px; }
+        .pricing-trial { background: linear-gradient(135deg, #22c55e, #16a34a); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-size: 15px; font-weight: 700; margin-bottom: 5px; }
         .pricing-amount { display: flex; align-items: baseline; justify-content: center; gap: 3px; }
-        .pricing-currency { font-size: 16px; color: #94a3b8; }
-        .pricing-value { font-size: 36px; font-weight: 800; color: #f1f5f9; }
-        .pricing-period { font-size: 12px; color: #64748b; }
-        .pricing-vat { font-size: 10px; color: #64748b; margin-top: 3px; }
+        .pricing-currency { font-size: 18px; color: #94a3b8; }
+        .pricing-value { font-size: 40px; font-weight: 800; color: #f1f5f9; }
+        .pricing-period { font-size: 14px; color: #64748b; }
+        .pricing-vat { font-size: 11px; color: #64748b; margin-top: 3px; }
         .pricing-features { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: left; max-width: 600px; margin: 0 auto; }
-        .pricing-feature { display: flex; align-items: center; gap: 5px; color: #cbd5e1; font-size: 10px; }
+        .pricing-feature { display: flex; align-items: center; gap: 5px; color: #cbd5e1; font-size: 11px; }
         .pricing-feature .check { color: #22c55e; font-weight: bold; }
 
         /* Tablet Highlight - Compact */
         .tablet-highlight { background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(16, 185, 129, 0.1)); border: 2px solid rgba(34, 197, 94, 0.4); border-radius: 12px; padding: 15px; margin: 12px auto; max-width: 350px; text-align: center; }
-        .tablet-highlight .icon { font-size: 24px; margin-bottom: 5px; }
-        .tablet-highlight h4 { color: #4ade80; font-size: 14px; margin-bottom: 5px; }
-        .tablet-highlight p { color: #cbd5e1; font-size: 11px; }
+        .tablet-highlight .icon { font-size: 28px; margin-bottom: 5px; }
+        .tablet-highlight h4 { color: #4ade80; font-size: 15px; margin-bottom: 5px; }
+        .tablet-highlight p { color: #cbd5e1; font-size: 12px; }
 
         /* Advertising Section - Compact */
         .ad-section { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; margin: 20px 0; }
-        .ad-text h3 { color: #f1f5f9; font-size: 14px; margin-bottom: 8px; }
-        .ad-text p { color: #94a3b8; font-size: 11px; line-height: 1.5; margin-bottom: 10px; }
+        .ad-text h3 { color: #f1f5f9; font-size: 15px; margin-bottom: 8px; }
+        .ad-text p { color: #94a3b8; font-size: 12px; line-height: 1.5; margin-bottom: 10px; }
         .ad-list { background: rgba(14, 165, 233, 0.1); border: 1px solid rgba(14, 165, 233, 0.3); border-radius: 8px; padding: 10px; }
-        .ad-list h4 { color: #00e6ff; font-size: 11px; margin-bottom: 6px; }
-        .ad-list ul { color: #cbd5e1; font-size: 10px; margin: 0; padding-left: 15px; line-height: 1.6; }
+        .ad-list h4 { color: #00e6ff; font-size: 12px; margin-bottom: 6px; }
+        .ad-list ul { color: #cbd5e1; font-size: 11px; margin: 0; padding-left: 15px; line-height: 1.6; }
         .ad-mockup { background: linear-gradient(135deg, #1e293b, #0f172a); border-radius: 16px; padding: 12px; border: 1px solid rgba(255,255,255,0.1); }
         .store-card { background: linear-gradient(135deg, rgba(0, 230, 255, 0.1), rgba(14, 165, 233, 0.05)); border: 1px solid rgba(0, 230, 255, 0.3); border-radius: 10px; padding: 10px; margin-bottom: 8px; }
         .store-card-faded { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 10px; padding: 10px; opacity: 0.5; }
 
         /* Updates - Compact */
         .updates-section { background: linear-gradient(135deg, rgba(168, 85, 247, 0.1), rgba(139, 92, 246, 0.05)); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 15px; margin: 15px 0; }
-        .updates-section h3 { font-size: 13px; font-weight: 700; color: #c4b5fd; margin-bottom: 8px; }
-        .updates-section p { color: #cbd5e1; font-size: 11px; margin-bottom: 10px; }
+        .updates-section h3 { font-size: 14px; font-weight: 700; color: #c4b5fd; margin-bottom: 8px; }
+        .updates-section p { color: #cbd5e1; font-size: 12px; margin-bottom: 10px; }
         .updates-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
-        .update-item { display: flex; align-items: center; gap: 6px; color: #e9d5ff; font-size: 10px; }
+        .update-item { display: flex; align-items: center; gap: 6px; color: #e9d5ff; font-size: 11px; }
         .update-item .bullet { color: #a855f7; }
 
         /* CTA - Compact */
         .cta-section { text-align: center; padding: 20px 0; border-top: 1px solid rgba(255,255,255,0.1); margin-top: 20px; }
-        .cta-title { font-size: 18px; font-weight: 800; color: #f1f5f9; margin-bottom: 8px; }
-        .cta-text { font-size: 12px; color: #94a3b8; margin-bottom: 12px; }
+        .cta-title { font-size: 20px; font-weight: 800; color: #f1f5f9; margin-bottom: 8px; }
+        .cta-text { font-size: 13px; color: #94a3b8; margin-bottom: 12px; }
         .cta-contact { display: inline-flex; flex-direction: column; gap: 5px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 12px 25px; }
-        .cta-contact a { color: #0ea5e9; text-decoration: none; font-size: 13px; font-weight: 600; }
+        .cta-contact a { color: #0ea5e9; text-decoration: none; font-size: 14px; font-weight: 600; }
 
         /* Footer - Compact */
-        .footer { text-align: center; padding: 15px 0; color: #64748b; font-size: 10px; border-top: 1px solid rgba(255,255,255,0.05); }
+        .footer { text-align: center; padding: 15px 0; color: #64748b; font-size: 11px; border-top: 1px solid rgba(255,255,255,0.05); }
         .footer-logo { width: 60px; margin-bottom: 8px; opacity: 0.5; }
 
         /* Summary Box */
         .summary-box { background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(22, 163, 74, 0.05)); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 10px; padding: 12px; margin-top: 12px; text-align: center; }
-        .summary-box h4 { color: #4ade80; font-size: 12px; margin-bottom: 5px; }
-        .summary-box p { color: #cbd5e1; font-size: 10px; }
+        .summary-box h4 { color: #4ade80; font-size: 13px; margin-bottom: 5px; }
+        .summary-box p { color: #cbd5e1; font-size: 11px; }
+
+        /* ROI Calculator Link */
+        .roi-link { display: inline-block; background: linear-gradient(135deg, #0ea5e9, #0284c7); color: white; padding: 10px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 12px; transition: transform 0.2s, box-shadow 0.2s; }
+        .roi-link:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(14, 165, 233, 0.4); }
+
+        /* ============================================== */
+        /* MOBILE RESPONSIVE STYLES */
+        /* ============================================== */
+        @media (max-width: 768px) {
+            body { font-size: 14px; }
+            .container { padding: 15px; }
+
+            /* Lang switcher mobile */
+            .lang-switcher { top: 10px; right: 10px; padding: 4px; }
+            .lang-btn { padding: 5px 10px; font-size: 11px; }
+
+            /* Header mobile */
+            .header { padding: 20px 0; padding-top: 55px; margin-bottom: 20px; }
+            .logo { width: 100px; }
+            .tagline { font-size: 14px; }
+            .hero-title { font-size: 22px; }
+            .hero-subtitle { font-size: 12px; padding: 0 10px; }
+
+            /* Section titles */
+            .section-title { font-size: 15px; }
+            .section-title .icon { width: 26px; height: 26px; font-size: 13px; }
+
+            /* Comparison - Stack on mobile */
+            .comparison { grid-template-columns: 1fr; gap: 12px; }
+            .comparison-card { padding: 14px; }
+            .comparison-card li { font-size: 12px; padding: 5px 0; padding-left: 22px; }
+
+            /* How it works - Vertical on mobile */
+            .how-it-works { flex-direction: column; gap: 15px; }
+            .step { display: flex; align-items: center; gap: 12px; text-align: left; }
+            .step:not(:last-child)::after { content: ""; display: none; }
+            .step-number { width: 44px; height: 44px; font-size: 18px; margin: 0; flex-shrink: 0; }
+            .step h4 { font-size: 14px; margin-bottom: 2px; }
+            .step p { font-size: 12px; }
+            .step-text { flex: 1; }
+
+            /* Features Grid - 2 columns on mobile */
+            .features-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            .feature-card { padding: 14px 10px; }
+            .feature-icon { width: 40px; height: 40px; font-size: 20px; }
+            .feature-card h3 { font-size: 12px; }
+            .feature-card p { font-size: 11px; }
+
+            /* Security Grid - 2 columns on mobile */
+            .security-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            .security-card { padding: 14px; }
+            .security-card .icon { font-size: 22px; }
+            .security-card h4 { font-size: 13px; }
+            .security-card p { font-size: 12px; }
+
+            /* Stats */
+            .stats-grid { gap: 10px; padding: 12px; }
+            .stat-card { min-width: 70px; }
+            .stat-value { font-size: 22px; }
+            .stat-label { font-size: 10px; }
+
+            /* Trust - 1 column on small mobile */
+            .trust-grid { grid-template-columns: 1fr; gap: 10px; }
+            .trust-card { display: flex; align-items: center; gap: 12px; text-align: left; padding: 14px; }
+            .trust-icon { font-size: 32px; margin: 0; flex-shrink: 0; }
+            .trust-text { flex: 1; }
+            .trust-card h4 { font-size: 14px; }
+            .trust-card p { font-size: 12px; }
+
+            /* Pricing */
+            .pricing-section { padding: 18px 15px; }
+            .pricing-title { font-size: 18px; }
+            .pricing-box { padding: 12px 20px; width: 100%; }
+            .pricing-value { font-size: 36px; }
+            .pricing-features { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+            .pricing-feature { font-size: 12px; }
+
+            /* Tablet highlight */
+            .tablet-highlight { margin: 15px auto; padding: 14px; max-width: 100%; }
+            .tablet-highlight h4 { font-size: 14px; }
+            .tablet-highlight p { font-size: 12px; }
+
+            /* Advertising - Stack on mobile */
+            .ad-section { grid-template-columns: 1fr; gap: 15px; }
+            .ad-text h3 { font-size: 16px; }
+            .ad-text p { font-size: 13px; }
+            .ad-list h4 { font-size: 13px; }
+            .ad-list ul { font-size: 12px; }
+            .ad-mockup { padding: 15px; }
+
+            /* Updates */
+            .updates-section { padding: 14px; }
+            .updates-section h3 { font-size: 14px; }
+            .updates-section p { font-size: 12px; }
+            .updates-list { grid-template-columns: 1fr; gap: 8px; }
+            .update-item { font-size: 12px; }
+
+            /* CTA */
+            .cta-section { padding: 18px 0; }
+            .cta-title { font-size: 18px; }
+            .cta-text { font-size: 13px; }
+            .cta-contact { width: 100%; padding: 14px 20px; }
+            .cta-contact a { font-size: 15px; }
+
+            /* Footer */
+            .footer { padding: 12px 0; font-size: 11px; }
+
+            /* Summary box */
+            .summary-box { padding: 14px; }
+            .summary-box h4 { font-size: 14px; }
+            .summary-box p { font-size: 12px; }
+
+            /* ROI link */
+            .roi-link { padding: 12px 24px; font-size: 13px; width: 100%; text-align: center; }
+        }
+
+        /* Extra small mobile */
+        @media (max-width: 400px) {
+            .features-grid { grid-template-columns: 1fr; }
+            .security-grid { grid-template-columns: 1fr; }
+            .pricing-features { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
+    <!-- Language Switcher -->
+    <div class="lang-switcher no-print">
+        <button class="lang-btn active" data-lang="de">DE</button>
+        <button class="lang-btn" data-lang="hu">HU</button>
+        <button class="lang-btn" data-lang="ro">RO</button>
+    </div>
+
     <div class="container">
         <!-- Header -->
         <header class="header">
             <img src="https://punktepass.de/wp-content/plugins/punktepass/assets/img/logo.webp" alt="PunktePass" class="logo">
-            <p class="tagline">Die digitale Revolution für Ihr Treueprogramm</p>
-            <h1 class="hero-title">Mehr Stammkunden. Weniger Aufwand.</h1>
-            <p class="hero-subtitle">Ersetzen Sie Papierstempel durch ein modernes, digitales Treueprogramm – geliebt von Kunden, perfekt für Ihr Geschäft.</p>
+            <p class="tagline" data-i18n="tagline">Die digitale Revolution für Ihr Treueprogramm</p>
+            <h1 class="hero-title" data-i18n="hero_title">Mehr Stammkunden. Weniger Aufwand.</h1>
+            <p class="hero-subtitle" data-i18n="hero_subtitle">Ersetzen Sie Papierstempel durch ein modernes, digitales Treueprogramm – geliebt von Kunden, perfekt für Ihr Geschäft.</p>
         </header>
 
         <!-- Problem vs Solution -->
         <section class="section">
-            <h2 class="section-title"><span class="icon">💡</span> Warum PunktePass?</h2>
+            <h2 class="section-title"><span class="icon">💡</span> <span data-i18n="why_punktepass">Warum PunktePass?</span></h2>
             <div class="comparison">
                 <div class="comparison-card problem">
-                    <h3>❌ Papierstempelkarten</h3>
+                    <h3>❌ <span data-i18n="paper_cards">Papierstempelkarten</span></h3>
                     <ul>
-                        <li>Karten gehen verloren oder werden vergessen</li>
-                        <li>Keine Übersicht über Kundendaten</li>
-                        <li>Betrugsanfällig (eigene Stempel)</li>
-                        <li>Unprofessioneller Eindruck</li>
-                        <li>Keine Möglichkeit zur Kundenansprache</li>
+                        <li data-i18n="problem_1">Karten gehen verloren oder werden vergessen</li>
+                        <li data-i18n="problem_2">Keine Übersicht über Kundendaten</li>
+                        <li data-i18n="problem_3">Betrugsanfällig (eigene Stempel)</li>
+                        <li data-i18n="problem_4">Unprofessioneller Eindruck</li>
+                        <li data-i18n="problem_5">Keine Möglichkeit zur Kundenansprache</li>
                     </ul>
                 </div>
                 <div class="comparison-card solution">
-                    <h3>✅ PunktePass Digital</h3>
+                    <h3>✅ <span data-i18n="digital_solution">PunktePass Digital</span></h3>
                     <ul>
-                        <li>Immer dabei – auf dem Smartphone</li>
-                        <li>Vollständige Kundenstatistiken</li>
-                        <li>Fälschungssicher durch QR-Codes</li>
-                        <li>Modernes, professionelles Image</li>
-                        <li>100% papierlos & umweltfreundlich</li>
+                        <li data-i18n="solution_1">Immer dabei – auf dem Smartphone</li>
+                        <li data-i18n="solution_2">Vollständige Kundenstatistiken</li>
+                        <li data-i18n="solution_3">Fälschungssicher durch QR-Codes</li>
+                        <li data-i18n="solution_4">Modernes, professionelles Image</li>
+                        <li data-i18n="solution_5">100% papierlos & umweltfreundlich</li>
                     </ul>
                 </div>
             </div>
@@ -177,204 +334,210 @@
 
         <!-- How it works -->
         <section class="section">
-            <h2 class="section-title"><span class="icon">⚡</span> So einfach funktioniert's</h2>
+            <h2 class="section-title"><span class="icon">⚡</span> <span data-i18n="how_it_works">So einfach funktioniert's</span></h2>
             <div class="how-it-works">
                 <div class="step">
                     <div class="step-number">1</div>
-                    <h4>Kunde zeigt QR-Code</h4>
-                    <p>Öffnet seine PunktePass-App</p>
+                    <div class="step-text">
+                        <h4 data-i18n="step1_title">Kunde zeigt QR-Code</h4>
+                        <p data-i18n="step1_desc">Öffnet seine PunktePass-App</p>
+                    </div>
                 </div>
                 <div class="step">
                     <div class="step-number">2</div>
-                    <h4>Sie scannen</h4>
-                    <p>Ein kurzer Scan mit Smartphone</p>
+                    <div class="step-text">
+                        <h4 data-i18n="step2_title">Sie scannen</h4>
+                        <p data-i18n="step2_desc">Ein kurzer Scan mit Smartphone</p>
+                    </div>
                 </div>
                 <div class="step">
                     <div class="step-number">3</div>
-                    <h4>Punkte gesammelt</h4>
-                    <p>Automatisch gutgeschrieben</p>
+                    <div class="step-text">
+                        <h4 data-i18n="step3_title">Punkte gesammelt</h4>
+                        <p data-i18n="step3_desc">Automatisch gutgeschrieben</p>
+                    </div>
                 </div>
             </div>
         </section>
 
         <!-- Features - 5 columns -->
         <section class="section">
-            <h2 class="section-title"><span class="icon">🚀</span> Alle Funktionen</h2>
+            <h2 class="section-title"><span class="icon">🚀</span> <span data-i18n="all_features">Alle Funktionen</span></h2>
             <div class="features-grid">
                 <div class="feature-card">
                     <div class="feature-icon">📱</div>
-                    <h3>QR-Scanner</h3>
-                    <p>Schnell & sicher per Kamera</p>
+                    <h3 data-i18n="feature_qr">QR-Scanner</h3>
+                    <p data-i18n="feature_qr_desc">Schnell & sicher per Kamera</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">👑</div>
-                    <h3>VIP-System</h3>
-                    <p>Bronze bis Platin Stufen</p>
+                    <h3 data-i18n="feature_vip">VIP-System</h3>
+                    <p data-i18n="feature_vip_desc">Bronze bis Platin Stufen</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">🎂</div>
-                    <h3>Geburtstags-Bonus</h3>
-                    <p>Automatische Extra-Punkte</p>
+                    <h3 data-i18n="feature_birthday">Geburtstags-Bonus</h3>
+                    <p data-i18n="feature_birthday_desc">Automatische Extra-Punkte</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">👋</div>
-                    <h3>Comeback-Kampagne</h3>
-                    <p>Inaktive Kunden zurückholen</p>
+                    <h3 data-i18n="feature_comeback">Comeback-Kampagne</h3>
+                    <p data-i18n="feature_comeback_desc">Inaktive Kunden zurückholen</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">🎁</div>
-                    <h3>Prämien</h3>
-                    <p>Flexibel definierbar</p>
+                    <h3 data-i18n="feature_rewards">Prämien</h3>
+                    <p data-i18n="feature_rewards_desc">Flexibel definierbar</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">📍</div>
-                    <h3>Filialen</h3>
-                    <p>Mehrere Standorte</p>
+                    <h3 data-i18n="feature_branches">Filialen</h3>
+                    <p data-i18n="feature_branches_desc">Mehrere Standorte</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">👥</div>
-                    <h3>Mitarbeiter</h3>
-                    <p>Eingeschränkte Konten</p>
+                    <h3 data-i18n="feature_staff">Mitarbeiter</h3>
+                    <p data-i18n="feature_staff_desc">Eingeschränkte Konten</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">📊</div>
-                    <h3>Statistiken</h3>
-                    <p>Export als CSV</p>
+                    <h3 data-i18n="feature_stats">Statistiken</h3>
+                    <p data-i18n="feature_stats_desc">Export als CSV</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">🌐</div>
-                    <h3>Branding</h3>
-                    <p>Ihr Logo & Farben</p>
+                    <h3 data-i18n="feature_branding">Branding</h3>
+                    <p data-i18n="feature_branding_desc">Ihr Logo & Farben</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">📈</div>
-                    <h3>Dashboard</h3>
-                    <p>Echtzeit-Übersicht</p>
+                    <h3 data-i18n="feature_dashboard">Dashboard</h3>
+                    <p data-i18n="feature_dashboard_desc">Echtzeit-Übersicht</p>
                 </div>
             </div>
         </section>
 
         <!-- Marketing Automation - NEW! -->
         <section class="section">
-            <h2 class="section-title"><span class="icon">🤖</span> Automatisches Marketing – Mehr Umsatz ohne Aufwand</h2>
+            <h2 class="section-title"><span class="icon">🤖</span> <span data-i18n="marketing_title">Automatisches Marketing – Mehr Umsatz ohne Aufwand</span></h2>
             <div class="comparison">
                 <div class="comparison-card solution" style="border-color: rgba(236, 72, 153, 0.4); background: linear-gradient(135deg, rgba(236, 72, 153, 0.1), rgba(219, 39, 119, 0.05));">
-                    <h3 style="color: #f472b6;">🎂 Geburtstags-Bonus</h3>
+                    <h3 style="color: #f472b6;">🎂 <span data-i18n="birthday_bonus">Geburtstags-Bonus</span></h3>
                     <ul>
-                        <li style="color: #fce7f3;">Automatische Extra-Punkte am Geburtstag</li>
-                        <li style="color: #fce7f3;">Kunden fühlen sich wertgeschätzt</li>
-                        <li style="color: #fce7f3;">Garantierter Besuch am Geburtstag</li>
-                        <li style="color: #fce7f3;">Kein manueller Aufwand für Sie</li>
-                        <li style="color: #fce7f3;">Anti-Missbrauch: Max. 1x pro Jahr</li>
+                        <li style="color: #fce7f3;" data-i18n="birthday_1">Automatische Extra-Punkte am Geburtstag</li>
+                        <li style="color: #fce7f3;" data-i18n="birthday_2">Kunden fühlen sich wertgeschätzt</li>
+                        <li style="color: #fce7f3;" data-i18n="birthday_3">Garantierter Besuch am Geburtstag</li>
+                        <li style="color: #fce7f3;" data-i18n="birthday_4">Kein manueller Aufwand für Sie</li>
+                        <li style="color: #fce7f3;" data-i18n="birthday_5">Anti-Missbrauch: Max. 1x pro Jahr</li>
                     </ul>
                 </div>
                 <div class="comparison-card solution" style="border-color: rgba(245, 158, 11, 0.4); background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(217, 119, 6, 0.05));">
-                    <h3 style="color: #fbbf24;">👋 Comeback-Kampagne</h3>
+                    <h3 style="color: #fbbf24;">👋 <span data-i18n="comeback_campaign">Comeback-Kampagne</span></h3>
                     <ul>
-                        <li style="color: #fef3c7;">Holt inaktive Kunden automatisch zurück</li>
-                        <li style="color: #fef3c7;">Extra-Punkte nach X Tagen Abwesenheit</li>
-                        <li style="color: #fef3c7;">10-15% der "verlorenen" Kunden kehren zurück</li>
-                        <li style="color: #fef3c7;">Sie definieren die Tage (z.B. 30, 60, 90)</li>
-                        <li style="color: #fef3c7;">Vollautomatisch – kein Eingreifen nötig</li>
+                        <li style="color: #fef3c7;" data-i18n="comeback_1">Holt inaktive Kunden automatisch zurück</li>
+                        <li style="color: #fef3c7;" data-i18n="comeback_2">Extra-Punkte nach X Tagen Abwesenheit</li>
+                        <li style="color: #fef3c7;" data-i18n="comeback_3">10-15% der "verlorenen" Kunden kehren zurück</li>
+                        <li style="color: #fef3c7;" data-i18n="comeback_4">Sie definieren die Tage (z.B. 30, 60, 90)</li>
+                        <li style="color: #fef3c7;" data-i18n="comeback_5">Vollautomatisch – kein Eingreifen nötig</li>
                     </ul>
                 </div>
             </div>
             <div class="summary-box" style="background: linear-gradient(135deg, rgba(14, 165, 233, 0.15), rgba(34, 211, 238, 0.1)); border-color: rgba(14, 165, 233, 0.4);">
-                <h4 style="color: #38bdf8;">💰 Berechnen Sie Ihren ROI!</h4>
-                <p style="margin-bottom: 8px;">Wie viele Extra-Kunden bringt PunktePass für Ihr Geschäft?</p>
-                <a href="https://punktepass.de/rechner" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #0ea5e9, #0284c7); color: white; padding: 8px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 11px;">🧮 ROI-Rechner öffnen →</a>
+                <h4 style="color: #38bdf8;">💰 <span data-i18n="roi_title">Berechnen Sie Ihren ROI!</span></h4>
+                <p style="margin-bottom: 10px;" data-i18n="roi_desc">Wie viele Extra-Kunden bringt PunktePass für Ihr Geschäft?</p>
+                <a href="https://punktepass.de/rechner" target="_blank" class="roi-link">🧮 <span data-i18n="roi_button">ROI-Rechner öffnen</span> →</a>
             </div>
         </section>
 
         <!-- Advertising Benefit -->
         <section class="section">
-            <h2 class="section-title"><span class="icon">📢</span> Kostenlose Werbung für Ihr Geschäft</h2>
+            <h2 class="section-title"><span class="icon">📢</span> <span data-i18n="free_advertising">Kostenlose Werbung für Ihr Geschäft</span></h2>
             <div class="ad-section">
                 <div class="ad-text">
-                    <h3>Ihr Geschäft wird entdeckt!</h3>
-                    <p>Sobald Sie registriert sind, erscheint Ihr Geschäft automatisch in der App aller PunktePass-Nutzer in Ihrer Umgebung – <strong style="color: #4ade80;">sortiert nach Entfernung!</strong></p>
+                    <h3 data-i18n="store_discovered">Ihr Geschäft wird entdeckt!</h3>
+                    <p><span data-i18n="ad_text_1">Sobald Sie registriert sind, erscheint Ihr Geschäft automatisch in der App aller PunktePass-Nutzer in Ihrer Umgebung –</span> <strong style="color: #4ade80;" data-i18n="ad_text_2">sortiert nach Entfernung!</strong></p>
                     <div class="ad-list">
-                        <h4>📍 Was Nutzer in Ihrer Nähe sehen:</h4>
+                        <h4>📍 <span data-i18n="what_users_see">Was Nutzer in Ihrer Nähe sehen:</span></h4>
                         <ul>
-                            <li><strong>Ihr Logo & Geschäftsname</strong></li>
-                            <li><strong style="color: #4ade80;">Öffnungsstatus</strong></li>
-                            <li><strong style="color: #fbbf24;">Ihre Prämien</strong></li>
-                            <li><strong style="color: #a855f7;">Kampagnen & VIP</strong></li>
-                            <li><strong style="color: #f87171;">Navigation</strong></li>
-                            <li><strong style="color: #ec4899;">Social Media</strong></li>
+                            <li><strong data-i18n="ad_list_1">Ihr Logo & Geschäftsname</strong></li>
+                            <li><strong style="color: #4ade80;" data-i18n="ad_list_2">Öffnungsstatus</strong></li>
+                            <li><strong style="color: #fbbf24;" data-i18n="ad_list_3">Ihre Prämien</strong></li>
+                            <li><strong style="color: #a855f7;" data-i18n="ad_list_4">Kampagnen & VIP</strong></li>
+                            <li><strong style="color: #f87171;" data-i18n="ad_list_5">Navigation</strong></li>
+                            <li><strong style="color: #ec4899;" data-i18n="ad_list_6">Social Media</strong></li>
                         </ul>
                     </div>
                 </div>
                 <div class="ad-mockup">
-                    <div style="font-size: 11px; color: #64748b; margin-bottom: 8px;">📍 Geschäfte in deiner Nähe</div>
+                    <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">📍 <span data-i18n="stores_nearby">Geschäfte in deiner Nähe</span></div>
                     <div class="store-card">
                         <div style="display: flex; align-items: center; gap: 8px;">
-                            <div style="width: 36px; height: 36px; background: linear-gradient(135deg, #3b82f6, #1d4ed8); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px;">☕</div>
+                            <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #3b82f6, #1d4ed8); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px;">☕</div>
                             <div>
-                                <div style="font-weight: 600; color: #f1f5f9; font-size: 12px;">Ihr Café</div>
+                                <div style="font-weight: 600; color: #f1f5f9; font-size: 13px;" data-i18n="your_cafe">Ihr Café</div>
                                 <div style="display: flex; gap: 5px; margin-top: 2px;">
-                                    <span style="background: #22c55e; color: white; padding: 1px 5px; border-radius: 6px; font-size: 8px;">Geöffnet</span>
-                                    <span style="background: rgba(0,230,255,0.2); color: #00e6ff; padding: 1px 5px; border-radius: 6px; font-size: 8px;">📍 0.3 km</span>
+                                    <span style="background: #22c55e; color: white; padding: 2px 6px; border-radius: 6px; font-size: 9px;" data-i18n="open_status">Geöffnet</span>
+                                    <span style="background: rgba(0,230,255,0.2); color: #00e6ff; padding: 2px 6px; border-radius: 6px; font-size: 9px;">📍 0.3 km</span>
                                 </div>
                             </div>
                         </div>
-                        <div style="display: flex; gap: 4px; margin-top: 6px;">
-                            <span style="background: rgba(251,191,36,0.2); color: #fbbf24; padding: 2px 5px; border-radius: 5px; font-size: 9px;">🎁 3 Prämien</span>
-                            <span style="background: rgba(168,85,247,0.2); color: #a855f7; padding: 2px 5px; border-radius: 5px; font-size: 9px;">👑 VIP</span>
+                        <div style="display: flex; gap: 4px; margin-top: 6px; flex-wrap: wrap;">
+                            <span style="background: rgba(251,191,36,0.2); color: #fbbf24; padding: 2px 6px; border-radius: 5px; font-size: 10px;">🎁 <span data-i18n="rewards_count">3 Prämien</span></span>
+                            <span style="background: rgba(168,85,247,0.2); color: #a855f7; padding: 2px 6px; border-radius: 5px; font-size: 10px;">👑 VIP</span>
                         </div>
                     </div>
                     <div class="store-card-faded">
                         <div style="display: flex; align-items: center; gap: 8px;">
-                            <div style="width: 36px; height: 36px; background: #374151; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px;">🍕</div>
+                            <div style="width: 40px; height: 40px; background: #374151; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px;">🍕</div>
                             <div>
-                                <div style="font-weight: 600; color: #94a3b8; font-size: 12px;">Pizzeria Roma</div>
-                                <span style="background: #dc2626; color: white; padding: 1px 5px; border-radius: 6px; font-size: 8px;">Geschlossen</span>
+                                <div style="font-weight: 600; color: #94a3b8; font-size: 13px;">Pizzeria Roma</div>
+                                <span style="background: #dc2626; color: white; padding: 2px 6px; border-radius: 6px; font-size: 9px;" data-i18n="closed_status">Geschlossen</span>
                             </div>
                         </div>
                     </div>
-                    <div style="text-align: center; margin-top: 8px; color: #4ade80; font-size: 10px; font-weight: 600;">✅ Ihr Geschäft ganz oben!</div>
+                    <div style="text-align: center; margin-top: 10px; color: #4ade80; font-size: 11px; font-weight: 600;">✅ <span data-i18n="store_on_top">Ihr Geschäft ganz oben!</span></div>
                 </div>
             </div>
         </section>
 
         <!-- Security - 3 columns -->
         <section class="section">
-            <h2 class="section-title"><span class="icon">🛡️</span> Betrugssicher – So schützt PunktePass Sie</h2>
+            <h2 class="section-title"><span class="icon">🛡️</span> <span data-i18n="security_title">Betrugssicher – So schützt PunktePass Sie</span></h2>
             <div class="security-grid">
                 <div class="security-card">
                     <div class="icon">⏱️</div>
-                    <h4>Zeitlich begrenzte QR-Codes</h4>
-                    <p>Jeder QR-Code ist <strong>nur 30 Min gültig</strong>. Screenshots nutzlos.</p>
+                    <h4 data-i18n="security_1_title">Zeitlich begrenzte QR-Codes</h4>
+                    <p><span data-i18n="security_1_desc">Jeder QR-Code ist</span> <strong data-i18n="security_1_highlight">nur 30 Min gültig</strong>. <span data-i18n="security_1_end">Screenshots nutzlos.</span></p>
                 </div>
                 <div class="security-card">
                     <div class="icon">📍</div>
-                    <h4>GPS-Standortprüfung</h4>
-                    <p>Scanner nur <strong>im Geschäft</strong> nutzbar.</p>
+                    <h4 data-i18n="security_2_title">GPS-Standortprüfung</h4>
+                    <p><span data-i18n="security_2_desc">Scanner nur</span> <strong data-i18n="security_2_highlight">im Geschäft</strong> <span data-i18n="security_2_end">nutzbar.</span></p>
                 </div>
                 <div class="security-card">
                     <div class="icon">📱</div>
-                    <h4>Gerätebindung</h4>
-                    <p><strong>Digitaler Fingerabdruck</strong> pro Gerät.</p>
+                    <h4 data-i18n="security_3_title">Gerätebindung</h4>
+                    <p><strong data-i18n="security_3_desc">Digitaler Fingerabdruck</strong> <span data-i18n="security_3_end">pro Gerät.</span></p>
                 </div>
                 <div class="security-card">
                     <div class="icon">🔒</div>
-                    <h4>Ein Scan pro Tag</h4>
-                    <p>Pro Kunde nur <strong>1x täglich</strong> Punkte.</p>
+                    <h4 data-i18n="security_4_title">Ein Scan pro Tag</h4>
+                    <p><span data-i18n="security_4_desc">Pro Kunde nur</span> <strong data-i18n="security_4_highlight">1x täglich</strong> <span data-i18n="security_4_end">Punkte.</span></p>
                 </div>
                 <div class="security-card">
                     <div class="icon">👥</div>
-                    <h4>Mitarbeiter-Konten</h4>
-                    <p><strong>Ohne Admin-Rechte</strong> – nur scannen.</p>
+                    <h4 data-i18n="security_5_title">Mitarbeiter-Konten</h4>
+                    <p><strong data-i18n="security_5_desc">Ohne Admin-Rechte</strong> – <span data-i18n="security_5_end">nur scannen.</span></p>
                 </div>
                 <div class="security-card">
                     <div class="icon">📋</div>
-                    <h4>Protokollierung</h4>
-                    <p><strong>Jeder Scan</strong> mit Zeitstempel & Gerät.</p>
+                    <h4 data-i18n="security_6_title">Protokollierung</h4>
+                    <p><strong data-i18n="security_6_desc">Jeder Scan</strong> <span data-i18n="security_6_end">mit Zeitstempel & Gerät.</span></p>
                 </div>
             </div>
             <div class="summary-box">
-                <h4>✅ Fazit: Betrug ist praktisch unmöglich</h4>
-                <p>Durch QR-Codes, GPS, Gerätebindung und Scan-Limits ist Manipulation ausgeschlossen.</p>
+                <h4>✅ <span data-i18n="security_summary_title">Fazit: Betrug ist praktisch unmöglich</span></h4>
+                <p data-i18n="security_summary_desc">Durch QR-Codes, GPS, Gerätebindung und Scan-Limits ist Manipulation ausgeschlossen.</p>
             </div>
         </section>
 
@@ -382,88 +545,94 @@
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-value">2x</div>
-                <div class="stat-label">Mehr Stammkunden</div>
+                <div class="stat-label" data-i18n="stat_1">Mehr Stammkunden</div>
             </div>
             <div class="stat-card">
                 <div class="stat-value">0%</div>
-                <div class="stat-label">Verlorene Karten</div>
+                <div class="stat-label" data-i18n="stat_2">Verlorene Karten</div>
             </div>
             <div class="stat-card">
                 <div class="stat-value">24/7</div>
-                <div class="stat-label">Statistik-Zugang</div>
+                <div class="stat-label" data-i18n="stat_3">Statistik-Zugang</div>
             </div>
         </div>
 
         <!-- Trust -->
         <section class="section">
-            <h2 class="section-title"><span class="icon">🇩🇪</span> Warum Sie uns vertrauen können</h2>
+            <h2 class="section-title"><span class="icon">🇩🇪</span> <span data-i18n="trust_title">Warum Sie uns vertrauen können</span></h2>
             <div class="trust-grid">
                 <div class="trust-card">
                     <div class="trust-icon">🇩🇪</div>
-                    <h4>Made in Germany</h4>
-                    <p>Entwickelt & gehostet in Deutschland</p>
+                    <div class="trust-text">
+                        <h4 data-i18n="trust_1_title">Made in Germany</h4>
+                        <p data-i18n="trust_1_desc">Entwickelt & gehostet in Deutschland</p>
+                    </div>
                 </div>
                 <div class="trust-card">
                     <div class="trust-icon">🔐</div>
-                    <h4>DSGVO-Konform</h4>
-                    <p>Vollständig EU-datenschutzkonform</p>
+                    <div class="trust-text">
+                        <h4 data-i18n="trust_2_title">DSGVO-Konform</h4>
+                        <p data-i18n="trust_2_desc">Vollständig EU-datenschutzkonform</p>
+                    </div>
                 </div>
                 <div class="trust-card">
                     <div class="trust-icon">💬</div>
-                    <h4>Persönlicher Support</h4>
-                    <p>Schnelle Hilfe per E-Mail</p>
+                    <div class="trust-text">
+                        <h4 data-i18n="trust_3_title">Persönlicher Support</h4>
+                        <p data-i18n="trust_3_desc">Schnelle Hilfe per E-Mail</p>
+                    </div>
                 </div>
             </div>
         </section>
 
         <!-- Updates -->
         <section class="updates-section">
-            <h3>🔄 Ständige Weiterentwicklung</h3>
-            <p>PunktePass wird kontinuierlich verbessert. Neue Funktionen regelmäßig!</p>
+            <h3>🔄 <span data-i18n="updates_title">Ständige Weiterentwicklung</span></h3>
+            <p data-i18n="updates_desc">PunktePass wird kontinuierlich verbessert. Neue Funktionen regelmäßig!</p>
             <div class="updates-list">
-                <div class="update-item"><span class="bullet">●</span> Regelmäßige Updates</div>
-                <div class="update-item"><span class="bullet">●</span> E-Mail bei Neuerungen</div>
-                <div class="update-item"><span class="bullet">●</span> Feedback wird umgesetzt</div>
-                <div class="update-item"><span class="bullet">●</span> Zukunftssichere Plattform</div>
+                <div class="update-item"><span class="bullet">●</span> <span data-i18n="update_1">Regelmäßige Updates</span></div>
+                <div class="update-item"><span class="bullet">●</span> <span data-i18n="update_2">E-Mail bei Neuerungen</span></div>
+                <div class="update-item"><span class="bullet">●</span> <span data-i18n="update_3">Feedback wird umgesetzt</span></div>
+                <div class="update-item"><span class="bullet">●</span> <span data-i18n="update_4">Zukunftssichere Plattform</span></div>
             </div>
         </section>
 
         <!-- Pricing -->
         <section class="pricing-section">
-            <h2 class="pricing-title">Transparente Preise</h2>
-            <p class="pricing-subtitle">Keine versteckten Kosten. Keine Einrichtungsgebühr.</p>
+            <h2 class="pricing-title" data-i18n="pricing_title">Transparente Preise</h2>
+            <p class="pricing-subtitle" data-i18n="pricing_subtitle">Keine versteckten Kosten. Keine Einrichtungsgebühr.</p>
             <div class="pricing-box">
-                <div class="pricing-trial">🎉 30 Tage kostenlos testen!</div>
+                <div class="pricing-trial">🎉 <span data-i18n="pricing_trial">30 Tage kostenlos testen!</span></div>
                 <div class="pricing-amount">
                     <span class="pricing-currency">€</span>
                     <span class="pricing-value">30</span>
-                    <span class="pricing-period">/ Monat</span>
+                    <span class="pricing-period" data-i18n="pricing_period">/ Monat</span>
                 </div>
-                <div class="pricing-vat">zzgl. MwSt.</div>
+                <div class="pricing-vat" data-i18n="pricing_vat">zzgl. MwSt.</div>
             </div>
 
             <div class="tablet-highlight">
                 <div class="icon">🎁📱</div>
-                <h4>GRATIS Android-Smartphone inklusive!</h4>
-                <p>Smartphone + Tischständer als Scanner – <strong style="color: #4ade80;">kostenlos im Paket!</strong></p>
+                <h4 data-i18n="tablet_title">GRATIS Android-Smartphone inklusive!</h4>
+                <p><span data-i18n="tablet_desc">Smartphone + Tischständer als Scanner –</span> <strong style="color: #4ade80;" data-i18n="tablet_free">kostenlos im Paket!</strong></p>
             </div>
 
             <div class="pricing-features">
-                <div class="pricing-feature"><span class="check">✓</span> Unbegrenzte Kunden</div>
-                <div class="pricing-feature"><span class="check">✓</span> Alle Funktionen</div>
-                <div class="pricing-feature"><span class="check">✓</span> Gratis Smartphone</div>
-                <div class="pricing-feature"><span class="check">✓</span> Tischständer</div>
-                <div class="pricing-feature"><span class="check">✓</span> Support</div>
-                <div class="pricing-feature"><span class="check">✓</span> Eigenes Branding</div>
-                <div class="pricing-feature"><span class="check">✓</span> Mehrere Filialen</div>
-                <div class="pricing-feature"><span class="check">✓</span> Monatlich kündbar</div>
+                <div class="pricing-feature"><span class="check">✓</span> <span data-i18n="price_feat_1">Unbegrenzte Kunden</span></div>
+                <div class="pricing-feature"><span class="check">✓</span> <span data-i18n="price_feat_2">Alle Funktionen</span></div>
+                <div class="pricing-feature"><span class="check">✓</span> <span data-i18n="price_feat_3">Gratis Smartphone</span></div>
+                <div class="pricing-feature"><span class="check">✓</span> <span data-i18n="price_feat_4">Tischständer</span></div>
+                <div class="pricing-feature"><span class="check">✓</span> <span data-i18n="price_feat_5">Support</span></div>
+                <div class="pricing-feature"><span class="check">✓</span> <span data-i18n="price_feat_6">Eigenes Branding</span></div>
+                <div class="pricing-feature"><span class="check">✓</span> <span data-i18n="price_feat_7">Mehrere Filialen</span></div>
+                <div class="pricing-feature"><span class="check">✓</span> <span data-i18n="price_feat_8">Monatlich kündbar</span></div>
             </div>
         </section>
 
         <!-- CTA -->
         <section class="cta-section">
-            <h2 class="cta-title">Bereit loszulegen?</h2>
-            <p class="cta-text">Starten Sie noch heute Ihre 30-tägige kostenlose Testphase!</p>
+            <h2 class="cta-title" data-i18n="cta_title">Bereit loszulegen?</h2>
+            <p class="cta-text" data-i18n="cta_text">Starten Sie noch heute Ihre 30-tägige kostenlose Testphase!</p>
             <div class="cta-contact">
                 <a href="mailto:info@punktepass.de">📧 info@punktepass.de</a>
                 <a href="https://punktepass.de">🌐 www.punktepass.de</a>
@@ -473,8 +642,473 @@
         <!-- Footer -->
         <footer class="footer">
             <img src="https://punktepass.de/wp-content/plugins/punktepass/assets/img/logo.webp" alt="PunktePass" class="footer-logo">
-            <p>© 2025 PunktePass. Alle Rechte vorbehalten.</p>
+            <p>© 2025 PunktePass. <span data-i18n="footer_rights">Alle Rechte vorbehalten.</span></p>
         </footer>
     </div>
+
+    <!-- i18n Translation Script -->
+    <script>
+    (function() {
+        'use strict';
+
+        // Translation strings for DE, HU, RO
+        const translations = {
+            de: {
+                tagline: 'Die digitale Revolution für Ihr Treueprogramm',
+                hero_title: 'Mehr Stammkunden. Weniger Aufwand.',
+                hero_subtitle: 'Ersetzen Sie Papierstempel durch ein modernes, digitales Treueprogramm – geliebt von Kunden, perfekt für Ihr Geschäft.',
+                why_punktepass: 'Warum PunktePass?',
+                paper_cards: 'Papierstempelkarten',
+                digital_solution: 'PunktePass Digital',
+                problem_1: 'Karten gehen verloren oder werden vergessen',
+                problem_2: 'Keine Übersicht über Kundendaten',
+                problem_3: 'Betrugsanfällig (eigene Stempel)',
+                problem_4: 'Unprofessioneller Eindruck',
+                problem_5: 'Keine Möglichkeit zur Kundenansprache',
+                solution_1: 'Immer dabei – auf dem Smartphone',
+                solution_2: 'Vollständige Kundenstatistiken',
+                solution_3: 'Fälschungssicher durch QR-Codes',
+                solution_4: 'Modernes, professionelles Image',
+                solution_5: '100% papierlos & umweltfreundlich',
+                how_it_works: 'So einfach funktioniert\'s',
+                step1_title: 'Kunde zeigt QR-Code',
+                step1_desc: 'Öffnet seine PunktePass-App',
+                step2_title: 'Sie scannen',
+                step2_desc: 'Ein kurzer Scan mit Smartphone',
+                step3_title: 'Punkte gesammelt',
+                step3_desc: 'Automatisch gutgeschrieben',
+                all_features: 'Alle Funktionen',
+                feature_qr: 'QR-Scanner',
+                feature_qr_desc: 'Schnell & sicher per Kamera',
+                feature_vip: 'VIP-System',
+                feature_vip_desc: 'Bronze bis Platin Stufen',
+                feature_birthday: 'Geburtstags-Bonus',
+                feature_birthday_desc: 'Automatische Extra-Punkte',
+                feature_comeback: 'Comeback-Kampagne',
+                feature_comeback_desc: 'Inaktive Kunden zurückholen',
+                feature_rewards: 'Prämien',
+                feature_rewards_desc: 'Flexibel definierbar',
+                feature_branches: 'Filialen',
+                feature_branches_desc: 'Mehrere Standorte',
+                feature_staff: 'Mitarbeiter',
+                feature_staff_desc: 'Eingeschränkte Konten',
+                feature_stats: 'Statistiken',
+                feature_stats_desc: 'Export als CSV',
+                feature_branding: 'Branding',
+                feature_branding_desc: 'Ihr Logo & Farben',
+                feature_dashboard: 'Dashboard',
+                feature_dashboard_desc: 'Echtzeit-Übersicht',
+                marketing_title: 'Automatisches Marketing – Mehr Umsatz ohne Aufwand',
+                birthday_bonus: 'Geburtstags-Bonus',
+                birthday_1: 'Automatische Extra-Punkte am Geburtstag',
+                birthday_2: 'Kunden fühlen sich wertgeschätzt',
+                birthday_3: 'Garantierter Besuch am Geburtstag',
+                birthday_4: 'Kein manueller Aufwand für Sie',
+                birthday_5: 'Anti-Missbrauch: Max. 1x pro Jahr',
+                comeback_campaign: 'Comeback-Kampagne',
+                comeback_1: 'Holt inaktive Kunden automatisch zurück',
+                comeback_2: 'Extra-Punkte nach X Tagen Abwesenheit',
+                comeback_3: '10-15% der "verlorenen" Kunden kehren zurück',
+                comeback_4: 'Sie definieren die Tage (z.B. 30, 60, 90)',
+                comeback_5: 'Vollautomatisch – kein Eingreifen nötig',
+                roi_title: 'Berechnen Sie Ihren ROI!',
+                roi_desc: 'Wie viele Extra-Kunden bringt PunktePass für Ihr Geschäft?',
+                roi_button: 'ROI-Rechner öffnen',
+                free_advertising: 'Kostenlose Werbung für Ihr Geschäft',
+                store_discovered: 'Ihr Geschäft wird entdeckt!',
+                ad_text_1: 'Sobald Sie registriert sind, erscheint Ihr Geschäft automatisch in der App aller PunktePass-Nutzer in Ihrer Umgebung –',
+                ad_text_2: 'sortiert nach Entfernung!',
+                what_users_see: 'Was Nutzer in Ihrer Nähe sehen:',
+                ad_list_1: 'Ihr Logo & Geschäftsname',
+                ad_list_2: 'Öffnungsstatus',
+                ad_list_3: 'Ihre Prämien',
+                ad_list_4: 'Kampagnen & VIP',
+                ad_list_5: 'Navigation',
+                ad_list_6: 'Social Media',
+                stores_nearby: 'Geschäfte in deiner Nähe',
+                your_cafe: 'Ihr Café',
+                open_status: 'Geöffnet',
+                closed_status: 'Geschlossen',
+                rewards_count: '3 Prämien',
+                store_on_top: 'Ihr Geschäft ganz oben!',
+                security_title: 'Betrugssicher – So schützt PunktePass Sie',
+                security_1_title: 'Zeitlich begrenzte QR-Codes',
+                security_1_desc: 'Jeder QR-Code ist',
+                security_1_highlight: 'nur 30 Min gültig',
+                security_1_end: 'Screenshots nutzlos.',
+                security_2_title: 'GPS-Standortprüfung',
+                security_2_desc: 'Scanner nur',
+                security_2_highlight: 'im Geschäft',
+                security_2_end: 'nutzbar.',
+                security_3_title: 'Gerätebindung',
+                security_3_desc: 'Digitaler Fingerabdruck',
+                security_3_end: 'pro Gerät.',
+                security_4_title: 'Ein Scan pro Tag',
+                security_4_desc: 'Pro Kunde nur',
+                security_4_highlight: '1x täglich',
+                security_4_end: 'Punkte.',
+                security_5_title: 'Mitarbeiter-Konten',
+                security_5_desc: 'Ohne Admin-Rechte',
+                security_5_end: 'nur scannen.',
+                security_6_title: 'Protokollierung',
+                security_6_desc: 'Jeder Scan',
+                security_6_end: 'mit Zeitstempel & Gerät.',
+                security_summary_title: 'Fazit: Betrug ist praktisch unmöglich',
+                security_summary_desc: 'Durch QR-Codes, GPS, Gerätebindung und Scan-Limits ist Manipulation ausgeschlossen.',
+                stat_1: 'Mehr Stammkunden',
+                stat_2: 'Verlorene Karten',
+                stat_3: 'Statistik-Zugang',
+                trust_title: 'Warum Sie uns vertrauen können',
+                trust_1_title: 'Made in Germany',
+                trust_1_desc: 'Entwickelt & gehostet in Deutschland',
+                trust_2_title: 'DSGVO-Konform',
+                trust_2_desc: 'Vollständig EU-datenschutzkonform',
+                trust_3_title: 'Persönlicher Support',
+                trust_3_desc: 'Schnelle Hilfe per E-Mail',
+                updates_title: 'Ständige Weiterentwicklung',
+                updates_desc: 'PunktePass wird kontinuierlich verbessert. Neue Funktionen regelmäßig!',
+                update_1: 'Regelmäßige Updates',
+                update_2: 'E-Mail bei Neuerungen',
+                update_3: 'Feedback wird umgesetzt',
+                update_4: 'Zukunftssichere Plattform',
+                pricing_title: 'Transparente Preise',
+                pricing_subtitle: 'Keine versteckten Kosten. Keine Einrichtungsgebühr.',
+                pricing_trial: '30 Tage kostenlos testen!',
+                pricing_period: '/ Monat',
+                pricing_vat: 'zzgl. MwSt.',
+                tablet_title: 'GRATIS Android-Smartphone inklusive!',
+                tablet_desc: 'Smartphone + Tischständer als Scanner –',
+                tablet_free: 'kostenlos im Paket!',
+                price_feat_1: 'Unbegrenzte Kunden',
+                price_feat_2: 'Alle Funktionen',
+                price_feat_3: 'Gratis Smartphone',
+                price_feat_4: 'Tischständer',
+                price_feat_5: 'Support',
+                price_feat_6: 'Eigenes Branding',
+                price_feat_7: 'Mehrere Filialen',
+                price_feat_8: 'Monatlich kündbar',
+                cta_title: 'Bereit loszulegen?',
+                cta_text: 'Starten Sie noch heute Ihre 30-tägige kostenlose Testphase!',
+                footer_rights: 'Alle Rechte vorbehalten.'
+            },
+            hu: {
+                tagline: 'A digitális forradalom a hűségprogramjához',
+                hero_title: 'Több törzsvásárló. Kevesebb munka.',
+                hero_subtitle: 'Cserélje le a papír bélyegzőket egy modern, digitális hűségprogramra – amit az ügyfelek szeretnek, és tökéletes az Ön üzletéhez.',
+                why_punktepass: 'Miért PunktePass?',
+                paper_cards: 'Papír bélyegzőkártyák',
+                digital_solution: 'PunktePass Digitális',
+                problem_1: 'A kártyák elvesznek vagy otthon maradnak',
+                problem_2: 'Nincs áttekintés az ügyféladatokról',
+                problem_3: 'Csalásra hajlamos (saját bélyegzők)',
+                problem_4: 'Nem professzionális benyomás',
+                problem_5: 'Nincs lehetőség az ügyfelek megszólítására',
+                solution_1: 'Mindig kéznél – az okostelefonon',
+                solution_2: 'Teljes ügyfélstatisztikák',
+                solution_3: 'Hamisíthatatlan QR-kódokkal',
+                solution_4: 'Modern, professzionális megjelenés',
+                solution_5: '100% papírmentes & környezetbarát',
+                how_it_works: 'Ilyen egyszerű',
+                step1_title: 'Az ügyfél mutatja a QR-kódot',
+                step1_desc: 'Megnyitja a PunktePass appot',
+                step2_title: 'Ön beolvassa',
+                step2_desc: 'Egy gyors beolvasás okostelefonnal',
+                step3_title: 'Pontok jóváírva',
+                step3_desc: 'Automatikusan jóváírva',
+                all_features: 'Minden funkció',
+                feature_qr: 'QR-szkenner',
+                feature_qr_desc: 'Gyors & biztonságos kamerával',
+                feature_vip: 'VIP-rendszer',
+                feature_vip_desc: 'Bronz-tól Platináig',
+                feature_birthday: 'Születésnapi bónusz',
+                feature_birthday_desc: 'Automatikus extra pontok',
+                feature_comeback: 'Comeback kampány',
+                feature_comeback_desc: 'Inaktív ügyfelek visszahozása',
+                feature_rewards: 'Jutalmak',
+                feature_rewards_desc: 'Rugalmasan meghatározható',
+                feature_branches: 'Fiókok',
+                feature_branches_desc: 'Több helyszín',
+                feature_staff: 'Alkalmazottak',
+                feature_staff_desc: 'Korlátozott fiókok',
+                feature_stats: 'Statisztikák',
+                feature_stats_desc: 'Export CSV-ként',
+                feature_branding: 'Branding',
+                feature_branding_desc: 'Az Ön logója & színei',
+                feature_dashboard: 'Vezérlőpult',
+                feature_dashboard_desc: 'Valós idejű áttekintés',
+                marketing_title: 'Automatikus marketing – Több bevétel munka nélkül',
+                birthday_bonus: 'Születésnapi bónusz',
+                birthday_1: 'Automatikus extra pontok születésnapon',
+                birthday_2: 'Az ügyfelek értékesnek érzik magukat',
+                birthday_3: 'Garantált látogatás születésnapon',
+                birthday_4: 'Nincs manuális munka Önnek',
+                birthday_5: 'Visszaélés ellen: Max. évi 1x',
+                comeback_campaign: 'Comeback kampány',
+                comeback_1: 'Automatikusan visszahozza az inaktív ügyfeleket',
+                comeback_2: 'Extra pontok X nap távollét után',
+                comeback_3: 'Az "elveszett" ügyfelek 10-15%-a visszatér',
+                comeback_4: 'Ön határozza meg a napokat (pl. 30, 60, 90)',
+                comeback_5: 'Teljesen automatikus – nincs beavatkozás',
+                roi_title: 'Számítsa ki a ROI-ját!',
+                roi_desc: 'Hány extra ügyfelet hoz a PunktePass az Ön üzletének?',
+                roi_button: 'ROI-kalkulátor megnyitása',
+                free_advertising: 'Ingyenes reklám az Ön üzletének',
+                store_discovered: 'Az Ön üzletét felfedezik!',
+                ad_text_1: 'Amint regisztrál, az Ön üzlete automatikusan megjelenik a környékbeli PunktePass felhasználók alkalmazásában –',
+                ad_text_2: 'távolság szerint rendezve!',
+                what_users_see: 'Mit látnak a közelben lévő felhasználók:',
+                ad_list_1: 'Az Ön logója & üzletneve',
+                ad_list_2: 'Nyitvatartási státusz',
+                ad_list_3: 'Az Ön jutalmai',
+                ad_list_4: 'Kampányok & VIP',
+                ad_list_5: 'Navigáció',
+                ad_list_6: 'Social Media',
+                stores_nearby: 'Üzletek a közeledben',
+                your_cafe: 'Az Ön kávézója',
+                open_status: 'Nyitva',
+                closed_status: 'Zárva',
+                rewards_count: '3 jutalom',
+                store_on_top: 'Az Ön üzlete az élen!',
+                security_title: 'Csalásbiztos – Így védi Önt a PunktePass',
+                security_1_title: 'Időkorlátos QR-kódok',
+                security_1_desc: 'Minden QR-kód',
+                security_1_highlight: 'csak 30 percig érvényes',
+                security_1_end: 'Képernyőképek használhatatlanok.',
+                security_2_title: 'GPS helyellenőrzés',
+                security_2_desc: 'A szkenner csak',
+                security_2_highlight: 'az üzletben',
+                security_2_end: 'használható.',
+                security_3_title: 'Eszközkötés',
+                security_3_desc: 'Digitális ujjlenyomat',
+                security_3_end: 'eszközönként.',
+                security_4_title: 'Egy beolvasás naponta',
+                security_4_desc: 'Ügyfelenként csak',
+                security_4_highlight: 'napi 1x',
+                security_4_end: 'pont.',
+                security_5_title: 'Alkalmazotti fiókok',
+                security_5_desc: 'Admin jogok nélkül',
+                security_5_end: 'csak beolvasás.',
+                security_6_title: 'Naplózás',
+                security_6_desc: 'Minden beolvasás',
+                security_6_end: 'időbélyeggel & eszközzel.',
+                security_summary_title: 'Összefoglalva: A csalás gyakorlatilag lehetetlen',
+                security_summary_desc: 'QR-kódok, GPS, eszközkötés és beolvasási limitek révén a manipuláció kizárt.',
+                stat_1: 'Több törzsvásárló',
+                stat_2: 'Elveszett kártyák',
+                stat_3: 'Statisztika hozzáférés',
+                trust_title: 'Miért bízhat bennünk',
+                trust_1_title: 'Made in Germany',
+                trust_1_desc: 'Németországban fejlesztve & üzemeltetve',
+                trust_2_title: 'GDPR-konform',
+                trust_2_desc: 'Teljes EU adatvédelmi megfelelés',
+                trust_3_title: 'Személyes támogatás',
+                trust_3_desc: 'Gyors segítség e-mailben',
+                updates_title: 'Folyamatos fejlesztés',
+                updates_desc: 'A PunktePass folyamatosan fejlődik. Rendszeresen új funkciók!',
+                update_1: 'Rendszeres frissítések',
+                update_2: 'E-mail az újdonságokról',
+                update_3: 'Visszajelzések megvalósítása',
+                update_4: 'Jövőbiztos platform',
+                pricing_title: 'Átlátható árak',
+                pricing_subtitle: 'Nincsenek rejtett költségek. Nincs beállítási díj.',
+                pricing_trial: '30 nap ingyenes próba!',
+                pricing_period: '/ hó',
+                pricing_vat: '+ ÁFA',
+                tablet_title: 'INGYENES Android okostelefon!',
+                tablet_desc: 'Okostelefon + asztali állvány szkennerként –',
+                tablet_free: 'ingyenes a csomagban!',
+                price_feat_1: 'Korlátlan ügyfelek',
+                price_feat_2: 'Minden funkció',
+                price_feat_3: 'Ingyenes okostelefon',
+                price_feat_4: 'Asztali állvány',
+                price_feat_5: 'Támogatás',
+                price_feat_6: 'Saját branding',
+                price_feat_7: 'Több fiók',
+                price_feat_8: 'Havonta felmondható',
+                cta_title: 'Készen áll a kezdésre?',
+                cta_text: 'Indítsa el még ma a 30 napos ingyenes próbaidőszakot!',
+                footer_rights: 'Minden jog fenntartva.'
+            },
+            ro: {
+                tagline: 'Revoluția digitală pentru programul dvs. de fidelitate',
+                hero_title: 'Mai mulți clienți fideli. Mai puțin efort.',
+                hero_subtitle: 'Înlocuiți ștampilele de hârtie cu un program de fidelitate digital modern – adorat de clienți, perfect pentru afacerea dvs.',
+                why_punktepass: 'De ce PunktePass?',
+                paper_cards: 'Carduri cu ștampile',
+                digital_solution: 'PunktePass Digital',
+                problem_1: 'Cardurile se pierd sau sunt uitate',
+                problem_2: 'Fără evidență a datelor clienților',
+                problem_3: 'Vulnerabil la fraudă (ștampile proprii)',
+                problem_4: 'Impresie neprofesională',
+                problem_5: 'Nicio posibilitate de a contacta clienții',
+                solution_1: 'Mereu la îndemână – pe smartphone',
+                solution_2: 'Statistici complete despre clienți',
+                solution_3: 'Imposibil de falsificat prin coduri QR',
+                solution_4: 'Imagine modernă, profesională',
+                solution_5: '100% fără hârtie & ecologic',
+                how_it_works: 'Atât de simplu funcționează',
+                step1_title: 'Clientul arată codul QR',
+                step1_desc: 'Deschide aplicația PunktePass',
+                step2_title: 'Dvs. scanați',
+                step2_desc: 'O scanare rapidă cu smartphone-ul',
+                step3_title: 'Puncte colectate',
+                step3_desc: 'Creditate automat',
+                all_features: 'Toate funcțiile',
+                feature_qr: 'Scanner QR',
+                feature_qr_desc: 'Rapid & sigur prin cameră',
+                feature_vip: 'Sistem VIP',
+                feature_vip_desc: 'Nivele de la Bronz la Platină',
+                feature_birthday: 'Bonus de ziua de naștere',
+                feature_birthday_desc: 'Puncte extra automate',
+                feature_comeback: 'Campanie Comeback',
+                feature_comeback_desc: 'Reactivarea clienților inactivi',
+                feature_rewards: 'Recompense',
+                feature_rewards_desc: 'Definibile flexibil',
+                feature_branches: 'Filiale',
+                feature_branches_desc: 'Mai multe locații',
+                feature_staff: 'Angajați',
+                feature_staff_desc: 'Conturi restricționate',
+                feature_stats: 'Statistici',
+                feature_stats_desc: 'Export ca CSV',
+                feature_branding: 'Branding',
+                feature_branding_desc: 'Logo-ul & culorile dvs.',
+                feature_dashboard: 'Dashboard',
+                feature_dashboard_desc: 'Vedere în timp real',
+                marketing_title: 'Marketing automat – Mai multe venituri fără efort',
+                birthday_bonus: 'Bonus de ziua de naștere',
+                birthday_1: 'Puncte extra automate de ziua de naștere',
+                birthday_2: 'Clienții se simt apreciați',
+                birthday_3: 'Vizită garantată de ziua de naștere',
+                birthday_4: 'Fără efort manual pentru dvs.',
+                birthday_5: 'Anti-abuz: Max. 1x pe an',
+                comeback_campaign: 'Campanie Comeback',
+                comeback_1: 'Readuce automat clienții inactivi',
+                comeback_2: 'Puncte extra după X zile de absență',
+                comeback_3: '10-15% dintre clienții "pierduți" revin',
+                comeback_4: 'Dvs. definiți zilele (ex. 30, 60, 90)',
+                comeback_5: 'Complet automat – fără intervenție',
+                roi_title: 'Calculați-vă ROI-ul!',
+                roi_desc: 'Câți clienți extra aduce PunktePass pentru afacerea dvs.?',
+                roi_button: 'Deschide calculatorul ROI',
+                free_advertising: 'Publicitate gratuită pentru afacerea dvs.',
+                store_discovered: 'Afacerea dvs. va fi descoperită!',
+                ad_text_1: 'Odată înregistrat, afacerea dvs. apare automat în aplicația tuturor utilizatorilor PunktePass din zonă –',
+                ad_text_2: 'sortați după distanță!',
+                what_users_see: 'Ce văd utilizatorii din apropiere:',
+                ad_list_1: 'Logo-ul & numele afacerii dvs.',
+                ad_list_2: 'Status deschis/închis',
+                ad_list_3: 'Recompensele dvs.',
+                ad_list_4: 'Campanii & VIP',
+                ad_list_5: 'Navigație',
+                ad_list_6: 'Social Media',
+                stores_nearby: 'Magazine din apropiere',
+                your_cafe: 'Cafeneaua dvs.',
+                open_status: 'Deschis',
+                closed_status: 'Închis',
+                rewards_count: '3 recompense',
+                store_on_top: 'Afacerea dvs. în top!',
+                security_title: 'Anti-fraudă – Cum vă protejează PunktePass',
+                security_1_title: 'Coduri QR cu timp limitat',
+                security_1_desc: 'Fiecare cod QR este',
+                security_1_highlight: 'valid doar 30 min',
+                security_1_end: 'Capturile de ecran sunt inutile.',
+                security_2_title: 'Verificare locație GPS',
+                security_2_desc: 'Scannerul este utilizabil doar',
+                security_2_highlight: 'în magazin',
+                security_2_end: '.',
+                security_3_title: 'Legare de dispozitiv',
+                security_3_desc: 'Amprentă digitală',
+                security_3_end: 'per dispozitiv.',
+                security_4_title: 'O scanare pe zi',
+                security_4_desc: 'Per client doar',
+                security_4_highlight: '1x pe zi',
+                security_4_end: 'puncte.',
+                security_5_title: 'Conturi de angajați',
+                security_5_desc: 'Fără drepturi de admin',
+                security_5_end: 'doar scanare.',
+                security_6_title: 'Înregistrare',
+                security_6_desc: 'Fiecare scanare',
+                security_6_end: 'cu timestamp & dispozitiv.',
+                security_summary_title: 'Concluzie: Frauda este practic imposibilă',
+                security_summary_desc: 'Prin coduri QR, GPS, legare de dispozitiv și limite de scanare, manipularea este exclusă.',
+                stat_1: 'Mai mulți clienți fideli',
+                stat_2: 'Carduri pierdute',
+                stat_3: 'Acces statistici',
+                trust_title: 'De ce puteți avea încredere în noi',
+                trust_1_title: 'Made in Germany',
+                trust_1_desc: 'Dezvoltat & găzduit în Germania',
+                trust_2_title: 'Conform GDPR',
+                trust_2_desc: 'Complet conform cu protecția datelor UE',
+                trust_3_title: 'Suport personal',
+                trust_3_desc: 'Ajutor rapid prin e-mail',
+                updates_title: 'Dezvoltare continuă',
+                updates_desc: 'PunktePass este îmbunătățit continuu. Funcții noi în mod regulat!',
+                update_1: 'Actualizări regulate',
+                update_2: 'E-mail la noutăți',
+                update_3: 'Feedback-ul este implementat',
+                update_4: 'Platformă pregătită pentru viitor',
+                pricing_title: 'Prețuri transparente',
+                pricing_subtitle: 'Fără costuri ascunse. Fără taxă de configurare.',
+                pricing_trial: '30 de zile gratuit!',
+                pricing_period: '/ lună',
+                pricing_vat: '+ TVA',
+                tablet_title: 'Smartphone Android GRATUIT inclus!',
+                tablet_desc: 'Smartphone + suport de masă ca scanner –',
+                tablet_free: 'gratuit în pachet!',
+                price_feat_1: 'Clienți nelimitați',
+                price_feat_2: 'Toate funcțiile',
+                price_feat_3: 'Smartphone gratuit',
+                price_feat_4: 'Suport de masă',
+                price_feat_5: 'Suport',
+                price_feat_6: 'Branding propriu',
+                price_feat_7: 'Mai multe filiale',
+                price_feat_8: 'Anulabil lunar',
+                cta_title: 'Gata să începeți?',
+                cta_text: 'Începeți azi perioada de probă gratuită de 30 de zile!',
+                footer_rights: 'Toate drepturile rezervate.'
+            }
+        };
+
+        let currentLang = localStorage.getItem('ppv_sales_lang') || 'de';
+
+        // Apply translations to DOM
+        function applyTranslations(lang) {
+            const strings = translations[lang] || translations.de;
+
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.dataset.i18n;
+                if (strings[key]) {
+                    el.textContent = strings[key];
+                }
+            });
+
+            // Update HTML lang attribute
+            document.documentElement.lang = lang;
+
+            // Update active button
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.lang === lang);
+            });
+
+            // Save preference
+            localStorage.setItem('ppv_sales_lang', lang);
+            currentLang = lang;
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Apply saved language
+            applyTranslations(currentLang);
+
+            // Bind language buttons
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const lang = this.dataset.lang;
+                    applyTranslations(lang);
+                });
+            });
+        });
+    })();
+    </script>
 </body>
 </html>
