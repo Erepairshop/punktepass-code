@@ -44,6 +44,86 @@ class PPV_Standalone_Admin {
     }
 
     /**
+     * User Agent-ből eszköz info kinyerése
+     */
+    private static function parse_device_info($user_agent) {
+        if (empty($user_agent)) {
+            return ['model' => 'Ismeretlen', 'os' => '', 'browser' => ''];
+        }
+
+        $info = [
+            'model' => '',
+            'os' => '',
+            'browser' => '',
+            'raw' => $user_agent
+        ];
+
+        // iPhone detection
+        if (preg_match('/iPhone/', $user_agent)) {
+            $info['model'] = 'iPhone';
+            if (preg_match('/iPhone OS ([\d_]+)/', $user_agent, $matches)) {
+                $info['os'] = 'iOS ' . str_replace('_', '.', $matches[1]);
+            }
+        }
+        // iPad detection
+        elseif (preg_match('/iPad/', $user_agent)) {
+            $info['model'] = 'iPad';
+            if (preg_match('/CPU OS ([\d_]+)/', $user_agent, $matches)) {
+                $info['os'] = 'iPadOS ' . str_replace('_', '.', $matches[1]);
+            }
+        }
+        // Android device detection - try to get model
+        elseif (preg_match('/Android/', $user_agent)) {
+            // Try to extract model: Android X.X; MODEL Build/
+            if (preg_match('/Android [\d.]+;\s*([^)]+?)\s*(?:Build|;|\))/', $user_agent, $matches)) {
+                $model = trim($matches[1]);
+                // Clean up common prefixes
+                $model = preg_replace('/^(SAMSUNG|Samsung|LG|Xiaomi|HUAWEI|Huawei|OPPO|OnePlus|Realme|vivo|Motorola)\s*/i', '', $model);
+                $info['model'] = $model ?: 'Android';
+            } else {
+                $info['model'] = 'Android';
+            }
+            if (preg_match('/Android ([\d.]+)/', $user_agent, $matches)) {
+                $info['os'] = 'Android ' . $matches[1];
+            }
+        }
+        // Windows
+        elseif (preg_match('/Windows/', $user_agent)) {
+            $info['model'] = 'Windows PC';
+            if (preg_match('/Windows NT ([\d.]+)/', $user_agent, $matches)) {
+                $versions = ['10.0' => '10/11', '6.3' => '8.1', '6.2' => '8', '6.1' => '7'];
+                $info['os'] = 'Windows ' . ($versions[$matches[1]] ?? $matches[1]);
+            }
+        }
+        // Mac
+        elseif (preg_match('/Macintosh/', $user_agent)) {
+            $info['model'] = 'Mac';
+            if (preg_match('/Mac OS X ([\d_]+)/', $user_agent, $matches)) {
+                $info['os'] = 'macOS ' . str_replace('_', '.', $matches[1]);
+            }
+        }
+        // Linux
+        elseif (preg_match('/Linux/', $user_agent)) {
+            $info['model'] = 'Linux PC';
+            $info['os'] = 'Linux';
+        }
+        else {
+            $info['model'] = 'Ismeretlen';
+        }
+
+        // Browser detection
+        if (preg_match('/Chrome\/([\d.]+)/', $user_agent, $matches)) {
+            $info['browser'] = 'Chrome ' . explode('.', $matches[1])[0];
+        } elseif (preg_match('/Safari\/([\d.]+)/', $user_agent) && !preg_match('/Chrome/', $user_agent)) {
+            $info['browser'] = 'Safari';
+        } elseif (preg_match('/Firefox\/([\d.]+)/', $user_agent, $matches)) {
+            $info['browser'] = 'Firefox ' . explode('.', $matches[1])[0];
+        }
+
+        return $info;
+    }
+
+    /**
      * /admin útvonalak kezelése
      */
     public static function handle_admin_routes() {
@@ -844,14 +924,17 @@ class PPV_Standalone_Admin {
                         <tr>
                             <th>Dátum</th>
                             <th>Üzlet</th>
-                            <th>Készülék</th>
+                            <th>Készülék név</th>
+                            <th>Eszköz modell</th>
                             <th>Típus</th>
                             <th>IP</th>
                             <th>Műveletek</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($requests as $req): ?>
+                        <?php foreach ($requests as $req):
+                            $device_info = self::parse_device_info($req->user_agent ?? '');
+                        ?>
                             <tr>
                                 <td><?php echo date('Y.m.d H:i', strtotime($req->requested_at)); ?></td>
                                 <td>
@@ -861,6 +944,15 @@ class PPV_Standalone_Admin {
                                     <?php endif; ?>
                                 </td>
                                 <td><?php echo esc_html($req->device_name); ?></td>
+                                <td title="<?php echo esc_attr($req->user_agent ?? ''); ?>">
+                                    <strong style="color: #00e6ff;"><?php echo esc_html($device_info['model']); ?></strong>
+                                    <?php if ($device_info['os']): ?>
+                                        <br><small style="color: #aaa;"><?php echo esc_html($device_info['os']); ?></small>
+                                    <?php endif; ?>
+                                    <?php if ($device_info['browser']): ?>
+                                        <br><small style="color: #666;"><?php echo esc_html($device_info['browser']); ?></small>
+                                    <?php endif; ?>
+                                </td>
                                 <td>
                                     <?php if ($req->request_type === 'add'): ?>
                                         <span class="badge badge-add">Hozzáadás</span>
