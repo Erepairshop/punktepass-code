@@ -3230,14 +3230,20 @@ class PPV_QR {
             FROM {$wpdb->prefix}ppv_stores WHERE id = %d
         ", $birthday_store_id));
 
+        ppv_log("🎂 [PPV_QR] Birthday check: store_id={$birthday_store_id}, enabled=" . ($birthday_settings->birthday_bonus_enabled ?? 'NULL') . ", type=" . ($birthday_settings->birthday_bonus_type ?? 'NULL'));
+
         if ($birthday_settings && $birthday_settings->birthday_bonus_enabled) {
             $user_bday_data = $wpdb->get_row($wpdb->prepare("
                 SELECT birthday, last_birthday_bonus_at FROM {$wpdb->prefix}ppv_users WHERE id = %d
             ", $user_id));
 
+            ppv_log("🎂 [PPV_QR] User birthday data: user_id={$user_id}, birthday=" . ($user_bday_data->birthday ?? 'NULL') . ", last_bonus=" . ($user_bday_data->last_birthday_bonus_at ?? 'NULL'));
+
             if ($user_bday_data && $user_bday_data->birthday) {
                 $today_md = date('m-d');
                 $birthday_md = date('m-d', strtotime($user_bday_data->birthday));
+
+                ppv_log("🎂 [PPV_QR] Date comparison: today={$today_md}, birthday={$birthday_md}, match=" . ($today_md === $birthday_md ? 'YES' : 'NO'));
 
                 if ($today_md === $birthday_md) {
                     // Anti-abuse check: minimum 320 days between birthday bonuses
