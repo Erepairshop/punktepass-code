@@ -631,7 +631,7 @@ if (!empty($store->gallery)) {
                             </div>
                             <div class="ppv-form-group" id="birthday_bonus_value_group" style="<?php echo ($store->birthday_bonus_type ?? 'double_points') !== 'fixed_points' ? 'display: none;' : ''; ?>">
                                 <label data-i18n="birthday_bonus_value"><?php echo esc_html(PPV_Lang::t('birthday_bonus_value')); ?></label>
-                                <input type="number" name="birthday_bonus_value" value="<?php echo esc_attr($store->birthday_bonus_value ?? 50); ?>" min="1" max="1000">
+                                <input type="number" id="birthday_bonus_value_input" name="birthday_bonus_value" value="<?php echo esc_attr($store->birthday_bonus_value ?? 50); ?>" min="1" max="1000" <?php echo ($store->birthday_bonus_type ?? 'double_points') !== 'fixed_points' ? 'disabled' : ''; ?>>
                             </div>
                         </div>
 
@@ -682,7 +682,7 @@ if (!empty($store->gallery)) {
 
                         <div class="ppv-form-group" id="comeback_bonus_value_group" style="<?php echo ($store->comeback_bonus_type ?? 'double_points') !== 'fixed_points' ? 'display: none;' : ''; ?>">
                             <label data-i18n="comeback_bonus_value"><?php echo esc_html(PPV_Lang::t('comeback_bonus_value')); ?></label>
-                            <input type="number" name="comeback_bonus_value" value="<?php echo esc_attr($store->comeback_bonus_value ?? 50); ?>" min="1" max="500">
+                            <input type="number" id="comeback_bonus_value_input" name="comeback_bonus_value" value="<?php echo esc_attr($store->comeback_bonus_value ?? 50); ?>" min="1" max="500" <?php echo ($store->comeback_bonus_type ?? 'double_points') !== 'fixed_points' ? 'disabled' : ''; ?>>
                         </div>
 
                         <div class="ppv-form-group">
@@ -727,9 +727,12 @@ if (!empty($store->gallery)) {
                 // Birthday bonus type change - show/hide value field
                 const birthdayType = document.getElementById('birthday_bonus_type');
                 const birthdayValueGroup = document.getElementById('birthday_bonus_value_group');
-                if (birthdayType && birthdayValueGroup) {
+                const birthdayValueInput = document.getElementById('birthday_bonus_value_input');
+                if (birthdayType && birthdayValueGroup && birthdayValueInput) {
                     birthdayType.addEventListener('change', function() {
-                        birthdayValueGroup.style.display = this.value === 'fixed_points' ? 'block' : 'none';
+                        const isFixed = this.value === 'fixed_points';
+                        birthdayValueGroup.style.display = isFixed ? 'block' : 'none';
+                        birthdayValueInput.disabled = !isFixed;
                     });
                 }
 
@@ -746,9 +749,12 @@ if (!empty($store->gallery)) {
                 // Comeback bonus type change - show/hide value field
                 const comebackType = document.getElementById('comeback_bonus_type');
                 const comebackValueGroup = document.getElementById('comeback_bonus_value_group');
-                if (comebackType && comebackValueGroup) {
+                const comebackValueInput = document.getElementById('comeback_bonus_value_input');
+                if (comebackType && comebackValueGroup && comebackValueInput) {
                     comebackType.addEventListener('change', function() {
-                        comebackValueGroup.style.display = this.value === 'fixed_points' ? 'block' : 'none';
+                        const isFixed = this.value === 'fixed_points';
+                        comebackValueGroup.style.display = isFixed ? 'block' : 'none';
+                        comebackValueInput.disabled = !isFixed;
                     });
                 }
 
