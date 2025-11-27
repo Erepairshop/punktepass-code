@@ -25,5 +25,8 @@ ALTER TABLE wp_ppv_users ADD COLUMN IF NOT EXISTS profile_visible TINYINT(1) DEF
 ALTER TABLE wp_ppv_users ADD COLUMN IF NOT EXISTS marketing_emails TINYINT(1) DEFAULT 1;
 ALTER TABLE wp_ppv_users ADD COLUMN IF NOT EXISTS data_sharing TINYINT(1) DEFAULT 0;
 
+-- Track last birthday bonus date (anti-abuse: min 320 days between bonuses)
+ALTER TABLE wp_ppv_users ADD COLUMN IF NOT EXISTS last_birthday_bonus_at DATE DEFAULT NULL;
+
 -- Add index for birthday (useful for birthday bonus feature)
 CREATE INDEX IF NOT EXISTS idx_ppv_users_birthday ON wp_ppv_users(birthday);

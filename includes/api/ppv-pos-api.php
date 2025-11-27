@@ -113,29 +113,50 @@ class PPV_POS_AUTO_API {
             ", $store_id));
 
             if ($birthday_settings && $birthday_settings->birthday_bonus_enabled) {
-                $user_birthday = $wpdb->get_var($wpdb->prepare("
-                    SELECT birthday FROM {$wpdb->prefix}ppv_users WHERE id = %d
+                $user_bday_data = $wpdb->get_row($wpdb->prepare("
+                    SELECT birthday, last_birthday_bonus_at FROM {$wpdb->prefix}ppv_users WHERE id = %d
                 ", $user_id));
 
-                if ($user_birthday) {
+                if ($user_bday_data && $user_bday_data->birthday) {
                     $today_md = date('m-d');
-                    $birthday_md = date('m-d', strtotime($user_birthday));
+                    $birthday_md = date('m-d', strtotime($user_bday_data->birthday));
 
                     if ($today_md === $birthday_md) {
-                        $bonus_type = $birthday_settings->birthday_bonus_type ?? 'double_points';
-
-                        switch ($bonus_type) {
-                            case 'double_points':
-                                $birthday_bonus_applied = $points_add;
-                                break;
-                            case 'fixed_points':
-                                $birthday_bonus_applied = intval($birthday_settings->birthday_bonus_value ?? 0);
-                                break;
+                        // Anti-abuse check: minimum 320 days between birthday bonuses
+                        $can_receive_bonus = true;
+                        if ($user_bday_data->last_birthday_bonus_at) {
+                            $last_bonus_date = strtotime($user_bday_data->last_birthday_bonus_at);
+                            $days_since_last_bonus = floor((time() - $last_bonus_date) / (60 * 60 * 24));
+                            if ($days_since_last_bonus < 320) {
+                                $can_receive_bonus = false;
+                            }
                         }
 
-                        if ($birthday_bonus_applied > 0) {
-                            $points_add += $birthday_bonus_applied;
-                            $response_message[] = "🎂 Geburtstags-Bonus: +{$birthday_bonus_applied}";
+                        if ($can_receive_bonus) {
+                            $bonus_type = $birthday_settings->birthday_bonus_type ?? 'double_points';
+
+                            switch ($bonus_type) {
+                                case 'double_points':
+                                    $birthday_bonus_applied = $points_add;
+                                    break;
+                                case 'fixed_points':
+                                    $birthday_bonus_applied = intval($birthday_settings->birthday_bonus_value ?? 0);
+                                    break;
+                            }
+
+                            if ($birthday_bonus_applied > 0) {
+                                $points_add += $birthday_bonus_applied;
+                                $response_message[] = "🎂 Geburtstags-Bonus: +{$birthday_bonus_applied}";
+
+                                // Update last_birthday_bonus_at to prevent abuse
+                                $wpdb->update(
+                                    $wpdb->prefix . 'ppv_users',
+                                    ['last_birthday_bonus_at' => date('Y-m-d')],
+                                    ['id' => $user_id],
+                                    ['%s'],
+                                    ['%d']
+                                );
+                            }
                         }
                     }
                 }

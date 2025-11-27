@@ -374,40 +374,63 @@ public static function ajax_auto_add_point() {
     ", $birthday_store_id));
 
     if ($birthday_settings && $birthday_settings->birthday_bonus_enabled) {
-        // Get user's birthday from ppv_users table
-        $user_birthday = $wpdb->get_var($wpdb->prepare("
-            SELECT birthday FROM {$wpdb->prefix}ppv_users WHERE id = %d
+        // Get user's birthday and last birthday bonus date from ppv_users table
+        $user_bday_data = $wpdb->get_row($wpdb->prepare("
+            SELECT birthday, last_birthday_bonus_at FROM {$wpdb->prefix}ppv_users WHERE id = %d
         ", $user_id));
 
-        if ($user_birthday) {
+        if ($user_bday_data && $user_bday_data->birthday) {
             // Check if today is user's birthday (compare month and day)
             $today_md = date('m-d');
-            $birthday_md = date('m-d', strtotime($user_birthday));
+            $birthday_md = date('m-d', strtotime($user_bday_data->birthday));
 
             if ($today_md === $birthday_md) {
-                ppv_log("🎂 [PPV_Scan] Today is user {$user_id}'s birthday!");
-
-                $bonus_type = $birthday_settings->birthday_bonus_type ?? 'double_points';
-                $base_points_for_birthday = $points_to_add; // Points before birthday bonus
-
-                switch ($bonus_type) {
-                    case 'double_points':
-                        $birthday_bonus_applied = $base_points_for_birthday; // Double = add same amount again
-                        break;
-                    case 'fixed_points':
-                        $birthday_bonus_applied = intval($birthday_settings->birthday_bonus_value ?? 0);
-                        break;
-                    case 'free_product':
-                        // Free product is handled separately (not points)
-                        // TODO: Implement free product voucher creation
-                        ppv_log("🎁 [PPV_Scan] Birthday free product bonus - not yet implemented");
-                        break;
+                // Anti-abuse check: minimum 320 days between birthday bonuses
+                $can_receive_bonus = true;
+                if ($user_bday_data->last_birthday_bonus_at) {
+                    $last_bonus_date = strtotime($user_bday_data->last_birthday_bonus_at);
+                    $days_since_last_bonus = floor((time() - $last_bonus_date) / (60 * 60 * 24));
+                    if ($days_since_last_bonus < 320) {
+                        $can_receive_bonus = false;
+                        ppv_log("🎂 [PPV_Scan] Birthday bonus BLOCKED for user {$user_id}: only {$days_since_last_bonus} days since last bonus (min 320)");
+                    }
                 }
 
-                if ($birthday_bonus_applied > 0) {
-                    $points_to_add += $birthday_bonus_applied;
-                    $birthday_bonus_message = $birthday_settings->birthday_bonus_message ?? '';
-                    ppv_log("🎂 [PPV_Scan] Birthday bonus applied: type={$bonus_type}, bonus=+{$birthday_bonus_applied}, total_points={$points_to_add}");
+                if ($can_receive_bonus) {
+                    ppv_log("🎂 [PPV_Scan] Today is user {$user_id}'s birthday!");
+
+                    $bonus_type = $birthday_settings->birthday_bonus_type ?? 'double_points';
+                    $base_points_for_birthday = $points_to_add; // Points before birthday bonus
+
+                    switch ($bonus_type) {
+                        case 'double_points':
+                            $birthday_bonus_applied = $base_points_for_birthday; // Double = add same amount again
+                            break;
+                        case 'fixed_points':
+                            $birthday_bonus_applied = intval($birthday_settings->birthday_bonus_value ?? 0);
+                            break;
+                        case 'free_product':
+                            // Free product is handled separately (not points)
+                            // TODO: Implement free product voucher creation
+                            ppv_log("🎁 [PPV_Scan] Birthday free product bonus - not yet implemented");
+                            break;
+                    }
+
+                    if ($birthday_bonus_applied > 0) {
+                        $points_to_add += $birthday_bonus_applied;
+                        $birthday_bonus_message = $birthday_settings->birthday_bonus_message ?? '';
+
+                        // Update last_birthday_bonus_at to prevent abuse
+                        $wpdb->update(
+                            $wpdb->prefix . 'ppv_users',
+                            ['last_birthday_bonus_at' => date('Y-m-d')],
+                            ['id' => $user_id],
+                            ['%s'],
+                            ['%d']
+                        );
+
+                        ppv_log("🎂 [PPV_Scan] Birthday bonus applied: type={$bonus_type}, bonus=+{$birthday_bonus_applied}, total_points={$points_to_add}");
+                    }
                 }
             }
         }
