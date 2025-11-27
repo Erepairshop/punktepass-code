@@ -83,7 +83,7 @@ class PPV_Standalone_Admin {
                             <td>
                                 <form method="post" style="display:inline;">
                                     <?php wp_nonce_field('ppv_remove_admin_store', 'ppv_nonce'); ?>
-                                    <input type="hidden" name="action" value="remove_admin_store">
+                                    <input type="hidden" name="ppv_action" value="remove_admin_store">
                                     <input type="hidden" name="store_id" value="<?php echo esc_attr($store->id); ?>">
                                     <button type="submit" class="button button-small" onclick="return confirm('Biztosan eltávolítod?');">Eltávolítás</button>
                                 </form>
@@ -97,7 +97,7 @@ class PPV_Standalone_Admin {
             <h2 style="margin-top: 30px;">Üzlet hozzáadása</h2>
             <form method="post">
                 <?php wp_nonce_field('ppv_add_admin_store', 'ppv_nonce'); ?>
-                <input type="hidden" name="action" value="add_admin_store">
+                <input type="hidden" name="ppv_action" value="add_admin_store">
                 <table class="form-table">
                     <tr>
                         <th><label for="store_id">Üzlet kiválasztása</label></th>
@@ -131,11 +131,11 @@ class PPV_Standalone_Admin {
      * WP-Admin műveletek kezelése
      */
     public static function handle_wp_admin_actions() {
-        if (!isset($_POST['action']) || !isset($_POST['ppv_nonce'])) {
+        if (!isset($_POST['ppv_action']) || !isset($_POST['ppv_nonce'])) {
             return;
         }
 
-        if ($_POST['action'] === 'add_admin_store') {
+        if ($_POST['ppv_action'] === 'add_admin_store') {
             if (!wp_verify_nonce($_POST['ppv_nonce'], 'ppv_add_admin_store')) {
                 return;
             }
@@ -153,7 +153,7 @@ class PPV_Standalone_Admin {
             exit;
         }
 
-        if ($_POST['action'] === 'remove_admin_store') {
+        if ($_POST['ppv_action'] === 'remove_admin_store') {
             if (!wp_verify_nonce($_POST['ppv_nonce'], 'ppv_remove_admin_store')) {
                 return;
             }
