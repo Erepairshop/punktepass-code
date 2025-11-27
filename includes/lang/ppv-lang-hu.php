@@ -1469,4 +1469,47 @@ return [
 
     // Notifications
     'rewards_new_redemption' => 'Új beváltás!',
+
+    // ============================================================
+    // MARKETING & AUTOMATIZMUS
+    // ============================================================
+    'tab_marketing' => 'Marketing',
+    'marketing_automation' => 'Marketing & Automatizmus',
+    'marketing_automation_help' => 'Automatizáld az ügyfélkapcsolatokat és növeld a visszatérési arányt.',
+
+    // Google Értékelés
+    'google_review_title' => 'Google Értékelések',
+    'google_review_desc' => 'Automatikusan kérj értékelést, amikor a vendégek pontot gyűjtenek.',
+    'google_review_url' => 'Google Értékelés URL',
+    'google_review_url_help' => 'Találd meg az URL-t: Google Business > Értékelések > Link megosztása',
+    'google_review_threshold' => 'Pont küszöb',
+    'google_review_frequency' => 'Gyakoriság',
+    'frequency_once' => 'Egyszer',
+    'frequency_monthly' => 'Havonta',
+    'frequency_quarterly' => 'Negyedévente',
+
+    // Születésnapi Bónusz
+    'birthday_bonus_title' => 'Születésnapi Bónusz',
+    'birthday_bonus_desc' => 'Automatikus üzenet és bónusz a vendég születésnapján.',
+    'birthday_bonus_type' => 'Bónusz típus',
+    'birthday_bonus_value' => 'Bónusz pontok',
+    'birthday_bonus_message' => 'Üzenet (opcionális)',
+    'birthday_bonus_message_placeholder' => 'Boldog születésnapot! Ma dupla pontot kapsz!',
+    'bonus_double_points' => 'Dupla pont',
+    'bonus_fixed_points' => 'Fix pontok',
+    'bonus_free_product' => 'Ingyenes termék',
+
+    // Comeback Kampány
+    'comeback_title' => 'Comeback Kampány',
+    'comeback_desc' => 'Automatikus üzenet az inaktív vendégeknek X nap után.',
+    'comeback_days' => 'Inaktivitás (nap)',
+    'comeback_bonus_type' => 'Bónusz típus',
+    'comeback_bonus_value' => 'Bónusz pontok',
+    'comeback_message' => 'Üzenet (opcionális)',
+    'comeback_message_placeholder' => 'Hiányzol! Gyere vissza és kapj dupla pontot!',
+    'days' => 'nap',
+
+    // Marketing Tippek
+    'marketing_tip_title' => 'Tipp',
+    'marketing_tip_text' => 'A Google értékelések javítják az online láthatóságodat és új vendégeket vonzanak. Aktiváld ezt a funkciót az automatikus értékelés kéréshez.',
 ];
