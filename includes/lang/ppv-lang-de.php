@@ -951,6 +951,19 @@ return [
 'gps_too_far' => 'Sie befinden sich zu weit vom Geschäft entfernt ({distance}m). Maximale Entfernung: {max}m',
 'gps_checking' => 'GPS-Standort wird überprüft...',
 
+// Mobile Scanner
+'mobile_scanner_title' => 'Mobile Scanner',
+'checking_mobile_scanner' => 'Status wird überprüft...',
+'request_mobile_scanner' => 'Mobile Scanner anfordern',
+'mobile_scanner_active' => 'Mobile Scanner aktiv',
+'mobile_scanner_pending' => 'Anfrage ausstehend',
+'mobile_scanner_info' => 'Mit Mobile Scanner können Sie ohne GPS-Standortprüfung scannen. Erfordert Admin-Genehmigung.',
+'mobile_scanner_enabled' => 'GPS-Prüfung ist deaktiviert. Scanner funktioniert überall.',
+'mobile_scanner_request_pending' => 'Ihre Anfrage wird vom Admin bearbeitet.',
+'mobile_scanner_not_active' => 'GPS-Standortprüfung ist aktiv.',
+'confirm_request_mobile_scanner' => 'Mit Mobile Scanner können Sie ohne GPS-Standortprüfung scannen. Eine Anfrage wird an den Admin gesendet. Fortfahren?',
+'mobile_scanner_request_sent' => 'Anfrage gesendet! Der Admin wird per E-Mail benachrichtigt.',
+
 'offline_banner' => 'Offline-Modus aktiv',
 'sync_now' => 'Sync',
 'scanner_title' => '📲 Kassenscanner',

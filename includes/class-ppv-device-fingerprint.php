@@ -154,6 +154,17 @@ class PPV_Device_Fingerprint {
             ppv_log("✅ [PPV_Device_Fingerprint] Device requests table created");
             update_option('ppv_device_migration_version', '1.3');
         }
+
+        // Migration 1.4: Extend request_type to include mobile_scanner
+        if (version_compare($migration_version, '1.4', '<')) {
+            $table_requests = $wpdb->prefix . self::DEVICE_REQUESTS_TABLE;
+
+            // Alter the ENUM to include mobile_scanner
+            $wpdb->query("ALTER TABLE {$table_requests} MODIFY COLUMN request_type ENUM('add', 'remove', 'mobile_scanner') NOT NULL");
+
+            ppv_log("✅ [PPV_Device_Fingerprint] Added mobile_scanner request type");
+            update_option('ppv_device_migration_version', '1.4');
+        }
     }
 
     /**
@@ -231,6 +242,24 @@ class PPV_Device_Fingerprint {
         register_rest_route('punktepass/v1', '/user-devices/reject/(?P<token>[a-zA-Z0-9]+)', [
             'methods' => 'GET',
             'callback' => [__CLASS__, 'rest_reject_device_request'],
+            'permission_callback' => '__return_true'
+        ]);
+
+        // ========================================
+        // 📱 MOBILE SCANNER REQUEST
+        // ========================================
+
+        // Request mobile scanner mode (needs admin approval)
+        register_rest_route('punktepass/v1', '/user-devices/request-mobile-scanner', [
+            'methods' => 'POST',
+            'callback' => [__CLASS__, 'rest_request_mobile_scanner'],
+            'permission_callback' => '__return_true'
+        ]);
+
+        // Check mobile scanner status
+        register_rest_route('punktepass/v1', '/user-devices/mobile-scanner-status', [
+            'methods' => 'GET',
+            'callback' => [__CLASS__, 'rest_get_mobile_scanner_status'],
             'permission_callback' => '__return_true'
         ]);
     }
@@ -1216,7 +1245,7 @@ class PPV_Device_Fingerprint {
             return self::render_approval_page('error', 'Anfrage nicht gefunden oder bereits verarbeitet');
         }
 
-        // Process the request
+        // Process the request based on type
         if ($req->request_type === 'add') {
             // Add the device
             $ip_address = self::get_client_ip();
@@ -1234,7 +1263,8 @@ class PPV_Device_Fingerprint {
                 ['%d', '%s', '%s', '%s', '%s', '%s', '%s']
             );
             ppv_log("📱 [Device Approved] ADD: store_id={$req->store_id}, hash={$req->fingerprint_hash}");
-        } else {
+            $action_text = 'Gerät erfolgreich hinzugefügt!';
+        } elseif ($req->request_type === 'remove') {
             // Remove the device
             $wpdb->delete(
                 $wpdb->prefix . self::USER_DEVICES_TABLE,
@@ -1242,6 +1272,20 @@ class PPV_Device_Fingerprint {
                 ['%d', '%s']
             );
             ppv_log("📱 [Device Approved] REMOVE: store_id={$req->store_id}, hash={$req->fingerprint_hash}");
+            $action_text = 'Gerät erfolgreich entfernt!';
+        } elseif ($req->request_type === 'mobile_scanner') {
+            // Enable mobile scanner for this store
+            $wpdb->update(
+                $wpdb->prefix . 'ppv_stores',
+                ['scanner_type' => 'mobile'],
+                ['id' => $req->store_id],
+                ['%s'],
+                ['%d']
+            );
+            ppv_log("📱 [Mobile Scanner Approved] store_id={$req->store_id}");
+            $action_text = 'Mobile Scanner erfolgreich aktiviert!';
+        } else {
+            return self::render_approval_page('error', 'Unbekannter Anfragetyp');
         }
 
         // Mark request as approved
@@ -1257,8 +1301,7 @@ class PPV_Device_Fingerprint {
             ['%d']
         );
 
-        $action = $req->request_type === 'add' ? 'hinzugefügt' : 'entfernt';
-        return self::render_approval_page('success', "Gerät erfolgreich {$action}!");
+        return self::render_approval_page('success', $action_text);
     }
 
     /**
@@ -1492,5 +1535,196 @@ class PPV_Device_Fingerprint {
 
         wp_mail($admin_email, $subject, $message, $headers);
         ppv_log("📧 [Device Email] Sent to {$admin_email} for store_id={$store_id}");
+    }
+
+    // ========================================
+    // 📱 MOBILE SCANNER REQUEST METHODS
+    // ========================================
+
+    /**
+     * REST: Get mobile scanner status for current store
+     */
+    public static function rest_get_mobile_scanner_status(WP_REST_Request $request) {
+        global $wpdb;
+
+        $store_id = self::get_session_store_id();
+
+        if ($store_id <= 0) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Nicht authentifiziert'
+            ], 401);
+        }
+
+        // Get current scanner type
+        $scanner_type = $wpdb->get_var($wpdb->prepare(
+            "SELECT scanner_type FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+            $store_id
+        ));
+
+        // Check for pending request
+        $pending_request = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}" . self::DEVICE_REQUESTS_TABLE . "
+             WHERE store_id = %d AND request_type = 'mobile_scanner' AND status = 'pending'
+             ORDER BY requested_at DESC LIMIT 1",
+            $store_id
+        ));
+
+        return new WP_REST_Response([
+            'success' => true,
+            'scanner_type' => $scanner_type ?: 'fixed',
+            'is_mobile' => ($scanner_type === 'mobile'),
+            'has_pending_request' => !empty($pending_request),
+            'pending_request' => $pending_request ? [
+                'id' => $pending_request->id,
+                'requested_at' => $pending_request->requested_at
+            ] : null
+        ], 200);
+    }
+
+    /**
+     * REST: Request mobile scanner mode (needs admin approval)
+     */
+    public static function rest_request_mobile_scanner(WP_REST_Request $request) {
+        global $wpdb;
+
+        $store_id = self::get_session_store_id();
+
+        if ($store_id <= 0) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Nicht authentifiziert'
+            ], 401);
+        }
+
+        // Check if already mobile
+        $scanner_type = $wpdb->get_var($wpdb->prepare(
+            "SELECT scanner_type FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+            $store_id
+        ));
+
+        if ($scanner_type === 'mobile') {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Mobile Scanner ist bereits aktiviert'
+            ], 200);
+        }
+
+        // Check for existing pending request
+        $existing = $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM {$wpdb->prefix}" . self::DEVICE_REQUESTS_TABLE . "
+             WHERE store_id = %d AND request_type = 'mobile_scanner' AND status = 'pending'",
+            $store_id
+        ));
+
+        if ($existing) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Es gibt bereits eine ausstehende Anfrage'
+            ], 200);
+        }
+
+        // Create the request
+        $token = wp_generate_password(32, false);
+        $ip_address = self::get_client_ip();
+        $user_agent = sanitize_text_field($_SERVER['HTTP_USER_AGENT'] ?? '');
+
+        $result = $wpdb->insert(
+            $wpdb->prefix . self::DEVICE_REQUESTS_TABLE,
+            [
+                'store_id' => $store_id,
+                'fingerprint_hash' => 'mobile_scanner_request',
+                'request_type' => 'mobile_scanner',
+                'device_name' => 'Mobile Scanner Anfrage',
+                'user_agent' => $user_agent,
+                'ip_address' => $ip_address,
+                'approval_token' => $token,
+                'status' => 'pending',
+                'requested_at' => current_time('mysql')
+            ],
+            ['%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s']
+        );
+
+        if (!$result) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Datenbankfehler'
+            ], 500);
+        }
+
+        // Send email to admin
+        self::send_mobile_scanner_request_email($store_id, $token);
+
+        ppv_log("📱 [Mobile Scanner] Request created: store_id={$store_id}, token={$token}");
+
+        return new WP_REST_Response([
+            'success' => true,
+            'message' => 'Anfrage gesendet! Der Admin wird per E-Mail benachrichtigt.'
+        ], 200);
+    }
+
+    /**
+     * Send mobile scanner request email to admin
+     */
+    private static function send_mobile_scanner_request_email($store_id, $token) {
+        global $wpdb;
+
+        // Get store info
+        $store = $wpdb->get_row($wpdb->prepare(
+            "SELECT name, email, city FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
+            $store_id
+        ));
+
+        $store_name = $store->name ?? "Store #{$store_id}";
+        $store_city = $store->city ?? '';
+
+        // Admin email
+        $admin_email = get_option('admin_email');
+        $site_url = site_url();
+
+        $approve_url = "{$site_url}/wp-json/punktepass/v1/user-devices/approve/{$token}";
+        $reject_url = "{$site_url}/wp-json/punktepass/v1/user-devices/reject/{$token}";
+
+        $subject = "[PunktePass] Mobile Scanner Anfrage - {$store_name}";
+
+        $message = "
+        <html>
+        <head><style>
+            body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }
+            .card { background: #fff; padding: 30px; border-radius: 10px; max-width: 500px; margin: 0 auto; }
+            h2 { color: #333; margin-top: 0; }
+            .info { background: #f0f0f0; padding: 15px; border-radius: 8px; margin: 20px 0; }
+            .warning { background: #fff3e0; border: 1px solid #ff9800; padding: 15px; border-radius: 8px; margin: 20px 0; }
+            .btn { display: inline-block; padding: 12px 25px; border-radius: 8px; text-decoration: none; color: #fff; margin-right: 10px; }
+            .btn-approve { background: #4caf50; }
+            .btn-reject { background: #f44336; }
+        </style></head>
+        <body>
+        <div class='card'>
+            <h2>📱 Mobile Scanner Anfrage</h2>
+            <p>Ein Geschäft möchte den <strong>Mobile Scanner</strong> Modus aktivieren.</p>
+            <div class='info'>
+                <p><strong>Geschäft:</strong> {$store_name}</p>
+                <p><strong>Stadt:</strong> {$store_city}</p>
+                <p><strong>Store ID:</strong> {$store_id}</p>
+                <p><strong>Zeitpunkt:</strong> " . current_time('d.m.Y H:i') . "</p>
+            </div>
+            <div class='warning'>
+                <p><strong>⚠️ Hinweis:</strong> Bei Mobile Scanner wird die GPS-Prüfung deaktiviert. Das Gerät kann von überall scannen.</p>
+            </div>
+            <p>Bitte bestätigen oder ablehnen:</p>
+            <a href='{$approve_url}' class='btn btn-approve'>✅ Genehmigen</a>
+            <a href='{$reject_url}' class='btn btn-reject'>❌ Ablehnen</a>
+        </div>
+        </body>
+        </html>";
+
+        $headers = [
+            'Content-Type: text/html; charset=UTF-8',
+            'From: PunktePass <noreply@punktepass.de>'
+        ];
+
+        wp_mail($admin_email, $subject, $message, $headers);
+        ppv_log("📧 [Mobile Scanner Email] Sent to {$admin_email} for store_id={$store_id}");
     }
 }

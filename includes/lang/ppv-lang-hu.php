@@ -926,6 +926,19 @@ return [
 'gps_too_far' => 'Túl messze van az üzlettől ({distance}m). Maximális távolság: {max}m',
 'gps_checking' => 'GPS helyzet ellenőrzése...',
 
+// Mobile Scanner
+'mobile_scanner_title' => 'Mobil Scanner',
+'checking_mobile_scanner' => 'Állapot ellenőrzése...',
+'request_mobile_scanner' => 'Mobil Scanner igénylése',
+'mobile_scanner_active' => 'Mobil Scanner aktív',
+'mobile_scanner_pending' => 'Kérelem függőben',
+'mobile_scanner_info' => 'Mobil Scanner használatával GPS helyzet ellenőrzés nélkül szkennelhet. Admin jóváhagyás szükséges.',
+'mobile_scanner_enabled' => 'GPS ellenőrzés kikapcsolva. A scanner bárhonnan működik.',
+'mobile_scanner_request_pending' => 'Kérelmét az admin feldolgozza.',
+'mobile_scanner_not_active' => 'GPS helyzet ellenőrzés aktív.',
+'confirm_request_mobile_scanner' => 'Mobil Scanner használatával GPS helyzet ellenőrzés nélkül szkennelhet. Kérelmet küldünk az adminnak. Folytatja?',
+'mobile_scanner_request_sent' => 'Kérelem elküldve! Az admin e-mailben értesítést kap.',
+
 'offline_banner' => 'Offline mód aktív',
 'sync_now' => 'Szinkronizálás',
 'scanner_title' => '📲 Kasszascanner',
