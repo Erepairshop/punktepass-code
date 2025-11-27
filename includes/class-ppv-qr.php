@@ -2053,7 +2053,7 @@ class PPV_QR {
             <div style="background: rgba(33, 150, 243, 0.1); border: 1px solid rgba(33, 150, 243, 0.3); border-radius: 10px; padding: 15px; margin-bottom: 20px;">
                 <p style="margin: 0; font-size: 13px; color: #2196f3;">
                     <i class="ri-information-line"></i>
-                    <?php echo self::t('devices_info', 'Um ein neues Gerät zu registrieren, klicken Sie auf "Dieses Gerät registrieren" vom gewünschten Gerät. Zum Entfernen eines Geräts ist eine Admin-Genehmigung erforderlich.'); ?>
+                    <?php echo self::t('devices_info', 'Registrieren Sie Geräte über "Dieses Gerät registrieren". Bei erreichtem Limit (2 Geräte) können Sie weitere Geräte mit Admin-Genehmigung anfordern.'); ?>
                 </p>
             </div>
 
