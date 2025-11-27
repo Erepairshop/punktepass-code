@@ -380,6 +380,35 @@ class PPV_ROI_Calculator {
             text-decoration: none;
         }
 
+        /* Language Switcher */
+        .lang-switcher {
+            position: fixed;
+            top: 12px;
+            right: 12px;
+            z-index: 1000;
+            display: flex;
+            gap: 4px;
+            background: rgba(21, 26, 37, 0.95);
+            padding: 5px;
+            border-radius: 10px;
+            border: 1px solid var(--card-border);
+            backdrop-filter: blur(10px);
+        }
+        .lang-btn {
+            padding: 6px 12px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+        .lang-btn:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+        .lang-btn.active { background: linear-gradient(135deg, #00bfff, #0099cc); color: white; }
+
         /* Animations */
         @keyframes slideUp {
             from {
@@ -411,10 +440,17 @@ class PPV_ROI_Calculator {
     </style>
 </head>
 <body>
+    <!-- Language Switcher -->
+    <div class="lang-switcher">
+        <a href="?lang=de" class="lang-btn <?php echo $lang === 'de' ? 'active' : ''; ?>">DE</a>
+        <a href="?lang=hu" class="lang-btn <?php echo $lang === 'hu' ? 'active' : ''; ?>">HU</a>
+        <a href="?lang=ro" class="lang-btn <?php echo $lang === 'ro' ? 'active' : ''; ?>">RO</a>
+    </div>
+
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <img src="<?php echo esc_url(PPV_PLUGIN_URL . 'assets/img/icons/icon-192.png'); ?>" alt="PunktePass" class="logo">
+            <img src="https://punktepass.de/wp-content/plugins/punktepass/assets/img/logo.webp" alt="PunktePass" class="logo">
             <h1><?php echo esc_html($t['headline']); ?></h1>
             <p><?php echo esc_html($t['subheadline']); ?></p>
         </div>
@@ -446,6 +482,14 @@ class PPV_ROI_Calculator {
             </div>
 
             <div class="results">
+                <div class="result-item">
+                    <span class="result-icon">📍</span>
+                    <div class="result-content">
+                        <div class="result-title"><?php echo esc_html($t['discovery_title']); ?></div>
+                        <div class="result-value highlight">+<span id="discovery-count">5</span> <?php echo esc_html($t['new_customers']); ?></div>
+                    </div>
+                </div>
+
                 <div class="result-item">
                     <span class="result-icon">👋</span>
                     <div class="result-content">
@@ -545,6 +589,7 @@ class PPV_ROI_Calculator {
         // Calculator Logic
         const slider = document.getElementById('customer-slider');
         const customerCount = document.getElementById('customer-count');
+        const discoveryCount = document.getElementById('discovery-count');
         const comebackCount = document.getElementById('comeback-count');
         const birthdayCount = document.getElementById('birthday-count');
         const vipPercent = document.getElementById('vip-percent');
@@ -578,6 +623,11 @@ class PPV_ROI_Calculator {
         function calculate() {
             const customers = parseInt(slider.value);
 
+            // Store Discovery: New customers who find the store in the app
+            // Based on local PunktePass users seeing the store card
+            // ~5% of customer base as potential new discovery (conservative estimate)
+            const discovery = Math.round(customers * 0.05) + 3; // minimum 3 new customers
+
             // Comeback: ~10-15% of inactive customers return
             const comeback = Math.round(customers * 0.12);
 
@@ -587,11 +637,12 @@ class PPV_ROI_Calculator {
             // VIP: Additional 20% frequency increase (already shown as %)
             const vip = 20;
 
-            // Total extra visits
-            const total = comeback + birthday + Math.round(customers * 0.05);
+            // Total extra visits (discovery + comeback + birthday + vip frequency boost)
+            const total = discovery + comeback + birthday + Math.round(customers * 0.05);
 
             // Update UI with animation
             animateNumber(customerCount, customers);
+            animateNumber(discoveryCount, discovery);
             animateNumber(comebackCount, comeback);
             animateNumber(birthdayCount, birthday);
             animateNumber(totalExtra, total);
@@ -634,6 +685,8 @@ class PPV_ROI_Calculator {
                 'customers_unit' => 'Kunden',
                 'visits_unit' => 'Besuche',
                 'results_title' => 'Ihre Vorteile',
+                'discovery_title' => 'App-Entdeckung',
+                'new_customers' => 'Neukunden',
                 'comeback_title' => 'Comeback-Kampagne',
                 'birthday_title' => 'Geburtstags-Bonus',
                 'vip_title' => 'VIP-Programm',
@@ -664,6 +717,8 @@ class PPV_ROI_Calculator {
                 'customers_unit' => 'vásárló',
                 'visits_unit' => 'látogatás',
                 'results_title' => 'Az Ön előnyei',
+                'discovery_title' => 'App felfedezés',
+                'new_customers' => 'új vásárló',
                 'comeback_title' => 'Comeback kampány',
                 'birthday_title' => 'Születésnapi bónusz',
                 'vip_title' => 'VIP program',
@@ -683,6 +738,38 @@ class PPV_ROI_Calculator {
                 'feature_3_desc' => 'Részletes vásárlói elemzés',
                 'feature_4_title' => 'GDPR megfelelő',
                 'feature_4_desc' => 'Európai szerverek, teljes adatbiztonság',
+            ],
+            'ro' => [
+                'page_title' => 'Calculator ROI | PunktePass',
+                'meta_description' => 'Calculați câți clienți suplimentari poate aduce PunktePass pentru afacerea dvs.',
+                'headline' => 'Calculator ROI',
+                'subheadline' => 'Calculați avantajele PunktePass',
+                'calculator_title' => 'Numărul de clienți',
+                'customers_per_month' => 'Clienți pe lună',
+                'customers_unit' => 'clienți',
+                'visits_unit' => 'vizite',
+                'results_title' => 'Avantajele dvs.',
+                'discovery_title' => 'Descoperire în App',
+                'new_customers' => 'clienți noi',
+                'comeback_title' => 'Campanie Comeback',
+                'birthday_title' => 'Bonus ziua de naștere',
+                'vip_title' => 'Program VIP',
+                'more_visits' => 'mai frecvent',
+                'total_extra' => 'TOTAL EXTRA',
+                'extra_visits_month' => 'vizite suplimentare / lună',
+                'per_day' => 'zi',
+                'cheaper_than_coffee' => 'Mai ieftin decât o cafea pe zi',
+                'cta_button' => 'Testează gratuit',
+                'email_subject' => 'Solicitare PunktePass',
+                'included_title' => 'Totul inclus',
+                'feature_1_title' => 'Card de fidelitate digital',
+                'feature_1_desc' => 'Compatibil Apple Wallet & Google Pay',
+                'feature_2_title' => 'Sistem de recompense',
+                'feature_2_desc' => 'Recompense flexibile și niveluri VIP',
+                'feature_3_title' => 'Statistici',
+                'feature_3_desc' => 'Analiză detaliată a clienților',
+                'feature_4_title' => 'Conform GDPR',
+                'feature_4_desc' => 'Servere europene, securitate completă a datelor',
             ],
         ];
 
