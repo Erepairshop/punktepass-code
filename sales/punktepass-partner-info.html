@@ -15,9 +15,70 @@
             font-size: 14px;
         }
         @media print {
-            body { background: white; color: #1e293b; font-size: 10px; }
-            .container { padding: 10px; }
-            .no-print, .lang-switcher { display: none; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            body { background: white !important; color: #1e293b !important; font-size: 11px; }
+            .container { padding: 15px; max-width: 100%; }
+            .no-print, .lang-switcher { display: none !important; }
+            .header { padding-top: 20px; border-bottom: 2px solid #e2e8f0; }
+            .logo { width: 80px; }
+            .hero-title { background: none !important; -webkit-text-fill-color: #0284c7 !important; color: #0284c7 !important; font-size: 22px; }
+            .tagline, .hero-subtitle { color: #64748b !important; }
+            .section-title { color: #1e293b !important; }
+            .section-title .icon { background: #0284c7 !important; color: white !important; }
+            .comparison-card { background: white !important; border: 1px solid #e2e8f0 !important; }
+            .comparison-card.problem { border-left: 3px solid #ef4444 !important; }
+            .comparison-card.solution { border-left: 3px solid #22c55e !important; }
+            .comparison-card h3 { color: #1e293b !important; }
+            .comparison-card li { color: #475569 !important; }
+            .feature-card { background: white !important; border: 1px solid #e2e8f0 !important; }
+            .feature-card h3, .feature-card p { color: #1e293b !important; }
+            .feature-icon { background: #0284c7 !important; }
+            .security-card { background: #fef2f2 !important; border: 1px solid #fecaca !important; }
+            .security-card h4 { color: #dc2626 !important; }
+            .security-card p { color: #475569 !important; }
+            .stats-grid { background: #f1f5f9 !important; }
+            .stat-value { background: none !important; -webkit-text-fill-color: #0284c7 !important; color: #0284c7 !important; }
+            .stat-label { color: #64748b !important; }
+            .trust-card { background: white !important; border: 1px solid #e2e8f0 !important; }
+            .trust-card h4, .trust-card p { color: #1e293b !important; }
+            .updates-section { background: #f5f3ff !important; border: 1px solid #ddd6fe !important; }
+            .updates-section h3 { color: #7c3aed !important; }
+            .updates-section p, .update-item { color: #475569 !important; }
+            .pricing-section { background: #f0f9ff !important; border: 2px solid #0284c7 !important; }
+            .pricing-title { color: #1e293b !important; }
+            .pricing-subtitle, .pricing-vat { color: #64748b !important; }
+            .pricing-box { background: #e0f2fe !important; }
+            .pricing-trial { background: none !important; -webkit-text-fill-color: #16a34a !important; color: #16a34a !important; }
+            .pricing-value { color: #1e293b !important; }
+            .pricing-feature { color: #475569 !important; }
+            .tablet-highlight { background: #f0fdf4 !important; border: 2px solid #22c55e !important; }
+            .tablet-highlight h4 { color: #16a34a !important; }
+            .tablet-highlight p { color: #475569 !important; }
+            .summary-box { background: #f0fdf4 !important; border: 1px solid #86efac !important; }
+            .summary-box h4 { color: #16a34a !important; }
+            .summary-box p { color: #475569 !important; }
+            .cta-section { border-top: 2px solid #e2e8f0; }
+            .cta-title { color: #1e293b !important; }
+            .cta-text { color: #64748b !important; }
+            .cta-contact { background: #f1f5f9 !important; border: 1px solid #e2e8f0 !important; }
+            .cta-contact a { color: #0284c7 !important; }
+            .footer { border-top: 1px solid #e2e8f0; color: #64748b !important; }
+            .ad-section { gap: 15px; }
+            .ad-text h3 { color: #1e293b !important; }
+            .ad-text p { color: #475569 !important; }
+            .ad-list { background: #f0f9ff !important; border: 1px solid #bae6fd !important; }
+            .ad-list h4 { color: #0284c7 !important; }
+            .ad-list ul { color: #475569 !important; }
+            .ad-mockup { background: #f8fafc !important; border: 1px solid #e2e8f0 !important; }
+            .store-card { background: #f0f9ff !important; border: 1px solid #bae6fd !important; }
+            .store-card div { color: #1e293b !important; }
+            .receipts-section { background: #fffbeb !important; border: 1px solid #fde68a !important; }
+            .receipts-section h3 { color: #b45309 !important; }
+            .receipts-section p, .receipts-section li { color: #475569 !important; }
+            .step-number { background: #0284c7 !important; }
+            .step h4 { color: #1e293b !important; }
+            .step p { color: #64748b !important; }
+            .how-it-works .step:not(:last-child)::after { color: #0284c7 !important; }
         }
         .container { max-width: 900px; margin: 0 auto; padding: 20px; }
 
@@ -165,9 +226,15 @@
         .summary-box h4 { color: #4ade80; font-size: 13px; margin-bottom: 5px; }
         .summary-box p { color: #cbd5e1; font-size: 11px; }
 
-        /* ROI Calculator Link */
-        .roi-link { display: inline-block; background: linear-gradient(135deg, #0ea5e9, #0284c7); color: white; padding: 10px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 12px; transition: transform 0.2s, box-shadow 0.2s; }
-        .roi-link:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(14, 165, 233, 0.4); }
+        /* Receipts Section */
+        .receipts-section { background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(217, 119, 6, 0.05)); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 12px; padding: 15px; margin: 15px 0; }
+        .receipts-section h3 { font-size: 14px; font-weight: 700; color: #fbbf24; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+        .receipts-section p { color: #fef3c7; font-size: 12px; margin-bottom: 10px; line-height: 1.5; }
+        .receipts-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 12px; }
+        .receipt-card { background: rgba(0,0,0,0.2); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 8px; padding: 12px; text-align: center; }
+        .receipt-card .icon { font-size: 24px; margin-bottom: 6px; }
+        .receipt-card h4 { color: #fbbf24; font-size: 12px; margin-bottom: 4px; }
+        .receipt-card p { color: #fef3c7; font-size: 10px; margin: 0; }
 
         /* ============================================== */
         /* MOBILE RESPONSIVE STYLES */
@@ -276,8 +343,14 @@
             .summary-box h4 { font-size: 14px; }
             .summary-box p { font-size: 12px; }
 
-            /* ROI link */
-            .roi-link { padding: 12px 24px; font-size: 13px; width: 100%; text-align: center; }
+            /* Receipts mobile */
+            .receipts-grid { grid-template-columns: 1fr; }
+            .receipts-section { padding: 14px; }
+            .receipts-section h3 { font-size: 15px; }
+            .receipts-section p { font-size: 13px; }
+            .receipt-card { padding: 14px; }
+            .receipt-card h4 { font-size: 13px; }
+            .receipt-card p { font-size: 11px; }
         }
 
         /* Extra small mobile */
@@ -442,10 +515,28 @@
                     </ul>
                 </div>
             </div>
-            <div class="summary-box" style="background: linear-gradient(135deg, rgba(14, 165, 233, 0.15), rgba(34, 211, 238, 0.1)); border-color: rgba(14, 165, 233, 0.4);">
-                <h4 style="color: #38bdf8;">💰 <span data-i18n="roi_title">Berechnen Sie Ihren ROI!</span></h4>
-                <p style="margin-bottom: 10px;" data-i18n="roi_desc">Wie viele Extra-Kunden bringt PunktePass für Ihr Geschäft?</p>
-                <a href="https://punktepass.de/rechner" target="_blank" class="roi-link">🧮 <span data-i18n="roi_button">ROI-Rechner öffnen</span> →</a>
+        </section>
+
+        <!-- Receipts / Bizonylatok -->
+        <section class="receipts-section">
+            <h3>🧾 <span data-i18n="receipts_title">Digitale Belege für Ihre Buchhaltung</span></h3>
+            <p data-i18n="receipts_desc">Mit PunktePass erhalten Sie automatisch professionelle Belege für jede Prämieneinlösung – perfekt für Ihre Steuererklärung und Buchhaltung.</p>
+            <div class="receipts-grid">
+                <div class="receipt-card">
+                    <div class="icon">📄</div>
+                    <h4 data-i18n="receipt_single">Einzelbelege</h4>
+                    <p data-i18n="receipt_single_desc">Pro Einlösung ein Beleg mit allen Details</p>
+                </div>
+                <div class="receipt-card">
+                    <div class="icon">📋</div>
+                    <h4 data-i18n="receipt_monthly">Monatsübersicht</h4>
+                    <p data-i18n="receipt_monthly_desc">Alle Einlösungen eines Monats zusammengefasst</p>
+                </div>
+                <div class="receipt-card">
+                    <div class="icon">📥</div>
+                    <h4 data-i18n="receipt_export">PDF Export</h4>
+                    <p data-i18n="receipt_export_desc">Herunterladen und ausdrucken jederzeit</p>
+                </div>
             </div>
         </section>
 
@@ -711,9 +802,14 @@
                 comeback_3: '10-15% der "verlorenen" Kunden kehren zurück',
                 comeback_4: 'Sie definieren die Tage (z.B. 30, 60, 90)',
                 comeback_5: 'Vollautomatisch – kein Eingreifen nötig',
-                roi_title: 'Berechnen Sie Ihren ROI!',
-                roi_desc: 'Wie viele Extra-Kunden bringt PunktePass für Ihr Geschäft?',
-                roi_button: 'ROI-Rechner öffnen',
+                receipts_title: 'Digitale Belege für Ihre Buchhaltung',
+                receipts_desc: 'Mit PunktePass erhalten Sie automatisch professionelle Belege für jede Prämieneinlösung – perfekt für Ihre Steuererklärung und Buchhaltung.',
+                receipt_single: 'Einzelbelege',
+                receipt_single_desc: 'Pro Einlösung ein Beleg mit allen Details',
+                receipt_monthly: 'Monatsübersicht',
+                receipt_monthly_desc: 'Alle Einlösungen eines Monats zusammengefasst',
+                receipt_export: 'PDF Export',
+                receipt_export_desc: 'Herunterladen und ausdrucken jederzeit',
                 free_advertising: 'Kostenlose Werbung für Ihr Geschäft',
                 store_discovered: 'Ihr Geschäft wird entdeckt!',
                 ad_text_1: 'Sobald Sie registriert sind, erscheint Ihr Geschäft automatisch in der App aller PunktePass-Nutzer in Ihrer Umgebung –',
@@ -849,9 +945,14 @@
                 comeback_3: 'Az "elveszett" ügyfelek 10-15%-a visszatér',
                 comeback_4: 'Ön határozza meg a napokat (pl. 30, 60, 90)',
                 comeback_5: 'Teljesen automatikus – nincs beavatkozás',
-                roi_title: 'Számítsa ki a ROI-ját!',
-                roi_desc: 'Hány extra ügyfelet hoz a PunktePass az Ön üzletének?',
-                roi_button: 'ROI-kalkulátor megnyitása',
+                receipts_title: 'Digitális bizonylatok a könyveléshez',
+                receipts_desc: 'A PunktePass automatikusan professzionális bizonylatokat készít minden beváltáshoz – tökéletes az adóbevalláshoz és könyveléshez.',
+                receipt_single: 'Egyedi bizonylatok',
+                receipt_single_desc: 'Beváltásonként egy bizonylat minden részlettel',
+                receipt_monthly: 'Havi összesítő',
+                receipt_monthly_desc: 'Egy hónap összes beváltása összefoglalva',
+                receipt_export: 'PDF Export',
+                receipt_export_desc: 'Letöltés és nyomtatás bármikor',
                 free_advertising: 'Ingyenes reklám az Ön üzletének',
                 store_discovered: 'Az Ön üzletét felfedezik!',
                 ad_text_1: 'Amint regisztrál, az Ön üzlete automatikusan megjelenik a környékbeli PunktePass felhasználók alkalmazásában –',
@@ -987,9 +1088,14 @@
                 comeback_3: '10-15% dintre clienții "pierduți" revin',
                 comeback_4: 'Dvs. definiți zilele (ex. 30, 60, 90)',
                 comeback_5: 'Complet automat – fără intervenție',
-                roi_title: 'Calculați-vă ROI-ul!',
-                roi_desc: 'Câți clienți extra aduce PunktePass pentru afacerea dvs.?',
-                roi_button: 'Deschide calculatorul ROI',
+                receipts_title: 'Documente digitale pentru contabilitate',
+                receipts_desc: 'Cu PunktePass primiți automat documente profesionale pentru fiecare răscumpărare – perfect pentru declarația fiscală și contabilitate.',
+                receipt_single: 'Documente individuale',
+                receipt_single_desc: 'Un document per răscumpărare cu toate detaliile',
+                receipt_monthly: 'Raport lunar',
+                receipt_monthly_desc: 'Toate răscumpărările unei luni rezumate',
+                receipt_export: 'Export PDF',
+                receipt_export_desc: 'Descărcare și tipărire oricând',
                 free_advertising: 'Publicitate gratuită pentru afacerea dvs.',
                 store_discovered: 'Afacerea dvs. va fi descoperită!',
                 ad_text_1: 'Odată înregistrat, afacerea dvs. apare automat în aplicația tuturor utilizatorilor PunktePass din zonă –',
