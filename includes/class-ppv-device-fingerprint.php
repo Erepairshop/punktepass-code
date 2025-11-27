@@ -285,6 +285,13 @@ class PPV_Device_Fingerprint {
             'permission_callback' => '__return_true'
         ]);
 
+        // Request new device slot (for already registered users)
+        register_rest_route('punktepass/v1', '/user-devices/request-new-slot', [
+            'methods' => 'POST',
+            'callback' => [__CLASS__, 'rest_request_new_device_slot'],
+            'permission_callback' => '__return_true'
+        ]);
+
         // Admin approval endpoint (via email link)
         register_rest_route('punktepass/v1', '/user-devices/approve/(?P<token>[a-zA-Z0-9]+)', [
             'methods' => 'GET',
@@ -964,12 +971,55 @@ class PPV_Device_Fingerprint {
         // Check device limit
         $device_count = self::get_user_device_count($parent_store_id);
         if ($device_count >= self::MAX_DEVICES_PER_USER) {
+            // Check if there's an available slot to claim
+            $available_slot = self::get_available_device_slot($parent_store_id);
+            if (!$available_slot) {
+                return new WP_REST_Response([
+                    'success' => false,
+                    'message' => 'Gerätelimit erreicht. Bitte Admin-Genehmigung anfordern.',
+                    'limit_reached' => true,
+                    'device_count' => $device_count,
+                    'max_devices' => self::MAX_DEVICES_PER_USER
+                ], 200);
+            }
+
+            // Claim the available slot - update it with the new device's info
+            ppv_log("📱 [Device Slot Claim] Claiming slot ID={$available_slot->id} for new device, store_id={$parent_store_id}");
+
+            $ip_address = self::get_client_ip();
+            $user_agent = sanitize_text_field($_SERVER['HTTP_USER_AGENT'] ?? '');
+
+            $update_data = [
+                'fingerprint_hash' => $fingerprint_hash,
+                'device_name' => $device_name,
+                'user_agent' => $user_agent,
+                'ip_address' => $ip_address,
+                'registered_at' => current_time('mysql'),
+                'last_used_at' => current_time('mysql'),
+                'status' => 'active'
+            ];
+            $update_format = ['%s', '%s', '%s', '%s', '%s', '%s', '%s'];
+
+            // Add device_info if available
+            if ($device_info_json && self::column_exists('device_info')) {
+                $update_data['device_info'] = $device_info_json;
+                $update_format[] = '%s';
+            }
+
+            $wpdb->update(
+                $wpdb->prefix . self::USER_DEVICES_TABLE,
+                $update_data,
+                ['id' => $available_slot->id],
+                $update_format,
+                ['%d']
+            );
+
+            ppv_log("📱 [Device Registered via Slot] store_id={$parent_store_id}, hash=" . substr($fingerprint_hash, 0, 16) . "..., name={$device_name}");
+
             return new WP_REST_Response([
-                'success' => false,
-                'message' => 'Gerätelimit erreicht. Bitte Admin-Genehmigung anfordern.',
-                'limit_reached' => true,
-                'device_count' => $device_count,
-                'max_devices' => self::MAX_DEVICES_PER_USER
+                'success' => true,
+                'message' => 'Gerät erfolgreich registriert (genehmigter Platz verwendet)!',
+                'slot_used' => true
             ], 200);
         }
 
@@ -1121,12 +1171,16 @@ class PPV_Device_Fingerprint {
         // Device is mobile scanner if either device-level OR store-level is enabled
         $is_mobile_scanner = $device_mobile_scanner || $store_is_mobile;
 
+        // Check for available slots (pre-approved by admin)
+        $available_slots = self::get_available_slot_count($parent_store_id);
+
         return new WP_REST_Response([
             'success' => true,
             'is_registered' => $is_registered,
             'can_use_scanner' => $can_use_scanner,
             'device_count' => $device_count,
             'max_devices' => self::MAX_DEVICES_PER_USER,
+            'available_slots' => $available_slots, // Pre-approved slots ready to claim
             // Device info
             'device_id' => $device_id,
             // Mobile scanner status (per-device)
@@ -1354,6 +1408,43 @@ class PPV_Device_Fingerprint {
     }
 
     /**
+     * REST: Request a new device slot (for already registered users at limit)
+     * Creates a request without specific fingerprint - user will register from new device later
+     */
+    public static function rest_request_new_device_slot(WP_REST_Request $request) {
+        $store_id = self::get_session_store_id();
+
+        if ($store_id <= 0) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Nicht authentifiziert'
+            ], 401);
+        }
+
+        $data = $request->get_json_params();
+        $device_name = sanitize_text_field($data['device_name'] ?? 'Neues Gerät');
+
+        // Use a placeholder fingerprint - will be replaced when device registers
+        $placeholder_hash = 'SLOT_PENDING_' . time() . '_' . wp_generate_password(8, false);
+        $parent_store_id = self::get_parent_store_id($store_id);
+
+        // Create approval request with type 'new_slot'
+        $result = self::create_device_request($parent_store_id, $placeholder_hash, 'new_slot', $device_name);
+
+        if ($result['success']) {
+            return new WP_REST_Response([
+                'success' => true,
+                'message' => 'Anfrage für weiteres Gerät gesendet. Admin-Genehmigung erforderlich.'
+            ], 200);
+        }
+
+        return new WP_REST_Response([
+            'success' => false,
+            'message' => $result['message'] ?? 'Fehler beim Erstellen der Anfrage'
+        ], 500);
+    }
+
+    /**
      * REST: Approve device request (via email link)
      */
     public static function rest_approve_device_request(WP_REST_Request $request) {
@@ -1426,6 +1517,24 @@ class PPV_Device_Fingerprint {
                 ppv_log("📱 [Mobile Scanner Approved - Legacy Store] store_id={$req->store_id}");
                 $action_text = 'Mobile Scanner erfolgreich aktiviert!';
             }
+        } elseif ($req->request_type === 'new_slot') {
+            // Approve new device slot - create a placeholder entry with status='slot'
+            // User can claim this slot when they register from a new device
+            $wpdb->insert(
+                $wpdb->prefix . self::USER_DEVICES_TABLE,
+                [
+                    'store_id' => $req->store_id,
+                    'fingerprint_hash' => $req->fingerprint_hash, // Placeholder hash
+                    'device_name' => $req->device_name . ' (reserviert)',
+                    'user_agent' => 'Slot für neues Gerät genehmigt',
+                    'ip_address' => null,
+                    'registered_at' => current_time('mysql'),
+                    'status' => 'slot' // Special status - can be claimed
+                ],
+                ['%d', '%s', '%s', '%s', '%s', '%s', '%s']
+            );
+            ppv_log("📱 [Device Slot Approved] NEW_SLOT: store_id={$req->store_id}, name={$req->device_name}");
+            $action_text = 'Zusätzlicher Geräteplatz genehmigt! Der Benutzer kann jetzt ein neues Gerät registrieren.';
         } else {
             return self::render_approval_page('error', 'Unbekannter Anfragetyp');
         }
@@ -1564,6 +1673,34 @@ class PPV_Device_Fingerprint {
     }
 
     /**
+     * Get an available device slot (pre-approved by admin)
+     * Returns the first slot with status='slot' that can be claimed
+     */
+    public static function get_available_device_slot($store_id) {
+        global $wpdb;
+
+        return $wpdb->get_row($wpdb->prepare(
+            "SELECT id, device_name FROM {$wpdb->prefix}" . self::USER_DEVICES_TABLE . "
+             WHERE store_id = %d AND status = 'slot'
+             ORDER BY registered_at ASC
+             LIMIT 1",
+            $store_id
+        ));
+    }
+
+    /**
+     * Count available device slots for a store
+     */
+    public static function get_available_slot_count($store_id) {
+        global $wpdb;
+
+        return (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->prefix}" . self::USER_DEVICES_TABLE . " WHERE store_id = %d AND status = 'slot'",
+            $store_id
+        ));
+    }
+
+    /**
      * Create device approval request and send email
      */
     private static function create_device_request($store_id, $fingerprint_hash, $type, $device_name) {
@@ -1635,7 +1772,18 @@ class PPV_Device_Fingerprint {
         // Admin email - use same as other notifications
         $admin_email = 'info@punktepass.de';
 
-        $type_text = $type === 'add' ? 'Neues Gerät hinzufügen' : 'Gerät entfernen';
+        // Set type text based on request type
+        if ($type === 'add') {
+            $type_text = 'Neues Gerät hinzufügen';
+        } elseif ($type === 'new_slot') {
+            $type_text = 'Zusätzlichen Geräteplatz anfordern';
+        } elseif ($type === 'remove') {
+            $type_text = 'Gerät entfernen';
+        } elseif ($type === 'mobile_scanner') {
+            $type_text = 'Mobile Scanner aktivieren';
+        } else {
+            $type_text = 'Unbekannte Anfrage';
+        }
         $site_url = site_url();
 
         $approve_url = "{$site_url}/wp-json/punktepass/v1/user-devices/approve/{$token}";

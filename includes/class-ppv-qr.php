@@ -2076,6 +2076,10 @@ class PPV_QR {
                         <button id="ppv-request-add-btn" class="ppv-btn-outline" type="button" style="display: none;">
                             <i class="ri-mail-send-line"></i> <?php echo self::t('request_admin_approval', 'Admin-Genehmigung anfordern'); ?>
                         </button>
+                        <!-- Button for registered users to request additional device slot -->
+                        <button id="ppv-request-new-slot-btn" class="ppv-btn-outline" type="button" style="display: none; margin-left: 10px; color: #ff9800; border-color: #ff9800;">
+                            <i class="ri-add-circle-line"></i> <?php echo self::t('request_new_device_slot', 'Weiteres Gerät anfordern'); ?>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -2313,30 +2317,53 @@ class PPV_QR {
                         $('#ppv-register-device-btn').show();
                         $('#ppv-device-registered-badge').hide();
                         $('#ppv-request-add-btn').hide();
+                        $('#ppv-request-new-slot-btn').hide();
                     } else if (data.is_registered) {
                         // Device is registered
                         $('#ppv-device-status').html('<span style="color: #4caf50;">✅ <?php echo esc_js(self::t('device_is_registered', 'Dieses Gerät ist registriert und kann den Scanner verwenden.')); ?></span>');
                         $('#ppv-device-registered-badge').show();
                         $('#ppv-register-device-btn').hide();
                         $('#ppv-request-add-btn').hide();
+
+                        // Check if limit is reached - show button to request additional device slot
+                        if (parseInt(data.device_count, 10) >= parseInt(data.max_devices, 10)) {
+                            $('#ppv-request-new-slot-btn').show();
+                        } else {
+                            $('#ppv-request-new-slot-btn').hide();
+                        }
                     } else if (parseInt(data.device_count, 10) === 0) {
                         // No devices yet - can register
                         $('#ppv-device-status').html('<span style="color: #2196f3;">📱 <?php echo esc_js(self::t('no_devices_yet', 'Noch keine Geräte registriert. Registrieren Sie dieses Gerät.')); ?></span>');
                         $('#ppv-register-device-btn').show();
                         $('#ppv-device-registered-badge').hide();
                         $('#ppv-request-add-btn').hide();
+                        $('#ppv-request-new-slot-btn').hide();
                     } else if (parseInt(data.device_count, 10) < parseInt(data.max_devices, 10)) {
                         // Can add more devices
                         $('#ppv-device-status').html('<span style="color: #ff9800;">⚠️ <?php echo esc_js(self::t('device_not_registered', 'Dieses Gerät ist nicht registriert.')); ?></span>');
                         $('#ppv-register-device-btn').show();
                         $('#ppv-device-registered-badge').hide();
                         $('#ppv-request-add-btn').hide();
+                        $('#ppv-request-new-slot-btn').hide();
                     } else {
-                        // Limit reached - need admin approval
-                        $('#ppv-device-status').html('<span style="color: #f44336;">🚫 <?php echo esc_js(self::t('device_limit_reached', 'Gerätelimit erreicht. Admin-Genehmigung erforderlich.')); ?></span>');
-                        $('#ppv-register-device-btn').hide();
-                        $('#ppv-device-registered-badge').hide();
-                        $('#ppv-request-add-btn').show();
+                        // Limit reached AND device NOT registered
+                        // Check if there are available slots (pre-approved by admin)
+                        const availableSlots = parseInt(data.available_slots || 0, 10);
+                        if (availableSlots > 0) {
+                            // There are available slots - user can register
+                            $('#ppv-device-status').html('<span style="color: #ff9800;">📋 <?php echo esc_js(self::t('slot_available', 'Ein genehmigter Geräteplatz ist verfügbar. Sie können dieses Gerät registrieren.')); ?></span>');
+                            $('#ppv-register-device-btn').show();
+                            $('#ppv-device-registered-badge').hide();
+                            $('#ppv-request-add-btn').hide();
+                            $('#ppv-request-new-slot-btn').hide();
+                        } else {
+                            // No available slots - need admin approval for THIS device
+                            $('#ppv-device-status').html('<span style="color: #f44336;">🚫 <?php echo esc_js(self::t('device_limit_reached', 'Gerätelimit erreicht. Admin-Genehmigung erforderlich.')); ?></span>');
+                            $('#ppv-register-device-btn').hide();
+                            $('#ppv-device-registered-badge').hide();
+                            $('#ppv-request-add-btn').show();
+                            $('#ppv-request-new-slot-btn').hide();
+                        }
                     }
                 } catch (e) {
                     console.error('[Devices] Check error:', e);
@@ -2414,6 +2441,44 @@ class PPV_QR {
                 } catch (e) {
                     alert('<?php echo esc_js(self::t('network_error', 'Netzwerkfehler')); ?>');
                     $btn.prop('disabled', false).html('<i class="ri-mail-send-line"></i> <?php echo esc_js(self::t('request_admin_approval', 'Admin-Genehmigung anfordern')); ?>');
+                }
+            });
+
+            // Request additional device slot (for already registered users at limit)
+            $('#ppv-request-new-slot-btn').on('click', async function() {
+                const $btn = $(this);
+                const deviceName = prompt('<?php echo esc_js(self::t('enter_new_device_name', 'Geben Sie einen Namen für das neue Gerät ein, das Sie hinzufügen möchten:')); ?>:', '<?php echo esc_js(self::t('new_device', 'Neues Gerät')); ?>');
+
+                if (!deviceName) return;
+
+                if (!confirm('<?php echo esc_js(self::t('confirm_request_new_slot', 'Sie möchten ein weiteres Gerät hinzufügen. Der Admin wird per E-Mail benachrichtigt und kann die Anfrage genehmigen. Fortfahren?')); ?>')) {
+                    return;
+                }
+
+                $btn.prop('disabled', true).html('<i class="ri-loader-4-line ri-spin"></i> <?php echo esc_js(self::t('sending_request', 'Anfrage wird gesendet...')); ?>');
+
+                try {
+                    const response = await fetch('/wp-json/punktepass/v1/user-devices/request-new-slot', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            device_name: deviceName,
+                            request_type: 'new_slot'
+                        })
+                    });
+                    const data = await response.json();
+
+                    if (data.success) {
+                        alert('<?php echo esc_js(self::t('new_slot_request_sent', 'Anfrage für weiteres Gerät erfolgreich gesendet! Der Admin wird per E-Mail benachrichtigt.')); ?>');
+                        $('#ppv-pending-requests').show();
+                        $btn.hide();
+                    } else {
+                        alert(data.message || '<?php echo esc_js(self::t('request_error', 'Fehler beim Senden der Anfrage')); ?>');
+                        $btn.prop('disabled', false).html('<i class="ri-add-circle-line"></i> <?php echo esc_js(self::t('request_new_device_slot', 'Weiteres Gerät anfordern')); ?>');
+                    }
+                } catch (e) {
+                    alert('<?php echo esc_js(self::t('network_error', 'Netzwerkfehler')); ?>');
+                    $btn.prop('disabled', false).html('<i class="ri-add-circle-line"></i> <?php echo esc_js(self::t('request_new_device_slot', 'Weiteres Gerät anfordern')); ?>');
                 }
             });
 
