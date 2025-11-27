@@ -385,6 +385,11 @@
       const vipBonus = vipMatch ? vipMatch[1] : null;
       const isVip = !!vipBonus;
 
+      // Check for Birthday bonus in message (e.g., "🎂 +5")
+      const bdayMatch = (log.message || '').match(/🎂\s*\+(\d+)/);
+      const bdayBonus = bdayMatch ? bdayMatch[1] : (log.birthday_bonus > 0 ? log.birthday_bonus : null);
+      const isBirthday = !!bdayBonus;
+
       // ✅ FIX: Subtitle logic - ALWAYS show date/time, with error message as second line
       const dateTime = `${log.date_short || ''} ${log.time_short || ''}`.trim();
       let subtitle = dateTime;
@@ -406,14 +411,20 @@
         ? `<img src="${log.avatar}" class="ppv-scan-avatar" alt="">`
         : `<div class="ppv-scan-avatar-placeholder">${log.success ? '✓' : '✗'}</div>`;
 
-      // Points display: show VIP badge if applicable, or error indicator
+      // Points display: show VIP/Birthday badges if applicable, or error indicator
       let pointsHtml;
       if (!log.success) {
         pointsHtml = `<div class="ppv-scan-points error-badge">✗</div>`;
-      } else if (isVip) {
-        pointsHtml = `<div class="ppv-scan-points vip">+${log.points}<span class="ppv-vip-badge">VIP +${vipBonus}</span></div>`;
       } else {
-        pointsHtml = `<div class="ppv-scan-points">+${log.points || '-'}</div>`;
+        let badges = '';
+        if (isVip) {
+          badges += `<span class="ppv-vip-badge">VIP +${vipBonus}</span>`;
+        }
+        if (isBirthday) {
+          badges += `<span class="ppv-bday-badge">🎂 +${bdayBonus}</span>`;
+        }
+        const hasBonus = isVip || isBirthday;
+        pointsHtml = `<div class="ppv-scan-points ${hasBonus ? 'bonus' : ''}">+${log.points}${badges}</div>`;
       }
 
       // ✅ FIX: Show subtitle2 (date/time) for errors and successful scans with name
