@@ -895,14 +895,20 @@ class PPV_Standalone_Admin {
 
         $success = $_GET['success'] ?? '';
 
-        // Összes függőben lévő kérelem
+        // Összes kérelem (pending előre, utána a feldolgozottak)
         $requests = $wpdb->get_results(
             "SELECT r.*, s.name as store_name, s.city as store_city
              FROM {$wpdb->prefix}ppv_device_requests r
              LEFT JOIN {$wpdb->prefix}ppv_stores s ON r.store_id = s.id
-             WHERE r.status = 'pending'
-             ORDER BY r.requested_at DESC"
+             ORDER BY
+                CASE WHEN r.status = 'pending' THEN 0 ELSE 1 END,
+                r.requested_at DESC
+             LIMIT 50"
         );
+
+        // Pending és feldolgozott szétválasztása
+        $pending_requests = array_filter($requests, fn($r) => $r->status === 'pending');
+        $processed_requests = array_filter($requests, fn($r) => $r->status !== 'pending');
 
         self::get_admin_header('device-requests');
         ?>
@@ -912,8 +918,12 @@ class PPV_Standalone_Admin {
             <div class="success-msg"><?php echo esc_html($success); ?></div>
         <?php endif; ?>
 
+        <!-- Nyitott kérelmek -->
+        <h2 style="color: #ff9800; margin-bottom: 15px;">
+            <i class="ri-time-line"></i> Nyitott kérelmek (<?php echo count($pending_requests); ?>)
+        </h2>
         <div class="card">
-            <?php if (empty($requests)): ?>
+            <?php if (empty($pending_requests)): ?>
                 <div class="empty-state">
                     <i class="ri-checkbox-circle-line"></i>
                     <p>Nincsenek nyitott kérelmek</p>
@@ -932,7 +942,7 @@ class PPV_Standalone_Admin {
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($requests as $req):
+                        <?php foreach ($pending_requests as $req):
                             $device_info = self::parse_device_info($req->user_agent ?? '');
                         ?>
                             <tr>
@@ -977,6 +987,67 @@ class PPV_Standalone_Admin {
                 </table>
             <?php endif; ?>
         </div>
+
+        <!-- Feldolgozott kérelmek -->
+        <?php if (!empty($processed_requests)): ?>
+        <h2 style="color: #888; margin: 30px 0 15px 0;">
+            <i class="ri-history-line"></i> Feldolgozott kérelmek
+        </h2>
+        <div class="card" style="opacity: 0.8;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Dátum</th>
+                        <th>Üzlet</th>
+                        <th>Készülék név</th>
+                        <th>Eszköz modell</th>
+                        <th>Típus</th>
+                        <th>Állapot</th>
+                        <th>Feldolgozta</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($processed_requests as $req):
+                        $device_info = self::parse_device_info($req->user_agent ?? '');
+                    ?>
+                        <tr style="opacity: 0.7;">
+                            <td><?php echo date('Y.m.d H:i', strtotime($req->requested_at)); ?></td>
+                            <td>
+                                <strong><?php echo esc_html($req->store_name ?: "Store #{$req->store_id}"); ?></strong>
+                            </td>
+                            <td><?php echo esc_html($req->device_name); ?></td>
+                            <td>
+                                <strong style="color: #00e6ff;"><?php echo esc_html($device_info['model']); ?></strong>
+                                <?php if ($device_info['os']): ?>
+                                    <br><small style="color: #aaa;"><?php echo esc_html($device_info['os']); ?></small>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <?php if ($req->request_type === 'add'): ?>
+                                    <span class="badge badge-add">Hozzáadás</span>
+                                <?php elseif ($req->request_type === 'remove'): ?>
+                                    <span class="badge badge-remove">Eltávolítás</span>
+                                <?php else: ?>
+                                    <span class="badge badge-mobile">Mobile Scanner</span>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <?php if ($req->status === 'approved'): ?>
+                                    <span style="color: #4caf50;">✅ Jóváhagyva</span>
+                                <?php else: ?>
+                                    <span style="color: #f44336;">❌ Elutasítva</span>
+                                <?php endif; ?>
+                                <?php if ($req->processed_at): ?>
+                                    <br><small style="color: #666;"><?php echo date('m.d H:i', strtotime($req->processed_at)); ?></small>
+                                <?php endif; ?>
+                            </td>
+                            <td><small style="color: #888;"><?php echo esc_html($req->processed_by ?? '-'); ?></small></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+        <?php endif; ?>
         <?php
         self::get_admin_footer();
     }
