@@ -6,774 +6,136 @@
     <title>PunktePass - Digitales Treueprogramm für Ihr Geschäft</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
             color: #e2e8f0;
-            line-height: 1.6;
-            min-height: 100vh;
-        }
-
-        /* Print styles */
-        @media print {
-            body {
-                background: white;
-                color: #1e293b;
-            }
-            .page-break {
-                page-break-before: always;
-            }
-            .no-print {
-                display: none;
-            }
-        }
-
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 40px 30px;
-        }
-
-        /* Header */
-        .header {
-            text-align: center;
-            padding: 60px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            margin-bottom: 60px;
-        }
-
-        .logo {
-            width: 200px;
-            margin-bottom: 30px;
-        }
-
-        .tagline {
-            font-size: 28px;
-            font-weight: 300;
-            color: #94a3b8;
-            margin-bottom: 20px;
-        }
-
-        .hero-title {
-            font-size: 42px;
-            font-weight: 800;
-            background: linear-gradient(135deg, #0ea5e9, #22d3ee);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 15px;
-        }
-
-        .hero-subtitle {
-            font-size: 18px;
-            color: #64748b;
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        /* Section styling */
-        .section {
-            margin-bottom: 60px;
-        }
-
-        .section-title {
-            font-size: 28px;
-            font-weight: 700;
-            color: #f1f5f9;
-            margin-bottom: 30px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .section-title .icon {
-            width: 50px;
-            height: 50px;
-            background: linear-gradient(135deg, #0ea5e9, #0284c7);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-        }
-
-        /* Problem-Solution */
-        .comparison {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
-            margin-bottom: 40px;
-        }
-
-        .comparison-card {
-            padding: 30px;
-            border-radius: 20px;
-            position: relative;
-        }
-
-        .comparison-card.problem {
-            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.05));
-            border: 1px solid rgba(239, 68, 68, 0.2);
-        }
-
-        .comparison-card.solution {
-            background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(22, 163, 74, 0.05));
-            border: 1px solid rgba(34, 197, 94, 0.2);
-        }
-
-        .comparison-card h3 {
-            font-size: 18px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .comparison-card.problem h3 {
-            color: #f87171;
-        }
-
-        .comparison-card.solution h3 {
-            color: #4ade80;
-        }
-
-        .comparison-card ul {
-            list-style: none;
-        }
-
-        .comparison-card li {
-            padding: 8px 0;
-            padding-left: 25px;
-            position: relative;
-            color: #cbd5e1;
-            font-size: 14px;
-        }
-
-        .comparison-card.problem li::before {
-            content: "✗";
-            position: absolute;
-            left: 0;
-            color: #f87171;
-            font-weight: bold;
-        }
-
-        .comparison-card.solution li::before {
-            content: "✓";
-            position: absolute;
-            left: 0;
-            color: #4ade80;
-            font-weight: bold;
-        }
-
-        /* Features Grid */
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 25px;
-        }
-
-        .feature-card {
-            background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 16px;
-            padding: 25px;
-            transition: transform 0.3s, box-shadow 0.3s;
-        }
-
-        .feature-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-        }
-
-        .feature-icon {
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, #0ea5e9, #0284c7);
-            border-radius: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 28px;
-            margin-bottom: 15px;
-        }
-
-        .feature-card h3 {
-            font-size: 18px;
-            font-weight: 600;
-            color: #f1f5f9;
-            margin-bottom: 10px;
-        }
-
-        .feature-card p {
-            font-size: 14px;
-            color: #94a3b8;
-        }
-
-        /* Mock-up Phone */
-        .mockup-section {
-            display: flex;
-            align-items: center;
-            gap: 50px;
-            margin: 60px 0;
-        }
-
-        .mockup-phone {
-            width: 280px;
-            height: 560px;
-            background: #000;
-            border-radius: 40px;
-            padding: 12px;
-            box-shadow: 0 30px 60px rgba(0,0,0,0.5), inset 0 0 0 2px #333;
-            flex-shrink: 0;
-        }
-
-        .mockup-screen {
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
-            border-radius: 30px;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .mockup-notch {
-            width: 120px;
-            height: 30px;
-            background: #000;
-            border-radius: 0 0 20px 20px;
-            margin: 0 auto;
-        }
-
-        .mockup-content {
-            padding: 20px;
-        }
-
-        .mockup-header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .mockup-store-logo {
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, #0ea5e9, #22d3ee);
-            border-radius: 15px;
-            margin: 0 auto 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-        }
-
-        .mockup-store-name {
-            font-size: 14px;
-            font-weight: 600;
-            color: #f1f5f9;
-        }
-
-        .mockup-points-card {
-            background: linear-gradient(135deg, #0ea5e9, #0284c7);
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 15px;
-        }
-
-        .mockup-points-label {
-            font-size: 11px;
-            color: rgba(255,255,255,0.8);
-            margin-bottom: 5px;
-        }
-
-        .mockup-points-value {
-            font-size: 36px;
-            font-weight: 800;
-            color: white;
-        }
-
-        .mockup-progress {
-            height: 8px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 4px;
-            margin-top: 15px;
-            overflow: hidden;
-        }
-
-        .mockup-progress-fill {
-            height: 100%;
-            width: 70%;
-            background: white;
-            border-radius: 4px;
-        }
-
-        .mockup-qr-btn {
-            background: linear-gradient(135deg, #22c55e, #16a34a);
-            border-radius: 12px;
-            padding: 15px;
-            text-align: center;
-            color: white;
-            font-weight: 600;
-            font-size: 14px;
-            margin-bottom: 15px;
-        }
-
-        .mockup-nav {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: rgba(15, 23, 42, 0.95);
-            display: flex;
-            justify-content: space-around;
-            padding: 12px 0;
-            border-top: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .mockup-nav-item {
-            text-align: center;
-            color: #64748b;
-            font-size: 10px;
-        }
-
-        .mockup-nav-item.active {
-            color: #0ea5e9;
-        }
-
-        .mockup-nav-icon {
-            font-size: 20px;
-            margin-bottom: 2px;
-        }
-
-        .mockup-text {
-            flex: 1;
-        }
-
-        .mockup-text h3 {
-            font-size: 24px;
-            font-weight: 700;
-            color: #f1f5f9;
-            margin-bottom: 15px;
-        }
-
-        .mockup-text p {
-            color: #94a3b8;
-            margin-bottom: 15px;
-            font-size: 15px;
-        }
-
-        .mockup-text ul {
-            list-style: none;
-        }
-
-        .mockup-text li {
-            padding: 8px 0;
-            padding-left: 30px;
-            position: relative;
-            color: #cbd5e1;
-        }
-
-        .mockup-text li::before {
-            content: "✓";
-            position: absolute;
-            left: 0;
-            color: #22c55e;
-            font-weight: bold;
-            font-size: 16px;
-        }
-
-        /* Scanner Mock-up */
-        .scanner-mockup {
-            background: linear-gradient(135deg, rgba(14, 165, 233, 0.1), rgba(34, 211, 238, 0.05));
-            border: 1px solid rgba(14, 165, 233, 0.2);
-            border-radius: 20px;
-            padding: 40px;
-            text-align: center;
-            margin: 40px 0;
-        }
-
-        .scanner-frame {
-            width: 200px;
-            height: 200px;
-            border: 3px dashed #0ea5e9;
-            border-radius: 20px;
-            margin: 0 auto 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-        }
-
-        .scanner-corners {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-        }
-
-        .scanner-corner {
-            position: absolute;
-            width: 30px;
-            height: 30px;
-            border: 4px solid #22d3ee;
-        }
-
-        .scanner-corner.tl { top: -2px; left: -2px; border-right: none; border-bottom: none; border-radius: 10px 0 0 0; }
-        .scanner-corner.tr { top: -2px; right: -2px; border-left: none; border-bottom: none; border-radius: 0 10px 0 0; }
-        .scanner-corner.bl { bottom: -2px; left: -2px; border-right: none; border-top: none; border-radius: 0 0 0 10px; }
-        .scanner-corner.br { bottom: -2px; right: -2px; border-left: none; border-top: none; border-radius: 0 0 10px 0; }
-
-        .scanner-qr {
-            width: 120px;
-            height: 120px;
-            background: white;
-            border-radius: 10px;
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            grid-template-rows: repeat(7, 1fr);
-            gap: 2px;
-            padding: 8px;
-        }
-
-        .qr-cell {
-            background: #1e293b;
-            border-radius: 2px;
-        }
-
-        .qr-cell.white {
-            background: white;
-        }
-
-        .scanner-text {
-            color: #0ea5e9;
-            font-weight: 600;
-            font-size: 16px;
-        }
-
-        /* Stats */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            margin: 40px 0;
-        }
-
-        .stat-card {
-            background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 16px;
-            padding: 25px;
-            text-align: center;
-        }
-
-        .stat-value {
-            font-size: 36px;
-            font-weight: 800;
-            background: linear-gradient(135deg, #0ea5e9, #22d3ee);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .stat-label {
-            font-size: 14px;
-            color: #94a3b8;
-            margin-top: 5px;
-        }
-
-        /* Pricing */
-        .pricing-section {
-            background: linear-gradient(135deg, rgba(14, 165, 233, 0.1), rgba(34, 211, 238, 0.05));
-            border: 2px solid rgba(14, 165, 233, 0.3);
-            border-radius: 24px;
-            padding: 50px;
-            text-align: center;
-            margin: 60px 0;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .pricing-badge {
-            position: absolute;
-            top: 20px;
-            right: -35px;
-            background: linear-gradient(135deg, #22c55e, #16a34a);
-            color: white;
-            padding: 8px 50px;
+            line-height: 1.5;
             font-size: 12px;
-            font-weight: 600;
-            transform: rotate(45deg);
         }
+        @media print {
+            body { background: white; color: #1e293b; font-size: 10px; }
+            .container { padding: 10px; }
+            .no-print { display: none; }
+        }
+        .container { max-width: 900px; margin: 0 auto; padding: 20px; }
 
-        .pricing-title {
-            font-size: 32px;
-            font-weight: 800;
-            color: #f1f5f9;
-            margin-bottom: 10px;
-        }
+        /* Header - Compact */
+        .header { text-align: center; padding: 25px 0; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 25px; }
+        .logo { width: 120px; margin-bottom: 10px; }
+        .tagline { font-size: 16px; font-weight: 300; color: #94a3b8; margin-bottom: 8px; }
+        .hero-title { font-size: 26px; font-weight: 800; background: linear-gradient(135deg, #0ea5e9, #22d3ee); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 5px; }
+        .hero-subtitle { font-size: 12px; color: #64748b; max-width: 500px; margin: 0 auto; }
 
-        .pricing-subtitle {
-            font-size: 16px;
-            color: #94a3b8;
-            margin-bottom: 30px;
-        }
+        /* Section - Compact */
+        .section { margin-bottom: 25px; }
+        .section-title { font-size: 16px; font-weight: 700; color: #f1f5f9; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+        .section-title .icon { width: 28px; height: 28px; background: linear-gradient(135deg, #0ea5e9, #0284c7); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
 
-        .pricing-box {
-            display: inline-block;
-            background: rgba(0,0,0,0.3);
-            border-radius: 20px;
-            padding: 40px 60px;
-            margin-bottom: 30px;
-        }
+        /* Comparison - 2 columns compact */
+        .comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .comparison-card { padding: 15px; border-radius: 12px; }
+        .comparison-card.problem { background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.05)); border: 1px solid rgba(239, 68, 68, 0.2); }
+        .comparison-card.solution { background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(22, 163, 74, 0.05)); border: 1px solid rgba(34, 197, 94, 0.2); }
+        .comparison-card h3 { font-size: 13px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+        .comparison-card.problem h3 { color: #f87171; }
+        .comparison-card.solution h3 { color: #4ade80; }
+        .comparison-card ul { list-style: none; }
+        .comparison-card li { padding: 3px 0; padding-left: 18px; position: relative; color: #cbd5e1; font-size: 11px; }
+        .comparison-card.problem li::before { content: "✗"; position: absolute; left: 0; color: #f87171; font-weight: bold; }
+        .comparison-card.solution li::before { content: "✓"; position: absolute; left: 0; color: #4ade80; font-weight: bold; }
 
-        .pricing-trial {
-            background: linear-gradient(135deg, #22c55e, #16a34a);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 15px;
-        }
+        /* How it works - Compact inline */
+        .how-it-works { display: flex; justify-content: space-between; gap: 10px; margin: 20px 0; }
+        .step { flex: 1; text-align: center; position: relative; }
+        .step:not(:last-child)::after { content: "→"; position: absolute; right: -8px; top: 18px; color: #0ea5e9; font-size: 16px; }
+        .step-number { width: 36px; height: 36px; background: linear-gradient(135deg, #0ea5e9, #0284c7); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800; color: white; margin: 0 auto 6px; }
+        .step h4 { font-size: 11px; font-weight: 600; color: #f1f5f9; margin-bottom: 3px; }
+        .step p { font-size: 10px; color: #94a3b8; }
 
-        .pricing-amount {
-            display: flex;
-            align-items: baseline;
-            justify-content: center;
-            gap: 5px;
-        }
+        /* Features Grid - 5 columns compact */
+        .features-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+        .feature-card { background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02)); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 12px; text-align: center; }
+        .feature-icon { width: 32px; height: 32px; background: linear-gradient(135deg, #0ea5e9, #0284c7); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; margin: 0 auto 8px; }
+        .feature-card h3 { font-size: 10px; font-weight: 600; color: #f1f5f9; margin-bottom: 4px; }
+        .feature-card p { font-size: 9px; color: #94a3b8; line-height: 1.3; }
 
-        .pricing-currency {
-            font-size: 24px;
-            color: #94a3b8;
-        }
+        /* Security Grid - 3 columns compact */
+        .security-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .security-card { background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.05)); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 10px; padding: 12px; }
+        .security-card .icon { font-size: 18px; margin-bottom: 6px; }
+        .security-card h4 { color: #f87171; font-size: 11px; margin-bottom: 5px; }
+        .security-card p { color: #cbd5e1; font-size: 10px; line-height: 1.3; }
 
-        .pricing-value {
-            font-size: 64px;
-            font-weight: 800;
-            color: #f1f5f9;
-        }
+        /* Stats - Compact inline */
+        .stats-grid { display: flex; justify-content: space-around; gap: 15px; margin: 15px 0; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 12px; }
+        .stat-card { text-align: center; }
+        .stat-value { font-size: 22px; font-weight: 800; background: linear-gradient(135deg, #0ea5e9, #22d3ee); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .stat-label { font-size: 10px; color: #94a3b8; }
 
-        .pricing-period {
-            font-size: 18px;
-            color: #64748b;
-        }
+        /* Trust - 3 columns compact */
+        .trust-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .trust-card { background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 12px; text-align: center; }
+        .trust-icon { font-size: 24px; margin-bottom: 6px; }
+        .trust-card h4 { font-size: 11px; font-weight: 600; color: #f1f5f9; margin-bottom: 4px; }
+        .trust-card p { font-size: 10px; color: #94a3b8; }
 
-        .pricing-vat {
-            font-size: 14px;
-            color: #64748b;
-            margin-top: 10px;
-        }
+        /* Pricing - Compact */
+        .pricing-section { background: linear-gradient(135deg, rgba(14, 165, 233, 0.1), rgba(34, 211, 238, 0.05)); border: 2px solid rgba(14, 165, 233, 0.3); border-radius: 16px; padding: 20px; text-align: center; margin: 20px 0; }
+        .pricing-title { font-size: 18px; font-weight: 800; color: #f1f5f9; margin-bottom: 5px; }
+        .pricing-subtitle { font-size: 11px; color: #94a3b8; margin-bottom: 12px; }
+        .pricing-box { display: inline-block; background: rgba(0,0,0,0.3); border-radius: 12px; padding: 15px 30px; margin-bottom: 12px; }
+        .pricing-trial { background: linear-gradient(135deg, #22c55e, #16a34a); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-size: 14px; font-weight: 700; margin-bottom: 5px; }
+        .pricing-amount { display: flex; align-items: baseline; justify-content: center; gap: 3px; }
+        .pricing-currency { font-size: 16px; color: #94a3b8; }
+        .pricing-value { font-size: 36px; font-weight: 800; color: #f1f5f9; }
+        .pricing-period { font-size: 12px; color: #64748b; }
+        .pricing-vat { font-size: 10px; color: #64748b; margin-top: 3px; }
+        .pricing-features { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: left; max-width: 600px; margin: 0 auto; }
+        .pricing-feature { display: flex; align-items: center; gap: 5px; color: #cbd5e1; font-size: 10px; }
+        .pricing-feature .check { color: #22c55e; font-weight: bold; }
 
-        .pricing-features {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            text-align: left;
-            max-width: 500px;
-            margin: 0 auto;
-        }
+        /* Tablet Highlight - Compact */
+        .tablet-highlight { background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(16, 185, 129, 0.1)); border: 2px solid rgba(34, 197, 94, 0.4); border-radius: 12px; padding: 15px; margin: 12px auto; max-width: 350px; text-align: center; }
+        .tablet-highlight .icon { font-size: 24px; margin-bottom: 5px; }
+        .tablet-highlight h4 { color: #4ade80; font-size: 14px; margin-bottom: 5px; }
+        .tablet-highlight p { color: #cbd5e1; font-size: 11px; }
 
-        .pricing-feature {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: #cbd5e1;
-            font-size: 14px;
-        }
+        /* Advertising Section - Compact */
+        .ad-section { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; margin: 20px 0; }
+        .ad-text h3 { color: #f1f5f9; font-size: 14px; margin-bottom: 8px; }
+        .ad-text p { color: #94a3b8; font-size: 11px; line-height: 1.5; margin-bottom: 10px; }
+        .ad-list { background: rgba(14, 165, 233, 0.1); border: 1px solid rgba(14, 165, 233, 0.3); border-radius: 8px; padding: 10px; }
+        .ad-list h4 { color: #00e6ff; font-size: 11px; margin-bottom: 6px; }
+        .ad-list ul { color: #cbd5e1; font-size: 10px; margin: 0; padding-left: 15px; line-height: 1.6; }
+        .ad-mockup { background: linear-gradient(135deg, #1e293b, #0f172a); border-radius: 16px; padding: 12px; border: 1px solid rgba(255,255,255,0.1); }
+        .store-card { background: linear-gradient(135deg, rgba(0, 230, 255, 0.1), rgba(14, 165, 233, 0.05)); border: 1px solid rgba(0, 230, 255, 0.3); border-radius: 10px; padding: 10px; margin-bottom: 8px; }
+        .store-card-faded { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 10px; padding: 10px; opacity: 0.5; }
 
-        .pricing-feature .check {
-            color: #22c55e;
-            font-weight: bold;
-        }
+        /* Updates - Compact */
+        .updates-section { background: linear-gradient(135deg, rgba(168, 85, 247, 0.1), rgba(139, 92, 246, 0.05)); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 15px; margin: 15px 0; }
+        .updates-section h3 { font-size: 13px; font-weight: 700; color: #c4b5fd; margin-bottom: 8px; }
+        .updates-section p { color: #cbd5e1; font-size: 11px; margin-bottom: 10px; }
+        .updates-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+        .update-item { display: flex; align-items: center; gap: 6px; color: #e9d5ff; font-size: 10px; }
+        .update-item .bullet { color: #a855f7; }
 
-        /* Trust Section */
-        .trust-section {
-            margin: 60px 0;
-        }
+        /* CTA - Compact */
+        .cta-section { text-align: center; padding: 20px 0; border-top: 1px solid rgba(255,255,255,0.1); margin-top: 20px; }
+        .cta-title { font-size: 18px; font-weight: 800; color: #f1f5f9; margin-bottom: 8px; }
+        .cta-text { font-size: 12px; color: #94a3b8; margin-bottom: 12px; }
+        .cta-contact { display: inline-flex; flex-direction: column; gap: 5px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 12px 25px; }
+        .cta-contact a { color: #0ea5e9; text-decoration: none; font-size: 13px; font-weight: 600; }
 
-        .trust-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 25px;
-        }
+        /* Footer - Compact */
+        .footer { text-align: center; padding: 15px 0; color: #64748b; font-size: 10px; border-top: 1px solid rgba(255,255,255,0.05); }
+        .footer-logo { width: 60px; margin-bottom: 8px; opacity: 0.5; }
 
-        .trust-card {
-            background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 16px;
-            padding: 25px;
-            text-align: center;
-        }
-
-        .trust-icon {
-            font-size: 40px;
-            margin-bottom: 15px;
-        }
-
-        .trust-card h4 {
-            font-size: 16px;
-            font-weight: 600;
-            color: #f1f5f9;
-            margin-bottom: 10px;
-        }
-
-        .trust-card p {
-            font-size: 13px;
-            color: #94a3b8;
-        }
-
-        /* Updates Section */
-        .updates-section {
-            background: linear-gradient(135deg, rgba(168, 85, 247, 0.1), rgba(139, 92, 246, 0.05));
-            border: 1px solid rgba(168, 85, 247, 0.2);
-            border-radius: 20px;
-            padding: 40px;
-            margin: 60px 0;
-        }
-
-        .updates-section h3 {
-            font-size: 22px;
-            font-weight: 700;
-            color: #c4b5fd;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .updates-section p {
-            color: #cbd5e1;
-            font-size: 15px;
-            margin-bottom: 20px;
-        }
-
-        .updates-list {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-        }
-
-        .update-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: #e9d5ff;
-            font-size: 14px;
-        }
-
-        .update-item .bullet {
-            color: #a855f7;
-        }
-
-        /* CTA Section */
-        .cta-section {
-            text-align: center;
-            padding: 60px 0;
-            border-top: 1px solid rgba(255,255,255,0.1);
-            margin-top: 60px;
-        }
-
-        .cta-title {
-            font-size: 32px;
-            font-weight: 800;
-            color: #f1f5f9;
-            margin-bottom: 15px;
-        }
-
-        .cta-text {
-            font-size: 18px;
-            color: #94a3b8;
-            margin-bottom: 30px;
-        }
-
-        .cta-contact {
-            display: inline-flex;
-            flex-direction: column;
-            gap: 10px;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 16px;
-            padding: 25px 40px;
-        }
-
-        .cta-contact a {
-            color: #0ea5e9;
-            text-decoration: none;
-            font-size: 18px;
-            font-weight: 600;
-        }
-
-        .cta-contact a:hover {
-            text-decoration: underline;
-        }
-
-        /* Footer */
-        .footer {
-            text-align: center;
-            padding: 40px 0;
-            color: #64748b;
-            font-size: 13px;
-            border-top: 1px solid rgba(255,255,255,0.05);
-        }
-
-        .footer-logo {
-            width: 100px;
-            margin-bottom: 15px;
-            opacity: 0.5;
-        }
-
-        /* How it works */
-        .how-it-works {
-            display: flex;
-            justify-content: space-between;
-            gap: 20px;
-            margin: 40px 0;
-        }
-
-        .step {
-            flex: 1;
-            text-align: center;
-            position: relative;
-        }
-
-        .step:not(:last-child)::after {
-            content: "→";
-            position: absolute;
-            right: -15px;
-            top: 30px;
-            color: #0ea5e9;
-            font-size: 24px;
-        }
-
-        .step-number {
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, #0ea5e9, #0284c7);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            font-weight: 800;
-            color: white;
-            margin: 0 auto 15px;
-        }
-
-        .step h4 {
-            font-size: 16px;
-            font-weight: 600;
-            color: #f1f5f9;
-            margin-bottom: 8px;
-        }
-
-        .step p {
-            font-size: 13px;
-            color: #94a3b8;
-        }
+        /* Summary Box */
+        .summary-box { background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(22, 163, 74, 0.05)); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 10px; padding: 12px; margin-top: 12px; text-align: center; }
+        .summary-box h4 { color: #4ade80; font-size: 12px; margin-bottom: 5px; }
+        .summary-box p { color: #cbd5e1; font-size: 10px; }
     </style>
 </head>
 <body>
@@ -788,11 +150,7 @@
 
         <!-- Problem vs Solution -->
         <section class="section">
-            <h2 class="section-title">
-                <span class="icon">💡</span>
-                Warum PunktePass?
-            </h2>
-
+            <h2 class="section-title"><span class="icon">💡</span> Warum PunktePass?</h2>
             <div class="comparison">
                 <div class="comparison-card problem">
                     <h3>❌ Papierstempelkarten</h3>
@@ -802,7 +160,6 @@
                         <li>Betrugsanfällig (eigene Stempel)</li>
                         <li>Unprofessioneller Eindruck</li>
                         <li>Keine Möglichkeit zur Kundenansprache</li>
-                        <li>Umweltbelastung durch Papier</li>
                     </ul>
                 </div>
                 <div class="comparison-card solution">
@@ -812,7 +169,6 @@
                         <li>Vollständige Kundenstatistiken</li>
                         <li>Fälschungssicher durch QR-Codes</li>
                         <li>Modernes, professionelles Image</li>
-                        <li>Direkte Kommunikation mit Kunden</li>
                         <li>100% papierlos & umweltfreundlich</li>
                     </ul>
                 </div>
@@ -821,398 +177,229 @@
 
         <!-- How it works -->
         <section class="section">
-            <h2 class="section-title">
-                <span class="icon">⚡</span>
-                So einfach funktioniert's
-            </h2>
-
+            <h2 class="section-title"><span class="icon">⚡</span> So einfach funktioniert's</h2>
             <div class="how-it-works">
                 <div class="step">
                     <div class="step-number">1</div>
                     <h4>Kunde zeigt QR-Code</h4>
-                    <p>Der Kunde öffnet seine PunktePass-App und zeigt seinen persönlichen QR-Code</p>
+                    <p>Öffnet seine PunktePass-App</p>
                 </div>
                 <div class="step">
                     <div class="step-number">2</div>
                     <h4>Sie scannen</h4>
-                    <p>Ein kurzer Scan mit Ihrem Tablet oder Smartphone – fertig!</p>
+                    <p>Ein kurzer Scan mit Tablet</p>
                 </div>
                 <div class="step">
                     <div class="step-number">3</div>
                     <h4>Punkte gesammelt</h4>
-                    <p>Der Kunde erhält automatisch seine Punkte und sieht seinen Fortschritt</p>
+                    <p>Automatisch gutgeschrieben</p>
                 </div>
             </div>
         </section>
 
-        <!-- Mock-up Section -->
-        <section class="mockup-section">
-            <div class="mockup-phone">
-                <div class="mockup-screen">
-                    <div class="mockup-notch"></div>
-                    <div class="mockup-content">
-                        <div class="mockup-header">
-                            <div class="mockup-store-logo">☕</div>
-                            <div class="mockup-store-name">Ihr Geschäft</div>
-                        </div>
-                        <div class="mockup-points-card">
-                            <div class="mockup-points-label">IHRE PUNKTE</div>
-                            <div class="mockup-points-value">7 / 10</div>
-                            <div class="mockup-progress">
-                                <div class="mockup-progress-fill"></div>
-                            </div>
-                        </div>
-                        <div class="mockup-qr-btn">📱 QR-Code anzeigen</div>
-                    </div>
-                    <div class="mockup-nav">
-                        <div class="mockup-nav-item active">
-                            <div class="mockup-nav-icon">🏠</div>
-                            Home
-                        </div>
-                        <div class="mockup-nav-item">
-                            <div class="mockup-nav-icon">🎁</div>
-                            Prämien
-                        </div>
-                        <div class="mockup-nav-item">
-                            <div class="mockup-nav-icon">📊</div>
-                            Verlauf
-                        </div>
-                        <div class="mockup-nav-item">
-                            <div class="mockup-nav-icon">⚙️</div>
-                            Profil
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="mockup-text">
-                <h3>So sehen Ihre Kunden PunktePass</h3>
-                <p>Eine elegante, benutzerfreundliche App, die Ihre Kunden lieben werden. Alles auf einen Blick:</p>
-                <ul>
-                    <li>Aktueller Punktestand mit Fortschrittsanzeige</li>
-                    <li>Ein-Klick QR-Code für schnelles Punktesammeln</li>
-                    <li>Übersicht aller verfügbaren Prämien</li>
-                    <li>Kompletter Verlauf aller Transaktionen</li>
-                </ul>
-            </div>
-        </section>
-
-        <!-- ADVERTISING BENEFIT - NEW SECTION -->
-        <section class="section" style="margin: 60px 0;">
-            <h2 class="section-title">
-                <span class="icon">📢</span>
-                Kostenlose Werbung für Ihr Geschäft
-            </h2>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center;">
-                <!-- Left: Text -->
-                <div>
-                    <h3 style="color: #f1f5f9; font-size: 22px; margin-bottom: 15px;">Ihr Geschäft wird entdeckt!</h3>
-                    <p style="color: #94a3b8; font-size: 16px; line-height: 1.7; margin-bottom: 20px;">
-                        Sobald Sie bei PunktePass registriert sind, erscheint Ihr Geschäft automatisch in der App aller PunktePass-Nutzer in Ihrer Umgebung – <strong style="color: #4ade80;">sortiert nach Entfernung!</strong>
-                    </p>
-                    <p style="color: #94a3b8; font-size: 16px; line-height: 1.7; margin-bottom: 20px;">
-                        Jeder Nutzer sieht Ihr Logo, Ihre Prämien, Kampagnen und VIP-Angebote. Sie können sogar direkt zu Ihnen navigieren!
-                    </p>
-                    <div style="background: rgba(14, 165, 233, 0.1); border: 1px solid rgba(14, 165, 233, 0.3); border-radius: 12px; padding: 20px;">
-                        <h4 style="color: #00e6ff; margin: 0 0 12px 0;"><i>📍</i> Was Nutzer in Ihrer Nähe sehen:</h4>
-                        <ul style="color: #cbd5e1; font-size: 14px; margin: 0; padding-left: 20px; line-height: 1.8;">
-                            <li><strong style="color: #fff;">Ihr Logo & Geschäftsname</strong></li>
-                            <li><strong style="color: #4ade80;">Öffnungsstatus</strong> (Geöffnet/Geschlossen)</li>
-                            <li><strong style="color: #fbbf24;">Ihre Prämien</strong> mit Punkteangaben</li>
-                            <li><strong style="color: #a855f7;">Ihre Kampagnen</strong> und Aktionen</li>
-                            <li><strong style="color: #38bdf8;">VIP-Bonusprogramm</strong></li>
-                            <li><strong style="color: #f87171;">Navigation</strong> – direkter Routenplaner</li>
-                            <li><strong style="color: #00e6ff;">Kontakt</strong> – Anrufen & Website</li>
-                            <li><strong style="color: #ec4899;">Social Media</strong> – Facebook, Instagram, TikTok</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- Right: Mini mockup of nearby stores -->
-                <div style="background: linear-gradient(135deg, #1e293b, #0f172a); border-radius: 24px; padding: 20px; border: 1px solid rgba(255,255,255,0.1);">
-                    <div style="background: #0f172a; border-radius: 12px; padding: 15px; margin-bottom: 15px;">
-                        <div style="font-size: 14px; color: #64748b; margin-bottom: 10px;"><i>📍</i> Geschäfte in deiner Nähe</div>
-                        <input type="range" style="width: 100%; accent-color: #00e6ff;" value="30" disabled>
-                        <div style="display: flex; justify-content: space-between; font-size: 11px; color: #475569;">
-                            <span>10 km</span><span>1000 km</span>
-                        </div>
-                    </div>
-
-                    <!-- Store Card 1 - Main highlight (your store) -->
-                    <div style="background: linear-gradient(135deg, rgba(0, 230, 255, 0.1), rgba(14, 165, 233, 0.05)); border: 1px solid rgba(0, 230, 255, 0.3); border-radius: 16px; padding: 15px; margin-bottom: 12px;">
-                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
-                            <div style="width: 50px; height: 50px; background: linear-gradient(135deg, #3b82f6, #1d4ed8); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px;">☕</div>
-                            <div style="flex: 1;">
-                                <div style="font-weight: 600; color: #f1f5f9; font-size: 15px;">Ihr Café</div>
-                                <div style="display: flex; gap: 8px; margin-top: 4px;">
-                                    <span style="background: #22c55e; color: white; padding: 2px 8px; border-radius: 10px; font-size: 10px;">Geöffnet</span>
-                                    <span style="background: rgba(0,230,255,0.2); color: #00e6ff; padding: 2px 8px; border-radius: 10px; font-size: 10px;">📍 0.3 km</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                            <span style="background: rgba(251,191,36,0.2); color: #fbbf24; padding: 3px 8px; border-radius: 8px; font-size: 11px;">🎁 3 Prämien</span>
-                            <span style="background: rgba(168,85,247,0.2); color: #a855f7; padding: 3px 8px; border-radius: 8px; font-size: 11px;">👑 VIP</span>
-                        </div>
-                    </div>
-
-                    <!-- Store Card 2 - Other store (faded) -->
-                    <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 15px; opacity: 0.5;">
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            <div style="width: 50px; height: 50px; background: #374151; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px;">🍕</div>
-                            <div style="flex: 1;">
-                                <div style="font-weight: 600; color: #94a3b8; font-size: 15px;">Pizzeria Roma</div>
-                                <div style="display: flex; gap: 8px; margin-top: 4px;">
-                                    <span style="background: #dc2626; color: white; padding: 2px 8px; border-radius: 10px; font-size: 10px;">Geschlossen</span>
-                                    <span style="background: rgba(255,255,255,0.1); color: #64748b; padding: 2px 8px; border-radius: 10px; font-size: 10px;">📍 1.2 km</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div style="text-align: center; margin-top: 15px;">
-                        <span style="color: #4ade80; font-size: 13px; font-weight: 600;">✅ Ihr Geschäft ganz oben – weil Sie am nächsten sind!</span>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Scanner Mock-up -->
-        <div class="scanner-mockup">
-            <h3 style="font-size: 22px; font-weight: 700; color: #f1f5f9; margin-bottom: 20px;">
-                📸 Ihr Scanner – einfach & schnell
-            </h3>
-            <div class="scanner-frame">
-                <div class="scanner-corners">
-                    <div class="scanner-corner tl"></div>
-                    <div class="scanner-corner tr"></div>
-                    <div class="scanner-corner bl"></div>
-                    <div class="scanner-corner br"></div>
-                </div>
-                <div class="scanner-qr">
-                    <!-- Simplified QR pattern -->
-                    <div class="qr-cell"></div><div class="qr-cell"></div><div class="qr-cell"></div><div class="qr-cell white"></div><div class="qr-cell"></div><div class="qr-cell"></div><div class="qr-cell"></div>
-                    <div class="qr-cell"></div><div class="qr-cell white"></div><div class="qr-cell"></div><div class="qr-cell white"></div><div class="qr-cell"></div><div class="qr-cell white"></div><div class="qr-cell"></div>
-                    <div class="qr-cell"></div><div class="qr-cell"></div><div class="qr-cell"></div><div class="qr-cell"></div><div class="qr-cell"></div><div class="qr-cell"></div><div class="qr-cell"></div>
-                    <div class="qr-cell white"></div><div class="qr-cell white"></div><div class="qr-cell"></div><div class="qr-cell white"></div><div class="qr-cell"></div><div class="qr-cell white"></div><div class="qr-cell white"></div>
-                    <div class="qr-cell"></div><div class="qr-cell"></div><div class="qr-cell"></div><div class="qr-cell"></div><div class="qr-cell"></div><div class="qr-cell"></div><div class="qr-cell"></div>
-                    <div class="qr-cell"></div><div class="qr-cell white"></div><div class="qr-cell"></div><div class="qr-cell white"></div><div class="qr-cell"></div><div class="qr-cell white"></div><div class="qr-cell"></div>
-                    <div class="qr-cell"></div><div class="qr-cell"></div><div class="qr-cell"></div><div class="qr-cell white"></div><div class="qr-cell"></div><div class="qr-cell"></div><div class="qr-cell"></div>
-                </div>
-            </div>
-            <p class="scanner-text">QR-Code scannen – Punkte vergeben – fertig!</p>
-            <p style="color: #94a3b8; font-size: 14px; margin-top: 10px;">Funktioniert auf jedem Tablet oder Smartphone mit Kamera</p>
-        </div>
-
-        <!-- Features -->
-        <section class="section page-break">
-            <h2 class="section-title">
-                <span class="icon">🚀</span>
-                Alle Funktionen im Überblick
-            </h2>
-
+        <!-- Features - 5 columns -->
+        <section class="section">
+            <h2 class="section-title"><span class="icon">🚀</span> Alle Funktionen</h2>
             <div class="features-grid">
                 <div class="feature-card">
                     <div class="feature-icon">📱</div>
-                    <h3>QR-Code Scanner</h3>
-                    <p>Schnelles, sicheres Punktesammeln per Kamera. Gratis Tablet + Ständer inklusive!</p>
+                    <h3>QR-Scanner</h3>
+                    <p>Schnell & sicher per Kamera</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">👑</div>
-                    <h3>VIP-Stufen System</h3>
-                    <p>Bronze, Silber, Gold, Platin – Ihre Stammkunden erhalten automatisch mehr Punkte pro Stufe.</p>
+                    <h3>VIP-System</h3>
+                    <p>Bronze bis Platin Stufen</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">🎯</div>
-                    <h3>Kampagnen & Aktionen</h3>
-                    <p>Erstellen Sie zeitlich begrenzte Aktionen: Extra-Punkte, Rabatte oder Gratis-Produkte.</p>
+                    <h3>Kampagnen</h3>
+                    <p>Zeitlich begrenzte Aktionen</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">🎁</div>
-                    <h3>Flexible Prämien</h3>
-                    <p>Definieren Sie selbst, was Ihre Kunden für ihre gesammelten Punkte erhalten.</p>
+                    <h3>Prämien</h3>
+                    <p>Flexibel definierbar</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">📍</div>
-                    <h3>Mehrere Filialen</h3>
-                    <p>Verwalten Sie alle Standorte zentral. Kunden sammeln überall Punkte.</p>
+                    <h3>Filialen</h3>
+                    <p>Mehrere Standorte</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">👥</div>
-                    <h3>Mitarbeiter-Konten</h3>
-                    <p>Erstellen Sie Scanner-Accounts für Mitarbeiter – mit eingeschränkten Rechten.</p>
+                    <h3>Mitarbeiter</h3>
+                    <p>Eingeschränkte Konten</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">📊</div>
-                    <h3>Statistiken & Export</h3>
-                    <p>Sehen Sie alle Scans, Top-Kunden und exportieren Sie Daten als CSV.</p>
+                    <h3>Statistiken</h3>
+                    <p>Export als CSV</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">🌐</div>
-                    <h3>Eigenes Branding</h3>
-                    <p>Ihr Logo, Ihre Farben. Die App sieht aus wie Ihre eigene Treue-App.</p>
+                    <h3>Branding</h3>
+                    <p>Ihr Logo & Farben</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">🔒</div>
-                    <h3>Sicher & DSGVO</h3>
-                    <p>Höchste Sicherheitsstandards. Alle Daten bleiben in Deutschland.</p>
+                    <h3>DSGVO</h3>
+                    <p>Daten in Deutschland</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">📈</div>
-                    <h3>Echtzeit-Dashboard</h3>
-                    <p>Alle wichtigen Zahlen auf einen Blick. Jederzeit und von überall.</p>
+                    <h3>Dashboard</h3>
+                    <p>Echtzeit-Übersicht</p>
                 </div>
             </div>
         </section>
 
-        <!-- Stats -->
+        <!-- Advertising Benefit -->
+        <section class="section">
+            <h2 class="section-title"><span class="icon">📢</span> Kostenlose Werbung für Ihr Geschäft</h2>
+            <div class="ad-section">
+                <div class="ad-text">
+                    <h3>Ihr Geschäft wird entdeckt!</h3>
+                    <p>Sobald Sie registriert sind, erscheint Ihr Geschäft automatisch in der App aller PunktePass-Nutzer in Ihrer Umgebung – <strong style="color: #4ade80;">sortiert nach Entfernung!</strong></p>
+                    <div class="ad-list">
+                        <h4>📍 Was Nutzer in Ihrer Nähe sehen:</h4>
+                        <ul>
+                            <li><strong>Ihr Logo & Geschäftsname</strong></li>
+                            <li><strong style="color: #4ade80;">Öffnungsstatus</strong></li>
+                            <li><strong style="color: #fbbf24;">Ihre Prämien</strong></li>
+                            <li><strong style="color: #a855f7;">Kampagnen & VIP</strong></li>
+                            <li><strong style="color: #f87171;">Navigation</strong></li>
+                            <li><strong style="color: #ec4899;">Social Media</strong></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="ad-mockup">
+                    <div style="font-size: 11px; color: #64748b; margin-bottom: 8px;">📍 Geschäfte in deiner Nähe</div>
+                    <div class="store-card">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="width: 36px; height: 36px; background: linear-gradient(135deg, #3b82f6, #1d4ed8); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px;">☕</div>
+                            <div>
+                                <div style="font-weight: 600; color: #f1f5f9; font-size: 12px;">Ihr Café</div>
+                                <div style="display: flex; gap: 5px; margin-top: 2px;">
+                                    <span style="background: #22c55e; color: white; padding: 1px 5px; border-radius: 6px; font-size: 8px;">Geöffnet</span>
+                                    <span style="background: rgba(0,230,255,0.2); color: #00e6ff; padding: 1px 5px; border-radius: 6px; font-size: 8px;">📍 0.3 km</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 4px; margin-top: 6px;">
+                            <span style="background: rgba(251,191,36,0.2); color: #fbbf24; padding: 2px 5px; border-radius: 5px; font-size: 9px;">🎁 3 Prämien</span>
+                            <span style="background: rgba(168,85,247,0.2); color: #a855f7; padding: 2px 5px; border-radius: 5px; font-size: 9px;">👑 VIP</span>
+                        </div>
+                    </div>
+                    <div class="store-card-faded">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="width: 36px; height: 36px; background: #374151; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px;">🍕</div>
+                            <div>
+                                <div style="font-weight: 600; color: #94a3b8; font-size: 12px;">Pizzeria Roma</div>
+                                <span style="background: #dc2626; color: white; padding: 1px 5px; border-radius: 6px; font-size: 8px;">Geschlossen</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="text-align: center; margin-top: 8px; color: #4ade80; font-size: 10px; font-weight: 600;">✅ Ihr Geschäft ganz oben!</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Security - 3 columns -->
+        <section class="section">
+            <h2 class="section-title"><span class="icon">🛡️</span> Betrugssicher – So schützt PunktePass Sie</h2>
+            <div class="security-grid">
+                <div class="security-card">
+                    <div class="icon">⏱️</div>
+                    <h4>Zeitlich begrenzte QR-Codes</h4>
+                    <p>Jeder QR-Code ist <strong>nur 30 Min gültig</strong>. Screenshots nutzlos.</p>
+                </div>
+                <div class="security-card">
+                    <div class="icon">📍</div>
+                    <h4>GPS-Standortprüfung</h4>
+                    <p>Scanner nur <strong>im Geschäft</strong> nutzbar.</p>
+                </div>
+                <div class="security-card">
+                    <div class="icon">📱</div>
+                    <h4>Gerätebindung</h4>
+                    <p><strong>Digitaler Fingerabdruck</strong> pro Gerät.</p>
+                </div>
+                <div class="security-card">
+                    <div class="icon">🔒</div>
+                    <h4>Ein Scan pro Tag</h4>
+                    <p>Pro Kunde nur <strong>1x täglich</strong> Punkte.</p>
+                </div>
+                <div class="security-card">
+                    <div class="icon">👥</div>
+                    <h4>Mitarbeiter-Konten</h4>
+                    <p><strong>Ohne Admin-Rechte</strong> – nur scannen.</p>
+                </div>
+                <div class="security-card">
+                    <div class="icon">📋</div>
+                    <h4>Protokollierung</h4>
+                    <p><strong>Jeder Scan</strong> mit Zeitstempel & Gerät.</p>
+                </div>
+            </div>
+            <div class="summary-box">
+                <h4>✅ Fazit: Betrug ist praktisch unmöglich</h4>
+                <p>Durch QR-Codes, GPS, Gerätebindung und Scan-Limits ist Manipulation ausgeschlossen.</p>
+            </div>
+        </section>
+
+        <!-- Stats inline -->
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-value">2x</div>
-                <div class="stat-label">Mehr Stammkunden durch digitale Treue</div>
+                <div class="stat-label">Mehr Stammkunden</div>
             </div>
             <div class="stat-card">
                 <div class="stat-value">0%</div>
-                <div class="stat-label">Verlorene Stempelkarten</div>
+                <div class="stat-label">Verlorene Karten</div>
             </div>
             <div class="stat-card">
                 <div class="stat-value">24/7</div>
-                <div class="stat-label">Zugang zu Ihren Statistiken</div>
+                <div class="stat-label">Statistik-Zugang</div>
             </div>
         </div>
 
-        <!-- Trust Section -->
-        <section class="trust-section">
-            <h2 class="section-title">
-                <span class="icon">🛡️</span>
-                Warum Sie uns vertrauen können
-            </h2>
-
+        <!-- Trust -->
+        <section class="section">
+            <h2 class="section-title"><span class="icon">🇩🇪</span> Warum Sie uns vertrauen können</h2>
             <div class="trust-grid">
                 <div class="trust-card">
                     <div class="trust-icon">🇩🇪</div>
                     <h4>Made in Germany</h4>
-                    <p>Entwickelt und gehostet in Deutschland. Deutsche Qualität & Datenschutz.</p>
+                    <p>Entwickelt & gehostet in Deutschland</p>
                 </div>
                 <div class="trust-card">
                     <div class="trust-icon">🔐</div>
                     <h4>DSGVO-Konform</h4>
-                    <p>Vollständig konform mit der EU-Datenschutzverordnung. Ihre Daten sind sicher.</p>
+                    <p>Vollständig EU-datenschutzkonform</p>
                 </div>
                 <div class="trust-card">
                     <div class="trust-icon">💬</div>
                     <h4>Persönlicher Support</h4>
-                    <p>Bei Fragen sind wir für Sie da. Schnelle Hilfe per E-Mail.</p>
+                    <p>Schnelle Hilfe per E-Mail</p>
                 </div>
             </div>
         </section>
 
-        <!-- SECURITY SECTION - Detailed Anti-Fraud -->
-        <section class="section" style="margin: 60px 0;">
-            <h2 class="section-title">
-                <span class="icon">🛡️</span>
-                Betrugssicher – So schützt PunktePass Sie
-            </h2>
-
-            <p style="color: #94a3b8; font-size: 16px; margin-bottom: 30px; max-width: 700px;">
-                Unser System wurde von Grund auf so entwickelt, dass Betrug von beiden Seiten – Kunden und Mitarbeitern – praktisch unmöglich ist.
-            </p>
-
-            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 25px;">
-                <!-- Security Card 1 -->
-                <div style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.05)); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 16px; padding: 25px;">
-                    <div style="font-size: 28px; margin-bottom: 12px;">⏱️</div>
-                    <h4 style="color: #f87171; font-size: 16px; margin-bottom: 10px;">Zeitlich begrenzte QR-Codes</h4>
-                    <p style="color: #cbd5e1; font-size: 13px; margin: 0;">
-                        Jeder Kunden-QR-Code ist <strong>nur 30 Minuten gültig</strong> und wird danach automatisch erneuert. Ein Screenshot oder Foto des QR-Codes kann nicht missbraucht werden.
-                    </p>
-                </div>
-
-                <!-- Security Card 2 -->
-                <div style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.05)); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 16px; padding: 25px;">
-                    <div style="font-size: 28px; margin-bottom: 12px;">📍</div>
-                    <h4 style="color: #f87171; font-size: 16px; margin-bottom: 10px;">GPS-Standortprüfung</h4>
-                    <p style="color: #cbd5e1; font-size: 13px; margin: 0;">
-                        Das Scanner-Tablet ist an Ihren Standort gebunden. Scans sind nur möglich, wenn sich der Scanner <strong>physisch in Ihrem Geschäft befindet</strong>.
-                    </p>
-                </div>
-
-                <!-- Security Card 3 -->
-                <div style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.05)); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 16px; padding: 25px;">
-                    <div style="font-size: 28px; margin-bottom: 12px;">📱</div>
-                    <h4 style="color: #f87171; font-size: 16px; margin-bottom: 10px;">Gerätebindung (Fingerprint)</h4>
-                    <p style="color: #cbd5e1; font-size: 13px; margin: 0;">
-                        Jedes Scanner-Gerät wird mit einem <strong>einzigartigen digitalen Fingerabdruck</strong> registriert. Unbekannte Geräte werden automatisch blockiert.
-                    </p>
-                </div>
-
-                <!-- Security Card 4 -->
-                <div style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.05)); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 16px; padding: 25px;">
-                    <div style="font-size: 28px; margin-bottom: 12px;">🔒</div>
-                    <h4 style="color: #f87171; font-size: 16px; margin-bottom: 10px;">Ein Scan pro Tag</h4>
-                    <p style="color: #cbd5e1; font-size: 13px; margin: 0;">
-                        Jeder Kunde kann pro Geschäft <strong>nur einmal täglich Punkte sammeln</strong>. Mehrfaches Scannen wird automatisch verhindert.
-                    </p>
-                </div>
-
-                <!-- Security Card 5 -->
-                <div style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.05)); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 16px; padding: 25px;">
-                    <div style="font-size: 28px; margin-bottom: 12px;">👥</div>
-                    <h4 style="color: #f87171; font-size: 16px; margin-bottom: 10px;">Eingeschränkte Mitarbeiter-Konten</h4>
-                    <p style="color: #cbd5e1; font-size: 13px; margin: 0;">
-                        Mitarbeiter erhalten <strong>Scanner-Accounts ohne Admin-Rechte</strong>. Sie können nur scannen – keine Einstellungen ändern oder Punkte manipulieren.
-                    </p>
-                </div>
-
-                <!-- Security Card 6 -->
-                <div style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.05)); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 16px; padding: 25px;">
-                    <div style="font-size: 28px; margin-bottom: 12px;">📋</div>
-                    <h4 style="color: #f87171; font-size: 16px; margin-bottom: 10px;">Lückenlose Protokollierung</h4>
-                    <p style="color: #cbd5e1; font-size: 13px; margin: 0;">
-                        <strong>Jeder Scan wird protokolliert</strong> – mit Zeitstempel, Gerät und Mitarbeiter. Exportierbar als CSV für volle Transparenz.
-                    </p>
-                </div>
-            </div>
-
-            <!-- Summary Box -->
-            <div style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(22, 163, 74, 0.05)); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 16px; padding: 25px; margin-top: 30px; text-align: center;">
-                <h4 style="color: #4ade80; font-size: 18px; margin: 0 0 10px 0;">✅ Fazit: Betrug ist praktisch unmöglich</h4>
-                <p style="color: #cbd5e1; font-size: 14px; margin: 0; max-width: 600px; display: inline-block;">
-                    Durch die Kombination aus zeitlich begrenzten QR-Codes, GPS-Prüfung, Gerätebindung und Scan-Limits ist es weder für Kunden noch für Mitarbeiter möglich, das System zu manipulieren.
-                </p>
-            </div>
-        </section>
-
-        <!-- Updates Section -->
+        <!-- Updates -->
         <section class="updates-section">
             <h3>🔄 Ständige Weiterentwicklung</h3>
-            <p>PunktePass wird kontinuierlich verbessert. Neue Funktionen werden regelmäßig hinzugefügt – und Sie werden per E-Mail informiert!</p>
+            <p>PunktePass wird kontinuierlich verbessert. Neue Funktionen regelmäßig!</p>
             <div class="updates-list">
-                <div class="update-item">
-                    <span class="bullet">●</span>
-                    Regelmäßige Updates & neue Features
-                </div>
-                <div class="update-item">
-                    <span class="bullet">●</span>
-                    E-Mail-Benachrichtigung bei Neuerungen
-                </div>
-                <div class="update-item">
-                    <span class="bullet">●</span>
-                    Feedback wird ernst genommen
-                </div>
-                <div class="update-item">
-                    <span class="bullet">●</span>
-                    Zukunftssichere Plattform
-                </div>
+                <div class="update-item"><span class="bullet">●</span> Regelmäßige Updates</div>
+                <div class="update-item"><span class="bullet">●</span> E-Mail bei Neuerungen</div>
+                <div class="update-item"><span class="bullet">●</span> Feedback wird umgesetzt</div>
+                <div class="update-item"><span class="bullet">●</span> Zukunftssichere Plattform</div>
             </div>
         </section>
 
         <!-- Pricing -->
         <section class="pricing-section">
-            <div class="pricing-badge">ANGEBOT</div>
             <h2 class="pricing-title">Transparente Preise</h2>
             <p class="pricing-subtitle">Keine versteckten Kosten. Keine Einrichtungsgebühr.</p>
-
             <div class="pricing-box">
                 <div class="pricing-trial">🎉 30 Tage kostenlos testen!</div>
                 <div class="pricing-amount">
@@ -1223,21 +410,20 @@
                 <div class="pricing-vat">zzgl. MwSt.</div>
             </div>
 
-            <!-- FREE TABLET HIGHLIGHT -->
-            <div style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(16, 185, 129, 0.1)); border: 2px solid rgba(34, 197, 94, 0.4); border-radius: 16px; padding: 25px; margin: 30px auto; max-width: 450px;">
-                <div style="font-size: 32px; margin-bottom: 10px;">🎁📱</div>
-                <h4 style="color: #4ade80; font-size: 20px; margin: 0 0 10px 0;">GRATIS Android-Tablet inklusive!</h4>
-                <p style="color: #cbd5e1; font-size: 14px; margin: 0;">Sie erhalten ein Android-Tablet mit Tischständer als Scanner-Gerät – <strong style="color: #4ade80;">kostenlos im Paket enthalten!</strong></p>
+            <div class="tablet-highlight">
+                <div class="icon">🎁📱</div>
+                <h4>GRATIS Android-Tablet inklusive!</h4>
+                <p>Tablet + Tischständer als Scanner – <strong style="color: #4ade80;">kostenlos im Paket!</strong></p>
             </div>
 
             <div class="pricing-features">
                 <div class="pricing-feature"><span class="check">✓</span> Unbegrenzte Kunden</div>
-                <div class="pricing-feature"><span class="check">✓</span> Alle Funktionen inklusive</div>
-                <div class="pricing-feature"><span class="check">✓</span> Gratis Android-Tablet</div>
-                <div class="pricing-feature"><span class="check">✓</span> Tischständer inklusive</div>
-                <div class="pricing-feature"><span class="check">✓</span> Persönlicher Support</div>
+                <div class="pricing-feature"><span class="check">✓</span> Alle Funktionen</div>
+                <div class="pricing-feature"><span class="check">✓</span> Gratis Tablet</div>
+                <div class="pricing-feature"><span class="check">✓</span> Tischständer</div>
+                <div class="pricing-feature"><span class="check">✓</span> Support</div>
                 <div class="pricing-feature"><span class="check">✓</span> Eigenes Branding</div>
-                <div class="pricing-feature"><span class="check">✓</span> Mehrere Filialen möglich</div>
+                <div class="pricing-feature"><span class="check">✓</span> Mehrere Filialen</div>
                 <div class="pricing-feature"><span class="check">✓</span> Monatlich kündbar</div>
             </div>
         </section>
@@ -1247,7 +433,6 @@
             <h2 class="cta-title">Bereit loszulegen?</h2>
             <p class="cta-text">Starten Sie noch heute Ihre 30-tägige kostenlose Testphase!</p>
             <div class="cta-contact">
-                <span style="color: #94a3b8; font-size: 14px;">Kontaktieren Sie uns:</span>
                 <a href="mailto:info@punktepass.de">📧 info@punktepass.de</a>
                 <a href="https://punktepass.de">🌐 www.punktepass.de</a>
             </div>
@@ -1257,7 +442,6 @@
         <footer class="footer">
             <img src="https://punktepass.de/wp-content/plugins/punktepass/assets/img/logo.webp" alt="PunktePass" class="footer-logo">
             <p>© 2024 PunktePass. Alle Rechte vorbehalten.</p>
-            <p style="margin-top: 5px;">Das digitale Treueprogramm für moderne Geschäfte.</p>
         </footer>
     </div>
 </body>
