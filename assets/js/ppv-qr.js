@@ -114,6 +114,113 @@
     return { latitude: null, longitude: null };
   }
 
+  /**
+   * Calculate distance between two GPS coordinates (Haversine formula)
+   * Returns distance in meters
+   */
+  function calculateGpsDistance(lat1, lng1, lat2, lng2) {
+    const earthRadius = 6371000; // meters
+
+    const lat1Rad = lat1 * Math.PI / 180;
+    const lat2Rad = lat2 * Math.PI / 180;
+    const deltaLat = (lat2 - lat1) * Math.PI / 180;
+    const deltaLng = (lng2 - lng1) * Math.PI / 180;
+
+    const a = Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+              Math.cos(lat1Rad) * Math.cos(lat2Rad) *
+              Math.sin(deltaLng / 2) * Math.sin(deltaLng / 2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return Math.round(earthRadius * c);
+  }
+
+  /**
+   * Check GPS geofencing - is device within allowed distance from store?
+   * Returns: { allowed: true } or { allowed: false, message: string, distance: number }
+   */
+  async function checkGpsGeofence(storeGps) {
+    // If store has no GPS coordinates, skip geofencing (allow)
+    if (!storeGps || !storeGps.store_lat || !storeGps.store_lng) {
+      ppvLog('[GPS] Store has no coordinates, skipping geofence check');
+      return { allowed: true, skipped: 'no_store_gps' };
+    }
+
+    // Get current device GPS position
+    const deviceGps = getGpsCoordinates();
+
+    // If device has no GPS, try to get it now
+    if (!deviceGps.latitude || !deviceGps.longitude) {
+      ppvLog('[GPS] No cached GPS, requesting position...');
+
+      // Wait for GPS position (with timeout)
+      try {
+        const position = await new Promise((resolve, reject) => {
+          if (!navigator.geolocation) {
+            reject(new Error('Geolocation not supported'));
+            return;
+          }
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 60000
+          });
+        });
+
+        STATE.gpsPosition = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracy: position.coords.accuracy,
+          timestamp: Date.now()
+        };
+
+        deviceGps.latitude = position.coords.latitude;
+        deviceGps.longitude = position.coords.longitude;
+        ppvLog('[GPS] Position acquired:', deviceGps.latitude.toFixed(4), deviceGps.longitude.toFixed(4));
+      } catch (err) {
+        ppvWarn('[GPS] Failed to get position:', err.message);
+        // If GPS permission denied or unavailable, block the scanner
+        return {
+          allowed: false,
+          message: L.gps_permission_required || 'GPS-Standortzugriff ist erforderlich. Bitte aktivieren Sie GPS und erteilen Sie die Berechtigung.',
+          reason: 'gps_unavailable'
+        };
+      }
+    }
+
+    // Calculate distance
+    const distance = calculateGpsDistance(
+      parseFloat(storeGps.store_lat),
+      parseFloat(storeGps.store_lng),
+      deviceGps.latitude,
+      deviceGps.longitude
+    );
+
+    const maxDistance = storeGps.max_distance || 500;
+
+    ppvLog('[GPS] Distance check:', {
+      storeLocation: { lat: storeGps.store_lat, lng: storeGps.store_lng },
+      deviceLocation: { lat: deviceGps.latitude.toFixed(4), lng: deviceGps.longitude.toFixed(4) },
+      distance: distance + 'm',
+      maxAllowed: maxDistance + 'm'
+    });
+
+    if (distance <= maxDistance) {
+      return { allowed: true, distance: distance };
+    }
+
+    // Distance exceeded - block scanner
+    return {
+      allowed: false,
+      message: (L.gps_too_far || 'Sie befinden sich zu weit vom Geschäft entfernt ({distance}m). Maximale Entfernung: {max}m')
+        .replace('{distance}', distance)
+        .replace('{max}', maxDistance),
+      distance: distance,
+      maxDistance: maxDistance,
+      reason: 'gps_distance'
+    };
+  }
+
   const L = window.ppv_lang || {};
 
   // ============================================================
@@ -1154,6 +1261,7 @@
 
     /**
      * 📱 Check if current device is allowed to use scanner
+     * Checks: 1) Device registration, 2) GPS geofencing
      */
     async checkDeviceAllowed() {
       try {
@@ -1176,22 +1284,37 @@
         const data = await response.json();
         ppvLog('[Scanner] Device check result:', data);
 
-        // Allow only if device is registered
-        if (data.can_use_scanner) {
-          return { allowed: true };
+        // Check device registration first
+        if (!data.can_use_scanner) {
+          // Not allowed - device not registered
+          let message;
+          if (data.device_count === 0) {
+            message = L.device_register_first || 'Bitte registrieren Sie zuerst ein Gerät im Tab "Geräte", bevor Sie den Scanner verwenden können.';
+          } else {
+            message = L.device_not_allowed || 'Dieses Gerät ist nicht für den Scanner registriert. Bitte registrieren Sie es im Tab "Geräte".';
+          }
+          return {
+            allowed: false,
+            message: message
+          };
         }
 
-        // Not allowed - device not registered
-        let message;
-        if (data.device_count === 0) {
-          message = L.device_register_first || 'Bitte registrieren Sie zuerst ein Gerät im Tab "Geräte", bevor Sie den Scanner verwenden können.';
-        } else {
-          message = L.device_not_allowed || 'Dieses Gerät ist nicht für den Scanner registriert. Bitte registrieren Sie es im Tab "Geräte".';
+        // Device is registered - now check GPS geofencing
+        if (data.gps) {
+          const gpsCheck = await checkGpsGeofence(data.gps);
+          ppvLog('[Scanner] GPS geofence check result:', gpsCheck);
+
+          if (!gpsCheck.allowed) {
+            return {
+              allowed: false,
+              message: gpsCheck.message,
+              reason: gpsCheck.reason
+            };
+          }
         }
-        return {
-          allowed: false,
-          message: message
-        };
+
+        // All checks passed
+        return { allowed: true };
       } catch (e) {
         ppvWarn('[Scanner] Device check error:', e);
         // On error, block scanner (strict mode - require device registration)

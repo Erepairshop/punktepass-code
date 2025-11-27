@@ -928,7 +928,29 @@ return [
 'device_register_first' => 'Vă rugăm să înregistrați mai întâi un dispozitiv în tab-ul "Dispozitive", înainte de a putea utiliza scannerul.',
 'device_blocked_title' => 'Dispozitiv neînregistrat',
 'device_blocked_hint' => 'Mergeți la tab-ul "Dispozitive" pentru a înregistra acest dispozitiv.',
+'update_fingerprint' => 'Actualizare Fingerprint',
+'confirm_update_fingerprint' => 'Actualizați fingerprint-ul dispozitivului cu browser-ul curent?',
+'fingerprint_updated' => 'Fingerprint actualizat cu succes! Pagina se va reîncărca.',
+'update_error' => 'Eroare la actualizare',
 'close' => 'Închide',
+
+// GPS Geofencing
+'gps_permission_required' => 'Acces GPS necesar. Vă rugăm activați GPS și acordați permisiunea.',
+'gps_too_far' => 'Sunteți prea departe de magazin ({distance}m). Distanța maximă: {max}m',
+'gps_checking' => 'Se verifică locația GPS...',
+
+// Mobile Scanner
+'mobile_scanner_title' => 'Scanner Mobil',
+'checking_mobile_scanner' => 'Se verifică starea...',
+'request_mobile_scanner' => 'Solicită Scanner Mobil',
+'mobile_scanner_active' => 'Scanner Mobil activ',
+'mobile_scanner_pending' => 'Cerere în așteptare',
+'mobile_scanner_info' => 'Cu Scanner Mobil puteți scana fără verificarea locației GPS. Necesită aprobare admin.',
+'mobile_scanner_enabled' => 'Verificarea GPS este dezactivată. Scannerul funcționează oriunde.',
+'mobile_scanner_request_pending' => 'Cererea dumneavoastră este procesată de admin.',
+'mobile_scanner_not_active' => 'Verificarea locației GPS este activă.',
+'confirm_request_mobile_scanner' => 'Cu Scanner Mobil puteți scana fără verificarea locației GPS. Se va trimite o cerere către admin. Continuați?',
+'mobile_scanner_request_sent' => 'Cerere trimisă! Adminul va fi notificat prin e-mail.',
 
 'offline_banner' => 'Mod offline activ',
 'sync_now' => 'Sincronizare',

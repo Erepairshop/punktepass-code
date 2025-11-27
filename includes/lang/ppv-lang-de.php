@@ -940,7 +940,29 @@ return [
 'device_register_first' => 'Bitte registrieren Sie zuerst ein Gerät im Tab "Geräte", bevor Sie den Scanner verwenden können.',
 'device_blocked_title' => 'Gerät nicht registriert',
 'device_blocked_hint' => 'Gehen Sie zum Tab "Geräte" um dieses Gerät zu registrieren.',
+'update_fingerprint' => 'Fingerprint aktualisieren',
+'confirm_update_fingerprint' => 'Fingerprint für dieses Gerät mit dem aktuellen Browser aktualisieren?',
+'fingerprint_updated' => 'Fingerprint erfolgreich aktualisiert! Die Seite wird neu geladen.',
+'update_error' => 'Fehler beim Aktualisieren',
 'close' => 'Schließen',
+
+// GPS Geofencing
+'gps_permission_required' => 'GPS-Standortzugriff ist erforderlich. Bitte aktivieren Sie GPS und erteilen Sie die Berechtigung.',
+'gps_too_far' => 'Sie befinden sich zu weit vom Geschäft entfernt ({distance}m). Maximale Entfernung: {max}m',
+'gps_checking' => 'GPS-Standort wird überprüft...',
+
+// Mobile Scanner
+'mobile_scanner_title' => 'Mobile Scanner',
+'checking_mobile_scanner' => 'Status wird überprüft...',
+'request_mobile_scanner' => 'Mobile Scanner anfordern',
+'mobile_scanner_active' => 'Mobile Scanner aktiv',
+'mobile_scanner_pending' => 'Anfrage ausstehend',
+'mobile_scanner_info' => 'Mit Mobile Scanner können Sie ohne GPS-Standortprüfung scannen. Erfordert Admin-Genehmigung.',
+'mobile_scanner_enabled' => 'GPS-Prüfung ist deaktiviert. Scanner funktioniert überall.',
+'mobile_scanner_request_pending' => 'Ihre Anfrage wird vom Admin bearbeitet.',
+'mobile_scanner_not_active' => 'GPS-Standortprüfung ist aktiv.',
+'confirm_request_mobile_scanner' => 'Mit Mobile Scanner können Sie ohne GPS-Standortprüfung scannen. Eine Anfrage wird an den Admin gesendet. Fortfahren?',
+'mobile_scanner_request_sent' => 'Anfrage gesendet! Der Admin wird per E-Mail benachrichtigt.',
 
 'offline_banner' => 'Offline-Modus aktiv',
 'sync_now' => 'Sync',

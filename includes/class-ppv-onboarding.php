@@ -531,7 +531,8 @@ if (!class_exists('PPV_Onboarding')) {
 
             $steps = [
                 'profile_lite' => $profile_complete,
-                'reward' => self::has_reward($store->id)
+                'reward' => self::has_reward($store->id),
+                'device' => self::has_device($store->id)
             ];
 
             $completed = count(array_filter($steps));
@@ -562,6 +563,26 @@ if (!class_exists('PPV_Onboarding')) {
             global $wpdb;
             $count = $wpdb->get_var($wpdb->prepare(
                 "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_rewards WHERE store_id = %d",
+                $store_id
+            ));
+            return $count > 0;
+        }
+
+        /**
+         * Ellenőrzi hogy a store-nak van-e regisztrált eszköze
+         */
+        private static function has_device($store_id) {
+            global $wpdb;
+            $table = $wpdb->prefix . 'ppv_device_fingerprints';
+
+            // Ellenőrizzük hogy létezik-e a tábla
+            $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$table}'");
+            if (!$table_exists) {
+                return false;
+            }
+
+            $count = $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) FROM {$table} WHERE store_id = %d AND status = 'approved'",
                 $store_id
             ));
             return $count > 0;

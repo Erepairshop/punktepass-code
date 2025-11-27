@@ -39,6 +39,7 @@ class PPV_Device_Fingerprint {
     public static function hooks() {
         add_action('rest_api_init', [__CLASS__, 'register_routes']);
         add_action('admin_init', [__CLASS__, 'run_migrations']);
+        add_action('init', [__CLASS__, 'run_migrations']); // Also run on init for standalone admin
     }
 
     /**
@@ -46,6 +47,11 @@ class PPV_Device_Fingerprint {
      */
     public static function run_migrations() {
         global $wpdb;
+
+        // Prevent running multiple times in same request
+        static $already_run = false;
+        if ($already_run) return;
+        $already_run = true;
 
         $migration_version = get_option('ppv_device_migration_version', '0');
 
@@ -154,6 +160,65 @@ class PPV_Device_Fingerprint {
             ppv_log("✅ [PPV_Device_Fingerprint] Device requests table created");
             update_option('ppv_device_migration_version', '1.3');
         }
+
+        // Migration 1.4: Extend request_type to include mobile_scanner
+        if (version_compare($migration_version, '1.4', '<')) {
+            $table_requests = $wpdb->prefix . self::DEVICE_REQUESTS_TABLE;
+
+            // Alter the ENUM to include mobile_scanner
+            $wpdb->query("ALTER TABLE {$table_requests} MODIFY COLUMN request_type ENUM('add', 'remove', 'mobile_scanner') NOT NULL");
+
+            ppv_log("✅ [PPV_Device_Fingerprint] Added mobile_scanner request type");
+            update_option('ppv_device_migration_version', '1.4');
+            $migration_version = '1.4';
+        }
+
+        // Migration 1.5: Add device_info column for storing device details (memory, screen, etc.)
+        if (version_compare($migration_version, '1.5', '<')) {
+            $table_user_devices = $wpdb->prefix . self::USER_DEVICES_TABLE;
+            $table_requests = $wpdb->prefix . self::DEVICE_REQUESTS_TABLE;
+
+            // Add device_info column to user_devices table
+            $wpdb->query("ALTER TABLE {$table_user_devices} ADD COLUMN device_info TEXT NULL COMMENT 'JSON: device details from FingerprintJS' AFTER user_agent");
+
+            // Add device_info column to device_requests table
+            $wpdb->query("ALTER TABLE {$table_requests} ADD COLUMN device_info TEXT NULL COMMENT 'JSON: device details from FingerprintJS' AFTER user_agent");
+
+            ppv_log("✅ [PPV_Device_Fingerprint] Added device_info column to tables");
+            update_option('ppv_device_migration_version', '1.5');
+            $migration_version = '1.5';
+        }
+
+        // Migration 1.6: Add mobile_scanner column to user_devices (per-device mobile scanner)
+        if (version_compare($migration_version, '1.6', '<')) {
+            $table_user_devices = $wpdb->prefix . self::USER_DEVICES_TABLE;
+            $table_requests = $wpdb->prefix . self::DEVICE_REQUESTS_TABLE;
+
+            // Add mobile_scanner column to user_devices table (per-device setting)
+            $wpdb->query("ALTER TABLE {$table_user_devices} ADD COLUMN mobile_scanner TINYINT(1) NOT NULL DEFAULT 0 COMMENT '1=device is mobile scanner' AFTER status");
+
+            // Add device_id column to device_requests table (for device-specific mobile scanner requests)
+            $wpdb->query("ALTER TABLE {$table_requests} ADD COLUMN device_id BIGINT(20) UNSIGNED NULL COMMENT 'Target device ID for mobile_scanner requests' AFTER store_id");
+
+            ppv_log("✅ [PPV_Device_Fingerprint] Added mobile_scanner column (per-device) and device_id to requests");
+            update_option('ppv_device_migration_version', '1.6');
+        }
+    }
+
+    /**
+     * Check if a column exists in the user_devices table
+     */
+    private static function column_exists($column_name) {
+        global $wpdb;
+        static $columns_cache = null;
+
+        if ($columns_cache === null) {
+            $table = $wpdb->prefix . self::USER_DEVICES_TABLE;
+            $columns = $wpdb->get_col("SHOW COLUMNS FROM {$table}");
+            $columns_cache = array_flip($columns);
+        }
+
+        return isset($columns_cache[$column_name]);
     }
 
     /**
@@ -199,6 +264,13 @@ class PPV_Device_Fingerprint {
             'permission_callback' => '__return_true'
         ]);
 
+        // Update device fingerprint (when fingerprint changed)
+        register_rest_route('punktepass/v1', '/user-devices/update-fingerprint', [
+            'methods' => 'POST',
+            'callback' => [__CLASS__, 'rest_update_device_fingerprint'],
+            'permission_callback' => '__return_true'
+        ]);
+
         // Request device removal (needs admin approval)
         register_rest_route('punktepass/v1', '/user-devices/request-remove', [
             'methods' => 'POST',
@@ -213,6 +285,13 @@ class PPV_Device_Fingerprint {
             'permission_callback' => '__return_true'
         ]);
 
+        // Request new device slot (for already registered users)
+        register_rest_route('punktepass/v1', '/user-devices/request-new-slot', [
+            'methods' => 'POST',
+            'callback' => [__CLASS__, 'rest_request_new_device_slot'],
+            'permission_callback' => '__return_true'
+        ]);
+
         // Admin approval endpoint (via email link)
         register_rest_route('punktepass/v1', '/user-devices/approve/(?P<token>[a-zA-Z0-9]+)', [
             'methods' => 'GET',
@@ -224,6 +303,24 @@ class PPV_Device_Fingerprint {
         register_rest_route('punktepass/v1', '/user-devices/reject/(?P<token>[a-zA-Z0-9]+)', [
             'methods' => 'GET',
             'callback' => [__CLASS__, 'rest_reject_device_request'],
+            'permission_callback' => '__return_true'
+        ]);
+
+        // ========================================
+        // 📱 MOBILE SCANNER REQUEST
+        // ========================================
+
+        // Request mobile scanner mode (needs admin approval)
+        register_rest_route('punktepass/v1', '/user-devices/request-mobile-scanner', [
+            'methods' => 'POST',
+            'callback' => [__CLASS__, 'rest_request_mobile_scanner'],
+            'permission_callback' => '__return_true'
+        ]);
+
+        // Check mobile scanner status
+        register_rest_route('punktepass/v1', '/user-devices/mobile-scanner-status', [
+            'methods' => 'GET',
+            'callback' => [__CLASS__, 'rest_get_mobile_scanner_status'],
             'permission_callback' => '__return_true'
         ]);
     }
@@ -821,6 +918,7 @@ class PPV_Device_Fingerprint {
         $data = $request->get_json_params();
         $fingerprint = sanitize_text_field($data['fingerprint'] ?? '');
         $device_name = sanitize_text_field($data['device_name'] ?? 'Unbenanntes Gerät');
+        $device_info = $data['device_info'] ?? null; // FingerprintJS components data
 
         if (empty($fingerprint) || strlen($fingerprint) < 16) {
             return new WP_REST_Response([
@@ -832,6 +930,12 @@ class PPV_Device_Fingerprint {
         $fingerprint_hash = self::hash_fingerprint($fingerprint);
         $parent_store_id = self::get_parent_store_id($store_id);
 
+        // Prepare device_info JSON
+        $device_info_json = null;
+        if (!empty($device_info) && is_array($device_info)) {
+            $device_info_json = wp_json_encode($device_info);
+        }
+
         // Check if already registered
         $existing = $wpdb->get_var($wpdb->prepare(
             "SELECT id FROM {$wpdb->prefix}" . self::USER_DEVICES_TABLE . " WHERE store_id = %d AND fingerprint_hash = %s",
@@ -839,12 +943,21 @@ class PPV_Device_Fingerprint {
         ));
 
         if ($existing) {
-            // Update last_used_at
+            // Update last_used_at and device_info if provided
+            $update_data = ['last_used_at' => current_time('mysql')];
+            $update_format = ['%s'];
+
+            // Only add device_info if we have data AND column exists
+            if ($device_info_json && self::column_exists('device_info')) {
+                $update_data['device_info'] = $device_info_json;
+                $update_format[] = '%s';
+            }
+
             $wpdb->update(
                 $wpdb->prefix . self::USER_DEVICES_TABLE,
-                ['last_used_at' => current_time('mysql')],
+                $update_data,
                 ['id' => $existing],
-                ['%s'],
+                $update_format,
                 ['%d']
             );
 
@@ -858,23 +971,25 @@ class PPV_Device_Fingerprint {
         // Check device limit
         $device_count = self::get_user_device_count($parent_store_id);
         if ($device_count >= self::MAX_DEVICES_PER_USER) {
-            return new WP_REST_Response([
-                'success' => false,
-                'message' => 'Gerätelimit erreicht. Bitte Admin-Genehmigung anfordern.',
-                'limit_reached' => true,
-                'device_count' => $device_count,
-                'max_devices' => self::MAX_DEVICES_PER_USER
-            ], 200);
-        }
+            // Check if there's an available slot to claim
+            $available_slot = self::get_available_device_slot($parent_store_id);
+            if (!$available_slot) {
+                return new WP_REST_Response([
+                    'success' => false,
+                    'message' => 'Gerätelimit erreicht. Bitte Admin-Genehmigung anfordern.',
+                    'limit_reached' => true,
+                    'device_count' => $device_count,
+                    'max_devices' => self::MAX_DEVICES_PER_USER
+                ], 200);
+            }
 
-        // Register the device
-        $ip_address = self::get_client_ip();
-        $user_agent = sanitize_text_field($_SERVER['HTTP_USER_AGENT'] ?? '');
+            // Claim the available slot - update it with the new device's info
+            ppv_log("📱 [Device Slot Claim] Claiming slot ID={$available_slot->id} for new device, store_id={$parent_store_id}");
 
-        $result = $wpdb->insert(
-            $wpdb->prefix . self::USER_DEVICES_TABLE,
-            [
-                'store_id' => $parent_store_id,
+            $ip_address = self::get_client_ip();
+            $user_agent = sanitize_text_field($_SERVER['HTTP_USER_AGENT'] ?? '');
+
+            $update_data = [
                 'fingerprint_hash' => $fingerprint_hash,
                 'device_name' => $device_name,
                 'user_agent' => $user_agent,
@@ -882,8 +997,59 @@ class PPV_Device_Fingerprint {
                 'registered_at' => current_time('mysql'),
                 'last_used_at' => current_time('mysql'),
                 'status' => 'active'
-            ],
-            ['%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s']
+            ];
+            $update_format = ['%s', '%s', '%s', '%s', '%s', '%s', '%s'];
+
+            // Add device_info if available
+            if ($device_info_json && self::column_exists('device_info')) {
+                $update_data['device_info'] = $device_info_json;
+                $update_format[] = '%s';
+            }
+
+            $wpdb->update(
+                $wpdb->prefix . self::USER_DEVICES_TABLE,
+                $update_data,
+                ['id' => $available_slot->id],
+                $update_format,
+                ['%d']
+            );
+
+            ppv_log("📱 [Device Registered via Slot] store_id={$parent_store_id}, hash=" . substr($fingerprint_hash, 0, 16) . "..., name={$device_name}");
+
+            return new WP_REST_Response([
+                'success' => true,
+                'message' => 'Gerät erfolgreich registriert (genehmigter Platz verwendet)!',
+                'slot_used' => true
+            ], 200);
+        }
+
+        // Register the device
+        $ip_address = self::get_client_ip();
+        $user_agent = sanitize_text_field($_SERVER['HTTP_USER_AGENT'] ?? '');
+
+        // Base insert data (without device_info - column might not exist yet)
+        $insert_data = [
+            'store_id' => $parent_store_id,
+            'fingerprint_hash' => $fingerprint_hash,
+            'device_name' => $device_name,
+            'user_agent' => $user_agent,
+            'ip_address' => $ip_address,
+            'registered_at' => current_time('mysql'),
+            'last_used_at' => current_time('mysql'),
+            'status' => 'active'
+        ];
+        $insert_format = ['%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s'];
+
+        // Only add device_info if we have data AND column exists
+        if ($device_info_json && self::column_exists('device_info')) {
+            $insert_data['device_info'] = $device_info_json;
+            $insert_format[] = '%s';
+        }
+
+        $result = $wpdb->insert(
+            $wpdb->prefix . self::USER_DEVICES_TABLE,
+            $insert_data,
+            $insert_format
         );
 
         if ($result) {
@@ -905,6 +1071,8 @@ class PPV_Device_Fingerprint {
      * REST: Check if current device is registered
      */
     public static function rest_check_user_device(WP_REST_Request $request) {
+        global $wpdb;
+
         $store_id = self::get_session_store_id();
 
         if ($store_id <= 0) {
@@ -917,6 +1085,20 @@ class PPV_Device_Fingerprint {
         $data = $request->get_json_params();
         $fingerprint = sanitize_text_field($data['fingerprint'] ?? '');
 
+        // Get store location for GPS geofencing
+        $current_store_id = $store_id; // Use current store (filiale) for GPS, not parent
+        $store_location = $wpdb->get_row($wpdb->prepare(
+            "SELECT latitude, longitude, max_scan_distance FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+            $current_store_id
+        ));
+
+        // Build GPS data for response
+        $gps_data = [
+            'store_lat' => $store_location->latitude ?? null,
+            'store_lng' => $store_location->longitude ?? null,
+            'max_distance' => intval($store_location->max_scan_distance ?? 500) ?: 500
+        ];
+
         if (empty($fingerprint) || strlen($fingerprint) < 16) {
             return new WP_REST_Response([
                 'success' => true,
@@ -924,38 +1106,206 @@ class PPV_Device_Fingerprint {
                 'can_use_scanner' => false, // Block scanner - require device registration
                 'device_count' => 0,
                 'max_devices' => self::MAX_DEVICES_PER_USER,
-                'message' => 'Kein Fingerprint'
+                'message' => 'Kein Fingerprint',
+                'gps' => $gps_data
             ], 200);
         }
 
         $fingerprint_hash = self::hash_fingerprint($fingerprint);
         $parent_store_id = self::get_parent_store_id($store_id);
 
+        // Debug: Log the check
+        ppv_log("📱 [Device Check] store_id={$store_id}, parent_store_id={$parent_store_id}, fp_hash=" . substr($fingerprint_hash, 0, 16) . "...");
+
+        // Get all registered hashes for comparison
+        $registered_hashes = $wpdb->get_col($wpdb->prepare(
+            "SELECT fingerprint_hash FROM {$wpdb->prefix}" . self::USER_DEVICES_TABLE . " WHERE store_id = %d AND status = 'active'",
+            $parent_store_id
+        ));
+
+        ppv_log("📱 [Device Check] Registered hashes: " . json_encode(array_map(fn($h) => substr($h, 0, 16) . '...', $registered_hashes)));
+
         $is_registered = self::is_device_registered_for_user($parent_store_id, $fingerprint_hash);
         $device_count = self::get_user_device_count($parent_store_id);
+
+        ppv_log("📱 [Device Check] is_registered=" . ($is_registered ? 'YES' : 'NO') . ", device_count={$device_count}");
 
         // Allow scanner only if device is registered
         $can_use_scanner = $is_registered;
 
-        // Update last_used_at if registered
+        // Check device-level mobile scanner status
+        $device_mobile_scanner = false;
+        $device_id = null;
+
+        // Update last_used_at if registered and get mobile_scanner status
         if ($is_registered) {
-            global $wpdb;
-            $wpdb->update(
-                $wpdb->prefix . self::USER_DEVICES_TABLE,
-                ['last_used_at' => current_time('mysql')],
-                ['store_id' => $parent_store_id, 'fingerprint_hash' => $fingerprint_hash],
-                ['%s'],
-                ['%d', '%s']
-            );
+            // Get device info including mobile_scanner status
+            $device = $wpdb->get_row($wpdb->prepare(
+                "SELECT id, mobile_scanner FROM {$wpdb->prefix}" . self::USER_DEVICES_TABLE . "
+                 WHERE store_id = %d AND fingerprint_hash = %s AND status = 'active'",
+                $parent_store_id, $fingerprint_hash
+            ));
+
+            if ($device) {
+                $device_id = intval($device->id);
+                $device_mobile_scanner = !empty($device->mobile_scanner);
+
+                // Update last_used_at
+                $wpdb->update(
+                    $wpdb->prefix . self::USER_DEVICES_TABLE,
+                    ['last_used_at' => current_time('mysql')],
+                    ['id' => $device->id],
+                    ['%s'],
+                    ['%d']
+                );
+            }
         }
+
+        // Also check legacy store-level mobile scanner for backwards compatibility
+        $store_scanner_type = $wpdb->get_var($wpdb->prepare(
+            "SELECT scanner_type FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+            $current_store_id
+        ));
+        $store_is_mobile = ($store_scanner_type === 'mobile');
+
+        // Device is mobile scanner if either device-level OR store-level is enabled
+        $is_mobile_scanner = $device_mobile_scanner || $store_is_mobile;
+
+        // Check for available slots (pre-approved by admin)
+        $available_slots = self::get_available_slot_count($parent_store_id);
 
         return new WP_REST_Response([
             'success' => true,
             'is_registered' => $is_registered,
             'can_use_scanner' => $can_use_scanner,
             'device_count' => $device_count,
-            'max_devices' => self::MAX_DEVICES_PER_USER
+            'max_devices' => self::MAX_DEVICES_PER_USER,
+            'available_slots' => $available_slots, // Pre-approved slots ready to claim
+            // Device info
+            'device_id' => $device_id,
+            // Mobile scanner status (per-device)
+            'is_mobile_scanner' => $is_mobile_scanner,
+            'device_mobile_scanner' => $device_mobile_scanner,
+            'store_mobile_scanner' => $store_is_mobile, // Legacy store-level
+            // GPS geofencing data (only relevant if NOT mobile scanner)
+            'gps' => $gps_data,
+            // Debug info
+            'debug' => [
+                'current_hash' => substr($fingerprint_hash, 0, 16) . '...',
+                'registered_hashes' => array_map(fn($h) => substr($h, 0, 16) . '...', $registered_hashes),
+                'store_id' => $parent_store_id
+            ]
         ], 200);
+    }
+
+    /**
+     * REST: Update device fingerprint (when browser fingerprint changed)
+     * This allows updating the fingerprint of an existing device without admin approval
+     */
+    public static function rest_update_device_fingerprint(WP_REST_Request $request) {
+        global $wpdb;
+
+        $store_id = self::get_session_store_id();
+
+        if ($store_id <= 0) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Nicht authentifiziert'
+            ], 401);
+        }
+
+        $data = $request->get_json_params();
+        $device_id = intval($data['device_id'] ?? 0);
+        $new_fingerprint = sanitize_text_field($data['fingerprint'] ?? '');
+        $device_info = $data['device_info'] ?? null; // FingerprintJS components data
+
+        if ($device_id <= 0) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Ungültige Geräte-ID'
+            ], 400);
+        }
+
+        if (empty($new_fingerprint) || strlen($new_fingerprint) < 16) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Ungültiger Fingerprint'
+            ], 400);
+        }
+
+        $parent_store_id = self::get_parent_store_id($store_id);
+        $new_fingerprint_hash = self::hash_fingerprint($new_fingerprint);
+
+        // Prepare device_info JSON
+        $device_info_json = null;
+        if (!empty($device_info) && is_array($device_info)) {
+            $device_info_json = wp_json_encode($device_info);
+        }
+
+        // Check if device exists for this store
+        $device = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}" . self::USER_DEVICES_TABLE . " WHERE id = %d AND store_id = %d",
+            $device_id, $parent_store_id
+        ));
+
+        if (!$device) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Gerät nicht gefunden'
+            ], 404);
+        }
+
+        // Check if new fingerprint is already registered to another device
+        $existing = $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM {$wpdb->prefix}" . self::USER_DEVICES_TABLE . " WHERE store_id = %d AND fingerprint_hash = %s AND id != %d",
+            $parent_store_id, $new_fingerprint_hash, $device_id
+        ));
+
+        if ($existing) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Fingerprint bereits für ein anderes Gerät registriert'
+            ], 400);
+        }
+
+        // Update the fingerprint
+        $ip_address = self::get_client_ip();
+        $user_agent = sanitize_text_field($_SERVER['HTTP_USER_AGENT'] ?? '');
+
+        $update_data = [
+            'fingerprint_hash' => $new_fingerprint_hash,
+            'user_agent' => $user_agent,
+            'ip_address' => $ip_address,
+            'last_used_at' => current_time('mysql')
+        ];
+        $update_format = ['%s', '%s', '%s', '%s'];
+
+        // Only add device_info if we have data AND column exists
+        if ($device_info_json && self::column_exists('device_info')) {
+            $update_data['device_info'] = $device_info_json;
+            $update_format[] = '%s';
+        }
+
+        $result = $wpdb->update(
+            $wpdb->prefix . self::USER_DEVICES_TABLE,
+            $update_data,
+            ['id' => $device_id],
+            $update_format,
+            ['%d']
+        );
+
+        if ($result !== false) {
+            ppv_log("📱 [Device Update] Fingerprint updated: device_id={$device_id}, old_hash=" . substr($device->fingerprint_hash, 0, 16) . "..., new_hash=" . substr($new_fingerprint_hash, 0, 16) . "...");
+            return new WP_REST_Response([
+                'success' => true,
+                'message' => 'Fingerprint erfolgreich aktualisiert'
+            ], 200);
+        }
+
+        return new WP_REST_Response([
+            'success' => false,
+            'message' => 'Fehler beim Aktualisieren'
+        ], 500);
     }
 
     /**
@@ -1058,6 +1408,43 @@ class PPV_Device_Fingerprint {
     }
 
     /**
+     * REST: Request a new device slot (for already registered users at limit)
+     * Creates a request without specific fingerprint - user will register from new device later
+     */
+    public static function rest_request_new_device_slot(WP_REST_Request $request) {
+        $store_id = self::get_session_store_id();
+
+        if ($store_id <= 0) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Nicht authentifiziert'
+            ], 401);
+        }
+
+        $data = $request->get_json_params();
+        $device_name = sanitize_text_field($data['device_name'] ?? 'Neues Gerät');
+
+        // Use a placeholder fingerprint - will be replaced when device registers
+        $placeholder_hash = 'SLOT_PENDING_' . time() . '_' . wp_generate_password(8, false);
+        $parent_store_id = self::get_parent_store_id($store_id);
+
+        // Create approval request with type 'new_slot'
+        $result = self::create_device_request($parent_store_id, $placeholder_hash, 'new_slot', $device_name);
+
+        if ($result['success']) {
+            return new WP_REST_Response([
+                'success' => true,
+                'message' => 'Anfrage für weiteres Gerät gesendet. Admin-Genehmigung erforderlich.'
+            ], 200);
+        }
+
+        return new WP_REST_Response([
+            'success' => false,
+            'message' => $result['message'] ?? 'Fehler beim Erstellen der Anfrage'
+        ], 500);
+    }
+
+    /**
      * REST: Approve device request (via email link)
      */
     public static function rest_approve_device_request(WP_REST_Request $request) {
@@ -1078,7 +1465,7 @@ class PPV_Device_Fingerprint {
             return self::render_approval_page('error', 'Anfrage nicht gefunden oder bereits verarbeitet');
         }
 
-        // Process the request
+        // Process the request based on type
         if ($req->request_type === 'add') {
             // Add the device
             $ip_address = self::get_client_ip();
@@ -1096,7 +1483,8 @@ class PPV_Device_Fingerprint {
                 ['%d', '%s', '%s', '%s', '%s', '%s', '%s']
             );
             ppv_log("📱 [Device Approved] ADD: store_id={$req->store_id}, hash={$req->fingerprint_hash}");
-        } else {
+            $action_text = 'Gerät erfolgreich hinzugefügt!';
+        } elseif ($req->request_type === 'remove') {
             // Remove the device
             $wpdb->delete(
                 $wpdb->prefix . self::USER_DEVICES_TABLE,
@@ -1104,6 +1492,51 @@ class PPV_Device_Fingerprint {
                 ['%d', '%s']
             );
             ppv_log("📱 [Device Approved] REMOVE: store_id={$req->store_id}, hash={$req->fingerprint_hash}");
+            $action_text = 'Gerät erfolgreich entfernt!';
+        } elseif ($req->request_type === 'mobile_scanner') {
+            // Enable mobile scanner for this specific device (per-device setting)
+            if (!empty($req->device_id)) {
+                $wpdb->update(
+                    $wpdb->prefix . self::USER_DEVICES_TABLE,
+                    ['mobile_scanner' => 1],
+                    ['id' => $req->device_id],
+                    ['%d'],
+                    ['%d']
+                );
+                ppv_log("📱 [Mobile Scanner Approved] device_id={$req->device_id}, store_id={$req->store_id}");
+                $action_text = 'Mobile Scanner für Gerät erfolgreich aktiviert!';
+            } else {
+                // Legacy: store-level mobile scanner (for older requests without device_id)
+                $wpdb->update(
+                    $wpdb->prefix . 'ppv_stores',
+                    ['scanner_type' => 'mobile'],
+                    ['id' => $req->store_id],
+                    ['%s'],
+                    ['%d']
+                );
+                ppv_log("📱 [Mobile Scanner Approved - Legacy Store] store_id={$req->store_id}");
+                $action_text = 'Mobile Scanner erfolgreich aktiviert!';
+            }
+        } elseif ($req->request_type === 'new_slot') {
+            // Approve new device slot - create a placeholder entry with status='slot'
+            // User can claim this slot when they register from a new device
+            $wpdb->insert(
+                $wpdb->prefix . self::USER_DEVICES_TABLE,
+                [
+                    'store_id' => $req->store_id,
+                    'fingerprint_hash' => $req->fingerprint_hash, // Placeholder hash
+                    'device_name' => $req->device_name . ' (reserviert)',
+                    'user_agent' => 'Slot für neues Gerät genehmigt',
+                    'ip_address' => null,
+                    'registered_at' => current_time('mysql'),
+                    'status' => 'slot' // Special status - can be claimed
+                ],
+                ['%d', '%s', '%s', '%s', '%s', '%s', '%s']
+            );
+            ppv_log("📱 [Device Slot Approved] NEW_SLOT: store_id={$req->store_id}, name={$req->device_name}");
+            $action_text = 'Zusätzlicher Geräteplatz genehmigt! Der Benutzer kann jetzt ein neues Gerät registrieren.';
+        } else {
+            return self::render_approval_page('error', 'Unbekannter Anfragetyp');
         }
 
         // Mark request as approved
@@ -1119,8 +1552,7 @@ class PPV_Device_Fingerprint {
             ['%d']
         );
 
-        $action = $req->request_type === 'add' ? 'hinzugefügt' : 'entfernt';
-        return self::render_approval_page('success', "Gerät erfolgreich {$action}!");
+        return self::render_approval_page('success', $action_text);
     }
 
     /**
@@ -1209,7 +1641,7 @@ class PPV_Device_Fingerprint {
         global $wpdb;
 
         return $wpdb->get_results($wpdb->prepare("
-            SELECT id, device_name, fingerprint_hash, user_agent, ip_address, registered_at, last_used_at, status
+            SELECT id, device_name, fingerprint_hash, user_agent, device_info, ip_address, registered_at, last_used_at, status, mobile_scanner
             FROM {$wpdb->prefix}" . self::USER_DEVICES_TABLE . "
             WHERE store_id = %d AND status = 'active'
             ORDER BY registered_at DESC
@@ -1237,6 +1669,34 @@ class PPV_Device_Fingerprint {
         return (bool) $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(*) FROM {$wpdb->prefix}" . self::USER_DEVICES_TABLE . " WHERE store_id = %d AND fingerprint_hash = %s AND status = 'active'",
             $store_id, $fingerprint_hash
+        ));
+    }
+
+    /**
+     * Get an available device slot (pre-approved by admin)
+     * Returns the first slot with status='slot' that can be claimed
+     */
+    public static function get_available_device_slot($store_id) {
+        global $wpdb;
+
+        return $wpdb->get_row($wpdb->prepare(
+            "SELECT id, device_name FROM {$wpdb->prefix}" . self::USER_DEVICES_TABLE . "
+             WHERE store_id = %d AND status = 'slot'
+             ORDER BY registered_at ASC
+             LIMIT 1",
+            $store_id
+        ));
+    }
+
+    /**
+     * Count available device slots for a store
+     */
+    public static function get_available_slot_count($store_id) {
+        global $wpdb;
+
+        return (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->prefix}" . self::USER_DEVICES_TABLE . " WHERE store_id = %d AND status = 'slot'",
+            $store_id
         ));
     }
 
@@ -1309,10 +1769,21 @@ class PPV_Device_Fingerprint {
         $store_name = $store->name ?? "Store #{$store_id}";
         $store_email = $store->email ?? '';
 
-        // Admin email
-        $admin_email = get_option('admin_email');
+        // Admin email - use same as other notifications
+        $admin_email = 'info@punktepass.de';
 
-        $type_text = $type === 'add' ? 'Neues Gerät hinzufügen' : 'Gerät entfernen';
+        // Set type text based on request type
+        if ($type === 'add') {
+            $type_text = 'Neues Gerät hinzufügen';
+        } elseif ($type === 'new_slot') {
+            $type_text = 'Zusätzlichen Geräteplatz anfordern';
+        } elseif ($type === 'remove') {
+            $type_text = 'Gerät entfernen';
+        } elseif ($type === 'mobile_scanner') {
+            $type_text = 'Mobile Scanner aktivieren';
+        } else {
+            $type_text = 'Unbekannte Anfrage';
+        }
         $site_url = site_url();
 
         $approve_url = "{$site_url}/wp-json/punktepass/v1/user-devices/approve/{$token}";
@@ -1352,7 +1823,256 @@ class PPV_Device_Fingerprint {
             'From: PunktePass <noreply@punktepass.de>'
         ];
 
-        wp_mail($admin_email, $subject, $message, $headers);
-        ppv_log("📧 [Device Email] Sent to {$admin_email} for store_id={$store_id}");
+        ppv_log("📧 [Device Email] Attempting to send to: {$admin_email}");
+        $sent = wp_mail($admin_email, $subject, $message, $headers);
+        ppv_log("📧 [Device Email] Result: " . ($sent ? 'SUCCESS' : 'FAILED') . " - to={$admin_email}, store_id={$store_id}");
+    }
+
+    // ========================================
+    // 📱 MOBILE SCANNER REQUEST METHODS
+    // ========================================
+
+    /**
+     * REST: Get mobile scanner status for devices (per-device system)
+     */
+    public static function rest_get_mobile_scanner_status(WP_REST_Request $request) {
+        global $wpdb;
+
+        $store_id = self::get_session_store_id();
+
+        if ($store_id <= 0) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Nicht authentifiziert'
+            ], 401);
+        }
+
+        $parent_store_id = self::get_parent_store_id($store_id);
+
+        // Get all devices with mobile_scanner status
+        $devices = $wpdb->get_results($wpdb->prepare(
+            "SELECT id, device_name, mobile_scanner FROM {$wpdb->prefix}" . self::USER_DEVICES_TABLE . "
+             WHERE store_id = %d AND status = 'active'
+             ORDER BY registered_at DESC",
+            $parent_store_id
+        ));
+
+        // Get pending mobile scanner requests for this store's devices
+        $pending_requests = $wpdb->get_results($wpdb->prepare(
+            "SELECT device_id, requested_at FROM {$wpdb->prefix}" . self::DEVICE_REQUESTS_TABLE . "
+             WHERE store_id = %d AND request_type = 'mobile_scanner' AND status = 'pending'",
+            $parent_store_id
+        ));
+
+        // Build pending map by device_id and collect pending device IDs
+        $pending_by_device = [];
+        $pending_device_ids = [];
+        foreach ($pending_requests as $pr) {
+            if ($pr->device_id) {
+                $pending_by_device[$pr->device_id] = $pr->requested_at;
+                $pending_device_ids[] = intval($pr->device_id);
+            }
+        }
+
+        // Build devices response with mobile scanner info
+        $devices_info = [];
+        foreach ($devices as $device) {
+            $devices_info[] = [
+                'id' => intval($device->id),
+                'device_name' => $device->device_name,
+                'mobile_scanner' => !empty($device->mobile_scanner),
+                'pending_request' => isset($pending_by_device[$device->id]) ? $pending_by_device[$device->id] : null
+            ];
+        }
+
+        // Legacy: also return store-level scanner type for backwards compatibility
+        $scanner_type = $wpdb->get_var($wpdb->prepare(
+            "SELECT scanner_type FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+            $store_id
+        ));
+
+        return new WP_REST_Response([
+            'success' => true,
+            'devices' => $devices_info,
+            'pending_device_ids' => $pending_device_ids, // Simple array for frontend
+            // Legacy store-level info
+            'store_scanner_type' => $scanner_type ?: 'fixed',
+            'store_is_mobile' => ($scanner_type === 'mobile')
+        ], 200);
+    }
+
+    /**
+     * REST: Request mobile scanner mode for a specific device (needs admin approval)
+     */
+    public static function rest_request_mobile_scanner(WP_REST_Request $request) {
+        global $wpdb;
+
+        $store_id = self::get_session_store_id();
+
+        if ($store_id <= 0) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Nicht authentifiziert'
+            ], 401);
+        }
+
+        $data = $request->get_json_params();
+        $device_id = intval($data['device_id'] ?? 0);
+
+        if ($device_id <= 0) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Geräte-ID erforderlich'
+            ], 400);
+        }
+
+        $parent_store_id = self::get_parent_store_id($store_id);
+
+        // Check if device exists and belongs to this store
+        $device = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}" . self::USER_DEVICES_TABLE . " WHERE id = %d AND store_id = %d AND status = 'active'",
+            $device_id, $parent_store_id
+        ));
+
+        if (!$device) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Gerät nicht gefunden'
+            ], 404);
+        }
+
+        // Check if device already has mobile scanner
+        if (!empty($device->mobile_scanner)) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Dieses Gerät hat bereits Mobile Scanner aktiviert'
+            ], 200);
+        }
+
+        // Check for existing pending request for this device
+        $existing = $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM {$wpdb->prefix}" . self::DEVICE_REQUESTS_TABLE . "
+             WHERE device_id = %d AND request_type = 'mobile_scanner' AND status = 'pending'",
+            $device_id
+        ));
+
+        if ($existing) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Es gibt bereits eine ausstehende Anfrage für dieses Gerät'
+            ], 200);
+        }
+
+        // Create the request
+        $token = wp_generate_password(32, false);
+        $ip_address = self::get_client_ip();
+        $user_agent = sanitize_text_field($_SERVER['HTTP_USER_AGENT'] ?? '');
+
+        $result = $wpdb->insert(
+            $wpdb->prefix . self::DEVICE_REQUESTS_TABLE,
+            [
+                'store_id' => $parent_store_id,
+                'device_id' => $device_id,
+                'fingerprint_hash' => $device->fingerprint_hash,
+                'request_type' => 'mobile_scanner',
+                'device_name' => $device->device_name,
+                'user_agent' => $user_agent,
+                'ip_address' => $ip_address,
+                'approval_token' => $token,
+                'status' => 'pending',
+                'requested_at' => current_time('mysql')
+            ],
+            ['%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s']
+        );
+
+        if (!$result) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Datenbankfehler'
+            ], 500);
+        }
+
+        // Send email to admin
+        self::send_mobile_scanner_request_email($parent_store_id, $token, $device);
+
+        ppv_log("📱 [Mobile Scanner] Request created: store_id={$parent_store_id}, device_id={$device_id}, device={$device->device_name}, token={$token}");
+
+        return new WP_REST_Response([
+            'success' => true,
+            'message' => 'Anfrage gesendet! Der Admin wird per E-Mail benachrichtigt.'
+        ], 200);
+    }
+
+    /**
+     * Send mobile scanner request email to admin (per-device)
+     */
+    private static function send_mobile_scanner_request_email($store_id, $token, $device = null) {
+        global $wpdb;
+
+        // Get store info
+        $store = $wpdb->get_row($wpdb->prepare(
+            "SELECT name, email, city FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
+            $store_id
+        ));
+
+        $store_name = $store->name ?? "Store #{$store_id}";
+        $store_city = $store->city ?? '';
+        $device_name = $device->device_name ?? 'Unbekannt';
+        $device_id = $device->id ?? 0;
+
+        // Admin email - use same as other notifications
+        $admin_email = 'info@punktepass.de';
+        $site_url = site_url();
+
+        $approve_url = "{$site_url}/wp-json/punktepass/v1/user-devices/approve/{$token}";
+        $reject_url = "{$site_url}/wp-json/punktepass/v1/user-devices/reject/{$token}";
+
+        $subject = "[PunktePass] Mobile Scanner für Gerät - {$store_name}";
+
+        $message = "
+        <html>
+        <head><style>
+            body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }
+            .card { background: #fff; padding: 30px; border-radius: 10px; max-width: 500px; margin: 0 auto; }
+            h2 { color: #333; margin-top: 0; }
+            .info { background: #f0f0f0; padding: 15px; border-radius: 8px; margin: 20px 0; }
+            .device-info { background: #e3f2fd; border: 1px solid #2196f3; padding: 15px; border-radius: 8px; margin: 20px 0; }
+            .warning { background: #fff3e0; border: 1px solid #ff9800; padding: 15px; border-radius: 8px; margin: 20px 0; }
+            .btn { display: inline-block; padding: 12px 25px; border-radius: 8px; text-decoration: none; color: #fff; margin-right: 10px; }
+            .btn-approve { background: #4caf50; }
+            .btn-reject { background: #f44336; }
+        </style></head>
+        <body>
+        <div class='card'>
+            <h2>📱 Mobile Scanner Anfrage (Gerätspezifisch)</h2>
+            <p>Ein Geschäft möchte den <strong>Mobile Scanner</strong> für ein bestimmtes Gerät aktivieren.</p>
+            <div class='info'>
+                <p><strong>Geschäft:</strong> {$store_name}</p>
+                <p><strong>Stadt:</strong> {$store_city}</p>
+                <p><strong>Store ID:</strong> {$store_id}</p>
+                <p><strong>Zeitpunkt:</strong> " . current_time('d.m.Y H:i') . "</p>
+            </div>
+            <div class='device-info'>
+                <p><strong>📱 Gerät:</strong> {$device_name}</p>
+                <p><strong>Geräte-ID:</strong> #{$device_id}</p>
+            </div>
+            <div class='warning'>
+                <p><strong>⚠️ Hinweis:</strong> Bei Mobile Scanner wird die GPS-Prüfung für dieses Gerät deaktiviert. Es kann von überall scannen.</p>
+            </div>
+            <p>Bitte bestätigen oder ablehnen:</p>
+            <a href='{$approve_url}' class='btn btn-approve'>✅ Genehmigen</a>
+            <a href='{$reject_url}' class='btn btn-reject'>❌ Ablehnen</a>
+        </div>
+        </body>
+        </html>";
+
+        $headers = [
+            'Content-Type: text/html; charset=UTF-8',
+            'From: PunktePass <noreply@punktepass.de>'
+        ];
+
+        ppv_log("📧 [Mobile Scanner Email] Attempting to send to: {$admin_email}");
+        $sent = wp_mail($admin_email, $subject, $message, $headers);
+        ppv_log("📧 [Mobile Scanner Email] Result: " . ($sent ? 'SUCCESS' : 'FAILED') . " - to={$admin_email}, store_id={$store_id}, device_id={$device_id}");
     }
 }
