@@ -14,10 +14,10 @@ class PPV_Standalone_Admin {
     const ADMIN_OPTION_KEY = 'ppv_standalone_admin_users';
 
     /**
-     * Inicializálás
+     * Hooks - a plugin által hívott metódus
      */
-    public static function init() {
-        add_action('init', [__CLASS__, 'handle_admin_routes']);
+    public static function hooks() {
+        add_action('init', [__CLASS__, 'handle_admin_routes'], 1);
         add_action('rest_api_init', [__CLASS__, 'register_api_routes']);
     }
 
