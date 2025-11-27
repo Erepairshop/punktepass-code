@@ -268,6 +268,8 @@ class PPV_Standalone_Admin {
             self::render_handlers_page();
         } elseif ($path === '/admin/delete-device') {
             self::handle_delete_device();
+        } elseif ($path === '/admin/deactivate-mobile') {
+            self::handle_deactivate_mobile();
         } elseif (preg_match('#/admin/approve/([a-zA-Z0-9]+)#', $path, $matches)) {
             self::handle_approve($matches[1]);
         } elseif (preg_match('#/admin/reject/([a-zA-Z0-9]+)#', $path, $matches)) {
@@ -331,6 +333,67 @@ class PPV_Standalone_Admin {
             wp_redirect('/admin/handlers?deleted=' . urlencode($device->device_name) . '&store=' . urlencode($device->store_name));
         } else {
             wp_redirect('/admin/handlers?error=delete_failed');
+        }
+        exit;
+    }
+
+    /**
+     * Mobile Scanner deaktiválása admin által
+     */
+    private static function handle_deactivate_mobile() {
+        global $wpdb;
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            wp_redirect('/admin/handlers');
+            exit;
+        }
+
+        $store_id = intval($_POST['store_id'] ?? 0);
+        $reason = sanitize_text_field($_POST['reason'] ?? '');
+
+        if (empty($store_id)) {
+            wp_redirect('/admin/handlers?error=missing_store');
+            exit;
+        }
+
+        if (empty($reason)) {
+            wp_redirect('/admin/handlers?error=missing_reason');
+            exit;
+        }
+
+        // Store lekérése
+        $store = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+            $store_id
+        ));
+
+        if (!$store) {
+            wp_redirect('/admin/handlers?error=store_not_found');
+            exit;
+        }
+
+        if ($store->scanner_type !== 'mobile') {
+            wp_redirect('/admin/handlers?error=not_mobile');
+            exit;
+        }
+
+        // Mobile Scanner deaktiválása (visszaállítás fixed-re)
+        $result = $wpdb->update(
+            $wpdb->prefix . 'ppv_stores',
+            ['scanner_type' => 'fixed'],
+            ['id' => $store_id],
+            ['%s'],
+            ['%d']
+        );
+
+        if ($result !== false) {
+            // Log the deactivation
+            $admin_email = $_SESSION['ppv_admin_email'] ?? 'admin';
+            ppv_log("📵 [Admin Mobile Deactivate] store_id={$store_id}, store={$store->name}, reason={$reason}, by={$admin_email}");
+
+            wp_redirect('/admin/handlers?mobile_deactivated=' . urlencode($store->name));
+        } else {
+            wp_redirect('/admin/handlers?error=deactivate_failed');
         }
         exit;
     }
@@ -1240,6 +1303,7 @@ class PPV_Standalone_Admin {
 
         $deleted = $_GET['deleted'] ?? '';
         $store_deleted = $_GET['store'] ?? '';
+        $mobile_deactivated = $_GET['mobile_deactivated'] ?? '';
         $error = $_GET['error'] ?? '';
 
         self::get_admin_header('handlers');
@@ -1249,12 +1313,19 @@ class PPV_Standalone_Admin {
         <?php if ($deleted): ?>
             <div class="success-msg">✅ Eszköz törölve: <strong><?php echo esc_html($deleted); ?></strong> (<?php echo esc_html($store_deleted); ?>)</div>
         <?php endif; ?>
+        <?php if ($mobile_deactivated): ?>
+            <div class="success-msg">📵 Mobile Scanner deaktiválva: <strong><?php echo esc_html($mobile_deactivated); ?></strong></div>
+        <?php endif; ?>
         <?php if ($error === 'missing_reason'): ?>
-            <div class="error-msg">❌ Add meg a törlés okát!</div>
+            <div class="error-msg">❌ Add meg az indokot!</div>
         <?php elseif ($error === 'device_not_found'): ?>
             <div class="error-msg">❌ Eszköz nem található!</div>
+        <?php elseif ($error === 'store_not_found'): ?>
+            <div class="error-msg">❌ Handler nem található!</div>
         <?php elseif ($error === 'delete_failed'): ?>
             <div class="error-msg">❌ Hiba a törlés során!</div>
+        <?php elseif ($error === 'deactivate_failed'): ?>
+            <div class="error-msg">❌ Hiba a Mobile Scanner deaktiválása során!</div>
         <?php endif; ?>
 
         <div class="card">
@@ -1280,6 +1351,10 @@ class PPV_Standalone_Admin {
                             <td>
                                 <?php if ($handler->scanner_type === 'mobile'): ?>
                                     <span class="badge badge-mobile">Mobile</span>
+                                    <button type="button" class="btn btn-sm" style="background: rgba(156,39,176,0.2); color: #9c27b0; border: 1px solid rgba(156,39,176,0.3); padding: 4px 8px; font-size: 11px; margin-left: 5px;"
+                                            onclick="openMobileDeactivateModal(<?php echo $handler->id; ?>, '<?php echo esc_js($handler->name); ?>')">
+                                        <i class="ri-close-line"></i> Deaktiválás
+                                    </button>
                                 <?php else: ?>
                                     <span class="badge" style="background: rgba(255,255,255,0.1); color: #888;">Fixed</span>
                                 <?php endif; ?>
@@ -1425,7 +1500,39 @@ class PPV_Standalone_Admin {
             </div>
         </div>
 
+        <!-- Mobile Scanner deaktiválás modal -->
+        <div id="mobileDeactivateModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center;">
+            <div style="background: #1a1a2e; border: 1px solid rgba(255,255,255,0.1); border-radius: 15px; padding: 30px; max-width: 450px; width: 90%;">
+                <h3 style="color: #9c27b0; margin: 0 0 20px 0;"><i class="ri-smartphone-line"></i> Mobile Scanner deaktiválása</h3>
+                <p style="color: #ccc; margin-bottom: 15px;">
+                    Biztosan deaktiválni szeretnéd a Mobile Scanner jogosultságot?
+                </p>
+                <div style="background: rgba(156,39,176,0.1); border: 1px solid rgba(156,39,176,0.3); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                    <p style="margin: 0; color: #fff;"><strong id="mobileStoreName"></strong></p>
+                    <p style="margin: 5px 0 0 0; color: #9c27b0; font-size: 12px;">A handler visszaáll Fixed Scanner módra</p>
+                </div>
+                <form method="POST" action="/admin/deactivate-mobile" id="mobileDeactivateForm">
+                    <input type="hidden" name="store_id" id="mobileStoreId">
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; color: #fff; margin-bottom: 8px;">Deaktiválás oka: <span style="color: #f44336;">*</span></label>
+                        <textarea name="reason" id="mobileDeactivateReason" required rows="3"
+                                  style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; color: #fff; font-size: 14px; resize: none;"
+                                  placeholder="pl. GPS kötelező lett, visszaélés, helyszín változott..."></textarea>
+                    </div>
+                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                        <button type="button" onclick="closeMobileDeactivateModal()" class="btn" style="background: rgba(255,255,255,0.1); color: #fff;">
+                            Mégse
+                        </button>
+                        <button type="submit" class="btn" style="background: rgba(156,39,176,0.3); color: #9c27b0; border: 1px solid rgba(156,39,176,0.5);">
+                            <i class="ri-close-line"></i> Deaktiválás
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <script>
+        // === Eszköz törlés modal ===
         function openDeleteModal(deviceId, deviceName, deviceModel, storeName) {
             document.getElementById('deleteDeviceId').value = deviceId;
             document.getElementById('deleteDeviceName').textContent = deviceName;
@@ -1439,14 +1546,32 @@ class PPV_Standalone_Admin {
             document.getElementById('deleteModal').style.display = 'none';
         }
 
+        // === Mobile Scanner deaktiválás modal ===
+        function openMobileDeactivateModal(storeId, storeName) {
+            document.getElementById('mobileStoreId').value = storeId;
+            document.getElementById('mobileStoreName').textContent = storeName;
+            document.getElementById('mobileDeactivateReason').value = '';
+            document.getElementById('mobileDeactivateModal').style.display = 'flex';
+        }
+
+        function closeMobileDeactivateModal() {
+            document.getElementById('mobileDeactivateModal').style.display = 'none';
+        }
+
         // ESC billentyű
         document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') closeDeleteModal();
+            if (e.key === 'Escape') {
+                closeDeleteModal();
+                closeMobileDeactivateModal();
+            }
         });
 
         // Kattintás a háttérre
         document.getElementById('deleteModal').addEventListener('click', function(e) {
             if (e.target === this) closeDeleteModal();
+        });
+        document.getElementById('mobileDeactivateModal').addEventListener('click', function(e) {
+            if (e.target === this) closeMobileDeactivateModal();
         });
         </script>
         <?php
