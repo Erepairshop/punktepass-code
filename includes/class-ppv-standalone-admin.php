@@ -920,6 +920,3 @@ class PPV_Standalone_Admin {
         self::get_admin_footer();
     }
 }
-
-// Inicializálás
-PPV_Standalone_Admin::init();
