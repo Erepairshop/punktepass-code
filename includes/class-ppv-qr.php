@@ -2137,7 +2137,7 @@ class PPV_QR {
                     }
 
                     const script = document.createElement('script');
-                    script.src = 'https://cdn.jsdelivr.net/npm/@aspect-analytics/browser@2.0.0/dist/browser.min.js';
+                    script.src = 'https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@4/dist/fp.min.js';
                     script.onload = resolve;
                     script.onerror = () => {
                         // Fallback: use basic fingerprint
