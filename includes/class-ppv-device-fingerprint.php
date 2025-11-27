@@ -184,6 +184,22 @@ class PPV_Device_Fingerprint {
     }
 
     /**
+     * Check if a column exists in the user_devices table
+     */
+    private static function column_exists($column_name) {
+        global $wpdb;
+        static $columns_cache = null;
+
+        if ($columns_cache === null) {
+            $table = $wpdb->prefix . self::USER_DEVICES_TABLE;
+            $columns = $wpdb->get_col("SHOW COLUMNS FROM {$table}");
+            $columns_cache = array_flip($columns);
+        }
+
+        return isset($columns_cache[$column_name]);
+    }
+
+    /**
      * Register REST API routes
      */
     public static function register_routes() {
@@ -902,7 +918,8 @@ class PPV_Device_Fingerprint {
             $update_data = ['last_used_at' => current_time('mysql')];
             $update_format = ['%s'];
 
-            if ($device_info_json) {
+            // Only add device_info if we have data AND column exists
+            if ($device_info_json && self::column_exists('device_info')) {
                 $update_data['device_info'] = $device_info_json;
                 $update_format[] = '%s';
             }
@@ -938,18 +955,24 @@ class PPV_Device_Fingerprint {
         $ip_address = self::get_client_ip();
         $user_agent = sanitize_text_field($_SERVER['HTTP_USER_AGENT'] ?? '');
 
+        // Base insert data (without device_info - column might not exist yet)
         $insert_data = [
             'store_id' => $parent_store_id,
             'fingerprint_hash' => $fingerprint_hash,
             'device_name' => $device_name,
             'user_agent' => $user_agent,
-            'device_info' => $device_info_json,
             'ip_address' => $ip_address,
             'registered_at' => current_time('mysql'),
             'last_used_at' => current_time('mysql'),
             'status' => 'active'
         ];
-        $insert_format = ['%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s'];
+        $insert_format = ['%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s'];
+
+        // Only add device_info if we have data AND column exists
+        if ($device_info_json && self::column_exists('device_info')) {
+            $insert_data['device_info'] = $device_info_json;
+            $insert_format[] = '%s';
+        }
 
         $result = $wpdb->insert(
             $wpdb->prefix . self::USER_DEVICES_TABLE,
@@ -1148,7 +1171,8 @@ class PPV_Device_Fingerprint {
         ];
         $update_format = ['%s', '%s', '%s', '%s'];
 
-        if ($device_info_json) {
+        // Only add device_info if we have data AND column exists
+        if ($device_info_json && self::column_exists('device_info')) {
             $update_data['device_info'] = $device_info_json;
             $update_format[] = '%s';
         }
