@@ -3292,6 +3292,66 @@ class PPV_QR {
         }
 
         // ═══════════════════════════════════════════════════════════
+        // 👋 COMEBACK CAMPAIGN BONUS
+        // ═══════════════════════════════════════════════════════════
+        $comeback_bonus_applied = 0;
+
+        // Get comeback settings from store (or parent store for filiales)
+        $comeback_store_id = $store_id;
+        if (class_exists('PPV_Filiale')) {
+            $comeback_store_id = PPV_Filiale::get_parent_id($store_id);
+        }
+
+        $comeback_settings = $wpdb->get_row($wpdb->prepare("
+            SELECT comeback_enabled, comeback_days, comeback_bonus_type, comeback_bonus_value, comeback_message
+            FROM {$wpdb->prefix}ppv_stores WHERE id = %d
+        ", $comeback_store_id));
+
+        ppv_log("👋 [PPV_QR] Comeback check: store_id={$comeback_store_id}, enabled=" . ($comeback_settings->comeback_enabled ?? 'NULL') . ", days=" . ($comeback_settings->comeback_days ?? 'NULL'));
+
+        if ($comeback_settings && $comeback_settings->comeback_enabled) {
+            // Get user's last scan date at this store (or parent store for filiales)
+            $last_scan_date = $wpdb->get_var($wpdb->prepare("
+                SELECT MAX(created) FROM {$wpdb->prefix}ppv_points
+                WHERE user_id = %d AND store_id IN (
+                    SELECT id FROM {$wpdb->prefix}ppv_stores
+                    WHERE id = %d OR parent_store_id = %d
+                ) AND type = 'qr_scan'
+            ", $user_id, $comeback_store_id, $comeback_store_id));
+
+            ppv_log("👋 [PPV_QR] User last scan: user_id={$user_id}, last_scan=" . ($last_scan_date ?? 'NULL (first scan)'));
+
+            if ($last_scan_date) {
+                $days_since_last_scan = floor((time() - strtotime($last_scan_date)) / (60 * 60 * 24));
+                $comeback_days_required = intval($comeback_settings->comeback_days ?? 30);
+
+                ppv_log("👋 [PPV_QR] Inactivity check: days_inactive={$days_since_last_scan}, required={$comeback_days_required}");
+
+                if ($days_since_last_scan >= $comeback_days_required) {
+                    ppv_log("👋 [PPV_QR] User {$user_id} qualifies for comeback bonus! Inactive for {$days_since_last_scan} days.");
+
+                    $comeback_type = $comeback_settings->comeback_bonus_type ?? 'double_points';
+                    $base_points_for_comeback = $points_add;
+
+                    switch ($comeback_type) {
+                        case 'double_points':
+                            $comeback_bonus_applied = $base_points_for_comeback;
+                            break;
+                        case 'fixed_points':
+                            $comeback_bonus_applied = intval($comeback_settings->comeback_bonus_value ?? 0);
+                            break;
+                    }
+
+                    if ($comeback_bonus_applied > 0) {
+                        $points_add += $comeback_bonus_applied;
+                        ppv_log("👋 [PPV_QR] Comeback bonus applied: type={$comeback_type}, bonus=+{$comeback_bonus_applied}, total_points={$points_add}");
+                    }
+                }
+            }
+            // Note: First-time visitors don't get comeback bonus (no previous visit)
+        }
+
+        // ═══════════════════════════════════════════════════════════
         // INSERT POINTS
         // ═══════════════════════════════════════════════════════════
         $wpdb->insert("{$wpdb->prefix}ppv_points", [
@@ -3315,6 +3375,9 @@ class PPV_QR {
         }
         if ($birthday_bonus_applied > 0) {
             $bonus_parts[] = "🎂 +{$birthday_bonus_applied}";
+        }
+        if ($comeback_bonus_applied > 0) {
+            $bonus_parts[] = "👋 +{$comeback_bonus_applied}";
         }
         $log_msg = "+{$points_add} " . self::t('points', 'Punkte');
         if (!empty($bonus_parts)) {
@@ -3350,6 +3413,7 @@ class PPV_QR {
                 'points' => (string)$points_add,
                 'vip_bonus' => $vip_bonus_applied,
                 'birthday_bonus' => $birthday_bonus_applied, // 🎂 Birthday bonus
+                'comeback_bonus' => $comeback_bonus_applied, // 👋 Comeback bonus
                 'date_short' => date('d.m.'),
                 'time_short' => date('H:i'),
                 'success' => true,
@@ -3375,6 +3439,7 @@ class PPV_QR {
                 'store_name' => $store_name ?? 'PunktePass',
                 'vip_bonus' => $vip_bonus_applied,
                 'birthday_bonus' => $birthday_bonus_applied, // 🎂 Birthday bonus
+                'comeback_bonus' => $comeback_bonus_applied, // 👋 Comeback bonus
                 'success' => true,
             ]);
         }
@@ -3386,6 +3451,9 @@ class PPV_QR {
         }
         if ($birthday_bonus_applied > 0) {
             $bonus_suffix .= " 🎂 Geburtstags-Bonus: +{$birthday_bonus_applied}";
+        }
+        if ($comeback_bonus_applied > 0) {
+            $bonus_suffix .= " 👋 Comeback-Bonus: +{$comeback_bonus_applied}";
         }
         $success_msg = "✅ +{$points_add} " . self::t('points', 'Punkte') . $bonus_suffix;
 

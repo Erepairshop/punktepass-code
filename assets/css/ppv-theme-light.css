@@ -7400,6 +7400,15 @@ ppv-app-root {
     border-radius: 4px;
 }
 
+.ppv-comeback-badge {
+    font-size: 9px;
+    font-weight: 500;
+    color: #f59e0b;
+    background: rgba(245, 158, 11, 0.15);
+    padding: 1px 4px;
+    border-radius: 4px;
+}
+
 .ppv-scan-points.bonus {
     flex-direction: column;
     align-items: center;
@@ -7472,6 +7481,12 @@ body.ppv-dark .ppv-bday-badge,
 [data-theme="dark"] .ppv-bday-badge {
     color: #f9a8d4;
     background: rgba(236, 72, 153, 0.2);
+}
+
+body.ppv-dark .ppv-comeback-badge,
+[data-theme="dark"] .ppv-comeback-badge {
+    color: #fcd34d;
+    background: rgba(245, 158, 11, 0.2);
 }
 
 /* ──────────────────────────────────────────────────────────────────────

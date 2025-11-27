@@ -390,6 +390,11 @@
       const bdayBonus = bdayMatch ? bdayMatch[1] : (log.birthday_bonus > 0 ? log.birthday_bonus : null);
       const isBirthday = !!bdayBonus;
 
+      // Check for Comeback bonus in message (e.g., "👋 +5")
+      const comebackMatch = (log.message || '').match(/👋\s*\+(\d+)/);
+      const comebackBonus = comebackMatch ? comebackMatch[1] : (log.comeback_bonus > 0 ? log.comeback_bonus : null);
+      const isComeback = !!comebackBonus;
+
       // ✅ FIX: Subtitle logic - ALWAYS show date/time, with error message as second line
       const dateTime = `${log.date_short || ''} ${log.time_short || ''}`.trim();
       let subtitle = dateTime;
@@ -411,7 +416,7 @@
         ? `<img src="${log.avatar}" class="ppv-scan-avatar" alt="">`
         : `<div class="ppv-scan-avatar-placeholder">${log.success ? '✓' : '✗'}</div>`;
 
-      // Points display: show VIP/Birthday badges if applicable, or error indicator
+      // Points display: show VIP/Birthday/Comeback badges if applicable, or error indicator
       let pointsHtml;
       if (!log.success) {
         pointsHtml = `<div class="ppv-scan-points error-badge">✗</div>`;
@@ -423,7 +428,10 @@
         if (isBirthday) {
           badges += `<span class="ppv-bday-badge">🎂 +${bdayBonus}</span>`;
         }
-        const hasBonus = isVip || isBirthday;
+        if (isComeback) {
+          badges += `<span class="ppv-comeback-badge">👋 +${comebackBonus}</span>`;
+        }
+        const hasBonus = isVip || isBirthday || isComeback;
         pointsHtml = `<div class="ppv-scan-points ${hasBonus ? 'bonus' : ''}">+${log.points}${badges}</div>`;
       }
 
