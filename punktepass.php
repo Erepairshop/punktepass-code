@@ -279,6 +279,7 @@ $core_modules = [
      'includes/class-ppv-user-qr.php', // Timed QR endpoint
      'includes/class-ppv-device-fingerprint.php', // Device fingerprint for fraud prevention
      'includes/class-ppv-standalone-admin.php', // Standalone admin panel at /admin
+     'includes/class-ppv-roi-calculator.php', // ROI calculator landing page at /rechner
 
 ];
 
