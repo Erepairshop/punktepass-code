@@ -1480,4 +1480,47 @@ return [
 
     // Notifications
     'rewards_new_redemption' => 'Răscumpărare nouă!',
+
+    // ============================================================
+    // MARKETING & AUTOMATIZARE
+    // ============================================================
+    'tab_marketing' => 'Marketing',
+    'marketing_automation' => 'Marketing & Automatizare',
+    'marketing_automation_help' => 'Automatizați relațiile cu clienții și creșteți rata de revenire.',
+
+    // Google Review
+    'google_review_title' => 'Recenzii Google',
+    'google_review_desc' => 'Cereți automat recenzii când clienții colectează puncte.',
+    'google_review_url' => 'URL Recenzie Google',
+    'google_review_url_help' => 'Găsiți URL-ul în: Google Business > Recenzii > Partajare link',
+    'google_review_threshold' => 'Prag puncte',
+    'google_review_frequency' => 'Frecvență',
+    'frequency_once' => 'O singură dată',
+    'frequency_monthly' => 'Lunar',
+    'frequency_quarterly' => 'Trimestrial',
+
+    // Birthday Bonus
+    'birthday_bonus_title' => 'Bonus Ziua de Naștere',
+    'birthday_bonus_desc' => 'Mesaj și bonus automat de ziua clientului.',
+    'birthday_bonus_type' => 'Tip bonus',
+    'birthday_bonus_value' => 'Puncte bonus',
+    'birthday_bonus_message' => 'Mesaj (opțional)',
+    'birthday_bonus_message_placeholder' => 'La mulți ani! Azi primești puncte duble!',
+    'bonus_double_points' => 'Puncte duble',
+    'bonus_fixed_points' => 'Puncte fixe',
+    'bonus_free_product' => 'Produs gratuit',
+
+    // Comeback Campaign
+    'comeback_title' => 'Campanie Revenire',
+    'comeback_desc' => 'Mesaj automat către clienții inactivi după X zile.',
+    'comeback_days' => 'Inactivitate (zile)',
+    'comeback_bonus_type' => 'Tip bonus',
+    'comeback_bonus_value' => 'Puncte bonus',
+    'comeback_message' => 'Mesaj (opțional)',
+    'comeback_message_placeholder' => 'Ne lipsești! Revino și primești puncte duble!',
+    'days' => 'zile',
+
+    // Marketing Tips
+    'marketing_tip_title' => 'Sfat',
+    'marketing_tip_text' => 'Recenziile Google îmbunătățesc vizibilitatea online și atrag clienți noi. Activează această funcție pentru a cere automat recenzii.',
 ];

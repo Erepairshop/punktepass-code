@@ -1492,5 +1492,48 @@ return [
 
     // Notifications
     'rewards_new_redemption' => 'Neue Einlösung!',
+
+    // ============================================================
+    // MARKETING & AUTOMATION
+    // ============================================================
+    'tab_marketing' => 'Marketing',
+    'marketing_automation' => 'Marketing & Automatisierung',
+    'marketing_automation_help' => 'Automatisieren Sie Ihre Kundenbindung und steigern Sie die Wiederkehrquote.',
+
+    // Google Review
+    'google_review_title' => 'Google Bewertungen',
+    'google_review_desc' => 'Automatisch um Bewertungen bitten, wenn Kunden Punkte sammeln.',
+    'google_review_url' => 'Google Bewertungs-URL',
+    'google_review_url_help' => 'Finden Sie Ihre URL unter Google Business > Bewertungen > Link teilen',
+    'google_review_threshold' => 'Punkte-Schwelle',
+    'google_review_frequency' => 'Häufigkeit',
+    'frequency_once' => 'Einmalig',
+    'frequency_monthly' => 'Monatlich',
+    'frequency_quarterly' => 'Vierteljährlich',
+
+    // Birthday Bonus
+    'birthday_bonus_title' => 'Geburtstags-Bonus',
+    'birthday_bonus_desc' => 'Automatische Nachricht und Bonus am Geburtstag des Kunden.',
+    'birthday_bonus_type' => 'Bonus-Typ',
+    'birthday_bonus_value' => 'Bonus-Punkte',
+    'birthday_bonus_message' => 'Nachricht (optional)',
+    'birthday_bonus_message_placeholder' => 'Herzlichen Glückwunsch zum Geburtstag! Heute gibt es doppelte Punkte für Sie!',
+    'bonus_double_points' => 'Doppelte Punkte',
+    'bonus_fixed_points' => 'Feste Punkte',
+    'bonus_free_product' => 'Gratis Produkt',
+
+    // Comeback Campaign
+    'comeback_title' => 'Comeback-Kampagne',
+    'comeback_desc' => 'Automatische Nachricht an inaktive Kunden nach X Tagen.',
+    'comeback_days' => 'Inaktivität (Tage)',
+    'comeback_bonus_type' => 'Bonus-Typ',
+    'comeback_bonus_value' => 'Bonus-Punkte',
+    'comeback_message' => 'Nachricht (optional)',
+    'comeback_message_placeholder' => 'Wir vermissen Sie! Kommen Sie vorbei und erhalten Sie doppelte Punkte!',
+    'days' => 'Tage',
+
+    // Marketing Tips
+    'marketing_tip_title' => 'Tipp',
+    'marketing_tip_text' => 'Google Bewertungen verbessern Ihre Online-Sichtbarkeit und ziehen neue Kunden an. Aktivieren Sie diese Funktion, um automatisch um Bewertungen zu bitten.',
 ];
 

@@ -210,6 +210,7 @@ wp_localize_script('pp-profile-lite-i18n', 'ppv_profile', [
                     <button class="ppv-tab-btn" data-tab="hours" data-i18n="tab_hours">🕒 <?php echo esc_html(PPV_Lang::t('tab_hours')); ?></button>
                     <button class="ppv-tab-btn" data-tab="media" data-i18n="tab_media">🖼️ <?php echo esc_html(PPV_Lang::t('tab_media')); ?></button>
                     <button class="ppv-tab-btn" data-tab="contact" data-i18n="tab_contact">📞 <?php echo esc_html(PPV_Lang::t('tab_contact')); ?></button>
+                    <button class="ppv-tab-btn" data-tab="marketing" data-i18n="tab_marketing">⚡ <?php echo esc_html(PPV_Lang::t('tab_marketing')); ?></button>
                     <button class="ppv-tab-btn" data-tab="settings" data-i18n="tab_settings">⚙️ <?php echo esc_html(PPV_Lang::t('tab_settings')); ?></button>
                 </div>
 
@@ -223,6 +224,7 @@ wp_localize_script('pp-profile-lite-i18n', 'ppv_profile', [
                     <?php echo self::render_tab_hours($store); ?>
                     <?php echo self::render_tab_media($store); ?>
                     <?php echo self::render_tab_contact($store); ?>
+                    <?php echo self::render_tab_marketing($store); ?>
                     <?php echo self::render_tab_settings($store); ?>
 
                     <div class="ppv-form-footer">
@@ -530,6 +532,218 @@ if (!empty($store->gallery)) {
             return ob_get_clean();
         }
 
+        /**
+         * ============================================================
+         * MARKETING & AUTOMATION TAB
+         * ============================================================
+         */
+        private static function render_tab_marketing($store) {
+            ob_start();
+            ?>
+            <div class="ppv-tab-content" id="tab-marketing">
+                <h2 data-i18n="marketing_automation"><?php echo esc_html(PPV_Lang::t('marketing_automation')); ?></h2>
+                <p class="ppv-help" style="margin-bottom: 20px;" data-i18n="marketing_automation_help">
+                    <?php echo esc_html(PPV_Lang::t('marketing_automation_help')); ?>
+                </p>
+
+                <!-- ============================================================
+                     GOOGLE REVIEW REQUEST
+                     ============================================================ -->
+                <div class="ppv-marketing-card" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                    <div class="ppv-marketing-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <div>
+                            <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 24px;">⭐</span>
+                                <span data-i18n="google_review_title"><?php echo esc_html(PPV_Lang::t('google_review_title')); ?></span>
+                            </h3>
+                            <small style="color: #888;" data-i18n="google_review_desc"><?php echo esc_html(PPV_Lang::t('google_review_desc')); ?></small>
+                        </div>
+                        <label class="ppv-toggle">
+                            <input type="checkbox" name="google_review_enabled" value="1" <?php checked($store->google_review_enabled ?? 0, 1); ?>>
+                            <span class="ppv-toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="ppv-marketing-body" id="google-review-settings" style="<?php echo empty($store->google_review_enabled) ? 'opacity: 0.5; pointer-events: none;' : ''; ?>">
+                        <div class="ppv-form-group">
+                            <label data-i18n="google_review_url"><?php echo esc_html(PPV_Lang::t('google_review_url')); ?></label>
+                            <input type="url" name="google_review_url" value="<?php echo esc_attr($store->google_review_url ?? ''); ?>" placeholder="https://g.page/r/...">
+                            <small style="color: #666;" data-i18n="google_review_url_help"><?php echo esc_html(PPV_Lang::t('google_review_url_help')); ?></small>
+                        </div>
+
+                        <div class="ppv-form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <div class="ppv-form-group">
+                                <label data-i18n="google_review_threshold"><?php echo esc_html(PPV_Lang::t('google_review_threshold')); ?></label>
+                                <input type="number" name="google_review_threshold" value="<?php echo esc_attr($store->google_review_threshold ?? 100); ?>" min="10" max="1000" step="10">
+                            </div>
+                            <div class="ppv-form-group">
+                                <label data-i18n="google_review_frequency"><?php echo esc_html(PPV_Lang::t('google_review_frequency')); ?></label>
+                                <select name="google_review_frequency">
+                                    <option value="once" <?php selected($store->google_review_frequency ?? 'once', 'once'); ?> data-i18n="frequency_once"><?php echo esc_html(PPV_Lang::t('frequency_once')); ?></option>
+                                    <option value="monthly" <?php selected($store->google_review_frequency ?? '', 'monthly'); ?> data-i18n="frequency_monthly"><?php echo esc_html(PPV_Lang::t('frequency_monthly')); ?></option>
+                                    <option value="quarterly" <?php selected($store->google_review_frequency ?? '', 'quarterly'); ?> data-i18n="frequency_quarterly"><?php echo esc_html(PPV_Lang::t('frequency_quarterly')); ?></option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================================
+                     BIRTHDAY BONUS
+                     ============================================================ -->
+                <div class="ppv-marketing-card" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                    <div class="ppv-marketing-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <div>
+                            <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 24px;">🎂</span>
+                                <span data-i18n="birthday_bonus_title"><?php echo esc_html(PPV_Lang::t('birthday_bonus_title')); ?></span>
+                            </h3>
+                            <small style="color: #888;" data-i18n="birthday_bonus_desc"><?php echo esc_html(PPV_Lang::t('birthday_bonus_desc')); ?></small>
+                        </div>
+                        <label class="ppv-toggle">
+                            <input type="checkbox" name="birthday_bonus_enabled" value="1" <?php checked($store->birthday_bonus_enabled ?? 0, 1); ?>>
+                            <span class="ppv-toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="ppv-marketing-body" id="birthday-bonus-settings" style="<?php echo empty($store->birthday_bonus_enabled) ? 'opacity: 0.5; pointer-events: none;' : ''; ?>">
+                        <div class="ppv-form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <div class="ppv-form-group">
+                                <label data-i18n="birthday_bonus_type"><?php echo esc_html(PPV_Lang::t('birthday_bonus_type')); ?></label>
+                                <select name="birthday_bonus_type" id="birthday_bonus_type">
+                                    <option value="double_points" <?php selected($store->birthday_bonus_type ?? 'double_points', 'double_points'); ?> data-i18n="bonus_double_points"><?php echo esc_html(PPV_Lang::t('bonus_double_points')); ?></option>
+                                    <option value="fixed_points" <?php selected($store->birthday_bonus_type ?? '', 'fixed_points'); ?> data-i18n="bonus_fixed_points"><?php echo esc_html(PPV_Lang::t('bonus_fixed_points')); ?></option>
+                                    <option value="free_product" <?php selected($store->birthday_bonus_type ?? '', 'free_product'); ?> data-i18n="bonus_free_product"><?php echo esc_html(PPV_Lang::t('bonus_free_product')); ?></option>
+                                </select>
+                            </div>
+                            <div class="ppv-form-group" id="birthday_bonus_value_group" style="<?php echo ($store->birthday_bonus_type ?? 'double_points') !== 'fixed_points' ? 'display: none;' : ''; ?>">
+                                <label data-i18n="birthday_bonus_value"><?php echo esc_html(PPV_Lang::t('birthday_bonus_value')); ?></label>
+                                <input type="number" name="birthday_bonus_value" value="<?php echo esc_attr($store->birthday_bonus_value ?? 50); ?>" min="1" max="1000">
+                            </div>
+                        </div>
+
+                        <div class="ppv-form-group">
+                            <label data-i18n="birthday_bonus_message"><?php echo esc_html(PPV_Lang::t('birthday_bonus_message')); ?></label>
+                            <textarea name="birthday_bonus_message" rows="2" placeholder="<?php echo esc_attr(PPV_Lang::t('birthday_bonus_message_placeholder')); ?>"><?php echo esc_textarea($store->birthday_bonus_message ?? ''); ?></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================================
+                     COMEBACK CAMPAIGN
+                     ============================================================ -->
+                <div class="ppv-marketing-card" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                    <div class="ppv-marketing-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <div>
+                            <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 24px;">👋</span>
+                                <span data-i18n="comeback_title"><?php echo esc_html(PPV_Lang::t('comeback_title')); ?></span>
+                            </h3>
+                            <small style="color: #888;" data-i18n="comeback_desc"><?php echo esc_html(PPV_Lang::t('comeback_desc')); ?></small>
+                        </div>
+                        <label class="ppv-toggle">
+                            <input type="checkbox" name="comeback_enabled" value="1" <?php checked($store->comeback_enabled ?? 0, 1); ?>>
+                            <span class="ppv-toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="ppv-marketing-body" id="comeback-settings" style="<?php echo empty($store->comeback_enabled) ? 'opacity: 0.5; pointer-events: none;' : ''; ?>">
+                        <div class="ppv-form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <div class="ppv-form-group">
+                                <label data-i18n="comeback_days"><?php echo esc_html(PPV_Lang::t('comeback_days')); ?></label>
+                                <select name="comeback_days">
+                                    <option value="14" <?php selected($store->comeback_days ?? 30, 14); ?>>14 <?php echo esc_html(PPV_Lang::t('days')); ?></option>
+                                    <option value="30" <?php selected($store->comeback_days ?? 30, 30); ?>>30 <?php echo esc_html(PPV_Lang::t('days')); ?></option>
+                                    <option value="60" <?php selected($store->comeback_days ?? 30, 60); ?>>60 <?php echo esc_html(PPV_Lang::t('days')); ?></option>
+                                    <option value="90" <?php selected($store->comeback_days ?? 30, 90); ?>>90 <?php echo esc_html(PPV_Lang::t('days')); ?></option>
+                                </select>
+                            </div>
+                            <div class="ppv-form-group">
+                                <label data-i18n="comeback_bonus_type"><?php echo esc_html(PPV_Lang::t('comeback_bonus_type')); ?></label>
+                                <select name="comeback_bonus_type" id="comeback_bonus_type">
+                                    <option value="double_points" <?php selected($store->comeback_bonus_type ?? 'double_points', 'double_points'); ?> data-i18n="bonus_double_points"><?php echo esc_html(PPV_Lang::t('bonus_double_points')); ?></option>
+                                    <option value="fixed_points" <?php selected($store->comeback_bonus_type ?? '', 'fixed_points'); ?> data-i18n="bonus_fixed_points"><?php echo esc_html(PPV_Lang::t('bonus_fixed_points')); ?></option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="ppv-form-group" id="comeback_bonus_value_group" style="<?php echo ($store->comeback_bonus_type ?? 'double_points') !== 'fixed_points' ? 'display: none;' : ''; ?>">
+                            <label data-i18n="comeback_bonus_value"><?php echo esc_html(PPV_Lang::t('comeback_bonus_value')); ?></label>
+                            <input type="number" name="comeback_bonus_value" value="<?php echo esc_attr($store->comeback_bonus_value ?? 50); ?>" min="1" max="500">
+                        </div>
+
+                        <div class="ppv-form-group">
+                            <label data-i18n="comeback_message"><?php echo esc_html(PPV_Lang::t('comeback_message')); ?></label>
+                            <textarea name="comeback_message" rows="2" placeholder="<?php echo esc_attr(PPV_Lang::t('comeback_message_placeholder')); ?>"><?php echo esc_textarea($store->comeback_message ?? ''); ?></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Info box -->
+                <div class="ppv-info-box" style="background: rgba(0, 230, 255, 0.05); border: 1px solid rgba(0, 230, 255, 0.2); border-radius: 8px; padding: 15px; margin-top: 20px;">
+                    <p style="margin: 0; color: #00e6ff; font-size: 13px;">
+                        <strong>💡 <?php echo esc_html(PPV_Lang::t('marketing_tip_title')); ?></strong><br>
+                        <span style="color: #888;"><?php echo esc_html(PPV_Lang::t('marketing_tip_text')); ?></span>
+                    </p>
+                </div>
+            </div>
+
+            <script>
+            // Toggle settings visibility based on checkbox state
+            document.addEventListener('DOMContentLoaded', function() {
+                // Google Review toggle
+                const googleToggle = document.querySelector('input[name="google_review_enabled"]');
+                const googleSettings = document.getElementById('google-review-settings');
+                if (googleToggle && googleSettings) {
+                    googleToggle.addEventListener('change', function() {
+                        googleSettings.style.opacity = this.checked ? '1' : '0.5';
+                        googleSettings.style.pointerEvents = this.checked ? 'auto' : 'none';
+                    });
+                }
+
+                // Birthday Bonus toggle
+                const birthdayToggle = document.querySelector('input[name="birthday_bonus_enabled"]');
+                const birthdaySettings = document.getElementById('birthday-bonus-settings');
+                if (birthdayToggle && birthdaySettings) {
+                    birthdayToggle.addEventListener('change', function() {
+                        birthdaySettings.style.opacity = this.checked ? '1' : '0.5';
+                        birthdaySettings.style.pointerEvents = this.checked ? 'auto' : 'none';
+                    });
+                }
+
+                // Birthday bonus type change - show/hide value field
+                const birthdayType = document.getElementById('birthday_bonus_type');
+                const birthdayValueGroup = document.getElementById('birthday_bonus_value_group');
+                if (birthdayType && birthdayValueGroup) {
+                    birthdayType.addEventListener('change', function() {
+                        birthdayValueGroup.style.display = this.value === 'fixed_points' ? 'block' : 'none';
+                    });
+                }
+
+                // Comeback toggle
+                const comebackToggle = document.querySelector('input[name="comeback_enabled"]');
+                const comebackSettings = document.getElementById('comeback-settings');
+                if (comebackToggle && comebackSettings) {
+                    comebackToggle.addEventListener('change', function() {
+                        comebackSettings.style.opacity = this.checked ? '1' : '0.5';
+                        comebackSettings.style.pointerEvents = this.checked ? 'auto' : 'none';
+                    });
+                }
+
+                // Comeback bonus type change - show/hide value field
+                const comebackType = document.getElementById('comeback_bonus_type');
+                const comebackValueGroup = document.getElementById('comeback_bonus_value_group');
+                if (comebackType && comebackValueGroup) {
+                    comebackType.addEventListener('change', function() {
+                        comebackValueGroup.style.display = this.value === 'fixed_points' ? 'block' : 'none';
+                    });
+                }
+            });
+            </script>
+            <?php
+            return ob_get_clean();
+        }
+
         private static function render_tab_settings($store) {
             ob_start();
             ?>
@@ -783,7 +997,29 @@ public static function ajax_save_profile() {
         'logo' => sanitize_text_field($_POST['logo'] ?? ''),
 // ✅ FIX: Preserve existing gallery if no new uploads
         'gallery' => !empty($gallery_files) ? json_encode($gallery_files) : ($existing_store->gallery ?? ''),
-    'opening_hours' => json_encode($opening_hours),  // ← ADD THIS!
+    'opening_hours' => json_encode($opening_hours),
+
+        // ============================================================
+        // ✅ MARKETING AUTOMATION FIELDS
+        // ============================================================
+        // Google Review
+        'google_review_enabled' => !empty($_POST['google_review_enabled']) ? 1 : 0,
+        'google_review_url' => esc_url_raw($_POST['google_review_url'] ?? ''),
+        'google_review_threshold' => intval($_POST['google_review_threshold'] ?? 100),
+        'google_review_frequency' => sanitize_text_field($_POST['google_review_frequency'] ?? 'once'),
+
+        // Birthday Bonus
+        'birthday_bonus_enabled' => !empty($_POST['birthday_bonus_enabled']) ? 1 : 0,
+        'birthday_bonus_type' => sanitize_text_field($_POST['birthday_bonus_type'] ?? 'double_points'),
+        'birthday_bonus_value' => intval($_POST['birthday_bonus_value'] ?? 0),
+        'birthday_bonus_message' => sanitize_text_field($_POST['birthday_bonus_message'] ?? ''),
+
+        // Comeback Campaign
+        'comeback_enabled' => !empty($_POST['comeback_enabled']) ? 1 : 0,
+        'comeback_days' => intval($_POST['comeback_days'] ?? 30),
+        'comeback_bonus_type' => sanitize_text_field($_POST['comeback_bonus_type'] ?? 'double_points'),
+        'comeback_bonus_value' => intval($_POST['comeback_bonus_value'] ?? 50),
+        'comeback_message' => sanitize_text_field($_POST['comeback_message'] ?? ''),
 ];
 
 // ✅ Format specifierek az összes mezőhöz
@@ -797,8 +1033,8 @@ $format_specs = [
     '%s',  // address
     '%s',  // plz
     '%s',  // city
-    '%s',  // company_name (was missing!)
-    '%s',  // contact_person (was missing!)
+    '%s',  // company_name
+    '%s',  // contact_person
     '%s',  // tax_id
     '%d',  // is_taxable
     '%s',  // phone
@@ -814,10 +1050,24 @@ $format_specs = [
     '%d',  // maintenance_mode
     '%s',  // maintenance_message
     '%s',  // timezone
-    '%s',  // updated_at (was missing!)
+    '%s',  // updated_at
     '%s',  // logo
     '%s',  // gallery
-    '%s',  // opening_hours (was missing!)
+    '%s',  // opening_hours
+    // Marketing Automation
+    '%d',  // google_review_enabled
+    '%s',  // google_review_url
+    '%d',  // google_review_threshold
+    '%s',  // google_review_frequency
+    '%d',  // birthday_bonus_enabled
+    '%s',  // birthday_bonus_type
+    '%d',  // birthday_bonus_value
+    '%s',  // birthday_bonus_message
+    '%d',  // comeback_enabled
+    '%d',  // comeback_days
+    '%s',  // comeback_bonus_type
+    '%d',  // comeback_bonus_value
+    '%s',  // comeback_message
 ];
 
 ppv_log("💾 [DEBUG] Saving store ID: {$store_id}");
