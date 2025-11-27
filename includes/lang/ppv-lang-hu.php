@@ -921,6 +921,11 @@ return [
 'update_error' => 'Hiba a frissítés során',
 'close' => 'Bezárás',
 
+// GPS Geofencing
+'gps_permission_required' => 'GPS helyhez férés szükséges. Kérjük engedélyezze a GPS hozzáférést.',
+'gps_too_far' => 'Túl messze van az üzlettől ({distance}m). Maximális távolság: {max}m',
+'gps_checking' => 'GPS helyzet ellenőrzése...',
+
 'offline_banner' => 'Offline mód aktív',
 'sync_now' => 'Szinkronizálás',
 'scanner_title' => '📲 Kasszascanner',

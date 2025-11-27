@@ -934,6 +934,11 @@ return [
 'update_error' => 'Eroare la actualizare',
 'close' => 'Închide',
 
+// GPS Geofencing
+'gps_permission_required' => 'Acces GPS necesar. Vă rugăm activați GPS și acordați permisiunea.',
+'gps_too_far' => 'Sunteți prea departe de magazin ({distance}m). Distanța maximă: {max}m',
+'gps_checking' => 'Se verifică locația GPS...',
+
 'offline_banner' => 'Mod offline activ',
 'sync_now' => 'Sincronizare',
 'scanner_title' => '📲 Scanner de Casă',

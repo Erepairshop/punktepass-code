@@ -946,6 +946,11 @@ return [
 'update_error' => 'Fehler beim Aktualisieren',
 'close' => 'Schließen',
 
+// GPS Geofencing
+'gps_permission_required' => 'GPS-Standortzugriff ist erforderlich. Bitte aktivieren Sie GPS und erteilen Sie die Berechtigung.',
+'gps_too_far' => 'Sie befinden sich zu weit vom Geschäft entfernt ({distance}m). Maximale Entfernung: {max}m',
+'gps_checking' => 'GPS-Standort wird überprüft...',
+
 'offline_banner' => 'Offline-Modus aktiv',
 'sync_now' => 'Sync',
 'scanner_title' => '📲 Kassenscanner',

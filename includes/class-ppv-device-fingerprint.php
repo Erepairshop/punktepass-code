@@ -912,6 +912,8 @@ class PPV_Device_Fingerprint {
      * REST: Check if current device is registered
      */
     public static function rest_check_user_device(WP_REST_Request $request) {
+        global $wpdb;
+
         $store_id = self::get_session_store_id();
 
         if ($store_id <= 0) {
@@ -924,6 +926,20 @@ class PPV_Device_Fingerprint {
         $data = $request->get_json_params();
         $fingerprint = sanitize_text_field($data['fingerprint'] ?? '');
 
+        // Get store location for GPS geofencing
+        $current_store_id = $store_id; // Use current store (filiale) for GPS, not parent
+        $store_location = $wpdb->get_row($wpdb->prepare(
+            "SELECT latitude, longitude, max_scan_distance FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+            $current_store_id
+        ));
+
+        // Build GPS data for response
+        $gps_data = [
+            'store_lat' => $store_location->latitude ?? null,
+            'store_lng' => $store_location->longitude ?? null,
+            'max_distance' => intval($store_location->max_scan_distance ?? 500) ?: 500
+        ];
+
         if (empty($fingerprint) || strlen($fingerprint) < 16) {
             return new WP_REST_Response([
                 'success' => true,
@@ -931,7 +947,8 @@ class PPV_Device_Fingerprint {
                 'can_use_scanner' => false, // Block scanner - require device registration
                 'device_count' => 0,
                 'max_devices' => self::MAX_DEVICES_PER_USER,
-                'message' => 'Kein Fingerprint'
+                'message' => 'Kein Fingerprint',
+                'gps' => $gps_data
             ], 200);
         }
 
@@ -942,7 +959,6 @@ class PPV_Device_Fingerprint {
         ppv_log("📱 [Device Check] store_id={$store_id}, parent_store_id={$parent_store_id}, fp_hash=" . substr($fingerprint_hash, 0, 16) . "...");
 
         // Get all registered hashes for comparison
-        global $wpdb;
         $registered_hashes = $wpdb->get_col($wpdb->prepare(
             "SELECT fingerprint_hash FROM {$wpdb->prefix}" . self::USER_DEVICES_TABLE . " WHERE store_id = %d AND status = 'active'",
             $parent_store_id
@@ -975,6 +991,8 @@ class PPV_Device_Fingerprint {
             'can_use_scanner' => $can_use_scanner,
             'device_count' => $device_count,
             'max_devices' => self::MAX_DEVICES_PER_USER,
+            // GPS geofencing data
+            'gps' => $gps_data,
             // Debug info
             'debug' => [
                 'current_hash' => substr($fingerprint_hash, 0, 16) . '...',
