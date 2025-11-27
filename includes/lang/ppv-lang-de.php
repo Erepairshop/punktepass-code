@@ -306,6 +306,8 @@ return [
   'personal_data' => 'Persönliche Daten',
   'name' => 'Name',
   'email' => 'E-Mail-Adresse',
+  'birthday' => 'Geburtstag',
+  'birthday_hint' => 'Gib deinen Geburtstag an, um einen speziellen Bonus zu erhalten!',
   'change_password' => 'Passwort ändern',
   'new_password' => 'Neues Passwort',
   'repeat_password' => 'Passwort wiederholen',

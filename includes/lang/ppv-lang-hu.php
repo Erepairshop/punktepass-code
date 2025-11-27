@@ -333,6 +333,8 @@ return [
   'personal_data' => 'Személyes adatok',
   'name' => 'Név',
   'email' => 'E-mail cím',
+  'birthday' => 'Születésnap',
+  'birthday_hint' => 'Add meg a születésnapodat, hogy különleges bónuszt kapj!',
   'change_password' => 'Jelszó módosítása',
   'new_password' => 'Új jelszó',
   'repeat_password' => 'Jelszó megerősítése',

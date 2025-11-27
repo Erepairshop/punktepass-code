@@ -585,6 +585,19 @@ if (!empty($store->gallery)) {
                                 </select>
                             </div>
                         </div>
+
+                        <!-- Test Email Section -->
+                        <div class="ppv-form-group" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
+                            <label><?php echo esc_html(PPV_Lang::t('test_email') ?? 'Teszt email küldés'); ?></label>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <input type="email" id="google-review-test-email" placeholder="teszt@email.com" style="flex: 1;">
+                                <button type="button" id="google-review-test-btn" class="ppv-btn ppv-btn-secondary" style="white-space: nowrap;">
+                                    📧 <?php echo esc_html(PPV_Lang::t('send_test') ?? 'Teszt küldés'); ?>
+                                </button>
+                            </div>
+                            <small style="color: #888;"><?php echo esc_html(PPV_Lang::t('test_email_help') ?? 'Küldj magadnak egy teszt emailt az ellenőrzéshez'); ?></small>
+                            <div id="google-review-test-result" style="margin-top: 10px; display: none;"></div>
+                        </div>
                     </div>
                 </div>
 
@@ -618,7 +631,7 @@ if (!empty($store->gallery)) {
                             </div>
                             <div class="ppv-form-group" id="birthday_bonus_value_group" style="<?php echo ($store->birthday_bonus_type ?? 'double_points') !== 'fixed_points' ? 'display: none;' : ''; ?>">
                                 <label data-i18n="birthday_bonus_value"><?php echo esc_html(PPV_Lang::t('birthday_bonus_value')); ?></label>
-                                <input type="number" name="birthday_bonus_value" value="<?php echo esc_attr($store->birthday_bonus_value ?? 50); ?>" min="1" max="1000">
+                                <input type="number" id="birthday_bonus_value_input" name="birthday_bonus_value" value="<?php echo esc_attr($store->birthday_bonus_value ?? 50); ?>" min="1" max="1000" <?php echo ($store->birthday_bonus_type ?? 'double_points') !== 'fixed_points' ? 'disabled' : ''; ?>>
                             </div>
                         </div>
 
@@ -669,7 +682,7 @@ if (!empty($store->gallery)) {
 
                         <div class="ppv-form-group" id="comeback_bonus_value_group" style="<?php echo ($store->comeback_bonus_type ?? 'double_points') !== 'fixed_points' ? 'display: none;' : ''; ?>">
                             <label data-i18n="comeback_bonus_value"><?php echo esc_html(PPV_Lang::t('comeback_bonus_value')); ?></label>
-                            <input type="number" name="comeback_bonus_value" value="<?php echo esc_attr($store->comeback_bonus_value ?? 50); ?>" min="1" max="500">
+                            <input type="number" id="comeback_bonus_value_input" name="comeback_bonus_value" value="<?php echo esc_attr($store->comeback_bonus_value ?? 50); ?>" min="1" max="500" <?php echo ($store->comeback_bonus_type ?? 'double_points') !== 'fixed_points' ? 'disabled' : ''; ?>>
                         </div>
 
                         <div class="ppv-form-group">
@@ -714,9 +727,12 @@ if (!empty($store->gallery)) {
                 // Birthday bonus type change - show/hide value field
                 const birthdayType = document.getElementById('birthday_bonus_type');
                 const birthdayValueGroup = document.getElementById('birthday_bonus_value_group');
-                if (birthdayType && birthdayValueGroup) {
+                const birthdayValueInput = document.getElementById('birthday_bonus_value_input');
+                if (birthdayType && birthdayValueGroup && birthdayValueInput) {
                     birthdayType.addEventListener('change', function() {
-                        birthdayValueGroup.style.display = this.value === 'fixed_points' ? 'block' : 'none';
+                        const isFixed = this.value === 'fixed_points';
+                        birthdayValueGroup.style.display = isFixed ? 'block' : 'none';
+                        birthdayValueInput.disabled = !isFixed;
                     });
                 }
 
@@ -733,9 +749,67 @@ if (!empty($store->gallery)) {
                 // Comeback bonus type change - show/hide value field
                 const comebackType = document.getElementById('comeback_bonus_type');
                 const comebackValueGroup = document.getElementById('comeback_bonus_value_group');
-                if (comebackType && comebackValueGroup) {
+                const comebackValueInput = document.getElementById('comeback_bonus_value_input');
+                if (comebackType && comebackValueGroup && comebackValueInput) {
                     comebackType.addEventListener('change', function() {
-                        comebackValueGroup.style.display = this.value === 'fixed_points' ? 'block' : 'none';
+                        const isFixed = this.value === 'fixed_points';
+                        comebackValueGroup.style.display = isFixed ? 'block' : 'none';
+                        comebackValueInput.disabled = !isFixed;
+                    });
+                }
+
+                // Google Review Test Email Button
+                const testBtn = document.getElementById('google-review-test-btn');
+                const testEmailInput = document.getElementById('google-review-test-email');
+                const testResult = document.getElementById('google-review-test-result');
+
+                if (testBtn && testEmailInput && testResult) {
+                    testBtn.addEventListener('click', function() {
+                        const email = testEmailInput.value.trim();
+                        if (!email) {
+                            testResult.style.display = 'block';
+                            testResult.innerHTML = '<span style="color: #ef4444;">⚠️ Kérlek add meg az email címet!</span>';
+                            return;
+                        }
+
+                        // Disable button and show loading
+                        testBtn.disabled = true;
+                        testBtn.innerHTML = '⏳ Küldés...';
+                        testResult.style.display = 'block';
+                        testResult.innerHTML = '<span style="color: #888;">Email küldése folyamatban...</span>';
+
+                        // Get store ID from form
+                        const storeIdInput = document.querySelector('input[name="store_id"]');
+                        const storeId = storeIdInput ? storeIdInput.value : 0;
+
+                        // Send AJAX request
+                        fetch('<?php echo admin_url('admin-ajax.php'); ?>', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                            },
+                            body: 'action=ppv_test_google_review&store_id=' + storeId + '&target_email=' + encodeURIComponent(email)
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            testBtn.disabled = false;
+                            testBtn.innerHTML = '📧 <?php echo esc_html(PPV_Lang::t('send_test') ?? 'Teszt küldés'); ?>';
+
+                            if (data.success) {
+                                testResult.innerHTML = '<span style="color: #22c55e;">✅ ' + data.data.message + '</span>';
+                            } else {
+                                let errorMsg = data.data.message || 'Ismeretlen hiba';
+                                if (data.data.error) {
+                                    errorMsg += '<br><small style="color: #888;">Hiba: ' + data.data.error + '</small>';
+                                }
+                                testResult.innerHTML = '<span style="color: #ef4444;">❌ ' + errorMsg + '</span>';
+                            }
+                        })
+                        .catch(error => {
+                            testBtn.disabled = false;
+                            testBtn.innerHTML = '📧 <?php echo esc_html(PPV_Lang::t('send_test') ?? 'Teszt küldés'); ?>';
+                            testResult.innerHTML = '<span style="color: #ef4444;">❌ Hálózati hiba: ' + error.message + '</span>';
+                        });
                     });
                 }
             });
