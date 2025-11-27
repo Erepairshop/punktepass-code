@@ -3215,6 +3215,77 @@ class PPV_QR {
         }
 
         // ═══════════════════════════════════════════════════════════
+        // 🎂 BIRTHDAY BONUS
+        // ═══════════════════════════════════════════════════════════
+        $birthday_bonus_applied = 0;
+
+        // Get birthday bonus settings from store (or parent store for filiales)
+        $birthday_store_id = $store_id;
+        if (class_exists('PPV_Filiale')) {
+            $birthday_store_id = PPV_Filiale::get_parent_id($store_id);
+        }
+
+        $birthday_settings = $wpdb->get_row($wpdb->prepare("
+            SELECT birthday_bonus_enabled, birthday_bonus_type, birthday_bonus_value, birthday_bonus_message
+            FROM {$wpdb->prefix}ppv_stores WHERE id = %d
+        ", $birthday_store_id));
+
+        if ($birthday_settings && $birthday_settings->birthday_bonus_enabled) {
+            $user_bday_data = $wpdb->get_row($wpdb->prepare("
+                SELECT birthday, last_birthday_bonus_at FROM {$wpdb->prefix}ppv_users WHERE id = %d
+            ", $user_id));
+
+            if ($user_bday_data && $user_bday_data->birthday) {
+                $today_md = date('m-d');
+                $birthday_md = date('m-d', strtotime($user_bday_data->birthday));
+
+                if ($today_md === $birthday_md) {
+                    // Anti-abuse check: minimum 320 days between birthday bonuses
+                    $can_receive_bonus = true;
+                    if ($user_bday_data->last_birthday_bonus_at) {
+                        $last_bonus_date = strtotime($user_bday_data->last_birthday_bonus_at);
+                        $days_since_last_bonus = floor((time() - $last_bonus_date) / (60 * 60 * 24));
+                        if ($days_since_last_bonus < 320) {
+                            $can_receive_bonus = false;
+                            ppv_log("🎂 [PPV_QR] Birthday bonus BLOCKED for user {$user_id}: only {$days_since_last_bonus} days since last bonus (min 320)");
+                        }
+                    }
+
+                    if ($can_receive_bonus) {
+                        ppv_log("🎂 [PPV_QR] Today is user {$user_id}'s birthday!");
+
+                        $bonus_type = $birthday_settings->birthday_bonus_type ?? 'double_points';
+                        $base_points_for_birthday = $points_add;
+
+                        switch ($bonus_type) {
+                            case 'double_points':
+                                $birthday_bonus_applied = $base_points_for_birthday;
+                                break;
+                            case 'fixed_points':
+                                $birthday_bonus_applied = intval($birthday_settings->birthday_bonus_value ?? 0);
+                                break;
+                        }
+
+                        if ($birthday_bonus_applied > 0) {
+                            $points_add += $birthday_bonus_applied;
+
+                            // Update last_birthday_bonus_at to prevent abuse
+                            $wpdb->update(
+                                $wpdb->prefix . 'ppv_users',
+                                ['last_birthday_bonus_at' => date('Y-m-d')],
+                                ['id' => $user_id],
+                                ['%s'],
+                                ['%d']
+                            );
+
+                            ppv_log("🎂 [PPV_QR] Birthday bonus applied: type={$bonus_type}, bonus=+{$birthday_bonus_applied}, total_points={$points_add}");
+                        }
+                    }
+                }
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════
         // INSERT POINTS
         // ═══════════════════════════════════════════════════════════
         $wpdb->insert("{$wpdb->prefix}ppv_points", [
@@ -3232,9 +3303,17 @@ class PPV_QR {
         }
 
         // Build log message
-        $log_msg = $vip_bonus_applied > 0
-            ? "+{$points_add} " . self::t('points', 'Punkte') . " (VIP: +{$vip_bonus_applied})"
-            : "+{$points_add} " . self::t('points', 'Punkte');
+        $bonus_parts = [];
+        if ($vip_bonus_applied > 0) {
+            $bonus_parts[] = "VIP: +{$vip_bonus_applied}";
+        }
+        if ($birthday_bonus_applied > 0) {
+            $bonus_parts[] = "🎂 +{$birthday_bonus_applied}";
+        }
+        $log_msg = "+{$points_add} " . self::t('points', 'Punkte');
+        if (!empty($bonus_parts)) {
+            $log_msg .= " (" . implode(", ", $bonus_parts) . ")";
+        }
         $log_id = self::insert_log($store_id, $user_id, $log_msg, 'qr_scan', null, $scanner_id, $scanner_name);
 
         // ✅ Generate unique scan_id for deduplication
@@ -3264,6 +3343,7 @@ class PPV_QR {
                 'message' => $log_msg,
                 'points' => (string)$points_add,
                 'vip_bonus' => $vip_bonus_applied,
+                'birthday_bonus' => $birthday_bonus_applied, // 🎂 Birthday bonus
                 'date_short' => date('d.m.'),
                 'time_short' => date('H:i'),
                 'success' => true,
@@ -3288,13 +3368,20 @@ class PPV_QR {
                 'total_rewards' => $total_rewards,
                 'store_name' => $store_name ?? 'PunktePass',
                 'vip_bonus' => $vip_bonus_applied,
+                'birthday_bonus' => $birthday_bonus_applied, // 🎂 Birthday bonus
                 'success' => true,
             ]);
         }
 
-        // Build response message with VIP info
-        $vip_suffix = $vip_bonus_applied > 0 ? " (VIP-Bonus: +{$vip_bonus_applied})" : '';
-        $success_msg = "✅ +{$points_add} " . self::t('points', 'Punkte') . $vip_suffix;
+        // Build response message with bonus info
+        $bonus_suffix = '';
+        if ($vip_bonus_applied > 0) {
+            $bonus_suffix .= " (VIP-Bonus: +{$vip_bonus_applied})";
+        }
+        if ($birthday_bonus_applied > 0) {
+            $bonus_suffix .= " 🎂 Geburtstags-Bonus: +{$birthday_bonus_applied}";
+        }
+        $success_msg = "✅ +{$points_add} " . self::t('points', 'Punkte') . $bonus_suffix;
 
         // ═══════════════════════════════════════════════════════════
         // 🎁 REDEMPTION PROMPT: Check if user can redeem any rewards

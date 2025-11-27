@@ -350,11 +350,19 @@ jQuery(document).ready(function ($) {
       // Update last-scan directly if data is available
       if (message.data) {
         const scanTime = message.data.time_short || new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-        $("#last-scan").text(scanTime);
+        let lastScanText = scanTime;
 
-        // Flash effect to show update
-        $("#last-scan").css("color", "#00e0ff");
-        setTimeout(() => $("#last-scan").css("color", ""), 1000);
+        // Show birthday bonus indicator
+        if (message.data.birthday_bonus && message.data.birthday_bonus > 0) {
+          lastScanText += " 🎂";
+        }
+
+        $("#last-scan").text(lastScanText);
+
+        // Flash effect to show update (special color for birthday)
+        const flashColor = message.data.birthday_bonus > 0 ? "#ff69b4" : "#00e0ff";
+        $("#last-scan").css("color", flashColor);
+        setTimeout(() => $("#last-scan").css("color", ""), 1500);
       }
     });
 
