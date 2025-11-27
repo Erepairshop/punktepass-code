@@ -2155,6 +2155,7 @@ class PPV_QR {
             // ============================================================
 
             let currentFingerprint = null;
+            let currentDeviceInfo = null; // 📱 Készülék adatok FingerprintJS-ből
             let deviceCheckResult = null;
 
             // Load FingerprintJS if not loaded
@@ -2177,12 +2178,78 @@ class PPV_QR {
                 });
             }
 
+            // 📱 Készülék információk kinyerése a FingerprintJS komponensekből
+            function extractDeviceInfo(components) {
+                if (!components) return null;
+
+                const info = {};
+
+                // Platform és OS
+                if (components.platform) info.platform = components.platform.value;
+
+                // Képernyő felbontás
+                if (components.screenResolution) info.screen = components.screenResolution.value.join('x');
+
+                // Színmélység
+                if (components.colorDepth) info.colorDepth = components.colorDepth.value;
+
+                // Memória (GB)
+                if (components.deviceMemory) info.memory = components.deviceMemory.value;
+
+                // CPU magok
+                if (components.hardwareConcurrency) info.cpuCores = components.hardwareConcurrency.value;
+
+                // Érintőképernyő támogatás
+                if (components.touchSupport) {
+                    const ts = components.touchSupport.value;
+                    info.touchSupport = {
+                        maxTouchPoints: ts.maxTouchPoints,
+                        touchEvent: ts.touchEvent,
+                        touchStart: ts.touchStart
+                    };
+                }
+
+                // Időzóna
+                if (components.timezone) info.timezone = components.timezone.value;
+
+                // Nyelv
+                if (components.languages) {
+                    const langs = components.languages.value;
+                    info.languages = Array.isArray(langs) ? langs.slice(0, 3) : langs;
+                }
+
+                // Vendor (gyártó)
+                if (components.vendor) info.vendor = components.vendor.value;
+
+                // Canvas hash (egyedi rajzolási aláírás)
+                if (components.canvas) info.canvasHash = components.canvas.value ? 'yes' : 'no';
+
+                // WebGL renderer (grafikus chip neve)
+                if (components.webglRenderer) info.webglRenderer = components.webglRenderer.value;
+
+                // Audio hash
+                if (components.audio) info.audioHash = components.audio.value ? 'yes' : 'no';
+
+                // Timestamp mikor gyűjtöttük
+                info.collectedAt = new Date().toISOString();
+
+                // User Agent is (backup)
+                info.userAgent = navigator.userAgent;
+
+                return info;
+            }
+
             // Get device fingerprint (must be at least 16 chars for PHP validation)
             async function getDeviceFingerprint() {
                 try {
                     if (window.FingerprintJS) {
                         const fp = await FingerprintJS.load();
                         const result = await fp.get();
+
+                        // 📱 Tároljuk a készülék infókat
+                        currentDeviceInfo = extractDeviceInfo(result.components);
+                        console.log('[Devices] 📱 Device info collected:', currentDeviceInfo);
+
                         return result.visitorId;
                     }
 
@@ -2288,7 +2355,8 @@ class PPV_QR {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             fingerprint: currentFingerprint,
-                            device_name: deviceName
+                            device_name: deviceName,
+                            device_info: currentDeviceInfo // 📱 Készülék adatok
                         })
                     });
                     const data = await response.json();
@@ -2325,7 +2393,8 @@ class PPV_QR {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             fingerprint: currentFingerprint,
-                            device_name: deviceName
+                            device_name: deviceName,
+                            device_info: currentDeviceInfo // 📱 Készülék adatok
                         })
                     });
                     const data = await response.json();
@@ -2402,7 +2471,8 @@ class PPV_QR {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             device_id: deviceId,
-                            fingerprint: currentFingerprint
+                            fingerprint: currentFingerprint,
+                            device_info: currentDeviceInfo // 📱 Készülék adatok
                         })
                     });
                     const data = await response.json();

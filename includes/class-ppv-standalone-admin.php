@@ -131,6 +131,88 @@ class PPV_Standalone_Admin {
     }
 
     /**
+     * FingerprintJS device_info JSON formázása megjelenítéshez
+     */
+    private static function format_device_info_json($device_info_json) {
+        if (empty($device_info_json)) {
+            return null;
+        }
+
+        $info = json_decode($device_info_json, true);
+        if (!$info || !is_array($info)) {
+            return null;
+        }
+
+        $formatted = [];
+
+        // Képernyő
+        if (!empty($info['screen'])) {
+            $formatted['screen'] = $info['screen'];
+        }
+
+        // Memória
+        if (!empty($info['memory'])) {
+            $formatted['memory'] = $info['memory'] . ' GB';
+        }
+
+        // CPU magok
+        if (!empty($info['cpuCores'])) {
+            $formatted['cpuCores'] = $info['cpuCores'] . ' mag';
+        }
+
+        // Platform
+        if (!empty($info['platform'])) {
+            $formatted['platform'] = $info['platform'];
+        }
+
+        // Időzóna
+        if (!empty($info['timezone'])) {
+            $formatted['timezone'] = $info['timezone'];
+        }
+
+        // Érintőképernyő
+        if (!empty($info['touchSupport']) && is_array($info['touchSupport'])) {
+            $touch = $info['touchSupport'];
+            if (!empty($touch['maxTouchPoints']) && $touch['maxTouchPoints'] > 0) {
+                $formatted['touch'] = 'Igen (' . $touch['maxTouchPoints'] . ' pont)';
+            } else {
+                $formatted['touch'] = 'Nem';
+            }
+        }
+
+        // WebGL renderer (GPU info)
+        if (!empty($info['webglRenderer']) && $info['webglRenderer'] !== 'no') {
+            $renderer = $info['webglRenderer'];
+            // Rövidítsük le ha túl hosszú
+            if (strlen($renderer) > 40) {
+                $renderer = substr($renderer, 0, 37) . '...';
+            }
+            $formatted['gpu'] = $renderer;
+        }
+
+        // Vendor (gyártó)
+        if (!empty($info['vendor'])) {
+            $formatted['vendor'] = $info['vendor'];
+        }
+
+        // Nyelvek
+        if (!empty($info['languages'])) {
+            if (is_array($info['languages'])) {
+                $formatted['languages'] = implode(', ', array_slice($info['languages'], 0, 3));
+            } else {
+                $formatted['languages'] = $info['languages'];
+            }
+        }
+
+        // Gyűjtés ideje
+        if (!empty($info['collectedAt'])) {
+            $formatted['collectedAt'] = date('Y.m.d H:i', strtotime($info['collectedAt']));
+        }
+
+        return $formatted;
+    }
+
+    /**
      * /admin útvonalak kezelése
      */
     public static function handle_admin_routes() {
@@ -1146,10 +1228,11 @@ class PPV_Standalone_Admin {
              ORDER BY s.name ASC"
         );
 
-        // Eszközök lekérése handler-enként
+        // Eszközök lekérése handler-enként (device_info-val együtt)
         $devices_by_store = [];
         $all_devices = $wpdb->get_results(
-            "SELECT * FROM {$wpdb->prefix}ppv_user_devices WHERE status = 'active' ORDER BY registered_at DESC"
+            "SELECT id, store_id, fingerprint_hash, device_name, user_agent, device_info, ip_address, registered_at, last_used_at, status
+             FROM {$wpdb->prefix}ppv_user_devices WHERE status = 'active' ORDER BY registered_at DESC"
         );
         foreach ($all_devices as $device) {
             $devices_by_store[$device->store_id][] = $device;
@@ -1230,6 +1313,7 @@ class PPV_Standalone_Admin {
                                         <tbody>
                                             <?php foreach ($handler_devices as $device):
                                                 $device_info = self::parse_device_info($device->user_agent ?? '');
+                                                $fp_info = self::format_device_info_json($device->device_info ?? '');
                                             ?>
                                             <tr style="background: transparent;">
                                                 <td style="padding: 8px;"><?php echo esc_html($device->device_name); ?></td>
@@ -1249,6 +1333,54 @@ class PPV_Standalone_Admin {
                                                     </button>
                                                 </td>
                                             </tr>
+                                            <?php if ($fp_info): // FingerprintJS részletek ha elérhetők ?>
+                                            <tr style="background: rgba(0,230,255,0.03);">
+                                                <td colspan="7" style="padding: 5px 8px 10px 30px;">
+                                                    <div style="display: flex; flex-wrap: wrap; gap: 10px; font-size: 11px;">
+                                                        <?php if (!empty($fp_info['screen'])): ?>
+                                                            <span style="background: rgba(255,255,255,0.05); padding: 3px 8px; border-radius: 4px;">
+                                                                <i class="ri-computer-line" style="color: #00e6ff;"></i> <?php echo esc_html($fp_info['screen']); ?>
+                                                            </span>
+                                                        <?php endif; ?>
+                                                        <?php if (!empty($fp_info['memory'])): ?>
+                                                            <span style="background: rgba(255,255,255,0.05); padding: 3px 8px; border-radius: 4px;">
+                                                                <i class="ri-database-line" style="color: #4caf50;"></i> <?php echo esc_html($fp_info['memory']); ?>
+                                                            </span>
+                                                        <?php endif; ?>
+                                                        <?php if (!empty($fp_info['cpuCores'])): ?>
+                                                            <span style="background: rgba(255,255,255,0.05); padding: 3px 8px; border-radius: 4px;">
+                                                                <i class="ri-cpu-line" style="color: #ff9800;"></i> <?php echo esc_html($fp_info['cpuCores']); ?>
+                                                            </span>
+                                                        <?php endif; ?>
+                                                        <?php if (!empty($fp_info['touch'])): ?>
+                                                            <span style="background: rgba(255,255,255,0.05); padding: 3px 8px; border-radius: 4px;">
+                                                                <i class="ri-hand-coin-line" style="color: #e91e63;"></i> Touch: <?php echo esc_html($fp_info['touch']); ?>
+                                                            </span>
+                                                        <?php endif; ?>
+                                                        <?php if (!empty($fp_info['platform'])): ?>
+                                                            <span style="background: rgba(255,255,255,0.05); padding: 3px 8px; border-radius: 4px;">
+                                                                <i class="ri-device-line" style="color: #9c27b0;"></i> <?php echo esc_html($fp_info['platform']); ?>
+                                                            </span>
+                                                        <?php endif; ?>
+                                                        <?php if (!empty($fp_info['vendor'])): ?>
+                                                            <span style="background: rgba(255,255,255,0.05); padding: 3px 8px; border-radius: 4px;">
+                                                                <i class="ri-building-line" style="color: #2196f3;"></i> <?php echo esc_html($fp_info['vendor']); ?>
+                                                            </span>
+                                                        <?php endif; ?>
+                                                        <?php if (!empty($fp_info['timezone'])): ?>
+                                                            <span style="background: rgba(255,255,255,0.05); padding: 3px 8px; border-radius: 4px;">
+                                                                <i class="ri-time-line" style="color: #ffeb3b;"></i> <?php echo esc_html($fp_info['timezone']); ?>
+                                                            </span>
+                                                        <?php endif; ?>
+                                                        <?php if (!empty($fp_info['gpu'])): ?>
+                                                            <span style="background: rgba(255,255,255,0.05); padding: 3px 8px; border-radius: 4px; color: #888;" title="<?php echo esc_attr($fp_info['gpu']); ?>">
+                                                                <i class="ri-palette-line" style="color: #00bcd4;"></i> GPU
+                                                            </span>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            <?php endif; ?>
                                             <?php endforeach; ?>
                                         </tbody>
                                     </table>

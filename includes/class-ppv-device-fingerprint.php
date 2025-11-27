@@ -164,6 +164,22 @@ class PPV_Device_Fingerprint {
 
             ppv_log("✅ [PPV_Device_Fingerprint] Added mobile_scanner request type");
             update_option('ppv_device_migration_version', '1.4');
+            $migration_version = '1.4';
+        }
+
+        // Migration 1.5: Add device_info column for storing device details (memory, screen, etc.)
+        if (version_compare($migration_version, '1.5', '<')) {
+            $table_user_devices = $wpdb->prefix . self::USER_DEVICES_TABLE;
+            $table_requests = $wpdb->prefix . self::DEVICE_REQUESTS_TABLE;
+
+            // Add device_info column to user_devices table
+            $wpdb->query("ALTER TABLE {$table_user_devices} ADD COLUMN device_info TEXT NULL COMMENT 'JSON: device details from FingerprintJS' AFTER user_agent");
+
+            // Add device_info column to device_requests table
+            $wpdb->query("ALTER TABLE {$table_requests} ADD COLUMN device_info TEXT NULL COMMENT 'JSON: device details from FingerprintJS' AFTER user_agent");
+
+            ppv_log("✅ [PPV_Device_Fingerprint] Added device_info column to tables");
+            update_option('ppv_device_migration_version', '1.5');
         }
     }
 
@@ -857,6 +873,7 @@ class PPV_Device_Fingerprint {
         $data = $request->get_json_params();
         $fingerprint = sanitize_text_field($data['fingerprint'] ?? '');
         $device_name = sanitize_text_field($data['device_name'] ?? 'Unbenanntes Gerät');
+        $device_info = $data['device_info'] ?? null; // FingerprintJS components data
 
         if (empty($fingerprint) || strlen($fingerprint) < 16) {
             return new WP_REST_Response([
@@ -868,6 +885,12 @@ class PPV_Device_Fingerprint {
         $fingerprint_hash = self::hash_fingerprint($fingerprint);
         $parent_store_id = self::get_parent_store_id($store_id);
 
+        // Prepare device_info JSON
+        $device_info_json = null;
+        if (!empty($device_info) && is_array($device_info)) {
+            $device_info_json = wp_json_encode($device_info);
+        }
+
         // Check if already registered
         $existing = $wpdb->get_var($wpdb->prepare(
             "SELECT id FROM {$wpdb->prefix}" . self::USER_DEVICES_TABLE . " WHERE store_id = %d AND fingerprint_hash = %s",
@@ -875,12 +898,20 @@ class PPV_Device_Fingerprint {
         ));
 
         if ($existing) {
-            // Update last_used_at
+            // Update last_used_at and device_info if provided
+            $update_data = ['last_used_at' => current_time('mysql')];
+            $update_format = ['%s'];
+
+            if ($device_info_json) {
+                $update_data['device_info'] = $device_info_json;
+                $update_format[] = '%s';
+            }
+
             $wpdb->update(
                 $wpdb->prefix . self::USER_DEVICES_TABLE,
-                ['last_used_at' => current_time('mysql')],
+                $update_data,
                 ['id' => $existing],
-                ['%s'],
+                $update_format,
                 ['%d']
             );
 
@@ -907,19 +938,23 @@ class PPV_Device_Fingerprint {
         $ip_address = self::get_client_ip();
         $user_agent = sanitize_text_field($_SERVER['HTTP_USER_AGENT'] ?? '');
 
+        $insert_data = [
+            'store_id' => $parent_store_id,
+            'fingerprint_hash' => $fingerprint_hash,
+            'device_name' => $device_name,
+            'user_agent' => $user_agent,
+            'device_info' => $device_info_json,
+            'ip_address' => $ip_address,
+            'registered_at' => current_time('mysql'),
+            'last_used_at' => current_time('mysql'),
+            'status' => 'active'
+        ];
+        $insert_format = ['%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s'];
+
         $result = $wpdb->insert(
             $wpdb->prefix . self::USER_DEVICES_TABLE,
-            [
-                'store_id' => $parent_store_id,
-                'fingerprint_hash' => $fingerprint_hash,
-                'device_name' => $device_name,
-                'user_agent' => $user_agent,
-                'ip_address' => $ip_address,
-                'registered_at' => current_time('mysql'),
-                'last_used_at' => current_time('mysql'),
-                'status' => 'active'
-            ],
-            ['%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s']
+            $insert_data,
+            $insert_format
         );
 
         if ($result) {
@@ -1050,6 +1085,7 @@ class PPV_Device_Fingerprint {
         $data = $request->get_json_params();
         $device_id = intval($data['device_id'] ?? 0);
         $new_fingerprint = sanitize_text_field($data['fingerprint'] ?? '');
+        $device_info = $data['device_info'] ?? null; // FingerprintJS components data
 
         if ($device_id <= 0) {
             return new WP_REST_Response([
@@ -1067,6 +1103,12 @@ class PPV_Device_Fingerprint {
 
         $parent_store_id = self::get_parent_store_id($store_id);
         $new_fingerprint_hash = self::hash_fingerprint($new_fingerprint);
+
+        // Prepare device_info JSON
+        $device_info_json = null;
+        if (!empty($device_info) && is_array($device_info)) {
+            $device_info_json = wp_json_encode($device_info);
+        }
 
         // Check if device exists for this store
         $device = $wpdb->get_row($wpdb->prepare(
@@ -1098,16 +1140,24 @@ class PPV_Device_Fingerprint {
         $ip_address = self::get_client_ip();
         $user_agent = sanitize_text_field($_SERVER['HTTP_USER_AGENT'] ?? '');
 
+        $update_data = [
+            'fingerprint_hash' => $new_fingerprint_hash,
+            'user_agent' => $user_agent,
+            'ip_address' => $ip_address,
+            'last_used_at' => current_time('mysql')
+        ];
+        $update_format = ['%s', '%s', '%s', '%s'];
+
+        if ($device_info_json) {
+            $update_data['device_info'] = $device_info_json;
+            $update_format[] = '%s';
+        }
+
         $result = $wpdb->update(
             $wpdb->prefix . self::USER_DEVICES_TABLE,
-            [
-                'fingerprint_hash' => $new_fingerprint_hash,
-                'user_agent' => $user_agent,
-                'ip_address' => $ip_address,
-                'last_used_at' => current_time('mysql')
-            ],
+            $update_data,
             ['id' => $device_id],
-            ['%s', '%s', '%s', '%s'],
+            $update_format,
             ['%d']
         );
 
@@ -1390,7 +1440,7 @@ class PPV_Device_Fingerprint {
         global $wpdb;
 
         return $wpdb->get_results($wpdb->prepare("
-            SELECT id, device_name, fingerprint_hash, user_agent, ip_address, registered_at, last_used_at, status
+            SELECT id, device_name, fingerprint_hash, user_agent, device_info, ip_address, registered_at, last_used_at, status
             FROM {$wpdb->prefix}" . self::USER_DEVICES_TABLE . "
             WHERE store_id = %d AND status = 'active'
             ORDER BY registered_at DESC
