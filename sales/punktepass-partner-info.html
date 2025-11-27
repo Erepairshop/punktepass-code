@@ -37,7 +37,33 @@
             body::before { display: none !important; }
             .container { padding: 15px; max-width: 100%; }
             .no-print, .lang-switcher { display: none !important; }
-            .header { padding-top: 10px; padding-right: 90px; border-bottom: 2px solid #e2e8f0; }
+
+            /* Page break control - prevent breaking inside elements */
+            .section, .comparison, .comparison-card, .feature-card, .security-card,
+            .trust-card, .receipt-card, .pricing-section, .receipts-section,
+            .updates-section, .stats-grid, .summary-box, .tablet-highlight,
+            .ad-section, .how-it-works, .cta-section {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+
+            /* Allow page break before major sections */
+            .section { page-break-before: auto; margin-top: 10px; }
+
+            /* Keep section title with its content */
+            .section-title { page-break-after: avoid !important; break-after: avoid !important; }
+            h2, h3, h4 { page-break-after: avoid !important; break-after: avoid !important; }
+
+            /* Keep grids together */
+            .features-grid, .security-grid, .trust-grid, .receipts-grid, .comparison {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+
+            /* Orphan/widow control */
+            p, li { orphans: 3; widows: 3; }
+
+            .header { padding-top: 10px; padding-right: 90px; border-bottom: 2px solid #e2e8f0; page-break-after: avoid !important; }
             .logo { width: 70px; top: 10px; }
             .hero-title { background: none !important; -webkit-text-fill-color: #0284c7 !important; color: #0284c7 !important; font-size: 22px; }
             .tagline, .hero-subtitle { color: #64748b !important; }
@@ -80,7 +106,7 @@
             .cta-text { color: #64748b !important; }
             .cta-contact { background: #f1f5f9 !important; border: 1px solid #e2e8f0 !important; }
             .cta-contact a { color: #0284c7 !important; }
-            .footer { border-top: 1px solid #e2e8f0; color: #64748b !important; }
+            .footer { border-top: 1px solid #e2e8f0; color: #64748b !important; page-break-inside: avoid !important; }
             .ad-section { gap: 15px; }
             .ad-text h3 { color: #1e293b !important; }
             .ad-text p { color: #475569 !important; }
