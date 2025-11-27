@@ -1987,12 +1987,19 @@ class PPV_QR {
     public static function render_user_devices() {
         global $wpdb;
 
-        // Get current handler's store_id (BASE store, not filiale)
+        // Ensure session is started
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+
+        // Get current handler's store_id (same logic as API's get_session_store_id)
         $store_id = 0;
-        if (!empty($_SESSION['ppv_vendor_store_id'])) {
-            $store_id = intval($_SESSION['ppv_vendor_store_id']);
+        if (!empty($_SESSION['ppv_current_filiale_id'])) {
+            $store_id = intval($_SESSION['ppv_current_filiale_id']);
         } elseif (!empty($_SESSION['ppv_store_id'])) {
             $store_id = intval($_SESSION['ppv_store_id']);
+        } elseif (!empty($_SESSION['ppv_vendor_store_id'])) {
+            $store_id = intval($_SESSION['ppv_vendor_store_id']);
         } elseif (!empty($_SESSION['ppv_user_id'])) {
             $user_id = intval($_SESSION['ppv_user_id']);
             $store_id = $wpdb->get_var($wpdb->prepare(
@@ -2006,6 +2013,13 @@ class PPV_QR {
             "SELECT COALESCE(parent_store_id, id) FROM {$wpdb->prefix}ppv_stores WHERE id=%d LIMIT 1",
             $store_id
         ));
+
+        // Debug log
+        ppv_log("📱 [QR Devices] store_id={$store_id}, parent_id={$parent_id}, session=" . json_encode([
+            'filiale' => $_SESSION['ppv_current_filiale_id'] ?? null,
+            'store' => $_SESSION['ppv_store_id'] ?? null,
+            'vendor' => $_SESSION['ppv_vendor_store_id'] ?? null
+        ]));
 
         // Get registered devices for this store
         $devices = [];
