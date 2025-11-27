@@ -79,7 +79,14 @@ class PPV_Standalone_Admin {
                 $model = trim($matches[1]);
                 // Clean up common prefixes
                 $model = preg_replace('/^(SAMSUNG|Samsung|LG|Xiaomi|HUAWEI|Huawei|OPPO|OnePlus|Realme|vivo|Motorola)\s*/i', '', $model);
-                $info['model'] = $model ?: 'Android';
+
+                // Chrome 110+ privacy: "K" helyett valódi modell nem elérhető
+                if ($model === 'K' || $model === 'k') {
+                    $info['model'] = 'Android (rejtett)';
+                    $info['note'] = 'Chrome privacy mód';
+                } else {
+                    $info['model'] = $model ?: 'Android';
+                }
             } else {
                 $info['model'] = 'Android';
             }
