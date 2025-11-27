@@ -509,6 +509,7 @@ if (class_exists('PPV_Account_Delete')) PPV_Account_Delete::hooks();
 if (class_exists('PPV_My_Points')) PPV_My_Points::hooks();  // ← ÚJ!
 if (class_exists('PPV_Device_Fingerprint')) PPV_Device_Fingerprint::hooks(); // Device fingerprint fraud prevention
 if (class_exists('PPV_Standalone_Admin')) PPV_Standalone_Admin::hooks(); // Standalone admin panel at /admin
+if (class_exists('PPV_SMTP')) PPV_SMTP::hooks(); // SMTP email configuration
 
 if (class_exists('PPV_Theme_Handler')) PPV_Theme_Handler::hooks();
 

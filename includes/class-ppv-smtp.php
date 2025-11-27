@@ -402,8 +402,3 @@ class PPV_SMTP {
         }
     }
 }
-
-// Initialize
-add_action('plugins_loaded', function() {
-    PPV_SMTP::hooks();
-});
