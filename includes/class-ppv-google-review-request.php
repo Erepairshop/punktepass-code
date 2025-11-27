@@ -185,12 +185,23 @@ class PPV_Google_Review_Request {
             'From: ' . $store_name . ' <noreply@punktepass.de>'
         ];
 
+        ppv_log("[Google Review] Attempting to send email to: {$email}");
+        ppv_log("[Google Review] Subject: {$subject}");
+        ppv_log("[Google Review] Store: {$store->id}, User: {$user->user_id}");
+
         $sent = wp_mail($email, $subject, $body, $headers);
 
         if ($sent) {
-            ppv_log("[Google Review] Sent to {$email} (store {$store->id}, user {$user->user_id})");
+            ppv_log("[Google Review] SUCCESS: Sent to {$email} (store {$store->id}, user {$user->user_id})");
         } else {
-            ppv_log("[Google Review] Failed to send to {$email} (store {$store->id}, user {$user->user_id})");
+            // Get detailed error from PHPMailer
+            global $phpmailer;
+            $error_info = 'Unknown error';
+            if (isset($phpmailer) && isset($phpmailer->ErrorInfo) && !empty($phpmailer->ErrorInfo)) {
+                $error_info = $phpmailer->ErrorInfo;
+            }
+            ppv_log("[Google Review] FAILED: Could not send to {$email} (store {$store->id}, user {$user->user_id})");
+            ppv_log("[Google Review] Error details: {$error_info}");
         }
 
         return $sent;
@@ -419,7 +430,17 @@ class PPV_Google_Review_Request {
                     'store_id' => $store_id
                 ]);
             } else {
-                wp_send_json_error(['message' => 'Failed to send test email']);
+                // Get detailed error from PHPMailer
+                global $phpmailer;
+                $error_info = 'Unknown error - check server mail configuration';
+                if (isset($phpmailer) && isset($phpmailer->ErrorInfo) && !empty($phpmailer->ErrorInfo)) {
+                    $error_info = $phpmailer->ErrorInfo;
+                }
+                wp_send_json_error([
+                    'message' => 'Failed to send test email',
+                    'error' => $error_info,
+                    'to' => $target_email
+                ]);
             }
         } else {
             // Process store normally
