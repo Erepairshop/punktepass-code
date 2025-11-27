@@ -1490,8 +1490,8 @@ class PPV_Device_Fingerprint {
         $store_name = $store->name ?? "Store #{$store_id}";
         $store_email = $store->email ?? '';
 
-        // Admin email
-        $admin_email = get_option('admin_email');
+        // Admin email - use same as other notifications
+        $admin_email = 'info@punktepass.de';
 
         $type_text = $type === 'add' ? 'Neues Gerät hinzufügen' : 'Gerät entfernen';
         $site_url = site_url();
@@ -1679,8 +1679,8 @@ class PPV_Device_Fingerprint {
         $store_name = $store->name ?? "Store #{$store_id}";
         $store_city = $store->city ?? '';
 
-        // Admin email
-        $admin_email = get_option('admin_email');
+        // Admin email - use same as other notifications
+        $admin_email = 'info@punktepass.de';
         $site_url = site_url();
 
         $approve_url = "{$site_url}/wp-json/punktepass/v1/user-devices/approve/{$token}";
