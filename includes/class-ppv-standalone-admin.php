@@ -48,9 +48,27 @@ class PPV_Standalone_Admin {
         // Összes store lekérése
         $all_stores = $wpdb->get_results("SELECT id, name, email, city FROM {$wpdb->prefix}ppv_stores ORDER BY name");
 
+        $error = $_GET['error'] ?? '';
+        $added = isset($_GET['added']);
+        $removed = isset($_GET['removed']);
         ?>
         <div class="wrap">
             <h1>Admin Panel Felhasználók</h1>
+
+            <?php if ($added): ?>
+                <div class="notice notice-success is-dismissible"><p>Üzlet sikeresen hozzáadva!</p></div>
+            <?php endif; ?>
+            <?php if ($removed): ?>
+                <div class="notice notice-success is-dismissible"><p>Üzlet sikeresen eltávolítva!</p></div>
+            <?php endif; ?>
+            <?php if ($error === 'nonce'): ?>
+                <div class="notice notice-error"><p>Biztonsági hiba (nonce). Próbáld újra!</p></div>
+            <?php elseif ($error === 'permission'): ?>
+                <div class="notice notice-error"><p>Nincs jogosultságod ehhez a művelethez!</p></div>
+            <?php elseif ($error === 'no_store'): ?>
+                <div class="notice notice-error"><p>Kérjük válassz üzletet!</p></div>
+            <?php endif; ?>
+
             <p>Itt adhatod hozzá azokat az üzleteket, amelyek be tudnak jelentkezni a <code>/admin</code> felületre a saját email/jelszó adataikkal.</p>
 
             <h2>Engedélyezett üzletek</h2>
@@ -131,13 +149,25 @@ class PPV_Standalone_Admin {
      * WP-Admin műveletek kezelése
      */
     public static function handle_wp_admin_actions() {
+        // Csak a mi oldalunkon futtassuk
+        $page = $_GET['page'] ?? '';
+        if ($page !== 'ppv-admin-panel-users') {
+            return;
+        }
+
         if (!isset($_POST['ppv_action']) || !isset($_POST['ppv_nonce'])) {
             return;
         }
 
         if ($_POST['ppv_action'] === 'add_admin_store') {
             if (!wp_verify_nonce($_POST['ppv_nonce'], 'ppv_add_admin_store')) {
-                return;
+                wp_redirect(admin_url('admin.php?page=ppv-admin-panel-users&error=nonce'));
+                exit;
+            }
+
+            if (!current_user_can('manage_options')) {
+                wp_redirect(admin_url('admin.php?page=ppv-admin-panel-users&error=permission'));
+                exit;
             }
 
             $store_id = intval($_POST['store_id'] ?? 0);
@@ -147,9 +177,11 @@ class PPV_Standalone_Admin {
                     $allowed_stores[] = $store_id;
                     update_option(self::ALLOWED_STORES_KEY, $allowed_stores);
                 }
+                wp_redirect(admin_url('admin.php?page=ppv-admin-panel-users&added=1'));
+                exit;
             }
 
-            wp_redirect(admin_url('admin.php?page=ppv-admin-panel-users&added=1'));
+            wp_redirect(admin_url('admin.php?page=ppv-admin-panel-users&error=no_store'));
             exit;
         }
 
