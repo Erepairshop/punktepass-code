@@ -10,8 +10,8 @@ if (!defined('ABSPATH')) exit;
 
 class PPV_Standalone_Admin {
 
-    // Admin hitelesítési adatok - wp_options-ban tárolva
-    const ADMIN_OPTION_KEY = 'ppv_standalone_admin_users';
+    // Engedélyezett store ID-k - wp_options-ban tárolva
+    const ALLOWED_STORES_KEY = 'ppv_standalone_admin_stores';
 
     /**
      * Hooks - a plugin által hívott metódus
@@ -19,6 +19,153 @@ class PPV_Standalone_Admin {
     public static function hooks() {
         add_action('init', [__CLASS__, 'handle_admin_routes'], 1);
         add_action('rest_api_init', [__CLASS__, 'register_api_routes']);
+        add_action('admin_menu', [__CLASS__, 'add_wp_admin_menu']);
+        add_action('admin_init', [__CLASS__, 'handle_wp_admin_actions']);
+    }
+
+    /**
+     * WP-Admin menü hozzáadása
+     */
+    public static function add_wp_admin_menu() {
+        add_submenu_page(
+            'punktepass',
+            'Admin Panel Felhasználók',
+            'Admin Panel',
+            'manage_options',
+            'ppv-admin-panel-users',
+            [__CLASS__, 'render_wp_admin_page']
+        );
+    }
+
+    /**
+     * WP-Admin oldal renderelése
+     */
+    public static function render_wp_admin_page() {
+        global $wpdb;
+
+        $allowed_stores = get_option(self::ALLOWED_STORES_KEY, []);
+
+        // Összes store lekérése
+        $all_stores = $wpdb->get_results("SELECT id, name, email, city FROM {$wpdb->prefix}ppv_stores ORDER BY name");
+
+        ?>
+        <div class="wrap">
+            <h1>Admin Panel Felhasználók</h1>
+            <p>Itt adhatod hozzá azokat az üzleteket, amelyek be tudnak jelentkezni a <code>/admin</code> felületre a saját email/jelszó adataikkal.</p>
+
+            <h2>Engedélyezett üzletek</h2>
+            <?php if (empty($allowed_stores)): ?>
+                <p><em>Nincs még hozzáadott üzlet.</em></p>
+            <?php else: ?>
+                <table class="wp-list-table widefat fixed striped">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Név</th>
+                            <th>Email</th>
+                            <th>Város</th>
+                            <th>Művelet</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($allowed_stores as $store_id):
+                            $store = $wpdb->get_row($wpdb->prepare(
+                                "SELECT id, name, email, city FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+                                $store_id
+                            ));
+                            if (!$store) continue;
+                        ?>
+                        <tr>
+                            <td><?php echo esc_html($store->id); ?></td>
+                            <td><?php echo esc_html($store->name); ?></td>
+                            <td><?php echo esc_html($store->email); ?></td>
+                            <td><?php echo esc_html($store->city); ?></td>
+                            <td>
+                                <form method="post" style="display:inline;">
+                                    <?php wp_nonce_field('ppv_remove_admin_store', 'ppv_nonce'); ?>
+                                    <input type="hidden" name="action" value="remove_admin_store">
+                                    <input type="hidden" name="store_id" value="<?php echo esc_attr($store->id); ?>">
+                                    <button type="submit" class="button button-small" onclick="return confirm('Biztosan eltávolítod?');">Eltávolítás</button>
+                                </form>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
+
+            <h2 style="margin-top: 30px;">Üzlet hozzáadása</h2>
+            <form method="post">
+                <?php wp_nonce_field('ppv_add_admin_store', 'ppv_nonce'); ?>
+                <input type="hidden" name="action" value="add_admin_store">
+                <table class="form-table">
+                    <tr>
+                        <th><label for="store_id">Üzlet kiválasztása</label></th>
+                        <td>
+                            <select name="store_id" id="store_id" required>
+                                <option value="">-- Válassz üzletet --</option>
+                                <?php foreach ($all_stores as $store):
+                                    if (in_array($store->id, $allowed_stores)) continue;
+                                ?>
+                                <option value="<?php echo esc_attr($store->id); ?>">
+                                    #<?php echo esc_html($store->id); ?> - <?php echo esc_html($store->name); ?> (<?php echo esc_html($store->email); ?>)
+                                </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </td>
+                    </tr>
+                </table>
+                <p class="submit">
+                    <button type="submit" class="button button-primary">Hozzáadás</button>
+                </p>
+            </form>
+
+            <hr style="margin-top: 40px;">
+            <h3>Bejelentkezés</h3>
+            <p>Az engedélyezett üzletek a <strong><a href="/admin" target="_blank">/admin</a></strong> oldalon tudnak bejelentkezni a saját email címükkel és jelszavukkal.</p>
+        </div>
+        <?php
+    }
+
+    /**
+     * WP-Admin műveletek kezelése
+     */
+    public static function handle_wp_admin_actions() {
+        if (!isset($_POST['action']) || !isset($_POST['ppv_nonce'])) {
+            return;
+        }
+
+        if ($_POST['action'] === 'add_admin_store') {
+            if (!wp_verify_nonce($_POST['ppv_nonce'], 'ppv_add_admin_store')) {
+                return;
+            }
+
+            $store_id = intval($_POST['store_id'] ?? 0);
+            if ($store_id > 0) {
+                $allowed_stores = get_option(self::ALLOWED_STORES_KEY, []);
+                if (!in_array($store_id, $allowed_stores)) {
+                    $allowed_stores[] = $store_id;
+                    update_option(self::ALLOWED_STORES_KEY, $allowed_stores);
+                }
+            }
+
+            wp_redirect(admin_url('admin.php?page=ppv-admin-panel-users&added=1'));
+            exit;
+        }
+
+        if ($_POST['action'] === 'remove_admin_store') {
+            if (!wp_verify_nonce($_POST['ppv_nonce'], 'ppv_remove_admin_store')) {
+                return;
+            }
+
+            $store_id = intval($_POST['store_id'] ?? 0);
+            $allowed_stores = get_option(self::ALLOWED_STORES_KEY, []);
+            $allowed_stores = array_filter($allowed_stores, fn($id) => $id != $store_id);
+            update_option(self::ALLOWED_STORES_KEY, array_values($allowed_stores));
+
+            wp_redirect(admin_url('admin.php?page=ppv-admin-panel-users&removed=1'));
+            exit;
+        }
     }
 
     /**
@@ -50,6 +197,8 @@ class PPV_Standalone_Admin {
         if ($path === '/admin/logout') {
             unset($_SESSION['ppv_admin_logged_in']);
             unset($_SESSION['ppv_admin_email']);
+            unset($_SESSION['ppv_admin_store_id']);
+            unset($_SESSION['ppv_admin_store_name']);
             wp_redirect('/admin');
             exit;
         }
@@ -83,9 +232,11 @@ class PPV_Standalone_Admin {
     }
 
     /**
-     * Bejelentkezés kezelése
+     * Bejelentkezés kezelése - ppv_stores táblából
      */
     private static function handle_login() {
+        global $wpdb;
+
         $email = sanitize_email($_POST['email'] ?? '');
         $password = $_POST['password'] ?? '';
 
@@ -94,28 +245,49 @@ class PPV_Standalone_Admin {
             exit;
         }
 
-        // Admin felhasználók lekérése
-        $admins = get_option(self::ADMIN_OPTION_KEY, []);
+        // Engedélyezett store ID-k lekérése
+        $allowed_stores = get_option(self::ALLOWED_STORES_KEY, []);
 
-        // Alapértelmezett admin ha nincs beállítva
-        if (empty($admins)) {
-            $admins = [
-                'info@punktepass.de' => password_hash('punktepass2024', PASSWORD_DEFAULT)
-            ];
-            update_option(self::ADMIN_OPTION_KEY, $admins);
-        }
-
-        // Hitelesítés ellenőrzése
-        if (isset($admins[$email]) && password_verify($password, $admins[$email])) {
-            $_SESSION['ppv_admin_logged_in'] = true;
-            $_SESSION['ppv_admin_email'] = $email;
-            ppv_log("🔐 [Admin] Sikeres bejelentkezés: {$email}");
-            wp_redirect('/admin/dashboard');
+        if (empty($allowed_stores)) {
+            ppv_log("🔐 [Admin] Nincs engedélyezett store beállítva");
+            wp_redirect('/admin?error=no_admins');
             exit;
         }
 
-        ppv_log("🔐 [Admin] Sikertelen bejelentkezés: {$email}");
-        wp_redirect('/admin?error=invalid_credentials');
+        // Store keresése email alapján
+        $store = $wpdb->get_row($wpdb->prepare(
+            "SELECT id, email, password, name FROM {$wpdb->prefix}ppv_stores WHERE email = %s",
+            $email
+        ));
+
+        // Ellenőrzés: létezik-e és engedélyezett-e
+        if (!$store) {
+            ppv_log("🔐 [Admin] Ismeretlen email: {$email}");
+            wp_redirect('/admin?error=invalid_credentials');
+            exit;
+        }
+
+        if (!in_array($store->id, $allowed_stores)) {
+            ppv_log("🔐 [Admin] Store nincs engedélyezve: {$store->id} ({$email})");
+            wp_redirect('/admin?error=not_authorized');
+            exit;
+        }
+
+        // Jelszó ellenőrzése
+        if (!password_verify($password, $store->password)) {
+            ppv_log("🔐 [Admin] Hibás jelszó: {$email}");
+            wp_redirect('/admin?error=invalid_credentials');
+            exit;
+        }
+
+        // Sikeres bejelentkezés
+        $_SESSION['ppv_admin_logged_in'] = true;
+        $_SESSION['ppv_admin_email'] = $email;
+        $_SESSION['ppv_admin_store_id'] = $store->id;
+        $_SESSION['ppv_admin_store_name'] = $store->name;
+
+        ppv_log("🔐 [Admin] Sikeres bejelentkezés: {$email} (Store #{$store->id})");
+        wp_redirect('/admin/dashboard');
         exit;
     }
 
@@ -374,9 +546,13 @@ class PPV_Standalone_Admin {
                 </div>
 
                 <?php if ($error === 'invalid_credentials'): ?>
-                    <div class="error">Hibás bejelentkezési adatok</div>
+                    <div class="error">Hibás email cím vagy jelszó</div>
                 <?php elseif ($error === 'missing_fields'): ?>
                     <div class="error">Kérjük töltse ki az összes mezőt</div>
+                <?php elseif ($error === 'no_admins'): ?>
+                    <div class="error">Nincs beállítva admin felhasználó. Kérjük lépjen kapcsolatba a rendszergazdával.</div>
+                <?php elseif ($error === 'not_authorized'): ?>
+                    <div class="error">Ez a fiók nincs engedélyezve az admin panelhez.</div>
                 <?php endif; ?>
 
                 <form method="POST" action="/admin/login">
