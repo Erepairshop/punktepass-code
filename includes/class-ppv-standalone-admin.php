@@ -1067,6 +1067,15 @@ class PPV_Standalone_Admin {
              ORDER BY s.name ASC"
         );
 
+        // Eszközök lekérése handler-enként
+        $devices_by_store = [];
+        $all_devices = $wpdb->get_results(
+            "SELECT * FROM {$wpdb->prefix}ppv_user_devices WHERE status = 'active' ORDER BY registered_at DESC"
+        );
+        foreach ($all_devices as $device) {
+            $devices_by_store[$device->store_id][] = $device;
+        }
+
         self::get_admin_header('handlers');
         ?>
         <h1 class="page-title"><i class="ri-store-2-line"></i> Handler áttekintés</h1>
@@ -1084,7 +1093,9 @@ class PPV_Standalone_Admin {
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($handlers as $handler): ?>
+                    <?php foreach ($handlers as $handler):
+                        $handler_devices = $devices_by_store[$handler->id] ?? [];
+                    ?>
                         <tr>
                             <td>#<?php echo $handler->id; ?></td>
                             <td><strong><?php echo esc_html($handler->name); ?></strong></td>
@@ -1096,9 +1107,54 @@ class PPV_Standalone_Admin {
                                     <span class="badge" style="background: rgba(255,255,255,0.1); color: #888;">Fixed</span>
                                 <?php endif; ?>
                             </td>
-                            <td><?php echo intval($handler->device_count); ?></td>
+                            <td>
+                                <?php if (empty($handler_devices)): ?>
+                                    <span style="color: #f44336;">0</span>
+                                <?php else: ?>
+                                    <strong style="color: #4caf50;"><?php echo count($handler_devices); ?></strong>
+                                <?php endif; ?>
+                            </td>
                             <td><?php echo intval($handler->filiale_count); ?></td>
                         </tr>
+                        <?php if (!empty($handler_devices)): ?>
+                        <tr>
+                            <td colspan="6" style="padding: 0; background: rgba(0,230,255,0.05);">
+                                <div style="padding: 15px 20px 15px 50px;">
+                                    <strong style="color: #00e6ff; font-size: 12px;">📱 REGISZTRÁLT ESZKÖZÖK:</strong>
+                                    <table style="margin-top: 10px; background: transparent;">
+                                        <thead>
+                                            <tr style="background: rgba(0,0,0,0.2);">
+                                                <th style="padding: 8px; font-size: 11px;">Név</th>
+                                                <th style="padding: 8px; font-size: 11px;">Modell</th>
+                                                <th style="padding: 8px; font-size: 11px;">OS</th>
+                                                <th style="padding: 8px; font-size: 11px;">Böngésző</th>
+                                                <th style="padding: 8px; font-size: 11px;">Regisztrálva</th>
+                                                <th style="padding: 8px; font-size: 11px;">IP</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php foreach ($handler_devices as $device):
+                                                $device_info = self::parse_device_info($device->user_agent ?? '');
+                                            ?>
+                                            <tr style="background: transparent;">
+                                                <td style="padding: 8px;"><?php echo esc_html($device->device_name); ?></td>
+                                                <td style="padding: 8px;">
+                                                    <strong style="color: #00e6ff;"><?php echo esc_html($device_info['model']); ?></strong>
+                                                </td>
+                                                <td style="padding: 8px; color: #aaa; font-size: 12px;"><?php echo esc_html($device_info['os'] ?: '-'); ?></td>
+                                                <td style="padding: 8px; color: #666; font-size: 12px;"><?php echo esc_html($device_info['browser'] ?: '-'); ?></td>
+                                                <td style="padding: 8px; color: #888; font-size: 11px;">
+                                                    <?php echo date('Y.m.d H:i', strtotime($device->registered_at)); ?>
+                                                </td>
+                                                <td style="padding: 8px; color: #666; font-size: 11px;"><?php echo esc_html($device->ip_address); ?></td>
+                                            </tr>
+                                            <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </td>
+                        </tr>
+                        <?php endif; ?>
                     <?php endforeach; ?>
                 </tbody>
             </table>
