@@ -2498,22 +2498,29 @@ class PPV_QR {
             // 📱 MOBILE SCANNER MANAGEMENT (PER-DEVICE)
             // ============================================================
 
-            // Highlight current device and check pending mobile scanner requests
+            // Highlight current device using device_id from API response
             function highlightCurrentDevice() {
-                if (!currentFingerprint) return;
+                // Use device_id from API response (deviceCheckResult)
+                if (!deviceCheckResult || !deviceCheckResult.device_id) {
+                    console.log('[Devices] ⚠️ No device_id in API response, cannot highlight current device');
+                    return;
+                }
 
-                console.log('[Devices] 🔍 Looking for current device with fingerprint:', currentFingerprint);
+                const currentDeviceId = deviceCheckResult.device_id;
+                console.log('[Devices] 🔍 Looking for current device with ID:', currentDeviceId);
 
                 $('.ppv-device-card').each(function() {
                     const $card = $(this);
-                    const cardFingerprint = $card.data('fingerprint');
+                    const cardDeviceId = parseInt($card.data('device-id'), 10);
 
-                    if (cardFingerprint === currentFingerprint) {
-                        console.log('[Devices] ✅ Found current device!');
-                        // Highlight the card
+                    if (cardDeviceId === currentDeviceId) {
+                        console.log('[Devices] ✅ Found current device! ID:', currentDeviceId);
+                        // Highlight the card with green border and glow
                         $card.css({
                             'border-left-color': '#00e676',
-                            'box-shadow': '0 0 15px rgba(0, 230, 118, 0.3)'
+                            'border-left-width': '6px',
+                            'box-shadow': '0 0 20px rgba(0, 230, 118, 0.4)',
+                            'background': 'linear-gradient(135deg, rgba(0, 230, 118, 0.1), rgba(76, 175, 80, 0.05))'
                         });
                         // Show the current device badge
                         $card.find('.ppv-current-device-badge').show();
