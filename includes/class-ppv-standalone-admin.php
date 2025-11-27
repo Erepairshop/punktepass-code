@@ -222,10 +222,30 @@ class PPV_Standalone_Admin {
         // Záró perjel eltávolítása
         $path = rtrim($path, '/');
 
+        // Public sales page (no login required)
+        if ($path === '/sales' || $path === '/sales/partner') {
+            self::render_sales_page();
+            exit;
+        }
+
         // Admin útvonal ellenőrzése
         if ($path === '/admin' || strpos($path, '/admin/') === 0) {
             self::process_admin_request($path);
             exit;
+        }
+    }
+
+    /**
+     * Render the public sales page
+     */
+    private static function render_sales_page() {
+        $sales_file = plugin_dir_path(__FILE__) . '../sales/punktepass-partner-info.html';
+
+        if (file_exists($sales_file)) {
+            header('Content-Type: text/html; charset=utf-8');
+            readfile($sales_file);
+        } else {
+            wp_die('Sales page not found', 'PunktePass', ['response' => 404]);
         }
     }
 
