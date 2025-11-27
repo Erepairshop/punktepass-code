@@ -940,6 +940,10 @@ return [
 'device_register_first' => 'Bitte registrieren Sie zuerst ein Gerät im Tab "Geräte", bevor Sie den Scanner verwenden können.',
 'device_blocked_title' => 'Gerät nicht registriert',
 'device_blocked_hint' => 'Gehen Sie zum Tab "Geräte" um dieses Gerät zu registrieren.',
+'update_fingerprint' => 'Fingerprint aktualisieren',
+'confirm_update_fingerprint' => 'Fingerprint für dieses Gerät mit dem aktuellen Browser aktualisieren?',
+'fingerprint_updated' => 'Fingerprint erfolgreich aktualisiert! Die Seite wird neu geladen.',
+'update_error' => 'Fehler beim Aktualisieren',
 'close' => 'Schließen',
 
 'offline_banner' => 'Offline-Modus aktiv',

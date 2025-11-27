@@ -2099,7 +2099,10 @@ class PPV_QR {
                                     </div>
                                     <?php endif; ?>
                                 </div>
-                                <div>
+                                <div style="display: flex; flex-direction: column; gap: 8px;">
+                                    <button class="ppv-device-update-btn ppv-btn-outline" data-device-id="<?php echo $device->id; ?>" data-device-name="<?php echo esc_attr($device->device_name ?: $device_type['name']); ?>" style="padding: 8px 12px; font-size: 12px; color: #2196f3; border-color: #2196f3;">
+                                        <i class="ri-refresh-line"></i> <?php echo self::t('update_fingerprint', 'Fingerprint aktualisieren'); ?>
+                                    </button>
                                     <button class="ppv-device-remove-btn ppv-btn-outline" data-device-id="<?php echo $device->id; ?>" data-device-name="<?php echo esc_attr($device->device_name ?: $device_type['name']); ?>" style="padding: 8px 12px; font-size: 12px; color: #f44336; border-color: #f44336;">
                                         <i class="ri-delete-bin-line"></i> <?php echo self::t('request_removal', 'Entfernung anfordern'); ?>
                                     </button>
@@ -2347,6 +2350,47 @@ class PPV_QR {
                 } catch (e) {
                     alert('<?php echo esc_js(self::t('network_error', 'Netzwerkfehler')); ?>');
                     $btn.prop('disabled', false).html('<i class="ri-delete-bin-line"></i> <?php echo esc_js(self::t('request_removal', 'Entfernung anfordern')); ?>');
+                }
+            });
+
+            // Update device fingerprint
+            $(document).on('click', '.ppv-device-update-btn', async function() {
+                const $btn = $(this);
+                const deviceId = $btn.data('device-id');
+                const deviceName = $btn.data('device-name');
+
+                if (!confirm('<?php echo esc_js(self::t('confirm_update_fingerprint', 'Fingerprint für dieses Gerät mit dem aktuellen Browser aktualisieren?')); ?>\n\n' + deviceName)) {
+                    return;
+                }
+
+                if (!currentFingerprint) {
+                    alert('<?php echo esc_js(self::t('fingerprint_error', 'Geräte-Fingerprint konnte nicht erstellt werden')); ?>');
+                    return;
+                }
+
+                $btn.prop('disabled', true).html('<i class="ri-loader-4-line ri-spin"></i>');
+
+                try {
+                    const response = await fetch('/wp-json/punktepass/v1/user-devices/update-fingerprint', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            device_id: deviceId,
+                            fingerprint: currentFingerprint
+                        })
+                    });
+                    const data = await response.json();
+
+                    if (data.success) {
+                        alert('<?php echo esc_js(self::t('fingerprint_updated', 'Fingerprint erfolgreich aktualisiert! Die Seite wird neu geladen.')); ?>');
+                        location.reload();
+                    } else {
+                        alert(data.message || '<?php echo esc_js(self::t('update_error', 'Fehler beim Aktualisieren')); ?>');
+                        $btn.prop('disabled', false).html('<i class="ri-refresh-line"></i> <?php echo esc_js(self::t('update_fingerprint', 'Fingerprint aktualisieren')); ?>');
+                    }
+                } catch (e) {
+                    alert('<?php echo esc_js(self::t('network_error', 'Netzwerkfehler')); ?>');
+                    $btn.prop('disabled', false).html('<i class="ri-refresh-line"></i> <?php echo esc_js(self::t('update_fingerprint', 'Fingerprint aktualisieren')); ?>');
                 }
             });
 

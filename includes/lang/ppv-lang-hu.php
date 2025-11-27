@@ -915,6 +915,10 @@ return [
 'device_register_first' => 'Kérjük, először regisztráljon egy készüléket a "Készülékek" fülön, mielőtt használhatná a scannert.',
 'device_blocked_title' => 'Készülék nincs regisztrálva',
 'device_blocked_hint' => 'Menjen a "Készülékek" fülre a készülék regisztrálásához.',
+'update_fingerprint' => 'Fingerprint frissítése',
+'confirm_update_fingerprint' => 'Frissíti a készülék fingerprint-jét a jelenlegi böngészővel?',
+'fingerprint_updated' => 'Fingerprint sikeresen frissítve! Az oldal újratöltődik.',
+'update_error' => 'Hiba a frissítés során',
 'close' => 'Bezárás',
 
 'offline_banner' => 'Offline mód aktív',

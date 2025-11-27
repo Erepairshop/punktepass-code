@@ -928,6 +928,10 @@ return [
 'device_register_first' => 'Vă rugăm să înregistrați mai întâi un dispozitiv în tab-ul "Dispozitive", înainte de a putea utiliza scannerul.',
 'device_blocked_title' => 'Dispozitiv neînregistrat',
 'device_blocked_hint' => 'Mergeți la tab-ul "Dispozitive" pentru a înregistra acest dispozitiv.',
+'update_fingerprint' => 'Actualizare Fingerprint',
+'confirm_update_fingerprint' => 'Actualizați fingerprint-ul dispozitivului cu browser-ul curent?',
+'fingerprint_updated' => 'Fingerprint actualizat cu succes! Pagina se va reîncărca.',
+'update_error' => 'Eroare la actualizare',
 'close' => 'Închide',
 
 'offline_banner' => 'Mod offline activ',

@@ -199,6 +199,13 @@ class PPV_Device_Fingerprint {
             'permission_callback' => '__return_true'
         ]);
 
+        // Update device fingerprint (when fingerprint changed)
+        register_rest_route('punktepass/v1', '/user-devices/update-fingerprint', [
+            'methods' => 'POST',
+            'callback' => [__CLASS__, 'rest_update_device_fingerprint'],
+            'permission_callback' => '__return_true'
+        ]);
+
         // Request device removal (needs admin approval)
         register_rest_route('punktepass/v1', '/user-devices/request-remove', [
             'methods' => 'POST',
@@ -975,6 +982,100 @@ class PPV_Device_Fingerprint {
                 'store_id' => $parent_store_id
             ]
         ], 200);
+    }
+
+    /**
+     * REST: Update device fingerprint (when browser fingerprint changed)
+     * This allows updating the fingerprint of an existing device without admin approval
+     */
+    public static function rest_update_device_fingerprint(WP_REST_Request $request) {
+        global $wpdb;
+
+        $store_id = self::get_session_store_id();
+
+        if ($store_id <= 0) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Nicht authentifiziert'
+            ], 401);
+        }
+
+        $data = $request->get_json_params();
+        $device_id = intval($data['device_id'] ?? 0);
+        $new_fingerprint = sanitize_text_field($data['fingerprint'] ?? '');
+
+        if ($device_id <= 0) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Ungültige Geräte-ID'
+            ], 400);
+        }
+
+        if (empty($new_fingerprint) || strlen($new_fingerprint) < 16) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Ungültiger Fingerprint'
+            ], 400);
+        }
+
+        $parent_store_id = self::get_parent_store_id($store_id);
+        $new_fingerprint_hash = self::hash_fingerprint($new_fingerprint);
+
+        // Check if device exists for this store
+        $device = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}" . self::USER_DEVICES_TABLE . " WHERE id = %d AND store_id = %d",
+            $device_id, $parent_store_id
+        ));
+
+        if (!$device) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Gerät nicht gefunden'
+            ], 404);
+        }
+
+        // Check if new fingerprint is already registered to another device
+        $existing = $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM {$wpdb->prefix}" . self::USER_DEVICES_TABLE . " WHERE store_id = %d AND fingerprint_hash = %s AND id != %d",
+            $parent_store_id, $new_fingerprint_hash, $device_id
+        ));
+
+        if ($existing) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Fingerprint bereits für ein anderes Gerät registriert'
+            ], 400);
+        }
+
+        // Update the fingerprint
+        $ip_address = self::get_client_ip();
+        $user_agent = sanitize_text_field($_SERVER['HTTP_USER_AGENT'] ?? '');
+
+        $result = $wpdb->update(
+            $wpdb->prefix . self::USER_DEVICES_TABLE,
+            [
+                'fingerprint_hash' => $new_fingerprint_hash,
+                'user_agent' => $user_agent,
+                'ip_address' => $ip_address,
+                'last_used_at' => current_time('mysql')
+            ],
+            ['id' => $device_id],
+            ['%s', '%s', '%s', '%s'],
+            ['%d']
+        );
+
+        if ($result !== false) {
+            ppv_log("📱 [Device Update] Fingerprint updated: device_id={$device_id}, old_hash=" . substr($device->fingerprint_hash, 0, 16) . "..., new_hash=" . substr($new_fingerprint_hash, 0, 16) . "...");
+            return new WP_REST_Response([
+                'success' => true,
+                'message' => 'Fingerprint erfolgreich aktualisiert'
+            ], 200);
+        }
+
+        return new WP_REST_Response([
+            'success' => false,
+            'message' => 'Fehler beim Aktualisieren'
+        ], 500);
     }
 
     /**
