@@ -102,6 +102,46 @@ class PPV_POS_AUTO_API {
             $response_message[] = "+{$points_add} Punkte gutgeschrieben";
         }
 
+        // ===============================
+        // 🎂 Birthday Bonus
+        // ===============================
+        $birthday_bonus_applied = 0;
+        if ($user_id && $points_add > 0) {
+            $birthday_settings = $wpdb->get_row($wpdb->prepare("
+                SELECT birthday_bonus_enabled, birthday_bonus_type, birthday_bonus_value, birthday_bonus_message
+                FROM {$wpdb->prefix}ppv_stores WHERE id = %d
+            ", $store_id));
+
+            if ($birthday_settings && $birthday_settings->birthday_bonus_enabled) {
+                $user_birthday = $wpdb->get_var($wpdb->prepare("
+                    SELECT birthday FROM {$wpdb->prefix}ppv_users WHERE id = %d
+                ", $user_id));
+
+                if ($user_birthday) {
+                    $today_md = date('m-d');
+                    $birthday_md = date('m-d', strtotime($user_birthday));
+
+                    if ($today_md === $birthday_md) {
+                        $bonus_type = $birthday_settings->birthday_bonus_type ?? 'double_points';
+
+                        switch ($bonus_type) {
+                            case 'double_points':
+                                $birthday_bonus_applied = $points_add;
+                                break;
+                            case 'fixed_points':
+                                $birthday_bonus_applied = intval($birthday_settings->birthday_bonus_value ?? 0);
+                                break;
+                        }
+
+                        if ($birthday_bonus_applied > 0) {
+                            $points_add += $birthday_bonus_applied;
+                            $response_message[] = "🎂 Geburtstags-Bonus: +{$birthday_bonus_applied}";
+                        }
+                    }
+                }
+            }
+        }
+
        // ===============================
 // 🔹 Pont jóváírás (ha van)
 // ===============================

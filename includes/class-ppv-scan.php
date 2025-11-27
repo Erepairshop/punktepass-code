@@ -358,6 +358,61 @@ public static function ajax_auto_add_point() {
         }
     }
 
+    /** 🎂 Birthday Bonus */
+    $birthday_bonus_applied = 0;
+    $birthday_bonus_message = '';
+
+    // Get birthday bonus settings from store (or parent store for filiales)
+    $birthday_store_id = $store_id;
+    if (class_exists('PPV_Filiale')) {
+        $birthday_store_id = PPV_Filiale::get_parent_id($store_id);
+    }
+
+    $birthday_settings = $wpdb->get_row($wpdb->prepare("
+        SELECT birthday_bonus_enabled, birthday_bonus_type, birthday_bonus_value, birthday_bonus_message
+        FROM {$wpdb->prefix}ppv_stores WHERE id = %d
+    ", $birthday_store_id));
+
+    if ($birthday_settings && $birthday_settings->birthday_bonus_enabled) {
+        // Get user's birthday from ppv_users table
+        $user_birthday = $wpdb->get_var($wpdb->prepare("
+            SELECT birthday FROM {$wpdb->prefix}ppv_users WHERE id = %d
+        ", $user_id));
+
+        if ($user_birthday) {
+            // Check if today is user's birthday (compare month and day)
+            $today_md = date('m-d');
+            $birthday_md = date('m-d', strtotime($user_birthday));
+
+            if ($today_md === $birthday_md) {
+                ppv_log("🎂 [PPV_Scan] Today is user {$user_id}'s birthday!");
+
+                $bonus_type = $birthday_settings->birthday_bonus_type ?? 'double_points';
+                $base_points_for_birthday = $points_to_add; // Points before birthday bonus
+
+                switch ($bonus_type) {
+                    case 'double_points':
+                        $birthday_bonus_applied = $base_points_for_birthday; // Double = add same amount again
+                        break;
+                    case 'fixed_points':
+                        $birthday_bonus_applied = intval($birthday_settings->birthday_bonus_value ?? 0);
+                        break;
+                    case 'free_product':
+                        // Free product is handled separately (not points)
+                        // TODO: Implement free product voucher creation
+                        ppv_log("🎁 [PPV_Scan] Birthday free product bonus - not yet implemented");
+                        break;
+                }
+
+                if ($birthday_bonus_applied > 0) {
+                    $points_to_add += $birthday_bonus_applied;
+                    $birthday_bonus_message = $birthday_settings->birthday_bonus_message ?? '';
+                    ppv_log("🎂 [PPV_Scan] Birthday bonus applied: type={$bonus_type}, bonus=+{$birthday_bonus_applied}, total_points={$points_to_add}");
+                }
+            }
+        }
+    }
+
     // --- Beszúrás ---
     $wpdb->insert("{$wpdb->prefix}ppv_points", [
         'user_id'    => $user_id,
@@ -378,6 +433,9 @@ public static function ajax_auto_add_point() {
     if ($vip_bonus_applied > 0) {
         $msg .= " (VIP-Bonus: +{$vip_bonus_applied})";
     }
+    if ($birthday_bonus_applied > 0) {
+        $msg .= " 🎂 Geburtstags-Bonus: +{$birthday_bonus_applied}!";
+    }
 
     wp_send_json_success([
         'msg'   => $msg,
@@ -385,7 +443,9 @@ public static function ajax_auto_add_point() {
         'user_id' => $user_id,
         'store_id'=> $store_id,
         'points' => $points_to_add,
-        'vip_bonus' => $vip_bonus_applied
+        'vip_bonus' => $vip_bonus_applied,
+        'birthday_bonus' => $birthday_bonus_applied,
+        'birthday_message' => $birthday_bonus_message
     ]);
 }
 
