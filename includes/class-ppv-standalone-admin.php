@@ -177,6 +177,8 @@ class PPV_Standalone_Admin {
             self::render_device_requests();
         } elseif ($path === '/admin/handlers') {
             self::render_handlers_page();
+        } elseif ($path === '/admin/delete-device') {
+            self::handle_delete_device();
         } elseif (preg_match('#/admin/approve/([a-zA-Z0-9]+)#', $path, $matches)) {
             self::handle_approve($matches[1]);
         } elseif (preg_match('#/admin/reject/([a-zA-Z0-9]+)#', $path, $matches)) {
@@ -184,6 +186,64 @@ class PPV_Standalone_Admin {
         } else {
             self::render_dashboard();
         }
+    }
+
+    /**
+     * Eszköz törlése admin által
+     */
+    private static function handle_delete_device() {
+        global $wpdb;
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            wp_redirect('/admin/handlers');
+            exit;
+        }
+
+        $device_id = intval($_POST['device_id'] ?? 0);
+        $reason = sanitize_text_field($_POST['reason'] ?? '');
+
+        if (empty($device_id)) {
+            wp_redirect('/admin/handlers?error=missing_device');
+            exit;
+        }
+
+        if (empty($reason)) {
+            wp_redirect('/admin/handlers?error=missing_reason');
+            exit;
+        }
+
+        // Eszköz lekérése
+        $device = $wpdb->get_row($wpdb->prepare(
+            "SELECT d.*, s.name as store_name
+             FROM {$wpdb->prefix}ppv_user_devices d
+             LEFT JOIN {$wpdb->prefix}ppv_stores s ON d.store_id = s.id
+             WHERE d.id = %d",
+            $device_id
+        ));
+
+        if (!$device) {
+            wp_redirect('/admin/handlers?error=device_not_found');
+            exit;
+        }
+
+        // Eszköz törlése
+        $result = $wpdb->delete(
+            $wpdb->prefix . 'ppv_user_devices',
+            ['id' => $device_id],
+            ['%d']
+        );
+
+        if ($result) {
+            // Log the deletion
+            $admin_email = $_SESSION['ppv_admin_email'] ?? 'admin';
+            $device_info = self::parse_device_info($device->user_agent ?? '');
+            ppv_log("🗑️ [Admin Device Delete] device_id={$device_id}, store={$device->store_name} (#{$device->store_id}), device={$device->device_name} ({$device_info['model']}), reason={$reason}, by={$admin_email}");
+
+            wp_redirect('/admin/handlers?deleted=' . urlencode($device->device_name) . '&store=' . urlencode($device->store_name));
+        } else {
+            wp_redirect('/admin/handlers?error=delete_failed');
+        }
+        exit;
     }
 
     /**
@@ -716,6 +776,18 @@ class PPV_Standalone_Admin {
                     border-radius: 10px;
                     margin-bottom: 20px;
                 }
+                .error-msg {
+                    background: rgba(244, 67, 54, 0.1);
+                    border: 1px solid rgba(244, 67, 54, 0.3);
+                    color: #f44336;
+                    padding: 15px;
+                    border-radius: 10px;
+                    margin-bottom: 20px;
+                }
+                .btn-sm {
+                    padding: 6px 12px;
+                    font-size: 12px;
+                }
                 .empty-state {
                     text-align: center;
                     padding: 60px 20px;
@@ -1076,9 +1148,24 @@ class PPV_Standalone_Admin {
             $devices_by_store[$device->store_id][] = $device;
         }
 
+        $deleted = $_GET['deleted'] ?? '';
+        $store_deleted = $_GET['store'] ?? '';
+        $error = $_GET['error'] ?? '';
+
         self::get_admin_header('handlers');
         ?>
         <h1 class="page-title"><i class="ri-store-2-line"></i> Handler áttekintés</h1>
+
+        <?php if ($deleted): ?>
+            <div class="success-msg">✅ Eszköz törölve: <strong><?php echo esc_html($deleted); ?></strong> (<?php echo esc_html($store_deleted); ?>)</div>
+        <?php endif; ?>
+        <?php if ($error === 'missing_reason'): ?>
+            <div class="error-msg">❌ Add meg a törlés okát!</div>
+        <?php elseif ($error === 'device_not_found'): ?>
+            <div class="error-msg">❌ Eszköz nem található!</div>
+        <?php elseif ($error === 'delete_failed'): ?>
+            <div class="error-msg">❌ Hiba a törlés során!</div>
+        <?php endif; ?>
 
         <div class="card">
             <table>
@@ -1130,6 +1217,7 @@ class PPV_Standalone_Admin {
                                                 <th style="padding: 8px; font-size: 11px;">Böngésző</th>
                                                 <th style="padding: 8px; font-size: 11px;">Regisztrálva</th>
                                                 <th style="padding: 8px; font-size: 11px;">IP</th>
+                                                <th style="padding: 8px; font-size: 11px;">Művelet</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -1147,6 +1235,12 @@ class PPV_Standalone_Admin {
                                                     <?php echo date('Y.m.d H:i', strtotime($device->registered_at)); ?>
                                                 </td>
                                                 <td style="padding: 8px; color: #666; font-size: 11px;"><?php echo esc_html($device->ip_address); ?></td>
+                                                <td style="padding: 8px;">
+                                                    <button type="button" class="btn btn-reject btn-sm"
+                                                            onclick="openDeleteModal(<?php echo $device->id; ?>, '<?php echo esc_js($device->device_name); ?>', '<?php echo esc_js($device_info['model']); ?>', '<?php echo esc_js($handler->name); ?>')">
+                                                        <i class="ri-delete-bin-line"></i> Törlés
+                                                    </button>
+                                                </td>
                                             </tr>
                                             <?php endforeach; ?>
                                         </tbody>
@@ -1159,6 +1253,63 @@ class PPV_Standalone_Admin {
                 </tbody>
             </table>
         </div>
+
+        <!-- Törlés megerősítő modal -->
+        <div id="deleteModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center;">
+            <div style="background: #1a1a2e; border: 1px solid rgba(255,255,255,0.1); border-radius: 15px; padding: 30px; max-width: 450px; width: 90%;">
+                <h3 style="color: #f44336; margin: 0 0 20px 0;"><i class="ri-alert-line"></i> Eszköz törlése</h3>
+                <p style="color: #ccc; margin-bottom: 15px;">
+                    Biztosan törölni szeretnéd az alábbi eszközt?
+                </p>
+                <div style="background: rgba(244,67,54,0.1); border: 1px solid rgba(244,67,54,0.3); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                    <p style="margin: 0; color: #fff;"><strong id="deleteDeviceName"></strong></p>
+                    <p style="margin: 5px 0 0 0; color: #00e6ff;" id="deleteDeviceModel"></p>
+                    <p style="margin: 5px 0 0 0; color: #888; font-size: 12px;">Handler: <span id="deleteStoreName"></span></p>
+                </div>
+                <form method="POST" action="/admin/delete-device" id="deleteForm">
+                    <input type="hidden" name="device_id" id="deleteDeviceId">
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; color: #fff; margin-bottom: 8px;">Törlés oka: <span style="color: #f44336;">*</span></label>
+                        <textarea name="reason" id="deleteReason" required rows="3"
+                                  style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; color: #fff; font-size: 14px; resize: none;"
+                                  placeholder="pl. Ügyfél kérése, elveszett eszköz, új készülék..."></textarea>
+                    </div>
+                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                        <button type="button" onclick="closeDeleteModal()" class="btn" style="background: rgba(255,255,255,0.1); color: #fff;">
+                            Mégse
+                        </button>
+                        <button type="submit" class="btn btn-reject">
+                            <i class="ri-delete-bin-line"></i> Véglegesen törlés
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <script>
+        function openDeleteModal(deviceId, deviceName, deviceModel, storeName) {
+            document.getElementById('deleteDeviceId').value = deviceId;
+            document.getElementById('deleteDeviceName').textContent = deviceName;
+            document.getElementById('deleteDeviceModel').textContent = deviceModel;
+            document.getElementById('deleteStoreName').textContent = storeName;
+            document.getElementById('deleteReason').value = '';
+            document.getElementById('deleteModal').style.display = 'flex';
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').style.display = 'none';
+        }
+
+        // ESC billentyű
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeDeleteModal();
+        });
+
+        // Kattintás a háttérre
+        document.getElementById('deleteModal').addEventListener('click', function(e) {
+            if (e.target === this) closeDeleteModal();
+        });
+        </script>
         <?php
         self::get_admin_footer();
     }
