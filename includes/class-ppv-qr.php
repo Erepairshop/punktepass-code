@@ -2043,32 +2043,6 @@ class PPV_QR {
                 </p>
             </div>
 
-            <!-- Mobile Scanner Request Box -->
-            <div id="ppv-mobile-scanner-box" style="background: linear-gradient(135deg, rgba(156, 39, 176, 0.1) 0%, rgba(103, 58, 183, 0.1) 100%); border: 1px solid rgba(156, 39, 176, 0.3); border-radius: 15px; padding: 20px; margin-bottom: 20px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
-                    <div style="flex: 1; min-width: 200px;">
-                        <h4 style="margin: 0 0 8px 0; color: #fff;"><i class="ri-map-pin-line"></i> <?php echo self::t('mobile_scanner_title', 'Mobile Scanner'); ?></h4>
-                        <p id="ppv-mobile-scanner-status" style="margin: 0; font-size: 13px; color: #999;">
-                            <?php echo self::t('checking_mobile_scanner', 'Status wird überprüft...'); ?>
-                        </p>
-                    </div>
-                    <div id="ppv-mobile-scanner-actions">
-                        <button id="ppv-request-mobile-scanner-btn" class="ppv-btn" type="button" style="display: none; background: linear-gradient(135deg, #9c27b0, #673ab7);">
-                            <i class="ri-map-pin-add-line"></i> <?php echo self::t('request_mobile_scanner', 'Mobile Scanner anfordern'); ?>
-                        </button>
-                        <span id="ppv-mobile-scanner-active-badge" style="display: none; background: #9c27b0; color: white; padding: 8px 16px; border-radius: 8px; font-size: 13px;">
-                            ✅ <?php echo self::t('mobile_scanner_active', 'Mobile Scanner aktiv'); ?>
-                        </span>
-                        <span id="ppv-mobile-scanner-pending-badge" style="display: none; background: #ff9800; color: white; padding: 8px 16px; border-radius: 8px; font-size: 13px;">
-                            ⏳ <?php echo self::t('mobile_scanner_pending', 'Anfrage ausstehend'); ?>
-                        </span>
-                    </div>
-                </div>
-                <p style="margin: 12px 0 0 0; font-size: 12px; color: #888;">
-                    <i class="ri-information-line"></i> <?php echo self::t('mobile_scanner_info', 'Mit Mobile Scanner können Sie ohne GPS-Standortprüfung scannen. Erfordert Admin-Genehmigung.'); ?>
-                </p>
-            </div>
-
             <!-- Current Device Registration -->
             <div id="ppv-current-device-box" style="background: linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, rgba(0, 230, 118, 0.1) 100%); border: 1px solid rgba(76, 175, 80, 0.3); border-radius: 15px; padding: 20px; margin-bottom: 20px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
@@ -2106,12 +2080,22 @@ class PPV_QR {
                         $registered_date = date('d.m.Y H:i', strtotime($device->registered_at));
                         $last_used = $device->last_used_at ? date('d.m.Y H:i', strtotime($device->last_used_at)) : '-';
                         $device_type = self::detect_device_type($device->user_agent);
+                        $is_mobile_scanner = !empty($device->mobile_scanner) && $device->mobile_scanner == 1;
                         ?>
-                        <div class="ppv-device-card glass-card" data-device-id="<?php echo $device->id; ?>" data-fingerprint="<?php echo esc_attr($device->fingerprint_hash); ?>" style="padding: 15px; margin-bottom: 15px; border-left: 4px solid #4caf50; border-radius: 12px;">
+                        <div class="ppv-device-card glass-card" data-device-id="<?php echo $device->id; ?>" data-fingerprint="<?php echo esc_attr($device->fingerprint_hash); ?>" data-mobile-scanner="<?php echo $is_mobile_scanner ? '1' : '0'; ?>" style="padding: 15px; margin-bottom: 15px; border-left: 4px solid #4caf50; border-radius: 12px; position: relative;">
+                            <!-- Current device indicator (will be shown by JS) -->
+                            <div class="ppv-current-device-badge" style="display: none; position: absolute; top: -8px; right: 15px; background: linear-gradient(135deg, #4caf50, #00e676); color: white; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: bold; box-shadow: 0 2px 8px rgba(76,175,80,0.4);">
+                                <i class="ri-check-line"></i> <?php echo self::t('current_device_badge', 'Dieses Gerät'); ?>
+                            </div>
                             <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 15px; flex-wrap: wrap;">
                                 <div style="flex: 1; min-width: 200px;">
-                                    <div style="font-weight: bold; font-size: 16px; margin-bottom: 5px; color: #fff;">
+                                    <div style="font-weight: bold; font-size: 16px; margin-bottom: 5px; color: #fff; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                                         <?php echo esc_html($device_type['icon']); ?> <?php echo esc_html($device->device_name ?: $device_type['name']); ?>
+                                        <?php if ($is_mobile_scanner): ?>
+                                        <span style="background: linear-gradient(135deg, #9c27b0, #673ab7); color: white; padding: 3px 10px; border-radius: 10px; font-size: 11px; font-weight: normal;">
+                                            <i class="ri-map-pin-line"></i> Mobile Scanner
+                                        </span>
+                                        <?php endif; ?>
                                     </div>
                                     <div style="font-size: 12px; color: #999; margin-bottom: 3px;">
                                         <i class="ri-time-line"></i> <?php echo self::t('registered_at', 'Registriert'); ?>: <?php echo $registered_date; ?>
@@ -2126,6 +2110,12 @@ class PPV_QR {
                                     <?php endif; ?>
                                 </div>
                                 <div style="display: flex; flex-direction: column; gap: 8px;">
+                                    <!-- Mobile Scanner request/status button -->
+                                    <?php if (!$is_mobile_scanner): ?>
+                                    <button class="ppv-device-mobile-scanner-btn ppv-btn-outline" data-device-id="<?php echo $device->id; ?>" data-device-name="<?php echo esc_attr($device->device_name ?: $device_type['name']); ?>" style="padding: 8px 12px; font-size: 12px; color: #9c27b0; border-color: #9c27b0;">
+                                        <i class="ri-map-pin-add-line"></i> Mobile Scanner
+                                    </button>
+                                    <?php endif; ?>
                                     <button class="ppv-device-update-btn ppv-btn-outline" data-device-id="<?php echo $device->id; ?>" data-device-name="<?php echo esc_attr($device->device_name ?: $device_type['name']); ?>" style="padding: 8px 12px; font-size: 12px; color: #2196f3; border-color: #2196f3;">
                                         <i class="ri-refresh-line"></i> <?php echo self::t('update_fingerprint', 'Fingerprint aktualisieren'); ?>
                                     </button>
@@ -2491,75 +2481,95 @@ class PPV_QR {
             });
 
             // ============================================================
-            // 📱 MOBILE SCANNER MANAGEMENT
+            // 📱 MOBILE SCANNER MANAGEMENT (PER-DEVICE)
             // ============================================================
 
-            // Check mobile scanner status
-            async function checkMobileScannerStatus() {
+            // Highlight current device and check pending mobile scanner requests
+            function highlightCurrentDevice() {
+                if (!currentFingerprint) return;
+
+                console.log('[Devices] 🔍 Looking for current device with fingerprint:', currentFingerprint);
+
+                $('.ppv-device-card').each(function() {
+                    const $card = $(this);
+                    const cardFingerprint = $card.data('fingerprint');
+
+                    if (cardFingerprint === currentFingerprint) {
+                        console.log('[Devices] ✅ Found current device!');
+                        // Highlight the card
+                        $card.css({
+                            'border-left-color': '#00e676',
+                            'box-shadow': '0 0 15px rgba(0, 230, 118, 0.3)'
+                        });
+                        // Show the current device badge
+                        $card.find('.ppv-current-device-badge').show();
+                    }
+                });
+            }
+
+            // Check pending mobile scanner requests for each device
+            async function checkMobileScannerPendingRequests() {
                 try {
                     const response = await fetch('/wp-json/punktepass/v1/user-devices/mobile-scanner-status');
                     const data = await response.json();
-                    console.log('[Mobile Scanner] Status:', data);
+                    console.log('[Mobile Scanner] Status for devices:', data);
 
-                    if (data.is_mobile) {
-                        // Mobile scanner is already active
-                        $('#ppv-mobile-scanner-status').html('<span style="color: #9c27b0;"><?php echo esc_js(self::t('mobile_scanner_enabled', 'GPS-Prüfung ist deaktiviert. Scanner funktioniert überall.')); ?></span>');
-                        $('#ppv-mobile-scanner-active-badge').show();
-                        $('#ppv-request-mobile-scanner-btn').hide();
-                        $('#ppv-mobile-scanner-pending-badge').hide();
-                    } else if (data.has_pending_request) {
-                        // Request is pending
-                        $('#ppv-mobile-scanner-status').html('<span style="color: #ff9800;"><?php echo esc_js(self::t('mobile_scanner_request_pending', 'Ihre Anfrage wird vom Admin bearbeitet.')); ?></span>');
-                        $('#ppv-mobile-scanner-pending-badge').show();
-                        $('#ppv-request-mobile-scanner-btn').hide();
-                        $('#ppv-mobile-scanner-active-badge').hide();
-                    } else {
-                        // Can request mobile scanner
-                        $('#ppv-mobile-scanner-status').html('<span style="color: #999;"><?php echo esc_js(self::t('mobile_scanner_not_active', 'GPS-Standortprüfung ist aktiv.')); ?></span>');
-                        $('#ppv-request-mobile-scanner-btn').show();
-                        $('#ppv-mobile-scanner-active-badge').hide();
-                        $('#ppv-mobile-scanner-pending-badge').hide();
+                    // If there are pending requests for specific devices, update their buttons
+                    if (data.pending_device_ids && Array.isArray(data.pending_device_ids)) {
+                        data.pending_device_ids.forEach(deviceId => {
+                            const $btn = $(`.ppv-device-mobile-scanner-btn[data-device-id="${deviceId}"]`);
+                            if ($btn.length) {
+                                $btn.prop('disabled', true)
+                                    .css({ 'background': '#ff9800', 'color': 'white', 'border-color': '#ff9800' })
+                                    .html('<i class="ri-time-line"></i> <?php echo esc_js(self::t('mobile_scanner_pending_short', 'Ausstehend')); ?>');
+                            }
+                        });
                     }
                 } catch (e) {
                     console.error('[Mobile Scanner] Status check error:', e);
-                    $('#ppv-mobile-scanner-status').html('<span style="color: #f44336;"><?php echo esc_js(self::t('check_error', 'Fehler bei der Überprüfung')); ?></span>');
                 }
             }
 
-            // Request mobile scanner
-            $('#ppv-request-mobile-scanner-btn').on('click', async function() {
+            // Request mobile scanner for specific device
+            $(document).on('click', '.ppv-device-mobile-scanner-btn', async function() {
                 const $btn = $(this);
+                const deviceId = $btn.data('device-id');
+                const deviceName = $btn.data('device-name');
 
-                if (!confirm('<?php echo esc_js(self::t('confirm_request_mobile_scanner', 'Mit Mobile Scanner können Sie ohne GPS-Standortprüfung scannen. Eine Anfrage wird an den Admin gesendet. Fortfahren?')); ?>')) {
+                if (!confirm('<?php echo esc_js(self::t('confirm_request_device_mobile_scanner', 'Mobile Scanner für dieses Gerät anfordern? Mit Mobile Scanner können Sie ohne GPS-Standortprüfung scannen.')); ?>')) {
                     return;
                 }
 
-                $btn.prop('disabled', true).html('<i class="ri-loader-4-line ri-spin"></i> <?php echo esc_js(self::t('sending_request', 'Anfrage wird gesendet...')); ?>');
+                $btn.prop('disabled', true).html('<i class="ri-loader-4-line ri-spin"></i>');
 
                 try {
                     const response = await fetch('/wp-json/punktepass/v1/user-devices/request-mobile-scanner', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({})
+                        body: JSON.stringify({ device_id: deviceId })
                     });
                     const data = await response.json();
 
                     if (data.success) {
                         alert('<?php echo esc_js(self::t('mobile_scanner_request_sent', 'Anfrage gesendet! Der Admin wird per E-Mail benachrichtigt.')); ?>');
-                        checkMobileScannerStatus(); // Refresh status
+                        // Update button to show pending status
+                        $btn.css({ 'background': '#ff9800', 'color': 'white', 'border-color': '#ff9800' })
+                            .html('<i class="ri-time-line"></i> <?php echo esc_js(self::t('mobile_scanner_pending_short', 'Ausstehend')); ?>');
                     } else {
                         alert(data.message || '<?php echo esc_js(self::t('request_error', 'Fehler beim Senden der Anfrage')); ?>');
-                        $btn.prop('disabled', false).html('<i class="ri-map-pin-add-line"></i> <?php echo esc_js(self::t('request_mobile_scanner', 'Mobile Scanner anfordern')); ?>');
+                        $btn.prop('disabled', false).html('<i class="ri-map-pin-add-line"></i> Mobile Scanner');
                     }
                 } catch (e) {
                     alert('<?php echo esc_js(self::t('network_error', 'Netzwerkfehler')); ?>');
-                    $btn.prop('disabled', false).html('<i class="ri-map-pin-add-line"></i> <?php echo esc_js(self::t('request_mobile_scanner', 'Mobile Scanner anfordern')); ?>');
+                    $btn.prop('disabled', false).html('<i class="ri-map-pin-add-line"></i> Mobile Scanner');
                 }
             });
 
             // Initialize on page load
-            checkDeviceStatus();
-            checkMobileScannerStatus();
+            checkDeviceStatus().then(() => {
+                highlightCurrentDevice();
+                checkMobileScannerPendingRequests();
+            });
         });
         </script>
         <?php

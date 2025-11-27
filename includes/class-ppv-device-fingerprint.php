@@ -1710,11 +1710,13 @@ class PPV_Device_Fingerprint {
             $parent_store_id
         ));
 
-        // Build pending map by device_id
+        // Build pending map by device_id and collect pending device IDs
         $pending_by_device = [];
+        $pending_device_ids = [];
         foreach ($pending_requests as $pr) {
             if ($pr->device_id) {
                 $pending_by_device[$pr->device_id] = $pr->requested_at;
+                $pending_device_ids[] = intval($pr->device_id);
             }
         }
 
@@ -1738,6 +1740,7 @@ class PPV_Device_Fingerprint {
         return new WP_REST_Response([
             'success' => true,
             'devices' => $devices_info,
+            'pending_device_ids' => $pending_device_ids, // Simple array for frontend
             // Legacy store-level info
             'store_scanner_type' => $scanner_type ?: 'fixed',
             'store_is_mobile' => ($scanner_type === 'mobile')
