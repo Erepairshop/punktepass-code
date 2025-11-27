@@ -434,9 +434,5 @@ class PPV_Google_Review_Request {
     }
 }
 
-// Initialize
-add_action('plugins_loaded', function() {
-    if (class_exists('PPV_Google_Review_Request')) {
-        PPV_Google_Review_Request::hooks();
-    }
-});
+// Initialize hooks directly (required for AJAX to work properly)
+PPV_Google_Review_Request::hooks();
