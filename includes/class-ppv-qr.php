@@ -3368,6 +3368,23 @@ class PPV_QR {
             PPV_User_Level::add_lifetime_points($user_id, $points_add);
         }
 
+        // 🎁 REFERRAL: Check if this is user's first scan at this store via referral
+        if (class_exists('PPV_Referral_Handler')) {
+            // Count previous scans for this user at this store (excluding the one we just inserted)
+            $previous_scans = $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_points WHERE user_id = %d AND store_id = %d",
+                $user_id, $store_id
+            ));
+
+            // If this is the first scan (count = 1, the one we just inserted)
+            if ((int)$previous_scans === 1) {
+                $referral_result = PPV_Referral_Handler::process_referral($user_id, $store_id);
+                if ($referral_result) {
+                    ppv_log("🎁 [PPV_QR] Referral processed for user {$user_id} at store {$store_id}");
+                }
+            }
+        }
+
         // Build log message
         $bonus_parts = [];
         if ($vip_bonus_applied > 0) {
