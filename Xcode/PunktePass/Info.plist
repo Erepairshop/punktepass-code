@@ -30,9 +30,21 @@
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>CFBundleURLName</key>
-			<string></string>
+			<string>Google Sign-In</string>
 			<key>CFBundleURLSchemes</key>
-			<array />
+			<array>
+				<string>com.googleusercontent.apps.453567547051-odmqrinafba8ls8ktp9snlp7d2fpl9q0</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>Facebook Login</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>fb4070833883179463</string>
+			</array>
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
