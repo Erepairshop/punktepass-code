@@ -590,17 +590,10 @@ if (!empty($store->gallery)) {
                             </div>
                         </div>
 
-                        <!-- Test Email Section -->
                         <div class="ppv-form-group" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
-                            <label><?php echo esc_html(PPV_Lang::t('test_email') ?? 'Teszt email küldés'); ?></label>
-                            <div style="display: flex; gap: 10px; align-items: center;">
-                                <input type="email" id="google-review-test-email" placeholder="teszt@email.com" style="flex: 1;">
-                                <button type="button" id="google-review-test-btn" class="ppv-btn ppv-btn-secondary" style="white-space: nowrap;">
-                                    📧 <?php echo esc_html(PPV_Lang::t('send_test') ?? 'Teszt küldés'); ?>
-                                </button>
-                            </div>
-                            <small style="color: #888;"><?php echo esc_html(PPV_Lang::t('test_email_help') ?? 'Küldj magadnak egy teszt emailt az ellenőrzéshez'); ?></small>
-                            <div id="google-review-test-result" style="margin-top: 10px; display: none;"></div>
+                            <label data-i18n="google_review_bonus_points"><?php echo esc_html(PPV_Lang::t('google_review_bonus_points')); ?></label>
+                            <input type="number" name="google_review_bonus_points" value="<?php echo esc_attr($store->google_review_bonus_points ?? 5); ?>" min="0" max="100" step="1">
+                            <small style="color: #888;" data-i18n="google_review_bonus_help"><?php echo esc_html(PPV_Lang::t('google_review_bonus_help')); ?></small>
                         </div>
                     </div>
                 </div>

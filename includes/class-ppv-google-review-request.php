@@ -4,22 +4,24 @@ if (!defined('ABSPATH')) exit;
 /**
  * PunktePass - Google Review Request System
  * Automatically sends Google review requests to loyal customers
- * when they reach a configurable point threshold.
+ * when they reach a configurable lifetime point threshold.
  *
  * Configuration (per store in Marketing tab):
  * - google_review_enabled: Toggle feature on/off
  * - google_review_url: Store's Google review link
- * - google_review_threshold: Points threshold to trigger request
+ * - google_review_threshold: Lifetime points threshold to trigger request
  * - google_review_frequency: 'once', 'monthly', 'quarterly'
+ * - google_review_bonus_points: Points awarded on next scan after review request
+ *
+ * Notification priority:
+ * 1. WhatsApp (if user has whatsapp_consent=1 and phone_number)
+ * 2. Email (if user has marketing_emails=1 and valid email)
  */
 class PPV_Google_Review_Request {
 
     public static function hooks() {
         add_action('init', [__CLASS__, 'schedule_cron']);
         add_action('ppv_google_review_request', [__CLASS__, 'process_all_stores']);
-
-        // Manual trigger for testing (admin only)
-        add_action('wp_ajax_ppv_test_google_review', [__CLASS__, 'ajax_test_review']);
     }
 
     /**
@@ -48,7 +50,8 @@ class PPV_Google_Review_Request {
         // Get all stores with Google Review enabled and valid URL
         $stores = $wpdb->get_results("
             SELECT id, name, company_name, country,
-                   google_review_url, google_review_threshold, google_review_frequency
+                   google_review_url, google_review_threshold, google_review_frequency,
+                   google_review_bonus_points, whatsapp_enabled
             FROM {$wpdb->prefix}ppv_stores
             WHERE google_review_enabled = 1
               AND google_review_url IS NOT NULL
@@ -78,12 +81,13 @@ class PPV_Google_Review_Request {
         $store_id = intval($store->id);
         $threshold = intval($store->google_review_threshold ?? 100);
         $frequency = $store->google_review_frequency ?? 'once';
+        $bonus_points = intval($store->google_review_bonus_points ?? 5);
         $review_url = $store->google_review_url;
 
         $sent = 0;
         $errors = 0;
 
-        ppv_log("[Google Review] Processing store {$store_id} (threshold: {$threshold}, frequency: {$frequency})");
+        ppv_log("[Google Review] Processing store {$store_id} (threshold: {$threshold}, frequency: {$frequency}, bonus: {$bonus_points})");
 
         // Include filialen in point calculations
         $store_ids = $wpdb->get_col($wpdb->prepare("
@@ -101,15 +105,18 @@ class PPV_Google_Review_Request {
         $frequency_filter = self::get_frequency_sql($frequency);
 
         // Find eligible users:
-        // 1. Have total points >= threshold for this store
+        // 1. Have LIFETIME points >= threshold for this store
         // 2. Have NOT been sent a request within the frequency period (or never)
-        // 3. Have a valid email address
+        // 3. Have either WhatsApp consent OR marketing_emails enabled
         $query = $wpdb->prepare("
             SELECT
                 u.id as user_id,
                 u.email,
                 u.first_name,
                 u.display_name,
+                u.phone_number,
+                u.whatsapp_consent,
+                u.marketing_emails,
                 COALESCE(SUM(p.points), 0) as total_points,
                 grr.last_request_at
             FROM {$wpdb->prefix}ppv_users u
@@ -117,10 +124,12 @@ class PPV_Google_Review_Request {
             LEFT JOIN {$wpdb->prefix}ppv_google_review_requests grr
                 ON grr.user_id = u.id AND grr.store_id = %d
             WHERE p.store_id IN ({$placeholders})
-              AND u.email IS NOT NULL
-              AND u.email != ''
-              AND u.email LIKE '%@%'
-            GROUP BY u.id, u.email, u.first_name, u.display_name, grr.last_request_at
+              AND (
+                  (u.whatsapp_consent = 1 AND u.phone_number IS NOT NULL AND u.phone_number != '')
+                  OR
+                  (u.marketing_emails = 1 AND u.email IS NOT NULL AND u.email != '' AND u.email LIKE '%@%')
+              )
+            GROUP BY u.id, u.email, u.first_name, u.display_name, u.phone_number, u.whatsapp_consent, u.marketing_emails, grr.last_request_at
             HAVING total_points >= %d
                AND {$frequency_filter}
         ", array_merge([$store_id], $store_ids, [$threshold]));
@@ -130,10 +139,10 @@ class PPV_Google_Review_Request {
         ppv_log("[Google Review] Store {$store_id}: Found " . count($eligible_users) . " eligible users");
 
         foreach ($eligible_users as $user) {
-            $result = self::send_review_request($store, $user, $review_url);
+            $result = self::send_review_request($store, $user, $review_url, $bonus_points);
             if ($result) {
                 $sent++;
-                // Record the request
+                // Record the request and set bonus_pending
                 self::record_request($store_id, $user->user_id);
             } else {
                 $errors++;
@@ -159,13 +168,74 @@ class PPV_Google_Review_Request {
     }
 
     /**
-     * Send review request email to a user
+     * Send review request to a user - WhatsApp first, fallback to Email
      */
-    public static function send_review_request($store, $user, $review_url) {
-        $email = sanitize_email($user->email);
+    public static function send_review_request($store, $user, $review_url, $bonus_points) {
+        // Determine notification channel: WhatsApp priority, then Email
+        $use_whatsapp = !empty($user->whatsapp_consent)
+                       && !empty($user->phone_number)
+                       && !empty($store->whatsapp_enabled);
+
+        if ($use_whatsapp) {
+            return self::send_whatsapp_request($store, $user, $review_url, $bonus_points);
+        } else {
+            return self::send_email_request($store, $user, $review_url, $bonus_points);
+        }
+    }
+
+    /**
+     * Send WhatsApp review request
+     */
+    private static function send_whatsapp_request($store, $user, $review_url, $bonus_points) {
+        $phone = $user->phone_number;
+        $store_name = $store->company_name ?: $store->name ?: 'Store';
+        $user_name = $user->first_name ?: $user->display_name ?: '';
+        $lang = self::get_language_from_country($store->country);
+
+        ppv_log("[Google Review] Sending WhatsApp to: {$phone} for store {$store->id}");
+
+        // Build WhatsApp message text
+        $T = self::get_translations($lang);
+        $message = sprintf(
+            $T['whatsapp_message'],
+            $user_name ? $user_name . ', ' : '',
+            $store_name,
+            $bonus_points,
+            $review_url
+        );
+
+        // Use PPV_WhatsApp class to send text message
+        if (class_exists('PPV_WhatsApp')) {
+            $result = PPV_WhatsApp::send_text($store->id, $phone, $message);
+
+            if (!is_wp_error($result)) {
+                ppv_log("[Google Review] WhatsApp SUCCESS to {$phone}");
+                return true;
+            } else {
+                ppv_log("[Google Review] WhatsApp FAILED to {$phone}: " . $result->get_error_message());
+                // Fallback to email if WhatsApp fails
+                return self::send_email_request($store, $user, $review_url, $bonus_points);
+            }
+        }
+
+        // Fallback to email if WhatsApp class not available
+        return self::send_email_request($store, $user, $review_url, $bonus_points);
+    }
+
+    /**
+     * Send Email review request
+     */
+    private static function send_email_request($store, $user, $review_url, $bonus_points) {
+        $email = sanitize_email($user->email ?? '');
 
         if (empty($email) || !is_email($email)) {
             ppv_log("[Google Review] Invalid email for user {$user->user_id}");
+            return false;
+        }
+
+        // Check if user has marketing_emails enabled
+        if (empty($user->marketing_emails)) {
+            ppv_log("[Google Review] User {$user->user_id} has marketing_emails disabled");
             return false;
         }
 
@@ -177,7 +247,7 @@ class PPV_Google_Review_Request {
         $store_name = $store->company_name ?: $store->name ?: 'Store';
         $user_name = $user->first_name ?: $user->display_name ?: '';
         $subject = sprintf($T['email_subject'], $store_name);
-        $body = self::build_email_body($store_name, $user_name, $review_url, $T);
+        $body = self::build_email_body($store_name, $user_name, $review_url, $bonus_points, $T);
 
         // Send email
         $headers = [
@@ -185,30 +255,26 @@ class PPV_Google_Review_Request {
             'From: ' . $store_name . ' <noreply@punktepass.de>'
         ];
 
-        ppv_log("[Google Review] Attempting to send email to: {$email}");
-        ppv_log("[Google Review] Subject: {$subject}");
-        ppv_log("[Google Review] Store: {$store->id}, User: {$user->user_id}");
+        ppv_log("[Google Review] Sending email to: {$email}");
 
         $sent = wp_mail($email, $subject, $body, $headers);
 
         if ($sent) {
-            ppv_log("[Google Review] SUCCESS: Sent to {$email} (store {$store->id}, user {$user->user_id})");
+            ppv_log("[Google Review] Email SUCCESS to {$email}");
         } else {
-            // Get detailed error from PHPMailer
             global $phpmailer;
             $error_info = 'Unknown error';
             if (isset($phpmailer) && isset($phpmailer->ErrorInfo) && !empty($phpmailer->ErrorInfo)) {
                 $error_info = $phpmailer->ErrorInfo;
             }
-            ppv_log("[Google Review] FAILED: Could not send to {$email} (store {$store->id}, user {$user->user_id})");
-            ppv_log("[Google Review] Error details: {$error_info}");
+            ppv_log("[Google Review] Email FAILED to {$email}: {$error_info}");
         }
 
         return $sent;
     }
 
     /**
-     * Record that a review request was sent
+     * Record that a review request was sent and set bonus_pending
      */
     private static function record_request($store_id, $user_id) {
         global $wpdb;
@@ -223,20 +289,14 @@ class PPV_Google_Review_Request {
 
         if ($existing) {
             // Update existing record
-            $wpdb->update(
-                $table,
-                [
-                    'last_request_at' => current_time('mysql'),
-                    'request_count' => new \stdClass() // Will use raw SQL
-                ],
-                ['store_id' => $store_id, 'user_id' => $user_id],
-                ['%s'],
-                ['%d', '%d']
-            );
-            // Increment count separately
             $wpdb->query($wpdb->prepare(
-                "UPDATE {$table} SET request_count = request_count + 1 WHERE store_id = %d AND user_id = %d",
-                $store_id, $user_id
+                "UPDATE {$table} SET
+                    last_request_at = %s,
+                    request_count = request_count + 1,
+                    bonus_pending = 1,
+                    bonus_awarded_at = NULL
+                 WHERE store_id = %d AND user_id = %d",
+                current_time('mysql'), $store_id, $user_id
             ));
         } else {
             // Insert new record
@@ -244,9 +304,82 @@ class PPV_Google_Review_Request {
                 'store_id' => $store_id,
                 'user_id' => $user_id,
                 'last_request_at' => current_time('mysql'),
-                'request_count' => 1
-            ], ['%d', '%d', '%s', '%d']);
+                'request_count' => 1,
+                'bonus_pending' => 1
+            ], ['%d', '%d', '%s', '%d', '%d']);
         }
+    }
+
+    /**
+     * Check and award bonus points during QR scan
+     * Called from QR scan handler when user scans
+     *
+     * @param int $store_id The store (or parent store) ID
+     * @param int $user_id The user ID
+     * @return array|false Bonus info if awarded, false otherwise
+     */
+    public static function check_and_award_bonus($store_id, $user_id) {
+        global $wpdb;
+
+        // Get parent store ID if this is a filiale
+        $parent_id = $wpdb->get_var($wpdb->prepare(
+            "SELECT COALESCE(parent_store_id, id) FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+            $store_id
+        ));
+
+        $store_id_to_check = $parent_id ?: $store_id;
+
+        // Check if user has pending bonus
+        $pending = $wpdb->get_row($wpdb->prepare("
+            SELECT grr.*, s.google_review_bonus_points
+            FROM {$wpdb->prefix}ppv_google_review_requests grr
+            INNER JOIN {$wpdb->prefix}ppv_stores s ON s.id = grr.store_id
+            WHERE grr.store_id = %d
+              AND grr.user_id = %d
+              AND grr.bonus_pending = 1
+        ", $store_id_to_check, $user_id));
+
+        if (!$pending) {
+            return false;
+        }
+
+        $bonus_points = intval($pending->google_review_bonus_points ?? 5);
+
+        if ($bonus_points <= 0) {
+            return false;
+        }
+
+        // Award the bonus points
+        $wpdb->insert($wpdb->prefix . 'ppv_points', [
+            'store_id' => $store_id,
+            'user_id' => $user_id,
+            'points' => $bonus_points,
+            'type' => 'google_review_bonus',
+            'description' => 'Google Review Bonus',
+            'created_at' => current_time('mysql')
+        ], ['%d', '%d', '%d', '%s', '%s', '%s']);
+
+        // Mark bonus as awarded
+        $wpdb->update(
+            $wpdb->prefix . 'ppv_google_review_requests',
+            [
+                'bonus_pending' => 0,
+                'bonus_awarded_at' => current_time('mysql')
+            ],
+            [
+                'store_id' => $store_id_to_check,
+                'user_id' => $user_id
+            ],
+            ['%d', '%s'],
+            ['%d', '%d']
+        );
+
+        ppv_log("[Google Review] Bonus {$bonus_points} points awarded to user {$user_id} at store {$store_id}");
+
+        return [
+            'points' => $bonus_points,
+            'type' => 'google_review_bonus'
+        ];
     }
 
     /**
@@ -267,12 +400,14 @@ class PPV_Google_Review_Request {
     }
 
     /**
-     * Build HTML email body
+     * Build HTML email body with bonus info
      */
-    private static function build_email_body($store_name, $user_name, $review_url, $T) {
+    private static function build_email_body($store_name, $user_name, $review_url, $bonus_points, $T) {
         $greeting = !empty($user_name)
             ? sprintf($T['greeting_name'], esc_html($user_name))
             : $T['greeting_generic'];
+
+        $bonus_text = sprintf($T['bonus_text'], $bonus_points);
 
         $html = '
 <!DOCTYPE html>
@@ -300,9 +435,15 @@ class PPV_Google_Review_Request {
                 ' . sprintf($T['thank_you_text'], '<strong>' . esc_html($store_name) . '</strong>') . '
             </p>
 
-            <p style="font-size: 16px; color: #374151; margin: 0 0 25px;">
+            <p style="font-size: 16px; color: #374151; margin: 0 0 15px;">
                 ' . esc_html($T['review_request_text']) . '
             </p>
+
+            <!-- Bonus highlight -->
+            <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
+                <div style="font-size: 32px; margin-bottom: 8px;">🎁</div>
+                <p style="margin: 0; font-size: 18px; font-weight: 600;">' . esc_html($bonus_text) . '</p>
+            </div>
 
             <!-- CTA Button -->
             <div style="text-align: center; margin: 30px 0;">
@@ -337,7 +478,7 @@ class PPV_Google_Review_Request {
     }
 
     /**
-     * Get translations for email
+     * Get translations for messages
      */
     private static function get_translations($lang) {
         $translations = [
@@ -347,10 +488,12 @@ class PPV_Google_Review_Request {
                 'greeting_name' => 'Hallo %s,',
                 'greeting_generic' => 'Hallo,',
                 'thank_you_text' => 'vielen Dank, dass Sie treuer Kunde von %s sind!',
-                'review_request_text' => 'Wir wurden uns sehr uber Ihre ehrliche Bewertung auf Google freuen. Ihre Meinung hilft anderen Kunden, uns zu finden.',
+                'review_request_text' => 'Wir wurden uns sehr uber Ihre ehrliche Bewertung auf Google freuen.',
+                'bonus_text' => 'Bei Ihrem nachsten Besuch erhalten Sie %d Bonuspunkte!',
                 'button_text' => 'Jetzt bewerten',
                 'takes_only_text' => 'Es dauert nur 1 Minute!',
                 'footer_thanks' => 'Vielen Dank fur Ihre Unterstutzung!',
+                'whatsapp_message' => '%svielen Dank fur Ihre Treue bei %s! Wir wurden uns uber eine Google-Bewertung freuen. Bei Ihrem nachsten Besuch erhalten Sie %d Bonuspunkte! %s',
             ],
             'hu' => [
                 'email_subject' => 'A velemenye fontos nekunk! - %s',
@@ -358,10 +501,12 @@ class PPV_Google_Review_Request {
                 'greeting_name' => 'Kedves %s,',
                 'greeting_generic' => 'Kedves Vasarlonk,',
                 'thank_you_text' => 'koszonjuk, hogy husseges vasarloja a %s-nak!',
-                'review_request_text' => 'Nagyon orulnank, ha megosztana velunk oszinte velemenyet a Google-on. Az On ertekelse segit masoknak megtalalini minket.',
+                'review_request_text' => 'Nagyon orulnank, ha megosztana velunk oszinte velemenyet a Google-on.',
+                'bonus_text' => 'Kovetkezo latasatasanal %d bonuszpontot kap!',
                 'button_text' => 'Ertekeles irasa',
                 'takes_only_text' => 'Mindossze 1 percet vesz igenybe!',
                 'footer_thanks' => 'Koszonjuk a tamogatasat!',
+                'whatsapp_message' => '%skoszonjuk huseget a %s-nal! Orulnank egy Google ertekelesnek. Kovetkezo latogatasakor %d bonuszpontot kap! %s',
             ],
             'ro' => [
                 'email_subject' => 'Parerea dvs. conteaza! - %s',
@@ -369,91 +514,18 @@ class PPV_Google_Review_Request {
                 'greeting_name' => 'Buna ziua %s,',
                 'greeting_generic' => 'Buna ziua,',
                 'thank_you_text' => 'va multumim ca sunteti client fidel al %s!',
-                'review_request_text' => 'Ne-ar face mare placere sa ne lasati o recenzie sincera pe Google. Parerea dvs. ii ajuta pe altii sa ne gaseasca.',
+                'review_request_text' => 'Ne-ar face mare placere sa ne lasati o recenzie sincera pe Google.',
+                'bonus_text' => 'La urmatoarea vizita veti primi %d puncte bonus!',
                 'button_text' => 'Lasati o recenzie',
                 'takes_only_text' => 'Dureaza doar 1 minut!',
                 'footer_thanks' => 'Va multumim pentru sprijin!',
+                'whatsapp_message' => '%sva multumim pentru fidelitate la %s! V-am fi recunoscatori pentru o recenzie pe Google. La urmatoarea vizita primiti %d puncte bonus! %s',
             ],
         ];
 
         return $translations[$lang] ?? $translations['de'];
     }
-
-    /**
-     * AJAX handler for testing (admin only)
-     */
-    public static function ajax_test_review() {
-        if (!current_user_can('manage_options')) {
-            wp_send_json_error(['message' => 'Unauthorized']);
-        }
-
-        $store_id = intval($_POST['store_id'] ?? 0);
-        if (!$store_id) {
-            wp_send_json_error(['message' => 'Missing store_id']);
-        }
-
-        global $wpdb;
-        $store = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
-            $store_id
-        ));
-
-        if (!$store) {
-            wp_send_json_error(['message' => 'Store not found']);
-        }
-
-        if (empty($store->google_review_enabled)) {
-            wp_send_json_error(['message' => 'Google Review not enabled for this store']);
-        }
-
-        if (empty($store->google_review_url)) {
-            wp_send_json_error(['message' => 'Google Review URL not configured']);
-        }
-
-        // Optional: override email for testing
-        $target_email = sanitize_email($_POST['target_email'] ?? '');
-
-        if (!empty($target_email) && is_email($target_email)) {
-            // Send test to specific email
-            $test_user = (object) [
-                'user_id' => 0,
-                'email' => $target_email,
-                'first_name' => 'Test',
-                'display_name' => 'Test User'
-            ];
-
-            $result = self::send_review_request($store, $test_user, $store->google_review_url);
-
-            if ($result) {
-                wp_send_json_success([
-                    'message' => 'Test review request sent to ' . $target_email,
-                    'store_id' => $store_id
-                ]);
-            } else {
-                // Get detailed error from PHPMailer
-                global $phpmailer;
-                $error_info = 'Unknown error - check server mail configuration';
-                if (isset($phpmailer) && isset($phpmailer->ErrorInfo) && !empty($phpmailer->ErrorInfo)) {
-                    $error_info = $phpmailer->ErrorInfo;
-                }
-                wp_send_json_error([
-                    'message' => 'Failed to send test email',
-                    'error' => $error_info,
-                    'to' => $target_email
-                ]);
-            }
-        } else {
-            // Process store normally
-            $result = self::process_store($store);
-
-            wp_send_json_success([
-                'message' => "Processed store {$store_id}",
-                'sent' => $result['sent'],
-                'errors' => $result['errors']
-            ]);
-        }
-    }
 }
 
-// Initialize hooks directly (required for AJAX to work properly)
+// Initialize hooks
 PPV_Google_Review_Request::hooks();
