@@ -1517,6 +1517,12 @@ return [
     'comeback_message_placeholder' => 'Hiányzol! Gyere vissza és kapj dupla pontot!',
     'days' => 'nap',
 
+    // WhatsApp Business
+    'whatsapp_desc' => 'Automatikus WhatsApp üzenetek és ügyfélszolgálat',
+    'whatsapp_not_configured' => 'WhatsApp még nincs beállítva',
+    'whatsapp_managed_by_team' => 'Az API beállításokat a PunktePass csapat kezeli.',
+    'min_max_days' => 'Minimum 7, maximum 180 nap',
+
     // Marketing Tippek
     'marketing_tip_title' => 'Tipp',
     'marketing_tip_text' => 'A Google értékelések javítják az online láthatóságodat és új vendégeket vonzanak. Aktiváld ezt a funkciót az automatikus értékelés kéréshez.',

@@ -1540,6 +1540,12 @@ return [
     'comeback_message_placeholder' => 'Wir vermissen Sie! Kommen Sie vorbei und erhalten Sie doppelte Punkte!',
     'days' => 'Tage',
 
+    // WhatsApp Business
+    'whatsapp_desc' => 'Automatische WhatsApp-Nachrichten & Kundensupport',
+    'whatsapp_not_configured' => 'WhatsApp noch nicht konfiguriert',
+    'whatsapp_managed_by_team' => 'API-Einstellungen werden vom PunktePass-Team verwaltet.',
+    'min_max_days' => 'Mindestens 7, maximal 180 Tage',
+
     // Marketing Tips
     'marketing_tip_title' => 'Tipp',
     'marketing_tip_text' => 'Google Bewertungen verbessern Ihre Online-Sichtbarkeit und ziehen neue Kunden an. Aktivieren Sie diese Funktion, um automatisch um Bewertungen zu bitten.',

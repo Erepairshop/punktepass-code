@@ -719,12 +719,12 @@ if (!empty($store->gallery)) {
                                 <span style="font-size: 24px;">💬</span>
                                 <span>WhatsApp Business</span>
                                 <?php if (!empty($store->whatsapp_enabled) && !empty($store->whatsapp_phone_id)): ?>
-                                    <span style="background: #25D366; color: white; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600;">AKTIV</span>
+                                    <span style="background: #25D366; color: white; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600;" data-i18n="status_active"><?php echo esc_html(PPV_Lang::t('status_active')); ?></span>
                                 <?php else: ?>
-                                    <span style="background: rgba(255,255,255,0.1); color: #888; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600;">INAKTIV</span>
+                                    <span style="background: rgba(255,255,255,0.1); color: #888; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600;" data-i18n="status_inactive"><?php echo esc_html(PPV_Lang::t('status_inactive')); ?></span>
                                 <?php endif; ?>
                             </h3>
-                            <small style="color: #888;">Automatische WhatsApp-Nachrichten & Kundensupport</small>
+                            <small style="color: #888;" data-i18n="whatsapp_desc"><?php echo esc_html(PPV_Lang::t('whatsapp_desc')); ?></small>
                         </div>
                         <label class="ppv-toggle">
                             <input type="checkbox" name="whatsapp_enabled" value="1" <?php checked($store->whatsapp_enabled ?? 0, 1); ?>>
@@ -734,8 +734,8 @@ if (!empty($store->gallery)) {
                     <?php if (empty($store->whatsapp_phone_id)): ?>
                     <div style="margin-top: 15px; padding: 12px; background: rgba(255,152,0,0.1); border: 1px solid rgba(255,152,0,0.3); border-radius: 8px;">
                         <p style="margin: 0; color: #ff9800; font-size: 13px;">
-                            <strong>⚠️ WhatsApp noch nicht konfiguriert</strong><br>
-                            <span style="color: #888;">API-Einstellungen werden vom PunktePass-Team verwaltet.</span>
+                            <strong>⚠️ <?php echo esc_html(PPV_Lang::t('whatsapp_not_configured')); ?></strong><br>
+                            <span style="color: #888;"><?php echo esc_html(PPV_Lang::t('whatsapp_managed_by_team')); ?></span>
                         </p>
                     </div>
                     <?php endif; ?>

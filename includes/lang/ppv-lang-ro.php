@@ -1528,6 +1528,12 @@ return [
     'comeback_message_placeholder' => 'Ne lipsești! Revino și primești puncte duble!',
     'days' => 'zile',
 
+    // WhatsApp Business
+    'whatsapp_desc' => 'Mesaje WhatsApp automate și suport clienți',
+    'whatsapp_not_configured' => 'WhatsApp nu este configurat încă',
+    'whatsapp_managed_by_team' => 'Setările API sunt gestionate de echipa PunktePass.',
+    'min_max_days' => 'Minimum 7, maximum 180 zile',
+
     // Marketing Tips
     'marketing_tip_title' => 'Sfat',
     'marketing_tip_text' => 'Recenziile Google îmbunătățesc vizibilitatea online și atrag clienți noi. Activează această funcție pentru a cere automat recenzii.',
