@@ -98,6 +98,7 @@ class PPV_Referral_Handler {
             'code' => strtoupper($code),
             'store_id' => $store->id,
             'store_key' => $store_key,
+            'store_name' => $store->name,
             'referrer_id' => $referrer->user_id,
             'timestamp' => time()
         ]);
@@ -112,17 +113,39 @@ class PPV_Referral_Handler {
             true
         );
 
-        ppv_log("✅ [PPV_Referral] Referral cookie set: code={$code}, store={$store_key}, referrer={$referrer->user_id}");
+        // Also store in session for immediate access
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+        $_SESSION['ppv_referral'] = [
+            'code' => strtoupper($code),
+            'store_id' => $store->id,
+            'store_key' => $store_key,
+            'store_name' => $store->name,
+            'referrer_id' => $referrer->user_id,
+        ];
 
-        // Redirect to store page
-        wp_redirect(home_url("/store/{$store_key}"));
+        ppv_log("✅ [PPV_Referral] Referral cookie+session set: code={$code}, store={$store_key}, referrer={$referrer->user_id}");
+
+        // Redirect to login page with referral flag
+        wp_redirect(home_url("/login?ref=1&store=" . urlencode($store_key)));
         exit;
     }
 
     /**
-     * Get referral data from cookie
+     * Get referral data from session or cookie
      */
     public static function get_referral_data() {
+        // First check session (immediate access after redirect)
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+
+        if (!empty($_SESSION['ppv_referral']) && isset($_SESSION['ppv_referral']['code'])) {
+            return $_SESSION['ppv_referral'];
+        }
+
+        // Fallback to cookie
         if (empty($_COOKIE[self::COOKIE_NAME])) {
             return null;
         }
@@ -142,10 +165,25 @@ class PPV_Referral_Handler {
     }
 
     /**
-     * Clear referral cookie
+     * Check if current user came via referral for a specific store
+     */
+    public static function has_referral_for_store($store_id) {
+        $data = self::get_referral_data();
+        if (!$data) {
+            return false;
+        }
+        return (int)$data['store_id'] === (int)$store_id;
+    }
+
+    /**
+     * Clear referral cookie and session
      */
     public static function clear_referral_cookie() {
         setcookie(self::COOKIE_NAME, '', time() - 3600, '/', '', is_ssl(), true);
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+        unset($_SESSION['ppv_referral']);
     }
 
     /**

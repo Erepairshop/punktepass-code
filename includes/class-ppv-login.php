@@ -393,6 +393,22 @@ public static function render_landing_page($atts) {
                     <!-- Right: Login Card -->
                     <div class="ppv-login-section">
                         <div class="ppv-login-card">
+                            <?php
+                            // Check for referral
+                            $referral = class_exists('PPV_Referral_Handler') ? PPV_Referral_Handler::get_referral_data() : null;
+                            if ($referral):
+                                $store_name = esc_html($referral['store_name'] ?? 'einem Shop');
+                            ?>
+                            <!-- Referral Welcome Banner -->
+                            <div class="ppv-referral-welcome-banner">
+                                <div class="referral-icon">🎁</div>
+                                <div class="referral-text">
+                                    <strong><?php echo PPV_Lang::t('referral_welcome_title') ?: 'Du wurdest eingeladen!'; ?></strong>
+                                    <p><?php echo sprintf(PPV_Lang::t('referral_welcome_desc') ?: 'Melde dich an und erhalte Bonuspunkte bei %s', $store_name); ?></p>
+                                </div>
+                            </div>
+                            <?php endif; ?>
+
                             <!-- Welcome Text -->
                             <div class="ppv-login-welcome">
                                 <h2><?php echo PPV_Lang::t('login_welcome'); ?></h2>
