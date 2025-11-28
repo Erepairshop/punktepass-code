@@ -66,6 +66,116 @@ class PPV_WhatsApp {
                 'permission_callback' => '__return_true'
             ]
         ]);
+
+        // Admin API endpoints for standalone admin panel
+        register_rest_route('punktepass/v1', '/whatsapp/verify', [
+            'methods' => 'POST',
+            'callback' => [__CLASS__, 'rest_verify_connection'],
+            'permission_callback' => [__CLASS__, 'check_admin_permission']
+        ]);
+
+        register_rest_route('punktepass/v1', '/whatsapp/test', [
+            'methods' => 'POST',
+            'callback' => [__CLASS__, 'rest_send_test'],
+            'permission_callback' => [__CLASS__, 'check_admin_permission']
+        ]);
+    }
+
+    /**
+     * Check if user has admin permission (standalone admin session)
+     */
+    public static function check_admin_permission() {
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+        return !empty($_SESSION['ppv_admin_logged_in']);
+    }
+
+    /**
+     * REST API: Verify WhatsApp connection
+     */
+    public static function rest_verify_connection(WP_REST_Request $request) {
+        $data = $request->get_json_params();
+        $store_id = intval($data['store_id'] ?? 0);
+
+        if (!$store_id) {
+            return new WP_REST_Response(['success' => false, 'message' => 'Missing store_id'], 400);
+        }
+
+        $config = self::get_store_config($store_id);
+        if (!$config) {
+            return new WP_REST_Response(['success' => false, 'message' => 'Store not found'], 404);
+        }
+
+        $access_token = self::decrypt_token($config->whatsapp_access_token);
+        if (empty($access_token) || empty($config->whatsapp_phone_id)) {
+            return new WP_REST_Response(['success' => false, 'message' => 'WhatsApp nicht konfiguriert'], 400);
+        }
+
+        // Test API connection
+        $url = self::API_BASE_URL . self::API_VERSION . '/' . $config->whatsapp_phone_id;
+
+        $response = wp_remote_get($url, [
+            'headers' => ['Authorization' => 'Bearer ' . $access_token],
+            'timeout' => 15
+        ]);
+
+        if (is_wp_error($response)) {
+            return new WP_REST_Response(['success' => false, 'message' => $response->get_error_message()], 500);
+        }
+
+        $body = json_decode(wp_remote_retrieve_body($response), true);
+        $code = wp_remote_retrieve_response_code($response);
+
+        if ($code !== 200) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => $body['error']['message'] ?? 'Verbindung fehlgeschlagen'
+            ], $code);
+        }
+
+        return new WP_REST_Response([
+            'success' => true,
+            'data' => [
+                'message' => 'Verbindung erfolgreich!',
+                'phone_number' => $body['display_phone_number'] ?? 'Unknown',
+                'verified_name' => $body['verified_name'] ?? 'Unknown'
+            ]
+        ]);
+    }
+
+    /**
+     * REST API: Send test message
+     */
+    public static function rest_send_test(WP_REST_Request $request) {
+        $data = $request->get_json_params();
+        $store_id = intval($data['store_id'] ?? 0);
+        $phone = sanitize_text_field($data['phone'] ?? '');
+
+        if (!$store_id || !$phone) {
+            return new WP_REST_Response(['success' => false, 'message' => 'Fehlende Parameter'], 400);
+        }
+
+        // Send test template
+        $result = self::send_template(
+            $store_id,
+            $phone,
+            'hello_world', // Meta's default test template
+            [],
+            'en'
+        );
+
+        if (is_wp_error($result)) {
+            return new WP_REST_Response(['success' => false, 'message' => $result->get_error_message()], 500);
+        }
+
+        return new WP_REST_Response([
+            'success' => true,
+            'data' => [
+                'message' => 'Testnachricht gesendet!',
+                'wa_message_id' => $result['messages'][0]['id'] ?? 'Unknown'
+            ]
+        ]);
     }
 
     // ============================================================
