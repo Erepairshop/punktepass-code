@@ -910,32 +910,33 @@ if (!empty($store->gallery)) {
                             </div>
                         </div>
 
-                        <!-- How it works collapsible -->
-                        <details class="ppv-how-it-works" style="margin-top: 15px; background: rgba(255,107,107,0.08); border: 1px solid rgba(255,107,107,0.2); border-radius: 10px; overflow: hidden;">
-                            <summary style="padding: 12px 15px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: 500; color: #ff6b6b; list-style: none;">
-                                <span style="font-size: 16px;">💡</span>
-                                <span data-i18n="referral_how_it_works"><?php echo esc_html(PPV_Lang::t('referral_how_it_works') ?: 'So funktioniert\'s'); ?></span>
-                                <svg style="margin-left: auto; width: 16px; height: 16px; transition: transform 0.2s;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                            </summary>
-                            <div style="padding: 0 15px 15px 15px; color: #ccc; font-size: 13px; line-height: 1.6;">
-                                <div style="display: flex; flex-direction: column; gap: 10px;">
-                                    <div style="display: flex; align-items: flex-start; gap: 10px;">
-                                        <span style="background: linear-gradient(135deg, #ff6b6b, #ee5a5a); color: white; min-width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600;">1</span>
-                                        <span data-i18n="referral_step1"><?php echo esc_html(PPV_Lang::t('referral_step1') ?: 'Ein Kunde teilt seinen persönlichen Empfehlungslink oder QR-Code mit Freunden und Familie.'); ?></span>
-                                    </div>
-                                    <div style="display: flex; align-items: flex-start; gap: 10px;">
-                                        <span style="background: linear-gradient(135deg, #ff6b6b, #ee5a5a); color: white; min-width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600;">2</span>
-                                        <span data-i18n="referral_step2"><?php echo esc_html(PPV_Lang::t('referral_step2') ?: 'Der geworbene Neukunde registriert sich über den Link und sammelt seine ersten Punkte.'); ?></span>
-                                    </div>
-                                    <div style="display: flex; align-items: flex-start; gap: 10px;">
-                                        <span style="background: linear-gradient(135deg, #ff6b6b, #ee5a5a); color: white; min-width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600;">3</span>
-                                        <span data-i18n="referral_step3"><?php echo esc_html(PPV_Lang::t('referral_step3') ?: 'Beide erhalten automatisch die eingestellte Belohnung - der Werber und der Geworbene.'); ?></span>
-                                    </div>
-                                </div>
-                            </div>
-                        </details>
                     </div>
                     <?php endif; ?>
+
+                    <!-- How it works collapsible (always visible) -->
+                    <details class="ppv-how-it-works" style="margin-top: 15px; background: rgba(255,107,107,0.08); border: 1px solid rgba(255,107,107,0.2); border-radius: 10px; overflow: hidden;">
+                        <summary style="padding: 12px 15px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: 500; color: #ff6b6b; list-style: none;">
+                            <span style="font-size: 16px;">💡</span>
+                            <span data-i18n="referral_how_it_works"><?php echo esc_html(PPV_Lang::t('referral_how_it_works') ?: 'So funktioniert\'s'); ?></span>
+                            <svg style="margin-left: auto; width: 16px; height: 16px; transition: transform 0.2s;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </summary>
+                        <div style="padding: 0 15px 15px 15px; color: #ccc; font-size: 13px; line-height: 1.6;">
+                            <div style="display: flex; flex-direction: column; gap: 10px;">
+                                <div style="display: flex; align-items: flex-start; gap: 10px;">
+                                    <span style="background: linear-gradient(135deg, #ff6b6b, #ee5a5a); color: white; min-width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600;">1</span>
+                                    <span data-i18n="referral_step1"><?php echo esc_html(PPV_Lang::t('referral_step1') ?: 'Ein Kunde teilt seinen persönlichen Empfehlungslink oder QR-Code mit Freunden und Familie.'); ?></span>
+                                </div>
+                                <div style="display: flex; align-items: flex-start; gap: 10px;">
+                                    <span style="background: linear-gradient(135deg, #ff6b6b, #ee5a5a); color: white; min-width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600;">2</span>
+                                    <span data-i18n="referral_step2"><?php echo esc_html(PPV_Lang::t('referral_step2') ?: 'Der geworbene Neukunde registriert sich über den Link und sammelt seine ersten Punkte.'); ?></span>
+                                </div>
+                                <div style="display: flex; align-items: flex-start; gap: 10px;">
+                                    <span style="background: linear-gradient(135deg, #ff6b6b, #ee5a5a); color: white; min-width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600;">3</span>
+                                    <span data-i18n="referral_step3"><?php echo esc_html(PPV_Lang::t('referral_step3') ?: 'Beide erhalten automatisch die eingestellte Belohnung - der Werber und der Geworbene.'); ?></span>
+                                </div>
+                            </div>
+                        </div>
+                    </details>
                 </div>
 
                 <!-- Info box -->
