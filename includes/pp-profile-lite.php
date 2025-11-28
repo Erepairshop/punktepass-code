@@ -696,12 +696,16 @@ if (!empty($store->gallery)) {
                      WHATSAPP CLOUD API
                      ============================================================ -->
                 <div class="ppv-marketing-card" style="background: linear-gradient(135deg, rgba(37, 211, 102, 0.08), rgba(37, 211, 102, 0.02)); border: 1px solid rgba(37, 211, 102, 0.3); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
-                    <div class="ppv-marketing-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <div class="ppv-marketing-header" style="display: flex; justify-content: space-between; align-items: center;">
                         <div>
                             <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
                                 <span style="font-size: 24px;">💬</span>
                                 <span>WhatsApp Business</span>
-                                <span style="background: linear-gradient(135deg, #25D366, #128C7E); color: white; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600;">NEU</span>
+                                <?php if (!empty($store->whatsapp_enabled) && !empty($store->whatsapp_phone_id)): ?>
+                                    <span style="background: #25D366; color: white; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600;">AKTIV</span>
+                                <?php else: ?>
+                                    <span style="background: rgba(255,255,255,0.1); color: #888; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600;">INAKTIV</span>
+                                <?php endif; ?>
                             </h3>
                             <small style="color: #888;">Automatische WhatsApp-Nachrichten & Kundensupport</small>
                         </div>
@@ -710,87 +714,14 @@ if (!empty($store->gallery)) {
                             <span class="ppv-toggle-slider"></span>
                         </label>
                     </div>
-
-                    <div class="ppv-marketing-body" id="whatsapp-settings" style="<?php echo empty($store->whatsapp_enabled) ? 'opacity: 0.5; pointer-events: none;' : ''; ?>">
-
-                        <!-- API Configuration -->
-                        <div style="background: rgba(0,0,0,0.2); border-radius: 8px; padding: 15px; margin-bottom: 15px;">
-                            <h4 style="margin: 0 0 10px; color: #25D366; font-size: 14px;">🔐 API Konfiguration</h4>
-
-                            <div class="ppv-form-group">
-                                <label>Phone Number ID</label>
-                                <input type="text" name="whatsapp_phone_id" value="<?php echo esc_attr($store->whatsapp_phone_id ?? ''); ?>" placeholder="123456789012345">
-                                <small style="color: #666;">Von Meta Business Suite → WhatsApp Manager</small>
-                            </div>
-
-                            <div class="ppv-form-group">
-                                <label>Business Account ID</label>
-                                <input type="text" name="whatsapp_business_id" value="<?php echo esc_attr($store->whatsapp_business_id ?? ''); ?>" placeholder="123456789012345">
-                            </div>
-
-                            <div class="ppv-form-group">
-                                <label>Access Token</label>
-                                <input type="password" name="whatsapp_access_token" value="<?php echo !empty($store->whatsapp_access_token) ? '••••••••••••••••' : ''; ?>" placeholder="EAAxxxxxxx..." id="whatsapp-access-token">
-                                <small style="color: #666;">System User Token mit whatsapp_business_messaging Berechtigung</small>
-                            </div>
-
-                            <div style="display: flex; gap: 10px; margin-top: 10px;">
-                                <button type="button" id="whatsapp-verify-btn" class="ppv-btn ppv-btn-secondary" style="background: #25D366; border-color: #25D366;">
-                                    ✓ Verbindung testen
-                                </button>
-                                <span id="whatsapp-verify-result" style="display: none; padding: 8px; border-radius: 6px;"></span>
-                            </div>
-                        </div>
-
-                        <!-- Features Toggle -->
-                        <div class="ppv-form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-                            <div style="background: rgba(0,0,0,0.2); border-radius: 8px; padding: 15px;">
-                                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-                                    <input type="checkbox" name="whatsapp_marketing_enabled" value="1" <?php checked($store->whatsapp_marketing_enabled ?? 0, 1); ?> style="width: 18px; height: 18px;">
-                                    <span>
-                                        <strong style="color: #f1f5f9;">📣 Marketing</strong><br>
-                                        <small style="color: #888;">Geburtstag & Comeback per WhatsApp</small>
-                                    </span>
-                                </label>
-                            </div>
-
-                            <div style="background: rgba(0,0,0,0.2); border-radius: 8px; padding: 15px;">
-                                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-                                    <input type="checkbox" name="whatsapp_support_enabled" value="1" <?php checked($store->whatsapp_support_enabled ?? 0, 1); ?> style="width: 18px; height: 18px;">
-                                    <span>
-                                        <strong style="color: #f1f5f9;">🎧 Support Chat</strong><br>
-                                        <small style="color: #888;">Kunden können direkt schreiben</small>
-                                    </span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <!-- Test Message -->
-                        <div class="ppv-form-group" style="padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
-                            <label>Testnachricht senden</label>
-                            <div style="display: flex; gap: 10px; align-items: center;">
-                                <input type="tel" id="whatsapp-test-phone" placeholder="+49 176 12345678" style="flex: 1;">
-                                <button type="button" id="whatsapp-test-btn" class="ppv-btn ppv-btn-secondary" style="white-space: nowrap; background: #25D366; border-color: #25D366;">
-                                    📱 Test senden
-                                </button>
-                            </div>
-                            <small style="color: #666;">Sendet "Hello World" Template an diese Nummer</small>
-                            <div id="whatsapp-test-result" style="margin-top: 10px; display: none;"></div>
-                        </div>
-
-                        <!-- Webhook Info -->
-                        <div style="background: rgba(37, 211, 102, 0.1); border: 1px dashed rgba(37, 211, 102, 0.4); border-radius: 8px; padding: 12px; margin-top: 15px;">
-                            <p style="margin: 0; font-size: 12px; color: #25D366;">
-                                <strong>📡 Webhook URL für Meta:</strong><br>
-                                <code style="background: rgba(0,0,0,0.3); padding: 4px 8px; border-radius: 4px; font-size: 11px; word-break: break-all;">
-                                    <?php echo esc_html(home_url('/wp-json/punktepass/v1/whatsapp-webhook')); ?>
-                                </code>
-                            </p>
-                            <p style="margin: 8px 0 0; font-size: 11px; color: #888;">
-                                Verify Token: <code style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px;">punktepass_whatsapp_2024</code>
-                            </p>
-                        </div>
+                    <?php if (empty($store->whatsapp_phone_id)): ?>
+                    <div style="margin-top: 15px; padding: 12px; background: rgba(255,152,0,0.1); border: 1px solid rgba(255,152,0,0.3); border-radius: 8px;">
+                        <p style="margin: 0; color: #ff9800; font-size: 13px;">
+                            <strong>⚠️ WhatsApp noch nicht konfiguriert</strong><br>
+                            <span style="color: #888;">API-Einstellungen werden vom PunktePass-Team verwaltet.</span>
+                        </p>
                     </div>
+                    <?php endif; ?>
                 </div>
 
                 <!-- Info box -->
@@ -1290,13 +1221,10 @@ public static function ajax_save_profile() {
         'comeback_message' => sanitize_text_field($_POST['comeback_message'] ?? ''),
 
         // ============================================================
-        // ✅ WHATSAPP CLOUD API FIELDS
+        // ✅ WHATSAPP CLOUD API - Only enable/disable toggle
+        // API settings are managed in /admin/whatsapp
         // ============================================================
         'whatsapp_enabled' => !empty($_POST['whatsapp_enabled']) ? 1 : 0,
-        'whatsapp_phone_id' => sanitize_text_field($_POST['whatsapp_phone_id'] ?? ''),
-        'whatsapp_business_id' => sanitize_text_field($_POST['whatsapp_business_id'] ?? ''),
-        'whatsapp_marketing_enabled' => !empty($_POST['whatsapp_marketing_enabled']) ? 1 : 0,
-        'whatsapp_support_enabled' => !empty($_POST['whatsapp_support_enabled']) ? 1 : 0,
 ];
 
 // ✅ Format specifierek az összes mezőhöz
@@ -1345,25 +1273,9 @@ $format_specs = [
     '%s',  // comeback_bonus_type
     '%d',  // comeback_bonus_value
     '%s',  // comeback_message
-    // WhatsApp Cloud API
+    // WhatsApp Cloud API - only enable toggle (settings managed in /admin/whatsapp)
     '%d',  // whatsapp_enabled
-    '%s',  // whatsapp_phone_id
-    '%s',  // whatsapp_business_id
-    '%d',  // whatsapp_marketing_enabled
-    '%d',  // whatsapp_support_enabled
 ];
-
-// ============================================================
-// ✅ WHATSAPP ACCESS TOKEN - Handle separately (encrypted)
-// ============================================================
-$wa_token = $_POST['whatsapp_access_token'] ?? '';
-// Only update token if it's not the masked placeholder
-if (!empty($wa_token) && strpos($wa_token, '••••') === false) {
-    // Encrypt and save the new token
-    $encrypted_token = PPV_WhatsApp::encrypt_token($wa_token);
-    $update_data['whatsapp_access_token'] = $encrypted_token;
-    $format_specs[] = '%s';  // whatsapp_access_token
-}
 
 ppv_log("💾 [DEBUG] Saving store ID: {$store_id}");
 ppv_log("💾 [DEBUG] Country: " . ($update_data['country'] ?? 'NULL'));

@@ -286,6 +286,8 @@ class PPV_Standalone_Admin {
             self::render_device_requests();
         } elseif ($path === '/admin/handlers') {
             self::render_handlers_page();
+        } elseif ($path === '/admin/whatsapp') {
+            self::render_whatsapp_settings();
         } elseif ($path === '/admin/delete-device') {
             self::handle_delete_device();
         } elseif ($path === '/admin/deactivate-mobile') {
@@ -1064,6 +1066,9 @@ class PPV_Standalone_Admin {
                     <a href="/admin/handlers" class="<?php echo $current_page === 'handlers' ? 'active' : ''; ?>">
                         <i class="ri-store-2-line"></i> Handlerek
                     </a>
+                    <a href="/admin/whatsapp" class="<?php echo $current_page === 'whatsapp' ? 'active' : ''; ?>">
+                        <i class="ri-whatsapp-line"></i> WhatsApp
+                    </a>
                 </nav>
                 <div class="admin-user">
                     <span><?php echo esc_html($admin_email); ?></span>
@@ -1744,5 +1749,345 @@ class PPV_Standalone_Admin {
         </div>
         <?php
         self::get_admin_footer();
+    }
+
+    /**
+     * WhatsApp beállítások oldal
+     */
+    private static function render_whatsapp_settings() {
+        global $wpdb;
+
+        // POST kezelése
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['whatsapp_save'])) {
+            self::handle_whatsapp_save();
+        }
+
+        // Get all stores for dropdown
+        $stores = $wpdb->get_results(
+            "SELECT id, name, city, whatsapp_enabled, whatsapp_phone_id, whatsapp_business_id,
+                    whatsapp_access_token, whatsapp_marketing_enabled, whatsapp_support_enabled
+             FROM {$wpdb->prefix}ppv_stores
+             WHERE parent_store_id IS NULL OR parent_store_id = 0
+             ORDER BY name ASC"
+        );
+
+        $selected_store_id = intval($_GET['store_id'] ?? ($stores[0]->id ?? 0));
+        $selected_store = null;
+        foreach ($stores as $store) {
+            if ($store->id == $selected_store_id) {
+                $selected_store = $store;
+                break;
+            }
+        }
+
+        $success = $_GET['success'] ?? '';
+        $error = $_GET['error'] ?? '';
+
+        self::get_admin_header('whatsapp');
+        ?>
+        <h1 class="page-title">
+            <i class="ri-whatsapp-line" style="color: #25D366;"></i> WhatsApp Cloud API Beállítások
+        </h1>
+
+        <?php if ($success): ?>
+            <div class="success-msg"><?php echo esc_html($success); ?></div>
+        <?php endif; ?>
+        <?php if ($error): ?>
+            <div class="error-msg"><?php echo esc_html($error); ?></div>
+        <?php endif; ?>
+
+        <!-- Store kiválasztó -->
+        <div class="card" style="margin-bottom: 20px;">
+            <form method="GET" action="/admin/whatsapp" style="display: flex; align-items: center; gap: 15px;">
+                <label style="color: #888;">Handler kiválasztása:</label>
+                <select name="store_id" onchange="this.form.submit()" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 10px 15px; color: #fff; font-size: 14px; min-width: 250px;">
+                    <?php foreach ($stores as $store): ?>
+                        <option value="<?php echo $store->id; ?>" <?php selected($store->id, $selected_store_id); ?>>
+                            <?php echo esc_html($store->name); ?>
+                            <?php if ($store->city): ?>(<?php echo esc_html($store->city); ?>)<?php endif; ?>
+                            <?php if ($store->whatsapp_enabled): ?> ✓<?php endif; ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </form>
+        </div>
+
+        <?php if ($selected_store): ?>
+        <form method="POST" action="/admin/whatsapp?store_id=<?php echo $selected_store_id; ?>">
+            <input type="hidden" name="whatsapp_save" value="1">
+            <input type="hidden" name="store_id" value="<?php echo $selected_store_id; ?>">
+
+            <!-- API Konfiguráció -->
+            <div class="card">
+                <h3 class="card-title" style="color: #25D366;">
+                    <i class="ri-key-2-line"></i> API Konfiguráció
+                </h3>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <label style="display: block; color: #fff; margin-bottom: 8px;">Phone Number ID</label>
+                        <input type="text" name="whatsapp_phone_id"
+                               value="<?php echo esc_attr($selected_store->whatsapp_phone_id ?? ''); ?>"
+                               placeholder="123456789012345"
+                               style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; color: #fff; font-size: 14px;">
+                        <small style="color: #666; display: block; margin-top: 5px;">Meta Business Suite → WhatsApp Manager → API-Setup</small>
+                    </div>
+                    <div>
+                        <label style="display: block; color: #fff; margin-bottom: 8px;">Business Account ID</label>
+                        <input type="text" name="whatsapp_business_id"
+                               value="<?php echo esc_attr($selected_store->whatsapp_business_id ?? ''); ?>"
+                               placeholder="123456789012345"
+                               style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; color: #fff; font-size: 14px;">
+                        <small style="color: #666; display: block; margin-top: 5px;">WhatsApp-Unternehmenskonto-ID</small>
+                    </div>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <label style="display: block; color: #fff; margin-bottom: 8px;">Access Token</label>
+                    <input type="password" name="whatsapp_access_token" id="wa-token"
+                           value="<?php echo !empty($selected_store->whatsapp_access_token) ? '••••••••••••••••••••••••' : ''; ?>"
+                           placeholder="EAAxxxxxxx..."
+                           style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; color: #fff; font-size: 14px;">
+                    <small style="color: #666; display: block; margin-top: 5px;">System User Token mit whatsapp_business_messaging Berechtigung</small>
+                    <button type="button" onclick="document.getElementById('wa-token').type = document.getElementById('wa-token').type === 'password' ? 'text' : 'password'"
+                            style="margin-top: 8px; background: rgba(255,255,255,0.1); border: none; border-radius: 6px; padding: 6px 12px; color: #888; cursor: pointer; font-size: 12px;">
+                        <i class="ri-eye-line"></i> Token anzeigen/verbergen
+                    </button>
+                </div>
+
+                <div style="margin-top: 20px; display: flex; gap: 15px;">
+                    <button type="button" id="verify-connection-btn" class="btn" style="background: rgba(37,211,102,0.2); color: #25D366; border: 1px solid rgba(37,211,102,0.3);">
+                        <i class="ri-check-double-line"></i> Verbindung testen
+                    </button>
+                    <span id="verify-result" style="display: none; padding: 10px 15px; border-radius: 8px;"></span>
+                </div>
+            </div>
+
+            <!-- Funkciók -->
+            <div class="card">
+                <h3 class="card-title" style="color: #00e6ff;">
+                    <i class="ri-toggle-line"></i> Funkciók
+                </h3>
+
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+                    <label style="display: flex; align-items: center; gap: 12px; background: rgba(0,0,0,0.2); padding: 20px; border-radius: 10px; cursor: pointer;">
+                        <input type="checkbox" name="whatsapp_enabled" value="1" <?php checked($selected_store->whatsapp_enabled ?? 0, 1); ?>
+                               style="width: 20px; height: 20px; accent-color: #25D366;">
+                        <div>
+                            <strong style="color: #fff; display: block;">WhatsApp aktív</strong>
+                            <small style="color: #888;">API-Verbindung aktivieren</small>
+                        </div>
+                    </label>
+
+                    <label style="display: flex; align-items: center; gap: 12px; background: rgba(0,0,0,0.2); padding: 20px; border-radius: 10px; cursor: pointer;">
+                        <input type="checkbox" name="whatsapp_marketing_enabled" value="1" <?php checked($selected_store->whatsapp_marketing_enabled ?? 0, 1); ?>
+                               style="width: 20px; height: 20px; accent-color: #ff9800;">
+                        <div>
+                            <strong style="color: #fff; display: block;">📣 Marketing</strong>
+                            <small style="color: #888;">Geburtstag & Comeback</small>
+                        </div>
+                    </label>
+
+                    <label style="display: flex; align-items: center; gap: 12px; background: rgba(0,0,0,0.2); padding: 20px; border-radius: 10px; cursor: pointer;">
+                        <input type="checkbox" name="whatsapp_support_enabled" value="1" <?php checked($selected_store->whatsapp_support_enabled ?? 0, 1); ?>
+                               style="width: 20px; height: 20px; accent-color: #2196f3;">
+                        <div>
+                            <strong style="color: #fff; display: block;">🎧 Support Chat</strong>
+                            <small style="color: #888;">Kunden-Nachrichten</small>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Webhook Info -->
+            <div class="card" style="background: rgba(37,211,102,0.05); border-color: rgba(37,211,102,0.2);">
+                <h3 class="card-title" style="color: #25D366;">
+                    <i class="ri-webhook-line"></i> Webhook Konfiguráció (Meta Dashboard-ban beállítandó)
+                </h3>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <label style="display: block; color: #888; margin-bottom: 8px;">Webhook URL:</label>
+                        <div style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; font-family: monospace; font-size: 13px; color: #25D366; word-break: break-all;">
+                            <?php echo esc_html(home_url('/wp-json/punktepass/v1/whatsapp-webhook')); ?>
+                        </div>
+                    </div>
+                    <div>
+                        <label style="display: block; color: #888; margin-bottom: 8px;">Verify Token:</label>
+                        <div style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; font-family: monospace; font-size: 13px; color: #25D366;">
+                            punktepass_whatsapp_2024
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 15px; padding: 12px; background: rgba(255,152,0,0.1); border-radius: 8px; border: 1px solid rgba(255,152,0,0.3);">
+                    <p style="margin: 0; color: #ff9800; font-size: 13px;">
+                        <i class="ri-information-line"></i> <strong>Felder für Webhook-Abonnement:</strong> messages, message_status
+                    </p>
+                </div>
+            </div>
+
+            <!-- Testnachricht -->
+            <div class="card">
+                <h3 class="card-title" style="color: #9c27b0;">
+                    <i class="ri-send-plane-line"></i> Testnachricht senden
+                </h3>
+
+                <div style="display: flex; gap: 15px; align-items: flex-end;">
+                    <div style="flex: 1;">
+                        <label style="display: block; color: #888; margin-bottom: 8px;">Telefonnummer:</label>
+                        <input type="tel" id="test-phone" placeholder="+49 176 12345678"
+                               style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; color: #fff; font-size: 14px;">
+                    </div>
+                    <button type="button" id="send-test-btn" class="btn" style="background: rgba(156,39,176,0.2); color: #9c27b0; border: 1px solid rgba(156,39,176,0.3); white-space: nowrap;">
+                        <i class="ri-send-plane-fill"></i> Test senden
+                    </button>
+                </div>
+                <small style="color: #666; display: block; margin-top: 8px;">Sendet das "Hello World" Template an diese Nummer</small>
+                <div id="test-result" style="margin-top: 15px; display: none;"></div>
+            </div>
+
+            <!-- Mentés gomb -->
+            <div style="text-align: right; margin-top: 20px;">
+                <button type="submit" class="btn" style="background: linear-gradient(135deg, #25D366, #128C7E); color: #fff; padding: 14px 30px; font-size: 16px;">
+                    <i class="ri-save-line"></i> Beállítások mentése
+                </button>
+            </div>
+        </form>
+
+        <script>
+        // Verbindung testen
+        document.getElementById('verify-connection-btn').addEventListener('click', async function() {
+            const btn = this;
+            const result = document.getElementById('verify-result');
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Prüfe...';
+            result.style.display = 'none';
+
+            try {
+                const response = await fetch('/wp-json/punktepass/v1/whatsapp/verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ store_id: <?php echo $selected_store_id; ?> })
+                });
+                const data = await response.json();
+
+                result.style.display = 'inline-block';
+                if (data.success) {
+                    result.style.background = 'rgba(76,175,80,0.2)';
+                    result.style.color = '#4caf50';
+                    result.innerHTML = '✓ ' + (data.data?.message || 'Verbindung OK');
+                } else {
+                    result.style.background = 'rgba(244,67,54,0.2)';
+                    result.style.color = '#f44336';
+                    result.innerHTML = '✗ ' + (data.message || 'Fehler');
+                }
+            } catch (e) {
+                result.style.display = 'inline-block';
+                result.style.background = 'rgba(244,67,54,0.2)';
+                result.style.color = '#f44336';
+                result.innerHTML = '✗ Netzwerkfehler';
+            }
+
+            btn.disabled = false;
+            btn.innerHTML = '<i class="ri-check-double-line"></i> Verbindung testen';
+        });
+
+        // Testnachricht senden
+        document.getElementById('send-test-btn').addEventListener('click', async function() {
+            const btn = this;
+            const phone = document.getElementById('test-phone').value;
+            const result = document.getElementById('test-result');
+
+            if (!phone) {
+                alert('Bitte Telefonnummer eingeben');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Sende...';
+
+            try {
+                const response = await fetch('/wp-json/punktepass/v1/whatsapp/test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ store_id: <?php echo $selected_store_id; ?>, phone: phone })
+                });
+                const data = await response.json();
+
+                result.style.display = 'block';
+                if (data.success) {
+                    result.innerHTML = '<div style="background: rgba(76,175,80,0.2); color: #4caf50; padding: 12px; border-radius: 8px;">✓ ' + (data.data?.message || 'Nachricht gesendet!') + '</div>';
+                } else {
+                    result.innerHTML = '<div style="background: rgba(244,67,54,0.2); color: #f44336; padding: 12px; border-radius: 8px;">✗ ' + (data.message || 'Fehler') + '</div>';
+                }
+            } catch (e) {
+                result.style.display = 'block';
+                result.innerHTML = '<div style="background: rgba(244,67,54,0.2); color: #f44336; padding: 12px; border-radius: 8px;">✗ Netzwerkfehler</div>';
+            }
+
+            btn.disabled = false;
+            btn.innerHTML = '<i class="ri-send-plane-fill"></i> Test senden';
+        });
+        </script>
+        <?php else: ?>
+            <div class="card">
+                <div class="empty-state">
+                    <i class="ri-store-2-line"></i>
+                    <p>Keine Handler gefunden</p>
+                </div>
+            </div>
+        <?php endif; ?>
+        <?php
+        self::get_admin_footer();
+    }
+
+    /**
+     * WhatsApp beállítások mentése
+     */
+    private static function handle_whatsapp_save() {
+        global $wpdb;
+
+        $store_id = intval($_POST['store_id'] ?? 0);
+        if (!$store_id) {
+            wp_redirect('/admin/whatsapp?error=' . urlencode('Nincs kiválasztva handler'));
+            exit;
+        }
+
+        $update_data = [
+            'whatsapp_enabled' => !empty($_POST['whatsapp_enabled']) ? 1 : 0,
+            'whatsapp_phone_id' => sanitize_text_field($_POST['whatsapp_phone_id'] ?? ''),
+            'whatsapp_business_id' => sanitize_text_field($_POST['whatsapp_business_id'] ?? ''),
+            'whatsapp_marketing_enabled' => !empty($_POST['whatsapp_marketing_enabled']) ? 1 : 0,
+            'whatsapp_support_enabled' => !empty($_POST['whatsapp_support_enabled']) ? 1 : 0,
+        ];
+
+        $format_specs = ['%d', '%s', '%s', '%d', '%d'];
+
+        // Access Token - csak ha nem a maszkolás placeholder
+        $wa_token = $_POST['whatsapp_access_token'] ?? '';
+        if (!empty($wa_token) && strpos($wa_token, '••••') === false) {
+            if (class_exists('PPV_WhatsApp')) {
+                $update_data['whatsapp_access_token'] = PPV_WhatsApp::encrypt_token($wa_token);
+            } else {
+                $update_data['whatsapp_access_token'] = $wa_token;
+            }
+            $format_specs[] = '%s';
+        }
+
+        $result = $wpdb->update(
+            $wpdb->prefix . 'ppv_stores',
+            $update_data,
+            ['id' => $store_id],
+            $format_specs,
+            ['%d']
+        );
+
+        $admin_email = $_SESSION['ppv_admin_email'] ?? 'admin';
+        ppv_log("[WhatsApp Admin] Store #{$store_id} beállítások frissítve by {$admin_email}");
+
+        wp_redirect('/admin/whatsapp?store_id=' . $store_id . '&success=' . urlencode('WhatsApp beállítások mentve!'));
+        exit;
     }
 }
