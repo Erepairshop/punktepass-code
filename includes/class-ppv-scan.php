@@ -436,6 +436,17 @@ public static function ajax_auto_add_point() {
         }
     }
 
+    /** ⭐ Google Review Bonus (auto-awarded on next scan after review request) */
+    $google_review_bonus_applied = 0;
+
+    if (class_exists('PPV_Google_Review_Request')) {
+        $review_bonus = PPV_Google_Review_Request::check_and_award_bonus($store_id, $user_id);
+        if ($review_bonus && !empty($review_bonus['points'])) {
+            $google_review_bonus_applied = intval($review_bonus['points']);
+            ppv_log("⭐ [PPV_Scan] Google Review bonus applied: user_id={$user_id}, bonus=+{$google_review_bonus_applied}");
+        }
+    }
+
     // --- Beszúrás ---
     $wpdb->insert("{$wpdb->prefix}ppv_points", [
         'user_id'    => $user_id,
@@ -447,8 +458,9 @@ public static function ajax_auto_add_point() {
     ]);
 
     // Update lifetime_points for VIP level calculation
-    if (class_exists('PPV_User_Level') && $points_to_add > 0) {
-        PPV_User_Level::add_lifetime_points($user_id, $points_to_add);
+    $total_points_for_lifetime = $points_to_add + $google_review_bonus_applied;
+    if (class_exists('PPV_User_Level') && $total_points_for_lifetime > 0) {
+        PPV_User_Level::add_lifetime_points($user_id, $total_points_for_lifetime);
     }
 
     // --- Visszajelzés ---
@@ -459,6 +471,9 @@ public static function ajax_auto_add_point() {
     if ($birthday_bonus_applied > 0) {
         $msg .= " 🎂 Geburtstags-Bonus: +{$birthday_bonus_applied}!";
     }
+    if ($google_review_bonus_applied > 0) {
+        $msg .= " ⭐ Google-Bewertungs-Bonus: +{$google_review_bonus_applied}!";
+    }
 
     wp_send_json_success([
         'msg'   => $msg,
@@ -468,7 +483,8 @@ public static function ajax_auto_add_point() {
         'points' => $points_to_add,
         'vip_bonus' => $vip_bonus_applied,
         'birthday_bonus' => $birthday_bonus_applied,
-        'birthday_message' => $birthday_bonus_message
+        'birthday_message' => $birthday_bonus_message,
+        'google_review_bonus' => $google_review_bonus_applied
     ]);
 }
 

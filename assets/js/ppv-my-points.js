@@ -463,6 +463,9 @@
           <!-- 🏆 TIER PROGRESS SECTION -->
           ${buildTierProgressHtml(d.tier, d.tiers, l, lang)}
 
+          <!-- 🎁 REFERRAL PROGRAM SECTION -->
+          ${buildReferralHtml(d.referral, l, lang)}
+
           <!-- 📑 TABS NAVIGATION -->
           <div class="ppv-mypoints-tabs">
             <button class="ppv-mypoints-tab active" data-tab="points">
@@ -767,6 +770,162 @@
       </div>
     `;
   }
+
+  /** ============================
+   * 🎁 BUILD REFERRAL SECTION HTML
+   * ============================ */
+  function buildReferralHtml(referral, l, lang) {
+    if (!referral || !referral.enabled || !referral.stores || referral.stores.length === 0) {
+      return '';
+    }
+
+    // Use translations from ppv_lang (l) with fallbacks
+    const fallbacks = {
+      de: {
+        title: 'Freunde einladen',
+        subtitle: 'Empfehle Freunde und sammelt beide Bonuspunkte!',
+        your_code: 'Dein Einladungscode',
+        copy: 'Link kopieren',
+        copied: 'Kopiert!',
+        whatsapp: 'WhatsApp',
+        successful: 'Erfolgreich',
+        pending: 'Ausstehend',
+        no_referrals_yet: 'Noch keine Einladungen',
+      },
+      hu: {
+        title: 'Barátok meghívása',
+        subtitle: 'Hívd meg barátaidat és mindketten bónuszpontokat kaptok!',
+        your_code: 'A meghívó kódod',
+        copy: 'Link másolása',
+        copied: 'Másolva!',
+        whatsapp: 'WhatsApp',
+        successful: 'Sikeres',
+        pending: 'Függőben',
+        no_referrals_yet: 'Még nincsenek meghívások',
+      },
+      ro: {
+        title: 'Invită prieteni',
+        subtitle: 'Invită-ți prietenii și amândoi primiți puncte bonus!',
+        your_code: 'Codul tău de invitație',
+        copy: 'Copiază link',
+        copied: 'Copiat!',
+        whatsapp: 'WhatsApp',
+        successful: 'Reușit',
+        pending: 'În așteptare',
+        no_referrals_yet: 'Încă nu ai invitații',
+      }
+    };
+
+    const fb = fallbacks[lang] || fallbacks.de;
+    const t = {
+      title: l.referral_section_title || fb.title,
+      subtitle: l.referral_section_subtitle || fb.subtitle,
+      your_code: l.referral_your_code || fb.your_code,
+      copy: l.referral_copy_link || fb.copy,
+      copied: l.referral_copied || fb.copied,
+      whatsapp: l.referral_share_whatsapp || fb.whatsapp,
+      successful: l.referral_successful || fb.successful,
+      pending: l.referral_pending || fb.pending,
+      no_referrals_yet: l.referral_no_invites || fb.no_referrals_yet,
+    };
+
+    // Build store cards
+    let storeCardsHtml = '';
+    referral.stores.forEach(store => {
+      const hasReferrals = store.stats.total > 0;
+
+      storeCardsHtml += `
+        <div class="ppv-referral-store-card" data-store-id="${store.id}">
+          <div class="referral-store-header">
+            <h4><i class="ri-store-2-fill"></i> ${escapeHtml(store.name)}</h4>
+            <span class="referral-reward-badge">
+              <i class="ri-gift-fill"></i> ${escapeHtml(store.reward_text)}
+            </span>
+          </div>
+
+          <div class="referral-code-box">
+            <span class="code-label">${t.your_code}:</span>
+            <span class="code-value">${escapeHtml(referral.code)}</span>
+          </div>
+
+          <div class="referral-share-buttons">
+            <button class="ppv-btn-share ppv-btn-whatsapp" onclick="shareReferralWhatsApp('${escapeHtml(store.share_url)}', '${escapeHtml(store.name)}')">
+              <i class="ri-whatsapp-fill"></i> ${t.whatsapp}
+            </button>
+            <button class="ppv-btn-share ppv-btn-copy" onclick="copyReferralLink('${escapeHtml(store.share_url)}', this)">
+              <i class="ri-link"></i> ${t.copy}
+            </button>
+          </div>
+
+          ${hasReferrals ? `
+            <div class="referral-stats">
+              <div class="stat">
+                <i class="ri-check-double-fill"></i>
+                <span class="value">${store.stats.successful}</span>
+                <span class="label">${t.successful}</span>
+              </div>
+              <div class="stat">
+                <i class="ri-time-fill"></i>
+                <span class="value">${store.stats.pending}</span>
+                <span class="label">${t.pending}</span>
+              </div>
+            </div>
+          ` : `
+            <p class="referral-no-stats"><i class="ri-user-add-line"></i> ${t.no_referrals_yet}</p>
+          `}
+        </div>
+      `;
+    });
+
+    return `
+      <div class="ppv-referral-section">
+        <h3><i class="ri-user-add-fill"></i> ${t.title}</h3>
+        <p class="referral-subtitle">${t.subtitle}</p>
+        <div class="ppv-referral-stores">
+          ${storeCardsHtml}
+        </div>
+      </div>
+    `;
+  }
+
+  // Share via WhatsApp
+  window.shareReferralWhatsApp = function(url, storeName) {
+    if (navigator.vibrate) navigator.vibrate(50);
+    const text = encodeURIComponent(`Hey! Hol dir Punkte bei ${storeName}! Nutze meinen Einladungslink: ${url}`);
+    window.open(`https://wa.me/?text=${text}`, '_blank');
+  };
+
+  // Copy referral link
+  window.copyReferralLink = function(url, btn) {
+    if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
+
+    navigator.clipboard.writeText(url).then(() => {
+      const originalHtml = btn.innerHTML;
+      btn.innerHTML = '<i class="ri-check-line"></i> Kopiert!';
+      btn.classList.add('copied');
+
+      setTimeout(() => {
+        btn.innerHTML = originalHtml;
+        btn.classList.remove('copied');
+      }, 2000);
+    }).catch(err => {
+      console.error('Copy failed:', err);
+      // Fallback for older browsers
+      const input = document.createElement('input');
+      input.value = url;
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand('copy');
+      document.body.removeChild(input);
+
+      btn.innerHTML = '<i class="ri-check-line"></i> Kopiert!';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.innerHTML = '<i class="ri-link"></i> Link kopieren';
+        btn.classList.remove('copied');
+      }, 2000);
+    });
+  };
 
   /** ============================
    * 🛡️ XSS PROTECTION

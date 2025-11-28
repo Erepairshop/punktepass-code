@@ -581,27 +581,40 @@ if (!empty($store->gallery)) {
                                 <input type="number" name="google_review_threshold" value="<?php echo esc_attr($store->google_review_threshold ?? 100); ?>" min="10" max="1000" step="10">
                             </div>
                             <div class="ppv-form-group">
-                                <label data-i18n="google_review_frequency"><?php echo esc_html(PPV_Lang::t('google_review_frequency')); ?></label>
-                                <select name="google_review_frequency">
-                                    <option value="once" <?php selected($store->google_review_frequency ?? 'once', 'once'); ?> data-i18n="frequency_once"><?php echo esc_html(PPV_Lang::t('frequency_once')); ?></option>
-                                    <option value="monthly" <?php selected($store->google_review_frequency ?? '', 'monthly'); ?> data-i18n="frequency_monthly"><?php echo esc_html(PPV_Lang::t('frequency_monthly')); ?></option>
-                                    <option value="quarterly" <?php selected($store->google_review_frequency ?? '', 'quarterly'); ?> data-i18n="frequency_quarterly"><?php echo esc_html(PPV_Lang::t('frequency_quarterly')); ?></option>
-                                </select>
+                                <label data-i18n="google_review_bonus_points"><?php echo esc_html(PPV_Lang::t('google_review_bonus_points')); ?></label>
+                                <input type="number" name="google_review_bonus_points" value="<?php echo esc_attr($store->google_review_bonus_points ?? 5); ?>" min="0" max="100" step="1">
+                                <small style="color: #888;" data-i18n="google_review_bonus_help"><?php echo esc_html(PPV_Lang::t('google_review_bonus_help')); ?></small>
                             </div>
                         </div>
 
-                        <!-- Test Email Section -->
-                        <div class="ppv-form-group" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
-                            <label><?php echo esc_html(PPV_Lang::t('test_email') ?? 'Teszt email küldés'); ?></label>
-                            <div style="display: flex; gap: 10px; align-items: center;">
-                                <input type="email" id="google-review-test-email" placeholder="teszt@email.com" style="flex: 1;">
-                                <button type="button" id="google-review-test-btn" class="ppv-btn ppv-btn-secondary" style="white-space: nowrap;">
-                                    📧 <?php echo esc_html(PPV_Lang::t('send_test') ?? 'Teszt küldés'); ?>
-                                </button>
+                        <!-- How it works collapsible -->
+                        <details class="ppv-how-it-works" style="margin-top: 15px; background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.2); border-radius: 10px; overflow: hidden;">
+                            <summary style="padding: 12px 15px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: 500; color: #3b82f6; list-style: none;">
+                                <span style="font-size: 16px;">💡</span>
+                                <span data-i18n="google_review_how_it_works"><?php echo esc_html(PPV_Lang::t('google_review_how_it_works')); ?></span>
+                                <svg style="margin-left: auto; width: 16px; height: 16px; transition: transform 0.2s;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            </summary>
+                            <div style="padding: 0 15px 15px 15px; color: #ccc; font-size: 13px; line-height: 1.6;">
+                                <div style="display: flex; flex-direction: column; gap: 10px;">
+                                    <div style="display: flex; align-items: flex-start; gap: 10px;">
+                                        <span style="background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: white; min-width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600;">1</span>
+                                        <span data-i18n="google_review_step1"><?php echo esc_html(PPV_Lang::t('google_review_step1')); ?></span>
+                                    </div>
+                                    <div style="display: flex; align-items: flex-start; gap: 10px;">
+                                        <span style="background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: white; min-width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600;">2</span>
+                                        <span data-i18n="google_review_step2"><?php echo esc_html(PPV_Lang::t('google_review_step2')); ?></span>
+                                    </div>
+                                    <div style="display: flex; align-items: flex-start; gap: 10px;">
+                                        <span style="background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: white; min-width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600;">3</span>
+                                        <span data-i18n="google_review_step3"><?php echo esc_html(PPV_Lang::t('google_review_step3')); ?></span>
+                                    </div>
+                                </div>
                             </div>
-                            <small style="color: #888;"><?php echo esc_html(PPV_Lang::t('test_email_help') ?? 'Küldj magadnak egy teszt emailt az ellenőrzéshez'); ?></small>
-                            <div id="google-review-test-result" style="margin-top: 10px; display: none;"></div>
-                        </div>
+                        </details>
+                        <style>
+                            .ppv-how-it-works[open] summary svg { transform: rotate(180deg); }
+                            .ppv-how-it-works summary::-webkit-details-marker { display: none; }
+                        </style>
                     </div>
                 </div>
 
@@ -705,24 +718,16 @@ if (!empty($store->gallery)) {
                             <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
                                 <span style="font-size: 24px;">💬</span>
                                 <span>WhatsApp Business</span>
-                                <?php if (!empty($store->whatsapp_enabled) && !empty($store->whatsapp_phone_id)): ?>
-                                    <span style="background: #25D366; color: white; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600;">AKTIV</span>
-                                <?php else: ?>
-                                    <span style="background: rgba(255,255,255,0.1); color: #888; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600;">INAKTIV</span>
-                                <?php endif; ?>
+                                <span style="background: #25D366; color: white; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600;" data-i18n="status_active"><?php echo esc_html(PPV_Lang::t('status_active')); ?></span>
                             </h3>
-                            <small style="color: #888;">Automatische WhatsApp-Nachrichten & Kundensupport</small>
+                            <small style="color: #888;" data-i18n="whatsapp_desc"><?php echo esc_html(PPV_Lang::t('whatsapp_desc')); ?></small>
                         </div>
-                        <label class="ppv-toggle">
-                            <input type="checkbox" name="whatsapp_enabled" value="1" <?php checked($store->whatsapp_enabled ?? 0, 1); ?>>
-                            <span class="ppv-toggle-slider"></span>
-                        </label>
                     </div>
                     <?php if (empty($store->whatsapp_phone_id)): ?>
                     <div style="margin-top: 15px; padding: 12px; background: rgba(255,152,0,0.1); border: 1px solid rgba(255,152,0,0.3); border-radius: 8px;">
                         <p style="margin: 0; color: #ff9800; font-size: 13px;">
-                            <strong>⚠️ WhatsApp noch nicht konfiguriert</strong><br>
-                            <span style="color: #888;">API-Einstellungen werden vom PunktePass-Team verwaltet.</span>
+                            <strong>⚠️ <?php echo esc_html(PPV_Lang::t('whatsapp_not_configured')); ?></strong><br>
+                            <span style="color: #888;"><?php echo esc_html(PPV_Lang::t('whatsapp_managed_by_team')); ?></span>
                         </p>
                     </div>
                     <?php endif; ?>
@@ -751,16 +756,16 @@ if (!empty($store->gallery)) {
                         <div>
                             <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
                                 <span style="font-size: 24px;">🎁</span>
-                                <span>Referral Program</span>
+                                <span><?php echo PPV_Lang::t('referral_admin_title') ?: 'Referral Program'; ?></span>
                                 <?php if (!$referral_activated_at): ?>
-                                    <span style="background: rgba(255,255,255,0.1); color: #888; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600;">NEU</span>
+                                    <span style="background: rgba(255,255,255,0.1); color: #888; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600;"><?php echo PPV_Lang::t('referral_admin_not_started') ?: 'NEU'; ?></span>
                                 <?php elseif (!$grace_period_over): ?>
-                                    <span style="background: rgba(255,152,0,0.3); color: #ff9800; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600;">⏳ <?php echo $grace_days_remaining; ?> Tage</span>
+                                    <span style="background: rgba(255,152,0,0.3); color: #ff9800; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600;">⏳ <?php echo $grace_days_remaining; ?> <?php echo PPV_Lang::t('days') ?: 'Tage'; ?></span>
                                 <?php elseif (!empty($store->referral_enabled)): ?>
-                                    <span style="background: #ff6b6b; color: white; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600;">AKTIV</span>
+                                    <span style="background: #ff6b6b; color: white; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600;"><?php echo strtoupper(PPV_Lang::t('referral_admin_active') ?: 'AKTIV'); ?></span>
                                 <?php endif; ?>
                             </h3>
-                            <small style="color: #888;">Kunden werben Kunden - Neue Kunden durch Empfehlungen</small>
+                            <small style="color: #888;"><?php echo PPV_Lang::t('referral_section_subtitle') ?: 'Kunden werben Kunden - Neue Kunden durch Empfehlungen'; ?></small>
                         </div>
                         <label class="ppv-toggle">
                             <input type="checkbox" name="referral_enabled" value="1" <?php checked($store->referral_enabled ?? 0, 1); ?> <?php echo !$grace_period_over ? 'disabled' : ''; ?>>
@@ -772,14 +777,13 @@ if (!empty($store->gallery)) {
                     <!-- Not yet activated - show activation prompt -->
                     <div style="background: rgba(0,0,0,0.2); border-radius: 8px; padding: 20px; text-align: center;">
                         <p style="color: #f1f5f9; margin: 0 0 15px;">
-                            <strong>🚀 Referral Program starten</strong><br>
+                            <strong>🚀 <?php echo PPV_Lang::t('referral_admin_start_title') ?: 'Referral Program starten'; ?></strong><br>
                             <span style="color: #888; font-size: 13px;">
-                                Nach der Aktivierung beginnt eine <?php echo $referral_grace_days; ?>-tägige Sammelphase.<br>
-                                In dieser Zeit werden Ihre bestehenden Kunden erfasst.
+                                <?php echo sprintf(PPV_Lang::t('referral_admin_start_desc') ?: 'Nach der Aktivierung beginnt eine %d-tägige Sammelphase. In dieser Zeit werden alle bestehenden Kunden erfasst, damit nur echte Neukunden als Referrals zählen.', $referral_grace_days); ?>
                             </span>
                         </p>
                         <button type="button" id="activate-referral-btn" class="ppv-btn" style="background: linear-gradient(135deg, #ff6b6b, #ee5a5a); border: none; color: white; padding: 12px 24px; border-radius: 8px; cursor: pointer;">
-                            <i class="ri-rocket-line"></i> Grace Period starten
+                            <i class="ri-rocket-line"></i> <?php echo PPV_Lang::t('referral_admin_start_btn') ?: 'Jetzt starten'; ?>
                         </button>
                     </div>
 
@@ -787,10 +791,10 @@ if (!empty($store->gallery)) {
                     <!-- Grace period active -->
                     <div style="background: rgba(255,152,0,0.1); border: 1px solid rgba(255,152,0,0.3); border-radius: 8px; padding: 15px;">
                         <p style="margin: 0; color: #ff9800;">
-                            <strong>⏳ Grace Period läuft</strong><br>
+                            <strong>⏳ <?php echo PPV_Lang::t('referral_admin_grace_title') ?: 'Sammelphase läuft'; ?></strong><br>
                             <span style="color: #888;">
-                                Noch <strong><?php echo $grace_days_remaining; ?> Tage</strong> bis das Referral Program aktiviert werden kann.<br>
-                                In dieser Zeit werden bestehende Kunden erfasst.
+                                <?php echo sprintf(PPV_Lang::t('referral_admin_grace_remaining') ?: 'Noch %d Tage bis das Referral Program aktiviert werden kann.', $grace_days_remaining); ?><br>
+                                <?php echo PPV_Lang::t('referral_admin_grace_desc') ?: 'In dieser Zeit werden bestehende Kunden erfasst.'; ?>
                             </span>
                         </p>
                         <div style="margin-top: 10px; background: rgba(0,0,0,0.2); border-radius: 4px; height: 8px; overflow: hidden;">
@@ -802,9 +806,9 @@ if (!empty($store->gallery)) {
                     <!-- Grace period settings (editable) -->
                     <div style="margin-top: 15px; background: rgba(0,0,0,0.2); border-radius: 8px; padding: 15px;">
                         <div class="ppv-form-group" style="margin-bottom: 0;">
-                            <label>Grace Period (Tage)</label>
+                            <label><?php echo PPV_Lang::t('referral_admin_grace_days') ?: 'Grace Period (Tage)'; ?></label>
                             <input type="number" name="referral_grace_days" value="<?php echo esc_attr($referral_grace_days); ?>" min="7" max="180" style="width: 100px;">
-                            <small style="color: #666;">Mindestens 7, maximal 180 Tage</small>
+                            <small style="color: #666;"><?php echo PPV_Lang::t('min_max_days') ?: 'Mindestens 7, maximal 180 Tage'; ?></small>
                         </div>
                     </div>
 
@@ -814,51 +818,49 @@ if (!empty($store->gallery)) {
 
                         <!-- Reward Type Selection -->
                         <div style="background: rgba(0,0,0,0.2); border-radius: 8px; padding: 15px; margin-bottom: 15px;">
-                            <h4 style="margin: 0 0 10px; color: #ff6b6b; font-size: 14px;">🎁 Belohnung konfigurieren</h4>
-                            <p style="color: #888; font-size: 12px; margin-bottom: 15px;">Was bekommen Werber und Geworbener?</p>
+                            <h4 style="margin: 0 0 10px; color: #ff6b6b; font-size: 14px;">🎁 <?php echo PPV_Lang::t('referral_admin_reward_type') ?: 'Belohnung konfigurieren'; ?></h4>
+                            <p style="color: #888; font-size: 12px; margin-bottom: 15px;"><?php echo PPV_Lang::t('referral_section_subtitle') ?: 'Was bekommen Werber und Geworbener?'; ?></p>
 
                             <div class="ppv-form-row" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px;">
                                 <label style="display: flex; flex-direction: column; align-items: center; gap: 8px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; cursor: pointer; border: 2px solid <?php echo ($store->referral_reward_type ?? 'points') === 'points' ? '#ff6b6b' : 'transparent'; ?>;">
                                     <input type="radio" name="referral_reward_type" value="points" <?php checked($store->referral_reward_type ?? 'points', 'points'); ?> style="display: none;" onchange="updateReferralRewardUI()">
                                     <span style="font-size: 24px;">⭐</span>
-                                    <strong style="color: #f1f5f9;">Punkte</strong>
+                                    <strong style="color: #f1f5f9;"><?php echo PPV_Lang::t('referral_admin_reward_points') ?: 'Punkte'; ?></strong>
                                 </label>
 
                                 <label style="display: flex; flex-direction: column; align-items: center; gap: 8px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; cursor: pointer; border: 2px solid <?php echo ($store->referral_reward_type ?? '') === 'euro' ? '#ff6b6b' : 'transparent'; ?>;">
                                     <input type="radio" name="referral_reward_type" value="euro" <?php checked($store->referral_reward_type ?? '', 'euro'); ?> style="display: none;" onchange="updateReferralRewardUI()">
                                     <span style="font-size: 24px;">💶</span>
-                                    <strong style="color: #f1f5f9;">Euro-Wert</strong>
+                                    <strong style="color: #f1f5f9;"><?php echo PPV_Lang::t('referral_admin_reward_euro') ?: 'Euro'; ?></strong>
                                 </label>
 
                                 <label style="display: flex; flex-direction: column; align-items: center; gap: 8px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; cursor: pointer; border: 2px solid <?php echo ($store->referral_reward_type ?? '') === 'gift' ? '#ff6b6b' : 'transparent'; ?>;">
                                     <input type="radio" name="referral_reward_type" value="gift" <?php checked($store->referral_reward_type ?? '', 'gift'); ?> style="display: none;" onchange="updateReferralRewardUI()">
                                     <span style="font-size: 24px;">🎀</span>
-                                    <strong style="color: #f1f5f9;">Geschenk</strong>
+                                    <strong style="color: #f1f5f9;"><?php echo PPV_Lang::t('referral_admin_reward_gift') ?: 'Geschenk'; ?></strong>
                                 </label>
                             </div>
 
                             <!-- Points value -->
                             <div id="referral-value-points" class="ppv-form-group" style="<?php echo ($store->referral_reward_type ?? 'points') !== 'points' ? 'display:none;' : ''; ?>">
-                                <label>Punkte pro Person</label>
+                                <label><?php echo PPV_Lang::t('referral_admin_points_value') ?: 'Punkte pro Empfehlung'; ?></label>
                                 <input type="number" name="referral_reward_value" value="<?php echo esc_attr($store->referral_reward_value ?? 50); ?>" min="1" max="500" style="width: 100px;">
-                                <small style="color: #666;">Werber UND Geworbener bekommen diese Punkte</small>
+                                <small style="color: #666;"><?php echo PPV_Lang::t('referral_section_subtitle') ?: 'Werber UND Geworbener bekommen diese Punkte'; ?></small>
                             </div>
 
                             <!-- Euro value -->
                             <div id="referral-value-euro" class="ppv-form-group" style="<?php echo ($store->referral_reward_type ?? '') !== 'euro' ? 'display:none;' : ''; ?>">
-                                <label>Euro-Wert pro Person</label>
+                                <label><?php echo PPV_Lang::t('referral_admin_euro_value') ?: 'Euro Rabatt'; ?></label>
                                 <div style="display: flex; align-items: center; gap: 5px;">
                                     <input type="number" name="referral_reward_value_euro" value="<?php echo esc_attr($store->referral_reward_value ?? 5); ?>" min="1" max="50" style="width: 80px;">
                                     <span style="color: #888;">€</span>
                                 </div>
-                                <small style="color: #666;">Als Rabatt auf den nächsten Einkauf</small>
                             </div>
 
                             <!-- Gift -->
                             <div id="referral-value-gift" class="ppv-form-group" style="<?php echo ($store->referral_reward_type ?? '') !== 'gift' ? 'display:none;' : ''; ?>">
-                                <label>Geschenk-Beschreibung</label>
-                                <input type="text" name="referral_reward_gift" value="<?php echo esc_attr($store->referral_reward_gift ?? ''); ?>" placeholder="z.B. Gratis Kaffee, 1x Dessert...">
-                                <small style="color: #666;">Was bekommt jeder als Geschenk?</small>
+                                <label><?php echo PPV_Lang::t('referral_admin_gift_value') ?: 'Geschenk-Beschreibung'; ?></label>
+                                <input type="text" name="referral_reward_gift" value="<?php echo esc_attr($store->referral_reward_gift ?? ''); ?>" placeholder="<?php echo PPV_Lang::t('referral_admin_gift_placeholder') ?: 'z.B. Gratis Kaffee, 1x Dessert...'; ?>">
                             </div>
                         </div>
 
@@ -867,8 +869,8 @@ if (!empty($store->gallery)) {
                             <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
                                 <input type="checkbox" name="referral_manual_approval" value="1" <?php checked($store->referral_manual_approval ?? 0, 1); ?> style="width: 18px; height: 18px;">
                                 <span>
-                                    <strong style="color: #f1f5f9;">🔍 Manuelle Genehmigung</strong><br>
-                                    <small style="color: #888;">Jeden neuen Referral vor der Belohnung prüfen</small>
+                                    <strong style="color: #f1f5f9;">🔍 <?php echo PPV_Lang::t('referral_admin_manual_approval') ?: 'Manuelle Freigabe'; ?></strong><br>
+                                    <small style="color: #888;"><?php echo PPV_Lang::t('referral_admin_manual_desc') ?: 'Jeden neuen Referral vor der Belohnung prüfen'; ?></small>
                                 </span>
                             </label>
                         </div>
@@ -887,28 +889,54 @@ if (!empty($store->gallery)) {
                         ));
                         ?>
                         <div style="background: rgba(255,107,107,0.1); border: 1px solid rgba(255,107,107,0.3); border-radius: 8px; padding: 15px;">
-                            <h4 style="margin: 0 0 10px; color: #ff6b6b; font-size: 14px;">📊 Referral Statistik</h4>
+                            <h4 style="margin: 0 0 10px; color: #ff6b6b; font-size: 14px;">📊 <?php echo PPV_Lang::t('referral_admin_stats') ?: 'Referral Statistik'; ?></h4>
                             <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; text-align: center;">
                                 <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px;">
                                     <div style="font-size: 24px; font-weight: bold; color: #f1f5f9;"><?php echo intval($referral_stats->total ?? 0); ?></div>
-                                    <div style="font-size: 11px; color: #888;">Gesamt</div>
+                                    <div style="font-size: 11px; color: #888;"><?php echo PPV_Lang::t('referral_admin_total') ?: 'Gesamt'; ?></div>
                                 </div>
                                 <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px;">
                                     <div style="font-size: 24px; font-weight: bold; color: #4caf50;"><?php echo intval($referral_stats->successful ?? 0); ?></div>
-                                    <div style="font-size: 11px; color: #888;">Erfolgreich</div>
+                                    <div style="font-size: 11px; color: #888;"><?php echo PPV_Lang::t('referral_successful') ?: 'Erfolgreich'; ?></div>
                                 </div>
                                 <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px;">
                                     <div style="font-size: 24px; font-weight: bold; color: #ff9800;"><?php echo intval($referral_stats->pending ?? 0); ?></div>
-                                    <div style="font-size: 11px; color: #888;">Wartend</div>
+                                    <div style="font-size: 11px; color: #888;"><?php echo PPV_Lang::t('referral_pending') ?: 'Ausstehend'; ?></div>
                                 </div>
                                 <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px;">
                                     <div style="font-size: 24px; font-weight: bold; color: #f44336;"><?php echo intval($referral_stats->rejected ?? 0); ?></div>
-                                    <div style="font-size: 11px; color: #888;">Abgelehnt</div>
+                                    <div style="font-size: 11px; color: #888;"><?php echo PPV_Lang::t('referral_admin_rejected') ?: 'Abgelehnt'; ?></div>
                                 </div>
                             </div>
                         </div>
+
                     </div>
                     <?php endif; ?>
+
+                    <!-- How it works collapsible (always visible) -->
+                    <details class="ppv-how-it-works" style="margin-top: 15px; background: rgba(255,107,107,0.08); border: 1px solid rgba(255,107,107,0.2); border-radius: 10px; overflow: hidden;">
+                        <summary style="padding: 12px 15px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: 500; color: #ff6b6b; list-style: none;">
+                            <span style="font-size: 16px;">💡</span>
+                            <span data-i18n="referral_how_it_works"><?php echo esc_html(PPV_Lang::t('referral_how_it_works') ?: 'So funktioniert\'s'); ?></span>
+                            <svg style="margin-left: auto; width: 16px; height: 16px; transition: transform 0.2s;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </summary>
+                        <div style="padding: 0 15px 15px 15px; color: #ccc; font-size: 13px; line-height: 1.6;">
+                            <div style="display: flex; flex-direction: column; gap: 10px;">
+                                <div style="display: flex; align-items: flex-start; gap: 10px;">
+                                    <span style="background: linear-gradient(135deg, #ff6b6b, #ee5a5a); color: white; min-width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600;">1</span>
+                                    <span data-i18n="referral_step1"><?php echo esc_html(PPV_Lang::t('referral_step1') ?: 'Ein Kunde teilt seinen persönlichen Empfehlungslink oder QR-Code mit Freunden und Familie.'); ?></span>
+                                </div>
+                                <div style="display: flex; align-items: flex-start; gap: 10px;">
+                                    <span style="background: linear-gradient(135deg, #ff6b6b, #ee5a5a); color: white; min-width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600;">2</span>
+                                    <span data-i18n="referral_step2"><?php echo esc_html(PPV_Lang::t('referral_step2') ?: 'Der geworbene Neukunde registriert sich über den Link und sammelt seine ersten Punkte.'); ?></span>
+                                </div>
+                                <div style="display: flex; align-items: flex-start; gap: 10px;">
+                                    <span style="background: linear-gradient(135deg, #ff6b6b, #ee5a5a); color: white; min-width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600;">3</span>
+                                    <span data-i18n="referral_step3"><?php echo esc_html(PPV_Lang::t('referral_step3') ?: 'Beide erhalten automatisch die eingestellte Belohnung - der Werber und der Geworbene.'); ?></span>
+                                </div>
+                            </div>
+                        </div>
+                    </details>
                 </div>
 
                 <!-- Info box -->
@@ -964,12 +992,12 @@ if (!empty($store->gallery)) {
                         this.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Wird aktiviert...';
 
                         jQuery.ajax({
-                            url: ppProfileLite.ajaxurl,
+                            url: ppv_profile.ajaxUrl,
                             type: 'POST',
                             data: {
                                 action: 'ppv_activate_referral_grace_period',
                                 store_id: window.ppvWhatsAppStoreId,
-                                nonce: ppProfileLite.nonce
+                                nonce: ppv_profile.nonce
                             },
                             success: function(res) {
                                 if (res.success) {

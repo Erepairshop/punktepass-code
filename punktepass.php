@@ -236,6 +236,7 @@ $core_modules = [
     'includes/class-ppv-user-dashboard.php',
     'includes/class-ppv-my-points.php',
     'includes/class-ppv-my-points-rest.php',
+    'includes/class-ppv-referral-handler.php',
     'includes/class-ppv-belohnungen.php',
     'includes/class-ppv-user-settings.php',
     'includes/class-ppv-login.php',
@@ -694,10 +695,13 @@ add_action('wp_footer', function () {
 // ========================================
 add_action('init', function () {
     add_rewrite_rule('^store/([^/]*)/?$', 'index.php?pagename=store&store=$matches[1]', 'top');
+    // Referral links: /r/{code}/{store_key}
+    add_rewrite_rule('^r/([A-Za-z0-9]+)/([^/]+)/?$', 'index.php?ppv_referral_code=$matches[1]&ppv_referral_store=$matches[2]', 'top');
 }, 10);
 
 register_activation_hook(__FILE__, function () {
     add_rewrite_rule('^store/([^/]*)/?$', 'index.php?pagename=store&store=$matches[1]', 'top');
+    add_rewrite_rule('^r/([A-Za-z0-9]+)/([^/]+)/?$', 'index.php?ppv_referral_code=$matches[1]&ppv_referral_store=$matches[2]', 'top');
     flush_rewrite_rules();
 });
 
