@@ -353,12 +353,9 @@ private static function get_today_hours($opening_hours) {
      * 🌐 GLOBAL COMPACT HEADER - COMPLETE WITH CSS + LOGO FIX
      * ============================================================ */
     public static function render_global_header() {
-        // 1️⃣ Skip if not logged in
+        // 1️⃣ Check login status
         self::ensure_session();
         $uid = self::get_safe_user_id();
-        if ($uid <= 0) {
-            return;
-        }
 
         // 2️⃣ Skip on login/signup pages
         if (function_exists('ppv_is_login_page') && ppv_is_login_page()) {
@@ -371,6 +368,102 @@ private static function get_today_hours($opening_hours) {
             if (strpos($uri, $pattern) !== false) {
                 return;
             }
+        }
+
+        // 3️⃣ If NOT logged in → Show session expired header on ALL protected pages
+        if ($uid <= 0) {
+            // Public pages that don't need login header
+            $public_pages = ['/', '/impressum', '/datenschutz', '/agb', '/kontakt', '/about', '/home', '/partner'];
+            $is_public = false;
+            $clean_uri = rtrim(parse_url($uri, PHP_URL_PATH), '/');
+            if (empty($clean_uri)) $clean_uri = '/';
+
+            foreach ($public_pages as $page) {
+                if ($clean_uri === $page) {
+                    $is_public = true;
+                    break;
+                }
+            }
+
+            // Show session expired header on all non-public pages
+            if (!$is_public) {
+                $login_url = home_url('/login');
+                ?>
+                <div class="ppv-global-header ppv-session-expired">
+                    <div class="ppv-header-inner">
+                        <div class="ppv-header-left">
+                            <span class="ppv-session-msg">
+                                <i class="ri-error-warning-line"></i>
+                                Sitzung abgelaufen
+                            </span>
+                        </div>
+                        <div class="ppv-header-right">
+                            <a href="<?php echo esc_url($login_url); ?>" class="ppv-login-btn">
+                                <i class="ri-login-box-line"></i>
+                                Anmelden
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <style>
+                .ppv-session-expired {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    z-index: 99999;
+                    background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+                    border-bottom: 1px solid #F59E0B;
+                    padding: 12px 16px;
+                    padding-top: calc(12px + env(safe-area-inset-top, 0px));
+                }
+                .ppv-session-expired .ppv-header-inner {
+                    max-width: 600px;
+                    margin: 0 auto;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 16px;
+                }
+                .ppv-session-msg {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    font-size: 14px;
+                    font-weight: 600;
+                    color: #92400E;
+                }
+                .ppv-session-msg i {
+                    font-size: 18px;
+                }
+                .ppv-login-btn {
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    padding: 10px 20px;
+                    background: linear-gradient(135deg, #0066FF 0%, #0052CC 100%);
+                    color: white;
+                    border-radius: 10px;
+                    font-size: 14px;
+                    font-weight: 600;
+                    text-decoration: none;
+                    box-shadow: 0 4px 12px rgba(0, 102, 255, 0.3);
+                    transition: all 0.3s ease;
+                }
+                .ppv-login-btn:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 6px 16px rgba(0, 102, 255, 0.4);
+                }
+                .ppv-login-btn i {
+                    font-size: 16px;
+                }
+                body {
+                    padding-top: calc(56px + env(safe-area-inset-top, 0px)) !important;
+                }
+                </style>
+                <?php
+            }
+            return;
         }
 
         // 3️⃣ Skip on admin pages

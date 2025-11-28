@@ -23,8 +23,6 @@ jQuery(document).ready(function ($) {
 
   // Detect Safari
   const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-  if (isSafari) {
-  }
 
   // User dashboard pages - these use Turbo for SPA navigation
   const userPages = ['/user_dashboard', '/meine-punkte', '/belohnungen', '/einstellungen', '/punkte'];

@@ -273,6 +273,8 @@ $core_modules = [
      'includes/class-ppv-scan-monitoring.php',
      'includes/class-ppv-weekly-report.php', // Weekly email reports to store owners
      'includes/class-ppv-google-review-request.php', // Automated Google review requests
+     'includes/class-ppv-whatsapp.php', // WhatsApp Cloud API integration for marketing & support
+     'includes/class-ppv-whatsapp-chat.php', // WhatsApp Support Chat UI
      'includes/class-ppv-smtp.php', // SMTP configuration for reliable email delivery
      'includes/admin/class-ppv-admin-suspicious-scans.php',
      'includes/admin/class-ppv-admin-suspicious-devices.php', // Admin panel for suspicious devices
