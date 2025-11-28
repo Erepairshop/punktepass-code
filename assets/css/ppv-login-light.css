@@ -1,6 +1,7 @@
 /**
  * PunktePass - Modern Login & Landing Page
- * Optimized & Clean CSS Architecture
+ * Optimized & Clean CSS Architecture + App-Compatible Scroll
+ * Glassmorphism Design
  * Author: Erik Borota / PunktePass
  */
 
@@ -14,9 +15,11 @@
     --pp-primary-light: #E6F0FF;
     --ppv-bg: #F8F9FB;
     --ppv-card: #FFFFFF;
+    --ppv-card-glass: rgba(255, 255, 255, 0.85);
     --ppv-text: #1A1A1A;
     --ppv-text-muted: #6B7280;
     --ppv-border: #E5E7EB;
+    --ppv-border-glass: rgba(255, 255, 255, 0.3);
     --ppv-success: #10B981;
     --ppv-error: #EF4444;
 
@@ -24,11 +27,26 @@
     --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
     --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
     --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+    --shadow-glass: 0 8px 32px rgba(0, 102, 255, 0.12);
 
     /* Spacing & Sizing */
-    --radius: 12px;
-    --radius-sm: 8px;
+    --radius: 16px;
+    --radius-sm: 10px;
     --transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+
+    /* Safe Area Insets for notched phones */
+    --safe-area-top: env(safe-area-inset-top, 0px);
+    --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-area-left: env(safe-area-inset-left, 0px);
+    --safe-area-right: env(safe-area-inset-right, 0px);
+}
+
+/* ============================================
+   APP-COMPATIBLE SCROLL & BASE
+   ============================================ */
+html, body {
+    overflow-x: hidden;
+    overscroll-behavior-y: none;
 }
 
 /* ============================================
@@ -37,20 +55,38 @@
 .ppv-landing-container {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     -webkit-font-smoothing: antialiased;
+    /* Use min-height with dvh fallback for mobile compatibility */
     min-height: 100vh;
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
+    /* App-compatible scrolling */
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    /* Safe area padding */
+    padding-top: var(--safe-area-top);
+    padding-bottom: var(--safe-area-bottom);
+    padding-left: var(--safe-area-left);
+    padding-right: var(--safe-area-right);
+    /* Ensure scroll starts at top */
+    position: relative;
 }
 
 /* ============================================
-   HEADER
+   HEADER - Glassmorphism
    ============================================ */
 .ppv-landing-header {
-    position: relative;
+    position: sticky;
+    top: 0;
     z-index: 100;
-    background: var(--ppv-card);
-    border-bottom: 1px solid var(--ppv-border);
-    padding: 20px 0;
+    background: var(--ppv-card-glass);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--ppv-border-glass);
+    padding: 16px 0;
+    /* Ensure header is always accessible */
+    flex-shrink: 0;
 }
 
 .ppv-header-content {
@@ -130,12 +166,13 @@
    HERO SECTION
    ============================================ */
 .ppv-hero-section {
-    flex: 1;
+    flex: 1 0 auto;
     position: relative;
     display: flex;
-    align-items: center;
-    padding: 60px 0;
-    overflow: hidden;
+    align-items: flex-start;
+    padding: 40px 0 60px;
+    /* Allow content to expand and scroll */
+    min-height: 0;
 }
 
 /* Animated Background */
@@ -213,16 +250,19 @@
 }
 
 .ppv-feature-card {
-    background: var(--ppv-card);
-    border: 1px solid var(--ppv-border);
+    background: var(--ppv-card-glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--ppv-border-glass);
     border-radius: var(--radius);
     padding: 28px 24px;
     transition: var(--transition);
 }
 
 .ppv-feature-card:hover {
-    border-color: var(--pp-primary-light);
-    box-shadow: var(--shadow-md);
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(0, 102, 255, 0.2);
+    box-shadow: var(--shadow-glass);
     transform: translateY(-4px);
 }
 
@@ -258,19 +298,21 @@
 }
 
 /* ============================================
-   LOGIN CARD
+   LOGIN CARD - Glassmorphism
    ============================================ */
 .ppv-login-section {
-    position: sticky;
-    top: 20px;
+    position: relative;
     animation: slideIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .ppv-login-card {
-    background: var(--ppv-card);
+    background: var(--ppv-card-glass);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border-radius: var(--radius);
-    box-shadow: var(--shadow-lg);
-    padding: 24px;
+    border: 1px solid var(--ppv-border-glass);
+    box-shadow: var(--shadow-glass);
+    padding: 28px;
 }
 
 .ppv-login-welcome {
@@ -306,7 +348,7 @@
     align-items: center;
     justify-content: center;
     gap: 10px;
-    padding: 12px 16px;
+    padding: 14px 16px;
     border: none;
     border-radius: var(--radius-sm);
     font-size: 14px;
@@ -315,11 +357,18 @@
     transition: var(--transition);
     box-shadow: var(--shadow-sm);
     font-family: inherit;
+    /* Better touch targets for mobile */
+    min-height: 48px;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .ppv-social-btn:hover:not(:disabled) {
     box-shadow: var(--shadow-md);
     transform: translateY(-2px);
+}
+
+.ppv-social-btn:active:not(:disabled) {
+    transform: scale(0.98);
 }
 
 .ppv-social-btn:active {
@@ -432,21 +481,25 @@
 .ppv-form-group input[type="password"],
 .ppv-form-group input[type="text"] {
     width: 100%;
-    padding: 11px 16px;
-    background: var(--ppv-bg);
+    padding: 14px 16px;
+    background: rgba(248, 249, 251, 0.8);
     border: 1.5px solid var(--ppv-border);
     border-radius: var(--radius-sm);
-    font-size: 15px;
+    font-size: 16px; /* Prevents iOS zoom on focus */
     color: var(--ppv-text);
     transition: var(--transition);
     font-family: inherit;
+    /* Better touch targets */
+    min-height: 52px;
+    -webkit-appearance: none;
+    appearance: none;
 }
 
 .ppv-form-group input:focus {
     outline: none;
     background: var(--ppv-card);
     border-color: var(--pp-primary);
-    box-shadow: 0 0 0 3px var(--pp-primary-light);
+    box-shadow: 0 0 0 4px rgba(0, 102, 255, 0.15);
 }
 
 .ppv-form-group input::placeholder {
@@ -537,32 +590,35 @@
    ============================================ */
 .ppv-submit-btn {
     width: 100%;
-    padding: 12px 24px;
-    background: var(--pp-primary);
+    padding: 14px 24px;
+    background: linear-gradient(135deg, var(--pp-primary) 0%, #0052CC 100%);
     color: white;
     border: none;
     border-radius: var(--radius-sm);
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 600;
     cursor: pointer;
     transition: var(--transition);
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 4px 14px rgba(0, 102, 255, 0.35);
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    margin-top: 4px;
+    margin-top: 8px;
     font-family: inherit;
+    /* Better touch targets for mobile */
+    min-height: 52px;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .ppv-submit-btn:hover:not(:disabled) {
-    background: var(--pp-primary-hover);
-    box-shadow: var(--shadow-md);
-    transform: translateY(-1px);
+    background: linear-gradient(135deg, #0052CC 0%, #003d99 100%);
+    box-shadow: 0 6px 20px rgba(0, 102, 255, 0.45);
+    transform: translateY(-2px);
 }
 
-.ppv-submit-btn:active {
-    transform: translateY(0);
+.ppv-submit-btn:active:not(:disabled) {
+    transform: scale(0.98);
 }
 
 .ppv-submit-btn:disabled {
@@ -627,17 +683,22 @@
 }
 
 /* ============================================
-   FOOTER
+   FOOTER - Glassmorphism
    ============================================ */
 .ppv-landing-footer {
     position: relative;
     z-index: 10;
-    background: var(--ppv-card);
-    border-top: 1px solid var(--ppv-border);
+    background: var(--ppv-card-glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid var(--ppv-border-glass);
     padding: 24px;
     text-align: center;
     color: var(--ppv-text-muted);
     font-size: 13px;
+    /* Ensure footer stays at bottom */
+    flex-shrink: 0;
+    margin-top: auto;
 }
 
 .ppv-landing-footer p {
@@ -678,25 +739,103 @@
 }
 
 @media (max-width: 640px) {
+    .ppv-landing-container {
+        /* Extra padding for mobile safe areas */
+        padding-top: max(16px, var(--safe-area-top));
+        padding-bottom: max(16px, var(--safe-area-bottom));
+    }
+
+    .ppv-landing-header {
+        padding: 12px 0;
+    }
+
     .ppv-header-content {
         flex-direction: column;
         text-align: center;
+        gap: 10px;
+        padding: 0 16px;
+    }
+
+    .ppv-logo {
+        width: 60px;
+        height: 60px;
+    }
+
+    .ppv-logo-section h1 {
+        font-size: 20px;
+    }
+
+    .ppv-slogan {
+        font-size: 13px;
+        display: none; /* Hide on very small screens */
+    }
+
+    .ppv-lang-switcher {
+        margin-top: 4px;
+    }
+
+    .ppv-hero-section {
+        padding: 24px 0 40px;
+    }
+
+    .ppv-hero-content {
+        padding: 0 16px;
+        gap: 32px;
+    }
+
+    .ppv-features-grid {
+        grid-template-columns: 1fr;
         gap: 12px;
     }
 
-    .ppv-slogan { font-size: 14px; }
-    .ppv-lang-switcher { margin-top: 8px; }
-    .ppv-hero-section { padding: 40px 0; }
-    .ppv-features-grid { grid-template-columns: 1fr; gap: 16px; }
-    .ppv-social-login-grid { grid-template-columns: 1fr; gap: 10px; }
-    .ppv-login-card { padding: 28px 24px; }
-    .ppv-login-welcome h2 { font-size: 18px; }
+    .ppv-feature-card {
+        padding: 20px 16px;
+    }
 
-    .ppv-form-group input,
-    .ppv-social-btn,
+    .ppv-social-login-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .ppv-login-card {
+        padding: 24px 20px;
+    }
+
+    .ppv-login-welcome h2 {
+        font-size: 18px;
+    }
+
+    .ppv-form-group input[type="email"],
+    .ppv-form-group input[type="password"],
+    .ppv-form-group input[type="text"] {
+        padding: 14px 16px;
+        font-size: 16px; /* Prevents iOS zoom on focus */
+    }
+
+    .ppv-social-btn {
+        padding: 14px 16px;
+        font-size: 15px;
+    }
+
     .ppv-submit-btn {
-        padding: 11px 16px;
-        font-size: 14px;
+        padding: 16px 24px;
+        font-size: 16px;
+    }
+
+    .ppv-landing-footer {
+        padding: 20px 16px;
+        padding-bottom: max(20px, calc(var(--safe-area-bottom) + 16px));
+    }
+}
+
+/* Extra small devices */
+@media (max-width: 375px) {
+    .ppv-login-card {
+        padding: 20px 16px;
+    }
+
+    .ppv-logo-section h1 {
+        font-size: 18px;
     }
 }
 
@@ -717,4 +856,53 @@
 .ppv-register-link a:focus-visible {
     outline: 2px solid var(--pp-primary);
     outline-offset: 2px;
+}
+
+/* ============================================
+   IOS / PWA / APP SCROLL FIX
+   ============================================ */
+/* Fix for iOS Safari and WebView scroll bounce */
+@supports (-webkit-touch-callout: none) {
+    .ppv-landing-container {
+        /* iOS specific: ensure proper scroll behavior */
+        height: -webkit-fill-available;
+        min-height: -webkit-fill-available;
+    }
+}
+
+/* PWA standalone mode fixes */
+@media all and (display-mode: standalone) {
+    .ppv-landing-container {
+        /* Extra top padding for status bar in PWA */
+        padding-top: max(20px, var(--safe-area-top));
+    }
+
+    .ppv-landing-header {
+        /* Adjust sticky position for PWA */
+        top: var(--safe-area-top);
+    }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+    .ppv-social-btn,
+    .ppv-submit-btn,
+    .ppv-lang-btn {
+        /* Larger touch targets */
+        min-height: 48px;
+    }
+
+    .ppv-feature-card:hover {
+        /* Disable hover effects on touch */
+        transform: none;
+        box-shadow: var(--shadow-sm);
+    }
+}
+
+/* Ensure scroll-to-top works */
+.ppv-landing-container::before {
+    content: '';
+    display: block;
+    height: 0;
+    width: 100%;
 }
