@@ -964,12 +964,12 @@ if (!empty($store->gallery)) {
                         this.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Wird aktiviert...';
 
                         jQuery.ajax({
-                            url: ppProfileLite.ajaxurl,
+                            url: ppv_profile.ajaxUrl,
                             type: 'POST',
                             data: {
                                 action: 'ppv_activate_referral_grace_period',
                                 store_id: window.ppvWhatsAppStoreId,
-                                nonce: ppProfileLite.nonce
+                                nonce: ppv_profile.nonce
                             },
                             success: function(res) {
                                 if (res.success) {
