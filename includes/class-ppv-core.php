@@ -204,6 +204,21 @@ class PPV_Core {
 
             update_option('ppv_db_migration_version', '1.7');
         }
+
+        // Migration 1.8: Add language column to ppv_users for user language preference
+        if (version_compare($migration_version, '1.8', '<')) {
+            $users_table = $wpdb->prefix . 'ppv_users';
+
+            // Check if language column exists
+            $lang_col = $wpdb->get_results("SHOW COLUMNS FROM {$users_table} LIKE 'language'");
+
+            if (empty($lang_col)) {
+                $wpdb->query("ALTER TABLE {$users_table} ADD COLUMN language VARCHAR(5) DEFAULT 'de' COMMENT 'User language preference (de/hu/ro)' AFTER email");
+                ppv_log("✅ [PPV_Core] Added 'language' column to ppv_users table");
+            }
+
+            update_option('ppv_db_migration_version', '1.8');
+        }
     }
 
     public static function init_session_bridge() {
