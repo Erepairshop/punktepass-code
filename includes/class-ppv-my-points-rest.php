@@ -237,6 +237,9 @@ if (class_exists('PPV_Lang')) {
                 ppv_log("🏆 [PPV_MyPoints_REST] Tier info: level=" . ($data['tier']['level'] ?? 'unknown') . ", progress=" . ($data['tier']['progress'] ?? 0) . "%");
             }
 
+            // 🎁 REFERRAL PROGRAM DATA
+            $data['referral'] = self::get_user_referral_data($user_id, $lang);
+
             // ✅ REMOVED duplicate lang load - lang is already loaded at line 103-112
 
             // 🔹 Nyelvi kulcsok a Dashboard mintájára
@@ -264,6 +267,134 @@ if (class_exists('PPV_Lang')) {
             ppv_log("❌ [PPV_MYPOINTS_REST] ERROR: " . $e->getMessage());
             return rest_ensure_response(['error' => 'db_error', 'message' => $e->getMessage()]);
         }
+    }
+
+    /**
+     * 🎁 Get user referral program data
+     * Returns referral code, stores with referral enabled, and stats
+     */
+    private static function get_user_referral_data($user_id, $lang = 'de') {
+        global $wpdb;
+
+        $stores_table = $wpdb->prefix . 'ppv_stores';
+        $points_table = $wpdb->prefix . 'ppv_points';
+        $referrals_table = $wpdb->prefix . 'ppv_referrals';
+        $codes_table = $wpdb->prefix . 'ppv_user_referral_codes';
+
+        $result = [
+            'enabled' => false,
+            'code' => null,
+            'stores' => [],
+            'total_referrals' => 0,
+            'successful_referrals' => 0,
+        ];
+
+        // Check if referral tables exist
+        $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$codes_table}'");
+        if (!$table_exists) {
+            ppv_log("⚠️ [PPV_MyPoints_REST] Referral tables not yet created");
+            return $result;
+        }
+
+        // Get or create user's referral code
+        $user_code = $wpdb->get_var($wpdb->prepare(
+            "SELECT referral_code FROM {$codes_table} WHERE user_id = %d",
+            $user_id
+        ));
+
+        if (!$user_code) {
+            // Generate unique 8-char code
+            $user_code = strtoupper(substr(md5($user_id . time() . wp_rand()), 0, 8));
+            $wpdb->insert($codes_table, [
+                'user_id' => $user_id,
+                'referral_code' => $user_code,
+                'created_at' => current_time('mysql')
+            ]);
+            ppv_log("🎁 [PPV_MyPoints_REST] Created referral code for user {$user_id}: {$user_code}");
+        }
+
+        $result['code'] = $user_code;
+
+        // Get stores where:
+        // 1. User has points (is a customer)
+        // 2. Referral is enabled
+        // 3. Grace period has passed (referral_activated_at + grace_days < now)
+        $stores = $wpdb->get_results($wpdb->prepare("
+            SELECT DISTINCT
+                s.id,
+                s.name,
+                s.store_key,
+                s.referral_enabled,
+                s.referral_activated_at,
+                s.referral_grace_days,
+                s.referral_reward_type,
+                s.referral_reward_value,
+                s.referral_reward_gift,
+                COALESCE(SUM(p.points), 0) as user_points
+            FROM {$stores_table} s
+            INNER JOIN {$points_table} p ON p.store_id = s.id AND p.user_id = %d
+            WHERE s.referral_enabled = 1
+              AND s.referral_activated_at IS NOT NULL
+              AND DATEDIFF(NOW(), s.referral_activated_at) >= s.referral_grace_days
+            GROUP BY s.id
+            ORDER BY user_points DESC
+        ", $user_id));
+
+        if (!empty($stores)) {
+            $result['enabled'] = true;
+
+            foreach ($stores as $store) {
+                // Get referral stats for this store
+                $stats = $wpdb->get_row($wpdb->prepare("
+                    SELECT
+                        COUNT(*) as total,
+                        SUM(CASE WHEN status IN ('completed', 'approved') THEN 1 ELSE 0 END) as successful,
+                        SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending
+                    FROM {$referrals_table}
+                    WHERE referrer_user_id = %d AND store_id = %d
+                ", $user_id, $store->id));
+
+                // Build share URL
+                $share_url = home_url("/r/{$user_code}/{$store->store_key}");
+
+                // Reward text based on type
+                $reward_text = '';
+                switch ($store->referral_reward_type) {
+                    case 'points':
+                        $reward_text = $store->referral_reward_value . ' ' . ($lang === 'de' ? 'Punkte' : ($lang === 'hu' ? 'pont' : 'puncte'));
+                        break;
+                    case 'euro':
+                        $reward_text = $store->referral_reward_value . '€ ' . ($lang === 'de' ? 'Rabatt' : ($lang === 'hu' ? 'kedvezmény' : 'reducere'));
+                        break;
+                    case 'gift':
+                        $reward_text = $store->referral_reward_gift ?: ($lang === 'de' ? 'Geschenk' : ($lang === 'hu' ? 'ajándék' : 'cadou'));
+                        break;
+                }
+
+                $result['stores'][] = [
+                    'id' => (int) $store->id,
+                    'name' => $store->name,
+                    'store_key' => $store->store_key,
+                    'reward_type' => $store->referral_reward_type,
+                    'reward_value' => (int) $store->referral_reward_value,
+                    'reward_text' => $reward_text,
+                    'share_url' => $share_url,
+                    'stats' => [
+                        'total' => (int) ($stats->total ?? 0),
+                        'successful' => (int) ($stats->successful ?? 0),
+                        'pending' => (int) ($stats->pending ?? 0),
+                    ],
+                    'user_points' => (int) $store->user_points,
+                ];
+
+                $result['total_referrals'] += (int) ($stats->total ?? 0);
+                $result['successful_referrals'] += (int) ($stats->successful ?? 0);
+            }
+
+            ppv_log("🎁 [PPV_MyPoints_REST] Referral data: " . count($result['stores']) . " stores, code={$user_code}");
+        }
+
+        return $result;
     }
 }
 
