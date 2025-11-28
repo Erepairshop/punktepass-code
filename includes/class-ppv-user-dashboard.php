@@ -370,19 +370,23 @@ private static function get_today_hours($opening_hours) {
             }
         }
 
-        // 3️⃣ If NOT logged in but on a user page → Show session expired header
+        // 3️⃣ If NOT logged in → Show session expired header on ALL protected pages
         if ($uid <= 0) {
-            $user_pages = ['/user_dashboard', '/meine-punkte', '/belohnungen', '/einstellungen', '/punkte'];
-            $is_user_page = false;
-            foreach ($user_pages as $page) {
-                if (strpos($uri, $page) !== false) {
-                    $is_user_page = true;
+            // Public pages that don't need login header
+            $public_pages = ['/', '/impressum', '/datenschutz', '/agb', '/kontakt', '/about', '/home', '/partner'];
+            $is_public = false;
+            $clean_uri = rtrim(parse_url($uri, PHP_URL_PATH), '/');
+            if (empty($clean_uri)) $clean_uri = '/';
+
+            foreach ($public_pages as $page) {
+                if ($clean_uri === $page) {
+                    $is_public = true;
                     break;
                 }
             }
 
-            if ($is_user_page) {
-                // Render session expired header with login button
+            // Show session expired header on all non-public pages
+            if (!$is_public) {
                 $login_url = home_url('/login');
                 ?>
                 <div class="ppv-global-header ppv-session-expired">
@@ -403,6 +407,11 @@ private static function get_today_hours($opening_hours) {
                 </div>
                 <style>
                 .ppv-session-expired {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    z-index: 99999;
                     background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
                     border-bottom: 1px solid #F59E0B;
                     padding: 12px 16px;
@@ -447,6 +456,9 @@ private static function get_today_hours($opening_hours) {
                 }
                 .ppv-login-btn i {
                     font-size: 16px;
+                }
+                body {
+                    padding-top: calc(56px + env(safe-area-inset-top, 0px)) !important;
                 }
                 </style>
                 <?php
