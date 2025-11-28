@@ -1503,6 +1503,13 @@ return [
     'google_review_step1' => 'Când un client atinge pragul de puncte setat, primește automat un mesaj WhatsApp sau e-mail cu cerere de recenzie Google.',
     'google_review_step2' => 'Clientul face clic pe link și este redirecționat direct către pagina ta de recenzii Google.',
     'google_review_step3' => 'La următoarea scanare QR, clientul primește automat punctele bonus setate ca mulțumire.',
+
+    // Referral Program - Cum funcționează
+    'referral_how_it_works' => 'Cum funcționează',
+    'referral_step1' => 'Un client distribuie linkul sau codul QR personal de recomandare prietenilor și familiei.',
+    'referral_step2' => 'Noul client recomandat se înregistrează prin link și începe să colecteze primele puncte.',
+    'referral_step3' => 'Ambii primesc automat recompensa setată - atât cel care recomandă, cât și cel recomandat.',
+
     'frequency_once' => 'O singură dată',
     'frequency_monthly' => 'Lunar',
     'frequency_quarterly' => 'Trimestrial',

@@ -1515,6 +1515,13 @@ return [
     'google_review_step1' => 'Wenn ein Kunde den Punkte-Schwellenwert erreicht, erhält er automatisch eine WhatsApp- oder E-Mail-Nachricht mit der Bitte um eine Google-Bewertung.',
     'google_review_step2' => 'Der Kunde klickt auf den Link und wird direkt zu Ihrer Google-Bewertungsseite weitergeleitet.',
     'google_review_step3' => 'Beim nächsten QR-Scan erhält der Kunde automatisch die eingestellten Bonus-Punkte als Dankeschön.',
+
+    // Referral Program - How it works
+    'referral_how_it_works' => 'So funktioniert\'s',
+    'referral_step1' => 'Ein Kunde teilt seinen persönlichen Empfehlungslink oder QR-Code mit Freunden und Familie.',
+    'referral_step2' => 'Der geworbene Neukunde registriert sich über den Link und sammelt seine ersten Punkte.',
+    'referral_step3' => 'Beide erhalten automatisch die eingestellte Belohnung - der Werber und der Geworbene.',
+
     'frequency_once' => 'Einmalig',
     'frequency_monthly' => 'Monatlich',
     'frequency_quarterly' => 'Vierteljährlich',

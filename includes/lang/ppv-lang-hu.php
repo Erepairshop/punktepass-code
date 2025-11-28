@@ -1492,6 +1492,13 @@ return [
     'google_review_step1' => 'Amikor egy vendég eléri a beállított pontküszöböt, automatikusan WhatsApp vagy e-mail üzenetet kap Google értékelés kéréssel.',
     'google_review_step2' => 'A vendég a linkre kattintva közvetlenül a Google értékelő oldaladra kerül.',
     'google_review_step3' => 'A következő QR-kód beolvasáskor a vendég automatikusan megkapja a beállított bónusz pontokat köszönetképpen.',
+
+    // Referral Program - Így működik
+    'referral_how_it_works' => 'Így működik',
+    'referral_step1' => 'A vendég megosztja személyes ajánló linkjét vagy QR-kódját barátaival és családjával.',
+    'referral_step2' => 'Az ajánlott új vendég regisztrál a linken keresztül és elkezdi gyűjteni az első pontjait.',
+    'referral_step3' => 'Mindketten automatikusan megkapják a beállított jutalmat - az ajánló és az ajánlott is.',
+
     'frequency_once' => 'Egyszer',
     'frequency_monthly' => 'Havonta',
     'frequency_quarterly' => 'Negyedévente',
