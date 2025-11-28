@@ -141,23 +141,4 @@ jQuery(document).ready(function ($) {
   window.addEventListener('popstate', function() {
     setTimeout(updateActiveNav, 100);
   });
-
-  // 🍎 Safari bfcache fix - prevent double render
-  if (isSafari) {
-    window.addEventListener('pageshow', function(event) {
-      if (event.persisted) {
-        // Page restored from Safari bfcache - skip any re-render
-        window.PPV_NAV_STATE.isNavigating = false;
-        updateActiveNav();
-      }
-    });
-
-    // Prevent Turbo from re-rendering on Safari restore
-    document.addEventListener('turbo:before-render', function(event) {
-      if (window.PPV_SAFARI_RESTORED) {
-        event.preventDefault();
-        window.PPV_SAFARI_RESTORED = false;
-      }
-    });
-  }
 });
