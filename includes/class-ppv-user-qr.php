@@ -35,7 +35,7 @@ class PPV_User_QR {
         if (!$user) return ['error' => 'user_not_found'];
         return [
             'qr_value' => "PPUSER-{$user->id}-{$user->qr_token}",
-            'qr_url'   => 'https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=' . urlencode("PPUSER-{$user->id}-{$user->qr_token}")
+            'qr_url'   => 'https://api.qrserver.com/v1/create-qr-code/?size=364x364&data=' . urlencode("PPUSER-{$user->id}-{$user->qr_token}")
         ];
     }
 
@@ -68,7 +68,7 @@ class PPV_User_QR {
         // Ha van érvényes timed token, visszaadjuk
         if (!empty($user->timed_qr_token) && $expires_at > $now) {
             $qr_value = "PPQR-{$user->id}-{$user->timed_qr_token}";
-            $qr_url = 'https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=' . urlencode($qr_value);
+            $qr_url = 'https://api.qrserver.com/v1/create-qr-code/?size=364x364&data=' . urlencode($qr_value);
 
             return new WP_REST_Response([
                 'qr_value'   => $qr_value,
@@ -95,7 +95,7 @@ class PPV_User_QR {
         );
 
         $qr_value = "PPQR-{$user->id}-{$new_token}";
-        $qr_url = 'https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=' . urlencode($qr_value);
+        $qr_url = 'https://api.qrserver.com/v1/create-qr-code/?size=364x364&data=' . urlencode($qr_value);
 
         return new WP_REST_Response([
             'qr_value'   => $qr_value,

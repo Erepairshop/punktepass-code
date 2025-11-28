@@ -852,14 +852,14 @@ button .ri-loader-4-line,
     font-size: 20px;
 }
 
-/* QR Image Container - Smaller for mobile */
+/* QR Image Container - 30% larger display */
 .ppv-user-qr img {
-    width: 180px;
-    height: 180px;
+    width: 234px;
+    height: 234px;
     object-fit: contain;
     border: 2px solid var(--pp-primary);
     background: #ffffff;
-    padding: 8px;
+    padding: 10px;
     border-radius: var(--pp-r-md);
     margin: 0 auto 16px;
     display: block;
@@ -890,9 +890,9 @@ button .ri-loader-4-line,
     }
 
     .ppv-user-qr img {
-        width: 150px;
-        height: 150px;
-        padding: 6px;
+        width: 195px;
+        height: 195px;
+        padding: 8px;
     }
 
     .ppv-user-qr h3,

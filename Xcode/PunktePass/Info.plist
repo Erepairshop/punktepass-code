@@ -98,7 +98,15 @@
 	<true/>
 	<key>WKAppBoundDomains</key>
 	<array>
-		<string>punktepass.de/?pwa=1</string>
+		<string>punktepass.de</string>
+		<string>accounts.google.com</string>
+		<string>www.facebook.com</string>
+		<string>connect.facebook.net</string>
+		<string>m.facebook.com</string>
+		<string>www.tiktok.com</string>
+		<string>appleid.apple.com</string>
+		<string>maps.google.com</string>
+		<string>www.google.com</string>
 	</array>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
