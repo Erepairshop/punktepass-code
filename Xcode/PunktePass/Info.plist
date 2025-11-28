@@ -3,11 +3,11 @@
 <plist version="1.0">
 <dict>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Capture Audio by user request</string>
+	<string>PunktePass benötigt Zugriff auf Ihr Mikrofon, um Sprachnachrichten aufzunehmen, wenn Sie den Kundensupport kontaktieren möchten.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Track current location by user request</string>
+	<string>PunktePass verwendet Ihren Standort, um Geschäfte in Ihrer Nähe anzuzeigen und Ihnen die nächstgelegenen Einlösemöglichkeiten für Ihre Punkte zu zeigen.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Capture Video by user request</string>
+	<string>PunktePass benötigt Zugriff auf Ihre Kamera, um QR-Codes zu scannen und Punkte zu sammeln oder einzulösen. Außerdem können Sie damit Ihr Profilbild aufnehmen.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
