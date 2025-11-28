@@ -38,8 +38,34 @@ class PPV_Login {
         }
 
         ?>
-        <!-- Google Fonts -->
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+        <!-- ⚡ PERFORMANCE: Preconnect to external domains -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="preconnect" href="https://accounts.google.com" crossorigin>
+
+        <!-- ⚡ PERFORMANCE: Preload critical assets -->
+        <link rel="preload" href="<?php echo PPV_PLUGIN_URL; ?>assets/img/logo.webp" as="image" type="image/webp">
+
+        <!-- ⚡ PERFORMANCE: Inline Critical CSS for instant first paint -->
+        <style id="ppv-critical-css">
+            :root{--pp-primary:#0066FF;--ppv-bg:#F8F9FB;--ppv-card-glass:rgba(255,255,255,0.85);--ppv-text:#1A1A1A;--ppv-border-glass:rgba(255,255,255,0.3);--safe-area-top:env(safe-area-inset-top,0px)}
+            html,body{margin:0;padding:0;overflow:hidden;height:100%;width:100%;position:fixed;background:linear-gradient(135deg,#F8F9FB 0%,#E6F0FF 100%)}
+            .ppv-landing-container{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;height:100%;height:100dvh;display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:none}
+            .ppv-landing-header{position:sticky;top:0;z-index:100;background:var(--ppv-card-glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--ppv-border-glass);padding:10px 0;padding-top:calc(10px + var(--safe-area-top));flex-shrink:0}
+            .ppv-header-content{max-width:1200px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;gap:24px}
+            .ppv-logo-section{display:flex;align-items:center;gap:12px}
+            .ppv-logo{width:48px;height:48px;object-fit:contain}
+            .ppv-logo-section h1{font-size:20px;font-weight:700;color:var(--ppv-text);margin:0}
+            .ppv-lang-switcher{display:flex;gap:4px;background:var(--ppv-bg);border:1px solid #E5E7EB;border-radius:8px;padding:4px}
+            .ppv-lang-btn{padding:6px 12px;background:transparent;border:none;border-radius:6px;font-size:13px;font-weight:600;color:#6B7280;cursor:pointer}
+            .ppv-lang-btn.active{background:var(--pp-primary);color:white}
+            .ppv-login-card{background:var(--ppv-card-glass);backdrop-filter:blur(20px);border-radius:16px;border:1px solid var(--ppv-border-glass);padding:28px}
+            @media(max-width:640px){.ppv-landing-header{padding:8px 0;padding-top:calc(8px + var(--safe-area-top))}.ppv-header-content{gap:8px;padding:0 12px}.ppv-logo{width:36px;height:36px}.ppv-logo-section{gap:8px}.ppv-logo-section h1{font-size:16px}.ppv-lang-switcher{padding:2px}.ppv-lang-btn{padding:4px 8px;font-size:12px}}
+        </style>
+
+        <!-- Google Fonts - async loading to not block render -->
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'">
+        <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"></noscript>
 
         <!-- Login CSS - Fresh with cache-busting -->
         <link rel="stylesheet" href="<?php echo PPV_PLUGIN_URL; ?>assets/css/ppv-login-light.css?ver=<?php echo time(); ?>" type="text/css" media="all" id="ppv-login-main-css">
