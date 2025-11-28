@@ -1537,5 +1537,51 @@ return [
     // Marketing Tips
     'marketing_tip_title' => 'Tipp',
     'marketing_tip_text' => 'Google Bewertungen verbessern Ihre Online-Sichtbarkeit und ziehen neue Kunden an. Aktivieren Sie diese Funktion, um automatisch um Bewertungen zu bitten.',
+
+    // ============================================================
+    // REFERRAL / FREUNDE EINLADEN
+    // ============================================================
+    'referral_section_title' => 'Freunde einladen',
+    'referral_section_subtitle' => 'Empfehle Freunde und sammelt beide Bonuspunkte!',
+    'referral_your_code' => 'Dein Einladungscode',
+    'referral_reward_points' => '%d Punkte für dich & deinen Freund',
+    'referral_reward_gift' => 'Geschenk: %s',
+    'referral_share_whatsapp' => 'WhatsApp',
+    'referral_copy_link' => 'Link kopieren',
+    'referral_copied' => 'Kopiert!',
+    'referral_stats_title' => 'Deine Empfehlungen',
+    'referral_successful' => 'Erfolgreich',
+    'referral_pending' => 'Ausstehend',
+    'referral_no_invites' => 'Noch keine Einladungen',
+    'referral_welcome_title' => 'Du wurdest eingeladen!',
+    'referral_welcome_desc' => 'Melde dich an und erhalte Bonuspunkte bei %s',
+    'referral_whatsapp_text' => 'Hey! Hol dir Punkte bei %s! Nutze meinen Einladungslink: %s',
+    'referral_share_invite' => 'Einladung teilen',
+    'referral_no_stores' => 'Derzeit kein Empfehlungsprogramm aktiv',
+
+    // Admin/Handler - Referral Program Settings
+    'referral_admin_title' => 'Referral Program',
+    'referral_admin_not_started' => 'Nicht gestartet',
+    'referral_admin_active' => 'Aktiv',
+    'referral_admin_start_title' => 'Referral Program starten',
+    'referral_admin_start_desc' => 'Nach der Aktivierung beginnt eine %d-tägige Sammelphase. In dieser Zeit werden alle bestehenden Kunden erfasst, damit nur echte Neukunden als Referrals zählen.',
+    'referral_admin_start_btn' => 'Jetzt starten',
+    'referral_admin_grace_title' => 'Sammelphase läuft',
+    'referral_admin_grace_remaining' => 'Noch %d Tage bis das Referral Program aktiviert werden kann.',
+    'referral_admin_grace_desc' => 'In dieser Zeit werden bestehende Kunden erfasst.',
+    'referral_admin_grace_days' => 'Sammeltage anpassen',
+    'referral_admin_reward_type' => 'Belohnungs-Typ',
+    'referral_admin_reward_points' => 'Punkte',
+    'referral_admin_reward_euro' => 'Euro',
+    'referral_admin_reward_gift' => 'Geschenk',
+    'referral_admin_points_value' => 'Punkte pro Empfehlung',
+    'referral_admin_euro_value' => 'Euro Rabatt',
+    'referral_admin_gift_value' => 'Geschenk-Beschreibung',
+    'referral_admin_gift_placeholder' => 'z.B. Gratis Kaffee, 1x Dessert...',
+    'referral_admin_manual_approval' => 'Manuelle Freigabe',
+    'referral_admin_manual_desc' => 'Jeden neuen Referral vor der Belohnung prüfen',
+    'referral_admin_stats' => 'Referral Statistik',
+    'referral_admin_total' => 'Gesamt',
+    'referral_admin_rejected' => 'Abgelehnt',
 ];
 

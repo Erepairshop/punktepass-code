@@ -779,53 +779,55 @@
       return '';
     }
 
-    // Referral labels
-    const labels = {
+    // Use translations from ppv_lang (l) with fallbacks
+    const fallbacks = {
       de: {
         title: 'Freunde einladen',
-        subtitle: 'Lade Freunde ein und erhalte Belohnungen!',
-        your_code: 'Dein Code',
-        reward: 'Belohnung',
-        share: 'Teilen',
+        subtitle: 'Empfehle Freunde und sammelt beide Bonuspunkte!',
+        your_code: 'Dein Einladungscode',
         copy: 'Link kopieren',
         copied: 'Kopiert!',
         whatsapp: 'WhatsApp',
-        stats: 'Deine Einladungen',
         successful: 'Erfolgreich',
         pending: 'Ausstehend',
         no_referrals_yet: 'Noch keine Einladungen',
       },
       hu: {
         title: 'Barátok meghívása',
-        subtitle: 'Hívd meg barátaidat és kapj jutalmakat!',
-        your_code: 'A te kódod',
-        reward: 'Jutalom',
-        share: 'Megosztás',
+        subtitle: 'Hívd meg barátaidat és mindketten bónuszpontokat kaptok!',
+        your_code: 'A meghívó kódod',
         copy: 'Link másolása',
         copied: 'Másolva!',
         whatsapp: 'WhatsApp',
-        stats: 'A te meghívásaid',
         successful: 'Sikeres',
         pending: 'Függőben',
-        no_referrals_yet: 'Még nincs meghívás',
+        no_referrals_yet: 'Még nincsenek meghívások',
       },
       ro: {
         title: 'Invită prieteni',
-        subtitle: 'Invită-ți prietenii și primește recompense!',
-        your_code: 'Codul tău',
-        reward: 'Recompensă',
-        share: 'Distribuie',
+        subtitle: 'Invită-ți prietenii și amândoi primiți puncte bonus!',
+        your_code: 'Codul tău de invitație',
         copy: 'Copiază link',
         copied: 'Copiat!',
         whatsapp: 'WhatsApp',
-        stats: 'Invitațiile tale',
-        successful: 'Reușite',
+        successful: 'Reușit',
         pending: 'În așteptare',
         no_referrals_yet: 'Încă nu ai invitații',
       }
     };
 
-    const t = labels[lang] || labels.de;
+    const fb = fallbacks[lang] || fallbacks.de;
+    const t = {
+      title: l.referral_section_title || fb.title,
+      subtitle: l.referral_section_subtitle || fb.subtitle,
+      your_code: l.referral_your_code || fb.your_code,
+      copy: l.referral_copy_link || fb.copy,
+      copied: l.referral_copied || fb.copied,
+      whatsapp: l.referral_share_whatsapp || fb.whatsapp,
+      successful: l.referral_successful || fb.successful,
+      pending: l.referral_pending || fb.pending,
+      no_referrals_yet: l.referral_no_invites || fb.no_referrals_yet,
+    };
 
     // Build store cards
     let storeCardsHtml = '';
