@@ -1545,6 +1545,43 @@ return [
     'marketing_tip_text' => 'Google Bewertungen verbessern Ihre Online-Sichtbarkeit und ziehen neue Kunden an. Aktivieren Sie diese Funktion, um automatisch um Bewertungen zu bitten.',
 
     // ============================================================
+    // STATISTIKEN SEITE
+    // ============================================================
+    'overview' => 'Übersicht',
+    'advanced' => 'Erweitert',
+    'scanner_stats' => 'Mitarbeiter',
+    'suspicious_scans' => 'Verdächtige Scans',
+    'employee_scans' => 'Mitarbeiter Scans',
+    'employee_scans_desc' => 'Übersicht welcher Mitarbeiter wie viele Scans durchgeführt hat.',
+    'total_scanners' => 'Scanner gesamt',
+    'tracked_scans' => 'Erfasste Scans',
+    'untracked_scans' => 'Ohne Scanner',
+    'no_scanner_data' => 'Noch keine Scanner-Daten vorhanden. Sobald Mitarbeiter Scans durchführen, erscheinen hier die Statistiken.',
+    'without_assignment' => 'Ohne Zuordnung',
+    'suspicious_desc' => 'Scans die aus verdächtiger Entfernung durchgeführt wurden.',
+    'status_new' => 'Neu',
+    'status_reviewed' => 'Überprüft',
+    'status_dismissed' => 'Abgewiesen',
+    'status_all' => 'Alle',
+    'no_suspicious_scans' => 'Keine verdächtigen Scans vorhanden.',
+    'loading' => 'Laden...',
+    'loading_data' => 'Daten werden geladen...',
+    'error_loading_data' => 'Fehler beim Laden der Daten',
+    'all_branches' => 'Alle Filialen',
+    'today' => 'Heute',
+    'this_week' => 'Diese Woche',
+    'this_month' => 'Diesen Monat',
+    'all_time' => 'Gesamt',
+    'export_csv' => 'CSV exportieren',
+    'weekly' => 'Wöchentlich',
+    'monthly' => 'Monatlich',
+    'total' => 'Gesamt',
+    'unique' => 'Einzigartig',
+    'top_5_users' => 'Top 5 Kunden',
+    'employee' => 'Mitarbeiter',
+    'untracked' => 'Ohne Zuordnung',
+
+    // ============================================================
     // REFERRAL / FREUNDE EINLADEN
     // ============================================================
     'referral_section_title' => 'Freunde einladen',

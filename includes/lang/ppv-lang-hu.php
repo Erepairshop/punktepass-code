@@ -1522,6 +1522,43 @@ return [
     'marketing_tip_text' => 'A Google értékelések javítják az online láthatóságodat és új vendégeket vonzanak. Aktiváld ezt a funkciót az automatikus értékelés kéréshez.',
 
     // ============================================================
+    // STATISZTIKÁK OLDAL
+    // ============================================================
+    'overview' => 'Áttekintés',
+    'advanced' => 'Részletes',
+    'scanner_stats' => 'Munkatársak',
+    'suspicious_scans' => 'Gyanús szkennelések',
+    'employee_scans' => 'Munkatársi szkennelések',
+    'employee_scans_desc' => 'Áttekintés arról, hogy melyik munkatárs hány szkennelést végzett.',
+    'total_scanners' => 'Összes szkenner',
+    'tracked_scans' => 'Rögzített szkennelések',
+    'untracked_scans' => 'Szkenner nélkül',
+    'no_scanner_data' => 'Még nincs szkenner adat. Amint a munkatársak szkenneléseket végeznek, itt megjelennek a statisztikák.',
+    'without_assignment' => 'Hozzárendelés nélkül',
+    'suspicious_desc' => 'Gyanús távolságból végzett szkennelések.',
+    'status_new' => 'Új',
+    'status_reviewed' => 'Ellenőrzött',
+    'status_dismissed' => 'Elutasított',
+    'status_all' => 'Összes',
+    'no_suspicious_scans' => 'Nincs gyanús szkennelés.',
+    'loading' => 'Betöltés...',
+    'loading_data' => 'Adatok betöltése...',
+    'error_loading_data' => 'Hiba az adatok betöltésekor',
+    'all_branches' => 'Összes fiók',
+    'today' => 'Ma',
+    'this_week' => 'Ezen a héten',
+    'this_month' => 'Ebben a hónapban',
+    'all_time' => 'Összesen',
+    'export_csv' => 'CSV exportálás',
+    'weekly' => 'Heti',
+    'monthly' => 'Havi',
+    'total' => 'Összes',
+    'unique' => 'Egyedi',
+    'top_5_users' => 'Top 5 felhasználó',
+    'employee' => 'Munkatárs',
+    'untracked' => 'Hozzárendelés nélkül',
+
+    // ============================================================
     // REFERRAL / BARÁTOK MEGHÍVÁSA
     // ============================================================
     'referral_section_title' => 'Barátok meghívása',

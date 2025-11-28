@@ -1533,6 +1533,43 @@ return [
     'marketing_tip_text' => 'Recenziile Google îmbunătățesc vizibilitatea online și atrag clienți noi. Activează această funcție pentru a cere automat recenzii.',
 
     // ============================================================
+    // PAGINA STATISTICI
+    // ============================================================
+    'overview' => 'Prezentare generală',
+    'advanced' => 'Avansat',
+    'scanner_stats' => 'Angajați',
+    'suspicious_scans' => 'Scanări suspecte',
+    'employee_scans' => 'Scanări angajați',
+    'employee_scans_desc' => 'Prezentare generală a câte scanări a efectuat fiecare angajat.',
+    'total_scanners' => 'Total scanere',
+    'tracked_scans' => 'Scanări înregistrate',
+    'untracked_scans' => 'Fără scaner',
+    'no_scanner_data' => 'Nu există încă date despre scanere. Când angajații vor efectua scanări, statisticile vor apărea aici.',
+    'without_assignment' => 'Fără atribuire',
+    'suspicious_desc' => 'Scanări efectuate de la distanță suspectă.',
+    'status_new' => 'Nou',
+    'status_reviewed' => 'Verificat',
+    'status_dismissed' => 'Respins',
+    'status_all' => 'Toate',
+    'no_suspicious_scans' => 'Nu există scanări suspecte.',
+    'loading' => 'Se încarcă...',
+    'loading_data' => 'Se încarcă datele...',
+    'error_loading_data' => 'Eroare la încărcarea datelor',
+    'all_branches' => 'Toate filialele',
+    'today' => 'Astăzi',
+    'this_week' => 'Săptămâna aceasta',
+    'this_month' => 'Luna aceasta',
+    'all_time' => 'Total',
+    'export_csv' => 'Exportă CSV',
+    'weekly' => 'Săptămânal',
+    'monthly' => 'Lunar',
+    'total' => 'Total',
+    'unique' => 'Unic',
+    'top_5_users' => 'Top 5 utilizatori',
+    'employee' => 'Angajat',
+    'untracked' => 'Fără atribuire',
+
+    // ============================================================
     // REFERRAL / INVITĂ PRIETENI
     // ============================================================
     'referral_section_title' => 'Invită prieteni',
