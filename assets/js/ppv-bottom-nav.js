@@ -66,8 +66,7 @@ jQuery(document).ready(function ($) {
 
   // Navigation click handler
   $(".ppv-bottom-nav .nav-item").on("click", function (e) {
-    // 📳 Haptic feedback on navigation
-    if (window.ppvHaptic) window.ppvHaptic('tap');
+    // 📳 Haptic feedback removed - pages handle their own feedback to avoid double vibration
 
     const href = $(this).attr("href");
     if (!href || href === '#') return;

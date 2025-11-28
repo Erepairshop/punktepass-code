@@ -47,6 +47,12 @@ class PPV_Bottom_Nav {
             return $tag;
         }, 10, 2);
 
+        // 🚀 Completely disable Turbo cache to prevent double-render
+        add_action('wp_head', function() {
+            echo '<meta name="turbo-cache-control" content="no-cache">' . "\n";
+            echo '<meta name="turbo-visit-control" content="reload">' . "\n";
+        }, 1);
+
         wp_enqueue_style(
             'ppv-bottom-nav',
             plugins_url('assets/css/ppv-bottom-nav.css', dirname(__FILE__)),

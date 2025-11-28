@@ -6443,157 +6443,308 @@ body.ppv-dark .ppv-mypoints-tab.active {
 }
 
 /* ==========================================================================
-   PunktePass – User Settings v10.0
-   Neon Light Theme • PWA Mobile UI • Avatar System • Modern Layout
+   PunktePass – User Settings v11.0
+   Glassmorphism Design • Modern Toggle Switches • PWA Mobile UI
    ========================================================================== */
 
 :root {
-    --ppv-s-bg: #f6f8fa;
+    --ppv-s-bg: linear-gradient(180deg, #F8F9FB 0%, #E6F0FF 100%);
     --ppv-s-card: #ffffff;
-    --ppv-s-text: #111827;
+    --ppv-s-card-glass: rgba(255, 255, 255, 0.85);
+    --ppv-s-text: #1A1A1A;
     --ppv-s-text-light: #6b7280;
-    --ppv-s-primary: #2563eb;
-    --ppv-s-primary-soft: rgba(37, 99, 235, 0.08);
+    --ppv-s-primary: #0066FF;
+    --ppv-s-primary-hover: #0052CC;
+    --ppv-s-primary-soft: rgba(0, 102, 255, 0.08);
     --ppv-s-border: #e5e7eb;
+    --ppv-s-border-glass: rgba(255, 255, 255, 0.4);
     --ppv-s-shadow: 0 4px 18px rgba(0,0,0,0.06);
-    --ppv-s-radius: 18px;
-    --ppv-s-radius-sm: 12px;
+    --ppv-s-shadow-glass: 0 8px 32px rgba(0, 102, 255, 0.12);
+    --ppv-s-radius: 16px;
+    --ppv-s-radius-sm: 10px;
+    --ppv-s-success: #10B981;
+    --ppv-s-error: #EF4444;
+    --ppv-s-warning: #F59E0B;
 }
 
 /* WRAPPER --------------------------------------------------------------- */
 .ppv-settings-wrapper {
-    padding: 1rem 1rem 5rem;
+    padding: 16px 16px calc(100px + env(safe-area-inset-bottom, 0px));
     background: var(--ppv-s-bg);
     color: var(--ppv-s-text);
-    font-family: Inter, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    max-width: 600px;
+    margin: 0 auto;
 }
 
 /* HEADER BAR ------------------------------------------------------------ */
 .ppv-header-bar {
+    background: var(--ppv-s-card-glass);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--ppv-s-border-glass);
+    border-radius: var(--ppv-s-radius);
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    box-shadow: var(--ppv-s-shadow-glass);
     text-align: center;
-    margin-bottom: 1.5rem;
 }
 
 .ppv-header-bar h2 {
-    font-size: 1.55rem;
+    font-size: 1.35rem;
     font-weight: 700;
     display: inline-flex;
     align-items: center;
-    gap: .5rem;
+    gap: 10px;
+    margin: 0;
+    color: var(--ppv-s-text);
+}
+
+.ppv-header-bar h2 i {
+    font-size: 1.4rem;
+    color: var(--ppv-s-primary);
 }
 
 /* AVATAR BLOCK ---------------------------------------------------------- */
 .ppv-avatar-block {
-    width: 120px;
-    height: 120px;
-    margin: 0 auto 1.6rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 28px;
     position: relative;
 }
 
 #ppv-avatar-preview {
-    width: 100%;
-    height: 100%;
+    width: 100px;
+    height: 100px;
     border-radius: 50%;
     object-fit: cover;
     background: #FFF;
-    border: 3px solid var(--ppv-s-primary);
-    box-shadow: var(--ppv-s-shadow);
+    border: 4px solid var(--ppv-s-card);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1), 0 0 0 2px rgba(0, 102, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+#ppv-avatar-preview:hover {
+    transform: scale(1.05);
 }
 
 .upload-btn {
     position: absolute;
-    right: -5px;
-    bottom: -5px;
-    width: 38px;
-    height: 38px;
-    background: var(--ppv-s-primary);
+    right: calc(50% - 60px);
+    bottom: 0;
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, var(--ppv-s-primary) 0%, var(--ppv-s-primary-hover) 100%);
     color: white;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: var(--ppv-s-shadow);
+    box-shadow: 0 4px 12px rgba(0, 102, 255, 0.35);
     cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.upload-btn i {
+    font-size: 18px;
 }
 
 .upload-btn:hover {
-    background: #1d4ed8;
+    background: linear-gradient(135deg, var(--ppv-s-primary-hover) 0%, #003d99 100%);
+    transform: scale(1.1);
+    box-shadow: 0 6px 16px rgba(0, 102, 255, 0.45);
+}
+
+.upload-btn:active {
+    transform: scale(0.95);
 }
 
 /* SECTIONS -------------------------------------------------------------- */
 .ppv-section {
-    background: var(--ppv-s-card);
-    padding: 1.2rem;
-    margin-bottom: 1.2rem;
+    background: var(--ppv-s-card-glass);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    padding: 24px;
+    margin-bottom: 20px;
     border-radius: var(--ppv-s-radius);
     box-shadow: var(--ppv-s-shadow);
-    border: 1px solid var(--ppv-s-border);
+    border: 1px solid var(--ppv-s-border-glass);
+    transition: all 0.3s ease;
+}
+
+.ppv-section:hover {
+    box-shadow: var(--ppv-s-shadow-glass);
 }
 
 .ppv-section.danger {
-    border-left: 4px solid #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    background: rgba(254, 226, 226, 0.3);
+}
+
+.ppv-section.danger h3 {
+    color: var(--ppv-s-error);
+}
+
+.ppv-section.danger h3 i {
+    color: var(--ppv-s-error);
 }
 
 .ppv-section h3 {
-    font-size: 1.15rem;
-    font-weight: 700;
-    margin-bottom: .8rem;
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0 0 20px 0;
     display: flex;
     align-items: center;
-    gap: .4rem;
+    gap: 10px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--ppv-s-border);
+    color: var(--ppv-s-text);
+}
+
+.ppv-section h3 i {
+    font-size: 1.2rem;
+    color: var(--ppv-s-primary);
 }
 
 .ppv-section p {
     font-size: .9rem;
     color: var(--ppv-s-text-light);
+    line-height: 1.5;
+    margin: 0 0 16px 0;
+}
+
+.ppv-section p.muted {
+    color: var(--ppv-s-text-light);
+    margin-bottom: 16px;
 }
 
 /* FORM INPUTS ----------------------------------------------------------- */
+.ppv-section label:not(.ppv-checkbox) {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ppv-s-text-light);
+    margin-bottom: 6px;
+    margin-top: 16px;
+}
+
+.ppv-section label:not(.ppv-checkbox):first-of-type {
+    margin-top: 0;
+}
+
 .ppv-form input[type="text"],
 .ppv-form input[type="email"],
 .ppv-form input[type="password"],
 .ppv-form input[type="date"] {
     width: 100%;
-    padding: .7rem .9rem;
-    font-size: .95rem;
-    margin-bottom: .8rem;
-    border: 1px solid var(--ppv-s-border);
+    padding: 14px 16px;
+    font-size: 16px;
+    border: 1.5px solid var(--ppv-s-border);
     border-radius: var(--ppv-s-radius-sm);
-    background: #fff;
-    box-shadow: var(--ppv-s-shadow);
+    background: rgba(248, 249, 251, 0.9);
+    color: var(--ppv-s-text);
+    font-family: inherit;
+    transition: all 0.3s ease;
+    -webkit-appearance: none;
+    appearance: none;
+    box-sizing: border-box;
+}
+
+.ppv-form input:focus {
+    outline: none;
+    background: var(--ppv-s-card);
+    border-color: var(--ppv-s-primary);
+    box-shadow: 0 0 0 4px rgba(0, 102, 255, 0.12);
+}
+
+.ppv-form input::placeholder {
+    color: #9CA3AF;
 }
 
 /* Field hint text */
 .ppv-field-hint {
-    font-size: .8rem;
+    font-size: 12px;
     color: var(--ppv-s-text-light);
-    margin-top: -.5rem;
-    margin-bottom: .8rem;
+    margin: 6px 0 0;
     opacity: 0.8;
 }
 
 .ppv-form-row {
-    display: flex;
-    gap: .8rem;
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 16px;
+    margin-top: 16px;
 }
 
-.ppv-form-row > div {
-    flex: 1;
+.ppv-form-row > div label {
+    margin-top: 0;
 }
 
-/* CHECKBOX -------------------------------------------------------------- */
+/* CHECKBOX - Modern Toggle Switch --------------------------------------- */
 .ppv-checkbox {
     display: flex;
     align-items: center;
-    gap: .6rem;
-    margin-bottom: .6rem;
-    font-size: .95rem;
+    gap: 14px;
+    padding: 14px 16px;
+    background: rgba(248, 249, 251, 0.6);
+    border: 1px solid var(--ppv-s-border);
+    border-radius: var(--ppv-s-radius-sm);
     cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 12px;
 }
 
-.ppv-checkbox input {
+.ppv-checkbox:first-of-type {
+    margin-top: 0;
+}
+
+.ppv-checkbox:hover {
+    background: rgba(248, 249, 251, 0.9);
+    border-color: rgba(0, 102, 255, 0.2);
+}
+
+.ppv-checkbox input[type="checkbox"] {
+    position: relative;
+    width: 48px;
+    height: 26px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: #D1D5DB;
+    border-radius: 13px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+.ppv-checkbox input[type="checkbox"]::before {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
     width: 20px;
     height: 20px;
+    background: white;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.ppv-checkbox input[type="checkbox"]:checked {
+    background: linear-gradient(135deg, var(--ppv-s-primary) 0%, var(--ppv-s-primary-hover) 100%);
+}
+
+.ppv-checkbox input[type="checkbox"]:checked::before {
+    transform: translateX(22px);
+}
+
+.ppv-checkbox span {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ppv-s-text);
+    line-height: 1.4;
 }
 
 /* BUTTONS --------------------------------------------------------------- */
@@ -6602,67 +6753,108 @@ body.ppv-dark .ppv-mypoints-tab.active {
 .neutral-btn,
 .danger-btn {
     width: 100%;
-    padding: .85rem;
-    font-size: 1rem;
+    padding: 16px 24px;
+    font-size: 16px;
     border-radius: var(--ppv-s-radius-sm);
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: .35rem;
+    gap: 10px;
     font-weight: 600;
     cursor: pointer;
+    font-family: inherit;
+    min-height: 54px;
+    transition: all 0.3s ease;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .save-btn {
     border: none;
-    background: var(--ppv-s-primary);
+    background: linear-gradient(135deg, var(--ppv-s-primary) 0%, var(--ppv-s-primary-hover) 100%);
     color: white;
-    box-shadow: var(--ppv-s-shadow);
+    box-shadow: 0 4px 14px rgba(0, 102, 255, 0.35);
 }
 
-.save-btn:hover {
-    background: #1d4ed8;
+.save-btn i {
+    font-size: 20px;
+}
+
+.save-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--ppv-s-primary-hover) 0%, #003d99 100%);
+    box-shadow: 0 6px 20px rgba(0, 102, 255, 0.45);
+    transform: translateY(-2px);
+}
+
+.save-btn:active:not(:disabled) {
+    transform: scale(0.98);
+}
+
+.save-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 .neutral-btn {
-    background: var(--ppv-s-primary-soft);
-    color: var(--ppv-s-primary);
-    border: none;
+    background: var(--ppv-s-card);
+    color: var(--ppv-s-text);
+    border: 1.5px solid var(--ppv-s-border);
 }
 
-.neutral-btn:hover {
-    background: rgba(37, 99, 235, 0.15);
+.neutral-btn i {
+    font-size: 18px;
+    color: var(--ppv-s-text-light);
+}
+
+.neutral-btn:hover:not(:disabled) {
+    background: var(--ppv-s-bg);
+    border-color: rgba(0, 102, 255, 0.2);
+    color: var(--ppv-s-primary);
+}
+
+.neutral-btn:hover:not(:disabled) i {
+    color: var(--ppv-s-primary);
+}
+
+.neutral-btn:active:not(:disabled) {
+    transform: scale(0.98);
 }
 
 .danger-btn {
-    background: #ef4444;
+    background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
     color: white;
     border: none;
+    box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3);
 }
 
-.danger-btn:hover {
-    background: #dc2626;
+.danger-btn i {
+    font-size: 18px;
+}
+
+.danger-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+    transform: translateY(-2px);
+}
+
+.danger-btn:active:not(:disabled) {
+    transform: scale(0.98);
 }
 
 /* ACTIONS --------------------------------------------------------------- */
 .ppv-actions {
-    margin-top: 1rem;
+    margin-top: 12px;
 }
 
 /* TOAST --------------------------------------------------------------- */
 .ppv-toast {
     position: fixed;
-    top: 20px;
+    bottom: calc(100px + env(safe-area-inset-bottom, 0px));
     left: 50%;
-    transform: translateX(-50%) translateY(-20px);
+    transform: translateX(-50%) translateY(100px);
     opacity: 0;
-    padding: .8rem 1.3rem;
-    background: #111827;
-    color: white;
-    border-radius: 12px;
     z-index: 999999;
-    transition: 0.3s ease;
-    box-shadow: 0 4px 18px rgba(0,0,0,0.25);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
 }
 
 .ppv-toast.show {
@@ -6670,12 +6862,38 @@ body.ppv-dark .ppv-mypoints-tab.active {
     transform: translateX(-50%) translateY(0);
 }
 
-.ppv-toast.success {
-    background: #10b981;
+.ppv-toast-inner,
+.ppv-toast:not(:has(.ppv-toast-inner)) {
+    padding: 14px 24px;
+    background: var(--ppv-s-card);
+    border-radius: var(--ppv-s-radius-sm);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ppv-s-text);
+    white-space: nowrap;
+    border-left: 4px solid var(--ppv-s-primary);
 }
 
-.ppv-toast.error {
-    background: #ef4444;
+.ppv-toast.success,
+.ppv-toast.success .ppv-toast-inner {
+    border-left-color: var(--ppv-s-success);
+    background: #ECFDF5;
+    color: #065F46;
+}
+
+.ppv-toast.error,
+.ppv-toast.error .ppv-toast-inner {
+    border-left-color: var(--ppv-s-error);
+    background: #FEF2F2;
+    color: #991B1B;
+}
+
+.ppv-toast.warning,
+.ppv-toast.warning .ppv-toast-inner {
+    border-left-color: var(--ppv-s-warning);
+    background: #FFFBEB;
+    color: #92400E;
 }
 
 /* MODAL --------------------------------------------------------------- */
@@ -6683,11 +6901,13 @@ body.ppv-dark .ppv-mypoints-tab.active {
     position: fixed;
     inset: 0;
     background: rgba(0,0,0,0.5);
-    backdrop-filter: blur(3px);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
     display: none;
     align-items: center;
     justify-content: center;
     z-index: 900000;
+    padding: 20px;
 }
 
 .ppv-modal.show {
@@ -6695,22 +6915,23 @@ body.ppv-dark .ppv-mypoints-tab.active {
 }
 
 .ppv-modal-inner {
-    background: var(--ppv-bg-primary, #fff);
-    border-radius: 12px;
-    padding: 2rem;
+    background: var(--ppv-s-card);
+    border-radius: var(--ppv-s-radius);
+    padding: 28px;
     max-width: 500px;
     width: 100%;
     max-height: 85vh;
     overflow-y: auto;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
     position: relative;
-    animation: modalIn .25s ease;
+    animation: modalIn .3s ease;
 }
 
 .ppv-modal-inner h4 {
     margin: 0 0 1.5rem 0;
     font-size: 18px;
-    color: var(--ppv-text-primary, #1f2937);
+    font-weight: 700;
+    color: var(--ppv-s-text);
 }
 
 .ppv-modal-inner label {
@@ -6719,68 +6940,263 @@ body.ppv-dark .ppv-mypoints-tab.active {
     margin-bottom: 0.5rem;
     font-size: 13px;
     font-weight: 600;
-    color: var(--ppv-text-primary, #1f2937);
+    color: var(--ppv-s-text);
 }
 
 .ppv-modal-inner input,
 .ppv-modal-inner select,
 .ppv-modal-inner textarea {
     width: 100%;
-    padding: 0.75rem;
+    padding: 14px 16px;
     margin-bottom: 0.75rem;
-    border: 1px solid var(--ppv-border, #e5e7eb);
-    border-radius: 6px;
-    background: var(--ppv-bg-primary, #fff);
-    color: var(--ppv-text-primary, #1f2937);
-    font-size: 13px;
+    border: 1.5px solid var(--ppv-s-border);
+    border-radius: var(--ppv-s-radius-sm);
+    background: rgba(248, 249, 251, 0.9);
+    color: var(--ppv-s-text);
+    font-size: 16px;
+    font-family: inherit;
     box-sizing: border-box;
-    transition: 0.2s;
+    transition: all 0.3s ease;
 }
 
 .ppv-modal-inner input:focus,
 .ppv-modal-inner select:focus,
 .ppv-modal-inner textarea:focus {
     outline: none;
-    border-color: var(--pp-primary, #6366f1);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    border-color: var(--ppv-s-primary);
+    box-shadow: 0 0 0 4px rgba(0, 102, 255, 0.1);
+    background: var(--ppv-s-card);
 }
 
 .ppv-modal-content {
     background: var(--ppv-s-card);
-    padding: 1.5rem;
+    padding: 28px;
     width: 90%;
-    max-width: 380px;
+    max-width: 420px;
     border-radius: var(--ppv-s-radius);
-    box-shadow: var(--ppv-s-shadow);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
     position: relative;
-    animation: modalIn .25s ease;
+    animation: modalIn .3s ease;
 }
 
 @keyframes modalIn {
-    from {opacity: 0; transform: scale(.9);}
-    to {opacity: 1; transform: scale(1);}
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
 }
 
 .ppv-modal-close {
     position: absolute;
-    top: 12px;
-    right: 12px;
-    font-size: 1.4rem;
+    top: 16px;
+    right: 20px;
+    font-size: 28px;
     cursor: pointer;
+    color: var(--ppv-s-text-light);
+    transition: all 0.3s ease;
+    line-height: 1;
+}
+
+.ppv-modal-close:hover {
+    color: var(--ppv-s-error);
+}
+
+.ppv-modal-content h3 {
+    margin: 0 0 12px 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--ppv-s-error);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.ppv-modal-content h3 i {
+    font-size: 24px;
+}
+
+.ppv-modal-content p {
+    font-size: 14px;
+    color: var(--ppv-s-text-light);
+    line-height: 1.6;
+    margin: 0 0 20px 0;
+}
+
+.ppv-modal-form label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ppv-s-text);
+    margin-bottom: 8px;
 }
 
 .ppv-modal-form input {
     width: 100%;
-    margin-top: .8rem;
-    padding: .75rem;
+    padding: 14px 16px;
     border-radius: var(--ppv-s-radius-sm);
-    border: 1px solid var(--ppv-s-border);
+    border: 1.5px solid var(--ppv-s-border);
+    background: rgba(248, 249, 251, 0.9);
+    font-size: 16px;
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+}
+
+.ppv-modal-form input:focus {
+    outline: none;
+    border-color: var(--ppv-s-error);
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
 }
 
 .ppv-modal-actions {
-    margin-top: 1rem;
-    display: flex;
-    gap: .7rem;
+    margin-top: 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+/* RESPONSIVE SETTINGS ------------------------------------------------------- */
+@media (max-width: 640px) {
+    .ppv-settings-wrapper {
+        padding: 12px 12px calc(90px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .ppv-header-bar {
+        padding: 16px 20px;
+        margin-bottom: 20px;
+    }
+
+    .ppv-header-bar h2 {
+        font-size: 1.15rem;
+    }
+
+    #ppv-avatar-preview {
+        width: 90px;
+        height: 90px;
+    }
+
+    .upload-btn {
+        width: 32px;
+        height: 32px;
+        right: calc(50% - 55px);
+    }
+
+    .upload-btn i {
+        font-size: 16px;
+    }
+
+    .ppv-section {
+        padding: 20px 16px;
+    }
+
+    .ppv-section h3 {
+        font-size: 0.95rem;
+    }
+
+    .ppv-form-row {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+
+    .ppv-form-row > div:last-child label {
+        margin-top: 16px;
+    }
+
+    .ppv-checkbox {
+        padding: 12px 14px;
+    }
+
+    .ppv-checkbox input[type="checkbox"] {
+        width: 44px;
+        height: 24px;
+    }
+
+    .ppv-checkbox input[type="checkbox"]::before {
+        width: 18px;
+        height: 18px;
+    }
+
+    .ppv-checkbox input[type="checkbox"]:checked::before {
+        transform: translateX(20px);
+    }
+
+    .save-btn,
+    .neutral-btn,
+    .danger-btn {
+        padding: 14px 18px;
+        font-size: 15px;
+        min-height: 50px;
+    }
+
+    .ppv-modal-content {
+        padding: 24px 20px;
+    }
+
+    .ppv-modal-actions {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .ppv-modal-actions .neutral-btn {
+        order: 2;
+    }
+
+    .ppv-modal-actions .danger-btn {
+        order: 1;
+    }
+}
+
+@media (max-width: 375px) {
+    #ppv-avatar-preview {
+        width: 80px;
+        height: 80px;
+    }
+
+    .upload-btn {
+        width: 30px;
+        height: 30px;
+        right: calc(50% - 50px);
+    }
+
+    .ppv-header-bar h2 {
+        font-size: 1rem;
+    }
+
+    .ppv-section h3 {
+        font-size: 0.9rem;
+    }
+}
+
+/* ACCESSIBILITY - Settings -------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+    .ppv-settings-wrapper *,
+    .ppv-settings-wrapper *::before,
+    .ppv-settings-wrapper *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+.save-btn:focus-visible,
+.neutral-btn:focus-visible,
+.danger-btn:focus-visible {
+    outline: 2px solid var(--ppv-s-primary);
+    outline-offset: 2px;
+}
+
+/* TOUCH DEVICE - Settings --------------------------------------------------- */
+@media (hover: none) and (pointer: coarse) {
+    .ppv-section:hover {
+        box-shadow: var(--ppv-s-shadow);
+    }
+
+    .ppv-checkbox:hover {
+        background: rgba(248, 249, 251, 0.6);
+        border-color: var(--ppv-s-border);
+    }
 }
 
 /* ==========================================================================
@@ -6791,8 +7207,17 @@ body.ppv-dark .ppv-settings-wrapper {
     color: var(--pp-text);
 }
 
+body.ppv-dark .ppv-header-bar {
+    background: rgba(30, 41, 59, 0.85);
+    border-color: var(--pp-border);
+}
+
 body.ppv-dark .ppv-header-bar h2 {
     color: var(--pp-text);
+}
+
+body.ppv-dark .ppv-header-bar h2 i {
+    color: var(--pp-primary);
 }
 
 body.ppv-dark .ppv-avatar-block {
@@ -6805,8 +7230,13 @@ body.ppv-dark #ppv-avatar-preview {
     box-shadow: 0 0 20px rgba(0, 212, 255, 0.25);
 }
 
+body.ppv-dark .upload-btn {
+    background: linear-gradient(135deg, var(--pp-primary) 0%, #0099cc 100%);
+    box-shadow: 0 4px 12px rgba(0, 212, 255, 0.35);
+}
+
 body.ppv-dark .ppv-section {
-    background: var(--pp-surface);
+    background: rgba(30, 41, 59, 0.85);
     border-color: var(--pp-border);
     color: var(--pp-text);
     box-shadow: var(--pp-shadow-sm);
@@ -6814,13 +7244,18 @@ body.ppv-dark .ppv-section {
 
 body.ppv-dark .ppv-section h3 {
     color: var(--pp-text);
+    border-bottom-color: var(--pp-border);
+}
+
+body.ppv-dark .ppv-section h3 i {
+    color: var(--pp-primary);
 }
 
 body.ppv-dark .ppv-section p {
     color: var(--pp-text-3);
 }
 
-body.ppv-dark .ppv-section label {
+body.ppv-dark .ppv-section label:not(.ppv-checkbox) {
     color: var(--pp-text-2);
 }
 
@@ -6846,8 +7281,26 @@ body.ppv-dark .ppv-form input::placeholder {
     color: var(--pp-text-muted);
 }
 
+body.ppv-dark .ppv-checkbox {
+    background: rgba(30, 41, 59, 0.6);
+    border-color: var(--pp-border);
+}
+
+body.ppv-dark .ppv-checkbox:hover {
+    background: rgba(30, 41, 59, 0.8);
+    border-color: rgba(0, 212, 255, 0.3);
+}
+
 body.ppv-dark .ppv-checkbox span {
     color: var(--pp-text-2);
+}
+
+body.ppv-dark .ppv-checkbox input[type="checkbox"] {
+    background: var(--pp-border);
+}
+
+body.ppv-dark .ppv-checkbox input[type="checkbox"]:checked {
+    background: linear-gradient(135deg, var(--pp-primary) 0%, #0099cc 100%);
 }
 
 body.ppv-dark .neutral-btn {
@@ -6859,6 +7312,24 @@ body.ppv-dark .neutral-btn {
 body.ppv-dark .neutral-btn:hover {
     background: rgba(0, 212, 255, 0.22);
     border-color: var(--pp-primary);
+}
+
+body.ppv-dark .ppv-toast-inner,
+body.ppv-dark .ppv-toast:not(:has(.ppv-toast-inner)) {
+    background: var(--pp-surface);
+    color: var(--pp-text);
+}
+
+body.ppv-dark .ppv-modal-content,
+body.ppv-dark .ppv-modal-inner {
+    background: var(--pp-surface);
+    color: var(--pp-text);
+}
+
+body.ppv-dark .ppv-modal-form input {
+    background: var(--pp-bg-2);
+    border-color: var(--pp-border);
+    color: var(--pp-text);
 }
 
 body.ppv-dark .ppv-modal-content {
