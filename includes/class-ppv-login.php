@@ -664,7 +664,13 @@ public static function render_landing_page($atts) {
                 PPV_Device_Fingerprint::track_login($user->id, $fingerprint, 'password');
             }
 
-            ppv_log("✅ [PPV_Login] User logged in (#{$user->id})");
+            // 🌐 Save user's browser language preference
+            $browser_lang = self::get_current_lang();
+            if (!empty($browser_lang)) {
+                $wpdb->update("{$prefix}ppv_users", ['language' => $browser_lang], ['id' => $user->id], ['%s'], ['%d']);
+            }
+
+            ppv_log("✅ [PPV_Login] User logged in (#{$user->id}, lang={$browser_lang})");
 
             wp_send_json_success([
                 'message' => PPV_Lang::t('login_success'),
@@ -922,6 +928,9 @@ public static function render_landing_page($atts) {
             $email
         ));
         
+        // 🌐 Get user's browser language
+        $browser_lang = self::get_current_lang();
+
         // 🆕 Create new user if doesn't exist
         if (!$user) {
             $insert_result = $wpdb->insert(
@@ -932,10 +941,11 @@ public static function render_landing_page($atts) {
                     'first_name' => $first_name,
                     'last_name' => $last_name,
                     'google_id' => $google_id,
+                    'language' => $browser_lang,
                     'created_at' => current_time('mysql'),
                     'active' => 1
                 ],
-                ['%s', '%s', '%s', '%s', '%s', '%s', '%d']
+                ['%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d']
             );
             
             if ($insert_result === false) {
@@ -952,16 +962,25 @@ public static function render_landing_page($atts) {
                 $user_id
             ));
         } else {
-            // Update Google ID if missing
+            // Update Google ID if missing + always update language
+            $update_data = ['language' => $browser_lang];
+            $update_format = ['%s'];
+
             if (empty($user->google_id)) {
-                $wpdb->update(
-                    "{$prefix}ppv_users",
-                    ['google_id' => $google_id],
-                    ['id' => $user->id],
-                    ['%s'],
-                    ['%d']
-                );
-                ppv_log("✅ [PPV_Login] Google ID updated for user #{$user->id}");
+                $update_data['google_id'] = $google_id;
+                $update_format[] = '%s';
+            }
+
+            $wpdb->update(
+                "{$prefix}ppv_users",
+                $update_data,
+                ['id' => $user->id],
+                $update_format,
+                ['%d']
+            );
+
+            if (empty($user->google_id)) {
+                ppv_log("✅ [PPV_Login] Google ID + language updated for user #{$user->id}");
             }
         }
         

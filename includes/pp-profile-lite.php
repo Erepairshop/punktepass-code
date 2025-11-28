@@ -581,19 +581,10 @@ if (!empty($store->gallery)) {
                                 <input type="number" name="google_review_threshold" value="<?php echo esc_attr($store->google_review_threshold ?? 100); ?>" min="10" max="1000" step="10">
                             </div>
                             <div class="ppv-form-group">
-                                <label data-i18n="google_review_frequency"><?php echo esc_html(PPV_Lang::t('google_review_frequency')); ?></label>
-                                <select name="google_review_frequency">
-                                    <option value="once" <?php selected($store->google_review_frequency ?? 'once', 'once'); ?> data-i18n="frequency_once"><?php echo esc_html(PPV_Lang::t('frequency_once')); ?></option>
-                                    <option value="monthly" <?php selected($store->google_review_frequency ?? '', 'monthly'); ?> data-i18n="frequency_monthly"><?php echo esc_html(PPV_Lang::t('frequency_monthly')); ?></option>
-                                    <option value="quarterly" <?php selected($store->google_review_frequency ?? '', 'quarterly'); ?> data-i18n="frequency_quarterly"><?php echo esc_html(PPV_Lang::t('frequency_quarterly')); ?></option>
-                                </select>
+                                <label data-i18n="google_review_bonus_points"><?php echo esc_html(PPV_Lang::t('google_review_bonus_points')); ?></label>
+                                <input type="number" name="google_review_bonus_points" value="<?php echo esc_attr($store->google_review_bonus_points ?? 5); ?>" min="0" max="100" step="1">
+                                <small style="color: #888;" data-i18n="google_review_bonus_help"><?php echo esc_html(PPV_Lang::t('google_review_bonus_help')); ?></small>
                             </div>
-                        </div>
-
-                        <div class="ppv-form-group" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
-                            <label data-i18n="google_review_bonus_points"><?php echo esc_html(PPV_Lang::t('google_review_bonus_points')); ?></label>
-                            <input type="number" name="google_review_bonus_points" value="<?php echo esc_attr($store->google_review_bonus_points ?? 5); ?>" min="0" max="100" step="1">
-                            <small style="color: #888;" data-i18n="google_review_bonus_help"><?php echo esc_html(PPV_Lang::t('google_review_bonus_help')); ?></small>
                         </div>
                     </div>
                 </div>

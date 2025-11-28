@@ -10,12 +10,13 @@ if (!defined('ABSPATH')) exit;
  * - google_review_enabled: Toggle feature on/off
  * - google_review_url: Store's Google review link
  * - google_review_threshold: Lifetime points threshold to trigger request
- * - google_review_frequency: 'once', 'monthly', 'quarterly'
  * - google_review_bonus_points: Points awarded on next scan after review request
  *
  * Notification priority:
  * 1. WhatsApp (if user has whatsapp_consent=1 and phone_number)
  * 2. Email (if user has marketing_emails=1 and valid email)
+ *
+ * Language: Uses user's saved language preference (from browser)
  */
 class PPV_Google_Review_Request {
 
@@ -29,7 +30,6 @@ class PPV_Google_Review_Request {
      */
     public static function schedule_cron() {
         if (!wp_next_scheduled('ppv_google_review_request')) {
-            // Run daily at 10:00 AM server time
             $next_run = strtotime('today 10:00:00');
             if ($next_run < time()) {
                 $next_run = strtotime('tomorrow 10:00:00');
@@ -50,7 +50,7 @@ class PPV_Google_Review_Request {
         // Get all stores with Google Review enabled and valid URL
         $stores = $wpdb->get_results("
             SELECT id, name, company_name, country,
-                   google_review_url, google_review_threshold, google_review_frequency,
+                   google_review_url, google_review_threshold,
                    google_review_bonus_points, whatsapp_enabled
             FROM {$wpdb->prefix}ppv_stores
             WHERE google_review_enabled = 1
@@ -80,14 +80,13 @@ class PPV_Google_Review_Request {
 
         $store_id = intval($store->id);
         $threshold = intval($store->google_review_threshold ?? 100);
-        $frequency = $store->google_review_frequency ?? 'once';
         $bonus_points = intval($store->google_review_bonus_points ?? 5);
         $review_url = $store->google_review_url;
 
         $sent = 0;
         $errors = 0;
 
-        ppv_log("[Google Review] Processing store {$store_id} (threshold: {$threshold}, frequency: {$frequency}, bonus: {$bonus_points})");
+        ppv_log("[Google Review] Processing store {$store_id} (threshold: {$threshold}, bonus: {$bonus_points})");
 
         // Include filialen in point calculations
         $store_ids = $wpdb->get_col($wpdb->prepare("
@@ -101,12 +100,9 @@ class PPV_Google_Review_Request {
 
         $placeholders = implode(',', array_fill(0, count($store_ids), '%d'));
 
-        // Calculate frequency date filter
-        $frequency_filter = self::get_frequency_sql($frequency);
-
         // Find eligible users:
         // 1. Have LIFETIME points >= threshold for this store
-        // 2. Have NOT been sent a request within the frequency period (or never)
+        // 2. Have NEVER been sent a request (once per user)
         // 3. Have either WhatsApp consent OR marketing_emails enabled
         $query = $wpdb->prepare("
             SELECT
@@ -117,6 +113,7 @@ class PPV_Google_Review_Request {
                 u.phone_number,
                 u.whatsapp_consent,
                 u.marketing_emails,
+                u.language,
                 COALESCE(SUM(p.points), 0) as total_points,
                 grr.last_request_at
             FROM {$wpdb->prefix}ppv_users u
@@ -129,9 +126,9 @@ class PPV_Google_Review_Request {
                   OR
                   (u.marketing_emails = 1 AND u.email IS NOT NULL AND u.email != '' AND u.email LIKE '%@%')
               )
-            GROUP BY u.id, u.email, u.first_name, u.display_name, u.phone_number, u.whatsapp_consent, u.marketing_emails, grr.last_request_at
+            GROUP BY u.id, u.email, u.first_name, u.display_name, u.phone_number, u.whatsapp_consent, u.marketing_emails, u.language, grr.last_request_at
             HAVING total_points >= %d
-               AND {$frequency_filter}
+               AND grr.last_request_at IS NULL
         ", array_merge([$store_id], $store_ids, [$threshold]));
 
         $eligible_users = $wpdb->get_results($query);
@@ -150,21 +147,6 @@ class PPV_Google_Review_Request {
         }
 
         return ['sent' => $sent, 'errors' => $errors];
-    }
-
-    /**
-     * Get SQL condition for frequency check
-     */
-    private static function get_frequency_sql($frequency) {
-        switch ($frequency) {
-            case 'monthly':
-                return "(grr.last_request_at IS NULL OR grr.last_request_at < DATE_SUB(NOW(), INTERVAL 30 DAY))";
-            case 'quarterly':
-                return "(grr.last_request_at IS NULL OR grr.last_request_at < DATE_SUB(NOW(), INTERVAL 90 DAY))";
-            case 'once':
-            default:
-                return "grr.last_request_at IS NULL";
-        }
     }
 
     /**
@@ -190,9 +172,11 @@ class PPV_Google_Review_Request {
         $phone = $user->phone_number;
         $store_name = $store->company_name ?: $store->name ?: 'Store';
         $user_name = $user->first_name ?: $user->display_name ?: '';
-        $lang = self::get_language_from_country($store->country);
 
-        ppv_log("[Google Review] Sending WhatsApp to: {$phone} for store {$store->id}");
+        // Use user's language preference
+        $lang = self::get_user_language($user);
+
+        ppv_log("[Google Review] Sending WhatsApp to: {$phone} for store {$store->id} (lang: {$lang})");
 
         // Build WhatsApp message text
         $T = self::get_translations($lang);
@@ -239,8 +223,8 @@ class PPV_Google_Review_Request {
             return false;
         }
 
-        // Determine language from store country
-        $lang = self::get_language_from_country($store->country);
+        // Use user's language preference
+        $lang = self::get_user_language($user);
         $T = self::get_translations($lang);
 
         // Build email
@@ -255,7 +239,7 @@ class PPV_Google_Review_Request {
             'From: ' . $store_name . ' <noreply@punktepass.de>'
         ];
 
-        ppv_log("[Google Review] Sending email to: {$email}");
+        ppv_log("[Google Review] Sending email to: {$email} (lang: {$lang})");
 
         $sent = wp_mail($email, $subject, $body, $headers);
 
@@ -383,20 +367,18 @@ class PPV_Google_Review_Request {
     }
 
     /**
-     * Get language code from country
+     * Get user's language preference
      */
-    private static function get_language_from_country($country) {
-        $country = strtolower(trim($country ?? ''));
+    private static function get_user_language($user) {
+        // Use saved language preference, fallback to 'de'
+        $lang = $user->language ?? 'de';
 
-        if (in_array($country, ['hungary', 'magyarorszag', 'ungarn', 'hu'])) {
-            return 'hu';
+        // Validate language
+        if (!in_array($lang, ['de', 'hu', 'ro'])) {
+            $lang = 'de';
         }
 
-        if (in_array($country, ['romania', 'romania', 'rumanien', 'ro'])) {
-            return 'ro';
-        }
-
-        return 'de';
+        return $lang;
     }
 
     /**
@@ -488,38 +470,38 @@ class PPV_Google_Review_Request {
                 'greeting_name' => 'Hallo %s,',
                 'greeting_generic' => 'Hallo,',
                 'thank_you_text' => 'vielen Dank, dass Sie treuer Kunde von %s sind!',
-                'review_request_text' => 'Wir wurden uns sehr uber Ihre ehrliche Bewertung auf Google freuen.',
-                'bonus_text' => 'Bei Ihrem nachsten Besuch erhalten Sie %d Bonuspunkte!',
+                'review_request_text' => 'Wir würden uns sehr über Ihre ehrliche Bewertung auf Google freuen.',
+                'bonus_text' => 'Bei Ihrem nächsten Besuch erhalten Sie %d Bonuspunkte!',
                 'button_text' => 'Jetzt bewerten',
                 'takes_only_text' => 'Es dauert nur 1 Minute!',
-                'footer_thanks' => 'Vielen Dank fur Ihre Unterstutzung!',
-                'whatsapp_message' => '%svielen Dank fur Ihre Treue bei %s! Wir wurden uns uber eine Google-Bewertung freuen. Bei Ihrem nachsten Besuch erhalten Sie %d Bonuspunkte! %s',
+                'footer_thanks' => 'Vielen Dank für Ihre Unterstützung!',
+                'whatsapp_message' => '%svielen Dank für Ihre Treue bei %s! Wir würden uns über eine Google-Bewertung freuen. Bei Ihrem nächsten Besuch erhalten Sie %d Bonuspunkte! %s',
             ],
             'hu' => [
-                'email_subject' => 'A velemenye fontos nekunk! - %s',
-                'email_title' => 'Az ertekelese szamit!',
+                'email_subject' => 'A véleménye fontos nekünk! - %s',
+                'email_title' => 'Az értékelése számít!',
                 'greeting_name' => 'Kedves %s,',
-                'greeting_generic' => 'Kedves Vasarlonk,',
-                'thank_you_text' => 'koszonjuk, hogy husseges vasarloja a %s-nak!',
-                'review_request_text' => 'Nagyon orulnank, ha megosztana velunk oszinte velemenyet a Google-on.',
-                'bonus_text' => 'Kovetkezo latasatasanal %d bonuszpontot kap!',
-                'button_text' => 'Ertekeles irasa',
-                'takes_only_text' => 'Mindossze 1 percet vesz igenybe!',
-                'footer_thanks' => 'Koszonjuk a tamogatasat!',
-                'whatsapp_message' => '%skoszonjuk huseget a %s-nal! Orulnank egy Google ertekelesnek. Kovetkezo latogatasakor %d bonuszpontot kap! %s',
+                'greeting_generic' => 'Kedves Vásárlónk,',
+                'thank_you_text' => 'köszönjük, hogy hűséges vásárlója a %s-nak!',
+                'review_request_text' => 'Nagyon örülnénk, ha megosztaná velünk őszinte véleményét a Google-on.',
+                'bonus_text' => 'Következő látogatásánál %d bónuszpontot kap!',
+                'button_text' => 'Értékelés írása',
+                'takes_only_text' => 'Mindössze 1 percet vesz igénybe!',
+                'footer_thanks' => 'Köszönjük a támogatását!',
+                'whatsapp_message' => '%sköszönjük hűségét a %s-nál! Örülnénk egy Google értékelésnek. Következő látogatásakor %d bónuszpontot kap! %s',
             ],
             'ro' => [
-                'email_subject' => 'Parerea dvs. conteaza! - %s',
-                'email_title' => 'Recenzia dvs. conteaza!',
-                'greeting_name' => 'Buna ziua %s,',
-                'greeting_generic' => 'Buna ziua,',
-                'thank_you_text' => 'va multumim ca sunteti client fidel al %s!',
-                'review_request_text' => 'Ne-ar face mare placere sa ne lasati o recenzie sincera pe Google.',
-                'bonus_text' => 'La urmatoarea vizita veti primi %d puncte bonus!',
-                'button_text' => 'Lasati o recenzie',
-                'takes_only_text' => 'Dureaza doar 1 minut!',
-                'footer_thanks' => 'Va multumim pentru sprijin!',
-                'whatsapp_message' => '%sva multumim pentru fidelitate la %s! V-am fi recunoscatori pentru o recenzie pe Google. La urmatoarea vizita primiti %d puncte bonus! %s',
+                'email_subject' => 'Părerea dvs. contează! - %s',
+                'email_title' => 'Recenzia dvs. contează!',
+                'greeting_name' => 'Bună ziua %s,',
+                'greeting_generic' => 'Bună ziua,',
+                'thank_you_text' => 'vă mulțumim că sunteți client fidel al %s!',
+                'review_request_text' => 'Ne-ar face mare plăcere să ne lăsați o recenzie sinceră pe Google.',
+                'bonus_text' => 'La următoarea vizită veți primi %d puncte bonus!',
+                'button_text' => 'Lăsați o recenzie',
+                'takes_only_text' => 'Durează doar 1 minut!',
+                'footer_thanks' => 'Vă mulțumim pentru sprijin!',
+                'whatsapp_message' => '%svă mulțumim pentru fidelitate la %s! V-am fi recunoscători pentru o recenzie pe Google. La următoarea vizită primiți %d puncte bonus! %s',
             ],
         ];
 
