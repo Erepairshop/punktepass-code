@@ -16,7 +16,14 @@ let allowedOrigins: [String] = ["punktepass.de"]
 
 // auth origins will open in modal and show toolbar for back into the main origin.
 // These should also appear in Info.plist
-let authOrigins: [String] = []
+let authOrigins: [String] = [
+    "accounts.google.com",
+    "www.facebook.com",
+    "m.facebook.com",
+    "connect.facebook.net",
+    "www.tiktok.com",
+    "appleid.apple.com"
+]
 // allowedOrigins + authOrigins <= 10
 
 let platformCookie = Cookie(name: "app-platform", value: "iOS App Store")

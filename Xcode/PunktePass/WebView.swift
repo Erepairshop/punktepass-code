@@ -103,8 +103,38 @@ func calcWebviewFrame(webviewView: UIView, toolbarView: UIToolbar?) -> CGRect{
 }
 
 extension ViewController: WKUIDelegate, WKDownloadDelegate {
-    // redirect new tabs to main webview
+    // Handle target="_blank" links and popups
     func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
+        if let requestUrl = navigationAction.request.url,
+           let requestHost = requestUrl.host {
+            // Check if it's an external link that should open in Safari/Maps
+            let isAllowedOrigin = allowedOrigins.first(where: { requestHost.range(of: $0) != nil }) != nil
+            let isAuthOrigin = authOrigins.first(where: { requestHost.range(of: $0) != nil }) != nil
+
+            if !isAllowedOrigin && !isAuthOrigin {
+                // External link - open in Safari or native app
+                if ["http", "https"].contains(requestUrl.scheme?.lowercased() ?? "") {
+                    // Check if Maps app can handle this URL
+                    if requestHost.contains("maps.google.com") || requestHost.contains("maps.apple.com") {
+                        // Try to open in Maps app first
+                        if let mapsUrl = URL(string: requestUrl.absoluteString.replacingOccurrences(of: "https://", with: "maps://").replacingOccurrences(of: "http://", with: "maps://")) {
+                            if UIApplication.shared.canOpenURL(mapsUrl) {
+                                UIApplication.shared.open(mapsUrl)
+                                return nil
+                            }
+                        }
+                    }
+                    // Fallback to Safari
+                    let safariViewController = SFSafariViewController(url: requestUrl)
+                    self.present(safariViewController, animated: true, completion: nil)
+                } else if UIApplication.shared.canOpenURL(requestUrl) {
+                    UIApplication.shared.open(requestUrl)
+                }
+                return nil
+            }
+        }
+
+        // Internal or auth links - load in main webview
         if (navigationAction.targetFrame == nil) {
             webView.load(navigationAction.request)
         }
