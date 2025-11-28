@@ -586,6 +586,35 @@ if (!empty($store->gallery)) {
                                 <small style="color: #888;" data-i18n="google_review_bonus_help"><?php echo esc_html(PPV_Lang::t('google_review_bonus_help')); ?></small>
                             </div>
                         </div>
+
+                        <!-- How it works collapsible -->
+                        <details class="ppv-how-it-works" style="margin-top: 15px; background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.2); border-radius: 10px; overflow: hidden;">
+                            <summary style="padding: 12px 15px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: 500; color: #3b82f6; list-style: none;">
+                                <span style="font-size: 16px;">💡</span>
+                                <span data-i18n="google_review_how_it_works"><?php echo esc_html(PPV_Lang::t('google_review_how_it_works')); ?></span>
+                                <svg style="margin-left: auto; width: 16px; height: 16px; transition: transform 0.2s;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            </summary>
+                            <div style="padding: 0 15px 15px 15px; color: #ccc; font-size: 13px; line-height: 1.6;">
+                                <div style="display: flex; flex-direction: column; gap: 10px;">
+                                    <div style="display: flex; align-items: flex-start; gap: 10px;">
+                                        <span style="background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: white; min-width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600;">1</span>
+                                        <span data-i18n="google_review_step1"><?php echo esc_html(PPV_Lang::t('google_review_step1')); ?></span>
+                                    </div>
+                                    <div style="display: flex; align-items: flex-start; gap: 10px;">
+                                        <span style="background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: white; min-width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600;">2</span>
+                                        <span data-i18n="google_review_step2"><?php echo esc_html(PPV_Lang::t('google_review_step2')); ?></span>
+                                    </div>
+                                    <div style="display: flex; align-items: flex-start; gap: 10px;">
+                                        <span style="background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: white; min-width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600;">3</span>
+                                        <span data-i18n="google_review_step3"><?php echo esc_html(PPV_Lang::t('google_review_step3')); ?></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </details>
+                        <style>
+                            .ppv-how-it-works[open] summary svg { transform: rotate(180deg); }
+                            .ppv-how-it-works summary::-webkit-details-marker { display: none; }
+                        </style>
                     </div>
                 </div>
 
