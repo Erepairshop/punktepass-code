@@ -35,6 +35,10 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
             add_action('wp_ajax_nopriv_ppv_delete_gallery_image', [__CLASS__, 'ajax_delete_gallery_image']); // ✅ PPV session auth
             add_action('wp_ajax_ppv_reset_trusted_device', [__CLASS__, 'ajax_reset_trusted_device']);
             add_action('wp_ajax_nopriv_ppv_reset_trusted_device', [__CLASS__, 'ajax_reset_trusted_device']); // ✅ PPV session auth
+
+            // Referral Program
+            add_action('wp_ajax_ppv_activate_referral_grace_period', [__CLASS__, 'ajax_activate_referral_grace_period']);
+            add_action('wp_ajax_nopriv_ppv_activate_referral_grace_period', [__CLASS__, 'ajax_activate_referral_grace_period']);
         }
 
         // ==================== AUTH CHECK ====================
@@ -724,6 +728,189 @@ if (!empty($store->gallery)) {
                     <?php endif; ?>
                 </div>
 
+                <!-- ============================================================
+                     REFERRAL PROGRAM
+                     ============================================================ -->
+                <?php
+                // Calculate grace period status
+                $referral_activated_at = $store->referral_activated_at ?? null;
+                $referral_grace_days = intval($store->referral_grace_days ?? 60);
+                $grace_period_over = false;
+                $grace_days_remaining = $referral_grace_days;
+
+                if ($referral_activated_at) {
+                    $activated_date = new DateTime($referral_activated_at);
+                    $now = new DateTime();
+                    $days_since_activation = $now->diff($activated_date)->days;
+                    $grace_days_remaining = max(0, $referral_grace_days - $days_since_activation);
+                    $grace_period_over = ($grace_days_remaining === 0);
+                }
+                ?>
+                <div class="ppv-marketing-card" style="background: linear-gradient(135deg, rgba(255, 107, 107, 0.08), rgba(255, 107, 107, 0.02)); border: 1px solid rgba(255, 107, 107, 0.3); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                    <div class="ppv-marketing-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <div>
+                            <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 24px;">🎁</span>
+                                <span>Referral Program</span>
+                                <?php if (!$referral_activated_at): ?>
+                                    <span style="background: rgba(255,255,255,0.1); color: #888; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600;">NEU</span>
+                                <?php elseif (!$grace_period_over): ?>
+                                    <span style="background: rgba(255,152,0,0.3); color: #ff9800; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600;">⏳ <?php echo $grace_days_remaining; ?> Tage</span>
+                                <?php elseif (!empty($store->referral_enabled)): ?>
+                                    <span style="background: #ff6b6b; color: white; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600;">AKTIV</span>
+                                <?php endif; ?>
+                            </h3>
+                            <small style="color: #888;">Kunden werben Kunden - Neue Kunden durch Empfehlungen</small>
+                        </div>
+                        <label class="ppv-toggle">
+                            <input type="checkbox" name="referral_enabled" value="1" <?php checked($store->referral_enabled ?? 0, 1); ?> <?php echo !$grace_period_over ? 'disabled' : ''; ?>>
+                            <span class="ppv-toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <?php if (!$referral_activated_at): ?>
+                    <!-- Not yet activated - show activation prompt -->
+                    <div style="background: rgba(0,0,0,0.2); border-radius: 8px; padding: 20px; text-align: center;">
+                        <p style="color: #f1f5f9; margin: 0 0 15px;">
+                            <strong>🚀 Referral Program starten</strong><br>
+                            <span style="color: #888; font-size: 13px;">
+                                Nach der Aktivierung beginnt eine <?php echo $referral_grace_days; ?>-tägige Sammelphase.<br>
+                                In dieser Zeit werden Ihre bestehenden Kunden erfasst.
+                            </span>
+                        </p>
+                        <button type="button" id="activate-referral-btn" class="ppv-btn" style="background: linear-gradient(135deg, #ff6b6b, #ee5a5a); border: none; color: white; padding: 12px 24px; border-radius: 8px; cursor: pointer;">
+                            <i class="ri-rocket-line"></i> Grace Period starten
+                        </button>
+                    </div>
+
+                    <?php elseif (!$grace_period_over): ?>
+                    <!-- Grace period active -->
+                    <div style="background: rgba(255,152,0,0.1); border: 1px solid rgba(255,152,0,0.3); border-radius: 8px; padding: 15px;">
+                        <p style="margin: 0; color: #ff9800;">
+                            <strong>⏳ Grace Period läuft</strong><br>
+                            <span style="color: #888;">
+                                Noch <strong><?php echo $grace_days_remaining; ?> Tage</strong> bis das Referral Program aktiviert werden kann.<br>
+                                In dieser Zeit werden bestehende Kunden erfasst.
+                            </span>
+                        </p>
+                        <div style="margin-top: 10px; background: rgba(0,0,0,0.2); border-radius: 4px; height: 8px; overflow: hidden;">
+                            <?php $progress = (($referral_grace_days - $grace_days_remaining) / $referral_grace_days) * 100; ?>
+                            <div style="background: linear-gradient(90deg, #ff6b6b, #ff9800); height: 100%; width: <?php echo $progress; ?>%; transition: width 0.3s;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Grace period settings (editable) -->
+                    <div style="margin-top: 15px; background: rgba(0,0,0,0.2); border-radius: 8px; padding: 15px;">
+                        <div class="ppv-form-group" style="margin-bottom: 0;">
+                            <label>Grace Period (Tage)</label>
+                            <input type="number" name="referral_grace_days" value="<?php echo esc_attr($referral_grace_days); ?>" min="7" max="180" style="width: 100px;">
+                            <small style="color: #666;">Mindestens 7, maximal 180 Tage</small>
+                        </div>
+                    </div>
+
+                    <?php else: ?>
+                    <!-- Grace period over - show full settings -->
+                    <div class="ppv-marketing-body" id="referral-settings" style="<?php echo empty($store->referral_enabled) ? 'opacity: 0.5; pointer-events: none;' : ''; ?>">
+
+                        <!-- Reward Type Selection -->
+                        <div style="background: rgba(0,0,0,0.2); border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                            <h4 style="margin: 0 0 10px; color: #ff6b6b; font-size: 14px;">🎁 Belohnung konfigurieren</h4>
+                            <p style="color: #888; font-size: 12px; margin-bottom: 15px;">Was bekommen Werber und Geworbener?</p>
+
+                            <div class="ppv-form-row" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px;">
+                                <label style="display: flex; flex-direction: column; align-items: center; gap: 8px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; cursor: pointer; border: 2px solid <?php echo ($store->referral_reward_type ?? 'points') === 'points' ? '#ff6b6b' : 'transparent'; ?>;">
+                                    <input type="radio" name="referral_reward_type" value="points" <?php checked($store->referral_reward_type ?? 'points', 'points'); ?> style="display: none;" onchange="updateReferralRewardUI()">
+                                    <span style="font-size: 24px;">⭐</span>
+                                    <strong style="color: #f1f5f9;">Punkte</strong>
+                                </label>
+
+                                <label style="display: flex; flex-direction: column; align-items: center; gap: 8px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; cursor: pointer; border: 2px solid <?php echo ($store->referral_reward_type ?? '') === 'euro' ? '#ff6b6b' : 'transparent'; ?>;">
+                                    <input type="radio" name="referral_reward_type" value="euro" <?php checked($store->referral_reward_type ?? '', 'euro'); ?> style="display: none;" onchange="updateReferralRewardUI()">
+                                    <span style="font-size: 24px;">💶</span>
+                                    <strong style="color: #f1f5f9;">Euro-Wert</strong>
+                                </label>
+
+                                <label style="display: flex; flex-direction: column; align-items: center; gap: 8px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; cursor: pointer; border: 2px solid <?php echo ($store->referral_reward_type ?? '') === 'gift' ? '#ff6b6b' : 'transparent'; ?>;">
+                                    <input type="radio" name="referral_reward_type" value="gift" <?php checked($store->referral_reward_type ?? '', 'gift'); ?> style="display: none;" onchange="updateReferralRewardUI()">
+                                    <span style="font-size: 24px;">🎀</span>
+                                    <strong style="color: #f1f5f9;">Geschenk</strong>
+                                </label>
+                            </div>
+
+                            <!-- Points value -->
+                            <div id="referral-value-points" class="ppv-form-group" style="<?php echo ($store->referral_reward_type ?? 'points') !== 'points' ? 'display:none;' : ''; ?>">
+                                <label>Punkte pro Person</label>
+                                <input type="number" name="referral_reward_value" value="<?php echo esc_attr($store->referral_reward_value ?? 50); ?>" min="1" max="500" style="width: 100px;">
+                                <small style="color: #666;">Werber UND Geworbener bekommen diese Punkte</small>
+                            </div>
+
+                            <!-- Euro value -->
+                            <div id="referral-value-euro" class="ppv-form-group" style="<?php echo ($store->referral_reward_type ?? '') !== 'euro' ? 'display:none;' : ''; ?>">
+                                <label>Euro-Wert pro Person</label>
+                                <div style="display: flex; align-items: center; gap: 5px;">
+                                    <input type="number" name="referral_reward_value_euro" value="<?php echo esc_attr($store->referral_reward_value ?? 5); ?>" min="1" max="50" style="width: 80px;">
+                                    <span style="color: #888;">€</span>
+                                </div>
+                                <small style="color: #666;">Als Rabatt auf den nächsten Einkauf</small>
+                            </div>
+
+                            <!-- Gift -->
+                            <div id="referral-value-gift" class="ppv-form-group" style="<?php echo ($store->referral_reward_type ?? '') !== 'gift' ? 'display:none;' : ''; ?>">
+                                <label>Geschenk-Beschreibung</label>
+                                <input type="text" name="referral_reward_gift" value="<?php echo esc_attr($store->referral_reward_gift ?? ''); ?>" placeholder="z.B. Gratis Kaffee, 1x Dessert...">
+                                <small style="color: #666;">Was bekommt jeder als Geschenk?</small>
+                            </div>
+                        </div>
+
+                        <!-- Manual Approval -->
+                        <div style="background: rgba(0,0,0,0.2); border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                <input type="checkbox" name="referral_manual_approval" value="1" <?php checked($store->referral_manual_approval ?? 0, 1); ?> style="width: 18px; height: 18px;">
+                                <span>
+                                    <strong style="color: #f1f5f9;">🔍 Manuelle Genehmigung</strong><br>
+                                    <small style="color: #888;">Jeden neuen Referral vor der Belohnung prüfen</small>
+                                </span>
+                            </label>
+                        </div>
+
+                        <!-- Statistics -->
+                        <?php
+                        global $wpdb;
+                        $referral_stats = $wpdb->get_row($wpdb->prepare(
+                            "SELECT
+                                COUNT(*) as total,
+                                SUM(CASE WHEN status IN ('completed', 'approved') THEN 1 ELSE 0 END) as successful,
+                                SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
+                                SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END) as rejected
+                             FROM {$wpdb->prefix}ppv_referrals WHERE store_id = %d",
+                            $store->id
+                        ));
+                        ?>
+                        <div style="background: rgba(255,107,107,0.1); border: 1px solid rgba(255,107,107,0.3); border-radius: 8px; padding: 15px;">
+                            <h4 style="margin: 0 0 10px; color: #ff6b6b; font-size: 14px;">📊 Referral Statistik</h4>
+                            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; text-align: center;">
+                                <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px;">
+                                    <div style="font-size: 24px; font-weight: bold; color: #f1f5f9;"><?php echo intval($referral_stats->total ?? 0); ?></div>
+                                    <div style="font-size: 11px; color: #888;">Gesamt</div>
+                                </div>
+                                <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px;">
+                                    <div style="font-size: 24px; font-weight: bold; color: #4caf50;"><?php echo intval($referral_stats->successful ?? 0); ?></div>
+                                    <div style="font-size: 11px; color: #888;">Erfolgreich</div>
+                                </div>
+                                <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px;">
+                                    <div style="font-size: 24px; font-weight: bold; color: #ff9800;"><?php echo intval($referral_stats->pending ?? 0); ?></div>
+                                    <div style="font-size: 11px; color: #888;">Wartend</div>
+                                </div>
+                                <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px;">
+                                    <div style="font-size: 24px; font-weight: bold; color: #f44336;"><?php echo intval($referral_stats->rejected ?? 0); ?></div>
+                                    <div style="font-size: 11px; color: #888;">Abgelehnt</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+                </div>
+
                 <!-- Info box -->
                 <div class="ppv-info-box" style="background: rgba(0, 230, 255, 0.05); border: 1px solid rgba(0, 230, 255, 0.2); border-radius: 8px; padding: 15px; margin-top: 20px;">
                     <p style="margin: 0; color: #00e6ff; font-size: 13px;">
@@ -737,6 +924,71 @@ if (!empty($store->gallery)) {
             // WhatsApp nonce for AJAX
             window.ppvWhatsAppNonce = '<?php echo wp_create_nonce('ppv_whatsapp_nonce'); ?>';
             window.ppvWhatsAppStoreId = <?php echo intval($store->id ?? 0); ?>;
+
+            // Referral Program UI
+            function updateReferralRewardUI() {
+                const type = document.querySelector('input[name="referral_reward_type"]:checked')?.value || 'points';
+
+                // Update radio button styles
+                document.querySelectorAll('input[name="referral_reward_type"]').forEach(radio => {
+                    const label = radio.closest('label');
+                    if (label) {
+                        label.style.borderColor = radio.checked ? '#ff6b6b' : 'transparent';
+                    }
+                });
+
+                // Show/hide value inputs
+                document.getElementById('referral-value-points').style.display = type === 'points' ? 'block' : 'none';
+                document.getElementById('referral-value-euro').style.display = type === 'euro' ? 'block' : 'none';
+                document.getElementById('referral-value-gift').style.display = type === 'gift' ? 'block' : 'none';
+            }
+
+            // Referral toggle
+            document.addEventListener('DOMContentLoaded', function() {
+                const referralToggle = document.querySelector('input[name="referral_enabled"]');
+                const referralSettings = document.getElementById('referral-settings');
+                if (referralToggle && referralSettings) {
+                    referralToggle.addEventListener('change', function() {
+                        referralSettings.style.opacity = this.checked ? '1' : '0.5';
+                        referralSettings.style.pointerEvents = this.checked ? 'auto' : 'none';
+                    });
+                }
+
+                // Activate referral grace period button
+                const activateBtn = document.getElementById('activate-referral-btn');
+                if (activateBtn) {
+                    activateBtn.addEventListener('click', function() {
+                        if (!confirm('Grace Period starten? Diese Aktion kann nicht rückgängig gemacht werden.')) return;
+
+                        this.disabled = true;
+                        this.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Wird aktiviert...';
+
+                        jQuery.ajax({
+                            url: ppProfileLite.ajaxurl,
+                            type: 'POST',
+                            data: {
+                                action: 'ppv_activate_referral_grace_period',
+                                store_id: window.ppvWhatsAppStoreId,
+                                nonce: ppProfileLite.nonce
+                            },
+                            success: function(res) {
+                                if (res.success) {
+                                    location.reload();
+                                } else {
+                                    alert(res.data?.msg || 'Fehler');
+                                    activateBtn.disabled = false;
+                                    activateBtn.innerHTML = '<i class="ri-rocket-line"></i> Grace Period starten';
+                                }
+                            },
+                            error: function() {
+                                alert('Netzwerkfehler');
+                                activateBtn.disabled = false;
+                                activateBtn.innerHTML = '<i class="ri-rocket-line"></i> Grace Period starten';
+                            }
+                        });
+                    });
+                }
+            });
             </script>
             <script>
             // Toggle settings visibility based on checkbox state
@@ -1225,6 +1477,16 @@ public static function ajax_save_profile() {
         // API settings are managed in /admin/whatsapp
         // ============================================================
         'whatsapp_enabled' => !empty($_POST['whatsapp_enabled']) ? 1 : 0,
+
+        // ============================================================
+        // ✅ REFERRAL PROGRAM FIELDS
+        // ============================================================
+        'referral_enabled' => !empty($_POST['referral_enabled']) ? 1 : 0,
+        'referral_grace_days' => max(7, min(180, intval($_POST['referral_grace_days'] ?? 60))),
+        'referral_reward_type' => in_array($_POST['referral_reward_type'] ?? '', ['points', 'euro', 'gift']) ? $_POST['referral_reward_type'] : 'points',
+        'referral_reward_value' => intval($_POST['referral_reward_value'] ?? $_POST['referral_reward_value_euro'] ?? 50),
+        'referral_reward_gift' => sanitize_text_field($_POST['referral_reward_gift'] ?? ''),
+        'referral_manual_approval' => !empty($_POST['referral_manual_approval']) ? 1 : 0,
 ];
 
 // ✅ Format specifierek az összes mezőhöz
@@ -1275,6 +1537,13 @@ $format_specs = [
     '%s',  // comeback_message
     // WhatsApp Cloud API - only enable toggle (settings managed in /admin/whatsapp)
     '%d',  // whatsapp_enabled
+    // Referral Program
+    '%d',  // referral_enabled
+    '%d',  // referral_grace_days
+    '%s',  // referral_reward_type
+    '%d',  // referral_reward_value
+    '%s',  // referral_reward_gift
+    '%d',  // referral_manual_approval
 ];
 
 ppv_log("💾 [DEBUG] Saving store ID: {$store_id}");
@@ -1741,6 +2010,56 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
                 wp_send_json_success(['message' => 'Megbízható eszköz visszaállítva']);
             } else {
                 wp_send_json_error(['message' => 'Hiba történt']);
+            }
+        }
+
+        /**
+         * ============================================================
+         * 🎁 ACTIVATE REFERRAL GRACE PERIOD
+         * ============================================================
+         */
+        public static function ajax_activate_referral_grace_period() {
+            self::ensure_session();
+
+            $auth = self::check_auth();
+            if (!$auth['valid']) {
+                wp_send_json_error(['msg' => 'Nincs jogosultság']);
+                return;
+            }
+
+            $store_id = self::get_store_id();
+            if (!$store_id) {
+                wp_send_json_error(['msg' => 'Store not found']);
+                return;
+            }
+
+            global $wpdb;
+
+            // Check if already activated
+            $store = $wpdb->get_row($wpdb->prepare(
+                "SELECT referral_activated_at FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+                $store_id
+            ));
+
+            if (!empty($store->referral_activated_at)) {
+                wp_send_json_error(['msg' => 'Grace Period bereits aktiviert']);
+                return;
+            }
+
+            // Activate grace period
+            $result = $wpdb->update(
+                "{$wpdb->prefix}ppv_stores",
+                ['referral_activated_at' => current_time('mysql')],
+                ['id' => $store_id],
+                ['%s'],
+                ['%d']
+            );
+
+            if ($result !== false) {
+                ppv_log("[PPV_REFERRAL] Grace period started for store #{$store_id}");
+                wp_send_json_success(['msg' => 'Grace Period gestartet!']);
+            } else {
+                wp_send_json_error(['msg' => 'Fehler beim Starten der Grace Period']);
             }
         }
     }
