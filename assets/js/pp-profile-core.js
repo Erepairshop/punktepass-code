@@ -45,17 +45,31 @@
             sessionStorage.removeItem('ppv_profile_reloaded');
         }, { once: false });
 
-        // 3. Force reload when restoring from Turbo cache (back/forward)
-        document.addEventListener('turbo:visit', function(e) {
-            const profileForm = document.getElementById('ppv-profile-form');
-            // Only reload on restore action AND if we haven't just reloaded
-            if (profileForm && e.detail?.action === 'restore') {
-                const alreadyReloaded = sessionStorage.getItem('ppv_profile_reloaded');
-                if (!alreadyReloaded) {
-                    sessionStorage.setItem('ppv_profile_reloaded', 'true');
+        // 3. Force reload when coming back to profile page (any Turbo navigation)
+        document.addEventListener('turbo:before-render', function(e) {
+            // Check if the incoming page has the profile form
+            const newBody = e.detail.newBody;
+            if (newBody && newBody.querySelector('#ppv-profile-form')) {
+                // Check if we navigated away and came back (cache restore)
+                const wasOnProfilePage = sessionStorage.getItem('ppv_on_profile_page');
+                const leftProfilePage = sessionStorage.getItem('ppv_left_profile_page');
+
+                if (leftProfilePage) {
+                    // We're coming back to profile after leaving - force full reload
+                    sessionStorage.removeItem('ppv_left_profile_page');
                     e.preventDefault();
                     window.location.reload();
+                    return;
                 }
+            }
+        });
+
+        // Track when we leave the profile page
+        document.addEventListener('turbo:before-visit', function(e) {
+            const profileForm = document.getElementById('ppv-profile-form');
+            if (profileForm) {
+                // We're leaving the profile page
+                sessionStorage.setItem('ppv_left_profile_page', 'true');
             }
         });
 
