@@ -412,6 +412,13 @@ return [
 'signup_title' => 'Konto erstellen',
 'signup_subtitle' => 'Jetzt registrieren und Punkte sammeln',
 
+// USER TYPE SELECTION
+'signup_i_am' => 'Ich bin:',
+'signup_type_customer' => 'Kunde',
+'signup_type_customer_desc' => 'Punkte sammeln',
+'signup_type_vendor' => 'Händler',
+'signup_type_vendor_desc' => '30 Tage Test',
+
 // BUTTONS
 'signup_google_btn' => 'Mit Google registrieren',
 'signup_or_email' => 'oder mit E-Mail',

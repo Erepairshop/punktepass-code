@@ -213,7 +213,7 @@ class PPV_Signup {
 
                             <!-- User Type Selection (NEW!) -->
                             <div class="ppv-user-type-selector" style="margin-bottom: 24px;">
-                                <p style="font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 12px;">Ich bin:</p>
+                                <p style="font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 12px;"><?php echo PPV_Lang::t('signup_i_am'); ?></p>
                                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                                     <label class="ppv-type-option ppv-type-active" data-type="user">
                                         <input type="radio" name="user_type" value="user" checked style="display: none;">
@@ -222,8 +222,8 @@ class PPV_Signup {
                                                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                                                 <circle cx="12" cy="7" r="4"/>
                                             </svg>
-                                            <strong style="display: block; font-size: 15px; color: #111827; margin-bottom: 4px;">Kunde</strong>
-                                            <span style="font-size: 12px; color: #6B7280;">Punkte sammeln</span>
+                                            <strong style="display: block; font-size: 15px; color: #111827; margin-bottom: 4px;"><?php echo PPV_Lang::t('signup_type_customer'); ?></strong>
+                                            <span style="font-size: 12px; color: #6B7280;"><?php echo PPV_Lang::t('signup_type_customer_desc'); ?></span>
                                         </div>
                                     </label>
 
@@ -234,8 +234,8 @@ class PPV_Signup {
                                                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
                                                 <polyline points="9 22 9 12 15 12 15 22"/>
                                             </svg>
-                                            <strong style="display: block; font-size: 15px; color: #111827; margin-bottom: 4px;">Händler</strong>
-                                            <span style="font-size: 12px; color: #6B7280;">30 Tage Test</span>
+                                            <strong style="display: block; font-size: 15px; color: #111827; margin-bottom: 4px;"><?php echo PPV_Lang::t('signup_type_vendor'); ?></strong>
+                                            <span style="font-size: 12px; color: #6B7280;"><?php echo PPV_Lang::t('signup_type_vendor_desc'); ?></span>
                                         </div>
                                     </label>
                                 </div>
