@@ -1668,4 +1668,32 @@ return [
     'referral_admin_stats' => 'Ajánlási Statisztika',
     'referral_admin_total' => 'Összesen',
     'referral_admin_rejected' => 'Elutasított',
+
+    // ============================================================
+    // HANDLER REDEMPTION MODAL
+    // ============================================================
+    'confirm_redemption' => 'Beváltás megerősítése',
+    'reward_type_fixed' => 'FIX KEDVEZMÉNY',
+    'reward_type_percent' => '% KEDVEZMÉNY',
+    'reward_type_free_product' => 'INGYENES TERMÉK',
+    'value' => 'Érték',
+    'free' => 'Ingyenes',
+    'points' => 'pont',
+    'balance' => 'Egyenleg',
+    'confirm' => 'Megerősít',
+    'reject' => 'Elutasít',
+    'reject_now' => 'Most elutasít',
+    'rejected' => 'Elutasítva',
+    'processing' => 'Feldolgozás...',
+    'rejection_reason_optional' => 'Elutasítás oka (opcionális)',
+    'rejection_reason_placeholder' => 'pl. Jutalom nem elérhető',
+    'enter_purchase_amount' => 'Vásárlási összeg megadása',
+    'customer_gets_discount' => 'Az ügyfél kap',
+    'discount' => 'kedvezményt',
+    'on_this_amount' => 'erre az összegre',
+    'please_enter_purchase_amount' => 'Kérjük adja meg a vásárlási összeget!',
+    'redemption_confirmed' => 'Beváltás megerősítve!',
+    'redemption_rejected' => 'Beváltás elutasítva',
+    'network_error' => 'Hálózati hiba',
+    'error' => 'Hiba',
 ];

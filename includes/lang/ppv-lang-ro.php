@@ -1679,4 +1679,32 @@ return [
     'referral_admin_stats' => 'Statistici Recomandări',
     'referral_admin_total' => 'Total',
     'referral_admin_rejected' => 'Respins',
+
+    // ============================================================
+    // HANDLER REDEMPTION MODAL
+    // ============================================================
+    'confirm_redemption' => 'Confirmă răscumpărarea',
+    'reward_type_fixed' => 'REDUCERE FIXĂ',
+    'reward_type_percent' => '% REDUCERE',
+    'reward_type_free_product' => 'PRODUS GRATUIT',
+    'value' => 'Valoare',
+    'free' => 'Gratuit',
+    'points' => 'puncte',
+    'balance' => 'Sold',
+    'confirm' => 'Confirmă',
+    'reject' => 'Respinge',
+    'reject_now' => 'Respinge acum',
+    'rejected' => 'Respins',
+    'processing' => 'Se procesează...',
+    'rejection_reason_optional' => 'Motiv respingere (opțional)',
+    'rejection_reason_placeholder' => 'ex. Recompensa nu este disponibilă',
+    'enter_purchase_amount' => 'Introduceți suma de achiziție',
+    'customer_gets_discount' => 'Clientul primește',
+    'discount' => 'reducere',
+    'on_this_amount' => 'pe această sumă',
+    'please_enter_purchase_amount' => 'Vă rugăm introduceți suma de achiziție!',
+    'redemption_confirmed' => 'Răscumpărare confirmată!',
+    'redemption_rejected' => 'Răscumpărare respinsă',
+    'network_error' => 'Eroare de rețea',
+    'error' => 'Eroare',
 ];
