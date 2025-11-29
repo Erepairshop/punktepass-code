@@ -283,7 +283,10 @@ function initLogin() {
         googlePromptActive = true;
 
         try {
+            // Cancel any previous prompt first
+            google.accounts.id.cancel();
             glog('📤 Calling google.accounts.id.prompt()...');
+
             google.accounts.id.prompt((notification) => {
                 glog('📥 Prompt notification received');
                 googlePromptActive = false;
@@ -293,7 +296,13 @@ function initLogin() {
                     const reason = notification.getNotDisplayedReason();
                     glog('❌ NOT DISPLAYED - reason:', reason);
 
-                    // Only show error for actual problems, not user actions
+                    // If suppressed/cooldown, use OAuth popup fallback
+                    if (reason === 'suppressed_by_user' || reason === 'opt_out_or_no_session') {
+                        glog('🔄 Using OAuth popup fallback...');
+                        openGoogleOAuthPopup();
+                        return;
+                    }
+
                     if (reason === 'browser_not_supported') {
                         showAlert('Google Login wird von diesem Browser nicht unterstützt', 'error');
                     } else if (reason === 'invalid_client') {
@@ -304,6 +313,7 @@ function initLogin() {
                 if (notification.isSkippedMoment()) {
                     const reason = notification.getSkippedReason();
                     glog('⏭️ SKIPPED - reason:', reason);
+                    // User cancelled - also try popup on next click
                 }
 
                 if (notification.isDismissedMoment()) {
@@ -317,7 +327,62 @@ function initLogin() {
         } catch (e) {
             glog('💥 EXCEPTION in prompt():', e);
             googlePromptActive = false;
+            // Fallback to OAuth popup
+            openGoogleOAuthPopup();
         }
+    }
+
+    /**
+     * Fallback: Render Google Sign-In button when One Tap is suppressed
+     */
+    let googleButtonRendered = false;
+
+    function openGoogleOAuthPopup() {
+        glog('🔄 Fallback: Rendering Google button');
+
+        // Only render once
+        if (googleButtonRendered) {
+            glog('⚠️ Button already rendered, triggering click');
+            // Try to click the rendered button
+            const renderedBtn = document.querySelector('#ppv-google-rendered-btn div[role="button"]');
+            if (renderedBtn) {
+                renderedBtn.click();
+            }
+            return;
+        }
+
+        const $btn = $('#ppv-google-login-btn');
+
+        // Create container for Google's rendered button
+        const container = document.createElement('div');
+        container.id = 'ppv-google-rendered-btn';
+        container.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;opacity:0.01;cursor:pointer;';
+
+        // Insert into button
+        $btn.css('position', 'relative').append(container);
+
+        // Render Google button
+        google.accounts.id.renderButton(container, {
+            type: 'standard',
+            theme: 'outline',
+            size: 'large',
+            width: $btn.outerWidth(),
+            click_listener: () => {
+                glog('🖱️ Google rendered button clicked');
+            }
+        });
+
+        googleButtonRendered = true;
+        glog('✅ Google button rendered as overlay');
+
+        // Auto-click it
+        setTimeout(() => {
+            const renderedBtn = container.querySelector('div[role="button"]');
+            if (renderedBtn) {
+                glog('🖱️ Auto-clicking rendered button');
+                renderedBtn.click();
+            }
+        }, 100);
     }
 
     /**
