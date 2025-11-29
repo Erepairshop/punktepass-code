@@ -211,8 +211,8 @@ function initLogin() {
     let googleInitialized = false;
     let googlePromptActive = false;
 
-    // 🔍 DEBUG MODE
-    const GOOGLE_DEBUG = true;
+    // 🔍 DEBUG MODE (set to false for production)
+    const GOOGLE_DEBUG = false;
     function glog(...args) {
         if (GOOGLE_DEBUG) console.log('[GOOGLE]', ...args);
     }
