@@ -6580,16 +6580,16 @@ body.ppv-dark .ppv-mypoints-tab.active {
 }
 
 .ppv-section.danger {
-    border: 1px solid rgba(239, 68, 68, 0.2);
-    background: rgba(254, 226, 226, 0.3);
+    border: 1px solid rgba(220, 38, 38, 0.15);
+    background: var(--ppv-s-card);
 }
 
 .ppv-section.danger h3 {
-    color: var(--ppv-s-error);
+    color: #DC2626;
 }
 
 .ppv-section.danger h3 i {
-    color: var(--ppv-s-error);
+    color: #DC2626;
 }
 
 .ppv-section h3 {
@@ -6949,20 +6949,22 @@ body.ppv-dark .ppv-mypoints-tab.active {
 }
 
 .danger-btn {
-    background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
-    color: white;
-    border: none;
-    box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3);
+    background: var(--ppv-s-card);
+    color: #DC2626;
+    border: 1.5px solid rgba(220, 38, 38, 0.25);
+    box-shadow: none;
 }
 
 .danger-btn i {
     font-size: 18px;
+    color: #DC2626;
 }
 
 .danger-btn:hover:not(:disabled) {
-    background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);
-    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
-    transform: translateY(-2px);
+    background: rgba(254, 226, 226, 0.5);
+    border-color: rgba(220, 38, 38, 0.4);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
 }
 
 .danger-btn:active:not(:disabled) {
@@ -6971,7 +6973,24 @@ body.ppv-dark .ppv-mypoints-tab.active {
 
 /* ACTIONS --------------------------------------------------------------- */
 .ppv-actions {
-    margin-top: 12px;
+    position: fixed;
+    bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+    left: 0;
+    right: 0;
+    padding: 16px 20px;
+    background: linear-gradient(to top, var(--ppv-s-bg) 0%, var(--ppv-s-bg) 80%, transparent 100%);
+    z-index: 100;
+}
+
+.ppv-actions .save-btn {
+    max-width: 400px;
+    margin: 0 auto;
+    box-shadow: 0 4px 20px rgba(0, 102, 255, 0.3);
+}
+
+/* Add padding to form so content doesn't hide behind sticky button */
+#ppv-settings-form {
+    padding-bottom: 100px;
 }
 
 /* TOAST --------------------------------------------------------------- */
