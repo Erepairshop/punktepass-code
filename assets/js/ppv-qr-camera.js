@@ -467,24 +467,12 @@
     }
 
     async loadLibrary() {
-      // Use html5-qrcode (ZXing-based) - professional grade scanner
-      if (window.Html5Qrcode) {
-        await this.startHtml5QrScanner();
+      // Use jsQR directly - faster and more focused
+      if (window.jsQR) {
+        this.startJsQRScanner();
         return;
       }
 
-      const script = document.createElement('script');
-      script.src = 'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';
-      script.onload = () => this.startHtml5QrScanner();
-      script.onerror = () => {
-        ppvWarn('[Camera] html5-qrcode failed, falling back to jsQR');
-        this.loadFallbackLibrary();
-      };
-      document.head.appendChild(script);
-    }
-
-    loadFallbackLibrary() {
-      if (window.jsQR) { this.startJsQRScanner(); return; }
       const script = document.createElement('script');
       script.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
       script.onload = () => this.startJsQRScanner();
