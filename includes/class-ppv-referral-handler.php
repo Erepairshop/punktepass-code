@@ -212,18 +212,6 @@ class PPV_Referral_Handler {
             return false;
         }
 
-        // Check if user was already referred to this store
-        $existing = $wpdb->get_var($wpdb->prepare(
-            "SELECT id FROM {$wpdb->prefix}ppv_referrals WHERE referred_user_id = %d AND store_id = %d",
-            $user_id, $store_id
-        ));
-
-        if ($existing) {
-            ppv_log("⚠️ [PPV_Referral] User already referred to this store: user={$user_id}, store={$store_id}");
-            self::clear_referral_cookie();
-            return false;
-        }
-
         // Get store reward settings
         $store = $wpdb->get_row($wpdb->prepare(
             "SELECT referral_reward_type, referral_reward_value, referral_reward_gift, referral_manual_approval
@@ -238,18 +226,31 @@ class PPV_Referral_Handler {
         // Create referral record
         $status = $store->referral_manual_approval ? 'pending' : 'completed';
 
-        $wpdb->insert($wpdb->prefix . 'ppv_referrals', [
-            'referrer_user_id' => $referrer_id,
-            'referred_user_id' => $user_id,
-            'store_id' => $store_id,
-            'referral_code' => $referral_data['code'],
-            'status' => $status,
-            'reward_type' => $store->referral_reward_type,
-            'reward_value' => $store->referral_reward_value,
-            'reward_gift' => $store->referral_reward_gift,
-            'created_at' => current_time('mysql'),
-            'completed_at' => $status === 'completed' ? current_time('mysql') : null,
-        ]);
+        // 🔒 FIX: Use INSERT IGNORE to atomically prevent duplicate referrals
+        // This prevents race condition where two concurrent requests both pass the "existing" check
+        $result = $wpdb->query($wpdb->prepare("
+            INSERT IGNORE INTO {$wpdb->prefix}ppv_referrals
+            (referrer_user_id, referred_user_id, store_id, referral_code, status, reward_type, reward_value, reward_gift, created_at, completed_at)
+            VALUES (%d, %d, %d, %s, %s, %s, %s, %s, %s, %s)
+        ",
+            $referrer_id,
+            $user_id,
+            $store_id,
+            $referral_data['code'],
+            $status,
+            $store->referral_reward_type,
+            $store->referral_reward_value,
+            $store->referral_reward_gift,
+            current_time('mysql'),
+            $status === 'completed' ? current_time('mysql') : null
+        ));
+
+        // 🔒 Check if insert was successful (not duplicate)
+        if ($result === 0 || $wpdb->insert_id === 0) {
+            ppv_log("⚠️ [PPV_Referral] User already referred to this store (atomic check): user={$user_id}, store={$store_id}");
+            self::clear_referral_cookie();
+            return false;
+        }
 
         $referral_id = $wpdb->insert_id;
 

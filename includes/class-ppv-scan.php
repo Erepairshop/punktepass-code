@@ -168,6 +168,13 @@ public static function ajax_auto_add_point() {
     // --- Kampány ---
     $campaign_id = intval($_POST['campaign_id'] ?? 0);
 
+    // 🔒 NEW: Device/IP tracking for fraud detection
+    $device_fingerprint = isset($_POST['device_fingerprint']) ? sanitize_text_field($_POST['device_fingerprint']) : null;
+    $scan_lat = isset($_POST['latitude']) ? floatval($_POST['latitude']) : null;
+    $scan_lng = isset($_POST['longitude']) ? floatval($_POST['longitude']) : null;
+    $scanner_id = isset($_POST['scanner_id']) ? intval($_POST['scanner_id']) : null;
+    $ip_address = self::get_client_ip();
+
     // --- Ellenőrzés: létezik-e a bolt ---
     $store = $wpdb->get_row($wpdb->prepare(
         "SELECT id, company_name FROM {$wpdb->prefix}ppv_stores WHERE id=%d",
@@ -282,7 +289,11 @@ public static function ajax_auto_add_point() {
                 }
             };
 
-            $vip_bonus_details = ['fix' => 0, 'streak' => 0, 'daily' => 0];
+            // 🔒 FIX: Initialize ALL keys including 'pct' to prevent undefined array key error
+            $vip_bonus_details = ['pct' => 0, 'fix' => 0, 'streak' => 0, 'daily' => 0];
+
+            // 🔒 FIX: Save TRUE base points BEFORE any bonuses for double_points calculations
+            $true_base_points = $points_to_add;
 
             // 1. FIXED POINT BONUS
             if ($vip_settings->vip_fix_enabled && $user_level !== null) {
@@ -400,7 +411,8 @@ public static function ajax_auto_add_point() {
                     ppv_log("🎂 [PPV_Scan] Today is user {$user_id}'s birthday!");
 
                     $bonus_type = $birthday_settings->birthday_bonus_type ?? 'double_points';
-                    $base_points_for_birthday = $points_to_add; // Points before birthday bonus
+                    // 🔒 FIX: Use true_base_points (before VIP bonuses) to prevent bonus compounding
+                    $base_points_for_birthday = isset($true_base_points) ? $true_base_points : $points_to_add;
 
                     switch ($bonus_type) {
                         case 'double_points':
@@ -417,19 +429,24 @@ public static function ajax_auto_add_point() {
                     }
 
                     if ($birthday_bonus_applied > 0) {
-                        $points_to_add += $birthday_bonus_applied;
-                        $birthday_bonus_message = $birthday_settings->birthday_bonus_message ?? '';
+                        // 🔒 FIX: Use atomic UPDATE with WHERE to prevent race condition
+                        $rows_updated = $wpdb->query($wpdb->prepare("
+                            UPDATE {$wpdb->prefix}ppv_users
+                            SET last_birthday_bonus_at = %s
+                            WHERE id = %d
+                            AND (last_birthday_bonus_at IS NULL OR last_birthday_bonus_at < DATE_SUB(CURDATE(), INTERVAL 320 DAY))
+                        ", date('Y-m-d'), $user_id));
 
-                        // Update last_birthday_bonus_at to prevent abuse
-                        $wpdb->update(
-                            $wpdb->prefix . 'ppv_users',
-                            ['last_birthday_bonus_at' => date('Y-m-d')],
-                            ['id' => $user_id],
-                            ['%s'],
-                            ['%d']
-                        );
-
-                        ppv_log("🎂 [PPV_Scan] Birthday bonus applied: type={$bonus_type}, bonus=+{$birthday_bonus_applied}, total_points={$points_to_add}");
+                        if ($rows_updated > 0) {
+                            // Successfully claimed - add bonus
+                            $points_to_add += $birthday_bonus_applied;
+                            $birthday_bonus_message = $birthday_settings->birthday_bonus_message ?? '';
+                            ppv_log("🎂 [PPV_Scan] Birthday bonus applied: type={$bonus_type}, bonus=+{$birthday_bonus_applied}, total_points={$points_to_add}");
+                        } else {
+                            // Race condition prevented - another request already claimed it
+                            $birthday_bonus_applied = 0;
+                            ppv_log("🔒 [PPV_Scan] Birthday bonus race condition prevented for user {$user_id}");
+                        }
                     }
                 }
             }
@@ -447,20 +464,63 @@ public static function ajax_auto_add_point() {
         }
     }
 
-    // --- Beszúrás ---
-    $wpdb->insert("{$wpdb->prefix}ppv_points", [
-        'user_id'    => $user_id,
-        'store_id'   => $store_id,
-        'points'     => $points_to_add,
-        'campaign_id'=> $campaign_id,
-        'type'       => 'qr_scan',
-        'created'    => current_time('mysql')
-    ]);
+    // ═══════════════════════════════════════════════════════════
+    // 🔒 INSERT POINTS (WITH TRANSACTION FOR ATOMICITY)
+    // ═══════════════════════════════════════════════════════════
+    $wpdb->query('START TRANSACTION');
 
-    // Update lifetime_points for VIP level calculation
-    $total_points_for_lifetime = $points_to_add + $google_review_bonus_applied;
-    if (class_exists('PPV_User_Level') && $total_points_for_lifetime > 0) {
-        PPV_User_Level::add_lifetime_points($user_id, $total_points_for_lifetime);
+    try {
+        // 🔒 DUPLICATE CHECK: Prevent race condition double-inserts
+        $recent_insert = $wpdb->get_var($wpdb->prepare("
+            SELECT id FROM {$wpdb->prefix}ppv_points
+            WHERE user_id = %d AND store_id = %d AND type = 'qr_scan'
+            AND created > DATE_SUB(NOW(), INTERVAL 5 SECOND)
+            LIMIT 1
+        ", $user_id, $store_id));
+
+        if ($recent_insert) {
+            $wpdb->query('ROLLBACK');
+            ppv_log("⚠️ [PPV_Scan] Duplicate scan blocked: user={$user_id}, store={$store_id}, existing_id={$recent_insert}");
+            wp_send_json_error(['msg' => '⚠️ Scan bereits verarbeitet', 'error_type' => 'duplicate_scan']);
+        }
+
+        // --- Beszúrás with new tracking fields ---
+        $insert_result = $wpdb->insert("{$wpdb->prefix}ppv_points", [
+            'user_id'    => $user_id,
+            'store_id'   => $store_id,
+            'points'     => $points_to_add,
+            'campaign_id'=> $campaign_id ?: null,
+            'type'       => 'qr_scan',
+            // 🔒 NEW: Device/GPS tracking fields
+            'device_fingerprint' => $device_fingerprint,
+            'ip_address' => $ip_address,
+            'latitude' => $scan_lat,
+            'longitude' => $scan_lng,
+            'scanner_id' => $scanner_id,
+            'created'    => current_time('mysql')
+        ]);
+
+        if ($insert_result === false) {
+            $wpdb->query('ROLLBACK');
+            ppv_log("❌ [PPV_Scan] Failed to insert points: " . $wpdb->last_error);
+            wp_send_json_error(['msg' => '❌ Datenbankfehler', 'error_type' => 'db_error']);
+        }
+
+        $points_insert_id = $wpdb->insert_id;
+
+        // Update lifetime_points for VIP level calculation
+        $total_points_for_lifetime = $points_to_add + $google_review_bonus_applied;
+        if (class_exists('PPV_User_Level') && $total_points_for_lifetime > 0) {
+            PPV_User_Level::add_lifetime_points($user_id, $total_points_for_lifetime);
+        }
+
+        $wpdb->query('COMMIT');
+        ppv_log("✅ [PPV_Scan] Points inserted successfully: id={$points_insert_id}, user={$user_id}, store={$store_id}, points={$points_to_add}");
+
+    } catch (Exception $e) {
+        $wpdb->query('ROLLBACK');
+        ppv_log("❌ [PPV_Scan] Transaction failed: " . $e->getMessage());
+        wp_send_json_error(['msg' => '❌ Transaktionsfehler', 'error_type' => 'transaction_error']);
     }
 
     // --- Visszajelzés ---
@@ -487,6 +547,34 @@ public static function ajax_auto_add_point() {
         'google_review_bonus' => $google_review_bonus_applied
     ]);
 }
+
+    // ============================================================
+    // 🔒 HELPER: Get client IP address
+    // ============================================================
+    private static function get_client_ip() {
+        $ip_keys = [
+            'HTTP_CF_CONNECTING_IP',  // Cloudflare
+            'HTTP_X_FORWARDED_FOR',   // Proxy/Load balancer
+            'HTTP_X_REAL_IP',         // Nginx proxy
+            'REMOTE_ADDR'             // Direct connection
+        ];
+
+        foreach ($ip_keys as $key) {
+            if (!empty($_SERVER[$key])) {
+                $ip = $_SERVER[$key];
+                // Handle comma-separated list (X-Forwarded-For)
+                if (strpos($ip, ',') !== false) {
+                    $ip = trim(explode(',', $ip)[0]);
+                }
+                // Validate IP
+                if (filter_var($ip, FILTER_VALIDATE_IP)) {
+                    return $ip;
+                }
+            }
+        }
+
+        return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+    }
 
 }
 
