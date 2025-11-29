@@ -64,14 +64,14 @@ trait PPV_QR_Devices_Trait {
         <div class="ppv-user-devices">
             <div class="ppv-devices-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <div>
-                    <h3><i class="ri-smartphone-line"></i> <?php echo self::t('devices_title', 'Registrierte Geräte'); ?></h3>
+                    <h3><i class="ri-smartphone-line"></i> <?php echo self::t('devices_title', 'Regisztrált Készülékek'); ?></h3>
                     <p style="font-size: 13px; color: #999; margin: 5px 0 0 0;">
-                        <?php echo self::t('devices_subtitle', 'Verwalten Sie die Geräte, die den Scanner verwenden dürfen.'); ?>
+                        <?php echo self::t('devices_subtitle', 'Kezelje a scannert használó eszközöket.'); ?>
                     </p>
                 </div>
                 <div style="text-align: right;">
                     <span class="ppv-device-counter" style="font-size: 14px; color: <?php echo $can_add_more ? '#4caf50' : '#ff9800'; ?>;">
-                        <strong><?php echo $device_count; ?></strong> / <?php echo $max_devices; ?> <?php echo self::t('devices', 'Geräte'); ?>
+                        <strong><?php echo $device_count; ?></strong> / <?php echo $max_devices; ?> <?php echo self::t('devices', 'Készülékek'); ?>
                     </span>
                 </div>
             </div>
@@ -80,7 +80,7 @@ trait PPV_QR_Devices_Trait {
             <div style="background: rgba(33, 150, 243, 0.1); border: 1px solid rgba(33, 150, 243, 0.3); border-radius: 10px; padding: 15px; margin-bottom: 20px;">
                 <p style="margin: 0; font-size: 13px; color: #2196f3;">
                     <i class="ri-information-line"></i>
-                    <?php echo self::t('devices_info', 'Registrieren Sie Geräte über "Dieses Gerät registrieren". Bei erreichtem Limit (2 Geräte) können Sie weitere Geräte mit Admin-Genehmigung anfordern.'); ?>
+                    <?php echo self::t('devices_info', 'Új készülék regisztrálásához kattintson a "Készülék regisztrálása" gombra a kívánt eszközről.'); ?>
                 </p>
             </div>
 
@@ -88,24 +88,24 @@ trait PPV_QR_Devices_Trait {
             <div id="ppv-current-device-box" style="background: linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, rgba(0, 230, 118, 0.1) 100%); border: 1px solid rgba(76, 175, 80, 0.3); border-radius: 15px; padding: 20px; margin-bottom: 20px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
                     <div>
-                        <h4 style="margin: 0 0 8px 0; color: #fff;"><i class="ri-device-line"></i> <?php echo self::t('current_device', 'Aktuelles Gerät'); ?></h4>
+                        <h4 style="margin: 0 0 8px 0; color: #fff;"><i class="ri-device-line"></i> <?php echo self::t('current_device', 'Jelenlegi készülék'); ?></h4>
                         <p id="ppv-device-status" style="margin: 0; font-size: 13px; color: #999;">
-                            <?php echo self::t('checking_device', 'Gerätestatus wird überprüft...'); ?>
+                            <?php echo self::t('checking_device', 'Készülék állapot ellenőrzése...'); ?>
                         </p>
                     </div>
                     <div id="ppv-device-actions">
                         <button id="ppv-register-device-btn" class="ppv-btn neon" type="button" style="display: none;">
-                            <i class="ri-add-line"></i> <?php echo self::t('register_this_device', 'Dieses Gerät registrieren'); ?>
+                            <i class="ri-add-line"></i> <?php echo self::t('register_this_device', 'Készülék regisztrálása'); ?>
                         </button>
                         <span id="ppv-device-registered-badge" style="display: none; background: #4caf50; color: white; padding: 8px 16px; border-radius: 8px; font-size: 13px;">
-                            ✅ <?php echo self::t('device_registered', 'Gerät registriert'); ?>
+                            ✅ <?php echo self::t('device_registered', 'Készülék regisztrálva'); ?>
                         </span>
                         <button id="ppv-request-add-btn" class="ppv-btn-outline" type="button" style="display: none;">
-                            <i class="ri-mail-send-line"></i> <?php echo self::t('request_admin_approval', 'Admin-Genehmigung anfordern'); ?>
+                            <i class="ri-mail-send-line"></i> <?php echo self::t('request_admin_approval', 'Admin jóváhagyás kérése'); ?>
                         </button>
                         <!-- Button for registered users to request additional device slot -->
                         <button id="ppv-request-new-slot-btn" class="ppv-btn-outline" type="button" style="display: none; margin-left: 10px; color: #ff9800; border-color: #ff9800;">
-                            <i class="ri-add-circle-line"></i> <?php echo self::t('request_new_device_slot', 'Weiteres Gerät anfordern'); ?>
+                            <i class="ri-add-circle-line"></i> <?php echo self::t('request_new_device_slot', 'További készülék kérése'); ?>
                         </button>
                     </div>
                 </div>
@@ -115,8 +115,8 @@ trait PPV_QR_Devices_Trait {
             <?php if (empty($devices)): ?>
                 <div style="text-align: center; padding: 40px; color: #999; background: rgba(255,255,255,0.03); border-radius: 12px;">
                     <i class="ri-smartphone-line" style="font-size: 48px; color: #444; margin-bottom: 15px; display: block;"></i>
-                    <p style="margin: 0;"><?php echo self::t('no_devices_registered', 'Noch keine Geräte registriert.'); ?></p>
-                    <p style="margin: 10px 0 0 0; font-size: 13px;"><?php echo self::t('register_first_device', 'Registrieren Sie Ihr erstes Gerät, um den Scanner zu verwenden.'); ?></p>
+                    <p style="margin: 0;"><?php echo self::t('no_devices_registered', 'Még nincs regisztrált készülék.'); ?></p>
+                    <p style="margin: 10px 0 0 0; font-size: 13px;"><?php echo self::t('register_first_device', 'Regisztrálja első készülékét a scanner használatához.'); ?></p>
                 </div>
             <?php else: ?>
                 <div class="ppv-devices-list">
@@ -130,7 +130,7 @@ trait PPV_QR_Devices_Trait {
                         <div class="ppv-device-card glass-card" data-device-id="<?php echo $device->id; ?>" data-fingerprint="<?php echo esc_attr($device->fingerprint_hash); ?>" data-mobile-scanner="<?php echo $is_mobile_scanner ? '1' : '0'; ?>" style="padding: 15px; margin-bottom: 15px; border-left: 4px solid #4caf50; border-radius: 12px; position: relative;">
                             <!-- Current device indicator (will be shown by JS) -->
                             <div class="ppv-current-device-badge" style="display: none; position: absolute; top: -8px; right: 15px; background: linear-gradient(135deg, #4caf50, #00e676); color: white; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: bold; box-shadow: 0 2px 8px rgba(76,175,80,0.4);">
-                                <i class="ri-check-line"></i> <?php echo self::t('current_device_badge', 'Dieses Gerät'); ?>
+                                <i class="ri-check-line"></i> <?php echo self::t('current_device_badge', 'Ez a készülék'); ?>
                             </div>
                             <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 15px; flex-wrap: wrap;">
                                 <div style="flex: 1; min-width: 200px;">
