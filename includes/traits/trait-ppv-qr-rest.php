@@ -171,6 +171,17 @@ trait PPV_QR_REST_Trait {
         $device_fingerprint = isset($data['device_fingerprint']) ? sanitize_text_field($data['device_fingerprint']) : null;
         $ip_address = self::get_client_ip();
 
+        // 🔍 DEBUG: Log device tracking data
+        ppv_log("🔍 [PPV_QR] Device tracking: " . json_encode([
+            'device_fingerprint' => $device_fingerprint ?: 'NULL',
+            'ip_address' => $ip_address,
+            'scanner_id' => $scanner_id,
+            'latitude' => $scan_lat,
+            'longitude' => $scan_lng,
+            'raw_fingerprint_isset' => isset($data['device_fingerprint']) ? 'YES' : 'NO',
+            'raw_fingerprint_value' => $data['device_fingerprint'] ?? 'NOT_SET'
+        ]));
+
         if (empty($qr_code) || empty($store_key)) {
             return new WP_REST_Response([
                 'success' => false,
@@ -849,7 +860,7 @@ trait PPV_QR_REST_Trait {
             }
 
             $wpdb->query('COMMIT');
-            ppv_log("✅ [PPV_QR] Points inserted successfully: id={$points_insert_id}, user={$user_id}, store={$store_id}, points={$points_add}");
+            ppv_log("✅ [PPV_QR] Points inserted successfully: id={$points_insert_id}, user={$user_id}, store={$store_id}, points={$points_add}, device=" . ($device_fingerprint ?: 'NULL'));
 
         } catch (Exception $e) {
             $wpdb->query('ROLLBACK');
