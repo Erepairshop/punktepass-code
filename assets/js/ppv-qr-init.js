@@ -258,10 +258,13 @@
     const rewardValue = data.reward_value || 0;
 
     const isPercentType = rewardType === 'discount_percent';
+    const isFixedType = rewardType === 'discount_fixed';
+    const isFreeProduct = rewardType === 'free_product';
+
     const purchaseAmountHtml = isPercentType ? `
         <div class="ppv-redemption-purchase-amount" style="margin: 15px 0; padding: 15px; background: linear-gradient(135deg, #fff3e0, #ffe0b2); border-radius: 12px; border: 2px solid #ff9800;">
           <label for="ppv-purchase-amount" style="display: block; margin-bottom: 8px; font-weight: 600; color: #e65100;">
-            <span style="font-size: 18px;">💰</span> Einkaufsbetrag eingeben:
+            <span style="font-size: 18px;">💰</span> ${L.enter_purchase_amount || 'Einkaufsbetrag eingeben'}:
           </label>
           <div style="display: flex; align-items: center; gap: 8px;">
             <input type="number" id="ppv-purchase-amount"
@@ -273,25 +276,40 @@
             <span style="font-size: 20px; font-weight: bold; color: #e65100;">€</span>
           </div>
           <p style="margin: 8px 0 0 0; font-size: 13px; color: #bf360c;">
-            ℹ️ Der Kunde erhält <strong>${rewardValue}% Rabatt</strong> auf diesen Betrag
+            ℹ️ ${L.customer_gets_discount || 'Der Kunde erhält'} <strong>${rewardValue}% ${L.discount || 'Rabatt'}</strong> ${L.on_this_amount || 'auf diesen Betrag'}
           </p>
         </div>
     ` : '';
 
-    let rewardValueInfo = '';
-    if (rewardType === 'discount_fixed' && rewardValue > 0) {
-      rewardValueInfo = `<div style="color: #4caf50; font-weight: 600; margin-top: 5px;">💶 Wert: ${rewardValue}€ Rabatt</div>`;
-    } else if (rewardType === 'free_product' && data.free_product_value > 0) {
-      rewardValueInfo = `<div style="color: #4caf50; font-weight: 600; margin-top: 5px;">🎁 Wert: ${data.free_product_value}€</div>`;
+    // 🎁 Build reward type badge and value display
+    let rewardTypeBadge = '';
+    let rewardValueDisplay = '';
+
+    if (isFixedType && rewardValue > 0) {
+      rewardTypeBadge = `<span style="display: inline-block; background: linear-gradient(135deg, #4caf50, #388e3c); color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 8px;">💶 ${L.reward_type_fixed || 'FIX RABATT'}</span>`;
+      rewardValueDisplay = `<div style="font-size: 28px; font-weight: 700; color: #2e7d32; margin: 10px 0;">−${rewardValue}€</div>`;
     } else if (isPercentType && rewardValue > 0) {
-      rewardValueInfo = `<div style="color: #ff9800; font-weight: 600; margin-top: 5px;">📊 ${rewardValue}% Rabatt</div>`;
+      rewardTypeBadge = `<span style="display: inline-block; background: linear-gradient(135deg, #ff9800, #f57c00); color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 8px;">📊 ${L.reward_type_percent || '% RABATT'}</span>`;
+      rewardValueDisplay = `<div style="font-size: 28px; font-weight: 700; color: #e65100; margin: 10px 0;">−${rewardValue}%</div>`;
+    } else if (isFreeProduct) {
+      const freeProductVal = data.free_product_value || 0;
+      rewardTypeBadge = `<span style="display: inline-block; background: linear-gradient(135deg, #9c27b0, #7b1fa2); color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 8px;">🎁 ${L.reward_type_free_product || 'GRATIS PRODUKT'}</span>`;
+      rewardValueDisplay = freeProductVal > 0
+        ? `<div style="font-size: 28px; font-weight: 700; color: #7b1fa2; margin: 10px 0;">${L.value || 'Wert'}: ${freeProductVal}€</div>`
+        : `<div style="font-size: 22px; font-weight: 600; color: #7b1fa2; margin: 10px 0;">${L.free || 'Gratis'}!</div>`;
     }
+
+    // Show description if available
+    const rewardDescription = data.reward_description ? escapeHtml(data.reward_description) : '';
+    const rewardDescriptionHtml = rewardDescription
+      ? `<div style="font-size: 13px; color: #666; margin-top: 5px; font-style: italic;">${rewardDescription}</div>`
+      : '';
 
     modal.innerHTML = `
       <div class="ppv-handler-redemption-content">
         <div class="ppv-redemption-header">
           <span class="ppv-redemption-icon">🎁</span>
-          <h3>Einlösung bestätigen</h3>
+          <h3>${L.confirm_redemption || 'Einlösung bestätigen'}</h3>
         </div>
 
         <div class="ppv-redemption-user-info">
@@ -302,30 +320,32 @@
           </div>
         </div>
 
-        <div class="ppv-redemption-reward-info">
-          <div class="ppv-redemption-reward-title">${rewardTitle}</div>
-          ${rewardValueInfo}
-          <div class="ppv-redemption-reward-points">
-            <span class="ppv-redemption-cost">-${rewardPoints} Punkte</span>
-            <span class="ppv-redemption-balance">(Aktuell: ${currentPoints} Punkte)</span>
+        <div class="ppv-redemption-reward-info" style="text-align: center; padding: 15px; background: linear-gradient(135deg, #f8f9fa, #e9ecef); border-radius: 12px; margin: 10px 0;">
+          ${rewardTypeBadge}
+          <div class="ppv-redemption-reward-title" style="font-size: 16px; font-weight: 600; color: #333;">${rewardTitle}</div>
+          ${rewardDescriptionHtml}
+          ${rewardValueDisplay}
+          <div class="ppv-redemption-reward-points" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #dee2e6;">
+            <span class="ppv-redemption-cost" style="color: #dc3545; font-weight: 600;">−${rewardPoints} ${L.points || 'Punkte'}</span>
+            <span class="ppv-redemption-balance" style="color: #666; margin-left: 8px;">(${L.balance || 'Guthaben'}: ${currentPoints} ${L.points || 'Punkte'})</span>
           </div>
         </div>
 
         ${purchaseAmountHtml}
 
         <div class="ppv-redemption-rejection-reason" style="display:none;">
-          <label for="ppv-rejection-reason">Ablehnungsgrund (optional):</label>
-          <input type="text" id="ppv-rejection-reason" placeholder="z.B. Prämie nicht verfügbar" maxlength="255">
+          <label for="ppv-rejection-reason">${L.rejection_reason_optional || 'Ablehnungsgrund (optional)'}:</label>
+          <input type="text" id="ppv-rejection-reason" placeholder="${L.rejection_reason_placeholder || 'z.B. Prämie nicht verfügbar'}" maxlength="255">
         </div>
 
         <div class="ppv-redemption-actions">
           <button class="ppv-btn ppv-btn-reject" id="ppv-handler-reject">
             <span class="ppv-btn-icon">❌</span>
-            <span class="ppv-btn-text">Ablehnen</span>
+            <span class="ppv-btn-text">${L.reject || 'Ablehnen'}</span>
           </button>
           <button class="ppv-btn ppv-btn-confirm" id="ppv-handler-confirm">
             <span class="ppv-btn-icon">✅</span>
-            <span class="ppv-btn-text">Bestätigen</span>
+            <span class="ppv-btn-text">${L.confirm || 'Bestätigen'}</span>
           </button>
         </div>
       </div>
@@ -356,14 +376,14 @@
       if (rewardType === 'discount_percent') {
         const purchaseAmount = parseFloat(purchaseAmountInput?.value) || 0;
         if (purchaseAmount <= 0) {
-          window.ppvToast('⚠️ Bitte Einkaufsbetrag eingeben!', 'warning');
+          window.ppvToast('⚠️ ' + (L.please_enter_purchase_amount || 'Bitte Einkaufsbetrag eingeben!'), 'warning');
           purchaseAmountInput?.focus();
           return;
         }
       }
 
       confirmBtn.disabled = true;
-      confirmBtn.innerHTML = '<span class="ppv-btn-icon">⏳</span><span class="ppv-btn-text">Wird verarbeitet...</span>';
+      confirmBtn.innerHTML = '<span class="ppv-btn-icon">⏳</span><span class="ppv-btn-text">' + (L.processing || 'Wird verarbeitet...') + '</span>';
 
       const purchaseAmount = rewardType === 'discount_percent' ? (parseFloat(purchaseAmountInput?.value) || 0) : null;
       await handleHandlerResponse('approve', data.token, null, purchaseAmount);
@@ -374,13 +394,13 @@
         showingRejectionReason = true;
         rejectionReasonDiv.style.display = 'block';
         rejectionReasonInput.focus();
-        rejectBtn.innerHTML = '<span class="ppv-btn-icon">❌</span><span class="ppv-btn-text">Jetzt ablehnen</span>';
+        rejectBtn.innerHTML = '<span class="ppv-btn-icon">❌</span><span class="ppv-btn-text">' + (L.reject_now || 'Jetzt ablehnen') + '</span>';
         return;
       }
 
       rejectBtn.disabled = true;
-      rejectBtn.innerHTML = '<span class="ppv-btn-icon">⏳</span><span class="ppv-btn-text">Wird verarbeitet...</span>';
-      const reason = rejectionReasonInput.value.trim() || 'Abgelehnt';
+      rejectBtn.innerHTML = '<span class="ppv-btn-icon">⏳</span><span class="ppv-btn-text">' + (L.processing || 'Wird verarbeitet...') + '</span>';
+      const reason = rejectionReasonInput.value.trim() || (L.rejected || 'Abgelehnt');
       await handleHandlerResponse('reject', data.token, reason);
     });
   }
@@ -424,14 +444,14 @@
 
       if (data.success) {
         if (action === 'approve') {
-          window.ppvToast('✅ Einlösung bestätigt!', 'success');
+          window.ppvToast('✅ ' + (L.redemption_confirmed || 'Einlösung bestätigt!'), 'success');
           playSound('success');
         } else {
-          window.ppvToast('❌ Einlösung abgelehnt', 'info');
+          window.ppvToast('❌ ' + (L.redemption_rejected || 'Einlösung abgelehnt'), 'info');
         }
         closeHandlerRedemptionModal();
       } else {
-        window.ppvToast('⚠️ ' + (data.message || 'Fehler'), 'error');
+        window.ppvToast('⚠️ ' + (data.message || L.error || 'Fehler'), 'error');
         playSound('error');
         const modal = document.getElementById('ppv-handler-redemption-modal');
         if (modal) {
@@ -439,17 +459,17 @@
           const rejectBtn = modal.querySelector('#ppv-handler-reject');
           if (confirmBtn) {
             confirmBtn.disabled = false;
-            confirmBtn.innerHTML = '<span class="ppv-btn-icon">✅</span><span class="ppv-btn-text">Bestätigen</span>';
+            confirmBtn.innerHTML = '<span class="ppv-btn-icon">✅</span><span class="ppv-btn-text">' + (L.confirm || 'Bestätigen') + '</span>';
           }
           if (rejectBtn) {
             rejectBtn.disabled = false;
-            rejectBtn.innerHTML = '<span class="ppv-btn-icon">❌</span><span class="ppv-btn-text">Jetzt ablehnen</span>';
+            rejectBtn.innerHTML = '<span class="ppv-btn-icon">❌</span><span class="ppv-btn-text">' + (L.reject_now || 'Jetzt ablehnen') + '</span>';
           }
         }
       }
     } catch (err) {
       console.error('[Handler] Response error:', err);
-      window.ppvToast('⚠️ Netzwerkfehler', 'error');
+      window.ppvToast('⚠️ ' + (L.network_error || 'Netzwerkfehler'), 'error');
       playSound('error');
     }
   }

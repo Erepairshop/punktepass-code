@@ -467,15 +467,45 @@ async function initUserDashboard() {
 
         <div class="ppv-redemption-rewards">
           <p style="margin-bottom: 12px; color: rgba(255,255,255,0.8);">${lang === 'de' ? 'Wähle eine Prämie:' : lang === 'hu' ? 'Válassz jutalmat:' : 'Alege o recompensă:'}</p>
-          ${rewards.map(r => `
-            <button class="ppv-reward-option" data-reward-id="${r.id}" data-points="${r.required_points}">
-              <div class="ppv-reward-option-info">
-                <strong>${escapeHtml(r.title)}</strong>
-                <span style="color: #fbbf24;">${r.required_points} ${lang === 'de' ? 'Punkte' : lang === 'hu' ? 'pont' : 'puncte'}</span>
+          ${rewards.map(r => {
+            // 🎁 Build reward type badge and value display
+            let rewardTypeBadge = '';
+            let rewardValueText = '';
+            const actionType = r.action_type || r.type || '';
+            const actionValue = r.action_value || r.value || 0;
+
+            if (actionType === 'discount_fixed' && actionValue > 0) {
+              rewardTypeBadge = `<span style="display: inline-block; background: linear-gradient(135deg, #4caf50, #388e3c); color: white; padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600;">💶 ${lang === 'de' ? 'FIX' : lang === 'hu' ? 'FIX' : 'FIX'}</span>`;
+              rewardValueText = `<span style="color: #4caf50; font-weight: 700; font-size: 16px;">−${actionValue}€</span>`;
+            } else if (actionType === 'discount_percent' && actionValue > 0) {
+              rewardTypeBadge = `<span style="display: inline-block; background: linear-gradient(135deg, #ff9800, #f57c00); color: white; padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600;">📊 %</span>`;
+              rewardValueText = `<span style="color: #ff9800; font-weight: 700; font-size: 16px;">−${actionValue}%</span>`;
+            } else if (actionType === 'free_product') {
+              rewardTypeBadge = `<span style="display: inline-block; background: linear-gradient(135deg, #9c27b0, #7b1fa2); color: white; padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600;">🎁 ${lang === 'de' ? 'GRATIS' : lang === 'hu' ? 'INGYEN' : 'GRATIS'}</span>`;
+              rewardValueText = r.free_product_value ? `<span style="color: #9c27b0; font-weight: 700; font-size: 14px;">${lang === 'de' ? 'Wert' : lang === 'hu' ? 'Érték' : 'Valoare'}: ${r.free_product_value}€</span>` : '';
+            }
+
+            // Description if available
+            const descHtml = r.description ? `<div style="font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 4px; font-style: italic; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(r.description)}</div>` : '';
+
+            return `
+            <button class="ppv-reward-option" data-reward-id="${r.id}" data-points="${r.required_points}" style="flex-direction: column; align-items: stretch; padding: 12px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <div class="ppv-reward-option-info" style="flex: 1;">
+                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                    ${rewardTypeBadge}
+                    <strong style="font-size: 14px;">${escapeHtml(r.title)}</strong>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 12px;">
+                    <span style="color: #fbbf24; font-size: 12px;"><i class="ri-copper-coin-line"></i> ${r.required_points} ${lang === 'de' ? 'Punkte' : lang === 'hu' ? 'pont' : 'puncte'}</span>
+                    ${rewardValueText}
+                  </div>
+                  ${descHtml}
+                </div>
+                <i class="ri-arrow-right-s-line" style="font-size: 24px; color: #34d399;"></i>
               </div>
-              <i class="ri-arrow-right-s-line"></i>
             </button>
-          `).join('')}
+          `}).join('')}
         </div>
 
         <div class="ppv-redemption-actions">

@@ -1691,5 +1691,33 @@ return [
     'referral_admin_stats' => 'Referral Statistik',
     'referral_admin_total' => 'Gesamt',
     'referral_admin_rejected' => 'Abgelehnt',
+
+    // ============================================================
+    // HANDLER REDEMPTION MODAL
+    // ============================================================
+    'confirm_redemption' => 'Einlösung bestätigen',
+    'reward_type_fixed' => 'FIX RABATT',
+    'reward_type_percent' => '% RABATT',
+    'reward_type_free_product' => 'GRATIS PRODUKT',
+    'value' => 'Wert',
+    'free' => 'Gratis',
+    'points' => 'Punkte',
+    'balance' => 'Guthaben',
+    'confirm' => 'Bestätigen',
+    'reject' => 'Ablehnen',
+    'reject_now' => 'Jetzt ablehnen',
+    'rejected' => 'Abgelehnt',
+    'processing' => 'Wird verarbeitet...',
+    'rejection_reason_optional' => 'Ablehnungsgrund (optional)',
+    'rejection_reason_placeholder' => 'z.B. Prämie nicht verfügbar',
+    'enter_purchase_amount' => 'Einkaufsbetrag eingeben',
+    'customer_gets_discount' => 'Der Kunde erhält',
+    'discount' => 'Rabatt',
+    'on_this_amount' => 'auf diesen Betrag',
+    'please_enter_purchase_amount' => 'Bitte Einkaufsbetrag eingeben!',
+    'redemption_confirmed' => 'Einlösung bestätigt!',
+    'redemption_rejected' => 'Einlösung abgelehnt',
+    'network_error' => 'Netzwerkfehler',
+    'error' => 'Fehler',
 ];
 
