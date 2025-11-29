@@ -153,14 +153,18 @@
         hash2 = ((hash2 << 7) - hash2) + data.charCodeAt(i);
         hash2 = hash2 & hash2;
       }
-      return 'fp_' + Math.abs(hash1).toString(16).padStart(8, '0') + Math.abs(hash2).toString(16).padStart(8, '0');
+      const fp = 'fp_' + Math.abs(hash1).toString(16).padStart(8, '0') + Math.abs(hash2).toString(16).padStart(8, '0');
+      console.log('📱 [POS-Sync] Generated fingerprint:', fp);
+      return fp;
     } catch (e) {
+      console.error('📱 [POS-Sync] Fingerprint generation error:', e);
       return null;
     }
   }
 
   // Initialize fallback immediately (before any scan can happen)
   deviceFingerprint = generateFallbackFingerprint();
+  console.log('📱 [POS-Sync] Device fingerprint initialized:', deviceFingerprint);
 
   // Try to upgrade to FingerprintJS if available (async)
   (async function() {
@@ -203,6 +207,14 @@
 
     // Get GPS for fraud detection
     const gps = getGps();
+    const fp = getDeviceFingerprint();
+
+    // 🔍 DEBUG: Log what we're sending
+    console.log('📱 [POS-Sync] Sending scan with:', {
+      scanner_id: getScannerId(),
+      device_fingerprint: fp,
+      gps: gps
+    });
 
     try {
       const res = await fetch("/wp-json/punktepass/v1/pos/scan", {
@@ -219,7 +231,7 @@
           longitude: gps.longitude,
           scanner_id: getScannerId(),
           scanner_name: getScannerName(),
-          device_fingerprint: getDeviceFingerprint()
+          device_fingerprint: fp
         })
       });
 
