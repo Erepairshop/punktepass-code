@@ -209,6 +209,7 @@ function initLogin() {
      * Initialize Google Login
      */
     let googleInitialized = false;
+    let googlePromptActive = false;
 
     function initGoogleLogin() {
         const clientId = ppvLogin.google_client_id;
@@ -223,15 +224,21 @@ function initLogin() {
 
         // Manual button click handler
         $('#ppv-google-login-btn').on('click', function() {
+            // Prevent double-click while prompt is active
+            if (googlePromptActive) {
+                console.log('⏳ Google prompt already active');
+                return;
+            }
+
             if (googleInitialized && typeof google !== 'undefined' && google.accounts) {
-                google.accounts.id.prompt();
+                showGooglePrompt();
             } else if (typeof google !== 'undefined' && google.accounts) {
                 // SDK loaded but not initialized yet - initialize now
                 tryInitializeGoogle(clientId);
                 // Small delay then prompt
                 setTimeout(function() {
                     if (googleInitialized) {
-                        google.accounts.id.prompt();
+                        showGooglePrompt();
                     } else {
                         showAlert('Google Login wird geladen...', 'info');
                     }
@@ -240,6 +247,44 @@ function initLogin() {
                 showAlert('Google Login wird geladen, bitte erneut klicken...', 'info');
                 // Try again in case SDK loads soon
                 waitForGoogleSDK(clientId);
+            }
+        });
+    }
+
+    /**
+     * Show Google Sign-In prompt with proper error handling
+     */
+    function showGooglePrompt() {
+        googlePromptActive = true;
+
+        google.accounts.id.prompt((notification) => {
+            googlePromptActive = false;
+
+            // Handle different notification states
+            if (notification.isNotDisplayed()) {
+                const reason = notification.getNotDisplayedReason();
+                console.log('ℹ️ Google prompt not displayed:', reason);
+
+                // Only show error for actual problems, not user actions
+                if (reason === 'browser_not_supported') {
+                    showAlert('Google Login wird von diesem Browser nicht unterstützt', 'error');
+                } else if (reason === 'invalid_client') {
+                    showAlert('Google Login Konfigurationsfehler', 'error');
+                }
+                // Don't show error for: opt_out_or_no_session, suppressed_by_user, etc.
+            }
+
+            if (notification.isSkippedMoment()) {
+                const reason = notification.getSkippedReason();
+                console.log('ℹ️ Google prompt skipped:', reason);
+                // User closed popup or clicked outside - this is normal, no error needed
+            }
+
+            if (notification.isDismissedMoment()) {
+                const reason = notification.getDismissedReason();
+                console.log('ℹ️ Google prompt dismissed:', reason);
+                // credential_returned = success (handled by callback)
+                // cancel_called, flow_restarted = normal user actions
             }
         });
     }
@@ -256,7 +301,8 @@ function initLogin() {
                     client_id: clientId,
                     callback: handleGoogleCallback,
                     auto_select: false,
-                    cancel_on_tap_outside: true
+                    cancel_on_tap_outside: true,
+                    itp_support: true  // Better Safari/Firefox support
                 });
                 googleInitialized = true;
                 console.log('✅ Google Sign-In initialized');
