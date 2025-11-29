@@ -3,11 +3,11 @@
 <plist version="1.0">
 <dict>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Capture Audio by user request</string>
+	<string>PunktePass benötigt Zugriff auf Ihr Mikrofon, um Sprachnachrichten aufzunehmen, wenn Sie den Kundensupport kontaktieren möchten.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Track current location by user request</string>
+	<string>PunktePass verwendet Ihren Standort, um Geschäfte in Ihrer Nähe anzuzeigen und Ihnen die nächstgelegenen Einlösemöglichkeiten für Ihre Punkte zu zeigen.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Capture Video by user request</string>
+	<string>PunktePass benötigt Zugriff auf Ihre Kamera, um QR-Codes zu scannen und Punkte zu sammeln oder einzulösen. Außerdem können Sie damit Ihr Profilbild aufnehmen.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -33,7 +33,7 @@
 			<string>Google Sign-In</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>com.googleusercontent.apps.453567547051-odmqrinafba8ls8ktp9snlp7d2fpl9q0</string>
+				<string>com.googleusercontent.apps.645942978357-1bdviltt810gutpve9vjj2kab340man6</string>
 			</array>
 		</dict>
 		<dict>
@@ -79,7 +79,6 @@
 	</dict>
 	<key>UIBackgroundModes</key>
 	<array>
-		<string>processing</string>
 		<string>remote-notification</string>
 	</array>
 	<key>UILaunchStoryboardName</key>
@@ -112,20 +111,16 @@
 	<array>
 		<string>punktepass.de</string>
 		<string>accounts.google.com</string>
+		<string>oauth2.googleapis.com</string>
+		<string>www.googleapis.com</string>
 		<string>www.facebook.com</string>
 		<string>connect.facebook.net</string>
 		<string>m.facebook.com</string>
-		<string>www.tiktok.com</string>
 		<string>appleid.apple.com</string>
 		<string>maps.google.com</string>
 		<string>www.google.com</string>
 	</array>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
-	<key>BGTaskSchedulerPermittedIdentifiers</key>
-	<array>
-		<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
-	</array>
-	
 </dict>
 </plist>

@@ -130,7 +130,7 @@ class PPV_Signup {
 
         $google_client_id = defined('PPV_GOOGLE_CLIENT_ID')
             ? PPV_GOOGLE_CLIENT_ID
-            : get_option('ppv_google_client_id', '453567547051-odmqrinafba8ls8ktp9snlp7d2fpl9q0.apps.googleusercontent.com');
+            : get_option('ppv_google_client_id', '645942978357-ndj7dgrapd2dgndnjf03se1p08l0o9ra.apps.googleusercontent.com');
 
         // Localize
         wp_localize_script('ppv-signup', 'ppvSignup', [
@@ -848,7 +848,7 @@ class PPV_Signup {
     private static function verify_google_token($credential) {
         $client_id = defined('PPV_GOOGLE_CLIENT_ID')
             ? PPV_GOOGLE_CLIENT_ID
-            : get_option('ppv_google_client_id', '453567547051-odmqrinafba8ls8ktp9snlp7d2fpl9q0.apps.googleusercontent.com');
+            : get_option('ppv_google_client_id', '645942978357-ndj7dgrapd2dgndnjf03se1p08l0o9ra.apps.googleusercontent.com');
 
         if (empty($client_id)) {
             return false;

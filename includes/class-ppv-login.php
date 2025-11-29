@@ -564,7 +564,7 @@ public static function render_landing_page($atts) {
         window.ppvLogin = {
             ajaxurl: '<?php echo admin_url('admin-ajax.php'); ?>',
             nonce: '<?php echo wp_create_nonce('ppv_login_nonce'); ?>',
-            google_client_id: '<?php echo defined('PPV_GOOGLE_CLIENT_ID') ? PPV_GOOGLE_CLIENT_ID : get_option('ppv_google_client_id', '453567547051-odmqrinafba8ls8ktp9snlp7d2fpl9q0.apps.googleusercontent.com'); ?>',
+            google_client_id: '<?php echo defined('PPV_GOOGLE_CLIENT_ID') ? PPV_GOOGLE_CLIENT_ID : get_option('ppv_google_client_id', '645942978357-ndj7dgrapd2dgndnjf03se1p08l0o9ra.apps.googleusercontent.com'); ?>',
             facebook_app_id: '<?php echo defined('PPV_FACEBOOK_APP_ID') ? PPV_FACEBOOK_APP_ID : get_option('ppv_facebook_app_id', '4070833883179463'); ?>',
             tiktok_client_key: '<?php echo defined('PPV_TIKTOK_CLIENT_KEY') ? PPV_TIKTOK_CLIENT_KEY : get_option('ppv_tiktok_client_key', '9bb6aca5781d007d6c00fe3ed60d6734'); ?>',
             apple_client_id: '<?php echo defined('PPV_APPLE_CLIENT_ID') ? PPV_APPLE_CLIENT_ID : get_option('ppv_apple_client_id', ''); ?>',
@@ -1039,7 +1039,7 @@ public static function render_landing_page($atts) {
      * ============================================================ */
   private static function verify_google_token($credential) {
         // Check wp-config.php define first, then options table
-        $client_id = defined('PPV_GOOGLE_CLIENT_ID') ? PPV_GOOGLE_CLIENT_ID : get_option('ppv_google_client_id', '453567547051-odmqrinafba8ls8ktp9snlp7d2fpl9q0.apps.googleusercontent.com');
+        $client_id = defined('PPV_GOOGLE_CLIENT_ID') ? PPV_GOOGLE_CLIENT_ID : get_option('ppv_google_client_id', '645942978357-ndj7dgrapd2dgndnjf03se1p08l0o9ra.apps.googleusercontent.com');
         
         ppv_log("🔍 [PPV_Google] Starting token verification");
         
