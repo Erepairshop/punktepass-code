@@ -543,12 +543,27 @@ class PPV_QR {
         // Only enqueue camera scanner JS for handlers/scanners
         if ($is_handler) {
             // Load Ably JS library + shared manager if configured
-            if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+            $ably_enabled = class_exists('PPV_Ably') && PPV_Ably::is_enabled();
+            if ($ably_enabled) {
                 PPV_Ably::enqueue_scripts(); // Enqueues ably-js + ppv-ably-manager
-                wp_enqueue_script('ppv-qr', PPV_PLUGIN_URL . 'assets/js/ppv-qr.js', ['jquery', 'ppv-ably-manager'], time(), true);
-            } else {
-                wp_enqueue_script('ppv-qr', PPV_PLUGIN_URL . 'assets/js/ppv-qr.js', ['jquery'], time(), true);
             }
+
+            // JS file version (cache busting)
+            $js_version = '6.5.0';
+
+            // Modular QR Scanner JS files with proper dependencies
+            wp_enqueue_script('ppv-qr-core', PPV_PLUGIN_URL . 'assets/js/ppv-qr-core.js', ['jquery'], $js_version, true);
+            wp_enqueue_script('ppv-qr-ui', PPV_PLUGIN_URL . 'assets/js/ppv-qr-ui.js', ['ppv-qr-core'], $js_version, true);
+            wp_enqueue_script('ppv-qr-sync', PPV_PLUGIN_URL . 'assets/js/ppv-qr-sync.js', ['ppv-qr-core', 'ppv-qr-ui'], $js_version, true);
+            wp_enqueue_script('ppv-qr-campaigns', PPV_PLUGIN_URL . 'assets/js/ppv-qr-campaigns.js', ['ppv-qr-core'], $js_version, true);
+            wp_enqueue_script('ppv-qr-camera', PPV_PLUGIN_URL . 'assets/js/ppv-qr-camera.js', ['ppv-qr-core'], $js_version, true);
+
+            // Main init module - depends on all other modules + optionally Ably
+            $init_deps = ['ppv-qr-core', 'ppv-qr-ui', 'ppv-qr-sync', 'ppv-qr-campaigns', 'ppv-qr-camera'];
+            if ($ably_enabled) {
+                $init_deps[] = 'ppv-ably-manager';
+            }
+            wp_enqueue_script('ppv-qr', PPV_PLUGIN_URL . 'assets/js/ppv-qr-init.js', $init_deps, $js_version, true);
 
             $lang = sanitize_text_field($_COOKIE['ppv_lang'] ?? '');
             if (empty($lang) || !in_array($lang, ['de', 'hu', 'ro'])) {
