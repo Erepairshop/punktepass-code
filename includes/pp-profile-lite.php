@@ -17,6 +17,7 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
         const NONCE_NAME = 'ppv_nonce';
 
         public static function hooks() {
+            add_action('wp_head', [__CLASS__, 'add_turbo_no_cache_meta'], 1);
             add_action('wp_ajax_ppv_get_strings', [__CLASS__, 'ajax_get_strings']);
             add_action('wp_ajax_ppv_geocode_address', [__CLASS__, 'ajax_geocode_address']);
             add_action('wp_ajax_nopriv_ppv_geocode_address', [__CLASS__, 'ajax_geocode_address']);
@@ -39,6 +40,15 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
             // Referral Program
             add_action('wp_ajax_ppv_activate_referral_grace_period', [__CLASS__, 'ajax_activate_referral_grace_period']);
             add_action('wp_ajax_nopriv_ppv_activate_referral_grace_period', [__CLASS__, 'ajax_activate_referral_grace_period']);
+        }
+
+        // ==================== TURBO CACHE FIX ====================
+        public static function add_turbo_no_cache_meta() {
+            // Only add on profile pages (check if shortcode will render)
+            global $post;
+            if ($post && has_shortcode($post->post_content, 'pp_store_profile')) {
+                echo '<meta name="turbo-cache-control" content="no-cache">' . "\n";
+            }
         }
 
         // ==================== AUTH CHECK ====================
@@ -192,9 +202,6 @@ wp_localize_script('pp-profile-lite-i18n', 'ppv_profile', [
 
             ob_start();
             ?>
-            <!-- ✅ Disable Turbo cache for this page to ensure fresh data after save -->
-            <meta name="turbo-cache-control" content="no-cache">
-
             <div class="ppv-profile-container">
                 <div class="ppv-profile-header">
                     <div class="ppv-header-left">

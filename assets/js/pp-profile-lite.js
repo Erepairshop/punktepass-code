@@ -15,7 +15,7 @@
     // ============================================================
     (function setupTurboCacheFix() {
         // 1. Add meta tag to head (if not already there)
-        if (!document.querySelector('meta[name="turbo-cache-control"]')) {
+        if (!document.querySelector('head meta[name="turbo-cache-control"]')) {
             const meta = document.createElement('meta');
             meta.name = 'turbo-cache-control';
             meta.content = 'no-cache';
@@ -31,6 +31,40 @@
                 profileForm.dataset.ppvBound = 'false';
             }
         }, { once: false });
+
+        // 3. ✅ FIX: Force reload when restoring from Turbo cache (back/forward navigation)
+        document.addEventListener('turbo:visit', function(e) {
+            const profileForm = document.getElementById('ppv-profile-form');
+            if (profileForm && e.detail?.action === 'restore') {
+                // Turbo is restoring from cache - force a fresh reload
+                e.preventDefault();
+                window.location.reload();
+            }
+        });
+
+        // 4. ✅ Alternative: Force reload on turbo:load if page was cached
+        let lastVisitTime = Date.now();
+        document.addEventListener('turbo:before-visit', function() {
+            lastVisitTime = Date.now();
+        });
+        document.addEventListener('turbo:load', function() {
+            const profileForm = document.getElementById('ppv-profile-form');
+            // If we loaded instantly (< 50ms), it's likely from cache
+            if (profileForm && (Date.now() - lastVisitTime) < 50) {
+                // Check if we have a timestamp marker
+                const marker = sessionStorage.getItem('ppv_profile_loaded_at');
+                const now = Date.now();
+                if (marker && (now - parseInt(marker)) > 2000) {
+                    // Page was loaded before and now restored from cache - reload
+                    window.location.reload();
+                    return;
+                }
+            }
+            // Mark this page load time
+            if (profileForm) {
+                sessionStorage.setItem('ppv_profile_loaded_at', Date.now().toString());
+            }
+        });
     })();
 
     class PPVProfileForm {
