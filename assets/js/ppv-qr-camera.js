@@ -31,6 +31,7 @@
     constructor(scanProcessor) {
       this.scanProcessor = scanProcessor;
       this.scanner = null;
+      this.html5QrCode = null;  // html5-qrcode instance
       this.scanning = false;
       this.state = 'stopped';
       this.lastRead = '';
@@ -293,11 +294,21 @@
 
     async stopScanner() {
       try {
+        // Stop html5-qrcode if running
+        if (this.html5QrCode) {
+          try {
+            await this.html5QrCode.stop();
+            this.html5QrCode.clear();
+          } catch (e) { /* ignore */ }
+          this.html5QrCode = null;
+        }
+        // Stop qr-scanner if running
         if (this.scanner) {
           if (typeof this.scanner.stop === 'function') await this.scanner.stop();
           if (typeof this.scanner.destroy === 'function') this.scanner.destroy();
           this.scanner = null;
         }
+        // Stop jsQR stream if running
         if (this.iosStream) { this.iosStream.getTracks().forEach(t => t.stop()); this.iosStream = null; }
       } catch (e) { ppvWarn('[Camera] Stop error:', e); }
 
@@ -456,16 +467,19 @@
     }
 
     async loadLibrary() {
-      // Use jsQR directly - no web worker needed, avoids CORS issues
-      if (window.jsQR) {
-        await this.startJsQRScanner();
+      // Use html5-qrcode (ZXing-based) - professional grade scanner
+      if (window.Html5Qrcode) {
+        await this.startHtml5QrScanner();
         return;
       }
 
       const script = document.createElement('script');
-      script.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
-      script.onload = () => this.startJsQRScanner();
-      script.onerror = () => this.updateStatus('error', '❌ Scanner nicht verfügbar');
+      script.src = 'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';
+      script.onload = () => this.startHtml5QrScanner();
+      script.onerror = () => {
+        ppvWarn('[Camera] html5-qrcode failed, falling back to jsQR');
+        this.loadFallbackLibrary();
+      };
       document.head.appendChild(script);
     }
 
@@ -577,6 +591,106 @@
       }
     }
 
+    // ============================================================
+    // HTML5-QRCODE SCANNER (ZXing-based - Professional Grade)
+    // ============================================================
+    async startHtml5QrScanner() {
+      if (!this.readerDiv || !window.Html5Qrcode) return;
+
+      // Clean up any previous scanner
+      if (this.html5QrCode) {
+        try {
+          await this.html5QrCode.stop();
+        } catch (e) { /* ignore */ }
+        this.html5QrCode = null;
+      }
+
+      try {
+        // Create container for html5-qrcode
+        const scannerId = 'ppv-html5-qrcode-reader';
+        this.readerDiv.innerHTML = `<div id="${scannerId}" style="width:100%;height:100%;"></div>`;
+
+        this.html5QrCode = new Html5Qrcode(scannerId, { verbose: false });
+
+        const config = {
+          fps: 10,
+          qrbox: { width: 250, height: 250 },
+          aspectRatio: 1.0,
+          disableFlip: false,
+          experimentalFeatures: {
+            useBarCodeDetectorIfSupported: true
+          }
+        };
+
+        await this.html5QrCode.start(
+          { facingMode: 'environment' },
+          config,
+          (decodedText, decodedResult) => {
+            ppvLog('[Html5QR] Scanned:', decodedText);
+            this.onScanSuccess(decodedText);
+          },
+          (errorMessage) => {
+            // Ignore "No QR code found" errors (normal during scanning)
+          }
+        );
+
+        ppvLog('[Html5QR] Scanner started successfully');
+
+        // Get video track for torch/refocus
+        try {
+          const videoElement = document.querySelector(`#${scannerId} video`);
+          if (videoElement && videoElement.srcObject) {
+            this.videoTrack = videoElement.srcObject.getVideoTracks()[0];
+            if (this.videoTrack) {
+              const capabilities = this.videoTrack.getCapabilities();
+              if (capabilities.torch && this.torchBtn) {
+                this.torchBtn.style.display = 'inline-flex';
+              }
+              if (this.refocusBtn) {
+                this.refocusBtn.style.display = 'inline-flex';
+              }
+              this.startPeriodicRefocus();
+            }
+          }
+        } catch (trackErr) {
+          ppvWarn('[Html5QR] Track setup error:', trackErr);
+        }
+
+        this.scanning = true;
+        this.state = 'scanning';
+        this.updateStatus('scanning', L.scanner_active || 'Scanning...');
+
+      } catch (e) {
+        ppvWarn('[Html5QR] Start error:', e);
+        console.error('[Html5QR] Detailed error:', e);
+
+        const errMsg = e?.message || String(e);
+        if (/permission|denied|not allowed/i.test(errMsg)) {
+          this.updateStatus('error', '❌ Kamera-Zugriff verweigert');
+          window.ppvToast('Bitte erlaube den Kamerazugriff', 'error');
+        } else if (/not found|no camera/i.test(errMsg)) {
+          this.updateStatus('error', '❌ Keine Kamera gefunden');
+        } else {
+          // Fallback to jsQR
+          ppvLog('[Html5QR] Falling back to jsQR...');
+          this.loadFallbackLibrary();
+        }
+      }
+    }
+
+    async stopHtml5QrScanner() {
+      if (this.html5QrCode) {
+        try {
+          await this.html5QrCode.stop();
+          this.html5QrCode.clear();
+        } catch (e) { /* ignore */ }
+        this.html5QrCode = null;
+      }
+    }
+
+    // ============================================================
+    // JSQR SCANNER (Fallback)
+    // ============================================================
     async startJsQRScanner() {
       if (!this.readerDiv || !window.jsQR) return;
       if (this.iosStream) { this.iosStream.getTracks().forEach(t => t.stop()); this.iosStream = null; }
