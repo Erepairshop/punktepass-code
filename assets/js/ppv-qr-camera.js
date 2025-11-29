@@ -481,15 +481,24 @@
       if (!this.readerDiv || !window.QrScanner) return;
 
       try {
-        // IMPORTANT: Set worker path BEFORE creating scanner instance
-        QrScanner.WORKER_PATH = 'https://unpkg.com/qr-scanner@1.4.2/qr-scanner-worker.min.js';
-        ppvLog('[Camera] Worker path set to:', QrScanner.WORKER_PATH);
-
         let videoEl = this.readerDiv.querySelector('video');
         if (!videoEl) {
           videoEl = document.createElement('video');
           videoEl.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:8px;';
           this.readerDiv.appendChild(videoEl);
+        }
+
+        const workerPath = 'https://unpkg.com/qr-scanner@1.4.2/qr-scanner-worker.min.js';
+
+        // Fetch worker and create blob URL to avoid CORS import() issues
+        let workerBlobUrl = null;
+        try {
+          const workerResponse = await fetch(workerPath);
+          const workerBlob = await workerResponse.blob();
+          workerBlobUrl = URL.createObjectURL(workerBlob);
+          ppvLog('[Camera] Worker blob URL created');
+        } catch (fetchErr) {
+          ppvWarn('[Camera] Could not fetch worker, using direct path:', fetchErr);
         }
 
         const options = {
@@ -499,6 +508,9 @@
           highlightCodeOutline: true,
           returnDetailedScanResult: true
         };
+
+        // Set worker path - use blob URL if available, otherwise CDN path
+        QrScanner.WORKER_PATH = workerBlobUrl || workerPath;
 
         this.scanner = new QrScanner(
           videoEl,
