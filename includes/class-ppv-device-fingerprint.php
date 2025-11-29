@@ -30,6 +30,9 @@ class PPV_Device_Fingerprint {
     // Device approval requests table
     const DEVICE_REQUESTS_TABLE = 'ppv_device_requests';
 
+    // Device deletion log table
+    const DEVICE_DELETION_LOG_TABLE = 'ppv_device_deletion_log';
+
     // Maximum devices per user (store owner)
     const MAX_DEVICES_PER_USER = 2;
 
@@ -202,6 +205,35 @@ class PPV_Device_Fingerprint {
 
             ppv_log("✅ [PPV_Device_Fingerprint] Added mobile_scanner column (per-device) and device_id to requests");
             update_option('ppv_device_migration_version', '1.6');
+            $migration_version = '1.6';
+        }
+
+        // Migration 1.7: Add device deletion log table
+        if (version_compare($migration_version, '1.7', '<')) {
+            $table_deletion_log = $wpdb->prefix . self::DEVICE_DELETION_LOG_TABLE;
+
+            $sql = "CREATE TABLE IF NOT EXISTS {$table_deletion_log} (
+                id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+                store_id BIGINT(20) UNSIGNED NOT NULL,
+                device_id BIGINT(20) UNSIGNED NOT NULL,
+                device_name VARCHAR(255) NULL,
+                fingerprint_hash VARCHAR(64) NOT NULL,
+                deleted_by_user_id BIGINT(20) UNSIGNED NOT NULL COMMENT 'PPV user ID who deleted',
+                deleted_by_user_type ENUM('handler', 'scanner') NOT NULL COMMENT 'User type who deleted',
+                deleted_by_user_email VARCHAR(255) NULL,
+                ip_address VARCHAR(45) NULL,
+                deleted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                KEY idx_store (store_id),
+                KEY idx_deleted_at (deleted_at)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
+
+            require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+            dbDelta($sql);
+
+            ppv_log("✅ [PPV_Device_Fingerprint] Device deletion log table created");
+            update_option('ppv_device_migration_version', '1.7');
+            $migration_version = '1.7';
         }
     }
 
@@ -271,10 +303,17 @@ class PPV_Device_Fingerprint {
             'permission_callback' => '__return_true'
         ]);
 
-        // Request device removal (needs admin approval)
+        // Request device removal (needs admin approval) - LEGACY, kept for backwards compatibility
         register_rest_route('punktepass/v1', '/user-devices/request-remove', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'rest_request_device_removal'],
+            'permission_callback' => '__return_true'
+        ]);
+
+        // Direct device deletion (no admin approval needed)
+        register_rest_route('punktepass/v1', '/user-devices/delete', [
+            'methods' => 'POST',
+            'callback' => [__CLASS__, 'rest_delete_device_direct'],
             'permission_callback' => '__return_true'
         ]);
 
@@ -1330,7 +1369,7 @@ class PPV_Device_Fingerprint {
     }
 
     /**
-     * REST: Request device removal (needs admin approval)
+     * REST: Request device removal (needs admin approval) - LEGACY
      */
     public static function rest_request_device_removal(WP_REST_Request $request) {
         global $wpdb;
@@ -1382,6 +1421,104 @@ class PPV_Device_Fingerprint {
         return new WP_REST_Response([
             'success' => false,
             'message' => $result['message'] ?? 'Fehler beim Erstellen der Anfrage'
+        ], 500);
+    }
+
+    /**
+     * REST: Direct device deletion (no admin approval needed)
+     * Shop owners and scanner users can delete devices directly
+     */
+    public static function rest_delete_device_direct(WP_REST_Request $request) {
+        global $wpdb;
+
+        $store_id = self::get_session_store_id();
+
+        if ($store_id <= 0) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Nicht authentifiziert'
+            ], 401);
+        }
+
+        // Get current user info for logging
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+        $user_id = intval($_SESSION['ppv_user_id'] ?? 0);
+        $user_type = sanitize_text_field($_SESSION['ppv_user_type'] ?? 'handler');
+
+        // Get user email
+        $user_email = '';
+        if ($user_id > 0) {
+            $user_email = $wpdb->get_var($wpdb->prepare(
+                "SELECT email FROM {$wpdb->prefix}ppv_users WHERE id = %d",
+                $user_id
+            ));
+        }
+
+        $data = $request->get_json_params();
+        $device_id = intval($data['device_id'] ?? 0);
+
+        if ($device_id <= 0) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Ungültige Geräte-ID'
+            ], 400);
+        }
+
+        $parent_store_id = self::get_parent_store_id($store_id);
+
+        // Get device info before deletion (for logging)
+        $device = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}" . self::USER_DEVICES_TABLE . " WHERE id = %d AND store_id = %d",
+            $device_id, $parent_store_id
+        ));
+
+        if (!$device) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Gerät nicht gefunden'
+            ], 404);
+        }
+
+        // Log the deletion BEFORE deleting
+        $ip_address = self::get_client_ip();
+        $wpdb->insert(
+            $wpdb->prefix . self::DEVICE_DELETION_LOG_TABLE,
+            [
+                'store_id' => $parent_store_id,
+                'device_id' => $device_id,
+                'device_name' => $device->device_name,
+                'fingerprint_hash' => $device->fingerprint_hash,
+                'deleted_by_user_id' => $user_id,
+                'deleted_by_user_type' => ($user_type === 'scanner') ? 'scanner' : 'handler',
+                'deleted_by_user_email' => $user_email,
+                'ip_address' => $ip_address,
+                'deleted_at' => current_time('mysql')
+            ],
+            ['%d', '%d', '%s', '%s', '%d', '%s', '%s', '%s', '%s']
+        );
+
+        ppv_log("📱 [Device Delete] Logged: device_id={$device_id}, device_name={$device->device_name}, deleted_by={$user_email} ({$user_type})");
+
+        // Delete the device
+        $result = $wpdb->delete(
+            $wpdb->prefix . self::USER_DEVICES_TABLE,
+            ['id' => $device_id, 'store_id' => $parent_store_id],
+            ['%d', '%d']
+        );
+
+        if ($result) {
+            ppv_log("📱 [Device Delete] SUCCESS: device_id={$device_id}, store_id={$parent_store_id}");
+            return new WP_REST_Response([
+                'success' => true,
+                'message' => 'Gerät erfolgreich gelöscht'
+            ], 200);
+        }
+
+        return new WP_REST_Response([
+            'success' => false,
+            'message' => 'Fehler beim Löschen des Geräts'
         ], 500);
     }
 

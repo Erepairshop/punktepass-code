@@ -164,8 +164,8 @@ trait PPV_QR_Devices_Trait {
                                     <button class="ppv-device-update-btn ppv-btn-outline" data-device-id="<?php echo $device->id; ?>" data-device-name="<?php echo esc_attr($device->device_name ?: $device_type['name']); ?>" style="padding: 8px 12px; font-size: 12px; color: #2196f3; border-color: #2196f3;">
                                         <i class="ri-refresh-line"></i> <?php echo self::t('update_fingerprint', 'Fingerprint aktualisieren'); ?>
                                     </button>
-                                    <button class="ppv-device-remove-btn ppv-btn-outline" data-device-id="<?php echo $device->id; ?>" data-device-name="<?php echo esc_attr($device->device_name ?: $device_type['name']); ?>" style="padding: 8px 12px; font-size: 12px; color: #f44336; border-color: #f44336;">
-                                        <i class="ri-delete-bin-line"></i> <?php echo self::t('request_removal', 'Entfernung anfordern'); ?>
+                                    <button class="ppv-device-delete-btn ppv-btn-outline" data-device-id="<?php echo $device->id; ?>" data-device-name="<?php echo esc_attr($device->device_name ?: $device_type['name']); ?>" style="padding: 8px 12px; font-size: 12px; color: #f44336; border-color: #f44336;">
+                                        <i class="ri-delete-bin-line"></i> <?php echo self::t('delete_device', 'Löschen'); ?>
                                     </button>
                                 </div>
                             </div>
@@ -192,6 +192,7 @@ trait PPV_QR_Devices_Trait {
             let currentFingerprint = null;
             let currentDeviceInfo = null; // 📱 Készülék adatok FingerprintJS-ből
             let deviceCheckResult = null;
+            const isScanner = <?php echo $is_scanner ? 'true' : 'false'; ?>; // Scanner user flag
 
             // Load FingerprintJS if not loaded
             function loadFingerprintJS() {
@@ -353,7 +354,8 @@ trait PPV_QR_Devices_Trait {
                         $('#ppv-request-add-btn').hide();
 
                         // Check if limit is reached - show button to request additional device slot
-                        if (parseInt(data.device_count, 10) >= parseInt(data.max_devices, 10)) {
+                        // But NOT for scanner users - they cannot request additional devices
+                        if (parseInt(data.device_count, 10) >= parseInt(data.max_devices, 10) && !isScanner) {
                             $('#ppv-request-new-slot-btn').show();
                         } else {
                             $('#ppv-request-new-slot-btn').hide();
@@ -385,10 +387,15 @@ trait PPV_QR_Devices_Trait {
                             $('#ppv-request-new-slot-btn').hide();
                         } else {
                             // No available slots - need admin approval for THIS device
-                            $('#ppv-device-status').html('<span style="color: #f44336;">🚫 <?php echo esc_js(self::t('device_limit_reached', 'Gerätelimit erreicht. Admin-Genehmigung erforderlich.')); ?></span>');
+                            // But NOT for scanner users - they cannot request additional devices
+                            if (isScanner) {
+                                $('#ppv-device-status').html('<span style="color: #f44336;">🚫 <?php echo esc_js(self::t('device_limit_reached_scanner', 'Gerätelimit erreicht. Kontaktieren Sie den Shop-Inhaber.')); ?></span>');
+                            } else {
+                                $('#ppv-device-status').html('<span style="color: #f44336;">🚫 <?php echo esc_js(self::t('device_limit_reached', 'Gerätelimit erreicht. Admin-Genehmigung erforderlich.')); ?></span>');
+                            }
                             $('#ppv-register-device-btn').hide();
                             $('#ppv-device-registered-badge').hide();
-                            $('#ppv-request-add-btn').show();
+                            $('#ppv-request-add-btn').toggle(!isScanner); // Hide for scanner users
                             $('#ppv-request-new-slot-btn').hide();
                         }
                     }
@@ -509,20 +516,21 @@ trait PPV_QR_Devices_Trait {
                 }
             });
 
-            // Request device removal
-            $(document).on('click', '.ppv-device-remove-btn', async function() {
+            // Direct device deletion (no admin approval needed)
+            $(document).on('click', '.ppv-device-delete-btn', async function() {
                 const $btn = $(this);
                 const deviceId = $btn.data('device-id');
                 const deviceName = $btn.data('device-name');
 
-                if (!confirm('<?php echo esc_js(self::t('confirm_request_remove', 'Eine Löschungsanfrage für dieses Gerät wird an den Admin gesendet. Fortfahren?')); ?>\n\n' + deviceName)) {
+                // Confirmation dialog with warning that deletion is permanent
+                if (!confirm('<?php echo esc_js(self::t('confirm_delete_device', 'Sind Sie sicher, dass Sie dieses Gerät löschen möchten?\n\nDie Löschung kann nicht rückgängig gemacht werden!')); ?>\n\n📱 ' + deviceName)) {
                     return;
                 }
 
                 $btn.prop('disabled', true).html('<i class="ri-loader-4-line ri-spin"></i>');
 
                 try {
-                    const response = await fetch('/wp-json/punktepass/v1/user-devices/request-remove', {
+                    const response = await fetch('/wp-json/punktepass/v1/user-devices/delete', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ device_id: deviceId })
@@ -530,17 +538,26 @@ trait PPV_QR_Devices_Trait {
                     const data = await response.json();
 
                     if (data.success) {
-                        alert('<?php echo esc_js(self::t('removal_request_sent', 'Löschungsanfrage gesendet! Der Admin wird per E-Mail benachrichtigt.')); ?>');
-                        $('#ppv-pending-requests').show();
-                        $btn.closest('.ppv-device-card').css('opacity', '0.5');
-                        $btn.replaceWith('<span style="color: #ff9800; font-size: 12px;"><i class="ri-time-line"></i> <?php echo esc_js(self::t('pending_removal', 'Löschung ausstehend')); ?></span>');
+                        alert('<?php echo esc_js(self::t('device_deleted', 'Gerät erfolgreich gelöscht!')); ?>');
+                        // Remove the device card from UI with animation
+                        $btn.closest('.ppv-device-card').fadeOut(300, function() {
+                            $(this).remove();
+                            // Update device counter if exists
+                            const $counter = $('.ppv-device-counter strong');
+                            if ($counter.length) {
+                                const currentCount = parseInt($counter.text(), 10);
+                                if (currentCount > 0) {
+                                    $counter.text(currentCount - 1);
+                                }
+                            }
+                        });
                     } else {
-                        alert(data.message || '<?php echo esc_js(self::t('request_error', 'Fehler beim Senden der Anfrage')); ?>');
-                        $btn.prop('disabled', false).html('<i class="ri-delete-bin-line"></i> <?php echo esc_js(self::t('request_removal', 'Entfernung anfordern')); ?>');
+                        alert(data.message || '<?php echo esc_js(self::t('delete_error', 'Fehler beim Löschen des Geräts')); ?>');
+                        $btn.prop('disabled', false).html('<i class="ri-delete-bin-line"></i> <?php echo esc_js(self::t('delete_device', 'Löschen')); ?>');
                     }
                 } catch (e) {
                     alert('<?php echo esc_js(self::t('network_error', 'Netzwerkfehler')); ?>');
-                    $btn.prop('disabled', false).html('<i class="ri-delete-bin-line"></i> <?php echo esc_js(self::t('request_removal', 'Entfernung anfordern')); ?>');
+                    $btn.prop('disabled', false).html('<i class="ri-delete-bin-line"></i> <?php echo esc_js(self::t('delete_device', 'Löschen')); ?>');
                 }
             });
 
