@@ -163,9 +163,30 @@ if (defined('PPV_GOOGLE_MAPS_KEY') && PPV_GOOGLE_MAPS_KEY) {
     );
 }
 
-            wp_enqueue_script('pp-profile-lite-i18n', PPV_PLUGIN_URL . 'assets/js/pp-profile-lite.js', ['jquery'], filemtime(PPV_PLUGIN_DIR . 'assets/js/pp-profile-lite.js'), true);
+            // Profile Lite Modular JS (v3.0)
+            $js_base = PPV_PLUGIN_URL . 'assets/js/';
+            $js_dir = PPV_PLUGIN_DIR . 'assets/js/';
 
-wp_localize_script('pp-profile-lite-i18n', 'ppv_profile', [
+            // 1. Core module (state, helpers, Turbo cache fix)
+            wp_enqueue_script('pp-profile-core', $js_base . 'pp-profile-core.js', [], filemtime($js_dir . 'pp-profile-core.js'), true);
+
+            // 2. Tabs module
+            wp_enqueue_script('pp-profile-tabs', $js_base . 'pp-profile-tabs.js', ['pp-profile-core'], filemtime($js_dir . 'pp-profile-tabs.js'), true);
+
+            // 3. Form module
+            wp_enqueue_script('pp-profile-form', $js_base . 'pp-profile-form.js', ['pp-profile-core', 'pp-profile-tabs'], filemtime($js_dir . 'pp-profile-form.js'), true);
+
+            // 4. Media module
+            wp_enqueue_script('pp-profile-media', $js_base . 'pp-profile-media.js', ['pp-profile-core'], filemtime($js_dir . 'pp-profile-media.js'), true);
+
+            // 5. Geocoding module
+            wp_enqueue_script('pp-profile-geocoding', $js_base . 'pp-profile-geocoding.js', ['pp-profile-core'], filemtime($js_dir . 'pp-profile-geocoding.js'), true);
+
+            // 6. Init module (depends on all others)
+            wp_enqueue_script('pp-profile-init', $js_base . 'pp-profile-init.js', ['pp-profile-core', 'pp-profile-tabs', 'pp-profile-form', 'pp-profile-media', 'pp-profile-geocoding'], filemtime($js_dir . 'pp-profile-init.js'), true);
+
+            // Localize script data
+            wp_localize_script('pp-profile-core', 'ppv_profile', [
                 'ajaxUrl' => admin_url('admin-ajax.php'),
                 'nonce' => wp_create_nonce(self::NONCE_ACTION),
                 'strings' => PPV_Lang::$strings,
