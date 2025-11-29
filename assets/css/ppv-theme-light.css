@@ -6709,6 +6709,7 @@ body.ppv-dark .ppv-mypoints-tab.active {
 .ppv-checkbox input[type="checkbox"] {
     position: relative;
     width: 48px;
+    min-width: 48px;
     height: 26px;
     -webkit-appearance: none;
     appearance: none;
@@ -6717,6 +6718,7 @@ body.ppv-dark .ppv-mypoints-tab.active {
     cursor: pointer;
     transition: all 0.3s ease;
     flex-shrink: 0;
+    margin: 0;
 }
 
 .ppv-checkbox input[type="checkbox"]::before {
@@ -6745,6 +6747,8 @@ body.ppv-dark .ppv-mypoints-tab.active {
     font-weight: 500;
     color: var(--ppv-s-text);
     line-height: 1.4;
+    flex: 1;
+    padding-left: 4px;
 }
 
 /* WhatsApp Toggle - Green accent */
