@@ -709,6 +709,69 @@ public static function render_landing_page($atts) {
                 ]);
             }
 
+            // 🔍 SCANNER LOGIN: Handle scanner users (password login from ppv_users)
+            if ($db_user_type === 'scanner') {
+                ppv_log("🔍 [PPV_Login] Scanner user detected: #{$user->id}");
+
+                // Check if scanner is active
+                if ($user->active != 1) {
+                    ppv_log("❌ [PPV_Login] Scanner user is disabled: #{$user->id}");
+                    wp_send_json_error(['message' => 'Ihr Konto wurde deaktiviert.']);
+                }
+
+                // Get handler's store
+                if (!empty($user->vendor_store_id)) {
+                    $handler_store = $wpdb->get_row($wpdb->prepare(
+                        "SELECT id, active FROM {$prefix}ppv_stores WHERE id=%d LIMIT 1",
+                        $user->vendor_store_id
+                    ));
+
+                    if (!$handler_store || $handler_store->active != 1) {
+                        ppv_log("❌ [PPV_Login] Scanner's handler store inactive: #{$user->vendor_store_id}");
+                        wp_send_json_error(['message' => 'Der Handler ist inaktiv.']);
+                    }
+                }
+
+                // Set scanner session
+                $_SESSION['ppv_user_id'] = $user->id;
+                $_SESSION['ppv_user_type'] = 'scanner';
+                $_SESSION['ppv_user_email'] = $user->email;
+                if (!empty($user->vendor_store_id)) {
+                    $_SESSION['ppv_store_id'] = $user->vendor_store_id;
+                }
+
+                $GLOBALS['ppv_role'] = 'scanner';
+
+                // Generate/reuse token
+                $token = $user->login_token;
+                if (empty($token)) {
+                    $token = md5(uniqid('ppv_scanner_', true));
+                    $wpdb->update("{$prefix}ppv_users", ['login_token' => $token], ['id' => $user->id]);
+                    ppv_log("🔑 [PPV_Login] New token generated for scanner #{$user->id}");
+                }
+
+                // Set cookie
+                $domain = $_SERVER['HTTP_HOST'] ?? '';
+                $expire = $remember ? time() + (86400 * 180) : time() + (86400 * 30);
+                setcookie('ppv_user_token', $token, $expire, '/', $domain, true, true);
+
+                // Track fingerprint
+                if (!empty($fingerprint) && class_exists('PPV_Device_Fingerprint')) {
+                    PPV_Device_Fingerprint::track_login($user->id, $fingerprint, 'password');
+                }
+
+                ppv_log("✅ [PPV_Login] Scanner logged in (#{$user->id}, store={$user->vendor_store_id})");
+
+                wp_send_json_success([
+                    'message' => PPV_Lang::t('login_success'),
+                    'role' => 'scanner',
+                    'user_id' => (int)$user->id,
+                    'store_id' => (int)($user->vendor_store_id ?? 0),
+                    'user_token' => $token,
+                    'redirect' => home_url('/qr-center')
+                ]);
+            }
+
             // 👤 REGULAR USER LOGIN
             $_SESSION['ppv_user_id'] = $user->id;
             $_SESSION['ppv_user_type'] = 'user';
