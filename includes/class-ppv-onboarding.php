@@ -253,11 +253,42 @@ if (!class_exists('PPV_Onboarding')) {
         public static function rest_permission_check() {
             // ✅ SCANNER USERS: Block REST API access
             if (class_exists('PPV_Permissions') && PPV_Permissions::is_scanner_user()) {
-                return false;
+                ppv_log("❌ [PPV_ONBOARDING] Permission denied: scanner user");
+                return new WP_Error('rest_forbidden', 'Scanner users cannot access onboarding', ['status' => 403]);
             }
 
             $auth = self::check_auth();
-            return $auth['valid'] && $auth['type'] === 'ppv_stores';
+
+            // Debug permission check
+            ppv_log("🔐 [PPV_ONBOARDING] Permission check: valid=" . ($auth['valid'] ? 'true' : 'false') . ", type=" . ($auth['type'] ?? 'NONE') . ", store_id=" . ($auth['store_id'] ?? 'NONE'));
+
+            if ($auth['valid'] && $auth['type'] === 'ppv_stores') {
+                return true;
+            }
+
+            // ✅ Fallback: Check if vendor user is logged in via ppv_users
+            if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+                @session_start();
+            }
+
+            if (!empty($_SESSION['ppv_user_type']) && $_SESSION['ppv_user_type'] === 'vendor' && !empty($_SESSION['ppv_user_id'])) {
+                global $wpdb;
+                $vendor = $wpdb->get_row($wpdb->prepare(
+                    "SELECT vendor_store_id FROM {$wpdb->prefix}ppv_users WHERE id = %d AND user_type = 'vendor' LIMIT 1",
+                    intval($_SESSION['ppv_user_id'])
+                ));
+
+                if ($vendor && !empty($vendor->vendor_store_id)) {
+                    // Set session vars for subsequent calls
+                    $_SESSION['ppv_vendor_store_id'] = $vendor->vendor_store_id;
+                    $_SESSION['ppv_store_id'] = $vendor->vendor_store_id;
+                    ppv_log("✅ [PPV_ONBOARDING] Permission granted via vendor user fallback: store_id={$vendor->vendor_store_id}");
+                    return true;
+                }
+            }
+
+            ppv_log("❌ [PPV_ONBOARDING] Permission denied: no valid auth");
+            return new WP_Error('rest_forbidden', 'Authentication required for onboarding', ['status' => 403]);
         }
 
         /**
@@ -265,6 +296,12 @@ if (!class_exists('PPV_Onboarding')) {
          */
         public static function rest_get_progress($request) {
             $auth = self::check_auth();
+
+            if (!$auth['valid'] || empty($auth['store_id'])) {
+                ppv_log("❌ [PPV_ONBOARDING] rest_get_progress: auth invalid");
+                return new WP_Error('auth_failed', 'Authentication failed', ['status' => 403]);
+            }
+
             $store = self::get_store($auth['store_id']);
 
             if (!$store) {
@@ -284,6 +321,12 @@ if (!class_exists('PPV_Onboarding')) {
          */
         public static function rest_mark_welcome_shown($request) {
             $auth = self::check_auth();
+
+            if (!$auth['valid'] || empty($auth['store_id'])) {
+                ppv_log("❌ [PPV_ONBOARDING] rest_mark_welcome_shown: auth invalid");
+                return new WP_Error('auth_failed', 'Authentication failed', ['status' => 403]);
+            }
+
             global $wpdb;
 
             $result = $wpdb->update(
@@ -302,6 +345,12 @@ if (!class_exists('PPV_Onboarding')) {
          */
         public static function rest_complete_step($request) {
             $auth = self::check_auth();
+
+            if (!$auth['valid'] || empty($auth['store_id'])) {
+                ppv_log("❌ [PPV_ONBOARDING] rest_complete_step: auth invalid");
+                return new WP_Error('auth_failed', 'Authentication failed', ['status' => 403]);
+            }
+
             $body = json_decode($request->get_body(), true);
             $step = sanitize_text_field($body['step'] ?? '');
             $value = $body['value'] ?? [];
@@ -392,6 +441,12 @@ if (!class_exists('PPV_Onboarding')) {
          */
         public static function rest_dismiss_onboarding($request) {
             $auth = self::check_auth();
+
+            if (!$auth['valid'] || empty($auth['store_id'])) {
+                ppv_log("❌ [PPV_ONBOARDING] rest_dismiss_onboarding: auth invalid");
+                return new WP_Error('auth_failed', 'Authentication failed', ['status' => 403]);
+            }
+
             $body = json_decode($request->get_body(), true);
             $type = sanitize_text_field($body['type'] ?? 'permanent');
 
@@ -415,6 +470,12 @@ if (!class_exists('PPV_Onboarding')) {
          */
         public static function rest_postpone_onboarding($request) {
             $auth = self::check_auth();
+
+            if (!$auth['valid'] || empty($auth['store_id'])) {
+                ppv_log("❌ [PPV_ONBOARDING] rest_postpone_onboarding: auth invalid");
+                return new WP_Error('auth_failed', 'Authentication failed', ['status' => 403]);
+            }
+
             global $wpdb;
 
             // 8 óra múlva jelenjen meg újra
@@ -441,6 +502,12 @@ if (!class_exists('PPV_Onboarding')) {
          */
         public static function rest_reset_onboarding($request) {
             $auth = self::check_auth();
+
+            if (!$auth['valid'] || empty($auth['store_id'])) {
+                ppv_log("❌ [PPV_ONBOARDING] rest_reset_onboarding: auth invalid");
+                return new WP_Error('auth_failed', 'Authentication failed', ['status' => 403]);
+            }
+
             global $wpdb;
 
             $result = $wpdb->update(

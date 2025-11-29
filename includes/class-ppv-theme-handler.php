@@ -105,8 +105,8 @@ class PPV_Theme_Handler {
         $samesite = 'Lax';
 
         // Get host variants
-        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-        $host = str_replace('www.', '', $host);
+        $original_host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+        $host = str_replace('www.', '', $original_host);
 
         // Cookie domains to try
         $domains = [
@@ -116,8 +116,8 @@ class PPV_Theme_Handler {
         ];
 
         // If has www variant
-        if (strpos($_SERVER['HTTP_HOST'], 'www.') === 0) {
-            $domains[] = $_SERVER['HTTP_HOST']; // www.domain.com
+        if (strpos($original_host, 'www.') === 0) {
+            $domains[] = $original_host; // www.domain.com
         }
 
         // Set cookie on all variants

@@ -679,37 +679,47 @@ class PPV_Signup {
         // HÄNDLER: Create store
         $store_id = null;
         if ($user_type === 'vendor') {
+            ppv_log("🏪 [PPV_Signup] Creating store for vendor #{$user_id}...");
+
             $pos_token = md5(uniqid('pos_', true));
             $store_key = bin2hex(random_bytes(32));
             $qr_secret = bin2hex(random_bytes(16));
             $pos_api_key = bin2hex(random_bytes(32));
             $trial_ends_at = date('Y-m-d H:i:s', strtotime('+30 days'));
 
+            $store_data = [
+                'user_id' => $user_id,
+                'email' => $email,
+                'name' => 'Mein Geschäft',
+                'pos_token' => $pos_token,
+                'store_key' => $store_key,
+                'qr_secret' => $qr_secret,
+                'pos_api_key' => $pos_api_key,
+                'pos_enabled' => 1,
+                'trial_ends_at' => $trial_ends_at,
+                'subscription_status' => 'trial',
+                'active' => 1,
+                'created_at' => current_time('mysql'),
+                'updated_at' => current_time('mysql')
+            ];
+
+            // Log store data for debugging
+            ppv_log("📝 [PPV_Signup] Store data: " . json_encode($store_data, JSON_UNESCAPED_UNICODE));
+
             $store_result = $wpdb->insert(
                 "{$prefix}ppv_stores",
-                [
-                    'user_id' => $user_id,
-                    'email' => $email,
-                    'name' => 'Mein Geschäft',
-                    'pos_token' => $pos_token,
-                    'store_key' => $store_key,
-                    'qr_secret' => $qr_secret,
-                    'pos_api_key' => $pos_api_key,
-                    'pos_enabled' => 1,
-                    'trial_ends_at' => $trial_ends_at,
-                    'subscription_status' => 'trial',
-                    'active' => 1,
-                    'created_at' => current_time('mysql'),
-                    'updated_at' => current_time('mysql')
-                ],
+                $store_data,
                 ['%d', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s', '%d', '%s', '%s']
             );
+
+            // Debug: Log the last query
+            ppv_log("🔍 [PPV_Signup] Last query: " . $wpdb->last_query);
 
             if ($store_result !== false) {
                 $store_id = $wpdb->insert_id;
 
                 // Link store to user
-                $wpdb->update(
+                $update_result = $wpdb->update(
                     "{$prefix}ppv_users",
                     ['vendor_store_id' => $store_id],
                     ['id' => $user_id],
@@ -717,9 +727,23 @@ class PPV_Signup {
                     ['%d']
                 );
 
+                if ($update_result === false) {
+                    ppv_log("⚠️ [PPV_Signup] Failed to link store to user: " . $wpdb->last_error);
+                }
+
                 ppv_log("✅ [PPV_Signup] Store created: #{$store_id} | Trial ends: {$trial_ends_at}");
             } else {
-                ppv_log("❌ [PPV_Signup] Store creation failed: " . $wpdb->last_error);
+                ppv_log("❌ [PPV_Signup] Store INSERT failed!");
+                ppv_log("❌ [PPV_Signup] DB Error: " . $wpdb->last_error);
+                ppv_log("❌ [PPV_Signup] Last query: " . $wpdb->last_query);
+
+                // Return error to user for debugging
+                // Note: In production, you might want to show a generic error
+                wp_send_json_error([
+                    'message' => 'Store creation failed: ' . $wpdb->last_error,
+                    'debug' => 'User created but store failed. Check server logs.'
+                ]);
+                return;
             }
         }
 
@@ -850,37 +874,48 @@ class PPV_Signup {
             ppv_log("✅ [PPV_Signup] Google user created: #{$user_id} ({$user_type})");
 
             // HÄNDLER: Create store
+            $store_id = null;
             if ($user_type === 'vendor') {
+                ppv_log("🏪 [PPV_Signup] Creating store for Google vendor #{$user_id}...");
+
                 $pos_token = md5(uniqid('pos_', true));
                 $store_key = bin2hex(random_bytes(32));
                 $qr_secret = bin2hex(random_bytes(16));
                 $pos_api_key = bin2hex(random_bytes(32));
                 $trial_ends_at = date('Y-m-d H:i:s', strtotime('+30 days'));
 
+                $store_data = [
+                    'user_id' => $user_id,
+                    'email' => $email,
+                    'name' => trim($first_name . ' ' . $last_name) ?: 'Mein Geschäft',
+                    'pos_token' => $pos_token,
+                    'store_key' => $store_key,
+                    'qr_secret' => $qr_secret,
+                    'pos_api_key' => $pos_api_key,
+                    'pos_enabled' => 1,
+                    'trial_ends_at' => $trial_ends_at,
+                    'subscription_status' => 'trial',
+                    'active' => 1,
+                    'created_at' => current_time('mysql'),
+                    'updated_at' => current_time('mysql')
+                ];
+
+                // Log store data for debugging
+                ppv_log("📝 [PPV_Signup] Google store data: " . json_encode($store_data, JSON_UNESCAPED_UNICODE));
+
                 $store_result = $wpdb->insert(
                     "{$prefix}ppv_stores",
-                    [
-                        'user_id' => $user_id,
-                        'email' => $email,
-                        'name' => trim($first_name . ' ' . $last_name) ?: 'Mein Geschäft',
-                        'pos_token' => $pos_token,
-                        'store_key' => $store_key,
-                        'qr_secret' => $qr_secret,
-                        'pos_api_key' => $pos_api_key,
-                        'pos_enabled' => 1,
-                        'trial_ends_at' => $trial_ends_at,
-                        'subscription_status' => 'trial',
-                        'active' => 1,
-                        'created_at' => current_time('mysql'),
-                        'updated_at' => current_time('mysql')
-                    ],
+                    $store_data,
                     ['%d', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s', '%d', '%s', '%s']
                 );
+
+                // Debug: Log the last query
+                ppv_log("🔍 [PPV_Signup] Google store last query: " . $wpdb->last_query);
 
                 if ($store_result !== false) {
                     $store_id = $wpdb->insert_id;
 
-                    $wpdb->update(
+                    $update_result = $wpdb->update(
                         "{$prefix}ppv_users",
                         ['vendor_store_id' => $store_id],
                         ['id' => $user_id],
@@ -888,7 +923,21 @@ class PPV_Signup {
                         ['%d']
                     );
 
+                    if ($update_result === false) {
+                        ppv_log("⚠️ [PPV_Signup] Failed to link store to Google user: " . $wpdb->last_error);
+                    }
+
                     ppv_log("✅ [PPV_Signup] Store created for Google user: #{$store_id}");
+                } else {
+                    ppv_log("❌ [PPV_Signup] Google store INSERT failed!");
+                    ppv_log("❌ [PPV_Signup] DB Error: " . $wpdb->last_error);
+                    ppv_log("❌ [PPV_Signup] Last query: " . $wpdb->last_query);
+
+                    wp_send_json_error([
+                        'message' => 'Store creation failed: ' . $wpdb->last_error,
+                        'debug' => 'User created but store failed. Check server logs.'
+                    ]);
+                    return;
                 }
             }
 
