@@ -40,48 +40,32 @@
             const profileForm = document.getElementById('ppv-profile-form');
             if (profileForm) {
                 profileForm.dataset.ppvBound = 'false';
+                // Mark that we're leaving profile page
+                sessionStorage.setItem('ppv_was_on_profile', 'true');
             }
-            // Clear reload flag when leaving page
-            sessionStorage.removeItem('ppv_profile_reloaded');
         }, { once: false });
 
-        // 3. Force reload when coming back to profile page (any Turbo navigation)
+        // 3. Force reload when coming back to profile page via Turbo
         document.addEventListener('turbo:before-render', function(e) {
-            // Check if the incoming page has the profile form
             const newBody = e.detail.newBody;
-            if (newBody && newBody.querySelector('#ppv-profile-form')) {
-                // Check if we navigated away and came back (cache restore)
-                const wasOnProfilePage = sessionStorage.getItem('ppv_on_profile_page');
-                const leftProfilePage = sessionStorage.getItem('ppv_left_profile_page');
+            const hasProfileForm = newBody && newBody.querySelector('#ppv-profile-form');
+            const wasOnProfile = sessionStorage.getItem('ppv_was_on_profile');
 
-                if (leftProfilePage) {
-                    // We're coming back to profile after leaving - force full reload
-                    sessionStorage.removeItem('ppv_left_profile_page');
-                    e.preventDefault();
-                    window.location.reload();
-                    return;
-                }
+            if (hasProfileForm && wasOnProfile) {
+                // Coming back to profile - force hard reload
+                console.log('[Profile-Core] Forcing reload - returning to profile page');
+                sessionStorage.removeItem('ppv_was_on_profile');
+                e.preventDefault();
+                window.location.reload();
             }
         });
 
-        // Track when we leave the profile page
-        document.addEventListener('turbo:before-visit', function(e) {
-            const profileForm = document.getElementById('ppv-profile-form');
-            if (profileForm) {
-                // We're leaving the profile page
-                sessionStorage.setItem('ppv_left_profile_page', 'true');
-            }
-        });
-
-        // 4. Clear reload flag on fresh page load (not from cache)
+        // 4. Clear flag when on profile page (fresh load)
         document.addEventListener('turbo:load', function() {
             const profileForm = document.getElementById('ppv-profile-form');
             if (profileForm) {
-                // Clear the reload flag after successful load
-                // This allows future cache restores to trigger reload
-                setTimeout(() => {
-                    sessionStorage.removeItem('ppv_profile_reloaded');
-                }, 1000);
+                // We're on profile page now - clear the flag
+                sessionStorage.removeItem('ppv_was_on_profile');
             }
         });
     })();

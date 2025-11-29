@@ -160,7 +160,7 @@
                             store_name: data.data.store?.name
                         }));
 
-                        // Force reload with cache-bust + preserve current tab
+                        // Force HARD reload (bypass Turbo completely)
                         setTimeout(() => {
                             const url = new URL(window.location.href);
                             url.searchParams.set('_t', Date.now());
@@ -171,12 +171,13 @@
                                 url.hash = 'tab-' + activeTab;
                             }
 
-                            // Use Turbo.visit or fallback to location.replace
-                            if (typeof Turbo !== 'undefined' && Turbo.visit) {
-                                Turbo.visit(url.toString(), { action: 'replace' });
-                            } else {
-                                window.location.replace(url.toString());
+                            // Clear Turbo cache if available
+                            if (typeof Turbo !== 'undefined' && Turbo.cache) {
+                                Turbo.cache.clear();
                             }
+
+                            // ALWAYS use hard reload to bypass Turbo cache
+                            window.location.href = url.toString();
                         }, 500);
                     }
                 } else {
