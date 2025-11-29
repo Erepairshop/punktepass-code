@@ -1608,16 +1608,16 @@ class PPV_QR {
                         $is_active = $scanner->active == 1; // PPV users: 1 = active, 0 = disabled
                         $created_date = date('Y-m-d H:i', strtotime($scanner->created_at));
                         ?>
-                        <div class="scanner-user-card glass-card" style="padding: 15px; margin-bottom: 15px; border-left: 4px solid <?php echo $is_active ? '#4caf50' : '#999'; ?>;">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <div>
-                                    <div style="font-weight: bold; font-size: 16px; margin-bottom: 5px;">
+                        <div class="scanner-user-card glass-card <?php echo $is_active ? 'active' : 'inactive'; ?>">
+                            <div class="scanner-user-card-inner">
+                                <div class="scanner-user-info">
+                                    <div class="scanner-user-email">
                                         📧 <?php echo esc_html($scanner->email); ?>
                                     </div>
-                                    <div style="font-size: 12px; color: #999;">
+                                    <div class="scanner-user-meta">
                                         <?php echo self::t('created_at', 'Létrehozva'); ?>: <?php echo $created_date; ?>
                                     </div>
-                                    <div style="font-size: 12px; color: #00e6ff; margin-top: 3px;">
+                                    <div class="scanner-user-store">
                                         🏪 <?php
                                         echo esc_html($scanner->store_name ?: 'N/A');
                                         if (!empty($scanner->store_city)) {
@@ -1629,36 +1629,36 @@ class PPV_QR {
                                         }
                                         ?>
                                     </div>
-                                    <div style="margin-top: 5px;">
+                                    <div class="scanner-user-status">
                                         <?php if ($is_active): ?>
-                                            <span style="background: #4caf50; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">
+                                            <span class="scanner-status-badge scanner-status-active">
                                                 ✅ <?php echo self::t('status_active', 'Aktív'); ?>
                                             </span>
                                         <?php else: ?>
-                                            <span style="background: #999; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">
+                                            <span class="scanner-status-badge scanner-status-inactive">
                                                 🚫 <?php echo self::t('status_disabled', 'Letiltva'); ?>
                                             </span>
                                         <?php endif; ?>
                                     </div>
                                 </div>
-                                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                <div class="scanner-user-actions">
                                     <!-- Change Filiale -->
-                                    <button class="ppv-scanner-change-filiale ppv-btn-outline" data-user-id="<?php echo $scanner->id; ?>" data-email="<?php echo esc_attr($scanner->email); ?>" data-current-store="<?php echo $scanner->vendor_store_id; ?>" style="padding: 8px 12px; font-size: 13px;">
+                                    <button class="ppv-scanner-change-filiale ppv-btn-outline" data-user-id="<?php echo $scanner->id; ?>" data-email="<?php echo esc_attr($scanner->email); ?>" data-current-store="<?php echo $scanner->vendor_store_id; ?>">
                                         <i class="ri-store-2-line"></i> <?php echo self::t('change_filiale', 'Filiale ändern'); ?>
                                     </button>
 
                                     <!-- Password Reset -->
-                                    <button class="ppv-scanner-reset-pw ppv-btn-outline" data-user-id="<?php echo $scanner->id; ?>" data-email="<?php echo esc_attr($scanner->email); ?>" style="padding: 8px 12px; font-size: 13px;">
+                                    <button class="ppv-scanner-reset-pw ppv-btn-outline" data-user-id="<?php echo $scanner->id; ?>" data-email="<?php echo esc_attr($scanner->email); ?>">
                                         <i class="ri-refresh-line"></i> <?php echo self::t('reset_password', 'Jelszó Reset'); ?>
                                     </button>
 
                                     <!-- Toggle Active/Disable -->
                                     <?php if ($is_active): ?>
-                                        <button class="ppv-scanner-toggle ppv-btn-outline" data-user-id="<?php echo $scanner->id; ?>" data-action="disable" style="padding: 8px 12px; font-size: 13px; background: #f44336; color: white; border: none;">
+                                        <button class="ppv-scanner-toggle ppv-btn-outline scanner-btn-danger" data-user-id="<?php echo $scanner->id; ?>" data-action="disable">
                                             🚫 <?php echo self::t('disable', 'Letiltás'); ?>
                                         </button>
                                     <?php else: ?>
-                                        <button class="ppv-scanner-toggle ppv-btn" data-user-id="<?php echo $scanner->id; ?>" data-action="enable" style="padding: 8px 12px; font-size: 13px;">
+                                        <button class="ppv-scanner-toggle ppv-btn" data-user-id="<?php echo $scanner->id; ?>" data-action="enable">
                                             ✅ <?php echo self::t('enable', 'Engedélyezés'); ?>
                                         </button>
                                     <?php endif; ?>

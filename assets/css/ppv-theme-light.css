@@ -8182,11 +8182,75 @@ body.ppv-dark .ppv-comeback-badge,
     margin: 0.25rem 0;
 }
 
+/* Scanner User Card Inner Layout */
+.scanner-user-card-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+
+.scanner-user-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.scanner-user-email {
+    font-weight: bold;
+    font-size: 16px;
+    margin-bottom: 5px;
+    color: var(--pp-text);
+    word-break: break-word;
+}
+
+.scanner-user-meta {
+    font-size: 12px;
+    color: var(--pp-text-3);
+}
+
+.scanner-user-store {
+    font-size: 12px;
+    color: var(--pp-primary);
+    margin-top: 3px;
+}
+
+.scanner-user-status {
+    margin-top: 5px;
+}
+
+.scanner-status-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    color: white;
+}
+
+.scanner-status-active {
+    background: var(--pp-success);
+}
+
+.scanner-status-inactive {
+    background: var(--pp-text-3);
+}
+
 .scanner-user-actions {
     display: flex;
     gap: 0.5rem;
-    margin-top: 1rem;
     flex-wrap: wrap;
+    flex-shrink: 0;
+}
+
+.scanner-user-actions .ppv-btn,
+.scanner-user-actions .ppv-btn-outline {
+    padding: 8px 12px;
+    font-size: 13px;
+}
+
+.scanner-btn-danger {
+    background: var(--pp-error) !important;
+    color: white !important;
+    border: none !important;
 }
 
 /* ──────────────────────────────────────────────────────────────────────
@@ -8421,6 +8485,47 @@ body.ppv-dark .ppv-comeback-badge,
         font-size: 20px;
         bottom: 80px;
         left: 15px;
+    }
+
+    /* Mobile: Scanner Users Header */
+    .ppv-scanner-header {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.75rem;
+    }
+
+    .ppv-scanner-header h3 {
+        font-size: 1.1rem;
+        text-align: center;
+    }
+
+    .ppv-scanner-header #ppv-new-scanner-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* Mobile: Scanner User Card */
+    .scanner-user-card-inner {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .scanner-user-info {
+        width: 100%;
+    }
+
+    .scanner-user-actions {
+        width: 100%;
+        flex-direction: column;
+        margin-top: 1rem;
+    }
+
+    .scanner-user-actions .ppv-btn,
+    .scanner-user-actions .ppv-btn-outline {
+        width: 100%;
+        justify-content: center;
+        text-align: center;
+        box-sizing: border-box;
     }
 }
 
