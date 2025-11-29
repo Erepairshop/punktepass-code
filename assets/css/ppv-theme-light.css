@@ -6842,6 +6842,9 @@ body.ppv-dark .ppv-mypoints-tab.active {
     background-position: right 8px center;
     padding-right: 28px;
     border-radius: 0;
+    width: 110px;
+    min-width: 110px;
+    flex-shrink: 0;
 }
 
 .ppv-phone-prefix-select:focus {
