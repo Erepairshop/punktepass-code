@@ -1,5 +1,5 @@
 // PunktePass PWA Service Worker
-// Version: 5.9 - iOS Safari fix
+// Version: 6.0 - Global cache fix for dynamic pages
 // ✅ Timeout protection (6s for iOS)
 // ✅ Safari compatible with retry
 // ✅ No POST blocking
@@ -7,10 +7,11 @@
 // ✅ Fresh CSS/JS always
 // ✅ Login pages never cached
 // ✅ Force old cache deletion
+// ✅ Dynamic pages (handler/user) never cached - fixes onboarding/profile state issues
 
-const CACHE_VERSION = "v5.9";
+const CACHE_VERSION = "v6.0";
 const CACHE_NAME = "punktepass-" + CACHE_VERSION;
-const API_CACHE = "punktepass-api-v5.9";
+const API_CACHE = "punktepass-api-v6.0";
 
 // Only cache critical files
 const ASSETS = [
@@ -89,8 +90,8 @@ self.addEventListener("fetch", e => {
   }
 
   // ✅ Login/Signup pages - Always fresh, never cache
-  if (url.pathname.includes('/login') || 
-      url.pathname.includes('/anmelden') || 
+  if (url.pathname.includes('/login') ||
+      url.pathname.includes('/anmelden') ||
       url.pathname.includes('/bejelentkezes') ||
       url.pathname.includes('/signup') ||
       url.pathname.includes('/registrierung') ||
@@ -100,6 +101,30 @@ self.addEventListener("fetch", e => {
         return new Response(
           '<html><body><h1>Offline</h1><p>Bitte überprüfe deine Internetverbindung.</p></body></html>',
           { status: 503, headers: { 'Content-Type': 'text/html' } }
+        );
+      })
+    );
+    return;
+  }
+
+  // ✅ Dynamic handler/user pages - Network first, no cache
+  // These pages have dynamic state (onboarding, profile, points, etc.)
+  const dynamicPages = [
+    '/qr-center',
+    '/mein-profil',
+    '/rewards',
+    '/statistik',
+    '/einstellungen',
+    '/user_dashboard',
+    '/meine-punkte',
+    '/belohnungen'
+  ];
+  if (dynamicPages.some(page => url.pathname.includes(page))) {
+    e.respondWith(
+      fetch(req, { cache: 'no-store' }).catch(() => {
+        return new Response(
+          '<html><body style="font-family: sans-serif; text-align: center; padding: 40px;"><h1>Offline</h1><p>Bitte überprüfe deine Internetverbindung.</p></body></html>',
+          { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
         );
       })
     );
