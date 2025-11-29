@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) exit;
  */
 trait PPV_QR_Devices_Trait {
 
-    public static function render_user_devices() {
+    public static function render_user_devices($is_scanner = false) {
         global $wpdb;
 
         // Ensure session is started
