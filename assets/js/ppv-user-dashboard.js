@@ -1091,11 +1091,11 @@ async function initUserDashboard() {
       ? `<span class="ppv-status-badge ppv-open"><i class="ri-checkbox-blank-circle-fill"></i> ${T.open}</span>`
       : `<span class="ppv-status-badge ppv-closed"><i class="ri-checkbox-blank-circle-fill"></i> ${T.closed}</span>`;
 
-    // Gallery - ✅ OPTIMIZED: Added loading="lazy" for performance
+    // Gallery - ✅ OPTIMIZED: Added loading="lazy" for performance + XSS protection
     const galleryHTML = store.gallery && store.gallery.length > 0
       ? `<div class="ppv-gallery-thumbs">
            ${store.gallery.map((img, idx) => `
-             <img src="${img}" alt="${T.gallery_label}" class="ppv-gallery-thumb" data-index="${idx}" loading="lazy">
+             <img src="${escapeHtml(img)}" alt="${T.gallery_label}" class="ppv-gallery-thumb" data-index="${idx}" loading="lazy">
            `).join('')}
          </div>`
       : '';
@@ -1109,9 +1109,9 @@ async function initUserDashboard() {
          </div>`
       : '';
 
-    // Hours
+    // Hours (escape to prevent XSS)
     const hoursHTML = store.open_hours_today
-      ? `<span class="ppv-hours"><i class="ri-time-line"></i> ${store.open_hours_today}</span>`
+      ? `<span class="ppv-hours"><i class="ri-time-line"></i> ${escapeHtml(store.open_hours_today)}</span>`
       : '';
 
     // ✅ REWARDS - FULLY TRANSLATED - MODERN ICONS ✅
@@ -1361,7 +1361,7 @@ async function initUserDashboard() {
     return `
       <div class="ppv-store-card-enhanced" data-store-id="${store.id}">
         <div class="ppv-store-header">
-          <img src="${logo}" alt="Logo" class="ppv-store-logo">
+          <img src="${escapeHtml(logo)}" alt="Logo" class="ppv-store-logo">
           <div class="ppv-store-info">
             <h4>${escapeHtml(store.company_name || store.name)}</h4>
             <div class="ppv-store-badges">
@@ -1391,7 +1391,7 @@ async function initUserDashboard() {
           ${socialHTML}
           <div class="ppv-store-meta">
             ${hoursHTML}
-            <span class="ppv-address"><i class="ri-map-pin-line"></i> ${escapeHtml(store.address || '')} ${store.plz || ''} ${store.city || ''}</span>
+            <span class="ppv-address"><i class="ri-map-pin-line"></i> ${escapeHtml(store.address || '')} ${escapeHtml(store.plz || '')} ${escapeHtml(store.city || '')}</span>
           </div>
           ${rewardsHTML}
           ${vipHTML}
@@ -1399,8 +1399,8 @@ async function initUserDashboard() {
             <button class="ppv-action-btn ppv-route" data-lat="${store.latitude}" data-lng="${store.longitude}" type="button">
               <i class="ri-route-fill"></i> ${T.route}
             </button>
-            ${store.phone ? `<a href="tel:${store.phone}" class="ppv-action-btn ppv-call"><i class="ri-phone-fill"></i> ${T.call}</a>` : ''}
-            ${store.website ? `<a href="${store.website}" target="_blank" rel="noopener" class="ppv-action-btn ppv-web"><i class="ri-global-line"></i> ${T.website}</a>` : ''}
+            ${store.phone ? `<a href="tel:${escapeHtml(store.phone)}" class="ppv-action-btn ppv-call"><i class="ri-phone-fill"></i> ${T.call}</a>` : ''}
+            ${store.website ? `<a href="${escapeHtml(store.website)}" target="_blank" rel="noopener" class="ppv-action-btn ppv-web"><i class="ri-global-line"></i> ${T.website}</a>` : ''}
           </div>
         </div>
       </div>
