@@ -149,13 +149,22 @@ class PPV_Stats {
     // 🔐 PERMISSION CHECK
     // ========================================
     public static function check_handler_permission($request = null) {
+        // ✅ Use centralized permission check (supports token-based auth for scanner users)
+        if (class_exists('PPV_Permissions')) {
+            $result = PPV_Permissions::check_handler();
+            if (is_wp_error($result)) {
+                ppv_log("🚫 [Stats Perm] DENIED by PPV_Permissions: " . $result->get_error_message());
+                return $result;
+            }
+        }
+
         $store_id = self::get_handler_store_id();
-        
+
         if (!$store_id) {
             ppv_log("🚫 [Stats Perm] DENIED - no store");
             return new WP_Error('unauthorized', 'Not authenticated', ['status' => 403]);
         }
-        
+
         ppv_log("✅ [Stats Perm] OK - store={$store_id}");
         return true;
     }

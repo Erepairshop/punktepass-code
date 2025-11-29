@@ -286,6 +286,8 @@ class PPV_Standalone_Admin {
             self::render_device_requests();
         } elseif ($path === '/admin/handlers') {
             self::render_handlers_page();
+        } elseif ($path === '/admin/device-deletion-log') {
+            self::render_device_deletion_log();
         } elseif ($path === '/admin/whatsapp') {
             self::render_whatsapp_settings();
         } elseif ($path === '/admin/delete-device') {
@@ -1066,6 +1068,9 @@ class PPV_Standalone_Admin {
                     <a href="/admin/handlers" class="<?php echo $current_page === 'handlers' ? 'active' : ''; ?>">
                         <i class="ri-store-2-line"></i> Handlerek
                     </a>
+                    <a href="/admin/device-deletion-log" class="<?php echo $current_page === 'device-deletion-log' ? 'active' : ''; ?>">
+                        <i class="ri-delete-bin-line"></i> Törlési napló
+                    </a>
                     <a href="/admin/whatsapp" class="<?php echo $current_page === 'whatsapp' ? 'active' : ''; ?>">
                         <i class="ri-whatsapp-line"></i> WhatsApp
                     </a>
@@ -1363,6 +1368,100 @@ class PPV_Standalone_Admin {
             </table>
         </div>
         <?php endif; ?>
+        <?php
+        self::get_admin_footer();
+    }
+
+    /**
+     * Eszköz törlési napló oldal
+     * Megjeleníti a felhasználók által törölt eszközöket (handler és scanner userek)
+     */
+    private static function render_device_deletion_log() {
+        global $wpdb;
+
+        // Ellenőrizzük, hogy létezik-e a tábla
+        $table_name = $wpdb->prefix . 'ppv_device_deletion_log';
+        $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$table_name}'") === $table_name;
+
+        // Törlési napló lekérése
+        $deletions = [];
+        if ($table_exists) {
+            $deletions = $wpdb->get_results(
+                "SELECT dl.*, s.name as store_name, s.city as store_city
+                 FROM {$table_name} dl
+                 LEFT JOIN {$wpdb->prefix}ppv_stores s ON dl.store_id = s.id
+                 ORDER BY dl.deleted_at DESC
+                 LIMIT 100"
+            );
+        }
+
+        self::get_admin_header('device-deletion-log');
+        ?>
+        <h1 class="page-title"><i class="ri-delete-bin-line"></i> Eszköz törlési napló</h1>
+
+        <div class="card">
+            <p style="color: #888; margin-bottom: 20px;">
+                <i class="ri-information-line"></i>
+                Itt láthatod mely eszközöket törölték a felhasználók (Handler-ek és Scanner felhasználók).
+            </p>
+
+            <?php if (!$table_exists): ?>
+                <div class="empty-state">
+                    <i class="ri-database-2-line"></i>
+                    <p>A törlési napló tábla még nem létezik.<br>Az első törlés után automatikusan létrejön.</p>
+                </div>
+            <?php elseif (empty($deletions)): ?>
+                <div class="empty-state">
+                    <i class="ri-checkbox-circle-line"></i>
+                    <p>Még nem történt eszköz törlés</p>
+                </div>
+            <?php else: ?>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Törlés dátuma</th>
+                            <th>Üzlet</th>
+                            <th>Törölt eszköz</th>
+                            <th>Törölte</th>
+                            <th>User típus</th>
+                            <th>IP</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($deletions as $del): ?>
+                            <tr>
+                                <td><?php echo date('Y.m.d H:i', strtotime($del->deleted_at)); ?></td>
+                                <td>
+                                    <strong><?php echo esc_html($del->store_name ?: "Store #{$del->store_id}"); ?></strong>
+                                    <?php if (!empty($del->store_city)): ?>
+                                        <br><small style="color: #888;"><?php echo esc_html($del->store_city); ?></small>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <strong style="color: #f44336;"><?php echo esc_html($del->device_name ?: 'N/A'); ?></strong>
+                                    <br><small style="color: #666;">ID: #<?php echo $del->device_id; ?></small>
+                                </td>
+                                <td>
+                                    <?php echo esc_html($del->deleted_by_user_email ?: "User #{$del->deleted_by_user_id}"); ?>
+                                </td>
+                                <td>
+                                    <?php if ($del->deleted_by_user_type === 'scanner'): ?>
+                                        <span class="badge" style="background: rgba(156, 39, 176, 0.2); color: #9c27b0;">
+                                            <i class="ri-qr-scan-2-line"></i> Scanner
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="badge" style="background: rgba(33, 150, 243, 0.2); color: #2196f3;">
+                                            <i class="ri-store-2-line"></i> Handler
+                                        </span>
+                                    <?php endif; ?>
+                                </td>
+                                <td><small style="color: #888;"><?php echo esc_html($del->ip_address ?: '-'); ?></small></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
+        </div>
         <?php
         self::get_admin_footer();
     }

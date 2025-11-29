@@ -716,68 +716,68 @@ class PPV_QR {
         $is_scanner = class_exists('PPV_Permissions') && PPV_Permissions::is_scanner_user();
         ?>
 
-        <?php if ($is_scanner): ?>
-            <!-- SCANNER USER: Only Scanner Interface -->
-            <div class="ppv-pos-center glass-card">
+        <!-- Interface with Tabs (Scanner user sees limited tabs) -->
+        <div class="ppv-qr-wrapper glass-card">
+            <h2 style="font-size: 18px; margin-bottom: 16px;"><i class="ri-broadcast-line" style="margin-right: 6px;"></i><?php echo self::t('qrcamp_title', 'Kassenscanner & Kampagnen'); ?></h2>
+
+            <div class="ppv-tabs">
+                <button class="ppv-tab active" data-tab="scanner" id="ppv-tab-scanner">
+                    <i class="ri-qr-scan-2-line"></i> <?php echo self::t('tab_scanner', 'Kassenscanner'); ?>
+                </button>
+                <?php if (!$is_scanner): ?>
+                <button class="ppv-tab" data-tab="vip" id="ppv-tab-vip">
+                    <i class="ri-vip-crown-line"></i> <?php echo self::t('tab_vip', 'VIP Beállítások'); ?>
+                </button>
+                <button class="ppv-tab" data-tab="rewards" id="ppv-tab-rewards">
+                    <i class="ri-gift-line"></i> <?php echo self::t('tab_rewards', 'Prämien'); ?>
+                </button>
+                <button class="ppv-tab" data-tab="scanner-users" id="ppv-tab-scanner-users">
+                    <i class="ri-team-line"></i> <?php echo self::t('tab_scanner_users', 'Scanner Felhasználók'); ?>
+                </button>
+                <?php endif; ?>
+                <button class="ppv-tab" data-tab="devices" id="ppv-tab-devices">
+                    <i class="ri-smartphone-line"></i> <?php echo self::t('tab_devices', 'Készülékek'); ?>
+                </button>
+            </div>
+
+            <!-- TAB CONTENT: SCANNER -->
+            <div class="ppv-tab-content active" id="tab-scanner">
                 <?php self::render_pos_scanner(); ?>
             </div>
-        <?php else: ?>
-            <!-- HANDLER USER: Full Interface with Tabs -->
-            <div class="ppv-qr-wrapper glass-card">
-                <h2 style="font-size: 18px; margin-bottom: 16px;"><i class="ri-broadcast-line" style="margin-right: 6px;"></i><?php echo self::t('qrcamp_title', 'Kassenscanner & Kampagnen'); ?></h2>
 
-                <div class="ppv-tabs">
-                    <button class="ppv-tab active" data-tab="scanner" id="ppv-tab-scanner">
-                        <i class="ri-qr-scan-2-line"></i> <?php echo self::t('tab_scanner', 'Kassenscanner'); ?>
-                    </button>
-                    <button class="ppv-tab" data-tab="vip" id="ppv-tab-vip">
-                        <i class="ri-vip-crown-line"></i> <?php echo self::t('tab_vip', 'VIP Beállítások'); ?>
-                    </button>
-                    <button class="ppv-tab" data-tab="rewards" id="ppv-tab-rewards">
-                        <i class="ri-gift-line"></i> <?php echo self::t('tab_rewards', 'Prämien'); ?>
-                    </button>
-                    <button class="ppv-tab" data-tab="scanner-users" id="ppv-tab-scanner-users">
-                        <i class="ri-team-line"></i> <?php echo self::t('tab_scanner_users', 'Scanner Felhasználók'); ?>
-                    </button>
-                    <button class="ppv-tab" data-tab="devices" id="ppv-tab-devices">
-                        <i class="ri-smartphone-line"></i> <?php echo self::t('tab_devices', 'Készülékek'); ?>
-                    </button>
-                </div>
-
-                <!-- TAB CONTENT: SCANNER -->
-                <div class="ppv-tab-content active" id="tab-scanner">
-                    <?php self::render_pos_scanner(); ?>
-                </div>
-
-                <!-- TAB CONTENT: VIP BEÁLLÍTÁSOK -->
-                <div class="ppv-tab-content" id="tab-vip">
-                    <?php echo do_shortcode('[ppv_vip_settings]'); ?>
-                </div>
-
-                <!-- TAB CONTENT: PRÄMIEN -->
-                <div class="ppv-tab-content" id="tab-rewards">
-                    <?php echo do_shortcode('[ppv_rewards_management]'); ?>
-                </div>
-
-                <!-- TAB CONTENT: SCANNER FELHASZNÁLÓK -->
-                <div class="ppv-tab-content" id="tab-scanner-users">
-                    <?php self::render_scanner_users(); ?>
-                </div>
-
-                <!-- TAB CONTENT: KÉSZÜLÉKEK -->
-                <div class="ppv-tab-content" id="tab-devices">
-                    <?php self::render_user_devices(); ?>
-                </div>
+            <?php if (!$is_scanner): ?>
+            <!-- TAB CONTENT: VIP BEÁLLÍTÁSOK -->
+            <div class="ppv-tab-content" id="tab-vip">
+                <?php echo do_shortcode('[ppv_vip_settings]'); ?>
             </div>
-        <?php endif; ?>
+
+            <!-- TAB CONTENT: PRÄMIEN -->
+            <div class="ppv-tab-content" id="tab-rewards">
+                <?php echo do_shortcode('[ppv_rewards_management]'); ?>
+            </div>
+
+            <!-- TAB CONTENT: SCANNER FELHASZNÁLÓK -->
+            <div class="ppv-tab-content" id="tab-scanner-users">
+                <?php self::render_scanner_users(); ?>
+            </div>
+            <?php endif; ?>
+
+            <!-- TAB CONTENT: KÉSZÜLÉKEK -->
+            <div class="ppv-tab-content" id="tab-devices">
+                <?php self::render_user_devices($is_scanner); ?>
+            </div>
+        </div>
 
         <script>
         jQuery(document).ready(function($){
-            // Restore saved tab on page load
+            // Restore saved tab on page load (only if the tab button exists)
             var savedTab = localStorage.getItem('ppv_active_tab');
-            if (savedTab && $(".ppv-tab[data-tab='" + savedTab + "']").length) {
+            var $savedTabBtn = $(".ppv-tab[data-tab='" + savedTab + "']");
+
+            // Only restore if the saved tab exists (scanner users don't have all tabs)
+            if (savedTab && $savedTabBtn.length) {
                 $(".ppv-tab").removeClass("active");
-                $(".ppv-tab[data-tab='" + savedTab + "']").addClass("active");
+                $savedTabBtn.addClass("active");
                 $(".ppv-tab-content").removeClass("active");
                 $("#tab-" + savedTab).addClass("active");
             }
