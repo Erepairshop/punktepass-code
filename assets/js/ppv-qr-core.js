@@ -12,7 +12,7 @@
   // ============================================================
   // DEBUG MODE
   // ============================================================
-  const PPV_DEBUG = false;
+  const PPV_DEBUG = true;
   const ppvLog = (...args) => { if (PPV_DEBUG) console.log(...args); };
   const ppvWarn = (...args) => { if (PPV_DEBUG) console.warn(...args); };
 

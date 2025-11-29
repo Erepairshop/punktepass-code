@@ -550,7 +550,7 @@ class PPV_QR {
             }
 
             // JS file version (cache busting)
-            $js_version = '6.5.1';
+            $js_version = '6.5.2';
 
             // Modular QR Scanner JS files with proper dependencies
             wp_enqueue_script('ppv-qr-core', PPV_PLUGIN_URL . 'assets/js/ppv-qr-core.js', ['jquery'], $js_version, true);
