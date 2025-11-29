@@ -7552,11 +7552,7 @@ ppv-app-root {
    🏠 QR CENTER MAIN CONTAINER
    ────────────────────────────────────────────────────────────────────── */
 .ppv-pos-center {
-    background: var(--pp-surface);
-    border-radius: var(--pp-r-lg);
-    padding: 1.5rem;
-    box-shadow: var(--pp-shadow);
-    border: 1px solid var(--pp-border-soft);
+    padding: 0;
     margin-bottom: 1.5rem;
 }
 
@@ -7566,6 +7562,19 @@ ppv-app-root {
     border: 1px solid var(--pp-border-soft);
     border-radius: var(--pp-r-lg);
     box-shadow: var(--pp-shadow);
+}
+
+/* Remove borders from inner containers inside tabs */
+.ppv-tab-content .ppv-pos-center,
+.ppv-tab-content .ppv-campaigns,
+.ppv-tab-content .ppv-scanner-users,
+.ppv-tab-content .ppv-user-devices,
+.ppv-tab-content .ppv-filiale-switcher {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+    padding: 0;
 }
 
 .glass-card {
@@ -8411,14 +8420,18 @@ body.ppv-dark .ppv-comeback-badge,
    📱 RESPONSIVE
    ────────────────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
-    /* Mobile: Full width for POS center */
-    .ppv-pos-center,
-    .ppv-campaigns,
-    .ppv-scanner-users {
-        padding: 1rem;
-        margin-left: 0;
-        margin-right: 0;
-        border-radius: var(--pp-r-sm);
+    /* Mobile: Keep inner containers clean inside tabs */
+    .ppv-tab-content .ppv-pos-center,
+    .ppv-tab-content .ppv-campaigns,
+    .ppv-tab-content .ppv-scanner-users,
+    .ppv-tab-content .ppv-user-devices,
+    .ppv-tab-content .ppv-filiale-switcher {
+        padding: 0;
+        margin: 0;
+        border-radius: 0;
+        border: none;
+        box-shadow: none;
+        background: transparent;
         width: 100%;
         box-sizing: border-box;
     }
@@ -14618,10 +14631,18 @@ body.ppv-dark .glass-card,
     border-color: rgba(0, 168, 204, 0.2) !important;
 }
 
-body.ppv-dark .ppv-pos-center,
-[data-theme="dark"] .ppv-pos-center {
-    background: #162233 !important;
-    border-color: rgba(0, 168, 204, 0.2) !important;
+/* Dark mode: Inner containers inside tabs - no borders */
+body.ppv-dark .ppv-tab-content .ppv-pos-center,
+body.ppv-dark .ppv-tab-content .ppv-campaigns,
+body.ppv-dark .ppv-tab-content .ppv-scanner-users,
+body.ppv-dark .ppv-tab-content .ppv-user-devices,
+[data-theme="dark"] .ppv-tab-content .ppv-pos-center,
+[data-theme="dark"] .ppv-tab-content .ppv-campaigns,
+[data-theme="dark"] .ppv-tab-content .ppv-scanner-users,
+[data-theme="dark"] .ppv-tab-content .ppv-user-devices {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
 }
 
 /* ==========================================================================
