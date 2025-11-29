@@ -470,22 +470,8 @@
     }
 
     async loadLibrary() {
-      // Check for native BarcodeDetector API first (fastest, hardware-accelerated)
-      if ('BarcodeDetector' in window) {
-        try {
-          const formats = await BarcodeDetector.getSupportedFormats();
-          if (formats.includes('qr_code')) {
-            ppvLog('[Camera] Using native BarcodeDetector API');
-            this.startNativeScanner();
-            return;
-          }
-        } catch (e) {
-          ppvWarn('[Camera] BarcodeDetector check failed:', e);
-        }
-      }
-
-      // Fallback to jsQR
-      ppvLog('[Camera] Using jsQR fallback');
+      // Use jsQR as primary - faster center region scanning, better close-up detection
+      ppvLog('[Camera] Using jsQR scanner (primary)');
       if (window.jsQR) {
         this.startJsQRScanner();
         return;
@@ -494,7 +480,15 @@
       const script = document.createElement('script');
       script.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
       script.onload = () => this.startJsQRScanner();
-      script.onerror = () => this.updateStatus('error', '❌ Scanner nicht verfügbar');
+      script.onerror = () => {
+        // Fallback to native BarcodeDetector if jsQR fails
+        if ('BarcodeDetector' in window) {
+          ppvLog('[Camera] jsQR failed, trying native BarcodeDetector');
+          this.startNativeScanner();
+        } else {
+          this.updateStatus('error', '❌ Scanner nicht verfügbar');
+        }
+      };
       document.head.appendChild(script);
     }
 
@@ -917,15 +911,30 @@
       const video = this.iosVideo, canvas = this.iosCanvas, ctx = this.iosCanvasCtx;
 
       if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        // Ensure canvas matches video size
+        if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+        }
+
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+        // ✅ Scan only CENTER region (60% of frame) for better close-up detection
+        const scanRegion = 0.6;
+        const regionSize = Math.min(canvas.width, canvas.height) * scanRegion;
+        const startX = (canvas.width - regionSize) / 2;
+        const startY = (canvas.height - regionSize) / 2;
+
+        // Get image data only from center region - faster scanning
+        const imageData = ctx.getImageData(startX, startY, regionSize, regionSize);
         const code = jsQR(imageData.data, imageData.width, imageData.height, {
-          inversionAttempts: 'attemptBoth'
+          inversionAttempts: 'dontInvert'  // Faster - only normal QR codes
         });
         if (code && code.data) this.onScanSuccess(code.data);
       }
 
-      if (this.scanning) setTimeout(() => this.jsQRScanLoop(), 40);
+      // 15 FPS (66ms) for better performance
+      if (this.scanning) setTimeout(() => this.jsQRScanLoop(), 66);
     }
 
     onScanSuccess(qrCode) {
