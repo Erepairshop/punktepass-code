@@ -188,7 +188,7 @@
         }
 
         markWelcomeShown() {
-            $.post(this.config.rest_url + 'mark-welcome-shown', {}, () => {
+            $.post(this.config.ajax_url, { action: 'ppv_onboarding_mark_welcome' }, () => {
                 this.config.welcome_shown = true;
             });
         }
@@ -534,22 +534,20 @@
             btn.prop('disabled', true).html('<span class="btn-icon">⏳</span> ' + (window.ppv_lang?.onb_state_searching || 'Keresés...'));
 
             $.ajax({
-                url: this.config.rest_url + 'geocode',
+                url: this.config.ajax_url,
                 method: 'POST',
-                contentType: 'application/json',
-                headers: { 'X-WP-Nonce': this.config.nonce },
-                data: JSON.stringify({ address, city, zip, country }),
+                data: { action: 'ppv_onboarding_geocode', address, city, zip, country },
                 success: (response) => {
-                    if (response.success && response.lat && response.lng) {
-                        const lat = response.lat.toFixed(4);
-                        const lng = response.lng.toFixed(4);
+                    if (response.success && response.data && response.data.lat && response.data.lng) {
+                        const lat = response.data.lat.toFixed(4);
+                        const lng = response.data.lng.toFixed(4);
 
                         content.find('[name="latitude"]').val(lat);
                         content.find('[name="longitude"]').val(lng);
 
                         // Update map
                         if (this.onbMap) {
-                            const latlng = [response.lat, response.lng];
+                            const latlng = [response.data.lat, response.data.lng];
                             this.onbMap.setView(latlng, 16);
 
                             if (this.onbMarker) {
@@ -803,19 +801,16 @@
             btn.prop('disabled', true).text(L.onb_state_saving || '⏳ Mentés...');
 
             $.ajax({
-                url: this.config.rest_url + 'complete-step',
+                url: this.config.ajax_url,
                 method: 'POST',
-                contentType: 'application/json',
-                headers: {
-                    'X-WP-Nonce': this.config.nonce
-                },
-                data: JSON.stringify({
+                data: {
+                    action: 'ppv_onboarding_complete_step',
                     step: step,
-                    value: data
-                }),
+                    value: JSON.stringify(data)
+                },
                 success: (response) => {
-                    if (response.success) {
-                        this.progress = response.progress;
+                    if (response.success && response.data) {
+                        this.progress = response.data.progress;
 
                         // Ha ez volt az utolsó lépés és 100%
                         if (step === 'reward' || this.progress.is_complete) {
@@ -1107,9 +1102,9 @@
                 return;
             }
 
-            $.get(this.config.rest_url + 'progress', (response) => {
-                if (response.success) {
-                    this.progress = response.progress;
+            $.post(this.config.ajax_url, { action: 'ppv_onboarding_progress' }, (response) => {
+                if (response.success && response.data) {
+                    this.progress = response.data.progress;
                     this.renderProgressCard();
 
                     // Ha közben elérte a 100%-ot
@@ -1125,20 +1120,12 @@
          *  ⏰ POSTPONE ONBOARDING (8 hours)
          * ============================================================ */
         postponeOnboarding() {
-            $.ajax({
-                url: this.config.rest_url + 'postpone',
-                method: 'POST',
-                contentType: 'application/json',
-                headers: {
-                    'X-WP-Nonce': this.config.nonce
-                },
-                data: JSON.stringify({}),
-                success: (response) => {
+            $.post(this.config.ajax_url, { action: 'ppv_onboarding_postpone' }, (response) => {
+                if (response.success) {
                     this.showToast(L.onb_postponed || '⏰ 8 óra múlva emlékeztetünk!', 'info');
-                },
-                error: () => {
-                    console.error('❌ Failed to postpone onboarding');
                 }
+            }).fail(() => {
+                console.error('❌ Failed to postpone onboarding');
             });
         }
 
@@ -1146,22 +1133,12 @@
          *  ❌ DISMISS
          * ============================================================ */
         dismissOnboarding(type, callback) {
-            $.ajax({
-                url: this.config.rest_url + 'dismiss',
-                method: 'POST',
-                contentType: 'application/json',
-                headers: {
-                    'X-WP-Nonce': this.config.nonce
-                },
-                data: JSON.stringify({ type: type }),
-                success: (response) => {
-                    if (callback) callback();
-                },
-                error: () => {
-                    console.error('❌ Failed to dismiss onboarding');
-                    // Still call callback even on error to hide UI
-                    if (callback) callback();
-                }
+            $.post(this.config.ajax_url, { action: 'ppv_onboarding_dismiss', type: type }, (response) => {
+                if (callback) callback();
+            }).fail(() => {
+                console.error('❌ Failed to dismiss onboarding');
+                // Still call callback even on error to hide UI
+                if (callback) callback();
             });
         }
 
