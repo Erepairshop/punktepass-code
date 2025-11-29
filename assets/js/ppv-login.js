@@ -208,32 +208,83 @@ function initLogin() {
     /**
      * Initialize Google Login
      */
+    let googleInitialized = false;
+
     function initGoogleLogin() {
         const clientId = ppvLogin.google_client_id;
-        
+
         if (!clientId) {
             console.warn('Google Client ID not configured');
             return;
         }
-        
-        // Initialize Google Identity Services
-        if (typeof google !== 'undefined' && google.accounts) {
-            google.accounts.id.initialize({
-                client_id: clientId,
-                callback: handleGoogleCallback,
-                auto_select: false,
-                cancel_on_tap_outside: true
-            });
-        }
-        
+
+        // Try to initialize Google SDK (may not be loaded yet)
+        tryInitializeGoogle(clientId);
+
         // Manual button click handler
         $('#ppv-google-login-btn').on('click', function() {
-            if (typeof google !== 'undefined' && google.accounts) {
+            if (googleInitialized && typeof google !== 'undefined' && google.accounts) {
                 google.accounts.id.prompt();
+            } else if (typeof google !== 'undefined' && google.accounts) {
+                // SDK loaded but not initialized yet - initialize now
+                tryInitializeGoogle(clientId);
+                // Small delay then prompt
+                setTimeout(function() {
+                    if (googleInitialized) {
+                        google.accounts.id.prompt();
+                    } else {
+                        showAlert('Google Login wird geladen...', 'info');
+                    }
+                }, 100);
             } else {
-                showAlert('Google Login ist momentan nicht verfügbar', 'error');
+                showAlert('Google Login wird geladen, bitte erneut klicken...', 'info');
+                // Try again in case SDK loads soon
+                waitForGoogleSDK(clientId);
             }
         });
+    }
+
+    /**
+     * Try to initialize Google SDK
+     */
+    function tryInitializeGoogle(clientId) {
+        if (googleInitialized) return true;
+
+        if (typeof google !== 'undefined' && google.accounts) {
+            try {
+                google.accounts.id.initialize({
+                    client_id: clientId,
+                    callback: handleGoogleCallback,
+                    auto_select: false,
+                    cancel_on_tap_outside: true
+                });
+                googleInitialized = true;
+                console.log('✅ Google Sign-In initialized');
+                return true;
+            } catch (e) {
+                console.error('❌ Google init error:', e);
+                return false;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Wait for Google SDK to load then initialize
+     */
+    function waitForGoogleSDK(clientId) {
+        let attempts = 0;
+        const maxAttempts = 20; // 2 seconds max
+
+        const checkInterval = setInterval(function() {
+            attempts++;
+            if (tryInitializeGoogle(clientId)) {
+                clearInterval(checkInterval);
+            } else if (attempts >= maxAttempts) {
+                clearInterval(checkInterval);
+                console.warn('⚠️ Google SDK failed to load');
+            }
+        }, 100);
     }
     
     /**
