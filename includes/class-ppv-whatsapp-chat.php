@@ -103,14 +103,6 @@ class PPV_WhatsApp_Chat {
                     font-size: 12px;
                     margin-top: 2px;
                 }
-                .ppv-wa-conv-preview {
-                    color: #94a3b8;
-                    font-size: 12px;
-                    margin-top: 4px;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                    white-space: nowrap;
-                }
                 .ppv-wa-conv-time {
                     color: #64748b;
                     font-size: 10px;
@@ -252,7 +244,6 @@ class PPV_WhatsApp_Chat {
                                 <?php endif; ?>
                             </div>
                             <div class="ppv-wa-conv-phone"><?php echo esc_html(self::format_phone($conv->phone_number)); ?></div>
-                            <div class="ppv-wa-conv-preview"><?php echo esc_html($conv->last_message_preview); ?></div>
                             <div class="ppv-wa-conv-time"><?php echo esc_html(self::time_ago($conv->last_message_at)); ?></div>
                         </div>
                     <?php endforeach; ?>

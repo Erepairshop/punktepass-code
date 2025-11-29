@@ -6882,9 +6882,9 @@ body.ppv-dark .ppv-mypoints-tab.active {
 .neutral-btn,
 .danger-btn {
     width: 100%;
-    padding: 16px 24px;
-    font-size: 16px;
-    border-radius: var(--ppv-s-radius-sm);
+    padding: 14px 24px;
+    font-size: 15px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -6892,30 +6892,32 @@ body.ppv-dark .ppv-mypoints-tab.active {
     font-weight: 600;
     cursor: pointer;
     font-family: inherit;
-    min-height: 54px;
-    transition: all 0.3s ease;
+    min-height: 50px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     -webkit-tap-highlight-color: transparent;
 }
 
 .save-btn {
     border: none;
-    background: linear-gradient(135deg, var(--ppv-s-primary) 0%, var(--ppv-s-primary-hover) 100%);
-    color: white;
-    box-shadow: 0 4px 14px rgba(0, 102, 255, 0.35);
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    color: white !important;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
 }
 
 .save-btn i {
-    font-size: 20px;
+    font-size: 18px;
+    color: white !important;
 }
 
 .save-btn:hover:not(:disabled) {
-    background: linear-gradient(135deg, var(--ppv-s-primary-hover) 0%, #003d99 100%);
-    box-shadow: 0 6px 20px rgba(0, 102, 255, 0.45);
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
     transform: translateY(-2px);
 }
 
 .save-btn:active:not(:disabled) {
     transform: scale(0.98);
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
 }
 
 .save-btn:disabled {
@@ -6924,7 +6926,7 @@ body.ppv-dark .ppv-mypoints-tab.active {
 }
 
 .neutral-btn {
-    background: var(--ppv-s-card);
+    background: transparent;
     color: var(--ppv-s-text);
     border: 1.5px solid var(--ppv-s-border);
 }
@@ -6936,12 +6938,11 @@ body.ppv-dark .ppv-mypoints-tab.active {
 
 .neutral-btn:hover:not(:disabled) {
     background: var(--ppv-s-bg);
-    border-color: rgba(0, 102, 255, 0.2);
-    color: var(--ppv-s-primary);
+    border-color: var(--ppv-s-text-light);
 }
 
 .neutral-btn:hover:not(:disabled) i {
-    color: var(--ppv-s-primary);
+    color: var(--ppv-s-text);
 }
 
 .neutral-btn:active:not(:disabled) {
@@ -6949,10 +6950,9 @@ body.ppv-dark .ppv-mypoints-tab.active {
 }
 
 .danger-btn {
-    background: var(--ppv-s-card);
+    background: transparent;
     color: #DC2626;
-    border: 1.5px solid rgba(220, 38, 38, 0.25);
-    box-shadow: none;
+    border: 1.5px solid rgba(220, 38, 38, 0.3);
 }
 
 .danger-btn i {
@@ -6961,10 +6961,13 @@ body.ppv-dark .ppv-mypoints-tab.active {
 }
 
 .danger-btn:hover:not(:disabled) {
-    background: rgba(254, 226, 226, 0.5);
-    border-color: rgba(220, 38, 38, 0.4);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
+    background: #DC2626;
+    border-color: #DC2626;
+    color: white;
+}
+
+.danger-btn:hover:not(:disabled) i {
+    color: white;
 }
 
 .danger-btn:active:not(:disabled) {
@@ -6980,12 +6983,15 @@ body.ppv-dark .ppv-mypoints-tab.active {
     padding: 16px 20px;
     background: linear-gradient(to top, var(--ppv-s-bg) 0%, var(--ppv-s-bg) 80%, transparent 100%);
     z-index: 100;
+    display: flex;
+    justify-content: center;
 }
 
 .ppv-actions .save-btn {
     max-width: 400px;
+    width: 100%;
     margin: 0 auto;
-    box-shadow: 0 4px 20px rgba(0, 102, 255, 0.3);
+    box-shadow: 0 4px 20px rgba(16, 185, 129, 0.35);
 }
 
 /* Add padding to form so content doesn't hide behind sticky button */
