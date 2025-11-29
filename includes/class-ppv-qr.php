@@ -770,11 +770,14 @@ class PPV_QR {
 
         <script>
         jQuery(document).ready(function($){
-            // Restore saved tab on page load
+            // Restore saved tab on page load (only if the tab button exists)
             var savedTab = localStorage.getItem('ppv_active_tab');
-            if (savedTab && $(".ppv-tab[data-tab='" + savedTab + "']").length) {
+            var $savedTabBtn = $(".ppv-tab[data-tab='" + savedTab + "']");
+
+            // Only restore if the saved tab exists (scanner users don't have all tabs)
+            if (savedTab && $savedTabBtn.length) {
                 $(".ppv-tab").removeClass("active");
-                $(".ppv-tab[data-tab='" + savedTab + "']").addClass("active");
+                $savedTabBtn.addClass("active");
                 $(".ppv-tab-content").removeClass("active");
                 $("#tab-" + savedTab).addClass("active");
             }
