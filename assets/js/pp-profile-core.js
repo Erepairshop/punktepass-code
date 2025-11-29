@@ -41,34 +41,33 @@
             if (profileForm) {
                 profileForm.dataset.ppvBound = 'false';
             }
+            // Clear reload flag when leaving page
+            sessionStorage.removeItem('ppv_profile_reloaded');
         }, { once: false });
 
-        // 3. Force reload when restoring from Turbo cache
+        // 3. Force reload when restoring from Turbo cache (back/forward)
         document.addEventListener('turbo:visit', function(e) {
             const profileForm = document.getElementById('ppv-profile-form');
+            // Only reload on restore action AND if we haven't just reloaded
             if (profileForm && e.detail?.action === 'restore') {
-                e.preventDefault();
-                window.location.reload();
+                const alreadyReloaded = sessionStorage.getItem('ppv_profile_reloaded');
+                if (!alreadyReloaded) {
+                    sessionStorage.setItem('ppv_profile_reloaded', 'true');
+                    e.preventDefault();
+                    window.location.reload();
+                }
             }
         });
 
-        // 4. Timestamp-based cache detection
-        let lastVisitTime = Date.now();
-        document.addEventListener('turbo:before-visit', function() {
-            lastVisitTime = Date.now();
-        });
+        // 4. Clear reload flag on fresh page load (not from cache)
         document.addEventListener('turbo:load', function() {
             const profileForm = document.getElementById('ppv-profile-form');
-            if (profileForm && (Date.now() - lastVisitTime) < 50) {
-                const marker = sessionStorage.getItem('ppv_profile_loaded_at');
-                const now = Date.now();
-                if (marker && (now - parseInt(marker)) > 2000) {
-                    window.location.reload();
-                    return;
-                }
-            }
             if (profileForm) {
-                sessionStorage.setItem('ppv_profile_loaded_at', Date.now().toString());
+                // Clear the reload flag after successful load
+                // This allows future cache restores to trigger reload
+                setTimeout(() => {
+                    sessionStorage.removeItem('ppv_profile_reloaded');
+                }, 1000);
             }
         });
     })();
