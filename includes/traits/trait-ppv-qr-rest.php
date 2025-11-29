@@ -744,11 +744,11 @@ trait PPV_QR_REST_Trait {
 
         try {
             // 🔒 DUPLICATE CHECK: Prevent race condition double-inserts
-            // Check if points were already inserted in the last 5 seconds
+            // Check if points were already inserted in the last 10 seconds (extended for slow networks)
             $recent_insert = $wpdb->get_var($wpdb->prepare("
                 SELECT id FROM {$wpdb->prefix}ppv_points
                 WHERE user_id = %d AND store_id = %d AND type = 'qr_scan'
-                AND created > DATE_SUB(NOW(), INTERVAL 5 SECOND)
+                AND created > DATE_SUB(NOW(), INTERVAL 10 SECOND)
                 LIMIT 1
             ", $user_id, $store_id));
 

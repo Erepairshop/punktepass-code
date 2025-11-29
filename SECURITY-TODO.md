@@ -43,8 +43,9 @@
 
 ## KÖZEPES (2 héten belül)
 
-- [ ] **Scan ablak növelése** - `class-ppv-scan.php:477`
-  - 5 sec → 10-15 sec (hálózati latency miatt)
+- [x] **Scan ablak növelése** - `trait-ppv-qr-rest.php:751`
+  - ~~5 sec → 10-15 sec (hálózati latency miatt)~~
+  - ✅ JAVÍTVA: 10 másodperc (2025-11-29)
 
 - [ ] **Device fingerprint validálás** - `class-ppv-scan.php:172`
   - Hossz és formátum ellenőrzés
@@ -58,8 +59,9 @@
   - ~~Létezik de nincs használva!~~
   - ✅ JAVÍTVA: Sikeres scan 3/perc, sikertelen 20/perc, Redeem 5/perc per IP
 
-- [ ] **Birthday bonus race fix** - `class-ppv-scan.php:432-449`
-  - Atomic update-re átírni
+- [x] **Birthday bonus race fix** - `trait-ppv-qr-rest.php:656-663`
+  - ~~Atomic update-re átírni~~
+  - ✅ MÁR JAVÍTVA VOLT: atomic UPDATE with WHERE clause
 
 - [ ] **GPS validálás** - `class-ppv-scan.php:173-174`
   - Store geofence ellenőrzés
@@ -73,9 +75,9 @@
   - ~~`ppv_points (user_id, store_id, created)`~~
   - ✅ SQL fájl elkészítve - futtatni kell manuálisan!
 
-- [ ] **Audit logging** - Security
-  - Minden kritikus művelet logolása
-  - Failed attempts tracking
+- [x] **Audit logging** - Security
+  - ~~Minden kritikus művelet logolása~~
+  - ✅ MÁR MEGVAN: `ppv_log()` minden kritikus helyen
 
 ---
 
@@ -92,6 +94,9 @@
 - [x] Max pont limit - 20 pont/scan (2025-11-29)
 - [x] Session validáció - `class-ppv-permissions.php` (2025-11-29)
 - [x] Database indexek - `database/add-indexes.sql` (2025-11-29)
+- [x] Scan ablak növelése - 5→10 sec `trait-ppv-qr-rest.php` (2025-11-29)
+- [x] Birthday bonus race fix - már megvolt (2025-11-29)
+- [x] Audit logging - már megvolt `ppv_log()` (2025-11-29)
 
 ---
 
