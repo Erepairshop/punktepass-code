@@ -31,9 +31,9 @@
   - ~~Csak 1 perces ablak, `reward_title` alapján~~
   - ✅ JAVÍTVA: `reward_id` + 5 perces ablak (race condition fix része)
 
-- [ ] **Session validáció** - `class-ppv-permissions.php:46-50`
-  - Session user nincs validálva (létezik-e még, aktív-e)
-  - Session hijacking lehetséges
+- [x] **Session validáció** - `class-ppv-permissions.php:46-84, 562-578`
+  - ~~Session user nincs validálva (létezik-e még, aktív-e)~~
+  - ✅ JAVÍTVA: DB ellenőrzés user/store létezik-e és aktív-e
 
 - [x] **Secure cookie flags** - `class-ppv-user-settings.php`, `class-ppv-session.php`
   - ~~Token cookie nincs HttpOnly/Secure/SameSite~~
@@ -69,9 +69,9 @@
 
 ## ALACSONY (1 hónapon belül)
 
-- [ ] **Database indexek** - Performance
-  - `ppv_points (user_id, store_id, created)`
-  - `ppv_rewards_redeemed (store_id, status)`
+- [x] **Database indexek** - `database/add-indexes.sql`
+  - ~~`ppv_points (user_id, store_id, created)`~~
+  - ✅ SQL fájl elkészítve - futtatni kell manuálisan!
 
 - [ ] **Audit logging** - Security
   - Minden kritikus művelet logolása
@@ -89,7 +89,9 @@
 - [x] Race Condition fix - `class-ppv-redeem.php` (2025-11-29)
 - [x] Secure cookie flags - `class-ppv-user-settings.php`, `class-ppv-session.php` (2025-11-29)
 - [x] Rate limiting - scan/redeem endpoints (2025-11-29)
-- [x] Max pont limit - 100 pont/scan (2025-11-29)
+- [x] Max pont limit - 20 pont/scan (2025-11-29)
+- [x] Session validáció - `class-ppv-permissions.php` (2025-11-29)
+- [x] Database indexek - `database/add-indexes.sql` (2025-11-29)
 
 ---
 

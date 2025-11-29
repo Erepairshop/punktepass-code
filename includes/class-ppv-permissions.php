@@ -45,14 +45,42 @@ class PPV_Permissions {
 
         // 1. Check session authentication
         if (!empty($_SESSION['ppv_user_id'])) {
-            ppv_perm_log("✅ [PPV_Permissions] Auth via SESSION: user_id=" . $_SESSION['ppv_user_id']);
-            return true;
+            // 🔒 SECURITY: Validate user still exists and is active
+            global $wpdb;
+            $user_id = intval($_SESSION['ppv_user_id']);
+            $user_exists = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}ppv_users WHERE id = %d AND status = 'active'",
+                $user_id
+            ));
+
+            if ($user_exists) {
+                ppv_perm_log("✅ [PPV_Permissions] Auth via SESSION: user_id=" . $user_id);
+                return true;
+            } else {
+                // User deleted or inactive - clear session
+                ppv_perm_log("⚠️ [PPV_Permissions] Session user_id={$user_id} no longer valid - clearing session");
+                unset($_SESSION['ppv_user_id']);
+                // Don't return error here, let it fall through to try other auth methods
+            }
         }
 
         // 1b. 🏪 TRIAL HANDLER SUPPORT: Check ppv_vendor_store_id (händler trial has this set)
         if (!empty($_SESSION['ppv_vendor_store_id'])) {
-            ppv_perm_log("✅ [PPV_Permissions] Auth via SESSION: vendor_store_id=" . $_SESSION['ppv_vendor_store_id']);
-            return true;
+            // 🔒 SECURITY: Validate store still exists and is active
+            global $wpdb;
+            $store_id = intval($_SESSION['ppv_vendor_store_id']);
+            $store_exists = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE id = %d AND status = 'active'",
+                $store_id
+            ));
+
+            if ($store_exists) {
+                ppv_perm_log("✅ [PPV_Permissions] Auth via SESSION: vendor_store_id=" . $store_id);
+                return true;
+            } else {
+                ppv_perm_log("⚠️ [PPV_Permissions] Session vendor_store_id={$store_id} no longer valid - clearing session");
+                unset($_SESSION['ppv_vendor_store_id']);
+            }
         }
 
         ppv_perm_log("🔍 [PPV_Permissions] No session user_id, checking token restore...");
@@ -533,8 +561,21 @@ class PPV_Permissions {
 
         // 1. Check session authentication (PPV user)
         if (!empty($_SESSION['ppv_user_id'])) {
-            ppv_perm_log("✅ [PPV_Permissions] check_logged_in_user() SUCCESS via SESSION");
-            return true;
+            // 🔒 SECURITY: Validate user still exists and is active
+            global $wpdb;
+            $user_id = intval($_SESSION['ppv_user_id']);
+            $user_exists = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}ppv_users WHERE id = %d AND status = 'active'",
+                $user_id
+            ));
+
+            if ($user_exists) {
+                ppv_perm_log("✅ [PPV_Permissions] check_logged_in_user() SUCCESS via SESSION");
+                return true;
+            } else {
+                ppv_perm_log("⚠️ [PPV_Permissions] Session user_id={$user_id} no longer valid - clearing session");
+                unset($_SESSION['ppv_user_id']);
+            }
         }
 
         // 2. Try to restore session from token
