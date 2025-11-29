@@ -1101,10 +1101,11 @@ return [
     // ONBOARDING
     // ============================================================
     'onb_welcome_title' => 'Willkommen bei PunktePass!',
-    'onb_welcome_subtitle' => 'Wir helfen dir, die 2 grundlegenden Dinge einzurichten, damit deine Gäste Punkte sammeln können!',
+    'onb_welcome_subtitle' => 'Wir helfen dir, die 3 grundlegenden Dinge einzurichten, damit deine Gäste Punkte sammeln können!',
     'onb_welcome_step1' => 'Fülle die Geschäfts-Basisdaten aus',
     'onb_welcome_step2' => 'Erstelle die erste Prämie',
-    'onb_welcome_time' => '⏱️ Etwa 3 Minuten',
+    'onb_welcome_step3' => 'Registriere ein Gerät',
+    'onb_welcome_time' => '⏱️ Etwa 5 Minuten',
     'onb_btn_later' => 'Später',
     'onb_btn_start' => 'Los geht\'s!',
 
@@ -1170,6 +1171,7 @@ return [
     'onb_progress_title' => 'Erste Einrichtung',
     'onb_progress_step_profile' => 'Profildaten ausfüllen',
     'onb_progress_step_reward' => 'Erste Prämie',
+    'onb_progress_step_device' => 'Gerät registriert',
 
     'onb_reward_step_title' => '2️⃣ Erste Prämie erstellen',
     'onb_reward_step_progress' => '100% (2/2)',
@@ -1218,6 +1220,30 @@ return [
     'onb_reward_free_product' => '🎁 Produktname',
     'onb_reward_free_product_placeholder' => 'z.B. Kaffee + Kuchen',
     'onb_reward_free_product_value' => '💰 Produktwert',
+
+    // Onboarding - fehlende Übersetzungen
+    'onb_postponed' => '⏰ Wir erinnern dich in 8 Stunden!',
+    'onb_confirm_dismiss' => 'Wirklich schließen? Du kannst es später in den Einstellungen wieder öffnen.',
+    'onb_confirm_hide' => 'Wirklich ausblenden? Du kannst es später in den Einstellungen wieder öffnen.',
+    'onb_celebration_autoclose' => 'Schließt automatisch in 5 Sek.',
+    'onb_celebration_tip' => '💡 <strong>Tipp:</strong> Erstelle eine Kampagne, damit deine Gäste schneller Punkte sammeln!',
+    'onb_btn_done' => '✅ Verstanden',
+    'onb_error_save' => '❌ Fehler beim Speichern',
+    'onb_state_saving' => '⏳ Wird gespeichert...',
+    'onb_error_address' => '❌ Bitte gib zuerst die Adresse und Stadt an!',
+    'onb_state_searching' => 'Suche...',
+    'onb_success_geocode' => '✅ Koordinaten gefunden!',
+    'onb_error_not_found' => '❌ Adresse nicht gefunden',
+
+    // Reward form helper texts
+    'onb_reward_name_helper' => '📝 Der Name der Prämie, den die Kunden sehen',
+    'onb_reward_points_helper' => '🎯 Wie viele Punkte der Kunde für diese Prämie benötigt',
+    'onb_reward_description_helper' => '💬 Weitere Details zur Prämie (optional)',
+    'onb_reward_type_helper' => '🎁 Welche Art von Belohnung der Kunde erhält',
+    'onb_reward_value_helper' => '💶 Rabattwert (z.B. 10 = 10% oder 5 = 5 EUR)',
+    'onb_reward_free_product_helper' => '🎁 Name des kostenlosen Produkts (z.B. Kaffee + Kuchen)',
+    'onb_reward_free_product_value_helper' => '💰 Normaler Preis des Produkts',
+    'onb_reward_points_given_helper' => '⭐ Diese Punkte belohnen den Kunden bei der Einlösung',
 
     // Ország nevek
     'country_hu' => 'Ungarn',

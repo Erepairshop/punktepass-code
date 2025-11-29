@@ -1078,10 +1078,11 @@ return [
     // ONBOARDING
     // ============================================================
     'onb_welcome_title' => 'Üdvözlünk a PunktePass-ban!',
-    'onb_welcome_subtitle' => 'Segítünk beállítani a 2 alapvető dolgot, hogy a vendégek pontokat gyűjthessenek!',
+    'onb_welcome_subtitle' => 'Segítünk beállítani a 3 alapvető dolgot, hogy a vendégek pontokat gyűjthessenek!',
     'onb_welcome_step1' => 'Töltsd ki az üzlet alapadatait',
     'onb_welcome_step2' => 'Hozd létre az első prémiumot',
-    'onb_welcome_time' => '⏱️ Körülbelül 3 perc',
+    'onb_welcome_step3' => 'Regisztrálj egy eszközt',
+    'onb_welcome_time' => '⏱️ Körülbelül 5 perc',
     'onb_btn_later' => 'Később',
     'onb_btn_start' => 'Kezdjük!',
 
@@ -1147,6 +1148,7 @@ return [
     'onb_progress_title' => 'Kezdeti Beállítások',
     'onb_progress_step_profile' => 'Profil adatok kitöltve',
     'onb_progress_step_reward' => 'Első prémium',
+    'onb_progress_step_device' => 'Eszköz regisztrálva',
 
     'onb_reward_step_title' => '2️⃣ Első Prémium Létrehozása',
     'onb_reward_step_progress' => '100% (2/2)',
@@ -1195,6 +1197,30 @@ return [
     'onb_reward_free_product' => '🎁 Termék neve',
     'onb_reward_free_product_placeholder' => 'pl. Kávé + Sütemény',
     'onb_reward_free_product_value' => '💰 Termék értéke',
+
+    // Onboarding - hiányzó fordítások
+    'onb_postponed' => '⏰ 8 óra múlva emlékeztetünk!',
+    'onb_confirm_dismiss' => 'Biztosan bezárod? Később visszahozhatod a beállításokból.',
+    'onb_confirm_hide' => 'Biztosan elrejted? Később visszahozhatod a beállításokból.',
+    'onb_celebration_autoclose' => 'Auto-bezár 5 mp múlva',
+    'onb_celebration_tip' => '💡 <strong>Tipp:</strong> Hozz létre egy kampányt hogy gyorsabban gyűjtsenek pontokat a vendégeid!',
+    'onb_btn_done' => '✅ Rendben',
+    'onb_error_save' => '❌ Hiba történt a mentés során',
+    'onb_state_saving' => '⏳ Mentés...',
+    'onb_error_address' => '❌ Kérlek add meg a címet és várost először!',
+    'onb_state_searching' => 'Keresés...',
+    'onb_success_geocode' => '✅ Koordináták megtalálva!',
+    'onb_error_not_found' => '❌ Cím nem található',
+
+    // Reward form helper texts
+    'onb_reward_name_helper' => '📝 A prémium neve, amit az ügyfelek látnak',
+    'onb_reward_points_helper' => '🎯 Hány pont szükséges az ügyfélnek ezen prémium beváltásához',
+    'onb_reward_description_helper' => '💬 További részletek a prémiumról (opcionális)',
+    'onb_reward_type_helper' => '🎁 Milyen típusú jutalmat kap az ügyfél',
+    'onb_reward_value_helper' => '💶 Kedvezmény értéke (pl. 10 = 10% vagy 5 = 5 EUR)',
+    'onb_reward_free_product_helper' => '🎁 Az ingyenes termék neve (pl. Kávé + Sütemény)',
+    'onb_reward_free_product_value_helper' => '💰 A termék rendes ára',
+    'onb_reward_points_given_helper' => '⭐ Ezek a pontok jutalmazzák az ügyfelet beváltáskor',
 
     // Ország nevek
     'country_hu' => 'Magyarország',

@@ -130,7 +130,7 @@
 
                         <h2>${L.onb_welcome_title || 'Üdvözlünk a PunktePass-ban!'}</h2>
 
-                        <p>${L.onb_welcome_subtitle || 'Segítünk beállítani a 2 alapvető dolgot, hogy a vendégek pontokat gyűjthessenek!'}</p>
+                        <p>${L.onb_welcome_subtitle || 'Segítünk beállítani a 3 alapvető dolgot, hogy a vendégek pontokat gyűjthessenek!'}</p>
 
                         <div class="ppv-welcome-steps">
                             <div class="ppv-welcome-step">
@@ -140,6 +140,10 @@
                             <div class="ppv-welcome-step">
                                 <span class="step-number">2</span>
                                 <span>${L.onb_welcome_step2 || 'Hozd létre az első prémiumot'}</span>
+                            </div>
+                            <div class="ppv-welcome-step">
+                                <span class="step-number">3</span>
+                                <span>${L.onb_welcome_step3 || 'Regisztrálj egy eszközt'}</span>
                             </div>
                         </div>
 
