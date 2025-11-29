@@ -916,6 +916,31 @@ class PPV_Device_Fingerprint {
             }
         }
 
+        // ✅ NEW: Token-based auth fallback (for scanner users via REST API)
+        $token = null;
+        if (!empty($_COOKIE['ppv_user_token'])) {
+            $token = sanitize_text_field($_COOKIE['ppv_user_token']);
+        }
+
+        if ($token) {
+            // Try to find user by login_token
+            $user_data = $wpdb->get_row($wpdb->prepare(
+                "SELECT id, user_type, vendor_store_id FROM {$wpdb->prefix}ppv_users WHERE login_token = %s AND active = 1 LIMIT 1",
+                $token
+            ));
+
+            if ($user_data && !empty($user_data->vendor_store_id)) {
+                // Cache in session for future calls
+                $_SESSION['ppv_user_id'] = intval($user_data->id);
+                $_SESSION['ppv_store_id'] = intval($user_data->vendor_store_id);
+                if (!empty($user_data->user_type)) {
+                    $_SESSION['ppv_user_type'] = $user_data->user_type;
+                }
+                ppv_log("📱 [Device] get_session_store_id TOKEN fallback: user_id={$user_data->id}, store_id={$user_data->vendor_store_id}, type={$user_data->user_type}");
+                return intval($user_data->vendor_store_id);
+            }
+        }
+
         return 0;
     }
 
