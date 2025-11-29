@@ -1,0 +1,669 @@
+/**
+ * PunktePass QR Scanner - Init Module
+ * Contains: Initialization, Event Delegation, CSV Export, Redemption Modal
+ * Depends on: all other ppv-qr-*.js modules
+ */
+(function() {
+  'use strict';
+
+  // Guard against multiple script loads
+  if (window.PPV_QR_LOADED) {
+    window.PPV_QR.log('[QR] Already loaded, skipping');
+    return;
+  }
+  window.PPV_QR_LOADED = true;
+
+  const {
+    log: ppvLog,
+    warn: ppvWarn,
+    L,
+    STATE,
+    initGpsTracking,
+    stopGpsTracking,
+    getStoreKey,
+    preloadSounds,
+    playSound,
+    escapeHtml,
+    UIManager,
+    OfflineSyncManager,
+    ScanProcessor,
+    CampaignManager,
+    CameraScanner,
+    SettingsManager
+  } = window.PPV_QR;
+
+  // ============================================================
+  // EVENT DELEGATION
+  // ============================================================
+  function setupEventDelegation() {
+    document.body.removeEventListener('click', handleBodyClick);
+    document.body.addEventListener('click', handleBodyClick);
+
+    const campTypeSelect = document.getElementById('camp-type');
+    if (campTypeSelect && !campTypeSelect.dataset.listenerAdded) {
+      campTypeSelect.dataset.listenerAdded = 'true';
+      campTypeSelect.addEventListener('change', (e) => {
+        STATE.campaignManager?.updateVisibilityByType(e.target.value);
+        STATE.campaignManager?.updateValueLabel(e.target.value);
+      });
+    }
+
+    const campFilterSelect = document.getElementById('ppv-campaign-filter');
+    if (campFilterSelect && !campFilterSelect.dataset.listenerAdded) {
+      campFilterSelect.dataset.listenerAdded = 'true';
+      campFilterSelect.addEventListener('change', () => {
+        STATE.campaignManager?.load();
+      });
+    }
+
+    const campFilialeSelect = document.getElementById('ppv-campaign-filiale');
+    if (campFilialeSelect && !campFilialeSelect.dataset.listenerAdded) {
+      campFilialeSelect.dataset.listenerAdded = 'true';
+      campFilialeSelect.addEventListener('change', () => {
+        ppvLog('[QR] Campaign filiale changed to:', campFilialeSelect.value);
+        STATE.campaignManager?.load();
+      });
+    }
+  }
+
+  function handleBodyClick(e) {
+    const target = e.target;
+
+    // Campaign actions
+    const editBtn = target.closest('.ppv-camp-edit');
+    const deleteBtn = target.closest('.ppv-camp-delete');
+    const archiveBtn = target.closest('.ppv-camp-archive');
+    const cloneBtn = target.closest('.ppv-camp-clone');
+
+    if (editBtn) {
+      ppvLog('[QR] Edit button clicked, id:', editBtn.dataset.id);
+      const camp = STATE.campaignManager?.campaigns.find(c => c.id == editBtn.dataset.id);
+      if (camp) {
+        ppvLog('[QR] Found campaign:', camp.title);
+        STATE.campaignManager.edit(camp);
+      } else {
+        ppvWarn('[QR] Campaign not found for id:', editBtn.dataset.id);
+      }
+    }
+    if (deleteBtn) {
+      ppvLog('[QR] Delete button clicked, id:', deleteBtn.dataset.id);
+      STATE.campaignManager?.delete(deleteBtn.dataset.id);
+    }
+    if (archiveBtn) {
+      ppvLog('[QR] Archive button clicked, id:', archiveBtn.dataset.id);
+      STATE.campaignManager?.archive(archiveBtn.dataset.id);
+    }
+    if (cloneBtn) {
+      ppvLog('[QR] Clone button clicked, id:', cloneBtn.dataset.id);
+      STATE.campaignManager?.clone(cloneBtn.dataset.id);
+    }
+
+    // New campaign button
+    if (target.id === 'ppv-new-campaign' || target.closest('#ppv-new-campaign')) {
+      STATE.campaignManager?.resetForm();
+      STATE.campaignManager?.showModal();
+    }
+
+    // Save campaign
+    if (target.id === 'camp-save' || target.closest('#camp-save')) {
+      STATE.campaignManager?.save();
+    }
+
+    // Cancel campaign
+    if (target.id === 'camp-cancel' || target.closest('#camp-cancel')) {
+      STATE.campaignManager?.hideModal();
+    }
+
+    // Campaign filter
+    if (target.id === 'ppv-campaign-filter') {
+      STATE.campaignManager?.load();
+    }
+
+    // CSV Export Button
+    if (target.id === 'ppv-csv-export-btn' || target.closest('#ppv-csv-export-btn')) {
+      e.preventDefault();
+      const menu = document.getElementById('ppv-csv-export-menu');
+      if (menu) {
+        menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+      }
+    }
+
+    // CSV Export Options
+    if (target.classList.contains('ppv-csv-export-option') || target.closest('.ppv-csv-export-option')) {
+      e.preventDefault();
+      const option = target.closest('.ppv-csv-export-option') || target;
+      const period = option.dataset.period;
+      const menu = document.getElementById('ppv-csv-export-menu');
+      if (menu) menu.style.display = 'none';
+      handleCsvExport(period);
+    }
+
+    // Close CSV dropdown when clicking outside
+    if (!target.closest('.ppv-csv-wrapper')) {
+      const menu = document.getElementById('ppv-csv-export-menu');
+      if (menu) menu.style.display = 'none';
+    }
+  }
+
+  // ============================================================
+  // CSV EXPORT HANDLER
+  // ============================================================
+  async function handleCsvExport(period) {
+    const storeKey = getStoreKey();
+    if (!storeKey) {
+      window.ppvToast('⚠️ Kein Store ausgewählt', 'warning');
+      return;
+    }
+
+    let dateParam = '';
+
+    if (period === 'today') {
+      dateParam = new Date().toISOString().split('T')[0];
+    } else if (period === 'date') {
+      const selectedDate = prompt('Datum eingeben (YYYY-MM-DD):', new Date().toISOString().split('T')[0]);
+      if (!selectedDate) return;
+      dateParam = selectedDate;
+    } else if (period === 'month') {
+      const now = new Date();
+      dateParam = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    window.ppvToast('⏳ CSV wird erstellt...', 'info');
+
+    try {
+      const res = await fetch(`/wp-json/punktepass/v1/pos/export-csv?period=${period}&date=${dateParam}`, {
+        headers: { 'PPV-POS-Token': storeKey }
+      });
+
+      if (!res.ok) throw new Error('Export failed');
+
+      const data = await res.json();
+
+      if (data.csv) {
+        const blob = new Blob([data.csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = data.filename || `pos-export-${dateParam}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        window.ppvToast('✅ CSV heruntergeladen', 'success');
+      } else {
+        throw new Error(data.message || 'Export failed');
+      }
+    } catch (err) {
+      ppvWarn('[CSV] Export error:', err);
+      window.ppvToast('❌ Export fehlgeschlagen', 'error');
+    }
+  }
+
+  // ============================================================
+  // CLEANUP
+  // ============================================================
+  function cleanup() {
+    if (STATE.ablySubscriberId && window.PPV_ABLY_MANAGER) {
+      ppvLog('[Ably] Unsubscribing via shared manager on cleanup');
+      window.PPV_ABLY_MANAGER.unsubscribe(STATE.ablySubscriberId);
+      STATE.ablySubscriberId = null;
+    }
+
+    if (STATE.pollInterval) {
+      ppvLog('[Poll] Clearing interval on cleanup');
+      clearInterval(STATE.pollInterval);
+      STATE.pollInterval = null;
+    }
+
+    if (STATE.visibilityHandler) {
+      document.removeEventListener('visibilitychange', STATE.visibilityHandler);
+      STATE.visibilityHandler = null;
+    }
+
+    stopGpsTracking();
+
+    STATE.cameraScanner?.cleanup();
+    STATE.cameraScanner = null;
+    STATE.campaignManager = null;
+    STATE.scanProcessor = null;
+    STATE.uiManager = null;
+    STATE.initialized = false;
+  }
+
+  // ============================================================
+  // HANDLER REDEMPTION MODAL
+  // ============================================================
+  let activeRedemptionModal = null;
+  let activeRedemptionToken = null;
+
+  function showHandlerRedemptionModal(data) {
+    closeHandlerRedemptionModal();
+
+    activeRedemptionToken = data.token;
+
+    const modal = document.createElement('div');
+    modal.id = 'ppv-handler-redemption-modal';
+    modal.className = 'ppv-handler-redemption-modal';
+
+    const userName = escapeHtml(data.customer_name || data.user_name || data.user_email || `Kunde #${data.user_id}`);
+    const userEmail = data.email ? escapeHtml(data.email) : '';
+    const avatarHtml = data.avatar
+      ? `<img src="${escapeHtml(data.avatar)}" class="ppv-redemption-avatar" alt="">`
+      : `<div class="ppv-redemption-avatar-placeholder">👤</div>`;
+
+    const rewardTitle = escapeHtml(data.reward_title || 'Prämie');
+    const rewardPoints = data.reward_points || 0;
+    const currentPoints = data.current_points || 0;
+    const rewardType = data.reward_type || 'info';
+    const rewardValue = data.reward_value || 0;
+
+    const isPercentType = rewardType === 'discount_percent';
+    const purchaseAmountHtml = isPercentType ? `
+        <div class="ppv-redemption-purchase-amount" style="margin: 15px 0; padding: 15px; background: linear-gradient(135deg, #fff3e0, #ffe0b2); border-radius: 12px; border: 2px solid #ff9800;">
+          <label for="ppv-purchase-amount" style="display: block; margin-bottom: 8px; font-weight: 600; color: #e65100;">
+            <span style="font-size: 18px;">💰</span> Einkaufsbetrag eingeben:
+          </label>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <input type="number" id="ppv-purchase-amount"
+                   placeholder="0.00"
+                   min="0.01"
+                   step="0.01"
+                   style="flex: 1; padding: 12px 15px; font-size: 20px; font-weight: bold; border: 2px solid #ff9800; border-radius: 8px; text-align: right;"
+                   required>
+            <span style="font-size: 20px; font-weight: bold; color: #e65100;">€</span>
+          </div>
+          <p style="margin: 8px 0 0 0; font-size: 13px; color: #bf360c;">
+            ℹ️ Der Kunde erhält <strong>${rewardValue}% Rabatt</strong> auf diesen Betrag
+          </p>
+        </div>
+    ` : '';
+
+    let rewardValueInfo = '';
+    if (rewardType === 'discount_fixed' && rewardValue > 0) {
+      rewardValueInfo = `<div style="color: #4caf50; font-weight: 600; margin-top: 5px;">💶 Wert: ${rewardValue}€ Rabatt</div>`;
+    } else if (rewardType === 'free_product' && data.free_product_value > 0) {
+      rewardValueInfo = `<div style="color: #4caf50; font-weight: 600; margin-top: 5px;">🎁 Wert: ${data.free_product_value}€</div>`;
+    } else if (isPercentType && rewardValue > 0) {
+      rewardValueInfo = `<div style="color: #ff9800; font-weight: 600; margin-top: 5px;">📊 ${rewardValue}% Rabatt</div>`;
+    }
+
+    modal.innerHTML = `
+      <div class="ppv-handler-redemption-content">
+        <div class="ppv-redemption-header">
+          <span class="ppv-redemption-icon">🎁</span>
+          <h3>Einlösung bestätigen</h3>
+        </div>
+
+        <div class="ppv-redemption-user-info">
+          ${avatarHtml}
+          <div class="ppv-redemption-user-details">
+            <div class="ppv-redemption-user-name">${userName}</div>
+            ${userEmail ? `<div class="ppv-redemption-user-email">${userEmail}</div>` : ''}
+          </div>
+        </div>
+
+        <div class="ppv-redemption-reward-info">
+          <div class="ppv-redemption-reward-title">${rewardTitle}</div>
+          ${rewardValueInfo}
+          <div class="ppv-redemption-reward-points">
+            <span class="ppv-redemption-cost">-${rewardPoints} Punkte</span>
+            <span class="ppv-redemption-balance">(Aktuell: ${currentPoints} Punkte)</span>
+          </div>
+        </div>
+
+        ${purchaseAmountHtml}
+
+        <div class="ppv-redemption-rejection-reason" style="display:none;">
+          <label for="ppv-rejection-reason">Ablehnungsgrund (optional):</label>
+          <input type="text" id="ppv-rejection-reason" placeholder="z.B. Prämie nicht verfügbar" maxlength="255">
+        </div>
+
+        <div class="ppv-redemption-actions">
+          <button class="ppv-btn ppv-btn-reject" id="ppv-handler-reject">
+            <span class="ppv-btn-icon">❌</span>
+            <span class="ppv-btn-text">Ablehnen</span>
+          </button>
+          <button class="ppv-btn ppv-btn-confirm" id="ppv-handler-confirm">
+            <span class="ppv-btn-icon">✅</span>
+            <span class="ppv-btn-text">Bestätigen</span>
+          </button>
+        </div>
+      </div>
+    `;
+
+    modal.dataset.rewardType = rewardType;
+    modal.dataset.rewardValue = rewardValue;
+    modal.dataset.freeProductValue = data.free_product_value || 0;
+
+    document.body.appendChild(modal);
+    activeRedemptionModal = modal;
+
+    playSound('success');
+
+    requestAnimationFrame(() => {
+      modal.classList.add('show');
+    });
+
+    const confirmBtn = modal.querySelector('#ppv-handler-confirm');
+    const rejectBtn = modal.querySelector('#ppv-handler-reject');
+    const rejectionReasonDiv = modal.querySelector('.ppv-redemption-rejection-reason');
+    const rejectionReasonInput = modal.querySelector('#ppv-rejection-reason');
+    const purchaseAmountInput = modal.querySelector('#ppv-purchase-amount');
+
+    let showingRejectionReason = false;
+
+    confirmBtn.addEventListener('click', async () => {
+      if (rewardType === 'discount_percent') {
+        const purchaseAmount = parseFloat(purchaseAmountInput?.value) || 0;
+        if (purchaseAmount <= 0) {
+          window.ppvToast('⚠️ Bitte Einkaufsbetrag eingeben!', 'warning');
+          purchaseAmountInput?.focus();
+          return;
+        }
+      }
+
+      confirmBtn.disabled = true;
+      confirmBtn.innerHTML = '<span class="ppv-btn-icon">⏳</span><span class="ppv-btn-text">Wird verarbeitet...</span>';
+
+      const purchaseAmount = rewardType === 'discount_percent' ? (parseFloat(purchaseAmountInput?.value) || 0) : null;
+      await handleHandlerResponse('approve', data.token, null, purchaseAmount);
+    });
+
+    rejectBtn.addEventListener('click', async () => {
+      if (!showingRejectionReason) {
+        showingRejectionReason = true;
+        rejectionReasonDiv.style.display = 'block';
+        rejectionReasonInput.focus();
+        rejectBtn.innerHTML = '<span class="ppv-btn-icon">❌</span><span class="ppv-btn-text">Jetzt ablehnen</span>';
+        return;
+      }
+
+      rejectBtn.disabled = true;
+      rejectBtn.innerHTML = '<span class="ppv-btn-icon">⏳</span><span class="ppv-btn-text">Wird verarbeitet...</span>';
+      const reason = rejectionReasonInput.value.trim() || 'Abgelehnt';
+      await handleHandlerResponse('reject', data.token, reason);
+    });
+  }
+
+  function closeHandlerRedemptionModal() {
+    if (activeRedemptionModal) {
+      activeRedemptionModal.classList.remove('show');
+      setTimeout(() => {
+        activeRedemptionModal?.remove();
+        activeRedemptionModal = null;
+        activeRedemptionToken = null;
+      }, 300);
+    }
+  }
+
+  async function handleHandlerResponse(action, token, reason, purchaseAmount = null) {
+    try {
+      const payload = {
+        token: token,
+        action: action
+      };
+
+      if (reason) {
+        payload.reason = reason;
+      }
+
+      if (purchaseAmount !== null && purchaseAmount > 0) {
+        payload.purchase_amount = purchaseAmount;
+      }
+
+      const response = await fetch('/wp-json/ppv/v1/redemption/handler-response', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'PPV-POS-Token': getStoreKey()
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        if (action === 'approve') {
+          window.ppvToast('✅ Einlösung bestätigt!', 'success');
+          playSound('success');
+        } else {
+          window.ppvToast('❌ Einlösung abgelehnt', 'info');
+        }
+        closeHandlerRedemptionModal();
+      } else {
+        window.ppvToast('⚠️ ' + (data.message || 'Fehler'), 'error');
+        playSound('error');
+        const modal = document.getElementById('ppv-handler-redemption-modal');
+        if (modal) {
+          const confirmBtn = modal.querySelector('#ppv-handler-confirm');
+          const rejectBtn = modal.querySelector('#ppv-handler-reject');
+          if (confirmBtn) {
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = '<span class="ppv-btn-icon">✅</span><span class="ppv-btn-text">Bestätigen</span>';
+          }
+          if (rejectBtn) {
+            rejectBtn.disabled = false;
+            rejectBtn.innerHTML = '<span class="ppv-btn-icon">❌</span><span class="ppv-btn-text">Jetzt ablehnen</span>';
+          }
+        }
+      }
+    } catch (err) {
+      console.error('[Handler] Response error:', err);
+      window.ppvToast('⚠️ Netzwerkfehler', 'error');
+      playSound('error');
+    }
+  }
+
+  // ============================================================
+  // INITIALIZATION
+  // ============================================================
+  function init() {
+    const now = Date.now();
+    if (now - STATE.lastInitTime < 2000) {
+      ppvLog('[QR] Init throttled (too soon)');
+      return;
+    }
+    STATE.lastInitTime = now;
+
+    const campaignList = document.getElementById('ppv-campaign-list');
+    const posInput = document.getElementById('ppv-pos-input');
+    const posLog = document.getElementById('ppv-pos-log');
+
+    if (!campaignList && !posInput && !posLog) {
+      cleanup();
+      return;
+    }
+
+    ppvLog('[QR] Initializing...');
+    cleanup();
+
+    preloadSounds();
+    initGpsTracking();
+
+    STATE.uiManager = new UIManager();
+    STATE.uiManager.init();
+
+    STATE.scanProcessor = new ScanProcessor(STATE.uiManager);
+
+    STATE.campaignManager = new CampaignManager(STATE.uiManager);
+    STATE.campaignManager.init();
+
+    STATE.cameraScanner = new CameraScanner(STATE.scanProcessor);
+    STATE.cameraScanner.init();
+
+    setupEventDelegation();
+
+    // Input handling
+    if (posInput) {
+      posInput.addEventListener('keypress', e => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const qr = posInput.value.trim();
+          if (qr.length >= 4) {
+            STATE.scanProcessor.process(qr);
+            posInput.value = '';
+          }
+        }
+      });
+      posInput.focus();
+    }
+
+    const sendBtn = document.getElementById('ppv-pos-send');
+    if (sendBtn && posInput) {
+      sendBtn.addEventListener('click', () => {
+        const qr = posInput.value.trim();
+        if (qr) {
+          STATE.scanProcessor.process(qr);
+          posInput.value = '';
+        }
+      });
+    }
+
+    // Settings
+    SettingsManager.initLanguage();
+    SettingsManager.initTheme();
+
+    // Load data
+    STATE.scanProcessor.loadLogs();
+    STATE.campaignManager.load();
+    OfflineSyncManager.sync();
+
+    // ============================================================
+    // REAL-TIME UPDATES: Ably (primary) or Polling (fallback)
+    // ============================================================
+    const POLL_INTERVAL_MS = 10000;
+
+    const ablyConfig = window.PPV_STORE_DATA?.ably;
+    const storeId = window.PPV_STORE_DATA?.store_id;
+
+    if (ablyConfig && window.PPV_ABLY_MANAGER && storeId) {
+      ppvLog('[Ably] Initializing via shared manager with key:', ablyConfig.key.substring(0, 10) + '...');
+
+      const manager = window.PPV_ABLY_MANAGER;
+      const channelName = 'store-' + storeId;
+
+      if (!manager.init({ key: ablyConfig.key, channel: channelName })) {
+        ppvLog('[Ably] Failed to init shared manager, using polling');
+        startPolling();
+        STATE.initialized = true;
+        return;
+      }
+
+      manager.onStateChange((state) => {
+        if (state === 'connected') {
+          ppvLog('[Ably] Connected via shared manager');
+          if (STATE.pollInterval) {
+            clearInterval(STATE.pollInterval);
+            STATE.pollInterval = null;
+          }
+        } else if (state === 'disconnected') {
+          console.warn('⚠️ [Ably] DISCONNECTED - starting fallback polling');
+          ppvLog('[Ably] Disconnected, starting fallback polling');
+          startPolling();
+        } else if (state === 'failed') {
+          console.error('❌ [Ably] CONNECTION FAILED');
+          ppvLog('[Ably] Connection failed');
+          startPolling();
+        }
+      });
+
+      STATE.ablySubscriberId = 'qr-center-' + storeId;
+
+      manager.subscribe(channelName, 'new-scan', (message) => {
+        ppvLog('[Ably] New scan received:', message.data);
+        if (STATE.uiManager) {
+          STATE.uiManager.addScanItem({ ...message.data, _realtime: true });
+        } else {
+          console.warn('📡 [Ably] STATE.uiManager is null!');
+        }
+      }, STATE.ablySubscriberId);
+
+      manager.subscribe(channelName, 'reward-request', (message) => {
+        ppvLog('[Ably] Reward request received:', message.data);
+        STATE.scanProcessor?.loadLogs();
+      }, STATE.ablySubscriberId);
+
+      manager.subscribe(channelName, 'redemption-request', (message) => {
+        showHandlerRedemptionModal(message.data);
+      }, STATE.ablySubscriberId);
+
+      manager.subscribe(channelName, 'redemption-cancelled', (message) => {
+        closeHandlerRedemptionModal();
+        window.ppvToast('❌ Kunde hat abgebrochen', 'info');
+      }, STATE.ablySubscriberId);
+
+      manager.subscribe(channelName, 'campaign-update', (message) => {
+        ppvLog('[Ably] Campaign update received:', message.data);
+        window.ppvToast(`📢 Kampány ${message.data.action === 'created' ? 'létrehozva' : message.data.action === 'updated' ? 'frissítve' : 'törölve'}`, 'info');
+        STATE.campaignManager?.load();
+      }, STATE.ablySubscriberId);
+
+      manager.subscribe(channelName, 'reward-update', (message) => {
+        ppvLog('[Ably] Reward update received:', message.data);
+        window.ppvToast(`🎁 Prämie ${message.data.action === 'created' ? 'létrehozva' : message.data.action === 'updated' ? 'frissítve' : 'törölve'}`, 'info');
+      }, STATE.ablySubscriberId);
+
+      STATE.initialized = true;
+      ppvLog('[QR] Initialization complete (Ably shared manager mode)');
+
+    } else {
+      ppvLog('[Poll] Ably not available, using polling fallback');
+      startPolling();
+      STATE.initialized = true;
+      ppvLog('[QR] Initialization complete (polling mode)');
+    }
+
+    function startPolling() {
+      if (!getStoreKey()) {
+        ppvLog('[Poll] No store key, skipping polling');
+        return;
+      }
+
+      if (STATE.pollInterval) {
+        clearInterval(STATE.pollInterval);
+      }
+
+      ppvLog('[Poll] Starting polling (every ' + (POLL_INTERVAL_MS / 1000) + 's)');
+
+      const poll = () => {
+        if (document.hidden) return;
+        STATE.scanProcessor?.loadLogs();
+      };
+
+      STATE.pollInterval = setInterval(poll, POLL_INTERVAL_MS);
+    }
+
+    if (!STATE.visibilityHandler) {
+      let lastVis = 0;
+      STATE.visibilityHandler = () => {
+        if (!document.hidden && Date.now() - lastVis > 3000) {
+          lastVis = Date.now();
+          STATE.campaignManager?.load();
+          STATE.scanProcessor?.loadLogs();
+        }
+      };
+      document.addEventListener('visibilitychange', STATE.visibilityHandler);
+    }
+  }
+
+  // ============================================================
+  // EVENT LISTENERS
+  // ============================================================
+
+  // Initial load
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+  // Turbo.js support
+  document.addEventListener('turbo:load', init);
+  document.addEventListener('turbo:before-visit', cleanup);
+
+  // Custom SPA event support
+  window.addEventListener('ppv:spa-navigate', init);
+
+  ppvLog('[QR-Init] Script loaded v6.5');
+
+})();

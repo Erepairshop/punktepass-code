@@ -450,6 +450,13 @@ return [
 'signup_title' => 'Creare cont',
 'signup_subtitle' => 'Înregistrează-te acum și colectează puncte',
 
+// USER TYPE SELECTION
+'signup_i_am' => 'Eu sunt:',
+'signup_type_customer' => 'Client',
+'signup_type_customer_desc' => 'Colectează puncte',
+'signup_type_vendor' => 'Comerciant',
+'signup_type_vendor_desc' => '30 zile test',
+
 // BUTTONS
 'signup_google_btn' => 'Înregistrare cu Google',
 'signup_or_email' => 'sau cu e-mail',

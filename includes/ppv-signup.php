@@ -213,7 +213,7 @@ class PPV_Signup {
 
                             <!-- User Type Selection (NEW!) -->
                             <div class="ppv-user-type-selector" style="margin-bottom: 24px;">
-                                <p style="font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 12px;">Ich bin:</p>
+                                <p style="font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 12px;"><?php echo PPV_Lang::t('signup_i_am'); ?></p>
                                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                                     <label class="ppv-type-option ppv-type-active" data-type="user">
                                         <input type="radio" name="user_type" value="user" checked style="display: none;">
@@ -222,8 +222,8 @@ class PPV_Signup {
                                                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                                                 <circle cx="12" cy="7" r="4"/>
                                             </svg>
-                                            <strong style="display: block; font-size: 15px; color: #111827; margin-bottom: 4px;">Kunde</strong>
-                                            <span style="font-size: 12px; color: #6B7280;">Punkte sammeln</span>
+                                            <strong style="display: block; font-size: 15px; color: #111827; margin-bottom: 4px;"><?php echo PPV_Lang::t('signup_type_customer'); ?></strong>
+                                            <span style="font-size: 12px; color: #6B7280;"><?php echo PPV_Lang::t('signup_type_customer_desc'); ?></span>
                                         </div>
                                     </label>
 
@@ -234,8 +234,8 @@ class PPV_Signup {
                                                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
                                                 <polyline points="9 22 9 12 15 12 15 22"/>
                                             </svg>
-                                            <strong style="display: block; font-size: 15px; color: #111827; margin-bottom: 4px;">Händler</strong>
-                                            <span style="font-size: 12px; color: #6B7280;">30 Tage Test</span>
+                                            <strong style="display: block; font-size: 15px; color: #111827; margin-bottom: 4px;"><?php echo PPV_Lang::t('signup_type_vendor'); ?></strong>
+                                            <span style="font-size: 12px; color: #6B7280;"><?php echo PPV_Lang::t('signup_type_vendor_desc'); ?></span>
                                         </div>
                                     </label>
                                 </div>
@@ -395,6 +395,69 @@ class PPV_Signup {
         </div>
 
         <style>
+        /* ============================================
+           SIGNUP PAGE SPECIFIC OVERRIDES
+           ============================================ */
+
+        /* Enable scrolling for signup (longer form) */
+        html, body {
+            overflow-y: auto !important;
+            position: static !important;
+            height: auto !important;
+            min-height: 100% !important;
+        }
+
+        .ppv-landing-container {
+            min-height: 100vh;
+            min-height: 100dvh;
+            height: auto !important;
+            overflow: visible !important;
+        }
+
+        /* Smaller header for signup */
+        .ppv-landing-header {
+            padding: 8px 0 !important;
+            padding-top: calc(8px + env(safe-area-inset-top, 0px)) !important;
+        }
+
+        .ppv-header-content {
+            padding: 0 16px !important;
+        }
+
+        .ppv-logo {
+            width: 36px !important;
+            height: 36px !important;
+        }
+
+        .ppv-logo-section h1 {
+            font-size: 18px !important;
+        }
+
+        .ppv-slogan {
+            display: none !important;
+        }
+
+        /* Hero section - allow natural height */
+        .ppv-hero-section {
+            min-height: auto !important;
+            flex: 1;
+            padding: 24px 16px 40px !important;
+        }
+
+        /* Card adjustments for mobile */
+        .ppv-login-card {
+            padding: 20px !important;
+        }
+
+        .ppv-login-welcome h2 {
+            font-size: 22px !important;
+        }
+
+        /* Form spacing */
+        .ppv-form-group {
+            margin-bottom: 16px !important;
+        }
+
         /* User Type Selector Styling */
         .ppv-type-option > div {
             transition: all 0.3s ease;
@@ -416,6 +479,50 @@ class PPV_Signup {
 
         .ppv-type-option.ppv-type-active strong {
             color: #1E40AF !important;
+        }
+
+        /* Password requirements - compact */
+        .ppv-password-requirements {
+            margin-top: 8px;
+        }
+
+        .ppv-password-requirements ul {
+            margin: 4px 0 !important;
+            font-size: 11px !important;
+        }
+
+        /* Footer sticky at bottom */
+        .ppv-landing-footer {
+            margin-top: auto;
+            flex-shrink: 0;
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 640px) {
+            .ppv-hero-section {
+                padding: 16px 12px 32px !important;
+            }
+
+            .ppv-login-card {
+                padding: 16px !important;
+            }
+
+            .ppv-login-welcome h2 {
+                font-size: 20px !important;
+            }
+
+            .ppv-user-type-selector p {
+                font-size: 13px !important;
+            }
+
+            .ppv-type-option > div {
+                padding: 12px !important;
+            }
+
+            .ppv-type-option svg {
+                width: 28px !important;
+                height: 28px !important;
+            }
         }
         </style>
 

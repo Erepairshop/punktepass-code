@@ -438,6 +438,13 @@ return [
 'signup_title' => 'Fiók létrehozása',
 'signup_subtitle' => 'Regisztrálj most és gyűjts pontokat',
 
+// USER TYPE SELECTION
+'signup_i_am' => 'Én vagyok:',
+'signup_type_customer' => 'Ügyfél',
+'signup_type_customer_desc' => 'Pontgyűjtés',
+'signup_type_vendor' => 'Kereskedő',
+'signup_type_vendor_desc' => '30 napos teszt',
+
 // BUTTONS
 'signup_google_btn' => 'Regisztráció Google-lal',
 'signup_or_email' => 'vagy e-maillel',

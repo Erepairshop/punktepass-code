@@ -208,43 +208,255 @@ function initLogin() {
     /**
      * Initialize Google Login
      */
+    let googleInitialized = false;
+    let googlePromptActive = false;
+
+    // 🔍 DEBUG MODE (set to false for production)
+    const GOOGLE_DEBUG = false;
+    function glog(...args) {
+        if (GOOGLE_DEBUG) console.log('[GOOGLE]', ...args);
+    }
+
     function initGoogleLogin() {
         const clientId = ppvLogin.google_client_id;
-        
+
+        glog('🚀 initGoogleLogin called');
+        glog('📋 Client ID:', clientId ? clientId.substring(0, 20) + '...' : 'MISSING');
+        glog('📦 google object exists:', typeof google !== 'undefined');
+        glog('📦 google.accounts exists:', typeof google !== 'undefined' && !!google.accounts);
+
         if (!clientId) {
             console.warn('Google Client ID not configured');
             return;
         }
-        
-        // Initialize Google Identity Services
-        if (typeof google !== 'undefined' && google.accounts) {
-            google.accounts.id.initialize({
-                client_id: clientId,
-                callback: handleGoogleCallback,
-                auto_select: false,
-                cancel_on_tap_outside: true
-            });
-        }
-        
+
+        // Try to initialize Google SDK (may not be loaded yet)
+        const initResult = tryInitializeGoogle(clientId);
+        glog('🔧 Initial tryInitializeGoogle result:', initResult);
+
         // Manual button click handler
         $('#ppv-google-login-btn').on('click', function() {
-            if (typeof google !== 'undefined' && google.accounts) {
-                google.accounts.id.prompt();
+            glog('👆 Button clicked!');
+            glog('   - googleInitialized:', googleInitialized);
+            glog('   - googlePromptActive:', googlePromptActive);
+            glog('   - google exists:', typeof google !== 'undefined');
+            glog('   - google.accounts exists:', typeof google !== 'undefined' && !!google.accounts);
+
+            // Prevent double-click while prompt is active
+            if (googlePromptActive) {
+                glog('⏳ Blocked - prompt already active');
+                return;
+            }
+
+            if (googleInitialized && typeof google !== 'undefined' && google.accounts) {
+                glog('✅ Path A: Already initialized, showing prompt');
+                showGooglePrompt();
+            } else if (typeof google !== 'undefined' && google.accounts) {
+                glog('⚠️ Path B: SDK loaded but not initialized');
+                // SDK loaded but not initialized yet - initialize now
+                tryInitializeGoogle(clientId);
+                // Small delay then prompt
+                setTimeout(function() {
+                    glog('   - After timeout, googleInitialized:', googleInitialized);
+                    if (googleInitialized) {
+                        showGooglePrompt();
+                    } else {
+                        showAlert('Google Login wird geladen...', 'info');
+                    }
+                }, 100);
             } else {
-                showAlert('Google Login ist momentan nicht verfügbar', 'error');
+                glog('❌ Path C: SDK not loaded yet');
+                showAlert('Google Login wird geladen, bitte erneut klicken...', 'info');
+                // Try again in case SDK loads soon
+                waitForGoogleSDK(clientId);
             }
         });
+
+        glog('✅ Click handler registered');
+    }
+
+    /**
+     * Show Google Sign-In prompt with proper error handling
+     */
+    function showGooglePrompt() {
+        glog('🔔 showGooglePrompt() called');
+        googlePromptActive = true;
+
+        try {
+            // Cancel any previous prompt first
+            google.accounts.id.cancel();
+            glog('📤 Calling google.accounts.id.prompt()...');
+
+            google.accounts.id.prompt((notification) => {
+                glog('📥 Prompt notification received');
+                googlePromptActive = false;
+
+                // Handle different notification states
+                if (notification.isNotDisplayed()) {
+                    const reason = notification.getNotDisplayedReason();
+                    glog('❌ NOT DISPLAYED - reason:', reason);
+
+                    // If suppressed/cooldown, use OAuth popup fallback
+                    if (reason === 'suppressed_by_user' || reason === 'opt_out_or_no_session') {
+                        glog('🔄 Using OAuth popup fallback...');
+                        openGoogleOAuthPopup();
+                        return;
+                    }
+
+                    if (reason === 'browser_not_supported') {
+                        showAlert('Google Login wird von diesem Browser nicht unterstützt', 'error');
+                    } else if (reason === 'invalid_client') {
+                        showAlert('Google Login Konfigurationsfehler', 'error');
+                    }
+                }
+
+                if (notification.isSkippedMoment()) {
+                    const reason = notification.getSkippedReason();
+                    glog('⏭️ SKIPPED - reason:', reason);
+                    // User cancelled - also try popup on next click
+                }
+
+                if (notification.isDismissedMoment()) {
+                    const reason = notification.getDismissedReason();
+                    glog('🚪 DISMISSED - reason:', reason);
+                }
+
+                glog('📊 Moment type:', notification.getMomentType());
+            });
+            glog('📤 prompt() call completed');
+        } catch (e) {
+            glog('💥 EXCEPTION in prompt():', e);
+            googlePromptActive = false;
+            // Fallback to OAuth popup
+            openGoogleOAuthPopup();
+        }
+    }
+
+    /**
+     * Fallback: Render Google Sign-In button when One Tap is suppressed
+     */
+    let googleButtonRendered = false;
+
+    function openGoogleOAuthPopup() {
+        glog('🔄 Fallback: Rendering Google button');
+
+        // Only render once
+        if (googleButtonRendered) {
+            glog('⚠️ Button already rendered, triggering click');
+            // Try to click the rendered button
+            const renderedBtn = document.querySelector('#ppv-google-rendered-btn div[role="button"]');
+            if (renderedBtn) {
+                renderedBtn.click();
+            }
+            return;
+        }
+
+        const $btn = $('#ppv-google-login-btn');
+
+        // Create container for Google's rendered button
+        const container = document.createElement('div');
+        container.id = 'ppv-google-rendered-btn';
+        container.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;opacity:0.01;cursor:pointer;';
+
+        // Insert into button
+        $btn.css('position', 'relative').append(container);
+
+        // Render Google button
+        google.accounts.id.renderButton(container, {
+            type: 'standard',
+            theme: 'outline',
+            size: 'large',
+            width: $btn.outerWidth(),
+            click_listener: () => {
+                glog('🖱️ Google rendered button clicked');
+            }
+        });
+
+        googleButtonRendered = true;
+        glog('✅ Google button rendered as overlay');
+
+        // Auto-click it
+        setTimeout(() => {
+            const renderedBtn = container.querySelector('div[role="button"]');
+            if (renderedBtn) {
+                glog('🖱️ Auto-clicking rendered button');
+                renderedBtn.click();
+            }
+        }, 100);
+    }
+
+    /**
+     * Try to initialize Google SDK
+     */
+    function tryInitializeGoogle(clientId) {
+        glog('🔧 tryInitializeGoogle called');
+        glog('   - Already initialized:', googleInitialized);
+
+        if (googleInitialized) return true;
+
+        glog('   - google exists:', typeof google !== 'undefined');
+        glog('   - google.accounts exists:', typeof google !== 'undefined' && !!google.accounts);
+
+        if (typeof google !== 'undefined' && google.accounts) {
+            try {
+                glog('🔧 Calling google.accounts.id.initialize()...');
+                google.accounts.id.initialize({
+                    client_id: clientId,
+                    callback: handleGoogleCallback,
+                    auto_select: false,
+                    cancel_on_tap_outside: true,
+                    itp_support: true,
+                    use_fedcm_for_prompt: false  // Disable FedCM to avoid AbortError
+                });
+                googleInitialized = true;
+                glog('✅ Google Sign-In initialized successfully!');
+                return true;
+            } catch (e) {
+                glog('💥 EXCEPTION in initialize():', e);
+                return false;
+            }
+        }
+        glog('⚠️ SDK not available yet');
+        return false;
+    }
+
+    /**
+     * Wait for Google SDK to load then initialize
+     */
+    function waitForGoogleSDK(clientId) {
+        glog('⏳ waitForGoogleSDK started');
+        let attempts = 0;
+        const maxAttempts = 20; // 2 seconds max
+
+        const checkInterval = setInterval(function() {
+            attempts++;
+            glog(`   Attempt ${attempts}/${maxAttempts}`);
+            if (tryInitializeGoogle(clientId)) {
+                glog('✅ SDK loaded after waiting!');
+                clearInterval(checkInterval);
+            } else if (attempts >= maxAttempts) {
+                glog('❌ SDK failed to load after max attempts');
+                clearInterval(checkInterval);
+            }
+        }, 100);
     }
     
     /**
      * Handle Google OAuth Callback
      */
     function handleGoogleCallback(response) {
+        glog('🎉 handleGoogleCallback called!');
+        glog('   - response:', response);
+        glog('   - has credential:', !!response.credential);
+
         if (!response.credential) {
+            glog('❌ No credential in response!');
             showAlert('Google Login fehlgeschlagen', 'error');
             return;
         }
-        
+
+        glog('✅ Got credential, sending to backend...');
+
         // Show loading
         const $btn = $('#ppv-google-login-btn');
         $btn.prop('disabled', true).html('<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/></path></svg><span>Anmelden...</span>');
