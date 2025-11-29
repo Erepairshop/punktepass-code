@@ -417,6 +417,10 @@ trait PPV_QR_REST_Trait {
             $points_add = (int)round(($points_add * (float)$bonus->multiplier) + (int)$bonus->extra_points);
         }
 
+        // 🔒 FIX: Save TRUE base points BEFORE any bonuses for double_points calculations
+        // This prevents birthday/comeback bonus from compounding on VIP bonuses
+        $true_base_points = $points_add;
+
         // ═══════════════════════════════════════════════════════════
         // VIP LEVEL BONUSES (Extended: 4 types)
         // ═══════════════════════════════════════════════════════════
@@ -489,16 +493,23 @@ trait PPV_QR_REST_Trait {
                 }
 
                 // 3. EVERY Xth SCAN BONUS (Streak)
+                // 🔒 FIX: Store streak params for verification inside transaction
+                $streak_bonus_pending = false;
+                $streak_expected_scan = 0;
+                $streak_count_setting = 0;
+
                 if ($vip_settings->vip_streak_enabled && $user_level !== null) {
-                    $streak_count = intval($vip_settings->vip_streak_count);
-                    if ($streak_count > 0) {
+                    $streak_count_setting = intval($vip_settings->vip_streak_count);
+                    if ($streak_count_setting > 0) {
                         $user_scan_count = (int)$wpdb->get_var($wpdb->prepare("
                             SELECT COUNT(*) FROM {$wpdb->prefix}ppv_points
                             WHERE user_id = %d AND store_id = %d AND type = 'qr_scan'
                         ", $user_id, $store_id));
 
                         $next_scan_number = $user_scan_count + 1;
-                        if ($next_scan_number % $streak_count === 0) {
+                        $streak_expected_scan = $next_scan_number;
+
+                        if ($next_scan_number % $streak_count_setting === 0) {
                             $streak_type = $vip_settings->vip_streak_type ?? 'fixed';
 
                             if ($streak_type === 'fixed') {
@@ -514,12 +525,16 @@ trait PPV_QR_REST_Trait {
                                 $vip_bonus_details['streak'] = $base_points * 2;
                             }
 
-                            ppv_log("🔥 [PPV_QR] Streak bonus triggered! Scan #{$next_scan_number} (every {$streak_count})");
+                            $streak_bonus_pending = true;
+                            ppv_log("🔥 [PPV_QR] Streak bonus PRE-calculated! Expected scan #{$next_scan_number} (every {$streak_count_setting})");
                         }
                     }
                 }
 
                 // 4. FIRST SCAN EVER BONUS (one-time per store)
+                // 🔒 FIX: Track first-scan bonus for verification inside transaction
+                $first_scan_bonus_pending = false;
+
                 if ($vip_settings->vip_daily_enabled && $user_level !== null) {
                     $ever_scanned_here = (int)$wpdb->get_var($wpdb->prepare("
                         SELECT COUNT(*) FROM {$wpdb->prefix}ppv_points
@@ -533,7 +548,8 @@ trait PPV_QR_REST_Trait {
                             $vip_settings->vip_daily_gold,
                             $vip_settings->vip_daily_platinum
                         );
-                        ppv_log("🎉 [PPV_QR] First scan ever bonus applied for user {$user_id} at store {$store_id}");
+                        $first_scan_bonus_pending = true;
+                        ppv_log("🎉 [PPV_QR] First scan ever bonus PRE-calculated for user {$user_id} at store {$store_id}");
                     }
                 }
 
@@ -594,11 +610,11 @@ trait PPV_QR_REST_Trait {
                         ppv_log("🎂 [PPV_QR] Today is user {$user_id}'s birthday!");
 
                         $bonus_type = $birthday_settings->birthday_bonus_type ?? 'double_points';
-                        $base_points_for_birthday = $points_add;
 
                         switch ($bonus_type) {
                             case 'double_points':
-                                $birthday_bonus_applied = $base_points_for_birthday;
+                                // 🔒 FIX: Use TRUE base points, not points with VIP bonus already added
+                                $birthday_bonus_applied = $true_base_points;
                                 break;
                             case 'fixed_points':
                                 $birthday_bonus_applied = intval($birthday_settings->birthday_bonus_value ?? 0);
@@ -606,18 +622,24 @@ trait PPV_QR_REST_Trait {
                         }
 
                         if ($birthday_bonus_applied > 0) {
-                            $points_add += $birthday_bonus_applied;
+                            // 🔒 FIX: Use atomic UPDATE with WHERE to prevent race condition
+                            // Only update if last bonus was > 320 days ago (or never)
+                            $rows_updated = $wpdb->query($wpdb->prepare("
+                                UPDATE {$wpdb->prefix}ppv_users
+                                SET last_birthday_bonus_at = %s
+                                WHERE id = %d
+                                AND (last_birthday_bonus_at IS NULL OR last_birthday_bonus_at < DATE_SUB(CURDATE(), INTERVAL 320 DAY))
+                            ", date('Y-m-d'), $user_id));
 
-                            // Update last_birthday_bonus_at to prevent abuse
-                            $wpdb->update(
-                                $wpdb->prefix . 'ppv_users',
-                                ['last_birthday_bonus_at' => date('Y-m-d')],
-                                ['id' => $user_id],
-                                ['%s'],
-                                ['%d']
-                            );
-
-                            ppv_log("🎂 [PPV_QR] Birthday bonus applied: type={$bonus_type}, bonus=+{$birthday_bonus_applied}, total_points={$points_add}");
+                            if ($rows_updated > 0) {
+                                // Successfully claimed - add bonus
+                                $points_add += $birthday_bonus_applied;
+                                ppv_log("🎂 [PPV_QR] Birthday bonus applied: type={$bonus_type}, bonus=+{$birthday_bonus_applied}, total_points={$points_add}");
+                            } else {
+                                // Race condition - another request already claimed it
+                                $birthday_bonus_applied = 0;
+                                ppv_log("🎂 [PPV_QR] Birthday bonus race condition prevented for user {$user_id}");
+                            }
                         }
                     }
                 }
@@ -664,11 +686,11 @@ trait PPV_QR_REST_Trait {
                     ppv_log("👋 [PPV_QR] User {$user_id} qualifies for comeback bonus! Inactive for {$days_since_last_scan} days.");
 
                     $comeback_type = $comeback_settings->comeback_bonus_type ?? 'double_points';
-                    $base_points_for_comeback = $points_add;
 
                     switch ($comeback_type) {
                         case 'double_points':
-                            $comeback_bonus_applied = $base_points_for_comeback;
+                            // 🔒 FIX: Use TRUE base points, not points with VIP/birthday bonus already added
+                            $comeback_bonus_applied = $true_base_points;
                             break;
                         case 'fixed_points':
                             $comeback_bonus_applied = intval($comeback_settings->comeback_bonus_value ?? 0);
@@ -685,37 +707,148 @@ trait PPV_QR_REST_Trait {
         }
 
         // ═══════════════════════════════════════════════════════════
-        // INSERT POINTS
+        // INSERT POINTS (WITH TRANSACTION FOR ATOMICITY)
         // ═══════════════════════════════════════════════════════════
-        $wpdb->insert("{$wpdb->prefix}ppv_points", [
-            'user_id' => $user_id,
-            'store_id' => $store_id,
-            'points' => $points_add,
-            'campaign_id' => $campaign_id ?: null,
-            'type' => 'qr_scan',
-            'created' => current_time('mysql')
-        ]);
+        $wpdb->query('START TRANSACTION');
 
-        // Update lifetime_points for VIP level calculation
-        if (class_exists('PPV_User_Level')) {
-            PPV_User_Level::add_lifetime_points($user_id, $points_add);
-        }
+        try {
+            // 🔒 DUPLICATE CHECK: Prevent race condition double-inserts
+            // Check if points were already inserted in the last 5 seconds
+            $recent_insert = $wpdb->get_var($wpdb->prepare("
+                SELECT id FROM {$wpdb->prefix}ppv_points
+                WHERE user_id = %d AND store_id = %d AND type = 'qr_scan'
+                AND created > DATE_SUB(NOW(), INTERVAL 5 SECOND)
+                LIMIT 1
+            ", $user_id, $store_id));
 
-        // 🎁 REFERRAL: Check if this is user's first scan at this store via referral
-        if (class_exists('PPV_Referral_Handler')) {
-            // Count previous scans for this user at this store (excluding the one we just inserted)
-            $previous_scans = $wpdb->get_var($wpdb->prepare(
-                "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_points WHERE user_id = %d AND store_id = %d",
-                $user_id, $store_id
-            ));
+            if ($recent_insert) {
+                $wpdb->query('ROLLBACK');
+                ppv_log("⚠️ [PPV_QR] Duplicate scan blocked: user={$user_id}, store={$store_id}, existing_id={$recent_insert}");
+                return new WP_REST_Response([
+                    'success' => false,
+                    'message' => self::t('err_duplicate_scan', '⚠️ Scan bereits verarbeitet'),
+                    'error_type' => 'duplicate_scan'
+                ], 429);
+            }
 
-            // If this is the first scan (count = 1, the one we just inserted)
-            if ((int)$previous_scans === 1) {
-                $referral_result = PPV_Referral_Handler::process_referral($user_id, $store_id);
-                if ($referral_result) {
-                    ppv_log("🎁 [PPV_QR] Referral processed for user {$user_id} at store {$store_id}");
+            $insert_result = $wpdb->insert("{$wpdb->prefix}ppv_points", [
+                'user_id' => $user_id,
+                'store_id' => $store_id,
+                'points' => $points_add,
+                'campaign_id' => $campaign_id ?: null,
+                'type' => 'qr_scan',
+                'created' => current_time('mysql')
+            ]);
+
+            if ($insert_result === false) {
+                $wpdb->query('ROLLBACK');
+                ppv_log("❌ [PPV_QR] Failed to insert points: " . $wpdb->last_error);
+                return new WP_REST_Response([
+                    'success' => false,
+                    'message' => '❌ Database error',
+                    'error_type' => 'db_error'
+                ], 500);
+            }
+
+            $points_insert_id = $wpdb->insert_id;
+
+            // 🔒 FIX: Verify streak bonus INSIDE transaction to prevent race condition
+            // If another request inserted between our count and our insert, the streak might be invalid
+            if (isset($streak_bonus_pending) && $streak_bonus_pending && $streak_count_setting > 0) {
+                $actual_scan_count = (int)$wpdb->get_var($wpdb->prepare("
+                    SELECT COUNT(*) FROM {$wpdb->prefix}ppv_points
+                    WHERE user_id = %d AND store_id = %d AND type = 'qr_scan'
+                ", $user_id, $store_id));
+
+                // If actual count doesn't match expected streak trigger, remove the bonus
+                if ($actual_scan_count % $streak_count_setting !== 0) {
+                    // Race condition detected - another scan was inserted
+                    $streak_bonus_value = $vip_bonus_details['streak'] ?? 0;
+                    if ($streak_bonus_value > 0) {
+                        $points_add -= $streak_bonus_value;
+                        $vip_bonus_applied -= $streak_bonus_value;
+                        $vip_bonus_details['streak'] = 0;
+
+                        // Update the inserted record with corrected points
+                        $wpdb->update(
+                            "{$wpdb->prefix}ppv_points",
+                            ['points' => $points_add],
+                            ['id' => $points_insert_id],
+                            ['%d'],
+                            ['%d']
+                        );
+
+                        ppv_log("🔒 [PPV_QR] Streak bonus REVOKED due to race condition: expected scan #{$streak_expected_scan}, actual count={$actual_scan_count}");
+                    }
+                } else {
+                    ppv_log("🔥 [PPV_QR] Streak bonus CONFIRMED! Actual scan count={$actual_scan_count} (every {$streak_count_setting})");
                 }
             }
+
+            // 🔒 FIX: Verify first-scan bonus INSIDE transaction to prevent race condition
+            if (isset($first_scan_bonus_pending) && $first_scan_bonus_pending) {
+                $actual_scan_count_for_first = (int)$wpdb->get_var($wpdb->prepare("
+                    SELECT COUNT(*) FROM {$wpdb->prefix}ppv_points
+                    WHERE user_id = %d AND store_id = %d AND type = 'qr_scan'
+                ", $user_id, $store_id));
+
+                // If count > 1, this wasn't actually the first scan (race condition)
+                if ($actual_scan_count_for_first > 1) {
+                    $first_scan_bonus_value = $vip_bonus_details['daily'] ?? 0;
+                    if ($first_scan_bonus_value > 0) {
+                        $points_add -= $first_scan_bonus_value;
+                        $vip_bonus_applied -= $first_scan_bonus_value;
+                        $vip_bonus_details['daily'] = 0;
+
+                        // Update the inserted record with corrected points
+                        $wpdb->update(
+                            "{$wpdb->prefix}ppv_points",
+                            ['points' => $points_add],
+                            ['id' => $points_insert_id],
+                            ['%d'],
+                            ['%d']
+                        );
+
+                        ppv_log("🔒 [PPV_QR] First-scan bonus REVOKED due to race condition: actual count={$actual_scan_count_for_first}");
+                    }
+                } else {
+                    ppv_log("🎉 [PPV_QR] First-scan bonus CONFIRMED! This is scan #1 for user at this store");
+                }
+            }
+
+            // Update lifetime_points for VIP level calculation
+            if (class_exists('PPV_User_Level')) {
+                PPV_User_Level::add_lifetime_points($user_id, $points_add);
+            }
+
+            // 🎁 REFERRAL: Check if this is user's first scan at this store via referral
+            if (class_exists('PPV_Referral_Handler')) {
+                // Count previous scans for this user at this store
+                $previous_scans = $wpdb->get_var($wpdb->prepare(
+                    "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_points WHERE user_id = %d AND store_id = %d",
+                    $user_id, $store_id
+                ));
+
+                // If this is the first scan (count = 1, the one we just inserted)
+                if ((int)$previous_scans === 1) {
+                    $referral_result = PPV_Referral_Handler::process_referral($user_id, $store_id);
+                    if ($referral_result) {
+                        ppv_log("🎁 [PPV_QR] Referral processed for user {$user_id} at store {$store_id}");
+                    }
+                }
+            }
+
+            $wpdb->query('COMMIT');
+            ppv_log("✅ [PPV_QR] Points inserted successfully: id={$points_insert_id}, user={$user_id}, store={$store_id}, points={$points_add}");
+
+        } catch (Exception $e) {
+            $wpdb->query('ROLLBACK');
+            ppv_log("❌ [PPV_QR] Transaction failed: " . $e->getMessage());
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => '❌ Transaction failed',
+                'error_type' => 'transaction_error'
+            ], 500);
         }
 
         // Build log message
