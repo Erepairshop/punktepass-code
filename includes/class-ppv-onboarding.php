@@ -636,23 +636,17 @@ if (!class_exists('PPV_Onboarding')) {
         }
 
         /**
-         * Ellenőrzi hogy a store-nak van-e regisztrált eszköze
+         * Ellenőrzi hogy a store-nak van-e beállított POS eszköze (pos_token)
          */
         private static function has_device($store_id) {
             global $wpdb;
-            $table = $wpdb->prefix . 'ppv_device_fingerprints';
 
-            // Ellenőrizzük hogy létezik-e a tábla
-            $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$table}'");
-            if (!$table_exists) {
-                return false;
-            }
-
-            $count = $wpdb->get_var($wpdb->prepare(
-                "SELECT COUNT(*) FROM {$table} WHERE store_id = %d AND status = 'approved'",
+            $pos_token = $wpdb->get_var($wpdb->prepare(
+                "SELECT pos_token FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
                 $store_id
             ));
-            return $count > 0;
+
+            return !empty($pos_token);
         }
 
         /**
