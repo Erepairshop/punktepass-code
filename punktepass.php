@@ -542,6 +542,44 @@ add_action('wp_head', function () { ?>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <?php }, 1);
 
+// ========================================
+// 🚀 TURBO CACHE CONTROL - Disable cache for dynamic pages
+// ========================================
+// Handler/vendor pages have dynamic state (onboarding, profile, etc.)
+// These should NEVER be served from Turbo cache
+add_action('wp_head', function() {
+    // Handler pages - always disable Turbo cache
+    $uri = $_SERVER['REQUEST_URI'] ?? '';
+    $handler_pages = [
+        '/qr-center',
+        '/mein-profil',
+        '/rewards',
+        '/statistik',
+        '/einstellungen',
+        '/user_dashboard',
+        '/meine-punkte',
+        '/belohnungen'
+    ];
+
+    $is_dynamic_page = false;
+    foreach ($handler_pages as $page) {
+        if (strpos($uri, $page) !== false) {
+            $is_dynamic_page = true;
+            break;
+        }
+    }
+
+    // Also check for handler session
+    if (!$is_dynamic_page && function_exists('ppv_is_handler_session') && ppv_is_handler_session()) {
+        $is_dynamic_page = true;
+    }
+
+    if ($is_dynamic_page) {
+        echo '<meta name="turbo-cache-control" content="no-cache">' . "\n";
+        echo '<meta name="turbo-visit-control" content="reload">' . "\n";
+    }
+}, 2);
+
 
 
 // ========================================
