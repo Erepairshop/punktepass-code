@@ -640,8 +640,9 @@ class PPV_QR {
                 'store_key' => $store_key ?: '',
             ];
 
-            // Add scanner info if this is a scanner user
-            if (!empty($_SESSION['ppv_user_type']) && $_SESSION['ppv_user_type'] === 'scanner' && !empty($_SESSION['ppv_user_id'])) {
+            // Add scanner info for any authenticated PPV user (scanner OR handler/vendor)
+            // This allows tracking who performed the scan for accountability
+            if (!empty($_SESSION['ppv_user_id'])) {
                 $scanner_id = intval($_SESSION['ppv_user_id']);
                 $scanner_email = sanitize_email($_SESSION['ppv_user_email'] ?? '');
                 $store_data['scanner_id'] = $scanner_id;

@@ -38,7 +38,8 @@
     ablySubscriberId: null,  // Ably subscriber ID for cleanup (shared manager)
     pollInterval: null,   // Polling interval for cleanup
     gpsPosition: null,     // Current GPS position for fraud detection
-    gpsWatchId: null       // GPS watch ID for cleanup
+    gpsWatchId: null,      // GPS watch ID for cleanup
+    deviceFingerprint: null // Device fingerprint for fraud detection
   };
 
   // ============================================================
@@ -112,6 +113,47 @@
       };
     }
     return { latitude: null, longitude: null };
+  }
+
+  // ============================================================
+  // DEVICE FINGERPRINT (for fraud detection)
+  // ============================================================
+  async function initDeviceFingerprint() {
+    try {
+      // Try FingerprintJS if loaded
+      if (window.FingerprintJS) {
+        const fp = await FingerprintJS.load();
+        const result = await fp.get();
+        STATE.deviceFingerprint = result.visitorId;
+        ppvLog('[Fingerprint] FingerprintJS:', STATE.deviceFingerprint);
+        return;
+      }
+
+      // Fallback fingerprint (must be at least 16 chars)
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      ctx.textBaseline = 'top';
+      ctx.font = '14px Arial';
+      ctx.fillText('fingerprint', 0, 0);
+      const data = canvas.toDataURL() + navigator.userAgent + screen.width + screen.height + navigator.language + (new Date()).getTimezoneOffset();
+      let hash1 = 0, hash2 = 0;
+      for (let i = 0; i < data.length; i++) {
+        hash1 = ((hash1 << 5) - hash1) + data.charCodeAt(i);
+        hash1 = hash1 & hash1;
+        hash2 = ((hash2 << 7) - hash2) + data.charCodeAt(i);
+        hash2 = hash2 & hash2;
+      }
+      // Combine hashes to ensure at least 16 characters
+      STATE.deviceFingerprint = 'fp_' + Math.abs(hash1).toString(16).padStart(8, '0') + Math.abs(hash2).toString(16).padStart(8, '0');
+      ppvLog('[Fingerprint] Fallback:', STATE.deviceFingerprint);
+    } catch (e) {
+      ppvWarn('[Fingerprint] Error:', e);
+      STATE.deviceFingerprint = null;
+    }
+  }
+
+  function getDeviceFingerprint() {
+    return STATE.deviceFingerprint || null;
   }
 
   /**
@@ -556,7 +598,8 @@
             latitude: gps.latitude,
             longitude: gps.longitude,
             scanner_id: getScannerId(),
-            scanner_name: getScannerName()
+            scanner_name: getScannerName(),
+            device_fingerprint: getDeviceFingerprint()
           })
         });
 
@@ -1684,7 +1727,8 @@
           latitude: gps.latitude,
           longitude: gps.longitude,
           scanner_id: getScannerId(),
-          scanner_name: getScannerName()
+          scanner_name: getScannerName(),
+          device_fingerprint: getDeviceFingerprint()
         })
       })
         .then(res => res.json())
@@ -2094,6 +2138,9 @@
 
     // Start GPS tracking for fraud detection
     initGpsTracking();
+
+    // Initialize device fingerprint for fraud detection
+    initDeviceFingerprint();
 
     STATE.uiManager = new UIManager();
     STATE.uiManager.init();

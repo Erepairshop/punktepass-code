@@ -134,6 +134,55 @@
   // Start GPS tracking on load
   initGpsTracking();
 
+  /** 📱 Device Fingerprint for Fraud Detection */
+  let deviceFingerprint = null;
+
+  async function initDeviceFingerprint() {
+    try {
+      if (window.FingerprintJS) {
+        const fp = await FingerprintJS.load();
+        const result = await fp.get();
+        deviceFingerprint = result.visitorId;
+        return;
+      }
+      // Fallback fingerprint
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      ctx.textBaseline = 'top';
+      ctx.font = '14px Arial';
+      ctx.fillText('fingerprint', 0, 0);
+      const data = canvas.toDataURL() + navigator.userAgent + screen.width + screen.height + navigator.language + (new Date()).getTimezoneOffset();
+      let hash1 = 0, hash2 = 0;
+      for (let i = 0; i < data.length; i++) {
+        hash1 = ((hash1 << 5) - hash1) + data.charCodeAt(i);
+        hash1 = hash1 & hash1;
+        hash2 = ((hash2 << 7) - hash2) + data.charCodeAt(i);
+        hash2 = hash2 & hash2;
+      }
+      deviceFingerprint = 'fp_' + Math.abs(hash1).toString(16).padStart(8, '0') + Math.abs(hash2).toString(16).padStart(8, '0');
+    } catch (e) {
+      deviceFingerprint = null;
+    }
+  }
+
+  function getDeviceFingerprint() {
+    return deviceFingerprint || null;
+  }
+
+  // Initialize fingerprint on load
+  initDeviceFingerprint();
+
+  /** 👤 Scanner Info (employee who is scanning) */
+  function getScannerId() {
+    return window.PPV_STORE_DATA?.scanner_id ||
+           Number(sessionStorage.getItem('ppv_scanner_id')) || null;
+  }
+
+  function getScannerName() {
+    return window.PPV_STORE_DATA?.scanner_name ||
+           sessionStorage.getItem('ppv_scanner_name') || null;
+  }
+
   /** 🎯 POS Scan Handler */
   $(document).on("ppv:scan", async function(e, scanData) {
     if (!scanData || !scanData.qr || !POS_TOKEN) {
@@ -162,7 +211,10 @@
           store_key: POS_TOKEN,
           points_add: scanData.points_add || 1,
           latitude: gps.latitude,
-          longitude: gps.longitude
+          longitude: gps.longitude,
+          scanner_id: getScannerId(),
+          scanner_name: getScannerName(),
+          device_fingerprint: getDeviceFingerprint()
         })
       });
 
