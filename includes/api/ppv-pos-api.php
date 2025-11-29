@@ -134,10 +134,12 @@ class PPV_POS_AUTO_API {
 
                         if ($can_receive_bonus) {
                             $bonus_type = $birthday_settings->birthday_bonus_type ?? 'double_points';
+                            // 🔒 FIX: Save true base points BEFORE bonus calculation
+                            $true_base_points = $points_add;
 
                             switch ($bonus_type) {
                                 case 'double_points':
-                                    $birthday_bonus_applied = $points_add;
+                                    $birthday_bonus_applied = $true_base_points;
                                     break;
                                 case 'fixed_points':
                                     $birthday_bonus_applied = intval($birthday_settings->birthday_bonus_value ?? 0);
@@ -145,17 +147,22 @@ class PPV_POS_AUTO_API {
                             }
 
                             if ($birthday_bonus_applied > 0) {
-                                $points_add += $birthday_bonus_applied;
-                                $response_message[] = "🎂 Geburtstags-Bonus: +{$birthday_bonus_applied}";
+                                // 🔒 FIX: Use atomic UPDATE with WHERE to prevent race condition
+                                $rows_updated = $wpdb->query($wpdb->prepare("
+                                    UPDATE {$wpdb->prefix}ppv_users
+                                    SET last_birthday_bonus_at = %s
+                                    WHERE id = %d
+                                    AND (last_birthday_bonus_at IS NULL OR last_birthday_bonus_at < DATE_SUB(CURDATE(), INTERVAL 320 DAY))
+                                ", date('Y-m-d'), $user_id));
 
-                                // Update last_birthday_bonus_at to prevent abuse
-                                $wpdb->update(
-                                    $wpdb->prefix . 'ppv_users',
-                                    ['last_birthday_bonus_at' => date('Y-m-d')],
-                                    ['id' => $user_id],
-                                    ['%s'],
-                                    ['%d']
-                                );
+                                if ($rows_updated > 0) {
+                                    $points_add += $birthday_bonus_applied;
+                                    $response_message[] = "🎂 Geburtstags-Bonus: +{$birthday_bonus_applied}";
+                                } else {
+                                    // Race condition prevented
+                                    $birthday_bonus_applied = 0;
+                                    ppv_log("🔒 [POS API] Birthday bonus race condition prevented for user {$user_id}");
+                                }
                             }
                         }
                     }
@@ -163,63 +170,133 @@ class PPV_POS_AUTO_API {
             }
         }
 
-       // ===============================
-// 🔹 Pont jóváírás (ha van)
-// ===============================
-if ($points_add !== 0) {
-    $safe_user_id = intval($user_id) > 0 ? intval($user_id) : 0;
+        // ===============================
+        // 🔹 Pont jóváírás (ha van) - WITH TRANSACTION PROTECTION
+        // ===============================
+        if ($points_add !== 0) {
+            $safe_user_id = intval($user_id) > 0 ? intval($user_id) : 0;
+            $table_name = $wpdb->prefix . 'ppv_points';
 
-    $table_name = $wpdb->prefix . 'ppv_points';
+            // 🔒 Get IP address for tracking
+            $ip_address = self::get_client_ip();
 
-    $insert_result = $wpdb->insert(
-        $table_name,
-        [
-            'user_id'   => $safe_user_id,
-            'store_id'  => intval($store_id),
-            'points'    => intval($points_add),
-            'type'      => sanitize_text_field($type ?? 'pos_auto'),
-            'reference' => sanitize_text_field($invoice_id ?? ''),
-            'created'   => current_time('mysql')
-        ]
-    );
+            // 🔒 START TRANSACTION for atomicity
+            $wpdb->query('START TRANSACTION');
 
-    if ($safe_user_id === 0) {
-        $response_message[] = "+{$points_add} Punkte gutgeschrieben (POS Modus)";
-    } else {
-        $response_message[] = "+{$points_add} Punkte gutgeschrieben (User Modus)";
-    }
-}
+            try {
+                // 🔒 DUPLICATE CHECK: Prevent race condition double-inserts (for user scans)
+                if ($safe_user_id > 0) {
+                    $recent_insert = $wpdb->get_var($wpdb->prepare("
+                        SELECT id FROM {$wpdb->prefix}ppv_points
+                        WHERE user_id = %d AND store_id = %d
+                        AND created > DATE_SUB(NOW(), INTERVAL 5 SECOND)
+                        LIMIT 1
+                    ", $safe_user_id, $store_id));
+
+                    if ($recent_insert) {
+                        $wpdb->query('ROLLBACK');
+                        ppv_log("⚠️ [POS API] Duplicate scan blocked: user={$safe_user_id}, store={$store_id}, existing_id={$recent_insert}");
+                        return rest_ensure_response([
+                            'success' => false,
+                            'message' => '⚠️ Doppelte Transaktion blockiert',
+                            'error_type' => 'duplicate'
+                        ]);
+                    }
+                }
+
+                $insert_result = $wpdb->insert(
+                    $table_name,
+                    [
+                        'user_id'   => $safe_user_id,
+                        'store_id'  => intval($store_id),
+                        'points'    => intval($points_add),
+                        'type'      => sanitize_text_field($type ?? 'pos_auto'),
+                        // 🔒 NEW: Device/GPS tracking fields
+                        'ip_address' => $ip_address,
+                        'reference' => sanitize_text_field($invoice_id ?? ''),
+                        'created'   => current_time('mysql')
+                    ]
+                );
+
+                if ($insert_result === false) {
+                    $wpdb->query('ROLLBACK');
+                    ppv_log("❌ [POS API] Failed to insert points: " . $wpdb->last_error);
+                    return rest_ensure_response([
+                        'success' => false,
+                        'message' => '❌ Datenbankfehler',
+                        'error_type' => 'db_error'
+                    ]);
+                }
+
+                $wpdb->query('COMMIT');
+
+                if ($safe_user_id === 0) {
+                    $response_message[] = "+{$points_add} Punkte gutgeschrieben (POS Modus)";
+                } else {
+                    $response_message[] = "+{$points_add} Punkte gutgeschrieben (User Modus)";
+                }
+
+            } catch (Exception $e) {
+                $wpdb->query('ROLLBACK');
+                ppv_log("❌ [POS API] Transaction failed: " . $e->getMessage());
+                return rest_ensure_response([
+                    'success' => false,
+                    'message' => '❌ Transaktionsfehler',
+                    'error_type' => 'transaction_error'
+                ]);
+            }
+        }
 
 
 
         // ===============================
-        // 🔹 Reward beváltás (ha van kód)
+        // 🔹 Reward beváltás (ha van kód) - WITH TRANSACTION PROTECTION
         // ===============================
         if ($reward_code) {
             $reward = $wpdb->get_row($wpdb->prepare("
-                SELECT * FROM wp_ppv_rewards 
-                WHERE store_id=%d 
+                SELECT * FROM wp_ppv_rewards
+                WHERE store_id=%d
                 AND (action_value LIKE %s OR title LIKE %s)
                 LIMIT 1
             ", $store_id, '%' . $wpdb->esc_like($reward_code) . '%', '%' . $wpdb->esc_like($reward_code) . '%'));
 
             if ($reward && $user_id) {
-                $total_points = (int)$wpdb->get_var($wpdb->prepare(
-                    "SELECT SUM(points) FROM wp_ppv_points WHERE user_id=%d", $user_id
-                ));
+                // 🔒 START TRANSACTION for redemption atomicity
+                $wpdb->query('START TRANSACTION');
 
-                if ($total_points >= $reward->required_points) {
-                    $wpdb->insert("wp_ppv_points", [
-                        'user_id' => $user_id,
-                        'store_id' => $store_id,
-                        'points' => -abs($reward->required_points),
-                        'type' => 'redeem',
-                        'reference' => $reward->title,
-                        'created' => current_time('mysql')
-                    ]);
-                    $response_message[] = "{$reward->title} eingelöst";
-                } else {
-                    $response_message[] = "Nicht genug Punkte für {$reward->title}";
+                try {
+                    // 🔒 FIX: Lock and check points in single query to prevent race condition
+                    $total_points = (int)$wpdb->get_var($wpdb->prepare(
+                        "SELECT COALESCE(SUM(points), 0) FROM {$wpdb->prefix}ppv_points WHERE user_id=%d FOR UPDATE",
+                        $user_id
+                    ));
+
+                    if ($total_points >= $reward->required_points) {
+                        $insert_result = $wpdb->insert("{$wpdb->prefix}ppv_points", [
+                            'user_id' => $user_id,
+                            'store_id' => $store_id,
+                            'points' => -abs($reward->required_points),
+                            'type' => 'redeem',
+                            'ip_address' => self::get_client_ip(),
+                            'reference' => $reward->title,
+                            'created' => current_time('mysql')
+                        ]);
+
+                        if ($insert_result === false) {
+                            $wpdb->query('ROLLBACK');
+                            $response_message[] = "Fehler bei der Einlösung";
+                        } else {
+                            $wpdb->query('COMMIT');
+                            $response_message[] = "{$reward->title} eingelöst";
+                        }
+                    } else {
+                        $wpdb->query('ROLLBACK');
+                        $response_message[] = "Nicht genug Punkte für {$reward->title}";
+                    }
+                } catch (Exception $e) {
+                    $wpdb->query('ROLLBACK');
+                    ppv_log("❌ [POS API] Redemption failed: " . $e->getMessage());
+                    $response_message[] = "Einlösungsfehler";
                 }
             } else {
                 $response_message[] = "Ungültiger Reward-Code";
@@ -304,8 +381,18 @@ if ($points_add !== 0) {
             store_id BIGINT UNSIGNED NOT NULL,
             points INT NOT NULL,
             type VARCHAR(50) DEFAULT 'sale',
+            campaign_id BIGINT UNSIGNED NULL,
+            device_fingerprint VARCHAR(64) NULL COMMENT 'SHA256 hash of scanner device fingerprint',
+            ip_address VARCHAR(45) NULL COMMENT 'IP address of scan request',
+            latitude DECIMAL(10,8) NULL COMMENT 'GPS latitude of scan location',
+            longitude DECIMAL(11,8) NULL COMMENT 'GPS longitude of scan location',
+            scanner_id BIGINT UNSIGNED NULL COMMENT 'User ID of employee who scanned',
             reference VARCHAR(255) NULL,
-            created DATETIME DEFAULT CURRENT_TIMESTAMP
+            created DATETIME DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_user_store (user_id, store_id),
+            INDEX idx_device_fingerprint (device_fingerprint),
+            INDEX idx_ip_address (ip_address),
+            INDEX idx_scanner_id (scanner_id)
         ) $charset;";
 
         $sql[] = "CREATE TABLE IF NOT EXISTS wp_ppv_pos_log (
@@ -335,6 +422,34 @@ if ($points_add !== 0) {
 
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
         foreach ($sql as $query) dbDelta($query);
+    }
+
+    // ============================================================
+    // 🔒 HELPER: Get client IP address
+    // ============================================================
+    private static function get_client_ip() {
+        $ip_keys = [
+            'HTTP_CF_CONNECTING_IP',  // Cloudflare
+            'HTTP_X_FORWARDED_FOR',   // Proxy/Load balancer
+            'HTTP_X_REAL_IP',         // Nginx proxy
+            'REMOTE_ADDR'             // Direct connection
+        ];
+
+        foreach ($ip_keys as $key) {
+            if (!empty($_SERVER[$key])) {
+                $ip = $_SERVER[$key];
+                // Handle comma-separated list (X-Forwarded-For)
+                if (strpos($ip, ',') !== false) {
+                    $ip = trim(explode(',', $ip)[0]);
+                }
+                // Validate IP
+                if (filter_var($ip, FILTER_VALIDATE_IP)) {
+                    return $ip;
+                }
+            }
+        }
+
+        return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
     }
 }
 

@@ -167,6 +167,10 @@ trait PPV_QR_REST_Trait {
         $scanner_id = isset($data['scanner_id']) ? intval($data['scanner_id']) : null;
         $scanner_name = isset($data['scanner_name']) ? sanitize_text_field($data['scanner_name']) : null;
 
+        // 🔒 Device/IP tracking for fraud detection and audit
+        $device_fingerprint = isset($data['device_fingerprint']) ? sanitize_text_field($data['device_fingerprint']) : null;
+        $ip_address = self::get_client_ip();
+
         if (empty($qr_code) || empty($store_key)) {
             return new WP_REST_Response([
                 'success' => false,
@@ -737,6 +741,12 @@ trait PPV_QR_REST_Trait {
                 'points' => $points_add,
                 'campaign_id' => $campaign_id ?: null,
                 'type' => 'qr_scan',
+                // 🔒 NEW: Device/GPS tracking fields for fraud detection
+                'device_fingerprint' => $device_fingerprint,
+                'ip_address' => $ip_address,
+                'latitude' => $scan_lat,
+                'longitude' => $scan_lng,
+                'scanner_id' => $scanner_id,
                 'created' => current_time('mysql')
             ]);
 
@@ -2115,5 +2125,33 @@ trait PPV_QR_REST_Trait {
                 'message' => '❌ Fehler bei der Einlösung'
             ], 500);
         }
+    }
+
+    // ============================================================
+    // 🔒 HELPER: Get client IP address
+    // ============================================================
+    private static function get_client_ip() {
+        $ip_keys = [
+            'HTTP_CF_CONNECTING_IP',  // Cloudflare
+            'HTTP_X_FORWARDED_FOR',   // Proxy/Load balancer
+            'HTTP_X_REAL_IP',         // Nginx proxy
+            'REMOTE_ADDR'             // Direct connection
+        ];
+
+        foreach ($ip_keys as $key) {
+            if (!empty($_SERVER[$key])) {
+                $ip = $_SERVER[$key];
+                // Handle comma-separated list (X-Forwarded-For)
+                if (strpos($ip, ',') !== false) {
+                    $ip = trim(explode(',', $ip)[0]);
+                }
+                // Validate IP
+                if (filter_var($ip, FILTER_VALIDATE_IP)) {
+                    return $ip;
+                }
+            }
+        }
+
+        return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
     }
 }
