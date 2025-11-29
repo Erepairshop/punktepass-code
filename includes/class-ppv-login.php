@@ -256,24 +256,38 @@ public static function check_already_logged_in() {
         PPV_SessionBridge::restore_from_token();
     }
 
-    // 🔐 USER already logged in (CHECK SESSION FIRST, not cookie!)
-    if (!empty($_SESSION['ppv_user_id']) && $_SESSION['ppv_user_type'] === 'user') {
+    // 🔹 DEBUG: Log session state
+    ppv_log("🔍 [PPV_Login] check_already_logged_in: user_id=" . ($_SESSION['ppv_user_id'] ?? 'EMPTY') .
+            ", user_type=" . ($_SESSION['ppv_user_type'] ?? 'EMPTY') .
+            ", store_id=" . ($_SESSION['ppv_store_id'] ?? 'EMPTY') .
+            ", vendor_store_id=" . ($_SESSION['ppv_vendor_store_id'] ?? 'EMPTY'));
+
+    // 🏪 HANDLER/STORE/SCANNER already logged in
+    // ✅ FIX: Check ppv_store_id OR ppv_vendor_store_id FIRST (priority over user_type check)
+    // This catches: handlers, vendors, scanners, trial handlers - anyone with a store association
+    if (!empty($_SESSION['ppv_store_id']) || !empty($_SESSION['ppv_vendor_store_id'])) {
+        $user_type = $_SESSION['ppv_user_type'] ?? '';
+
+        // Allowed types for qr-center: store, handler, vendor, admin, scanner
+        if (in_array($user_type, ['store', 'handler', 'vendor', 'admin', 'scanner'])) {
+            ppv_log("🔄 [PPV_Login] Store/Handler/Scanner redirect from login page (type={$user_type})");
+            wp_safe_redirect(home_url('/qr-center'));
+            exit;
+        }
+
+        // ✅ FIX: If store_id exists but user_type is wrong/empty, still redirect to qr-center
+        // This handles cases where user_type was not properly set in DB
+        if (!empty($_SESSION['ppv_store_id'])) {
+            ppv_log("🔄 [PPV_Login] Store redirect (fallback) - store_id exists but user_type={$user_type}");
+            wp_safe_redirect(home_url('/qr-center'));
+            exit;
+        }
+    }
+
+    // 🔐 USER already logged in (only if no store association)
+    if (!empty($_SESSION['ppv_user_id']) && ($_SESSION['ppv_user_type'] ?? '') === 'user') {
         ppv_log("🔄 [PPV_Login] User redirect from login page (session check)");
         wp_safe_redirect(home_url('/user_dashboard'));
-        exit;
-    }
-
-    // 🏪 HANDLER/STORE already logged in
-    if (!empty($_SESSION['ppv_store_id']) && in_array($_SESSION['ppv_user_type'], ['store', 'handler', 'vendor', 'admin'])) {
-        ppv_log("🔄 [PPV_Login] Store redirect from login page (session check)");
-        wp_safe_redirect(home_url('/qr-center'));
-        exit;
-    }
-
-    // 👥 SCANNER already logged in
-    if (!empty($_SESSION['ppv_user_id']) && isset($_SESSION['ppv_user_type']) && $_SESSION['ppv_user_type'] === 'scanner') {
-        ppv_log("🔄 [PPV_Login] Scanner redirect from login page (session check)");
-        wp_safe_redirect(home_url('/qr-center'));
         exit;
     }
 

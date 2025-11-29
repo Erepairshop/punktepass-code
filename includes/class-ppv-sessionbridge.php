@@ -98,11 +98,20 @@ class PPV_SessionBridge {
 
             if ($user) {
                 $_SESSION['ppv_user_id'] = $user->id;
-                $_SESSION['ppv_user_type'] = $user->user_type ?? 'user';
                 $_SESSION['ppv_user_email'] = $user->email;
 
+                // ✅ FIX: Determine user_type with fallback logic
+                // If user_type is NULL/empty in DB, try to detect from vendor_store_id
+                $user_type = $user->user_type;
+                if (empty($user_type) && !empty($user->vendor_store_id)) {
+                    // User has vendor_store_id but no user_type - assume 'vendor'
+                    $user_type = 'vendor';
+                    ppv_log("⚠️ [PPV_SessionBridge] user_type was empty, detected as 'vendor' from vendor_store_id");
+                }
+                $_SESSION['ppv_user_type'] = $user_type ?: 'user';
+
                 // Vendor/Scanner user esetén restore store is
-                if (in_array($user->user_type, ['vendor', 'scanner']) && !empty($user->vendor_store_id)) {
+                if (in_array($user_type, ['vendor', 'scanner']) && !empty($user->vendor_store_id)) {
                     $_SESSION['ppv_vendor_store_id'] = $user->vendor_store_id;
 
                     // 🔹 FILIALE SUPPORT: Only restore if ppv_current_filiale_id is NOT set
@@ -110,13 +119,13 @@ class PPV_SessionBridge {
                     if (empty($_SESSION['ppv_current_filiale_id'])) {
                         $_SESSION['ppv_store_id'] = $user->vendor_store_id;
                         $_SESSION['ppv_active_store'] = $user->vendor_store_id;
-                        ppv_log("✅ [PPV_SessionBridge] Store restored for {$user->user_type}: store_id={$user->vendor_store_id}");
+                        ppv_log("✅ [PPV_SessionBridge] Store restored for {$user_type}: store_id={$user->vendor_store_id}");
                     } else {
                         ppv_log("🔹 [PPV_SessionBridge] Filiale active (ID=" . $_SESSION['ppv_current_filiale_id'] . "), skipping store_id restore");
                     }
                 }
 
-                ppv_log("✅ [PPV_SessionBridge] User restored from token: ID={$user->id}, type=" . ($user->user_type ?? 'user'));
+                ppv_log("✅ [PPV_SessionBridge] User restored from token: ID={$user->id}, type={$user_type}, vendor_store_id=" . ($user->vendor_store_id ?? 'NONE'));
                 return;
             } else {
                 // ✅ FIX: Invalid token - töröljük a cookie-t hogy ne próbálkozzon újra
