@@ -23,9 +23,9 @@
 
 ## MAGAS (Sürgős - 1 héten belül)
 
-- [x] **Max pont limit** - `class-ppv-scan.php:243-248`, `trait-ppv-qr-rest.php:424-429`
+- [x] **Max pont limit** - `trait-ppv-qr-rest.php`, `class-ppv-rest.php`, `class-ppv-rewards-management.php`
   - ~~Store owner bármennyi pontot beállíthat~~
-  - ✅ JAVÍTVA: Max 100 pont/scan limit mindkét endpoint-on
+  - ✅ JAVÍTVA: Max 20 pont/scan limit + Admin UI validáció + HTML max attribútum
 
 - [x] **Duplikáció check javítás** - `class-ppv-redeem.php:133-146`
   - ~~Csak 1 perces ablak, `reward_title` alapján~~
@@ -54,9 +54,9 @@
   - CSRF védelem hiányzik
   - Minden state-changing endpoint-ra kell
 
-- [x] **Rate limiting aktiválás** - `trait-ppv-qr-rest.php:157-165`, `class-ppv-redeem.php:78-86`
+- [x] **Rate limiting aktiválás** - `trait-ppv-qr-rest.php`, `class-ppv-redeem.php`
   - ~~Létezik de nincs használva!~~
-  - ✅ JAVÍTVA: Scan 20/perc, Redeem 5/perc per IP
+  - ✅ JAVÍTVA: Sikeres scan 3/perc, sikertelen 20/perc, Redeem 5/perc per IP
 
 - [ ] **Birthday bonus race fix** - `class-ppv-scan.php:432-449`
   - Atomic update-re átírni

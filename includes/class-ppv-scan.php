@@ -241,7 +241,7 @@ public static function ajax_auto_add_point() {
     }
 
     // 🔒 SECURITY: Max point limit per scan (prevents point inflation)
-    $max_points_per_scan = 100;
+    $max_points_per_scan = 20;
     if ($points_to_add > $max_points_per_scan) {
         ppv_log("⚠️ [PPV_Scan] Points capped: requested={$points_to_add}, max={$max_points_per_scan}");
         $points_to_add = $max_points_per_scan;

@@ -104,9 +104,15 @@ class PPV_Scan {
         $points_to_add = 1;
         if ($campaign_id) {
             $points_to_add = intval($wpdb->get_var($wpdb->prepare("
-                SELECT points FROM {$wpdb->prefix}ppv_campaigns 
+                SELECT points FROM {$wpdb->prefix}ppv_campaigns
                 WHERE id=%d AND store_id=%d
             ", $campaign_id, $store_id))) ?: 1;
+        }
+
+        // 🔒 SECURITY: Max point limit per scan
+        $max_points_per_scan = 20;
+        if ($points_to_add > $max_points_per_scan) {
+            $points_to_add = $max_points_per_scan;
         }
 
         // 🔹 Új pont beszúrása
