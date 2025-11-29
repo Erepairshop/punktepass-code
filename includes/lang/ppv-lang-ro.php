@@ -379,6 +379,11 @@ return [
   'email_notifications' => 'Notificări prin e-mail',
   'push_notifications' => 'Notificări push',
   'promo_notifications' => 'Notificări promoționale',
+  'whatsapp_notifications' => 'Notificări WhatsApp',
+  'whatsapp_notifications_hint' => 'Primește cupoane de ziua de naștere și oferte bonus prin WhatsApp',
+  'whatsapp_phone' => 'Număr de telefon WhatsApp',
+  'whatsapp_phone_placeholder' => '722 123 456',
+  'whatsapp_phone_hint' => 'Numărul tău de mobil pentru mesaje WhatsApp (fără prefix de țară)',
   'privacy' => 'Confidențialitate',
   'profile_visible' => 'Profil vizibil public',
   'marketing_emails' => 'Primesc e-mailuri de marketing',
@@ -1089,10 +1094,11 @@ return [
     // ONBOARDING
     // ============================================================
     'onb_welcome_title' => 'Bun venit la PunktePass!',
-    'onb_welcome_subtitle' => 'Te ajutam sa configurezi cele 2 lucruri de baza pentru ca oaspetii tai sa colecteze puncte!',
+    'onb_welcome_subtitle' => 'Te ajutam sa configurezi cele 3 lucruri de baza pentru ca oaspetii tai sa colecteze puncte!',
     'onb_welcome_step1' => 'Completeaza datele de baza ale magazinului',
     'onb_welcome_step2' => 'Creaza prima recompensa',
-    'onb_welcome_time' => '⏱️ Aproximativ 3 minute',
+    'onb_welcome_step3' => 'Inregistreaza un dispozitiv',
+    'onb_welcome_time' => '⏱️ Aproximativ 5 minute',
     'onb_btn_later' => 'Mai tarziu',
     'onb_btn_start' => 'Hai sa incepem!',
 
@@ -1158,6 +1164,7 @@ return [
     'onb_progress_title' => 'Configurare initiala',
     'onb_progress_step_profile' => 'Completeaza profilul',
     'onb_progress_step_reward' => 'Prima recompensa',
+    'onb_progress_step_device' => 'Dispozitiv inregistrat',
 
     'onb_reward_step_title' => '2️⃣ Creaza prima recompensa',
     'onb_reward_step_progress' => '100% (2/2)',
@@ -1206,6 +1213,31 @@ return [
     'onb_reward_free_product' => '🎁 Numele produsului',
     'onb_reward_free_product_placeholder' => 'de ex. Cafea + Prăjitură',
     'onb_reward_free_product_value' => '💰 Valoarea produsului',
+
+    // Onboarding - traduceri lipsa
+    'onb_postponed' => '⏰ Te vom reaminti in 8 ore!',
+    'onb_confirm_dismiss' => 'Esti sigur ca inchizi? Poti reveni mai tarziu din setari.',
+    'onb_confirm_hide' => 'Esti sigur ca ascunzi? Poti reveni mai tarziu din setari.',
+    'onb_celebration_autoclose' => 'Se inchide automat in 5 sec.',
+    'onb_celebration_tip' => '💡 <strong>Sfat:</strong> Creeaza o campanie pentru ca oaspetii tai sa colecteze puncte mai repede!',
+    'onb_btn_done' => '✅ Am inteles',
+    'onb_error_save' => '❌ Eroare la salvare',
+    'onb_state_saving' => '⏳ Se salveaza...',
+    'onb_error_address' => '❌ Te rog introdu mai intai adresa si orasul!',
+    'onb_state_searching' => 'Se cauta...',
+    'onb_success_geocode' => '✅ Coordonate gasite!',
+    'onb_error_not_found' => '❌ Adresa nu a fost gasita',
+    'onb_need_device' => '✅ Recompensa salvata! Inca un pas: inregistreaza un dispozitiv.',
+
+    // Reward form helper texts
+    'onb_reward_name_helper' => '📝 Numele recompensei pe care il vad clientii',
+    'onb_reward_points_helper' => '🎯 Cate puncte are nevoie clientul pentru aceasta recompensa',
+    'onb_reward_description_helper' => '💬 Detalii suplimentare despre recompensa (optional)',
+    'onb_reward_type_helper' => '🎁 Ce tip de recompensa primeste clientul',
+    'onb_reward_value_helper' => '💶 Valoarea reducerii (ex. 10 = 10% sau 5 = 5 EUR)',
+    'onb_reward_free_product_helper' => '🎁 Numele produsului gratuit (ex. Cafea + Prajitura)',
+    'onb_reward_free_product_value_helper' => '💰 Pretul normal al produsului',
+    'onb_reward_points_given_helper' => '⭐ Aceste puncte recompenseaza clientul la revendicare',
 
     // Ország nevek (Country names)
     'country_hu' => 'Ungaria',

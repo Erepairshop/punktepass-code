@@ -31,8 +31,22 @@ if (!class_exists('PPV_Onboarding')) {
             // Enqueue scripts & styles
             add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
 
-            // REST API endpoints
+            // REST API endpoints (legacy)
             add_action('rest_api_init', [__CLASS__, 'register_rest_routes']);
+
+            // ✅ WP AJAX endpoints (működik session-nel, mint profile)
+            add_action('wp_ajax_ppv_onboarding_progress', [__CLASS__, 'ajax_get_progress']);
+            add_action('wp_ajax_nopriv_ppv_onboarding_progress', [__CLASS__, 'ajax_get_progress']);
+            add_action('wp_ajax_ppv_onboarding_mark_welcome', [__CLASS__, 'ajax_mark_welcome_shown']);
+            add_action('wp_ajax_nopriv_ppv_onboarding_mark_welcome', [__CLASS__, 'ajax_mark_welcome_shown']);
+            add_action('wp_ajax_ppv_onboarding_complete_step', [__CLASS__, 'ajax_complete_step']);
+            add_action('wp_ajax_nopriv_ppv_onboarding_complete_step', [__CLASS__, 'ajax_complete_step']);
+            add_action('wp_ajax_ppv_onboarding_dismiss', [__CLASS__, 'ajax_dismiss']);
+            add_action('wp_ajax_nopriv_ppv_onboarding_dismiss', [__CLASS__, 'ajax_dismiss']);
+            add_action('wp_ajax_ppv_onboarding_postpone', [__CLASS__, 'ajax_postpone']);
+            add_action('wp_ajax_nopriv_ppv_onboarding_postpone', [__CLASS__, 'ajax_postpone']);
+            add_action('wp_ajax_ppv_onboarding_geocode', [__CLASS__, 'ajax_geocode']);
+            add_action('wp_ajax_nopriv_ppv_onboarding_geocode', [__CLASS__, 'ajax_geocode']);
         }
 
         /**
@@ -172,7 +186,8 @@ if (!class_exists('PPV_Onboarding')) {
 
             // Config localize
             $onboarding_config = [
-                'rest_url' => rest_url('ppv/v1/onboarding/'),
+                'ajax_url' => admin_url('admin-ajax.php'),
+                'rest_url' => rest_url('ppv/v1/onboarding/'), // legacy
                 'nonce' => wp_create_nonce('wp_rest'),
                 'store_id' => $store_id,
                 'progress' => $progress,
@@ -636,22 +651,27 @@ if (!class_exists('PPV_Onboarding')) {
         }
 
         /**
-         * Ellenőrzi hogy a store-nak van-e regisztrált eszköze
+         * Ellenőrzi hogy a store-nak van-e regisztrált eszköze (ppv_user_devices táblában)
          */
         private static function has_device($store_id) {
             global $wpdb;
-            $table = $wpdb->prefix . 'ppv_device_fingerprints';
 
-            // Ellenőrizzük hogy létezik-e a tábla
-            $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$table}'");
-            if (!$table_exists) {
+            // Get parent store ID (devices are linked to parent store)
+            $parent_id = $wpdb->get_var($wpdb->prepare(
+                "SELECT COALESCE(parent_store_id, id) FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
+                $store_id
+            ));
+
+            if (!$parent_id) {
                 return false;
             }
 
+            // Check ppv_user_devices table for active devices
             $count = $wpdb->get_var($wpdb->prepare(
-                "SELECT COUNT(*) FROM {$table} WHERE store_id = %d AND status = 'approved'",
-                $store_id
+                "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_user_devices WHERE store_id = %d AND status = 'active'",
+                $parent_id
             ));
+
             return $count > 0;
         }
 
@@ -703,6 +723,276 @@ if (!class_exists('PPV_Onboarding')) {
             }
 
             return ['valid' => false];
+        }
+
+        // ==================== WP AJAX HANDLERS ====================
+
+        /**
+         * AJAX: Get progress
+         */
+        public static function ajax_get_progress() {
+            self::ensure_session();
+            $auth = self::check_auth();
+
+            if (!$auth['valid'] || empty($auth['store_id'])) {
+                ppv_log("❌ [PPV_ONBOARDING] ajax_get_progress: auth invalid");
+                wp_send_json_error(['msg' => 'Not authenticated']);
+                return;
+            }
+
+            $store = self::get_store($auth['store_id']);
+            if (!$store) {
+                wp_send_json_error(['msg' => 'Store not found']);
+                return;
+            }
+
+            $progress = self::calculate_progress($store);
+            wp_send_json_success(['progress' => $progress]);
+        }
+
+        /**
+         * AJAX: Mark welcome shown
+         */
+        public static function ajax_mark_welcome_shown() {
+            self::ensure_session();
+            $auth = self::check_auth();
+
+            if (!$auth['valid'] || empty($auth['store_id'])) {
+                wp_send_json_error(['msg' => 'Not authenticated']);
+                return;
+            }
+
+            global $wpdb;
+            $result = $wpdb->update(
+                $wpdb->prefix . 'ppv_stores',
+                ['onboarding_welcome_shown' => 1],
+                ['id' => $auth['store_id']],
+                ['%d'],
+                ['%d']
+            );
+
+            wp_send_json_success(['updated' => $result !== false]);
+        }
+
+        /**
+         * AJAX: Complete step
+         */
+        public static function ajax_complete_step() {
+            self::ensure_session();
+            $auth = self::check_auth();
+
+            if (!$auth['valid'] || empty($auth['store_id'])) {
+                wp_send_json_error(['msg' => 'Not authenticated']);
+                return;
+            }
+
+            $step = sanitize_text_field($_POST['step'] ?? '');
+            $value = isset($_POST['value']) ? (is_array($_POST['value']) ? $_POST['value'] : json_decode(stripslashes($_POST['value']), true)) : [];
+
+            global $wpdb;
+
+            if ($step === 'profile_lite') {
+                $opening_hours = [];
+                if (!empty($value['opening_hours']) && is_array($value['opening_hours'])) {
+                    foreach ($value['opening_hours'] as $day => $hours) {
+                        $opening_hours[sanitize_key($day)] = [
+                            'von' => sanitize_text_field($hours['von'] ?? ''),
+                            'bis' => sanitize_text_field($hours['bis'] ?? ''),
+                            'closed' => intval($hours['closed'] ?? 0)
+                        ];
+                    }
+                }
+
+                $wpdb->update(
+                    $wpdb->prefix . 'ppv_stores',
+                    [
+                        'name' => sanitize_text_field($value['shop_name'] ?? ''),
+                        'company_name' => sanitize_text_field($value['company_name'] ?? ''),
+                        'country' => sanitize_text_field($value['country'] ?? 'HU'),
+                        'address' => sanitize_text_field($value['address'] ?? ''),
+                        'city' => sanitize_text_field($value['city'] ?? ''),
+                        'plz' => sanitize_text_field($value['zip'] ?? ''),
+                        'latitude' => floatval($value['latitude'] ?? 0),
+                        'longitude' => floatval($value['longitude'] ?? 0),
+                        'timezone' => sanitize_text_field($value['timezone'] ?? 'Europe/Budapest'),
+                        'opening_hours' => json_encode($opening_hours),
+                    ],
+                    ['id' => $auth['store_id']],
+                    ['%s', '%s', '%s', '%s', '%s', '%s', '%f', '%f', '%s', '%s'],
+                    ['%d']
+                );
+
+                ppv_log("✅ [PPV_ONBOARDING] Profile saved for store #{$auth['store_id']}");
+            } elseif ($step === 'reward') {
+                $wpdb->insert(
+                    $wpdb->prefix . 'ppv_rewards',
+                    [
+                        'store_id' => $auth['store_id'],
+                        'title' => sanitize_text_field($value['title'] ?? ''),
+                        'description' => wp_kses_post($value['description'] ?? ''),
+                        'required_points' => intval($value['required_points'] ?? 100),
+                        'action_type' => sanitize_text_field($value['action_type'] ?? 'free_product'),
+                        'action_value' => floatval($value['action_value'] ?? 0),
+                        'points_given' => intval($value['points_given'] ?? 0),
+                        'free_product' => sanitize_text_field($value['free_product'] ?? ''),
+                        'free_product_value' => floatval($value['free_product_value'] ?? 0),
+                        'active' => 1,
+                        'created_at' => current_time('mysql')
+                    ],
+                    ['%d', '%s', '%s', '%d', '%s', '%f', '%d', '%s', '%f', '%d', '%s']
+                );
+
+                $wpdb->update(
+                    $wpdb->prefix . 'ppv_stores',
+                    ['onboarding_completed' => 1],
+                    ['id' => $auth['store_id']],
+                    ['%d'],
+                    ['%d']
+                );
+            }
+
+            $store = self::get_store($auth['store_id']);
+            $progress = self::calculate_progress($store);
+
+            wp_send_json_success(['progress' => $progress]);
+        }
+
+        /**
+         * AJAX: Dismiss onboarding
+         */
+        public static function ajax_dismiss() {
+            self::ensure_session();
+            $auth = self::check_auth();
+
+            if (!$auth['valid'] || empty($auth['store_id'])) {
+                wp_send_json_error(['msg' => 'Not authenticated']);
+                return;
+            }
+
+            global $wpdb;
+            $result = $wpdb->update(
+                $wpdb->prefix . 'ppv_stores',
+                ['onboarding_dismissed' => 1],
+                ['id' => $auth['store_id']],
+                ['%d'],
+                ['%d']
+            );
+
+            ppv_log("🚫 [PPV_ONBOARDING] Dismissed store #{$auth['store_id']}");
+            wp_send_json_success(['dismissed' => $result !== false]);
+        }
+
+        /**
+         * AJAX: Postpone onboarding
+         */
+        public static function ajax_postpone() {
+            self::ensure_session();
+            $auth = self::check_auth();
+
+            if (!$auth['valid'] || empty($auth['store_id'])) {
+                wp_send_json_error(['msg' => 'Not authenticated']);
+                return;
+            }
+
+            global $wpdb;
+            $postpone_until = date('Y-m-d H:i:s', strtotime('+8 hours'));
+
+            $result = $wpdb->update(
+                $wpdb->prefix . 'ppv_stores',
+                ['onboarding_postponed_until' => $postpone_until],
+                ['id' => $auth['store_id']],
+                ['%s'],
+                ['%d']
+            );
+
+            ppv_log("⏰ [PPV_ONBOARDING] Postponed store #{$auth['store_id']} until {$postpone_until}");
+            wp_send_json_success(['postponed_until' => $postpone_until]);
+        }
+
+        /**
+         * AJAX: Geocode address
+         */
+        public static function ajax_geocode() {
+            self::ensure_session();
+
+            $address = sanitize_text_field($_POST['address'] ?? '');
+            $city = sanitize_text_field($_POST['city'] ?? '');
+            $zip = sanitize_text_field($_POST['zip'] ?? '');
+            $country = sanitize_text_field($_POST['country'] ?? 'HU');
+
+            if (empty($address) || empty($city)) {
+                wp_send_json_error(['msg' => 'Address and city required']);
+                return;
+            }
+
+            $country_names = [
+                'DE' => 'Deutschland',
+                'HU' => 'Hungary',
+                'RO' => 'Romania'
+            ];
+            $country_name = $country_names[$country] ?? $country;
+
+            $full_address = "{$address}, {$zip} {$city}, {$country_name}";
+            ppv_log("🔍 [PPV_ONBOARDING] Geocode: {$full_address}");
+
+            // Google Maps API first
+            $google_api_key = defined('PPV_GOOGLE_MAPS_KEY') ? PPV_GOOGLE_MAPS_KEY : '';
+
+            if (!empty($google_api_key)) {
+                $google_url = 'https://maps.googleapis.com/maps/api/geocode/json?' . http_build_query([
+                    'address' => $full_address,
+                    'key' => $google_api_key
+                ]);
+
+                $response = wp_remote_get($google_url, ['timeout' => 10]);
+                if (!is_wp_error($response)) {
+                    $data = json_decode(wp_remote_retrieve_body($response), true);
+                    if (!empty($data['results'][0]['geometry']['location'])) {
+                        $location = $data['results'][0]['geometry']['location'];
+                        wp_send_json_success([
+                            'lat' => floatval($location['lat']),
+                            'lng' => floatval($location['lng']),
+                            'source' => 'google'
+                        ]);
+                        return;
+                    }
+                }
+            }
+
+            // Fallback to Nominatim
+            $query = urlencode($full_address);
+            $nominatim_url = "https://nominatim.openstreetmap.org/search?q={$query}&format=json&limit=1";
+
+            $response = wp_remote_get($nominatim_url, [
+                'timeout' => 10,
+                'headers' => ['User-Agent' => 'PunktePass/1.0']
+            ]);
+
+            if (is_wp_error($response)) {
+                wp_send_json_error(['msg' => 'Geocoding failed']);
+                return;
+            }
+
+            $data = json_decode(wp_remote_retrieve_body($response), true);
+
+            if (!empty($data[0])) {
+                wp_send_json_success([
+                    'lat' => floatval($data[0]['lat']),
+                    'lng' => floatval($data[0]['lon']),
+                    'source' => 'nominatim'
+                ]);
+            } else {
+                wp_send_json_error(['msg' => 'Location not found']);
+            }
+        }
+
+        /**
+         * Ensure session is started
+         */
+        private static function ensure_session() {
+            if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+                @session_start();
+            }
         }
     }
 

@@ -557,18 +557,22 @@ html, body {
 
 .ppv-checkbox {
     display: flex;
-    align-items: center;
-    gap: 10px;
+    align-items: flex-start;
+    gap: 12px;
     font-size: 14px;
     color: var(--ppv-text);
     cursor: pointer;
+    width: 100%;
+    text-align: left;
 }
 
 /* Toggle Switch Style for Login */
 .ppv-checkbox input[type="checkbox"] {
     position: relative;
     width: 46px;
+    min-width: 46px;
     height: 26px;
+    margin-top: 2px;
     -webkit-appearance: none;
     appearance: none;
     background: #D1D5DB;
@@ -598,6 +602,12 @@ html, body {
 
 .ppv-checkbox input[type="checkbox"]:checked::before {
     transform: translateX(20px);
+}
+
+.ppv-checkbox span {
+    flex: 1;
+    min-width: 0;
+    line-height: 1.4;
 }
 
 .ppv-checkbox a {

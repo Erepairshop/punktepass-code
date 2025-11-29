@@ -14,7 +14,7 @@ if (!defined('ABSPATH')) exit;
  */
 class PPV_WhatsApp {
 
-    const API_VERSION = 'v18.0';
+    const API_VERSION = 'v22.0';
     const API_BASE_URL = 'https://graph.facebook.com/';
 
     /**
