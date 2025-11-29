@@ -574,20 +574,36 @@ class PPV_Permissions {
      * @return bool True if scanner user, false otherwise
      */
     public static function is_scanner_user() {
+        global $wpdb;
+
         // Check session first
         if (!empty($_SESSION['ppv_user_type']) && $_SESSION['ppv_user_type'] === 'scanner') {
             return true;
         }
 
-        // Check PPV users database
+        // Check PPV users database via session user_id
         if (!empty($_SESSION['ppv_user_id'])) {
-            global $wpdb;
             $user = $wpdb->get_row($wpdb->prepare(
                 "SELECT user_type FROM {$wpdb->prefix}ppv_users WHERE id = %d LIMIT 1",
                 $_SESSION['ppv_user_id']
             ));
 
-            return $user && $user->user_type === 'scanner';
+            if ($user && $user->user_type === 'scanner') {
+                return true;
+            }
+        }
+
+        // ✅ NEW: Check via token-based auth (REST API calls)
+        $user_data = self::get_authenticated_user_data();
+        if ($user_data && isset($user_data['user_type']) && $user_data['user_type'] === 'scanner') {
+            // Populate session for subsequent calls
+            $_SESSION['ppv_user_id'] = $user_data['id'];
+            $_SESSION['ppv_user_type'] = 'scanner';
+            if (!empty($user_data['vendor_store_id'])) {
+                $_SESSION['ppv_store_id'] = intval($user_data['vendor_store_id']);
+            }
+            ppv_perm_log("✅ [PPV_Permissions] is_scanner_user() detected via TOKEN: user_id={$user_data['id']}");
+            return true;
         }
 
         return false;
@@ -600,24 +616,36 @@ class PPV_Permissions {
      * @return int|false Store ID or false if not found
      */
     public static function get_scanner_store_id() {
+        global $wpdb;
+
         if (!self::is_scanner_user()) {
             return false;
         }
 
-        // Check session first
+        // Check session first (should be populated by is_scanner_user())
         if (!empty($_SESSION['ppv_store_id'])) {
             return intval($_SESSION['ppv_store_id']);
         }
 
-        // Get from database
+        // Get from database via session user_id
         if (!empty($_SESSION['ppv_user_id'])) {
-            global $wpdb;
             $scanner = $wpdb->get_row($wpdb->prepare(
                 "SELECT vendor_store_id FROM {$wpdb->prefix}ppv_users WHERE id = %d AND user_type = 'scanner' LIMIT 1",
                 $_SESSION['ppv_user_id']
             ));
 
-            return $scanner && $scanner->vendor_store_id ? intval($scanner->vendor_store_id) : false;
+            if ($scanner && $scanner->vendor_store_id) {
+                $_SESSION['ppv_store_id'] = intval($scanner->vendor_store_id);
+                return intval($scanner->vendor_store_id);
+            }
+        }
+
+        // ✅ NEW: Fallback to token-based auth
+        $user_data = self::get_authenticated_user_data();
+        if ($user_data && $user_data['user_type'] === 'scanner' && !empty($user_data['vendor_store_id'])) {
+            $_SESSION['ppv_store_id'] = intval($user_data['vendor_store_id']);
+            ppv_perm_log("✅ [PPV_Permissions] get_scanner_store_id() via TOKEN: store_id={$user_data['vendor_store_id']}");
+            return intval($user_data['vendor_store_id']);
         }
 
         return false;
