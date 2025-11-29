@@ -508,6 +508,10 @@
       if (!this.readerDiv || !window.QrScanner) return;
 
       try {
+        // IMPORTANT: Set worker path BEFORE creating scanner instance
+        QrScanner.WORKER_PATH = 'https://unpkg.com/qr-scanner@1.4.2/qr-scanner-worker.min.js';
+        ppvLog('[Camera] Worker path set to:', QrScanner.WORKER_PATH);
+
         let videoEl = this.readerDiv.querySelector('video');
         if (!videoEl) {
           videoEl = document.createElement('video');
@@ -528,8 +532,6 @@
           result => this.onScanSuccess(result.data || result),
           options
         );
-
-        QrScanner.WORKER_PATH = 'https://unpkg.com/qr-scanner@1.4.2/qr-scanner-worker.min.js';
 
         await this.scanner.start();
         ppvLog('[Camera] QrScanner started successfully');
