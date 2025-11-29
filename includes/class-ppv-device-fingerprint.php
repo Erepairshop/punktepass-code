@@ -841,6 +841,8 @@ class PPV_Device_Fingerprint {
      * Get store ID from session (helper)
      */
     private static function get_session_store_id() {
+        global $wpdb;
+
         if (session_status() === PHP_SESSION_NONE) {
             @session_start();
         }
@@ -854,6 +856,18 @@ class PPV_Device_Fingerprint {
         }
         if (!empty($_SESSION['ppv_vendor_store_id'])) {
             return intval($_SESSION['ppv_vendor_store_id']);
+        }
+
+        // Scanner user: get store_id from ppv_users.vendor_store_id
+        if (!empty($_SESSION['ppv_user_id']) && !empty($_SESSION['ppv_user_type']) && $_SESSION['ppv_user_type'] === 'scanner') {
+            $store_id = $wpdb->get_var($wpdb->prepare(
+                "SELECT vendor_store_id FROM {$wpdb->prefix}ppv_users WHERE id = %d AND user_type = 'scanner' LIMIT 1",
+                intval($_SESSION['ppv_user_id'])
+            ));
+            if ($store_id) {
+                $_SESSION['ppv_store_id'] = intval($store_id); // Cache for future calls
+                return intval($store_id);
+            }
         }
 
         return 0;
