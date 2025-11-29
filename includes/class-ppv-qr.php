@@ -928,7 +928,7 @@ class PPV_QR {
         $is_scanner = class_exists('PPV_Permissions') && PPV_Permissions::is_scanner_user();
 
         if (!$is_scanner): ?>
-        <div class="ppv-trial-info-block" style="margin-bottom: 15px; padding: 12px 16px; background: <?php echo $info_color; ?>; border-radius: 10px; border: 2px solid <?php echo $border_color; ?>;">
+        <div class="ppv-trial-info-block" style="margin-bottom: 15px; padding: 12px 16px; background: <?php echo $info_color; ?>; border-radius: 10px;">
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
                 <div style="display: flex; align-items: center; gap: 10px;">
                     <span style="font-size: 24px;"><?php echo $info_icon; ?></span>
