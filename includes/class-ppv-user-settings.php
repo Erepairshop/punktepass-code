@@ -119,7 +119,14 @@ class PPV_User_Settings {
         }
 
         $_SESSION['ppv_lang'] = $lang;
-        setcookie('ppv_lang', $lang, time() + 31536000, '/', '', false, true);
+        // 🔒 SECURITY: Secure cookie flags (HttpOnly nem kell mert JS olvassa)
+        setcookie('ppv_lang', $lang, [
+            'expires' => time() + 31536000,
+            'path' => '/',
+            'secure' => true,
+            'httponly' => false,  // JS needs to read this
+            'samesite' => 'Lax'
+        ]);
 
         ppv_log("🌍 [PPV_User_Settings] Active language: {$lang}");
 
@@ -424,8 +431,14 @@ class PPV_User_Settings {
             session_destroy();
         }
 
-        // Clear cookies
-        setcookie('ppv_user_token', '', time() - 3600, '/');
+        // Clear cookies - 🔒 SECURITY: Secure flags for cookie deletion
+        setcookie('ppv_user_token', '', [
+            'expires' => time() - 3600,
+            'path' => '/',
+            'secure' => true,
+            'httponly' => true,
+            'samesite' => 'Lax'
+        ]);
 
         wp_send_json_success(['msg' => self::t('account_deleted'), 'redirect' => home_url()]);
     }

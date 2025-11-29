@@ -154,6 +154,16 @@ trait PPV_QR_REST_Trait {
     public static function rest_process_scan(WP_REST_Request $r) {
         global $wpdb;
 
+        // 🔒 SECURITY: Rate limiting - max 20 scans/minute per IP
+        $rate_check = PPV_Permissions::check_rate_limit('pos_scan', 20, 60);
+        if (is_wp_error($rate_check)) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => '⚠️ ' . $rate_check->get_error_message()
+            ], 429);
+        }
+        PPV_Permissions::increment_rate_limit('pos_scan', 60);
+
         $data = $r->get_json_params();
         $qr_code = sanitize_text_field($data['qr'] ?? '');
         $store_key = sanitize_text_field($data['store_key'] ?? '');
@@ -409,6 +419,13 @@ trait PPV_QR_REST_Trait {
                 'store_name' => $store->name ?? 'PunktePass',
                 'error_type' => 'no_points_configured'
             ], 400);
+        }
+
+        // 🔒 SECURITY: Max point limit per scan (prevents point inflation)
+        $max_points_per_scan = 100;
+        if ($points_add > $max_points_per_scan) {
+            ppv_log("⚠️ [PPV_QR] Points capped: requested={$points_add}, max={$max_points_per_scan}");
+            $points_add = $max_points_per_scan;
         }
 
         // Check for bonus day (multiplies base/campaign points)

@@ -75,6 +75,16 @@ wp_add_inline_script('ppv-redeem', "window.ppv_redeem = {$__json};", 'before');
     public static function rest_pos_redeem($request) {
         global $wpdb;
 
+        // 🔒 SECURITY: Rate limiting - max 5 redeems/minute per IP
+        $rate_check = PPV_Permissions::check_rate_limit('pos_redeem', 5, 60);
+        if (is_wp_error($rate_check)) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => '⚠️ ' . $rate_check->get_error_message()
+            ], 429);
+        }
+        PPV_Permissions::increment_rate_limit('pos_redeem', 60);
+
         $params = $request->get_json_params();
 
         // 🏪 FILIALE SUPPORT: Use session-aware store ID

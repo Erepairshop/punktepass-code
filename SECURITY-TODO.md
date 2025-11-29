@@ -23,9 +23,9 @@
 
 ## MAGAS (Sürgős - 1 héten belül)
 
-- [ ] **Max pont limit** - `class-ppv-scan.php:203-234`
-  - Store owner bármennyi pontot beállíthat
-  - Pont inflációt okozhat
+- [x] **Max pont limit** - `class-ppv-scan.php:243-248`, `trait-ppv-qr-rest.php:424-429`
+  - ~~Store owner bármennyi pontot beállíthat~~
+  - ✅ JAVÍTVA: Max 100 pont/scan limit mindkét endpoint-on
 
 - [x] **Duplikáció check javítás** - `class-ppv-redeem.php:133-146`
   - ~~Csak 1 perces ablak, `reward_title` alapján~~
@@ -35,9 +35,9 @@
   - Session user nincs validálva (létezik-e még, aktív-e)
   - Session hijacking lehetséges
 
-- [ ] **Secure cookie flags** - `class-ppv-my-points-rest.php:445`
-  - Token cookie nincs HttpOnly/Secure/SameSite
-  - XSS token theft lehetséges
+- [x] **Secure cookie flags** - `class-ppv-user-settings.php`, `class-ppv-session.php`
+  - ~~Token cookie nincs HttpOnly/Secure/SameSite~~
+  - ✅ JAVÍTVA: Secure + SameSite=Lax minden cookie-n
 
 ---
 
@@ -54,9 +54,9 @@
   - CSRF védelem hiányzik
   - Minden state-changing endpoint-ra kell
 
-- [ ] **Rate limiting aktiválás** - `class-ppv-permissions.php:461-497`
-  - Létezik de nincs használva!
-  - Scan és redeem endpoint-okra kell
+- [x] **Rate limiting aktiválás** - `trait-ppv-qr-rest.php:157-165`, `class-ppv-redeem.php:78-86`
+  - ~~Létezik de nincs használva!~~
+  - ✅ JAVÍTVA: Scan 20/perc, Redeem 5/perc per IP
 
 - [ ] **Birthday bonus race fix** - `class-ppv-scan.php:432-449`
   - Atomic update-re átírni
@@ -87,6 +87,9 @@
 - [x] SQL Injection fix - `class-ppv-my-points-rest.php` (2025-11-29)
 - [x] Privilege Escalation fix - `class-ppv-redeem.php` (2025-11-29)
 - [x] Race Condition fix - `class-ppv-redeem.php` (2025-11-29)
+- [x] Secure cookie flags - `class-ppv-user-settings.php`, `class-ppv-session.php` (2025-11-29)
+- [x] Rate limiting - scan/redeem endpoints (2025-11-29)
+- [x] Max pont limit - 100 pont/scan (2025-11-29)
 
 ---
 

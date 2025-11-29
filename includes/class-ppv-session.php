@@ -184,7 +184,14 @@ class PPV_Session {
 
         // 🔹 Eszköz globális mentése, ha elérhető
         if (!empty($GLOBALS['ppv_active_device']) && empty($_COOKIE['ppv_device_key'])) {
-            setcookie('ppv_device_key', $GLOBALS['ppv_active_device']->device_key, time() + 86400 * 30, '/');
+            // 🔒 SECURITY: Secure cookie flags
+            setcookie('ppv_device_key', $GLOBALS['ppv_active_device']->device_key, [
+                'expires' => time() + 86400 * 30,
+                'path' => '/',
+                'secure' => true,
+                'httponly' => true,
+                'samesite' => 'Lax'
+            ]);
         }
 
         // 5️⃣ WP login fallback
@@ -443,7 +450,14 @@ add_action('init', function() {
         $token = sanitize_text_field($_GET['token']);
         $store = PPV_Session::get_store_by_key($token);
         if ($store) {
-            setcookie('ppv_pos_token', $token, time() + 86400 * 30, '/');
+            // 🔒 SECURITY: Secure cookie flags
+            setcookie('ppv_pos_token', $token, [
+                'expires' => time() + 86400 * 30,
+                'path' => '/',
+                'secure' => true,
+                'httponly' => true,
+                'samesite' => 'Lax'
+            ]);
             $_SESSION['ppv_active_store'] = intval($store->id);
             $_SESSION['ppv_is_pos'] = true;
             $GLOBALS['ppv_active_store'] = $store;
