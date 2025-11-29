@@ -214,33 +214,153 @@
     /**
      * Initialize Google Signup
      */
+    let googleInitialized = false;
+    let googlePromptActive = false;
+    let googleButtonRendered = false;
+
     function initGoogleSignup() {
         const clientId = ppvSignup.google_client_id;
-        
+
         if (!clientId) {
             console.warn('Google Client ID not configured');
             $('#ppv-google-signup-btn').prop('disabled', true).css('opacity', '0.5');
             return;
         }
-        
-        // Initialize Google Identity Services
-        if (typeof google !== 'undefined' && google.accounts) {
-            google.accounts.id.initialize({
-                client_id: clientId,
-                callback: handleGoogleCallback,
-                auto_select: false,
-                cancel_on_tap_outside: true
-            });
-        }
-        
+
+        // Try to initialize Google SDK (may not be loaded yet)
+        tryInitializeGoogle(clientId);
+
         // Manual button click handler
         $('#ppv-google-signup-btn').on('click', function() {
-            if (typeof google !== 'undefined' && google.accounts) {
-                google.accounts.id.prompt();
+            // Prevent double-click while prompt is active
+            if (googlePromptActive) {
+                return;
+            }
+
+            if (googleInitialized && typeof google !== 'undefined' && google.accounts) {
+                showGooglePrompt();
+            } else if (typeof google !== 'undefined' && google.accounts) {
+                // SDK loaded but not initialized yet - initialize now
+                tryInitializeGoogle(clientId);
+                setTimeout(function() {
+                    if (googleInitialized) {
+                        showGooglePrompt();
+                    } else {
+                        showAlert(t('error_google_unavailable'), 'info');
+                    }
+                }, 100);
             } else {
-                showAlert(t('error_google_unavailable'), 'error');
+                showAlert(t('error_google_unavailable'), 'info');
+                waitForGoogleSDK(clientId);
             }
         });
+    }
+
+    /**
+     * Show Google Sign-In prompt with proper error handling
+     */
+    function showGooglePrompt() {
+        googlePromptActive = true;
+
+        try {
+            google.accounts.id.cancel();
+            google.accounts.id.prompt((notification) => {
+                googlePromptActive = false;
+
+                if (notification.isNotDisplayed()) {
+                    const reason = notification.getNotDisplayedReason();
+                    if (reason === 'suppressed_by_user' || reason === 'opt_out_or_no_session') {
+                        openGoogleButtonFallback();
+                        return;
+                    }
+                    if (reason === 'browser_not_supported') {
+                        showAlert(t('error_google_unavailable'), 'error');
+                    } else if (reason === 'invalid_client') {
+                        showAlert(t('error_google_unavailable'), 'error');
+                    }
+                }
+            });
+        } catch (e) {
+            googlePromptActive = false;
+            openGoogleButtonFallback();
+        }
+    }
+
+    /**
+     * Fallback: Render Google Sign-In button when One Tap is suppressed
+     */
+    function openGoogleButtonFallback() {
+        if (googleButtonRendered) {
+            const renderedBtn = document.querySelector('#ppv-google-rendered-btn div[role="button"]');
+            if (renderedBtn) {
+                renderedBtn.click();
+            }
+            return;
+        }
+
+        const $btn = $('#ppv-google-signup-btn');
+        const container = document.createElement('div');
+        container.id = 'ppv-google-rendered-btn';
+        container.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;opacity:0.01;cursor:pointer;';
+        $btn.css('position', 'relative').append(container);
+
+        google.accounts.id.renderButton(container, {
+            type: 'standard',
+            theme: 'outline',
+            size: 'large',
+            width: $btn.outerWidth()
+        });
+
+        googleButtonRendered = true;
+
+        setTimeout(() => {
+            const renderedBtn = container.querySelector('div[role="button"]');
+            if (renderedBtn) {
+                renderedBtn.click();
+            }
+        }, 100);
+    }
+
+    /**
+     * Try to initialize Google SDK
+     */
+    function tryInitializeGoogle(clientId) {
+        if (googleInitialized) return true;
+
+        if (typeof google !== 'undefined' && google.accounts) {
+            try {
+                google.accounts.id.initialize({
+                    client_id: clientId,
+                    callback: handleGoogleCallback,
+                    auto_select: false,
+                    cancel_on_tap_outside: true,
+                    itp_support: true,
+                    use_fedcm_for_prompt: false
+                });
+                googleInitialized = true;
+                return true;
+            } catch (e) {
+                return false;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Wait for Google SDK to load then initialize
+     */
+    function waitForGoogleSDK(clientId) {
+        let attempts = 0;
+        const maxAttempts = 20;
+
+        const checkInterval = setInterval(function() {
+            attempts++;
+            if (tryInitializeGoogle(clientId)) {
+                clearInterval(checkInterval);
+            } else if (attempts >= maxAttempts) {
+                clearInterval(checkInterval);
+            }
+        }, 100);
     }
     
     /**
