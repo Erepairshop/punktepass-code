@@ -137,15 +137,9 @@
   /** 📱 Device Fingerprint for Fraud Detection */
   let deviceFingerprint = null;
 
-  async function initDeviceFingerprint() {
+  // Generate fallback fingerprint IMMEDIATELY (synchronous)
+  function generateFallbackFingerprint() {
     try {
-      if (window.FingerprintJS) {
-        const fp = await FingerprintJS.load();
-        const result = await fp.get();
-        deviceFingerprint = result.visitorId;
-        return;
-      }
-      // Fallback fingerprint
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       ctx.textBaseline = 'top';
@@ -159,18 +153,29 @@
         hash2 = ((hash2 << 7) - hash2) + data.charCodeAt(i);
         hash2 = hash2 & hash2;
       }
-      deviceFingerprint = 'fp_' + Math.abs(hash1).toString(16).padStart(8, '0') + Math.abs(hash2).toString(16).padStart(8, '0');
+      return 'fp_' + Math.abs(hash1).toString(16).padStart(8, '0') + Math.abs(hash2).toString(16).padStart(8, '0');
     } catch (e) {
-      deviceFingerprint = null;
+      return null;
     }
   }
+
+  // Initialize fallback immediately (before any scan can happen)
+  deviceFingerprint = generateFallbackFingerprint();
+
+  // Try to upgrade to FingerprintJS if available (async)
+  (async function() {
+    try {
+      if (window.FingerprintJS) {
+        const fp = await FingerprintJS.load();
+        const result = await fp.get();
+        deviceFingerprint = result.visitorId;
+      }
+    } catch (e) { /* keep fallback */ }
+  })();
 
   function getDeviceFingerprint() {
     return deviceFingerprint || null;
   }
-
-  // Initialize fingerprint on load
-  initDeviceFingerprint();
 
   /** 👤 Scanner Info (employee who is scanning) */
   function getScannerId() {

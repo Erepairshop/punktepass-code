@@ -118,18 +118,10 @@
   // ============================================================
   // DEVICE FINGERPRINT (for fraud detection)
   // ============================================================
-  async function initDeviceFingerprint() {
-    try {
-      // Try FingerprintJS if loaded
-      if (window.FingerprintJS) {
-        const fp = await FingerprintJS.load();
-        const result = await fp.get();
-        STATE.deviceFingerprint = result.visitorId;
-        ppvLog('[Fingerprint] FingerprintJS:', STATE.deviceFingerprint);
-        return;
-      }
 
-      // Fallback fingerprint (must be at least 16 chars)
+  // Generate fallback fingerprint IMMEDIATELY (synchronous)
+  function generateFallbackFingerprint() {
+    try {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       ctx.textBaseline = 'top';
@@ -143,12 +135,27 @@
         hash2 = ((hash2 << 7) - hash2) + data.charCodeAt(i);
         hash2 = hash2 & hash2;
       }
-      // Combine hashes to ensure at least 16 characters
-      STATE.deviceFingerprint = 'fp_' + Math.abs(hash1).toString(16).padStart(8, '0') + Math.abs(hash2).toString(16).padStart(8, '0');
-      ppvLog('[Fingerprint] Fallback:', STATE.deviceFingerprint);
+      return 'fp_' + Math.abs(hash1).toString(16).padStart(8, '0') + Math.abs(hash2).toString(16).padStart(8, '0');
     } catch (e) {
-      ppvWarn('[Fingerprint] Error:', e);
-      STATE.deviceFingerprint = null;
+      return null;
+    }
+  }
+
+  // Initialize fallback immediately (before any scan can happen)
+  STATE.deviceFingerprint = generateFallbackFingerprint();
+  ppvLog('[Fingerprint] Initial fallback:', STATE.deviceFingerprint);
+
+  // Try to upgrade to FingerprintJS if available (async, will replace fallback)
+  async function initDeviceFingerprint() {
+    try {
+      if (window.FingerprintJS) {
+        const fp = await FingerprintJS.load();
+        const result = await fp.get();
+        STATE.deviceFingerprint = result.visitorId;
+        ppvLog('[Fingerprint] Upgraded to FingerprintJS:', STATE.deviceFingerprint);
+      }
+    } catch (e) {
+      ppvWarn('[Fingerprint] FingerprintJS error, keeping fallback:', e);
     }
   }
 
