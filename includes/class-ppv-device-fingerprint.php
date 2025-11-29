@@ -858,15 +858,22 @@ class PPV_Device_Fingerprint {
             return intval($_SESSION['ppv_vendor_store_id']);
         }
 
-        // Scanner user: get store_id from ppv_users.vendor_store_id
-        if (!empty($_SESSION['ppv_user_id']) && !empty($_SESSION['ppv_user_type']) && $_SESSION['ppv_user_type'] === 'scanner') {
-            $store_id = $wpdb->get_var($wpdb->prepare(
-                "SELECT vendor_store_id FROM {$wpdb->prefix}ppv_users WHERE id = %d AND user_type = 'scanner' LIMIT 1",
-                intval($_SESSION['ppv_user_id'])
+        // Fallback: get store_id from database if user_id is set
+        if (!empty($_SESSION['ppv_user_id'])) {
+            $user_id = intval($_SESSION['ppv_user_id']);
+            $user_data = $wpdb->get_row($wpdb->prepare(
+                "SELECT user_type, vendor_store_id FROM {$wpdb->prefix}ppv_users WHERE id = %d LIMIT 1",
+                $user_id
             ));
-            if ($store_id) {
-                $_SESSION['ppv_store_id'] = intval($store_id); // Cache for future calls
-                return intval($store_id);
+
+            if ($user_data && !empty($user_data->vendor_store_id)) {
+                // Cache in session for future calls
+                $_SESSION['ppv_store_id'] = intval($user_data->vendor_store_id);
+                if (!empty($user_data->user_type)) {
+                    $_SESSION['ppv_user_type'] = $user_data->user_type;
+                }
+                ppv_log("📱 [Device] get_session_store_id fallback: user_id={$user_id}, store_id={$user_data->vendor_store_id}, type={$user_data->user_type}");
+                return intval($user_data->vendor_store_id);
             }
         }
 
