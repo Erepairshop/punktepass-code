@@ -49,9 +49,9 @@ class PPV_Standalone_POSLog {
         ");
 
         // Get stats
-        $total_points_given = $wpdb->get_var("SELECT SUM(points_change) FROM {$wpdb->prefix}ppv_pos_log WHERE points_change > 0");
-        $total_points_redeemed = $wpdb->get_var("SELECT ABS(SUM(points_change)) FROM {$wpdb->prefix}ppv_pos_log WHERE points_change < 0");
-        $total_rewards = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ppv_pos_log WHERE reward_title IS NOT NULL AND reward_title != ''");
+        $total_points_given = $wpdb->get_var("SELECT COALESCE(SUM(points_change), 0) FROM {$wpdb->prefix}ppv_pos_log WHERE points_change > 0");
+        $total_points_redeemed = $wpdb->get_var("SELECT COALESCE(ABS(SUM(points_change)), 0) FROM {$wpdb->prefix}ppv_pos_log WHERE points_change < 0");
+        $total_rewards = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ppv_pos_log WHERE reward_code IS NOT NULL AND reward_code != ''");
 
         self::render_html($logs, $stores, $store_filter, $type_filter, $total_points_given, $total_points_redeemed, $total_rewards);
     }
@@ -251,8 +251,8 @@ class PPV_Standalone_POSLog {
                                         <?php echo $points_prefix . intval($log->points_change); ?>
                                     </td>
                                     <td>
-                                        <?php if (!empty($log->reward_title)): ?>
-                                            <span class="reward-badge">🎁 <?php echo esc_html($log->reward_title); ?></span>
+                                        <?php if (!empty($log->reward_code)): ?>
+                                            <span class="reward-badge">🎁 <?php echo esc_html($log->reward_code); ?></span>
                                         <?php else: ?>
                                             -
                                         <?php endif; ?>
