@@ -710,16 +710,28 @@
         this.readerDiv.innerHTML = '';
         this.readerDiv.appendChild(video);
 
-        // Try exact environment camera first
+        // Try exact environment camera first with high quality settings
         let stream;
         try {
           stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: { exact: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
+            video: {
+              facingMode: { exact: 'environment' },
+              width: { min: 1280, ideal: 1920, max: 3840 },
+              height: { min: 720, ideal: 1080, max: 2160 },
+              aspectRatio: { ideal: 16/9 },
+              frameRate: { ideal: 30 }
+            }
           });
         } catch (e) {
           // Fallback to non-exact
           stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+            video: {
+              facingMode: 'environment',
+              width: { min: 1280, ideal: 1920, max: 3840 },
+              height: { min: 720, ideal: 1080, max: 2160 },
+              aspectRatio: { ideal: 16/9 },
+              frameRate: { ideal: 30 }
+            }
           });
         }
 
@@ -800,16 +812,18 @@
         const stream = await navigator.mediaDevices.getUserMedia({
           video: {
             facingMode: { exact: 'environment' },
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
+            width: { min: 1280, ideal: 1920, max: 3840 },
+            height: { min: 720, ideal: 1080, max: 2160 },
+            aspectRatio: { ideal: 16/9 },
+            frameRate: { ideal: 30 }
           }
         });
 
         video.srcObject = stream;
         await video.play();
 
-        canvas.width = video.videoWidth || 1280;
-        canvas.height = video.videoHeight || 720;
+        canvas.width = video.videoWidth || 1920;
+        canvas.height = video.videoHeight || 1080;
 
         this.iosStream = stream;
         this.iosVideo = video;
@@ -851,7 +865,13 @@
             }
 
             const stream = await navigator.mediaDevices.getUserMedia({
-              video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+              video: {
+                facingMode: 'environment',
+                width: { min: 1280, ideal: 1920, max: 3840 },
+                height: { min: 720, ideal: 1080, max: 2160 },
+                aspectRatio: { ideal: 16/9 },
+                frameRate: { ideal: 30 }
+              }
             });
 
             video.srcObject = stream;
@@ -859,8 +879,8 @@
 
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d', { willReadFrequently: true });
-            canvas.width = video.videoWidth || 1280;
-            canvas.height = video.videoHeight || 720;
+            canvas.width = video.videoWidth || 1920;
+            canvas.height = video.videoHeight || 1080;
 
             this.iosStream = stream;
             this.iosVideo = video;
