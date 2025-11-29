@@ -218,6 +218,51 @@
   if (getScannerName()) sessionStorage.setItem('ppv_scanner_name', getScannerName());
 
   // ============================================================
+  // DEVICE FINGERPRINT
+  // ============================================================
+  function generateDeviceFingerprint() {
+    try {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      ctx.textBaseline = 'top';
+      ctx.font = '14px Arial';
+      ctx.fillText('fingerprint', 0, 0);
+      const data = canvas.toDataURL() + navigator.userAgent + screen.width + screen.height + navigator.language + (new Date()).getTimezoneOffset();
+      let hash1 = 0, hash2 = 0;
+      for (let i = 0; i < data.length; i++) {
+        hash1 = ((hash1 << 5) - hash1) + data.charCodeAt(i);
+        hash1 = hash1 & hash1;
+        hash2 = ((hash2 << 7) - hash2) + data.charCodeAt(i);
+        hash2 = hash2 & hash2;
+      }
+      return 'fp_' + Math.abs(hash1).toString(16).padStart(8, '0') + Math.abs(hash2).toString(16).padStart(8, '0');
+    } catch (e) {
+      ppvWarn('[Fingerprint] Generation error:', e);
+      return null;
+    }
+  }
+
+  // Generate fingerprint immediately on load
+  STATE.deviceFingerprint = generateDeviceFingerprint();
+  ppvLog('[Fingerprint] Device fingerprint initialized:', STATE.deviceFingerprint);
+
+  // Try to upgrade to FingerprintJS if available (async)
+  (async function() {
+    try {
+      if (window.FingerprintJS) {
+        const fp = await FingerprintJS.load();
+        const result = await fp.get();
+        STATE.deviceFingerprint = result.visitorId;
+        ppvLog('[Fingerprint] Upgraded to FingerprintJS:', STATE.deviceFingerprint);
+      }
+    } catch (e) { /* keep fallback */ }
+  })();
+
+  function getDeviceFingerprint() {
+    return STATE.deviceFingerprint || null;
+  }
+
+  // ============================================================
   // TOAST
   // ============================================================
   window.ppvToast = function(msg, type = 'info') {
@@ -316,6 +361,7 @@
     getStoreID: getStoreID,
     getScannerId: getScannerId,
     getScannerName: getScannerName,
+    getDeviceFingerprint: getDeviceFingerprint,
 
     // Utilities
     canProcessScan: canProcessScan,

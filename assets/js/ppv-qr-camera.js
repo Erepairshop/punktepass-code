@@ -18,6 +18,7 @@
     getScannerId,
     getScannerName,
     getGpsCoordinates,
+    getDeviceFingerprint,
     checkGpsGeofence,
     playSound
   } = window.PPV_QR;
@@ -342,7 +343,7 @@
 
     async checkDeviceAllowed() {
       try {
-        const fingerprint = await this.getDeviceFingerprint();
+        const fingerprint = getDeviceFingerprint();
         if (!fingerprint) {
           ppvWarn('[Scanner] No fingerprint available - blocking scanner');
           return {
@@ -389,34 +390,6 @@
           allowed: false,
           message: L.device_register_first || 'Bitte registrieren Sie zuerst ein Gerät im Tab "Geräte", bevor Sie den Scanner verwenden können.'
         };
-      }
-    }
-
-    async getDeviceFingerprint() {
-      try {
-        if (window.FingerprintJS) {
-          const fp = await FingerprintJS.load();
-          const result = await fp.get();
-          return result.visitorId;
-        }
-
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        ctx.textBaseline = 'top';
-        ctx.font = '14px Arial';
-        ctx.fillText('fingerprint', 0, 0);
-        const data = canvas.toDataURL() + navigator.userAgent + screen.width + screen.height + navigator.language + (new Date()).getTimezoneOffset();
-        let hash1 = 0, hash2 = 0;
-        for (let i = 0; i < data.length; i++) {
-          hash1 = ((hash1 << 5) - hash1) + data.charCodeAt(i);
-          hash1 = hash1 & hash1;
-          hash2 = ((hash2 << 7) - hash2) + data.charCodeAt(i);
-          hash2 = hash2 & hash2;
-        }
-        return 'fp_' + Math.abs(hash1).toString(16).padStart(8, '0') + Math.abs(hash2).toString(16).padStart(8, '0');
-      } catch (e) {
-        ppvWarn('[Scanner] Fingerprint error:', e);
-        return null;
       }
     }
 
@@ -701,7 +674,8 @@
           latitude: gps.latitude,
           longitude: gps.longitude,
           scanner_id: getScannerId(),
-          scanner_name: getScannerName()
+          scanner_name: getScannerName(),
+          device_fingerprint: getDeviceFingerprint()
         })
       })
         .then(res => res.json())
