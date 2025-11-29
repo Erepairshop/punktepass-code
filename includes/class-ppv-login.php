@@ -649,11 +649,71 @@ public static function render_landing_page($atts) {
             // Clear any store session
             unset($_SESSION['ppv_store_id'], $_SESSION['ppv_active_store'], $_SESSION['ppv_is_pos']);
 
-            // Set user session
+            // ✅ FIX: Respect actual user_type from database (vendor, scanner, user)
+            $db_user_type = $user->user_type ?? 'user';
+
+            // 🏪 VENDOR LOGIN: Handle vendor users separately
+            if ($db_user_type === 'vendor') {
+                ppv_log("🏪 [PPV_Login] Vendor user detected: #{$user->id}");
+
+                // Set vendor session
+                $_SESSION['ppv_user_id'] = $user->id;
+                $_SESSION['ppv_user_type'] = 'vendor';
+                $_SESSION['ppv_user_email'] = $user->email;
+
+                // Set store session if vendor_store_id exists
+                if (!empty($user->vendor_store_id)) {
+                    $_SESSION['ppv_vendor_store_id'] = $user->vendor_store_id;
+                    $_SESSION['ppv_store_id'] = $user->vendor_store_id;
+                    $_SESSION['ppv_active_store'] = $user->vendor_store_id;
+                    ppv_log("✅ [PPV_Login] Vendor store_id set: {$user->vendor_store_id}");
+                } else {
+                    ppv_log("⚠️ [PPV_Login] Vendor has no vendor_store_id - might need onboarding");
+                }
+
+                $GLOBALS['ppv_role'] = 'vendor';
+
+                // Generate/reuse token
+                $token = $user->login_token;
+                if (empty($token)) {
+                    $token = md5(uniqid('ppv_vendor_', true));
+                    $wpdb->update("{$prefix}ppv_users", ['login_token' => $token], ['id' => $user->id]);
+                    ppv_log("🔑 [PPV_Login] New token generated for vendor #{$user->id}");
+                }
+
+                // Set cookie
+                $domain = $_SERVER['HTTP_HOST'] ?? '';
+                $expire = $remember ? time() + (86400 * 180) : time() + (86400 * 30);
+                setcookie('ppv_user_token', $token, $expire, '/', $domain, true, true);
+
+                // 📱 Track login fingerprint
+                if (!empty($fingerprint) && class_exists('PPV_Device_Fingerprint')) {
+                    PPV_Device_Fingerprint::track_login($user->id, $fingerprint, 'password');
+                }
+
+                // 🌐 Save user's browser language preference
+                $browser_lang = self::get_current_lang();
+                if (!empty($browser_lang)) {
+                    $wpdb->update("{$prefix}ppv_users", ['language' => $browser_lang], ['id' => $user->id], ['%s'], ['%d']);
+                }
+
+                ppv_log("✅ [PPV_Login] Vendor logged in (#{$user->id}, store={$user->vendor_store_id})");
+
+                wp_send_json_success([
+                    'message' => PPV_Lang::t('login_success'),
+                    'role' => 'vendor',
+                    'user_id' => (int)$user->id,
+                    'store_id' => (int)($user->vendor_store_id ?? 0),
+                    'user_token' => $token,
+                    'redirect' => home_url('/qr-center')
+                ]);
+            }
+
+            // 👤 REGULAR USER LOGIN
             $_SESSION['ppv_user_id'] = $user->id;
             $_SESSION['ppv_user_type'] = 'user';
             $_SESSION['ppv_user_email'] = $user->email;
-            
+
             $GLOBALS['ppv_role'] = 'user';
 
             // ✅ Multi-device: Reuse existing token if available (don't kick out other devices)
