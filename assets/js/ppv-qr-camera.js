@@ -18,8 +18,6 @@
     getScannerId,
     getScannerName,
     getGpsCoordinates,
-    getDeviceFingerprint,
-    getDeviceFingerprintAsync,
     checkGpsGeofence,
     playSound
   } = window.PPV_QR;
@@ -31,7 +29,6 @@
     constructor(scanProcessor) {
       this.scanProcessor = scanProcessor;
       this.scanner = null;
-      this.html5QrCode = null;  // html5-qrcode instance
       this.scanning = false;
       this.state = 'stopped';
       this.lastRead = '';
@@ -294,24 +291,11 @@
 
     async stopScanner() {
       try {
-        // Stop native BarcodeDetector
-        this.barcodeDetector = null;
-        this.nativeVideo = null;
-        // Stop html5-qrcode if running
-        if (this.html5QrCode) {
-          try {
-            await this.html5QrCode.stop();
-            this.html5QrCode.clear();
-          } catch (e) { /* ignore */ }
-          this.html5QrCode = null;
-        }
-        // Stop qr-scanner if running
         if (this.scanner) {
           if (typeof this.scanner.stop === 'function') await this.scanner.stop();
           if (typeof this.scanner.destroy === 'function') this.scanner.destroy();
           this.scanner = null;
         }
-        // Stop stream if running
         if (this.iosStream) { this.iosStream.getTracks().forEach(t => t.stop()); this.iosStream = null; }
       } catch (e) { ppvWarn('[Camera] Stop error:', e); }
 
@@ -358,9 +342,7 @@
 
     async checkDeviceAllowed() {
       try {
-        // Wait for FingerprintJS to load and get fingerprint
-        const fingerprint = await getDeviceFingerprintAsync();
-        ppvLog('[Scanner] Using fingerprint:', fingerprint);
+        const fingerprint = await this.getDeviceFingerprint();
         if (!fingerprint) {
           ppvWarn('[Scanner] No fingerprint available - blocking scanner');
           return {
@@ -407,6 +389,34 @@
           allowed: false,
           message: L.device_register_first || 'Bitte registrieren Sie zuerst ein Gerät im Tab "Geräte", bevor Sie den Scanner verwenden können.'
         };
+      }
+    }
+
+    async getDeviceFingerprint() {
+      try {
+        if (window.FingerprintJS) {
+          const fp = await FingerprintJS.load();
+          const result = await fp.get();
+          return result.visitorId;
+        }
+
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        ctx.textBaseline = 'top';
+        ctx.font = '14px Arial';
+        ctx.fillText('fingerprint', 0, 0);
+        const data = canvas.toDataURL() + navigator.userAgent + screen.width + screen.height + navigator.language + (new Date()).getTimezoneOffset();
+        let hash1 = 0, hash2 = 0;
+        for (let i = 0; i < data.length; i++) {
+          hash1 = ((hash1 << 5) - hash1) + data.charCodeAt(i);
+          hash1 = hash1 & hash1;
+          hash2 = ((hash2 << 7) - hash2) + data.charCodeAt(i);
+          hash2 = hash2 & hash2;
+        }
+        return 'fp_' + Math.abs(hash1).toString(16).padStart(8, '0') + Math.abs(hash2).toString(16).padStart(8, '0');
+      } catch (e) {
+        ppvWarn('[Scanner] Fingerprint error:', e);
+        return null;
       }
     }
 
@@ -470,25 +480,27 @@
     }
 
     async loadLibrary() {
-      // Use jsQR as primary - faster center region scanning, better close-up detection
-      ppvLog('[Camera] Using jsQR scanner (primary)');
-      if (window.jsQR) {
-        this.startJsQRScanner();
+      if (window.QrScanner) {
+        await this.startQrScanner();
         return;
       }
 
       const script = document.createElement('script');
+      script.src = 'https://unpkg.com/qr-scanner@1.4.2/qr-scanner.umd.min.js';
+      script.onload = () => this.startQrScanner();
+      script.onerror = () => {
+        ppvWarn('[Camera] qr-scanner failed to load, falling back to jsQR');
+        this.loadFallbackLibrary();
+      };
+      document.head.appendChild(script);
+    }
+
+    loadFallbackLibrary() {
+      if (window.jsQR) { this.startJsQRScanner(); return; }
+      const script = document.createElement('script');
       script.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
       script.onload = () => this.startJsQRScanner();
-      script.onerror = () => {
-        // Fallback to native BarcodeDetector if jsQR fails
-        if ('BarcodeDetector' in window) {
-          ppvLog('[Camera] jsQR failed, trying native BarcodeDetector');
-          this.startNativeScanner();
-        } else {
-          this.updateStatus('error', '❌ Scanner nicht verfügbar');
-        }
-      };
+      script.onerror = () => this.updateStatus('error', '❌ Scanner nicht verfügbar');
       document.head.appendChild(script);
     }
 
@@ -503,19 +515,6 @@
           this.readerDiv.appendChild(videoEl);
         }
 
-        const workerPath = 'https://unpkg.com/qr-scanner@1.4.2/qr-scanner-worker.min.js';
-
-        // Fetch worker and create blob URL to avoid CORS import() issues
-        let workerBlobUrl = null;
-        try {
-          const workerResponse = await fetch(workerPath);
-          const workerBlob = await workerResponse.blob();
-          workerBlobUrl = URL.createObjectURL(workerBlob);
-          ppvLog('[Camera] Worker blob URL created');
-        } catch (fetchErr) {
-          ppvWarn('[Camera] Could not fetch worker, using direct path:', fetchErr);
-        }
-
         const options = {
           preferredCamera: 'environment',
           maxScansPerSecond: 3,
@@ -524,14 +523,13 @@
           returnDetailedScanResult: true
         };
 
-        // Set worker path - use blob URL if available, otherwise CDN path
-        QrScanner.WORKER_PATH = workerBlobUrl || workerPath;
-
         this.scanner = new QrScanner(
           videoEl,
           result => this.onScanSuccess(result.data || result),
           options
         );
+
+        QrScanner.WORKER_PATH = 'https://unpkg.com/qr-scanner@1.4.2/qr-scanner-worker.min.js';
 
         await this.scanner.start();
         ppvLog('[Camera] QrScanner started successfully');
@@ -591,202 +589,6 @@
       }
     }
 
-    // ============================================================
-    // HTML5-QRCODE SCANNER (ZXing-based - Professional Grade)
-    // ============================================================
-    async startHtml5QrScanner() {
-      if (!this.readerDiv || !window.Html5Qrcode) return;
-
-      // Clean up any previous scanner
-      if (this.html5QrCode) {
-        try {
-          await this.html5QrCode.stop();
-        } catch (e) { /* ignore */ }
-        this.html5QrCode = null;
-      }
-
-      try {
-        // Create container for html5-qrcode
-        const scannerId = 'ppv-html5-qrcode-reader';
-        this.readerDiv.innerHTML = `<div id="${scannerId}" style="width:100%;height:100%;"></div>`;
-
-        this.html5QrCode = new Html5Qrcode(scannerId, { verbose: false });
-
-        const config = {
-          fps: 10,
-          qrbox: { width: 250, height: 250 },
-          aspectRatio: 1.0,
-          disableFlip: false,
-          experimentalFeatures: {
-            useBarCodeDetectorIfSupported: true
-          }
-        };
-
-        await this.html5QrCode.start(
-          { facingMode: 'environment' },
-          config,
-          (decodedText, decodedResult) => {
-            ppvLog('[Html5QR] Scanned:', decodedText);
-            this.onScanSuccess(decodedText);
-          },
-          (errorMessage) => {
-            // Ignore "No QR code found" errors (normal during scanning)
-          }
-        );
-
-        ppvLog('[Html5QR] Scanner started successfully');
-
-        // Get video track for torch/refocus
-        try {
-          const videoElement = document.querySelector(`#${scannerId} video`);
-          if (videoElement && videoElement.srcObject) {
-            this.videoTrack = videoElement.srcObject.getVideoTracks()[0];
-            if (this.videoTrack) {
-              const capabilities = this.videoTrack.getCapabilities();
-              if (capabilities.torch && this.torchBtn) {
-                this.torchBtn.style.display = 'inline-flex';
-              }
-              if (this.refocusBtn) {
-                this.refocusBtn.style.display = 'inline-flex';
-              }
-              this.startPeriodicRefocus();
-            }
-          }
-        } catch (trackErr) {
-          ppvWarn('[Html5QR] Track setup error:', trackErr);
-        }
-
-        this.scanning = true;
-        this.state = 'scanning';
-        this.updateStatus('scanning', L.scanner_active || 'Scanning...');
-
-      } catch (e) {
-        ppvWarn('[Html5QR] Start error:', e);
-        console.error('[Html5QR] Detailed error:', e);
-
-        const errMsg = e?.message || String(e);
-        if (/permission|denied|not allowed/i.test(errMsg)) {
-          this.updateStatus('error', '❌ Kamera-Zugriff verweigert');
-          window.ppvToast('Bitte erlaube den Kamerazugriff', 'error');
-        } else if (/not found|no camera/i.test(errMsg)) {
-          this.updateStatus('error', '❌ Keine Kamera gefunden');
-        } else {
-          // Fallback to jsQR
-          ppvLog('[Html5QR] Falling back to jsQR...');
-          this.loadFallbackLibrary();
-        }
-      }
-    }
-
-    async stopHtml5QrScanner() {
-      if (this.html5QrCode) {
-        try {
-          await this.html5QrCode.stop();
-          this.html5QrCode.clear();
-        } catch (e) { /* ignore */ }
-        this.html5QrCode = null;
-      }
-    }
-
-    // ============================================================
-    // NATIVE BARCODE DETECTOR (Fastest - Hardware Accelerated)
-    // ============================================================
-    async startNativeScanner() {
-      if (!this.readerDiv) return;
-
-      try {
-        const video = document.createElement('video');
-        video.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:8px;';
-        video.setAttribute('playsinline', 'true');
-        video.setAttribute('autoplay', 'true');
-        video.setAttribute('muted', 'true');
-
-        this.readerDiv.innerHTML = '';
-        this.readerDiv.appendChild(video);
-
-        // Try exact environment camera first with high quality settings
-        let stream;
-        try {
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: {
-              facingMode: { exact: 'environment' },
-              width: { min: 1280, ideal: 1920, max: 3840 },
-              height: { min: 720, ideal: 1080, max: 2160 },
-              aspectRatio: { ideal: 16/9 },
-              frameRate: { ideal: 30 }
-            }
-          });
-        } catch (e) {
-          // Fallback to non-exact
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: {
-              facingMode: 'environment',
-              width: { min: 1280, ideal: 1920, max: 3840 },
-              height: { min: 720, ideal: 1080, max: 2160 },
-              aspectRatio: { ideal: 16/9 },
-              frameRate: { ideal: 30 }
-            }
-          });
-        }
-
-        video.srcObject = stream;
-        await video.play();
-
-        this.barcodeDetector = new BarcodeDetector({ formats: ['qr_code'] });
-        this.nativeVideo = video;
-        this.iosStream = stream;
-
-        this.videoTrack = stream.getVideoTracks()[0];
-        if (this.videoTrack) {
-          const capabilities = this.videoTrack.getCapabilities();
-          if (capabilities.torch && this.torchBtn) this.torchBtn.style.display = 'inline-flex';
-          if (this.refocusBtn) this.refocusBtn.style.display = 'inline-flex';
-          this.startPeriodicRefocus();
-        }
-
-        this.scanning = true;
-        this.state = 'scanning';
-        this.updateStatus('scanning', L.scanner_active || 'Scanning...');
-        this.nativeScanLoop();
-
-        ppvLog('[Native] BarcodeDetector scanner started');
-
-      } catch (e) {
-        ppvWarn('[Native] Start error:', e);
-        // Fallback to jsQR
-        ppvLog('[Native] Falling back to jsQR...');
-        if (window.jsQR) {
-          this.startJsQRScanner();
-        } else {
-          const script = document.createElement('script');
-          script.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
-          script.onload = () => this.startJsQRScanner();
-          script.onerror = () => this.updateStatus('error', '❌ Scanner nicht verfügbar');
-          document.head.appendChild(script);
-        }
-      }
-    }
-
-    async nativeScanLoop() {
-      if (!this.scanning || !this.nativeVideo || !this.barcodeDetector) return;
-
-      try {
-        if (this.nativeVideo.readyState === this.nativeVideo.HAVE_ENOUGH_DATA) {
-          const codes = await this.barcodeDetector.detect(this.nativeVideo);
-          if (codes.length > 0) {
-            this.onScanSuccess(codes[0].rawValue);
-          }
-        }
-      } catch (e) {
-        // Ignore detection errors
-      }
-
-      if (this.scanning) requestAnimationFrame(() => this.nativeScanLoop());
-    }
-
-    // ============================================================
-    // JSQR SCANNER (Fallback)
-    // ============================================================
     async startJsQRScanner() {
       if (!this.readerDiv || !window.jsQR) return;
       if (this.iosStream) { this.iosStream.getTracks().forEach(t => t.stop()); this.iosStream = null; }
@@ -806,18 +608,16 @@
         const stream = await navigator.mediaDevices.getUserMedia({
           video: {
             facingMode: { exact: 'environment' },
-            width: { min: 1280, ideal: 1920, max: 3840 },
-            height: { min: 720, ideal: 1080, max: 2160 },
-            aspectRatio: { ideal: 16/9 },
-            frameRate: { ideal: 30 }
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
           }
         });
 
         video.srcObject = stream;
         await video.play();
 
-        canvas.width = video.videoWidth || 1920;
-        canvas.height = video.videoHeight || 1080;
+        canvas.width = video.videoWidth || 1280;
+        canvas.height = video.videoHeight || 720;
 
         this.iosStream = stream;
         this.iosVideo = video;
@@ -846,56 +646,11 @@
         if (e.name === 'OverconstrainedError') {
           ppvLog('[jsQR] Retrying without exact facingMode...');
           try {
-            // Retry with relaxed constraints
-            const video = this.readerDiv.querySelector('video') || document.createElement('video');
-            video.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:8px;';
-            video.setAttribute('playsinline', 'true');
-            video.setAttribute('autoplay', 'true');
-            video.setAttribute('muted', 'true');
-
-            if (!this.readerDiv.contains(video)) {
-              this.readerDiv.innerHTML = '';
-              this.readerDiv.appendChild(video);
-            }
-
             const stream = await navigator.mediaDevices.getUserMedia({
-              video: {
-                facingMode: 'environment',
-                width: { min: 1280, ideal: 1920, max: 3840 },
-                height: { min: 720, ideal: 1080, max: 2160 },
-                aspectRatio: { ideal: 16/9 },
-                frameRate: { ideal: 30 }
-              }
+              video: { facingMode: 'environment' }
             });
-
-            video.srcObject = stream;
-            await video.play();
-
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d', { willReadFrequently: true });
-            canvas.width = video.videoWidth || 1920;
-            canvas.height = video.videoHeight || 1080;
-
-            this.iosStream = stream;
-            this.iosVideo = video;
-            this.iosCanvas = canvas;
-            this.iosCanvasCtx = ctx;
-
-            this.videoTrack = stream.getVideoTracks()[0];
-            if (this.videoTrack) {
-              const capabilities = this.videoTrack.getCapabilities();
-              if (capabilities.torch && this.torchBtn) this.torchBtn.style.display = 'inline-flex';
-              if (this.refocusBtn) this.refocusBtn.style.display = 'inline-flex';
-            }
-
-            this.scanning = true;
-            this.state = 'scanning';
-            this.updateStatus('scanning', L.scanner_active || 'Scanning...');
-            this.jsQRScanLoop();
-            ppvLog('[jsQR] Started with relaxed constraints');
-            return;
+            this.updateStatus('error', '❌ Kamera nicht kompatibel');
           } catch (e2) {
-            ppvWarn('[jsQR] Fallback also failed:', e2);
             this.updateStatus('error', '❌ Kamera nicht verfügbar');
           }
         } else {
@@ -911,30 +666,15 @@
       const video = this.iosVideo, canvas = this.iosCanvas, ctx = this.iosCanvasCtx;
 
       if (video.readyState === video.HAVE_ENOUGH_DATA) {
-        // Ensure canvas matches video size
-        if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-        }
-
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-        // ✅ Scan only CENTER region (60% of frame) for better close-up detection
-        const scanRegion = 0.6;
-        const regionSize = Math.min(canvas.width, canvas.height) * scanRegion;
-        const startX = (canvas.width - regionSize) / 2;
-        const startY = (canvas.height - regionSize) / 2;
-
-        // Get image data only from center region - faster scanning
-        const imageData = ctx.getImageData(startX, startY, regionSize, regionSize);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const code = jsQR(imageData.data, imageData.width, imageData.height, {
-          inversionAttempts: 'dontInvert'  // Faster - only normal QR codes
+          inversionAttempts: 'attemptBoth'
         });
         if (code && code.data) this.onScanSuccess(code.data);
       }
 
-      // 15 FPS (66ms) for better performance
-      if (this.scanning) setTimeout(() => this.jsQRScanLoop(), 66);
+      if (this.scanning) setTimeout(() => this.jsQRScanLoop(), 40);
     }
 
     onScanSuccess(qrCode) {
@@ -959,8 +699,7 @@
           latitude: gps.latitude,
           longitude: gps.longitude,
           scanner_id: getScannerId(),
-          scanner_name: getScannerName(),
-          device_fingerprint: getDeviceFingerprint()
+          scanner_name: getScannerName()
         })
       })
         .then(res => res.json())

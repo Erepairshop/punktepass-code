@@ -12,7 +12,7 @@
   // ============================================================
   // DEBUG MODE
   // ============================================================
-  const PPV_DEBUG = true;
+  const PPV_DEBUG = false;
   const ppvLog = (...args) => { if (PPV_DEBUG) console.log(...args); };
   const ppvWarn = (...args) => { if (PPV_DEBUG) console.warn(...args); };
 
@@ -218,82 +218,6 @@
   if (getScannerName()) sessionStorage.setItem('ppv_scanner_name', getScannerName());
 
   // ============================================================
-  // DEVICE FINGERPRINT
-  // ============================================================
-  function generateDeviceFingerprint() {
-    try {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      ctx.textBaseline = 'top';
-      ctx.font = '14px Arial';
-      ctx.fillText('fingerprint', 0, 0);
-      const data = canvas.toDataURL() + navigator.userAgent + screen.width + screen.height + navigator.language + (new Date()).getTimezoneOffset();
-      let hash1 = 0, hash2 = 0;
-      for (let i = 0; i < data.length; i++) {
-        hash1 = ((hash1 << 5) - hash1) + data.charCodeAt(i);
-        hash1 = hash1 & hash1;
-        hash2 = ((hash2 << 7) - hash2) + data.charCodeAt(i);
-        hash2 = hash2 & hash2;
-      }
-      return 'fp_' + Math.abs(hash1).toString(16).padStart(8, '0') + Math.abs(hash2).toString(16).padStart(8, '0');
-    } catch (e) {
-      ppvWarn('[Fingerprint] Generation error:', e);
-      return null;
-    }
-  }
-
-  // Load FingerprintJS library
-  function loadFingerprintJS() {
-    return new Promise((resolve) => {
-      if (window.FingerprintJS) {
-        resolve();
-        return;
-      }
-
-      const script = document.createElement('script');
-      script.src = 'https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@4/dist/fp.min.js';
-      script.onload = resolve;
-      script.onerror = () => {
-        ppvWarn('[Fingerprint] FingerprintJS failed to load, using fallback');
-        resolve();
-      };
-      document.head.appendChild(script);
-    });
-  }
-
-  // Initialize fingerprint (async - waits for FingerprintJS)
-  STATE.fingerprintReady = (async function() {
-    // First set fallback immediately
-    STATE.deviceFingerprint = generateDeviceFingerprint();
-    ppvLog('[Fingerprint] Fallback fingerprint:', STATE.deviceFingerprint);
-
-    // Then try to load and use FingerprintJS
-    try {
-      await loadFingerprintJS();
-      if (window.FingerprintJS) {
-        const fp = await FingerprintJS.load();
-        const result = await fp.get();
-        STATE.deviceFingerprint = result.visitorId;
-        ppvLog('[Fingerprint] FingerprintJS loaded:', STATE.deviceFingerprint);
-      }
-    } catch (e) {
-      ppvWarn('[Fingerprint] FingerprintJS error, keeping fallback:', e);
-    }
-
-    return STATE.deviceFingerprint;
-  })();
-
-  function getDeviceFingerprint() {
-    return STATE.deviceFingerprint || null;
-  }
-
-  // Async version that waits for FingerprintJS
-  async function getDeviceFingerprintAsync() {
-    await STATE.fingerprintReady;
-    return STATE.deviceFingerprint || null;
-  }
-
-  // ============================================================
   // TOAST
   // ============================================================
   window.ppvToast = function(msg, type = 'info') {
@@ -392,8 +316,6 @@
     getStoreID: getStoreID,
     getScannerId: getScannerId,
     getScannerName: getScannerName,
-    getDeviceFingerprint: getDeviceFingerprint,
-    getDeviceFingerprintAsync: getDeviceFingerprintAsync,
 
     // Utilities
     canProcessScan: canProcessScan,

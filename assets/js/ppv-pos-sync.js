@@ -134,64 +134,6 @@
   // Start GPS tracking on load
   initGpsTracking();
 
-  /** 📱 Device Fingerprint for Fraud Detection */
-  let deviceFingerprint = null;
-
-  // Generate fallback fingerprint IMMEDIATELY (synchronous)
-  function generateFallbackFingerprint() {
-    try {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      ctx.textBaseline = 'top';
-      ctx.font = '14px Arial';
-      ctx.fillText('fingerprint', 0, 0);
-      const data = canvas.toDataURL() + navigator.userAgent + screen.width + screen.height + navigator.language + (new Date()).getTimezoneOffset();
-      let hash1 = 0, hash2 = 0;
-      for (let i = 0; i < data.length; i++) {
-        hash1 = ((hash1 << 5) - hash1) + data.charCodeAt(i);
-        hash1 = hash1 & hash1;
-        hash2 = ((hash2 << 7) - hash2) + data.charCodeAt(i);
-        hash2 = hash2 & hash2;
-      }
-      const fp = 'fp_' + Math.abs(hash1).toString(16).padStart(8, '0') + Math.abs(hash2).toString(16).padStart(8, '0');
-      console.log('📱 [POS-Sync] Generated fingerprint:', fp);
-      return fp;
-    } catch (e) {
-      console.error('📱 [POS-Sync] Fingerprint generation error:', e);
-      return null;
-    }
-  }
-
-  // Initialize fallback immediately (before any scan can happen)
-  deviceFingerprint = generateFallbackFingerprint();
-  console.log('📱 [POS-Sync] Device fingerprint initialized:', deviceFingerprint);
-
-  // Try to upgrade to FingerprintJS if available (async)
-  (async function() {
-    try {
-      if (window.FingerprintJS) {
-        const fp = await FingerprintJS.load();
-        const result = await fp.get();
-        deviceFingerprint = result.visitorId;
-      }
-    } catch (e) { /* keep fallback */ }
-  })();
-
-  function getDeviceFingerprint() {
-    return deviceFingerprint || null;
-  }
-
-  /** 👤 Scanner Info (employee who is scanning) */
-  function getScannerId() {
-    return window.PPV_STORE_DATA?.scanner_id ||
-           Number(sessionStorage.getItem('ppv_scanner_id')) || null;
-  }
-
-  function getScannerName() {
-    return window.PPV_STORE_DATA?.scanner_name ||
-           sessionStorage.getItem('ppv_scanner_name') || null;
-  }
-
   /** 🎯 POS Scan Handler */
   $(document).on("ppv:scan", async function(e, scanData) {
     if (!scanData || !scanData.qr || !POS_TOKEN) {
@@ -207,14 +149,6 @@
 
     // Get GPS for fraud detection
     const gps = getGps();
-    const fp = getDeviceFingerprint();
-
-    // 🔍 DEBUG: Log what we're sending
-    console.log('📱 [POS-Sync] Sending scan with:', {
-      scanner_id: getScannerId(),
-      device_fingerprint: fp,
-      gps: gps
-    });
 
     try {
       const res = await fetch("/wp-json/punktepass/v1/pos/scan", {
@@ -228,10 +162,7 @@
           store_key: POS_TOKEN,
           points_add: scanData.points_add || 1,
           latitude: gps.latitude,
-          longitude: gps.longitude,
-          scanner_id: getScannerId(),
-          scanner_name: getScannerName(),
-          device_fingerprint: fp
+          longitude: gps.longitude
         })
       });
 

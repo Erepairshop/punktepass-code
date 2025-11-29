@@ -17,7 +17,6 @@
     getScannerId,
     getScannerName,
     getGpsCoordinates,
-    getDeviceFingerprint,
     canProcessScan
   } = window.PPV_QR;
 
@@ -105,8 +104,7 @@
             latitude: gps.latitude,
             longitude: gps.longitude,
             scanner_id: getScannerId(),
-            scanner_name: getScannerName(),
-            device_fingerprint: getDeviceFingerprint()
+            scanner_name: getScannerName()
           })
         });
 
