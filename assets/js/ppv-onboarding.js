@@ -816,11 +816,15 @@
                     if (response.success && response.data) {
                         this.progress = response.data.progress;
 
-                        // Ha ez volt az utolsó lépés és 100%
-                        if (step === 'reward' || this.progress.is_complete) {
-                            this.celebrationShown = true; // ✅ Set flag to prevent double show
+                        // ✅ Csak akkor celebration ha MIND A 3 LÉPÉS KÉSZ (100%)
+                        if (this.progress.is_complete) {
+                            this.celebrationShown = true;
                             this.closeModal(modal);
                             setTimeout(() => this.showCelebrationModal(), 300);
+                        } else if (step === 'reward') {
+                            // Reward kész, de device még nincs - bezárjuk és emlékeztetjük
+                            this.closeModal(modal);
+                            this.showToast(L.onb_need_device || '✅ Prémium mentve! Még egy lépés: regisztrálj egy eszközt.', 'info');
                         } else {
                             // Következő lépés
                             this.wizardStep++;

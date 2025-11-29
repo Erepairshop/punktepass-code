@@ -1234,6 +1234,7 @@ return [
     'onb_state_searching' => 'Suche...',
     'onb_success_geocode' => '✅ Koordinaten gefunden!',
     'onb_error_not_found' => '❌ Adresse nicht gefunden',
+    'onb_need_device' => '✅ Prämie gespeichert! Noch ein Schritt: Registriere ein Gerät.',
 
     // Reward form helper texts
     'onb_reward_name_helper' => '📝 Der Name der Prämie, den die Kunden sehen',

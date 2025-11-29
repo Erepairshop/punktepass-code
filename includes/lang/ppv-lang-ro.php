@@ -1222,6 +1222,7 @@ return [
     'onb_state_searching' => 'Se cauta...',
     'onb_success_geocode' => '✅ Coordonate gasite!',
     'onb_error_not_found' => '❌ Adresa nu a fost gasita',
+    'onb_need_device' => '✅ Recompensa salvata! Inca un pas: inregistreaza un dispozitiv.',
 
     // Reward form helper texts
     'onb_reward_name_helper' => '📝 Numele recompensei pe care il vad clientii',

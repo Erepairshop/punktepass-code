@@ -1211,6 +1211,7 @@ return [
     'onb_state_searching' => 'Keresés...',
     'onb_success_geocode' => '✅ Koordináták megtalálva!',
     'onb_error_not_found' => '❌ Cím nem található',
+    'onb_need_device' => '✅ Prémium mentve! Még egy lépés: regisztrálj egy eszközt.',
 
     // Reward form helper texts
     'onb_reward_name_helper' => '📝 A prémium neve, amit az ügyfelek látnak',
