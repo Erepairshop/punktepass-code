@@ -33,11 +33,11 @@ CREATE INDEX IF NOT EXISTS idx_points_user_store_date ON wp_ppv_points(user_id, 
 -- Email alapú keresés (login)
 CREATE INDEX IF NOT EXISTS idx_users_email ON wp_ppv_users(email);
 
--- Status szűrés (active check)
-CREATE INDEX IF NOT EXISTS idx_users_status ON wp_ppv_users(status);
-
 -- Store lookup (vendor_store_id)
 CREATE INDEX IF NOT EXISTS idx_users_vendor_store ON wp_ppv_users(vendor_store_id);
+
+-- User type lookup
+CREATE INDEX IF NOT EXISTS idx_users_user_type ON wp_ppv_users(user_type);
 
 -- ============================================================
 -- ppv_stores - Store keresés

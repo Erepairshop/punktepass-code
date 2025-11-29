@@ -49,7 +49,7 @@ class PPV_Permissions {
             global $wpdb;
             $user_id = intval($_SESSION['ppv_user_id']);
             $user_exists = $wpdb->get_var($wpdb->prepare(
-                "SELECT id FROM {$wpdb->prefix}ppv_users WHERE id = %d AND status = 'active'",
+                "SELECT id FROM {$wpdb->prefix}ppv_users WHERE id = %d AND active = 1",
                 $user_id
             ));
 
@@ -565,7 +565,7 @@ class PPV_Permissions {
             global $wpdb;
             $user_id = intval($_SESSION['ppv_user_id']);
             $user_exists = $wpdb->get_var($wpdb->prepare(
-                "SELECT id FROM {$wpdb->prefix}ppv_users WHERE id = %d AND status = 'active'",
+                "SELECT id FROM {$wpdb->prefix}ppv_users WHERE id = %d AND active = 1",
                 $user_id
             ));
 
