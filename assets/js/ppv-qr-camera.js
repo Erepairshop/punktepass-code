@@ -19,6 +19,7 @@
     getScannerName,
     getGpsCoordinates,
     getDeviceFingerprint,
+    getDeviceFingerprintAsync,
     checkGpsGeofence,
     playSound
   } = window.PPV_QR;
@@ -343,7 +344,9 @@
 
     async checkDeviceAllowed() {
       try {
-        const fingerprint = getDeviceFingerprint();
+        // Wait for FingerprintJS to load and get fingerprint
+        const fingerprint = await getDeviceFingerprintAsync();
+        ppvLog('[Scanner] Using fingerprint:', fingerprint);
         if (!fingerprint) {
           ppvWarn('[Scanner] No fingerprint available - blocking scanner');
           return {

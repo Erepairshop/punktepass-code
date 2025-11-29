@@ -242,23 +242,54 @@
     }
   }
 
-  // Generate fingerprint immediately on load
-  STATE.deviceFingerprint = generateDeviceFingerprint();
-  ppvLog('[Fingerprint] Device fingerprint initialized:', STATE.deviceFingerprint);
+  // Load FingerprintJS library
+  function loadFingerprintJS() {
+    return new Promise((resolve) => {
+      if (window.FingerprintJS) {
+        resolve();
+        return;
+      }
 
-  // Try to upgrade to FingerprintJS if available (async)
-  (async function() {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@4/dist/fp.min.js';
+      script.onload = resolve;
+      script.onerror = () => {
+        ppvWarn('[Fingerprint] FingerprintJS failed to load, using fallback');
+        resolve();
+      };
+      document.head.appendChild(script);
+    });
+  }
+
+  // Initialize fingerprint (async - waits for FingerprintJS)
+  STATE.fingerprintReady = (async function() {
+    // First set fallback immediately
+    STATE.deviceFingerprint = generateDeviceFingerprint();
+    ppvLog('[Fingerprint] Fallback fingerprint:', STATE.deviceFingerprint);
+
+    // Then try to load and use FingerprintJS
     try {
+      await loadFingerprintJS();
       if (window.FingerprintJS) {
         const fp = await FingerprintJS.load();
         const result = await fp.get();
         STATE.deviceFingerprint = result.visitorId;
-        ppvLog('[Fingerprint] Upgraded to FingerprintJS:', STATE.deviceFingerprint);
+        ppvLog('[Fingerprint] FingerprintJS loaded:', STATE.deviceFingerprint);
       }
-    } catch (e) { /* keep fallback */ }
+    } catch (e) {
+      ppvWarn('[Fingerprint] FingerprintJS error, keeping fallback:', e);
+    }
+
+    return STATE.deviceFingerprint;
   })();
 
   function getDeviceFingerprint() {
+    return STATE.deviceFingerprint || null;
+  }
+
+  // Async version that waits for FingerprintJS
+  async function getDeviceFingerprintAsync() {
+    await STATE.fingerprintReady;
     return STATE.deviceFingerprint || null;
   }
 
@@ -362,6 +393,7 @@
     getScannerId: getScannerId,
     getScannerName: getScannerName,
     getDeviceFingerprint: getDeviceFingerprint,
+    getDeviceFingerprintAsync: getDeviceFingerprintAsync,
 
     // Utilities
     canProcessScan: canProcessScan,
