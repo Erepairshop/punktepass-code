@@ -8,6 +8,12 @@ if (!defined('ABSPATH')) exit;
 
 class PPV_Profile_Ajax {
 
+    // Constants (duplicated from main class to avoid load order issues)
+    const UPLOAD_MAX_SIZE = 4 * 1024 * 1024;
+    const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp'];
+    const NONCE_ACTION = 'ppv_save_profile';
+    const NONCE_NAME = 'ppv_nonce';
+
     /**
      * Register all AJAX hooks
      */
@@ -43,11 +49,11 @@ class PPV_Profile_Ajax {
 public static function ajax_save_profile() {
     global $wpdb; // ✅ FIX: Declare $wpdb at the start of the function
 
-    if (!isset($_POST[PPV_Profile_Lite_i18n::NONCE_NAME])) {
+    if (!isset($_POST[self::NONCE_NAME])) {
         wp_send_json_error(['msg' => 'Nonce missing']);
     }
 
-    if (!wp_verify_nonce($_POST[PPV_Profile_Lite_i18n::NONCE_NAME], PPV_Profile_Lite_i18n::NONCE_ACTION)) {
+    if (!wp_verify_nonce($_POST[self::NONCE_NAME], self::NONCE_ACTION)) {
         wp_send_json_error(['msg' => 'Invalid nonce']);
     }
 
@@ -300,11 +306,11 @@ ppv_log("💾 [DEBUG] Last SQL error: " . $wpdb->last_error);
 }
 
         public static function ajax_auto_save_profile() {
-            if (!isset($_POST[PPV_Profile_Lite_i18n::NONCE_NAME])) {
+            if (!isset($_POST[self::NONCE_NAME])) {
                 wp_send_json_error(['msg' => 'Nonce missing']);
             }
 
-            if (!wp_verify_nonce($_POST[PPV_Profile_Lite_i18n::NONCE_NAME], PPV_Profile_Lite_i18n::NONCE_ACTION)) {
+            if (!wp_verify_nonce($_POST[self::NONCE_NAME], self::NONCE_ACTION)) {
                 wp_send_json_error(['msg' => 'Invalid nonce']);
             }
 
@@ -331,11 +337,11 @@ ppv_log("💾 [DEBUG] Last SQL error: " . $wpdb->last_error);
         }
         
         public static function ajax_delete_gallery_image() {
-            if (!isset($_POST[PPV_Profile_Lite_i18n::NONCE_NAME])) {
+            if (!isset($_POST[self::NONCE_NAME])) {
                 wp_send_json_error(['msg' => 'Nonce missing']);
             }
 
-            if (!wp_verify_nonce($_POST[PPV_Profile_Lite_i18n::NONCE_NAME], PPV_Profile_Lite_i18n::NONCE_ACTION)) {
+            if (!wp_verify_nonce($_POST[self::NONCE_NAME], self::NONCE_ACTION)) {
                 wp_send_json_error(['msg' => 'Invalid nonce']);
             }
 
@@ -392,12 +398,12 @@ ppv_log("💾 [DEBUG] Last SQL error: " . $wpdb->last_error);
 
         public static function ajax_delete_media() {
         // Nonce ellenőrzés
-            if (!isset($_POST[PPV_Profile_Lite_i18n::NONCE_NAME])) {
+            if (!isset($_POST[self::NONCE_NAME])) {
                 wp_send_json_error(['msg' => 'Nonce missing']);
                 return;
             }
 
-            if (!wp_verify_nonce($_POST[PPV_Profile_Lite_i18n::NONCE_NAME], PPV_Profile_Lite_i18n::NONCE_ACTION)) {
+            if (!wp_verify_nonce($_POST[self::NONCE_NAME], self::NONCE_ACTION)) {
                 wp_send_json_error(['msg' => 'Invalid nonce']);
                 return;
             }
@@ -418,11 +424,11 @@ ppv_log("💾 [DEBUG] Last SQL error: " . $wpdb->last_error);
         }
 
         public static function handle_form_submit() {
-            if ($_SERVER['REQUEST_METHOD'] !== 'POST' || empty($_POST[PPV_Profile_Lite_i18n::NONCE_NAME])) {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST' || empty($_POST[self::NONCE_NAME])) {
                 return;
             }
 
-            if (!wp_verify_nonce($_POST[PPV_Profile_Lite_i18n::NONCE_NAME], PPV_Profile_Lite_i18n::NONCE_ACTION)) {
+            if (!wp_verify_nonce($_POST[self::NONCE_NAME], self::NONCE_ACTION)) {
                 wp_die(esc_html(PPV_Lang::t('error')));
             }
         }
@@ -432,12 +438,12 @@ ppv_log("💾 [DEBUG] Last SQL error: " . $wpdb->last_error);
  */
 
 public static function ajax_geocode_address() {
-    if (!isset($_POST[PPV_Profile_Lite_i18n::NONCE_NAME])) {
+    if (!isset($_POST[self::NONCE_NAME])) {
         wp_send_json_error(['msg' => 'Nonce missing']);
         return;
     }
 
-    if (!wp_verify_nonce($_POST[PPV_Profile_Lite_i18n::NONCE_NAME], PPV_Profile_Lite_i18n::NONCE_ACTION)) {
+    if (!wp_verify_nonce($_POST[self::NONCE_NAME], self::NONCE_ACTION)) {
         wp_send_json_error(['msg' => 'Invalid nonce']);
         return;
     }
