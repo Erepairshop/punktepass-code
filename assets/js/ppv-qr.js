@@ -2316,6 +2316,7 @@
 
     // Reward info
     const rewardTitle = escapeHtml(data.reward_title || 'Prämie');
+    const rewardDescription = data.reward_description ? escapeHtml(data.reward_description) : '';
     const rewardPoints = data.reward_points || 0;
     const currentPoints = data.current_points || 0;
     const rewardType = data.reward_type || 'info';
@@ -2323,6 +2324,9 @@
 
     // 🆕 Build purchase amount input for percent type rewards
     const isPercentType = rewardType === 'discount_percent';
+    const isFixedType = rewardType === 'discount_fixed';
+    const isFreeProduct = rewardType === 'free_product';
+
     const purchaseAmountHtml = isPercentType ? `
         <div class="ppv-redemption-purchase-amount" style="margin: 15px 0; padding: 15px; background: linear-gradient(135deg, #fff3e0, #ffe0b2); border-radius: 12px; border: 2px solid #ff9800;">
           <label for="ppv-purchase-amount" style="display: block; margin-bottom: 8px; font-weight: 600; color: #e65100;">
@@ -2343,15 +2347,28 @@
         </div>
     ` : '';
 
-    // Show reward value info for other types
-    let rewardValueInfo = '';
-    if (rewardType === 'discount_fixed' && rewardValue > 0) {
-      rewardValueInfo = `<div style="color: #4caf50; font-weight: 600; margin-top: 5px;">💶 Wert: ${rewardValue}€ Rabatt</div>`;
-    } else if (rewardType === 'free_product' && data.free_product_value > 0) {
-      rewardValueInfo = `<div style="color: #4caf50; font-weight: 600; margin-top: 5px;">🎁 Wert: ${data.free_product_value}€</div>`;
+    // 🎁 Build reward type badge and value display
+    let rewardTypeBadge = '';
+    let rewardValueDisplay = '';
+
+    if (isFixedType && rewardValue > 0) {
+      rewardTypeBadge = `<span style="display: inline-block; background: linear-gradient(135deg, #4caf50, #388e3c); color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 8px;">💶 FIX RABATT</span>`;
+      rewardValueDisplay = `<div style="font-size: 28px; font-weight: 700; color: #2e7d32; margin: 10px 0;">−${rewardValue}€</div>`;
     } else if (isPercentType && rewardValue > 0) {
-      rewardValueInfo = `<div style="color: #ff9800; font-weight: 600; margin-top: 5px;">📊 ${rewardValue}% Rabatt</div>`;
+      rewardTypeBadge = `<span style="display: inline-block; background: linear-gradient(135deg, #ff9800, #f57c00); color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 8px;">📊 % RABATT</span>`;
+      rewardValueDisplay = `<div style="font-size: 28px; font-weight: 700; color: #e65100; margin: 10px 0;">−${rewardValue}%</div>`;
+    } else if (isFreeProduct) {
+      const freeProductVal = data.free_product_value || 0;
+      rewardTypeBadge = `<span style="display: inline-block; background: linear-gradient(135deg, #9c27b0, #7b1fa2); color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 8px;">🎁 GRATIS PRODUKT</span>`;
+      rewardValueDisplay = freeProductVal > 0
+        ? `<div style="font-size: 28px; font-weight: 700; color: #7b1fa2; margin: 10px 0;">Wert: ${freeProductVal}€</div>`
+        : `<div style="font-size: 22px; font-weight: 600; color: #7b1fa2; margin: 10px 0;">Gratis!</div>`;
     }
+
+    // Show description if available
+    const rewardDescriptionHtml = rewardDescription
+      ? `<div style="font-size: 13px; color: #666; margin-top: 5px; font-style: italic;">${rewardDescription}</div>`
+      : '';
 
     modal.innerHTML = `
       <div class="ppv-handler-redemption-content">
@@ -2368,12 +2385,14 @@
           </div>
         </div>
 
-        <div class="ppv-redemption-reward-info">
-          <div class="ppv-redemption-reward-title">${rewardTitle}</div>
-          ${rewardValueInfo}
-          <div class="ppv-redemption-reward-points">
-            <span class="ppv-redemption-cost">-${rewardPoints} Punkte</span>
-            <span class="ppv-redemption-balance">(Aktuell: ${currentPoints} Punkte)</span>
+        <div class="ppv-redemption-reward-info" style="text-align: center; padding: 15px; background: linear-gradient(135deg, #f8f9fa, #e9ecef); border-radius: 12px; margin: 10px 0;">
+          ${rewardTypeBadge}
+          <div class="ppv-redemption-reward-title" style="font-size: 16px; font-weight: 600; color: #333;">${rewardTitle}</div>
+          ${rewardDescriptionHtml}
+          ${rewardValueDisplay}
+          <div class="ppv-redemption-reward-points" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #dee2e6;">
+            <span class="ppv-redemption-cost" style="color: #dc3545; font-weight: 600;">−${rewardPoints} Punkte</span>
+            <span class="ppv-redemption-balance" style="color: #666; margin-left: 8px;">(Guthaben: ${currentPoints} Punkte)</span>
           </div>
         </div>
 

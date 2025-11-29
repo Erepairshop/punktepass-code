@@ -1880,6 +1880,12 @@ trait PPV_QR_REST_Trait {
             $prompt->store_id
         ));
 
+        // Get user's current point balance
+        $current_points = (int)$wpdb->get_var($wpdb->prepare(
+            "SELECT COALESCE(SUM(points), 0) FROM {$wpdb->prefix}ppv_points WHERE user_id = %d",
+            $prompt->user_id
+        ));
+
         // 📡 ABLY: Notify handler about redemption request
         if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
             PPV_Ably::trigger_redemption_request($prompt->store_id, [
@@ -1891,10 +1897,12 @@ trait PPV_QR_REST_Trait {
                 'avatar' => $user_info->avatar ?? null,
                 'reward_id' => $selected_reward_id,
                 'reward_title' => $selected_reward['title'],
+                'reward_description' => $selected_reward['description'] ?? '',
                 'reward_points' => $selected_reward['required_points'],
                 'reward_type' => $selected_reward['action_type'] ?? 'info',
                 'reward_value' => floatval($selected_reward['action_value'] ?? 0),
                 'free_product_value' => floatval($selected_reward['free_product_value'] ?? 0),
+                'current_points' => $current_points,
                 'store_name' => $store_name ?? 'PunktePass',
                 'time' => date('H:i'),
             ]);
