@@ -44,10 +44,36 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
 
         // ==================== TURBO CACHE FIX ====================
         public static function add_turbo_no_cache_meta() {
-            // Only add on profile pages (check if shortcode will render)
             global $post;
+            $is_profile_page = false;
+
+            // 1. Shortcode check
             if ($post && has_shortcode($post->post_content, 'pp_store_profile')) {
+                $is_profile_page = true;
+            }
+
+            // 2. URL pattern check
+            $uri = $_SERVER['REQUEST_URI'] ?? '';
+            if (strpos($uri, '/profil') !== false ||
+                strpos($uri, '/profile') !== false ||
+                strpos($uri, '/einstellungen') !== false ||
+                strpos($uri, '/admin') !== false) {
+                $is_profile_page = true;
+            }
+
+            // 3. Page slug check
+            if ($post && (
+                strpos($post->post_name, 'profil') !== false ||
+                strpos($post->post_name, 'profile') !== false ||
+                strpos($post->post_name, 'einstellungen') !== false
+            )) {
+                $is_profile_page = true;
+            }
+
+            if ($is_profile_page) {
                 echo '<meta name="turbo-cache-control" content="no-cache">' . "\n";
+                echo '<meta name="turbo-visit-control" content="reload">' . "\n";
+                echo '<!-- PPV Profile - No Cache -->' . "\n";
             }
         }
 

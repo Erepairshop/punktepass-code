@@ -40,35 +40,32 @@
             const profileForm = document.getElementById('ppv-profile-form');
             if (profileForm) {
                 profileForm.dataset.ppvBound = 'false';
+                // Mark that we're leaving profile page
+                sessionStorage.setItem('ppv_was_on_profile', 'true');
             }
         }, { once: false });
 
-        // 3. Force reload when restoring from Turbo cache
-        document.addEventListener('turbo:visit', function(e) {
-            const profileForm = document.getElementById('ppv-profile-form');
-            if (profileForm && e.detail?.action === 'restore') {
+        // 3. Force reload when coming back to profile page via Turbo
+        document.addEventListener('turbo:before-render', function(e) {
+            const newBody = e.detail.newBody;
+            const hasProfileForm = newBody && newBody.querySelector('#ppv-profile-form');
+            const wasOnProfile = sessionStorage.getItem('ppv_was_on_profile');
+
+            if (hasProfileForm && wasOnProfile) {
+                // Coming back to profile - force hard reload
+                console.log('[Profile-Core] Forcing reload - returning to profile page');
+                sessionStorage.removeItem('ppv_was_on_profile');
                 e.preventDefault();
                 window.location.reload();
             }
         });
 
-        // 4. Timestamp-based cache detection
-        let lastVisitTime = Date.now();
-        document.addEventListener('turbo:before-visit', function() {
-            lastVisitTime = Date.now();
-        });
+        // 4. Clear flag when on profile page (fresh load)
         document.addEventListener('turbo:load', function() {
             const profileForm = document.getElementById('ppv-profile-form');
-            if (profileForm && (Date.now() - lastVisitTime) < 50) {
-                const marker = sessionStorage.getItem('ppv_profile_loaded_at');
-                const now = Date.now();
-                if (marker && (now - parseInt(marker)) > 2000) {
-                    window.location.reload();
-                    return;
-                }
-            }
             if (profileForm) {
-                sessionStorage.setItem('ppv_profile_loaded_at', Date.now().toString());
+                // We're on profile page now - clear the flag
+                sessionStorage.removeItem('ppv_was_on_profile');
             }
         });
     })();

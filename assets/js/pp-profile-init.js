@@ -13,16 +13,10 @@
     }
     window.PPV_PROFILE_LOADED = true;
 
-    const {
-        STATE,
-        t,
-        showAlert,
-        initState,
-        TabManager,
-        FormManager,
-        MediaManager,
-        GeocodingManager
-    } = window.PPV_PROFILE || {};
+    // Get references at runtime (not at module load time)
+    function getModule() {
+        return window.PPV_PROFILE || {};
+    }
 
     // ============================================================
     // PROFILE CONTROLLER
@@ -57,7 +51,8 @@
             console.log('[Profile-Init] Initializing...');
 
             // Initialize global state
-            initState();
+            const { initState } = getModule();
+            if (initState) initState();
 
             // Verify saved data (debug)
             this.verifySavedData();
@@ -79,6 +74,11 @@
          * Initialize tab manager
          */
         initTabManager() {
+            const { TabManager } = getModule();
+            if (!TabManager) {
+                console.error('[Profile-Init] TabManager not found!');
+                return;
+            }
             this.tabManager = new TabManager();
             this.tabManager.bindTabs();
             this.tabManager.restoreTab();
@@ -88,6 +88,11 @@
          * Initialize form manager
          */
         initFormManager() {
+            const { FormManager } = getModule();
+            if (!FormManager) {
+                console.error('[Profile-Init] FormManager not found!');
+                return;
+            }
             this.formManager = new FormManager(this.$form, this.tabManager);
             this.formManager.bindInputs();
             this.formManager.bindSubmit();
@@ -97,6 +102,11 @@
          * Initialize media manager
          */
         initMediaManager() {
+            const { MediaManager } = getModule();
+            if (!MediaManager) {
+                console.error('[Profile-Init] MediaManager not found!');
+                return;
+            }
             this.mediaManager = new MediaManager(this.$form);
             this.mediaManager.bindFileInputs();
             this.mediaManager.bindGalleryDelete();
@@ -106,6 +116,11 @@
          * Initialize geocoding manager
          */
         initGeocodingManager() {
+            const { GeocodingManager } = getModule();
+            if (!GeocodingManager) {
+                console.error('[Profile-Init] GeocodingManager not found!');
+                return;
+            }
             this.geocodingManager = new GeocodingManager();
             this.geocodingManager.init();
         }
@@ -118,7 +133,8 @@
             if (!resetBtn) return;
 
             resetBtn.addEventListener('click', async () => {
-                const L = STATE.strings;
+                const { STATE, showAlert } = getModule();
+                const L = STATE?.strings || {};
 
                 if (!confirm(L.onboarding_reset_confirm || 'Are you sure you want to restart onboarding?')) {
                     return;
@@ -186,6 +202,9 @@
          * Update UI translations
          */
         updateUI() {
+            const { t } = getModule();
+            if (!t) return;
+
             // Tab buttons
             document.querySelectorAll('.ppv-tab-btn[data-i18n]').forEach(btn => {
                 const key = btn.dataset.i18n;
