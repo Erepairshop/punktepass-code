@@ -453,18 +453,16 @@
     }
 
     async loadLibrary() {
-      if (window.QrScanner) {
-        await this.startQrScanner();
+      // Use jsQR directly - no web worker needed, avoids CORS issues
+      if (window.jsQR) {
+        await this.startJsQRScanner();
         return;
       }
 
       const script = document.createElement('script');
-      script.src = 'https://unpkg.com/qr-scanner@1.4.2/qr-scanner.umd.min.js';
-      script.onload = () => this.startQrScanner();
-      script.onerror = () => {
-        ppvWarn('[Camera] qr-scanner failed to load, falling back to jsQR');
-        this.loadFallbackLibrary();
-      };
+      script.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
+      script.onload = () => this.startJsQRScanner();
+      script.onerror = () => this.updateStatus('error', '❌ Scanner nicht verfügbar');
       document.head.appendChild(script);
     }
 
