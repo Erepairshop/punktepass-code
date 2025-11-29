@@ -6900,12 +6900,13 @@ body.ppv-dark .ppv-mypoints-tab.active {
 .save-btn {
     border: none;
     background: linear-gradient(135deg, #10B981 0%, #059669 100%);
-    color: white;
+    color: white !important;
     box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
 }
 
 .save-btn i {
     font-size: 18px;
+    color: white !important;
 }
 
 .save-btn:hover:not(:disabled) {
@@ -6982,10 +6983,13 @@ body.ppv-dark .ppv-mypoints-tab.active {
     padding: 16px 20px;
     background: linear-gradient(to top, var(--ppv-s-bg) 0%, var(--ppv-s-bg) 80%, transparent 100%);
     z-index: 100;
+    display: flex;
+    justify-content: center;
 }
 
 .ppv-actions .save-btn {
     max-width: 400px;
+    width: 100%;
     margin: 0 auto;
     box-shadow: 0 4px 20px rgba(16, 185, 129, 0.35);
 }
