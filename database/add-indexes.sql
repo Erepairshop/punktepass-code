@@ -43,8 +43,8 @@ CREATE INDEX IF NOT EXISTS idx_users_user_type ON wp_ppv_users(user_type);
 -- ppv_stores - Store keresés
 -- ============================================================
 
--- Status szűrés
-CREATE INDEX IF NOT EXISTS idx_stores_status ON wp_ppv_stores(status);
+-- Subscription status szűrés
+CREATE INDEX IF NOT EXISTS idx_stores_subscription_status ON wp_ppv_stores(subscription_status);
 
 -- User (owner) lookup
 CREATE INDEX IF NOT EXISTS idx_stores_user_id ON wp_ppv_stores(user_id);
