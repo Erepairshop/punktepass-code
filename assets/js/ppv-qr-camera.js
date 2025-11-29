@@ -294,6 +294,9 @@
 
     async stopScanner() {
       try {
+        // Stop native BarcodeDetector
+        this.barcodeDetector = null;
+        this.nativeVideo = null;
         // Stop html5-qrcode if running
         if (this.html5QrCode) {
           try {
@@ -308,7 +311,7 @@
           if (typeof this.scanner.destroy === 'function') this.scanner.destroy();
           this.scanner = null;
         }
-        // Stop jsQR stream if running
+        // Stop stream if running
         if (this.iosStream) { this.iosStream.getTracks().forEach(t => t.stop()); this.iosStream = null; }
       } catch (e) { ppvWarn('[Camera] Stop error:', e); }
 
@@ -467,7 +470,22 @@
     }
 
     async loadLibrary() {
-      // Use jsQR directly - faster and more focused
+      // Check for native BarcodeDetector API first (fastest, hardware-accelerated)
+      if ('BarcodeDetector' in window) {
+        try {
+          const formats = await BarcodeDetector.getSupportedFormats();
+          if (formats.includes('qr_code')) {
+            ppvLog('[Camera] Using native BarcodeDetector API');
+            this.startNativeScanner();
+            return;
+          }
+        } catch (e) {
+          ppvWarn('[Camera] BarcodeDetector check failed:', e);
+        }
+      }
+
+      // Fallback to jsQR
+      ppvLog('[Camera] Using jsQR fallback');
       if (window.jsQR) {
         this.startJsQRScanner();
         return;
@@ -674,6 +692,90 @@
         } catch (e) { /* ignore */ }
         this.html5QrCode = null;
       }
+    }
+
+    // ============================================================
+    // NATIVE BARCODE DETECTOR (Fastest - Hardware Accelerated)
+    // ============================================================
+    async startNativeScanner() {
+      if (!this.readerDiv) return;
+
+      try {
+        const video = document.createElement('video');
+        video.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:8px;';
+        video.setAttribute('playsinline', 'true');
+        video.setAttribute('autoplay', 'true');
+        video.setAttribute('muted', 'true');
+
+        this.readerDiv.innerHTML = '';
+        this.readerDiv.appendChild(video);
+
+        // Try exact environment camera first
+        let stream;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { exact: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
+          });
+        } catch (e) {
+          // Fallback to non-exact
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+          });
+        }
+
+        video.srcObject = stream;
+        await video.play();
+
+        this.barcodeDetector = new BarcodeDetector({ formats: ['qr_code'] });
+        this.nativeVideo = video;
+        this.iosStream = stream;
+
+        this.videoTrack = stream.getVideoTracks()[0];
+        if (this.videoTrack) {
+          const capabilities = this.videoTrack.getCapabilities();
+          if (capabilities.torch && this.torchBtn) this.torchBtn.style.display = 'inline-flex';
+          if (this.refocusBtn) this.refocusBtn.style.display = 'inline-flex';
+          this.startPeriodicRefocus();
+        }
+
+        this.scanning = true;
+        this.state = 'scanning';
+        this.updateStatus('scanning', L.scanner_active || 'Scanning...');
+        this.nativeScanLoop();
+
+        ppvLog('[Native] BarcodeDetector scanner started');
+
+      } catch (e) {
+        ppvWarn('[Native] Start error:', e);
+        // Fallback to jsQR
+        ppvLog('[Native] Falling back to jsQR...');
+        if (window.jsQR) {
+          this.startJsQRScanner();
+        } else {
+          const script = document.createElement('script');
+          script.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
+          script.onload = () => this.startJsQRScanner();
+          script.onerror = () => this.updateStatus('error', '❌ Scanner nicht verfügbar');
+          document.head.appendChild(script);
+        }
+      }
+    }
+
+    async nativeScanLoop() {
+      if (!this.scanning || !this.nativeVideo || !this.barcodeDetector) return;
+
+      try {
+        if (this.nativeVideo.readyState === this.nativeVideo.HAVE_ENOUGH_DATA) {
+          const codes = await this.barcodeDetector.detect(this.nativeVideo);
+          if (codes.length > 0) {
+            this.onScanSuccess(codes[0].rawValue);
+          }
+        }
+      } catch (e) {
+        // Ignore detection errors
+      }
+
+      if (this.scanning) requestAnimationFrame(() => this.nativeScanLoop());
     }
 
     // ============================================================
