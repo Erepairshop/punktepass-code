@@ -302,7 +302,8 @@ function initLogin() {
                     callback: handleGoogleCallback,
                     auto_select: false,
                     cancel_on_tap_outside: true,
-                    itp_support: true  // Better Safari/Firefox support
+                    itp_support: true,
+                    use_fedcm_for_prompt: false  // Disable FedCM to avoid AbortError
                 });
                 googleInitialized = true;
                 console.log('✅ Google Sign-In initialized');
