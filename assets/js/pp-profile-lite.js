@@ -546,21 +546,24 @@
 
     // ==================== INIT (Turbo-compatible) ====================
     function initProfileForm() {
-        // Destroy old instance if exists to prevent duplicate handlers
+        const form = document.getElementById('ppv-profile-form');
+        if (!form) {
+            window.ppvProfileForm = null;
+            return;
+        }
+
+        // ✅ FIX: Check if old instance references a different (stale) DOM element
         if (window.ppvProfileForm && window.ppvProfileForm.$form) {
-            // Already initialized on this page, skip
-            const existingForm = document.getElementById('ppv-profile-form');
-            if (!existingForm) {
+            // If the DOM element changed (Turbo replaced it), force re-init
+            if (window.ppvProfileForm.$form !== form) {
                 window.ppvProfileForm = null;
+                form.dataset.ppvBound = 'false'; // Reset bound flag
             } else {
-                return; // Form exists and already initialized
+                return; // Same form, already initialized
             }
         }
 
-        const form = document.getElementById('ppv-profile-form');
-        if (form) {
-            window.ppvProfileForm = new PPVProfileForm();
-        }
+        window.ppvProfileForm = new PPVProfileForm();
     }
 
     // Init on DOMContentLoaded
@@ -570,8 +573,10 @@
         initProfileForm();
     }
 
-    // 🚀 Turbo: Re-init after navigation (only turbo:load, not render to avoid double-init)
+    // 🚀 Turbo: Re-init after navigation
     document.addEventListener('turbo:load', initProfileForm);
+    // ✅ Also listen to turbo:render for Turbo.visit with action: "replace"
+    document.addEventListener('turbo:render', initProfileForm);
 
     // 🔄 Browser back/forward cache (bfcache) detection - force reload for fresh data
     window.addEventListener('pageshow', function(event) {
