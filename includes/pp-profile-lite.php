@@ -44,10 +44,42 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
 
         // ==================== TURBO CACHE FIX ====================
         public static function add_turbo_no_cache_meta() {
-            // Only add on profile pages (check if shortcode will render)
             global $post;
+
+            // Check multiple ways to detect profile page
+            $is_profile_page = false;
+
+            // 1. Shortcode in post content
             if ($post && has_shortcode($post->post_content, 'pp_store_profile')) {
+                $is_profile_page = true;
+            }
+
+            // 2. Check if profile form exists (for block editor / templates)
+            // This runs on wp_head, so we can't check DOM. Instead, check URL or slug.
+            if ($post && (
+                strpos($post->post_name, 'profil') !== false ||
+                strpos($post->post_name, 'profile') !== false ||
+                strpos($post->post_name, 'einstellungen') !== false ||
+                strpos($post->post_name, 'settings') !== false
+            )) {
+                $is_profile_page = true;
+            }
+
+            // 3. Check if we're in admin profile context (session check)
+            if (!empty($_SESSION['ppv_store_id']) || !empty($_SESSION['ppv_current_filiale_id'])) {
+                // User has store session - likely on admin pages
+                if (strpos($_SERVER['REQUEST_URI'], '/admin') !== false ||
+                    strpos($_SERVER['REQUEST_URI'], '/profil') !== false ||
+                    strpos($_SERVER['REQUEST_URI'], '/profile') !== false) {
+                    $is_profile_page = true;
+                }
+            }
+
+            if ($is_profile_page) {
+                // Turbo cache control - prevents Turbo from caching this page
                 echo '<meta name="turbo-cache-control" content="no-cache">' . "\n";
+                // Add timestamp to help debug
+                echo '<!-- PPV Profile Page - No Cache - ' . date('Y-m-d H:i:s') . ' -->' . "\n";
             }
         }
 
