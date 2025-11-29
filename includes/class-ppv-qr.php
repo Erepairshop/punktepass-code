@@ -356,7 +356,7 @@ class PPV_QR {
         return ['limited' => false];
     }
 
-    private static function insert_log($store_id, $user_id, $msg, $type = 'scan', $error_type = null, $scanner_id = null, $scanner_name = null) {
+    private static function insert_log($store_id, $user_id, $msg, $type = 'scan', $error_type = null, $scanner_id = null, $scanner_name = null, $points_change = 0) {
         global $wpdb;
 
         // Get IP address
@@ -390,6 +390,7 @@ class PPV_QR {
             'user_id' => $user_id,
             'message' => sanitize_text_field($msg),
             'type' => $type,
+            'points_change' => intval($points_change),
             'ip_address' => $ip_address,
             'user_agent' => $user_agent,
             'metadata' => $metadata,

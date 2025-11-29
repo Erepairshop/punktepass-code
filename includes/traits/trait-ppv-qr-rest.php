@@ -733,7 +733,7 @@ trait PPV_QR_REST_Trait {
         if (!empty($bonus_parts)) {
             $log_msg .= " (" . implode(", ", $bonus_parts) . ")";
         }
-        $log_id = self::insert_log($store_id, $user_id, $log_msg, 'qr_scan', null, $scanner_id, $scanner_name);
+        $log_id = self::insert_log($store_id, $user_id, $log_msg, 'qr_scan', null, $scanner_id, $scanner_name, $points_add);
 
         // ✅ Generate unique scan_id for deduplication
         $scan_id = "scan-{$store_id}-{$user_id}-{$log_id}";
