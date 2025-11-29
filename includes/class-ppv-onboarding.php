@@ -253,11 +253,42 @@ if (!class_exists('PPV_Onboarding')) {
         public static function rest_permission_check() {
             // ✅ SCANNER USERS: Block REST API access
             if (class_exists('PPV_Permissions') && PPV_Permissions::is_scanner_user()) {
+                ppv_log("❌ [PPV_ONBOARDING] Permission denied: scanner user");
                 return false;
             }
 
             $auth = self::check_auth();
-            return $auth['valid'] && $auth['type'] === 'ppv_stores';
+
+            // Debug permission check
+            ppv_log("🔐 [PPV_ONBOARDING] Permission check: valid=" . ($auth['valid'] ? 'true' : 'false') . ", type=" . ($auth['type'] ?? 'NONE') . ", store_id=" . ($auth['store_id'] ?? 'NONE'));
+
+            if ($auth['valid'] && $auth['type'] === 'ppv_stores') {
+                return true;
+            }
+
+            // ✅ Fallback: Check if vendor user is logged in via ppv_users
+            if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+                @session_start();
+            }
+
+            if (!empty($_SESSION['ppv_user_type']) && $_SESSION['ppv_user_type'] === 'vendor' && !empty($_SESSION['ppv_user_id'])) {
+                global $wpdb;
+                $vendor = $wpdb->get_row($wpdb->prepare(
+                    "SELECT vendor_store_id FROM {$wpdb->prefix}ppv_users WHERE id = %d AND user_type = 'vendor' LIMIT 1",
+                    intval($_SESSION['ppv_user_id'])
+                ));
+
+                if ($vendor && !empty($vendor->vendor_store_id)) {
+                    // Set session vars for subsequent calls
+                    $_SESSION['ppv_vendor_store_id'] = $vendor->vendor_store_id;
+                    $_SESSION['ppv_store_id'] = $vendor->vendor_store_id;
+                    ppv_log("✅ [PPV_ONBOARDING] Permission granted via vendor user fallback: store_id={$vendor->vendor_store_id}");
+                    return true;
+                }
+            }
+
+            ppv_log("❌ [PPV_ONBOARDING] Permission denied: no valid auth");
+            return false;
         }
 
         /**
