@@ -86,6 +86,20 @@ wp_add_inline_script('ppv-redeem', "window.ppv_redeem = {$__json};", 'before');
             return new WP_REST_Response(['success' => false, 'message' => 'Ungültige Anfrage.'], 400);
         }
 
+        // 🔒 SECURITY FIX: Verify user has history with this store (prevents arbitrary user_id manipulation)
+        $points_table = $wpdb->prefix . 'ppv_points';
+        $user_has_store_history = $wpdb->get_var($wpdb->prepare("
+            SELECT COUNT(*) FROM $points_table
+            WHERE user_id = %d AND store_id = %d
+        ", $user_id, $store_id));
+
+        if (!$user_has_store_history) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => '❌ Benutzer hat keine Verbindung zu diesem Geschäft.'
+            ], 403);
+        }
+
         $points_table  = $wpdb->prefix . 'ppv_points';
         $rewards_table = $wpdb->prefix . 'ppv_rewards';
         $requests_table = $wpdb->prefix . 'ppv_reward_requests';
@@ -99,93 +113,110 @@ wp_add_inline_script('ppv-redeem', "window.ppv_redeem = {$__json};", 'before');
             return new WP_REST_Response(['success' => false, 'message' => 'Prämie nicht gefunden.'], 404);
         }
 
-        // 🔹 Pont ellenőrzés
-        $user_points = (int)$wpdb->get_var($wpdb->prepare("
-            SELECT COALESCE(SUM(points),0) FROM $points_table WHERE user_id=%d
-        ", $user_id));
+        // 🔒 SECURITY FIX: Use transaction with row locking to prevent race condition
+        $wpdb->query('START TRANSACTION');
 
-        if ($user_points < $reward->required_points) {
-            return new WP_REST_Response([
-                'success' => false,
-                'message' => 'Nicht genügend Punkte (' . $user_points . ' / ' . $reward->required_points . ')'
-            ], 403);
-        }
-        // 🔹 Ellenőrizzük, van-e már függő vagy friss redeem
-$existing = $wpdb->get_var($wpdb->prepare("
-    SELECT COUNT(*) FROM $requests_table
-    WHERE user_id=%d AND reward_title=%s AND store_id=%d
-    AND created_at > DATE_SUB(NOW(), INTERVAL 1 MINUTE)
-", $user_id, $reward->title, $store_id));
+        try {
+            // 🔹 Pont ellenőrzés WITH ROW LOCKING (FOR UPDATE)
+            $user_points = (int)$wpdb->get_var($wpdb->prepare("
+                SELECT COALESCE(SUM(points),0) FROM $points_table WHERE user_id=%d FOR UPDATE
+            ", $user_id));
 
-if ($existing > 0) {
-    return new WP_REST_Response([
-        'success' => false,
-        'message' => '⚠️ Es gibt bereits eine offene Anfrage.'
-    ], 409);
-}
+            if ($user_points < $reward->required_points) {
+                $wpdb->query('ROLLBACK');
+                return new WP_REST_Response([
+                    'success' => false,
+                    'message' => 'Nicht genügend Punkte (' . $user_points . ' / ' . $reward->required_points . ')'
+                ], 403);
+            }
 
+            // 🔹 Ellenőrizzük, van-e már függő vagy friss redeem (extended to 5 minutes, use reward_id)
+            $existing = $wpdb->get_var($wpdb->prepare("
+                SELECT COUNT(*) FROM $requests_table
+                WHERE user_id=%d AND reward_id=%d AND store_id=%d
+                AND created_at > DATE_SUB(NOW(), INTERVAL 5 MINUTE)
+            ", $user_id, $reward_id, $store_id));
 
-        // 🔹 Pont levonás
-        $wpdb->insert($points_table, [
-            'user_id'   => $user_id,
-            'store_id'  => $store_id,
-            'points'    => -intval($reward->required_points),
-            'type'      => 'redeem',
-            'reference' => 'POS-REWARD-' . $reward->id,
-            'created'   => current_time('mysql')
-        ]);
+            if ($existing > 0) {
+                $wpdb->query('ROLLBACK');
+                return new WP_REST_Response([
+                    'success' => false,
+                    'message' => '⚠️ Es gibt bereits eine offene Anfrage.'
+                ], 409);
+            }
 
-        // 🎁 Bónusz pontok hozzáadása (points_given)
-        $points_given = intval($reward->points_given ?? 0);
-        if ($points_given > 0) {
+            // 🔹 Pont levonás (inside transaction)
             $wpdb->insert($points_table, [
                 'user_id'   => $user_id,
                 'store_id'  => $store_id,
-                'points'    => $points_given,
-                'type'      => 'reward_bonus',
-                'reference' => 'REWARD-BONUS-' . $reward->id,
+                'points'    => -intval($reward->required_points),
+                'type'      => 'redeem',
+                'reference' => 'POS-REWARD-' . $reward->id . '-' . time(),
                 'created'   => current_time('mysql')
             ]);
-            ppv_log("🎁 [PPV_Redeem] Bonus points added: user_id={$user_id}, points_given={$points_given}");
+
+            // 🎁 Bónusz pontok hozzáadása (points_given)
+            $points_given = intval($reward->points_given ?? 0);
+            if ($points_given > 0) {
+                $wpdb->insert($points_table, [
+                    'user_id'   => $user_id,
+                    'store_id'  => $store_id,
+                    'points'    => $points_given,
+                    'type'      => 'reward_bonus',
+                    'reference' => 'REWARD-BONUS-' . $reward->id,
+                    'created'   => current_time('mysql')
+                ]);
+                ppv_log("🎁 [PPV_Redeem] Bonus points added: user_id={$user_id}, points_given={$points_given}");
+            }
+
+            // 🔹 Reward Request log (biztosan illeszkedik az adatbázis oszlopaihoz)
+            $wpdb->insert($requests_table, [
+                'store_id'   => $store_id,
+                'user_id'    => $user_id,
+                'reward_id'  => $reward->id,
+                'status'     => 'approved',
+                'created_at' => current_time('mysql'),
+                'updated_at' => current_time('mysql')
+            ]);
+
+
+            // 🔹 Reward státusz frissítése
+            $wpdb->update($rewards_table, [
+                'redeemed'     => intval($reward->redeemed) + 1,
+                'redeemed_by'  => $user_id,
+                'redeemed_at'  => current_time('mysql')
+            ], ['id' => $reward->id]);
+
+            // ✅ COMMIT transaction - all operations successful
+            $wpdb->query('COMMIT');
+
+            // Calculate new balance (deduct required, add bonus)
+            $new_balance = $user_points - $reward->required_points + $points_given;
+
+            // Build response message
+            $message = '✅ Prämie erfolgreich eingelöst.';
+            if ($points_given > 0) {
+                $message .= " (+{$points_given} Bonuspunkte)";
+            }
+
+            return new WP_REST_Response([
+                'success' => true,
+                'message' => $message,
+                'user_id' => $user_id,
+                'store_id' => $store_id,
+                'points_given' => $points_given,
+                'new_balance' => $new_balance
+            ], 200);
+
+        } catch (Exception $e) {
+            // 🔒 ROLLBACK on any error
+            $wpdb->query('ROLLBACK');
+            ppv_log("❌ [PPV_Redeem] Transaction failed: " . $e->getMessage());
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => '❌ Fehler bei der Einlösung. Bitte erneut versuchen.'
+            ], 500);
         }
-
-
-// 🔹 Reward Request log (biztosan illeszkedik az adatbázis oszlopaihoz)
-$wpdb->insert($requests_table, [
-    'store_id'   => $store_id,
-    'user_id'    => $user_id,
-    'reward_id'  => $reward->id,
-    'status'     => 'approved',
-    'created_at' => current_time('mysql'),
-    'updated_at' => current_time('mysql')
-]);
-
-
-        // 🔹 Reward státusz frissítése
-        $wpdb->update($rewards_table, [
-            'redeemed'     => intval($reward->redeemed) + 1,
-            'redeemed_by'  => $user_id,
-            'redeemed_at'  => current_time('mysql')
-        ], ['id' => $reward->id]);
-
-        // Calculate new balance (deduct required, add bonus)
-        $new_balance = $user_points - $reward->required_points + $points_given;
-
-        // Build response message
-        $message = '✅ Prämie erfolgreich eingelöst.';
-        if ($points_given > 0) {
-            $message .= " (+{$points_given} Bonuspunkte)";
-        }
-
-        return new WP_REST_Response([
-            'success' => true,
-            'message' => $message,
-            'user_id' => $user_id,
-            'store_id' => $store_id,
-            'points_given' => $points_given,
-            'new_balance' => $new_balance
-        ], 200);
-
     }
 
     /** ============================================================

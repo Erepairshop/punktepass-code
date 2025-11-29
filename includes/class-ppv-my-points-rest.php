@@ -176,22 +176,24 @@ if (class_exists('PPV_Lang')) {
             $data['total'] = (int) $wpdb->get_var($wpdb->prepare("SELECT SUM(points) FROM $points_table WHERE user_id=%d", $user_id));
             $data['avg']   = (float) $wpdb->get_var($wpdb->prepare("SELECT AVG(points) FROM $points_table WHERE user_id=%d", $user_id));
 
-            $data['top_day'] = $wpdb->get_row("
+            // 🔒 SECURITY FIX: Use prepare() to prevent SQL injection
+            $data['top_day'] = $wpdb->get_row($wpdb->prepare("
                 SELECT DATE(created) AS day, SUM(points) AS total
                 FROM $points_table
-                WHERE user_id=$user_id
+                WHERE user_id = %d
                 GROUP BY DATE(created)
                 ORDER BY total DESC LIMIT 1
-            ");
+            ", $user_id));
 
-            $data['top_store'] = $wpdb->get_row("
+            // 🔒 SECURITY FIX: Use prepare() to prevent SQL injection
+            $data['top_store'] = $wpdb->get_row($wpdb->prepare("
                 SELECT s.name AS store_name, SUM(p.points) AS total
                 FROM $points_table p
                 LEFT JOIN $stores_table s ON p.store_id=s.id
-                WHERE p.user_id=$user_id
+                WHERE p.user_id = %d
                 GROUP BY p.store_id
                 ORDER BY total DESC LIMIT 1
-            ");
+            ", $user_id));
 
             $data['top3'] = $wpdb->get_results("
                 SELECT s.name AS store_name, SUM(p.points) AS total
