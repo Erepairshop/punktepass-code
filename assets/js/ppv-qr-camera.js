@@ -634,11 +634,50 @@
         if (e.name === 'OverconstrainedError') {
           ppvLog('[jsQR] Retrying without exact facingMode...');
           try {
+            // Retry with relaxed constraints
+            const video = this.readerDiv.querySelector('video') || document.createElement('video');
+            video.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:8px;';
+            video.setAttribute('playsinline', 'true');
+            video.setAttribute('autoplay', 'true');
+            video.setAttribute('muted', 'true');
+
+            if (!this.readerDiv.contains(video)) {
+              this.readerDiv.innerHTML = '';
+              this.readerDiv.appendChild(video);
+            }
+
             const stream = await navigator.mediaDevices.getUserMedia({
-              video: { facingMode: 'environment' }
+              video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
             });
-            this.updateStatus('error', '❌ Kamera nicht kompatibel');
+
+            video.srcObject = stream;
+            await video.play();
+
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            canvas.width = video.videoWidth || 1280;
+            canvas.height = video.videoHeight || 720;
+
+            this.iosStream = stream;
+            this.iosVideo = video;
+            this.iosCanvas = canvas;
+            this.iosCanvasCtx = ctx;
+
+            this.videoTrack = stream.getVideoTracks()[0];
+            if (this.videoTrack) {
+              const capabilities = this.videoTrack.getCapabilities();
+              if (capabilities.torch && this.torchBtn) this.torchBtn.style.display = 'inline-flex';
+              if (this.refocusBtn) this.refocusBtn.style.display = 'inline-flex';
+            }
+
+            this.scanning = true;
+            this.state = 'scanning';
+            this.updateStatus('scanning', L.scanner_active || 'Scanning...');
+            this.jsQRScanLoop();
+            ppvLog('[jsQR] Started with relaxed constraints');
+            return;
           } catch (e2) {
+            ppvWarn('[jsQR] Fallback also failed:', e2);
             this.updateStatus('error', '❌ Kamera nicht verfügbar');
           }
         } else {
