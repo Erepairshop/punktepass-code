@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "de.punktepass.twa",
+        "sha256_cert_fingerprints": ["15:3D:B1:2D:56:C2:2C:B7:FB:04:7B:D9:7A:5F:1A:D2:19:6C:75:BA:C8:D7:97:BE:3C:FD:C2:9C:D8:3D:E8:E9"]
+      }
+    }]
