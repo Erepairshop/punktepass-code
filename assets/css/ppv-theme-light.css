@@ -6822,6 +6822,34 @@ body.ppv-dark .ppv-mypoints-tab.active {
     font-size: 18px;
 }
 
+.ppv-phone-prefix-select {
+    padding: 14px 12px;
+    background: rgba(37, 211, 102, 0.1);
+    color: #25D366;
+    font-weight: 600;
+    font-size: 14px;
+    border: none;
+    border-right: 1px solid rgba(37, 211, 102, 0.2);
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2325D366' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    padding-right: 28px;
+    border-radius: 0;
+}
+
+.ppv-phone-prefix-select:focus {
+    outline: none;
+}
+
+.ppv-phone-prefix-select option {
+    background: var(--ppv-s-bg, #fff);
+    color: var(--ppv-s-text, #333);
+    padding: 10px;
+}
+
 .ppv-phone-input-group input[type="tel"] {
     flex: 1;
     border: none !important;
@@ -7428,6 +7456,17 @@ body.ppv-dark .ppv-phone-prefix {
 }
 
 body.ppv-dark .ppv-phone-input-group input[type="tel"] {
+    color: var(--pp-text);
+}
+
+body.ppv-dark .ppv-phone-prefix-select {
+    background-color: rgba(37, 211, 102, 0.15);
+    color: #25D366;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2325D366' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+}
+
+body.ppv-dark .ppv-phone-prefix-select option {
+    background: var(--pp-bg-2);
     color: var(--pp-text);
 }
 

@@ -290,12 +290,21 @@ class PPV_User_Settings {
         // Phone number for WhatsApp
         if (isset($_POST['phone_number'])) {
             $phone = sanitize_text_field($_POST['phone_number']);
-            // Remove spaces and dashes
+            // Remove spaces, dashes and leading zeros
             $phone = preg_replace('/[\s\-]/', '', $phone);
-            // Add country code if needed
-            if (!empty($phone) && substr($phone, 0, 2) !== '49') {
-                $phone = '49' . ltrim($phone, '0');
+            $phone = ltrim($phone, '0');
+
+            // Get country prefix (default 49 for Germany)
+            $prefix = sanitize_text_field($_POST['phone_prefix'] ?? '49');
+            if (!in_array($prefix, ['49', '36', '40'])) {
+                $prefix = '49';
             }
+
+            // Combine prefix + number
+            if (!empty($phone)) {
+                $phone = $prefix . $phone;
+            }
+
             $update_data['phone_number'] = $phone;
             $update_format[] = '%s';
         }
@@ -546,9 +555,30 @@ class PPV_User_Settings {
 
                     <div id="ppv-whatsapp-phone-wrapper" class="ppv-whatsapp-phone-field" style="<?php echo $whatsapp_notif ? '' : 'display: none;'; ?>">
                         <label><?php echo self::t('whatsapp_phone'); ?></label>
+                        <?php
+                        // Detect current country code from saved phone
+                        $current_prefix = '49'; // default German
+                        $phone_without_prefix = $phone_number;
+                        if (!empty($phone_number)) {
+                            if (substr($phone_number, 0, 2) === '40') {
+                                $current_prefix = '40';
+                                $phone_without_prefix = substr($phone_number, 2);
+                            } elseif (substr($phone_number, 0, 2) === '36') {
+                                $current_prefix = '36';
+                                $phone_without_prefix = substr($phone_number, 2);
+                            } elseif (substr($phone_number, 0, 2) === '49') {
+                                $current_prefix = '49';
+                                $phone_without_prefix = substr($phone_number, 2);
+                            }
+                        }
+                        ?>
                         <div class="ppv-phone-input-group">
-                            <span class="ppv-phone-prefix"><i class="ri-whatsapp-line"></i> +49</span>
-                            <input type="tel" name="phone_number" id="ppv-phone-number" value="<?php echo esc_attr(ltrim($phone_number, '+49')); ?>" placeholder="<?php echo self::t('whatsapp_phone_placeholder'); ?>">
+                            <select name="phone_prefix" id="ppv-phone-prefix" class="ppv-phone-prefix-select">
+                                <option value="49" <?php selected($current_prefix, '49'); ?>>🇩🇪 +49</option>
+                                <option value="36" <?php selected($current_prefix, '36'); ?>>🇭🇺 +36</option>
+                                <option value="40" <?php selected($current_prefix, '40'); ?>>🇷🇴 +40</option>
+                            </select>
+                            <input type="tel" name="phone_number" id="ppv-phone-number" value="<?php echo esc_attr($phone_without_prefix); ?>" placeholder="<?php echo self::t('whatsapp_phone_placeholder'); ?>">
                         </div>
                         <p class="ppv-field-hint"><?php echo self::t('whatsapp_phone_hint'); ?></p>
                     </div>
