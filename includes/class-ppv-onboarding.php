@@ -651,17 +651,28 @@ if (!class_exists('PPV_Onboarding')) {
         }
 
         /**
-         * Ellenőrzi hogy a store-nak van-e beállított POS eszköze (pos_token)
+         * Ellenőrzi hogy a store-nak van-e regisztrált eszköze (ppv_user_devices táblában)
          */
         private static function has_device($store_id) {
             global $wpdb;
 
-            $pos_token = $wpdb->get_var($wpdb->prepare(
-                "SELECT pos_token FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
+            // Get parent store ID (devices are linked to parent store)
+            $parent_id = $wpdb->get_var($wpdb->prepare(
+                "SELECT COALESCE(parent_store_id, id) FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
                 $store_id
             ));
 
-            return !empty($pos_token);
+            if (!$parent_id) {
+                return false;
+            }
+
+            // Check ppv_user_devices table for active devices
+            $count = $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_user_devices WHERE store_id = %d AND status = 'active'",
+                $parent_id
+            ));
+
+            return $count > 0;
         }
 
         /**
