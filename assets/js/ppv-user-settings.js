@@ -149,6 +149,24 @@ function initUserSettings() {
   });
 
   /** =============================
+   * 📱 WHATSAPP PHONE TOGGLE
+   * ============================= */
+  const $whatsappToggle = $('#ppv-whatsapp-toggle');
+  const $phoneWrapper = $('#ppv-whatsapp-phone-wrapper');
+
+  $whatsappToggle.off('change.whatsapp').on('change.whatsapp', function() {
+    if ($(this).is(':checked')) {
+      $phoneWrapper.slideDown(300);
+      // Focus on phone input after animation
+      setTimeout(() => {
+        $('#ppv-phone-number').focus();
+      }, 350);
+    } else {
+      $phoneWrapper.slideUp(300);
+    }
+  });
+
+  /** =============================
    * 💾 BEÁLLÍTÁSOK MENTÉSE
    * ============================= */
   $("#ppv-settings-form").off("submit").on("submit", function (e) {
@@ -163,6 +181,7 @@ function initUserSettings() {
     formData.set('profile_visible', $('input[name="profile_visible"]').is(':checked'));
     formData.set('marketing_emails', $('input[name="marketing_emails"]').is(':checked'));
     formData.set('data_sharing', $('input[name="data_sharing"]').is(':checked'));
+    formData.set('whatsapp_notifications', $('input[name="whatsapp_notifications"]').is(':checked'));
 
     formData.append('action', 'ppv_save_user_settings');
     formData.append('nonce', ppv_user_settings.nonce);

@@ -6747,6 +6747,100 @@ body.ppv-dark .ppv-mypoints-tab.active {
     line-height: 1.4;
 }
 
+/* WhatsApp Toggle - Green accent */
+.ppv-checkbox.ppv-whatsapp-toggle {
+    border-color: rgba(37, 211, 102, 0.2);
+    background: rgba(37, 211, 102, 0.05);
+}
+
+.ppv-checkbox.ppv-whatsapp-toggle:hover {
+    border-color: rgba(37, 211, 102, 0.35);
+    background: rgba(37, 211, 102, 0.1);
+}
+
+.ppv-checkbox.ppv-whatsapp-toggle span i {
+    color: #25D366;
+    margin-right: 4px;
+}
+
+.ppv-checkbox.ppv-whatsapp-toggle input[type="checkbox"]:checked {
+    background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+}
+
+/* WhatsApp Phone Input Field */
+.ppv-whatsapp-phone-field {
+    margin-top: 12px;
+    padding: 16px;
+    background: rgba(37, 211, 102, 0.05);
+    border: 1px solid rgba(37, 211, 102, 0.2);
+    border-radius: var(--ppv-s-radius-sm);
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.ppv-whatsapp-phone-field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ppv-s-text);
+    margin-bottom: 8px !important;
+    margin-top: 0 !important;
+}
+
+.ppv-phone-input-group {
+    display: flex;
+    align-items: stretch;
+    border-radius: var(--ppv-s-radius-sm);
+    overflow: hidden;
+    border: 1px solid rgba(37, 211, 102, 0.3);
+    background: var(--ppv-s-bg);
+}
+
+.ppv-phone-prefix {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 14px;
+    background: rgba(37, 211, 102, 0.1);
+    color: #25D366;
+    font-weight: 600;
+    font-size: 14px;
+    border-right: 1px solid rgba(37, 211, 102, 0.2);
+}
+
+.ppv-phone-prefix i {
+    font-size: 18px;
+}
+
+.ppv-phone-input-group input[type="tel"] {
+    flex: 1;
+    border: none !important;
+    padding: 14px 16px !important;
+    font-size: 16px;
+    background: transparent !important;
+    margin: 0 !important;
+}
+
+.ppv-phone-input-group input[type="tel"]:focus {
+    outline: none;
+    box-shadow: none !important;
+}
+
+.ppv-whatsapp-phone-field .ppv-field-hint {
+    margin-top: 8px;
+    margin-bottom: 0;
+}
+
 /* BUTTONS --------------------------------------------------------------- */
 
 .save-btn,
@@ -7301,6 +7395,40 @@ body.ppv-dark .ppv-checkbox input[type="checkbox"] {
 
 body.ppv-dark .ppv-checkbox input[type="checkbox"]:checked {
     background: linear-gradient(135deg, var(--pp-primary) 0%, #0099cc 100%);
+}
+
+/* Dark mode WhatsApp toggle */
+body.ppv-dark .ppv-checkbox.ppv-whatsapp-toggle {
+    background: rgba(37, 211, 102, 0.1);
+    border-color: rgba(37, 211, 102, 0.25);
+}
+
+body.ppv-dark .ppv-checkbox.ppv-whatsapp-toggle:hover {
+    background: rgba(37, 211, 102, 0.15);
+    border-color: rgba(37, 211, 102, 0.4);
+}
+
+body.ppv-dark .ppv-checkbox.ppv-whatsapp-toggle input[type="checkbox"]:checked {
+    background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+}
+
+body.ppv-dark .ppv-whatsapp-phone-field {
+    background: rgba(37, 211, 102, 0.08);
+    border-color: rgba(37, 211, 102, 0.25);
+}
+
+body.ppv-dark .ppv-phone-input-group {
+    border-color: rgba(37, 211, 102, 0.3);
+    background: var(--pp-bg-2);
+}
+
+body.ppv-dark .ppv-phone-prefix {
+    background: rgba(37, 211, 102, 0.15);
+    border-color: rgba(37, 211, 102, 0.25);
+}
+
+body.ppv-dark .ppv-phone-input-group input[type="tel"] {
+    color: var(--pp-text);
 }
 
 body.ppv-dark .neutral-btn {

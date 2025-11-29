@@ -277,6 +277,28 @@ class PPV_User_Settings {
             $update_data['promo_notifications'] = $_POST['promo_notifications'] === 'true' ? 1 : 0;
             $update_format[] = '%d';
         }
+        if (isset($_POST['whatsapp_notifications'])) {
+            $update_data['whatsapp_consent'] = $_POST['whatsapp_notifications'] === 'true' ? 1 : 0;
+            $update_format[] = '%d';
+            // Track consent timestamp
+            if ($_POST['whatsapp_notifications'] === 'true') {
+                $update_data['whatsapp_consent_at'] = current_time('mysql');
+                $update_format[] = '%s';
+            }
+        }
+
+        // Phone number for WhatsApp
+        if (isset($_POST['phone_number'])) {
+            $phone = sanitize_text_field($_POST['phone_number']);
+            // Remove spaces and dashes
+            $phone = preg_replace('/[\s\-]/', '', $phone);
+            // Add country code if needed
+            if (!empty($phone) && substr($phone, 0, 2) !== '49') {
+                $phone = '49' . ltrim($phone, '0');
+            }
+            $update_data['phone_number'] = $phone;
+            $update_format[] = '%s';
+        }
 
         // Privacy settings
         if (isset($_POST['profile_visible'])) {
@@ -426,10 +448,12 @@ class PPV_User_Settings {
         $lang = $_SESSION['ppv_lang'] ?? 'de';
         ppv_log("🔍 [PPV_User_Settings::render] Using language: {$lang}");
 
-        // Notification settings (default to 1 if null)
+        // Notification settings (default to 1 if null, except WhatsApp which defaults to 0)
         $email_notif = isset($user->email_notifications) ? (bool)$user->email_notifications : true;
         $push_notif = isset($user->push_notifications) ? (bool)$user->push_notifications : true;
         $promo_notif = isset($user->promo_notifications) ? (bool)$user->promo_notifications : true;
+        $whatsapp_notif = isset($user->whatsapp_consent) ? (bool)$user->whatsapp_consent : false;
+        $phone_number = $user->phone_number ?? '';
 
         // Privacy settings
         $profile_visible = isset($user->profile_visible) ? (bool)$user->profile_visible : true;
@@ -513,6 +537,21 @@ class PPV_User_Settings {
                         <input type="checkbox" name="promo_notifications" <?php checked($promo_notif); ?>>
                         <span><?php echo self::t('promo_notifications'); ?></span>
                     </label>
+
+                    <label class="ppv-checkbox ppv-whatsapp-toggle">
+                        <input type="checkbox" name="whatsapp_notifications" id="ppv-whatsapp-toggle" <?php checked($whatsapp_notif); ?>>
+                        <span><i class="ri-whatsapp-line"></i> <?php echo self::t('whatsapp_notifications'); ?></span>
+                    </label>
+                    <p class="ppv-field-hint" style="margin-top: -8px; margin-bottom: 12px;"><?php echo self::t('whatsapp_notifications_hint'); ?></p>
+
+                    <div id="ppv-whatsapp-phone-wrapper" class="ppv-whatsapp-phone-field" style="<?php echo $whatsapp_notif ? '' : 'display: none;'; ?>">
+                        <label><?php echo self::t('whatsapp_phone'); ?></label>
+                        <div class="ppv-phone-input-group">
+                            <span class="ppv-phone-prefix"><i class="ri-whatsapp-line"></i> +49</span>
+                            <input type="tel" name="phone_number" id="ppv-phone-number" value="<?php echo esc_attr(ltrim($phone_number, '+49')); ?>" placeholder="<?php echo self::t('whatsapp_phone_placeholder'); ?>">
+                        </div>
+                        <p class="ppv-field-hint"><?php echo self::t('whatsapp_phone_hint'); ?></p>
+                    </div>
                 </div>
 
                 <!-- Privacy -->
