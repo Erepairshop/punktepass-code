@@ -18,10 +18,11 @@ let allowedOrigins: [String] = ["punktepass.de"]
 // These should also appear in Info.plist
 let authOrigins: [String] = [
     "accounts.google.com",
+    "oauth2.googleapis.com",
+    "www.googleapis.com",
     "www.facebook.com",
     "m.facebook.com",
     "connect.facebook.net",
-    "www.tiktok.com",
     "appleid.apple.com"
 ]
 // allowedOrigins + authOrigins <= 10
