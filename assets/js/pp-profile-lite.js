@@ -84,10 +84,17 @@
 
             this.updateUI();
 
-            // ✅ Restore tab from URL hash (e.g. #tab-contact)
+            // ✅ Restore tab from URL hash or localStorage (survives page refresh)
+            let restoredTab = null;
             if (window.location.hash?.startsWith('#tab-')) {
-                const tabName = window.location.hash.replace('#tab-', '');
-                this.switchTab(tabName);
+                restoredTab = window.location.hash.replace('#tab-', '');
+            } else {
+                try {
+                    restoredTab = localStorage.getItem('ppv_profile_active_tab');
+                } catch (e) {}
+            }
+            if (restoredTab) {
+                this.switchTab(restoredTab);
             }
         }
 
@@ -191,6 +198,18 @@
             document.querySelectorAll('.ppv-tab-btn').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.tab === tabName);
             });
+
+            // ✅ Persist tab to URL hash (survives page refresh)
+            if (history.replaceState) {
+                history.replaceState(null, '', '#tab-' + tabName);
+            } else {
+                window.location.hash = 'tab-' + tabName;
+            }
+
+            // ✅ Also save to localStorage as fallback
+            try {
+                localStorage.setItem('ppv_profile_active_tab', tabName);
+            } catch (e) {}
         }
 
         // ==================== FORM INPUTS ====================
