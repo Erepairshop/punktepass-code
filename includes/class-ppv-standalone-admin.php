@@ -300,6 +300,28 @@ class PPV_Standalone_Admin {
             self::handle_approve($matches[1]);
         } elseif (preg_match('#/admin/reject/([a-zA-Z0-9]+)#', $path, $matches)) {
             self::handle_reject($matches[1]);
+        }
+        // ========================================
+        // 🆕 NEW STANDALONE ADMIN PAGES
+        // ========================================
+        elseif ($path === '/admin/renewals') {
+            require_once __DIR__ . '/admin/standalone/renewals.php';
+            PPV_Standalone_Renewals::render();
+        } elseif ($path === '/admin/support') {
+            require_once __DIR__ . '/admin/standalone/support.php';
+            PPV_Standalone_Support::render();
+        } elseif ($path === '/admin/suspicious-scans') {
+            require_once __DIR__ . '/admin/standalone/suspicious-scans.php';
+            PPV_Standalone_SuspiciousScans::render();
+        } elseif ($path === '/admin/pending-scans') {
+            require_once __DIR__ . '/admin/standalone/pending-scans.php';
+            PPV_Standalone_PendingScans::render();
+        } elseif ($path === '/admin/devices') {
+            require_once __DIR__ . '/admin/standalone/devices.php';
+            PPV_Standalone_Devices::render();
+        } elseif ($path === '/admin/pos-log') {
+            require_once __DIR__ . '/admin/standalone/pos-log.php';
+            PPV_Standalone_POSLog::render();
         } else {
             self::render_dashboard();
         }
@@ -1062,14 +1084,29 @@ class PPV_Standalone_Admin {
                     <a href="/admin/dashboard" class="<?php echo $current_page === 'dashboard' ? 'active' : ''; ?>">
                         <i class="ri-dashboard-line"></i> Vezérlőpult
                     </a>
-                    <a href="/admin/device-requests" class="<?php echo $current_page === 'device-requests' ? 'active' : ''; ?>">
-                        <i class="ri-smartphone-line"></i> Készülék kérelmek
-                    </a>
                     <a href="/admin/handlers" class="<?php echo $current_page === 'handlers' ? 'active' : ''; ?>">
                         <i class="ri-store-2-line"></i> Handlerek
                     </a>
-                    <a href="/admin/device-deletion-log" class="<?php echo $current_page === 'device-deletion-log' ? 'active' : ''; ?>">
-                        <i class="ri-delete-bin-line"></i> Törlési napló
+                    <a href="/admin/device-requests" class="<?php echo $current_page === 'device-requests' ? 'active' : ''; ?>">
+                        <i class="ri-smartphone-line"></i> Készülékek
+                    </a>
+                    <a href="/admin/support" class="<?php echo $current_page === 'support' ? 'active' : ''; ?>">
+                        <i class="ri-customer-service-line"></i> Támogatás
+                    </a>
+                    <a href="/admin/renewals" class="<?php echo $current_page === 'renewals' ? 'active' : ''; ?>">
+                        <i class="ri-refresh-line"></i> Megújítások
+                    </a>
+                    <a href="/admin/suspicious-scans" class="<?php echo $current_page === 'suspicious-scans' ? 'active' : ''; ?>">
+                        <i class="ri-alarm-warning-line"></i> Gyanús
+                    </a>
+                    <a href="/admin/pending-scans" class="<?php echo $current_page === 'pending-scans' ? 'active' : ''; ?>">
+                        <i class="ri-time-line"></i> Függő
+                    </a>
+                    <a href="/admin/devices" class="<?php echo $current_page === 'devices' ? 'active' : ''; ?>">
+                        <i class="ri-device-line"></i> Eszközök
+                    </a>
+                    <a href="/admin/pos-log" class="<?php echo $current_page === 'pos-log' ? 'active' : ''; ?>">
+                        <i class="ri-file-list-line"></i> POS Log
                     </a>
                     <a href="/admin/whatsapp" class="<?php echo $current_page === 'whatsapp' ? 'active' : ''; ?>">
                         <i class="ri-whatsapp-line"></i> WhatsApp
