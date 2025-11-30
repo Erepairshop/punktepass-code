@@ -1229,25 +1229,25 @@ public static function render_landing_page($atts) {
      * 🔹 Verify Google JWT Token
      * ============================================================ */
   private static function verify_google_token($credential) {
-        // Check wp-config.php define first, then options table
-        $client_id = defined('PPV_GOOGLE_CLIENT_ID') ? PPV_GOOGLE_CLIENT_ID : get_option('ppv_google_client_id', '645942978357-ndj7dgrapd2dgndnjf03se1p08l0o9ra.apps.googleusercontent.com');
-        
+        // Web client ID (for browser logins)
+        $web_client_id = defined('PPV_GOOGLE_CLIENT_ID') ? PPV_GOOGLE_CLIENT_ID : get_option('ppv_google_client_id', '645942978357-ndj7dgrapd2dgndnjf03se1p08l0o9ra.apps.googleusercontent.com');
+        // iOS client ID (for native iOS app logins)
+        $ios_client_id = '645942978357-1bdviltt810gutpve9vjj2kab340man6.apps.googleusercontent.com';
+
         ppv_log("🔍 [PPV_Google] Starting token verification");
-        
-        if (empty($client_id)) {
-            return false;
-        }
-        
+
         // Decode JWT
         $parts = explode('.', $credential);
         if (count($parts) !== 3) {
             return false;
         }
-        
+
         $payload = json_decode(base64_decode(str_replace(['-', '_'], ['+', '/'], $parts[1])), true);
-        
-        // Verify audience
-        if (!isset($payload['aud']) || $payload['aud'] !== $client_id) {
+
+        // Verify audience - accept both Web and iOS client IDs
+        $valid_audiences = [$web_client_id, $ios_client_id];
+        if (!isset($payload['aud']) || !in_array($payload['aud'], $valid_audiences)) {
+            ppv_log("❌ [PPV_Google] Invalid audience: " . ($payload['aud'] ?? 'none'));
             return false;
         }
         
