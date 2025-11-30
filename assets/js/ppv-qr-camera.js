@@ -606,6 +606,12 @@
         this.updateStatus('scanning', L.scanner_active || 'Scanning...');
 
       } catch (e) {
+        // Ignore "interrupted" errors (happens on quick start/stop)
+        if (e?.name === 'AbortError') {
+          ppvLog('[Camera] Play interrupted, ignoring...');
+          return;
+        }
+
         ppvWarn('[Camera] QrScanner error:', e);
         console.error('[Camera] Detailed error:', e);
 
@@ -617,6 +623,10 @@
           this.updateStatus('error', '❌ Keine Kamera gefunden');
         } else if (/in use|busy/i.test(errMsg)) {
           this.updateStatus('error', '❌ Kamera wird verwendet');
+        } else if (/interrupted/i.test(errMsg)) {
+          // Play was interrupted - ignore silently
+          ppvLog('[Camera] Play interrupted, ignoring...');
+          return;
         } else {
           this.updateStatus('error', '❌ Kamera nicht verfügbar');
           window.ppvToast('Kamera-Fehler: ' + errMsg.substring(0, 50), 'error');
@@ -649,7 +659,15 @@
         });
 
         video.srcObject = stream;
-        await video.play();
+        try {
+          await video.play();
+        } catch (playErr) {
+          // Ignore "interrupted" errors (happens on quick start/stop)
+          if (playErr.name !== 'AbortError') {
+            throw playErr;
+          }
+          ppvLog('[jsQR] Play interrupted, continuing...');
+        }
 
         canvas.width = video.videoWidth || 1280;
         canvas.height = video.videoHeight || 720;
