@@ -342,8 +342,8 @@
 
     async checkDeviceAllowed() {
       try {
-        const fingerprint = await this.getDeviceFingerprint();
-        if (!fingerprint) {
+        const fpResult = await this.getDeviceFingerprintFull();
+        if (!fpResult || !fpResult.visitorId) {
           ppvWarn('[Scanner] No fingerprint available - blocking scanner');
           return {
             allowed: false,
@@ -351,10 +351,14 @@
           };
         }
 
+        // Send fingerprint with components for similarity matching (auto-update feature)
         const response = await fetch('/wp-json/punktepass/v1/user-devices/check', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fingerprint: fingerprint })
+          body: JSON.stringify({
+            fingerprint: fpResult.visitorId,
+            components: fpResult.components // For auto-update similarity matching
+          })
         });
 
         const data = await response.json();
@@ -392,14 +396,32 @@
       }
     }
 
-    async getDeviceFingerprint() {
+    /**
+     * Get device fingerprint with components for similarity matching
+     * Returns { visitorId, components } or null
+     */
+    async getDeviceFingerprintFull() {
       try {
         if (window.FingerprintJS) {
           const fp = await FingerprintJS.load();
           const result = await fp.get();
-          return result.visitorId;
+          // Extract key components for similarity comparison
+          const components = {};
+          if (result.components) {
+            // Store stable components (less likely to change)
+            const stableKeys = ['platform', 'timezone', 'languages', 'colorDepth', 'deviceMemory',
+                               'hardwareConcurrency', 'screenResolution', 'vendor', 'vendorFlavors',
+                               'cookiesEnabled', 'colorGamut', 'audio', 'canvas', 'webGlBasics'];
+            for (const key of stableKeys) {
+              if (result.components[key]) {
+                components[key] = result.components[key].value;
+              }
+            }
+          }
+          return { visitorId: result.visitorId, components };
         }
 
+        // Fallback: generate simple fingerprint without components
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         ctx.textBaseline = 'top';
@@ -413,11 +435,20 @@
           hash2 = ((hash2 << 7) - hash2) + data.charCodeAt(i);
           hash2 = hash2 & hash2;
         }
-        return 'fp_' + Math.abs(hash1).toString(16).padStart(8, '0') + Math.abs(hash2).toString(16).padStart(8, '0');
+        return {
+          visitorId: 'fp_' + Math.abs(hash1).toString(16).padStart(8, '0') + Math.abs(hash2).toString(16).padStart(8, '0'),
+          components: null
+        };
       } catch (e) {
         ppvWarn('[Scanner] Fingerprint error:', e);
         return null;
       }
+    }
+
+    // Legacy method for backwards compatibility
+    async getDeviceFingerprint() {
+      const result = await this.getDeviceFingerprintFull();
+      return result ? result.visitorId : null;
     }
 
     showDeviceBlockedMessage(message) {
@@ -485,8 +516,10 @@
         return;
       }
 
+      // Load QR Scanner from local vendor (no CDN dependency)
+      const pluginUrl = window.PPV_STORE_DATA?.plugin_url || '/wp-content/plugins/punktepass/';
       const script = document.createElement('script');
-      script.src = 'https://unpkg.com/qr-scanner@1.4.2/qr-scanner.umd.min.js';
+      script.src = pluginUrl + 'assets/js/vendor/qr-scanner.umd.min.js';
       script.onload = () => this.startQrScanner();
       script.onerror = () => {
         ppvWarn('[Camera] qr-scanner failed to load, falling back to jsQR');
@@ -497,6 +530,7 @@
 
     loadFallbackLibrary() {
       if (window.jsQR) { this.startJsQRScanner(); return; }
+      // jsQR fallback still uses CDN (less critical, only used if local qr-scanner fails)
       const script = document.createElement('script');
       script.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
       script.onload = () => this.startJsQRScanner();
@@ -529,7 +563,7 @@
           options
         );
 
-        QrScanner.WORKER_PATH = 'https://unpkg.com/qr-scanner@1.4.2/qr-scanner-worker.min.js';
+        // Note: WORKER_PATH no longer needed in qr-scanner 1.4.2+ (worker is bundled inline)
 
         await this.scanner.start();
         ppvLog('[Camera] QrScanner started successfully');
@@ -686,8 +720,9 @@
       this.inlineProcessScan(qrCode);
     }
 
-    inlineProcessScan(qrCode) {
+    async inlineProcessScan(qrCode) {
       const gps = getGpsCoordinates();
+      const fingerprint = await this.getDeviceFingerprint();
 
       fetch('/wp-json/punktepass/v1/pos/scan', {
         method: 'POST',
@@ -699,7 +734,8 @@
           latitude: gps.latitude,
           longitude: gps.longitude,
           scanner_id: getScannerId(),
-          scanner_name: getScannerName()
+          scanner_name: getScannerName(),
+          device_fingerprint: fingerprint
         })
       })
         .then(res => res.json())

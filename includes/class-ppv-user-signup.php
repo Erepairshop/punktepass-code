@@ -15,8 +15,8 @@ class PPV_User_Signup {
 
     /** 🔹 Scripts + AJAX URL */
     public static function enqueue_assets() {
-        // Load FingerprintJS for device identification
-        wp_enqueue_script('fingerprintjs', 'https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@4/dist/fp.min.js', [], '4.0', true);
+        // Load FingerprintJS for device identification (local vendor file - no CDN dependency)
+        wp_enqueue_script('fingerprintjs', PPV_PLUGIN_URL . 'assets/js/vendor/fp.min.js', [], '4.6.2', true);
 
         wp_enqueue_script('ppv-user-signup', PPV_PLUGIN_URL . 'assets/js/ppv-user-signup.js', ['jquery', 'fingerprintjs'], time(), true);
         $__data = is_array([

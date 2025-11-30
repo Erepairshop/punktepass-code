@@ -638,6 +638,7 @@ class PPV_QR {
             $store_data = [
                 'store_id' => intval($store_id),
                 'store_key' => $store_key ?: '',
+                'plugin_url' => PPV_PLUGIN_URL, // For local vendor scripts (no CDN dependency)
             ];
 
             // Add scanner info if this is a scanner user
