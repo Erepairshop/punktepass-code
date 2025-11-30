@@ -4,24 +4,19 @@ import AuthenticationServices
 import SafariServices
 import CommonCrypto
 
-// Google OAuth handler using ASWebAuthenticationSession (Google blocks OAuth in WKWebView)
-class GoogleAuthHandler: NSObject, ASWebAuthenticationPresentationContextProviding {
+// Google OAuth handler using SFSafariViewController (ASWebAuthenticationSession has issues with HTTPS redirects)
+class GoogleAuthHandler: NSObject, SFSafariViewControllerDelegate {
     static let shared = GoogleAuthHandler()
     weak var webView: WKWebView?
     weak var viewController: UIViewController?
-    private var authSession: ASWebAuthenticationSession?
-    private var codeVerifier: String?
+    var safariVC: SFSafariViewController?
+    var codeVerifier: String?
+    var authCompletion: ((String?) -> Void)?
 
     // Google OAuth Web Client ID (from Google Cloud Console)
     private let googleClientId = "645942978357-ndj7dgrapd2dgndnjf03se1p08l0o9ra.apps.googleusercontent.com"
-    // Callback scheme for iOS app (reversed iOS client ID - used to catch the redirect)
-    private let callbackScheme = "com.googleusercontent.apps.645942978357-1bdviltt810gutpve9vjj2kab340man6"
     // HTTPS redirect URI that points to our PHP handler
-    private let redirectUri = "https://punktepass.de/google-callback.php"
-
-    func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
-        return viewController?.view.window ?? UIWindow()
-    }
+    let redirectUri = "https://punktepass.de/google-callback.php"
 
     func isGoogleOAuthURL(_ url: URL) -> Bool {
         guard let host = url.host else { return false }
@@ -36,7 +31,7 @@ class GoogleAuthHandler: NSObject, ASWebAuthenticationPresentationContextProvidi
     }
 
     // Generate PKCE code verifier (random string)
-    private func generateCodeVerifier() -> String {
+    func generateCodeVerifier() -> String {
         var buffer = [UInt8](repeating: 0, count: 32)
         _ = SecRandomCopyBytes(kSecRandomDefault, buffer.count, &buffer)
         return Data(buffer).base64EncodedString()
@@ -46,7 +41,7 @@ class GoogleAuthHandler: NSObject, ASWebAuthenticationPresentationContextProvidi
     }
 
     // Generate PKCE code challenge from verifier
-    private func generateCodeChallenge(from verifier: String) -> String {
+    func generateCodeChallenge(from verifier: String) -> String {
         guard let data = verifier.data(using: .utf8) else { return "" }
         var hash = [UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
         data.withUnsafeBytes {
@@ -58,13 +53,16 @@ class GoogleAuthHandler: NSObject, ASWebAuthenticationPresentationContextProvidi
             .replacingOccurrences(of: "=", with: "")
     }
 
-    func startGoogleAuth(completion: @escaping (String?) -> Void) {
+    func startGoogleAuth(from viewController: UIViewController, completion: @escaping (String?) -> Void) {
+        // Store completion for later
+        authCompletion = completion
+        self.viewController = viewController
+
         // Generate PKCE verifier and challenge
         codeVerifier = generateCodeVerifier()
         let codeChallenge = generateCodeChallenge(from: codeVerifier!)
 
-        // Build Google OAuth URL for authorization code flow with PKCE
-        // Uses HTTPS redirect to our server, which then redirects to the app's custom URL scheme
+        // Build Google OAuth URL
         var components = URLComponents(string: "https://accounts.google.com/o/oauth2/v2/auth")!
         components.queryItems = [
             URLQueryItem(name: "client_id", value: googleClientId),
@@ -82,51 +80,56 @@ class GoogleAuthHandler: NSObject, ASWebAuthenticationPresentationContextProvidi
             return
         }
 
-        print("Google Auth: Starting authentication with URL: \(authURL)")
+        print("Google Auth: Opening Safari with URL: \(authURL)")
 
-        authSession = ASWebAuthenticationSession(
-            url: authURL,
-            callbackURLScheme: callbackScheme
-        ) { [weak self] callbackURL, error in
-            guard let self = self else { return }
-
-            if let error = error {
-                print("Google Auth Error: \(error.localizedDescription)")
-                completion(nil)
-                return
-            }
-
-            guard let callbackURL = callbackURL else {
-                print("Google Auth: No callback URL")
-                completion(nil)
-                return
-            }
-
-            print("Google Auth: Callback URL: \(callbackURL)")
-
-            // Extract authorization code from URL
-            let components = URLComponents(url: callbackURL, resolvingAgainstBaseURL: false)
-            guard let code = components?.queryItems?.first(where: { $0.name == "code" })?.value else {
-                print("Google Auth: No authorization code in callback")
-                completion(nil)
-                return
-            }
-
-            print("Google Auth: Got authorization code")
-
-            // Exchange code for tokens
-            self.exchangeCodeForTokens(code: code, completion: completion)
-        }
-
-        authSession?.presentationContextProvider = self
-        authSession?.prefersEphemeralWebBrowserSession = false
-        authSession?.start()
+        // Open in SFSafariViewController
+        safariVC = SFSafariViewController(url: authURL)
+        safariVC?.delegate = self
+        safariVC?.modalPresentationStyle = .pageSheet
+        viewController.present(safariVC!, animated: true)
     }
 
-    private func exchangeCodeForTokens(code: String, completion: @escaping (String?) -> Void) {
+    // Called when user dismisses Safari without completing auth
+    func safariViewControllerDidFinish(_ controller: SFSafariViewController) {
+        print("Google Auth: User dismissed Safari")
+        authCompletion?(nil)
+        authCompletion = nil
+    }
+
+    // Called from SceneDelegate when we receive the callback URL
+    func handleCallback(url: URL) {
+        print("Google Auth: Received callback URL: \(url)")
+
+        // Dismiss Safari
+        safariVC?.dismiss(animated: true)
+        safariVC = nil
+
+        // Extract authorization code
+        let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+
+        if let error = components?.queryItems?.first(where: { $0.name == "error" })?.value {
+            print("Google Auth: Error from callback: \(error)")
+            authCompletion?(nil)
+            authCompletion = nil
+            return
+        }
+
+        guard let code = components?.queryItems?.first(where: { $0.name == "code" })?.value else {
+            print("Google Auth: No authorization code in callback")
+            authCompletion?(nil)
+            authCompletion = nil
+            return
+        }
+
+        print("Google Auth: Got authorization code, exchanging for tokens...")
+        exchangeCodeForTokens(code: code)
+    }
+
+    private func exchangeCodeForTokens(code: String) {
         guard let verifier = codeVerifier else {
             print("Google Auth: No code verifier")
-            completion(nil)
+            authCompletion?(nil)
+            authCompletion = nil
             return
         }
 
@@ -148,16 +151,24 @@ class GoogleAuthHandler: NSObject, ASWebAuthenticationPresentationContextProvidi
 
         print("Google Auth: Exchanging code for tokens...")
 
-        URLSession.shared.dataTask(with: request) { data, response, error in
+        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+            guard let self = self else { return }
+
             if let error = error {
                 print("Google Auth: Token exchange error: \(error.localizedDescription)")
-                completion(nil)
+                DispatchQueue.main.async {
+                    self.authCompletion?(nil)
+                    self.authCompletion = nil
+                }
                 return
             }
 
             guard let data = data else {
                 print("Google Auth: No data from token exchange")
-                completion(nil)
+                DispatchQueue.main.async {
+                    self.authCompletion?(nil)
+                    self.authCompletion = nil
+                }
                 return
             }
 
@@ -165,18 +176,30 @@ class GoogleAuthHandler: NSObject, ASWebAuthenticationPresentationContextProvidi
                 if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
                     if let idToken = json["id_token"] as? String {
                         print("Google Auth: Got ID token (length: \(idToken.count))")
-                        completion(idToken)
+                        DispatchQueue.main.async {
+                            self.authCompletion?(idToken)
+                            self.authCompletion = nil
+                        }
                     } else if let errorDesc = json["error_description"] as? String {
                         print("Google Auth: Token error: \(errorDesc)")
-                        completion(nil)
+                        DispatchQueue.main.async {
+                            self.authCompletion?(nil)
+                            self.authCompletion = nil
+                        }
                     } else {
                         print("Google Auth: Unknown token response: \(json)")
-                        completion(nil)
+                        DispatchQueue.main.async {
+                            self.authCompletion?(nil)
+                            self.authCompletion = nil
+                        }
                     }
                 }
             } catch {
                 print("Google Auth: JSON parse error: \(error)")
-                completion(nil)
+                DispatchQueue.main.async {
+                    self.authCompletion?(nil)
+                    self.authCompletion = nil
+                }
             }
         }.resume()
     }
@@ -422,14 +445,13 @@ extension ViewController: WKUIDelegate, WKDownloadDelegate {
         }
 
         if let requestUrl = navigationAction.request.url{
-            // Handle Google OAuth with ASWebAuthenticationSession (Google blocks OAuth in WKWebView)
+            // Handle Google OAuth with SFSafariViewController (Google blocks OAuth in WKWebView)
             if GoogleAuthHandler.shared.isGoogleOAuthURL(requestUrl) {
                 decisionHandler(.cancel)
                 GoogleAuthHandler.shared.webView = webView
-                GoogleAuthHandler.shared.viewController = self
 
-                // Start native Google OAuth flow
-                GoogleAuthHandler.shared.startGoogleAuth { [weak self] idToken in
+                // Start native Google OAuth flow via Safari
+                GoogleAuthHandler.shared.startGoogleAuth(from: self) { [weak self] idToken in
                     DispatchQueue.main.async {
                         if let token = idToken {
                             // Inject the credential into the web page

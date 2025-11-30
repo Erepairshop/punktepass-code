@@ -41,15 +41,22 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     
     // This function is called when our app is already running and the user clicks a custom scheme URL
     func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
-        if let scheme = URLContexts.first?.url {
-            // Convert scheme://url to a https://url and navigate to it
-            var comps = URLComponents(url: scheme, resolvingAgainstBaseURL: false)
-            comps?.scheme = "https"
+        guard let url = URLContexts.first?.url else { return }
 
-            if let url = comps?.url {
-                // Handle it inside our web view in a SPA-friendly way.
-                PunktePass.webView.evaluateJavaScript("location.href = '\(url)'")
-            }
+        // Check if this is a Google OAuth callback
+        if url.scheme?.starts(with: "com.googleusercontent.apps") == true {
+            print("SceneDelegate: Received Google OAuth callback: \(url)")
+            GoogleAuthHandler.shared.handleCallback(url: url)
+            return
+        }
+
+        // Otherwise, handle as before - convert scheme://url to https://url
+        var comps = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        comps?.scheme = "https"
+
+        if let httpsUrl = comps?.url {
+            // Handle it inside our web view in a SPA-friendly way.
+            PunktePass.webView.evaluateJavaScript("location.href = '\(httpsUrl)'")
         }
     }
 
