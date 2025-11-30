@@ -44,19 +44,20 @@ class GoogleAuthHandler: NSObject, ASWebAuthenticationPresentationContextProvidi
         return isGoogleAuth
     }
 
-    // Generate PKCE code verifier (random string)
+    // Generate PKCE code verifier (43-128 characters, URL-safe)
     func generateCodeVerifier() -> String {
-        var buffer = [UInt8](repeating: 0, count: 32)
-        _ = SecRandomCopyBytes(kSecRandomDefault, buffer.count, &buffer)
-        return Data(buffer).base64EncodedString()
-            .replacingOccurrences(of: "+", with: "-")
-            .replacingOccurrences(of: "/", with: "_")
-            .replacingOccurrences(of: "=", with: "")
+        // Use only alphanumeric characters to avoid any encoding issues
+        let characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        var result = ""
+        for _ in 0..<64 {
+            result.append(characters.randomElement()!)
+        }
+        return result
     }
 
-    // Generate PKCE code challenge from verifier
+    // Generate PKCE code challenge from verifier (SHA256 + base64url)
     func generateCodeChallenge(from verifier: String) -> String {
-        guard let data = verifier.data(using: .utf8) else { return "" }
+        guard let data = verifier.data(using: .ascii) else { return "" }
         var hash = [UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
         data.withUnsafeBytes {
             _ = CC_SHA256($0.baseAddress, CC_LONG(data.count), &hash)
@@ -75,6 +76,9 @@ class GoogleAuthHandler: NSObject, ASWebAuthenticationPresentationContextProvidi
         // Generate PKCE verifier and challenge
         codeVerifier = generateCodeVerifier()
         let codeChallenge = generateCodeChallenge(from: codeVerifier!)
+
+        print("Google Auth: Verifier length: \(codeVerifier!.count)")
+        print("Google Auth: Challenge: \(codeChallenge)")
 
         // Build Google OAuth URL with iOS client ID and custom scheme redirect
         var components = URLComponents(string: "https://accounts.google.com/o/oauth2/v2/auth")!
@@ -101,6 +105,13 @@ class GoogleAuthHandler: NSObject, ASWebAuthenticationPresentationContextProvidi
         // Use ASWebAuthenticationSession - it handles custom URL scheme callbacks automatically
         authSession = ASWebAuthenticationSession(url: authURL, callbackURLScheme: callbackScheme) { [weak self] callbackURL, error in
             guard let self = self else { return }
+
+            // IMPORTANT: Process callback URL even if there's an error (iOS bug workaround)
+            if let callbackURL = callbackURL {
+                print("Google Auth: Received callback URL: \(callbackURL)")
+                self.handleCallback(url: callbackURL)
+                return
+            }
 
             if let error = error {
                 print("Google Auth: Session error: \(error.localizedDescription)")
