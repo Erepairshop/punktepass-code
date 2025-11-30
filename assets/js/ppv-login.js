@@ -265,6 +265,15 @@ function initLogin() {
         glog('📋 Client ID:', clientId ? clientId.substring(0, 20) + '...' : 'MISSING');
         glog('📦 google object exists:', typeof google !== 'undefined');
         glog('📦 google.accounts exists:', typeof google !== 'undefined' && !!google.accounts);
+        glog('📱 isNativeIOSApp:', window.isNativeIOSApp);
+
+        // 🍎 iOS native app handles Google login natively - skip web SDK initialization
+        if (window.isNativeIOSApp) {
+            glog('🍎 Native iOS app detected - skipping Google SDK initialization');
+            console.log('🍎 Google login will be handled natively by iOS app');
+            // Button remains enabled - iOS native handler will intercept clicks
+            return;
+        }
 
         if (!clientId) {
             console.warn('Google Client ID not configured');
