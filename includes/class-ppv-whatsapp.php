@@ -159,14 +159,15 @@ class PPV_WhatsApp {
             return new WP_REST_Response(['success' => false, 'message' => 'Fehlende Parameter'], 400);
         }
 
-        // Get store for language detection
+        // Get store for store name
         $store = self::get_store_config($store_id);
         if (!$store) {
             return new WP_REST_Response(['success' => false, 'message' => 'Store nicht gefunden'], 404);
         }
 
         $store_name = $store->company_name ?: $store->name ?: 'Test Store';
-        $language = self::get_language_from_country($store->country);
+        // Language based on phone number prefix (not store country)
+        $language = self::get_language_from_phone($phone);
 
         // Select template based on type
         switch ($template_type) {
@@ -718,8 +719,8 @@ class PPV_WhatsApp {
 
             if ($already_sent > 0) continue;
 
-            // Send birthday template
-            $language = self::get_language_from_country($store->country);
+            // Send birthday template - language based on phone prefix
+            $language = self::get_language_from_phone($user->phone_number);
             $template_name = self::get_template_name('punktepass_birthday', $language);
 
             $result = self::send_template(
@@ -793,8 +794,8 @@ class PPV_WhatsApp {
 
             if ($already_sent > 0) continue;
 
-            // Send comeback template
-            $language = self::get_language_from_country($store->country);
+            // Send comeback template - language based on phone prefix
+            $language = self::get_language_from_phone($user->phone_number);
             $template_name = self::get_template_name('punktepass_comeback', $language);
 
             $result = self::send_template(
@@ -871,7 +872,8 @@ class PPV_WhatsApp {
         }
 
         $store_name = $store->company_name ?: $store->name;
-        $language = self::get_language_from_country($store->country);
+        // Language based on phone prefix
+        $language = self::get_language_from_phone($user->phone_number);
         $template_name = self::get_template_name('punktepass_google_review', $language);
 
         // Send template
@@ -1222,6 +1224,38 @@ class PPV_WhatsApp {
             return 'ro';
         }
 
+        return 'de';
+    }
+
+    /**
+     * Get language code from phone number prefix
+     * This takes priority over store country for determining message language
+     */
+    private static function get_language_from_phone($phone) {
+        // Clean phone number
+        $phone = preg_replace('/[^0-9+]/', '', $phone);
+
+        // Romanian: +40
+        if (preg_match('/^\+?40/', $phone)) {
+            return 'ro';
+        }
+
+        // Hungarian: +36
+        if (preg_match('/^\+?36/', $phone)) {
+            return 'hu';
+        }
+
+        // Austrian: +43
+        if (preg_match('/^\+?43/', $phone)) {
+            return 'de';
+        }
+
+        // German: +49
+        if (preg_match('/^\+?49/', $phone)) {
+            return 'de';
+        }
+
+        // Default to German
         return 'de';
     }
 
