@@ -20,7 +20,7 @@ class PPV_Login {
         add_action('wp_ajax_nopriv_ppv_login', [__CLASS__, 'ajax_login']);
         add_action('wp_ajax_nopriv_ppv_google_login', [__CLASS__, 'ajax_google_login']);
         add_action('wp_ajax_nopriv_ppv_facebook_login', [__CLASS__, 'ajax_facebook_login']);
-        add_action('wp_ajax_nopriv_ppv_tiktok_login', [__CLASS__, 'ajax_tiktok_login']);
+        // add_action('wp_ajax_nopriv_ppv_tiktok_login', [__CLASS__, 'ajax_tiktok_login']); // TikTok login disabled
         add_action('wp_ajax_nopriv_ppv_apple_login', [__CLASS__, 'ajax_apple_login']);
         add_action('template_redirect', [__CLASS__, 'check_already_logged_in'], 1);
     }
@@ -450,7 +450,7 @@ public static function render_landing_page($atts) {
                                     <span>Facebook</span>
                                 </button>
 
-                                <!-- TikTok Login Button -->
+                                <!-- TikTok Login Button - DISABLED
                                 <button type="button" id="ppv-tiktok-login-btn" class="ppv-social-btn ppv-tiktok-btn">
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                                         <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" fill="#000000"/>
@@ -459,6 +459,7 @@ public static function render_landing_page($atts) {
                                     </svg>
                                     <span>TikTok</span>
                                 </button>
+                                -->
 
                                 <!-- Apple Login Button -->
                                 <button type="button" id="ppv-apple-login-btn" class="ppv-social-btn ppv-apple-btn">
@@ -583,7 +584,7 @@ public static function render_landing_page($atts) {
             nonce: '<?php echo wp_create_nonce('ppv_login_nonce'); ?>',
             google_client_id: '<?php echo defined('PPV_GOOGLE_CLIENT_ID') ? PPV_GOOGLE_CLIENT_ID : get_option('ppv_google_client_id', '645942978357-ndj7dgrapd2dgndnjf03se1p08l0o9ra.apps.googleusercontent.com'); ?>',
             facebook_app_id: '<?php echo defined('PPV_FACEBOOK_APP_ID') ? PPV_FACEBOOK_APP_ID : get_option('ppv_facebook_app_id', '32519769227670976'); ?>',
-            tiktok_client_key: '<?php echo defined('PPV_TIKTOK_CLIENT_KEY') ? PPV_TIKTOK_CLIENT_KEY : get_option('ppv_tiktok_client_key', '9bb6aca5781d007d6c00fe3ed60d6734'); ?>',
+            // tiktok_client_key: '<?php echo defined('PPV_TIKTOK_CLIENT_KEY') ? PPV_TIKTOK_CLIENT_KEY : get_option('ppv_tiktok_client_key', '9bb6aca5781d007d6c00fe3ed60d6734'); ?>', // TikTok disabled
             apple_client_id: '<?php echo defined('PPV_APPLE_CLIENT_ID') ? PPV_APPLE_CLIENT_ID : get_option('ppv_apple_client_id', ''); ?>',
             apple_redirect_uri: '<?php echo home_url('/login'); ?>',
             redirect_url: '<?php echo home_url('/user_dashboard'); ?>'

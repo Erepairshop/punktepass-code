@@ -93,7 +93,7 @@ function initLogin() {
         initFormValidation();
         initGoogleLogin();
         initFacebookLogin();
-        initTikTokLogin();
+        // initTikTokLogin(); // TikTok login disabled
         initAppleLogin();
         initFormSubmit();
         initLanguageSwitcher();
