@@ -720,8 +720,9 @@
       this.inlineProcessScan(qrCode);
     }
 
-    inlineProcessScan(qrCode) {
+    async inlineProcessScan(qrCode) {
       const gps = getGpsCoordinates();
+      const fingerprint = await this.getDeviceFingerprint();
 
       fetch('/wp-json/punktepass/v1/pos/scan', {
         method: 'POST',
@@ -733,7 +734,8 @@
           latitude: gps.latitude,
           longitude: gps.longitude,
           scanner_id: getScannerId(),
-          scanner_name: getScannerName()
+          scanner_name: getScannerName(),
+          device_fingerprint: fingerprint
         })
       })
         .then(res => res.json())
