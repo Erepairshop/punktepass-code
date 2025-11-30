@@ -551,11 +551,19 @@
 
         const options = {
           preferredCamera: 'environment',
-          maxScansPerSecond: 3,
-
+          maxScansPerSecond: 5,
           highlightScanRegion: true,
           highlightCodeOutline: true,
-          returnDetailedScanResult: true
+          returnDetailedScanResult: true,
+          // Use full video for scanning - helps with close-up QR codes
+          calculateScanRegion: (video) => {
+            return {
+              x: 0,
+              y: 0,
+              width: video.videoWidth,
+              height: video.videoHeight
+            };
+          }
         };
 
         this.scanner = new QrScanner(
@@ -583,6 +591,15 @@
               }
               if (capabilities.exposureMode?.includes('continuous')) {
                 advancedConstraints.push({ exposureMode: 'continuous' });
+              }
+              // Set closer focus distance if supported (helps with close-up scanning)
+              if (capabilities.focusDistance) {
+                const minFocus = capabilities.focusDistance.min || 0;
+                const maxFocus = capabilities.focusDistance.max || 1;
+                // Set focus distance to closer range (20-30% of range for close-up)
+                const closeFocus = minFocus + (maxFocus - minFocus) * 0.25;
+                advancedConstraints.push({ focusDistance: closeFocus });
+                ppvLog('[Camera] Focus distance set to:', closeFocus, '(range:', minFocus, '-', maxFocus, ')');
               }
               if (advancedConstraints.length > 0) {
                 await this.videoTrack.applyConstraints({ advanced: advancedConstraints });
