@@ -15,8 +15,8 @@ class GoogleAuthHandler: NSObject, SFSafariViewControllerDelegate {
 
     // Google OAuth Web Client ID (from Google Cloud Console)
     private let googleClientId = "645942978357-ndj7dgrapd2dgndnjf03se1p08l0o9ra.apps.googleusercontent.com"
-    // HTTPS redirect URI that points to our PHP handler
-    let redirectUri = "https://punktepass.de/google-callback.php"
+    // HTTPS redirect URI - handled by WordPress rewrite rule
+    let redirectUri = "https://punktepass.de/google-callback"
 
     func isGoogleOAuthURL(_ url: URL) -> Bool {
         guard let host = url.host else { return false }

@@ -735,11 +735,45 @@ add_action('init', function () {
     add_rewrite_rule('^store/([^/]*)/?$', 'index.php?pagename=store&store=$matches[1]', 'top');
     // Referral links: /r/{code}/{store_key}
     add_rewrite_rule('^r/([A-Za-z0-9]+)/([^/]+)/?$', 'index.php?ppv_referral_code=$matches[1]&ppv_referral_store=$matches[2]', 'top');
+    // iOS Google OAuth callback
+    add_rewrite_rule('^google-callback/?$', 'index.php?ppv_google_callback=1', 'top');
 }, 10);
+
+// ========================================
+// 📱 iOS GOOGLE OAUTH CALLBACK
+// ========================================
+add_filter('query_vars', function($vars) {
+    $vars[] = 'ppv_google_callback';
+    return $vars;
+});
+
+add_action('template_redirect', function() {
+    if (get_query_var('ppv_google_callback')) {
+        // Get the authorization code from Google
+        $code = isset($_GET['code']) ? sanitize_text_field($_GET['code']) : null;
+        $error = isset($_GET['error']) ? sanitize_text_field($_GET['error']) : null;
+
+        // iOS app custom URL scheme (reversed client ID)
+        $appScheme = 'com.googleusercontent.apps.645942978357-1bdviltt810gutpve9vjj2kab340man6';
+
+        if ($error) {
+            $redirectUrl = $appScheme . ':/oauth2redirect?error=' . urlencode($error);
+        } elseif ($code) {
+            $redirectUrl = $appScheme . ':/oauth2redirect?code=' . urlencode($code);
+        } else {
+            $redirectUrl = $appScheme . ':/oauth2redirect?error=no_code';
+        }
+
+        // Redirect to iOS app
+        wp_redirect($redirectUrl);
+        exit;
+    }
+});
 
 register_activation_hook(__FILE__, function () {
     add_rewrite_rule('^store/([^/]*)/?$', 'index.php?pagename=store&store=$matches[1]', 'top');
     add_rewrite_rule('^r/([A-Za-z0-9]+)/([^/]+)/?$', 'index.php?ppv_referral_code=$matches[1]&ppv_referral_store=$matches[2]', 'top');
+    add_rewrite_rule('^google-callback/?$', 'index.php?ppv_google_callback=1', 'top');
     flush_rewrite_rules();
 });
 
