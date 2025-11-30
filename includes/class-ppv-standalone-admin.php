@@ -322,6 +322,9 @@ class PPV_Standalone_Admin {
         } elseif ($path === '/admin/pos-log') {
             require_once __DIR__ . '/admin/standalone/pos-log.php';
             PPV_Standalone_POSLog::render();
+        } elseif ($path === '/admin/db-health') {
+            require_once __DIR__ . '/admin/standalone/db-health.php';
+            PPV_Standalone_DBHealth::render();
         } else {
             self::render_dashboard();
         }
@@ -1107,6 +1110,9 @@ class PPV_Standalone_Admin {
                     </a>
                     <a href="/admin/pos-log" class="<?php echo $current_page === 'pos-log' ? 'active' : ''; ?>">
                         <i class="ri-file-list-line"></i> POS Log
+                    </a>
+                    <a href="/admin/db-health" class="<?php echo $current_page === 'db-health' ? 'active' : ''; ?>">
+                        <i class="ri-database-2-line"></i> DB Health
                     </a>
                     <a href="/admin/whatsapp" class="<?php echo $current_page === 'whatsapp' ? 'active' : ''; ?>">
                         <i class="ri-whatsapp-line"></i> WhatsApp
