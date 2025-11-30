@@ -12,9 +12,12 @@ class GoogleAuthHandler: NSObject, ASWebAuthenticationPresentationContextProvidi
     private var authSession: ASWebAuthenticationSession?
     private var codeVerifier: String?
 
-    // Google OAuth Client ID (same as in Google Cloud Console)
-    private let googleClientId = "645942978357-1bdviltt810gutpve9vjj2kab340man6.apps.googleusercontent.com"
+    // Google OAuth Web Client ID (from Google Cloud Console)
+    private let googleClientId = "645942978357-ndj7dgrapd2dgndnjf03se1p08l0o9ra.apps.googleusercontent.com"
+    // Callback scheme for iOS app (reversed iOS client ID - used to catch the redirect)
     private let callbackScheme = "com.googleusercontent.apps.645942978357-1bdviltt810gutpve9vjj2kab340man6"
+    // HTTPS redirect URI that points to our PHP handler
+    private let redirectUri = "https://punktepass.de/app/google-callback.php"
 
     func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
         return viewController?.view.window ?? UIWindow()
@@ -61,10 +64,11 @@ class GoogleAuthHandler: NSObject, ASWebAuthenticationPresentationContextProvidi
         let codeChallenge = generateCodeChallenge(from: codeVerifier!)
 
         // Build Google OAuth URL for authorization code flow with PKCE
+        // Uses HTTPS redirect to our server, which then redirects to the app's custom URL scheme
         var components = URLComponents(string: "https://accounts.google.com/o/oauth2/v2/auth")!
         components.queryItems = [
             URLQueryItem(name: "client_id", value: googleClientId),
-            URLQueryItem(name: "redirect_uri", value: "\(callbackScheme):/oauth2redirect"),
+            URLQueryItem(name: "redirect_uri", value: redirectUri),
             URLQueryItem(name: "response_type", value: "code"),
             URLQueryItem(name: "scope", value: "openid email profile"),
             URLQueryItem(name: "code_challenge", value: codeChallenge),
@@ -136,7 +140,7 @@ class GoogleAuthHandler: NSObject, ASWebAuthenticationPresentationContextProvidi
             "code": code,
             "code_verifier": verifier,
             "grant_type": "authorization_code",
-            "redirect_uri": "\(callbackScheme):/oauth2redirect"
+            "redirect_uri": redirectUri
         ]
 
         let bodyString = params.map { "\($0.key)=\($0.value.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")" }.joined(separator: "&")
