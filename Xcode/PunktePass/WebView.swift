@@ -23,7 +23,13 @@ class GoogleAuthHandler: NSObject, ASWebAuthenticationPresentationContextProvidi
 
     // ASWebAuthenticationPresentationContextProviding
     func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
-        return viewController?.view.window ?? UIApplication.shared.windows.first!
+        if let window = viewController?.view.window {
+            return window
+        }
+        // iOS 15+ compatible way to get key window
+        let scenes = UIApplication.shared.connectedScenes
+        let windowScene = scenes.first as? UIWindowScene
+        return windowScene?.windows.first ?? UIWindow()
     }
 
     func isGoogleOAuthURL(_ url: URL) -> Bool {
