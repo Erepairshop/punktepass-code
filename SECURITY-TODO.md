@@ -69,6 +69,67 @@
 
 ---
 
+## 📱 DEVICE & FINGERPRINT FEJLESZTÉSEK (2025-11-30)
+
+### 🔴 MAGAS Prioritás
+
+- [ ] **1. Local FingerprintJS hosting**
+  - CDN függőség megszüntetése (`cdn.jsdelivr.net`)
+  - `assets/js/vendor/fp.min.js` lokális tárolás
+  - Ha CDN nem elérhető → scanner nem működik!
+  - **Fájlok:** `trait-ppv-qr-devices.php`, `ppv-login.js`
+
+- [ ] **2. Local QR Scanner hosting**
+  - CDN függőség megszüntetése (`unpkg.com/qr-scanner`)
+  - `assets/js/vendor/qr-scanner.min.js` lokális tárolás
+  - **Fájlok:** `ppv-qr-camera.js`
+
+- [ ] **3. Auto fingerprint update**
+  - Ha fingerprint változott de hasonló (>80%) → auto frissítés
+  - User-nek ne kelljen manuálisan "Fingerprint frissítése"
+  - Similarity score implementálás
+  - **Fájlok:** `class-ppv-device-fingerprint.php`, `ppv-qr-camera.js`
+
+- [ ] **4. GPS block opció (store-onként)**
+  - Új oszlop: `ppv_stores.gps_block_enabled` (default: 0)
+  - Ha enabled → gyanús GPS = BLOCK (nem csak log)
+  - Store owner dönthet: csak logol vagy blokkol is
+  - **Fájlok:** `trait-ppv-qr-rest.php`, VIP settings UI
+
+### 🟡 KÖZEPES Prioritás
+
+- [ ] **5. Device request cooldown**
+  - Max 1 device request / 7 nap
+  - Spam prevention
+  - **Fájlok:** `class-ppv-device-fingerprint.php`
+
+- [ ] **6. Fingerprint change notification**
+  - Ha fingerprint változott → toast üzenet
+  - "Eszköz fingerprint változott - kattints a frissítéshez"
+  - **Fájlok:** `ppv-qr-camera.js`, `trait-ppv-qr-devices.php`
+
+- [ ] **7. Legacy mobile scanner cleanup**
+  - Store-level `scanner_type` megszüntetése
+  - Csak per-device `mobile_scanner` flag maradjon
+  - Backward compatibility check
+  - **Fájlok:** `class-ppv-device-fingerprint.php`, `trait-ppv-qr-rest.php`
+
+### 🟢 ALACSONY Prioritás
+
+- [ ] **8. Device activity dashboard**
+  - Utolsó 7 nap scan-ek eszközönként
+  - Gyanús aktivitás highlight
+  - Admin UI bővítés
+  - **Fájlok:** új admin page
+
+- [ ] **9. Fingerprint similarity score**
+  - 0-100% hasonlóság számítás
+  - 80%+ = valószínűleg ugyanaz az eszköz
+  - Jobb fraud detection
+  - **Fájlok:** `class-ppv-device-fingerprint.php`
+
+---
+
 ## ALACSONY (1 hónapon belül)
 
 - [x] **Database indexek** - `database/add-indexes.sql`
