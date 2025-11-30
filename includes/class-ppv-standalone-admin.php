@@ -2075,17 +2075,34 @@ class PPV_Standalone_Admin {
                     <i class="ri-send-plane-line"></i> Testnachricht senden
                 </h3>
 
-                <div style="display: flex; gap: 15px; align-items: flex-end;">
-                    <div style="flex: 1;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                    <div>
                         <label style="display: block; color: #888; margin-bottom: 8px;">Telefonnummer:</label>
                         <input type="tel" id="test-phone" placeholder="+49 176 12345678"
                                style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; color: #fff; font-size: 14px;">
+                    </div>
+                    <div>
+                        <label style="display: block; color: #888; margin-bottom: 8px;">Vorname (für Vorlage):</label>
+                        <input type="text" id="test-first-name" placeholder="Max" value="Test"
+                               style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; color: #fff; font-size: 14px;">
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 15px; align-items: flex-end;">
+                    <div style="flex: 1;">
+                        <label style="display: block; color: #888; margin-bottom: 8px;">Vorlage auswählen:</label>
+                        <select id="test-template" style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; color: #fff; font-size: 14px;">
+                            <option value="hello_world">🌍 Hello World (Meta Test)</option>
+                            <option value="birthday">🎂 Geburtstag (punktepass_birthday)</option>
+                            <option value="comeback">👋 Comeback (punktepass_comeback)</option>
+                            <option value="google_review">⭐ Google Review (punktepass_google_review)</option>
+                        </select>
                     </div>
                     <button type="button" id="send-test-btn" class="btn" style="background: rgba(156,39,176,0.2); color: #9c27b0; border: 1px solid rgba(156,39,176,0.3); white-space: nowrap;">
                         <i class="ri-send-plane-fill"></i> Test senden
                     </button>
                 </div>
-                <small style="color: #666; display: block; margin-top: 8px;">Sendet das "Hello World" Template an diese Nummer</small>
+                <small style="color: #666; display: block; margin-top: 8px;">Wählen Sie eine Vorlage und senden Sie eine Testnachricht. Die richtige Sprache wird automatisch basierend auf dem Standort gewählt.</small>
                 <div id="test-result" style="margin-top: 15px; display: none;"></div>
             </div>
 
@@ -2140,6 +2157,8 @@ class PPV_Standalone_Admin {
         document.getElementById('send-test-btn').addEventListener('click', async function() {
             const btn = this;
             const phone = document.getElementById('test-phone').value;
+            const firstName = document.getElementById('test-first-name').value || 'Test';
+            const templateType = document.getElementById('test-template').value;
             const result = document.getElementById('test-result');
 
             if (!phone) {
@@ -2154,15 +2173,22 @@ class PPV_Standalone_Admin {
                 const response = await fetch('/wp-json/punktepass/v1/whatsapp/test', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ store_id: <?php echo $selected_store_id; ?>, phone: phone })
+                    body: JSON.stringify({
+                        store_id: <?php echo $selected_store_id; ?>,
+                        phone: phone,
+                        template_type: templateType,
+                        first_name: firstName
+                    })
                 });
                 const data = await response.json();
 
                 result.style.display = 'block';
                 if (data.success) {
-                    result.innerHTML = '<div style="background: rgba(76,175,80,0.2); color: #4caf50; padding: 12px; border-radius: 8px;">✓ ' + (data.data?.message || 'Nachricht gesendet!') + '</div>';
+                    const templateInfo = data.data?.template_name ? ` (${data.data.template_name}, ${data.data.language})` : '';
+                    result.innerHTML = '<div style="background: rgba(76,175,80,0.2); color: #4caf50; padding: 12px; border-radius: 8px;">✓ ' + (data.data?.message || 'Nachricht gesendet!') + templateInfo + '</div>';
                 } else {
-                    result.innerHTML = '<div style="background: rgba(244,67,54,0.2); color: #f44336; padding: 12px; border-radius: 8px;">✗ ' + (data.message || 'Fehler') + '</div>';
+                    const templateInfo = data.template_name ? ` (${data.template_name}, ${data.language})` : '';
+                    result.innerHTML = '<div style="background: rgba(244,67,54,0.2); color: #f44336; padding: 12px; border-radius: 8px;">✗ ' + (data.message || 'Fehler') + templateInfo + '</div>';
                 }
             } catch (e) {
                 result.style.display = 'block';

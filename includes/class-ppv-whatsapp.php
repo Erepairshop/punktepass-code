@@ -146,33 +146,101 @@ class PPV_WhatsApp {
 
     /**
      * REST API: Send test message
+     * Supports different template types: hello_world, birthday, comeback, google_review
      */
     public static function rest_send_test(WP_REST_Request $request) {
         $data = $request->get_json_params();
         $store_id = intval($data['store_id'] ?? 0);
         $phone = sanitize_text_field($data['phone'] ?? '');
+        $template_type = sanitize_text_field($data['template_type'] ?? 'hello_world');
+        $first_name = sanitize_text_field($data['first_name'] ?? 'Test');
 
         if (!$store_id || !$phone) {
             return new WP_REST_Response(['success' => false, 'message' => 'Fehlende Parameter'], 400);
+        }
+
+        // Get store for language detection
+        $store = self::get_store_config($store_id);
+        if (!$store) {
+            return new WP_REST_Response(['success' => false, 'message' => 'Store nicht gefunden'], 404);
+        }
+
+        $store_name = $store->company_name ?: $store->name ?: 'Test Store';
+        $language = self::get_language_from_country($store->country);
+
+        // Select template based on type
+        switch ($template_type) {
+            case 'birthday':
+                $template_name = self::get_template_name('punktepass_birthday', $language);
+                $components = [
+                    [
+                        'type' => 'body',
+                        'parameters' => [
+                            ['type' => 'text', 'text' => $first_name],
+                            ['type' => 'text', 'text' => $store_name]
+                        ]
+                    ]
+                ];
+                break;
+
+            case 'comeback':
+                $template_name = self::get_template_name('punktepass_comeback', $language);
+                $components = [
+                    [
+                        'type' => 'body',
+                        'parameters' => [
+                            ['type' => 'text', 'text' => $first_name],
+                            ['type' => 'text', 'text' => $store_name]
+                        ]
+                    ]
+                ];
+                break;
+
+            case 'google_review':
+                $template_name = self::get_template_name('punktepass_google_review', $language);
+                $components = [
+                    [
+                        'type' => 'body',
+                        'parameters' => [
+                            ['type' => 'text', 'text' => $first_name],
+                            ['type' => 'text', 'text' => $store_name]
+                        ]
+                    ]
+                ];
+                break;
+
+            case 'hello_world':
+            default:
+                $template_name = 'hello_world';
+                $components = [];
+                $language = 'en';
+                break;
         }
 
         // Send test template
         $result = self::send_template(
             $store_id,
             $phone,
-            'hello_world', // Meta's default test template
-            [],
-            'en'
+            $template_name,
+            $components,
+            $language
         );
 
         if (is_wp_error($result)) {
-            return new WP_REST_Response(['success' => false, 'message' => $result->get_error_message()], 500);
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => $result->get_error_message(),
+                'template_name' => $template_name,
+                'language' => $language
+            ], 500);
         }
 
         return new WP_REST_Response([
             'success' => true,
             'data' => [
                 'message' => 'Testnachricht gesendet!',
+                'template_name' => $template_name,
+                'language' => $language,
                 'wa_message_id' => $result['messages'][0]['id'] ?? 'Unknown'
             ]
         ]);
@@ -646,10 +714,13 @@ class PPV_WhatsApp {
             if ($already_sent > 0) continue;
 
             // Send birthday template
+            $language = self::get_language_from_country($store->country);
+            $template_name = self::get_template_name('punktepass_birthday', $language);
+
             $result = self::send_template(
                 $store->id,
                 $user->phone_number,
-                'punktepass_birthday', // Must be pre-approved by Meta
+                $template_name, // punktepass_birthday or punktepass_birthday_ro
                 [
                     [
                         'type' => 'body',
@@ -659,7 +730,7 @@ class PPV_WhatsApp {
                         ]
                     ]
                 ],
-                self::get_language_from_country($store->country)
+                $language
             );
 
             // Update campaign type in log
@@ -718,10 +789,13 @@ class PPV_WhatsApp {
             if ($already_sent > 0) continue;
 
             // Send comeback template
+            $language = self::get_language_from_country($store->country);
+            $template_name = self::get_template_name('punktepass_comeback', $language);
+
             $result = self::send_template(
                 $store->id,
                 $user->phone_number,
-                'punktepass_comeback', // Must be pre-approved by Meta
+                $template_name, // punktepass_comeback or punktepass_comeback_ro
                 [
                     [
                         'type' => 'body',
@@ -731,7 +805,7 @@ class PPV_WhatsApp {
                         ]
                     ]
                 ],
-                self::get_language_from_country($store->country)
+                $language
             );
 
             if (!is_wp_error($result)) {
@@ -746,6 +820,100 @@ class PPV_WhatsApp {
 
             ppv_log("[WhatsApp] Comeback message sent to {$user->phone_number} for store {$store->id}");
         }
+    }
+
+    /**
+     * Send Google Review request to a user
+     * Can be called manually or after a successful transaction
+     *
+     * @param int $store_id Store ID
+     * @param int $user_id User ID
+     * @return array|WP_Error Result
+     */
+    public static function send_google_review_request($store_id, $user_id) {
+        global $wpdb;
+
+        // Get store config
+        $store = self::get_store_config($store_id);
+        if (!$store || empty($store->whatsapp_enabled)) {
+            return new WP_Error('disabled', 'WhatsApp not enabled');
+        }
+
+        // Get user with WhatsApp consent
+        $user = $wpdb->get_row($wpdb->prepare("
+            SELECT * FROM {$wpdb->prefix}ppv_users
+            WHERE id = %d
+              AND whatsapp_consent = 1
+              AND phone_number IS NOT NULL
+              AND phone_number != ''
+        ", $user_id));
+
+        if (!$user) {
+            return new WP_Error('no_consent', 'User has no WhatsApp consent or phone number');
+        }
+
+        // Check if already sent in last 30 days
+        $already_sent = $wpdb->get_var($wpdb->prepare("
+            SELECT COUNT(*) FROM {$wpdb->prefix}ppv_whatsapp_messages
+            WHERE store_id = %d
+              AND phone_number = %s
+              AND campaign_type = 'google_review'
+              AND created_at > DATE_SUB(NOW(), INTERVAL 30 DAY)
+        ", $store_id, $user->phone_number));
+
+        if ($already_sent > 0) {
+            return new WP_Error('already_sent', 'Google review request already sent in last 30 days');
+        }
+
+        $store_name = $store->company_name ?: $store->name;
+        $language = self::get_language_from_country($store->country);
+        $template_name = self::get_template_name('punktepass_google_review', $language);
+
+        // Send template
+        $result = self::send_template(
+            $store_id,
+            $user->phone_number,
+            $template_name, // punktepass_google_review or punktepass_google_review_ro
+            [
+                [
+                    'type' => 'body',
+                    'parameters' => [
+                        ['type' => 'text', 'text' => $user->first_name ?: $user->display_name],
+                        ['type' => 'text', 'text' => $store_name]
+                    ]
+                ]
+            ],
+            $language
+        );
+
+        // Update campaign type in log
+        if (!is_wp_error($result)) {
+            $wpdb->update(
+                $wpdb->prefix . 'ppv_whatsapp_messages',
+                ['campaign_type' => 'google_review'],
+                ['store_id' => $store_id, 'phone_number' => $user->phone_number],
+                ['%s'],
+                ['%d', '%s']
+            );
+            ppv_log("[WhatsApp] Google review request sent to {$user->phone_number} for store {$store_id}");
+        }
+
+        return $result;
+    }
+
+    /**
+     * Send Google Review request to multiple users (bulk)
+     *
+     * @param int $store_id Store ID
+     * @param array $user_ids Array of user IDs
+     * @return array Results for each user
+     */
+    public static function send_bulk_google_review_requests($store_id, $user_ids) {
+        $results = [];
+        foreach ($user_ids as $user_id) {
+            $results[$user_id] = self::send_google_review_request($store_id, $user_id);
+        }
+        return $results;
     }
 
     // ============================================================
@@ -1050,6 +1218,45 @@ class PPV_WhatsApp {
         }
 
         return 'de';
+    }
+
+    /**
+     * Get the correct template name with language suffix
+     * Meta templates are named: punktepass_birthday (German), punktepass_birthday_ro (Romanian)
+     */
+    public static function get_template_name($base_name, $language) {
+        // Romanian templates have _ro suffix
+        if ($language === 'ro') {
+            return $base_name . '_ro';
+        }
+
+        // German is the default (no suffix)
+        // Note: Hungarian templates would need _hu suffix when created
+        if ($language === 'hu') {
+            // Fall back to German if Hungarian template doesn't exist
+            return $base_name;
+        }
+
+        return $base_name;
+    }
+
+    /**
+     * Get template language code for WhatsApp API
+     * This is the language code sent to Meta API
+     */
+    public static function get_template_language_code($country) {
+        $lang = self::get_language_from_country($country);
+
+        // Map to WhatsApp language codes
+        switch ($lang) {
+            case 'ro':
+                return 'ro'; // Romanian
+            case 'hu':
+                return 'hu'; // Hungarian (falls back to German template)
+            case 'de':
+            default:
+                return 'de'; // German
+        }
     }
 }
 
