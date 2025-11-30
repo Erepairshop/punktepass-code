@@ -1524,7 +1524,8 @@ public static function render_landing_page($atts) {
         $last_name = sanitize_text_field($fb_data['last_name'] ?? '');
 
         if (empty($email) || empty($facebook_id)) {
-            wp_send_json_error(['message' => 'Facebook Daten unvollständig']);
+            ppv_log("❌ [PPV_Facebook] Data incomplete - email: '{$email}', facebook_id: '{$facebook_id}', raw data: " . json_encode($fb_data));
+            wp_send_json_error(['message' => 'Facebook Daten unvollständig. Bitte erlaube den Zugriff auf deine E-Mail-Adresse.']);
         }
 
         // Check if user exists
