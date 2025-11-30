@@ -246,5 +246,21 @@ extension ViewController: WKScriptMessageHandler {
         if message.name == "push-token" {
             handleFCMToken()
         }
+        if message.name == "native-google-login" {
+            handleNativeGoogleLogin()
+        }
   }
+
+  func handleNativeGoogleLogin() {
+        GoogleAuthHandler.shared.webView = PunktePass.webView
+        GoogleAuthHandler.shared.viewController = self
+
+        GoogleAuthHandler.shared.startGoogleAuth { [weak self] idToken in
+            DispatchQueue.main.async {
+                if let token = idToken {
+                    GoogleAuthHandler.shared.injectGoogleCredential(idToken: token, into: PunktePass.webView)
+                }
+            }
+        }
+    }
 }
