@@ -762,8 +762,40 @@ add_action('init', function() {
             $redirectUrl = $appScheme . ':/oauth2redirect?error=no_code';
         }
 
-        // Redirect to iOS app
-        header('Location: ' . $redirectUrl);
+        // Use HTML+JavaScript redirect for custom URL scheme (header redirect doesn't work reliably in Safari)
+        header('Content-Type: text/html; charset=UTF-8');
+        echo '<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PunktePass - Weiterleitung...</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #0b0f17; color: #fff;
+               display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .loader { text-align: center; }
+        .spinner { width: 50px; height: 50px; border: 4px solid rgba(0,191,255,0.2); border-top-color: #00bfff;
+                   border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        p { font-size: 16px; opacity: 0.8; }
+    </style>
+</head>
+<body>
+    <div class="loader">
+        <div class="spinner"></div>
+        <p>Weiterleitung zur App...</p>
+    </div>
+    <script>
+        // Try to redirect to app
+        window.location.href = "' . esc_js($redirectUrl) . '";
+
+        // Fallback: if redirect doesnt work after 2 seconds, show message
+        setTimeout(function() {
+            document.querySelector("p").textContent = "Bitte öffne die PunktePass App manuell";
+        }, 2000);
+    </script>
+</body>
+</html>';
         exit;
     }
 }, 1); // Priority 1 = very early
