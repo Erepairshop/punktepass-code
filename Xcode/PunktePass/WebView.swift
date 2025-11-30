@@ -2,6 +2,7 @@ import UIKit
 import WebKit
 import AuthenticationServices
 import SafariServices
+import CommonCrypto
 
 // Google OAuth handler using ASWebAuthenticationSession (Google blocks OAuth in WKWebView)
 class GoogleAuthHandler: NSObject, ASWebAuthenticationPresentationContextProviding {
@@ -9,6 +10,7 @@ class GoogleAuthHandler: NSObject, ASWebAuthenticationPresentationContextProvidi
     weak var webView: WKWebView?
     weak var viewController: UIViewController?
     private var authSession: ASWebAuthenticationSession?
+    private var codeVerifier: String?
 
     // Google OAuth Client ID (same as in Google Cloud Console)
     private let googleClientId = "645942978357-1bdviltt810gutpve9vjj2kab340man6.apps.googleusercontent.com"
@@ -30,18 +32,43 @@ class GoogleAuthHandler: NSObject, ASWebAuthenticationPresentationContextProvidi
         return isGoogleAuth
     }
 
-    func startGoogleAuth(completion: @escaping (String?) -> Void) {
-        // Generate random nonce for security
-        let nonce = UUID().uuidString
+    // Generate PKCE code verifier (random string)
+    private func generateCodeVerifier() -> String {
+        var buffer = [UInt8](repeating: 0, count: 32)
+        _ = SecRandomCopyBytes(kSecRandomDefault, buffer.count, &buffer)
+        return Data(buffer).base64EncodedString()
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "")
+    }
 
-        // Build Google OAuth URL for ID token flow
+    // Generate PKCE code challenge from verifier
+    private func generateCodeChallenge(from verifier: String) -> String {
+        guard let data = verifier.data(using: .utf8) else { return "" }
+        var hash = [UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
+        data.withUnsafeBytes {
+            _ = CC_SHA256($0.baseAddress, CC_LONG(data.count), &hash)
+        }
+        return Data(hash).base64EncodedString()
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "")
+    }
+
+    func startGoogleAuth(completion: @escaping (String?) -> Void) {
+        // Generate PKCE verifier and challenge
+        codeVerifier = generateCodeVerifier()
+        let codeChallenge = generateCodeChallenge(from: codeVerifier!)
+
+        // Build Google OAuth URL for authorization code flow with PKCE
         var components = URLComponents(string: "https://accounts.google.com/o/oauth2/v2/auth")!
         components.queryItems = [
             URLQueryItem(name: "client_id", value: googleClientId),
             URLQueryItem(name: "redirect_uri", value: "\(callbackScheme):/oauth2redirect"),
-            URLQueryItem(name: "response_type", value: "id_token"),
+            URLQueryItem(name: "response_type", value: "code"),
             URLQueryItem(name: "scope", value: "openid email profile"),
-            URLQueryItem(name: "nonce", value: nonce),
+            URLQueryItem(name: "code_challenge", value: codeChallenge),
+            URLQueryItem(name: "code_challenge_method", value: "S256"),
             URLQueryItem(name: "prompt", value: "select_account")
         ]
 
@@ -57,6 +84,8 @@ class GoogleAuthHandler: NSObject, ASWebAuthenticationPresentationContextProvidi
             url: authURL,
             callbackURLScheme: callbackScheme
         ) { [weak self] callbackURL, error in
+            guard let self = self else { return }
+
             if let error = error {
                 print("Google Auth Error: \(error.localizedDescription)")
                 completion(nil)
@@ -71,28 +100,81 @@ class GoogleAuthHandler: NSObject, ASWebAuthenticationPresentationContextProvidi
 
             print("Google Auth: Callback URL: \(callbackURL)")
 
-            // Extract ID token from URL fragment
-            // Format: com.googleusercontent...:/oauth2redirect#id_token=xxx&...
-            if let fragment = callbackURL.fragment {
-                let params = fragment.components(separatedBy: "&")
-                for param in params {
-                    let parts = param.components(separatedBy: "=")
-                    if parts.count == 2 && parts[0] == "id_token" {
-                        let idToken = parts[1]
-                        print("Google Auth: Got ID token (length: \(idToken.count))")
-                        completion(idToken)
-                        return
-                    }
-                }
+            // Extract authorization code from URL
+            let components = URLComponents(url: callbackURL, resolvingAgainstBaseURL: false)
+            guard let code = components?.queryItems?.first(where: { $0.name == "code" })?.value else {
+                print("Google Auth: No authorization code in callback")
+                completion(nil)
+                return
             }
 
-            print("Google Auth: No ID token in callback")
-            completion(nil)
+            print("Google Auth: Got authorization code")
+
+            // Exchange code for tokens
+            self.exchangeCodeForTokens(code: code, completion: completion)
         }
 
         authSession?.presentationContextProvider = self
         authSession?.prefersEphemeralWebBrowserSession = false
         authSession?.start()
+    }
+
+    private func exchangeCodeForTokens(code: String, completion: @escaping (String?) -> Void) {
+        guard let verifier = codeVerifier else {
+            print("Google Auth: No code verifier")
+            completion(nil)
+            return
+        }
+
+        let tokenURL = URL(string: "https://oauth2.googleapis.com/token")!
+        var request = URLRequest(url: tokenURL)
+        request.httpMethod = "POST"
+        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+
+        let params = [
+            "client_id": googleClientId,
+            "code": code,
+            "code_verifier": verifier,
+            "grant_type": "authorization_code",
+            "redirect_uri": "\(callbackScheme):/oauth2redirect"
+        ]
+
+        let bodyString = params.map { "\($0.key)=\($0.value.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")" }.joined(separator: "&")
+        request.httpBody = bodyString.data(using: .utf8)
+
+        print("Google Auth: Exchanging code for tokens...")
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                print("Google Auth: Token exchange error: \(error.localizedDescription)")
+                completion(nil)
+                return
+            }
+
+            guard let data = data else {
+                print("Google Auth: No data from token exchange")
+                completion(nil)
+                return
+            }
+
+            do {
+                if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                    if let idToken = json["id_token"] as? String {
+                        print("Google Auth: Got ID token (length: \(idToken.count))")
+                        completion(idToken)
+                    } else if let errorDesc = json["error_description"] as? String {
+                        print("Google Auth: Token error: \(errorDesc)")
+                        completion(nil)
+                    } else {
+                        print("Google Auth: Unknown token response: \(json)")
+                        completion(nil)
+                    }
+                }
+            } catch {
+                print("Google Auth: JSON parse error: \(error)")
+                completion(nil)
+            }
+        }.resume()
     }
 
     func injectGoogleCredential(idToken: String, into webView: WKWebView) {
