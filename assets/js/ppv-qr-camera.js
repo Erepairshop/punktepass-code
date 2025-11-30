@@ -823,7 +823,7 @@
     startPauseCountdown() {
       if (this.countdownInterval) clearInterval(this.countdownInterval);
       this.state = 'paused';
-      this.countdown = 5;
+      this.countdown = 3;
       this.lastRead = '';
       this.updateStatus('paused', `⏸️ Pause: ${this.countdown}s`);
 
