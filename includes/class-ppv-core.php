@@ -219,6 +219,21 @@ class PPV_Core {
 
             update_option('ppv_db_migration_version', '1.8');
         }
+
+        // Migration 1.9: Add scanner_id column to redemption_prompts for targeted modal display
+        if (version_compare($migration_version, '1.9', '<')) {
+            $prompts_table = $wpdb->prefix . 'ppv_redemption_prompts';
+
+            // Check if scanner_id column exists
+            $scanner_col = $wpdb->get_results("SHOW COLUMNS FROM {$prompts_table} LIKE 'scanner_id'");
+
+            if (empty($scanner_col)) {
+                $wpdb->query("ALTER TABLE {$prompts_table} ADD COLUMN scanner_id BIGINT(20) UNSIGNED NULL COMMENT 'Scanner device that scanned the user' AFTER store_id");
+                ppv_log("✅ [PPV_Core] Added 'scanner_id' column to ppv_redemption_prompts table");
+            }
+
+            update_option('ppv_db_migration_version', '1.9');
+        }
     }
 
     public static function init_session_bridge() {

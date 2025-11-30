@@ -1033,12 +1033,13 @@ trait PPV_QR_REST_Trait {
                     "{$wpdb->prefix}ppv_redemption_prompts",
                     [
                         'token' => $prompt_token,
+                        'scanner_id' => $scanner_id,
                         'available_rewards' => json_encode($rewards_array),
                         'expires_at' => $expires_at,
                         'created_at' => current_time('mysql')
                     ],
                     ['id' => $pending_prompt->id],
-                    ['%s', '%s', '%s', '%s'],
+                    ['%s', '%d', '%s', '%s', '%s'],
                     ['%d']
                 );
                 $prompt_id = $pending_prompt->id;
@@ -1048,13 +1049,14 @@ trait PPV_QR_REST_Trait {
                     [
                         'user_id' => $user_id,
                         'store_id' => $store_id,
+                        'scanner_id' => $scanner_id,
                         'token' => $prompt_token,
                         'available_rewards' => json_encode($rewards_array),
                         'status' => 'pending',
                         'created_at' => current_time('mysql'),
                         'expires_at' => $expires_at
                     ],
-                    ['%d', '%d', '%s', '%s', '%s', '%s', '%s']
+                    ['%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s']
                 );
                 $prompt_id = $wpdb->insert_id;
             }
@@ -1942,6 +1944,7 @@ trait PPV_QR_REST_Trait {
                 'prompt_id' => $prompt->id,
                 'token' => $token,
                 'user_id' => $prompt->user_id,
+                'scanner_id' => $prompt->scanner_id ?? null, // Target specific scanner device
                 'customer_name' => $customer_name ?: ($user_info->email ?? 'Kunde'),
                 'email' => $user_info->email ?? null,
                 'avatar' => $user_info->avatar ?? null,

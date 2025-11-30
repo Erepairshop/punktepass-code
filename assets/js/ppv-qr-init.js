@@ -604,6 +604,17 @@
       }, STATE.ablySubscriberId);
 
       manager.subscribe(channelName, 'redemption-request', (message) => {
+        // Only show modal if this is the scanner that scanned the user's QR
+        const myScannerId = getScannerId();
+        const targetScannerId = message.data?.scanner_id;
+
+        // If scanner_id is specified, only show on that device
+        // If scanner_id is null/undefined (legacy), show on all devices
+        if (targetScannerId && myScannerId && Number(targetScannerId) !== Number(myScannerId)) {
+          ppvLog('[Ably] Redemption request for different scanner:', targetScannerId, 'my:', myScannerId);
+          return; // Not for this scanner
+        }
+
         showHandlerRedemptionModal(message.data);
       }, STATE.ablySubscriberId);
 
