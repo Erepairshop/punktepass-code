@@ -563,9 +563,7 @@
           options
         );
 
-        // Use local worker file (no CDN dependency)
-        const pluginUrl = window.PPV_STORE_DATA?.plugin_url || '/wp-content/plugins/punktepass/';
-        QrScanner.WORKER_PATH = pluginUrl + 'assets/js/vendor/qr-scanner-worker.min.js';
+        // Note: WORKER_PATH no longer needed in qr-scanner 1.4.2+ (worker is bundled inline)
 
         await this.scanner.start();
         ppvLog('[Camera] QrScanner started successfully');
