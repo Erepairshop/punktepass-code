@@ -284,10 +284,15 @@ trait PPV_QR_REST_Trait {
 
         $rate_check = self::check_rate_limit($user_id, $store_id);
         if ($rate_check['limited']) {
-            // Log the rate limit error with error_type for client-side translation
             $response_data = $rate_check['response']->get_data();
             $error_type = $response_data['error_type'] ?? null;
-            self::insert_log($store_id, $user_id, $response_data['message'] ?? '⚠️ Rate limit', 'error', $error_type);
+
+            // Skip logging for common rate limit cases (already_scanned_today, duplicate_scan)
+            // These would create too many useless log entries
+            $skip_log_types = ['already_scanned_today', 'duplicate_scan'];
+            if (!in_array($error_type, $skip_log_types)) {
+                self::insert_log($store_id, $user_id, $response_data['message'] ?? '⚠️ Rate limit', 'error', $error_type);
+            }
 
             // Get user info for error response
             $user_info = $wpdb->get_row($wpdb->prepare("
