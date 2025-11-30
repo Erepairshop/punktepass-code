@@ -167,8 +167,8 @@
         if (this.scanning && this.state === 'scanning') {
           this.triggerRefocus();
         }
-      }, 8000);
-      ppvLog('[Camera] Periodic refocus started (8s interval)');
+      }, 5000);
+      ppvLog('[Camera] Periodic refocus started (5s interval)');
     }
 
     stopPeriodicRefocus() {
@@ -551,7 +551,7 @@
 
         const options = {
           preferredCamera: 'environment',
-          maxScansPerSecond: 5,  // Balanced: better than 3, not too aggressive
+          maxScansPerSecond: 6,  // Balanced for older devices
           highlightScanRegion: true,
           highlightCodeOutline: true,
           returnDetailedScanResult: true
@@ -583,8 +583,15 @@
               if (capabilities.exposureMode?.includes('continuous')) {
                 advancedConstraints.push({ exposureMode: 'continuous' });
               }
+              if (capabilities.whiteBalanceMode?.includes('continuous')) {
+                advancedConstraints.push({ whiteBalanceMode: 'continuous' });
+              }
               if (advancedConstraints.length > 0) {
-                await this.videoTrack.applyConstraints({ advanced: advancedConstraints });
+                try {
+                  await this.videoTrack.applyConstraints({ advanced: advancedConstraints });
+                } catch (e) {
+                  ppvWarn('[Camera] Some constraints not supported:', e.message);
+                }
               }
 
               if (capabilities.torch && this.torchBtn) {
