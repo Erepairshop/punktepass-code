@@ -422,6 +422,7 @@ class PPV_WhatsApp {
 
     /**
      * Verify webhook (GET request from Meta)
+     * Meta expects plain text response, not JSON
      */
     public static function verify_webhook(WP_REST_Request $request) {
         $mode = $request->get_param('hub_mode');
@@ -435,11 +436,15 @@ class PPV_WhatsApp {
 
         if ($mode === 'subscribe' && $token === $verify_token) {
             ppv_log("[WhatsApp] Webhook verified successfully");
-            return new WP_REST_Response($challenge, 200);
+            // Meta expects plain text, not JSON - must echo and exit
+            echo $challenge;
+            exit;
         }
 
         ppv_log("[WhatsApp] Webhook verification failed");
-        return new WP_REST_Response('Forbidden', 403);
+        http_response_code(403);
+        echo 'Forbidden';
+        exit;
     }
 
     /**
