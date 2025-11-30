@@ -12,6 +12,14 @@ class GoogleAuthHandler: NSObject, ASWebAuthenticationPresentationContextProvidi
     var authSession: ASWebAuthenticationSession?
     var codeVerifier: String?
     var authCompletion: ((String?) -> Void)?
+    var isAuthInProgress = false  // Prevent double-trigger
+
+    // Helper to complete auth and reset state
+    private func completeAuth(with token: String?) {
+        isAuthInProgress = false
+        authCompletion?(token)
+        authCompletion = nil
+    }
 
     // Google OAuth iOS Client ID (from Google Cloud Console - must match Info.plist URL scheme)
     private let googleClientId = "645942978357-1bdviltt810gutpve9vjj2kab340man6.apps.googleusercontent.com"
@@ -69,6 +77,17 @@ class GoogleAuthHandler: NSObject, ASWebAuthenticationPresentationContextProvidi
     }
 
     func startGoogleAuth(from viewController: UIViewController, completion: @escaping (String?) -> Void) {
+        // Prevent double-trigger - if auth is already in progress, ignore
+        if isAuthInProgress {
+            print("Google Auth: Already in progress, ignoring duplicate request")
+            return
+        }
+        isAuthInProgress = true
+
+        // Cancel any previous session
+        authSession?.cancel()
+        authSession = nil
+
         // Store completion for later
         authCompletion = completion
         self.viewController = viewController
@@ -119,8 +138,7 @@ class GoogleAuthHandler: NSObject, ASWebAuthenticationPresentationContextProvidi
                     print("Google Auth: User cancelled login")
                 }
                 DispatchQueue.main.async {
-                    self.authCompletion?(nil)
-                    self.authCompletion = nil
+                    self.completeAuth(with: nil)
                 }
                 return
             }
@@ -128,8 +146,7 @@ class GoogleAuthHandler: NSObject, ASWebAuthenticationPresentationContextProvidi
             guard let callbackURL = callbackURL else {
                 print("Google Auth: No callback URL received")
                 DispatchQueue.main.async {
-                    self.authCompletion?(nil)
-                    self.authCompletion = nil
+                    self.completeAuth(with: nil)
                 }
                 return
             }
@@ -143,7 +160,7 @@ class GoogleAuthHandler: NSObject, ASWebAuthenticationPresentationContextProvidi
 
         if !authSession!.start() {
             print("Google Auth: Failed to start session")
-            completion(nil)
+            completeAuth(with: nil)
         }
     }
 
@@ -157,8 +174,7 @@ class GoogleAuthHandler: NSObject, ASWebAuthenticationPresentationContextProvidi
         if let error = components?.queryItems?.first(where: { $0.name == "error" })?.value {
             print("Google Auth: Error from callback: \(error)")
             DispatchQueue.main.async {
-                self.authCompletion?(nil)
-                self.authCompletion = nil
+                self.completeAuth(with: nil)
             }
             return
         }
@@ -166,8 +182,7 @@ class GoogleAuthHandler: NSObject, ASWebAuthenticationPresentationContextProvidi
         guard let code = components?.queryItems?.first(where: { $0.name == "code" })?.value else {
             print("Google Auth: No authorization code in callback")
             DispatchQueue.main.async {
-                self.authCompletion?(nil)
-                self.authCompletion = nil
+                self.completeAuth(with: nil)
             }
             return
         }
@@ -180,8 +195,7 @@ class GoogleAuthHandler: NSObject, ASWebAuthenticationPresentationContextProvidi
         guard let verifier = codeVerifier else {
             print("Google Auth: No code verifier")
             DispatchQueue.main.async {
-                self.authCompletion?(nil)
-                self.authCompletion = nil
+                self.completeAuth(with: nil)
             }
             return
         }
@@ -211,8 +225,7 @@ class GoogleAuthHandler: NSObject, ASWebAuthenticationPresentationContextProvidi
             if let error = error {
                 print("Google Auth: Token exchange error: \(error.localizedDescription)")
                 DispatchQueue.main.async {
-                    self.authCompletion?(nil)
-                    self.authCompletion = nil
+                    self.completeAuth(with: nil)
                 }
                 return
             }
@@ -220,8 +233,7 @@ class GoogleAuthHandler: NSObject, ASWebAuthenticationPresentationContextProvidi
             guard let data = data else {
                 print("Google Auth: No data from token exchange")
                 DispatchQueue.main.async {
-                    self.authCompletion?(nil)
-                    self.authCompletion = nil
+                    self.completeAuth(with: nil)
                 }
                 return
             }
@@ -236,28 +248,24 @@ class GoogleAuthHandler: NSObject, ASWebAuthenticationPresentationContextProvidi
                     if let idToken = json["id_token"] as? String {
                         print("Google Auth: Got ID token (length: \(idToken.count))")
                         DispatchQueue.main.async {
-                            self.authCompletion?(idToken)
-                            self.authCompletion = nil
+                            self.completeAuth(with: idToken)
                         }
                     } else if let errorDesc = json["error_description"] as? String {
                         print("Google Auth: Token error: \(errorDesc)")
                         DispatchQueue.main.async {
-                            self.authCompletion?(nil)
-                            self.authCompletion = nil
+                            self.completeAuth(with: nil)
                         }
                     } else {
                         print("Google Auth: Unknown token response: \(json)")
                         DispatchQueue.main.async {
-                            self.authCompletion?(nil)
-                            self.authCompletion = nil
+                            self.completeAuth(with: nil)
                         }
                     }
                 }
             } catch {
                 print("Google Auth: JSON parse error: \(error)")
                 DispatchQueue.main.async {
-                    self.authCompletion?(nil)
-                    self.authCompletion = nil
+                    self.completeAuth(with: nil)
                 }
             }
         }.resume()
