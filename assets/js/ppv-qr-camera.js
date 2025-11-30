@@ -551,7 +551,7 @@
 
         const options = {
           preferredCamera: 'environment',
-          maxScansPerSecond: 5,
+          maxScansPerSecond: 10,
           highlightScanRegion: true,
           highlightCodeOutline: true,
           returnDetailedScanResult: true,
