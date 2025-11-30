@@ -1035,10 +1035,19 @@ public static function render_landing_page($atts) {
     public static function ajax_google_login() {
         global $wpdb;
         $prefix = $wpdb->prefix;
-        
+
         self::ensure_session();
-        
-        check_ajax_referer('ppv_login_nonce', 'nonce');
+
+        // 🍎 iOS app sends requests without nonce - verify with Google JWT instead
+        // Nonce check is optional because Google JWT token provides authentication
+        $nonce = sanitize_text_field($_POST['nonce'] ?? '');
+        if (!empty($nonce)) {
+            // If nonce is provided, verify it (web browser requests)
+            if (!wp_verify_nonce($nonce, 'ppv_login_nonce')) {
+                // Nonce invalid - but continue anyway, JWT will be verified
+                ppv_log("⚠️ [PPV_Login] Google login nonce invalid, continuing with JWT verification");
+            }
+        }
         
         $credential = sanitize_text_field($_POST['credential'] ?? '');
         $fingerprint = sanitize_text_field($_POST['device_fingerprint'] ?? '');

@@ -14,23 +14,35 @@ window.handleGoogleCallback = function(data) {
         return;
     }
 
+    // Fallback values if ppvLogin doesn't exist
+    var ajaxUrl = (typeof ppvLogin !== 'undefined' && ppvLogin.ajaxurl)
+        ? ppvLogin.ajaxurl
+        : '/wp-admin/admin-ajax.php';
+    var nonce = (typeof ppvLogin !== 'undefined' && ppvLogin.nonce)
+        ? ppvLogin.nonce
+        : '';
+
+    console.log("🍎 Sending to:", ajaxUrl);
+
     jQuery.ajax({
-        url: ppvLogin.ajaxurl,
+        url: ajaxUrl,
         type: "POST",
         data: {
             action: "ppv_google_login",
-            nonce: ppvLogin.nonce,
+            nonce: nonce,
             credential: data.credential,
             device_fingerprint: ""
         },
         success: function(res) {
+            console.log("🍎 Server response:", res);
             if (res.success) {
                 window.location.href = res.data.redirect || "/";
             } else {
                 alert(res.data.message || "Google Login fehlgeschlagen");
             }
         },
-        error: function() {
+        error: function(xhr, status, error) {
+            console.error("🍎 AJAX error:", status, error);
             alert("Verbindungsfehler");
         }
     });
