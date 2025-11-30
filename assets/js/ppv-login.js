@@ -5,6 +5,37 @@
  * Author: Erik Borota / PunktePass
  */
 
+// 🍎 GLOBAL iOS Google callback - ALWAYS AVAILABLE for native iOS app
+window.handleGoogleCallback = function(data) {
+    console.log("🍎 Native Google token received", data);
+
+    if (!data || !data.credential) {
+        alert("Google Login fehlgeschlagen");
+        return;
+    }
+
+    jQuery.ajax({
+        url: ppvLogin.ajaxurl,
+        type: "POST",
+        data: {
+            action: "ppv_google_login",
+            nonce: ppvLogin.nonce,
+            credential: data.credential,
+            device_fingerprint: ""
+        },
+        success: function(res) {
+            if (res.success) {
+                window.location.href = res.data.redirect || "/";
+            } else {
+                alert(res.data.message || "Google Login fehlgeschlagen");
+            }
+        },
+        error: function() {
+            alert("Verbindungsfehler");
+        }
+    });
+};
+
 (function($) {
     'use strict';
 
