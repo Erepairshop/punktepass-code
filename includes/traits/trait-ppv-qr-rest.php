@@ -2043,6 +2043,12 @@ trait PPV_QR_REST_Trait {
                     'reward_title' => $reward->title,
                     'reason' => $rejection_reason ?: self::t('rejection_default', 'Die Prämie ist derzeit nicht verfügbar'),
                 ]);
+
+                // 📡 Notify other handlers that this redemption was handled (close their modals)
+                PPV_Ably::trigger_redemption_handled($prompt->store_id, [
+                    'token' => $token,
+                    'action' => 'rejected'
+                ]);
             }
 
             return new WP_REST_Response([
@@ -2163,6 +2169,12 @@ trait PPV_QR_REST_Trait {
                     'points_spent' => $reward->required_points,
                     'new_balance' => $new_balance,
                     'actual_amount' => $actual_amount,
+                ]);
+
+                // 📡 Notify other handlers that this redemption was handled (close their modals)
+                PPV_Ably::trigger_redemption_handled($prompt->store_id, [
+                    'token' => $token,
+                    'action' => 'approved'
                 ]);
             }
 

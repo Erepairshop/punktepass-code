@@ -612,6 +612,19 @@
         window.ppvToast('❌ Kunde hat abgebrochen', 'info');
       }, STATE.ablySubscriberId);
 
+      // Close modal on other devices when one handler processes the redemption
+      manager.subscribe(channelName, 'redemption-handled', (message) => {
+        ppvLog('[Ably] Redemption handled by another device:', message.data);
+        // Only close if this modal shows the same token
+        if (activeRedemptionToken && message.data?.token === activeRedemptionToken) {
+          closeHandlerRedemptionModal();
+          const actionText = message.data.action === 'approved'
+            ? (L.handled_by_colleague_approved || '✅ Kollege hat bestätigt')
+            : (L.handled_by_colleague_rejected || '❌ Kollege hat abgelehnt');
+          window.ppvToast(actionText, 'info');
+        }
+      }, STATE.ablySubscriberId);
+
       manager.subscribe(channelName, 'campaign-update', (message) => {
         ppvLog('[Ably] Campaign update received:', message.data);
         window.ppvToast(`📢 Kampány ${message.data.action === 'created' ? 'létrehozva' : message.data.action === 'updated' ? 'frissítve' : 'törölve'}`, 'info');

@@ -287,6 +287,19 @@ class PPV_Ably {
     }
 
     /**
+     * Notify all store handlers that a redemption was handled
+     * Used to close modal on other devices when one handler processes the request
+     *
+     * @param int $store_id Store ID
+     * @param array $data Handled data (token, action: approved/rejected, handler info)
+     */
+    public static function trigger_redemption_handled($store_id, $data) {
+        $channel = 'store-' . intval($store_id);
+        ppv_log("📡 [PPV_Ably] trigger_redemption_handled: channel={$channel}, store_id={$store_id}, action={$data['action']}");
+        return self::publish($channel, 'redemption-handled', $data);
+    }
+
+    /**
      * Publish onboarding progress update for a store
      * Sent to store's channel when onboarding steps are completed
      *
