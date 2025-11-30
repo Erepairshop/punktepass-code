@@ -61,7 +61,7 @@
         ppvWarn('[GPS] Position error:', err.message);
         STATE.gpsPosition = null;
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+      { enableHighAccuracy: true, timeout: 30000, maximumAge: 120000 }
     );
 
     STATE.gpsWatchId = navigator.geolocation.watchPosition(
@@ -75,7 +75,7 @@
         ppvLog('[GPS] Position updated:', STATE.gpsPosition.latitude.toFixed(4), STATE.gpsPosition.longitude.toFixed(4));
       },
       (err) => { ppvWarn('[GPS] Watch error:', err.message); },
-      { enableHighAccuracy: false, timeout: 30000, maximumAge: 60000 }
+      { enableHighAccuracy: false, timeout: 60000, maximumAge: 120000 }
     );
   }
 
@@ -130,8 +130,8 @@
           }
           navigator.geolocation.getCurrentPosition(resolve, reject, {
             enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 60000
+            timeout: 30000,
+            maximumAge: 120000
           });
         });
 
