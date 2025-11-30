@@ -14,6 +14,8 @@ class PPV_Core {
         add_action('wp_enqueue_scripts', ['PPV_Core', 'enqueue_global_theme'], 5);
         add_action('wp', ['PPV_Core', 'init_session_bridge'], 1);
         add_action('admin_init', [__CLASS__, 'run_db_migrations'], 5);
+        // Daily cleanup of old error logs
+        add_action('ppv_daily_log_cleanup', [__CLASS__, 'cleanup_old_error_logs']);
     }
 
     /** ============================================================
@@ -233,6 +235,51 @@ class PPV_Core {
             }
 
             update_option('ppv_db_migration_version', '1.9');
+        }
+
+        // Migration 2.0: Add index to ppv_pos_log for faster queries + schedule daily cleanup
+        if (version_compare($migration_version, '2.0', '<')) {
+            $log_table = $wpdb->prefix . 'ppv_pos_log';
+
+            // Add composite index for faster deduplication queries
+            $index_exists = $wpdb->get_var("SHOW INDEX FROM {$log_table} WHERE Key_name = 'idx_user_store_date'");
+            if (!$index_exists) {
+                $wpdb->query("ALTER TABLE {$log_table} ADD INDEX idx_user_store_date (user_id, store_id, created_at)");
+                ppv_log("✅ [PPV_Core] Added index 'idx_user_store_date' to ppv_pos_log table");
+            }
+
+            // Add index for type-based queries (error cleanup)
+            $type_index = $wpdb->get_var("SHOW INDEX FROM {$log_table} WHERE Key_name = 'idx_type_created'");
+            if (!$type_index) {
+                $wpdb->query("ALTER TABLE {$log_table} ADD INDEX idx_type_created (type, created_at)");
+                ppv_log("✅ [PPV_Core] Added index 'idx_type_created' to ppv_pos_log table");
+            }
+
+            // Schedule daily error log cleanup
+            if (!wp_next_scheduled('ppv_daily_log_cleanup')) {
+                wp_schedule_event(strtotime('tomorrow 3:00'), 'daily', 'ppv_daily_log_cleanup');
+                ppv_log("✅ [PPV_Core] Scheduled daily log cleanup cron");
+            }
+
+            update_option('ppv_db_migration_version', '2.0');
+        }
+    }
+
+    /**
+     * Daily cleanup of old error logs (keep only 7 days of errors)
+     * Successful scans are kept and archived monthly
+     */
+    public static function cleanup_old_error_logs() {
+        global $wpdb;
+
+        $deleted = $wpdb->query("
+            DELETE FROM {$wpdb->prefix}ppv_pos_log
+            WHERE type = 'error'
+            AND created_at < DATE_SUB(NOW(), INTERVAL 7 DAY)
+        ");
+
+        if ($deleted > 0) {
+            ppv_log("🧹 [PPV_Core] Cleaned up {$deleted} old error log entries");
         }
     }
 

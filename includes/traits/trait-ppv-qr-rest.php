@@ -287,10 +287,23 @@ trait PPV_QR_REST_Trait {
             $response_data = $rate_check['response']->get_data();
             $error_type = $response_data['error_type'] ?? null;
 
-            // Skip logging for common rate limit cases (already_scanned_today, duplicate_scan)
-            // These would create too many useless log entries
-            $skip_log_types = ['already_scanned_today', 'duplicate_scan'];
-            if (!in_array($error_type, $skip_log_types)) {
+            // Smart logging: deduplicate repeated errors
+            $should_log = true;
+            if ($error_type === 'already_scanned_today') {
+                // Log only ONCE per day per user+store (not every retry)
+                $existing_error = $wpdb->get_var($wpdb->prepare("
+                    SELECT id FROM {$wpdb->prefix}ppv_pos_log
+                    WHERE user_id = %d AND store_id = %d AND type = 'error'
+                    AND DATE(created_at) = CURDATE()
+                    LIMIT 1
+                ", $user_id, $store_id));
+                $should_log = !$existing_error;
+            } elseif ($error_type === 'duplicate_scan') {
+                // Never log duplicate_scan - just retry spam within 2 min
+                $should_log = false;
+            }
+
+            if ($should_log) {
                 self::insert_log($store_id, $user_id, $response_data['message'] ?? '⚠️ Rate limit', 'error', $error_type);
             }
 
