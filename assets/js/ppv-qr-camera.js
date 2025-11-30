@@ -551,7 +551,7 @@
 
         const options = {
           preferredCamera: 'environment',
-          maxScansPerSecond: 3,
+          maxScansPerSecond: 10,  // Increased for better detection at angles
           highlightScanRegion: true,
           highlightCodeOutline: true,
           returnDetailedScanResult: true
@@ -577,6 +577,33 @@
               ppvLog('[Camera] Capabilities:', capabilities);
 
               const advancedConstraints = [];
+
+              // Request maximum resolution for better QR detection at angles
+              const resolutionConstraints = {};
+              if (capabilities.width && capabilities.width.max) {
+                // Cap at 1920 to balance quality vs performance
+                resolutionConstraints.width = Math.min(capabilities.width.max, 1920);
+              }
+              if (capabilities.height && capabilities.height.max) {
+                // Cap at 1080 to balance quality vs performance
+                resolutionConstraints.height = Math.min(capabilities.height.max, 1080);
+              }
+              if (capabilities.frameRate && capabilities.frameRate.max) {
+                // Higher frame rate = more chances to capture QR at good angle
+                resolutionConstraints.frameRate = Math.min(capabilities.frameRate.max, 30);
+              }
+
+              // Apply resolution constraints if any
+              if (Object.keys(resolutionConstraints).length > 0) {
+                try {
+                  await this.videoTrack.applyConstraints(resolutionConstraints);
+                  ppvLog('[Camera] Resolution set:', resolutionConstraints);
+                } catch (resErr) {
+                  ppvWarn('[Camera] Could not set resolution, using default:', resErr);
+                }
+              }
+
+              // Apply focus and exposure constraints
               if (capabilities.focusMode?.includes('continuous')) {
                 advancedConstraints.push({ focusMode: 'continuous' });
               }
@@ -642,16 +669,19 @@
         const stream = await navigator.mediaDevices.getUserMedia({
           video: {
             facingMode: { exact: 'environment' },
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
+            width: { ideal: 1920, min: 640 },
+            height: { ideal: 1080, min: 480 },
+            frameRate: { ideal: 30, min: 15 }
           }
         });
 
         video.srcObject = stream;
         await video.play();
 
-        canvas.width = video.videoWidth || 1280;
-        canvas.height = video.videoHeight || 720;
+        // Use actual video dimensions for best quality
+        canvas.width = video.videoWidth || 1920;
+        canvas.height = video.videoHeight || 1080;
+        ppvLog('[jsQR] Canvas size:', canvas.width, 'x', canvas.height);
 
         this.iosStream = stream;
         this.iosVideo = video;
@@ -708,7 +738,8 @@
         if (code && code.data) this.onScanSuccess(code.data);
       }
 
-      if (this.scanning) setTimeout(() => this.jsQRScanLoop(), 40);
+      // ~30fps scan rate for better detection at angles
+      if (this.scanning) setTimeout(() => this.jsQRScanLoop(), 33);
     }
 
     onScanSuccess(qrCode) {
