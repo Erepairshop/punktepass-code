@@ -742,13 +742,11 @@ add_action('init', function () {
 // ========================================
 // 📱 iOS GOOGLE OAUTH CALLBACK
 // ========================================
-add_filter('query_vars', function($vars) {
-    $vars[] = 'ppv_google_callback';
-    return $vars;
-});
-
-add_action('template_redirect', function() {
-    if (get_query_var('ppv_google_callback')) {
+// Handle callback early - uses direct URL detection (no rewrite rules needed)
+add_action('init', function() {
+    // Check if this is the google-callback URL
+    $request_uri = $_SERVER['REQUEST_URI'] ?? '';
+    if (preg_match('#^/google-callback/?(\?|$)#', $request_uri)) {
         // Get the authorization code from Google
         $code = isset($_GET['code']) ? sanitize_text_field($_GET['code']) : null;
         $error = isset($_GET['error']) ? sanitize_text_field($_GET['error']) : null;
@@ -765,10 +763,10 @@ add_action('template_redirect', function() {
         }
 
         // Redirect to iOS app
-        wp_redirect($redirectUrl);
+        header('Location: ' . $redirectUrl);
         exit;
     }
-});
+}, 1); // Priority 1 = very early
 
 register_activation_hook(__FILE__, function () {
     add_rewrite_rule('^store/([^/]*)/?$', 'index.php?pagename=store&store=$matches[1]', 'top');
