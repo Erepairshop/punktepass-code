@@ -604,12 +604,36 @@
       }, STATE.ablySubscriberId);
 
       manager.subscribe(channelName, 'redemption-request', (message) => {
+        // Only show modal if this is the scanner that scanned the user's QR
+        const myScannerId = getScannerId();
+        const targetScannerId = message.data?.scanner_id;
+
+        // If scanner_id is specified, only show on that device
+        // If scanner_id is null/undefined (legacy), show on all devices
+        if (targetScannerId && myScannerId && Number(targetScannerId) !== Number(myScannerId)) {
+          ppvLog('[Ably] Redemption request for different scanner:', targetScannerId, 'my:', myScannerId);
+          return; // Not for this scanner
+        }
+
         showHandlerRedemptionModal(message.data);
       }, STATE.ablySubscriberId);
 
       manager.subscribe(channelName, 'redemption-cancelled', (message) => {
         closeHandlerRedemptionModal();
         window.ppvToast('❌ Kunde hat abgebrochen', 'info');
+      }, STATE.ablySubscriberId);
+
+      // Close modal on other devices when one handler processes the redemption
+      manager.subscribe(channelName, 'redemption-handled', (message) => {
+        ppvLog('[Ably] Redemption handled by another device:', message.data);
+        // Only close if this modal shows the same token
+        if (activeRedemptionToken && message.data?.token === activeRedemptionToken) {
+          closeHandlerRedemptionModal();
+          const actionText = message.data.action === 'approved'
+            ? (L.handled_by_colleague_approved || '✅ Kollege hat bestätigt')
+            : (L.handled_by_colleague_rejected || '❌ Kollege hat abgelehnt');
+          window.ppvToast(actionText, 'info');
+        }
       }, STATE.ablySubscriberId);
 
       manager.subscribe(channelName, 'campaign-update', (message) => {

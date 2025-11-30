@@ -551,10 +551,19 @@
 
         const options = {
           preferredCamera: 'environment',
-          maxScansPerSecond: 3,
+          maxScansPerSecond: 10,
           highlightScanRegion: true,
           highlightCodeOutline: true,
-          returnDetailedScanResult: true
+          returnDetailedScanResult: true,
+          // Use full video for scanning - helps with close-up QR codes
+          calculateScanRegion: (video) => {
+            return {
+              x: 0,
+              y: 0,
+              width: video.videoWidth,
+              height: video.videoHeight
+            };
+          }
         };
 
         this.scanner = new QrScanner(
@@ -583,6 +592,15 @@
               if (capabilities.exposureMode?.includes('continuous')) {
                 advancedConstraints.push({ exposureMode: 'continuous' });
               }
+              // Set closer focus distance if supported (helps with close-up scanning)
+              if (capabilities.focusDistance) {
+                const minFocus = capabilities.focusDistance.min || 0;
+                const maxFocus = capabilities.focusDistance.max || 1;
+                // Set focus distance to closer range (20-30% of range for close-up)
+                const closeFocus = minFocus + (maxFocus - minFocus) * 0.25;
+                advancedConstraints.push({ focusDistance: closeFocus });
+                ppvLog('[Camera] Focus distance set to:', closeFocus, '(range:', minFocus, '-', maxFocus, ')');
+              }
               if (advancedConstraints.length > 0) {
                 await this.videoTrack.applyConstraints({ advanced: advancedConstraints });
               }
@@ -605,6 +623,12 @@
         this.updateStatus('scanning', L.scanner_active || 'Scanning...');
 
       } catch (e) {
+        // Ignore "interrupted" errors (happens on quick start/stop)
+        if (e?.name === 'AbortError') {
+          ppvLog('[Camera] Play interrupted, ignoring...');
+          return;
+        }
+
         ppvWarn('[Camera] QrScanner error:', e);
         console.error('[Camera] Detailed error:', e);
 
@@ -616,6 +640,10 @@
           this.updateStatus('error', '❌ Keine Kamera gefunden');
         } else if (/in use|busy/i.test(errMsg)) {
           this.updateStatus('error', '❌ Kamera wird verwendet');
+        } else if (/interrupted/i.test(errMsg)) {
+          // Play was interrupted - ignore silently
+          ppvLog('[Camera] Play interrupted, ignoring...');
+          return;
         } else {
           this.updateStatus('error', '❌ Kamera nicht verfügbar');
           window.ppvToast('Kamera-Fehler: ' + errMsg.substring(0, 50), 'error');
@@ -648,7 +676,15 @@
         });
 
         video.srcObject = stream;
-        await video.play();
+        try {
+          await video.play();
+        } catch (playErr) {
+          // Ignore "interrupted" errors (happens on quick start/stop)
+          if (playErr.name !== 'AbortError') {
+            throw playErr;
+          }
+          ppvLog('[jsQR] Play interrupted, continuing...');
+        }
 
         canvas.width = video.videoWidth || 1280;
         canvas.height = video.videoHeight || 720;
@@ -804,7 +840,7 @@
     startPauseCountdown() {
       if (this.countdownInterval) clearInterval(this.countdownInterval);
       this.state = 'paused';
-      this.countdown = 5;
+      this.countdown = 3;
       this.lastRead = '';
       this.updateStatus('paused', `⏸️ Pause: ${this.countdown}s`);
 

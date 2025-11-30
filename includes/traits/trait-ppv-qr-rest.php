@@ -284,10 +284,28 @@ trait PPV_QR_REST_Trait {
 
         $rate_check = self::check_rate_limit($user_id, $store_id);
         if ($rate_check['limited']) {
-            // Log the rate limit error with error_type for client-side translation
             $response_data = $rate_check['response']->get_data();
             $error_type = $response_data['error_type'] ?? null;
-            self::insert_log($store_id, $user_id, $response_data['message'] ?? '⚠️ Rate limit', 'error', $error_type);
+
+            // Smart logging: deduplicate repeated errors
+            $should_log = true;
+            if ($error_type === 'already_scanned_today') {
+                // Log only ONCE per day per user+store (not every retry)
+                $existing_error = $wpdb->get_var($wpdb->prepare("
+                    SELECT id FROM {$wpdb->prefix}ppv_pos_log
+                    WHERE user_id = %d AND store_id = %d AND type = 'error'
+                    AND DATE(created_at) = CURDATE()
+                    LIMIT 1
+                ", $user_id, $store_id));
+                $should_log = !$existing_error;
+            } elseif ($error_type === 'duplicate_scan') {
+                // Never log duplicate_scan - just retry spam within 2 min
+                $should_log = false;
+            }
+
+            if ($should_log) {
+                self::insert_log($store_id, $user_id, $response_data['message'] ?? '⚠️ Rate limit', 'error', $error_type);
+            }
 
             // Get user info for error response
             $user_info = $wpdb->get_row($wpdb->prepare("
@@ -1033,12 +1051,13 @@ trait PPV_QR_REST_Trait {
                     "{$wpdb->prefix}ppv_redemption_prompts",
                     [
                         'token' => $prompt_token,
+                        'scanner_id' => $scanner_id,
                         'available_rewards' => json_encode($rewards_array),
                         'expires_at' => $expires_at,
                         'created_at' => current_time('mysql')
                     ],
                     ['id' => $pending_prompt->id],
-                    ['%s', '%s', '%s', '%s'],
+                    ['%s', '%d', '%s', '%s', '%s'],
                     ['%d']
                 );
                 $prompt_id = $pending_prompt->id;
@@ -1048,13 +1067,14 @@ trait PPV_QR_REST_Trait {
                     [
                         'user_id' => $user_id,
                         'store_id' => $store_id,
+                        'scanner_id' => $scanner_id,
                         'token' => $prompt_token,
                         'available_rewards' => json_encode($rewards_array),
                         'status' => 'pending',
                         'created_at' => current_time('mysql'),
                         'expires_at' => $expires_at
                     ],
-                    ['%d', '%d', '%s', '%s', '%s', '%s', '%s']
+                    ['%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s']
                 );
                 $prompt_id = $wpdb->insert_id;
             }
@@ -1942,6 +1962,7 @@ trait PPV_QR_REST_Trait {
                 'prompt_id' => $prompt->id,
                 'token' => $token,
                 'user_id' => $prompt->user_id,
+                'scanner_id' => $prompt->scanner_id ?? null, // Target specific scanner device
                 'customer_name' => $customer_name ?: ($user_info->email ?? 'Kunde'),
                 'email' => $user_info->email ?? null,
                 'avatar' => $user_info->avatar ?? null,
@@ -2042,6 +2063,12 @@ trait PPV_QR_REST_Trait {
                 PPV_Ably::trigger_redemption_rejected($prompt->user_id, [
                     'reward_title' => $reward->title,
                     'reason' => $rejection_reason ?: self::t('rejection_default', 'Die Prämie ist derzeit nicht verfügbar'),
+                ]);
+
+                // 📡 Notify other handlers that this redemption was handled (close their modals)
+                PPV_Ably::trigger_redemption_handled($prompt->store_id, [
+                    'token' => $token,
+                    'action' => 'rejected'
                 ]);
             }
 
@@ -2163,6 +2190,12 @@ trait PPV_QR_REST_Trait {
                     'points_spent' => $reward->required_points,
                     'new_balance' => $new_balance,
                     'actual_amount' => $actual_amount,
+                ]);
+
+                // 📡 Notify other handlers that this redemption was handled (close their modals)
+                PPV_Ably::trigger_redemption_handled($prompt->store_id, [
+                    'token' => $token,
+                    'action' => 'approved'
                 ]);
             }
 
