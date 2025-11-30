@@ -17,7 +17,7 @@ class GoogleAuthHandler: NSObject, ASWebAuthenticationPresentationContextProvidi
     // Callback scheme for iOS app (reversed iOS client ID - used to catch the redirect)
     private let callbackScheme = "com.googleusercontent.apps.645942978357-1bdviltt810gutpve9vjj2kab340man6"
     // HTTPS redirect URI that points to our PHP handler
-    private let redirectUri = "https://punktepass.de/app/google-callback.php"
+    private let redirectUri = "https://punktepass.de/google-callback.php"
 
     func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
         return viewController?.view.window ?? UIWindow()
