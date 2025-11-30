@@ -19,18 +19,16 @@
 
     /**
      * 📱 Initialize FingerprintJS for device tracking
+     * Note: FingerprintJS is now loaded locally via vendor/fp.min.js (no CDN dependency)
      */
     function initFingerprintJS() {
-        // Load FingerprintJS from CDN if not already loaded
-        if (typeof FingerprintJS === 'undefined') {
-            const script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@4/dist/fp.min.js';
-            script.onload = function() {
-                loadFingerprint();
-            };
-            document.head.appendChild(script);
-        } else {
+        // FingerprintJS should already be loaded via local vendor script
+        if (typeof FingerprintJS !== 'undefined') {
             loadFingerprint();
+        } else {
+            // Fallback: wait for script to load (shouldn't happen normally)
+            console.warn('📱 FingerprintJS not yet loaded, waiting...');
+            setTimeout(initFingerprintJS, 100);
         }
     }
 

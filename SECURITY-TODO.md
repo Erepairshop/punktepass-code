@@ -73,21 +73,23 @@
 
 ### 🔴 MAGAS Prioritás
 
-- [ ] **1. Local FingerprintJS hosting**
+- [x] **1. Local FingerprintJS hosting** ✅ (2025-11-30)
   - CDN függőség megszüntetése (`cdn.jsdelivr.net`)
   - `assets/js/vendor/fp.min.js` lokális tárolás
-  - Ha CDN nem elérhető → scanner nem működik!
-  - **Fájlok:** `trait-ppv-qr-devices.php`, `ppv-login.js`
+  - ✅ JAVÍTVA: FingerprintJS v4.6.2 lokálisan
+  - **Fájlok:** `class-ppv-user-signup.php`, `class-ppv-login.php`, `ppv-login.js`
 
-- [ ] **2. Local QR Scanner hosting**
+- [x] **2. Local QR Scanner hosting** ✅ (2025-11-30)
   - CDN függőség megszüntetése (`unpkg.com/qr-scanner`)
-  - `assets/js/vendor/qr-scanner.min.js` lokális tárolás
-  - **Fájlok:** `ppv-qr-camera.js`
+  - `assets/js/vendor/qr-scanner.umd.min.js` lokális tárolás
+  - ✅ JAVÍTVA: QR Scanner + Worker lokálisan, PPV_STORE_DATA.plugin_url hozzáadva
+  - **Fájlok:** `class-ppv-qr.php`, `ppv-qr-camera.js`
 
-- [ ] **3. Auto fingerprint update**
+- [x] **3. Auto fingerprint update** ✅ (2025-11-30)
   - Ha fingerprint változott de hasonló (>80%) → auto frissítés
   - User-nek ne kelljen manuálisan "Fingerprint frissítése"
-  - Similarity score implementálás
+  - Similarity score implementálás (súlyozott komponens összehasonlítás)
+  - ✅ JAVÍTVA: `calculate_fingerprint_similarity()`, `find_similar_device()` metódusok
   - **Fájlok:** `class-ppv-device-fingerprint.php`, `ppv-qr-camera.js`
 
 - [ ] **4. GPS block opció (store-onként)**

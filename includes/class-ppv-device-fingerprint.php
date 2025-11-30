@@ -961,6 +961,140 @@ class PPV_Device_Fingerprint {
     }
 
     /**
+     * Calculate similarity score between two fingerprint component sets
+     * Returns 0-100 (percentage of matching components)
+     *
+     * @param array $current_components Current device components
+     * @param array|string $stored_components Stored device_info JSON or array
+     * @return int Similarity percentage (0-100)
+     */
+    public static function calculate_fingerprint_similarity($current_components, $stored_components) {
+        if (empty($current_components) || empty($stored_components)) {
+            return 0;
+        }
+
+        // Parse stored components if JSON string
+        if (is_string($stored_components)) {
+            $stored_components = json_decode($stored_components, true);
+        }
+
+        if (!is_array($current_components) || !is_array($stored_components)) {
+            return 0;
+        }
+
+        // Components to compare (with weights - higher weight = more important for device identity)
+        $components_weights = [
+            'platform' => 15,           // OS platform - very stable
+            'timezone' => 10,           // Timezone - stable unless traveling
+            'languages' => 5,           // Browser languages - stable
+            'colorDepth' => 5,          // Screen color depth - stable
+            'deviceMemory' => 10,       // RAM - stable
+            'hardwareConcurrency' => 10, // CPU cores - stable
+            'screenResolution' => 10,   // Screen size - stable per device
+            'vendor' => 8,              // Browser vendor - stable
+            'vendorFlavors' => 5,       // Browser flavor - can change with updates
+            'cookiesEnabled' => 2,      // Cookies - usually stable
+            'colorGamut' => 5,          // Display color gamut - stable
+            'audio' => 8,               // Audio fingerprint - fairly stable
+            'canvas' => 5,              // Canvas fingerprint - can change with GPU driver updates
+            'webGlBasics' => 2,         // WebGL info - can change with driver updates
+        ];
+
+        $total_weight = 0;
+        $matched_weight = 0;
+
+        foreach ($components_weights as $key => $weight) {
+            $total_weight += $weight;
+
+            $current_value = $current_components[$key] ?? null;
+            $stored_value = $stored_components[$key] ?? null;
+
+            if ($current_value === null || $stored_value === null) {
+                continue; // Skip if component missing from either
+            }
+
+            // Normalize for comparison
+            $current_normalized = self::normalize_component_value($current_value);
+            $stored_normalized = self::normalize_component_value($stored_value);
+
+            if ($current_normalized === $stored_normalized) {
+                $matched_weight += $weight;
+            }
+        }
+
+        if ($total_weight === 0) {
+            return 0;
+        }
+
+        return intval(round(($matched_weight / $total_weight) * 100));
+    }
+
+    /**
+     * Normalize component value for comparison
+     */
+    private static function normalize_component_value($value) {
+        if (is_array($value)) {
+            // Sort arrays for consistent comparison
+            sort($value);
+            return json_encode($value);
+        }
+        if (is_float($value)) {
+            return round($value, 2);
+        }
+        return $value;
+    }
+
+    /**
+     * Find best matching device by similarity
+     *
+     * @param int $store_id Parent store ID
+     * @param array $current_components Current device components
+     * @param int $threshold Minimum similarity threshold (default 80%)
+     * @return array|null Best matching device with similarity score, or null
+     */
+    public static function find_similar_device($store_id, $current_components, $threshold = 80) {
+        global $wpdb;
+
+        if (empty($current_components) || $store_id <= 0) {
+            return null;
+        }
+
+        // Get all registered devices with device_info
+        $devices = $wpdb->get_results($wpdb->prepare(
+            "SELECT id, fingerprint_hash, device_name, device_info, mobile_scanner
+             FROM {$wpdb->prefix}" . self::USER_DEVICES_TABLE . "
+             WHERE store_id = %d AND status = 'active' AND device_info IS NOT NULL",
+            $store_id
+        ));
+
+        if (empty($devices)) {
+            return null;
+        }
+
+        $best_match = null;
+        $best_score = 0;
+
+        foreach ($devices as $device) {
+            $score = self::calculate_fingerprint_similarity($current_components, $device->device_info);
+
+            ppv_log("📱 [Similarity] Device #{$device->id} ({$device->device_name}): {$score}%");
+
+            if ($score >= $threshold && $score > $best_score) {
+                $best_score = $score;
+                $best_match = [
+                    'device_id' => intval($device->id),
+                    'fingerprint_hash' => $device->fingerprint_hash,
+                    'device_name' => $device->device_name,
+                    'mobile_scanner' => !empty($device->mobile_scanner),
+                    'similarity' => $score
+                ];
+            }
+        }
+
+        return $best_match;
+    }
+
+    /**
      * REST: Get user's registered devices
      */
     public static function rest_get_user_devices(WP_REST_Request $request) {
@@ -1199,8 +1333,11 @@ class PPV_Device_Fingerprint {
         $fingerprint_hash = self::hash_fingerprint($fingerprint);
         $parent_store_id = self::get_parent_store_id($store_id);
 
+        // Get components for similarity matching (auto-update feature)
+        $components = $data['components'] ?? null;
+
         // Debug: Log the check
-        ppv_log("📱 [Device Check] store_id={$store_id}, parent_store_id={$parent_store_id}, fp_hash=" . substr($fingerprint_hash, 0, 16) . "...");
+        ppv_log("📱 [Device Check] store_id={$store_id}, parent_store_id={$parent_store_id}, fp_hash=" . substr($fingerprint_hash, 0, 16) . "..., has_components=" . (!empty($components) ? 'YES' : 'NO'));
 
         // Get all registered hashes for comparison
         $registered_hashes = $wpdb->get_col($wpdb->prepare(
@@ -1212,10 +1349,51 @@ class PPV_Device_Fingerprint {
 
         $is_registered = self::is_device_registered_for_user($parent_store_id, $fingerprint_hash);
         $device_count = self::get_user_device_count($parent_store_id);
+        $auto_updated = false;
+        $similarity_score = null;
 
         ppv_log("📱 [Device Check] is_registered=" . ($is_registered ? 'YES' : 'NO') . ", device_count={$device_count}");
 
-        // Allow scanner only if device is registered
+        // ========================================
+        // 🔄 AUTO FINGERPRINT UPDATE (Similarity Matching)
+        // ========================================
+        // If device not registered but we have components, try similarity matching
+        if (!$is_registered && !empty($components) && is_array($components)) {
+            ppv_log("📱 [Device Check] Exact match failed - trying similarity matching...");
+
+            $similar_device = self::find_similar_device($parent_store_id, $components, 80);
+
+            if ($similar_device) {
+                // Found a similar device - auto-update the fingerprint hash
+                $similarity_score = $similar_device['similarity'];
+                ppv_log("📱 [Auto-Update] Found similar device #{$similar_device['device_id']} ({$similar_device['device_name']}) with {$similarity_score}% similarity");
+
+                // Update the fingerprint hash for this device
+                $updated = $wpdb->update(
+                    $wpdb->prefix . self::USER_DEVICES_TABLE,
+                    [
+                        'fingerprint_hash' => $fingerprint_hash,
+                        'device_info' => wp_json_encode($components),
+                        'last_used_at' => current_time('mysql')
+                    ],
+                    ['id' => $similar_device['device_id']],
+                    ['%s', '%s', '%s'],
+                    ['%d']
+                );
+
+                if ($updated !== false) {
+                    ppv_log("✅ [Auto-Update] Fingerprint auto-updated for device #{$similar_device['device_id']}");
+                    $is_registered = true;
+                    $auto_updated = true;
+                } else {
+                    ppv_log("❌ [Auto-Update] Failed to update fingerprint: " . $wpdb->last_error);
+                }
+            } else {
+                ppv_log("📱 [Device Check] No similar device found (threshold: 80%)");
+            }
+        }
+
+        // Allow scanner only if device is registered (including auto-updated)
         $can_use_scanner = $is_registered;
 
         // Check device-level mobile scanner status
@@ -1235,14 +1413,16 @@ class PPV_Device_Fingerprint {
                 $device_id = intval($device->id);
                 $device_mobile_scanner = !empty($device->mobile_scanner);
 
-                // Update last_used_at
-                $wpdb->update(
-                    $wpdb->prefix . self::USER_DEVICES_TABLE,
-                    ['last_used_at' => current_time('mysql')],
-                    ['id' => $device->id],
-                    ['%s'],
-                    ['%d']
-                );
+                // Update last_used_at (skip if auto_updated since we already updated)
+                if (!$auto_updated) {
+                    $wpdb->update(
+                        $wpdb->prefix . self::USER_DEVICES_TABLE,
+                        ['last_used_at' => current_time('mysql')],
+                        ['id' => $device->id],
+                        ['%s'],
+                        ['%d']
+                    );
+                }
             }
         }
 
@@ -1268,6 +1448,9 @@ class PPV_Device_Fingerprint {
             'available_slots' => $available_slots, // Pre-approved slots ready to claim
             // Device info
             'device_id' => $device_id,
+            // Auto fingerprint update info
+            'auto_updated' => $auto_updated,
+            'similarity_score' => $similarity_score,
             // Mobile scanner status (per-device)
             'is_mobile_scanner' => $is_mobile_scanner,
             'device_mobile_scanner' => $device_mobile_scanner,
@@ -1278,7 +1461,9 @@ class PPV_Device_Fingerprint {
             'debug' => [
                 'current_hash' => substr($fingerprint_hash, 0, 16) . '...',
                 'registered_hashes' => array_map(fn($h) => substr($h, 0, 16) . '...', $registered_hashes),
-                'store_id' => $parent_store_id
+                'store_id' => $parent_store_id,
+                'auto_updated' => $auto_updated,
+                'similarity' => $similarity_score
             ]
         ], 200);
     }

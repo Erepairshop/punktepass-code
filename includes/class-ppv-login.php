@@ -570,6 +570,9 @@ public static function render_landing_page($atts) {
             </footer>
         </div>
 
+        <!-- FingerprintJS (local vendor - no CDN dependency) -->
+        <script src="<?php echo PPV_PLUGIN_URL; ?>assets/js/vendor/fp.min.js?ver=4.6.2"></script>
+
         <!-- Force Fresh JS Load (Bypass SW Cache) -->
         <script src="<?php echo PPV_PLUGIN_URL; ?>assets/js/ppv-login.js?ver=<?php echo time(); ?>"></script>
 
