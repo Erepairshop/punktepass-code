@@ -360,43 +360,29 @@ func injectGoogleLoginOverride(contentController: WKUserContentController) {
     // Override Google login button to use native iOS authentication
     let scriptSource = """
     (function() {
-        // Flag to identify iOS app
+        // Flag to identify iOS app - used by ppv-login.js to skip web Google init
         window.isPWAShellApp = true;
+        window.isNativeIOSApp = true;
 
-        // Wait for DOM and jQuery
-        function setupNativeGoogleLogin() {
-            if (typeof jQuery === 'undefined') {
-                setTimeout(setupNativeGoogleLogin, 100);
-                return;
-            }
-
-            // Override Google button click
-            jQuery(document).on('click', '#ppv-google-login-btn', function(e) {
+        // Use capture phase to intercept click BEFORE jQuery handlers
+        document.addEventListener('click', function(e) {
+            var btn = e.target.closest('#ppv-google-login-btn');
+            if (btn) {
                 e.preventDefault();
                 e.stopPropagation();
                 e.stopImmediatePropagation();
 
-                console.log('🍎 iOS: Triggering native Google login');
+                console.log('🍎 iOS: Native Google login triggered');
 
-                // Call native iOS handler
                 if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers['native-google-login']) {
                     window.webkit.messageHandlers['native-google-login'].postMessage({});
                 } else {
-                    console.error('🍎 Native Google login handler not available');
+                    console.error('🍎 Native handler not available');
                 }
+            }
+        }, true); // true = capture phase
 
-                return false;
-            });
-
-            console.log('🍎 iOS: Native Google login override installed');
-        }
-
-        // Run setup
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', setupNativeGoogleLogin);
-        } else {
-            setupNativeGoogleLogin();
-        }
+        console.log('🍎 iOS: Native Google login override ready');
     })();
     """
     let script = WKUserScript(source: scriptSource, injectionTime: .atDocumentStart, forMainFrameOnly: true)
