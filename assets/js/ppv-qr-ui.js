@@ -9,7 +9,7 @@
   if (window.PPV_QR_UI_LOADED) return;
   window.PPV_QR_UI_LOADED = true;
 
-  const { log: ppvLog, L } = window.PPV_QR;
+  const { log: ppvLog, L, escapeHtml } = window.PPV_QR;
 
   // ============================================================
   // UI MANAGER
@@ -82,9 +82,9 @@
         subtitle2 = dateTime;
       }
 
-      // Avatar
+      // Avatar (escape URL to prevent XSS)
       const avatarHtml = log.avatar
-        ? `<img src="${log.avatar}" class="ppv-scan-avatar" alt="">`
+        ? `<img src="${escapeHtml(log.avatar)}" class="ppv-scan-avatar" alt="">`
         : `<div class="ppv-scan-avatar-placeholder">${log.success ? '✓' : '✗'}</div>`;
 
       // Points display
@@ -100,17 +100,17 @@
         pointsHtml = `<div class="ppv-scan-points ${hasBonus ? 'bonus' : ''}">+${log.points}${badges}</div>`;
       }
 
-      const subtitle2Html = subtitle2 ? `<div class="ppv-scan-detail ppv-scan-time">${subtitle2}</div>` : '';
+      const subtitle2Html = subtitle2 ? `<div class="ppv-scan-detail ppv-scan-time">${escapeHtml(subtitle2)}</div>` : '';
       const scannerName = log.scanner_name || null;
       const scannerHtml = scannerName
-        ? `<div class="ppv-scan-detail ppv-scan-scanner">👤 ${scannerName}</div>`
+        ? `<div class="ppv-scan-detail ppv-scan-scanner">👤 ${escapeHtml(scannerName)}</div>`
         : '';
 
       item.innerHTML = `
         ${avatarHtml}
         <div class="ppv-scan-info">
-          <div class="ppv-scan-name">${displayName}</div>
-          <div class="ppv-scan-detail">${subtitle}</div>
+          <div class="ppv-scan-name">${escapeHtml(displayName)}</div>
+          <div class="ppv-scan-detail">${escapeHtml(subtitle)}</div>
           ${subtitle2Html}
           ${scannerHtml}
         </div>

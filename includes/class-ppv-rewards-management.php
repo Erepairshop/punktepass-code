@@ -261,8 +261,8 @@ class PPV_Rewards_Management {
 
                             <div class="ppv-form-group">
                                 <label><i class="ri-coin-line"></i> <?php echo esc_html(PPV_Lang::t('rewards_form_points_given') ?: 'Bónusz pontok'); ?></label>
-                                <input type="number" name="points_given" id="reward-points-given" placeholder="<?php echo esc_attr(PPV_Lang::t('rewards_form_points_given_placeholder') ?: 'pl. 5'); ?>" min="0" required>
-                                <small><?php echo esc_html(PPV_Lang::t('rewards_form_points_given_helper') ?: 'Beváltáskor kapott pontok'); ?></small>
+                                <input type="number" name="points_given" id="reward-points-given" placeholder="<?php echo esc_attr(PPV_Lang::t('rewards_form_points_given_placeholder') ?: 'pl. 5'); ?>" min="0" max="20" required>
+                                <small><?php echo esc_html(PPV_Lang::t('rewards_form_points_given_helper') ?: 'Beváltáskor kapott pontok'); ?> (max. 20)</small>
                             </div>
                         </div>
                     </div>
@@ -1224,6 +1224,15 @@ class PPV_Rewards_Management {
         $type     = sanitize_text_field($data['action_type'] ?? '');
         $value    = sanitize_text_field($data['action_value'] ?? '');
 
+        // 🔒 SECURITY: Max points per scan limit
+        $max_points_per_scan = 20;
+        if ($points_given > $max_points_per_scan) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => "❌ Maximum {$max_points_per_scan} Punkte pro Scan erlaubt."
+            ], 400);
+        }
+
         // 📅 Campaign fields
         $is_campaign = !empty($data['is_campaign']) ? 1 : 0;
         $start_date  = !empty($data['start_date']) ? sanitize_text_field($data['start_date']) : null;
@@ -1330,6 +1339,15 @@ class PPV_Rewards_Management {
         $desc     = sanitize_textarea_field($data['description'] ?? '');
         $type     = sanitize_text_field($data['action_type'] ?? '');
         $value    = sanitize_text_field($data['action_value'] ?? '');
+
+        // 🔒 SECURITY: Max points per scan limit
+        $max_points_per_scan = 20;
+        if ($points_given > $max_points_per_scan) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => "❌ Maximum {$max_points_per_scan} Punkte pro Scan erlaubt."
+            ], 400);
+        }
 
         // 📅 Campaign fields
         $is_campaign = !empty($data['is_campaign']) ? 1 : 0;

@@ -154,6 +154,26 @@ trait PPV_QR_REST_Trait {
     public static function rest_process_scan(WP_REST_Request $r) {
         global $wpdb;
 
+        // 🔒 SECURITY: Rate limiting
+        // 1. General rate limit for ALL requests (prevents spam/DoS) - 20/min
+        $rate_check_all = PPV_Permissions::check_rate_limit('pos_scan_all', 20, 60);
+        if (is_wp_error($rate_check_all)) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => '⚠️ ' . $rate_check_all->get_error_message()
+            ], 429);
+        }
+        PPV_Permissions::increment_rate_limit('pos_scan_all', 60);
+
+        // 2. Successful scan rate limit - 3/min (checked here, incremented on success)
+        $rate_check_success = PPV_Permissions::check_rate_limit('pos_scan_success', 3, 60);
+        if (is_wp_error($rate_check_success)) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => '⚠️ Zu viele erfolgreiche Scans. Bitte warte 1 Minute.'
+            ], 429);
+        }
+
         $data = $r->get_json_params();
         $qr_code = sanitize_text_field($data['qr'] ?? '');
         $store_key = sanitize_text_field($data['store_key'] ?? '');
@@ -409,6 +429,13 @@ trait PPV_QR_REST_Trait {
                 'store_name' => $store->name ?? 'PunktePass',
                 'error_type' => 'no_points_configured'
             ], 400);
+        }
+
+        // 🔒 SECURITY: Max point limit per scan (prevents point inflation)
+        $max_points_per_scan = 20;
+        if ($points_add > $max_points_per_scan) {
+            ppv_log("⚠️ [PPV_QR] Points capped: requested={$points_add}, max={$max_points_per_scan}");
+            $points_add = $max_points_per_scan;
         }
 
         // Check for bonus day (multiplies base/campaign points)
@@ -717,11 +744,11 @@ trait PPV_QR_REST_Trait {
 
         try {
             // 🔒 DUPLICATE CHECK: Prevent race condition double-inserts
-            // Check if points were already inserted in the last 5 seconds
+            // Check if points were already inserted in the last 10 seconds (extended for slow networks)
             $recent_insert = $wpdb->get_var($wpdb->prepare("
                 SELECT id FROM {$wpdb->prefix}ppv_points
                 WHERE user_id = %d AND store_id = %d AND type = 'qr_scan'
-                AND created > DATE_SUB(NOW(), INTERVAL 5 SECOND)
+                AND created > DATE_SUB(NOW(), INTERVAL 10 SECOND)
                 LIMIT 1
             ", $user_id, $store_id));
 
@@ -1057,6 +1084,9 @@ trait PPV_QR_REST_Trait {
                 ]);
             }
         }
+
+        // 🔒 SECURITY: Increment successful scan counter (rate limit 3/min)
+        PPV_Permissions::increment_rate_limit('pos_scan_success', 60);
 
         return new WP_REST_Response([
             'success' => true,
@@ -1399,6 +1429,16 @@ trait PPV_QR_REST_Trait {
             $campaign_type = 'points';
         }
 
+        // 🔒 SECURITY: Max points per scan limit
+        $points_given = (int)($data['points_given'] ?? 1);
+        $max_points_per_scan = 20;
+        if ($points_given > $max_points_per_scan) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => "❌ Maximum {$max_points_per_scan} Punkte pro Scan erlaubt."
+            ], 400);
+        }
+
         $fields = [
             'store_id'           => $store->id,
             'title'              => sanitize_text_field($data['title'] ?? ''),
@@ -1406,7 +1446,7 @@ trait PPV_QR_REST_Trait {
             'end_date'           => sanitize_text_field($data['end_date'] ?? ''),
             'campaign_type'      => $campaign_type,
             'required_points'    => (int)($data['required_points'] ?? 0),
-            'points_given'       => (int)($data['points_given'] ?? 1),
+            'points_given'       => $points_given,
             'status'             => sanitize_text_field($data['status'] ?? 'active'),
             'created_at'         => current_time('mysql'),
         ];
@@ -1657,13 +1697,23 @@ trait PPV_QR_REST_Trait {
             $campaign_type = 'points';
         }
 
+        // 🔒 SECURITY: Max points per scan limit
+        $points_given = (int)($d['points_given'] ?? 1);
+        $max_points_per_scan = 20;
+        if ($points_given > $max_points_per_scan) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => "❌ Maximum {$max_points_per_scan} Punkte pro Scan erlaubt."
+            ], 400);
+        }
+
         $fields = [
             'title'           => sanitize_text_field($d['title'] ?? ''),
             'start_date'      => sanitize_text_field($d['start_date'] ?? ''),
             'end_date'        => sanitize_text_field($d['end_date'] ?? ''),
             'campaign_type'   => $campaign_type,
             'required_points' => (int)($d['required_points'] ?? 0),
-            'points_given'    => (int)($d['points_given'] ?? 1),
+            'points_given'    => $points_given,
             'status'          => sanitize_text_field($d['status'] ?? 'active'),
             'updated_at'      => current_time('mysql'),
         ];

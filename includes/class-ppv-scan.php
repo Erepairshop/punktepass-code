@@ -240,6 +240,13 @@ public static function ajax_auto_add_point() {
         wp_send_json_error(['msg' => '⚠️ Keine Punkte konfiguriert. Bitte Prämie oder Kampagne einrichten.']);
     }
 
+    // 🔒 SECURITY: Max point limit per scan (prevents point inflation)
+    $max_points_per_scan = 20;
+    if ($points_to_add > $max_points_per_scan) {
+        ppv_log("⚠️ [PPV_Scan] Points capped: requested={$points_to_add}, max={$max_points_per_scan}");
+        $points_to_add = $max_points_per_scan;
+    }
+
     // 🔍 DEBUG: Log scan source
     ppv_log("🔍 [PPV_Scan] AJAX scan: user_id={$user_id}, store_id={$store_id}, points={$points_to_add}");
 
