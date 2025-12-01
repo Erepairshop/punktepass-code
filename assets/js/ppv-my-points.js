@@ -57,6 +57,7 @@
       no_rewards: "Keine Belohnungen verfügbar",
       reward_achieved: "Einlösbar!",
       claim_reward: "Einlösen",
+      points_missing: "fehlen noch",
     },
     hu: {
       title: "Pontjaim",
@@ -90,6 +91,7 @@
       no_rewards: "Nincs elérhető jutalom",
       reward_achieved: "Beváltható!",
       claim_reward: "Beváltás",
+      points_missing: "hiányzik",
     },
     ro: {
       title: "Punctele mele",
@@ -123,6 +125,7 @@
       no_rewards: "Nu există recompense disponibile",
       reward_achieved: "Disponibil!",
       claim_reward: "Revendică",
+      points_missing: "lipsesc",
     }
   };
 
@@ -891,7 +894,13 @@
   // Share via WhatsApp
   window.shareReferralWhatsApp = function(url, storeName) {
     if (navigator.vibrate) navigator.vibrate(50);
-    const text = encodeURIComponent(`Hey! Hol dir Punkte bei ${storeName}! Nutze meinen Einladungslink: ${url}`);
+    const lang = window.ppv_mypoints?.lang || 'de';
+    const messages = {
+      de: `Hey! Hol dir Punkte bei ${storeName}! Nutze meinen Einladungslink: ${url}`,
+      hu: `Hé! Gyűjts pontokat itt: ${storeName}! Használd a meghívó linkemet: ${url}`,
+      ro: `Hei! Colectează puncte la ${storeName}! Folosește link-ul meu de invitație: ${url}`
+    };
+    const text = encodeURIComponent(messages[lang] || messages.de);
     window.open(`https://wa.me/?text=${text}`, '_blank');
   };
 
@@ -954,7 +963,7 @@ function buildRewardsByStore(stores, l) {
     const achieved = store.achieved;
     const statusClass = achieved ? 'ppv-reward-achieved' : 'ppv-reward-progress';
     const statusIcon = achieved ? '🎉' : '🎯';
-    const statusText = achieved ? (l.reward_achieved || 'Elérhető!') : `${store.remaining} ${l.points_label || 'pont'} hiányzik`;
+    const statusText = achieved ? (l.reward_achieved || 'Einlösbar!') : `${store.remaining} ${l.points_label || 'Punkte'} ${l.points_missing || 'fehlen noch'}`;
     
     html += `
       <div class="ppv-reward-card ${statusClass}" data-store-id="${store.store_id}">

@@ -151,7 +151,7 @@
   async function handleCsvExport(period) {
     const storeKey = getStoreKey();
     if (!storeKey) {
-      window.ppvToast('⚠️ Kein Store ausgewählt', 'warning');
+      window.ppvToast('⚠️ ' + (L.no_store_selected || 'Kein Store ausgewählt'), 'warning');
       return;
     }
 
@@ -160,7 +160,7 @@
     if (period === 'today') {
       dateParam = new Date().toISOString().split('T')[0];
     } else if (period === 'date') {
-      const selectedDate = prompt('Datum eingeben (YYYY-MM-DD):', new Date().toISOString().split('T')[0]);
+      const selectedDate = prompt((L.csv_date_prompt || 'Datum eingeben (YYYY-MM-DD)') + ':', new Date().toISOString().split('T')[0]);
       if (!selectedDate) return;
       dateParam = selectedDate;
     } else if (period === 'month') {
@@ -168,7 +168,7 @@
       dateParam = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     }
 
-    window.ppvToast('⏳ CSV wird erstellt...', 'info');
+    window.ppvToast('⏳ ' + (L.csv_creating || 'CSV wird erstellt...'), 'info');
 
     try {
       const res = await fetch(`/wp-json/punktepass/v1/pos/export-csv?period=${period}&date=${dateParam}`, {
@@ -189,13 +189,13 @@
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
-        window.ppvToast('✅ CSV heruntergeladen', 'success');
+        window.ppvToast('✅ ' + (L.csv_downloaded || 'CSV heruntergeladen'), 'success');
       } else {
         throw new Error(data.message || 'Export failed');
       }
     } catch (err) {
       ppvWarn('[CSV] Export error:', err);
-      window.ppvToast('❌ Export fehlgeschlagen', 'error');
+      window.ppvToast('❌ ' + (L.export_failed || 'Export fehlgeschlagen'), 'error');
     }
   }
 
@@ -620,7 +620,7 @@
 
       manager.subscribe(channelName, 'redemption-cancelled', (message) => {
         closeHandlerRedemptionModal();
-        window.ppvToast('❌ Kunde hat abgebrochen', 'info');
+        window.ppvToast('❌ ' + (L.customer_cancelled || 'Kunde hat abgebrochen'), 'info');
       }, STATE.ablySubscriberId);
 
       // Close modal on other devices when one handler processes the redemption
@@ -638,13 +638,13 @@
 
       manager.subscribe(channelName, 'campaign-update', (message) => {
         ppvLog('[Ably] Campaign update received:', message.data);
-        window.ppvToast(`📢 Kampány ${message.data.action === 'created' ? 'létrehozva' : message.data.action === 'updated' ? 'frissítve' : 'törölve'}`, 'info');
+        window.ppvToast(`📢 ${L.campaign || 'Kampagne'} ${message.data.action === 'created' ? (L.created || 'erstellt') : message.data.action === 'updated' ? (L.updated || 'aktualisiert') : (L.deleted || 'gelöscht')}`, 'info');
         STATE.campaignManager?.load();
       }, STATE.ablySubscriberId);
 
       manager.subscribe(channelName, 'reward-update', (message) => {
         ppvLog('[Ably] Reward update received:', message.data);
-        window.ppvToast(`🎁 Prämie ${message.data.action === 'created' ? 'létrehozva' : message.data.action === 'updated' ? 'frissítve' : 'törölve'}`, 'info');
+        window.ppvToast(`🎁 ${L.reward || 'Prämie'} ${message.data.action === 'created' ? (L.created || 'erstellt') : message.data.action === 'updated' ? (L.updated || 'aktualisiert') : (L.deleted || 'gelöscht')}`, 'info');
       }, STATE.ablySubscriberId);
 
       STATE.initialized = true;

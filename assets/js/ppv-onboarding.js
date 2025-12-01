@@ -128,32 +128,32 @@
 
                         <div class="ppv-modal-icon">🎉</div>
 
-                        <h2>${L.onb_welcome_title || 'Üdvözlünk a PunktePass-ban!'}</h2>
+                        <h2>${L.onb_welcome_title || 'Willkommen bei PunktePass!'}</h2>
 
-                        <p>${L.onb_welcome_subtitle || 'Segítünk beállítani a 3 alapvető dolgot, hogy a vendégek pontokat gyűjthessenek!'}</p>
+                        <p>${L.onb_welcome_subtitle || 'Wir helfen Ihnen, die 3 Grundlagen einzurichten, damit Gäste Punkte sammeln können!'}</p>
 
                         <div class="ppv-welcome-steps">
                             <div class="ppv-welcome-step">
                                 <span class="step-number">1</span>
-                                <span>${L.onb_welcome_step1 || 'Töltsd ki az üzlet alapadatait'}</span>
+                                <span>${L.onb_welcome_step1 || 'Geschäftsdaten ausfüllen'}</span>
                             </div>
                             <div class="ppv-welcome-step">
                                 <span class="step-number">2</span>
-                                <span>${L.onb_welcome_step2 || 'Hozd létre az első prémiumot'}</span>
+                                <span>${L.onb_welcome_step2 || 'Erste Prämie erstellen'}</span>
                             </div>
                             <div class="ppv-welcome-step">
                                 <span class="step-number">3</span>
-                                <span>${L.onb_welcome_step3 || 'Regisztrálj egy eszközt'}</span>
+                                <span>${L.onb_welcome_step3 || 'Gerät registrieren'}</span>
                             </div>
                         </div>
 
                         <div class="ppv-welcome-time">
-                            ${L.onb_welcome_time || '⏱️ Körülbelül 3 perc'}
+                            ${L.onb_welcome_time || '⏱️ Ca. 3 Minuten'}
                         </div>
 
                         <div class="ppv-modal-actions">
-                            <button class="ppv-btn ppv-btn-secondary" data-action="later">${L.onb_btn_later || '⏭️ Később'}</button>
-                            <button class="ppv-btn ppv-btn-primary" data-action="start">${L.onb_btn_start || '🚀 Kezdjük!'}</button>
+                            <button class="ppv-btn ppv-btn-secondary" data-action="later">${L.onb_btn_later || '⏭️ Später'}</button>
+                            <button class="ppv-btn ppv-btn-primary" data-action="start">${L.onb_btn_start || '🚀 Los geht\'s!'}</button>
                         </div>
                     </div>
                 </div>
@@ -249,13 +249,13 @@
                     <div class="ppv-progress-bar">
                         <div class="ppv-progress-fill" style="width: 50%"></div>
                     </div>
-                    <div class="ppv-progress-text">1/2 ${L.onb_step || 'lépés'}</div>
+                    <div class="ppv-progress-text">1/2 ${L.onb_step || 'Schritt'}</div>
                 </div>
 
                 <div class="ppv-wizard-header">
                     <div class="ppv-wizard-icon">🏪</div>
-                    <h3>${L.onb_profile_step_title || 'Üzlet Alapadatok'}</h3>
-                    <p class="ppv-wizard-subtitle">${L.onb_profile_step_subtitle || 'Töltsd ki az üzleted legfontosabb adatait'}</p>
+                    <h3>${L.onb_profile_step_title || 'Geschäftsdaten'}</h3>
+                    <p class="ppv-wizard-subtitle">${L.onb_profile_step_subtitle || 'Füllen Sie die wichtigsten Daten Ihres Geschäfts aus'}</p>
                 </div>
 
                 <form class="ppv-wizard-form" id="ppv-profile-form">
@@ -263,34 +263,34 @@
                     <div class="ppv-form-section">
                         <div class="ppv-section-title">
                             <span class="ppv-section-icon">📋</span>
-                            ${L.onb_section_basic || 'Alapadatok'}
+                            ${L.onb_section_basic || 'Grunddaten'}
                         </div>
 
                         <div class="ppv-form-row">
                             <div class="ppv-form-group ppv-form-group-wide">
-                                <label>${L.onb_profile_shop_name || 'Üzlet neve'} <span class="required">*</span></label>
-                                <input type="text" name="shop_name" required placeholder="${L.onb_profile_shop_name_placeholder || 'pl. Teszt Kávézó'}">
-                                <small>${L.onb_profile_shop_name_help || 'Ez jelenik meg az ügyfeleknek'}</small>
+                                <label>${L.onb_profile_shop_name || 'Geschäftsname'} <span class="required">*</span></label>
+                                <input type="text" name="shop_name" required placeholder="${L.onb_profile_shop_name_placeholder || 'z.B. Test Café'}">
+                                <small>${L.onb_profile_shop_name_help || 'Dieser Name wird den Kunden angezeigt'}</small>
                             </div>
                         </div>
 
                         <div class="ppv-form-row">
                             <div class="ppv-form-group">
-                                <label>${L.onb_profile_company_name || 'Cégnév'}</label>
-                                <input type="text" name="company_name" placeholder="${L.onb_profile_company_name_placeholder || 'pl. Teszt Kft.'}">
-                                <small>${L.onb_profile_company_name_help || 'Hivatalos cégnév (számlázáshoz)'}</small>
+                                <label>${L.onb_profile_company_name || 'Firmenname'}</label>
+                                <input type="text" name="company_name" placeholder="${L.onb_profile_company_name_placeholder || 'z.B. Test GmbH'}">
+                                <small>${L.onb_profile_company_name_help || 'Offizieller Firmenname (für Rechnungen)'}</small>
                             </div>
                             <div class="ppv-form-group">
-                                <label>${L.onb_profile_country || 'Ország'} <span class="required">*</span></label>
+                                <label>${L.onb_profile_country || 'Land'} <span class="required">*</span></label>
                                 <select name="country" required>
-                                    <option value="">${L.onb_profile_country_placeholder || 'Válassz...'}</option>
-                                    <option value="HU">🇭🇺 ${L.country_hu || 'Magyarország'}</option>
-                                    <option value="DE">🇩🇪 ${L.country_de || 'Németország'}</option>
-                                    <option value="AT">🇦🇹 ${L.country_at || 'Ausztria'}</option>
-                                    <option value="RO">🇷🇴 ${L.country_ro || 'Románia'}</option>
-                                    <option value="SK">🇸🇰 ${L.country_sk || 'Szlovákia'}</option>
-                                    <option value="HR">🇭🇷 ${L.country_hr || 'Horvátország'}</option>
-                                    <option value="SI">🇸🇮 ${L.country_si || 'Szlovénia'}</option>
+                                    <option value="">${L.onb_profile_country_placeholder || 'Auswählen...'}</option>
+                                    <option value="HU">🇭🇺 ${L.country_hu || 'Ungarn'}</option>
+                                    <option value="DE">🇩🇪 ${L.country_de || 'Deutschland'}</option>
+                                    <option value="AT">🇦🇹 ${L.country_at || 'Österreich'}</option>
+                                    <option value="RO">🇷🇴 ${L.country_ro || 'Rumänien'}</option>
+                                    <option value="SK">🇸🇰 ${L.country_sk || 'Slowakei'}</option>
+                                    <option value="HR">🇭🇷 ${L.country_hr || 'Kroatien'}</option>
+                                    <option value="SI">🇸🇮 ${L.country_si || 'Slowenien'}</option>
                                 </select>
                             </div>
                         </div>
@@ -300,21 +300,21 @@
                     <div class="ppv-form-section">
                         <div class="ppv-section-title">
                             <span class="ppv-section-icon">📍</span>
-                            ${L.onb_section_address || 'Cím'}
+                            ${L.onb_section_address || 'Adresse'}
                         </div>
 
                         <div class="ppv-form-group">
-                            <label>${L.onb_profile_address || 'Utca, házszám'} <span class="required">*</span></label>
-                            <input type="text" name="address" required placeholder="${L.onb_profile_address_placeholder || 'pl. Fő utca 12.'}">
+                            <label>${L.onb_profile_address || 'Straße, Hausnr.'} <span class="required">*</span></label>
+                            <input type="text" name="address" required placeholder="${L.onb_profile_address_placeholder || 'z.B. Hauptstraße 12'}">
                         </div>
 
                         <div class="ppv-form-row ppv-form-row-3">
                             <div class="ppv-form-group">
-                                <label>${L.onb_profile_zip || 'Ir.szám'} <span class="required">*</span></label>
+                                <label>${L.onb_profile_zip || 'PLZ'} <span class="required">*</span></label>
                                 <input type="text" name="zip" required placeholder="${L.onb_profile_zip_placeholder || '1011'}">
                             </div>
                             <div class="ppv-form-group ppv-form-group-wide">
-                                <label>${L.onb_profile_city || 'Város'} <span class="required">*</span></label>
+                                <label>${L.onb_profile_city || 'Stadt'} <span class="required">*</span></label>
                                 <input type="text" name="city" required placeholder="${L.onb_profile_city_placeholder || 'Budapest'}">
                             </div>
                         </div>
@@ -324,31 +324,36 @@
                     <div class="ppv-form-section">
                         <div class="ppv-section-title">
                             <span class="ppv-section-icon">🗺️</span>
-                            ${L.onb_section_location || 'Helyszín a térképen'} <span class="required">*</span>
+                            ${L.onb_section_location || 'Standort auf der Karte'} <span class="required">*</span>
                         </div>
 
                         <div class="ppv-map-container">
                             <div id="ppv-onboarding-map" class="ppv-onboarding-map"></div>
                             <div class="ppv-map-instructions">
                                 <span class="ppv-map-icon">👆</span>
-                                ${L.onb_map_instructions || 'Kattints a térképre az üzleted pontos helyének megjelöléséhez!'}
+                                ${L.onb_map_instructions || 'Klicken Sie auf die Karte, um den genauen Standort zu markieren!'}
                             </div>
                         </div>
 
                         <div class="ppv-form-row">
                             <div class="ppv-form-group">
-                                <label>${L.onb_profile_latitude || 'Szélesség (Lat)'}</label>
+                                <label>${L.onb_profile_latitude || 'Breitengrad (Lat)'}</label>
                                 <input type="text" name="latitude" id="onb-latitude" placeholder="47.5000" readonly>
                             </div>
                             <div class="ppv-form-group">
-                                <label>${L.onb_profile_longitude || 'Hosszúság (Lng)'}</label>
+                                <label>${L.onb_profile_longitude || 'Längengrad (Lng)'}</label>
                                 <input type="text" name="longitude" id="onb-longitude" placeholder="19.0400" readonly>
                             </div>
                         </div>
 
                         <button type="button" class="ppv-btn ppv-btn-secondary ppv-btn-block" id="ppv-geocode-btn">
                             <span class="btn-icon">🔍</span>
-                            ${L.onb_profile_geocode_btn || 'Cím alapján keresés'}
+                            ${L.onb_profile_geocode_btn || 'Koordinaten suchen (nach Adresse)'}
+                        </button>
+
+                        <button type="button" class="ppv-btn ppv-btn-outline ppv-btn-block" id="ppv-manual-map-btn" style="margin-top: 10px;">
+                            <span class="btn-icon">🗺️</span>
+                            ${L.onb_manual_map_btn || 'Manuell auf der Karte'}
                         </button>
                     </div>
 
@@ -356,7 +361,7 @@
                     <div class="ppv-form-section">
                         <div class="ppv-section-title">
                             <span class="ppv-section-icon">🕐</span>
-                            ${L.onb_section_hours || 'Nyitvatartás'} <span class="required">*</span>
+                            ${L.onb_section_hours || 'Öffnungszeiten'} <span class="required">*</span>
                         </div>
 
                         <div class="ppv-opening-hours-grid">
@@ -364,7 +369,7 @@
                         </div>
 
                         <div class="ppv-quick-hours">
-                            <span>${L.onb_quick_fill || 'Gyors kitöltés:'}</span>
+                            <span>${L.onb_quick_fill || 'Schnelleingabe:'}</span>
                             <button type="button" class="ppv-chip" data-hours="9-17">${L.onb_hours_office || '9-17'}</button>
                             <button type="button" class="ppv-chip" data-hours="8-20">${L.onb_hours_retail || '8-20'}</button>
                             <button type="button" class="ppv-chip" data-hours="10-22">${L.onb_hours_gastro || '10-22'}</button>
@@ -376,7 +381,7 @@
                     <div class="ppv-form-section">
                         <div class="ppv-section-title">
                             <span class="ppv-section-icon">🌍</span>
-                            ${L.onb_section_timezone || 'Időzóna'} <span class="required">*</span>
+                            ${L.onb_section_timezone || 'Zeitzone'} <span class="required">*</span>
                         </div>
 
                         <div class="ppv-form-group">
@@ -389,17 +394,17 @@
                                 <option value="Europe/Zagreb">🇭🇷 Zágráb (CET/CEST)</option>
                                 <option value="Europe/Ljubljana">🇸🇮 Ljubljana (CET/CEST)</option>
                             </select>
-                            <small>${L.onb_timezone_help || 'A nyitvatartási idők és statisztikák ehhez igazodnak'}</small>
+                            <small>${L.onb_timezone_help || 'Öffnungszeiten und Statistiken richten sich danach'}</small>
                         </div>
                     </div>
                 </form>
 
                 <div class="ppv-modal-actions">
                     <button type="button" class="ppv-btn ppv-btn-secondary" data-action="skip">
-                        ${L.onb_btn_skip || 'Kihagyom'}
+                        ${L.onb_btn_skip || 'Überspringen'}
                     </button>
                     <button type="button" class="ppv-btn ppv-btn-primary" data-action="next">
-                        ${L.onb_btn_next || 'Következő'} <span class="btn-arrow">→</span>
+                        ${L.onb_btn_next || 'Weiter'} <span class="btn-arrow">→</span>
                     </button>
                 </div>
             `);
@@ -419,6 +424,14 @@
             content.on('click', '#ppv-geocode-btn', (e) => {
                 e.preventDefault();
                 this.geocodeAddress(content);
+            });
+
+            // Manual map button
+            content.on('click', '#ppv-manual-map-btn', (e) => {
+                e.preventDefault();
+                const lat = parseFloat(content.find('[name="latitude"]').val()) || 47.5;
+                const lng = parseFloat(content.find('[name="longitude"]').val()) || 19.04;
+                this.openManualMapModal(content, lat, lng);
             });
 
             // Next button
@@ -502,7 +515,7 @@
                     }
 
                     content.find('.ppv-map-instructions').addClass('success').html(
-                        '<span class="ppv-map-icon">✅</span> ' + (window.ppv_lang?.onb_map_selected || 'Helyszín kiválasztva!')
+                        '<span class="ppv-map-icon">✅</span> ' + (window.ppv_lang?.onb_map_selected || 'Standort ausgewählt!')
                     );
                 });
 
@@ -512,8 +525,8 @@
                 // Fallback: Simple placeholder with manual input
                 $(mapContainer).html(`
                     <div class="ppv-map-fallback">
-                        <p>🗺️ ${window.ppv_lang?.onb_map_fallback || 'Térkép betöltése...'}</p>
-                        <p><small>${window.ppv_lang?.onb_map_fallback_tip || 'Használd a "Cím alapján keresés" gombot'}</small></p>
+                        <p>🗺️ ${window.ppv_lang?.onb_map_fallback || 'Karte wird geladen...'}</p>
+                        <p><small>${window.ppv_lang?.onb_map_fallback_tip || 'Nutzen Sie die Adresssuche'}</small></p>
                     </div>
                 `);
                 content.find('[name="latitude"], [name="longitude"]').prop('readonly', false);
@@ -530,12 +543,12 @@
             const country = content.find('[name="country"]').val();
 
             if (!address || !city) {
-                this.showToast(window.ppv_lang?.onb_error_address || '❌ Add meg a címet és várost először!', 'error');
+                this.showToast(window.ppv_lang?.onb_error_address || '❌ Bitte zuerst Adresse und Stadt eingeben!', 'error');
                 return;
             }
 
             const btn = content.find('#ppv-geocode-btn');
-            btn.prop('disabled', true).html('<span class="btn-icon">⏳</span> ' + (window.ppv_lang?.onb_state_searching || 'Keresés...'));
+            btn.prop('disabled', true).html('<span class="btn-icon">⏳</span> ' + (window.ppv_lang?.onb_state_searching || 'Suche...'));
 
             $.ajax({
                 url: this.config.ajax_url,
@@ -562,20 +575,187 @@
                         }
 
                         content.find('.ppv-map-instructions').addClass('success').html(
-                            '<span class="ppv-map-icon">✅</span> ' + (window.ppv_lang?.onb_map_selected || 'Helyszín kiválasztva!')
+                            '<span class="ppv-map-icon">✅</span> ' + (window.ppv_lang?.onb_map_selected || 'Standort ausgewählt!')
                         );
 
-                        this.showToast(window.ppv_lang?.onb_success_geocode || '✅ Koordináták megtalálva!', 'success');
+                        this.showToast(window.ppv_lang?.onb_success_geocode || '✅ Koordinaten gefunden!', 'success');
                     } else {
-                        this.showToast(window.ppv_lang?.onb_error_not_found || '❌ Cím nem található', 'error');
+                        this.showToast(window.ppv_lang?.onb_error_not_found || '❌ Adresse nicht gefunden', 'error');
                     }
                 },
                 error: () => {
-                    this.showToast(window.ppv_lang?.onb_error_geocoding || '❌ Geocoding hiba', 'error');
+                    this.showToast(window.ppv_lang?.onb_error_geocoding || '❌ Geocoding Fehler', 'error');
                 },
                 complete: () => {
-                    btn.prop('disabled', false).html('<span class="btn-icon">🔍</span> ' + (window.ppv_lang?.onb_profile_geocode_btn || 'Cím alapján keresés'));
+                    btn.prop('disabled', false).html('<span class="btn-icon">🔍</span> ' + (window.ppv_lang?.onb_profile_geocode_btn || 'Koordinaten suchen (nach Adresse)'));
                 }
+            });
+        }
+
+        /** ============================================================
+         *  🗺️ MANUAL MAP MODAL
+         * ============================================================ */
+        openManualMapModal(content, defaultLat, defaultLng) {
+            const L = window.ppv_lang || {};
+            const mapTitle = L.map_modal_title || 'Standort auf der Karte markieren';
+            const mapClick = L.map_modal_click || 'Klicken Sie auf die Karte';
+            const mapCancel = L.map_modal_cancel || 'Abbrechen';
+            const mapConfirm = L.map_modal_confirm || 'Übernehmen';
+
+            // Remove existing modal
+            $('#ppv-onb-map-modal').remove();
+
+            const modalHTML = `
+                <div id="ppv-onb-map-modal" style="
+                    position: fixed;
+                    top: 0; left: 0;
+                    width: 100vw; height: 100vh;
+                    background: rgba(0,0,0,0.7);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 999999;
+                ">
+                    <div style="
+                        background: white;
+                        border-radius: 12px;
+                        width: 90%;
+                        max-width: 800px;
+                        max-height: 90vh;
+                        display: flex;
+                        flex-direction: column;
+                        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                    ">
+                        <div style="
+                            padding: 1.5rem;
+                            border-bottom: 1px solid #e5e7eb;
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                        ">
+                            <h2 style="margin: 0; font-size: 1.3rem;">🗺️ ${mapTitle}</h2>
+                            <button id="ppv-onb-map-close" style="
+                                background: none;
+                                border: none;
+                                font-size: 1.5rem;
+                                cursor: pointer;
+                                color: #666;
+                            ">✕</button>
+                        </div>
+                        <div id="ppv-onb-manual-map" style="
+                            flex: 1;
+                            min-height: 400px;
+                            margin: 1rem;
+                            border-radius: 8px;
+                            border: 2px solid #ddd;
+                        "></div>
+                        <div style="
+                            padding: 1.5rem;
+                            border-top: 1px solid #e5e7eb;
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            gap: 1rem;
+                        ">
+                            <p style="margin: 0; color: #666; font-size: 0.9rem;">
+                                📍 <strong id="ppv-onb-coord-display">${mapClick}</strong>
+                            </p>
+                            <div style="display: flex; gap: 0.75rem;">
+                                <button id="ppv-onb-map-cancel" style="
+                                    padding: 0.75rem 1.5rem;
+                                    border: 1px solid #ddd;
+                                    background: #f0f0f0;
+                                    border-radius: 6px;
+                                    cursor: pointer;
+                                    font-weight: 600;
+                                ">${mapCancel}</button>
+                                <button id="ppv-onb-map-confirm" style="
+                                    padding: 0.75rem 1.5rem;
+                                    border: none;
+                                    background: linear-gradient(135deg, #6366f1, #4f46e5);
+                                    color: white;
+                                    border-radius: 6px;
+                                    cursor: pointer;
+                                    font-weight: 600;
+                                ">✅ ${mapConfirm}</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            $('body').append(modalHTML);
+
+            let selectedCoords = null;
+            let manualMap = null;
+            let manualMarker = null;
+
+            // Initialize Leaflet map in modal
+            setTimeout(() => {
+                const mapContainer = document.getElementById('ppv-onb-manual-map');
+                if (!mapContainer) return;
+
+                if (typeof window.L !== 'undefined' && window.L.map) {
+                    manualMap = window.L.map(mapContainer).setView([defaultLat, defaultLng], 15);
+
+                    window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '© OpenStreetMap'
+                    }).addTo(manualMap);
+
+                    // Click handler
+                    manualMap.on('click', (e) => {
+                        const lat = e.latlng.lat;
+                        const lng = e.latlng.lng;
+
+                        selectedCoords = { lat, lng };
+
+                        if (manualMarker) {
+                            manualMarker.setLatLng(e.latlng);
+                        } else {
+                            manualMarker = window.L.marker(e.latlng).addTo(manualMap);
+                        }
+
+                        $('#ppv-onb-coord-display').html(`<strong>${lat.toFixed(4)}, ${lng.toFixed(4)}</strong>`);
+                    });
+
+                    setTimeout(() => manualMap.invalidateSize(), 100);
+                }
+            }, 100);
+
+            // Close button
+            $('#ppv-onb-map-close, #ppv-onb-map-cancel').on('click', () => {
+                $('#ppv-onb-map-modal').remove();
+            });
+
+            // Confirm button
+            $('#ppv-onb-map-confirm').on('click', () => {
+                const L = window.ppv_lang || {};
+                if (!selectedCoords) {
+                    this.showToast(L.map_click_required || 'Bitte klicken Sie auf die Karte!', 'error');
+                    return;
+                }
+
+                content.find('[name="latitude"]').val(selectedCoords.lat.toFixed(4));
+                content.find('[name="longitude"]').val(selectedCoords.lng.toFixed(4));
+
+                // Update main map if exists
+                if (this.onbMap) {
+                    const latlng = [selectedCoords.lat, selectedCoords.lng];
+                    this.onbMap.setView(latlng, 16);
+
+                    if (this.onbMarker) {
+                        this.onbMarker.setLatLng(latlng);
+                    } else {
+                        this.onbMarker = window.L.marker(latlng).addTo(this.onbMap);
+                    }
+                }
+
+                content.find('.ppv-map-instructions').addClass('success').html(
+                    '<span class="ppv-map-icon">✅</span> ' + (L.onb_map_selected || 'Standort ausgewählt!')
+                );
+
+                this.showToast(L.coordinates_set || '✅ Koordinaten gesetzt!', 'success');
+                $('#ppv-onb-map-modal').remove();
             });
         }
 
@@ -584,13 +764,13 @@
          * ============================================================ */
         renderOpeningHoursInputs() {
             const days = [
-                { key: 'mo', label: window.ppv_lang?.monday || 'Hétfő' },
-                { key: 'di', label: window.ppv_lang?.tuesday || 'Kedd' },
-                { key: 'mi', label: window.ppv_lang?.wednesday || 'Szerda' },
-                { key: 'do', label: window.ppv_lang?.thursday || 'Csütörtök' },
-                { key: 'fr', label: window.ppv_lang?.friday || 'Péntek' },
-                { key: 'sa', label: window.ppv_lang?.saturday || 'Szombat' },
-                { key: 'so', label: window.ppv_lang?.sunday || 'Vasárnap' }
+                { key: 'mo', label: window.ppv_lang?.monday || 'Montag' },
+                { key: 'di', label: window.ppv_lang?.tuesday || 'Dienstag' },
+                { key: 'mi', label: window.ppv_lang?.wednesday || 'Mittwoch' },
+                { key: 'do', label: window.ppv_lang?.thursday || 'Donnerstag' },
+                { key: 'fr', label: window.ppv_lang?.friday || 'Freitag' },
+                { key: 'sa', label: window.ppv_lang?.saturday || 'Samstag' },
+                { key: 'so', label: window.ppv_lang?.sunday || 'Sonntag' }
             ];
 
             return days.map(day => `
@@ -603,7 +783,7 @@
                     </div>
                     <label class="ppv-closed-checkbox">
                         <input type="checkbox" name="hours_${day.key}_closed">
-                        <span>${window.ppv_lang?.closed || 'Zárva'}</span>
+                        <span>${window.ppv_lang?.closed || 'Geschlossen'}</span>
                     </label>
                 </div>
             `).join('');
@@ -633,7 +813,7 @@
                 });
             }
 
-            this.showToast(window.ppv_lang?.onb_hours_applied || '✅ Nyitvatartás beállítva!', 'success');
+            this.showToast(window.ppv_lang?.onb_hours_applied || '✅ Öffnungszeiten eingestellt!', 'success');
         }
 
         collectOpeningHours(content) {
@@ -663,65 +843,65 @@
                     <div class="ppv-progress-text">100% (2/2)</div>
                 </div>
 
-                <h3>${L.onb_reward_step_title || '2️⃣ Első Prémium Létrehozása'}</h3>
+                <h3>${L.onb_reward_step_title || '2️⃣ Erste Prämie erstellen'}</h3>
 
                 <form class="ppv-wizard-form" id="ppv-reward-form">
                     <div class="ppv-form-group">
-                        <label>${L.onb_reward_name || 'Prémium neve'} *</label>
-                        <input type="text" name="title" placeholder="${L.onb_reward_name_placeholder || 'pl. Ingyenes Kávé'}">
-                        <small style="color: #999;">${L.onb_reward_name_helper || '📝 A prémium neve, amit az ügyfelek látnak'}</small>
+                        <label>${L.onb_reward_name || 'Prämienname'} *</label>
+                        <input type="text" name="title" placeholder="${L.onb_reward_name_placeholder || 'z.B. Gratis Kaffee'}">
+                        <small style="color: #999;">${L.onb_reward_name_helper || '📝 Der Prämienname, den Kunden sehen'}</small>
                     </div>
 
                     <div class="ppv-form-group">
-                        <label>${L.onb_reward_points || 'Szükséges pontok'} *</label>
+                        <label>${L.onb_reward_points || 'Erforderliche Punkte'} *</label>
                         <input type="number" name="required_points" placeholder="100" min="1" value="100">
-                        <small style="color: #999;">${L.onb_reward_points_helper || '🎯 Hány pont szükséges az ügyfélnek ezen prémium beváltásához'}</small>
+                        <small style="color: #999;">${L.onb_reward_points_helper || '🎯 Wie viele Punkte der Kunde für diese Prämie braucht'}</small>
                     </div>
 
                     <div class="ppv-form-group">
-                        <label>${L.onb_reward_description || 'Leírás (opcionális)'}</label>
-                        <textarea name="description" rows="3" placeholder="${L.onb_reward_description_placeholder || 'pl. Egy ingyenes eszpresszó vagy cappuccino választható.'}"></textarea>
-                        <small style="color: #999;">${L.onb_reward_description_helper || '💬 További részletek a prémiumról (opcionális)'}</small>
+                        <label>${L.onb_reward_description || 'Beschreibung (optional)'}</label>
+                        <textarea name="description" rows="3" placeholder="${L.onb_reward_description_placeholder || 'z.B. Ein gratis Espresso oder Cappuccino.'}"></textarea>
+                        <small style="color: #999;">${L.onb_reward_description_helper || '💬 Weitere Details zur Prämie (optional)'}</small>
                     </div>
 
                     <div class="ppv-form-group">
-                        <label>${L.onb_reward_type || 'Jutalmazás típusa'} *</label>
+                        <label>${L.onb_reward_type || 'Prämienart'} *</label>
                         <select name="action_type" id="onboarding-action-type">
                             <option value="discount_percent">${L.onb_reward_type_percent || 'Rabatt (%)'}</option>
-                            <option value="discount_fixed">${L.onb_reward_type_fixed || 'Fix rabatt'}</option>
-                            <option value="free_product" selected>${L.onb_reward_type_free || 'Ingyenes termék'}</option>
+                            <option value="discount_fixed">${L.onb_reward_type_fixed || 'Fixrabatt'}</option>
+                            <option value="free_product" selected>${L.onb_reward_type_free || 'Gratis-Produkt'}</option>
                         </select>
-                        <small style="color: #999;">${L.onb_reward_type_helper || '🎁 Milyen típusú jutalmat kap az ügyfél'}</small>
+                        <small style="color: #999;">${L.onb_reward_type_helper || '🎁 Welche Art von Prämie der Kunde erhält'}</small>
                     </div>
 
                     <div class="ppv-form-group" id="onboarding-action-value-wrapper">
-                        <label>${L.onb_reward_value || 'Érték'} *</label>
-                        <input type="text" name="action_value" placeholder="pl. 10" value="0">
-                        <small style="color: #999;">${L.onb_reward_value_helper || '💶 Rabatt értéke (pl. 10 = 10% vagy 5 = 5 EUR)'}</small>
+                        <label>${L.onb_reward_value || 'Wert'} *</label>
+                        <input type="text" name="action_value" placeholder="z.B. 10" value="0">
+                        <small style="color: #999;">${L.onb_reward_value_helper || '💶 Rabattwert (z.B. 10 = 10% oder 5 = 5 EUR)'}</small>
                     </div>
 
                     <!-- GRATIS TERMÉK NEVE (csak FREE_PRODUCT típusnál!) -->
                     <div class="ppv-form-group" id="onboarding-free-product-name-wrapper" style="display: none;">
                         <label>${L.onb_reward_free_product || '🎁 Produktname'}</label>
-                        <input type="text" name="free_product" id="onboarding-free-product-name" placeholder="${L.onb_reward_free_product_placeholder || 'pl. Kaffee + Kuchen'}">
-                        <small style="color: #999;">${L.onb_reward_free_product_helper || '🎁 Az ingyenes termék neve (pl. Kávé + Sütemény)'}</small>
+                        <input type="text" name="free_product" id="onboarding-free-product-name" placeholder="${L.onb_reward_free_product_placeholder || 'z.B. Kaffee + Kuchen'}">
+                        <small style="color: #999;">${L.onb_reward_free_product_helper || '🎁 Name des Gratis-Produkts (z.B. Kaffee + Kuchen)'}</small>
                     </div>
 
                     <!-- GRATIS TERMÉK ÉRTÉKE -->
                     <div class="ppv-form-group" id="onboarding-free-product-value-wrapper" style="display: none;">
                         <label style="color: #ff9800;">${L.onb_reward_free_product_value || '💰 Produktwert'} <span style="color: #ff0000;">*</span></label>
                         <input type="number" name="free_product_value" id="onboarding-free-product-value" value="0" min="0.01" step="0.01" placeholder="0.00" style="border-color: #ff9800;">
-                        <small style="color: #ff9800;">${L.onb_reward_free_product_value_helper || '💰 A termék rendes ára'}</small>
+                        <small style="color: #ff9800;">${L.onb_reward_free_product_value_helper || '💰 Der reguläre Preis des Produkts'}</small>
                     </div>
 
                     <div class="ppv-form-group">
-                        <label>${L.onb_reward_points_given || 'Pontok adva (ha beváltják)'} *</label>
+                        <label>${L.onb_reward_points_given || 'Punkte bei Einlösung'} *</label>
                         <input type="number" name="points_given" placeholder="5" min="0" value="0">
-                        <small style="color: #999;">${L.onb_reward_points_given_helper || '⭐ Ezek a pontok jutalmazzák az ügyfelet beváltáskor'}</small>
+                        <small style="color: #999;">${L.onb_reward_points_given_helper || '⭐ Diese Punkte erhält der Kunde bei Einlösung'}</small>
                     </div>
 
                     <div class="ppv-wizard-tip">
-                        ${L.onb_reward_tip || '💡 Később adhatsz hozzá képet és további prémiumokat!'}
+                        ${L.onb_reward_tip || '💡 Später können Sie Bilder und weitere Prämien hinzufügen!'}
                     </div>
                 </form>
 
@@ -853,19 +1033,19 @@
 
                         <div class="ppv-modal-icon ppv-celebration-icon">🎉</div>
 
-                        <h2>${L.onb_celebration_title || 'Gratulálunk!'}</h2>
+                        <h2>${L.onb_celebration_title || 'Herzlichen Glückwunsch!'}</h2>
 
-                        <p>${L.onb_celebration_subtitle || 'A PunktePass használatra kész! 🚀'}</p>
+                        <p>${L.onb_celebration_subtitle || 'PunktePass ist einsatzbereit! 🚀'}</p>
 
-                        <p>${L.onb_celebration_message || 'A vendégek most már gyűjthetnek pontokat és beválthatják a prémiumokat!'}</p>
+                        <p>${L.onb_celebration_message || 'Gäste können jetzt Punkte sammeln und Prämien einlösen!'}</p>
 
                         <div class="ppv-celebration-tip">
-                            ${L.onb_celebration_tip || '💡 <strong>Tipp:</strong> Hozz létre egy kampányt hogy gyorsabban gyűjtsenek pontokat a vendégeid!'}
+                            ${L.onb_celebration_tip || '💡 <strong>Tipp:</strong> Erstellen Sie eine Kampagne, damit Ihre Gäste schneller Punkte sammeln!'}
                         </div>
 
-                        <button class="ppv-btn ppv-btn-primary ppv-btn-large" data-action="close">${L.onb_btn_done || '✅ Rendben'}</button>
+                        <button class="ppv-btn ppv-btn-primary ppv-btn-large" data-action="close">${L.onb_btn_done || '✅ Fertig'}</button>
 
-                        <div class="ppv-auto-close">${L.onb_celebration_autoclose || 'Auto-bezár 5 mp múlva'}</div>
+                        <div class="ppv-auto-close">${L.onb_celebration_autoclose || 'Schließt in 5 Sek.'}</div>
                     </div>
                 </div>
             `);
@@ -880,7 +1060,7 @@
             let countdown = 5;
             const timer = setInterval(() => {
                 countdown--;
-                const autoCloseText = L.onb_celebration_autoclose || 'Auto-bezár 5 mp múlva';
+                const autoCloseText = L.onb_celebration_autoclose || 'Schließt in 5 Sek.';
                 modal.find('.ppv-auto-close').text(autoCloseText.replace('5', countdown));
 
                 if (countdown <= 0) {
@@ -959,14 +1139,14 @@
                     </div>
 
                     <div class="ppv-progress-steps">
-                        ${this.renderProgressStep('profile_lite', L.onb_progress_step_profile || 'Profil adatok kitöltve', this.progress.steps.profile_lite)}
-                        ${this.renderProgressStep('reward', L.onb_progress_step_reward || 'Első prémium', this.progress.steps.reward)}
-                        ${this.renderProgressStep('device', L.onb_progress_step_device || 'Eszköz regisztrálva', this.progress.steps.device)}
+                        ${this.renderProgressStep('profile_lite', L.onb_progress_step_profile || 'Profildaten ausgefüllt', this.progress.steps.profile_lite)}
+                        ${this.renderProgressStep('reward', L.onb_progress_step_reward || 'Erste Prämie', this.progress.steps.reward)}
+                        ${this.renderProgressStep('device', L.onb_progress_step_device || 'Gerät registriert', this.progress.steps.device)}
                     </div>
 
                     <div class="ppv-progress-actions">
-                        <button class="ppv-btn ppv-btn-secondary ppv-btn-sm" data-action="later">${L.onb_btn_later || '⏭️ Később'}</button>
-                        <button class="ppv-btn ppv-btn-primary ppv-btn-sm" data-action="continue">${L.onb_btn_continue || '🚀 Folytatás'}</button>
+                        <button class="ppv-btn ppv-btn-secondary ppv-btn-sm" data-action="later">${L.onb_btn_later || '⏭️ Später'}</button>
+                        <button class="ppv-btn ppv-btn-primary ppv-btn-sm" data-action="continue">${L.onb_btn_continue || '🚀 Fortfahren'}</button>
                     </div>
                 </div>
             `);
@@ -995,7 +1175,7 @@
 
             // X gomb - dismiss
             card.on('click', '[data-action="dismiss"]', () => {
-                if (confirm(L.onb_confirm_dismiss || 'Biztosan bezárod? Később visszahozhatod a beállításokból.')) {
+                if (confirm(L.onb_confirm_dismiss || 'Wirklich schließen? Kann später in den Einstellungen wieder aktiviert werden.')) {
                     // ✅ Set dismissed flag and wait for backend confirmation
                     this.dismissOnboarding('permanent', () => {
                         this.config.dismissed = true;
@@ -1017,7 +1197,7 @@
                 <div class="ppv-progress-step ${completed ? 'completed' : ''}" data-step="${key}">
                     <div class="ppv-step-icon">${completed ? '✅' : '⏳'}</div>
                     <div class="ppv-step-label">${label}</div>
-                    ${!completed ? `<button class="ppv-step-action">➡️ ${L.onb_btn_next || 'Beállítás'}</button>` : ''}
+                    ${!completed ? `<button class="ppv-step-action">➡️ ${L.onb_btn_next || 'Einrichten'}</button>` : ''}
                 </div>
             `;
         }
@@ -1093,7 +1273,7 @@
             });
 
             sticky.on('click', '[data-action="hide"]', () => {
-                if (confirm(L.onb_confirm_hide || 'Biztosan elrejted? Később visszahozhatod a beállításokból.')) {
+                if (confirm(L.onb_confirm_hide || 'Wirklich ausblenden? Kann später in den Einstellungen wieder aktiviert werden.')) {
                     this.dismissOnboarding('sticky');
                     sticky.removeClass('show');
                     setTimeout(() => sticky.remove(), 300);

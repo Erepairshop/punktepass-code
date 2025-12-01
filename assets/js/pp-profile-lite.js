@@ -176,7 +176,7 @@
         }
 
         deleteGalleryImage(imageUrl) {
-            if (!confirm('Törlöd ezt a képet?')) return;
+            if (!confirm(this.strings.confirm_delete_image || 'Bild löschen?')) return;
 
             const formData = new FormData();
             formData.append('action', 'ppv_delete_gallery_image');
@@ -191,14 +191,14 @@
             .then(r => r.json())
             .then(data => {
                 if (data.success) {
-                    this.showAlert('Kép törölve!', 'success');
+                    this.showAlert(this.strings.image_deleted || 'Bild gelöscht!', 'success');
                     location.reload();
                 } else {
-                    this.showAlert(data.data?.msg || 'Hiba a törléskor', 'error');
+                    this.showAlert(data.data?.msg || this.strings.delete_error || 'Fehler beim Löschen', 'error');
                 }
             })
             .catch(err => {
-                this.showAlert('Hiba a törléskor', 'error');
+                this.showAlert(this.strings.delete_error || 'Fehler beim Löschen', 'error');
             });
         }
 
@@ -793,8 +793,9 @@ window.closeInteractiveMap = function() {
 };
 
 window.confirmInteractiveMap = function() {
+  const L = window.ppv_profile?.strings || {};
   if (!window.ppvSelectedCoords) {
-    alert('Kérlek, kattints a térképre!');
+    alert(L.map_click_required || 'Bitte klicken Sie auf die Karte!');
     return;
   }
 
@@ -836,8 +837,9 @@ function initGeocodingFeatures() {
     const lngInput = document.getElementById('store_longitude');
 
     // ✅ ELLENŐRZÉS
+    const L = window.ppv_profile?.strings || {};
     if (!address || !city || !country) {
-      alert('Kérlek, add meg az utcát, a várost ÉS az országot!');
+      alert(L.geocode_fields_required || 'Bitte Straße, Stadt und Land eingeben!');
       return;
     }
 
@@ -864,9 +866,9 @@ function initGeocodingFeatures() {
       try {
         data = JSON.parse(responseText);
       } catch (e) {
-        alert('❌ PHP hiba történt!\n\n' + responseText);
+        alert('❌ ' + (L.php_error || 'PHP Fehler') + '!\n\n' + responseText);
         geocodeBtn.disabled = false;
-        geocodeBtn.textContent = '🗺️ Koordináták keresése (Cím alapján)';
+        geocodeBtn.textContent = '🗺️ ' + (L.geocode_button || 'Koordinaten suchen (nach Adresse)');
         return;
       }
 
@@ -903,11 +905,11 @@ function initGeocodingFeatures() {
       }
 
     } catch (error) {
-      alert('❌ Hiba a koordináták keresésekor!\n\n' + error.message);
+      alert('❌ ' + (L.geocode_error || 'Fehler bei der Koordinatensuche') + '!\n\n' + error.message);
     }
 
     geocodeBtn.disabled = false;
-    geocodeBtn.textContent = '🗺️ Koordináták keresése (Cím alapján)';
+    geocodeBtn.textContent = '🗺️ ' + (L.geocode_button || 'Koordinaten suchen (nach Adresse)');
   });
 }
 

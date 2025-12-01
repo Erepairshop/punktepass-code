@@ -15,6 +15,10 @@ if (window.PPV_REDEEM_ADMIN_LOADED) {
 } else {
   window.PPV_REDEEM_ADMIN_LOADED = true;
 
+// 🌐 Language detection
+const detectLang = () => document.cookie.match(/ppv_lang=([a-z]{2})/)?.[1] || localStorage.getItem('ppv_lang') || 'de';
+const LANG = detectLang();
+const T = { de: { points: 'Punkte' }, hu: { points: 'pont' }, ro: { points: 'puncte' } }[LANG] || { points: 'Punkte' };
 
 // Use centralized API manager
 const ppvFetch = window.ppvFetch || window.apiFetch || fetch;
@@ -106,7 +110,7 @@ document.addEventListener("DOMContentLoaded", function () {
         card.innerHTML = `
           <h4>${r.title}</h4>
           <p>${r.description || ""}</p>
-          <small>⭐ ${r.required_points} Punkte</small><br>
+          <small>⭐ ${r.required_points} ${T.points}</small><br>
           <small>${r.action_type}: ${r.action_value}</small><br>
           <button class="ppv-delete" data-id="${r.id}">🗑️ Löschen</button>
         `;
@@ -254,7 +258,7 @@ document.addEventListener("DOMContentLoaded", function () {
             <span>${statusBadge}</span>
           </div>
           <small>👤 ${r.user_email || 'Unbekannt'}</small><br>
-          <small>⭐ ${r.points_spent || 0} Punkte</small>
+          <small>⭐ ${r.points_spent || 0} ${T.points}</small>
           ${r.status === 'pending' ? `
             <div style="margin-top:10px;display:flex;gap:8px;">
               <button class="ppv-approve ppv-btn-success" data-id="${r.id}">✅ Genehmigen</button>

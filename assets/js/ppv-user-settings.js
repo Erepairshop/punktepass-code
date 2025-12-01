@@ -219,7 +219,7 @@ function initUserSettings() {
           if (res.success) {
             showToast("✅ " + res.data.msg, "success");
           } else {
-            showToast("⚠️ " + (res.data?.msg || "Fehler"), "error");
+            showToast("⚠️ " + (res.data?.msg || T.error || "Fehler"), "error");
           }
         },
         error: () => showToast(T.network_error, "error")
