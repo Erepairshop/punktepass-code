@@ -568,13 +568,14 @@
           highlightScanRegion: true,
           highlightCodeOutline: true,
           returnDetailedScanResult: true,
-          // Use full video for scanning - helps with close-up QR codes
+          // Scan center 70% of video for faster processing
           calculateScanRegion: (video) => {
+            const size = Math.min(video.videoWidth, video.videoHeight) * 0.7;
             return {
-              x: 0,
-              y: 0,
-              width: video.videoWidth,
-              height: video.videoHeight
+              x: (video.videoWidth - size) / 2,
+              y: (video.videoHeight - size) / 2,
+              width: size,
+              height: size
             };
           }
         };
@@ -752,7 +753,7 @@
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const code = jsQR(imageData.data, imageData.width, imageData.height, {
-          inversionAttempts: 'attemptBoth'
+          inversionAttempts: 'dontInvert' // Faster - skip inverted QR codes
         });
         if (code && code.data) this.onScanSuccess(code.data);
       }
