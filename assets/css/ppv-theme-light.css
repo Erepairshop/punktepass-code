@@ -20600,3 +20600,203 @@ body.ppv-dark .referral-no-stats {
 body.ppv-dark .ppv-referral-section .referral-subtitle {
     color: #aaa;
 }
+
+/* ==========================================================================
+   📊 CUSTOMER INSIGHTS PANEL (For Händler/Store Owner)
+   Compact display after successful scan - optimized for small screens
+   ========================================================================== */
+
+.ppv-insights-panel {
+    position: fixed;
+    top: 70px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 24px);
+    max-width: 380px;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border: 1px solid rgba(0, 217, 255, 0.3);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(0, 217, 255, 0.1);
+    z-index: 10000;
+    animation: ppv-insights-slide-in 0.3s ease-out;
+    overflow: hidden;
+}
+
+@keyframes ppv-insights-slide-in {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+.ppv-insights-panel.ppv-insights-hiding {
+    animation: ppv-insights-slide-out 0.5s ease-in forwards;
+}
+
+@keyframes ppv-insights-slide-out {
+    to {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-20px);
+    }
+}
+
+.ppv-insights-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: rgba(0, 217, 255, 0.1);
+    border-bottom: 1px solid rgba(0, 217, 255, 0.2);
+}
+
+.ppv-insights-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #00d9ff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: calc(100% - 40px);
+}
+
+.ppv-insights-close {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: #fff;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.ppv-insights-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.ppv-insights-body {
+    padding: 12px 16px;
+}
+
+.ppv-insights-line1,
+.ppv-insights-line2,
+.ppv-insights-line3 {
+    font-size: 13px;
+    color: #e0e0e0;
+    padding: 4px 0;
+    line-height: 1.4;
+}
+
+.ppv-insights-line1 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+}
+
+.ppv-insights-line2 {
+    color: #aaa;
+    font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+    font-size: 12px;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 6px 10px;
+    border-radius: 6px;
+    margin: 6px 0;
+}
+
+.ppv-insights-line3 {
+    color: #00d9ff;
+    font-weight: 500;
+}
+
+.ppv-insights-birthday {
+    font-size: 14px;
+    color: #ffd700;
+    font-weight: 600;
+    padding: 8px 0 4px;
+    text-align: center;
+    animation: ppv-birthday-pulse 1s ease-in-out infinite;
+}
+
+@keyframes ppv-birthday-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* Light theme adjustments */
+body:not(.ppv-dark) .ppv-insights-panel {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-color: rgba(0, 150, 200, 0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15), 0 0 20px rgba(0, 150, 200, 0.1);
+}
+
+body:not(.ppv-dark) .ppv-insights-header {
+    background: rgba(0, 150, 200, 0.08);
+    border-bottom-color: rgba(0, 150, 200, 0.15);
+}
+
+body:not(.ppv-dark) .ppv-insights-name {
+    color: #0096c8;
+}
+
+body:not(.ppv-dark) .ppv-insights-close {
+    background: rgba(0, 0, 0, 0.05);
+    color: #333;
+}
+
+body:not(.ppv-dark) .ppv-insights-close:hover {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+body:not(.ppv-dark) .ppv-insights-line1 {
+    color: #222;
+}
+
+body:not(.ppv-dark) .ppv-insights-line2 {
+    color: #555;
+    background: rgba(0, 0, 0, 0.04);
+}
+
+body:not(.ppv-dark) .ppv-insights-line3 {
+    color: #0096c8;
+}
+
+/* Mobile optimization - even more compact */
+@media (max-width: 380px) {
+    .ppv-insights-panel {
+        width: calc(100% - 16px);
+        top: 60px;
+    }
+
+    .ppv-insights-header {
+        padding: 10px 12px;
+    }
+
+    .ppv-insights-name {
+        font-size: 14px;
+    }
+
+    .ppv-insights-body {
+        padding: 10px 12px;
+    }
+
+    .ppv-insights-line1 {
+        font-size: 13px;
+    }
+
+    .ppv-insights-line2 {
+        font-size: 11px;
+        padding: 5px 8px;
+    }
+
+    .ppv-insights-line3 {
+        font-size: 12px;
+    }
+}

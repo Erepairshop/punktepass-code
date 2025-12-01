@@ -1191,6 +1191,16 @@ trait PPV_QR_REST_Trait {
         // 🔒 SECURITY: Increment successful scan counter (rate limit 3/min)
         PPV_Permissions::increment_rate_limit('pos_scan_success', 60);
 
+        // 📊 CUSTOMER INSIGHTS: Get customer insights for Händler display
+        $customer_insights = null;
+        if (class_exists('PPV_Customer_Insights')) {
+            $lang = sanitize_text_field($r->get_header('X-Lang') ?? 'de');
+            if (!in_array($lang, ['de', 'hu', 'ro'])) {
+                $lang = 'de';
+            }
+            $customer_insights = PPV_Customer_Insights::get_insights($user_id, $store_id, $lang);
+        }
+
         return new WP_REST_Response([
             'success' => true,
             'scan_id' => $scan_id, // ✅ Include scan_id for deduplication
@@ -1212,6 +1222,8 @@ trait PPV_QR_REST_Trait {
             // 👤 Scanner info (who performed the scan)
             'scanner_id' => $scanner_id,
             'scanner_name' => $scanner_name,
+            // 📊 Customer insights for Händler (visit patterns, VIP, points)
+            'customer_insights' => $customer_insights,
         ], 200);
     }
 
