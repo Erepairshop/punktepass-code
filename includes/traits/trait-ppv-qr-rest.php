@@ -117,15 +117,16 @@ trait PPV_QR_REST_Trait {
 
         // ════════════════════════════════════════════════════════════
         // 🎁 REAL-TIME REDEMPTION ENDPOINTS
-        // Token-based security - NONCE not applicable here
+        // Token-based security - token sent via Ably only to intended user
         // ════════════════════════════════════════════════════════════
 
         // User responds to redemption prompt (accept/decline)
-        // Security: token validated in callback + user_id verification
+        // Security: Token is unique 64-char hex, sent via Ably to specific user only
+        // Token validated in callback (exists in DB, not expired, correct status)
         register_rest_route('ppv/v1', '/redemption/user-response', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'rest_redemption_user_response'],
-            'permission_callback' => ['PPV_Permissions', 'check_logged_in_user'],
+            'permission_callback' => '__return_true',
         ]);
 
         // Handler confirms or rejects redemption (called from POS scanner)
@@ -1972,14 +1973,8 @@ trait PPV_QR_REST_Trait {
             ], 410);
         }
 
-        // Verify user owns this prompt
-        $current_user_id = PPV_Permissions::get_current_user_id();
-        if ($current_user_id != $prompt->user_id) {
-            return new WP_REST_Response([
-                'success' => false,
-                'message' => self::t('err_unauthorized', '❌ Nicht autorisiert')
-            ], 403);
-        }
+        // Note: Token-based security - the token was sent via Ably only to the specific user
+        // No additional user_id check needed - token validation proves user identity
 
         if ($action === 'decline') {
             // User chose "Later" - keep prompt for next scan
