@@ -101,12 +101,14 @@
             .tablet-highlight .icon { font-size: 24px !important; margin-bottom: 4px !important; }
             .tablet-highlight h4 { font-size: 13px !important; margin-bottom: 4px !important; }
             .tablet-highlight p { font-size: 10px !important; }
-            .cta-section { padding: 14px !important; margin-top: 10px !important; }
-            .cta-title { font-size: 16px !important; margin-bottom: 4px !important; }
-            .cta-text { font-size: 11px !important; margin-bottom: 10px !important; }
-            .cta-contact { padding: 10px !important; gap: 6px !important; }
-            .cta-contact a { font-size: 11px !important; }
-            .footer { padding: 8px 0 !important; margin-top: 10px !important; }
+            /* Keep Pricing + CTA + Footer together on same page */
+            .pricing-section { page-break-before: auto; page-break-after: avoid !important; }
+            .cta-section { page-break-before: avoid !important; padding: 12px !important; margin-top: 6px !important; }
+            .cta-title { font-size: 15px !important; margin-bottom: 3px !important; }
+            .cta-text { font-size: 10px !important; margin-bottom: 6px !important; }
+            .cta-contact { padding: 8px !important; gap: 4px !important; }
+            .cta-contact a { font-size: 10px !important; }
+            .footer { page-break-before: avoid !important; padding: 5px 0 !important; margin-top: 5px !important; }
             .footer-logo { width: 50px !important; margin-bottom: 4px !important; }
             .footer p { font-size: 9px !important; }
             .receipts-section { padding: 12px !important; margin: 10px 0 !important; }
