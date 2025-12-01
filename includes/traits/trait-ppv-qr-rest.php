@@ -373,6 +373,37 @@ trait PPV_QR_REST_Trait {
                 'avatar' => $user_info->avatar ?? null,
             ]));
 
+            // ═══════════════════════════════════════════════════════════
+            // 🎁 RATE LIMITED BUT CHECK FOR REWARDS ANYWAY
+            // User said "later" but changed their mind - show reward modal
+            // ═══════════════════════════════════════════════════════════
+            if ($error_type === 'already_scanned_today') {
+                $redemption_prompt = self::check_and_create_redemption_prompt($user_id, $store_id, $scanner_id);
+
+                if ($redemption_prompt) {
+                    // Update response with redemption prompt
+                    $updated_data = $rate_check['response']->get_data();
+                    $updated_data['redemption_prompt'] = $redemption_prompt;
+                    $updated_data['has_rewards'] = true;
+                    $rate_check['response']->set_data($updated_data);
+
+                    // 📡 ABLY: Send redemption prompt to user even on rate limit
+                    if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+                        PPV_Ably::trigger_redemption_prompt($user_id, [
+                            'prompt_id' => $redemption_prompt['prompt_id'],
+                            'token' => $redemption_prompt['token'],
+                            'rewards' => $redemption_prompt['rewards'],
+                            'user_total_points' => $redemption_prompt['user_total_points'],
+                            'expires_at' => $redemption_prompt['expires_at'],
+                            'timeout_seconds' => 60,
+                            'store_name' => $store_name ?? 'PunktePass',
+                        ]);
+                    }
+
+                    ppv_log("🎁 [PPV_QR] Rate limited but showing redemption: user={$user_id}, store={$store_id}");
+                }
+            }
+
             return $rate_check['response'];
         }
 
@@ -2340,5 +2371,105 @@ trait PPV_QR_REST_Trait {
         }
 
         return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+    }
+
+    // ============================================================
+    // 🎁 HELPER: Check and create redemption prompt
+    // Used for both successful scans and rate-limited users with rewards
+    // ============================================================
+    private static function check_and_create_redemption_prompt($user_id, $store_id, $scanner_id) {
+        global $wpdb;
+
+        // Get user's current total points
+        $user_total_points = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COALESCE(SUM(points), 0) FROM {$wpdb->prefix}ppv_points WHERE user_id = %d",
+            $user_id
+        ));
+
+        // 🏪 FILIALE FIX: Get rewards from PARENT store if this is a filiale
+        $reward_store_id = $store_id;
+        if (class_exists('PPV_Filiale')) {
+            $reward_store_id = PPV_Filiale::get_parent_id($store_id);
+        }
+
+        // Find available rewards that user can redeem
+        $available_rewards = $wpdb->get_results($wpdb->prepare("
+            SELECT id, title, description, required_points, action_type, action_value, free_product_value
+            FROM {$wpdb->prefix}ppv_rewards
+            WHERE store_id = %d AND required_points <= %d AND required_points > 0
+            ORDER BY required_points DESC
+        ", $reward_store_id, $user_total_points));
+
+        if (empty($available_rewards)) {
+            return null; // No available rewards
+        }
+
+        // User can redeem! Create or refresh prompt
+        $prompt_token = bin2hex(random_bytes(32));
+        $expires_at = date('Y-m-d H:i:s', strtotime('+60 seconds'));
+
+        // Convert rewards to array for JSON storage
+        $rewards_array = array_map(function($r) {
+            return [
+                'id' => (int)$r->id,
+                'title' => $r->title,
+                'description' => $r->description,
+                'required_points' => (int)$r->required_points,
+                'action_type' => $r->action_type ?? 'info',
+                'action_value' => floatval($r->action_value ?? 0),
+                'free_product_value' => floatval($r->free_product_value ?? 0)
+            ];
+        }, $available_rewards);
+
+        // Check for existing pending prompt
+        $pending_prompt = $wpdb->get_row($wpdb->prepare("
+            SELECT id FROM {$wpdb->prefix}ppv_redemption_prompts
+            WHERE user_id = %d AND store_id = %d AND status = 'pending' AND expires_at > NOW()
+            ORDER BY created_at DESC LIMIT 1
+        ", $user_id, $store_id));
+
+        if ($pending_prompt) {
+            // Update existing prompt
+            $wpdb->update(
+                "{$wpdb->prefix}ppv_redemption_prompts",
+                [
+                    'token' => $prompt_token,
+                    'scanner_id' => $scanner_id,
+                    'available_rewards' => json_encode($rewards_array),
+                    'expires_at' => $expires_at,
+                    'created_at' => current_time('mysql')
+                ],
+                ['id' => $pending_prompt->id],
+                ['%s', '%d', '%s', '%s', '%s'],
+                ['%d']
+            );
+            $prompt_id = $pending_prompt->id;
+        } else {
+            // Create new prompt
+            $wpdb->insert(
+                "{$wpdb->prefix}ppv_redemption_prompts",
+                [
+                    'user_id' => $user_id,
+                    'store_id' => $store_id,
+                    'scanner_id' => $scanner_id,
+                    'token' => $prompt_token,
+                    'available_rewards' => json_encode($rewards_array),
+                    'status' => 'pending',
+                    'created_at' => current_time('mysql'),
+                    'expires_at' => $expires_at
+                ],
+                ['%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s']
+            );
+            $prompt_id = $wpdb->insert_id;
+        }
+
+        return [
+            'prompt_id' => $prompt_id,
+            'token' => $prompt_token,
+            'rewards' => $rewards_array,
+            'user_total_points' => $user_total_points,
+            'expires_at' => $expires_at,
+            'timeout_seconds' => 60
+        ];
     }
 }
