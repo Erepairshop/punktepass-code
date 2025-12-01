@@ -564,7 +564,7 @@
 
         const options = {
           preferredCamera: 'environment',
-          maxScansPerSecond: 10,
+          maxScansPerSecond: 25, // Faster scanning (was 10)
           highlightScanRegion: true,
           highlightCodeOutline: true,
           returnDetailedScanResult: true,
@@ -757,7 +757,7 @@
         if (code && code.data) this.onScanSuccess(code.data);
       }
 
-      if (this.scanning) setTimeout(() => this.jsQRScanLoop(), 40);
+      if (this.scanning) setTimeout(() => this.jsQRScanLoop(), 30); // Faster scan loop (was 40ms)
     }
 
     onScanSuccess(qrCode) {
