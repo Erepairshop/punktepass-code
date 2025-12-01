@@ -1827,18 +1827,23 @@ async function initUserDashboard() {
     let isNfcSending = false;
 
     async function toggleNfcSend() {
+      alert('NFC gomb megnyomva!'); // DEBUG
+
       const qrImg = document.getElementById('ppv-qr-image');
+      alert('QR img: ' + (qrImg ? qrImg.src.substring(0, 50) : 'nincs')); // DEBUG
+
       if (!qrImg || !qrImg.src) {
-        showQRStatus('❌ Nincs QR kód', 'error');
+        alert('❌ Nincs QR kép');
         return;
       }
 
       // Extract QR value from URL
       const urlParams = new URL(qrImg.src).searchParams;
       const qrValue = urlParams.get('data') || '';
+      alert('QR érték: ' + qrValue.substring(0, 30)); // DEBUG
 
       if (!qrValue) {
-        showQRStatus('❌ QR kód nem elérhető', 'error');
+        alert('❌ QR kód nem elérhető');
         return;
       }
 
@@ -1848,6 +1853,7 @@ async function initUserDashboard() {
       }
 
       try {
+        alert('NFC írás indítása...'); // DEBUG
         nfcWriter = new NDEFReader();
         await nfcWriter.write({
           records: [{ recordType: "text", data: "ppv:" + qrValue }]
@@ -1858,18 +1864,18 @@ async function initUserDashboard() {
         nfcBtn.querySelector('.ppv-nfc-text').textContent = 'NFC aktív - érintsd oda!';
 
         if (navigator.vibrate) navigator.vibrate(100);
-        showQRStatus('📡 NFC aktív - érintsd a telefont a kasszához!', 'success');
+        alert('📡 NFC aktív! Érintsd a telefont a kasszához!');
 
         setTimeout(() => {
           if (isNfcSending) {
             stopNfcSend();
-            showQRStatus('⏰ NFC időtúllépés', 'warning');
+            alert('⏰ NFC időtúllépés');
           }
         }, 30000);
 
       } catch (e) {
         console.error('[NFC] Error:', e);
-        showQRStatus('❌ NFC hiba: ' + e.message, 'error');
+        alert('❌ NFC hiba: ' + e.message);
       }
     }
 
