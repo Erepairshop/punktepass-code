@@ -117,20 +117,23 @@ trait PPV_QR_REST_Trait {
 
         // ════════════════════════════════════════════════════════════
         // 🎁 REAL-TIME REDEMPTION ENDPOINTS
+        // Token-based security - NONCE not applicable here
         // ════════════════════════════════════════════════════════════
 
         // User responds to redemption prompt (accept/decline)
+        // Security: token validated in callback + user_id verification
         register_rest_route('ppv/v1', '/redemption/user-response', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'rest_redemption_user_response'],
-            'permission_callback' => ['PPV_Permissions', 'check_user_with_nonce'],
+            'permission_callback' => ['PPV_Permissions', 'check_logged_in_user'],
         ]);
 
-        // Handler confirms or rejects redemption
+        // Handler confirms or rejects redemption (called from POS scanner)
+        // Security: PPV-POS-Token header + token validated in callback
         register_rest_route('ppv/v1', '/redemption/handler-response', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'rest_redemption_handler_response'],
-            'permission_callback' => ['PPV_Permissions', 'check_handler_with_nonce'],
+            'permission_callback' => ['PPV_Permissions', 'check_handler'],
         ]);
     }
 
