@@ -201,24 +201,7 @@ class PPV_Bottom_Nav {
                 <!-- Category Selection (Step 1) -->
                 <div id="ppv-feedback-step1" class="ppv-feedback-step active">
                     <p class="ppv-feedback-subtitle">Was möchten Sie uns mitteilen?</p>
-                    <div class="ppv-feedback-categories">
-                        <button class="ppv-feedback-cat" data-category="bug">
-                            <i class="ri-bug-line"></i>
-                            <span>Fehler melden</span>
-                        </button>
-                        <button class="ppv-feedback-cat" data-category="feature">
-                            <i class="ri-lightbulb-line"></i>
-                            <span>Idee / Wunsch</span>
-                        </button>
-                        <button class="ppv-feedback-cat" data-category="question">
-                            <i class="ri-question-line"></i>
-                            <span>Frage</span>
-                        </button>
-                        <button class="ppv-feedback-cat" data-category="rating">
-                            <i class="ri-star-line"></i>
-                            <span>Bewertung</span>
-                        </button>
-                    </div>
+                    <div class="ppv-feedback-categories"><button class="ppv-feedback-cat" data-category="bug"><i class="ri-bug-line"></i><span>Fehler melden</span></button><button class="ppv-feedback-cat" data-category="feature"><i class="ri-lightbulb-line"></i><span>Idee / Wunsch</span></button><button class="ppv-feedback-cat" data-category="question"><i class="ri-question-line"></i><span>Frage</span></button><button class="ppv-feedback-cat" data-category="rating"><i class="ri-star-line"></i><span>Bewertung</span></button></div>
                 </div>
 
                 <!-- Feedback Form (Step 2) -->
