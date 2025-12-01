@@ -212,7 +212,15 @@ public static function ajax_register_user() {
 
     $email       = sanitize_email($_POST['email'] ?? '');
     $password    = sanitize_text_field($_POST['password'] ?? '');
-    $fingerprint = sanitize_text_field($_POST['device_fingerprint'] ?? '');
+
+    // Validate fingerprint with central validation
+    $fingerprint = '';
+    if (!empty($_POST['device_fingerprint']) && class_exists('PPV_Device_Fingerprint')) {
+        $fp_validation = PPV_Device_Fingerprint::validate_fingerprint($_POST['device_fingerprint'], true);
+        $fingerprint = $fp_validation['valid'] ? ($fp_validation['sanitized'] ?? '') : '';
+    } elseif (!empty($_POST['device_fingerprint'])) {
+        $fingerprint = sanitize_text_field($_POST['device_fingerprint']);
+    }
 
     if (!is_email($email)) {
         wp_send_json_error(['msg' => 'Ungültige E-Mail-Adresse.']);

@@ -169,7 +169,15 @@ public static function ajax_auto_add_point() {
     $campaign_id = intval($_POST['campaign_id'] ?? 0);
 
     // 🔒 NEW: Device/IP tracking for fraud detection
-    $device_fingerprint = isset($_POST['device_fingerprint']) ? sanitize_text_field($_POST['device_fingerprint']) : null;
+    $device_fingerprint = null;
+    if (!empty($_POST['device_fingerprint'])) {
+        if (class_exists('PPV_Device_Fingerprint') && method_exists('PPV_Device_Fingerprint', 'validate_fingerprint')) {
+            $fp_validation = PPV_Device_Fingerprint::validate_fingerprint($_POST['device_fingerprint'], true);
+            $device_fingerprint = $fp_validation['valid'] ? $fp_validation['sanitized'] : null;
+        } else {
+            $device_fingerprint = sanitize_text_field($_POST['device_fingerprint']);
+        }
+    }
     $scan_lat = isset($_POST['latitude']) ? floatval($_POST['latitude']) : null;
     $scan_lng = isset($_POST['longitude']) ? floatval($_POST['longitude']) : null;
     $scanner_id = isset($_POST['scanner_id']) ? intval($_POST['scanner_id']) : null;

@@ -1,7 +1,64 @@
 # PunktePass Security Audit - TODO Lista
 
-**Audit dátum:** 2025-11-29
+**Audit dátum:** 2025-11-29 (frissítve: 2025-12-01)
 **Auditor:** Claude Code
+
+> **Kapcsolódó dokumentáció:** [SYSTEM-AUDIT.md](./SYSTEM-AUDIT.md) - Teljes rendszer audit (Marketing, Biztonság, Funkciók)
+
+---
+
+## 🎯 FÁZIS 1 - BIZTONSÁGI FEJLESZTÉSEK ✅ KÉSZ (2025-12-01)
+
+### 1.1 GPS Geofence Validáció ✅ IMPLEMENTÁLVA
+```
+Prioritás: KRITIKUS
+Státusz: [x] KÉSZ - 2025-12-01
+```
+**Implementált logika:**
+- **Zone 1 (< 100m):** OK - scan engedélyezve
+- **Zone 2 (100-200m):** LOG - scan engedélyezve, de logolva gyanúsként
+- **Zone 3 (> 200m):** BLOCK - scan blokkolva
+
+**Mobile Scanner kivétel:**
+- Ha a device `mobile_scanner = 1`, akkor GPS ellenőrzés KIKAPCSOLVA
+
+**GPS Spoof Detection:**
+- Impossible travel detection (>300 km/h = gyanús)
+- GPS scan log tábla (`ppv_gps_scan_log`) az utolsó 24 óra pozícióihoz
+
+**Fájlok módosítva:**
+- `class-ppv-scan-monitoring.php` - 3-zónás logika + spoof detection
+- `trait-ppv-qr-rest.php` - GPS blocking implementálva
+- `ppv-lang-de.php`, `ppv-lang-hu.php` - hibaüzenetek
+
+---
+
+### 1.2 Device Request Cooldown ✅ IMPLEMENTÁLVA
+```
+Prioritás: KÖZEPES
+Státusz: [x] KÉSZ - 2025-12-01
+```
+**Implementált logika:**
+- **24 óra cooldown** - ugyanarról az eszközről max 1 kérés/nap
+- Spam prevention aktív
+
+**Fájlok módosítva:**
+- `class-ppv-device-fingerprint.php` - `DEVICE_REQUEST_COOLDOWN_HOURS = 24`
+
+---
+
+### 1.3 Fingerprint Change Notification ✅ IMPLEMENTÁLVA
+```
+Prioritás: ALACSONY
+Státusz: [x] KÉSZ - 2025-12-01
+```
+**Implementált logika:**
+- Toast üzenet amikor fingerprint auto-update történik
+- Megjeleníti a similarity score-t (pl. "85% egyezés")
+
+**Fájlok módosítva:**
+- `ppv-qr-camera.js` - toast notification hozzáadva
+- `ppv-lang-de.php`, `ppv-lang-hu.php` - `fingerprint_auto_updated` string
 
 ---
 
@@ -47,13 +104,17 @@
   - ~~5 sec → 10-15 sec (hálózati latency miatt)~~
   - ✅ JAVÍTVA: 10 másodperc (2025-11-29)
 
-- [ ] **Device fingerprint validálás** - `class-ppv-scan.php:172`
-  - Hossz és formátum ellenőrzés
-  - Stored XSS megelőzése
+- [x] **Device fingerprint validálás** - `class-ppv-device-fingerprint.php` ✅ (2025-12-01)
+  - Központi `validate_fingerprint()` függvény létrehozva
+  - Min/Max hossz ellenőrzés (16-64 karakter)
+  - Regex validálás (csak alfanumerikus - XSS védelem)
+  - Minden endpoint-on alkalmazva
 
-- [ ] **REST NONCE validálás** - `class-ppv-rewards.php:35`
-  - CSRF védelem hiányzik
-  - Minden state-changing endpoint-ra kell
+- [x] **REST NONCE validálás** - `class-ppv-rewards.php:35` ✅ (2025-12-01)
+  - CSRF védelem implementálva
+  - `PPV_Permissions::verify_nonce()` központi függvény
+  - `check_handler_with_nonce()`, `check_user_with_nonce()` combined checks
+  - Minden state-changing POST endpoint-on alkalmazva
 
 - [x] **Rate limiting aktiválás** - `trait-ppv-qr-rest.php`, `class-ppv-redeem.php`
   - ~~Létezik de nincs használva!~~
@@ -100,29 +161,32 @@
 
 ### 🟡 KÖZEPES Prioritás
 
-- [ ] **5. Device request cooldown**
-  - Max 1 device request / 7 nap
-  - Spam prevention
+- [x] **5. Device request cooldown** ✅ (2025-12-01)
+  - Max 1 device request / 24 óra (1 nap)
+  - Spam prevention aktív
   - **Fájlok:** `class-ppv-device-fingerprint.php`
 
-- [ ] **6. Fingerprint change notification**
-  - Ha fingerprint változott → toast üzenet
-  - "Eszköz fingerprint változott - kattints a frissítéshez"
-  - **Fájlok:** `ppv-qr-camera.js`, `trait-ppv-qr-devices.php`
+- [x] **6. Fingerprint change notification** ✅ (2025-12-01)
+  - Ha fingerprint auto-update → toast üzenet
+  - Similarity score megjelenítés
+  - **Fájlok:** `ppv-qr-camera.js`, `ppv-lang-de.php`, `ppv-lang-hu.php`
 
-- [ ] **7. Legacy mobile scanner cleanup**
-  - Store-level `scanner_type` megszüntetése
-  - Csak per-device `mobile_scanner` flag maradjon
-  - Backward compatibility check
-  - **Fájlok:** `class-ppv-device-fingerprint.php`, `trait-ppv-qr-rest.php`
+- [x] **7. Legacy mobile scanner cleanup** ✅ (2025-12-01)
+  - Store-level `scanner_type` → DEPRECATED (warnings hozzáadva)
+  - Per-device `mobile_scanner` flag a preferált módszer
+  - Backward compatibility megmaradt (fallback)
+  - Deprecation logok aktívak
+  - **Fájlok:** `class-ppv-scan-monitoring.php`
 
 ### 🟢 ALACSONY Prioritás
 
-- [ ] **8. Device activity dashboard**
+- [x] **8. Device activity dashboard** ✅ (2025-12-01)
+  - REST endpoint: `/punktepass/v1/stats/device-activity`
   - Utolsó 7 nap scan-ek eszközönként
-  - Gyanús aktivitás highlight
-  - Admin UI bővítés
-  - **Fájlok:** új admin page
+  - Gyanús aktivitás highlight (high volume, spike, burst detection)
+  - Mobile scanner badge megjelenítés
+  - Statistika oldalon új "Geräte" tab
+  - **Fájlok:** `class-ppv-stats.php`, `ppv-stats.js`, `ppv-theme-light.css`
 
 - [ ] **9. Fingerprint similarity score**
   - 0-100% hasonlóság számítás

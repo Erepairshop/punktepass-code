@@ -281,6 +281,7 @@ $core_modules = [
      'includes/admin/class-ppv-admin-suspicious-devices.php', // Admin panel for suspicious devices
      'includes/class-ppv-user-qr.php', // Timed QR endpoint
      'includes/class-ppv-device-fingerprint.php', // Device fingerprint for fraud prevention
+     'includes/class-ppv-customer-insights.php', // Customer insights for store owners (visit patterns, VIP status)
      'includes/class-ppv-standalone-admin.php', // Standalone admin panel at /admin
      'includes/class-ppv-roi-calculator.php', // ROI calculator landing page at /rechner
 

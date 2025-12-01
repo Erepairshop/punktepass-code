@@ -628,11 +628,19 @@ public static function render_landing_page($atts) {
         self::ensure_session();
         
         check_ajax_referer('ppv_login_nonce', 'nonce');
-        
+
         $email = sanitize_email($_POST['email'] ?? '');
         $password = $_POST['password'] ?? '';
         $remember = isset($_POST['remember']) && $_POST['remember'] === 'true';
-        $fingerprint = sanitize_text_field($_POST['device_fingerprint'] ?? '');
+
+        // Validate fingerprint with central validation
+        $fingerprint = '';
+        if (!empty($_POST['device_fingerprint']) && class_exists('PPV_Device_Fingerprint')) {
+            $fp_validation = PPV_Device_Fingerprint::validate_fingerprint($_POST['device_fingerprint'], true);
+            $fingerprint = $fp_validation['valid'] ? ($fp_validation['sanitized'] ?? '') : '';
+        } elseif (!empty($_POST['device_fingerprint'])) {
+            $fingerprint = sanitize_text_field($_POST['device_fingerprint']);
+        }
 
         if (empty($email) || empty($password)) {
             wp_send_json_error(['message' => PPV_Lang::t('login_error_empty')]);
@@ -1054,12 +1062,20 @@ public static function render_landing_page($atts) {
         }
         
         $credential = sanitize_text_field($_POST['credential'] ?? '');
-        $fingerprint = sanitize_text_field($_POST['device_fingerprint'] ?? '');
+
+        // Validate fingerprint with central validation
+        $fingerprint = '';
+        if (!empty($_POST['device_fingerprint']) && class_exists('PPV_Device_Fingerprint')) {
+            $fp_validation = PPV_Device_Fingerprint::validate_fingerprint($_POST['device_fingerprint'], true);
+            $fingerprint = $fp_validation['valid'] ? ($fp_validation['sanitized'] ?? '') : '';
+        } elseif (!empty($_POST['device_fingerprint'])) {
+            $fingerprint = sanitize_text_field($_POST['device_fingerprint']);
+        }
 
         if (empty($credential)) {
             wp_send_json_error(['message' => PPV_Lang::t('login_google_error')]);
         }
-        
+
         // Verify Google JWT token
         $payload = self::verify_google_token($credential);
         
@@ -1282,7 +1298,15 @@ public static function render_landing_page($atts) {
 
         $id_token = sanitize_text_field($_POST['id_token'] ?? '');
         $user_data = isset($_POST['user']) ? json_decode(stripslashes($_POST['user']), true) : null;
-        $fingerprint = sanitize_text_field($_POST['device_fingerprint'] ?? '');
+
+        // Validate fingerprint with central validation
+        $fingerprint = '';
+        if (!empty($_POST['device_fingerprint']) && class_exists('PPV_Device_Fingerprint')) {
+            $fp_validation = PPV_Device_Fingerprint::validate_fingerprint($_POST['device_fingerprint'], true);
+            $fingerprint = $fp_validation['valid'] ? ($fp_validation['sanitized'] ?? '') : '';
+        } elseif (!empty($_POST['device_fingerprint'])) {
+            $fingerprint = sanitize_text_field($_POST['device_fingerprint']);
+        }
 
         if (empty($id_token)) {
             wp_send_json_error(['message' => PPV_Lang::t('login_apple_error') ?: 'Apple Login fehlgeschlagen']);
@@ -1539,7 +1563,15 @@ public static function render_landing_page($atts) {
         check_ajax_referer('ppv_login_nonce', 'nonce');
 
         $access_token = sanitize_text_field($_POST['access_token'] ?? '');
-        $fingerprint = sanitize_text_field($_POST['device_fingerprint'] ?? '');
+
+        // Validate fingerprint with central validation
+        $fingerprint = '';
+        if (!empty($_POST['device_fingerprint']) && class_exists('PPV_Device_Fingerprint')) {
+            $fp_validation = PPV_Device_Fingerprint::validate_fingerprint($_POST['device_fingerprint'], true);
+            $fingerprint = $fp_validation['valid'] ? ($fp_validation['sanitized'] ?? '') : '';
+        } elseif (!empty($_POST['device_fingerprint'])) {
+            $fingerprint = sanitize_text_field($_POST['device_fingerprint']);
+        }
 
         if (empty($access_token)) {
             wp_send_json_error(['message' => 'Facebook Login fehlgeschlagen']);
@@ -1700,7 +1732,15 @@ public static function render_landing_page($atts) {
         check_ajax_referer('ppv_login_nonce', 'nonce');
 
         $code = sanitize_text_field($_POST['code'] ?? '');
-        $fingerprint = sanitize_text_field($_POST['device_fingerprint'] ?? '');
+
+        // Validate fingerprint with central validation
+        $fingerprint = '';
+        if (!empty($_POST['device_fingerprint']) && class_exists('PPV_Device_Fingerprint')) {
+            $fp_validation = PPV_Device_Fingerprint::validate_fingerprint($_POST['device_fingerprint'], true);
+            $fingerprint = $fp_validation['valid'] ? ($fp_validation['sanitized'] ?? '') : '';
+        } elseif (!empty($_POST['device_fingerprint'])) {
+            $fingerprint = sanitize_text_field($_POST['device_fingerprint']);
+        }
 
         if (empty($code)) {
             wp_send_json_error(['message' => 'TikTok Login fehlgeschlagen']);

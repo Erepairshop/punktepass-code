@@ -25,22 +25,23 @@ class PPV_Rewards_Management {
             'permission_callback' => ['PPV_Permissions', 'check_handler']
         ]);
 
+        // 🔒 CSRF: POST endpoints use check_handler_with_nonce
         register_rest_route('ppv/v1', '/rewards/save', [
             'methods'  => 'POST',
             'callback' => [__CLASS__, 'rest_save_reward'],
-            'permission_callback' => ['PPV_Permissions', 'check_handler']
+            'permission_callback' => ['PPV_Permissions', 'check_handler_with_nonce']
         ]);
 
         register_rest_route('ppv/v1', '/rewards/delete', [
             'methods'  => 'POST',
             'callback' => [__CLASS__, 'rest_delete_reward'],
-            'permission_callback' => ['PPV_Permissions', 'check_handler']
+            'permission_callback' => ['PPV_Permissions', 'check_handler_with_nonce']
         ]);
 
         register_rest_route('ppv/v1', '/rewards/update', [
             'methods'  => 'POST',
             'callback' => [__CLASS__, 'rest_update_reward'],
-            'permission_callback' => ['PPV_Permissions', 'check_handler']
+            'permission_callback' => ['PPV_Permissions', 'check_handler_with_nonce']
         ]);
     }
 

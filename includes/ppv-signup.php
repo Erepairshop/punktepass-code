@@ -1314,6 +1314,186 @@ class PPV_Signup {
     }
 
     /* ============================================================
+     * 💬 AJAX Submit Feedback (Universal - Users & Handlers)
+     * Categories: bug, feature, question, rating
+     * ============================================================ */
+    public static function ajax_submit_feedback() {
+        global $wpdb;
+
+        // Verify nonce
+        if (!wp_verify_nonce($_POST['nonce'] ?? '', 'ppv_feedback_nonce')) {
+            wp_send_json_error(['message' => 'Ungültige Sicherheitstoken']);
+            return;
+        }
+
+        // Start session
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+
+        // Get user info
+        $user_id = intval($_SESSION['ppv_user_id'] ?? 0);
+        $user_type = sanitize_text_field($_POST['user_type'] ?? 'user');
+        $store_id = 0;
+
+        // For handlers, get store_id
+        if ($user_type === 'handler') {
+            $store_id = intval($_SESSION['ppv_vendor_store_id'] ?? $_SESSION['ppv_store_id'] ?? 0);
+            if ($store_id === 0 && $user_id > 0) {
+                $store_id = intval($wpdb->get_var($wpdb->prepare(
+                    "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id = %d LIMIT 1",
+                    $user_id
+                )));
+            }
+        }
+
+        // Get form data
+        $category = sanitize_text_field($_POST['category'] ?? '');
+        $message = sanitize_textarea_field($_POST['message'] ?? '');
+        $rating = intval($_POST['rating'] ?? 0);
+        $email = sanitize_email($_POST['email'] ?? '');
+        $page_url = esc_url_raw($_POST['page_url'] ?? '');
+        $device_info = sanitize_text_field($_POST['device_info'] ?? '');
+
+        // Validate category
+        $valid_categories = ['bug', 'feature', 'question', 'rating'];
+        if (!in_array($category, $valid_categories)) {
+            wp_send_json_error(['message' => 'Ungültige Kategorie']);
+            return;
+        }
+
+        // Validate rating for rating category
+        if ($category === 'rating' && ($rating < 1 || $rating > 5)) {
+            wp_send_json_error(['message' => 'Ungültige Bewertung']);
+            return;
+        }
+
+        // Message required except for rating
+        if (empty($message) && $category !== 'rating') {
+            wp_send_json_error(['message' => 'Bitte beschreiben Sie Ihr Anliegen']);
+            return;
+        }
+
+        // Get user/store info for email
+        $user_email = '';
+        $user_name = '';
+
+        if ($user_type === 'handler' && $store_id > 0) {
+            $store = $wpdb->get_row($wpdb->prepare(
+                "SELECT email, company_name, name FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
+                $store_id
+            ));
+            if ($store) {
+                $user_email = $email ?: $store->email;
+                $user_name = $store->company_name ?: $store->name;
+            }
+        } elseif ($user_id > 0) {
+            $user = $wpdb->get_row($wpdb->prepare(
+                "SELECT email, first_name, last_name FROM {$wpdb->prefix}ppv_users WHERE id = %d LIMIT 1",
+                $user_id
+            ));
+            if ($user) {
+                $user_email = $user->email;
+                $user_name = trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? ''));
+            }
+        }
+
+        // Category metadata
+        $cat_meta = [
+            'bug' => ['emoji' => '🐛', 'text' => 'Fehler', 'priority' => 'normal'],
+            'feature' => ['emoji' => '💡', 'text' => 'Idee/Wunsch', 'priority' => 'low'],
+            'question' => ['emoji' => '❓', 'text' => 'Frage', 'priority' => 'normal'],
+            'rating' => ['emoji' => '⭐', 'text' => 'Bewertung', 'priority' => 'low']
+        ];
+        $meta = $cat_meta[$category];
+
+        // Build description with context
+        $full_description = "{$meta['emoji']} {$meta['text']}\n\n";
+        if ($category === 'rating') {
+            $full_description .= "Bewertung: " . str_repeat('⭐', $rating) . " ({$rating}/5)\n\n";
+        }
+        $full_description .= $message;
+        $full_description .= "\n\n---\n";
+        $full_description .= "📱 Gerät: {$device_info}\n";
+        $full_description .= "🌐 Seite: {$page_url}\n";
+        $full_description .= "👤 Typ: " . ($user_type === 'handler' ? 'Händler' : 'Kunde');
+
+        // Insert into support_tickets table
+        $insert_result = $wpdb->insert(
+            "{$wpdb->prefix}ppv_support_tickets",
+            [
+                'category' => $category,
+                'store_id' => $store_id ?: 0,
+                'user_id' => $user_id ?: 0,
+                'user_type' => $user_type,
+                'handler_email' => $user_email ?: 'anonymous@punktepass.de',
+                'handler_phone' => '',
+                'store_name' => $user_name ?: ($user_type === 'handler' ? 'Händler' : 'Kunde'),
+                'subject' => "[{$meta['text']}] " . ($user_name ?: 'Anonym'),
+                'description' => $full_description,
+                'priority' => $meta['priority'],
+                'status' => 'new',
+                'contact_preference' => 'email',
+                'page_url' => $page_url,
+                'created_at' => current_time('mysql')
+            ],
+            ['%s', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s']
+        );
+
+        if (!$insert_result) {
+            ppv_log("❌ [PPV_Feedback] Failed to insert: " . $wpdb->last_error);
+            wp_send_json_error(['message' => 'Fehler beim Speichern']);
+            return;
+        }
+
+        $ticket_id = $wpdb->insert_id;
+
+        // Send email to admin
+        $to = 'info@punktepass.de';
+        $subject = "{$meta['emoji']} PunktePass Feedback #{$ticket_id} - {$meta['text']}";
+
+        $email_body = "Neues Feedback eingegangen:\n\n";
+        $email_body .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+        $email_body .= "🎫 Ticket ID: #{$ticket_id}\n";
+        $email_body .= "📁 Kategorie: {$meta['emoji']} {$meta['text']}\n";
+        $email_body .= "👤 Benutzertyp: " . ($user_type === 'handler' ? 'Händler' : 'Kunde') . "\n";
+        if ($store_id > 0) {
+            $email_body .= "🏪 Store ID: #{$store_id}\n";
+        }
+        if ($user_id > 0) {
+            $email_body .= "🆔 User ID: #{$user_id}\n";
+        }
+        $email_body .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
+
+        if ($category === 'rating') {
+            $email_body .= "⭐ Bewertung: " . str_repeat('⭐', $rating) . " ({$rating}/5)\n\n";
+        }
+
+        $email_body .= "📝 Nachricht:\n";
+        $email_body .= $message . "\n\n";
+
+        $email_body .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+        $email_body .= "📱 Gerät: {$device_info}\n";
+        $email_body .= "🌐 Seite: {$page_url}\n";
+        $email_body .= "📧 E-Mail: " . ($user_email ?: 'Keine angegeben') . "\n";
+        $email_body .= "🕐 Zeit: " . current_time('Y-m-d H:i:s') . "\n";
+
+        $headers = [
+            'From: PunktePass Feedback <noreply@punktepass.de>',
+            'Content-Type: text/plain; charset=UTF-8'
+        ];
+        if ($user_email) {
+            $headers[] = 'Reply-To: ' . $user_email;
+        }
+
+        wp_mail($to, $subject, $email_body, $headers);
+
+        ppv_log("✅ [PPV_Feedback] #{$ticket_id} created - {$category} from {$user_type}");
+
+        wp_send_json_success(['message' => 'Vielen Dank für Ihr Feedback!']);
+    }
+
+    /* ============================================================
      * 👥 AJAX Create Scanner User
      * ============================================================ */
     public static function ajax_create_scanner_user() {
@@ -1709,6 +1889,10 @@ add_action('wp_ajax_nopriv_ppv_request_subscription_renewal', ['PPV_Signup', 'aj
 // Register AJAX handlers for support tickets
 add_action('wp_ajax_ppv_submit_support_ticket', ['PPV_Signup', 'ajax_submit_support_ticket']);
 add_action('wp_ajax_nopriv_ppv_submit_support_ticket', ['PPV_Signup', 'ajax_submit_support_ticket']);
+
+// Register AJAX handlers for universal feedback
+add_action('wp_ajax_ppv_submit_feedback', ['PPV_Signup', 'ajax_submit_feedback']);
+add_action('wp_ajax_nopriv_ppv_submit_feedback', ['PPV_Signup', 'ajax_submit_feedback']);
 
 // Register AJAX handlers for scanner user management
 add_action('wp_ajax_ppv_create_scanner_user', ['PPV_Signup', 'ajax_create_scanner_user']);

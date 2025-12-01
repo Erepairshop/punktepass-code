@@ -46,7 +46,7 @@ class PPV_Rewards {
         register_rest_route('ppv/v1', '/einloesungen/update', [
             'methods'  => 'POST',
             'callback' => [__CLASS__, 'rest_update_status'],
-            'permission_callback' => ['PPV_Permissions', 'check_handler']
+            'permission_callback' => ['PPV_Permissions', 'check_handler_with_nonce']
         ]);
 
         // Recent logs
@@ -67,21 +67,21 @@ class PPV_Rewards {
         register_rest_route('ppv/v1', '/einloesungen/monthly-receipt', [
             'methods'  => 'POST',
             'callback' => [__CLASS__, 'rest_generate_monthly_receipt'],
-            'permission_callback' => ['PPV_Permissions', 'check_handler']
+            'permission_callback' => ['PPV_Permissions', 'check_handler_with_nonce']
         ]);
 
         // Egyedi bizonylat generálás
         register_rest_route('ppv/v1', '/einloesungen/generate-receipt', [
             'methods'  => 'POST',
             'callback' => [__CLASS__, 'rest_generate_single_receipt'],
-            'permission_callback' => ['PPV_Permissions', 'check_handler']
+            'permission_callback' => ['PPV_Permissions', 'check_handler_with_nonce']
         ]);
 
         // Dátum szerinti bizonylat generálás
         register_rest_route('ppv/v1', '/einloesungen/date-receipt', [
             'methods'  => 'POST',
             'callback' => [__CLASS__, 'rest_generate_date_receipt'],
-            'permission_callback' => ['PPV_Permissions', 'check_handler']
+            'permission_callback' => ['PPV_Permissions', 'check_handler_with_nonce']
         ]);
 
         // === LEGACY ENDPOINTS (backward compatibility) ===
@@ -94,7 +94,7 @@ class PPV_Rewards {
         register_rest_route('ppv/v1', '/redeem/update', [
             'methods'  => 'POST',
             'callback' => [__CLASS__, 'rest_update_status'],
-            'permission_callback' => ['PPV_Permissions', 'check_handler']
+            'permission_callback' => ['PPV_Permissions', 'check_handler_with_nonce']
         ]);
 
         register_rest_route('ppv/v1', '/redeem/log', [
@@ -106,7 +106,7 @@ class PPV_Rewards {
         register_rest_route('ppv/v1', '/redeem/monthly-receipt', [
             'methods'  => 'POST',
             'callback' => [__CLASS__, 'rest_generate_monthly_receipt'],
-            'permission_callback' => ['PPV_Permissions', 'check_handler']
+            'permission_callback' => ['PPV_Permissions', 'check_handler_with_nonce']
         ]);
     }
 

@@ -364,6 +364,19 @@
         const data = await response.json();
         ppvLog('[Scanner] Device check result:', data);
 
+        // ═══════════════════════════════════════════════════════════════
+        // FINGERPRINT CHANGE NOTIFICATION (Fázis 1 - 2025-12)
+        // Show toast when fingerprint was auto-updated
+        // ═══════════════════════════════════════════════════════════════
+        if (data.auto_updated && data.similarity_score) {
+          ppvLog('[Scanner] 🔄 Fingerprint auto-updated with similarity:', data.similarity_score + '%');
+          const toastMsg = (L.fingerprint_auto_updated || 'Geräte-Fingerprint automatisch aktualisiert ({score}% Übereinstimmung)')
+            .replace('{score}', data.similarity_score);
+          if (window.ppvToast) {
+            window.ppvToast(toastMsg, 'info');
+          }
+        }
+
         if (!data.can_use_scanner) {
           let message;
           if (data.device_count === 0) {
@@ -781,6 +794,11 @@
             this.updateStatus('success', '✅ ' + (data.message || L.scanner_success_msg || 'Erfolgreich!'));
             window.ppvToast(data.message || L.scanner_point_added || '✅ Punkt hinzugefügt!', 'success');
 
+            // 📊 Show customer insights to Händler
+            if (data.customer_insights && data.customer_insights.display) {
+              this.showCustomerInsights(data.customer_name, data.customer_insights);
+            }
+
             const now = new Date();
             const scanId = data.scan_id || `local-${data.user_id}-${now.getTime()}`;
 
@@ -796,7 +814,8 @@
                 date_short: now.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'}).replace(/\./g, '.'),
                 time_short: now.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'}),
                 success: true,
-                _realtime: true
+                _realtime: true,
+                customer_insights: data.customer_insights || null
               });
             }
 
@@ -876,6 +895,72 @@
       const textEl = this.statusDiv.querySelector('.ppv-mini-text');
       if (iconEl) iconEl.textContent = iconMap[state] || '📷';
       if (textEl) textEl.textContent = text.replace(/^[📷⏳✅⚠️❌⏸️]\s*/, '');
+    }
+
+    /**
+     * 📊 Show customer insights panel to Händler after successful scan
+     * Compact display optimized for small screens (XCover 4S)
+     */
+    showCustomerInsights(customerName, insights) {
+      if (!insights || !insights.display) return;
+
+      // Remove existing insights panel if any
+      const existing = document.getElementById('ppv-customer-insights');
+      if (existing) existing.remove();
+
+      const d = insights.display;
+      const name = customerName || '';
+
+      // Build compact info lines
+      let html = `
+        <div id="ppv-customer-insights" class="ppv-insights-panel">
+          <div class="ppv-insights-header">
+            <span class="ppv-insights-name">${this.escapeHtml(name)}</span>
+            <button class="ppv-insights-close" onclick="this.parentElement.parentElement.remove()">×</button>
+          </div>
+          <div class="ppv-insights-body">
+            <div class="ppv-insights-line1">${this.escapeHtml(d.line1 || '')}</div>
+      `;
+
+      if (d.line2) {
+        html += `<div class="ppv-insights-line2">${this.escapeHtml(d.line2)}</div>`;
+      }
+
+      if (d.line3) {
+        html += `<div class="ppv-insights-line3">${this.escapeHtml(d.line3)}</div>`;
+      }
+
+      if (d.birthday) {
+        html += `<div class="ppv-insights-birthday">${this.escapeHtml(d.birthday)}</div>`;
+      }
+
+      html += `
+          </div>
+        </div>
+      `;
+
+      // Insert after mini scanner or at top of page
+      const mini = document.getElementById('ppv-mini-scanner');
+      if (mini) {
+        mini.insertAdjacentHTML('afterend', html);
+      } else {
+        document.body.insertAdjacentHTML('afterbegin', html);
+      }
+
+      // Auto-hide after 15 seconds
+      setTimeout(() => {
+        const panel = document.getElementById('ppv-customer-insights');
+        if (panel) {
+          panel.classList.add('ppv-insights-hiding');
+          setTimeout(() => panel.remove(), 500);
+        }
+      }, 15000);
+    }
+
+    escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
     }
 
     cleanup() {

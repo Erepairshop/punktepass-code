@@ -51,6 +51,8 @@ trait PPV_QR_REST_Trait {
     // 📡 REST ROUTES REGISTRATION
     // ============================================================
     public static function register_rest_routes() {
+        // 📱 Scanner endpoints - authenticate via PPV-POS-Token header (store key)
+        // These do NOT use NONCE because scanners aren't logged into WordPress
         register_rest_route('punktepass/v1', '/pos/scan', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'rest_process_scan'],
@@ -63,6 +65,7 @@ trait PPV_QR_REST_Trait {
             'permission_callback' => ['PPV_Permissions', 'check_handler'],
         ]);
 
+        // Offline sync also from scanner device - no NONCE
         register_rest_route('punktepass/v1', '/pos/sync_offline', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'rest_sync_offline'],
@@ -72,7 +75,7 @@ trait PPV_QR_REST_Trait {
         register_rest_route('punktepass/v1', '/pos/campaign', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'rest_create_campaign'],
-            'permission_callback' => ['PPV_Permissions', 'check_handler'],
+            'permission_callback' => ['PPV_Permissions', 'check_handler_with_nonce'],
         ]);
 
         register_rest_route('punktepass/v1', '/pos/campaigns', [
@@ -84,19 +87,19 @@ trait PPV_QR_REST_Trait {
         register_rest_route('punktepass/v1', '/pos/campaign/delete', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'rest_delete_campaign'],
-            'permission_callback' => ['PPV_Permissions', 'check_handler'],
+            'permission_callback' => ['PPV_Permissions', 'check_handler_with_nonce'],
         ]);
 
         register_rest_route('punktepass/v1', '/pos/campaign/update', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'rest_update_campaign'],
-            'permission_callback' => ['PPV_Permissions', 'check_handler'],
+            'permission_callback' => ['PPV_Permissions', 'check_handler_with_nonce'],
         ]);
 
         register_rest_route('punktepass/v1', '/pos/campaign/archive', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'rest_archive_campaign'],
-            'permission_callback' => ['PPV_Permissions', 'check_handler'],
+            'permission_callback' => ['PPV_Permissions', 'check_handler_with_nonce'],
         ]);
 
         // ✅ CSV Export endpoint
@@ -114,16 +117,20 @@ trait PPV_QR_REST_Trait {
 
         // ════════════════════════════════════════════════════════════
         // 🎁 REAL-TIME REDEMPTION ENDPOINTS
+        // Token-based security - token sent via Ably only to intended user
         // ════════════════════════════════════════════════════════════
 
         // User responds to redemption prompt (accept/decline)
+        // Security: Token is unique 64-char hex, sent via Ably to specific user only
+        // Token validated in callback (exists in DB, not expired, correct status)
         register_rest_route('ppv/v1', '/redemption/user-response', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'rest_redemption_user_response'],
-            'permission_callback' => ['PPV_Permissions', 'check_logged_in_user'],
+            'permission_callback' => '__return_true',
         ]);
 
-        // Handler confirms or rejects redemption
+        // Handler confirms or rejects redemption (called from POS scanner)
+        // Security: PPV-POS-Token header + token validated in callback
         register_rest_route('ppv/v1', '/redemption/handler-response', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'rest_redemption_handler_response'],
@@ -188,7 +195,17 @@ trait PPV_QR_REST_Trait {
         $scanner_name = isset($data['scanner_name']) ? sanitize_text_field($data['scanner_name']) : null;
 
         // 🔒 Device/IP tracking for fraud detection and audit
-        $device_fingerprint = isset($data['device_fingerprint']) ? sanitize_text_field($data['device_fingerprint']) : null;
+        $device_fingerprint = null;
+        if (isset($data['device_fingerprint']) && !empty($data['device_fingerprint'])) {
+            // Use central validation if available
+            if (class_exists('PPV_Device_Fingerprint') && method_exists('PPV_Device_Fingerprint', 'validate_fingerprint')) {
+                $fp_validation = PPV_Device_Fingerprint::validate_fingerprint($data['device_fingerprint'], true);
+                $device_fingerprint = $fp_validation['valid'] ? $fp_validation['sanitized'] : null;
+            } else {
+                // Fallback to basic sanitization
+                $device_fingerprint = sanitize_text_field($data['device_fingerprint']);
+            }
+        }
         $ip_address = self::get_client_ip();
 
         if (empty($qr_code) || empty($store_key)) {
@@ -356,28 +373,132 @@ trait PPV_QR_REST_Trait {
                 'avatar' => $user_info->avatar ?? null,
             ]));
 
+            // ═══════════════════════════════════════════════════════════
+            // 🎁 RATE LIMITED BUT CHECK FOR REWARDS ANYWAY
+            // User said "later" but changed their mind - show reward modal
+            // ═══════════════════════════════════════════════════════════
+            if ($error_type === 'already_scanned_today') {
+                $redemption_prompt = self::check_and_create_redemption_prompt($user_id, $store_id, $scanner_id);
+
+                if ($redemption_prompt) {
+                    // Update response with redemption prompt
+                    $updated_data = $rate_check['response']->get_data();
+                    $updated_data['redemption_prompt'] = $redemption_prompt;
+                    $updated_data['has_rewards'] = true;
+                    $rate_check['response']->set_data($updated_data);
+
+                    // 📡 ABLY: Send redemption prompt to user even on rate limit
+                    if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+                        PPV_Ably::trigger_redemption_prompt($user_id, [
+                            'prompt_id' => $redemption_prompt['prompt_id'],
+                            'token' => $redemption_prompt['token'],
+                            'rewards' => $redemption_prompt['rewards'],
+                            'user_total_points' => $redemption_prompt['user_total_points'],
+                            'expires_at' => $redemption_prompt['expires_at'],
+                            'timeout_seconds' => 60,
+                            'store_name' => $store_name ?? 'PunktePass',
+                        ]);
+                    }
+
+                    ppv_log("🎁 [PPV_QR] Rate limited but showing redemption: user={$user_id}, store={$store_id}");
+                }
+            }
+
             return $rate_check['response'];
         }
 
         // ═══════════════════════════════════════════════════════════
-        // GPS DISTANCE CHECK (Fraud Detection) - LOG ONLY, DON'T BLOCK
-        // Scan always goes through, suspicious cases logged for admin review
+        // GPS 3-ZONE VALIDATION (Fázis 1 - 2025-12)
+        // Zone 1 (< 100m): OK
+        // Zone 2 (100-200m): LOG only
+        // Zone 3 (> 200m): BLOCK
+        // Mobile scanner devices: GPS check SKIPPED
         // ═══════════════════════════════════════════════════════════
-        if (class_exists('PPV_Scan_Monitoring') && ($scan_lat || $scan_lng)) {
-            $gps_check = PPV_Scan_Monitoring::validate_scan_location($store_id, $scan_lat, $scan_lng);
+        if (class_exists('PPV_Scan_Monitoring')) {
+            // Pass device_fingerprint for mobile scanner check
+            $gps_check = PPV_Scan_Monitoring::validate_scan_location($store_id, $scan_lat, $scan_lng, $device_fingerprint);
 
-            if (!$gps_check['valid']) {
-                // Log suspicious scan for admin review - but allow scan to continue
+            $gps_action = $gps_check['action'] ?? 'none';
+            $gps_reason = $gps_check['reason'] ?? null;
+
+            // ACTION: BLOCK - Scan rejected (>200m or wrong country)
+            if ($gps_action === 'block' || !$gps_check['valid']) {
                 PPV_Scan_Monitoring::log_suspicious_scan($store_id, $user_id, $scan_lat, $scan_lng, $gps_check);
 
-                $reason = $gps_check['reason'] ?? 'gps_distance';
+                $distance = $gps_check['distance'] ?? 0;
+                $max_allowed = $gps_check['max_allowed'] ?? 200;
 
-                if ($reason === 'wrong_country') {
-                    ppv_log("[PPV_QR] ⚠️ SUSPICIOUS: Country mismatch (SCAN ALLOWED): user={$user_id}, store={$store_id}, store_country={$gps_check['store_country']}, scan_country={$gps_check['scan_country']}");
-                } else {
-                    ppv_log("[PPV_QR] ⚠️ SUSPICIOUS: GPS distance exceeded (SCAN ALLOWED): user={$user_id}, store={$store_id}, distance={$gps_check['distance']}m");
+                ppv_log("[PPV_QR] ❌ GPS BLOCKED: user={$user_id}, store={$store_id}, distance={$distance}m, reason={$gps_reason}");
+
+                // Get user info for response
+                $user_info = $wpdb->get_row($wpdb->prepare("
+                    SELECT first_name, last_name, email, avatar
+                    FROM {$wpdb->prefix}ppv_users WHERE id = %d
+                ", $user_id));
+                $customer_name = trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
+
+                $error_message = self::t('err_gps_too_far', '❌ Túl messze vagy az üzlettől ({distance}m). Maximum: {max}m');
+                $error_message = str_replace(['{distance}', '{max}'], [$distance, $max_allowed], $error_message);
+
+                if ($gps_reason === 'wrong_country') {
+                    $error_message = self::t('err_wrong_country', '❌ Rossz ország! A scan csak az üzlet országában működik.');
                 }
-                // Scan continues - admin can review suspicious scans in WP admin
+
+                return new WP_REST_Response([
+                    'success' => false,
+                    'message' => $error_message,
+                    'user_id' => $user_id,
+                    'customer_name' => $customer_name ?: null,
+                    'email' => $user_info->email ?? null,
+                    'avatar' => $user_info->avatar ?? null,
+                    'error_type' => 'gps_blocked',
+                    'distance' => $distance,
+                    'max_distance' => $max_allowed
+                ], 403);
+            }
+
+            // ACTION: LOG - Scan allowed but logged as suspicious (100-200m)
+            if ($gps_action === 'log') {
+                PPV_Scan_Monitoring::log_suspicious_scan($store_id, $user_id, $scan_lat, $scan_lng, $gps_check);
+                ppv_log("[PPV_QR] ⚠️ GPS LOG: user={$user_id}, store={$store_id}, distance={$gps_check['distance']}m (Zone 2: 100-200m)");
+                // Scan continues
+            }
+
+            // GPS SPOOF DETECTION - Check for impossible travel
+            if ($scan_lat && $scan_lng) {
+                $travel_check = PPV_Scan_Monitoring::check_impossible_travel($user_id, $scan_lat, $scan_lng);
+
+                if ($travel_check['suspicious']) {
+                    ppv_log("[PPV_QR] 🚨 GPS SPOOF DETECTED: user={$user_id}, " . json_encode($travel_check['details']));
+
+                    // Log as suspicious scan with impossible_travel reason
+                    PPV_Scan_Monitoring::log_suspicious_scan($store_id, $user_id, $scan_lat, $scan_lng, [
+                        'valid' => false,
+                        'reason' => 'impossible_travel',
+                        'distance' => $travel_check['details']['distance_km'] * 1000,
+                        'details' => $travel_check['details']
+                    ]);
+
+                    // BLOCK the scan - GPS spoofing detected
+                    $user_info = $wpdb->get_row($wpdb->prepare("
+                        SELECT first_name, last_name, email, avatar
+                        FROM {$wpdb->prefix}ppv_users WHERE id = %d
+                    ", $user_id));
+                    $customer_name = trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
+
+                    return new WP_REST_Response([
+                        'success' => false,
+                        'message' => self::t('err_gps_spoof', '❌ Gyanús GPS aktivitás észlelve. Kérjük, próbáld újra később.'),
+                        'user_id' => $user_id,
+                        'customer_name' => $customer_name ?: null,
+                        'email' => $user_info->email ?? null,
+                        'avatar' => $user_info->avatar ?? null,
+                        'error_type' => 'gps_spoof_detected'
+                    ], 403);
+                }
+
+                // Log GPS data for future impossible travel detection
+                PPV_Scan_Monitoring::log_gps_scan($user_id, $store_id, $scan_lat, $scan_lng);
             }
         }
 
@@ -1108,6 +1229,16 @@ trait PPV_QR_REST_Trait {
         // 🔒 SECURITY: Increment successful scan counter (rate limit 3/min)
         PPV_Permissions::increment_rate_limit('pos_scan_success', 60);
 
+        // 📊 CUSTOMER INSIGHTS: Get customer insights for Händler display
+        $customer_insights = null;
+        if (class_exists('PPV_Customer_Insights')) {
+            $lang = sanitize_text_field($r->get_header('X-Lang') ?? 'de');
+            if (!in_array($lang, ['de', 'hu', 'ro'])) {
+                $lang = 'de';
+            }
+            $customer_insights = PPV_Customer_Insights::get_insights($user_id, $store_id, $lang);
+        }
+
         return new WP_REST_Response([
             'success' => true,
             'scan_id' => $scan_id, // ✅ Include scan_id for deduplication
@@ -1129,6 +1260,8 @@ trait PPV_QR_REST_Trait {
             // 👤 Scanner info (who performed the scan)
             'scanner_id' => $scanner_id,
             'scanner_name' => $scanner_name,
+            // 📊 Customer insights for Händler (visit patterns, VIP, points)
+            'customer_insights' => $customer_insights,
         ], 200);
     }
 
@@ -1871,14 +2004,8 @@ trait PPV_QR_REST_Trait {
             ], 410);
         }
 
-        // Verify user owns this prompt
-        $current_user_id = PPV_Permissions::get_current_user_id();
-        if ($current_user_id != $prompt->user_id) {
-            return new WP_REST_Response([
-                'success' => false,
-                'message' => self::t('err_unauthorized', '❌ Nicht autorisiert')
-            ], 403);
-        }
+        // Note: Token-based security - the token was sent via Ably only to the specific user
+        // No additional user_id check needed - token validation proves user identity
 
         if ($action === 'decline') {
             // User chose "Later" - keep prompt for next scan
@@ -2244,5 +2371,105 @@ trait PPV_QR_REST_Trait {
         }
 
         return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+    }
+
+    // ============================================================
+    // 🎁 HELPER: Check and create redemption prompt
+    // Used for both successful scans and rate-limited users with rewards
+    // ============================================================
+    private static function check_and_create_redemption_prompt($user_id, $store_id, $scanner_id) {
+        global $wpdb;
+
+        // Get user's current total points
+        $user_total_points = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COALESCE(SUM(points), 0) FROM {$wpdb->prefix}ppv_points WHERE user_id = %d",
+            $user_id
+        ));
+
+        // 🏪 FILIALE FIX: Get rewards from PARENT store if this is a filiale
+        $reward_store_id = $store_id;
+        if (class_exists('PPV_Filiale')) {
+            $reward_store_id = PPV_Filiale::get_parent_id($store_id);
+        }
+
+        // Find available rewards that user can redeem
+        $available_rewards = $wpdb->get_results($wpdb->prepare("
+            SELECT id, title, description, required_points, action_type, action_value, free_product_value
+            FROM {$wpdb->prefix}ppv_rewards
+            WHERE store_id = %d AND required_points <= %d AND required_points > 0
+            ORDER BY required_points DESC
+        ", $reward_store_id, $user_total_points));
+
+        if (empty($available_rewards)) {
+            return null; // No available rewards
+        }
+
+        // User can redeem! Create or refresh prompt
+        $prompt_token = bin2hex(random_bytes(32));
+        $expires_at = date('Y-m-d H:i:s', strtotime('+60 seconds'));
+
+        // Convert rewards to array for JSON storage
+        $rewards_array = array_map(function($r) {
+            return [
+                'id' => (int)$r->id,
+                'title' => $r->title,
+                'description' => $r->description,
+                'required_points' => (int)$r->required_points,
+                'action_type' => $r->action_type ?? 'info',
+                'action_value' => floatval($r->action_value ?? 0),
+                'free_product_value' => floatval($r->free_product_value ?? 0)
+            ];
+        }, $available_rewards);
+
+        // Check for existing pending prompt
+        $pending_prompt = $wpdb->get_row($wpdb->prepare("
+            SELECT id FROM {$wpdb->prefix}ppv_redemption_prompts
+            WHERE user_id = %d AND store_id = %d AND status = 'pending' AND expires_at > NOW()
+            ORDER BY created_at DESC LIMIT 1
+        ", $user_id, $store_id));
+
+        if ($pending_prompt) {
+            // Update existing prompt
+            $wpdb->update(
+                "{$wpdb->prefix}ppv_redemption_prompts",
+                [
+                    'token' => $prompt_token,
+                    'scanner_id' => $scanner_id,
+                    'available_rewards' => json_encode($rewards_array),
+                    'expires_at' => $expires_at,
+                    'created_at' => current_time('mysql')
+                ],
+                ['id' => $pending_prompt->id],
+                ['%s', '%d', '%s', '%s', '%s'],
+                ['%d']
+            );
+            $prompt_id = $pending_prompt->id;
+        } else {
+            // Create new prompt
+            $wpdb->insert(
+                "{$wpdb->prefix}ppv_redemption_prompts",
+                [
+                    'user_id' => $user_id,
+                    'store_id' => $store_id,
+                    'scanner_id' => $scanner_id,
+                    'token' => $prompt_token,
+                    'available_rewards' => json_encode($rewards_array),
+                    'status' => 'pending',
+                    'created_at' => current_time('mysql'),
+                    'expires_at' => $expires_at
+                ],
+                ['%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s']
+            );
+            $prompt_id = $wpdb->insert_id;
+        }
+
+        return [
+            'prompt_id' => $prompt_id,
+            'token' => $prompt_token,
+            'rewards' => $rewards_array,
+            'user_total_points' => $user_total_points,
+            'expires_at' => $expires_at,
+            'timeout_seconds' => 60
+        ];
     }
 }

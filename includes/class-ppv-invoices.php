@@ -21,16 +21,17 @@ class PPV_Invoices {
      *  📡 REST ROUTES
      * ============================================================ */
     public static function register_rest_routes() {
+        // 🔒 CSRF: POST endpoints use check_handler_with_nonce
         register_rest_route('ppv/v1', '/invoices/create', [
             'methods'  => 'POST',
             'callback' => [__CLASS__, 'rest_create_invoice'],
-            'permission_callback' => ['PPV_Permissions', 'check_handler']
+            'permission_callback' => ['PPV_Permissions', 'check_handler_with_nonce']
         ]);
 
         register_rest_route('ppv/v1', '/invoices/collective', [
             'methods'  => 'POST',
             'callback' => [__CLASS__, 'rest_create_collective_invoice'],
-            'permission_callback' => ['PPV_Permissions', 'check_handler']
+            'permission_callback' => ['PPV_Permissions', 'check_handler_with_nonce']
         ]);
 
         register_rest_route('ppv/v1', '/invoices/list', [
@@ -42,7 +43,7 @@ class PPV_Invoices {
         register_rest_route('ppv/v1', '/invoices/send-email', [
             'methods'  => 'POST',
             'callback' => [__CLASS__, 'rest_send_email'],
-            'permission_callback' => ['PPV_Permissions', 'check_handler']
+            'permission_callback' => ['PPV_Permissions', 'check_handler_with_nonce']
         ]);
     }
 

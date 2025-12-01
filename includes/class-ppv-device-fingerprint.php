@@ -36,6 +36,60 @@ class PPV_Device_Fingerprint {
     // Maximum devices per user (store owner)
     const MAX_DEVICES_PER_USER = 2;
 
+    // Fingerprint validation constants
+    const FINGERPRINT_MIN_LENGTH = 16;
+    const FINGERPRINT_MAX_LENGTH = 64;
+
+    /**
+     * Validate device fingerprint format
+     * FingerprintJS v4 generates 20-character alphanumeric visitorId
+     *
+     * @param string $fingerprint The fingerprint to validate
+     * @param bool $allow_empty Whether to allow empty fingerprints (for optional cases)
+     * @return array ['valid' => bool, 'error' => string|null, 'sanitized' => string|null]
+     */
+    public static function validate_fingerprint($fingerprint, $allow_empty = false) {
+        // Sanitize first
+        $fingerprint = sanitize_text_field($fingerprint ?? '');
+
+        // Check if empty
+        if (empty($fingerprint)) {
+            if ($allow_empty) {
+                return ['valid' => true, 'error' => null, 'sanitized' => '', 'skipped' => true];
+            }
+            return ['valid' => false, 'error' => 'empty_fingerprint', 'sanitized' => null];
+        }
+
+        // Check minimum length
+        if (strlen($fingerprint) < self::FINGERPRINT_MIN_LENGTH) {
+            ppv_log("[Security] ⚠️ Fingerprint too short: " . strlen($fingerprint) . " chars");
+            return ['valid' => false, 'error' => 'fingerprint_too_short', 'sanitized' => null];
+        }
+
+        // Check maximum length (prevent DoS with huge strings)
+        if (strlen($fingerprint) > self::FINGERPRINT_MAX_LENGTH) {
+            ppv_log("[Security] ⚠️ Fingerprint too long: " . strlen($fingerprint) . " chars");
+            return ['valid' => false, 'error' => 'fingerprint_too_long', 'sanitized' => null];
+        }
+
+        // Check for valid characters (alphanumeric only - XSS prevention)
+        if (!preg_match('/^[a-zA-Z0-9]+$/', $fingerprint)) {
+            ppv_log("[Security] ⚠️ Fingerprint contains invalid characters");
+            return ['valid' => false, 'error' => 'fingerprint_invalid_chars', 'sanitized' => null];
+        }
+
+        return ['valid' => true, 'error' => null, 'sanitized' => $fingerprint];
+    }
+
+    /**
+     * Quick fingerprint validation (returns bool only)
+     * Use this for simple checks where you don't need detailed error info
+     */
+    public static function is_valid_fingerprint($fingerprint, $allow_empty = false) {
+        $result = self::validate_fingerprint($fingerprint, $allow_empty);
+        return $result['valid'];
+    }
+
     /**
      * Register hooks
      */
@@ -373,10 +427,21 @@ class PPV_Device_Fingerprint {
      */
     public static function rest_check_device(WP_REST_Request $request) {
         $data = $request->get_json_params();
-        $fingerprint = sanitize_text_field($data['fingerprint'] ?? '');
 
-        if (empty($fingerprint) || strlen($fingerprint) < 16) {
-            // No fingerprint provided - allow registration (fallback)
+        // Validate fingerprint (allow empty for fallback)
+        $fp_validation = self::validate_fingerprint($data['fingerprint'] ?? '', true);
+        if (!$fp_validation['valid']) {
+            return new WP_REST_Response([
+                'allowed' => false,
+                'blocked' => false,
+                'accounts' => 0,
+                'limit' => self::MAX_ACCOUNTS_PER_DEVICE,
+                'error' => $fp_validation['error']
+            ], 400);
+        }
+
+        // If fingerprint was empty/skipped, allow registration (fallback)
+        if (!empty($fp_validation['skipped'])) {
             return new WP_REST_Response([
                 'allowed' => true,
                 'blocked' => false,
@@ -385,6 +450,7 @@ class PPV_Device_Fingerprint {
             ], 200);
         }
 
+        $fingerprint = $fp_validation['sanitized'];
         $fingerprint_hash = self::hash_fingerprint($fingerprint);
 
         // 🚫 Check if device is blocked
@@ -422,17 +488,26 @@ class PPV_Device_Fingerprint {
         global $wpdb;
 
         $data = $request->get_json_params();
-        $fingerprint = sanitize_text_field($data['fingerprint'] ?? '');
         $user_id = intval($data['user_id'] ?? 0);
         $fingerprint_components = $data['components'] ?? null;
 
-        if (empty($fingerprint) || $user_id <= 0) {
+        // Validate fingerprint
+        $fp_validation = self::validate_fingerprint($data['fingerprint'] ?? '');
+        if (!$fp_validation['valid']) {
             return new WP_REST_Response([
                 'success' => false,
-                'message' => 'Missing fingerprint or user_id'
+                'message' => 'Invalid fingerprint: ' . $fp_validation['error']
             ], 400);
         }
 
+        if ($user_id <= 0) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Missing user_id'
+            ], 400);
+        }
+
+        $fingerprint = $fp_validation['sanitized'];
         $fingerprint_hash = self::hash_fingerprint($fingerprint);
 
         // Get IP and user agent
@@ -1135,17 +1210,19 @@ class PPV_Device_Fingerprint {
         }
 
         $data = $request->get_json_params();
-        $fingerprint = sanitize_text_field($data['fingerprint'] ?? '');
         $device_name = sanitize_text_field($data['device_name'] ?? 'Unbenanntes Gerät');
         $device_info = $data['device_info'] ?? null; // FingerprintJS components data
 
-        if (empty($fingerprint) || strlen($fingerprint) < 16) {
+        // Validate fingerprint
+        $fp_validation = self::validate_fingerprint($data['fingerprint'] ?? '');
+        if (!$fp_validation['valid']) {
             return new WP_REST_Response([
                 'success' => false,
-                'message' => 'Ungültiger Fingerprint'
+                'message' => 'Ungültiger Fingerprint: ' . $fp_validation['error']
             ], 400);
         }
 
+        $fingerprint = $fp_validation['sanitized'];
         $fingerprint_hash = self::hash_fingerprint($fingerprint);
         $parent_store_id = self::get_parent_store_id($store_id);
 
@@ -1302,7 +1379,6 @@ class PPV_Device_Fingerprint {
         }
 
         $data = $request->get_json_params();
-        $fingerprint = sanitize_text_field($data['fingerprint'] ?? '');
 
         // Get store location for GPS geofencing
         $current_store_id = $store_id; // Use current store (filiale) for GPS, not parent
@@ -1318,7 +1394,18 @@ class PPV_Device_Fingerprint {
             'max_distance' => intval($store_location->max_scan_distance ?? 500) ?: 500
         ];
 
-        if (empty($fingerprint) || strlen($fingerprint) < 16) {
+        // Validate fingerprint (allow empty for response with 'can_use_scanner' = false)
+        $fp_validation = self::validate_fingerprint($data['fingerprint'] ?? '', true);
+        if (!$fp_validation['valid']) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Invalid fingerprint: ' . $fp_validation['error'],
+                'gps' => $gps_data
+            ], 400);
+        }
+
+        // If fingerprint was empty/skipped
+        if (!empty($fp_validation['skipped'])) {
             return new WP_REST_Response([
                 'success' => true,
                 'is_registered' => false,
@@ -1330,6 +1417,7 @@ class PPV_Device_Fingerprint {
             ], 200);
         }
 
+        $fingerprint = $fp_validation['sanitized'];
         $fingerprint_hash = self::hash_fingerprint($fingerprint);
         $parent_store_id = self::get_parent_store_id($store_id);
 
@@ -1486,7 +1574,6 @@ class PPV_Device_Fingerprint {
 
         $data = $request->get_json_params();
         $device_id = intval($data['device_id'] ?? 0);
-        $new_fingerprint = sanitize_text_field($data['fingerprint'] ?? '');
         $device_info = $data['device_info'] ?? null; // FingerprintJS components data
 
         if ($device_id <= 0) {
@@ -1496,13 +1583,16 @@ class PPV_Device_Fingerprint {
             ], 400);
         }
 
-        if (empty($new_fingerprint) || strlen($new_fingerprint) < 16) {
+        // Validate fingerprint
+        $fp_validation = self::validate_fingerprint($data['fingerprint'] ?? '');
+        if (!$fp_validation['valid']) {
             return new WP_REST_Response([
                 'success' => false,
-                'message' => 'Ungültiger Fingerprint'
+                'message' => 'Ungültiger Fingerprint: ' . $fp_validation['error']
             ], 400);
         }
 
+        $new_fingerprint = $fp_validation['sanitized'];
         $parent_store_id = self::get_parent_store_id($store_id);
         $new_fingerprint_hash = self::hash_fingerprint($new_fingerprint);
 
@@ -1746,16 +1836,18 @@ class PPV_Device_Fingerprint {
         }
 
         $data = $request->get_json_params();
-        $fingerprint = sanitize_text_field($data['fingerprint'] ?? '');
         $device_name = sanitize_text_field($data['device_name'] ?? 'Neues Gerät');
 
-        if (empty($fingerprint) || strlen($fingerprint) < 16) {
+        // Validate fingerprint
+        $fp_validation = self::validate_fingerprint($data['fingerprint'] ?? '');
+        if (!$fp_validation['valid']) {
             return new WP_REST_Response([
                 'success' => false,
-                'message' => 'Ungültiger Fingerprint'
+                'message' => 'Ungültiger Fingerprint: ' . $fp_validation['error']
             ], 400);
         }
 
+        $fingerprint = $fp_validation['sanitized'];
         $fingerprint_hash = self::hash_fingerprint($fingerprint);
         $parent_store_id = self::get_parent_store_id($store_id);
 
@@ -2071,10 +2163,41 @@ class PPV_Device_Fingerprint {
     /**
      * Create device approval request and send email
      */
+    // ═══════════════════════════════════════════════════════════════
+    // DEVICE REQUEST COOLDOWN - 1 day limit (Fázis 1 - 2025-12)
+    // ═══════════════════════════════════════════════════════════════
+    const DEVICE_REQUEST_COOLDOWN_HOURS = 24; // 1 day cooldown
+
     private static function create_device_request($store_id, $fingerprint_hash, $type, $device_name) {
         global $wpdb;
 
-        // Check for existing pending request
+        // ═══════════════════════════════════════════════════════════════
+        // COOLDOWN CHECK - Prevent spam requests (max 1 request per 24 hours)
+        // ═══════════════════════════════════════════════════════════════
+        $cooldown_hours = self::DEVICE_REQUEST_COOLDOWN_HOURS;
+        $recent_request = $wpdb->get_row($wpdb->prepare(
+            "SELECT id, requested_at, status FROM {$wpdb->prefix}" . self::DEVICE_REQUESTS_TABLE . "
+             WHERE store_id = %d AND fingerprint_hash = %s
+             AND requested_at >= DATE_SUB(NOW(), INTERVAL %d HOUR)
+             ORDER BY requested_at DESC LIMIT 1",
+            $store_id, $fingerprint_hash, $cooldown_hours
+        ));
+
+        if ($recent_request) {
+            $time_since = strtotime(current_time('mysql')) - strtotime($recent_request->requested_at);
+            $hours_remaining = ceil(($cooldown_hours * 3600 - $time_since) / 3600);
+
+            ppv_log("🚫 [Device Cooldown] Request blocked: store_id={$store_id}, hours_remaining={$hours_remaining}");
+
+            return [
+                'success' => false,
+                'message' => "Bitte warten Sie noch {$hours_remaining} Stunde(n) bevor Sie eine neue Geräteanfrage stellen können.",
+                'cooldown' => true,
+                'hours_remaining' => $hours_remaining
+            ];
+        }
+
+        // Check for existing pending request (legacy check)
         $existing = $wpdb->get_var($wpdb->prepare(
             "SELECT id FROM {$wpdb->prefix}" . self::DEVICE_REQUESTS_TABLE . "
              WHERE store_id = %d AND fingerprint_hash = %s AND request_type = %s AND status = 'pending'",
