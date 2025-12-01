@@ -333,32 +333,33 @@ class PPV_Bottom_Nav {
         .ppv-feedback-close:hover { color: #fff; }
         .ppv-feedback-step {
             display: none;
-            padding: 20px;
+            padding: 15px;
         }
         .ppv-feedback-step.active { display: block; }
         .ppv-feedback-subtitle {
             color: #aaa;
             text-align: center;
-            margin: 0 0 20px 0;
-            font-size: 14px;
+            margin: 0 0 15px 0;
+            font-size: 13px;
         }
         .ppv-feedback-categories {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
+            display: grid !important;
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 10px;
         }
         .ppv-feedback-cat {
             background: rgba(0,217,255,0.1);
             border: 1px solid rgba(0,217,255,0.2);
             border-radius: 12px;
-            padding: 20px 15px;
+            padding: 16px 10px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             cursor: pointer;
             transition: all 0.2s;
             color: #fff;
+            min-height: 80px;
         }
         .ppv-feedback-cat:hover {
             background: rgba(0,217,255,0.2);
@@ -366,12 +367,13 @@ class PPV_Bottom_Nav {
             transform: translateY(-2px);
         }
         .ppv-feedback-cat i {
-            font-size: 28px;
+            font-size: 24px;
             color: #00d9ff;
         }
         .ppv-feedback-cat span {
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 500;
+            text-align: center;
         }
         .ppv-feedback-back {
             background: transparent;
