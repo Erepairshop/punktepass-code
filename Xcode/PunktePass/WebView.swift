@@ -2,7 +2,317 @@ import UIKit
 import WebKit
 import AuthenticationServices
 import SafariServices
+import CommonCrypto
 
+// Google OAuth handler using ASWebAuthenticationSession with iOS client ID
+class GoogleAuthHandler: NSObject, ASWebAuthenticationPresentationContextProviding {
+    static let shared = GoogleAuthHandler()
+    weak var webView: WKWebView?
+    weak var viewController: UIViewController?
+    var authSession: ASWebAuthenticationSession?
+    var codeVerifier: String?
+    var authCompletion: ((String?) -> Void)?
+    var isAuthInProgress = false  // Prevent double-trigger
+
+    // Helper to complete auth and reset state
+    private func completeAuth(with token: String?) {
+        isAuthInProgress = false
+        authCompletion?(token)
+        authCompletion = nil
+    }
+
+    // Google OAuth iOS Client ID (from Google Cloud Console - must match Info.plist URL scheme)
+    private let googleClientId = "645942978357-1bdviltt810gutpve9vjj2kab340man6.apps.googleusercontent.com"
+    // Custom URL scheme redirect (reversed client ID)
+    private let callbackScheme = "com.googleusercontent.apps.645942978357-1bdviltt810gutpve9vjj2kab340man6"
+    var redirectUri: String {
+        return "\(callbackScheme):/oauth2callback"
+    }
+
+    // ASWebAuthenticationPresentationContextProviding
+    func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
+        if let window = viewController?.view.window {
+            return window
+        }
+        // iOS 15+ compatible way to get key window
+        let scenes = UIApplication.shared.connectedScenes
+        let windowScene = scenes.first as? UIWindowScene
+        return windowScene?.windows.first ?? UIWindow()
+    }
+
+    func isGoogleOAuthURL(_ url: URL) -> Bool {
+        guard let host = url.host else { return false }
+        let isGoogleAuth = host.contains("accounts.google.com") &&
+                          (url.absoluteString.contains("oauth") ||
+                           url.absoluteString.contains("signin") ||
+                           url.absoluteString.contains("ServiceLogin") ||
+                           url.absoluteString.contains("v3/signin") ||
+                           url.absoluteString.contains("identifier") ||
+                           url.absoluteString.contains("gsi"))
+        return isGoogleAuth
+    }
+
+    // Generate PKCE code verifier (43-128 characters, URL-safe)
+    func generateCodeVerifier() -> String {
+        // Use only alphanumeric characters to avoid any encoding issues
+        let characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        var result = ""
+        for _ in 0..<64 {
+            result.append(characters.randomElement()!)
+        }
+        return result
+    }
+
+    // Generate PKCE code challenge from verifier (SHA256 + base64url)
+    func generateCodeChallenge(from verifier: String) -> String {
+        guard let data = verifier.data(using: .ascii) else { return "" }
+        var hash = [UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
+        data.withUnsafeBytes {
+            _ = CC_SHA256($0.baseAddress, CC_LONG(data.count), &hash)
+        }
+        return Data(hash).base64EncodedString()
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "")
+    }
+
+    func startGoogleAuth(from viewController: UIViewController, completion: @escaping (String?) -> Void) {
+        // Prevent double-trigger - if auth is already in progress, ignore
+        if isAuthInProgress {
+            print("Google Auth: Already in progress, ignoring duplicate request")
+            return
+        }
+        isAuthInProgress = true
+
+        // Cancel any previous session
+        authSession?.cancel()
+        authSession = nil
+
+        // Store completion for later
+        authCompletion = completion
+        self.viewController = viewController
+
+        // Generate PKCE verifier and challenge
+        codeVerifier = generateCodeVerifier()
+        let codeChallenge = generateCodeChallenge(from: codeVerifier!)
+
+        print("Google Auth: Verifier length: \(codeVerifier!.count)")
+        print("Google Auth: Challenge: \(codeChallenge)")
+
+        // Build Google OAuth URL with iOS client ID and custom scheme redirect
+        var components = URLComponents(string: "https://accounts.google.com/o/oauth2/v2/auth")!
+        components.queryItems = [
+            URLQueryItem(name: "client_id", value: googleClientId),
+            URLQueryItem(name: "redirect_uri", value: redirectUri),
+            URLQueryItem(name: "response_type", value: "code"),
+            URLQueryItem(name: "scope", value: "openid email profile"),
+            URLQueryItem(name: "code_challenge", value: codeChallenge),
+            URLQueryItem(name: "code_challenge_method", value: "S256"),
+            URLQueryItem(name: "prompt", value: "select_account")
+        ]
+
+        guard let authURL = components.url else {
+            print("Google Auth: Failed to create auth URL")
+            completion(nil)
+            return
+        }
+
+        print("Google Auth: Starting ASWebAuthenticationSession")
+        print("Google Auth: Auth URL: \(authURL)")
+        print("Google Auth: Callback scheme: \(callbackScheme)")
+
+        // Use ASWebAuthenticationSession - it handles custom URL scheme callbacks automatically
+        authSession = ASWebAuthenticationSession(url: authURL, callbackURLScheme: callbackScheme) { [weak self] callbackURL, error in
+            guard let self = self else { return }
+
+            // IMPORTANT: Process callback URL even if there's an error (iOS bug workaround)
+            if let callbackURL = callbackURL {
+                print("Google Auth: Received callback URL: \(callbackURL)")
+                self.handleCallback(url: callbackURL)
+                return
+            }
+
+            if let error = error {
+                print("Google Auth: Session error: \(error.localizedDescription)")
+                if (error as NSError).code == ASWebAuthenticationSessionError.canceledLogin.rawValue {
+                    print("Google Auth: User cancelled login")
+                }
+                DispatchQueue.main.async {
+                    self.completeAuth(with: nil)
+                }
+                return
+            }
+
+            guard let callbackURL = callbackURL else {
+                print("Google Auth: No callback URL received")
+                DispatchQueue.main.async {
+                    self.completeAuth(with: nil)
+                }
+                return
+            }
+
+            print("Google Auth: Received callback URL: \(callbackURL)")
+            self.handleCallback(url: callbackURL)
+        }
+
+        authSession?.presentationContextProvider = self
+        authSession?.prefersEphemeralWebBrowserSession = false // Use shared cookies for better UX
+
+        if !authSession!.start() {
+            print("Google Auth: Failed to start session")
+            completeAuth(with: nil)
+        }
+    }
+
+    // Handle the OAuth callback
+    func handleCallback(url: URL) {
+        print("Google Auth: Processing callback URL: \(url)")
+
+        // Extract authorization code
+        let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+
+        if let error = components?.queryItems?.first(where: { $0.name == "error" })?.value {
+            print("Google Auth: Error from callback: \(error)")
+            DispatchQueue.main.async {
+                self.completeAuth(with: nil)
+            }
+            return
+        }
+
+        guard let code = components?.queryItems?.first(where: { $0.name == "code" })?.value else {
+            print("Google Auth: No authorization code in callback")
+            DispatchQueue.main.async {
+                self.completeAuth(with: nil)
+            }
+            return
+        }
+
+        print("Google Auth: Got authorization code, exchanging for tokens...")
+        exchangeCodeForTokens(code: code)
+    }
+
+    private func exchangeCodeForTokens(code: String) {
+        guard let verifier = codeVerifier else {
+            print("Google Auth: No code verifier")
+            DispatchQueue.main.async {
+                self.completeAuth(with: nil)
+            }
+            return
+        }
+
+        let tokenURL = URL(string: "https://oauth2.googleapis.com/token")!
+        var request = URLRequest(url: tokenURL)
+        request.httpMethod = "POST"
+        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+
+        // For iOS/mobile clients, we don't need client_secret
+        let params = [
+            "client_id": googleClientId,
+            "code": code,
+            "code_verifier": verifier,
+            "grant_type": "authorization_code",
+            "redirect_uri": redirectUri
+        ]
+
+        let bodyString = params.map { "\($0.key)=\($0.value.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")" }.joined(separator: "&")
+        request.httpBody = bodyString.data(using: .utf8)
+
+        print("Google Auth: Exchanging code for tokens...")
+
+        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+            guard let self = self else { return }
+
+            if let error = error {
+                print("Google Auth: Token exchange error: \(error.localizedDescription)")
+                DispatchQueue.main.async {
+                    self.completeAuth(with: nil)
+                }
+                return
+            }
+
+            guard let data = data else {
+                print("Google Auth: No data from token exchange")
+                DispatchQueue.main.async {
+                    self.completeAuth(with: nil)
+                }
+                return
+            }
+
+            // Debug: print raw response
+            if let responseString = String(data: data, encoding: .utf8) {
+                print("Google Auth: Token response: \(responseString)")
+            }
+
+            do {
+                if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                    if let idToken = json["id_token"] as? String {
+                        print("Google Auth: Got ID token (length: \(idToken.count))")
+                        DispatchQueue.main.async {
+                            self.completeAuth(with: idToken)
+                        }
+                    } else if let errorDesc = json["error_description"] as? String {
+                        print("Google Auth: Token error: \(errorDesc)")
+                        DispatchQueue.main.async {
+                            self.completeAuth(with: nil)
+                        }
+                    } else {
+                        print("Google Auth: Unknown token response: \(json)")
+                        DispatchQueue.main.async {
+                            self.completeAuth(with: nil)
+                        }
+                    }
+                }
+            } catch {
+                print("Google Auth: JSON parse error: \(error)")
+                DispatchQueue.main.async {
+                    self.completeAuth(with: nil)
+                }
+            }
+        }.resume()
+    }
+
+    func injectGoogleCredential(idToken: String, into webView: WKWebView) {
+        // Call the website's handleGoogleCallback function with the credential
+        let js = """
+        (function() {
+            // Simulate Google Identity Services callback
+            if (typeof handleGoogleCallback === 'function') {
+                handleGoogleCallback({ credential: '\(idToken)' });
+            } else {
+                // Alternative: trigger AJAX directly
+                jQuery.ajax({
+                    url: ppvLogin.ajaxurl,
+                    type: 'POST',
+                    data: {
+                        action: 'ppv_google_login',
+                        nonce: ppvLogin.nonce,
+                        credential: '\(idToken)',
+                        device_fingerprint: ''
+                    },
+                    success: function(res) {
+                        if (res.success) {
+                            window.location.href = res.data.redirect || '/';
+                        } else {
+                            alert(res.data.message || 'Google Login fehlgeschlagen');
+                        }
+                    },
+                    error: function() {
+                        alert('Verbindungsfehler');
+                    }
+                });
+            }
+        })();
+        """
+
+        webView.evaluateJavaScript(js) { result, error in
+            if let error = error {
+                print("Google Auth JS inject error: \(error.localizedDescription)")
+            } else {
+                print("Google Auth: Credential injected into web page")
+            }
+        }
+    }
+}
 
 func createWebView(container: UIView, WKSMH: WKScriptMessageHandler, WKND: WKNavigationDelegate, NSO: NSObject, VC: ViewController) -> WKWebView{
 
@@ -14,6 +324,10 @@ func createWebView(container: UIView, WKSMH: WKScriptMessageHandler, WKND: WKNav
     userContentController.add(WKSMH, name: "push-permission-request")
     userContentController.add(WKSMH, name: "push-permission-state")
     userContentController.add(WKSMH, name: "push-token")
+    userContentController.add(WKSMH, name: "native-google-login")
+
+    // Add Google login override script for iOS native auth
+    injectGoogleLoginOverride(contentController: userContentController)
 
     config.userContentController = userContentController
 
@@ -41,7 +355,8 @@ func createWebView(container: UIView, WKSMH: WKScriptMessageHandler, WKND: WKNav
     let deviceModel = UIDevice.current.model
     let osVersion = UIDevice.current.systemVersion
     webView.configuration.applicationNameForUserAgent = "Safari/604.1"
-    webView.customUserAgent = "Mozilla/5.0 (\(deviceModel); CPU \(deviceModel) OS \(osVersion.replacingOccurrences(of: ".", with: "_")) like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/\(osVersion) Mobile/15E148 Safari/604.1 PWAShell"
+    // Use standard Safari User-Agent (removed PWAShell to avoid Google blocking)
+    webView.customUserAgent = "Mozilla/5.0 (\(deviceModel); CPU \(deviceModel) OS \(osVersion.replacingOccurrences(of: ".", with: "_")) like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/\(osVersion) Mobile/15E148 Safari/604.1"
 
     webView.addObserver(NSO, forKeyPath: #keyPath(WKWebView.estimatedProgress), options: NSKeyValueObservingOptions.new, context: nil)
     
@@ -57,6 +372,39 @@ func createWebView(container: UIView, WKSMH: WKScriptMessageHandler, WKND: WKNav
 func setAppStoreAsReferrer(contentController: WKUserContentController) {
     let scriptSource = "document.referrer = `app-info://platform/ios-store`;"
     let script = WKUserScript(source: scriptSource, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
+    contentController.addUserScript(script);
+}
+
+func injectGoogleLoginOverride(contentController: WKUserContentController) {
+    // Override Google login button to use native iOS authentication
+    let scriptSource = """
+    (function() {
+        // Flag to identify iOS app - used by ppv-login.js to skip web Google init
+        window.isPWAShellApp = true;
+        window.isNativeIOSApp = true;
+
+        // Use capture phase to intercept click BEFORE jQuery handlers
+        document.addEventListener('click', function(e) {
+            var btn = e.target.closest('#ppv-google-login-btn');
+            if (btn) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+
+                console.log('🍎 iOS: Native Google login triggered');
+
+                if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers['native-google-login']) {
+                    window.webkit.messageHandlers['native-google-login'].postMessage({});
+                } else {
+                    console.error('🍎 Native handler not available');
+                }
+            }
+        }, true); // true = capture phase
+
+        console.log('🍎 iOS: Native Google login override ready');
+    })();
+    """
+    let script = WKUserScript(source: scriptSource, injectionTime: .atDocumentStart, forMainFrameOnly: true)
     contentController.addUserScript(script);
 }
 
@@ -150,6 +498,28 @@ extension ViewController: WKUIDelegate, WKDownloadDelegate {
         }
 
         if let requestUrl = navigationAction.request.url{
+            // Handle Google OAuth with SFSafariViewController (Google blocks OAuth in WKWebView)
+            if GoogleAuthHandler.shared.isGoogleOAuthURL(requestUrl) {
+                decisionHandler(.cancel)
+                GoogleAuthHandler.shared.webView = webView
+
+                // Start native Google OAuth flow via Safari
+                GoogleAuthHandler.shared.startGoogleAuth(from: self) { [weak self] idToken in
+                    DispatchQueue.main.async {
+                        if let token = idToken {
+                            // Inject the credential into the web page
+                            GoogleAuthHandler.shared.injectGoogleCredential(idToken: token, into: webView)
+                        }
+                        // Hide toolbar if visible
+                        if let self = self, !self.toolbarView.isHidden {
+                            self.toolbarView.isHidden = true
+                            webView.frame = calcWebviewFrame(webviewView: self.webviewView, toolbarView: nil)
+                        }
+                    }
+                }
+                return
+            }
+
             if let requestHost = requestUrl.host {
                 // NOTE: Match auth origin first, because host origin may be a subset of auth origin and may therefore always match
                 let matchingAuthOrigin = authOrigins.first(where: { requestHost.range(of: $0) != nil })

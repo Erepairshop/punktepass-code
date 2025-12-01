@@ -735,11 +735,75 @@ add_action('init', function () {
     add_rewrite_rule('^store/([^/]*)/?$', 'index.php?pagename=store&store=$matches[1]', 'top');
     // Referral links: /r/{code}/{store_key}
     add_rewrite_rule('^r/([A-Za-z0-9]+)/([^/]+)/?$', 'index.php?ppv_referral_code=$matches[1]&ppv_referral_store=$matches[2]', 'top');
+    // iOS Google OAuth callback
+    add_rewrite_rule('^google-callback/?$', 'index.php?ppv_google_callback=1', 'top');
 }, 10);
+
+// ========================================
+// 📱 iOS GOOGLE OAUTH CALLBACK
+// ========================================
+// Handle callback early - uses direct URL detection (no rewrite rules needed)
+add_action('init', function() {
+    // Check if this is the google-callback URL
+    $request_uri = $_SERVER['REQUEST_URI'] ?? '';
+    if (preg_match('#^/google-callback/?(\?|$)#', $request_uri)) {
+        // Get the authorization code from Google
+        $code = isset($_GET['code']) ? sanitize_text_field($_GET['code']) : null;
+        $error = isset($_GET['error']) ? sanitize_text_field($_GET['error']) : null;
+
+        // iOS app custom URL scheme (reversed client ID)
+        $appScheme = 'com.googleusercontent.apps.645942978357-1bdviltt810gutpve9vjj2kab340man6';
+
+        if ($error) {
+            $redirectUrl = $appScheme . ':/oauth2redirect?error=' . urlencode($error);
+        } elseif ($code) {
+            $redirectUrl = $appScheme . ':/oauth2redirect?code=' . urlencode($code);
+        } else {
+            $redirectUrl = $appScheme . ':/oauth2redirect?error=no_code';
+        }
+
+        // Use HTML+JavaScript redirect for custom URL scheme (header redirect doesn't work reliably in Safari)
+        header('Content-Type: text/html; charset=UTF-8');
+        echo '<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PunktePass - Weiterleitung...</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #0b0f17; color: #fff;
+               display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .loader { text-align: center; }
+        .spinner { width: 50px; height: 50px; border: 4px solid rgba(0,191,255,0.2); border-top-color: #00bfff;
+                   border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        p { font-size: 16px; opacity: 0.8; }
+    </style>
+</head>
+<body>
+    <div class="loader">
+        <div class="spinner"></div>
+        <p>Weiterleitung zur App...</p>
+    </div>
+    <script>
+        // Try to redirect to app
+        window.location.href = "' . esc_js($redirectUrl) . '";
+
+        // Fallback: if redirect doesnt work after 2 seconds, show message
+        setTimeout(function() {
+            document.querySelector("p").textContent = "Bitte öffne die PunktePass App manuell";
+        }, 2000);
+    </script>
+</body>
+</html>';
+        exit;
+    }
+}, 1); // Priority 1 = very early
 
 register_activation_hook(__FILE__, function () {
     add_rewrite_rule('^store/([^/]*)/?$', 'index.php?pagename=store&store=$matches[1]', 'top');
     add_rewrite_rule('^r/([A-Za-z0-9]+)/([^/]+)/?$', 'index.php?ppv_referral_code=$matches[1]&ppv_referral_store=$matches[2]', 'top');
+    add_rewrite_rule('^google-callback/?$', 'index.php?ppv_google_callback=1', 'top');
     flush_rewrite_rules();
 });
 
