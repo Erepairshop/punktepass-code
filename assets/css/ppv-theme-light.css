@@ -11961,6 +11961,160 @@ select.ppv-support-input {
     }
 }
 
+/* ============================================================
+   📱 DEVICE ACTIVITY - Dashboard Styles
+   ============================================================ */
+.ppv-device-table {
+    background: var(--pp-surface);
+    border-radius: var(--pp-r-lg);
+    border: 1px solid var(--pp-border-soft);
+    overflow: hidden;
+}
+
+.ppv-device-row {
+    display: grid;
+    grid-template-columns: 2fr repeat(7, 1fr) 1fr;
+    gap: 4px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--pp-border-soft);
+    align-items: center;
+}
+
+.ppv-device-row:last-child {
+    border-bottom: none;
+}
+
+.ppv-device-header {
+    background: var(--pp-bg-2);
+    font-weight: 600;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--pp-text-muted);
+}
+
+.ppv-device-cell {
+    font-size: 12px;
+    color: var(--pp-text);
+    text-align: center;
+}
+
+.ppv-device-name-cell {
+    text-align: left !important;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.ppv-device-name {
+    font-weight: 500;
+    font-size: 13px;
+}
+
+.ppv-device-fingerprint {
+    font-size: 10px;
+    color: var(--pp-text-muted);
+    font-family: monospace;
+}
+
+.ppv-device-day-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    position: relative;
+    height: 50px;
+    justify-content: flex-end;
+}
+
+.ppv-mini-bar {
+    width: 20px;
+    min-height: 4px;
+    border-radius: 2px;
+    transition: all 0.2s ease;
+}
+
+.ppv-bar-low {
+    background: var(--pp-success, #10b981);
+}
+
+.ppv-bar-medium {
+    background: var(--pp-warning, #f59e0b);
+}
+
+.ppv-bar-high {
+    background: var(--pp-danger, #ef4444);
+}
+
+.ppv-day-count {
+    font-size: 10px;
+    color: var(--pp-text-muted);
+}
+
+.ppv-device-total-cell {
+    font-weight: 600;
+    color: var(--pp-primary);
+}
+
+.ppv-badge-scanner {
+    font-size: 12px;
+    margin-left: 4px;
+}
+
+.ppv-badge-warning {
+    font-size: 12px;
+    margin-left: 4px;
+}
+
+/* Suspicious device row highlight */
+.ppv-device-row.ppv-device-suspicious {
+    background: rgba(245, 158, 11, 0.08);
+    border-left: 3px solid var(--pp-warning, #f59e0b);
+}
+
+/* Stat card warning style */
+.ppv-stat-card-warning .ppv-stat-value {
+    color: var(--pp-warning, #f59e0b) !important;
+}
+
+/* Mobile responsive for device table */
+@media (max-width: 768px) {
+    .ppv-device-row {
+        grid-template-columns: 1.5fr repeat(7, 1fr) 0.8fr;
+        padding: 8px 10px;
+    }
+
+    .ppv-device-name {
+        font-size: 11px;
+    }
+
+    .ppv-device-fingerprint {
+        display: none;
+    }
+
+    .ppv-mini-bar {
+        width: 14px;
+    }
+
+    .ppv-day-count {
+        font-size: 9px;
+    }
+}
+
+@media (max-width: 480px) {
+    .ppv-device-row {
+        grid-template-columns: 1fr repeat(3, 1fr) 0.8fr;
+    }
+
+    /* Hide older days on very small screens */
+    .ppv-device-row .ppv-device-day-cell:nth-child(2),
+    .ppv-device-row .ppv-device-day-cell:nth-child(3),
+    .ppv-device-row .ppv-device-day-cell:nth-child(4),
+    .ppv-device-row .ppv-device-day-cell:nth-child(5) {
+        display: none;
+    }
+}
+
 /* Stats Main Title */
 .ppv-stats-title {
     display: flex;

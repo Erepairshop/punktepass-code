@@ -44,11 +44,11 @@ class PPV_Receipts {
             'permission_callback' => ['PPV_Permissions', 'check_handler']
         ]);
 
-        // ✅ HAVI BIZONYLAT GENERÁLÁS (POST) - A JavaScript ezt hívja!
+        // ✅ HAVI BIZONYLAT GENERÁLÁS (POST) - A JavaScript ezt hívja! - 🔒 CSRF protected
         register_rest_route('ppv/v1', '/redeem/monthly-receipt', [
             'methods'  => 'POST',
             'callback' => [__CLASS__, 'rest_generate_monthly_receipt'],
-            'permission_callback' => ['PPV_Permissions', 'check_handler']
+            'permission_callback' => ['PPV_Permissions', 'check_handler_with_nonce']
         ]);
 
         // ✅ HAVI BIZONYLAT LETÖLTÉS (PDF)

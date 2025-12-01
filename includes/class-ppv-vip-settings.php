@@ -31,11 +31,11 @@ class PPV_VIP_Settings {
             'permission_callback' => ['PPV_Permissions', 'check_handler']
         ]);
 
-        // Save VIP settings
+        // Save VIP settings - 🔒 CSRF protected
         register_rest_route('ppv/v1', '/vip/save', [
             'methods'  => 'POST',
             'callback' => [__CLASS__, 'rest_save_settings'],
-            'permission_callback' => ['PPV_Permissions', 'check_handler']
+            'permission_callback' => ['PPV_Permissions', 'check_handler_with_nonce']
         ]);
     }
 

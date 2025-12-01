@@ -51,10 +51,11 @@ trait PPV_QR_REST_Trait {
     // 📡 REST ROUTES REGISTRATION
     // ============================================================
     public static function register_rest_routes() {
+        // 🔒 CSRF: POST endpoints use check_handler_with_nonce
         register_rest_route('punktepass/v1', '/pos/scan', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'rest_process_scan'],
-            'permission_callback' => ['PPV_Permissions', 'check_handler'],
+            'permission_callback' => ['PPV_Permissions', 'check_handler_with_nonce'],
         ]);
 
         register_rest_route('punktepass/v1', '/pos/logs', [
@@ -66,13 +67,13 @@ trait PPV_QR_REST_Trait {
         register_rest_route('punktepass/v1', '/pos/sync_offline', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'rest_sync_offline'],
-            'permission_callback' => ['PPV_Permissions', 'check_handler'],
+            'permission_callback' => ['PPV_Permissions', 'check_handler_with_nonce'],
         ]);
 
         register_rest_route('punktepass/v1', '/pos/campaign', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'rest_create_campaign'],
-            'permission_callback' => ['PPV_Permissions', 'check_handler'],
+            'permission_callback' => ['PPV_Permissions', 'check_handler_with_nonce'],
         ]);
 
         register_rest_route('punktepass/v1', '/pos/campaigns', [
@@ -84,19 +85,19 @@ trait PPV_QR_REST_Trait {
         register_rest_route('punktepass/v1', '/pos/campaign/delete', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'rest_delete_campaign'],
-            'permission_callback' => ['PPV_Permissions', 'check_handler'],
+            'permission_callback' => ['PPV_Permissions', 'check_handler_with_nonce'],
         ]);
 
         register_rest_route('punktepass/v1', '/pos/campaign/update', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'rest_update_campaign'],
-            'permission_callback' => ['PPV_Permissions', 'check_handler'],
+            'permission_callback' => ['PPV_Permissions', 'check_handler_with_nonce'],
         ]);
 
         register_rest_route('punktepass/v1', '/pos/campaign/archive', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'rest_archive_campaign'],
-            'permission_callback' => ['PPV_Permissions', 'check_handler'],
+            'permission_callback' => ['PPV_Permissions', 'check_handler_with_nonce'],
         ]);
 
         // ✅ CSV Export endpoint
@@ -120,14 +121,14 @@ trait PPV_QR_REST_Trait {
         register_rest_route('ppv/v1', '/redemption/user-response', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'rest_redemption_user_response'],
-            'permission_callback' => ['PPV_Permissions', 'check_logged_in_user'],
+            'permission_callback' => ['PPV_Permissions', 'check_user_with_nonce'],
         ]);
 
         // Handler confirms or rejects redemption
         register_rest_route('ppv/v1', '/redemption/handler-response', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'rest_redemption_handler_response'],
-            'permission_callback' => ['PPV_Permissions', 'check_handler'],
+            'permission_callback' => ['PPV_Permissions', 'check_handler_with_nonce'],
         ]);
     }
 

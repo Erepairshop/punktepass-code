@@ -546,6 +546,94 @@ class PPV_Permissions {
     }
 
     /**
+     * Validate REST API nonce for CSRF protection
+     *
+     * Checks for nonce in:
+     * 1. X-WP-Nonce header (standard WordPress REST)
+     * 2. _wpnonce parameter (fallback)
+     *
+     * @param WP_REST_Request|null $request Optional request object
+     * @return bool|WP_Error True if valid, WP_Error if invalid
+     */
+    public static function verify_nonce($request = null) {
+        $nonce = null;
+
+        // 1. Check X-WP-Nonce header (preferred)
+        if (!empty($_SERVER['HTTP_X_WP_NONCE'])) {
+            $nonce = sanitize_text_field($_SERVER['HTTP_X_WP_NONCE']);
+        }
+
+        // 2. Check request parameter (fallback)
+        if (!$nonce && $request instanceof WP_REST_Request) {
+            $nonce = $request->get_param('_wpnonce');
+            if ($nonce) {
+                $nonce = sanitize_text_field($nonce);
+            }
+        }
+
+        // 3. Check POST/GET parameter (legacy fallback)
+        if (!$nonce && !empty($_REQUEST['_wpnonce'])) {
+            $nonce = sanitize_text_field($_REQUEST['_wpnonce']);
+        }
+
+        if (!$nonce) {
+            ppv_perm_log("❌ [PPV_Permissions] NONCE MISSING - CSRF check failed");
+            return new WP_Error(
+                'missing_nonce',
+                'Biztonsági token hiányzik. Frissítsd az oldalt és próbáld újra.',
+                ['status' => 403]
+            );
+        }
+
+        // Verify against 'wp_rest' action (standard WordPress REST nonce)
+        if (!wp_verify_nonce($nonce, 'wp_rest')) {
+            ppv_perm_log("❌ [PPV_Permissions] NONCE INVALID - CSRF check failed");
+            return new WP_Error(
+                'invalid_nonce',
+                'Érvénytelen biztonsági token. Frissítsd az oldalt és próbáld újra.',
+                ['status' => 403]
+            );
+        }
+
+        ppv_perm_log("✅ [PPV_Permissions] NONCE VALID");
+        return true;
+    }
+
+    /**
+     * Combined permission check: handler + nonce
+     * Use this for state-changing handler endpoints (POST, PUT, DELETE)
+     *
+     * @return bool|WP_Error True if allowed, WP_Error otherwise
+     */
+    public static function check_handler_with_nonce() {
+        // First check handler permission
+        $handler_check = self::check_handler();
+        if (is_wp_error($handler_check)) {
+            return $handler_check;
+        }
+
+        // Then verify nonce
+        return self::verify_nonce();
+    }
+
+    /**
+     * Combined permission check: logged in user + nonce
+     * Use this for state-changing user endpoints (POST, PUT, DELETE)
+     *
+     * @return bool|WP_Error True if allowed, WP_Error otherwise
+     */
+    public static function check_user_with_nonce() {
+        // First check user is logged in
+        $user_check = self::check_logged_in_user();
+        if (is_wp_error($user_check)) {
+            return $user_check;
+        }
+
+        // Then verify nonce
+        return self::verify_nonce();
+    }
+
+    /**
      * Check if user is logged in (PPV user or WP user)
      * Used for endpoints that require any authenticated user (not just handlers)
      *

@@ -921,6 +921,125 @@ jQuery(document).ready(function($) {
     }
 
     // ============================================================
+    // 📱 DEVICE ACTIVITY
+    // ============================================================
+    let deviceActivityLoaded = false;
+
+    // Load device activity when tab is clicked
+    $('.ppv-stats-tab[data-tab="device-activity"]').on('click', function() {
+        if (!deviceActivityLoaded) {
+            loadDeviceActivity();
+            deviceActivityLoaded = true;
+        }
+    });
+
+    function loadDeviceActivity() {
+        if (!config.device_activity_url) {
+            console.log("📱 [Device Activity] URL not configured");
+            return;
+        }
+
+        const $loading = $('#ppv-device-loading');
+        const $list = $('#ppv-device-activity-list');
+
+        $loading.show();
+
+        $.ajax({
+            url: config.device_activity_url,
+            method: 'GET',
+            data: { filiale_id: currentFilialeId },
+            headers: { 'X-WP-Nonce': nonce },
+            dataType: 'json',
+            cache: false,
+            success: function(res) {
+                $loading.hide();
+
+                if (res.success) {
+                    displayDeviceActivity(res);
+                } else {
+                    $list.html(`<p class="ppv-error-small">${T['error_loading'] || 'Error loading data'}</p>`);
+                }
+            },
+            error: function() {
+                $loading.hide();
+                $list.html(`<p class="ppv-error-small">${T['error_loading'] || 'Error loading data'}</p>`);
+            }
+        });
+    }
+
+    function displayDeviceActivity(data) {
+        const devices = data.devices || [];
+        const dates = data.dates || [];
+        const summary = data.summary || {};
+        const $list = $('#ppv-device-activity-list');
+
+        // Update summary stats
+        $('#ppv-device-count').text(formatNumber(summary.total_devices || 0));
+        $('#ppv-mobile-scanner-count').text(formatNumber(summary.mobile_scanner_count || 0));
+        $('#ppv-suspicious-device-count').text(formatNumber(summary.suspicious_count || 0));
+
+        if (devices.length === 0) {
+            $list.html(`<p class="ppv-no-data">${T['no_device_data'] || 'Noch keine Gerätedaten vorhanden.'}</p>`);
+            return;
+        }
+
+        // Format date headers (show only day name)
+        const dayNames = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+        const dateHeaders = dates.map(d => {
+            const date = new Date(d);
+            return dayNames[date.getDay()];
+        });
+
+        let html = '<div class="ppv-device-table">';
+
+        // Table header
+        html += `
+            <div class="ppv-device-row ppv-device-header">
+                <div class="ppv-device-cell ppv-device-name-cell">${T['device'] || 'Gerät'}</div>
+                ${dateHeaders.map(d => `<div class="ppv-device-cell ppv-device-day-cell">${d}</div>`).join('')}
+                <div class="ppv-device-cell ppv-device-total-cell">${T['total'] || 'Ges.'}</div>
+            </div>
+        `;
+
+        // Device rows
+        devices.forEach(device => {
+            const suspiciousClass = device.is_suspicious ? 'ppv-device-suspicious' : '';
+            const scannerBadge = device.is_mobile_scanner ? '<span class="ppv-badge-scanner">📱</span>' : '';
+            const suspiciousBadge = device.is_suspicious ? '<span class="ppv-badge-warning">⚠️</span>' : '';
+
+            // Generate mini bar chart for daily scans
+            const maxScan = Math.max(...device.daily_scans, 1);
+            const dailyCells = device.daily_scans.map(count => {
+                const height = Math.round((count / maxScan) * 100);
+                const barClass = count > 50 ? 'ppv-bar-high' : count > 20 ? 'ppv-bar-medium' : 'ppv-bar-low';
+                return `
+                    <div class="ppv-device-cell ppv-device-day-cell">
+                        <div class="ppv-mini-bar ${barClass}" style="height: ${Math.max(height, 5)}%;" title="${count} Scans"></div>
+                        <span class="ppv-day-count">${count || '-'}</span>
+                    </div>
+                `;
+            }).join('');
+
+            html += `
+                <div class="ppv-device-row ${suspiciousClass}">
+                    <div class="ppv-device-cell ppv-device-name-cell">
+                        <span class="ppv-device-name">${escapeHtml(device.name)}</span>
+                        ${scannerBadge}${suspiciousBadge}
+                        <span class="ppv-device-fingerprint">${device.fingerprint}</span>
+                    </div>
+                    ${dailyCells}
+                    <div class="ppv-device-cell ppv-device-total-cell">
+                        <strong>${formatNumber(device.total_scans)}</strong>
+                    </div>
+                </div>
+            `;
+        });
+
+        html += '</div>';
+        $list.html(html);
+    }
+
+    // ============================================================
     // 🚀 INIT
     // ============================================================
 

@@ -251,6 +251,9 @@ class PPV_Scan_Monitoring {
 
     /**
      * Get scanner type for a store
+     *
+     * @deprecated Use is_device_mobile_scanner() instead - per-device mobile_scanner flag
+     * This method will be removed in a future version
      */
     public static function get_scanner_type($store_id) {
         global $wpdb;
@@ -328,15 +331,19 @@ class PPV_Scan_Monitoring {
             ];
         }
 
-        // Check store-level scanner type (legacy, for backwards compatibility)
+        // ⚠️ DEPRECATED: Store-level scanner_type check
+        // Use per-device mobile_scanner flag instead (set in ppv_user_devices table)
+        // This fallback will be removed in a future version - migrate stores to device-level settings
         $scanner_type = self::get_scanner_type($store_id);
         if ($scanner_type === 'mobile') {
+            ppv_log("[GPS] ⚠️ DEPRECATED: Using store-level scanner_type='mobile' for store #{$store_id}. Please migrate to per-device mobile_scanner flag.");
             return [
                 'valid' => true,
                 'distance' => null,
                 'reason' => null,
                 'action' => 'none',
-                'skipped' => 'mobile_scanner_store'
+                'skipped' => 'mobile_scanner_store',
+                'deprecated' => true
             ];
         }
 
@@ -663,9 +670,15 @@ class PPV_Scan_Monitoring {
 
     /**
      * Set scanner type for a store
+     *
+     * @deprecated Use per-device mobile_scanner flag instead (ppv_user_devices.mobile_scanner)
+     * Set device as mobile scanner via REST API: POST /punktepass/v1/user-devices/request-mobile-scanner
+     * This method will be removed in a future version
      */
     public static function set_scanner_type($store_id, $type) {
         global $wpdb;
+
+        ppv_log("[Scanner] ⚠️ DEPRECATED: set_scanner_type() called for store #{$store_id}. Use per-device mobile_scanner flag instead.");
 
         if (!in_array($type, ['fixed', 'mobile'])) {
             $type = 'fixed';

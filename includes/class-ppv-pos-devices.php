@@ -25,16 +25,17 @@ class PPV_POS_Devices {
             'permission_callback' => ['PPV_Permissions', 'check_handler']
         ]);
 
+        // 🔒 CSRF protected
         register_rest_route('ppv/v1', '/pos/devices/register', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'register_device'],
-            'permission_callback' => ['PPV_Permissions', 'check_handler']
+            'permission_callback' => ['PPV_Permissions', 'check_handler_with_nonce']
         ]);
 
         register_rest_route('ppv/v1', '/pos/devices/update', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'update_device'],
-            'permission_callback' => ['PPV_Permissions', 'check_handler']
+            'permission_callback' => ['PPV_Permissions', 'check_handler_with_nonce']
         ]);
     }
 

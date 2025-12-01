@@ -169,6 +169,25 @@ class PPV_Stats {
         return true;
     }
 
+    /**
+     * Permission check with CSRF nonce validation
+     * Use this for POST endpoints
+     */
+    public static function check_handler_permission_with_nonce($request = null) {
+        // First check standard permission
+        $perm_check = self::check_handler_permission($request);
+        if (is_wp_error($perm_check)) {
+            return $perm_check;
+        }
+
+        // 🔒 CSRF: Verify nonce
+        if (class_exists('PPV_Permissions')) {
+            return PPV_Permissions::verify_nonce($request);
+        }
+
+        return true;
+    }
+
     // ========================================
     // 📡 REGISTER REST ROUTES
     // ========================================
@@ -221,9 +240,17 @@ class PPV_Stats {
             'permission_callback' => [__CLASS__, 'check_handler_permission']
         ]);
 
+        // 🔒 CSRF protected
         register_rest_route('punktepass/v1', '/stats/request-review', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'rest_request_review'],
+            'permission_callback' => [__CLASS__, 'check_handler_permission_with_nonce']
+        ]);
+
+        // 📱 Device Activity Dashboard - utolsó 7 nap scan-jei eszközönként
+        register_rest_route('punktepass/v1', '/stats/device-activity', [
+            'methods' => 'GET',
+            'callback' => [__CLASS__, 'rest_device_activity'],
             'permission_callback' => [__CLASS__, 'check_handler_permission']
         ]);
 
@@ -265,6 +292,7 @@ class PPV_Stats {
             'export_adv_url' => esc_url(rest_url('punktepass/v1/stats/export-advanced')),
             'scanner_url' => esc_url(rest_url('punktepass/v1/stats/scanners')),
             'suspicious_url' => esc_url(rest_url('punktepass/v1/stats/suspicious')),
+            'device_activity_url' => esc_url(rest_url('punktepass/v1/stats/device-activity')),
             'nonce' => wp_create_nonce('wp_rest'),
             'store_id' => intval($store_id ?? 0),
             'filialen' => $filialen,
@@ -1190,6 +1218,174 @@ class PPV_Stats {
     }
 
     // ========================================
+    // 📱 REST: DEVICE ACTIVITY DASHBOARD
+    // Shows device scans over last 7 days with suspicious activity highlight
+    // ========================================
+    public static function rest_device_activity($req) {
+        global $wpdb;
+
+        ppv_log("📱 [Device Activity] Start");
+
+        // Get store IDs
+        $filiale_param = $req->get_param('filiale_id');
+        $store_ids = self::get_store_ids_for_query($filiale_param);
+
+        if (empty($store_ids)) {
+            return new WP_REST_Response(['success' => false, 'error' => 'No store'], 403);
+        }
+
+        $placeholders = implode(',', array_fill(0, count($store_ids), '%d'));
+        $table_log = $wpdb->prefix . 'ppv_pos_log';
+        $table_devices = $wpdb->prefix . 'ppv_user_devices';
+
+        // Date range: last 7 days
+        $dates = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $dates[] = date('Y-m-d', strtotime("-{$i} days"));
+        }
+        $date_start = $dates[0];
+        $date_end = $dates[6];
+
+        // Get device fingerprints used in this store's scans (from metadata)
+        // We're extracting device_fingerprint from the pos_log metadata JSON
+        $device_scans = $wpdb->get_results($wpdb->prepare("
+            SELECT
+                JSON_UNQUOTE(JSON_EXTRACT(l.metadata, '$.device_fingerprint')) as device_fingerprint,
+                DATE(l.created_at) as scan_date,
+                COUNT(*) as scan_count
+            FROM {$table_log} l
+            WHERE l.store_id IN ({$placeholders})
+              AND l.type = 'qr_scan'
+              AND DATE(l.created_at) >= %s
+              AND DATE(l.created_at) <= %s
+              AND JSON_EXTRACT(l.metadata, '$.device_fingerprint') IS NOT NULL
+              AND JSON_EXTRACT(l.metadata, '$.device_fingerprint') != 'null'
+            GROUP BY device_fingerprint, scan_date
+            ORDER BY device_fingerprint, scan_date
+        ", array_merge($store_ids, [$date_start, $date_end])));
+
+        // Get device details from ppv_user_devices (for scanner devices)
+        $device_details = $wpdb->get_results($wpdb->prepare("
+            SELECT
+                d.device_fingerprint,
+                d.device_name,
+                d.browser_name,
+                d.os_name,
+                d.mobile_scanner,
+                d.last_used_at,
+                d.user_id
+            FROM {$table_devices} d
+            WHERE d.store_id IN ({$placeholders})
+              AND d.device_fingerprint IS NOT NULL
+            GROUP BY d.device_fingerprint
+        ", $store_ids));
+
+        // Create device lookup
+        $device_lookup = [];
+        foreach ($device_details as $d) {
+            $device_lookup[$d->device_fingerprint] = $d;
+        }
+
+        // Organize data by device
+        $devices_data = [];
+        foreach ($device_scans as $scan) {
+            $fp = $scan->device_fingerprint;
+            if (empty($fp) || $fp === 'null') continue;
+
+            if (!isset($devices_data[$fp])) {
+                $devices_data[$fp] = [
+                    'fingerprint' => substr($fp, 0, 8) . '...',
+                    'full_fingerprint' => $fp,
+                    'name' => null,
+                    'browser' => null,
+                    'os' => null,
+                    'is_mobile_scanner' => false,
+                    'daily_scans' => array_fill_keys($dates, 0),
+                    'total_scans' => 0,
+                    'last_activity' => null,
+                ];
+
+                // Add device details if available
+                if (isset($device_lookup[$fp])) {
+                    $d = $device_lookup[$fp];
+                    $devices_data[$fp]['name'] = $d->device_name ?: null;
+                    $devices_data[$fp]['browser'] = $d->browser_name ?: null;
+                    $devices_data[$fp]['os'] = $d->os_name ?: null;
+                    $devices_data[$fp]['is_mobile_scanner'] = (bool)$d->mobile_scanner;
+                    $devices_data[$fp]['last_activity'] = $d->last_used_at;
+                }
+            }
+
+            $devices_data[$fp]['daily_scans'][$scan->scan_date] = intval($scan->scan_count);
+            $devices_data[$fp]['total_scans'] += intval($scan->scan_count);
+        }
+
+        // Calculate suspicious indicators
+        $formatted = [];
+        $avg_total = count($devices_data) > 0 ? array_sum(array_column($devices_data, 'total_scans')) / count($devices_data) : 0;
+
+        foreach ($devices_data as $fp => $device) {
+            // Suspicious indicators
+            $suspicious_reasons = [];
+
+            // 1. High volume: More than 3x average
+            if ($avg_total > 0 && $device['total_scans'] > $avg_total * 3) {
+                $suspicious_reasons[] = 'high_volume';
+            }
+
+            // 2. Unusual activity spike: Any day has more than 50 scans
+            foreach ($device['daily_scans'] as $count) {
+                if ($count > 50) {
+                    $suspicious_reasons[] = 'spike';
+                    break;
+                }
+            }
+
+            // 3. No activity for 5+ days but suddenly active
+            $active_days = array_filter($device['daily_scans'], fn($c) => $c > 0);
+            if (count($active_days) == 1 && $device['total_scans'] > 20) {
+                $suspicious_reasons[] = 'burst';
+            }
+
+            $formatted[] = [
+                'fingerprint' => $device['fingerprint'],
+                'full_fingerprint' => $device['full_fingerprint'],
+                'name' => $device['name'] ?: 'Unbekanntes Gerät',
+                'browser' => $device['browser'],
+                'os' => $device['os'],
+                'is_mobile_scanner' => $device['is_mobile_scanner'],
+                'daily_scans' => array_values($device['daily_scans']),
+                'total_scans' => $device['total_scans'],
+                'last_activity' => $device['last_activity'],
+                'is_suspicious' => !empty($suspicious_reasons),
+                'suspicious_reasons' => $suspicious_reasons,
+            ];
+        }
+
+        // Sort by total scans descending
+        usort($formatted, fn($a, $b) => $b['total_scans'] - $a['total_scans']);
+
+        // Summary
+        $total_devices = count($formatted);
+        $suspicious_count = count(array_filter($formatted, fn($d) => $d['is_suspicious']));
+        $mobile_scanner_count = count(array_filter($formatted, fn($d) => $d['is_mobile_scanner']));
+
+        ppv_log("✅ [Device Activity] Complete: {$total_devices} devices, {$suspicious_count} suspicious");
+
+        return new WP_REST_Response([
+            'success' => true,
+            'devices' => $formatted,
+            'dates' => $dates,
+            'summary' => [
+                'total_devices' => $total_devices,
+                'suspicious_count' => $suspicious_count,
+                'mobile_scanner_count' => $mobile_scanner_count,
+                'avg_scans_per_device' => round($avg_total, 1),
+            ]
+        ], 200, ['Cache-Control' => 'no-store']);
+    }
+
+    // ========================================
     // 🎨 RENDER DASHBOARD
     // ✅ JAVÍTÁS 2: Removed get_translations() call
     // ✅ JAVÍTÁS 3: Translations integration
@@ -1229,6 +1425,9 @@ class PPV_Stats {
                 <button class="ppv-stats-tab" data-tab="suspicious" id="ppv-tab-suspicious-btn">
                     <i class="ri-alarm-warning-line"></i> <?php echo esc_html($T['suspicious_scans'] ?? 'Verdächtige Scans'); ?>
                     <span class="ppv-badge-count" id="ppv-suspicious-badge" style="display:none;"></span>
+                </button>
+                <button class="ppv-stats-tab" data-tab="device-activity" id="ppv-tab-device-activity-btn">
+                    <i class="ri-device-line"></i> <?php echo esc_html($T['device_activity'] ?? 'Geräte'); ?>
                 </button>
             </div>
 
@@ -1434,6 +1633,41 @@ class PPV_Stats {
                     </div>
                 </div>
             </div><!-- END TAB 4: SUSPICIOUS SCANS -->
+
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <!-- TAB 5: DEVICE ACTIVITY -->
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <div class="ppv-stats-tab-content" id="ppv-tab-device-activity" style="display:none;">
+                <div class="ppv-stats-section">
+                    <h3 class="ppv-section-title">📱 <?php echo esc_html($T['device_activity'] ?? 'Geräte-Aktivität'); ?></h3>
+                    <p class="ppv-section-desc"><?php echo esc_html($T['device_activity_desc'] ?? 'Übersicht der Scan-Aktivitäten pro Gerät (letzte 7 Tage).'); ?></p>
+
+                    <!-- Summary Stats -->
+                    <div class="ppv-stats-summary-row" style="margin-bottom: 20px;">
+                        <div class="ppv-stat-card">
+                            <span class="ppv-stat-label"><?php echo esc_html($T['total_devices'] ?? 'Aktive Geräte'); ?></span>
+                            <span class="ppv-stat-value" id="ppv-device-count">0</span>
+                        </div>
+                        <div class="ppv-stat-card">
+                            <span class="ppv-stat-label"><?php echo esc_html($T['mobile_scanners'] ?? 'Mobile Scanner'); ?></span>
+                            <span class="ppv-stat-value" id="ppv-mobile-scanner-count">0</span>
+                        </div>
+                        <div class="ppv-stat-card ppv-stat-card-warning">
+                            <span class="ppv-stat-label"><?php echo esc_html($T['suspicious_devices'] ?? 'Verdächtige Geräte'); ?></span>
+                            <span class="ppv-stat-value" id="ppv-suspicious-device-count">0</span>
+                        </div>
+                    </div>
+
+                    <div id="ppv-device-loading" class="ppv-loading-small" style="display:none;">
+                        <?php echo esc_html($T['loading'] ?? 'Loading...'); ?>
+                    </div>
+
+                    <!-- Device Activity Table -->
+                    <div class="ppv-device-activity-table" id="ppv-device-activity-list">
+                        <p class="ppv-no-data"><?php echo esc_html($T['no_device_data'] ?? 'Noch keine Gerätedaten vorhanden.'); ?></p>
+                    </div>
+                </div>
+            </div><!-- END TAB 5: DEVICE ACTIVITY -->
 
         </div>
 

@@ -219,46 +219,46 @@ if (!class_exists('PPV_Onboarding')) {
                 'permission_callback' => [__CLASS__, 'rest_permission_check']
             ]);
 
-            // Mark welcome shown
+            // Mark welcome shown - 🔒 CSRF protected
             register_rest_route('ppv/v1', '/onboarding/mark-welcome-shown', [
                 'methods' => 'POST',
                 'callback' => [__CLASS__, 'rest_mark_welcome_shown'],
-                'permission_callback' => [__CLASS__, 'rest_permission_check']
+                'permission_callback' => [__CLASS__, 'rest_permission_check_with_nonce']
             ]);
 
-            // Complete step
+            // Complete step - 🔒 CSRF protected
             register_rest_route('ppv/v1', '/onboarding/complete-step', [
                 'methods' => 'POST',
                 'callback' => [__CLASS__, 'rest_complete_step'],
-                'permission_callback' => [__CLASS__, 'rest_permission_check']
+                'permission_callback' => [__CLASS__, 'rest_permission_check_with_nonce']
             ]);
 
-            // Dismiss onboarding
+            // Dismiss onboarding - 🔒 CSRF protected
             register_rest_route('ppv/v1', '/onboarding/dismiss', [
                 'methods' => 'POST',
                 'callback' => [__CLASS__, 'rest_dismiss_onboarding'],
-                'permission_callback' => [__CLASS__, 'rest_permission_check']
+                'permission_callback' => [__CLASS__, 'rest_permission_check_with_nonce']
             ]);
 
-            // Reset onboarding
+            // Reset onboarding - 🔒 CSRF protected
             register_rest_route('ppv/v1', '/onboarding/reset', [
                 'methods' => 'POST',
                 'callback' => [__CLASS__, 'rest_reset_onboarding'],
-                'permission_callback' => [__CLASS__, 'rest_permission_check']
+                'permission_callback' => [__CLASS__, 'rest_permission_check_with_nonce']
             ]);
 
-            // Postpone onboarding (8 hours)
+            // Postpone onboarding (8 hours) - 🔒 CSRF protected
             register_rest_route('ppv/v1', '/onboarding/postpone', [
                 'methods' => 'POST',
                 'callback' => [__CLASS__, 'rest_postpone_onboarding'],
-                'permission_callback' => [__CLASS__, 'rest_permission_check']
+                'permission_callback' => [__CLASS__, 'rest_permission_check_with_nonce']
             ]);
 
-            // Geocode address
+            // Geocode address - 🔒 CSRF protected
             register_rest_route('ppv/v1', '/onboarding/geocode', [
                 'methods' => 'POST',
                 'callback' => [__CLASS__, 'rest_geocode_address'],
-                'permission_callback' => [__CLASS__, 'rest_permission_check']
+                'permission_callback' => [__CLASS__, 'rest_permission_check_with_nonce']
             ]);
         }
 
@@ -304,6 +304,25 @@ if (!class_exists('PPV_Onboarding')) {
 
             ppv_log("❌ [PPV_ONBOARDING] Permission denied: no valid auth");
             return new WP_Error('rest_forbidden', 'Authentication required for onboarding', ['status' => 403]);
+        }
+
+        /**
+         * REST permission check with CSRF nonce validation
+         * Use this for POST endpoints
+         */
+        public static function rest_permission_check_with_nonce() {
+            // First check standard permission
+            $perm_check = self::rest_permission_check();
+            if (is_wp_error($perm_check)) {
+                return $perm_check;
+            }
+
+            // 🔒 CSRF: Verify nonce
+            if (class_exists('PPV_Permissions')) {
+                return PPV_Permissions::verify_nonce();
+            }
+
+            return true;
         }
 
         /**

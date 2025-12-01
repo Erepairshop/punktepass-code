@@ -110,9 +110,11 @@ Státusz: [x] KÉSZ - 2025-12-01
   - Regex validálás (csak alfanumerikus - XSS védelem)
   - Minden endpoint-on alkalmazva
 
-- [ ] **REST NONCE validálás** - `class-ppv-rewards.php:35`
-  - CSRF védelem hiányzik
-  - Minden state-changing endpoint-ra kell
+- [x] **REST NONCE validálás** - `class-ppv-rewards.php:35` ✅ (2025-12-01)
+  - CSRF védelem implementálva
+  - `PPV_Permissions::verify_nonce()` központi függvény
+  - `check_handler_with_nonce()`, `check_user_with_nonce()` combined checks
+  - Minden state-changing POST endpoint-on alkalmazva
 
 - [x] **Rate limiting aktiválás** - `trait-ppv-qr-rest.php`, `class-ppv-redeem.php`
   - ~~Létezik de nincs használva!~~
@@ -169,19 +171,22 @@ Státusz: [x] KÉSZ - 2025-12-01
   - Similarity score megjelenítés
   - **Fájlok:** `ppv-qr-camera.js`, `ppv-lang-de.php`, `ppv-lang-hu.php`
 
-- [ ] **7. Legacy mobile scanner cleanup**
-  - Store-level `scanner_type` megszüntetése
-  - Csak per-device `mobile_scanner` flag maradjon
-  - Backward compatibility check
-  - **Fájlok:** `class-ppv-device-fingerprint.php`, `trait-ppv-qr-rest.php`
+- [x] **7. Legacy mobile scanner cleanup** ✅ (2025-12-01)
+  - Store-level `scanner_type` → DEPRECATED (warnings hozzáadva)
+  - Per-device `mobile_scanner` flag a preferált módszer
+  - Backward compatibility megmaradt (fallback)
+  - Deprecation logok aktívak
+  - **Fájlok:** `class-ppv-scan-monitoring.php`
 
 ### 🟢 ALACSONY Prioritás
 
-- [ ] **8. Device activity dashboard**
+- [x] **8. Device activity dashboard** ✅ (2025-12-01)
+  - REST endpoint: `/punktepass/v1/stats/device-activity`
   - Utolsó 7 nap scan-ek eszközönként
-  - Gyanús aktivitás highlight
-  - Admin UI bővítés
-  - **Fájlok:** új admin page
+  - Gyanús aktivitás highlight (high volume, spike, burst detection)
+  - Mobile scanner badge megjelenítés
+  - Statistika oldalon új "Geräte" tab
+  - **Fájlok:** `class-ppv-stats.php`, `ppv-stats.js`, `ppv-theme-light.css`
 
 - [ ] **9. Fingerprint similarity score**
   - 0-100% hasonlóság számítás
