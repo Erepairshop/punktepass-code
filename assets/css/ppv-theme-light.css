@@ -21041,7 +21041,10 @@ body:not(.ppv-dark) .ppv-insights-line3 {
     font-size: 13px;
 }
 
-/* 2x2 Grid for category buttons - MOBILE OPTIMIZED */
+/* 2x2 Grid for category buttons - MOBILE OPTIMIZED - MAX SPECIFICITY */
+#ppv-feedback-modal .ppv-feedback-categories,
+.ppv-feedback-modal .ppv-feedback-categories,
+div.ppv-feedback-categories,
 .ppv-feedback-categories {
     display: grid !important;
     grid-template-columns: 1fr 1fr !important;
@@ -21052,6 +21055,9 @@ body:not(.ppv-dark) .ppv-insights-line3 {
     box-sizing: border-box !important;
 }
 
+#ppv-feedback-modal .ppv-feedback-cat,
+.ppv-feedback-modal .ppv-feedback-cat,
+button.ppv-feedback-cat,
 .ppv-feedback-cat {
     background: rgba(0,217,255,0.1) !important;
     border: 1px solid rgba(0,217,255,0.2) !important;
@@ -21070,6 +21076,8 @@ body:not(.ppv-dark) .ppv-insights-line3 {
     max-width: none !important;
     box-sizing: border-box !important;
     flex: none !important;
+    float: none !important;
+    margin: 0 !important;
 }
 
 .ppv-feedback-cat:hover {
