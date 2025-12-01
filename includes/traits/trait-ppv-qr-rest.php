@@ -188,7 +188,17 @@ trait PPV_QR_REST_Trait {
         $scanner_name = isset($data['scanner_name']) ? sanitize_text_field($data['scanner_name']) : null;
 
         // 🔒 Device/IP tracking for fraud detection and audit
-        $device_fingerprint = isset($data['device_fingerprint']) ? sanitize_text_field($data['device_fingerprint']) : null;
+        $device_fingerprint = null;
+        if (isset($data['device_fingerprint']) && !empty($data['device_fingerprint'])) {
+            // Use central validation if available
+            if (class_exists('PPV_Device_Fingerprint') && method_exists('PPV_Device_Fingerprint', 'validate_fingerprint')) {
+                $fp_validation = PPV_Device_Fingerprint::validate_fingerprint($data['device_fingerprint'], true);
+                $device_fingerprint = $fp_validation['valid'] ? $fp_validation['sanitized'] : null;
+            } else {
+                // Fallback to basic sanitization
+                $device_fingerprint = sanitize_text_field($data['device_fingerprint']);
+            }
+        }
         $ip_address = self::get_client_ip();
 
         if (empty($qr_code) || empty($store_key)) {

@@ -697,6 +697,16 @@ class PPV_Scan_Monitoring {
             return ['valid' => true, 'is_new' => false, 'trusted_fp' => null, 'skipped' => 'no_fingerprint'];
         }
 
+        // Use central fingerprint validation if available
+        if (class_exists('PPV_Device_Fingerprint') && method_exists('PPV_Device_Fingerprint', 'validate_fingerprint')) {
+            $fp_validation = PPV_Device_Fingerprint::validate_fingerprint($device_fingerprint, true);
+            if (!$fp_validation['valid']) {
+                ppv_log("[PPV_Scan_Monitoring] ⚠️ Invalid fingerprint format rejected");
+                return ['valid' => false, 'is_new' => false, 'trusted_fp' => null, 'error' => $fp_validation['error']];
+            }
+            $device_fingerprint = $fp_validation['sanitized'];
+        }
+
         // Get current trusted fingerprint for this store
         $trusted_fp = $wpdb->get_var($wpdb->prepare(
             "SELECT trusted_device_fingerprint FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
