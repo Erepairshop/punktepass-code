@@ -20984,7 +20984,8 @@ body:not(.ppv-dark) .ppv-insights-line3 {
     max-width: 420px;
     max-height: 85vh;
     border-radius: 20px 20px 0 0;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
     transform: translateY(100%);
     transition: transform 0.3s ease;
 }
@@ -21042,29 +21043,33 @@ body:not(.ppv-dark) .ppv-insights-line3 {
 
 /* 2x2 Grid for category buttons - MOBILE OPTIMIZED */
 .ppv-feedback-categories {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto auto;
-    gap: 10px;
-    width: 100%;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    grid-template-rows: auto auto !important;
+    gap: 10px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
 }
 
 .ppv-feedback-cat {
-    background: rgba(0,217,255,0.1);
-    border: 1px solid rgba(0,217,255,0.2);
-    border-radius: 12px;
-    padding: 14px 8px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    cursor: pointer;
-    transition: all 0.2s;
-    color: #fff;
-    min-height: 70px;
-    width: auto;
-    max-width: none;
+    background: rgba(0,217,255,0.1) !important;
+    border: 1px solid rgba(0,217,255,0.2) !important;
+    border-radius: 12px !important;
+    padding: 14px 8px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    cursor: pointer !important;
+    transition: all 0.2s !important;
+    color: #fff !important;
+    min-height: 70px !important;
+    width: auto !important;
+    max-width: none !important;
+    box-sizing: border-box !important;
+    flex: none !important;
 }
 
 .ppv-feedback-cat:hover {
