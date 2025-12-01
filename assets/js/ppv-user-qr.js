@@ -463,9 +463,9 @@ document.addEventListener("DOMContentLoaded", () => {
              /Firefox/.test(navigator.userAgent) ? 'Firefox' : 'Ismeretlen'
   };
 
-  // Show debug info on screen
-  const qrDisplay = document.getElementById('ppvQrDisplay');
-  if (qrDisplay) {
+  // Show debug info on screen - add to main container (always visible)
+  const mainContainer = document.querySelector('.ppv-user-qr');
+  if (mainContainer) {
     const debugDiv = document.createElement('div');
     debugDiv.style.cssText = 'background:#333;color:#fff;padding:10px;margin-top:10px;border-radius:8px;font-size:12px;text-align:left;';
     debugDiv.innerHTML = `
@@ -476,7 +476,7 @@ document.addEventListener("DOMContentLoaded", () => {
       ${!debugInfo.nfcSupported ? '<br>⚠️ Használj <b>Chrome</b> böngészőt!' : ''}
       ${!debugInfo.isSecureContext ? '<br>⚠️ HTTPS szükséges!' : ''}
     `;
-    qrDisplay.appendChild(debugDiv);
+    mainContainer.appendChild(debugDiv);
   }
 
   if (!nfcSupported) {
