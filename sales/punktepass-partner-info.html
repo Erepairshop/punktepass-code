@@ -33,9 +33,9 @@
         .container { position: relative; z-index: 1; }
         @media print {
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-            body { background: white !important; color: #1e293b !important; font-size: 11px; }
+            body { background: white !important; color: #1e293b !important; font-size: 10px; }
             body::before { display: none !important; }
-            .container { padding: 15px; max-width: 100%; }
+            .container { padding: 10px; max-width: 100%; }
             .no-print, .lang-switcher { display: none !important; }
 
             /* Page break control - prevent breaking inside elements */
@@ -48,10 +48,10 @@
             }
 
             /* Allow page break before major sections */
-            .section { page-break-before: auto; margin-top: 10px; }
+            .section { page-break-before: auto; margin-top: 6px; margin-bottom: 8px; }
 
             /* Keep section title with its content */
-            .section-title { page-break-after: avoid !important; break-after: avoid !important; }
+            .section-title { page-break-after: avoid !important; break-after: avoid !important; margin-bottom: 8px !important; font-size: 14px !important; }
             h2, h3, h4 { page-break-after: avoid !important; break-after: avoid !important; }
 
             /* Keep grids together */
@@ -63,9 +63,77 @@
             /* Orphan/widow control */
             p, li { orphans: 3; widows: 3; }
 
-            .header { padding-top: 10px; padding-right: 90px; border-bottom: 2px solid #e2e8f0; page-break-after: avoid !important; }
-            .logo { width: 70px; top: 10px; }
-            .hero-title { background: none !important; -webkit-text-fill-color: #0284c7 !important; color: #0284c7 !important; font-size: 22px; }
+            /* Compact spacing for print */
+            .comparison { gap: 10px !important; margin-bottom: 10px !important; }
+            .comparison-card { padding: 12px !important; background: white !important; }
+            .comparison-card li { padding: 3px 0 3px 20px !important; font-size: 10px !important; color: #475569 !important; }
+            .comparison-card li[style] { color: #475569 !important; }
+            .comparison-card ul { list-style: none !important; padding-left: 0 !important; }
+            .comparison-card li::before { background: #64748b !important; left: 0 !important; top: 6px !important; width: 6px !important; height: 6px !important; }
+            .how-it-works { gap: 8px !important; margin: 12px 0 !important; }
+            .step { padding: 10px 6px !important; }
+            .step-number { width: 36px !important; height: 36px !important; font-size: 14px !important; margin-bottom: 6px !important; }
+            .features-grid { gap: 8px !important; }
+            .feature-card { padding: 10px 8px !important; }
+            .feature-icon { width: 32px !important; height: 32px !important; font-size: 14px !important; margin-bottom: 6px !important; }
+            .feature-card h3 { font-size: 10px !important; }
+            .feature-card p { font-size: 10px !important; }
+            .security-grid { gap: 8px !important; }
+            .security-card { padding: 10px !important; }
+            .security-card .icon { font-size: 18px !important; margin-bottom: 4px !important; }
+            .security-card h4 { font-size: 10px !important; margin-bottom: 3px !important; }
+            .security-card p { font-size: 10px !important; }
+            .stats-grid { padding: 12px !important; margin: 12px 0 !important; gap: 10px !important; }
+            .stat-card { padding: 6px !important; }
+            .stat-value { font-size: 22px !important; }
+            .stat-label { font-size: 10px !important; }
+            .trust-grid { gap: 8px !important; }
+            .trust-card { padding: 10px !important; }
+            .trust-icon { font-size: 24px !important; margin-bottom: 4px !important; }
+            .trust-card h4 { font-size: 11px !important; }
+            .trust-card p { font-size: 10px !important; }
+            .pricing-section { padding: 16px !important; margin: 14px 0 !important; }
+            .pricing-title { font-size: 18px !important; margin-bottom: 4px !important; }
+            .pricing-subtitle { font-size: 11px !important; margin-bottom: 10px !important; }
+            .pricing-box { padding: 12px 24px !important; margin-bottom: 10px !important; }
+            .pricing-trial { font-size: 13px !important; }
+            .pricing-value { font-size: 28px !important; }
+            .pricing-features { gap: 6px !important; }
+            .pricing-feature { font-size: 10px !important; padding: 2px 0 !important; }
+            .tablet-highlight { padding: 12px !important; margin: 10px auto !important; }
+            .tablet-highlight .icon { font-size: 24px !important; margin-bottom: 4px !important; }
+            .tablet-highlight h4 { font-size: 13px !important; margin-bottom: 4px !important; }
+            .tablet-highlight p { font-size: 10px !important; }
+            /* Keep Pricing + CTA + Footer together on same page */
+            .pricing-section { page-break-before: auto; page-break-after: avoid !important; }
+            .cta-section { page-break-before: avoid !important; padding: 12px !important; margin-top: 6px !important; }
+            .cta-title { font-size: 15px !important; margin-bottom: 3px !important; }
+            .cta-text { font-size: 10px !important; margin-bottom: 6px !important; }
+            .cta-contact { padding: 8px !important; gap: 4px !important; }
+            .cta-contact a { font-size: 10px !important; }
+            .footer { page-break-before: avoid !important; padding: 5px 0 !important; margin-top: 5px !important; }
+            .footer-logo { width: 50px !important; margin-bottom: 4px !important; }
+            .footer p { font-size: 10px !important; }
+            .receipts-section { padding: 12px !important; margin: 10px 0 !important; }
+            .receipts-section h3 { font-size: 13px !important; margin-bottom: 6px !important; }
+            .receipts-section > p { font-size: 10px !important; margin-bottom: 8px !important; }
+            .receipts-grid { gap: 8px !important; }
+            .receipt-card { padding: 10px !important; }
+            .receipt-card .icon { font-size: 20px !important; margin-bottom: 4px !important; }
+            .receipt-card h4 { font-size: 10px !important; }
+            .receipt-card p { font-size: 10px !important; }
+            .updates-section { padding: 10px !important; margin: 10px 0 !important; }
+            .updates-section h3 { font-size: 12px !important; margin-bottom: 4px !important; }
+            .updates-section > p { font-size: 10px !important; margin-bottom: 6px !important; }
+            .updates-list { gap: 4px !important; }
+            .update-item { font-size: 10px !important; }
+            .summary-box { padding: 10px !important; margin-top: 10px !important; }
+            .summary-box h4 { font-size: 11px !important; margin-bottom: 4px !important; }
+            .summary-box p { font-size: 10px !important; }
+
+            .header { padding-top: 8px; padding-right: 90px; border-bottom: 2px solid #e2e8f0; page-break-after: avoid !important; }
+            .logo { width: 60px; top: 8px; }
+            .hero-title { background: none !important; -webkit-text-fill-color: #0284c7 !important; color: #0284c7 !important; font-size: 20px; }
             .tagline, .hero-subtitle { color: #64748b !important; }
             .section-title { color: #1e293b !important; }
             .section-title .icon { background: #0284c7 !important; color: white !important; }
@@ -107,15 +175,17 @@
             .cta-contact { background: #f1f5f9 !important; border: 1px solid #e2e8f0 !important; }
             .cta-contact a { color: #0284c7 !important; }
             .footer { border-top: 1px solid #e2e8f0; color: #64748b !important; page-break-inside: avoid !important; }
-            .ad-section { gap: 15px; }
-            .ad-text h3 { color: #1e293b !important; }
-            .ad-text p { color: #475569 !important; }
-            .ad-list { background: #f0f9ff !important; border: 1px solid #bae6fd !important; }
-            .ad-list h4 { color: #0284c7 !important; }
-            .ad-list ul { color: #475569 !important; }
-            .ad-mockup { background: #f8fafc !important; border: 1px solid #e2e8f0 !important; }
-            .store-card { background: #f0f9ff !important; border: 1px solid #bae6fd !important; }
+            .ad-section { gap: 10px !important; margin: 10px 0 !important; }
+            .ad-text h3 { color: #1e293b !important; font-size: 13px !important; margin-bottom: 6px !important; }
+            .ad-text p { color: #475569 !important; font-size: 10px !important; margin-bottom: 8px !important; }
+            .ad-list { background: #f0f9ff !important; border: 1px solid #bae6fd !important; padding: 10px !important; }
+            .ad-list h4 { color: #0284c7 !important; font-size: 11px !important; margin-bottom: 4px !important; }
+            .ad-list ul { color: #475569 !important; font-size: 10px !important; line-height: 1.4 !important; }
+            .ad-list li { padding: 1px 0 !important; }
+            .ad-mockup { background: #f8fafc !important; border: 1px solid #e2e8f0 !important; padding: 10px !important; }
+            .store-card { background: #f0f9ff !important; border: 1px solid #bae6fd !important; padding: 8px !important; margin-bottom: 6px !important; }
             .store-card div { color: #1e293b !important; }
+            .store-card-faded { margin-bottom: 6px !important; }
             .receipts-section { background: #fffbeb !important; border: 1px solid #fde68a !important; }
             .receipts-section h3 { color: #b45309 !important; }
             .receipts-section p, .receipts-section li { color: #475569 !important; }
@@ -488,6 +558,32 @@
             </div>
         </section>
 
+        <!-- Expected Results - Industry Benchmark -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="icon"><i class="ri-bar-chart-line"></i></span>
+                <span data-i18n="results_title">Erwartete Ergebnisse (Branchendurchschnitt)</span>
+            </h2>
+            <div class="comparison" style="grid-template-columns: 1fr 1fr;">
+                <div class="comparison-card solution">
+                    <h3 style="color:#4ade80;"><i class="ri-user-star-line"></i> <span data-i18n="results_loyalty_title">Mehr Kundenbindung</span></h3>
+                    <ul>
+                        <li data-i18n="results_loyalty_1">+15–35% mehr wiederkehrende Kunden</li>
+                        <li data-i18n="results_loyalty_2">Kunden besuchen 1–2× häufiger</li>
+                        <li data-i18n="results_loyalty_3">VIP-System erhöht Loyalität deutlich</li>
+                    </ul>
+                </div>
+                <div class="comparison-card solution">
+                    <h3 style="color:#60a5fa;"><i class="ri-line-chart-line"></i> <span data-i18n="results_revenue_title">Mehr Umsatz & Reichweite</span></h3>
+                    <ul>
+                        <li data-i18n="results_revenue_1">+10–25% höherer Monatsumsatz</li>
+                        <li data-i18n="results_revenue_2">Durchschnittlich +30–120 neue Kunden/Monat</li>
+                        <li data-i18n="results_revenue_3">0% verlorene Stempelkarten</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
         <!-- Features - 5 columns -->
         <section class="section">
             <h2 class="section-title"><span class="icon"><i class="ri-rocket-2-line"></i></span> <span data-i18n="all_features">Alle Funktionen</span></h2>
@@ -570,27 +666,18 @@
                     </ul>
                 </div>
             </div>
-        </section>
-
-        <!-- Receipts / Bizonylatok -->
-        <section class="receipts-section">
-            <h3><i class="ri-file-list-3-line"></i> <span data-i18n="receipts_title">Digitale Belege für Ihre Buchhaltung</span></h3>
-            <p data-i18n="receipts_desc">Mit PunktePass erhalten Sie automatisch professionelle Belege für jede Prämieneinlösung – perfekt für Ihre Steuererklärung und Buchhaltung.</p>
-            <div class="receipts-grid">
-                <div class="receipt-card">
-                    <div class="icon"><i class="ri-file-text-line"></i></div>
-                    <h4 data-i18n="receipt_single">Einzelbelege</h4>
-                    <p data-i18n="receipt_single_desc">Pro Einlösung ein Beleg mit allen Details</p>
-                </div>
-                <div class="receipt-card">
-                    <div class="icon"><i class="ri-calendar-check-line"></i></div>
-                    <h4 data-i18n="receipt_monthly">Monatsübersicht</h4>
-                    <p data-i18n="receipt_monthly_desc">Alle Einlösungen eines Monats zusammengefasst</p>
-                </div>
-                <div class="receipt-card">
-                    <div class="icon"><i class="ri-download-cloud-2-line"></i></div>
-                    <h4 data-i18n="receipt_export">PDF Export</h4>
-                    <p data-i18n="receipt_export_desc">Herunterladen und ausdrucken jederzeit</p>
+            <!-- Referral Program -->
+            <div class="comparison" style="margin-top: 16px;">
+                <div class="comparison-card solution" style="border-color: rgba(34, 197, 94, 0.4); background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(22, 163, 74, 0.05)); grid-column: span 2;">
+                    <h3 style="color: #4ade80;"><i class="ri-user-add-line"></i> <span data-i18n="referral_title">Empfehlungsprogramm – Freunde werben Freunde</span></h3>
+                    <ul style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px 20px;">
+                        <li style="color: #dcfce7;" data-i18n="referral_1">Jeder Kunde bekommt einen persönlichen Einladungslink</li>
+                        <li style="color: #dcfce7;" data-i18n="referral_2">Teilen per WhatsApp, QR-Code oder Link</li>
+                        <li style="color: #dcfce7;" data-i18n="referral_3">Neukunde registriert sich & sammelt erste Punkte</li>
+                        <li style="color: #dcfce7;" data-i18n="referral_4">Beide erhalten automatisch Bonus-Punkte</li>
+                        <li style="color: #dcfce7;" data-i18n="referral_5">Sie definieren die Belohnung (Punkte/Geschenk)</li>
+                        <li style="color: #dcfce7;" data-i18n="referral_6">Kostenlose Neukundengewinnung durch Stammkunden</li>
+                    </ul>
                 </div>
             </div>
         </section>
@@ -646,6 +733,127 @@
             </div>
         </section>
 
+        <!-- Receipts / Bizonylatok -->
+        <section class="receipts-section">
+            <h3><i class="ri-file-list-3-line"></i> <span data-i18n="receipts_title">Digitale Belege für Ihre Buchhaltung</span></h3>
+            <p data-i18n="receipts_desc">Mit PunktePass erhalten Sie automatisch professionelle Belege für jede Prämieneinlösung – perfekt für Ihre Steuererklärung und Buchhaltung.</p>
+            <div class="receipts-grid">
+                <div class="receipt-card">
+                    <div class="icon"><i class="ri-file-text-line"></i></div>
+                    <h4 data-i18n="receipt_single">Einzelbelege</h4>
+                    <p data-i18n="receipt_single_desc">Pro Einlösung ein Beleg mit allen Details</p>
+                </div>
+                <div class="receipt-card">
+                    <div class="icon"><i class="ri-calendar-check-line"></i></div>
+                    <h4 data-i18n="receipt_monthly">Monatsübersicht</h4>
+                    <p data-i18n="receipt_monthly_desc">Alle Einlösungen eines Monats zusammengefasst</p>
+                </div>
+                <div class="receipt-card">
+                    <div class="icon"><i class="ri-download-cloud-2-line"></i></div>
+                    <h4 data-i18n="receipt_export">PDF Export</h4>
+                    <p data-i18n="receipt_export_desc">Herunterladen und ausdrucken jederzeit</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Stats inline -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">2x</div>
+                <div class="stat-label" data-i18n="stat_1">Mehr Stammkunden</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">0%</div>
+                <div class="stat-label" data-i18n="stat_2">Verlorene Karten</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">24/7</div>
+                <div class="stat-label" data-i18n="stat_3">Statistik-Zugang</div>
+            </div>
+        </div>
+
+        <!-- Package Contents -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="icon"><i class="ri-archive-line"></i></span>
+                <span data-i18n="package_title">Was ist im Paket enthalten?</span>
+            </h2>
+
+            <div class="features-grid" style="grid-template-columns: repeat(3, 1fr); gap: 16px;">
+
+                <!-- Smartphone -->
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="ri-smartphone-line"></i></div>
+                    <h3 data-i18n="package_phone_title">Android-Scanner Smartphone</h3>
+                    <p data-i18n="package_phone_desc">Voll eingerichtet, sofort einsatzbereit</p>
+                </div>
+
+                <!-- Stand -->
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="ri-base-station-line"></i></div>
+                    <h3 data-i18n="package_stand_title">Professioneller Tischständer</h3>
+                    <p data-i18n="package_stand_desc">Stabil, winkelverstellbar, rutschfest</p>
+                </div>
+
+                <!-- Loyalty System -->
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="ri-medal-line"></i></div>
+                    <h3 data-i18n="package_loyalty_title">Komplettes Bonus-System</h3>
+                    <p data-i18n="package_loyalty_desc">QR-Punkte, VIP, Prämien, Kampagnen</p>
+                </div>
+
+                <!-- Business Listing -->
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="ri-store-2-line"></i></div>
+                    <h3 data-i18n="package_listing_title">Ihr Geschäft in der App</h3>
+                    <p data-i18n="package_listing_desc">Logo, Öffnungszeiten, Navigation</p>
+                </div>
+
+                <!-- Accounting -->
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="ri-file-list-line"></i></div>
+                    <h3 data-i18n="package_invoice_title">Digitale Belege</h3>
+                    <p data-i18n="package_invoice_desc">Einzelbelege & Monatsübersicht</p>
+                </div>
+
+                <!-- Support -->
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="ri-customer-service-2-line"></i></div>
+                    <h3 data-i18n="package_support_title">Persönlicher Support</h3>
+                    <p data-i18n="package_support_desc">WhatsApp & E-Mail Hilfe</p>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Trust -->
+        <section class="section">
+            <h2 class="section-title"><span class="icon"><i class="ri-verified-badge-line"></i></span> <span data-i18n="trust_title">Warum Sie uns vertrauen können</span></h2>
+            <div class="trust-grid">
+                <div class="trust-card">
+                    <div class="trust-icon"><i class="ri-building-4-line" style="color: #3b82f6;"></i></div>
+                    <div class="trust-text">
+                        <h4 data-i18n="trust_1_title">Made in Germany</h4>
+                        <p data-i18n="trust_1_desc">Entwickelt & gehostet in Deutschland</p>
+                    </div>
+                </div>
+                <div class="trust-card">
+                    <div class="trust-icon"><i class="ri-shield-keyhole-line" style="color: #22c55e;"></i></div>
+                    <div class="trust-text">
+                        <h4 data-i18n="trust_2_title">DSGVO-Konform</h4>
+                        <p data-i18n="trust_2_desc">Vollständig EU-datenschutzkonform</p>
+                    </div>
+                </div>
+                <div class="trust-card">
+                    <div class="trust-icon"><i class="ri-customer-service-2-line" style="color: #8b5cf6;"></i></div>
+                    <div class="trust-text">
+                        <h4 data-i18n="trust_3_title">Persönlicher Support</h4>
+                        <p data-i18n="trust_3_desc">Schnelle Hilfe per E-Mail</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Security - 3 columns -->
         <section class="section">
             <h2 class="section-title"><span class="icon"><i class="ri-shield-check-line"></i></span> <span data-i18n="security_title">Betrugssicher – So schützt PunktePass Sie</span></h2>
@@ -684,50 +892,6 @@
             <div class="summary-box">
                 <h4><i class="ri-checkbox-circle-fill"></i> <span data-i18n="security_summary_title">Fazit: Betrug ist praktisch unmöglich</span></h4>
                 <p data-i18n="security_summary_desc">Durch QR-Codes, GPS, Gerätebindung und Scan-Limits ist Manipulation ausgeschlossen.</p>
-            </div>
-        </section>
-
-        <!-- Stats inline -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-value">2x</div>
-                <div class="stat-label" data-i18n="stat_1">Mehr Stammkunden</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value">0%</div>
-                <div class="stat-label" data-i18n="stat_2">Verlorene Karten</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value">24/7</div>
-                <div class="stat-label" data-i18n="stat_3">Statistik-Zugang</div>
-            </div>
-        </div>
-
-        <!-- Trust -->
-        <section class="section">
-            <h2 class="section-title"><span class="icon"><i class="ri-verified-badge-line"></i></span> <span data-i18n="trust_title">Warum Sie uns vertrauen können</span></h2>
-            <div class="trust-grid">
-                <div class="trust-card">
-                    <div class="trust-icon"><i class="ri-building-4-line" style="color: #3b82f6;"></i></div>
-                    <div class="trust-text">
-                        <h4 data-i18n="trust_1_title">Made in Germany</h4>
-                        <p data-i18n="trust_1_desc">Entwickelt & gehostet in Deutschland</p>
-                    </div>
-                </div>
-                <div class="trust-card">
-                    <div class="trust-icon"><i class="ri-shield-keyhole-line" style="color: #22c55e;"></i></div>
-                    <div class="trust-text">
-                        <h4 data-i18n="trust_2_title">DSGVO-Konform</h4>
-                        <p data-i18n="trust_2_desc">Vollständig EU-datenschutzkonform</p>
-                    </div>
-                </div>
-                <div class="trust-card">
-                    <div class="trust-icon"><i class="ri-customer-service-2-line" style="color: #8b5cf6;"></i></div>
-                    <div class="trust-text">
-                        <h4 data-i18n="trust_3_title">Persönlicher Support</h4>
-                        <p data-i18n="trust_3_desc">Schnelle Hilfe per E-Mail</p>
-                    </div>
-                </div>
             </div>
         </section>
 
@@ -997,7 +1161,7 @@
                 trust_2_title: 'DSGVO-Konform',
                 trust_2_desc: 'Vollständig EU-datenschutzkonform',
                 trust_3_title: 'Persönlicher Support',
-                trust_3_desc: 'Schnelle Hilfe per E-Mail',
+                trust_3_desc: 'Schnelle Hilfe per WhatsApp & E-Mail',
                 updates_title: 'Ständige Weiterentwicklung',
                 updates_desc: 'PunktePass wird kontinuierlich verbessert. Neue Funktionen regelmäßig!',
                 update_1: 'Regelmäßige Updates',
@@ -1023,7 +1187,39 @@
                 cta_title: 'Bereit loszulegen?',
                 cta_text: 'Starten Sie noch heute Ihre 30-tägige kostenlose Testphase!',
                 support_hours: 'Mo-Sa 09:00-18:00',
-                footer_rights: 'Alle Rechte vorbehalten.'
+                footer_rights: 'Alle Rechte vorbehalten.',
+                // Referral Program
+                referral_title: 'Empfehlungsprogramm – Freunde werben Freunde',
+                referral_1: 'Jeder Kunde bekommt einen persönlichen Einladungslink',
+                referral_2: 'Teilen per WhatsApp, QR-Code oder Link',
+                referral_3: 'Neukunde registriert sich & sammelt erste Punkte',
+                referral_4: 'Beide erhalten automatisch Bonus-Punkte',
+                referral_5: 'Sie definieren die Belohnung (Punkte/Geschenk)',
+                referral_6: 'Kostenlose Neukundengewinnung durch Stammkunden',
+                // Expected Results
+                results_title: 'Erwartete Ergebnisse (Branchendurchschnitt)',
+                results_loyalty_title: 'Mehr Kundenbindung',
+                results_loyalty_1: '+15–35% mehr wiederkehrende Kunden',
+                results_loyalty_2: 'Kunden besuchen 1–2× häufiger',
+                results_loyalty_3: 'VIP-System erhöht Loyalität deutlich',
+                results_revenue_title: 'Mehr Umsatz & Reichweite',
+                results_revenue_1: '+10–25% höherer Monatsumsatz',
+                results_revenue_2: 'Durchschnittlich +30–120 neue Kunden/Monat',
+                results_revenue_3: '0% verlorene Stempelkarten',
+                // Package descriptions
+                package_title: 'Was ist im Paket enthalten?',
+                package_phone_title: 'Android-Scanner Smartphone',
+                package_phone_desc: 'Voll eingerichtet, sofort einsatzbereit',
+                package_stand_title: 'Professioneller Tischständer',
+                package_stand_desc: 'Stabil, winkelverstellbar, rutschfest',
+                package_loyalty_title: 'Komplettes Bonus-System',
+                package_loyalty_desc: 'QR-Punkte, VIP, Prämien, Kampagnen',
+                package_listing_title: 'Ihr Geschäft in der App',
+                package_listing_desc: 'Logo, Öffnungszeiten, Navigation',
+                package_invoice_title: 'Digitale Belege',
+                package_invoice_desc: 'Einzelbelege & Monatsübersicht',
+                package_support_title: 'Persönlicher Support',
+                package_support_desc: 'WhatsApp & E-Mail Hilfe'
             },
             hu: {
                 tagline: 'A digitális forradalom a hűségprogramjához',
@@ -1141,7 +1337,7 @@
                 trust_2_title: 'GDPR-konform',
                 trust_2_desc: 'Teljes EU adatvédelmi megfelelés',
                 trust_3_title: 'Személyes támogatás',
-                trust_3_desc: 'Gyors segítség e-mailben',
+                trust_3_desc: 'Gyors segítség WhatsApp-on & e-mailben',
                 updates_title: 'Folyamatos fejlesztés',
                 updates_desc: 'A PunktePass folyamatosan fejlődik. Rendszeresen új funkciók!',
                 update_1: 'Rendszeres frissítések',
@@ -1167,7 +1363,39 @@
                 cta_title: 'Készen áll a kezdésre?',
                 cta_text: 'Indítsa el még ma a 30 napos ingyenes próbaidőszakot!',
                 support_hours: 'H-Szo 09:00-18:00',
-                footer_rights: 'Minden jog fenntartva.'
+                footer_rights: 'Minden jog fenntartva.',
+                // Referral Program
+                referral_title: 'Ajánlóprogram – Barátok hoznak barátokat',
+                referral_1: 'Minden ügyfél személyes meghívólinket kap',
+                referral_2: 'Megosztás WhatsApp-on, QR-kóddal vagy linkkel',
+                referral_3: 'Az új ügyfél regisztrál és pontokat gyűjt',
+                referral_4: 'Mindketten automatikusan bónuszpontokat kapnak',
+                referral_5: 'Ön határozza meg a jutalmat (pont/ajándék)',
+                referral_6: 'Ingyenes ügyfélszerzés törzsvendégeken keresztül',
+                // Expected Results
+                results_title: 'Várható eredmények (iparági átlag)',
+                results_loyalty_title: 'Több ügyfélhűség',
+                results_loyalty_1: '+15–35% több visszatérő ügyfél',
+                results_loyalty_2: 'Az ügyfelek 1–2× gyakrabban látogatnak',
+                results_loyalty_3: 'A VIP-rendszer jelentősen növeli a hűséget',
+                results_revenue_title: 'Több bevétel & elérés',
+                results_revenue_1: '+10–25% magasabb havi bevétel',
+                results_revenue_2: 'Átlagosan +30–120 új ügyfél/hónap',
+                results_revenue_3: '0% elveszett bélyegzőkártya',
+                // Package descriptions
+                package_title: 'Mi van a csomagban?',
+                package_phone_title: 'Android szkenner okostelefon',
+                package_phone_desc: 'Teljesen beállítva, azonnal használható',
+                package_stand_title: 'Professzionális asztali állvány',
+                package_stand_desc: 'Stabil, dönthető, csúszásmentes',
+                package_loyalty_title: 'Teljes bónusz rendszer',
+                package_loyalty_desc: 'QR-pontok, VIP, jutalmak, kampányok',
+                package_listing_title: 'Az Ön üzlete az appban',
+                package_listing_desc: 'Logó, nyitvatartás, navigáció',
+                package_invoice_title: 'Digitális bizonylatok',
+                package_invoice_desc: 'Egyedi bizonylatok & havi összesítő',
+                package_support_title: 'Személyes támogatás',
+                package_support_desc: 'WhatsApp & E-mail segítség'
             },
             ro: {
                 tagline: 'Revoluția digitală pentru programul dvs. de fidelitate',
@@ -1285,7 +1513,7 @@
                 trust_2_title: 'Conform GDPR',
                 trust_2_desc: 'Complet conform cu protecția datelor UE',
                 trust_3_title: 'Suport personal',
-                trust_3_desc: 'Ajutor rapid prin e-mail',
+                trust_3_desc: 'Ajutor rapid prin WhatsApp & e-mail',
                 updates_title: 'Dezvoltare continuă',
                 updates_desc: 'PunktePass este îmbunătățit continuu. Funcții noi în mod regulat!',
                 update_1: 'Actualizări regulate',
@@ -1311,7 +1539,39 @@
                 cta_title: 'Gata să începeți?',
                 cta_text: 'Începeți azi perioada de probă gratuită de 30 de zile!',
                 support_hours: 'Lu-Sâ 09:00-18:00',
-                footer_rights: 'Toate drepturile rezervate.'
+                footer_rights: 'Toate drepturile rezervate.',
+                // Referral Program
+                referral_title: 'Program de recomandare – Prietenii aduc prieteni',
+                referral_1: 'Fiecare client primește un link personal de invitație',
+                referral_2: 'Partajare prin WhatsApp, cod QR sau link',
+                referral_3: 'Noul client se înregistrează și colectează puncte',
+                referral_4: 'Ambii primesc automat puncte bonus',
+                referral_5: 'Dvs. definiți recompensa (puncte/cadou)',
+                referral_6: 'Achiziție gratuită de clienți prin clienți fideli',
+                // Expected Results
+                results_title: 'Rezultate așteptate (medie din industrie)',
+                results_loyalty_title: 'Mai multă loialitate',
+                results_loyalty_1: '+15–35% mai mulți clienți care revin',
+                results_loyalty_2: 'Clienții vizitează de 1–2× mai des',
+                results_loyalty_3: 'Sistemul VIP crește semnificativ loialitatea',
+                results_revenue_title: 'Mai multe venituri & acoperire',
+                results_revenue_1: '+10–25% venituri lunare mai mari',
+                results_revenue_2: 'În medie +30–120 clienți noi/lună',
+                results_revenue_3: '0% carduri de ștampile pierdute',
+                // Package descriptions
+                package_title: 'Ce este inclus în pachet?',
+                package_phone_title: 'Smartphone Android scanner',
+                package_phone_desc: 'Complet configurat, gata de utilizare',
+                package_stand_title: 'Suport profesional de masă',
+                package_stand_desc: 'Stabil, reglabil, anti-alunecare',
+                package_loyalty_title: 'Sistem complet de bonusuri',
+                package_loyalty_desc: 'Puncte QR, VIP, recompense, campanii',
+                package_listing_title: 'Afacerea dvs. în aplicație',
+                package_listing_desc: 'Logo, program, navigație',
+                package_invoice_title: 'Documente digitale',
+                package_invoice_desc: 'Documente individuale & raport lunar',
+                package_support_title: 'Suport personal',
+                package_support_desc: 'Ajutor WhatsApp & E-mail'
             }
         };
 

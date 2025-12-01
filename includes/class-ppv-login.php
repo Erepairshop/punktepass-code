@@ -695,13 +695,15 @@ public static function render_landing_page($atts) {
                     PPV_Device_Fingerprint::track_login($user->id, $fingerprint, 'password');
                 }
 
-                // 🌐 Save user's browser language preference
+                // 🌐 Save user's browser language preference + set cookie
                 $browser_lang = self::get_current_lang();
                 if (!empty($browser_lang)) {
                     $wpdb->update("{$prefix}ppv_users", ['language' => $browser_lang], ['id' => $user->id], ['%s'], ['%d']);
+                    $domain = $_SERVER['HTTP_HOST'] ?? '';
+                    setcookie('ppv_lang', $browser_lang, time() + (86400 * 365), '/', $domain, is_ssl(), false);
                 }
 
-                ppv_log("✅ [PPV_Login] Vendor logged in (#{$user->id}, store={$user->vendor_store_id})");
+                ppv_log("✅ [PPV_Login] Vendor logged in (#{$user->id}, store={$user->vendor_store_id}, lang={$browser_lang})");
 
                 wp_send_json_success([
                     'message' => PPV_Lang::t('login_success'),
@@ -805,10 +807,12 @@ public static function render_landing_page($atts) {
                 PPV_Device_Fingerprint::track_login($user->id, $fingerprint, 'password');
             }
 
-            // 🌐 Save user's browser language preference
+            // 🌐 Save user's browser language preference + set cookie
             $browser_lang = self::get_current_lang();
             if (!empty($browser_lang)) {
                 $wpdb->update("{$prefix}ppv_users", ['language' => $browser_lang], ['id' => $user->id], ['%s'], ['%d']);
+                $domain = $_SERVER['HTTP_HOST'] ?? '';
+                setcookie('ppv_lang', $browser_lang, time() + (86400 * 365), '/', $domain, is_ssl(), false);
             }
 
             ppv_log("✅ [PPV_Login] User logged in (#{$user->id}, lang={$browser_lang})");
@@ -1133,7 +1137,13 @@ public static function render_landing_page($atts) {
                 ppv_log("✅ [PPV_Login] Google ID + language updated for user #{$user->id}");
             }
         }
-        
+
+        // 🌐 Set language cookie
+        if (!empty($browser_lang)) {
+            $domain = $_SERVER['HTTP_HOST'] ?? '';
+            setcookie('ppv_lang', $browser_lang, time() + (86400 * 365), '/', $domain, is_ssl(), false);
+        }
+
         // 🔐 Log user in (Session + Token)
         // 🔒 Security: Regenerate session ID to prevent session fixation
         if (session_status() === PHP_SESSION_ACTIVE) {
@@ -1318,6 +1328,9 @@ public static function render_landing_page($atts) {
             ));
         }
 
+        // 🌐 Get user's browser language
+        $browser_lang = self::get_current_lang();
+
         // 🆕 Create new user if doesn't exist
         if (!$user) {
             // Apple may hide email, generate placeholder if needed
@@ -1333,10 +1346,11 @@ public static function render_landing_page($atts) {
                     'first_name' => $first_name,
                     'last_name' => $last_name,
                     'apple_id' => $apple_id,
+                    'language' => $browser_lang,
                     'created_at' => current_time('mysql'),
                     'active' => 1
                 ],
-                ['%s', '%s', '%s', '%s', '%s', '%s', '%d']
+                ['%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d']
             );
 
             if ($insert_result === false) {
@@ -1352,28 +1366,38 @@ public static function render_landing_page($atts) {
                 $user_id
             ));
         } else {
-            // Update Apple ID if missing
+            // Update Apple ID if missing + always update language
+            $update_data = ['language' => $browser_lang];
+            $update_format = ['%s'];
+
             if (empty($user->apple_id)) {
-                $wpdb->update(
-                    "{$prefix}ppv_users",
-                    ['apple_id' => $apple_id],
-                    ['id' => $user->id],
-                    ['%s'],
-                    ['%d']
-                );
-                ppv_log("✅ [PPV_Login] Apple ID updated for user #{$user->id}");
+                $update_data['apple_id'] = $apple_id;
+                $update_format[] = '%s';
             }
 
             // Update name if we have it and user doesn't
             if (!empty($first_name) && empty($user->first_name)) {
-                $wpdb->update(
-                    "{$prefix}ppv_users",
-                    ['first_name' => $first_name, 'last_name' => $last_name],
-                    ['id' => $user->id],
-                    ['%s', '%s'],
-                    ['%d']
-                );
+                $update_data['first_name'] = $first_name;
+                $update_data['last_name'] = $last_name;
+                $update_format[] = '%s';
+                $update_format[] = '%s';
             }
+
+            $wpdb->update(
+                "{$prefix}ppv_users",
+                $update_data,
+                ['id' => $user->id],
+                $update_format,
+                ['%d']
+            );
+
+            ppv_log("✅ [PPV_Login] Apple user updated (#{$user->id}): lang={$browser_lang}");
+        }
+
+        // 🌐 Set language cookie
+        if (!empty($browser_lang)) {
+            $domain = $_SERVER['HTTP_HOST'] ?? '';
+            setcookie('ppv_lang', $browser_lang, time() + (86400 * 365), '/', $domain, is_ssl(), false);
         }
 
         // 🔐 Log user in (Session + Token)

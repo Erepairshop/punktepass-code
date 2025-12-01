@@ -566,7 +566,21 @@ class PPV_QR {
             }
             wp_enqueue_script('ppv-qr', PPV_PLUGIN_URL . 'assets/js/ppv-qr-init.js', $init_deps, $js_version, true);
 
+            // 🌐 Language priority: Cookie > GET > DB > default
             $lang = sanitize_text_field($_COOKIE['ppv_lang'] ?? '');
+            if (empty($lang) && isset($_GET['lang'])) {
+                $lang = sanitize_text_field($_GET['lang']);
+            }
+            if ((empty($lang) || !in_array($lang, ['de', 'hu', 'ro'])) && !empty($_SESSION['ppv_user_id'])) {
+                global $wpdb;
+                $user_lang = $wpdb->get_var($wpdb->prepare(
+                    "SELECT language FROM {$wpdb->prefix}ppv_users WHERE id=%d LIMIT 1",
+                    intval($_SESSION['ppv_user_id'])
+                ));
+                if (!empty($user_lang) && in_array($user_lang, ['de', 'hu', 'ro'])) {
+                    $lang = $user_lang;
+                }
+            }
             if (empty($lang) || !in_array($lang, ['de', 'hu', 'ro'])) {
                 $lang = defined('PPV_LANG_ACTIVE') ? PPV_LANG_ACTIVE : 'de';
             }
@@ -701,7 +715,21 @@ class PPV_QR {
         }
         ppv_log("✅ [QR_CENTER] check_handler() PASSED");
 
+        // 🌐 Language priority: Cookie > GET > DB > default
         $lang = sanitize_text_field($_COOKIE['ppv_lang'] ?? '');
+        if (empty($lang) && isset($_GET['lang'])) {
+            $lang = sanitize_text_field($_GET['lang']);
+        }
+        if ((empty($lang) || !in_array($lang, ['de', 'hu', 'ro'])) && !empty($_SESSION['ppv_user_id'])) {
+            global $wpdb;
+            $user_lang = $wpdb->get_var($wpdb->prepare(
+                "SELECT language FROM {$wpdb->prefix}ppv_users WHERE id=%d LIMIT 1",
+                intval($_SESSION['ppv_user_id'])
+            ));
+            if (!empty($user_lang) && in_array($user_lang, ['de', 'hu', 'ro'])) {
+                $lang = $user_lang;
+            }
+        }
         if (empty($lang) || !in_array($lang, ['de', 'hu', 'ro'])) {
             $lang = defined('PPV_LANG_ACTIVE') ? PPV_LANG_ACTIVE : 'de';
         }
