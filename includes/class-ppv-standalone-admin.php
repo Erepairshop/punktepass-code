@@ -850,7 +850,11 @@ class PPV_Standalone_Admin {
      * Admin fejléc HTML
      */
     private static function get_admin_header($current_page = 'dashboard') {
+        global $wpdb;
         $admin_email = $_SESSION['ppv_admin_email'] ?? 'Admin';
+
+        // Get notification counts
+        $counts = self::get_notification_counts();
         ?>
         <!DOCTYPE html>
         <html lang="hu">
@@ -900,6 +904,31 @@ class PPV_Standalone_Admin {
                 .admin-nav a.active {
                     background: rgba(0, 230, 255, 0.1);
                     color: #00e6ff;
+                }
+                .admin-nav a {
+                    position: relative;
+                }
+                .nav-badge {
+                    position: absolute;
+                    top: -5px;
+                    right: -5px;
+                    background: #f44336;
+                    color: #fff;
+                    font-size: 10px;
+                    font-weight: 700;
+                    min-width: 18px;
+                    height: 18px;
+                    border-radius: 9px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 0 5px;
+                    box-shadow: 0 2px 8px rgba(244, 67, 54, 0.5);
+                    animation: pulse-badge 2s infinite;
+                }
+                @keyframes pulse-badge {
+                    0%, 100% { transform: scale(1); }
+                    50% { transform: scale(1.1); }
                 }
                 .admin-user {
                     display: flex;
@@ -1092,18 +1121,23 @@ class PPV_Standalone_Admin {
                     </a>
                     <a href="/admin/device-requests" class="<?php echo $current_page === 'device-requests' ? 'active' : ''; ?>">
                         <i class="ri-smartphone-line"></i> Készülékek
+                        <?php if ($counts['device_requests'] > 0): ?><span class="nav-badge"><?php echo $counts['device_requests']; ?></span><?php endif; ?>
                     </a>
                     <a href="/admin/support" class="<?php echo $current_page === 'support' ? 'active' : ''; ?>">
                         <i class="ri-customer-service-line"></i> Támogatás
+                        <?php if ($counts['support'] > 0): ?><span class="nav-badge"><?php echo $counts['support']; ?></span><?php endif; ?>
                     </a>
                     <a href="/admin/renewals" class="<?php echo $current_page === 'renewals' ? 'active' : ''; ?>">
                         <i class="ri-refresh-line"></i> Megújítások
+                        <?php if ($counts['renewals'] > 0): ?><span class="nav-badge"><?php echo $counts['renewals']; ?></span><?php endif; ?>
                     </a>
                     <a href="/admin/suspicious-scans" class="<?php echo $current_page === 'suspicious-scans' ? 'active' : ''; ?>">
                         <i class="ri-alarm-warning-line"></i> Gyanús
+                        <?php if ($counts['suspicious'] > 0): ?><span class="nav-badge"><?php echo $counts['suspicious']; ?></span><?php endif; ?>
                     </a>
                     <a href="/admin/pending-scans" class="<?php echo $current_page === 'pending-scans' ? 'active' : ''; ?>">
                         <i class="ri-time-line"></i> Függő
+                        <?php if ($counts['pending'] > 0): ?><span class="nav-badge"><?php echo $counts['pending']; ?></span><?php endif; ?>
                     </a>
                     <a href="/admin/devices" class="<?php echo $current_page === 'devices' ? 'active' : ''; ?>">
                         <i class="ri-device-line"></i> Eszközök
@@ -1136,6 +1170,61 @@ class PPV_Standalone_Admin {
         </body>
         </html>
         <?php
+    }
+
+    /**
+     * Get notification counts for admin menu badges
+     */
+    private static function get_notification_counts() {
+        global $wpdb;
+
+        // Cache key for performance
+        $cache_key = 'ppv_admin_nav_counts';
+        $cached = wp_cache_get($cache_key);
+        if ($cached !== false) {
+            return $cached;
+        }
+
+        $counts = [
+            'device_requests' => 0,
+            'support' => 0,
+            'renewals' => 0,
+            'suspicious' => 0,
+            'pending' => 0
+        ];
+
+        // Pending device requests (new/pending status)
+        $counts['device_requests'] = intval($wpdb->get_var(
+            "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_device_requests WHERE status = 'pending'"
+        ));
+
+        // New support tickets (status = 'new')
+        $counts['support'] = intval($wpdb->get_var(
+            "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_support_tickets WHERE status = 'new'"
+        ));
+
+        // Pending renewal requests
+        $counts['renewals'] = intval($wpdb->get_var(
+            "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_subscription_renewal_requests WHERE status = 'pending'"
+        ));
+
+        // Suspicious scans (last 24 hours, unreviewed)
+        $counts['suspicious'] = intval($wpdb->get_var(
+            "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_scans
+             WHERE is_suspicious = 1
+             AND reviewed_at IS NULL
+             AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)"
+        ));
+
+        // Pending scans (waiting for confirmation)
+        $counts['pending'] = intval($wpdb->get_var(
+            "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_scans WHERE status = 'pending'"
+        ));
+
+        // Cache for 1 minute
+        wp_cache_set($cache_key, $counts, '', 60);
+
+        return $counts;
     }
 
     /**
