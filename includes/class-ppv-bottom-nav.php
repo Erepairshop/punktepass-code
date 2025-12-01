@@ -342,24 +342,31 @@ class PPV_Bottom_Nav {
             margin: 0 0 15px 0;
             font-size: 13px;
         }
+        .ppv-feedback-modal .ppv-feedback-categories,
         .ppv-feedback-categories {
             display: grid !important;
-            grid-template-columns: repeat(2, 1fr) !important;
-            gap: 10px;
+            grid-template-columns: 1fr 1fr !important;
+            grid-template-rows: auto auto !important;
+            gap: 10px !important;
+            width: 100% !important;
         }
+        .ppv-feedback-modal .ppv-feedback-cat,
         .ppv-feedback-cat {
-            background: rgba(0,217,255,0.1);
-            border: 1px solid rgba(0,217,255,0.2);
-            border-radius: 12px;
-            padding: 16px 10px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 6px;
+            background: rgba(0,217,255,0.1) !important;
+            border: 1px solid rgba(0,217,255,0.2) !important;
+            border-radius: 12px !important;
+            padding: 14px 8px !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 6px !important;
             cursor: pointer;
             transition: all 0.2s;
-            color: #fff;
-            min-height: 80px;
+            color: #fff !important;
+            min-height: 70px !important;
+            width: auto !important;
+            max-width: none !important;
         }
         .ppv-feedback-cat:hover {
             background: rgba(0,217,255,0.2);
