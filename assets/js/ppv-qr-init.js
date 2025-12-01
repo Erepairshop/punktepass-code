@@ -21,6 +21,7 @@
     initGpsTracking,
     stopGpsTracking,
     getStoreKey,
+    getScannerId,
     preloadSounds,
     playSound,
     escapeHtml,
