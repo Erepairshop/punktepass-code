@@ -795,8 +795,11 @@
             window.ppvToast(data.message || L.scanner_point_added || '✅ Punkt hinzugefügt!', 'success');
 
             // 📊 Show customer insights to Händler
-            if (data.customer_insights) {
+            console.log('📊 Customer Insights:', data.customer_insights);
+            if (data.customer_insights && data.customer_insights.display) {
               this.showCustomerInsights(data.customer_name, data.customer_insights);
+            } else {
+              console.warn('⚠️ No customer_insights in response or missing display property');
             }
 
             const now = new Date();
