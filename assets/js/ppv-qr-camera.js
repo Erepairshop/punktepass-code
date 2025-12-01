@@ -795,11 +795,8 @@
             window.ppvToast(data.message || L.scanner_point_added || '✅ Punkt hinzugefügt!', 'success');
 
             // 📊 Show customer insights to Händler
-            console.log('📊 Customer Insights:', data.customer_insights);
             if (data.customer_insights && data.customer_insights.display) {
               this.showCustomerInsights(data.customer_name, data.customer_insights);
-            } else {
-              console.warn('⚠️ No customer_insights in response or missing display property');
             }
 
             const now = new Date();
@@ -950,14 +947,14 @@
         document.body.insertAdjacentHTML('afterbegin', html);
       }
 
-      // Auto-hide after 8 seconds
+      // Auto-hide after 15 seconds
       setTimeout(() => {
         const panel = document.getElementById('ppv-customer-insights');
         if (panel) {
           panel.classList.add('ppv-insights-hiding');
           setTimeout(() => panel.remove(), 500);
         }
-      }, 8000);
+      }, 15000);
     }
 
     escapeHtml(text) {
