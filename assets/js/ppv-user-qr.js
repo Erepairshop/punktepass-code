@@ -455,19 +455,35 @@ let isNfcSending = false;
 
 // Initialize NFC button if supported
 document.addEventListener("DOMContentLoaded", () => {
-  console.log('[NFC] Checking support...', {
+  const debugInfo = {
     nfcSupported: nfcSupported,
     isSecureContext: window.isSecureContext,
-    userAgent: navigator.userAgent.substring(0, 100)
-  });
+    browser: /SamsungBrowser/.test(navigator.userAgent) ? 'Samsung Internet' :
+             /Chrome/.test(navigator.userAgent) ? 'Chrome' :
+             /Firefox/.test(navigator.userAgent) ? 'Firefox' : 'Ismeretlen'
+  };
+
+  // Show debug info on screen
+  const qrDisplay = document.getElementById('ppvQrDisplay');
+  if (qrDisplay) {
+    const debugDiv = document.createElement('div');
+    debugDiv.style.cssText = 'background:#333;color:#fff;padding:10px;margin-top:10px;border-radius:8px;font-size:12px;text-align:left;';
+    debugDiv.innerHTML = `
+      <b>NFC Debug:</b><br>
+      📱 Böngésző: ${debugInfo.browser}<br>
+      🔒 HTTPS: ${debugInfo.isSecureContext ? '✅ Igen' : '❌ Nem'}<br>
+      📡 NFC API: ${debugInfo.nfcSupported ? '✅ Elérhető' : '❌ Nem elérhető'}<br>
+      ${!debugInfo.nfcSupported ? '<br>⚠️ Használj <b>Chrome</b> böngészőt!' : ''}
+      ${!debugInfo.isSecureContext ? '<br>⚠️ HTTPS szükséges!' : ''}
+    `;
+    qrDisplay.appendChild(debugDiv);
+  }
 
   if (!nfcSupported) {
-    console.log('[NFC] Not supported in this browser');
     return;
   }
 
   if (!window.isSecureContext) {
-    console.log('[NFC] Not in secure context (HTTPS required)');
     return;
   }
 
