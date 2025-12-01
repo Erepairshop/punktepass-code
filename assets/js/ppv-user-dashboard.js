@@ -87,6 +87,7 @@ const PPV_TRANSLATIONS = {
     qr_refresh: "Neuen QR-Code generieren",
     qr_new_generated: "Neuer QR-Code (30 Min)",
     reward_valid_until: "Gültig bis:",
+    points_unit: "Punkte",
   },
   hu: {
     welcome: "Üdv a PunktePassban",
@@ -147,6 +148,7 @@ const PPV_TRANSLATIONS = {
     qr_refresh: "Új QR-kód generálása",
     qr_new_generated: "Új QR-kód (30 perc)",
     reward_valid_until: "Érvényes:",
+    points_unit: "pont",
   },
   ro: {
     welcome: "Bun venit la PunktePass",
@@ -207,6 +209,7 @@ const PPV_TRANSLATIONS = {
     qr_refresh: "Generează cod QR nou",
     qr_new_generated: "Cod QR nou (30 min)",
     reward_valid_until: "Valid până:",
+    points_unit: "puncte",
   }
 };
 
@@ -1138,12 +1141,12 @@ async function initUserDashboard() {
             <div class="ppv-reward-mini">
               <div class="ppv-reward-header">
                 <strong>${escapeHtml(r.title)}</strong>
-                <span class="ppv-reward-badge">${r.required_points} pont</span>
+                <span class="ppv-reward-badge">${r.required_points} ${T.points_unit}</span>
               </div>
               <div class="ppv-reward-details">
                 <div class="ppv-reward-row">
                   <span class="ppv-reward-label"><i class="ri-map-pin-line"></i> ${T.reward_label_required}</span>
-                  <span class="ppv-reward-value"><strong>${r.required_points} pont</strong></span>
+                  <span class="ppv-reward-value"><strong>${r.required_points} ${T.points_unit}</strong></span>
                 </div>
                 <div class="ppv-reward-row">
                   <span class="ppv-reward-label"><i class="ri-gift-fill"></i> ${T.reward_label_reward}</span>
@@ -1151,7 +1154,7 @@ async function initUserDashboard() {
                 </div>
                 <div class="ppv-reward-row">
                   <span class="ppv-reward-label"><i class="ri-coins-line"></i> ${T.reward_per_scan}</span>
-                  <span class="ppv-reward-value"><strong style="color:#00e6ff;">+${r.points_given || 0} pont</strong></span>
+                  <span class="ppv-reward-value"><strong style="color:#00e6ff;">+${r.points_given || 0} ${T.points_unit}</strong></span>
                 </div>
                 ${endDateFormatted ? `
                 <div class="ppv-reward-row">
@@ -1244,14 +1247,14 @@ async function initUserDashboard() {
                 ${c.required_points && c.required_points > 0 ? `
                 <div class="ppv-reward-row">
                   <span class="ppv-reward-label"><i class="ri-map-pin-line"></i> ${T.reward_label_required}</span>
-                  <span class="ppv-reward-value"><strong style="color: #fbbf24;">${c.required_points} pont</strong></span>
+                  <span class="ppv-reward-value"><strong style="color: #fbbf24;">${c.required_points} ${T.points_unit}</strong></span>
                 </div>
                 ` : ''}
 
                 ${c.campaign_type !== 'points' ? `
                 <div class="ppv-reward-row">
                   <span class="ppv-reward-label"><i class="ri-coins-line"></i> ${T.reward_per_scan}</span>
-                  <span class="ppv-reward-value"><strong style="color: #00e6ff; font-size: 14px;">+${c.points_given || 1} pont</strong></span>
+                  <span class="ppv-reward-value"><strong style="color: #00e6ff; font-size: 14px;">+${c.points_given || 1} ${T.points_unit}</strong></span>
                 </div>
                 ` : ''}
 
