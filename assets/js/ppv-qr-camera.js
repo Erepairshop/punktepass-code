@@ -564,13 +564,13 @@
 
         const options = {
           preferredCamera: 'environment',
-          maxScansPerSecond: 25, // Faster scanning (was 10)
+          maxScansPerSecond: 30, // Aggressive scanning for faster detection
           highlightScanRegion: true,
           highlightCodeOutline: true,
           returnDetailedScanResult: true,
-          // Scan center 70% of video for faster processing
+          // Scan center 60% of video for faster processing
           calculateScanRegion: (video) => {
-            const size = Math.min(video.videoWidth, video.videoHeight) * 0.7;
+            const size = Math.min(video.videoWidth, video.videoHeight) * 0.6;
             return {
               x: (video.videoWidth - size) / 2,
               y: (video.videoHeight - size) / 2,
@@ -684,8 +684,8 @@
         const stream = await navigator.mediaDevices.getUserMedia({
           video: {
             facingMode: { exact: 'environment' },
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
+            width: { ideal: 640 },  // Lower resolution for faster processing
+            height: { ideal: 480 }
           }
         });
 
@@ -700,8 +700,8 @@
           ppvLog('[jsQR] Play interrupted, continuing...');
         }
 
-        canvas.width = video.videoWidth || 1280;
-        canvas.height = video.videoHeight || 720;
+        canvas.width = video.videoWidth || 640;
+        canvas.height = video.videoHeight || 480;
 
         this.iosStream = stream;
         this.iosVideo = video;
@@ -758,7 +758,7 @@
         if (code && code.data) this.onScanSuccess(code.data);
       }
 
-      if (this.scanning) setTimeout(() => this.jsQRScanLoop(), 30); // Faster scan loop (was 40ms)
+      if (this.scanning) setTimeout(() => this.jsQRScanLoop(), 25); // ~40fps scan loop
     }
 
     onScanSuccess(qrCode) {
