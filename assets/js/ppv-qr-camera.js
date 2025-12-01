@@ -42,6 +42,10 @@
       this.torchOn = false;
       this.videoTrack = null;
       this.refocusInterval = null;
+      // NFC support
+      this.nfcReader = null;
+      this.nfcSupported = 'NDEFReader' in window;
+      this.nfcAbortController = null;
     }
 
     init() {
@@ -177,6 +181,64 @@
         this.refocusInterval = null;
         ppvLog('[Camera] Periodic refocus stopped');
       }
+    }
+
+    // ============================================================
+    // NFC SUPPORT (Phone-to-Phone)
+    // ============================================================
+    async startNfcReader() {
+      if (!this.nfcSupported) {
+        ppvLog('[NFC] Not supported in this browser');
+        return;
+      }
+
+      try {
+        this.nfcReader = new NDEFReader();
+        this.nfcAbortController = new AbortController();
+
+        await this.nfcReader.scan({ signal: this.nfcAbortController.signal });
+
+        this.nfcReader.addEventListener('reading', ({ message }) => {
+          for (const record of message.records) {
+            if (record.recordType === 'text') {
+              const decoder = new TextDecoder(record.encoding || 'utf-8');
+              const data = decoder.decode(record.data);
+
+              // Check if it's a PunktePass NFC message (ppv:QRCODE)
+              if (data.startsWith('ppv:')) {
+                const qrCode = data.substring(4); // Remove 'ppv:' prefix
+                ppvLog('[NFC] 📡 Received PunktePass data:', qrCode);
+                this.onScanSuccess(qrCode);
+              }
+            }
+          }
+        });
+
+        this.nfcReader.addEventListener('readingerror', () => {
+          ppvWarn('[NFC] Reading error');
+        });
+
+        ppvLog('[NFC] 📡 NFC reader started - waiting for tap');
+        window.ppvToast('📡 NFC aktív - érintsd oda a telefont!', 'info');
+
+      } catch (e) {
+        if (e.name === 'NotAllowedError') {
+          ppvLog('[NFC] Permission denied');
+        } else if (e.name === 'NotSupportedError') {
+          ppvLog('[NFC] Not supported');
+        } else {
+          ppvWarn('[NFC] Start error:', e);
+        }
+      }
+    }
+
+    stopNfcReader() {
+      if (this.nfcAbortController) {
+        this.nfcAbortController.abort();
+        this.nfcAbortController = null;
+        ppvLog('[NFC] Reader stopped');
+      }
+      this.nfcReader = null;
     }
 
     // ============================================================
@@ -319,6 +381,7 @@
 
       if (this.countdownInterval) { clearInterval(this.countdownInterval); this.countdownInterval = null; }
       this.stopPeriodicRefocus();
+      this.stopNfcReader();
       this.saveScannerState(false);
     }
 
@@ -337,6 +400,10 @@
 
       if (this.toolbar) this.toolbar.style.display = 'flex';
       this.saveScannerState(true);
+
+      // Start NFC reader alongside camera
+      this.startNfcReader();
+
       await this.loadLibrary();
     }
 

@@ -444,3 +444,159 @@ window.addEventListener('offline', () => {
   showOfflineBanner();
   showStatus("📡 Offline - QR-Code weiterhin verfügbar", "warning");
 });
+
+// ═══════════════════════════════════════════════════════════════
+// 📡 NFC SEND SUPPORT (Phone-to-Phone)
+// ═══════════════════════════════════════════════════════════════
+
+const nfcSupported = 'NDEFReader' in window;
+let nfcWriter = null;
+let isNfcSending = false;
+
+// Initialize NFC button if supported
+document.addEventListener("DOMContentLoaded", () => {
+  if (!nfcSupported) {
+    console.log('[NFC] Not supported in this browser');
+    return;
+  }
+
+  // Create NFC button
+  createNfcButton();
+});
+
+function createNfcButton() {
+  const qrDisplay = document.getElementById('ppvQrDisplay');
+  if (!qrDisplay) return;
+
+  // Check if button already exists
+  if (document.getElementById('ppvNfcBtn')) return;
+
+  const nfcBtn = document.createElement('button');
+  nfcBtn.id = 'ppvNfcBtn';
+  nfcBtn.className = 'ppv-nfc-btn';
+  nfcBtn.innerHTML = `
+    <span class="ppv-nfc-icon">📡</span>
+    <span class="ppv-nfc-text">NFC küldés</span>
+  `;
+  nfcBtn.title = 'Érintsd a telefont a kasszához';
+
+  // Add button styles
+  const style = document.createElement('style');
+  style.textContent = `
+    .ppv-nfc-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 14px 20px;
+      margin-top: 12px;
+      background: linear-gradient(135deg, #9c27b0, #7b1fa2);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .ppv-nfc-btn:hover {
+      background: linear-gradient(135deg, #ab47bc, #8e24aa);
+      transform: translateY(-1px);
+    }
+    .ppv-nfc-btn:active {
+      transform: translateY(0);
+    }
+    .ppv-nfc-btn.sending {
+      background: linear-gradient(135deg, #4caf50, #388e3c);
+      animation: nfc-pulse 1s infinite;
+    }
+    .ppv-nfc-btn .ppv-nfc-icon {
+      font-size: 20px;
+    }
+    @keyframes nfc-pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+  `;
+  document.head.appendChild(style);
+
+  nfcBtn.addEventListener('click', toggleNfcSend);
+  qrDisplay.appendChild(nfcBtn);
+
+  console.log('[NFC] Send button created');
+}
+
+async function toggleNfcSend() {
+  const nfcBtn = document.getElementById('ppvNfcBtn');
+  const qrValue = document.getElementById('ppvQrValue');
+
+  if (!qrValue || !qrValue.value) {
+    showStatus('❌ Nincs QR kód a küldéshez', 'error');
+    return;
+  }
+
+  if (isNfcSending) {
+    // Stop sending
+    stopNfcSend();
+    return;
+  }
+
+  // Start sending
+  try {
+    nfcWriter = new NDEFReader();
+
+    // Write PunktePass data to NFC
+    await nfcWriter.write({
+      records: [{
+        recordType: "text",
+        data: "ppv:" + qrValue.value  // Prefix with ppv: so handler knows it's PunktePass
+      }]
+    });
+
+    isNfcSending = true;
+
+    if (nfcBtn) {
+      nfcBtn.classList.add('sending');
+      nfcBtn.querySelector('.ppv-nfc-text').textContent = 'NFC aktív - érintsd oda!';
+    }
+
+    // Haptic feedback
+    if (window.ppvHaptic) window.ppvHaptic('success');
+
+    showStatus('📡 NFC küldés aktív - érintsd a telefont a kasszához!', 'success');
+    console.log('[NFC] 📡 Sending:', qrValue.value);
+
+    // Auto-stop after 30 seconds
+    setTimeout(() => {
+      if (isNfcSending) {
+        stopNfcSend();
+        showStatus('⏰ NFC küldés időtúllépés - próbáld újra', 'warning');
+      }
+    }, 30000);
+
+  } catch (e) {
+    console.error('[NFC] Write error:', e);
+
+    if (e.name === 'NotAllowedError') {
+      showStatus('❌ NFC engedély megtagadva - engedélyezd a beállításokban', 'error');
+    } else if (e.name === 'NotSupportedError') {
+      showStatus('❌ NFC nem támogatott ezen az eszközön', 'error');
+    } else {
+      showStatus('❌ NFC hiba: ' + e.message, 'error');
+    }
+  }
+}
+
+function stopNfcSend() {
+  isNfcSending = false;
+  nfcWriter = null;
+
+  const nfcBtn = document.getElementById('ppvNfcBtn');
+  if (nfcBtn) {
+    nfcBtn.classList.remove('sending');
+    nfcBtn.querySelector('.ppv-nfc-text').textContent = 'NFC küldés';
+  }
+
+  console.log('[NFC] Send stopped');
+}
