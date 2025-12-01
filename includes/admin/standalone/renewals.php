@@ -24,50 +24,109 @@ class PPV_Standalone_Renewals {
             }
         }
 
-        // Get current tab
+        // Get current tab and status filter
         $tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'subscription';
+        $status_filter = isset($_GET['status']) ? sanitize_text_field($_GET['status']) : 'pending';
 
-        // Fetch subscription renewal requests
-        $renewal_requests = $wpdb->get_results("
-            SELECT
-                s.id,
-                s.name,
-                s.company_name,
-                s.email,
-                s.phone,
-                s.renewal_phone,
-                s.city,
-                s.subscription_renewal_requested,
-                s.subscription_status,
-                s.trial_ends_at,
-                s.subscription_expires_at,
-                s.created_at
-            FROM {$wpdb->prefix}ppv_stores s
-            WHERE s.subscription_renewal_requested IS NOT NULL
-            ORDER BY s.subscription_renewal_requested DESC
-        ");
+        // Fetch subscription renewal requests based on status
+        if ($status_filter === 'completed') {
+            // Show processed/completed renewals (history)
+            $renewal_requests = $wpdb->get_results("
+                SELECT
+                    s.id,
+                    s.name,
+                    s.company_name,
+                    s.email,
+                    s.phone,
+                    s.renewal_phone,
+                    s.city,
+                    s.subscription_renewal_requested,
+                    s.subscription_renewal_processed_at,
+                    s.subscription_status,
+                    s.trial_ends_at,
+                    s.subscription_expires_at,
+                    s.created_at
+                FROM {$wpdb->prefix}ppv_stores s
+                WHERE s.subscription_renewal_processed_at IS NOT NULL
+                ORDER BY s.subscription_renewal_processed_at DESC
+                LIMIT 100
+            ");
+        } else {
+            // Show pending renewals
+            $renewal_requests = $wpdb->get_results("
+                SELECT
+                    s.id,
+                    s.name,
+                    s.company_name,
+                    s.email,
+                    s.phone,
+                    s.renewal_phone,
+                    s.city,
+                    s.subscription_renewal_requested,
+                    s.subscription_status,
+                    s.trial_ends_at,
+                    s.subscription_expires_at,
+                    s.created_at
+                FROM {$wpdb->prefix}ppv_stores s
+                WHERE s.subscription_renewal_requested IS NOT NULL
+                  AND (s.subscription_renewal_processed_at IS NULL)
+                ORDER BY s.subscription_renewal_requested DESC
+            ");
+        }
 
-        // Fetch filiale requests
-        $filiale_requests = $wpdb->get_results("
-            SELECT
-                fr.*,
-                s.name as store_name,
-                s.company_name,
-                s.email as store_email,
-                s.phone as store_phone,
-                s.city,
-                s.max_filialen,
-                (SELECT COUNT(*) FROM {$wpdb->prefix}ppv_stores WHERE parent_store_id = fr.store_id OR id = fr.store_id) as current_count
-            FROM {$wpdb->prefix}ppv_filiale_requests fr
-            LEFT JOIN {$wpdb->prefix}ppv_stores s ON fr.store_id = s.id
-            WHERE fr.status = 'pending'
-            ORDER BY fr.created_at DESC
-        ");
+        // Fetch filiale requests based on status
+        if ($status_filter === 'completed') {
+            // Show approved/rejected filiale requests (history)
+            $filiale_requests = $wpdb->get_results("
+                SELECT
+                    fr.*,
+                    s.name as store_name,
+                    s.company_name,
+                    s.email as store_email,
+                    s.phone as store_phone,
+                    s.city,
+                    s.max_filialen,
+                    (SELECT COUNT(*) FROM {$wpdb->prefix}ppv_stores WHERE parent_store_id = fr.store_id OR id = fr.store_id) as current_count
+                FROM {$wpdb->prefix}ppv_filiale_requests fr
+                LEFT JOIN {$wpdb->prefix}ppv_stores s ON fr.store_id = s.id
+                WHERE fr.status IN ('approved', 'rejected')
+                ORDER BY fr.processed_at DESC
+                LIMIT 100
+            ");
+        } else {
+            // Show pending filiale requests
+            $filiale_requests = $wpdb->get_results("
+                SELECT
+                    fr.*,
+                    s.name as store_name,
+                    s.company_name,
+                    s.email as store_email,
+                    s.phone as store_phone,
+                    s.city,
+                    s.max_filialen,
+                    (SELECT COUNT(*) FROM {$wpdb->prefix}ppv_stores WHERE parent_store_id = fr.store_id OR id = fr.store_id) as current_count
+                FROM {$wpdb->prefix}ppv_filiale_requests fr
+                LEFT JOIN {$wpdb->prefix}ppv_stores s ON fr.store_id = s.id
+                WHERE fr.status = 'pending'
+                ORDER BY fr.created_at DESC
+            ");
+        }
+
+        // Count pending items for badges (always show pending count)
+        $pending_renewal_count = intval($wpdb->get_var("
+            SELECT COUNT(*) FROM {$wpdb->prefix}ppv_stores
+            WHERE subscription_renewal_requested IS NOT NULL
+              AND (subscription_renewal_processed_at IS NULL)
+        "));
+        $pending_filiale_count = intval($wpdb->get_var("
+            SELECT COUNT(*) FROM {$wpdb->prefix}ppv_filiale_requests
+            WHERE status = 'pending'
+        "));
 
         $renewal_count = count($renewal_requests);
         $filiale_count = count($filiale_requests);
 
-        self::render_html($renewal_requests, $filiale_requests, $renewal_count, $filiale_count, $tab);
+        self::render_html($renewal_requests, $filiale_requests, $renewal_count, $filiale_count, $tab, $status_filter, $pending_renewal_count, $pending_filiale_count);
     }
 
     /**
@@ -78,14 +137,14 @@ class PPV_Standalone_Renewals {
 
         $handler_id = intval($_POST['handler_id'] ?? 0);
         if ($handler_id > 0) {
+            // Set processed_at to keep history, don't clear the request data
             $wpdb->update(
                 "{$wpdb->prefix}ppv_stores",
                 [
-                    'subscription_renewal_requested' => NULL,
-                    'renewal_phone' => NULL
+                    'subscription_renewal_processed_at' => current_time('mysql')
                 ],
                 ['id' => $handler_id],
-                ['%s', '%s'],
+                ['%s'],
                 ['%d']
             );
             ppv_log("✅ [Renewals Admin] Renewal request marked as done for Handler #{$handler_id}");
@@ -257,10 +316,11 @@ class PPV_Standalone_Renewals {
     /**
      * Render HTML
      */
-    private static function render_html($renewal_requests, $filiale_requests, $renewal_count, $filiale_count, $current_tab) {
+    private static function render_html($renewal_requests, $filiale_requests, $renewal_count, $filiale_count, $current_tab, $status_filter, $pending_renewal_count, $pending_filiale_count) {
         $success = isset($_GET['success']) ? $_GET['success'] : '';
         $error = isset($_GET['error']) ? $_GET['error'] : '';
-        $total_count = $renewal_count + $filiale_count;
+        $total_pending = $pending_renewal_count + $pending_filiale_count;
+        $is_history = ($status_filter === 'completed');
         ?>
         <!DOCTYPE html>
         <html lang="hu">
@@ -403,6 +463,33 @@ class PPV_Standalone_Renewals {
                 .filiale-max { color: #10b981; }
                 .filiale-requested { color: #f472b6; }
 
+                /* Status filter sub-tabs */
+                .status-filter {
+                    display: flex;
+                    gap: 5px;
+                    margin-bottom: 20px;
+                }
+                .status-btn {
+                    padding: 8px 16px;
+                    background: #0f3460;
+                    border: none;
+                    border-radius: 20px;
+                    color: #888;
+                    font-size: 12px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    text-decoration: none;
+                    transition: all 0.2s;
+                }
+                .status-btn:hover { background: #1f2b4d; color: #fff; }
+                .status-btn.active { background: #00d9ff; color: #000; }
+                .history-note {
+                    font-size: 12px;
+                    color: #888;
+                    margin-left: 10px;
+                    font-style: italic;
+                }
+
                 /* Modal */
                 .modal-overlay {
                     display: none;
@@ -480,7 +567,7 @@ class PPV_Standalone_Renewals {
         </head>
         <body>
             <div class="admin-header">
-                <h1>📋 Kérelmek (<?php echo $total_count; ?> nyitott)</h1>
+                <h1>📋 Kérelmek <?php if (!$is_history): ?>(<?php echo $total_pending; ?> nyitott)<?php else: ?>(Előzmények)<?php endif; ?></h1>
                 <a href="/admin" class="back-link"><i class="ri-arrow-left-line"></i> Vissza</a>
             </div>
 
@@ -501,14 +588,27 @@ class PPV_Standalone_Renewals {
 
                 <!-- Tabs -->
                 <div class="tabs">
-                    <a href="/admin/renewals?tab=subscription" class="tab <?php echo $current_tab === 'subscription' ? 'active' : ''; ?>">
+                    <a href="/admin/renewals?tab=subscription&status=<?php echo $status_filter; ?>" class="tab <?php echo $current_tab === 'subscription' ? 'active' : ''; ?>">
                         <i class="ri-refresh-line"></i> Előfizetés
-                        <?php if ($renewal_count > 0): ?><span class="badge"><?php echo $renewal_count; ?></span><?php endif; ?>
+                        <?php if ($pending_renewal_count > 0): ?><span class="badge"><?php echo $pending_renewal_count; ?></span><?php endif; ?>
                     </a>
-                    <a href="/admin/renewals?tab=filiale" class="tab <?php echo $current_tab === 'filiale' ? 'active' : ''; ?>">
+                    <a href="/admin/renewals?tab=filiale&status=<?php echo $status_filter; ?>" class="tab <?php echo $current_tab === 'filiale' ? 'active' : ''; ?>">
                         <i class="ri-store-2-line"></i> Filiálé
-                        <?php if ($filiale_count > 0): ?><span class="badge"><?php echo $filiale_count; ?></span><?php endif; ?>
+                        <?php if ($pending_filiale_count > 0): ?><span class="badge"><?php echo $pending_filiale_count; ?></span><?php endif; ?>
                     </a>
+                </div>
+
+                <!-- Status Filter -->
+                <div class="status-filter">
+                    <a href="/admin/renewals?tab=<?php echo $current_tab; ?>&status=pending" class="status-btn <?php echo !$is_history ? 'active' : ''; ?>">
+                        🔴 Nyitott
+                    </a>
+                    <a href="/admin/renewals?tab=<?php echo $current_tab; ?>&status=completed" class="status-btn <?php echo $is_history ? 'active' : ''; ?>">
+                        📜 Előzmények
+                    </a>
+                    <?php if ($is_history): ?>
+                        <span class="history-note">(Utolsó 100 elem)</span>
+                    <?php endif; ?>
                 </div>
 
                 <?php if ($current_tab === 'subscription'): ?>
@@ -516,7 +616,7 @@ class PPV_Standalone_Renewals {
                     <?php if ($renewal_count === 0): ?>
                         <div class="empty-state">
                             <i class="ri-checkbox-circle-line"></i>
-                            <h3>Nincs nyitott előfizetés kérelem!</h3>
+                            <h3><?php echo $is_history ? 'Nincs előfizetés előzmény!' : 'Nincs nyitott előfizetés kérelem!'; ?></h3>
                         </div>
                     <?php else: ?>
                         <table>
@@ -526,11 +626,12 @@ class PPV_Standalone_Renewals {
                                     <th>Cégnév</th>
                                     <th>E-mail</th>
                                     <th>Telefon</th>
-                                    <th>Megújítási telefon</th>
+                                    <?php if (!$is_history): ?><th>Megújítási telefon</th><?php endif; ?>
                                     <th>Város</th>
                                     <th>Kérelem</th>
+                                    <?php if ($is_history): ?><th>Feldolgozva</th><?php endif; ?>
                                     <th>Státusz</th>
-                                    <th>Műveletek</th>
+                                    <?php if (!$is_history): ?><th>Műveletek</th><?php endif; ?>
                                 </tr>
                             </thead>
                             <tbody>
@@ -562,14 +663,27 @@ class PPV_Standalone_Renewals {
                                                 <a href="tel:<?php echo esc_attr($request->phone); ?>"><?php echo esc_html($request->phone); ?></a>
                                             <?php else: ?>-<?php endif; ?>
                                         </td>
+                                        <?php if (!$is_history): ?>
                                         <td>
                                             <?php if (!empty($request->renewal_phone)): ?>
                                                 <span class="phone-highlight">📞 <?php echo esc_html($request->renewal_phone); ?></span>
                                             <?php else: ?>-<?php endif; ?>
                                         </td>
+                                        <?php endif; ?>
                                         <td><?php echo esc_html($request->city); ?></td>
                                         <td><?php echo $requested_time; ?></td>
-                                        <td><span class="badge-status badge-<?php echo $status_class; ?>"><?php echo $status_text; ?></span></td>
+                                        <?php if ($is_history): ?>
+                                        <td>
+                                            <?php
+                                            $processed_time = !empty($request->subscription_renewal_processed_at)
+                                                ? date('Y-m-d H:i', strtotime($request->subscription_renewal_processed_at))
+                                                : '-';
+                                            echo $processed_time;
+                                            ?>
+                                        </td>
+                                        <?php endif; ?>
+                                        <td><span class="badge-status badge-<?php echo $status_class; ?>"><?php echo $is_history ? '✅ Feldolgozva' : $status_text; ?></span></td>
+                                        <?php if (!$is_history): ?>
                                         <td>
                                             <form method="post" style="display: inline-block;">
                                                 <input type="hidden" name="mark_done" value="1">
@@ -578,6 +692,7 @@ class PPV_Standalone_Renewals {
                                             </form>
                                             <a href="mailto:<?php echo esc_attr($request->email); ?>?subject=Előfizetés%20hosszabbítás" class="btn btn-secondary">📧</a>
                                         </td>
+                                        <?php endif; ?>
                                     </tr>
                                 <?php endforeach; ?>
                             </tbody>
@@ -589,7 +704,7 @@ class PPV_Standalone_Renewals {
                     <?php if ($filiale_count === 0): ?>
                         <div class="empty-state">
                             <i class="ri-store-2-line"></i>
-                            <h3>Nincs nyitott filiálé kérelem!</h3>
+                            <h3><?php echo $is_history ? 'Nincs filiálé előzmény!' : 'Nincs nyitott filiálé kérelem!'; ?></h3>
                         </div>
                     <?php else: ?>
                         <table>
@@ -599,9 +714,14 @@ class PPV_Standalone_Renewals {
                                     <th>Cégnév</th>
                                     <th>Filiálék</th>
                                     <th>Kapcsolat</th>
-                                    <th>Üzenet</th>
+                                    <?php if (!$is_history): ?><th>Üzenet</th><?php endif; ?>
                                     <th>Kérelem</th>
+                                    <?php if ($is_history): ?>
+                                    <th>Feldolgozva</th>
+                                    <th>Státusz</th>
+                                    <?php else: ?>
                                     <th>Műveletek</th>
+                                    <?php endif; ?>
                                 </tr>
                             </thead>
                             <tbody>
@@ -635,10 +755,32 @@ class PPV_Standalone_Renewals {
                                                 <a href="tel:<?php echo esc_attr($request->contact_phone); ?>">📞 <?php echo esc_html($request->contact_phone); ?></a>
                                             <?php endif; ?>
                                         </td>
+                                        <?php if (!$is_history): ?>
                                         <td style="max-width: 200px;">
                                             <small><?php echo esc_html(mb_substr($request->message ?: '-', 0, 100)); ?></small>
                                         </td>
+                                        <?php endif; ?>
                                         <td><?php echo $requested_time; ?></td>
+                                        <?php if ($is_history): ?>
+                                        <td>
+                                            <?php
+                                            $processed_time = !empty($request->processed_at)
+                                                ? date('Y-m-d H:i', strtotime($request->processed_at))
+                                                : '-';
+                                            echo $processed_time;
+                                            ?>
+                                        </td>
+                                        <td>
+                                            <?php if ($request->status === 'approved'): ?>
+                                                <span class="badge-status badge-success">✅ Jóváhagyva</span>
+                                            <?php else: ?>
+                                                <span class="badge-status badge-error">❌ Elutasítva</span>
+                                            <?php endif; ?>
+                                            <?php if (!empty($request->admin_note)): ?>
+                                                <br><small style="color:#888;" title="<?php echo esc_attr($request->admin_note); ?>"><?php echo esc_html(mb_substr($request->admin_note, 0, 40)); ?>...</small>
+                                            <?php endif; ?>
+                                        </td>
+                                        <?php else: ?>
                                         <td>
                                             <button class="btn btn-success" onclick="openFilialeModal(<?php echo intval($request->id); ?>, 'approve', <?php echo intval($request->store_id); ?>, <?php echo intval($request->max_filialen); ?>, <?php echo intval($request->requested_amount); ?>, '<?php echo esc_js($request->company_name ?: $request->store_name); ?>')">
                                                 ✅ Jóváhagy
@@ -647,6 +789,7 @@ class PPV_Standalone_Renewals {
                                                 ❌ Elutasít
                                             </button>
                                         </td>
+                                        <?php endif; ?>
                                     </tr>
                                 <?php endforeach; ?>
                             </tbody>
