@@ -1203,10 +1203,14 @@ class PPV_Standalone_Admin {
             "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_support_tickets WHERE status = 'new'"
         ));
 
-        // Pending renewal requests
-        $counts['renewals'] = intval($wpdb->get_var(
-            "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_subscription_renewal_requests WHERE status = 'pending'"
+        // Pending renewal requests (subscription + filiale)
+        $subscription_renewals = intval($wpdb->get_var(
+            "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_stores WHERE subscription_renewal_requested IS NOT NULL"
         ));
+        $filiale_requests = intval($wpdb->get_var(
+            "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_filiale_requests WHERE status = 'pending'"
+        ));
+        $counts['renewals'] = $subscription_renewals + $filiale_requests;
 
         // Suspicious scans (last 24 hours, unreviewed)
         $counts['suspicious'] = intval($wpdb->get_var(
