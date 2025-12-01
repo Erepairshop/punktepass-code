@@ -8,6 +8,11 @@
 document.addEventListener("DOMContentLoaded", function () {
   const base = ppv_rewards_rest.base;
 
+  // 🌐 Language detection
+  const detectLang = () => document.cookie.match(/ppv_lang=([a-z]{2})/)?.[1] || localStorage.getItem('ppv_lang') || 'de';
+  const LANG = detectLang();
+  const T = { de: { points: 'Punkte' }, hu: { points: 'pont' }, ro: { points: 'puncte' } }[LANG] || { points: 'Punkte' };
+
   // ============================================================
   // 🏪 FILIALE SUPPORT: Store ID Detection
   // ============================================================
@@ -87,7 +92,7 @@ tabButtons.forEach((btn) => {
           card.innerHTML = `
             <h4>${r.title}</h4>
             <p>${r.description || ""}</p>
-            <small>⭐ ${r.required_points} Punkte</small><br>
+            <small>⭐ ${r.required_points} ${T.points}</small><br>
             <small>${r.action_type || ""}: ${r.action_value || ""}</small><br>
             <button class="ppv-delete" data-id="${r.id}">🗑️ Löschen</button>
           `;
@@ -228,7 +233,7 @@ tabButtons.forEach((btn) => {
       const data = await res.json();
       if (data.success && data.items.length) {
         log.innerHTML = "<ul>" + data.items.map((r) => `
-          <li>${r.status === "approved" ? "✅" : "🕓"} ${r.user_email || "?"} – ${r.points_spent || 0} Punkte</li>
+          <li>${r.status === "approved" ? "✅" : "🕓"} ${r.user_email || "?"} – ${r.points_spent || 0} ${T.points}</li>
         `).join("") + "</ul>";
       } else {
         log.innerHTML = "<p>ℹ️ Keine Logeinträge.</p>";

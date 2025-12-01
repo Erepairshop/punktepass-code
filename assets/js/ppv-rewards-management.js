@@ -162,7 +162,7 @@ document.addEventListener("DOMContentLoaded", function () {
             <div class="ppv-reward-stats">
               <div class="ppv-reward-stat points">
                 <i class="ri-star-fill"></i>
-                <span>${r.required_points} ${L.rewards_points_label || 'pont'}</span>
+                <span>${r.required_points} ${L.rewards_points_label || 'Punkte'}</span>
               </div>
               <div class="ppv-reward-stat bonus">
                 <i class="ri-add-circle-fill"></i>

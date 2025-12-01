@@ -22,6 +22,21 @@
   ppvLog("✅ PunktePass Bizonylatok JS v2.1 geladen");
 
   /* ============================================================
+   * 🌐 LANGUAGE DETECTION + TRANSLATIONS
+   * ============================================================ */
+  const detectLang = () => {
+    return document.cookie.match(/ppv_lang=([a-z]{2})/)?.[1] ||
+           localStorage.getItem('ppv_lang') ||
+           'de';
+  };
+  const LANG = detectLang();
+  const T = {
+    de: { points: 'Punkte', receipt_id_missing: 'Beleg-ID fehlt' },
+    hu: { points: 'pont', receipt_id_missing: 'Bizonylat ID hiányzik' },
+    ro: { points: 'puncte', receipt_id_missing: 'ID-ul chitanței lipsește' }
+  }[LANG] || { points: 'Punkte', receipt_id_missing: 'Beleg-ID fehlt' };
+
+  /* ============================================================
    * 🔑 BASE + TOKEN + STORE - GLOBAL
    * ============================================================ */
   const base = window.ppv_receipts_rest?.base || "/wp-json/ppv/v1/";
@@ -180,7 +195,7 @@
           </div>
           <div style="text-align: right; white-space: nowrap;">
             <div style="font-size: 16px; font-weight: bold; color: #0066cc;">${amount.toFixed(2)} ${currency}</div>
-            <small style="color: #666;">${points} pont</small><br>
+            <small style="color: #666;">${points} ${T.points}</small><br>
             <small style="color: #999; font-size: 11px;">${date}</small>
           </div>
         </div>
@@ -224,7 +239,7 @@
     ppvLog(`📥 Download: #${receiptId}`);
 
     if (!receiptId) {
-        showToast('❌ Bizonylat ID hiányzik', 'error');
+        showToast('❌ ' + T.receipt_id_missing, 'error');
         return;
     }
 

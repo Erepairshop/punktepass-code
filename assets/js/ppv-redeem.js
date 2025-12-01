@@ -11,6 +11,20 @@
 jQuery(document).ready(function ($) {
 
   /* ============================================================
+   * 🌐 LANGUAGE DETECTION + TRANSLATIONS
+   * ============================================================ */
+  const detectLang = () => {
+    return document.cookie.match(/ppv_lang=([a-z]{2})/)?.[1] ||
+           localStorage.getItem('ppv_lang') || 'de';
+  };
+  const LANG = detectLang();
+  const T = {
+    de: { new_balance: 'Neuer Punktestand' },
+    hu: { new_balance: 'Új egyenleg' },
+    ro: { new_balance: 'Sold nou' }
+  }[LANG] || { new_balance: 'Neuer Punktestand' };
+
+  /* ============================================================
    * 🧠 STORE + TOKEN FALLBACK
    * ============================================================ */
   let storeID =
@@ -99,7 +113,7 @@ jQuery(document).ready(function ($) {
         showToast(json.message || "✅ Erfolgreich eingelöst.", "success");
 
         if (json.new_balance !== undefined) {
-          showToast("💰 Neuer Punktestand: " + json.new_balance, "info");
+          showToast("💰 " + T.new_balance + ": " + json.new_balance, "info");
         }
 
         setTimeout(() => location.reload(), 1200);

@@ -8,6 +8,10 @@
 
 jQuery(document).ready(function ($) {
 
+  // 🌐 Language detection
+  const detectLang = () => document.cookie.match(/ppv_lang=([a-z]{2})/)?.[1] || localStorage.getItem('ppv_lang') || 'de';
+  const LANG = detectLang();
+  const T = { de: { daily_points: 'Tägliche Punkte' }, hu: { daily_points: 'Napi pontok' }, ro: { daily_points: 'Puncte zilnice' } }[LANG] || { daily_points: 'Tägliche Punkte' };
 
   const $loginView = $("#ppv-pos-login");
   const $dashboardView = $("#ppv-pos-dashboard");
@@ -195,7 +199,7 @@ jQuery(document).ready(function ($) {
       data: {
         labels,
         datasets: [{
-          label: 'Tägliche Punkte',
+          label: T.daily_points,
           data: values,
           borderColor: '#00e0ff',
           backgroundColor: 'rgba(0,224,255,0.25)',
