@@ -1316,6 +1316,7 @@ class PPV_Signup {
     /* ============================================================
      * 💬 AJAX Submit Feedback (Universal - Users & Handlers)
      * Categories: bug, feature, question, rating
+     * Features: Language tracking, monthly rating limit, auto-confirmation email
      * ============================================================ */
     public static function ajax_submit_feedback() {
         global $wpdb;
@@ -1355,6 +1356,10 @@ class PPV_Signup {
         $page_url = esc_url_raw($_POST['page_url'] ?? '');
         $device_info = sanitize_text_field($_POST['device_info'] ?? '');
 
+        // Get user language from cookie
+        $language = isset($_COOKIE['ppv_lang']) ? sanitize_text_field($_COOKIE['ppv_lang']) : 'de';
+        if (!in_array($language, ['de', 'hu', 'en'])) $language = 'de';
+
         // Validate category
         $valid_categories = ['bug', 'feature', 'question', 'rating'];
         if (!in_array($category, $valid_categories)) {
@@ -1372,6 +1377,48 @@ class PPV_Signup {
         if (empty($message) && $category !== 'rating') {
             wp_send_json_error(['message' => 'Bitte beschreiben Sie Ihr Anliegen']);
             return;
+        }
+
+        // 🚫 MONTHLY RATING LIMIT: Check if user already submitted a rating this month
+        if ($category === 'rating') {
+            $month_start = date('Y-m-01 00:00:00');
+            $month_end = date('Y-m-t 23:59:59');
+
+            // Build query based on user type
+            if ($user_type === 'handler' && $store_id > 0) {
+                $existing_rating = $wpdb->get_var($wpdb->prepare(
+                    "SELECT id FROM {$wpdb->prefix}ppv_support_tickets
+                     WHERE category = 'rating'
+                     AND user_type = 'handler'
+                     AND store_id = %d
+                     AND created_at BETWEEN %s AND %s
+                     LIMIT 1",
+                    $store_id, $month_start, $month_end
+                ));
+            } elseif ($user_id > 0) {
+                $existing_rating = $wpdb->get_var($wpdb->prepare(
+                    "SELECT id FROM {$wpdb->prefix}ppv_support_tickets
+                     WHERE category = 'rating'
+                     AND user_type = 'user'
+                     AND user_id = %d
+                     AND created_at BETWEEN %s AND %s
+                     LIMIT 1",
+                    $user_id, $month_start, $month_end
+                ));
+            } else {
+                $existing_rating = null;
+            }
+
+            if ($existing_rating) {
+                // Multi-language error messages
+                $error_messages = [
+                    'de' => 'Sie haben diesen Monat bereits eine Bewertung abgegeben. Sie können im nächsten Monat wieder bewerten.',
+                    'hu' => 'Ebben a hónapban már küldött értékelést. A következő hónapban újra értékelhet.',
+                    'en' => 'You have already submitted a rating this month. You can rate again next month.'
+                ];
+                wp_send_json_error(['message' => $error_messages[$language]]);
+                return;
+            }
         }
 
         // Get user/store info for email
@@ -1416,9 +1463,10 @@ class PPV_Signup {
         $full_description .= "\n\n---\n";
         $full_description .= "📱 Gerät: {$device_info}\n";
         $full_description .= "🌐 Seite: {$page_url}\n";
+        $full_description .= "🌍 Sprache: " . strtoupper($language) . "\n";
         $full_description .= "👤 Typ: " . ($user_type === 'handler' ? 'Händler' : 'Kunde');
 
-        // Insert into support_tickets table
+        // Insert into support_tickets table (with new columns)
         $insert_result = $wpdb->insert(
             "{$wpdb->prefix}ppv_support_tickets",
             [
@@ -1426,6 +1474,8 @@ class PPV_Signup {
                 'store_id' => $store_id ?: 0,
                 'user_id' => $user_id ?: 0,
                 'user_type' => $user_type,
+                'language' => $language,
+                'rating' => $category === 'rating' ? $rating : null,
                 'handler_email' => $user_email ?: 'anonymous@punktepass.de',
                 'handler_phone' => '',
                 'store_name' => $user_name ?: ($user_type === 'handler' ? 'Händler' : 'Kunde'),
@@ -1435,9 +1485,10 @@ class PPV_Signup {
                 'status' => 'new',
                 'contact_preference' => 'email',
                 'page_url' => $page_url,
+                'device_info' => $device_info,
                 'created_at' => current_time('mysql')
             ],
-            ['%s', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s']
+            ['%s', '%d', '%d', '%s', '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s']
         );
 
         if (!$insert_result) {
@@ -1457,6 +1508,7 @@ class PPV_Signup {
         $email_body .= "🎫 Ticket ID: #{$ticket_id}\n";
         $email_body .= "📁 Kategorie: {$meta['emoji']} {$meta['text']}\n";
         $email_body .= "👤 Benutzertyp: " . ($user_type === 'handler' ? 'Händler' : 'Kunde') . "\n";
+        $email_body .= "🌍 Sprache: " . strtoupper($language) . "\n";
         if ($store_id > 0) {
             $email_body .= "🏪 Store ID: #{$store_id}\n";
         }
@@ -1488,9 +1540,97 @@ class PPV_Signup {
 
         wp_mail($to, $subject, $email_body, $headers);
 
-        ppv_log("✅ [PPV_Feedback] #{$ticket_id} created - {$category} from {$user_type}");
+        // 📧 SEND AUTO-CONFIRMATION EMAIL TO USER (except for ratings)
+        if ($category !== 'rating' && !empty($user_email)) {
+            self::send_feedback_confirmation_email($user_email, $user_name, $ticket_id, $category, $language);
+        }
 
-        wp_send_json_success(['message' => 'Vielen Dank für Ihr Feedback!']);
+        ppv_log("✅ [PPV_Feedback] #{$ticket_id} created - {$category} from {$user_type} (lang: {$language})");
+
+        // Multi-language success messages
+        $success_messages = [
+            'de' => 'Vielen Dank für Ihr Feedback!',
+            'hu' => 'Köszönjük visszajelzését!',
+            'en' => 'Thank you for your feedback!'
+        ];
+        wp_send_json_success(['message' => $success_messages[$language]]);
+    }
+
+    /**
+     * 📧 Send feedback confirmation email to user
+     */
+    private static function send_feedback_confirmation_email($email, $name, $ticket_id, $category, $lang = 'de') {
+        // Multi-language email content
+        $translations = [
+            'de' => [
+                'subject' => "Feedback erhalten - Ticket #{$ticket_id}",
+                'greeting' => $name ? "Hallo {$name}," : "Hallo,",
+                'thanks' => "vielen Dank für Ihre Nachricht an das PunktePass-Team!",
+                'received' => "Wir haben Ihr Anliegen erhalten und werden uns schnellstmöglich bei Ihnen melden.",
+                'ticket_info' => "Ihre Ticket-Nummer",
+                'footer_1' => "Mit freundlichen Grüßen",
+                'footer_2' => "Ihr PunktePass-Team",
+                'auto_msg' => "Dies ist eine automatisch generierte E-Mail. Bitte antworten Sie nicht direkt auf diese Nachricht."
+            ],
+            'hu' => [
+                'subject' => "Visszajelzés megérkezett - Jegy #{$ticket_id}",
+                'greeting' => $name ? "Kedves {$name}!" : "Kedves Felhasználó!",
+                'thanks' => "Köszönjük, hogy írt a PunktePass csapatának!",
+                'received' => "Megkaptuk üzenetét és hamarosan válaszolunk.",
+                'ticket_info' => "Az Ön jegyszáma",
+                'footer_1' => "Üdvözlettel",
+                'footer_2' => "A PunktePass csapat",
+                'auto_msg' => "Ez egy automatikusan generált e-mail. Kérjük, ne válaszoljon közvetlenül erre az üzenetre."
+            ],
+            'en' => [
+                'subject' => "Feedback Received - Ticket #{$ticket_id}",
+                'greeting' => $name ? "Hello {$name}," : "Hello,",
+                'thanks' => "Thank you for contacting the PunktePass team!",
+                'received' => "We have received your message and will get back to you as soon as possible.",
+                'ticket_info' => "Your ticket number",
+                'footer_1' => "Best regards",
+                'footer_2' => "Your PunktePass Team",
+                'auto_msg' => "This is an automatically generated email. Please do not reply directly to this message."
+            ]
+        ];
+
+        $T = $translations[$lang] ?? $translations['de'];
+
+        $cat_names = [
+            'bug' => ['de' => 'Fehlermeldung', 'hu' => 'Hibabejelentés', 'en' => 'Bug Report'],
+            'feature' => ['de' => 'Verbesserungsvorschlag', 'hu' => 'Fejlesztési javaslat', 'en' => 'Feature Request'],
+            'question' => ['de' => 'Frage', 'hu' => 'Kérdés', 'en' => 'Question']
+        ];
+        $cat_name = $cat_names[$category][$lang] ?? $cat_names[$category]['de'] ?? $category;
+
+        $body = "
+{$T['greeting']}
+
+{$T['thanks']}
+
+{$T['received']}
+
+{$T['ticket_info']}: #{$ticket_id}
+Kategorie / Category: {$cat_name}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+{$T['footer_1']},
+{$T['footer_2']}
+
+www.punktepass.de
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+{$T['auto_msg']}
+";
+
+        $headers = [
+            'From: PunktePass <info@punktepass.de>',
+            'Content-Type: text/plain; charset=UTF-8'
+        ];
+
+        wp_mail($email, $T['subject'], $body, $headers);
+        ppv_log("📧 [PPV_Feedback] Confirmation email sent to {$email} for ticket #{$ticket_id}");
     }
 
     /* ============================================================
