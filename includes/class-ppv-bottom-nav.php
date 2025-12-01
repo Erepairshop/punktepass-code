@@ -137,6 +137,12 @@ class PPV_Bottom_Nav {
 
         ob_start();
 
+        // Determine user type for feedback modal
+        $feedback_user_type = 'user';
+        if ($is_vendor || $is_pos) {
+            $feedback_user_type = 'handler';
+        }
+
         // --- User navigáció (prioritás!) ---
         // 🚀 data-turbo="false" for vendors visiting user pages - forces full reload
         $turbo_attr = $is_vendor ? 'data-turbo="false"' : '';
@@ -145,8 +151,9 @@ class PPV_Bottom_Nav {
                 <a href="/user_dashboard" class="nav-item" <?php echo $turbo_attr; ?> data-navlink="true" title="Dashboard"><i class="ri-home-smile-2-line"></i></a>
                 <a href="/meine-punkte" class="nav-item" <?php echo $turbo_attr; ?> data-navlink="true" title="Meine Punkte"><i class="ri-donut-chart-line"></i></a>
                 <a href="/belohnungen" class="nav-item" <?php echo $turbo_attr; ?> data-navlink="true" title="Belohnungen"><i class="ri-coupon-3-line"></i></a>
-                <a href="/einstellungen" class="nav-item" <?php echo $turbo_attr; ?> data-navlink="true" title="Einstellungen"><i class="ri-equalizer-line"></i></a>
+                <a href="#" class="nav-item" id="ppv-feedback-nav-btn" title="Feedback"><i class="ri-feedback-line"></i></a>
             </nav>
+            <?php self::render_feedback_modal('user'); ?>
         <?php
         // --- Händler / POS navigáció ---
         elseif ($is_vendor || $is_pos): ?>
@@ -155,41 +162,9 @@ class PPV_Bottom_Nav {
                 <a href="/rewards" class="nav-item" data-turbo="false" data-navlink="true" title="Rewards"><i class="ri-coupon-3-line"></i></a>
                 <a href="/mein-profil" class="nav-item" data-turbo="false" data-navlink="true" title="Profil"><i class="ri-user-3-line"></i></a>
                 <a href="/statistik" class="nav-item" data-turbo="false" data-navlink="true" title="Statistik"><i class="ri-bar-chart-line"></i></a>
-                <a href="#" class="nav-item" id="ppv-support-nav-btn" title="Support"><i class="ri-customer-service-2-line"></i></a>
+                <a href="#" class="nav-item" id="ppv-feedback-nav-btn" title="Feedback"><i class="ri-feedback-line"></i></a>
             </nav>
-
-            <!-- Support Modal -->
-            <div id="ppv-support-modal" class="ppv-support-modal">
-                <div class="ppv-support-modal-content">
-                    <h3 class="ppv-support-modal-title">
-                        <i class="ri-customer-service-2-line"></i> Support anfragen
-                    </h3>
-                    <p class="ppv-support-modal-description">
-                        Beschreiben Sie Ihr Problem. Wir melden uns schnellstmöglich.
-                    </p>
-
-                    <input type="email" id="ppv-support-email" class="ppv-support-input" placeholder="E-Mail Adresse *" required>
-                    <input type="tel" id="ppv-support-phone" class="ppv-support-input" placeholder="Telefonnummer *" required>
-                    <textarea id="ppv-support-desc" class="ppv-support-input" placeholder="Problembeschreibung *" rows="4"></textarea>
-
-                    <select id="ppv-support-priority" class="ppv-support-input">
-                        <option value="normal">Priorität: Normal</option>
-                        <option value="urgent">Priorität: Dringend</option>
-                        <option value="low">Priorität: Niedrig</option>
-                    </select>
-
-                    <div id="ppv-support-msg" class="ppv-support-message"></div>
-
-                    <div class="ppv-support-buttons">
-                        <button id="ppv-support-send" class="ppv-support-btn-submit">
-                            <i class="ri-send-plane-line"></i> Senden
-                        </button>
-                        <button id="ppv-support-close" class="ppv-support-btn-cancel">
-                            Abbrechen
-                        </button>
-                    </div>
-                </div>
-            </div>
+            <?php self::render_feedback_modal('handler'); ?>
         <?php
         // --- Alap user nav (basic users - Turbo enabled) ---
         else: ?>
@@ -197,21 +172,350 @@ class PPV_Bottom_Nav {
                 <a href="/user_dashboard" class="nav-item" data-navlink="true" title="Dashboard"><i class="ri-home-smile-2-line"></i></a>
                 <a href="/meine-punkte" class="nav-item" data-navlink="true" title="Meine Punkte"><i class="ri-donut-chart-line"></i></a>
                 <a href="/belohnungen" class="nav-item" data-navlink="true" title="Belohnungen"><i class="ri-coupon-3-line"></i></a>
-                <a href="/einstellungen" class="nav-item" data-navlink="true" title="Einstellungen"><i class="ri-equalizer-line"></i></a>
+                <a href="#" class="nav-item" id="ppv-feedback-nav-btn" title="Feedback"><i class="ri-feedback-line"></i></a>
             </nav>
+            <?php self::render_feedback_modal('user'); ?>
         <?php
         endif;
 
         return ob_get_clean();
     }
 
+    /** ============================================================
+     * 💬 FEEDBACK MODAL - Professional Feedback System
+     * Categories: Bug, Feature, Question, Rating
+     * Auto-captures: Device, Page, User Type
+     * ============================================================ */
+    private static function render_feedback_modal($user_type = 'user') {
+        ?>
+        <div id="ppv-feedback-modal" class="ppv-feedback-modal" data-user-type="<?php echo esc_attr($user_type); ?>">
+            <div class="ppv-feedback-content">
+                <!-- Header -->
+                <div class="ppv-feedback-header">
+                    <h3><i class="ri-feedback-line"></i> Feedback</h3>
+                    <button id="ppv-feedback-close" class="ppv-feedback-close"><i class="ri-close-line"></i></button>
+                </div>
+
+                <!-- Category Selection (Step 1) -->
+                <div id="ppv-feedback-step1" class="ppv-feedback-step active">
+                    <p class="ppv-feedback-subtitle">Was möchten Sie uns mitteilen?</p>
+                    <div class="ppv-feedback-categories">
+                        <button class="ppv-feedback-cat" data-category="bug">
+                            <i class="ri-bug-line"></i>
+                            <span>Fehler melden</span>
+                        </button>
+                        <button class="ppv-feedback-cat" data-category="feature">
+                            <i class="ri-lightbulb-line"></i>
+                            <span>Idee / Wunsch</span>
+                        </button>
+                        <button class="ppv-feedback-cat" data-category="question">
+                            <i class="ri-question-line"></i>
+                            <span>Frage</span>
+                        </button>
+                        <button class="ppv-feedback-cat" data-category="rating">
+                            <i class="ri-star-line"></i>
+                            <span>Bewertung</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Feedback Form (Step 2) -->
+                <div id="ppv-feedback-step2" class="ppv-feedback-step">
+                    <button id="ppv-feedback-back" class="ppv-feedback-back">
+                        <i class="ri-arrow-left-line"></i> Zurück
+                    </button>
+
+                    <div id="ppv-feedback-cat-header" class="ppv-feedback-cat-header">
+                        <i class="ri-bug-line"></i>
+                        <span>Fehler melden</span>
+                    </div>
+
+                    <!-- Rating (only for rating category) -->
+                    <div id="ppv-feedback-rating-section" class="ppv-feedback-rating" style="display: none;">
+                        <p>Wie zufrieden sind Sie mit PunktePass?</p>
+                        <div class="ppv-feedback-stars">
+                            <button class="ppv-star" data-rating="1"><i class="ri-star-line"></i></button>
+                            <button class="ppv-star" data-rating="2"><i class="ri-star-line"></i></button>
+                            <button class="ppv-star" data-rating="3"><i class="ri-star-line"></i></button>
+                            <button class="ppv-star" data-rating="4"><i class="ri-star-line"></i></button>
+                            <button class="ppv-star" data-rating="5"><i class="ri-star-line"></i></button>
+                        </div>
+                    </div>
+
+                    <textarea id="ppv-feedback-message" class="ppv-feedback-input" placeholder="Beschreiben Sie Ihr Anliegen..." rows="4"></textarea>
+
+                    <!-- Contact (optional for users, required for handlers) -->
+                    <?php if ($user_type === 'handler'): ?>
+                    <input type="email" id="ppv-feedback-email" class="ppv-feedback-input" placeholder="E-Mail (optional)">
+                    <?php endif; ?>
+
+                    <!-- Auto-captured context (hidden) -->
+                    <input type="hidden" id="ppv-feedback-page" value="">
+                    <input type="hidden" id="ppv-feedback-device" value="">
+                    <input type="hidden" id="ppv-feedback-category" value="">
+                    <input type="hidden" id="ppv-feedback-rating-value" value="0">
+
+                    <div id="ppv-feedback-msg" class="ppv-feedback-message"></div>
+
+                    <button id="ppv-feedback-send" class="ppv-feedback-submit">
+                        <i class="ri-send-plane-line"></i> Absenden
+                    </button>
+                </div>
+
+                <!-- Success (Step 3) -->
+                <div id="ppv-feedback-step3" class="ppv-feedback-step">
+                    <div class="ppv-feedback-success">
+                        <i class="ri-checkbox-circle-line"></i>
+                        <h4>Vielen Dank!</h4>
+                        <p>Ihr Feedback wurde gesendet.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <style>
+        /* 💬 FEEDBACK MODAL STYLES */
+        .ppv-feedback-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(4px);
+            z-index: 99999;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        .ppv-feedback-modal.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .ppv-feedback-content {
+            background: linear-gradient(145deg, #1a1a2e, #16213e);
+            width: 100%;
+            max-width: 420px;
+            max-height: 85vh;
+            border-radius: 20px 20px 0 0;
+            overflow: hidden;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+        }
+        .ppv-feedback-modal.show .ppv-feedback-content {
+            transform: translateY(0);
+        }
+        .ppv-feedback-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(0,217,255,0.2);
+        }
+        .ppv-feedback-header h3 {
+            color: #00d9ff;
+            font-size: 18px;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .ppv-feedback-close {
+            background: transparent;
+            border: none;
+            color: #888;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 4px;
+            line-height: 1;
+        }
+        .ppv-feedback-close:hover { color: #fff; }
+        .ppv-feedback-step {
+            display: none;
+            padding: 20px;
+        }
+        .ppv-feedback-step.active { display: block; }
+        .ppv-feedback-subtitle {
+            color: #aaa;
+            text-align: center;
+            margin: 0 0 20px 0;
+            font-size: 14px;
+        }
+        .ppv-feedback-categories {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        .ppv-feedback-cat {
+            background: rgba(0,217,255,0.1);
+            border: 1px solid rgba(0,217,255,0.2);
+            border-radius: 12px;
+            padding: 20px 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #fff;
+        }
+        .ppv-feedback-cat:hover {
+            background: rgba(0,217,255,0.2);
+            border-color: #00d9ff;
+            transform: translateY(-2px);
+        }
+        .ppv-feedback-cat i {
+            font-size: 28px;
+            color: #00d9ff;
+        }
+        .ppv-feedback-cat span {
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .ppv-feedback-back {
+            background: transparent;
+            border: none;
+            color: #00d9ff;
+            font-size: 14px;
+            cursor: pointer;
+            padding: 0;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .ppv-feedback-cat-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #00d9ff;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(0,217,255,0.2);
+        }
+        .ppv-feedback-cat-header i { font-size: 22px; }
+        .ppv-feedback-rating {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .ppv-feedback-rating p {
+            color: #aaa;
+            margin: 0 0 10px 0;
+            font-size: 14px;
+        }
+        .ppv-feedback-stars {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+        }
+        .ppv-star {
+            background: transparent;
+            border: none;
+            font-size: 32px;
+            color: #444;
+            cursor: pointer;
+            transition: all 0.2s;
+            padding: 4px;
+        }
+        .ppv-star:hover, .ppv-star.active {
+            color: #ffc107;
+            transform: scale(1.15);
+        }
+        .ppv-star.active i::before {
+            content: "\f186"; /* ri-star-fill */
+        }
+        .ppv-feedback-input {
+            width: 100%;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 12px 15px;
+            color: #fff;
+            font-size: 14px;
+            margin-bottom: 12px;
+            resize: none;
+            font-family: inherit;
+        }
+        .ppv-feedback-input:focus {
+            outline: none;
+            border-color: #00d9ff;
+        }
+        .ppv-feedback-input::placeholder { color: #666; }
+        .ppv-feedback-submit {
+            width: 100%;
+            background: linear-gradient(135deg, #00d9ff, #00b8d9);
+            border: none;
+            border-radius: 10px;
+            padding: 14px;
+            color: #000;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        .ppv-feedback-submit:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(0,217,255,0.3);
+        }
+        .ppv-feedback-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .ppv-feedback-message {
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            font-size: 13px;
+            display: none;
+        }
+        .ppv-feedback-message.show { display: block; }
+        .ppv-feedback-message.error {
+            background: rgba(220,53,69,0.2);
+            color: #ff6b6b;
+        }
+        .ppv-feedback-message.success {
+            background: rgba(40,167,69,0.2);
+            color: #51cf66;
+        }
+        .ppv-feedback-success {
+            text-align: center;
+            padding: 30px 20px;
+        }
+        .ppv-feedback-success i {
+            font-size: 64px;
+            color: #51cf66;
+            margin-bottom: 15px;
+        }
+        .ppv-feedback-success h4 {
+            color: #fff;
+            margin: 0 0 8px 0;
+            font-size: 20px;
+        }
+        .ppv-feedback-success p {
+            color: #aaa;
+            margin: 0;
+        }
+        @media (min-width: 500px) {
+            .ppv-feedback-content {
+                border-radius: 20px;
+                margin-bottom: 20px;
+            }
+        }
+        </style>
+        <?php
+    }
 
     /** ============================================================
-     * JS – Aktív ikon kijelölés + Turbo Navigation
+     * JS – Aktív ikon kijelölés + Turbo Navigation + Feedback Modal
      * ============================================================ */
     private static function inline_js() {
         $ajax_url = admin_url('admin-ajax.php');
-        $nonce = wp_create_nonce('ppv_support_nonce');
+        $nonce = wp_create_nonce('ppv_feedback_nonce');
 
         return "
         (function() {
@@ -239,109 +543,163 @@ class PPV_Bottom_Nav {
                 }).on('touchend mouseup', function() {
                     \$(this).removeClass('touch');
                 });
-
             }
 
-            // ============ SUPPORT MODAL (Event Delegation - Turbo Safe) ============
-            let supportEventsInitialized = false;
-            function initSupportModal() {
-                if (supportEventsInitialized) return;
-                supportEventsInitialized = true;
+            // ============ FEEDBACK MODAL (Event Delegation - Turbo Safe) ============
+            let feedbackEventsInitialized = false;
+            function initFeedbackModal() {
+                if (feedbackEventsInitialized) return;
+                feedbackEventsInitialized = true;
 
                 const \$ = jQuery;
+                const catMeta = {
+                    bug: { icon: 'ri-bug-line', text: 'Fehler melden', placeholder: 'Was ist passiert? Beschreiben Sie den Fehler...' },
+                    feature: { icon: 'ri-lightbulb-line', text: 'Idee / Wunsch', placeholder: 'Was wünschen Sie sich? Beschreiben Sie Ihre Idee...' },
+                    question: { icon: 'ri-question-line', text: 'Frage', placeholder: 'Was möchten Sie wissen?' },
+                    rating: { icon: 'ri-star-line', text: 'Bewertung', placeholder: 'Zusätzliche Anmerkungen (optional)...' }
+                };
 
-                // Open modal - event delegation on body
-                \$(document).on('click', '#ppv-support-nav-btn', function(e) {
+                function resetModal() {
+                    \$('#ppv-feedback-step1').addClass('active');
+                    \$('#ppv-feedback-step2, #ppv-feedback-step3').removeClass('active');
+                    \$('#ppv-feedback-message').val('');
+                    \$('#ppv-feedback-email').val('');
+                    \$('#ppv-feedback-category').val('');
+                    \$('#ppv-feedback-rating-value').val('0');
+                    \$('.ppv-star').removeClass('active');
+                    \$('#ppv-feedback-rating-section').hide();
+                    \$('#ppv-feedback-msg').removeClass('show error success');
+                }
+
+                function getDeviceInfo() {
+                    const ua = navigator.userAgent;
+                    let device = 'Desktop';
+                    if (/iPhone|iPad|iPod/.test(ua)) device = 'iOS';
+                    else if (/Android/.test(ua)) device = 'Android';
+                    else if (/Windows/.test(ua)) device = 'Windows';
+                    else if (/Mac/.test(ua)) device = 'macOS';
+
+                    let browser = 'Unknown';
+                    if (/Chrome/.test(ua) && !/Edg/.test(ua)) browser = 'Chrome';
+                    else if (/Safari/.test(ua) && !/Chrome/.test(ua)) browser = 'Safari';
+                    else if (/Firefox/.test(ua)) browser = 'Firefox';
+                    else if (/Edg/.test(ua)) browser = 'Edge';
+
+                    return device + ' / ' + browser;
+                }
+
+                // Open modal
+                \$(document).on('click', '#ppv-feedback-nav-btn', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
-                    const \$modal = \$('#ppv-support-modal');
-                    const \$msg = \$('#ppv-support-msg');
-                    \$modal.addClass('show');
-                    \$('#ppv-support-email').val('');
-                    \$('#ppv-support-phone').val('');
-                    \$('#ppv-support-desc').val('');
-                    setTimeout(function() { \$('#ppv-support-email').focus(); }, 100);
-                    \$msg.removeClass('show ppv-support-error ppv-support-success');
+                    resetModal();
+                    \$('#ppv-feedback-page').val(window.location.pathname);
+                    \$('#ppv-feedback-device').val(getDeviceInfo());
+                    \$('#ppv-feedback-modal').addClass('show');
                 });
 
                 // Close modal
-                \$(document).on('click', '#ppv-support-close', function() {
-                    \$('#ppv-support-modal').removeClass('show');
+                \$(document).on('click', '#ppv-feedback-close', function() {
+                    \$('#ppv-feedback-modal').removeClass('show');
                 });
 
-                // Close on backdrop click
-                \$(document).on('click', '#ppv-support-modal', function(e) {
-                    if (e.target === this) {
-                        \$(this).removeClass('show');
+                // Close on backdrop
+                \$(document).on('click', '#ppv-feedback-modal', function(e) {
+                    if (e.target === this) \$(this).removeClass('show');
+                });
+
+                // Category selection
+                \$(document).on('click', '.ppv-feedback-cat', function() {
+                    const cat = \$(this).data('category');
+                    const meta = catMeta[cat];
+
+                    \$('#ppv-feedback-category').val(cat);
+                    \$('#ppv-feedback-cat-header').html('<i class=\"' + meta.icon + '\"></i><span>' + meta.text + '</span>');
+                    \$('#ppv-feedback-message').attr('placeholder', meta.placeholder);
+
+                    // Show/hide rating section
+                    if (cat === 'rating') {
+                        \$('#ppv-feedback-rating-section').show();
+                    } else {
+                        \$('#ppv-feedback-rating-section').hide();
                     }
+
+                    \$('#ppv-feedback-step1').removeClass('active');
+                    \$('#ppv-feedback-step2').addClass('active');
+                    setTimeout(function() { \$('#ppv-feedback-message').focus(); }, 100);
                 });
 
-                // Send ticket
-                \$(document).on('click', '#ppv-support-send', function() {
-                    const \$modal = \$('#ppv-support-modal');
-                    const \$msg = \$('#ppv-support-msg');
-                    const email = \$('#ppv-support-email').val().trim();
-                    const phone = \$('#ppv-support-phone').val().trim();
-                    const desc = \$('#ppv-support-desc').val().trim();
-                    const priority = \$('#ppv-support-priority').val();
+                // Back button
+                \$(document).on('click', '#ppv-feedback-back', function() {
+                    \$('#ppv-feedback-step2').removeClass('active');
+                    \$('#ppv-feedback-step1').addClass('active');
+                });
+
+                // Star rating
+                \$(document).on('click', '.ppv-star', function() {
+                    const rating = \$(this).data('rating');
+                    \$('#ppv-feedback-rating-value').val(rating);
+                    \$('.ppv-star').removeClass('active');
+                    \$('.ppv-star').each(function() {
+                        if (\$(this).data('rating') <= rating) {
+                            \$(this).addClass('active');
+                        }
+                    });
+                });
+
+                // Submit feedback
+                \$(document).on('click', '#ppv-feedback-send', function() {
                     const \$btn = \$(this);
+                    const \$msg = \$('#ppv-feedback-msg');
+                    const message = \$('#ppv-feedback-message').val().trim();
+                    const category = \$('#ppv-feedback-category').val();
+                    const rating = \$('#ppv-feedback-rating-value').val();
+                    const userType = \$('#ppv-feedback-modal').data('user-type');
 
-                    if (!email) {
-                        \$msg.removeClass('ppv-support-success').addClass('ppv-support-error show').text('Bitte geben Sie Ihre E-Mail Adresse ein.');
-                        \$('#ppv-support-email').focus();
+                    // Validate
+                    if (category === 'rating' && rating === '0') {
+                        \$msg.removeClass('success').addClass('error show').text('Bitte wählen Sie eine Bewertung.');
+                        return;
+                    }
+                    if (!message && category !== 'rating') {
+                        \$msg.removeClass('success').addClass('error show').text('Bitte beschreiben Sie Ihr Anliegen.');
+                        \$('#ppv-feedback-message').focus();
                         return;
                     }
 
-                    const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+\$/;
-                    if (!emailRegex.test(email)) {
-                        \$msg.removeClass('ppv-support-success').addClass('ppv-support-error show').text('Bitte geben Sie eine gültige E-Mail Adresse ein.');
-                        \$('#ppv-support-email').focus();
-                        return;
-                    }
-
-                    if (!phone) {
-                        \$msg.removeClass('ppv-support-success').addClass('ppv-support-error show').text('Bitte geben Sie Ihre Telefonnummer ein.');
-                        \$('#ppv-support-phone').focus();
-                        return;
-                    }
-
-                    if (!desc) {
-                        \$msg.removeClass('ppv-support-success').addClass('ppv-support-error show').text('Bitte beschreiben Sie Ihr Problem.');
-                        \$('#ppv-support-desc').focus();
-                        return;
-                    }
-
-                    \$btn.prop('disabled', true).html('<i class=\"ri-loader-4-line\"></i> Senden...');
-                    \$msg.removeClass('show ppv-support-error ppv-support-success');
+                    \$btn.prop('disabled', true).html('<i class=\"ri-loader-4-line ri-spin\"></i> Senden...');
+                    \$msg.removeClass('show error success');
 
                     \$.ajax({
                         url: '{$ajax_url}',
                         type: 'POST',
                         data: {
-                            action: 'ppv_submit_support_ticket',
-                            email: email,
-                            phone: phone,
-                            description: desc,
-                            priority: priority,
-                            contact_method: 'email',
-                            nonce: '{$nonce}'
+                            action: 'ppv_submit_feedback',
+                            nonce: '{$nonce}',
+                            category: category,
+                            message: message,
+                            rating: rating,
+                            email: \$('#ppv-feedback-email').val() || '',
+                            page_url: \$('#ppv-feedback-page').val(),
+                            device_info: \$('#ppv-feedback-device').val(),
+                            user_type: userType
                         },
                         success: function(res) {
                             if (res.success) {
-                                \$msg.removeClass('ppv-support-error').addClass('ppv-support-success show').html('<i class=\"ri-checkbox-circle-line\"></i> Ticket gesendet!');
-                                \$('#ppv-support-email').val('');
-                                \$('#ppv-support-phone').val('');
-                                \$('#ppv-support-desc').val('');
-                                setTimeout(function() { \$modal.removeClass('show'); }, 1500);
+                                \$('#ppv-feedback-step2').removeClass('active');
+                                \$('#ppv-feedback-step3').addClass('active');
+                                setTimeout(function() {
+                                    \$('#ppv-feedback-modal').removeClass('show');
+                                }, 2000);
                             } else {
-                                \$msg.removeClass('ppv-support-success').addClass('ppv-support-error show').text(res.data?.message || 'Fehler');
+                                \$msg.removeClass('success').addClass('error show').text(res.data?.message || 'Fehler beim Senden');
                             }
                         },
                         error: function() {
-                            \$msg.removeClass('ppv-support-success').addClass('ppv-support-error show').text('Netzwerkfehler');
+                            \$msg.removeClass('success').addClass('error show').text('Netzwerkfehler');
                         },
                         complete: function() {
-                            \$btn.prop('disabled', false).html('<i class=\"ri-send-plane-line\"></i> Senden');
+                            \$btn.prop('disabled', false).html('<i class=\"ri-send-plane-line\"></i> Absenden');
                         }
                     });
                 });
@@ -351,11 +709,11 @@ class PPV_Bottom_Nav {
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', function() {
                     initAll();
-                    initSupportModal();
+                    initFeedbackModal();
                 });
             } else {
                 initAll();
-                initSupportModal();
+                initFeedbackModal();
             }
 
             // 🚀 Reinitialize nav after Turbo navigation (Support modal uses event delegation, no reinit needed)
