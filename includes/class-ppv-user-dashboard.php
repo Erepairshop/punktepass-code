@@ -36,15 +36,32 @@ class PPV_User_Dashboard {
         static $lang = null;
         if ($lang !== null) return $lang;
 
+        // 1. Cookie
         if (isset($_COOKIE['ppv_lang'])) {
             $lang = sanitize_text_field($_COOKIE['ppv_lang']);
-        } elseif (isset($_GET['lang'])) {
+        }
+        // 2. GET parameter
+        elseif (isset($_GET['lang'])) {
             $lang = sanitize_text_field($_GET['lang']);
-        } else {
+        }
+        // 3. User's saved language from database
+        elseif (!empty($_SESSION['ppv_user_id'])) {
+            global $wpdb;
+            $prefix = $wpdb->prefix;
+            $user_lang = $wpdb->get_var($wpdb->prepare(
+                "SELECT language FROM {$prefix}ppv_users WHERE id=%d LIMIT 1",
+                intval($_SESSION['ppv_user_id'])
+            ));
+            if (!empty($user_lang) && in_array($user_lang, ['de', 'hu', 'ro'])) {
+                $lang = $user_lang;
+            }
+        }
+        // 4. WordPress locale fallback
+        if (empty($lang)) {
             $lang = substr(get_locale(), 0, 2);
         }
 
-        return $lang ?: 'de';
+        return in_array($lang, ['de', 'hu', 'ro']) ? $lang : 'de';
     }
 
     private static function get_safe_user_id() {
