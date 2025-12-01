@@ -492,8 +492,9 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function createNfcButton() {
-  const qrDisplay = document.getElementById('ppvQrDisplay');
-  if (!qrDisplay) return;
+  // Add to actions area (always visible) instead of hidden qrDisplay
+  const actionsArea = document.querySelector('.ppv-qr-actions');
+  if (!actionsArea) return;
 
   // Check if button already exists
   if (document.getElementById('ppvNfcBtn')) return;
@@ -549,7 +550,7 @@ function createNfcButton() {
   document.head.appendChild(style);
 
   nfcBtn.addEventListener('click', toggleNfcSend);
-  qrDisplay.appendChild(nfcBtn);
+  actionsArea.appendChild(nfcBtn);
 
   console.log('[NFC] Send button created');
 }
