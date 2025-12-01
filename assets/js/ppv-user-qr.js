@@ -455,8 +455,19 @@ let isNfcSending = false;
 
 // Initialize NFC button if supported
 document.addEventListener("DOMContentLoaded", () => {
+  console.log('[NFC] Checking support...', {
+    nfcSupported: nfcSupported,
+    isSecureContext: window.isSecureContext,
+    userAgent: navigator.userAgent.substring(0, 100)
+  });
+
   if (!nfcSupported) {
     console.log('[NFC] Not supported in this browser');
+    return;
+  }
+
+  if (!window.isSecureContext) {
+    console.log('[NFC] Not in secure context (HTTPS required)');
     return;
   }
 
