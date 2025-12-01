@@ -51,11 +51,12 @@ trait PPV_QR_REST_Trait {
     // 📡 REST ROUTES REGISTRATION
     // ============================================================
     public static function register_rest_routes() {
-        // 🔒 CSRF: POST endpoints use check_handler_with_nonce
+        // 📱 Scanner endpoints - authenticate via PPV-POS-Token header (store key)
+        // These do NOT use NONCE because scanners aren't logged into WordPress
         register_rest_route('punktepass/v1', '/pos/scan', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'rest_process_scan'],
-            'permission_callback' => ['PPV_Permissions', 'check_handler_with_nonce'],
+            'permission_callback' => ['PPV_Permissions', 'check_handler'],
         ]);
 
         register_rest_route('punktepass/v1', '/pos/logs', [
@@ -64,10 +65,11 @@ trait PPV_QR_REST_Trait {
             'permission_callback' => ['PPV_Permissions', 'check_handler'],
         ]);
 
+        // Offline sync also from scanner device - no NONCE
         register_rest_route('punktepass/v1', '/pos/sync_offline', [
             'methods' => 'POST',
             'callback' => [__CLASS__, 'rest_sync_offline'],
-            'permission_callback' => ['PPV_Permissions', 'check_handler_with_nonce'],
+            'permission_callback' => ['PPV_Permissions', 'check_handler'],
         ]);
 
         register_rest_route('punktepass/v1', '/pos/campaign', [
