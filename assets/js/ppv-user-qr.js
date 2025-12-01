@@ -455,35 +455,7 @@ let isNfcSending = false;
 
 // Initialize NFC button if supported
 document.addEventListener("DOMContentLoaded", () => {
-  const debugInfo = {
-    nfcSupported: nfcSupported,
-    isSecureContext: window.isSecureContext,
-    browser: /SamsungBrowser/.test(navigator.userAgent) ? 'Samsung Internet' :
-             /Chrome/.test(navigator.userAgent) ? 'Chrome' :
-             /Firefox/.test(navigator.userAgent) ? 'Firefox' : 'Ismeretlen'
-  };
-
-  // Show debug info on screen - add to main container (always visible)
-  const mainContainer = document.querySelector('.ppv-user-qr');
-  if (mainContainer) {
-    const debugDiv = document.createElement('div');
-    debugDiv.style.cssText = 'background:#333;color:#fff;padding:10px;margin-top:10px;border-radius:8px;font-size:12px;text-align:left;';
-    debugDiv.innerHTML = `
-      <b>NFC Debug:</b><br>
-      📱 Böngésző: ${debugInfo.browser}<br>
-      🔒 HTTPS: ${debugInfo.isSecureContext ? '✅ Igen' : '❌ Nem'}<br>
-      📡 NFC API: ${debugInfo.nfcSupported ? '✅ Elérhető' : '❌ Nem elérhető'}<br>
-      ${!debugInfo.nfcSupported ? '<br>⚠️ Használj <b>Chrome</b> böngészőt!' : ''}
-      ${!debugInfo.isSecureContext ? '<br>⚠️ HTTPS szükséges!' : ''}
-    `;
-    mainContainer.appendChild(debugDiv);
-  }
-
-  if (!nfcSupported) {
-    return;
-  }
-
-  if (!window.isSecureContext) {
+  if (!nfcSupported || !window.isSecureContext) {
     return;
   }
 

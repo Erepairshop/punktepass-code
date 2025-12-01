@@ -880,29 +880,51 @@ button .ri-loader-4-line,
     border: 1px solid var(--pp-border-soft);
 }
 
+/* Mobile Responsive - Android scroll fix */
+@media (max-width: 768px) {
+    .ppv-user-qr {
+        max-height: 80vh;
+        max-height: 80dvh; /* Dynamic viewport height for mobile browsers */
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
 /* Mobile Responsive - Even smaller on very small screens */
 @media (max-width: 380px) {
     .ppv-user-qr {
         width: 92vw;
         max-width: 300px;
-        padding: 20px 16px;
+        padding: 16px 12px;
         margin: auto;
+        max-height: 75vh;
+        max-height: 75dvh;
     }
 
     .ppv-user-qr img {
-        width: 195px;
-        height: 195px;
-        padding: 8px;
+        width: 160px;
+        height: 160px;
+        padding: 6px;
     }
 
     .ppv-user-qr h3,
     .ppv-user-qr .qr-title {
         font-size: 14px;
+        margin-bottom: 8px;
     }
 
     .ppv-user-qr .qr-info {
         font-size: 12px;
         padding: 8px 12px;
+    }
+
+    .ppv-qr-warning {
+        padding: 8px 10px;
+        margin-bottom: 10px;
+    }
+
+    .ppv-qr-warning-text {
+        font-size: 11px;
     }
 }
 
