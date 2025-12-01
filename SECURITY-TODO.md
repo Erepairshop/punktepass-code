@@ -1,7 +1,77 @@
 # PunktePass Security Audit - TODO Lista
 
-**Audit dátum:** 2025-11-29
+**Audit dátum:** 2025-11-29 (frissítve: 2025-12-01)
 **Auditor:** Claude Code
+
+> **Kapcsolódó dokumentáció:** [SYSTEM-AUDIT.md](./SYSTEM-AUDIT.md) - Teljes rendszer audit (Marketing, Biztonság, Funkciók)
+
+---
+
+## 🎯 FÁZIS 1 - AZONNALI BIZTONSÁGI FEJLESZTÉSEK (2025-12)
+
+### 1.1 GPS Geofence Validáció
+```
+Prioritás: KRITIKUS
+Státusz: [ ] TODO
+```
+**Mi ez?** A scan csak akkor érvényes, ha a felhasználó az üzlet közelében van (pl. 100m).
+
+**Miért fontos?**
+- Megakadályozza a távoli csalásokat (valaki otthonról scanneli a QR kódot)
+- GPS spoof detection (ha túl gyorsan mozog a felhasználó)
+
+**Implementáció:**
+- Új oszlop: `ppv_stores.gps_validation_enabled` (default: 0)
+- Új oszlop: `ppv_stores.gps_radius_meters` (default: 100)
+- Haversine formula a távolságszámításhoz
+- Store owner választhatja: log only / block
+
+**Fájlok:**
+- `trait-ppv-qr-rest.php` - GPS validáció
+- `class-ppv-vip-settings.php` - Admin UI
+- `ppv-qr-camera.js` - GPS lekérdezés
+
+---
+
+### 1.2 Device Request Cooldown
+```
+Prioritás: KÖZEPES
+Státusz: [ ] TODO
+```
+**Mi ez?** Egy eszközről max 1 új device regisztráció 7 naponta.
+
+**Miért fontos?**
+- Spam prevention (valaki 100x kér új device-t)
+- Fraud detection (gyanús aktivitás)
+
+**Implementáció:**
+- Új oszlop: `ppv_device_fingerprints.last_request_at`
+- 7 napos cooldown ellenőrzés
+- Admin override lehetőség
+
+**Fájlok:**
+- `class-ppv-device-fingerprint.php`
+
+---
+
+### 1.3 Fingerprint Change Notification
+```
+Prioritás: ALACSONY
+Státusz: [ ] TODO
+```
+**Mi ez?** Ha a fingerprint változott, a user kap egy toast üzenetet.
+
+**Miért fontos?**
+- User tudja, hogy változott valami
+- Nem váratlanul kapja a "device not registered" hibát
+
+**Implementáció:**
+- Toast üzenet: "Eszköz fingerprint változott"
+- Auto-update gomb megjelenítése
+
+**Fájlok:**
+- `ppv-qr-camera.js`
+- `trait-ppv-qr-devices.php`
 
 ---
 
