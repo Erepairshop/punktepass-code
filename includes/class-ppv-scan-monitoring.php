@@ -24,6 +24,22 @@ class PPV_Scan_Monitoring {
     // Admin email for fraud alerts
     const FRAUD_ALERT_EMAIL = 'info@punktepass.de';
 
+    // ═══════════════════════════════════════════════════════════════
+    // GPS ZONE CONSTANTS (Fázis 1 - 2025-12)
+    // ═══════════════════════════════════════════════════════════════
+    // Zone 1: OK - scan allowed without logging
+    const GPS_ZONE_OK = 100;        // < 100m = OK
+
+    // Zone 2: LOG - scan allowed but logged as suspicious
+    const GPS_ZONE_LOG = 200;       // 100-200m = LOG only
+
+    // Zone 3: BLOCK - scan blocked (> 200m)
+    // Anything above GPS_ZONE_LOG = BLOCKED
+
+    // GPS Spoof Detection: Maximum realistic travel speed (km/h)
+    // Above this = impossible travel (GPS spoofing suspected)
+    const MAX_TRAVEL_SPEED_KMH = 300; // 300 km/h (high-speed train)
+
     /**
      * Initialize hooks
      */
@@ -246,31 +262,103 @@ class PPV_Scan_Monitoring {
     }
 
     /**
-     * Validate scan GPS location
-     * Returns: ['valid' => bool, 'distance' => int|null, 'reason' => string|null]
+     * Check if device has mobile_scanner enabled (skips GPS check)
+     * @param string $device_fingerprint The device fingerprint hash
+     * @param int $store_id The store ID
+     * @return bool True if device is a mobile scanner
      */
-    public static function validate_scan_location($store_id, $scan_lat, $scan_lng) {
+    public static function is_device_mobile_scanner($device_fingerprint, $store_id) {
         global $wpdb;
 
-        // Check if monitoring is enabled
-        if (!self::is_monitoring_enabled($store_id)) {
-            return ['valid' => true, 'distance' => null, 'reason' => null, 'skipped' => 'monitoring_disabled'];
+        if (empty($device_fingerprint)) {
+            return false;
         }
 
-        // Check scanner type - mobile scanners skip GPS check
+        // Get parent store ID (in case of filiale)
+        $parent_store_id = $wpdb->get_var($wpdb->prepare(
+            "SELECT COALESCE(parent_store_id, id) FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+            $store_id
+        ));
+
+        // Check if device has mobile_scanner flag
+        $mobile_scanner = $wpdb->get_var($wpdb->prepare(
+            "SELECT mobile_scanner FROM {$wpdb->prefix}ppv_user_devices
+             WHERE store_id = %d AND fingerprint_hash = %s AND status = 'active'",
+            $parent_store_id,
+            $device_fingerprint
+        ));
+
+        return !empty($mobile_scanner);
+    }
+
+    /**
+     * Validate scan GPS location with 3-zone logic
+     *
+     * ZONES:
+     * - Zone 1 (< 100m): OK - scan allowed
+     * - Zone 2 (100-200m): LOG - scan allowed but logged as suspicious
+     * - Zone 3 (> 200m): BLOCK - scan rejected
+     *
+     * EXCEPTIONS:
+     * - Mobile scanner devices skip ALL GPS checks
+     * - Store-level scanner_type='mobile' skips GPS checks
+     *
+     * @param int $store_id Store ID
+     * @param float $scan_lat Scan latitude
+     * @param float $scan_lng Scan longitude
+     * @param string|null $device_fingerprint Device fingerprint for mobile scanner check
+     * @return array ['valid' => bool, 'distance' => int|null, 'reason' => string|null, 'action' => string]
+     */
+    public static function validate_scan_location($store_id, $scan_lat, $scan_lng, $device_fingerprint = null) {
+        global $wpdb;
+
+        // ═══════════════════════════════════════════════════════════════
+        // MOBILE SCANNER EXCEPTION - Skip GPS for mobile scanner devices
+        // ═══════════════════════════════════════════════════════════════
+
+        // Check device-level mobile scanner first (per-device setting)
+        if ($device_fingerprint && self::is_device_mobile_scanner($device_fingerprint, $store_id)) {
+            ppv_log("[GPS] 📱 Mobile scanner device detected - GPS check SKIPPED for store #{$store_id}");
+            return [
+                'valid' => true,
+                'distance' => null,
+                'reason' => null,
+                'action' => 'none',
+                'skipped' => 'mobile_scanner_device'
+            ];
+        }
+
+        // Check store-level scanner type (legacy, for backwards compatibility)
         $scanner_type = self::get_scanner_type($store_id);
         if ($scanner_type === 'mobile') {
-            return ['valid' => true, 'distance' => null, 'reason' => null, 'skipped' => 'mobile_scanner'];
+            return [
+                'valid' => true,
+                'distance' => null,
+                'reason' => null,
+                'action' => 'none',
+                'skipped' => 'mobile_scanner_store'
+            ];
         }
 
-        // If no GPS provided from scan, allow (might be older device)
+        // ═══════════════════════════════════════════════════════════════
+        // GPS VALIDATION - Always enabled (admin controlled, not per-store)
+        // ═══════════════════════════════════════════════════════════════
+
+        // If no GPS provided from scan, LOG as suspicious (could be GPS spoofer hiding location)
         if (empty($scan_lat) || empty($scan_lng)) {
-            return ['valid' => true, 'distance' => null, 'reason' => null, 'skipped' => 'no_gps_data'];
+            ppv_log("[GPS] ⚠️ No GPS data provided for store #{$store_id} - logging as suspicious");
+            return [
+                'valid' => true,  // Allow scan but log
+                'distance' => null,
+                'reason' => 'no_gps_data',
+                'action' => 'log',
+                'skipped' => false
+            ];
         }
 
-        // Get store location AND country
+        // Get store location
         $store = $wpdb->get_row($wpdb->prepare(
-            "SELECT latitude, longitude, max_scan_distance, country FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+            "SELECT latitude, longitude, country FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
             $store_id
         ));
 
@@ -280,19 +368,27 @@ class PPV_Scan_Monitoring {
             if (!empty($store->country)) {
                 $country_check = self::validate_scan_country($scan_lat, $scan_lng, $store->country);
                 if (!$country_check['valid']) {
+                    ppv_log("[GPS] ❌ BLOCKED: Wrong country! Store={$store->country}, Scan={$country_check['detected_country']}");
                     return [
                         'valid' => false,
                         'distance' => null,
                         'reason' => 'wrong_country',
+                        'action' => 'block',
                         'store_country' => $store->country,
                         'scan_country' => $country_check['detected_country']
                     ];
                 }
             }
-            return ['valid' => true, 'distance' => null, 'reason' => null, 'skipped' => 'no_store_gps'];
+            return [
+                'valid' => true,
+                'distance' => null,
+                'reason' => null,
+                'action' => 'none',
+                'skipped' => 'no_store_gps'
+            ];
         }
 
-        // Calculate distance
+        // Calculate distance using Haversine formula
         $distance = self::calculate_distance(
             $store->latitude,
             $store->longitude,
@@ -300,19 +396,44 @@ class PPV_Scan_Monitoring {
             $scan_lng
         );
 
-        $max_distance = intval($store->max_scan_distance) ?: self::DEFAULT_MAX_DISTANCE;
+        // ═══════════════════════════════════════════════════════════════
+        // 3-ZONE GPS VALIDATION
+        // ═══════════════════════════════════════════════════════════════
 
-        // Check if within allowed range
-        if ($distance <= $max_distance) {
-            return ['valid' => true, 'distance' => $distance, 'reason' => null];
+        // ZONE 1: OK (< 100m) - Scan allowed, no logging
+        if ($distance <= self::GPS_ZONE_OK) {
+            return [
+                'valid' => true,
+                'distance' => $distance,
+                'reason' => null,
+                'action' => 'none',
+                'zone' => 'ok'
+            ];
         }
 
-        // Distance exceeded - suspicious scan
+        // ZONE 2: LOG (100-200m) - Scan allowed but logged as suspicious
+        if ($distance <= self::GPS_ZONE_LOG) {
+            ppv_log("[GPS] ⚠️ Zone 2 (LOG): Distance {$distance}m for store #{$store_id} - logging as suspicious");
+            return [
+                'valid' => true,
+                'distance' => $distance,
+                'reason' => 'gps_zone_log',
+                'action' => 'log',
+                'zone' => 'log',
+                'store_lat' => $store->latitude,
+                'store_lng' => $store->longitude
+            ];
+        }
+
+        // ZONE 3: BLOCK (> 200m) - Scan rejected
+        ppv_log("[GPS] ❌ Zone 3 (BLOCK): Distance {$distance}m for store #{$store_id} - BLOCKING scan");
         return [
             'valid' => false,
             'distance' => $distance,
-            'max_distance' => $max_distance,
-            'reason' => 'gps_distance',
+            'reason' => 'gps_distance_blocked',
+            'action' => 'block',
+            'zone' => 'block',
+            'max_allowed' => self::GPS_ZONE_LOG,
             'store_lat' => $store->latitude,
             'store_lng' => $store->longitude
         ];
@@ -859,6 +980,187 @@ class PPV_Scan_Monitoring {
      */
     public static function should_be_pending($distance) {
         return $distance !== null && $distance > self::PENDING_DISTANCE_THRESHOLD;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // GPS SPOOF DETECTION - Impossible Travel
+    // ═══════════════════════════════════════════════════════════════
+
+    /**
+     * Check for impossible travel (GPS spoofing detection)
+     *
+     * Compares current scan GPS with user's last scan GPS.
+     * If the user "traveled" faster than MAX_TRAVEL_SPEED_KMH, it's suspicious.
+     *
+     * Example: User scanned in Budapest, 5 minutes later scans in Vienna = 250km in 5min = 3000km/h = IMPOSSIBLE
+     *
+     * @param int $user_id User ID
+     * @param float $current_lat Current scan latitude
+     * @param float $current_lng Current scan longitude
+     * @return array ['suspicious' => bool, 'reason' => string|null, 'details' => array|null]
+     */
+    public static function check_impossible_travel($user_id, $current_lat, $current_lng) {
+        global $wpdb;
+
+        if (empty($current_lat) || empty($current_lng)) {
+            return ['suspicious' => false, 'reason' => 'no_current_gps'];
+        }
+
+        // Get user's last scan with GPS data (from suspicious_scans or from a GPS log)
+        // We need to track GPS per scan - let's check suspicious_scans first
+        $last_scan = $wpdb->get_row($wpdb->prepare("
+            SELECT scan_latitude, scan_longitude, created_at
+            FROM {$wpdb->prefix}ppv_suspicious_scans
+            WHERE user_id = %d
+              AND scan_latitude IS NOT NULL
+              AND scan_longitude IS NOT NULL
+              AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+            ORDER BY created_at DESC
+            LIMIT 1
+        ", $user_id));
+
+        // Also check the gps_scan_log table if it exists
+        $gps_log_table = $wpdb->prefix . 'ppv_gps_scan_log';
+        $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$gps_log_table}'") === $gps_log_table;
+
+        if ($table_exists) {
+            $last_gps_log = $wpdb->get_row($wpdb->prepare("
+                SELECT latitude, longitude, created_at
+                FROM {$gps_log_table}
+                WHERE user_id = %d
+                  AND latitude IS NOT NULL
+                  AND longitude IS NOT NULL
+                  AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+                ORDER BY created_at DESC
+                LIMIT 1
+            ", $user_id));
+
+            // Use the more recent one
+            if ($last_gps_log && (!$last_scan || strtotime($last_gps_log->created_at) > strtotime($last_scan->created_at))) {
+                $last_scan = (object)[
+                    'scan_latitude' => $last_gps_log->latitude,
+                    'scan_longitude' => $last_gps_log->longitude,
+                    'created_at' => $last_gps_log->created_at
+                ];
+            }
+        }
+
+        if (!$last_scan) {
+            return ['suspicious' => false, 'reason' => 'no_previous_gps'];
+        }
+
+        // Calculate distance and time
+        $distance_meters = self::calculate_distance(
+            $last_scan->scan_latitude,
+            $last_scan->scan_longitude,
+            $current_lat,
+            $current_lng
+        );
+
+        $time_diff_seconds = time() - strtotime($last_scan->created_at);
+
+        // Minimum time difference to check (avoid division by zero, also ignore very recent scans)
+        if ($time_diff_seconds < 60) {
+            return ['suspicious' => false, 'reason' => 'too_recent'];
+        }
+
+        // Calculate speed in km/h
+        $distance_km = $distance_meters / 1000;
+        $time_hours = $time_diff_seconds / 3600;
+        $speed_kmh = $time_hours > 0 ? $distance_km / $time_hours : 0;
+
+        // Check if speed exceeds maximum realistic travel speed
+        if ($speed_kmh > self::MAX_TRAVEL_SPEED_KMH) {
+            ppv_log("[GPS SPOOF] 🚨 IMPOSSIBLE TRAVEL detected! User #{$user_id}: {$distance_km}km in " . round($time_diff_seconds / 60, 1) . " min = {$speed_kmh} km/h (max: " . self::MAX_TRAVEL_SPEED_KMH . " km/h)");
+
+            return [
+                'suspicious' => true,
+                'reason' => 'impossible_travel',
+                'details' => [
+                    'distance_km' => round($distance_km, 2),
+                    'time_minutes' => round($time_diff_seconds / 60, 1),
+                    'speed_kmh' => round($speed_kmh, 1),
+                    'max_speed_kmh' => self::MAX_TRAVEL_SPEED_KMH,
+                    'last_lat' => $last_scan->scan_latitude,
+                    'last_lng' => $last_scan->scan_longitude,
+                    'last_time' => $last_scan->created_at,
+                    'current_lat' => $current_lat,
+                    'current_lng' => $current_lng
+                ]
+            ];
+        }
+
+        return ['suspicious' => false, 'speed_kmh' => round($speed_kmh, 1)];
+    }
+
+    /**
+     * Log GPS data for impossible travel detection
+     * Call this after every successful scan with GPS data
+     *
+     * @param int $user_id User ID
+     * @param int $store_id Store ID
+     * @param float $latitude Scan latitude
+     * @param float $longitude Scan longitude
+     */
+    public static function log_gps_scan($user_id, $store_id, $latitude, $longitude) {
+        global $wpdb;
+
+        if (empty($latitude) || empty($longitude)) {
+            return;
+        }
+
+        // Ensure table exists
+        self::ensure_gps_log_table();
+
+        $wpdb->insert(
+            $wpdb->prefix . 'ppv_gps_scan_log',
+            [
+                'user_id' => $user_id,
+                'store_id' => $store_id,
+                'latitude' => $latitude,
+                'longitude' => $longitude,
+                'created_at' => current_time('mysql')
+            ],
+            ['%d', '%d', '%f', '%f', '%s']
+        );
+
+        // Clean up old entries (keep only last 24 hours per user)
+        $wpdb->query($wpdb->prepare("
+            DELETE FROM {$wpdb->prefix}ppv_gps_scan_log
+            WHERE user_id = %d AND created_at < DATE_SUB(NOW(), INTERVAL 24 HOUR)
+        ", $user_id));
+    }
+
+    /**
+     * Ensure GPS scan log table exists
+     */
+    private static function ensure_gps_log_table() {
+        global $wpdb;
+
+        $table_name = $wpdb->prefix . 'ppv_gps_scan_log';
+
+        if ($wpdb->get_var("SHOW TABLES LIKE '{$table_name}'") === $table_name) {
+            return;
+        }
+
+        $charset_collate = $wpdb->get_charset_collate();
+
+        $sql = "CREATE TABLE {$table_name} (
+            id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            user_id BIGINT(20) UNSIGNED NOT NULL,
+            store_id BIGINT(20) UNSIGNED NOT NULL,
+            latitude DECIMAL(10,8) NOT NULL,
+            longitude DECIMAL(11,8) NOT NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            KEY idx_user_id (user_id),
+            KEY idx_created_at (created_at)
+        ) {$charset_collate};";
+
+        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+        dbDelta($sql);
+
+        ppv_log("[PPV_Scan_Monitoring] ✅ Created ppv_gps_scan_log table for impossible travel detection");
     }
 
     // ═══════════════════════════════════════════════════════════════

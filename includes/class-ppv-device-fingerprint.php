@@ -2071,10 +2071,41 @@ class PPV_Device_Fingerprint {
     /**
      * Create device approval request and send email
      */
+    // ═══════════════════════════════════════════════════════════════
+    // DEVICE REQUEST COOLDOWN - 1 day limit (Fázis 1 - 2025-12)
+    // ═══════════════════════════════════════════════════════════════
+    const DEVICE_REQUEST_COOLDOWN_HOURS = 24; // 1 day cooldown
+
     private static function create_device_request($store_id, $fingerprint_hash, $type, $device_name) {
         global $wpdb;
 
-        // Check for existing pending request
+        // ═══════════════════════════════════════════════════════════════
+        // COOLDOWN CHECK - Prevent spam requests (max 1 request per 24 hours)
+        // ═══════════════════════════════════════════════════════════════
+        $cooldown_hours = self::DEVICE_REQUEST_COOLDOWN_HOURS;
+        $recent_request = $wpdb->get_row($wpdb->prepare(
+            "SELECT id, requested_at, status FROM {$wpdb->prefix}" . self::DEVICE_REQUESTS_TABLE . "
+             WHERE store_id = %d AND fingerprint_hash = %s
+             AND requested_at >= DATE_SUB(NOW(), INTERVAL %d HOUR)
+             ORDER BY requested_at DESC LIMIT 1",
+            $store_id, $fingerprint_hash, $cooldown_hours
+        ));
+
+        if ($recent_request) {
+            $time_since = strtotime(current_time('mysql')) - strtotime($recent_request->requested_at);
+            $hours_remaining = ceil(($cooldown_hours * 3600 - $time_since) / 3600);
+
+            ppv_log("🚫 [Device Cooldown] Request blocked: store_id={$store_id}, hours_remaining={$hours_remaining}");
+
+            return [
+                'success' => false,
+                'message' => "Bitte warten Sie noch {$hours_remaining} Stunde(n) bevor Sie eine neue Geräteanfrage stellen können.",
+                'cooldown' => true,
+                'hours_remaining' => $hours_remaining
+            ];
+        }
+
+        // Check for existing pending request (legacy check)
         $existing = $wpdb->get_var($wpdb->prepare(
             "SELECT id FROM {$wpdb->prefix}" . self::DEVICE_REQUESTS_TABLE . "
              WHERE store_id = %d AND fingerprint_hash = %s AND request_type = %s AND status = 'pending'",

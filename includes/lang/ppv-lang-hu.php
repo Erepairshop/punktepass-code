@@ -943,6 +943,7 @@ return [
 'update_fingerprint' => 'Fingerprint frissítése',
 'confirm_update_fingerprint' => 'Frissíti a készülék fingerprint-jét a jelenlegi böngészővel?',
 'fingerprint_updated' => 'Fingerprint sikeresen frissítve! Az oldal újratöltődik.',
+'fingerprint_auto_updated' => 'Eszköz fingerprint automatikusan frissítve ({score}% egyezés)',
 'update_error' => 'Hiba a frissítés során',
 'close' => 'Bezárás',
 
@@ -1022,6 +1023,8 @@ return [
 'err_duplicate_scan' => '⚠️ Már beolvasva. Kérlek várj.',
 'err_gps_distance' => 'A beolvasás nem lehetséges - túl messze van a helyszíntől',
 'err_wrong_country' => 'A beolvasás nem lehetséges - rossz ország észlelve',
+'err_gps_too_far' => '❌ Túl messze vagy az üzlettől ({distance}m). Maximum: {max}m',
+'err_gps_spoof' => '❌ Gyanús GPS aktivitás észlelve. Kérjük, próbáld újra később.',
 'log_point_added' => '1 pont hozzáadva',
 'scan_success' => '✅ 1 pont hozzáadva',
 'offline_synced' => '✅ Offline szinkronizálva',

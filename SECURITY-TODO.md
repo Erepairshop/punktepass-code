@@ -7,71 +7,58 @@
 
 ---
 
-## 🎯 FÁZIS 1 - AZONNALI BIZTONSÁGI FEJLESZTÉSEK (2025-12)
+## 🎯 FÁZIS 1 - BIZTONSÁGI FEJLESZTÉSEK ✅ KÉSZ (2025-12-01)
 
-### 1.1 GPS Geofence Validáció
+### 1.1 GPS Geofence Validáció ✅ IMPLEMENTÁLVA
 ```
 Prioritás: KRITIKUS
-Státusz: [ ] TODO
+Státusz: [x] KÉSZ - 2025-12-01
 ```
-**Mi ez?** A scan csak akkor érvényes, ha a felhasználó az üzlet közelében van (pl. 100m).
+**Implementált logika:**
+- **Zone 1 (< 100m):** OK - scan engedélyezve
+- **Zone 2 (100-200m):** LOG - scan engedélyezve, de logolva gyanúsként
+- **Zone 3 (> 200m):** BLOCK - scan blokkolva
 
-**Miért fontos?**
-- Megakadályozza a távoli csalásokat (valaki otthonról scanneli a QR kódot)
-- GPS spoof detection (ha túl gyorsan mozog a felhasználó)
+**Mobile Scanner kivétel:**
+- Ha a device `mobile_scanner = 1`, akkor GPS ellenőrzés KIKAPCSOLVA
 
-**Implementáció:**
-- Új oszlop: `ppv_stores.gps_validation_enabled` (default: 0)
-- Új oszlop: `ppv_stores.gps_radius_meters` (default: 100)
-- Haversine formula a távolságszámításhoz
-- Store owner választhatja: log only / block
+**GPS Spoof Detection:**
+- Impossible travel detection (>300 km/h = gyanús)
+- GPS scan log tábla (`ppv_gps_scan_log`) az utolsó 24 óra pozícióihoz
 
-**Fájlok:**
-- `trait-ppv-qr-rest.php` - GPS validáció
-- `class-ppv-vip-settings.php` - Admin UI
-- `ppv-qr-camera.js` - GPS lekérdezés
+**Fájlok módosítva:**
+- `class-ppv-scan-monitoring.php` - 3-zónás logika + spoof detection
+- `trait-ppv-qr-rest.php` - GPS blocking implementálva
+- `ppv-lang-de.php`, `ppv-lang-hu.php` - hibaüzenetek
 
 ---
 
-### 1.2 Device Request Cooldown
+### 1.2 Device Request Cooldown ✅ IMPLEMENTÁLVA
 ```
 Prioritás: KÖZEPES
-Státusz: [ ] TODO
+Státusz: [x] KÉSZ - 2025-12-01
 ```
-**Mi ez?** Egy eszközről max 1 új device regisztráció 7 naponta.
+**Implementált logika:**
+- **24 óra cooldown** - ugyanarról az eszközről max 1 kérés/nap
+- Spam prevention aktív
 
-**Miért fontos?**
-- Spam prevention (valaki 100x kér új device-t)
-- Fraud detection (gyanús aktivitás)
-
-**Implementáció:**
-- Új oszlop: `ppv_device_fingerprints.last_request_at`
-- 7 napos cooldown ellenőrzés
-- Admin override lehetőség
-
-**Fájlok:**
-- `class-ppv-device-fingerprint.php`
+**Fájlok módosítva:**
+- `class-ppv-device-fingerprint.php` - `DEVICE_REQUEST_COOLDOWN_HOURS = 24`
 
 ---
 
-### 1.3 Fingerprint Change Notification
+### 1.3 Fingerprint Change Notification ✅ IMPLEMENTÁLVA
 ```
 Prioritás: ALACSONY
-Státusz: [ ] TODO
+Státusz: [x] KÉSZ - 2025-12-01
 ```
-**Mi ez?** Ha a fingerprint változott, a user kap egy toast üzenetet.
+**Implementált logika:**
+- Toast üzenet amikor fingerprint auto-update történik
+- Megjeleníti a similarity score-t (pl. "85% egyezés")
 
-**Miért fontos?**
-- User tudja, hogy változott valami
-- Nem váratlanul kapja a "device not registered" hibát
-
-**Implementáció:**
-- Toast üzenet: "Eszköz fingerprint változott"
-- Auto-update gomb megjelenítése
-
-**Fájlok:**
-- `ppv-qr-camera.js`
-- `trait-ppv-qr-devices.php`
+**Fájlok módosítva:**
+- `ppv-qr-camera.js` - toast notification hozzáadva
+- `ppv-lang-de.php`, `ppv-lang-hu.php` - `fingerprint_auto_updated` string
 
 ---
 

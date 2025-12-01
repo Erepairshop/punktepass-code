@@ -364,6 +364,19 @@
         const data = await response.json();
         ppvLog('[Scanner] Device check result:', data);
 
+        // ═══════════════════════════════════════════════════════════════
+        // FINGERPRINT CHANGE NOTIFICATION (Fázis 1 - 2025-12)
+        // Show toast when fingerprint was auto-updated
+        // ═══════════════════════════════════════════════════════════════
+        if (data.auto_updated && data.similarity_score) {
+          ppvLog('[Scanner] 🔄 Fingerprint auto-updated with similarity:', data.similarity_score + '%');
+          const toastMsg = (L.fingerprint_auto_updated || 'Geräte-Fingerprint automatisch aktualisiert ({score}% Übereinstimmung)')
+            .replace('{score}', data.similarity_score);
+          if (window.ppvToast) {
+            window.ppvToast(toastMsg, 'info');
+          }
+        }
+
         if (!data.can_use_scanner) {
           let message;
           if (data.device_count === 0) {

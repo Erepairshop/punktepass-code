@@ -968,6 +968,7 @@ return [
 'update_fingerprint' => 'Fingerprint aktualisieren',
 'confirm_update_fingerprint' => 'Fingerprint für dieses Gerät mit dem aktuellen Browser aktualisieren?',
 'fingerprint_updated' => 'Fingerprint erfolgreich aktualisiert! Die Seite wird neu geladen.',
+'fingerprint_auto_updated' => 'Geräte-Fingerprint automatisch aktualisiert ({score}% Übereinstimmung)',
 'update_error' => 'Fehler beim Aktualisieren',
 'close' => 'Schließen',
 
@@ -1047,6 +1048,8 @@ return [
 'err_duplicate_scan' => '⚠️ Bereits gescannt. Bitte warten.',
 'err_gps_distance' => 'Scan nicht möglich - zu weit vom Standort entfernt',
 'err_wrong_country' => 'Scan nicht möglich - falsches Land erkannt',
+'err_gps_too_far' => '❌ Sie sind zu weit vom Geschäft entfernt ({distance}m). Maximum: {max}m',
+'err_gps_spoof' => '❌ Verdächtige GPS-Aktivität erkannt. Bitte versuchen Sie es später erneut.',
 'log_point_added' => '1 Punkt hinzugefügt',
 'scan_success' => '✅ 1 Punkt hinzugefügt',
 'offline_synced' => '✅ Offline synchronisiert',

@@ -360,24 +360,97 @@ trait PPV_QR_REST_Trait {
         }
 
         // ═══════════════════════════════════════════════════════════
-        // GPS DISTANCE CHECK (Fraud Detection) - LOG ONLY, DON'T BLOCK
-        // Scan always goes through, suspicious cases logged for admin review
+        // GPS 3-ZONE VALIDATION (Fázis 1 - 2025-12)
+        // Zone 1 (< 100m): OK
+        // Zone 2 (100-200m): LOG only
+        // Zone 3 (> 200m): BLOCK
+        // Mobile scanner devices: GPS check SKIPPED
         // ═══════════════════════════════════════════════════════════
-        if (class_exists('PPV_Scan_Monitoring') && ($scan_lat || $scan_lng)) {
-            $gps_check = PPV_Scan_Monitoring::validate_scan_location($store_id, $scan_lat, $scan_lng);
+        if (class_exists('PPV_Scan_Monitoring')) {
+            // Pass device_fingerprint for mobile scanner check
+            $gps_check = PPV_Scan_Monitoring::validate_scan_location($store_id, $scan_lat, $scan_lng, $device_fingerprint);
 
-            if (!$gps_check['valid']) {
-                // Log suspicious scan for admin review - but allow scan to continue
+            $gps_action = $gps_check['action'] ?? 'none';
+            $gps_reason = $gps_check['reason'] ?? null;
+
+            // ACTION: BLOCK - Scan rejected (>200m or wrong country)
+            if ($gps_action === 'block' || !$gps_check['valid']) {
                 PPV_Scan_Monitoring::log_suspicious_scan($store_id, $user_id, $scan_lat, $scan_lng, $gps_check);
 
-                $reason = $gps_check['reason'] ?? 'gps_distance';
+                $distance = $gps_check['distance'] ?? 0;
+                $max_allowed = $gps_check['max_allowed'] ?? 200;
 
-                if ($reason === 'wrong_country') {
-                    ppv_log("[PPV_QR] ⚠️ SUSPICIOUS: Country mismatch (SCAN ALLOWED): user={$user_id}, store={$store_id}, store_country={$gps_check['store_country']}, scan_country={$gps_check['scan_country']}");
-                } else {
-                    ppv_log("[PPV_QR] ⚠️ SUSPICIOUS: GPS distance exceeded (SCAN ALLOWED): user={$user_id}, store={$store_id}, distance={$gps_check['distance']}m");
+                ppv_log("[PPV_QR] ❌ GPS BLOCKED: user={$user_id}, store={$store_id}, distance={$distance}m, reason={$gps_reason}");
+
+                // Get user info for response
+                $user_info = $wpdb->get_row($wpdb->prepare("
+                    SELECT first_name, last_name, email, avatar
+                    FROM {$wpdb->prefix}ppv_users WHERE id = %d
+                ", $user_id));
+                $customer_name = trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
+
+                $error_message = self::t('err_gps_too_far', '❌ Túl messze vagy az üzlettől ({distance}m). Maximum: {max}m');
+                $error_message = str_replace(['{distance}', '{max}'], [$distance, $max_allowed], $error_message);
+
+                if ($gps_reason === 'wrong_country') {
+                    $error_message = self::t('err_wrong_country', '❌ Rossz ország! A scan csak az üzlet országában működik.');
                 }
-                // Scan continues - admin can review suspicious scans in WP admin
+
+                return new WP_REST_Response([
+                    'success' => false,
+                    'message' => $error_message,
+                    'user_id' => $user_id,
+                    'customer_name' => $customer_name ?: null,
+                    'email' => $user_info->email ?? null,
+                    'avatar' => $user_info->avatar ?? null,
+                    'error_type' => 'gps_blocked',
+                    'distance' => $distance,
+                    'max_distance' => $max_allowed
+                ], 403);
+            }
+
+            // ACTION: LOG - Scan allowed but logged as suspicious (100-200m)
+            if ($gps_action === 'log') {
+                PPV_Scan_Monitoring::log_suspicious_scan($store_id, $user_id, $scan_lat, $scan_lng, $gps_check);
+                ppv_log("[PPV_QR] ⚠️ GPS LOG: user={$user_id}, store={$store_id}, distance={$gps_check['distance']}m (Zone 2: 100-200m)");
+                // Scan continues
+            }
+
+            // GPS SPOOF DETECTION - Check for impossible travel
+            if ($scan_lat && $scan_lng) {
+                $travel_check = PPV_Scan_Monitoring::check_impossible_travel($user_id, $scan_lat, $scan_lng);
+
+                if ($travel_check['suspicious']) {
+                    ppv_log("[PPV_QR] 🚨 GPS SPOOF DETECTED: user={$user_id}, " . json_encode($travel_check['details']));
+
+                    // Log as suspicious scan with impossible_travel reason
+                    PPV_Scan_Monitoring::log_suspicious_scan($store_id, $user_id, $scan_lat, $scan_lng, [
+                        'valid' => false,
+                        'reason' => 'impossible_travel',
+                        'distance' => $travel_check['details']['distance_km'] * 1000,
+                        'details' => $travel_check['details']
+                    ]);
+
+                    // BLOCK the scan - GPS spoofing detected
+                    $user_info = $wpdb->get_row($wpdb->prepare("
+                        SELECT first_name, last_name, email, avatar
+                        FROM {$wpdb->prefix}ppv_users WHERE id = %d
+                    ", $user_id));
+                    $customer_name = trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
+
+                    return new WP_REST_Response([
+                        'success' => false,
+                        'message' => self::t('err_gps_spoof', '❌ Gyanús GPS aktivitás észlelve. Kérjük, próbáld újra később.'),
+                        'user_id' => $user_id,
+                        'customer_name' => $customer_name ?: null,
+                        'email' => $user_info->email ?? null,
+                        'avatar' => $user_info->avatar ?? null,
+                        'error_type' => 'gps_spoof_detected'
+                    ], 403);
+                }
+
+                // Log GPS data for future impossible travel detection
+                PPV_Scan_Monitoring::log_gps_scan($user_id, $store_id, $scan_lat, $scan_lng);
             }
         }
 
