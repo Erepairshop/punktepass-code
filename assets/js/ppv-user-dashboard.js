@@ -1733,11 +1733,6 @@ async function initUserDashboard() {
               ${T.qr_instruction_3}
             </div>
 
-            <!-- NFC Button - only shown via JS if supported -->
-            <button id="ppvNfcBtn" class="ppv-nfc-btn" style="display:none;" title="Érintsd a telefont a kasszához">
-              <span class="ppv-nfc-icon">📡</span>
-              <span class="ppv-nfc-text">NFC küldés</span>
-            </button>
           </div>
 
           <!-- Expired State -->
@@ -1766,128 +1761,12 @@ async function initUserDashboard() {
   // ============================================================
   initQRToggle();
   initPointSync();
-  initNfcButton();
 
   // DOM is already rendered above, call initStores directly
   // Using requestAnimationFrame to ensure DOM is painted
   requestAnimationFrame(() => {
     initStores();
   });
-
-  // ============================================================
-  // 📡 NFC SEND SUPPORT (Phone-to-Phone)
-  // ============================================================
-  function initNfcButton() {
-    const nfcSupported = 'NDEFReader' in window;
-    const nfcBtn = document.getElementById('ppvNfcBtn');
-    if (!nfcBtn) return;
-
-    if (nfcSupported && window.isSecureContext) {
-      nfcBtn.style.display = 'flex';
-      nfcBtn.addEventListener('click', toggleNfcSend);
-
-      // Add button styles
-      const style = document.createElement('style');
-      style.textContent = `
-        .ppv-nfc-btn {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          width: 100%;
-          padding: 14px 20px;
-          margin-top: 12px;
-          background: linear-gradient(135deg, #9c27b0, #7b1fa2);
-          color: white;
-          border: none;
-          border-radius: 12px;
-          font-size: 16px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s ease;
-        }
-        .ppv-nfc-btn:hover {
-          background: linear-gradient(135deg, #ab47bc, #8e24aa);
-          transform: translateY(-1px);
-        }
-        .ppv-nfc-btn.sending {
-          background: linear-gradient(135deg, #4caf50, #388e3c);
-          animation: nfc-pulse 1s infinite;
-        }
-        .ppv-nfc-btn .ppv-nfc-icon { font-size: 20px; }
-        @keyframes nfc-pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.7; }
-        }
-      `;
-      document.head.appendChild(style);
-    }
-
-    let nfcWriter = null;
-    let isNfcSending = false;
-
-    async function toggleNfcSend() {
-      alert('NFC gomb megnyomva!'); // DEBUG
-
-      const qrImg = document.getElementById('ppv-qr-image');
-      alert('QR img: ' + (qrImg ? qrImg.src.substring(0, 50) : 'nincs')); // DEBUG
-
-      if (!qrImg || !qrImg.src) {
-        alert('❌ Nincs QR kép');
-        return;
-      }
-
-      // Extract QR value from URL
-      const urlParams = new URL(qrImg.src).searchParams;
-      const qrValue = urlParams.get('data') || '';
-      alert('QR érték: ' + qrValue.substring(0, 30)); // DEBUG
-
-      if (!qrValue) {
-        alert('❌ QR kód nem elérhető');
-        return;
-      }
-
-      if (isNfcSending) {
-        stopNfcSend();
-        return;
-      }
-
-      try {
-        alert('NFC írás indítása...'); // DEBUG
-        nfcWriter = new NDEFReader();
-        await nfcWriter.write({
-          records: [{ recordType: "text", data: "ppv:" + qrValue }]
-        });
-
-        isNfcSending = true;
-        nfcBtn.classList.add('sending');
-        nfcBtn.querySelector('.ppv-nfc-text').textContent = 'NFC aktív - érintsd oda!';
-
-        if (navigator.vibrate) navigator.vibrate(100);
-        alert('📡 NFC aktív! Érintsd a telefont a kasszához!');
-
-        setTimeout(() => {
-          if (isNfcSending) {
-            stopNfcSend();
-            alert('⏰ NFC időtúllépés');
-          }
-        }, 30000);
-
-      } catch (e) {
-        console.error('[NFC] Error:', e);
-        alert('❌ NFC hiba: ' + e.message);
-      }
-    }
-
-    function stopNfcSend() {
-      isNfcSending = false;
-      nfcWriter = null;
-      if (nfcBtn) {
-        nfcBtn.classList.remove('sending');
-        nfcBtn.querySelector('.ppv-nfc-text').textContent = 'NFC küldés';
-      }
-    }
-  }
 
   // ============================================================
   // TOAST - MODERN ICONS ✅
