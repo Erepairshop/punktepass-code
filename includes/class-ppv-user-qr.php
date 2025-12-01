@@ -174,6 +174,11 @@ class PPV_User_QR {
                 <button id="ppvBtnRefresh" class="ppv-btn ppv-btn-secondary ppv-btn-sm">
                     <i class="ri-refresh-line"></i> Aktualisieren
                 </button>
+                <!-- NFC Button - only shown via JS if supported -->
+                <button id="ppvNfcBtn" class="ppv-nfc-btn" style="display:none;" title="Érintsd a telefont a kasszához">
+                    <span class="ppv-nfc-icon">📡</span>
+                    <span class="ppv-nfc-text">NFC küldés</span>
+                </button>
             </div>
         </div>
         <?php

@@ -455,30 +455,14 @@ let isNfcSending = false;
 
 // Initialize NFC button if supported
 document.addEventListener("DOMContentLoaded", () => {
-  if (!nfcSupported || !window.isSecureContext) {
-    return;
+  const nfcBtn = document.getElementById('ppvNfcBtn');
+  if (!nfcBtn) return;
+
+  // Show button only if NFC is supported
+  if (nfcSupported && window.isSecureContext) {
+    nfcBtn.style.display = 'flex';
+    nfcBtn.addEventListener('click', toggleNfcSend);
   }
-
-  // Create NFC button
-  createNfcButton();
-});
-
-function createNfcButton() {
-  // Add to actions area (always visible) instead of hidden qrDisplay
-  const actionsArea = document.querySelector('.ppv-qr-actions');
-  if (!actionsArea) return;
-
-  // Check if button already exists
-  if (document.getElementById('ppvNfcBtn')) return;
-
-  const nfcBtn = document.createElement('button');
-  nfcBtn.id = 'ppvNfcBtn';
-  nfcBtn.className = 'ppv-nfc-btn';
-  nfcBtn.innerHTML = `
-    <span class="ppv-nfc-icon">📡</span>
-    <span class="ppv-nfc-text">NFC küldés</span>
-  `;
-  nfcBtn.title = 'Érintsd a telefont a kasszához';
 
   // Add button styles
   const style = document.createElement('style');
@@ -520,12 +504,7 @@ function createNfcButton() {
     }
   `;
   document.head.appendChild(style);
-
-  nfcBtn.addEventListener('click', toggleNfcSend);
-  actionsArea.appendChild(nfcBtn);
-
-  console.log('[NFC] Send button created');
-}
+});
 
 async function toggleNfcSend() {
   const nfcBtn = document.getElementById('ppvNfcBtn');
