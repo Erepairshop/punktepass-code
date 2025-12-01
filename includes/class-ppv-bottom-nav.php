@@ -151,6 +151,7 @@ class PPV_Bottom_Nav {
                 <a href="/user_dashboard" class="nav-item" <?php echo $turbo_attr; ?> data-navlink="true" title="Dashboard"><i class="ri-home-smile-2-line"></i></a>
                 <a href="/meine-punkte" class="nav-item" <?php echo $turbo_attr; ?> data-navlink="true" title="Meine Punkte"><i class="ri-donut-chart-line"></i></a>
                 <a href="/belohnungen" class="nav-item" <?php echo $turbo_attr; ?> data-navlink="true" title="Belohnungen"><i class="ri-coupon-3-line"></i></a>
+                <a href="/einstellungen" class="nav-item" <?php echo $turbo_attr; ?> data-navlink="true" title="Einstellungen"><i class="ri-settings-3-line"></i></a>
                 <a href="#" class="nav-item" id="ppv-feedback-nav-btn" title="Feedback"><i class="ri-feedback-line"></i></a>
             </nav>
             <?php self::render_feedback_modal('user'); ?>
@@ -172,6 +173,7 @@ class PPV_Bottom_Nav {
                 <a href="/user_dashboard" class="nav-item" data-navlink="true" title="Dashboard"><i class="ri-home-smile-2-line"></i></a>
                 <a href="/meine-punkte" class="nav-item" data-navlink="true" title="Meine Punkte"><i class="ri-donut-chart-line"></i></a>
                 <a href="/belohnungen" class="nav-item" data-navlink="true" title="Belohnungen"><i class="ri-coupon-3-line"></i></a>
+                <a href="/einstellungen" class="nav-item" data-navlink="true" title="Einstellungen"><i class="ri-settings-3-line"></i></a>
                 <a href="#" class="nav-item" id="ppv-feedback-nav-btn" title="Feedback"><i class="ri-feedback-line"></i></a>
             </nav>
             <?php self::render_feedback_modal('user'); ?>

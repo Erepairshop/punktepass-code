@@ -1,12 +1,142 @@
 <?php
 /**
- * PunktePass Standalone Admin - Támogatási jegyek
+ * PunktePass Standalone Admin - Feedback & Support
  * Route: /admin/support
+ * Multi-language support: DE, HU, EN
  */
 
 if (!defined('ABSPATH')) exit;
 
 class PPV_Standalone_Support {
+
+    /**
+     * Get translations for all supported languages
+     */
+    private static function get_translations() {
+        return [
+            'de' => [
+                'page_title' => 'Feedback & Support - PunktePass Admin',
+                'header_title' => 'Feedback & Support',
+                'open_tickets' => 'offen',
+                'back' => 'Zurück',
+                'ticket_updated' => 'Ticket aktualisiert!',
+                'status' => 'Status',
+                'status_open' => 'Offen',
+                'status_new' => 'Neu',
+                'status_in_progress' => 'In Bearbeitung',
+                'status_resolved' => 'Erledigt',
+                'category' => 'Kategorie',
+                'cat_all' => 'Alle',
+                'cat_bug' => 'Bug',
+                'cat_feature' => 'Idee',
+                'cat_question' => 'Frage',
+                'cat_rating' => 'Bewertung',
+                'cat_support' => 'Support',
+                'no_tickets' => 'Keine Tickets in dieser Kategorie!',
+                'th_id' => 'ID',
+                'th_category' => 'Kategorie',
+                'th_type' => 'Typ',
+                'th_sender' => 'Absender',
+                'th_message' => 'Nachricht',
+                'th_created' => 'Erstellt',
+                'th_actions' => 'Aktionen',
+                'type_handler' => 'Händler',
+                'type_user' => 'Kunde',
+                'btn_take' => 'Übernehmen',
+                'btn_resolve' => 'Erledigen',
+                'confirm_resolve' => 'Als erledigt markieren?',
+            ],
+            'hu' => [
+                'page_title' => 'Feedback & Support - PunktePass Admin',
+                'header_title' => 'Feedback & Support',
+                'open_tickets' => 'nyitott',
+                'back' => 'Vissza',
+                'ticket_updated' => 'Jegy frissítve!',
+                'status' => 'Státusz',
+                'status_open' => 'Nyitott',
+                'status_new' => 'Új',
+                'status_in_progress' => 'Folyamatban',
+                'status_resolved' => 'Megoldva',
+                'category' => 'Kategória',
+                'cat_all' => 'Mind',
+                'cat_bug' => 'Bug',
+                'cat_feature' => 'Ötlet',
+                'cat_question' => 'Kérdés',
+                'cat_rating' => 'Értékelés',
+                'cat_support' => 'Support',
+                'no_tickets' => 'Nincs jegy ebben a kategóriában!',
+                'th_id' => 'ID',
+                'th_category' => 'Kategória',
+                'th_type' => 'Típus',
+                'th_sender' => 'Küldő',
+                'th_message' => 'Üzenet',
+                'th_created' => 'Létrehozva',
+                'th_actions' => 'Műveletek',
+                'type_handler' => 'Kereskedő',
+                'type_user' => 'Ügyfél',
+                'btn_take' => 'Felvétel',
+                'btn_resolve' => 'Megoldás',
+                'confirm_resolve' => 'Megoldottként jelöli?',
+            ],
+            'en' => [
+                'page_title' => 'Feedback & Support - PunktePass Admin',
+                'header_title' => 'Feedback & Support',
+                'open_tickets' => 'open',
+                'back' => 'Back',
+                'ticket_updated' => 'Ticket updated!',
+                'status' => 'Status',
+                'status_open' => 'Open',
+                'status_new' => 'New',
+                'status_in_progress' => 'In Progress',
+                'status_resolved' => 'Resolved',
+                'category' => 'Category',
+                'cat_all' => 'All',
+                'cat_bug' => 'Bug',
+                'cat_feature' => 'Idea',
+                'cat_question' => 'Question',
+                'cat_rating' => 'Rating',
+                'cat_support' => 'Support',
+                'no_tickets' => 'No tickets in this category!',
+                'th_id' => 'ID',
+                'th_category' => 'Category',
+                'th_type' => 'Type',
+                'th_sender' => 'Sender',
+                'th_message' => 'Message',
+                'th_created' => 'Created',
+                'th_actions' => 'Actions',
+                'type_handler' => 'Merchant',
+                'type_user' => 'Customer',
+                'btn_take' => 'Take',
+                'btn_resolve' => 'Resolve',
+                'confirm_resolve' => 'Mark as resolved?',
+            ]
+        ];
+    }
+
+    /**
+     * Get current language
+     */
+    private static function get_current_lang() {
+        // Check URL parameter first
+        if (isset($_GET['lang']) && in_array($_GET['lang'], ['de', 'hu', 'en'])) {
+            setcookie('ppv_admin_lang', $_GET['lang'], time() + 365*24*60*60, '/');
+            return $_GET['lang'];
+        }
+        // Check cookie
+        if (isset($_COOKIE['ppv_admin_lang']) && in_array($_COOKIE['ppv_admin_lang'], ['de', 'hu', 'en'])) {
+            return $_COOKIE['ppv_admin_lang'];
+        }
+        // Default to German
+        return 'de';
+    }
+
+    /**
+     * Translation helper
+     */
+    private static function t($key, $lang) {
+        $translations = self::get_translations();
+        return $translations[$lang][$key] ?? $key;
+    }
 
     /**
      * Render support tickets page
@@ -18,6 +148,9 @@ class PPV_Standalone_Support {
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
             self::handle_status_update();
         }
+
+        // Get current language
+        $lang = self::get_current_lang();
 
         // Get filters
         $status_filter = isset($_GET['status']) ? sanitize_text_field($_GET['status']) : 'open';
@@ -85,7 +218,7 @@ class PPV_Standalone_Support {
             'support' => intval($support_count)
         ];
 
-        self::render_html($tickets, $status_filter, $category_filter, $new_count, $in_progress_count, $open_count, $resolved_count, $category_counts);
+        self::render_html($tickets, $status_filter, $category_filter, $new_count, $in_progress_count, $open_count, $resolved_count, $category_counts, $lang);
     }
 
     /**
@@ -116,23 +249,29 @@ class PPV_Standalone_Support {
         }
 
         $current_status = isset($_GET['status']) ? $_GET['status'] : 'open';
-        wp_redirect("/admin/support?status={$current_status}&success=updated");
+        $current_cat = isset($_GET['cat']) ? $_GET['cat'] : 'all';
+        $current_lang = isset($_GET['lang']) ? $_GET['lang'] : '';
+        $lang_param = $current_lang ? "&lang={$current_lang}" : '';
+        wp_redirect("/admin/support?status={$current_status}&cat={$current_cat}{$lang_param}&success=updated");
         exit;
     }
 
     /**
      * Render HTML
      */
-    private static function render_html($tickets, $status_filter, $category_filter, $new_count, $in_progress_count, $open_count, $resolved_count, $category_counts) {
+    private static function render_html($tickets, $status_filter, $category_filter, $new_count, $in_progress_count, $open_count, $resolved_count, $category_counts, $lang) {
         $success = isset($_GET['success']) ? $_GET['success'] : '';
         $ticket_count = count($tickets);
+
+        // Build base URL for language switcher
+        $base_url = "/admin/support?status={$status_filter}&cat={$category_filter}";
         ?>
         <!DOCTYPE html>
-        <html lang="hu">
+        <html lang="<?php echo $lang; ?>">
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Feedback & Support - PunktePass Admin</title>
+            <title><?php echo self::t('page_title', $lang); ?></title>
             <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
             <style>
                 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -149,8 +288,24 @@ class PPV_Standalone_Support {
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
+                    flex-wrap: wrap;
+                    gap: 10px;
                 }
                 .admin-header h1 { font-size: 18px; color: #00d9ff; }
+                .header-right { display: flex; align-items: center; gap: 15px; }
+                .lang-switcher { display: flex; gap: 5px; }
+                .lang-btn {
+                    padding: 4px 8px;
+                    border-radius: 4px;
+                    text-decoration: none;
+                    font-size: 12px;
+                    font-weight: 600;
+                    color: #888;
+                    background: #0f3460;
+                    transition: all 0.2s;
+                }
+                .lang-btn:hover { color: #fff; background: #1f4878; }
+                .lang-btn.active { color: #000; background: #00d9ff; }
                 .admin-header .back-link { color: #aaa; text-decoration: none; font-size: 14px; }
                 .admin-header .back-link:hover { color: #00d9ff; }
                 .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
@@ -266,55 +421,62 @@ class PPV_Standalone_Support {
         </head>
         <body>
             <div class="admin-header">
-                <h1>💬 Feedback & Support (<?php echo $open_count; ?> nyitott)</h1>
-                <a href="/admin" class="back-link"><i class="ri-arrow-left-line"></i> Vissza</a>
+                <h1><?php echo self::t('header_title', $lang); ?> (<?php echo $open_count; ?> <?php echo self::t('open_tickets', $lang); ?>)</h1>
+                <div class="header-right">
+                    <div class="lang-switcher">
+                        <a href="<?php echo $base_url; ?>&lang=de" class="lang-btn <?php echo $lang === 'de' ? 'active' : ''; ?>">DE</a>
+                        <a href="<?php echo $base_url; ?>&lang=hu" class="lang-btn <?php echo $lang === 'hu' ? 'active' : ''; ?>">HU</a>
+                        <a href="<?php echo $base_url; ?>&lang=en" class="lang-btn <?php echo $lang === 'en' ? 'active' : ''; ?>">EN</a>
+                    </div>
+                    <a href="/admin" class="back-link"><i class="ri-arrow-left-line"></i> <?php echo self::t('back', $lang); ?></a>
+                </div>
             </div>
 
             <div class="container">
                 <?php if ($success === 'updated'): ?>
-                    <div class="success-msg">Jegy frissitve!</div>
+                    <div class="success-msg"><?php echo self::t('ticket_updated', $lang); ?></div>
                 <?php endif; ?>
 
                 <!-- Status Filter -->
                 <div class="filter-section">
-                    <h3>Staatusz</h3>
+                    <h3><?php echo self::t('status', $lang); ?></h3>
                     <div class="tabs">
-                        <a href="/admin/support?status=open&cat=<?php echo $category_filter; ?>" class="tab <?php echo $status_filter === 'open' ? 'active' : ''; ?>">
-                            Nyitott (<?php echo $open_count; ?>)
+                        <a href="/admin/support?status=open&cat=<?php echo $category_filter; ?>&lang=<?php echo $lang; ?>" class="tab <?php echo $status_filter === 'open' ? 'active' : ''; ?>">
+                            <?php echo self::t('status_open', $lang); ?> (<?php echo $open_count; ?>)
                         </a>
-                        <a href="/admin/support?status=new&cat=<?php echo $category_filter; ?>" class="tab <?php echo $status_filter === 'new' ? 'active' : ''; ?>">
-                            Uj (<?php echo $new_count; ?>)
+                        <a href="/admin/support?status=new&cat=<?php echo $category_filter; ?>&lang=<?php echo $lang; ?>" class="tab <?php echo $status_filter === 'new' ? 'active' : ''; ?>">
+                            <?php echo self::t('status_new', $lang); ?> (<?php echo $new_count; ?>)
                         </a>
-                        <a href="/admin/support?status=in_progress&cat=<?php echo $category_filter; ?>" class="tab <?php echo $status_filter === 'in_progress' ? 'active' : ''; ?>">
-                            Folyamatban (<?php echo $in_progress_count; ?>)
+                        <a href="/admin/support?status=in_progress&cat=<?php echo $category_filter; ?>&lang=<?php echo $lang; ?>" class="tab <?php echo $status_filter === 'in_progress' ? 'active' : ''; ?>">
+                            <?php echo self::t('status_in_progress', $lang); ?> (<?php echo $in_progress_count; ?>)
                         </a>
-                        <a href="/admin/support?status=resolved&cat=<?php echo $category_filter; ?>" class="tab <?php echo $status_filter === 'resolved' ? 'active' : ''; ?>">
-                            Megoldva (<?php echo $resolved_count; ?>)
+                        <a href="/admin/support?status=resolved&cat=<?php echo $category_filter; ?>&lang=<?php echo $lang; ?>" class="tab <?php echo $status_filter === 'resolved' ? 'active' : ''; ?>">
+                            <?php echo self::t('status_resolved', $lang); ?> (<?php echo $resolved_count; ?>)
                         </a>
                     </div>
                 </div>
 
                 <!-- Category Filter -->
                 <div class="filter-section">
-                    <h3>Kategoria</h3>
+                    <h3><?php echo self::t('category', $lang); ?></h3>
                     <div class="tabs">
-                        <a href="/admin/support?status=<?php echo $status_filter; ?>&cat=all" class="tab <?php echo $category_filter === 'all' ? 'active' : ''; ?>">
-                            Mind
+                        <a href="/admin/support?status=<?php echo $status_filter; ?>&cat=all&lang=<?php echo $lang; ?>" class="tab <?php echo $category_filter === 'all' ? 'active' : ''; ?>">
+                            <?php echo self::t('cat_all', $lang); ?>
                         </a>
-                        <a href="/admin/support?status=<?php echo $status_filter; ?>&cat=bug" class="tab cat-bug <?php echo $category_filter === 'bug' ? 'active' : ''; ?>">
-                            Bug (<?php echo $category_counts['bug']; ?>)
+                        <a href="/admin/support?status=<?php echo $status_filter; ?>&cat=bug&lang=<?php echo $lang; ?>" class="tab cat-bug <?php echo $category_filter === 'bug' ? 'active' : ''; ?>">
+                            <?php echo self::t('cat_bug', $lang); ?> (<?php echo $category_counts['bug']; ?>)
                         </a>
-                        <a href="/admin/support?status=<?php echo $status_filter; ?>&cat=feature" class="tab cat-feature <?php echo $category_filter === 'feature' ? 'active' : ''; ?>">
-                            Otlet (<?php echo $category_counts['feature']; ?>)
+                        <a href="/admin/support?status=<?php echo $status_filter; ?>&cat=feature&lang=<?php echo $lang; ?>" class="tab cat-feature <?php echo $category_filter === 'feature' ? 'active' : ''; ?>">
+                            <?php echo self::t('cat_feature', $lang); ?> (<?php echo $category_counts['feature']; ?>)
                         </a>
-                        <a href="/admin/support?status=<?php echo $status_filter; ?>&cat=question" class="tab cat-question <?php echo $category_filter === 'question' ? 'active' : ''; ?>">
-                            Kerdes (<?php echo $category_counts['question']; ?>)
+                        <a href="/admin/support?status=<?php echo $status_filter; ?>&cat=question&lang=<?php echo $lang; ?>" class="tab cat-question <?php echo $category_filter === 'question' ? 'active' : ''; ?>">
+                            <?php echo self::t('cat_question', $lang); ?> (<?php echo $category_counts['question']; ?>)
                         </a>
-                        <a href="/admin/support?status=<?php echo $status_filter; ?>&cat=rating" class="tab cat-rating <?php echo $category_filter === 'rating' ? 'active' : ''; ?>">
-                            Ertekeles (<?php echo $category_counts['rating']; ?>)
+                        <a href="/admin/support?status=<?php echo $status_filter; ?>&cat=rating&lang=<?php echo $lang; ?>" class="tab cat-rating <?php echo $category_filter === 'rating' ? 'active' : ''; ?>">
+                            <?php echo self::t('cat_rating', $lang); ?> (<?php echo $category_counts['rating']; ?>)
                         </a>
-                        <a href="/admin/support?status=<?php echo $status_filter; ?>&cat=support" class="tab cat-support <?php echo $category_filter === 'support' ? 'active' : ''; ?>">
-                            Support (<?php echo $category_counts['support']; ?>)
+                        <a href="/admin/support?status=<?php echo $status_filter; ?>&cat=support&lang=<?php echo $lang; ?>" class="tab cat-support <?php echo $category_filter === 'support' ? 'active' : ''; ?>">
+                            <?php echo self::t('cat_support', $lang); ?> (<?php echo $category_counts['support']; ?>)
                         </a>
                     </div>
                 </div>
@@ -322,19 +484,19 @@ class PPV_Standalone_Support {
                 <?php if ($ticket_count === 0): ?>
                     <div class="empty-state">
                         <i class="ri-checkbox-circle-line"></i>
-                        <h3>Nincs jegy ebben a kategoriaban!</h3>
+                        <h3><?php echo self::t('no_tickets', $lang); ?></h3>
                     </div>
                 <?php else: ?>
                     <table>
                         <thead>
                             <tr>
-                                <th>ID</th>
-                                <th>Kategoria</th>
-                                <th>Tipus</th>
-                                <th>Kuldő</th>
-                                <th>Uzenet</th>
-                                <th>Letrehozva</th>
-                                <th>Muveletek</th>
+                                <th><?php echo self::t('th_id', $lang); ?></th>
+                                <th><?php echo self::t('th_category', $lang); ?></th>
+                                <th><?php echo self::t('th_type', $lang); ?></th>
+                                <th><?php echo self::t('th_sender', $lang); ?></th>
+                                <th><?php echo self::t('th_message', $lang); ?></th>
+                                <th><?php echo self::t('th_created', $lang); ?></th>
+                                <th><?php echo self::t('th_actions', $lang); ?></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -342,11 +504,11 @@ class PPV_Standalone_Support {
                                 <?php
                                 // Category badges with icons
                                 $category_badges = [
-                                    'bug' => ['icon' => 'ri-bug-line', 'text' => 'Bug', 'class' => 'error'],
-                                    'feature' => ['icon' => 'ri-lightbulb-line', 'text' => 'Otlet', 'class' => 'warning'],
-                                    'question' => ['icon' => 'ri-question-line', 'text' => 'Kerdes', 'class' => 'teal'],
-                                    'rating' => ['icon' => 'ri-star-line', 'text' => 'Ertekeles', 'class' => 'purple'],
-                                    'support' => ['icon' => 'ri-customer-service-line', 'text' => 'Support', 'class' => 'info']
+                                    'bug' => ['icon' => 'ri-bug-line', 'text' => self::t('cat_bug', $lang), 'class' => 'error'],
+                                    'feature' => ['icon' => 'ri-lightbulb-line', 'text' => self::t('cat_feature', $lang), 'class' => 'warning'],
+                                    'question' => ['icon' => 'ri-question-line', 'text' => self::t('cat_question', $lang), 'class' => 'teal'],
+                                    'rating' => ['icon' => 'ri-star-line', 'text' => self::t('cat_rating', $lang), 'class' => 'purple'],
+                                    'support' => ['icon' => 'ri-customer-service-line', 'text' => self::t('cat_support', $lang), 'class' => 'info']
                                 ];
                                 $cat = $ticket->category ?? 'support';
                                 $category_badge = $category_badges[$cat] ?? $category_badges['support'];
@@ -354,14 +516,14 @@ class PPV_Standalone_Support {
                                 // User type badge
                                 $user_type = $ticket->user_type ?? 'handler';
                                 $user_type_badge = $user_type === 'handler'
-                                    ? ['icon' => 'ri-store-2-line', 'text' => 'Handler', 'class' => 'handler']
-                                    : ['icon' => 'ri-user-line', 'text' => 'User', 'class' => 'user'];
+                                    ? ['icon' => 'ri-store-2-line', 'text' => self::t('type_handler', $lang), 'class' => 'handler']
+                                    : ['icon' => 'ri-user-line', 'text' => self::t('type_user', $lang), 'class' => 'user'];
 
                                 // Status badges
                                 $status_badges = [
-                                    'new' => ['text' => 'Uj', 'class' => 'info'],
-                                    'in_progress' => ['text' => 'Folyamatban', 'class' => 'warning'],
-                                    'resolved' => ['text' => 'Megoldva', 'class' => 'success']
+                                    'new' => ['text' => self::t('status_new', $lang), 'class' => 'info'],
+                                    'in_progress' => ['text' => self::t('status_in_progress', $lang), 'class' => 'warning'],
+                                    'resolved' => ['text' => self::t('status_resolved', $lang), 'class' => 'success']
                                 ];
                                 $status_badge = $status_badges[$ticket->status] ?? $status_badges['new'];
 
@@ -412,7 +574,7 @@ class PPV_Standalone_Support {
                                                 <input type="hidden" name="update_status" value="1">
                                                 <input type="hidden" name="ticket_id" value="<?php echo intval($ticket->id); ?>">
                                                 <input type="hidden" name="new_status" value="in_progress">
-                                                <button type="submit" class="btn btn-warning">Felvetel</button>
+                                                <button type="submit" class="btn btn-warning"><?php echo self::t('btn_take', $lang); ?></button>
                                             </form>
                                         <?php endif; ?>
 
@@ -421,11 +583,11 @@ class PPV_Standalone_Support {
                                                 <input type="hidden" name="update_status" value="1">
                                                 <input type="hidden" name="ticket_id" value="<?php echo intval($ticket->id); ?>">
                                                 <input type="hidden" name="new_status" value="resolved">
-                                                <button type="submit" class="btn btn-primary" onclick="return confirm('Megoldottként jelöli?');">✅</button>
+                                                <button type="submit" class="btn btn-primary" onclick="return confirm('<?php echo self::t('confirm_resolve', $lang); ?>');">✅</button>
                                             </form>
                                         <?php endif; ?>
 
-                                        <a href="mailto:<?php echo esc_attr($ticket->handler_email); ?>?subject=Támogatási%20jegy%20%23<?php echo intval($ticket->id); ?>" class="btn btn-secondary">📧</a>
+                                        <a href="mailto:<?php echo esc_attr($ticket->handler_email); ?>?subject=Support%20Ticket%20%23<?php echo intval($ticket->id); ?>" class="btn btn-secondary">📧</a>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
