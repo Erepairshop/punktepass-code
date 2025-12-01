@@ -158,12 +158,6 @@ class PPV_User_QR {
 
                 <p><?php echo esc_html(PPV_Lang::t('show_this_code_to_collect')); ?></p>
                 <input type="text" id="ppvQrValue" readonly value="" class="ppv-user-qr-value" title="Klicken zum Kopieren">
-
-                <!-- NFC Button - only shown via JS if supported -->
-                <button id="ppvNfcBtn" class="ppv-nfc-btn" style="display:none;" title="Érintsd a telefont a kasszához">
-                    <span class="ppv-nfc-icon">📡</span>
-                    <span class="ppv-nfc-text">NFC küldés</span>
-                </button>
             </div>
 
             <!-- Expired State -->
