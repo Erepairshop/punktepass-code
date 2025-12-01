@@ -187,51 +187,99 @@ class PPV_Bottom_Nav {
      * 💬 FEEDBACK MODAL - Professional Feedback System
      * Categories: Bug, Feature, Question, Rating
      * Auto-captures: Device, Page, User Type
+     * Multi-language: DE, HU, EN
      * ============================================================ */
     private static function render_feedback_modal($user_type = 'user') {
+        // Get current language
+        $lang = isset($_COOKIE['ppv_lang']) ? sanitize_text_field($_COOKIE['ppv_lang']) : 'de';
+        if (!in_array($lang, ['de', 'hu', 'en'])) $lang = 'de';
+
+        // Translations
+        $T = [
+            'de' => [
+                'title' => 'Feedback',
+                'subtitle' => 'Was möchten Sie uns mitteilen?',
+                'bug' => 'Fehler melden',
+                'feature' => 'Idee / Wunsch',
+                'question' => 'Frage',
+                'rating' => 'Bewertung',
+                'back' => 'Zurück',
+                'rating_q' => 'Wie zufrieden sind Sie mit PunktePass?',
+                'placeholder' => 'Beschreiben Sie Ihr Anliegen...',
+                'email_placeholder' => 'E-Mail (optional)',
+                'send' => 'Absenden',
+                'thanks' => 'Vielen Dank!',
+                'sent' => 'Ihr Feedback wurde gesendet.',
+            ],
+            'hu' => [
+                'title' => 'Visszajelzés',
+                'subtitle' => 'Mit szeretne nekünk írni?',
+                'bug' => 'Hiba bejelentés',
+                'feature' => 'Ötlet / Kívánság',
+                'question' => 'Kérdés',
+                'rating' => 'Értékelés',
+                'back' => 'Vissza',
+                'rating_q' => 'Mennyire elégedett a PunktePass-szal?',
+                'placeholder' => 'Írja le a kérését...',
+                'email_placeholder' => 'E-mail (opcionális)',
+                'send' => 'Küldés',
+                'thanks' => 'Köszönjük!',
+                'sent' => 'Visszajelzését elküldtük.',
+            ],
+            'en' => [
+                'title' => 'Feedback',
+                'subtitle' => 'What would you like to tell us?',
+                'bug' => 'Report Bug',
+                'feature' => 'Idea / Wish',
+                'question' => 'Question',
+                'rating' => 'Rating',
+                'back' => 'Back',
+                'rating_q' => 'How satisfied are you with PunktePass?',
+                'placeholder' => 'Describe your request...',
+                'email_placeholder' => 'Email (optional)',
+                'send' => 'Send',
+                'thanks' => 'Thank you!',
+                'sent' => 'Your feedback has been sent.',
+            ],
+        ];
+        $t = $T[$lang];
         ?>
-        <div id="ppv-feedback-modal" class="ppv-feedback-modal" data-user-type="<?php echo esc_attr($user_type); ?>">
+        <div id="ppv-feedback-modal" class="ppv-feedback-modal" data-user-type="<?php echo esc_attr($user_type); ?>" data-lang="<?php echo esc_attr($lang); ?>">
             <div class="ppv-feedback-content">
                 <!-- Header -->
                 <div class="ppv-feedback-header">
-                    <h3><i class="ri-feedback-line"></i> Feedback</h3>
+                    <h3><i class="ri-feedback-line"></i> <?php echo esc_html($t['title']); ?></h3>
                     <button id="ppv-feedback-close" class="ppv-feedback-close"><i class="ri-close-line"></i></button>
                 </div>
 
                 <!-- Category Selection (Step 1) -->
                 <div id="ppv-feedback-step1" class="ppv-feedback-step active">
-                    <p class="ppv-feedback-subtitle">Was möchten Sie uns mitteilen?</p>
-                    <div class="ppv-feedback-categories"><button class="ppv-feedback-cat" data-category="bug"><i class="ri-bug-line"></i><span>Fehler melden</span></button><button class="ppv-feedback-cat" data-category="feature"><i class="ri-lightbulb-line"></i><span>Idee / Wunsch</span></button><button class="ppv-feedback-cat" data-category="question"><i class="ri-question-line"></i><span>Frage</span></button><button class="ppv-feedback-cat" data-category="rating"><i class="ri-star-line"></i><span>Bewertung</span></button></div>
+                    <p class="ppv-feedback-subtitle"><?php echo esc_html($t['subtitle']); ?></p>
+                    <div class="ppv-feedback-categories"><button class="ppv-feedback-cat" data-category="bug"><i class="ri-bug-line"></i><span><?php echo esc_html($t['bug']); ?></span></button><button class="ppv-feedback-cat" data-category="feature"><i class="ri-lightbulb-line"></i><span><?php echo esc_html($t['feature']); ?></span></button><button class="ppv-feedback-cat" data-category="question"><i class="ri-question-line"></i><span><?php echo esc_html($t['question']); ?></span></button><button class="ppv-feedback-cat" data-category="rating"><i class="ri-star-line"></i><span><?php echo esc_html($t['rating']); ?></span></button></div>
                 </div>
 
                 <!-- Feedback Form (Step 2) -->
                 <div id="ppv-feedback-step2" class="ppv-feedback-step">
                     <button id="ppv-feedback-back" class="ppv-feedback-back">
-                        <i class="ri-arrow-left-line"></i> Zurück
+                        <i class="ri-arrow-left-line"></i> <?php echo esc_html($t['back']); ?>
                     </button>
 
                     <div id="ppv-feedback-cat-header" class="ppv-feedback-cat-header">
                         <i class="ri-bug-line"></i>
-                        <span>Fehler melden</span>
+                        <span><?php echo esc_html($t['bug']); ?></span>
                     </div>
 
                     <!-- Rating (only for rating category) -->
                     <div id="ppv-feedback-rating-section" class="ppv-feedback-rating" style="display: none;">
-                        <p>Wie zufrieden sind Sie mit PunktePass?</p>
-                        <div class="ppv-feedback-stars">
-                            <button class="ppv-star" data-rating="1"><i class="ri-star-line"></i></button>
-                            <button class="ppv-star" data-rating="2"><i class="ri-star-line"></i></button>
-                            <button class="ppv-star" data-rating="3"><i class="ri-star-line"></i></button>
-                            <button class="ppv-star" data-rating="4"><i class="ri-star-line"></i></button>
-                            <button class="ppv-star" data-rating="5"><i class="ri-star-line"></i></button>
-                        </div>
+                        <p><?php echo esc_html($t['rating_q']); ?></p>
+                        <div class="ppv-feedback-stars"><button class="ppv-star" data-rating="1"><i class="ri-star-line"></i></button><button class="ppv-star" data-rating="2"><i class="ri-star-line"></i></button><button class="ppv-star" data-rating="3"><i class="ri-star-line"></i></button><button class="ppv-star" data-rating="4"><i class="ri-star-line"></i></button><button class="ppv-star" data-rating="5"><i class="ri-star-line"></i></button></div>
                     </div>
 
-                    <textarea id="ppv-feedback-message" class="ppv-feedback-input" placeholder="Beschreiben Sie Ihr Anliegen..." rows="4"></textarea>
+                    <textarea id="ppv-feedback-message" class="ppv-feedback-input" placeholder="<?php echo esc_attr($t['placeholder']); ?>" rows="4"></textarea>
 
                     <!-- Contact (optional for users, required for handlers) -->
                     <?php if ($user_type === 'handler'): ?>
-                    <input type="email" id="ppv-feedback-email" class="ppv-feedback-input" placeholder="E-Mail (optional)">
+                    <input type="email" id="ppv-feedback-email" class="ppv-feedback-input" placeholder="<?php echo esc_attr($t['email_placeholder']); ?>">
                     <?php endif; ?>
 
                     <!-- Auto-captured context (hidden) -->
@@ -243,7 +291,7 @@ class PPV_Bottom_Nav {
                     <div id="ppv-feedback-msg" class="ppv-feedback-message"></div>
 
                     <button id="ppv-feedback-send" class="ppv-feedback-submit">
-                        <i class="ri-send-plane-line"></i> Absenden
+                        <i class="ri-send-plane-line"></i> <?php echo esc_html($t['send']); ?>
                     </button>
                 </div>
 
@@ -251,8 +299,8 @@ class PPV_Bottom_Nav {
                 <div id="ppv-feedback-step3" class="ppv-feedback-step">
                     <div class="ppv-feedback-success">
                         <i class="ri-checkbox-circle-line"></i>
-                        <h4>Vielen Dank!</h4>
-                        <p>Ihr Feedback wurde gesendet.</p>
+                        <h4><?php echo esc_html($t['thanks']); ?></h4>
+                        <p><?php echo esc_html($t['sent']); ?></p>
                     </div>
                 </div>
             </div>
@@ -302,12 +350,29 @@ class PPV_Bottom_Nav {
                 feedbackEventsInitialized = true;
 
                 const \$ = jQuery;
-                const catMeta = {
-                    bug: { icon: 'ri-bug-line', text: 'Fehler melden', placeholder: 'Was ist passiert? Beschreiben Sie den Fehler...' },
-                    feature: { icon: 'ri-lightbulb-line', text: 'Idee / Wunsch', placeholder: 'Was wünschen Sie sich? Beschreiben Sie Ihre Idee...' },
-                    question: { icon: 'ri-question-line', text: 'Frage', placeholder: 'Was möchten Sie wissen?' },
-                    rating: { icon: 'ri-star-line', text: 'Bewertung', placeholder: 'Zusätzliche Anmerkungen (optional)...' }
+                const lang = \$('#ppv-feedback-modal').data('lang') || 'de';
+
+                const translations = {
+                    de: {
+                        bug: { icon: 'ri-bug-line', text: 'Fehler melden', placeholder: 'Was ist passiert? Beschreiben Sie den Fehler...' },
+                        feature: { icon: 'ri-lightbulb-line', text: 'Idee / Wunsch', placeholder: 'Was wünschen Sie sich? Beschreiben Sie Ihre Idee...' },
+                        question: { icon: 'ri-question-line', text: 'Frage', placeholder: 'Was möchten Sie wissen?' },
+                        rating: { icon: 'ri-star-line', text: 'Bewertung', placeholder: 'Zusätzliche Anmerkungen (optional)...' }
+                    },
+                    hu: {
+                        bug: { icon: 'ri-bug-line', text: 'Hiba bejelentés', placeholder: 'Mi történt? Írja le a hibát...' },
+                        feature: { icon: 'ri-lightbulb-line', text: 'Ötlet / Kívánság', placeholder: 'Mit szeretne? Írja le az ötletét...' },
+                        question: { icon: 'ri-question-line', text: 'Kérdés', placeholder: 'Mit szeretne tudni?' },
+                        rating: { icon: 'ri-star-line', text: 'Értékelés', placeholder: 'További megjegyzések (opcionális)...' }
+                    },
+                    en: {
+                        bug: { icon: 'ri-bug-line', text: 'Report Bug', placeholder: 'What happened? Describe the bug...' },
+                        feature: { icon: 'ri-lightbulb-line', text: 'Idea / Wish', placeholder: 'What do you want? Describe your idea...' },
+                        question: { icon: 'ri-question-line', text: 'Question', placeholder: 'What would you like to know?' },
+                        rating: { icon: 'ri-star-line', text: 'Rating', placeholder: 'Additional notes (optional)...' }
+                    }
                 };
+                const catMeta = translations[lang] || translations.de;
 
                 function resetModal() {
                     \$('#ppv-feedback-step1').addClass('active');
