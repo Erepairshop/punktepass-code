@@ -104,9 +104,11 @@ Státusz: [x] KÉSZ - 2025-12-01
   - ~~5 sec → 10-15 sec (hálózati latency miatt)~~
   - ✅ JAVÍTVA: 10 másodperc (2025-11-29)
 
-- [ ] **Device fingerprint validálás** - `class-ppv-scan.php:172`
-  - Hossz és formátum ellenőrzés
-  - Stored XSS megelőzése
+- [x] **Device fingerprint validálás** - `class-ppv-device-fingerprint.php` ✅ (2025-12-01)
+  - Központi `validate_fingerprint()` függvény létrehozva
+  - Min/Max hossz ellenőrzés (16-64 karakter)
+  - Regex validálás (csak alfanumerikus - XSS védelem)
+  - Minden endpoint-on alkalmazva
 
 - [ ] **REST NONCE validálás** - `class-ppv-rewards.php:35`
   - CSRF védelem hiányzik
@@ -157,15 +159,15 @@ Státusz: [x] KÉSZ - 2025-12-01
 
 ### 🟡 KÖZEPES Prioritás
 
-- [ ] **5. Device request cooldown**
-  - Max 1 device request / 7 nap
-  - Spam prevention
+- [x] **5. Device request cooldown** ✅ (2025-12-01)
+  - Max 1 device request / 24 óra (1 nap)
+  - Spam prevention aktív
   - **Fájlok:** `class-ppv-device-fingerprint.php`
 
-- [ ] **6. Fingerprint change notification**
-  - Ha fingerprint változott → toast üzenet
-  - "Eszköz fingerprint változott - kattints a frissítéshez"
-  - **Fájlok:** `ppv-qr-camera.js`, `trait-ppv-qr-devices.php`
+- [x] **6. Fingerprint change notification** ✅ (2025-12-01)
+  - Ha fingerprint auto-update → toast üzenet
+  - Similarity score megjelenítés
+  - **Fájlok:** `ppv-qr-camera.js`, `ppv-lang-de.php`, `ppv-lang-hu.php`
 
 - [ ] **7. Legacy mobile scanner cleanup**
   - Store-level `scanner_type` megszüntetése
