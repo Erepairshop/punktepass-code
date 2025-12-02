@@ -236,7 +236,10 @@ document.addEventListener("DOMContentLoaded", function () {
       try {
         const res = await fetch(`${base}${endpoint}`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "X-WP-Nonce": ppv_rewards_mgmt?.nonce || ""
+          },
           body: JSON.stringify(body)
         });
 
@@ -341,7 +344,10 @@ document.addEventListener("DOMContentLoaded", function () {
       try {
         const res = await fetch(`${base}rewards/delete`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "X-WP-Nonce": ppv_rewards_mgmt?.nonce || ""
+          },
           body: JSON.stringify({ store_id: storeID, id })
         });
 
