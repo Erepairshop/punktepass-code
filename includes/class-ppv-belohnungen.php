@@ -397,7 +397,7 @@ class PPV_Belohnungen {
                             <div class="ppv-rw-store-header" onclick="ppvToggleStore(this)">
                                 <div class="ppv-rw-store-left">
                                     <?php if (!empty($store->logo_url)): ?>
-                                        <img src="<?php echo esc_url($store->logo_url); ?>" alt="" class="ppv-rw-store-logo">
+                                        <img src="<?php echo esc_url($store->logo_url); ?>" alt="" class="ppv-rw-store-logo" width="48" height="48" loading="lazy">
                                     <?php else: ?>
                                         <div class="ppv-rw-store-logo-placeholder">
                                             <i class="ri-store-2-fill"></i>

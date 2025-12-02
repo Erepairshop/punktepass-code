@@ -450,7 +450,7 @@ class PPV_ROI_Calculator {
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <img src="https://punktepass.de/wp-content/plugins/punktepass/assets/img/logo.webp" alt="PunktePass" class="logo">
+            <img src="https://punktepass.de/wp-content/plugins/punktepass/assets/img/logo.webp" alt="PunktePass" class="logo" width="60" height="60">
             <h1><?php echo esc_html($t['headline']); ?></h1>
             <p><?php echo esc_html($t['subheadline']); ?></p>
         </div>

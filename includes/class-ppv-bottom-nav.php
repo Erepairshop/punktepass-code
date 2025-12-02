@@ -24,12 +24,16 @@ class PPV_Bottom_Nav {
      * Assets (CSS + JS)
      * ============================================================ */
     public static function enqueue_assets() {
-        wp_enqueue_style(
-            'remixicons',
-            'https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css?ver=stable',
-            [],
-            null
-        );
+        // RemixIcons loaded via preload in class-ppv-performance.php for better LCP
+        // Fallback enqueue if performance class is not loaded
+        if (!class_exists('PPV_Performance')) {
+            wp_enqueue_style(
+                'remixicons',
+                'https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.min.css',
+                [],
+                null
+            );
+        }
 
         // 🚀 Pure SPA navigation (no Turbo - uses fetch for instant transitions)
 

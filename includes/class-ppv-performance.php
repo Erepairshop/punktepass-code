@@ -137,10 +137,49 @@ class PPV_Performance {
         img {
             max-width: 100%;
             height: auto;
+            display: block;
         }
 
         img[loading="lazy"] {
             background: #f0f0f0;
+        }
+
+        /* Fixed aspect ratios for common images - prevents CLS */
+        .ppv-logo, .ppv-header-logo-tiny { width: 32px; height: 32px; }
+        .ppv-header-avatar { width: 36px; height: 36px; border-radius: 50%; }
+        .ppv-rw-store-logo { width: 48px; height: 48px; border-radius: 8px; object-fit: cover; }
+        #ppv-avatar-preview { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; }
+
+        /* Font loading optimization */
+        @font-face {
+            font-family: 'Inter';
+            font-display: swap;
+            src: local('Inter');
+        }
+
+        /* RemixIcon placeholder while loading */
+        .ri-home-smile-2-line, .ri-donut-chart-line, .ri-coupon-3-line,
+        .ri-settings-3-line, .ri-feedback-line, .ri-star-fill,
+        .ri-user-3-line, .ri-bar-chart-line, .ri-store-2-fill {
+            width: 24px;
+            height: 24px;
+            display: inline-block;
+        }
+
+        /* Compact header - fixed height */
+        .ppv-compact-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 16px;
+            min-height: 56px;
+            background: rgba(255,255,255,0.95);
+        }
+
+        /* Login page logo */
+        .ppv-logo-section .ppv-logo {
+            width: 80px;
+            height: 80px;
         }
 
         /* Hide content until CSS loads */

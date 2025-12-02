@@ -309,7 +309,7 @@ public static function render_landing_page($atts) {
             <header class="ppv-landing-header">
                 <div class="ppv-header-content">
                     <div class="ppv-logo-section">
-                        <img src="<?php echo PPV_PLUGIN_URL; ?>assets/img/logo.webp" alt="PunktePass" class="ppv-logo">
+                        <img src="<?php echo PPV_PLUGIN_URL; ?>assets/img/logo.webp" alt="PunktePass" class="ppv-logo" width="80" height="80" fetchpriority="high">
                         <h1>PunktePass</h1>
                     </div>
                     <p class="ppv-slogan"><?php echo PPV_Lang::t('landing_slogan'); ?></p>
