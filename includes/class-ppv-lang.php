@@ -101,29 +101,32 @@ if (!$lang && !empty($_GET['lang'])) {
             ppv_log("🌍 [PPV_Lang] Using session → {$lang}");
         }
 
-        // 5️⃣ Geo fallback - OPTIMIZED: Session cache + short timeout
+        // 5️⃣ Geo fallback - OPTIMIZED: Transient + Session cache, NO external API on page load
         if (!$lang) {
-            // Check session cache first to avoid repeated HTTP calls
+            // Check session cache first
             if (!empty($_SESSION['ppv_geo_lang'])) {
                 $lang = $_SESSION['ppv_geo_lang'];
                 ppv_log("🌍 [PPV_Lang] Geo from session cache → {$lang}");
             } else {
-                // Default to German
-                $lang = 'de';
-
-                // Try geo lookup with 1 second timeout (non-blocking)
+                // Check transient cache (persists across sessions for same IP)
                 $ip = $_SERVER['REMOTE_ADDR'] ?? '';
-                if ($ip && $ip !== '127.0.0.1' && $ip !== '::1') {
-                    $ctx = stream_context_create(['http' => ['timeout' => 1]]);
-                    $geo = @json_decode(@file_get_contents("http://ip-api.com/json/{$ip}?fields=countryCode", false, $ctx), true);
-                    $cc = strtolower($geo['countryCode'] ?? '');
-                    if ($cc === 'hu') $lang = 'hu';
-                    elseif ($cc === 'ro') $lang = 'ro';
-                }
+                $cache_key = 'ppv_geo_' . md5($ip);
+                $cached_lang = get_transient($cache_key);
 
-                // Cache in session to avoid future HTTP calls
-                $_SESSION['ppv_geo_lang'] = $lang;
-                ppv_log("🌍 [PPV_Lang] Geo fallback → {$lang}");
+                if ($cached_lang !== false) {
+                    $lang = $cached_lang;
+                    $_SESSION['ppv_geo_lang'] = $lang;
+                    ppv_log("🌍 [PPV_Lang] Geo from transient cache → {$lang}");
+                } else {
+                    // Default to German - NO external API call on page load!
+                    // GeoIP lookup is disabled for performance - German is default
+                    $lang = 'de';
+
+                    // Cache in transient for 24 hours
+                    set_transient($cache_key, $lang, DAY_IN_SECONDS);
+                    $_SESSION['ppv_geo_lang'] = $lang;
+                    ppv_log("🌍 [PPV_Lang] Default (geo disabled) → {$lang}");
+                }
             }
         }
 

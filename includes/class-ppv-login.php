@@ -101,60 +101,26 @@ class PPV_Login {
     }
 
     /** ============================================================
-     * 🌍 Detect Language by Country (GeoIP)
+     * 🌍 Detect Language by Country (GeoIP) - OPTIMIZED
      * ============================================================ */
     private static function detect_language_by_country() {
-        // Check cache first (1 hour)
+        // Check cache first (24 hours)
         $cache_key = 'ppv_geo_' . md5(self::get_client_ip());
         $cached = get_transient($cache_key);
         if ($cached !== false) {
             return $cached;
         }
 
-        $ip = self::get_client_ip();
+        // 🚀 PERFORMANCE: Skip GeoIP API call - default to German
+        // External API calls add 1-2 seconds latency
+        // Users can manually select language if needed
+        $detected_lang = 'de';
 
-        // Skip for localhost/private IPs
-        if ($ip === '127.0.0.1' || strpos($ip, '192.168.') === 0 || strpos($ip, '10.') === 0) {
-            return 'de';
-        }
+        // Cache for 24 hours
+        set_transient($cache_key, $detected_lang, DAY_IN_SECONDS);
+        ppv_log("🌍 [PPV_Login] GeoIP disabled for performance, defaulting to: {$detected_lang}");
 
-        try {
-            // Use ip-api.com (free, no API key needed, 45 req/min limit)
-            $response = wp_remote_get("http://ip-api.com/json/{$ip}?fields=countryCode", [
-                'timeout' => 2, // Fast timeout to not slow down page
-                'sslverify' => false
-            ]);
-
-            if (!is_wp_error($response)) {
-                $data = json_decode(wp_remote_retrieve_body($response), true);
-                $country = $data['countryCode'] ?? '';
-
-                // Map country to language
-                $country_lang_map = [
-                    'DE' => 'de', // Germany
-                    'AT' => 'de', // Austria
-                    'CH' => 'de', // Switzerland
-                    'LI' => 'de', // Liechtenstein
-                    'HU' => 'hu', // Hungary
-                    'RO' => 'ro', // Romania
-                    'MD' => 'ro', // Moldova (Romanian)
-                ];
-
-                $detected_lang = $country_lang_map[$country] ?? 'de';
-
-                // Cache for 1 hour
-                set_transient($cache_key, $detected_lang, HOUR_IN_SECONDS);
-
-                ppv_log("🌍 [PPV_Login] GeoIP: IP={$ip}, Country={$country}, Lang={$detected_lang}");
-
-                return $detected_lang;
-            }
-        } catch (Exception $e) {
-            ppv_log("⚠️ [PPV_Login] GeoIP error: " . $e->getMessage());
-        }
-
-        // Fallback to locale
-        return substr(get_locale(), 0, 2);
+        return $detected_lang;
     }
 
     /** ============================================================
