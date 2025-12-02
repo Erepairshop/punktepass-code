@@ -349,14 +349,28 @@ trait PPV_QR_Devices_Trait {
                         $('#ppv-request-new-slot-btn').hide();
                     } else if (data.is_registered) {
                         // Device is registered
-                        $('#ppv-device-status').html('<span style="color: #4caf50;">✅ <?php echo esc_js(self::t('device_is_registered', 'Dieses Gerät ist registriert und kann den Scanner verwenden.')); ?></span>');
+                        const deviceCount = parseInt(data.device_count, 10);
+                        const maxDevices = parseInt(data.max_devices, 10);
+                        const remainingSlots = maxDevices - deviceCount;
+
+                        let statusHtml = '<span style="color: #4caf50;">✅ <?php echo esc_js(self::t('device_is_registered', 'Dieses Gerät ist registriert und kann den Scanner verwenden.')); ?></span>';
+
+                        // Show info about remaining device slots if there's capacity
+                        if (remainingSlots > 0) {
+                            const slotsText = remainingSlots === 1
+                                ? '<?php echo esc_js(self::t('one_more_device', '1 weiteres Gerät')); ?>'
+                                : remainingSlots + ' <?php echo esc_js(self::t('more_devices', 'weitere Geräte')); ?>';
+                            statusHtml += '<br><span style="color: #2196f3; font-size: 12px; margin-top: 5px; display: inline-block;"><i class="ri-information-line"></i> <?php echo esc_js(self::t('can_add_more_devices', 'Sie können noch')); ?> ' + slotsText + ' <?php echo esc_js(self::t('register_on_new_device', 'registrieren. Öffnen Sie diese Seite auf einem neuen Gerät.')); ?></span>';
+                        }
+
+                        $('#ppv-device-status').html(statusHtml);
                         $('#ppv-device-registered-badge').show();
                         $('#ppv-register-device-btn').hide();
                         $('#ppv-request-add-btn').hide();
 
                         // Check if limit is reached - show button to request additional device slot
                         // But NOT for scanner users - they cannot request additional devices
-                        if (parseInt(data.device_count, 10) >= parseInt(data.max_devices, 10) && !isScanner) {
+                        if (deviceCount >= maxDevices && !isScanner) {
                             $('#ppv-request-new-slot-btn').show();
                         } else {
                             $('#ppv-request-new-slot-btn').hide();
