@@ -53,7 +53,7 @@ class PPV_Bottom_Nav {
             echo '<meta name="turbo-cache-control" content="no-preview">' . "\n";
         }, 1);
 
-        // 🚀 Turbo progress bar + prefetch configuration (inline script)
+        // 🚀 Turbo progress bar configuration (minimal)
         add_action('wp_footer', function() {
             ?>
             <script type="module">
@@ -62,37 +62,10 @@ class PPV_Bottom_Nav {
             // Progress bar appears after 50ms (feels instant)
             Turbo.setProgressBarDelay(50);
 
-            // 🚀 Clear cache on login/logout
+            // Clear cache on login/logout
             if (window.location.pathname.includes('/login') || window.location.pathname.includes('/logout')) {
                 Turbo.cache.clear();
             }
-
-            // 🔥 Smart prefetch: only for nav links with data-turbo-preload
-            // Turbo 8's native prefetch handles the rest via meta tag
-            const prefetchedUrls = new Set();
-
-            function setupLinkPrefetch() {
-                document.querySelectorAll('a[data-turbo-preload]').forEach(link => {
-                    if (link._prefetchSetup) return;
-                    link._prefetchSetup = true;
-
-                    link.addEventListener('mouseenter', () => {
-                        const url = link.href;
-                        if (prefetchedUrls.has(url)) return;
-                        prefetchedUrls.add(url);
-
-                        const prefetchLink = document.createElement('link');
-                        prefetchLink.rel = 'prefetch';
-                        prefetchLink.href = url;
-                        prefetchLink.as = 'document';
-                        document.head.appendChild(prefetchLink);
-                    }, { passive: true });
-                });
-            }
-
-            // Setup on load and after Turbo navigation
-            setupLinkPrefetch();
-            document.addEventListener('turbo:load', setupLinkPrefetch);
             </script>
             <?php
         }, 99);
@@ -195,7 +168,7 @@ class PPV_Bottom_Nav {
 
         // --- User navigáció (prioritás!) ---
         // 🚀 data-turbo="false" for vendors visiting user pages - forces full reload
-        $turbo_attr = $is_vendor ? 'data-turbo="false"' : 'data-turbo-preload';
+        $turbo_attr = $is_vendor ? 'data-turbo="false"' : '';
         if ($is_user_page): ?>
             <nav class="ppv-bottom-nav" data-turbo-permanent id="ppv-main-nav">
                 <a href="/user_dashboard" class="nav-item" <?php echo $turbo_attr; ?> data-navlink="true" title="Dashboard"><i class="ri-home-smile-2-line"></i></a>
@@ -220,10 +193,10 @@ class PPV_Bottom_Nav {
         // --- Alap user nav (basic users - Turbo enabled) ---
         else: ?>
             <nav class="ppv-bottom-nav" data-turbo-permanent id="ppv-main-nav">
-                <a href="/user_dashboard" class="nav-item" data-turbo-preload data-navlink="true" title="Dashboard"><i class="ri-home-smile-2-line"></i></a>
-                <a href="/meine-punkte" class="nav-item" data-turbo-preload data-navlink="true" title="Meine Punkte"><i class="ri-donut-chart-line"></i></a>
-                <a href="/belohnungen" class="nav-item" data-turbo-preload data-navlink="true" title="Belohnungen"><i class="ri-coupon-3-line"></i></a>
-                <a href="/einstellungen" class="nav-item" data-turbo-preload data-navlink="true" title="Einstellungen"><i class="ri-settings-3-line"></i></a>
+                <a href="/user_dashboard" class="nav-item" data-navlink="true" title="Dashboard"><i class="ri-home-smile-2-line"></i></a>
+                <a href="/meine-punkte" class="nav-item" data-navlink="true" title="Meine Punkte"><i class="ri-donut-chart-line"></i></a>
+                <a href="/belohnungen" class="nav-item" data-navlink="true" title="Belohnungen"><i class="ri-coupon-3-line"></i></a>
+                <a href="/einstellungen" class="nav-item" data-navlink="true" title="Einstellungen"><i class="ri-settings-3-line"></i></a>
                 <a href="#" class="nav-item" id="ppv-feedback-nav-btn" title="Feedback"><i class="ri-feedback-line"></i></a>
             </nav>
             <?php self::render_feedback_modal('user'); ?>
