@@ -301,8 +301,8 @@ class PPV_Rewards_Management {
                                 <?php foreach ($filialen as $fil): ?>
                                     <?php if (intval($fil->id) !== $store_id): ?>
                                     <option value="<?php echo intval($fil->id); ?>">
-                                        <?php echo esc_html($fil->company_name ?: $fil->name); ?>
-                                        <?php if ($fil->city): ?>(<?php echo esc_html($fil->city); ?>)<?php endif; ?>
+                                        <?php echo esc_html($fil->name ?: $fil->company_name); ?>
+                                        <?php if ($fil->city): ?> – <?php echo esc_html($fil->city); ?><?php endif; ?>
                                     </option>
                                     <?php endif; ?>
                                 <?php endforeach; ?>

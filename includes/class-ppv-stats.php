@@ -1492,7 +1492,8 @@ class PPV_Stats {
                             <option value="all"><?php echo esc_html($T['all_branches'] ?? 'Összes filiale'); ?></option>
                             <?php foreach ($filialen as $fil): ?>
                                 <option value="<?php echo intval($fil->id); ?>">
-                                    <?php echo esc_html($fil->company_name ?: $fil->name ?: 'Filiale #' . $fil->id); ?>
+                                    <?php echo esc_html($fil->name ?: $fil->company_name ?: 'Filiale #' . $fil->id); ?>
+                                    <?php if ($fil->city): ?> – <?php echo esc_html($fil->city); ?><?php endif; ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
