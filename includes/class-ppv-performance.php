@@ -359,13 +359,12 @@ class PPV_Performance {
     }
 
     /**
-     * Remove render-blocking resources and add resource hints
+     * Add resource hints (preconnect only - no async CSS to prevent CLS)
      */
     public static function remove_render_blocking() {
         ?>
-        <!-- Resource Hints for faster loading -->
-        <link rel="preload" href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.min.css"></noscript>
+        <!-- Resource Hints - preconnect only, no async loading to prevent CLS -->
+        <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
         <?php
     }
 }
