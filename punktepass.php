@@ -529,9 +529,16 @@ foreach (['pp-vendor-signup.php', 'pp-user-signup.php'] as $signup) {
 }
 
 // ========================================
-// 🎨 PWA META TAGS
+// 🎨 PWA META TAGS + PERFORMANCE HINTS
 // ========================================
 add_action('wp_head', function () { ?>
+    <!-- 🚀 PRECONNECT - Early connection to CDNs for faster resource loading -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="dns-prefetch" href="//fonts.googleapis.com">
+    <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
+
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#fafdff">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -544,6 +551,56 @@ add_action('wp_head', function () { ?>
     <!-- 🚀 TURBO PREFETCH - Enables instant page transitions on hover -->
     <meta name="turbo-prefetch" content="true">
 <?php }, 1);
+
+// ========================================
+// 🚀 ASYNC GOOGLE FONTS - Prevent render blocking
+// ========================================
+add_filter('style_loader_tag', function($tag, $handle, $href, $media) {
+    // Convert Google Fonts to non-render-blocking
+    if (strpos($handle, 'google-fonts') !== false || strpos($href, 'fonts.googleapis.com') !== false) {
+        // Use media="print" with onload to load async, then switch to all
+        return sprintf(
+            '<link rel="stylesheet" id="%s-css" href="%s" media="print" onload="this.media=\'all\'">' . "\n" .
+            '<noscript><link rel="stylesheet" href="%s"></noscript>' . "\n",
+            esc_attr($handle),
+            esc_url($href),
+            esc_url($href)
+        );
+    }
+    return $tag;
+}, 10, 4);
+
+// ========================================
+// 🚀 DEFER NON-CRITICAL SCRIPTS - Reduce render blocking
+// ========================================
+add_filter('script_loader_tag', function($tag, $handle, $src) {
+    // Skip admin, login page scripts, and critical scripts
+    if (is_admin() || ppv_is_login_page()) {
+        return $tag;
+    }
+
+    // Scripts that should NOT be deferred (critical for page render)
+    $no_defer = [
+        'jquery',
+        'jquery-core',
+        'jquery-migrate',
+        'ppv-theme-loader',      // Needed early for theme flash prevention
+        'ppv-global-init-lock',  // Must run first
+        'turbo',                 // Already module type
+    ];
+
+    if (in_array($handle, $no_defer)) {
+        return $tag;
+    }
+
+    // Skip if already has defer/async or is module
+    if (strpos($tag, 'defer') !== false || strpos($tag, 'async') !== false || strpos($tag, 'type="module"') !== false) {
+        return $tag;
+    }
+
+    // Add defer attribute
+    return str_replace(' src=', ' defer src=', $tag);
+}, 10, 3);
 
 // ========================================
 // 🚀 TURBO CACHE CONTROL - Disable cache for dynamic pages
