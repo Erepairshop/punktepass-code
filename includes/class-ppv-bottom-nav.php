@@ -157,7 +157,7 @@ class PPV_Bottom_Nav {
         // 🚀 data-turbo="false" for vendors visiting user pages - forces full reload
         $turbo_attr = $is_vendor ? 'data-turbo="false"' : '';
         if ($is_user_page): ?>
-            <nav class="ppv-bottom-nav">
+            <nav class="ppv-bottom-nav" data-turbo-permanent id="ppv-main-nav">
                 <a href="/user_dashboard" class="nav-item" <?php echo $turbo_attr; ?> data-navlink="true" title="Dashboard"><i class="ri-home-smile-2-line"></i></a>
                 <a href="/meine-punkte" class="nav-item" <?php echo $turbo_attr; ?> data-navlink="true" title="Meine Punkte"><i class="ri-donut-chart-line"></i></a>
                 <a href="/belohnungen" class="nav-item" <?php echo $turbo_attr; ?> data-navlink="true" title="Belohnungen"><i class="ri-coupon-3-line"></i></a>
@@ -168,7 +168,7 @@ class PPV_Bottom_Nav {
         <?php
         // --- Händler / POS navigáció ---
         elseif ($is_vendor || $is_pos): ?>
-            <nav class="ppv-bottom-nav">
+            <nav class="ppv-bottom-nav" data-turbo-permanent id="ppv-main-nav">
                 <a href="/qr-center" class="nav-item" data-turbo="false" data-navlink="true" title="Start"><i class="ri-home-smile-2-line"></i></a>
                 <a href="/rewards" class="nav-item" data-turbo="false" data-navlink="true" title="Rewards"><i class="ri-coupon-3-line"></i></a>
                 <a href="/mein-profil" class="nav-item" data-turbo="false" data-navlink="true" title="Profil"><i class="ri-user-3-line"></i></a>
@@ -179,7 +179,7 @@ class PPV_Bottom_Nav {
         <?php
         // --- Alap user nav (basic users - Turbo enabled) ---
         else: ?>
-            <nav class="ppv-bottom-nav">
+            <nav class="ppv-bottom-nav" data-turbo-permanent id="ppv-main-nav">
                 <a href="/user_dashboard" class="nav-item" data-navlink="true" title="Dashboard"><i class="ri-home-smile-2-line"></i></a>
                 <a href="/meine-punkte" class="nav-item" data-navlink="true" title="Meine Punkte"><i class="ri-donut-chart-line"></i></a>
                 <a href="/belohnungen" class="nav-item" data-navlink="true" title="Belohnungen"><i class="ri-coupon-3-line"></i></a>
