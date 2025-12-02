@@ -345,16 +345,25 @@ if (class_exists('PPV_Lang')) {
         if (!empty($stores)) {
             $result['enabled'] = true;
 
+            // FIX N+1: Batch query all referral stats for all stores at once
+            $store_ids = array_column($stores, 'id');
+            $placeholders = implode(',', array_fill(0, count($store_ids), '%d'));
+            $query_args = array_merge([$user_id], $store_ids);
+
+            $all_stats = $wpdb->get_results($wpdb->prepare("
+                SELECT
+                    store_id,
+                    COUNT(*) as total,
+                    SUM(CASE WHEN status IN ('completed', 'approved') THEN 1 ELSE 0 END) as successful,
+                    SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending
+                FROM {$referrals_table}
+                WHERE referrer_user_id = %d AND store_id IN ($placeholders)
+                GROUP BY store_id
+            ", ...$query_args), OBJECT_K);
+
             foreach ($stores as $store) {
-                // Get referral stats for this store
-                $stats = $wpdb->get_row($wpdb->prepare("
-                    SELECT
-                        COUNT(*) as total,
-                        SUM(CASE WHEN status IN ('completed', 'approved') THEN 1 ELSE 0 END) as successful,
-                        SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending
-                    FROM {$referrals_table}
-                    WHERE referrer_user_id = %d AND store_id = %d
-                ", $user_id, $store->id));
+                // Get pre-fetched stats for this store
+                $stats = $all_stats[$store->id] ?? (object)['total' => 0, 'successful' => 0, 'pending' => 0];
 
                 // Build share URL
                 $share_url = home_url("/r/{$user_code}/{$store->store_key}");
