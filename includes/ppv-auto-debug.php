@@ -218,6 +218,94 @@ class PPV_Auto_Debug {
 add_action('plugins_loaded', ['PPV_Auto_Debug', 'enable']);
 add_action('init', ['PPV_Auto_Debug', 'run_health_checks']);
 
+// ============================================================
+// ⏱️ PERFORMANCE TIMING - Page load time measurement
+// ============================================================
+class PPV_Performance_Timer {
+    private static $start_time;
+    private static $start_memory;
+    private static $start_queries;
+    private static $enabled = true; // Set to false to disable
+
+    public static function init() {
+        if (!self::$enabled) return;
+
+        self::$start_time = microtime(true);
+        self::$start_memory = memory_get_usage();
+        self::$start_queries = get_num_queries();
+
+        // Output timing in footer (HTML comment + console.log)
+        add_action('wp_footer', [__CLASS__, 'output_timing'], 9999);
+    }
+
+    public static function output_timing() {
+        if (!self::$enabled) return;
+
+        global $wpdb;
+
+        $end_time = microtime(true);
+        $end_memory = memory_get_usage();
+        $end_queries = get_num_queries();
+
+        $duration_ms = round(($end_time - self::$start_time) * 1000, 2);
+        $memory_mb = round(($end_memory - self::$start_memory) / 1024 / 1024, 2);
+        $peak_memory_mb = round(memory_get_peak_usage() / 1024 / 1024, 2);
+        $query_count = $end_queries - self::$start_queries;
+
+        // Get slow queries if SAVEQUERIES is enabled
+        $slow_queries = [];
+        if (defined('SAVEQUERIES') && SAVEQUERIES && !empty($wpdb->queries)) {
+            foreach ($wpdb->queries as $q) {
+                $query_time_ms = round($q[1] * 1000, 2);
+                if ($query_time_ms > 50) { // Log queries > 50ms
+                    $slow_queries[] = [
+                        'time_ms' => $query_time_ms,
+                        'query' => substr($q[0], 0, 100) . '...'
+                    ];
+                }
+            }
+            usort($slow_queries, fn($a, $b) => $b['time_ms'] <=> $a['time_ms']);
+            $slow_queries = array_slice($slow_queries, 0, 5); // Top 5 slowest
+        }
+
+        $page = $_SERVER['REQUEST_URI'] ?? '/';
+
+        // HTML comment (visible in View Source)
+        echo "\n<!-- ⏱️ PPV Performance Timer\n";
+        echo "Page: {$page}\n";
+        echo "Duration: {$duration_ms}ms\n";
+        echo "Queries: {$query_count}\n";
+        echo "Memory: {$memory_mb}MB (peak: {$peak_memory_mb}MB)\n";
+        if (!empty($slow_queries)) {
+            echo "Slow Queries:\n";
+            foreach ($slow_queries as $sq) {
+                echo "  - {$sq['time_ms']}ms: {$sq['query']}\n";
+            }
+        }
+        echo "-->\n";
+
+        // Console.log for DevTools
+        $timing_data = [
+            'page' => $page,
+            'duration_ms' => $duration_ms,
+            'queries' => $query_count,
+            'memory_mb' => $memory_mb,
+            'peak_memory_mb' => $peak_memory_mb,
+            'slow_queries' => $slow_queries
+        ];
+
+        echo "<script>console.log('⏱️ PPV Performance:', " . json_encode($timing_data) . ");</script>\n";
+
+        // Warning if slow
+        if ($duration_ms > 1000) {
+            echo "<script>console.warn('🐢 SLOW PAGE: {$duration_ms}ms - check slow queries!');</script>\n";
+        }
+    }
+}
+
+// Start timer as early as possible
+PPV_Performance_Timer::init();
+
 /**
  * ============================================================
  *  🧠 SMART TRACE MODE – minden PHP hívás automatikusan felismeri a forrást
