@@ -40,6 +40,12 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
             // Referral Program
             add_action('wp_ajax_ppv_activate_referral_grace_period', [__CLASS__, 'ajax_activate_referral_grace_period']);
             add_action('wp_ajax_nopriv_ppv_activate_referral_grace_period', [__CLASS__, 'ajax_activate_referral_grace_period']);
+
+            // Account Settings - Email & Password Change
+            add_action('wp_ajax_ppv_change_email', [__CLASS__, 'ajax_change_email']);
+            add_action('wp_ajax_nopriv_ppv_change_email', [__CLASS__, 'ajax_change_email']);
+            add_action('wp_ajax_ppv_change_password', [__CLASS__, 'ajax_change_password']);
+            add_action('wp_ajax_nopriv_ppv_change_password', [__CLASS__, 'ajax_change_password']);
         }
 
         // ==================== TURBO CACHE FIX ====================
@@ -1367,6 +1373,50 @@ if (!empty($store->gallery)) {
                         🔄 <span data-i18n="onboarding_reset_btn"><?php echo esc_html(PPV_Lang::t('onboarding_reset_btn')); ?></span>
                     </button>
                 </div>
+
+                <hr>
+
+                <!-- ============================================================
+                     ACCOUNT SETTINGS - EMAIL & PASSWORD CHANGE
+                     ============================================================ -->
+                <h3>📧 <?php echo esc_html(PPV_Lang::t('account_settings', 'Fiók beállítások')); ?></h3>
+
+                <!-- Current Email Display -->
+                <?php
+                $current_user = wp_get_current_user();
+                $current_email = $current_user->user_email ?? '';
+                ?>
+
+                <!-- Email Change Section -->
+                <div class="ppv-form-group ppv-account-section" style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+                    <label style="font-weight: bold; margin-bottom: 10px; display: block;">
+                        📧 <?php echo esc_html(PPV_Lang::t('email_change', 'E-mail cím módosítása')); ?>
+                    </label>
+                    <p class="ppv-help" style="margin-bottom: 12px; color: #888;">
+                        <?php echo esc_html(PPV_Lang::t('email_change_help', 'Jelenlegi e-mail cím:')); ?> <strong><?php echo esc_html($current_email); ?></strong>
+                    </p>
+                    <input type="email" id="ppv-new-email" placeholder="<?php echo esc_attr(PPV_Lang::t('new_email_placeholder', 'Új e-mail cím')); ?>" style="margin-bottom: 10px;">
+                    <input type="email" id="ppv-confirm-email" placeholder="<?php echo esc_attr(PPV_Lang::t('confirm_email_placeholder', 'Új e-mail cím megerősítése')); ?>" style="margin-bottom: 10px;">
+                    <button type="button" id="ppv-change-email-btn" class="ppv-btn ppv-btn-secondary" style="width: 100%;">
+                        📧 <?php echo esc_html(PPV_Lang::t('change_email_btn', 'E-mail cím módosítása')); ?>
+                    </button>
+                </div>
+
+                <!-- Password Change Section -->
+                <div class="ppv-form-group ppv-account-section" style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px;">
+                    <label style="font-weight: bold; margin-bottom: 10px; display: block;">
+                        🔐 <?php echo esc_html(PPV_Lang::t('password_change', 'Jelszó módosítása')); ?>
+                    </label>
+                    <p class="ppv-help" style="margin-bottom: 12px; color: #888;">
+                        <?php echo esc_html(PPV_Lang::t('password_change_help', 'Adja meg a jelenlegi és az új jelszót.')); ?>
+                    </p>
+                    <input type="password" id="ppv-current-password" placeholder="<?php echo esc_attr(PPV_Lang::t('current_password_placeholder', 'Jelenlegi jelszó')); ?>" style="margin-bottom: 10px;">
+                    <input type="password" id="ppv-new-password" placeholder="<?php echo esc_attr(PPV_Lang::t('new_password_placeholder', 'Új jelszó')); ?>" style="margin-bottom: 10px;">
+                    <input type="password" id="ppv-confirm-password" placeholder="<?php echo esc_attr(PPV_Lang::t('confirm_password_placeholder', 'Új jelszó megerősítése')); ?>" style="margin-bottom: 10px;">
+                    <button type="button" id="ppv-change-password-btn" class="ppv-btn ppv-btn-secondary" style="width: 100%;">
+                        🔐 <?php echo esc_html(PPV_Lang::t('change_password_btn', 'Jelszó módosítása')); ?>
+                    </button>
+                </div>
             </div>
             <?php
             return ob_get_clean();
@@ -2150,6 +2200,155 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
             } else {
                 wp_send_json_error(['msg' => 'Fehler beim Starten der Grace Period']);
             }
+        }
+
+        /**
+         * ============================================================
+         * 📧 CHANGE EMAIL
+         * ============================================================
+         */
+        public static function ajax_change_email() {
+            self::ensure_session();
+
+            $auth = self::check_auth();
+            if (!$auth['valid']) {
+                wp_send_json_error(['msg' => PPV_Lang::t('error_no_permission', 'Nincs jogosultság')]);
+                return;
+            }
+
+            // Get user ID from session
+            $user_id = 0;
+            if (!empty($_SESSION['ppv_user_id'])) {
+                $user_id = intval($_SESSION['ppv_user_id']);
+            } elseif (is_user_logged_in()) {
+                $user_id = get_current_user_id();
+            }
+
+            if (!$user_id) {
+                wp_send_json_error(['msg' => PPV_Lang::t('error_no_user', 'Felhasználó nem található')]);
+                return;
+            }
+
+            $new_email = sanitize_email($_POST['new_email'] ?? '');
+            $confirm_email = sanitize_email($_POST['confirm_email'] ?? '');
+
+            // Validation
+            if (empty($new_email)) {
+                wp_send_json_error(['msg' => PPV_Lang::t('error_email_required', 'E-mail cím megadása kötelező')]);
+                return;
+            }
+
+            if (!is_email($new_email)) {
+                wp_send_json_error(['msg' => PPV_Lang::t('error_email_invalid', 'Érvénytelen e-mail cím')]);
+                return;
+            }
+
+            if ($new_email !== $confirm_email) {
+                wp_send_json_error(['msg' => PPV_Lang::t('error_email_mismatch', 'Az e-mail címek nem egyeznek')]);
+                return;
+            }
+
+            // Check if email already exists
+            if (email_exists($new_email) && email_exists($new_email) !== $user_id) {
+                wp_send_json_error(['msg' => PPV_Lang::t('error_email_exists', 'Ez az e-mail cím már foglalt')]);
+                return;
+            }
+
+            // Update user email
+            $result = wp_update_user([
+                'ID' => $user_id,
+                'user_email' => $new_email
+            ]);
+
+            if (is_wp_error($result)) {
+                wp_send_json_error(['msg' => $result->get_error_message()]);
+                return;
+            }
+
+            // Also update store email if exists
+            global $wpdb;
+            $store_id = self::get_store_id();
+            if ($store_id) {
+                $wpdb->update(
+                    "{$wpdb->prefix}ppv_stores",
+                    ['email' => $new_email],
+                    ['id' => $store_id],
+                    ['%s'],
+                    ['%d']
+                );
+            }
+
+            ppv_log("[PPV_ACCOUNT] Email changed for user #{$user_id} to: {$new_email}");
+            wp_send_json_success(['msg' => PPV_Lang::t('email_changed_success', 'E-mail cím sikeresen módosítva!')]);
+        }
+
+        /**
+         * ============================================================
+         * 🔐 CHANGE PASSWORD
+         * ============================================================
+         */
+        public static function ajax_change_password() {
+            self::ensure_session();
+
+            $auth = self::check_auth();
+            if (!$auth['valid']) {
+                wp_send_json_error(['msg' => PPV_Lang::t('error_no_permission', 'Nincs jogosultság')]);
+                return;
+            }
+
+            // Get user ID from session
+            $user_id = 0;
+            if (!empty($_SESSION['ppv_user_id'])) {
+                $user_id = intval($_SESSION['ppv_user_id']);
+            } elseif (is_user_logged_in()) {
+                $user_id = get_current_user_id();
+            }
+
+            if (!$user_id) {
+                wp_send_json_error(['msg' => PPV_Lang::t('error_no_user', 'Felhasználó nem található')]);
+                return;
+            }
+
+            $current_password = $_POST['current_password'] ?? '';
+            $new_password = $_POST['new_password'] ?? '';
+            $confirm_password = $_POST['confirm_password'] ?? '';
+
+            // Validation
+            if (empty($current_password)) {
+                wp_send_json_error(['msg' => PPV_Lang::t('error_current_password_required', 'Jelenlegi jelszó megadása kötelező')]);
+                return;
+            }
+
+            if (empty($new_password)) {
+                wp_send_json_error(['msg' => PPV_Lang::t('error_new_password_required', 'Új jelszó megadása kötelező')]);
+                return;
+            }
+
+            if (strlen($new_password) < 6) {
+                wp_send_json_error(['msg' => PPV_Lang::t('error_password_too_short', 'A jelszó legalább 6 karakter legyen')]);
+                return;
+            }
+
+            if ($new_password !== $confirm_password) {
+                wp_send_json_error(['msg' => PPV_Lang::t('error_password_mismatch', 'Az új jelszavak nem egyeznek')]);
+                return;
+            }
+
+            // Verify current password
+            $user = get_user_by('ID', $user_id);
+            if (!$user || !wp_check_password($current_password, $user->user_pass, $user_id)) {
+                wp_send_json_error(['msg' => PPV_Lang::t('error_current_password_wrong', 'A jelenlegi jelszó helytelen')]);
+                return;
+            }
+
+            // Update password
+            wp_set_password($new_password, $user_id);
+
+            // Re-authenticate the user (wp_set_password logs them out)
+            wp_set_auth_cookie($user_id, true);
+
+            ppv_log("[PPV_ACCOUNT] Password changed for user #{$user_id}");
+            wp_send_json_success(['msg' => PPV_Lang::t('password_changed_success', 'Jelszó sikeresen módosítva!')]);
         }
     }
 

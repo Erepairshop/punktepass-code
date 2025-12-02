@@ -81,6 +81,8 @@
             this.bindFormSubmit();
             this.bindGalleryDelete();
             this.bindOnboardingReset();
+            this.bindEmailChange();
+            this.bindPasswordChange();
 
             this.updateUI();
 
@@ -136,6 +138,139 @@
                     this.showAlert(L.onboarding_reset_error || '❌ Hiba történt!', 'error');
                     resetBtn.disabled = false;
                     resetBtn.innerHTML = '🔄 ' + (L.onboarding_reset_btn || 'Onboarding újraindítása');
+                });
+            });
+        }
+
+        // ==================== EMAIL CHANGE ====================
+        bindEmailChange() {
+            const changeBtn = document.getElementById('ppv-change-email-btn');
+            if (!changeBtn) return;
+
+            changeBtn.addEventListener('click', () => {
+                const L = this.strings;
+                const newEmail = document.getElementById('ppv-new-email')?.value?.trim();
+                const confirmEmail = document.getElementById('ppv-confirm-email')?.value?.trim();
+
+                if (!newEmail) {
+                    this.showAlert(L.error_email_required || 'E-mail cím megadása kötelező', 'error');
+                    return;
+                }
+
+                if (newEmail !== confirmEmail) {
+                    this.showAlert(L.error_email_mismatch || 'Az e-mail címek nem egyeznek', 'error');
+                    return;
+                }
+
+                if (!confirm(L.confirm_email_change || 'Biztosan módosítja az e-mail címet?')) {
+                    return;
+                }
+
+                changeBtn.disabled = true;
+                changeBtn.innerHTML = '⏳ ' + (L.saving || 'Mentés...');
+
+                const formData = new FormData();
+                formData.append('action', 'ppv_change_email');
+                formData.append('ppv_nonce', this.nonce);
+                formData.append('new_email', newEmail);
+                formData.append('confirm_email', confirmEmail);
+
+                fetch(this.ajaxUrl, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        this.showAlert(data.data?.msg || L.email_changed_success || '✅ E-mail cím sikeresen módosítva!', 'success');
+                        // Clear fields
+                        document.getElementById('ppv-new-email').value = '';
+                        document.getElementById('ppv-confirm-email').value = '';
+                        // Reload to show new email
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        this.showAlert(data.data?.msg || L.error || '❌ Hiba történt!', 'error');
+                    }
+                    changeBtn.disabled = false;
+                    changeBtn.innerHTML = '📧 ' + (L.change_email_btn || 'E-mail cím módosítása');
+                })
+                .catch(err => {
+                    console.error('Email change error:', err);
+                    this.showAlert(L.error || '❌ Hiba történt!', 'error');
+                    changeBtn.disabled = false;
+                    changeBtn.innerHTML = '📧 ' + (L.change_email_btn || 'E-mail cím módosítása');
+                });
+            });
+        }
+
+        // ==================== PASSWORD CHANGE ====================
+        bindPasswordChange() {
+            const changeBtn = document.getElementById('ppv-change-password-btn');
+            if (!changeBtn) return;
+
+            changeBtn.addEventListener('click', () => {
+                const L = this.strings;
+                const currentPassword = document.getElementById('ppv-current-password')?.value;
+                const newPassword = document.getElementById('ppv-new-password')?.value;
+                const confirmPassword = document.getElementById('ppv-confirm-password')?.value;
+
+                if (!currentPassword) {
+                    this.showAlert(L.error_current_password_required || 'Jelenlegi jelszó megadása kötelező', 'error');
+                    return;
+                }
+
+                if (!newPassword) {
+                    this.showAlert(L.error_new_password_required || 'Új jelszó megadása kötelező', 'error');
+                    return;
+                }
+
+                if (newPassword.length < 6) {
+                    this.showAlert(L.error_password_too_short || 'A jelszó legalább 6 karakter legyen', 'error');
+                    return;
+                }
+
+                if (newPassword !== confirmPassword) {
+                    this.showAlert(L.error_password_mismatch || 'Az új jelszavak nem egyeznek', 'error');
+                    return;
+                }
+
+                if (!confirm(L.confirm_password_change || 'Biztosan módosítja a jelszót?')) {
+                    return;
+                }
+
+                changeBtn.disabled = true;
+                changeBtn.innerHTML = '⏳ ' + (L.saving || 'Mentés...');
+
+                const formData = new FormData();
+                formData.append('action', 'ppv_change_password');
+                formData.append('ppv_nonce', this.nonce);
+                formData.append('current_password', currentPassword);
+                formData.append('new_password', newPassword);
+                formData.append('confirm_password', confirmPassword);
+
+                fetch(this.ajaxUrl, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        this.showAlert(data.data?.msg || L.password_changed_success || '✅ Jelszó sikeresen módosítva!', 'success');
+                        // Clear fields
+                        document.getElementById('ppv-current-password').value = '';
+                        document.getElementById('ppv-new-password').value = '';
+                        document.getElementById('ppv-confirm-password').value = '';
+                    } else {
+                        this.showAlert(data.data?.msg || L.error || '❌ Hiba történt!', 'error');
+                    }
+                    changeBtn.disabled = false;
+                    changeBtn.innerHTML = '🔐 ' + (L.change_password_btn || 'Jelszó módosítása');
+                })
+                .catch(err => {
+                    console.error('Password change error:', err);
+                    this.showAlert(L.error || '❌ Hiba történt!', 'error');
+                    changeBtn.disabled = false;
+                    changeBtn.innerHTML = '🔐 ' + (L.change_password_btn || 'Jelszó módosítása');
                 });
             });
         }
