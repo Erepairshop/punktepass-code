@@ -58,7 +58,7 @@ class PPV_Rewards_Management {
             'ppv-rewards-management',
             PPV_PLUGIN_URL . 'assets/js/ppv-rewards-management.js',
             ['jquery'],
-            time(),
+            filemtime(PPV_PLUGIN_DIR . 'assets/js/ppv-rewards-management.js'),
             true
         );
 
