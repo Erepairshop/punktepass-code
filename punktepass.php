@@ -474,7 +474,6 @@ $whitelist = [
     'ppv-login',
     'ppv-toast-points',
     'ppv-vip-settings', // VIP settings
-    'ppv-bottom-nav',   // Bottom navigation + Turbo progress bar
     'remix-icons',      // Icons for VIP settings
     'google-platform',
     'ppv-login-js'

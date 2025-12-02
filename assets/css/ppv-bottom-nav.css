@@ -92,26 +92,17 @@ body.ppv-theme-dark .ppv-bottom-nav .nav-item.active i {
   }
 }
 
-/* 🚀 Turbo 8 Native Progress Bar */
+/* Turbo Loading Indicator */
 .turbo-progress-bar {
   position: fixed;
   top: 0;
   left: 0;
   height: 3px;
   background: linear-gradient(90deg, #667eea, #764ba2, #00eaff);
-  background-size: 300% 100%;
-  animation: turbo-gradient 2s ease infinite;
   z-index: 99999;
-  box-shadow: 0 0 10px rgba(102,126,234,0.5);
+  transition: width 0.3s ease;
 }
 
-@keyframes turbo-gradient {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-/* Fallback for custom loading state */
 body.turbo-loading::before {
   content: '';
   position: fixed;
@@ -121,23 +112,13 @@ body.turbo-loading::before {
   height: 3px;
   background: linear-gradient(90deg, #667eea, #764ba2, #00eaff);
   background-size: 200% 100%;
-  animation: turbo-loading 0.8s ease-in-out infinite;
+  animation: turbo-loading 1s ease-in-out infinite;
   z-index: 99999;
 }
 
 @keyframes turbo-loading {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
-}
-
-/* 🚀 Turbo navigation: smooth body transition */
-body {
-  transition: opacity 0.15s ease;
-}
-
-body.turbo-loading {
-  opacity: 0.85;
-  pointer-events: none;
 }
 
 /* Support Modal */
