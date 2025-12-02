@@ -72,8 +72,7 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
 
             if ($is_profile_page) {
                 echo '<meta name="turbo-cache-control" content="no-cache">' . "\n";
-                echo '<meta name="turbo-visit-control" content="reload">' . "\n";
-                echo '<!-- PPV Profile - No Cache -->' . "\n";
+                echo '<!-- PPV Profile - No Cache, Turbo SPA enabled -->' . "\n";
             }
         }
 
