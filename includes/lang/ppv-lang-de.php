@@ -1722,5 +1722,36 @@ return [
     'redemption_rejected' => 'Einlösung abgelehnt',
     'network_error' => 'Netzwerkfehler',
     'error' => 'Fehler',
+
+    // ============================================================
+    // ACCOUNT SETTINGS - EMAIL & PASSWORD CHANGE
+    // ============================================================
+    'account_settings' => 'Kontoeinstellungen',
+    'email_change' => 'E-Mail-Adresse ändern',
+    'email_change_help' => 'Aktuelle E-Mail-Adresse:',
+    'new_email_placeholder' => 'Neue E-Mail-Adresse',
+    'confirm_email_placeholder' => 'Neue E-Mail-Adresse bestätigen',
+    'change_email_btn' => 'E-Mail-Adresse ändern',
+    'password_change' => 'Passwort ändern',
+    'password_change_help' => 'Geben Sie Ihr aktuelles und neues Passwort ein.',
+    'current_password_placeholder' => 'Aktuelles Passwort',
+    'new_password_placeholder' => 'Neues Passwort',
+    'confirm_password_placeholder' => 'Neues Passwort bestätigen',
+    'change_password_btn' => 'Passwort ändern',
+    'error_no_permission' => 'Keine Berechtigung',
+    'error_no_user' => 'Benutzer nicht gefunden',
+    'error_email_required' => 'E-Mail-Adresse ist erforderlich',
+    'error_email_invalid' => 'Ungültige E-Mail-Adresse',
+    'error_email_mismatch' => 'E-Mail-Adressen stimmen nicht überein',
+    'error_email_exists' => 'Diese E-Mail-Adresse ist bereits vergeben',
+    'email_changed_success' => 'E-Mail-Adresse erfolgreich geändert!',
+    'error_current_password_required' => 'Aktuelles Passwort ist erforderlich',
+    'error_new_password_required' => 'Neues Passwort ist erforderlich',
+    'error_password_too_short' => 'Das Passwort muss mindestens 6 Zeichen lang sein',
+    'error_password_mismatch' => 'Die neuen Passwörter stimmen nicht überein',
+    'error_current_password_wrong' => 'Das aktuelle Passwort ist falsch',
+    'password_changed_success' => 'Passwort erfolgreich geändert!',
+    'confirm_email_change' => 'Sind Sie sicher, dass Sie die E-Mail-Adresse ändern möchten?',
+    'confirm_password_change' => 'Sind Sie sicher, dass Sie das Passwort ändern möchten?',
 ];
 
