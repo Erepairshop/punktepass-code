@@ -101,6 +101,19 @@ trait PPV_QR_Campaigns_Trait {
                         <option value="archived"><?php echo self::t('status_archived', '📦 Archiv'); ?></option>
                     </select>
 
+                    <!-- 🏢 FILIALE SELECTOR (csak ha több filiálé van) -->
+                    <?php if ($has_multiple_filialen): ?>
+                    <div class="ppv-filiale-selector" style="margin-top: 16px; padding: 12px; background: rgba(102,126,234,0.1); border-radius: 8px;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0;">
+                            <input type="checkbox" id="camp-apply-all" style="width: 18px; height: 18px;">
+                            <span><i class="ri-checkbox-multiple-line"></i> <?php echo self::t('camp_apply_all', 'Auf alle Filialen anwenden'); ?></span>
+                        </label>
+                        <small style="display: block; margin-top: 6px; color: #888;">
+                            <?php echo self::t('camp_apply_all_hint', 'Kampagne wird für alle Filialen erstellt/aktualisiert'); ?>
+                        </small>
+                    </div>
+                    <?php endif; ?>
+
                     <!-- GOMBÓK -->
                     <div class="ppv-modal-actions">
                         <button id="camp-save" class="ppv-btn neon" type="button">

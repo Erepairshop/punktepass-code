@@ -22,39 +22,15 @@
             document.head.appendChild(meta);
         }
 
-        // 2. Prevent Turbo from caching this page snapshot
+        // 2. Prevent Turbo from caching this page snapshot - reset form binding
         document.addEventListener('turbo:before-cache', function() {
             const profileForm = document.getElementById('ppv-profile-form');
             if (profileForm) {
                 profileForm.dataset.ppvBound = 'false';
             }
-            // Clear reload flag when leaving page
-            sessionStorage.removeItem('ppv_profile_reloaded');
         }, { once: false });
 
-        // 3. Force reload when restoring from Turbo cache (back/forward)
-        document.addEventListener('turbo:visit', function(e) {
-            const profileForm = document.getElementById('ppv-profile-form');
-            // Only reload on restore action AND if we haven't just reloaded
-            if (profileForm && e.detail?.action === 'restore') {
-                const alreadyReloaded = sessionStorage.getItem('ppv_profile_reloaded');
-                if (!alreadyReloaded) {
-                    sessionStorage.setItem('ppv_profile_reloaded', 'true');
-                    e.preventDefault();
-                    window.location.reload();
-                }
-            }
-        });
-
-        // 4. Clear reload flag on fresh page load
-        document.addEventListener('turbo:load', function() {
-            const profileForm = document.getElementById('ppv-profile-form');
-            if (profileForm) {
-                setTimeout(() => {
-                    sessionStorage.removeItem('ppv_profile_reloaded');
-                }, 1000);
-            }
-        });
+        // 3. Turbo SPA handles back/forward - no reload needed
     })();
 
     class PPVProfileForm {
@@ -380,36 +356,9 @@
                     document.getElementById('ppv-last-updated').textContent =
                         `${this.t('last_updated')}: ${new Date().toLocaleString()}`;
 
-                    // ✅ Frissítjük a form mezőket és reload cache-bust URL-lel
-
+                    // ✅ Frissítjük a form mezőket (no reload - Turbo SPA)
                     if (data.data?.store) {
                         this.updateFormFields(data.data.store);
-
-                        // ✅ FIX: Store success in sessionStorage to verify after reload
-                        sessionStorage.setItem('ppv_last_save', JSON.stringify({
-                            timestamp: Date.now(),
-                            store_id: data.data.store_id,
-                            store_name: data.data.store?.name
-                        }));
-
-                        // ✅ Force reload with cache-bust parameter + preserve current tab
-                        setTimeout(() => {
-                            const url = new URL(window.location.href);
-                            url.searchParams.set('_t', Date.now());
-                            // Save current active tab to hash
-                            const activeTab = document.querySelector('.ppv-tab-btn.active');
-                            if (activeTab?.dataset.tab) {
-                                url.hash = 'tab-' + activeTab.dataset.tab;
-                            }
-                            // ✅ FIX: Use Turbo.visit with action: "replace" to bypass cache
-                            if (typeof Turbo !== 'undefined' && Turbo.visit) {
-                                Turbo.visit(url.toString(), { action: 'replace' });
-                            } else {
-                                window.location.replace(url.toString());
-                            }
-                        }, 500);
-                    } else {
-                        console.warn('⚠️ [Profile] No store data in response!');
                     }
                 } else {
                     this.showAlert(data.data?.msg || this.t('profile_save_error'), 'error');
@@ -602,12 +551,7 @@
     // ✅ Also listen to turbo:render for Turbo.visit with action: "replace"
     document.addEventListener('turbo:render', initProfileForm);
 
-    // 🔄 Browser back/forward cache (bfcache) detection - force reload for fresh data
-    window.addEventListener('pageshow', function(event) {
-        if (event.persisted) {
-            window.location.reload();
-        }
-    });
+    // 🔄 Turbo SPA handles back/forward - bfcache reload removed
 
 })();
 

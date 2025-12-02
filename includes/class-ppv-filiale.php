@@ -479,7 +479,7 @@ class PPV_Filiale {
     }
 
     /**
-     * AJAX: Request more filialen (send email to info@punktepass.de)
+     * AJAX: Request more filialen (saves to DB + sends notification email)
      */
     public static function ajax_request_more_filialen() {
         // Start session if needed
@@ -502,6 +502,7 @@ class PPV_Filiale {
         $contact_email = sanitize_email($_POST['contact_email'] ?? '');
         $contact_phone = sanitize_text_field($_POST['contact_phone'] ?? '');
         $message = sanitize_textarea_field($_POST['message'] ?? '');
+        $requested_amount = intval($_POST['requested_amount'] ?? 1);
 
         if (!$parent_store_id) {
             wp_send_json_error(['msg' => 'Missing parent store ID']);
@@ -515,7 +516,7 @@ class PPV_Filiale {
 
         // Get store info
         $store = $wpdb->get_row($wpdb->prepare(
-            "SELECT id, name, company_name, email, phone, city FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
+            "SELECT id, name, company_name, email, phone, city, max_filialen FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
             $parent_store_id
         ));
 
@@ -524,15 +525,50 @@ class PPV_Filiale {
             return;
         }
 
-        // Get current filiale count
+        // Check if there's already a pending request
+        $existing = $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM {$wpdb->prefix}ppv_filiale_requests WHERE store_id = %d AND status = 'pending' LIMIT 1",
+            $parent_store_id
+        ));
+
+        if ($existing) {
+            wp_send_json_error(['msg' => 'Sie haben bereits eine offene Anfrage. Bitte warten Sie auf die Bearbeitung.']);
+            return;
+        }
+
+        // Get current filiale info
         $limit_info = self::can_add_filiale($parent_store_id);
 
-        // Build email
+        // Insert request into database
+        $insert_result = $wpdb->insert(
+            "{$wpdb->prefix}ppv_filiale_requests",
+            [
+                'store_id' => $parent_store_id,
+                'current_max' => $limit_info['max'],
+                'requested_amount' => max(1, $requested_amount),
+                'contact_email' => $contact_email ?: $store->email,
+                'contact_phone' => $contact_phone ?: $store->phone,
+                'message' => $message,
+                'status' => 'pending',
+                'created_at' => current_time('mysql')
+            ],
+            ['%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s']
+        );
+
+        if (!$insert_result) {
+            wp_send_json_error(['msg' => 'Fehler beim Speichern der Anfrage']);
+            return;
+        }
+
+        $request_id = $wpdb->insert_id;
+
+        // Send notification email to admin
         $to = 'info@punktepass.de';
-        $subject = 'Anfrage: Mehr Filialen - ' . ($store->company_name ?: $store->name);
+        $subject = '🏪 Filialen-Anfrage #' . $request_id . ' - ' . ($store->company_name ?: $store->name);
 
         $body = "Neue Anfrage für zusätzliche Filialen\n";
         $body .= "=====================================\n\n";
+        $body .= "🎫 Anfrage ID: #{$request_id}\n\n";
         $body .= "Handler Information:\n";
         $body .= "- Store ID: {$store->id}\n";
         $body .= "- Firma: " . ($store->company_name ?: $store->name) . "\n";
@@ -540,13 +576,14 @@ class PPV_Filiale {
         $body .= "- Registrierte E-Mail: {$store->email}\n";
         $body .= "- Registriertes Telefon: {$store->phone}\n\n";
 
-        $body .= "Aktuelle Filialen:\n";
+        $body .= "Filialen Status:\n";
         $body .= "- Aktuell: {$limit_info['current']} Filiale(n)\n";
-        $body .= "- Maximum: {$limit_info['max']} Filiale(n)\n\n";
+        $body .= "- Maximum: {$limit_info['max']} Filiale(n)\n";
+        $body .= "- Gewünscht: +{$requested_amount} zusätzliche Filiale(n)\n\n";
 
         $body .= "Kontaktdaten für Rückruf:\n";
-        $body .= "- E-Mail: {$contact_email}\n";
-        $body .= "- Telefon: {$contact_phone}\n\n";
+        $body .= "- E-Mail: " . ($contact_email ?: $store->email) . "\n";
+        $body .= "- Telefon: " . ($contact_phone ?: $store->phone) . "\n\n";
 
         if (!empty($message)) {
             $body .= "Nachricht:\n";
@@ -555,32 +592,47 @@ class PPV_Filiale {
         }
 
         $body .= "=====================================\n";
-        $body .= "Gesendet am: " . current_time('Y-m-d H:i:s') . "\n";
+        $body .= "Bearbeiten: " . home_url('/admin/renewals') . "\n";
 
         $headers = [
             'Content-Type: text/plain; charset=UTF-8',
             'From: PunktePass System <noreply@punktepass.de>'
         ];
 
-        // Add reply-to if contact email provided
         if (!empty($contact_email)) {
             $headers[] = 'Reply-To: ' . $contact_email;
         }
 
-        // Send email
-        $sent = wp_mail($to, $subject, $body, $headers);
+        wp_mail($to, $subject, $body, $headers);
 
-        if ($sent) {
-            error_log("[PPV_Filiale] More filialen request sent for store #{$parent_store_id}");
-            wp_send_json_success([
-                'msg' => 'Ihre Anfrage wurde erfolgreich gesendet. Wir melden uns bald bei Ihnen!'
-            ]);
-        } else {
-            error_log("[PPV_Filiale] Failed to send more filialen request for store #{$parent_store_id}");
-            wp_send_json_error([
-                'msg' => 'Fehler beim Senden der Anfrage. Bitte versuchen Sie es später erneut.'
-            ]);
+        ppv_log("🏪 [PPV_Filiale] Request #{$request_id} created for store #{$parent_store_id} (+{$requested_amount} filialen)");
+
+        wp_send_json_success([
+            'msg' => 'Ihre Anfrage wurde erfolgreich gesendet. Wir melden uns bald bei Ihnen!',
+            'request_id' => $request_id
+        ]);
+    }
+
+    /**
+     * Update max filialen for a store (admin function)
+     */
+    public static function update_max_filialen($store_id, $new_max) {
+        global $wpdb;
+
+        $result = $wpdb->update(
+            "{$wpdb->prefix}ppv_stores",
+            ['max_filialen' => max(1, intval($new_max))],
+            ['id' => intval($store_id)],
+            ['%d'],
+            ['%d']
+        );
+
+        if ($result !== false) {
+            ppv_log("🏪 [PPV_Filiale] Store #{$store_id} max_filialen updated to {$new_max}");
+            return true;
         }
+
+        return false;
     }
 }
 

@@ -142,13 +142,24 @@ class PPV_QR {
             return [];
         }
 
-        // Get all stores: parent + children
+        // 🔧 FIX: Always resolve to PARENT store first
+        // If base_store_id is a child filiale, get its parent
+        $parent_id = $wpdb->get_var($wpdb->prepare(
+            "SELECT COALESCE(parent_store_id, id) FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+            $base_store_id
+        ));
+
+        if (!$parent_id) {
+            $parent_id = $base_store_id;
+        }
+
+        // Get all stores: parent + all children
         $filialen = $wpdb->get_results($wpdb->prepare("
             SELECT id, name, company_name, address, city, plz
             FROM {$wpdb->prefix}ppv_stores
             WHERE id = %d OR parent_store_id = %d
             ORDER BY (id = %d) DESC, name ASC
-        ", $base_store_id, $base_store_id, $base_store_id));
+        ", $parent_id, $parent_id, $parent_id));
 
         return $filialen ?: [];
     }

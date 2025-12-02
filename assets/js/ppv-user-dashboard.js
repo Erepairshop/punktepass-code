@@ -1732,6 +1732,7 @@ async function initUserDashboard() {
               ${T.qr_instruction_2}<br>
               ${T.qr_instruction_3}
             </div>
+
           </div>
 
           <!-- Expired State -->

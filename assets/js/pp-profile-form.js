@@ -150,35 +150,9 @@
                         lastUpdated.textContent = `${t('last_updated')}: ${new Date().toLocaleString()}`;
                     }
 
+                    // ✅ Update form fields (no reload - Turbo SPA)
                     if (data.data?.store) {
                         this.updateFields(data.data.store);
-
-                        // Store save info for verification after reload
-                        sessionStorage.setItem('ppv_last_save', JSON.stringify({
-                            timestamp: Date.now(),
-                            store_id: data.data.store_id,
-                            store_name: data.data.store?.name
-                        }));
-
-                        // Force HARD reload (bypass Turbo completely)
-                        setTimeout(() => {
-                            const url = new URL(window.location.href);
-                            url.searchParams.set('_t', Date.now());
-
-                            // Save current active tab to hash
-                            const activeTab = this.tabManager?.getActiveTab();
-                            if (activeTab) {
-                                url.hash = 'tab-' + activeTab;
-                            }
-
-                            // Clear Turbo cache if available
-                            if (typeof Turbo !== 'undefined' && Turbo.cache) {
-                                Turbo.cache.clear();
-                            }
-
-                            // ALWAYS use hard reload to bypass Turbo cache
-                            window.location.href = url.toString();
-                        }, 500);
                     }
                 } else {
                     showAlert(data.data?.msg || t('profile_save_error'), 'error');

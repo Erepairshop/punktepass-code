@@ -42,6 +42,10 @@
       this.torchOn = false;
       this.videoTrack = null;
       this.refocusInterval = null;
+      // NFC support
+      this.nfcReader = null;
+      this.nfcSupported = 'NDEFReader' in window;
+      this.nfcAbortController = null;
     }
 
     init() {
@@ -177,6 +181,64 @@
         this.refocusInterval = null;
         ppvLog('[Camera] Periodic refocus stopped');
       }
+    }
+
+    // ============================================================
+    // NFC SUPPORT (Phone-to-Phone)
+    // ============================================================
+    async startNfcReader() {
+      if (!this.nfcSupported) {
+        ppvLog('[NFC] Not supported in this browser');
+        return;
+      }
+
+      try {
+        this.nfcReader = new NDEFReader();
+        this.nfcAbortController = new AbortController();
+
+        await this.nfcReader.scan({ signal: this.nfcAbortController.signal });
+
+        this.nfcReader.addEventListener('reading', ({ message }) => {
+          for (const record of message.records) {
+            if (record.recordType === 'text') {
+              const decoder = new TextDecoder(record.encoding || 'utf-8');
+              const data = decoder.decode(record.data);
+
+              // Check if it's a PunktePass NFC message (ppv:QRCODE)
+              if (data.startsWith('ppv:')) {
+                const qrCode = data.substring(4); // Remove 'ppv:' prefix
+                ppvLog('[NFC] 📡 Received PunktePass data:', qrCode);
+                this.onScanSuccess(qrCode);
+              }
+            }
+          }
+        });
+
+        this.nfcReader.addEventListener('readingerror', () => {
+          ppvWarn('[NFC] Reading error');
+        });
+
+        ppvLog('[NFC] 📡 NFC reader started - waiting for tap');
+        window.ppvToast('📡 NFC aktív - érintsd oda a telefont!', 'info');
+
+      } catch (e) {
+        if (e.name === 'NotAllowedError') {
+          ppvLog('[NFC] Permission denied');
+        } else if (e.name === 'NotSupportedError') {
+          ppvLog('[NFC] Not supported');
+        } else {
+          ppvWarn('[NFC] Start error:', e);
+        }
+      }
+    }
+
+    stopNfcReader() {
+      if (this.nfcAbortController) {
+        this.nfcAbortController.abort();
+        this.nfcAbortController = null;
+        ppvLog('[NFC] Reader stopped');
+      }
+      this.nfcReader = null;
     }
 
     // ============================================================
@@ -319,6 +381,7 @@
 
       if (this.countdownInterval) { clearInterval(this.countdownInterval); this.countdownInterval = null; }
       this.stopPeriodicRefocus();
+      this.stopNfcReader();
       this.saveScannerState(false);
     }
 
@@ -337,6 +400,10 @@
 
       if (this.toolbar) this.toolbar.style.display = 'flex';
       this.saveScannerState(true);
+
+      // Start NFC reader alongside camera
+      this.startNfcReader();
+
       await this.loadLibrary();
     }
 
@@ -564,17 +631,18 @@
 
         const options = {
           preferredCamera: 'environment',
-          maxScansPerSecond: 10,
+          maxScansPerSecond: 30, // Aggressive scanning for faster detection
           highlightScanRegion: true,
           highlightCodeOutline: true,
           returnDetailedScanResult: true,
-          // Use full video for scanning - helps with close-up QR codes
+          // Scan center 60% of video for faster processing
           calculateScanRegion: (video) => {
+            const size = Math.min(video.videoWidth, video.videoHeight) * 0.6;
             return {
-              x: 0,
-              y: 0,
-              width: video.videoWidth,
-              height: video.videoHeight
+              x: (video.videoWidth - size) / 2,
+              y: (video.videoHeight - size) / 2,
+              width: size,
+              height: size
             };
           }
         };
@@ -683,8 +751,8 @@
         const stream = await navigator.mediaDevices.getUserMedia({
           video: {
             facingMode: { exact: 'environment' },
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
+            width: { ideal: 640 },  // Lower resolution for faster processing
+            height: { ideal: 480 }
           }
         });
 
@@ -699,8 +767,8 @@
           ppvLog('[jsQR] Play interrupted, continuing...');
         }
 
-        canvas.width = video.videoWidth || 1280;
-        canvas.height = video.videoHeight || 720;
+        canvas.width = video.videoWidth || 640;
+        canvas.height = video.videoHeight || 480;
 
         this.iosStream = stream;
         this.iosVideo = video;
@@ -752,12 +820,12 @@
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const code = jsQR(imageData.data, imageData.width, imageData.height, {
-          inversionAttempts: 'attemptBoth'
+          inversionAttempts: 'dontInvert' // Faster - skip inverted QR codes
         });
         if (code && code.data) this.onScanSuccess(code.data);
       }
 
-      if (this.scanning) setTimeout(() => this.jsQRScanLoop(), 40);
+      if (this.scanning) setTimeout(() => this.jsQRScanLoop(), 25); // ~40fps scan loop
     }
 
     onScanSuccess(qrCode) {

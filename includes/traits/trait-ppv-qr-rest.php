@@ -1623,15 +1623,45 @@ trait PPV_QR_REST_Trait {
                 break;
         }
 
-        // ✅ DEBUG: Log fields before insert
+        // 🏢 APPLY TO ALL FILIALEN?
+        $apply_to_all = !empty($data['apply_to_all']);
+        $created_count = 0;
 
+        if ($apply_to_all) {
+            // Get all filialen for this handler
+            $filialen = self::get_handler_filialen();
+
+            foreach ($filialen as $fil) {
+                $filiale_id = intval($fil->id);
+                $insert_fields = $fields;
+                $insert_fields['store_id'] = $filiale_id;
+
+                $wpdb->insert("{$prefix}ppv_campaigns", $insert_fields);
+                $created_count++;
+
+                // 📡 Ably: Notify each filiale
+                if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+                    PPV_Ably::trigger_campaign_update($filiale_id, [
+                        'action' => 'created',
+                        'title' => $fields['title'],
+                        'campaign_type' => $fields['campaign_type'],
+                    ]);
+                }
+            }
+
+            self::insert_log($store->id, 0, "Kampány létrehozva minden filiálénál: {$created_count} db", 'campaign_create_all');
+
+            return new WP_REST_Response([
+                'success' => true,
+                'message' => "✅ Kampagne für alle {$created_count} Filialen erstellt",
+                'fields'  => $fields,
+                'created' => $created_count,
+            ], 200);
+        }
+
+        // Single store create (original behavior)
         $wpdb->insert("{$prefix}ppv_campaigns", $fields);
         $campaign_id = $wpdb->insert_id;
-
-        // ✅ DEBUG: Check if insert succeeded
-        if ($wpdb->last_error) {
-        } else {
-        }
 
         // 📡 Ably: Notify real-time about new campaign
         if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
@@ -1890,6 +1920,72 @@ trait PPV_QR_REST_Trait {
                 break;
         }
 
+        // 🏢 APPLY TO ALL FILIALEN?
+        $apply_to_all = !empty($d['apply_to_all']);
+        $updated_count = 0;
+        $created_count = 0;
+
+        if ($apply_to_all) {
+            // Get all filialen for this handler
+            $filialen = self::get_handler_filialen();
+
+            foreach ($filialen as $fil) {
+                $filiale_id = intval($fil->id);
+
+                if ($filiale_id === intval($store->id)) {
+                    // Current store - update existing campaign
+                    $wpdb->update("{$prefix}ppv_campaigns", $fields, [
+                        'id'        => $id,
+                        'store_id'  => $filiale_id,
+                    ]);
+                    $updated_count++;
+                } else {
+                    // Other filiale - check if campaign with same title exists
+                    $existing = $wpdb->get_var($wpdb->prepare(
+                        "SELECT id FROM {$prefix}ppv_campaigns WHERE store_id = %d AND title = %s LIMIT 1",
+                        $filiale_id,
+                        $fields['title']
+                    ));
+
+                    if ($existing) {
+                        // Update existing campaign
+                        $wpdb->update("{$prefix}ppv_campaigns", $fields, [
+                            'id'        => $existing,
+                            'store_id'  => $filiale_id,
+                        ]);
+                        $updated_count++;
+                    } else {
+                        // Create new campaign for this filiale
+                        $insert_fields = $fields;
+                        $insert_fields['store_id'] = $filiale_id;
+                        $insert_fields['created_at'] = current_time('mysql');
+                        $wpdb->insert("{$prefix}ppv_campaigns", $insert_fields);
+                        $created_count++;
+                    }
+                }
+
+                // 📡 Ably: Notify each filiale
+                if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+                    PPV_Ably::trigger_campaign_update($filiale_id, [
+                        'action' => 'updated',
+                        'title' => $fields['title'],
+                        'campaign_type' => $fields['campaign_type'],
+                    ]);
+                }
+            }
+
+            self::insert_log($store->id, 0, "Kampány frissítve minden filiálénál: {$updated_count} frissítve, {$created_count} létrehozva", 'campaign_update_all');
+
+            return new WP_REST_Response([
+                'success' => true,
+                'message' => "✅ Kampagne auf alle Filialen angewendet ({$updated_count} aktualisiert, {$created_count} neu erstellt)",
+                'fields'  => $fields,
+                'updated' => $updated_count,
+                'created' => $created_count,
+            ], 200);
+        }
+
+        // Single store update (original behavior)
         $wpdb->update("{$prefix}ppv_campaigns", $fields, [
             'id'        => $id,
             'store_id'  => $store->id,
