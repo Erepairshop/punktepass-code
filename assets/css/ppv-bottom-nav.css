@@ -92,18 +92,8 @@ body.ppv-theme-dark .ppv-bottom-nav .nav-item.active i {
   }
 }
 
-/* Turbo Loading Indicator */
-.turbo-progress-bar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #667eea, #764ba2, #00eaff);
-  z-index: 99999;
-  transition: width 0.3s ease;
-}
-
-body.turbo-loading::before {
+/* SPA Loading Indicator */
+body.ppv-spa-loading::before {
   content: '';
   position: fixed;
   top: 0;
@@ -112,13 +102,19 @@ body.turbo-loading::before {
   height: 3px;
   background: linear-gradient(90deg, #667eea, #764ba2, #00eaff);
   background-size: 200% 100%;
-  animation: turbo-loading 1s ease-in-out infinite;
+  animation: spa-loading 0.8s ease-in-out infinite;
   z-index: 99999;
 }
 
-@keyframes turbo-loading {
+@keyframes spa-loading {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
+}
+
+/* Navigating state for nav items */
+.ppv-bottom-nav .nav-item.navigating {
+  opacity: 0.6;
+  pointer-events: none;
 }
 
 /* Support Modal */

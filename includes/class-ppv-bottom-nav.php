@@ -31,22 +31,7 @@ class PPV_Bottom_Nav {
             null
         );
 
-        // 🚀 Turbo.js for instant page transitions
-        wp_enqueue_script(
-            'turbo',
-            'https://cdn.jsdelivr.net/npm/@hotwired/turbo@8.0.4/dist/turbo.es2017-esm.js',
-            [],
-            null,
-            false
-        );
-        // Add module type to Turbo script
-        add_filter('script_loader_tag', function($tag, $handle) {
-            if ($handle === 'turbo') {
-                return str_replace('<script ', '<script type="module" ', $tag);
-            }
-            return $tag;
-        }, 10, 2);
-
+        // 🚀 Pure SPA navigation (no Turbo - uses fetch for instant transitions)
 
         wp_enqueue_style(
             'ppv-bottom-nav',
@@ -144,36 +129,35 @@ class PPV_Bottom_Nav {
         }
 
         // --- User navigáció (prioritás!) ---
-        // 🚀 data-turbo="false" for vendors visiting user pages - forces full reload
-        $turbo_attr = $is_vendor ? 'data-turbo="false"' : '';
+        // 🚀 Pure SPA navigation - no page refresh
         if ($is_user_page): ?>
-            <nav class="ppv-bottom-nav">
-                <a href="/user_dashboard" class="nav-item" <?php echo $turbo_attr; ?> data-navlink="true" title="Dashboard"><i class="ri-home-smile-2-line"></i></a>
-                <a href="/meine-punkte" class="nav-item" <?php echo $turbo_attr; ?> data-navlink="true" title="Meine Punkte"><i class="ri-donut-chart-line"></i></a>
-                <a href="/belohnungen" class="nav-item" <?php echo $turbo_attr; ?> data-navlink="true" title="Belohnungen"><i class="ri-coupon-3-line"></i></a>
-                <a href="/einstellungen" class="nav-item" <?php echo $turbo_attr; ?> data-navlink="true" title="Einstellungen"><i class="ri-settings-3-line"></i></a>
+            <nav class="ppv-bottom-nav" data-nav-type="user">
+                <a href="/user_dashboard" class="nav-item" data-spa="true" title="Dashboard"><i class="ri-home-smile-2-line"></i></a>
+                <a href="/meine-punkte" class="nav-item" data-spa="true" title="Meine Punkte"><i class="ri-donut-chart-line"></i></a>
+                <a href="/belohnungen" class="nav-item" data-spa="true" title="Belohnungen"><i class="ri-coupon-3-line"></i></a>
+                <a href="/einstellungen" class="nav-item" data-spa="true" title="Einstellungen"><i class="ri-settings-3-line"></i></a>
                 <a href="#" class="nav-item" id="ppv-feedback-nav-btn" title="Feedback"><i class="ri-feedback-line"></i></a>
             </nav>
             <?php self::render_feedback_modal('user'); ?>
         <?php
         // --- Händler / POS navigáció ---
         elseif ($is_vendor || $is_pos): ?>
-            <nav class="ppv-bottom-nav">
-                <a href="/qr-center" class="nav-item" data-turbo="false" data-navlink="true" title="Start"><i class="ri-home-smile-2-line"></i></a>
-                <a href="/rewards" class="nav-item" data-turbo="false" data-navlink="true" title="Rewards"><i class="ri-coupon-3-line"></i></a>
-                <a href="/mein-profil" class="nav-item" data-turbo="false" data-navlink="true" title="Profil"><i class="ri-user-3-line"></i></a>
-                <a href="/statistik" class="nav-item" data-turbo="false" data-navlink="true" title="Statistik"><i class="ri-bar-chart-line"></i></a>
+            <nav class="ppv-bottom-nav" data-nav-type="handler">
+                <a href="/qr-center" class="nav-item" data-spa="true" title="Start"><i class="ri-home-smile-2-line"></i></a>
+                <a href="/rewards" class="nav-item" data-spa="true" title="Rewards"><i class="ri-coupon-3-line"></i></a>
+                <a href="/mein-profil" class="nav-item" data-spa="true" title="Profil"><i class="ri-user-3-line"></i></a>
+                <a href="/statistik" class="nav-item" data-spa="true" title="Statistik"><i class="ri-bar-chart-line"></i></a>
                 <a href="#" class="nav-item" id="ppv-feedback-nav-btn" title="Feedback"><i class="ri-feedback-line"></i></a>
             </nav>
             <?php self::render_feedback_modal('handler'); ?>
         <?php
-        // --- Alap user nav (basic users - Turbo enabled) ---
+        // --- Alap user nav (basic users) ---
         else: ?>
-            <nav class="ppv-bottom-nav">
-                <a href="/user_dashboard" class="nav-item" data-navlink="true" title="Dashboard"><i class="ri-home-smile-2-line"></i></a>
-                <a href="/meine-punkte" class="nav-item" data-navlink="true" title="Meine Punkte"><i class="ri-donut-chart-line"></i></a>
-                <a href="/belohnungen" class="nav-item" data-navlink="true" title="Belohnungen"><i class="ri-coupon-3-line"></i></a>
-                <a href="/einstellungen" class="nav-item" data-navlink="true" title="Einstellungen"><i class="ri-settings-3-line"></i></a>
+            <nav class="ppv-bottom-nav" data-nav-type="user">
+                <a href="/user_dashboard" class="nav-item" data-spa="true" title="Dashboard"><i class="ri-home-smile-2-line"></i></a>
+                <a href="/meine-punkte" class="nav-item" data-spa="true" title="Meine Punkte"><i class="ri-donut-chart-line"></i></a>
+                <a href="/belohnungen" class="nav-item" data-spa="true" title="Belohnungen"><i class="ri-coupon-3-line"></i></a>
+                <a href="/einstellungen" class="nav-item" data-spa="true" title="Einstellungen"><i class="ri-settings-3-line"></i></a>
                 <a href="#" class="nav-item" id="ppv-feedback-nav-btn" title="Feedback"><i class="ri-feedback-line"></i></a>
             </nav>
             <?php self::render_feedback_modal('user'); ?>
