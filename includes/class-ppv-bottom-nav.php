@@ -347,6 +347,33 @@ class PPV_Bottom_Nav {
                 });
             }
 
+            // 🚀 EAGER PREFETCH - Preload user pages for instant navigation
+            let prefetchDone = false;
+            function eagerPrefetch() {
+                if (prefetchDone) return;
+                prefetchDone = true;
+
+                const userPages = ['/user_dashboard', '/meine-punkte', '/belohnungen', '/einstellungen'];
+                const currentPath = window.location.pathname.replace(/\/+\$/, '');
+
+                // Only prefetch on user pages
+                if (!userPages.some(p => currentPath === p || currentPath.startsWith(p))) return;
+
+                userPages.forEach(function(url) {
+                    // Skip current page
+                    if (currentPath === url) return;
+
+                    // Check if already prefetched
+                    if (document.querySelector('link[rel=\"prefetch\"][href=\"' + url + '\"]')) return;
+
+                    const link = document.createElement('link');
+                    link.rel = 'prefetch';
+                    link.href = url;
+                    link.as = 'document';
+                    document.head.appendChild(link);
+                });
+            }
+
             // Initialize on DOM ready
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', function() {
@@ -358,8 +385,24 @@ class PPV_Bottom_Nav {
                 initSupportModal();
             }
 
+            // 🚀 Trigger prefetch on idle (after page is fully loaded)
+            if ('requestIdleCallback' in window) {
+                requestIdleCallback(eagerPrefetch, { timeout: 2000 });
+            } else {
+                setTimeout(eagerPrefetch, 1000);
+            }
+
             // 🚀 Reinitialize nav after Turbo navigation (Support modal uses event delegation, no reinit needed)
-            document.addEventListener('turbo:load', initAll);
+            document.addEventListener('turbo:load', function() {
+                initAll();
+                // Re-prefetch after Turbo navigation
+                prefetchDone = false;
+                if ('requestIdleCallback' in window) {
+                    requestIdleCallback(eagerPrefetch, { timeout: 1000 });
+                } else {
+                    setTimeout(eagerPrefetch, 500);
+                }
+            });
 
             // 🚀 Show loading indicator
             document.addEventListener('turbo:before-fetch-request', function() {

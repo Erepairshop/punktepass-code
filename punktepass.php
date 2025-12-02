@@ -540,6 +540,9 @@ add_action('wp_head', function () { ?>
     <link rel="apple-touch-icon" href="<?php echo PPV_PLUGIN_URL; ?>assets/img/icons/icon-192.png">
     <!-- ❌ REMOVED: apple-touch-startup-image - caused big logo flash on iOS -->
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+    <!-- 🚀 TURBO PREFETCH - Enables instant page transitions on hover -->
+    <meta name="turbo-prefetch" content="true">
 <?php }, 1);
 
 // ========================================
