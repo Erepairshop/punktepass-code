@@ -3,16 +3,23 @@ if (!defined('ABSPATH')) exit;
 
 /**
  * PunktePass – Stores REST API
- * Version: 2.5 Unified
+ * Version: 2.6 Cached
  * ✅ POS-token kompatibilis
  * ✅ Lat/Lng detection optimalizálva
  * ✅ Fast open_now check (pre-fetched)
+ * ✅ Transient cache for performance (5 min)
  */
 
 class PPV_Stores_API {
 
+    const CACHE_KEY = 'ppv_stores_list';
+    const CACHE_TTL = 300; // 5 minutes
+
     public static function hooks() {
         add_action('rest_api_init', [__CLASS__, 'register_routes']);
+        // Clear cache when stores are updated
+        add_action('ppv_store_updated', [__CLASS__, 'clear_cache']);
+        add_action('ppv_reward_updated', [__CLASS__, 'clear_cache']);
     }
 
     public static function register_routes() {
@@ -21,6 +28,11 @@ class PPV_Stores_API {
             'callback' => [__CLASS__, 'get_stores'],
             'permission_callback' => ['PPV_Permissions', 'allow_anonymous']
         ]);
+    }
+
+    /** Clear the stores cache */
+    public static function clear_cache() {
+        delete_transient(self::CACHE_KEY);
     }
 
     /** ============================================================
@@ -37,54 +49,84 @@ class PPV_Stores_API {
         /** 🔐 POS token check */
         $token = $request->get_header('ppv-pos-token') ?: ($_GET['pos_token'] ?? '');
 
-        /** 🧠 Bolt + reward + nyitvatartás lekérés */
-        $query = "
-            SELECT s.id, s.name, s.city, s.address, s.latitude, s.longitude,
-                   s.logo, s.category, s.website, s.phone, s.email, s.description,
-                   s.zeiten, s.active, s.visible,
-                   MAX(r.title) AS reward_title, MAX(r.required_points) AS required_points
-            FROM {$prefix}ppv_stores s
-            LEFT JOIN {$prefix}ppv_rewards r ON r.store_id = s.id
-            WHERE s.active = 1 AND s.visible = 1
-            GROUP BY s.id
-            ORDER BY s.name ASC
-        ";
+        /** 🚀 Try to get from cache first (base store data without distance) */
+        $cached_stores = get_transient(self::CACHE_KEY);
 
-        $stores = $wpdb->get_results($query);
-        if (!$stores) return [];
+        if ($cached_stores === false) {
+            /** 🧠 Bolt + reward + nyitvatartás lekérés */
+            $query = "
+                SELECT s.id, s.name, s.city, s.address, s.latitude, s.longitude,
+                       s.logo, s.category, s.website, s.phone, s.email, s.description,
+                       s.zeiten, s.active, s.visible,
+                       MAX(r.title) AS reward_title, MAX(r.required_points) AS required_points
+                FROM {$prefix}ppv_stores s
+                LEFT JOIN {$prefix}ppv_rewards r ON r.store_id = s.id
+                WHERE s.active = 1 AND s.visible = 1
+                GROUP BY s.id
+                ORDER BY s.name ASC
+            ";
 
-        $results = [];
-        foreach ($stores as $s) {
-            $logo = $s->logo ?: PPV_PLUGIN_URL . 'assets/img/store-default.png';
-            $reward_text = ($s->reward_title)
-                ? $s->reward_title . ' – ' . intval($s->required_points) . ' Punkte'
-                : '';
+            $stores = $wpdb->get_results($query);
+            if (!$stores) return rest_ensure_response([]);
 
-            // Távolság
-            $distance_km = 0;
-            if ($lat && $lng && $s->latitude && $s->longitude) {
-                $distance_km = self::haversine($lat, $lng, $s->latitude, $s->longitude);
+            // Build cacheable base data
+            $cached_stores = [];
+            foreach ($stores as $s) {
+                $logo = $s->logo ?: PPV_PLUGIN_URL . 'assets/img/store-default.png';
+                $reward_text = ($s->reward_title)
+                    ? $s->reward_title . ' – ' . intval($s->required_points) . ' Punkte'
+                    : '';
+
+                $cached_stores[] = [
+                    'id'         => intval($s->id),
+                    'name'       => $s->name,
+                    'city'       => $s->city,
+                    'address'    => $s->address,
+                    'category'   => $s->category,
+                    'reward'     => $reward_text,
+                    'logo'       => esc_url($logo),
+                    'latitude'   => floatval($s->latitude),
+                    'longitude'  => floatval($s->longitude),
+                    'zeiten'     => $s->zeiten,
+                    'website'    => $s->website,
+                    'phone'      => $s->phone,
+                    'email'      => $s->email,
+                    'description'=> $s->description
+                ];
             }
 
-            // Nyitva-e most
-            $open_now = self::is_open_now_cached($s->zeiten);
+            // Cache for 5 minutes
+            set_transient(self::CACHE_KEY, $cached_stores, self::CACHE_TTL);
+        }
+
+        // Now add dynamic data (distance, open_now) to each store
+        $results = [];
+        foreach ($cached_stores as $store) {
+            // Calculate distance if coordinates provided
+            $distance_km = 0;
+            if ($lat && $lng && $store['latitude'] && $store['longitude']) {
+                $distance_km = self::haversine($lat, $lng, $store['latitude'], $store['longitude']);
+            }
+
+            // Check open_now (dynamic, not cached)
+            $open_now = self::is_open_now_cached($store['zeiten']);
 
             $results[] = [
-                'id'         => intval($s->id),
-                'name'       => $s->name,
-                'city'       => $s->city,
-                'address'    => $s->address,
-                'category'   => $s->category,
-                'reward'     => $reward_text,
-                'logo'       => esc_url($logo),
-                'latitude'   => floatval($s->latitude),
-                'longitude'  => floatval($s->longitude),
+                'id'         => $store['id'],
+                'name'       => $store['name'],
+                'city'       => $store['city'],
+                'address'    => $store['address'],
+                'category'   => $store['category'],
+                'reward'     => $store['reward'],
+                'logo'       => $store['logo'],
+                'latitude'   => $store['latitude'],
+                'longitude'  => $store['longitude'],
                 'distance_km'=> $distance_km ? max(0.1, round($distance_km, 1)) : 0,
                 'open_now'   => $open_now,
-                'website'    => $s->website,
-                'phone'      => $s->phone,
-                'email'      => $s->email,
-                'description'=> $s->description
+                'website'    => $store['website'],
+                'phone'      => $store['phone'],
+                'email'      => $store['email'],
+                'description'=> $store['description']
             ];
         }
 

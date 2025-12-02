@@ -306,37 +306,40 @@ class PPV_Analytics_API {
         if (session_status() === PHP_SESSION_NONE) {
             @session_start();
         }
-        
+
         $user_id = get_current_user_id();
         if (!$user_id && !empty($_SESSION['ppv_user_id'])) {
             $user_id = intval($_SESSION['ppv_user_id']);
         }
-        
+
         if ($user_id <= 0) {
             return rest_ensure_response(['success' => false]);
+        }
+
+        // 🚀 Check cache first (2 minute TTL per user)
+        $cache_key = 'ppv_analytics_summary_' . $user_id;
+        $cached = get_transient($cache_key);
+        if ($cached !== false) {
+            return rest_ensure_response($cached);
         }
 
         global $wpdb;
         $prefix = $wpdb->prefix;
 
-        // ✅ FIXED: created_at → created
-        $week_points = (int)$wpdb->get_var($wpdb->prepare(
-            "SELECT COALESCE(SUM(points), 0) FROM {$prefix}ppv_points
-            WHERE user_id = %d AND created >= DATE_SUB(NOW(), INTERVAL 7 DAY)",
-            $user_id
-        ));
-
-        $month_points = (int)$wpdb->get_var($wpdb->prepare(
-            "SELECT COALESCE(SUM(points), 0) FROM {$prefix}ppv_points
-            WHERE user_id = %d AND created >= DATE_SUB(NOW(), INTERVAL 30 DAY)",
-            $user_id
-        ));
-
-        $year_points = (int)$wpdb->get_var($wpdb->prepare(
-            "SELECT COALESCE(SUM(points), 0) FROM {$prefix}ppv_points
+        // ✅ OPTIMIZED: Single query for all time periods instead of 3 separate queries
+        $points_data = $wpdb->get_row($wpdb->prepare(
+            "SELECT
+                COALESCE(SUM(CASE WHEN created >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN points ELSE 0 END), 0) as week_points,
+                COALESCE(SUM(CASE WHEN created >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN points ELSE 0 END), 0) as month_points,
+                COALESCE(SUM(CASE WHEN created >= DATE_SUB(NOW(), INTERVAL 365 DAY) THEN points ELSE 0 END), 0) as year_points
+            FROM {$prefix}ppv_points
             WHERE user_id = %d AND created >= DATE_SUB(NOW(), INTERVAL 365 DAY)",
             $user_id
         ));
+
+        $week_points = (int)($points_data->week_points ?? 0);
+        $month_points = (int)($points_data->month_points ?? 0);
+        $year_points = (int)($points_data->year_points ?? 0);
 
         $best = $wpdb->get_row($wpdb->prepare(
             "SELECT DATE(created) as date, SUM(points) as points
@@ -348,11 +351,12 @@ class PPV_Analytics_API {
             $user_id
         ));
 
-        // Calculate streak
+        // Calculate streak - optimized to only check recent dates
         $streak = 0;
         $dates = $wpdb->get_col($wpdb->prepare(
             "SELECT DISTINCT DATE(created) as d FROM {$prefix}ppv_points
-            WHERE user_id = %d ORDER BY d DESC",
+            WHERE user_id = %d AND created >= DATE_SUB(NOW(), INTERVAL 90 DAY)
+            ORDER BY d DESC",
             $user_id
         ));
 
@@ -362,7 +366,7 @@ class PPV_Analytics_API {
                 $prev = strtotime($dates[$i - 1]);
                 $curr = strtotime($dates[$i]);
                 $diff = ($prev - $curr) / 86400;
-                
+
                 if ($diff == 1) {
                     $streak++;
                 } else {
@@ -371,7 +375,7 @@ class PPV_Analytics_API {
             }
         }
 
-        return rest_ensure_response([
+        $result = [
             'success' => true,
             'summary' => [
                 'week_points' => $week_points,
@@ -383,7 +387,12 @@ class PPV_Analytics_API {
                 ] : null,
                 'current_streak' => $streak,
             ],
-        ]);
+        ];
+
+        // Cache for 2 minutes
+        set_transient($cache_key, $result, 120);
+
+        return rest_ensure_response($result);
     }
 
     public static function debug_points($request) {

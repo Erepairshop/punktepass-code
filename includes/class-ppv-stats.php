@@ -610,7 +610,7 @@ class PPV_Stats {
     }
 
     // ========================================
-    // 💰 REST: SPENDING
+    // 💰 REST: SPENDING (OPTIMIZED)
     // ========================================
     public static function rest_spending($req) {
         global $wpdb;
@@ -625,35 +625,36 @@ class PPV_Stats {
             return new WP_REST_Response(['success' => false, 'error' => 'No store'], 403);
         }
 
+        // 🚀 Check cache first (2 minute TTL)
+        $cache_key = 'ppv_spending_' . md5(implode('_', $store_ids) . '_' . $filiale_param);
+        $cached = get_transient($cache_key);
+        if ($cached !== false) {
+            ppv_log("✅ [Spending] Cache hit");
+            return new WP_REST_Response($cached, 200, ['Cache-Control' => 'no-store']);
+        }
+
         $placeholders = implode(',', array_fill(0, count($store_ids), '%d'));
         $table_redeemed = $wpdb->prefix . 'ppv_rewards_redeemed';
         $today = current_time('Y-m-d');
         $week_start = date('Y-m-d', strtotime('monday this week', strtotime($today)));
         $month_start = date('Y-m-01', strtotime($today));
 
-        // Spending by period
-        $daily_spending = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT SUM(points_spent) FROM $table_redeemed WHERE store_id IN ($placeholders) AND DATE(redeemed_at)=%s AND status IN ('approved', 'bestätigt')",
-            array_merge($store_ids, [$today])
-        )) ?? 0;
+        // ✅ OPTIMIZED: Single query for all spending periods + status breakdown
+        $spending_data = $wpdb->get_row($wpdb->prepare(
+            "SELECT
+                COALESCE(SUM(CASE WHEN DATE(redeemed_at) = %s AND status IN ('approved', 'bestätigt') THEN points_spent ELSE 0 END), 0) as daily_spending,
+                COALESCE(SUM(CASE WHEN DATE(redeemed_at) >= %s AND status IN ('approved', 'bestätigt') THEN points_spent ELSE 0 END), 0) as weekly_spending,
+                COALESCE(SUM(CASE WHEN DATE(redeemed_at) >= %s AND status IN ('approved', 'bestätigt') THEN points_spent ELSE 0 END), 0) as monthly_spending,
+                COALESCE(AVG(CASE WHEN status IN ('approved', 'bestätigt') THEN points_spent END), 0) as avg_reward,
+                COALESCE(SUM(CASE WHEN status IN ('pending', 'offen') THEN points_spent ELSE 0 END), 0) as pending_total,
+                COALESCE(SUM(CASE WHEN status IN ('rejected', 'abgelehnt') THEN points_spent ELSE 0 END), 0) as rejected_total,
+                COALESCE(SUM(CASE WHEN status IN ('approved', 'bestätigt') THEN points_spent ELSE 0 END), 0) as approved_total
+            FROM $table_redeemed
+            WHERE store_id IN ($placeholders)",
+            array_merge([$today, $week_start, $month_start], $store_ids)
+        ));
 
-        $weekly_spending = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT SUM(points_spent) FROM $table_redeemed WHERE store_id IN ($placeholders) AND DATE(redeemed_at) >= %s AND status IN ('approved', 'bestätigt')",
-            array_merge($store_ids, [$week_start])
-        )) ?? 0;
-
-        $monthly_spending = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT SUM(points_spent) FROM $table_redeemed WHERE store_id IN ($placeholders) AND DATE(redeemed_at) >= %s AND status IN ('approved', 'bestätigt')",
-            array_merge($store_ids, [$month_start])
-        )) ?? 0;
-
-        // Average reward
-        $avg_reward = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT AVG(points_spent) FROM $table_redeemed WHERE store_id IN ($placeholders) AND status IN ('approved', 'bestätigt')",
-            $store_ids
-        )) ?? 0;
-
-        // Top rewards
+        // Top rewards (still separate query as it needs GROUP BY)
         $top_rewards = $wpdb->get_results($wpdb->prepare(
             "SELECT reward_id, SUM(points_spent) as total, COUNT(*) as count
              FROM $table_redeemed
@@ -673,39 +674,28 @@ class PPV_Stats {
             ];
         }
 
-        // By status
-        $pending = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT SUM(points_spent) FROM $table_redeemed WHERE store_id IN ($placeholders) AND status IN ('pending', 'offen')",
-            $store_ids
-        )) ?? 0;
-
-        $rejected = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT SUM(points_spent) FROM $table_redeemed WHERE store_id IN ($placeholders) AND status IN ('rejected', 'abgelehnt')",
-            $store_ids
-        )) ?? 0;
-
-        $approved = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT SUM(points_spent) FROM $table_redeemed WHERE store_id IN ($placeholders) AND status IN ('approved', 'bestätigt')",
-            $store_ids
-        )) ?? 0;
-
         ppv_log("✅ [Spending] Complete");
 
-        return new WP_REST_Response([
+        $result = [
             'success' => true,
             'spending' => [
-                'daily' => $daily_spending,
-                'weekly' => $weekly_spending,
-                'monthly' => $monthly_spending
+                'daily' => (int)($spending_data->daily_spending ?? 0),
+                'weekly' => (int)($spending_data->weekly_spending ?? 0),
+                'monthly' => (int)($spending_data->monthly_spending ?? 0)
             ],
-            'average_reward_value' => $avg_reward,
+            'average_reward_value' => (int)($spending_data->avg_reward ?? 0),
             'top_rewards' => $top_rewards_formatted,
             'by_status' => [
-                'approved' => $approved,
-                'pending' => $pending,
-                'rejected' => $rejected
+                'approved' => (int)($spending_data->approved_total ?? 0),
+                'pending' => (int)($spending_data->pending_total ?? 0),
+                'rejected' => (int)($spending_data->rejected_total ?? 0)
             ]
-        ], 200, ['Cache-Control' => 'no-store']);
+        ];
+
+        // Cache for 2 minutes
+        set_transient($cache_key, $result, 120);
+
+        return new WP_REST_Response($result, 200, ['Cache-Control' => 'no-store']);
     }
 
     // ========================================
