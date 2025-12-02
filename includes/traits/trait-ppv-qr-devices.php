@@ -52,7 +52,8 @@ trait PPV_QR_Devices_Trait {
         $devices = [];
         $max_devices = 2;
         if (class_exists('PPV_Device_Fingerprint')) {
-            $max_devices = PPV_Device_Fingerprint::MAX_DEVICES_PER_USER;
+            // Dynamic limit: base (2) + 1 per filiale
+            $max_devices = PPV_Device_Fingerprint::get_max_devices_for_store($parent_id);
             if ($parent_id) {
                 $devices = PPV_Device_Fingerprint::get_user_devices($parent_id);
             }
