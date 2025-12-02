@@ -62,44 +62,37 @@ class PPV_Bottom_Nav {
             // Progress bar appears after 50ms (feels instant)
             Turbo.setProgressBarDelay(50);
 
-            // 🚀 Instant prefetch on hover (eager loading)
-            document.addEventListener('turbo:before-prefetch', (event) => {
-                // Allow all prefetches for faster navigation
-            });
-
             // 🚀 Clear cache on login/logout
             if (window.location.pathname.includes('/login') || window.location.pathname.includes('/logout')) {
                 Turbo.cache.clear();
             }
 
-            // 🔥 Aggressive prefetch: preload on touchstart (mobile) and mouseenter (desktop)
-            let prefetchedUrls = new Set();
+            // 🔥 Smart prefetch: only for nav links with data-turbo-preload
+            // Turbo 8's native prefetch handles the rest via meta tag
+            const prefetchedUrls = new Set();
 
-            function prefetchUrl(url) {
-                if (prefetchedUrls.has(url)) return;
-                if (!url.startsWith('/') && !url.startsWith(window.location.origin)) return;
+            function setupLinkPrefetch() {
+                document.querySelectorAll('a[data-turbo-preload]').forEach(link => {
+                    if (link._prefetchSetup) return;
+                    link._prefetchSetup = true;
 
-                prefetchedUrls.add(url);
-                const link = document.createElement('link');
-                link.rel = 'prefetch';
-                link.href = url;
-                link.as = 'document';
-                document.head.appendChild(link);
+                    link.addEventListener('mouseenter', () => {
+                        const url = link.href;
+                        if (prefetchedUrls.has(url)) return;
+                        prefetchedUrls.add(url);
+
+                        const prefetchLink = document.createElement('link');
+                        prefetchLink.rel = 'prefetch';
+                        prefetchLink.href = url;
+                        prefetchLink.as = 'document';
+                        document.head.appendChild(prefetchLink);
+                    }, { passive: true });
+                });
             }
 
-            document.addEventListener('mouseenter', (e) => {
-                const link = e.target.closest('a[href^="/"]');
-                if (link && !link.hasAttribute('data-turbo-prefetch-false')) {
-                    prefetchUrl(link.href);
-                }
-            }, { capture: true, passive: true });
-
-            document.addEventListener('touchstart', (e) => {
-                const link = e.target.closest('a[href^="/"]');
-                if (link && !link.hasAttribute('data-turbo-prefetch-false')) {
-                    prefetchUrl(link.href);
-                }
-            }, { capture: true, passive: true });
+            // Setup on load and after Turbo navigation
+            setupLinkPrefetch();
+            document.addEventListener('turbo:load', setupLinkPrefetch);
             </script>
             <?php
         }, 99);
