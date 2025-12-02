@@ -144,6 +144,7 @@
     async save() {
       const safe = id => document.getElementById(id)?.value || '';
       const safeNum = id => Number(document.getElementById(id)?.value) || 0;
+      const safeChecked = id => document.getElementById(id)?.checked || false;
 
       const title = safe('camp-title');
       const start = safe('camp-start');
@@ -155,6 +156,7 @@
       const pointsGiven = safeNum('camp-points-given');
       const freeProductName = safe('camp-free-product-name').trim();
       const freeProductValue = safeNum('camp-free-product-value');
+      const applyToAll = safeChecked('camp-apply-all');
 
       if (!title || !start || !end) {
         window.ppvToast('⚠️ ' + (L.camp_fill_title_date || 'Bitte Titel und Datum ausfüllen'), 'warning');
@@ -180,7 +182,8 @@
             title, start_date: start, end_date: end, campaign_type: realType,
             camp_value: value, required_points: requiredPoints,
             free_product: freeProductName, free_product_value: freeProductValue,
-            points_given: pointsGiven, status
+            points_given: pointsGiven, status,
+            apply_to_all: applyToAll
           })
         });
 
@@ -274,6 +277,7 @@
       if (safe('camp-points-given')) safe('camp-points-given').value = 1;
       if (safe('camp-type')) safe('camp-type').value = 'points';
       if (safe('camp-status')) safe('camp-status').value = 'active';
+      if (safe('camp-apply-all')) safe('camp-apply-all').checked = false;
       this.editingId = 0;
     }
 
