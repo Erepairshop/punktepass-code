@@ -356,3 +356,39 @@ window.ppvErrorMsg = (function() {
     return fallbackMsg || langMsgs.unknown;
   };
 })();
+
+// ============================================================
+// 🚀 SCROLL PERFORMANCE OPTIMIZATION
+// ============================================================
+// Adds 'is-scrolling' class to body during scroll to disable
+// expensive CSS effects (backdrop-filter, animations) for 60fps
+// ============================================================
+
+(function() {
+  let scrollTimeout = null;
+  let isScrolling = false;
+
+  const onScroll = () => {
+    if (!isScrolling) {
+      isScrolling = true;
+      document.body.classList.add('is-scrolling');
+    }
+
+    // Clear previous timeout
+    if (scrollTimeout) {
+      clearTimeout(scrollTimeout);
+    }
+
+    // Remove class after scroll ends (150ms debounce)
+    scrollTimeout = setTimeout(() => {
+      isScrolling = false;
+      document.body.classList.remove('is-scrolling');
+    }, 150);
+  };
+
+  // Use passive listener for better scroll performance
+  window.addEventListener('scroll', onScroll, { passive: true });
+
+  // Also handle touch scroll on mobile
+  document.addEventListener('touchmove', onScroll, { passive: true });
+})();
