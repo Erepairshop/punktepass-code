@@ -101,25 +101,25 @@ class PPV_Login {
     }
 
     /** ============================================================
-     * 🌍 Detect Language by Country (GeoIP) - OPTIMIZED
+     * 🌍 Detect Language by Browser (Accept-Language header)
      * ============================================================ */
     private static function detect_language_by_country() {
-        // Check cache first (24 hours)
-        $cache_key = 'ppv_geo_' . md5(self::get_client_ip());
-        $cached = get_transient($cache_key);
-        if ($cached !== false) {
-            return $cached;
+        // Use browser's Accept-Language header (FREE, instant, no API!)
+        $accept = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '';
+        $detected_lang = 'de'; // Default German
+
+        if ($accept) {
+            // Check for Hungarian (hu, hu-HU)
+            if (preg_match('/\bhu\b/i', $accept)) {
+                $detected_lang = 'hu';
+            }
+            // Check for Romanian (ro, ro-RO)
+            elseif (preg_match('/\bro\b/i', $accept)) {
+                $detected_lang = 'ro';
+            }
         }
 
-        // 🚀 PERFORMANCE: Skip GeoIP API call - default to German
-        // External API calls add 1-2 seconds latency
-        // Users can manually select language if needed
-        $detected_lang = 'de';
-
-        // Cache for 24 hours
-        set_transient($cache_key, $detected_lang, DAY_IN_SECONDS);
-        ppv_log("🌍 [PPV_Login] GeoIP disabled for performance, defaulting to: {$detected_lang}");
-
+        ppv_log("🌍 [PPV_Login] Browser Accept-Language → {$detected_lang}");
         return $detected_lang;
     }
 

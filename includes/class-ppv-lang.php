@@ -101,32 +101,31 @@ if (!$lang && !empty($_GET['lang'])) {
             ppv_log("🌍 [PPV_Lang] Using session → {$lang}");
         }
 
-        // 5️⃣ Geo fallback - OPTIMIZED: Transient + Session cache, NO external API on page load
+        // 5️⃣ Browser Accept-Language fallback (FREE, instant, no API call!)
         if (!$lang) {
             // Check session cache first
-            if (!empty($_SESSION['ppv_geo_lang'])) {
-                $lang = $_SESSION['ppv_geo_lang'];
-                ppv_log("🌍 [PPV_Lang] Geo from session cache → {$lang}");
+            if (!empty($_SESSION['ppv_browser_lang'])) {
+                $lang = $_SESSION['ppv_browser_lang'];
+                ppv_log("🌍 [PPV_Lang] Browser lang from session → {$lang}");
             } else {
-                // Check transient cache (persists across sessions for same IP)
-                $ip = $_SERVER['REMOTE_ADDR'] ?? '';
-                $cache_key = 'ppv_geo_' . md5($ip);
-                $cached_lang = get_transient($cache_key);
+                // Parse Accept-Language header (e.g. "hu-HU,hu;q=0.9,de;q=0.8")
+                $accept = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '';
+                $lang = 'de'; // Default
 
-                if ($cached_lang !== false) {
-                    $lang = $cached_lang;
-                    $_SESSION['ppv_geo_lang'] = $lang;
-                    ppv_log("🌍 [PPV_Lang] Geo from transient cache → {$lang}");
-                } else {
-                    // Default to German - NO external API call on page load!
-                    // GeoIP lookup is disabled for performance - German is default
-                    $lang = 'de';
-
-                    // Cache in transient for 24 hours
-                    set_transient($cache_key, $lang, DAY_IN_SECONDS);
-                    $_SESSION['ppv_geo_lang'] = $lang;
-                    ppv_log("🌍 [PPV_Lang] Default (geo disabled) → {$lang}");
+                if ($accept) {
+                    // Check for Hungarian
+                    if (preg_match('/\bhu\b/i', $accept)) {
+                        $lang = 'hu';
+                    }
+                    // Check for Romanian
+                    elseif (preg_match('/\bro\b/i', $accept)) {
+                        $lang = 'ro';
+                    }
                 }
+
+                // Cache in session
+                $_SESSION['ppv_browser_lang'] = $lang;
+                ppv_log("🌍 [PPV_Lang] Browser Accept-Language → {$lang}");
             }
         }
 
