@@ -57,6 +57,11 @@ class PPV_Bottom_Nav {
             <?php
         }, 99);
 
+        // 🚀 Step 3: Native Turbo prefetch (hover preload)
+        add_action('wp_head', function() {
+            echo '<meta name="turbo-prefetch" content="true">' . "\n";
+        }, 1);
+
 
         wp_enqueue_style(
             'ppv-bottom-nav',
