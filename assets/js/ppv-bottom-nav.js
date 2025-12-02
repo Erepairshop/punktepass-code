@@ -27,12 +27,21 @@ jQuery(document).ready(function ($) {
   // User dashboard pages - these use Turbo for SPA navigation
   const userPages = ['/user_dashboard', '/meine-punkte', '/belohnungen', '/einstellungen', '/punkte'];
 
+  // Vendor/Handler pages - also use Turbo for SPA navigation
+  const vendorPages = ['/qr-center', '/mein-profil', '/rewards', '/statistik', '/profile-lite'];
+
   const isUserPagePath = (path) => {
     const cleanPath = path.replace(/\/+$/, "");
     return userPages.some(p => cleanPath === p || cleanPath.startsWith(p + '/'));
   };
 
+  const isVendorPagePath = (path) => {
+    const cleanPath = path.replace(/\/+$/, "");
+    return vendorPages.some(p => cleanPath === p || cleanPath.startsWith(p + '/'));
+  };
+
   const isUserPage = isUserPagePath(currentPath);
+  const isVendorPage = isVendorPagePath(currentPath);
 
   // Mark active nav item
   const updateActiveNav = () => {
@@ -95,9 +104,12 @@ jQuery(document).ready(function ($) {
     }
 
     const isTargetUserPage = isUserPagePath(targetPath);
+    const isTargetVendorPage = isVendorPagePath(targetPath);
 
-    // User page to user page = Turbo SPA navigation
-    if (isUserPage && isTargetUserPage) {
+    // Same-type navigation = Turbo SPA (user→user OR vendor→vendor)
+    const isSameTypeNav = (isUserPage && isTargetUserPage) || (isVendorPage && isTargetVendorPage);
+
+    if (isSameTypeNav) {
       window.PPV_NAV_STATE.isNavigating = true;
       $(this).addClass("navigating");
 
@@ -112,7 +124,7 @@ jQuery(document).ready(function ($) {
       return;
     }
 
-    // Non-user page or cross-type navigation = full page refresh
+    // Cross-type navigation (user↔vendor) = full page refresh
     e.preventDefault();
     window.PPV_NAV_STATE.isNavigating = true;
     $(this).addClass("navigating");
