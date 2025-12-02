@@ -171,13 +171,13 @@ class PPV_Bottom_Nav {
             </nav>
             <?php self::render_feedback_modal('user'); ?>
         <?php
-        // --- Händler / POS navigáció ---
+        // --- Händler / POS navigáció (Turbo SPA enabled) ---
         elseif ($is_vendor || $is_pos): ?>
             <nav class="ppv-bottom-nav" data-turbo-permanent id="ppv-main-nav">
-                <a href="/qr-center" class="nav-item" data-turbo="false" data-navlink="true" title="Start"><i class="ri-home-smile-2-line"></i></a>
-                <a href="/rewards" class="nav-item" data-turbo="false" data-navlink="true" title="Rewards"><i class="ri-coupon-3-line"></i></a>
-                <a href="/mein-profil" class="nav-item" data-turbo="false" data-navlink="true" title="Profil"><i class="ri-user-3-line"></i></a>
-                <a href="/statistik" class="nav-item" data-turbo="false" data-navlink="true" title="Statistik"><i class="ri-bar-chart-line"></i></a>
+                <a href="/qr-center" class="nav-item" data-navlink="true" title="Start"><i class="ri-home-smile-2-line"></i></a>
+                <a href="/rewards" class="nav-item" data-navlink="true" title="Rewards"><i class="ri-coupon-3-line"></i></a>
+                <a href="/mein-profil" class="nav-item" data-navlink="true" title="Profil"><i class="ri-user-3-line"></i></a>
+                <a href="/statistik" class="nav-item" data-navlink="true" title="Statistik"><i class="ri-bar-chart-line"></i></a>
                 <a href="#" class="nav-item" id="ppv-feedback-nav-btn" title="Feedback"><i class="ri-feedback-line"></i></a>
             </nav>
             <?php self::render_feedback_modal('handler'); ?>
