@@ -22,39 +22,15 @@
             document.head.appendChild(meta);
         }
 
-        // 2. Prevent Turbo from caching this page snapshot
+        // 2. Prevent Turbo from caching this page snapshot - reset form binding
         document.addEventListener('turbo:before-cache', function() {
             const profileForm = document.getElementById('ppv-profile-form');
             if (profileForm) {
                 profileForm.dataset.ppvBound = 'false';
             }
-            // Clear reload flag when leaving page
-            sessionStorage.removeItem('ppv_profile_reloaded');
         }, { once: false });
 
-        // 3. Force reload when restoring from Turbo cache (back/forward)
-        document.addEventListener('turbo:visit', function(e) {
-            const profileForm = document.getElementById('ppv-profile-form');
-            // Only reload on restore action AND if we haven't just reloaded
-            if (profileForm && e.detail?.action === 'restore') {
-                const alreadyReloaded = sessionStorage.getItem('ppv_profile_reloaded');
-                if (!alreadyReloaded) {
-                    sessionStorage.setItem('ppv_profile_reloaded', 'true');
-                    e.preventDefault();
-                    window.location.reload();
-                }
-            }
-        });
-
-        // 4. Clear reload flag on fresh page load
-        document.addEventListener('turbo:load', function() {
-            const profileForm = document.getElementById('ppv-profile-form');
-            if (profileForm) {
-                setTimeout(() => {
-                    sessionStorage.removeItem('ppv_profile_reloaded');
-                }, 1000);
-            }
-        });
+        // 3. Turbo SPA handles back/forward - no reload needed
     })();
 
     class PPVProfileForm {
@@ -575,12 +551,7 @@
     // ✅ Also listen to turbo:render for Turbo.visit with action: "replace"
     document.addEventListener('turbo:render', initProfileForm);
 
-    // 🔄 Browser back/forward cache (bfcache) detection - force reload for fresh data
-    window.addEventListener('pageshow', function(event) {
-        if (event.persisted) {
-            window.location.reload();
-        }
-    });
+    // 🔄 Turbo SPA handles back/forward - bfcache reload removed
 
 })();
 
