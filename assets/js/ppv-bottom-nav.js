@@ -1,12 +1,17 @@
 /**
- * PunktePass – Bottom Nav v3.1 (Turbo Drive Edition)
+ * PunktePass – Bottom Nav v3.0 (Turbo SPA Edition)
  *
  * Features:
- * - Turbo Drive SPA navigation (faster than full page refresh)
+ * - Full Turbo.js SPA navigation (no page refresh between user pages)
  * - Same-page navigation skip (prevents unnecessary re-renders)
  * - Improved debounce and throttle
  * - Global navigation state sync
  * - Safari optimizations
+ *
+ * v3.0 Changes:
+ * - Skip navigation if already on target page
+ * - Smoother Turbo integration
+ * - Better Safari handling
  */
 jQuery(document).ready(function ($) {
 
@@ -19,24 +24,15 @@ jQuery(document).ready(function ($) {
   // Detect Safari
   const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
-  // User dashboard pages - Turbo Drive SPA
+  // User dashboard pages - these use Turbo for SPA navigation
   const userPages = ['/user_dashboard', '/meine-punkte', '/belohnungen', '/einstellungen', '/punkte'];
-
-  // Vendor/Handler pages - Turbo Drive SPA
-  const vendorPages = ['/qr-center', '/mein-profil', '/rewards', '/statistik', '/profile-lite'];
 
   const isUserPagePath = (path) => {
     const cleanPath = path.replace(/\/+$/, "");
     return userPages.some(p => cleanPath === p || cleanPath.startsWith(p + '/'));
   };
 
-  const isVendorPagePath = (path) => {
-    const cleanPath = path.replace(/\/+$/, "");
-    return vendorPages.some(p => cleanPath === p || cleanPath.startsWith(p + '/'));
-  };
-
   const isUserPage = isUserPagePath(currentPath);
-  const isVendorPage = isVendorPagePath(currentPath);
 
   // Mark active nav item
   const updateActiveNav = () => {
@@ -68,6 +64,8 @@ jQuery(document).ready(function ($) {
 
   // Navigation click handler
   $(".ppv-bottom-nav .nav-item").on("click", function (e) {
+    // 📳 Haptic feedback removed - pages handle their own feedback to avoid double vibration
+
     const href = $(this).attr("href");
     if (!href || href === '#') return;
 
@@ -77,6 +75,7 @@ jQuery(document).ready(function ($) {
     // SKIP if already on the same page
     if (targetPath === currentPathNow) {
       e.preventDefault();
+      // Just scroll to top instead
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
@@ -96,12 +95,9 @@ jQuery(document).ready(function ($) {
     }
 
     const isTargetUserPage = isUserPagePath(targetPath);
-    const isTargetVendorPage = isVendorPagePath(targetPath);
 
-    // Same-type navigation = Turbo Drive SPA (user→user OR vendor→vendor)
-    const isSameTypeNav = (isUserPage && isTargetUserPage) || (isVendorPage && isTargetVendorPage);
-
-    if (isSameTypeNav) {
+    // User page to user page = Turbo SPA navigation
+    if (isUserPage && isTargetUserPage) {
       window.PPV_NAV_STATE.isNavigating = true;
       $(this).addClass("navigating");
 
@@ -112,11 +108,11 @@ jQuery(document).ready(function ($) {
         $(".ppv-bottom-nav .nav-item").removeClass("navigating");
       }, throttleTime);
 
-      // Let Turbo Drive handle the navigation (don't preventDefault)
+      // Let Turbo handle the navigation (don't preventDefault)
       return;
     }
 
-    // Cross-type navigation (user↔vendor) = full page refresh
+    // Non-user page or cross-type navigation = full page refresh
     e.preventDefault();
     window.PPV_NAV_STATE.isNavigating = true;
     $(this).addClass("navigating");
@@ -130,7 +126,7 @@ jQuery(document).ready(function ($) {
     }
   });
 
-  // Turbo Drive event handlers
+  // Turbo event handlers
   document.addEventListener('turbo:load', function() {
     window.PPV_NAV_STATE.isNavigating = false;
     $(".ppv-bottom-nav .nav-item").removeClass("navigating");

@@ -47,27 +47,6 @@ class PPV_Bottom_Nav {
             return $tag;
         }, 10, 2);
 
-        // 🚀 Step 1: Only progress bar delay (minimal change)
-        add_action('wp_footer', function() {
-            ?>
-            <script type="module">
-            import * as Turbo from 'https://cdn.jsdelivr.net/npm/@hotwired/turbo@8.0.4/dist/turbo.es2017-esm.js';
-            Turbo.setProgressBarDelay(50);
-            </script>
-            <?php
-        }, 99);
-
-        // 🚀 Step 3: Native Turbo prefetch (hover preload)
-        add_action('wp_head', function() {
-            echo '<meta name="turbo-prefetch" content="true">' . "\n";
-        }, 1);
-
-        // 🚀 Resource hints: preconnect to CDN (faster Turbo + Icons load)
-        add_action('wp_head', function() {
-            echo '<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>' . "\n";
-            echo '<link rel="dns-prefetch" href="https://cdn.jsdelivr.net">' . "\n";
-        }, 1);
-
 
         wp_enqueue_style(
             'ppv-bottom-nav',
@@ -168,7 +147,7 @@ class PPV_Bottom_Nav {
         // 🚀 data-turbo="false" for vendors visiting user pages - forces full reload
         $turbo_attr = $is_vendor ? 'data-turbo="false"' : '';
         if ($is_user_page): ?>
-            <nav class="ppv-bottom-nav" data-turbo-permanent id="ppv-main-nav">
+            <nav class="ppv-bottom-nav">
                 <a href="/user_dashboard" class="nav-item" <?php echo $turbo_attr; ?> data-navlink="true" title="Dashboard"><i class="ri-home-smile-2-line"></i></a>
                 <a href="/meine-punkte" class="nav-item" <?php echo $turbo_attr; ?> data-navlink="true" title="Meine Punkte"><i class="ri-donut-chart-line"></i></a>
                 <a href="/belohnungen" class="nav-item" <?php echo $turbo_attr; ?> data-navlink="true" title="Belohnungen"><i class="ri-coupon-3-line"></i></a>
@@ -177,20 +156,20 @@ class PPV_Bottom_Nav {
             </nav>
             <?php self::render_feedback_modal('user'); ?>
         <?php
-        // --- Händler / POS navigáció (Turbo Drive SPA) ---
+        // --- Händler / POS navigáció ---
         elseif ($is_vendor || $is_pos): ?>
-            <nav class="ppv-bottom-nav" data-turbo-permanent id="ppv-main-nav">
-                <a href="/qr-center" class="nav-item" data-navlink="true" title="Start"><i class="ri-home-smile-2-line"></i></a>
-                <a href="/rewards" class="nav-item" data-navlink="true" title="Rewards"><i class="ri-coupon-3-line"></i></a>
-                <a href="/mein-profil" class="nav-item" data-navlink="true" title="Profil"><i class="ri-user-3-line"></i></a>
-                <a href="/statistik" class="nav-item" data-navlink="true" title="Statistik"><i class="ri-bar-chart-line"></i></a>
+            <nav class="ppv-bottom-nav">
+                <a href="/qr-center" class="nav-item" data-turbo="false" data-navlink="true" title="Start"><i class="ri-home-smile-2-line"></i></a>
+                <a href="/rewards" class="nav-item" data-turbo="false" data-navlink="true" title="Rewards"><i class="ri-coupon-3-line"></i></a>
+                <a href="/mein-profil" class="nav-item" data-turbo="false" data-navlink="true" title="Profil"><i class="ri-user-3-line"></i></a>
+                <a href="/statistik" class="nav-item" data-turbo="false" data-navlink="true" title="Statistik"><i class="ri-bar-chart-line"></i></a>
                 <a href="#" class="nav-item" id="ppv-feedback-nav-btn" title="Feedback"><i class="ri-feedback-line"></i></a>
             </nav>
             <?php self::render_feedback_modal('handler'); ?>
         <?php
         // --- Alap user nav (basic users - Turbo enabled) ---
         else: ?>
-            <nav class="ppv-bottom-nav" data-turbo-permanent id="ppv-main-nav">
+            <nav class="ppv-bottom-nav">
                 <a href="/user_dashboard" class="nav-item" data-navlink="true" title="Dashboard"><i class="ri-home-smile-2-line"></i></a>
                 <a href="/meine-punkte" class="nav-item" data-navlink="true" title="Meine Punkte"><i class="ri-donut-chart-line"></i></a>
                 <a href="/belohnungen" class="nav-item" data-navlink="true" title="Belohnungen"><i class="ri-coupon-3-line"></i></a>
