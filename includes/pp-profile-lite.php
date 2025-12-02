@@ -1360,8 +1360,12 @@ if (!empty($store->gallery)) {
 
                 <hr>
 
+                <?php
+                // Only show onboarding reset for trial subscription handlers
+                if (($store->subscription_status ?? '') === 'trial'):
+                ?>
                 <!-- ============================================================
-                     ONBOARDING RESET
+                     ONBOARDING RESET (TRIAL ONLY)
                      ============================================================ -->
                 <h3>Onboarding</h3>
 
@@ -1375,6 +1379,7 @@ if (!empty($store->gallery)) {
                 </div>
 
                 <hr>
+                <?php endif; ?>
 
                 <!-- ============================================================
                      ACCOUNT SETTINGS - EMAIL & PASSWORD CHANGE
