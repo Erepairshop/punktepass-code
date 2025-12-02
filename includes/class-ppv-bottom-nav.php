@@ -18,6 +18,33 @@ class PPV_Bottom_Nav {
         add_shortcode('ppv_bottom_nav', [__CLASS__, 'render_nav']);
         add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets'], 99);
         add_action('wp_footer', [__CLASS__, 'inject_context'], 1);
+
+        // 🚀 Turbo Frames: Wrap vendor page content in turbo-frame
+        add_filter('the_content', [__CLASS__, 'wrap_turbo_frame'], 999);
+    }
+
+    /** ============================================================
+     * 🚀 Turbo Frames: Auto-wrap vendor page content
+     * ============================================================ */
+    public static function wrap_turbo_frame($content) {
+        // Only wrap on specific vendor pages
+        $vendor_pages = ['/qr-center', '/mein-profil', '/rewards', '/statistik', '/profile-lite'];
+        $current_path = $_SERVER['REQUEST_URI'] ?? '';
+
+        $is_vendor_page = false;
+        foreach ($vendor_pages as $page) {
+            if (strpos($current_path, $page) !== false) {
+                $is_vendor_page = true;
+                break;
+            }
+        }
+
+        if (!$is_vendor_page) {
+            return $content;
+        }
+
+        // Wrap content in turbo-frame (data-turbo-action="advance" updates browser URL)
+        return '<turbo-frame id="main-content" data-turbo-action="advance">' . $content . '</turbo-frame>';
     }
 
     /** ============================================================
@@ -177,13 +204,13 @@ class PPV_Bottom_Nav {
             </nav>
             <?php self::render_feedback_modal('user'); ?>
         <?php
-        // --- Händler / POS navigáció (Turbo SPA enabled) ---
+        // --- Händler / POS navigáció (Turbo Frames SPA) ---
         elseif ($is_vendor || $is_pos): ?>
             <nav class="ppv-bottom-nav" data-turbo-permanent id="ppv-main-nav">
-                <a href="/qr-center" class="nav-item" data-navlink="true" title="Start"><i class="ri-home-smile-2-line"></i></a>
-                <a href="/rewards" class="nav-item" data-navlink="true" title="Rewards"><i class="ri-coupon-3-line"></i></a>
-                <a href="/mein-profil" class="nav-item" data-navlink="true" title="Profil"><i class="ri-user-3-line"></i></a>
-                <a href="/statistik" class="nav-item" data-navlink="true" title="Statistik"><i class="ri-bar-chart-line"></i></a>
+                <a href="/qr-center" class="nav-item" data-turbo-frame="main-content" data-navlink="true" title="Start"><i class="ri-home-smile-2-line"></i></a>
+                <a href="/rewards" class="nav-item" data-turbo-frame="main-content" data-navlink="true" title="Rewards"><i class="ri-coupon-3-line"></i></a>
+                <a href="/mein-profil" class="nav-item" data-turbo-frame="main-content" data-navlink="true" title="Profil"><i class="ri-user-3-line"></i></a>
+                <a href="/statistik" class="nav-item" data-turbo-frame="main-content" data-navlink="true" title="Statistik"><i class="ri-bar-chart-line"></i></a>
                 <a href="#" class="nav-item" id="ppv-feedback-nav-btn" title="Feedback"><i class="ri-feedback-line"></i></a>
             </nav>
             <?php self::render_feedback_modal('handler'); ?>

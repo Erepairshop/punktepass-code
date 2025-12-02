@@ -1,17 +1,16 @@
 /**
- * PunktePass – Bottom Nav v3.0 (Turbo SPA Edition)
+ * PunktePass – Bottom Nav v4.0 (Turbo Frames Edition)
  *
  * Features:
- * - Full Turbo.js SPA navigation (no page refresh between user pages)
+ * - Turbo Frames SPA navigation (instant content swap, no page refresh)
  * - Same-page navigation skip (prevents unnecessary re-renders)
  * - Improved debounce and throttle
  * - Global navigation state sync
  * - Safari optimizations
  *
- * v3.0 Changes:
- * - Skip navigation if already on target page
- * - Smoother Turbo integration
- * - Better Safari handling
+ * v4.0 Changes:
+ * - Turbo Frames support for vendor pages (instant ~100ms navigation)
+ * - Better active state handling for frame navigation
  */
 jQuery(document).ready(function ($) {
 
@@ -106,10 +105,27 @@ jQuery(document).ready(function ($) {
     const isTargetUserPage = isUserPagePath(targetPath);
     const isTargetVendorPage = isVendorPagePath(targetPath);
 
-    // Same-type navigation = Turbo SPA (user→user OR vendor→vendor)
-    const isSameTypeNav = (isUserPage && isTargetUserPage) || (isVendorPage && isTargetVendorPage);
+    // 🚀 Vendor pages use Turbo Frames (instant navigation via data-turbo-frame attribute)
+    if (isVendorPage && isTargetVendorPage) {
+      window.PPV_NAV_STATE.isNavigating = true;
+      $(this).addClass("navigating");
 
-    if (isSameTypeNav) {
+      // Immediately update active state for instant feedback
+      $(".ppv-bottom-nav .nav-item").removeClass("active");
+      $(this).addClass("active");
+
+      // Reset navigation state after frame loads (or timeout as fallback)
+      setTimeout(() => {
+        window.PPV_NAV_STATE.isNavigating = false;
+        $(".ppv-bottom-nav .nav-item").removeClass("navigating");
+      }, 500);
+
+      // Let Turbo Frames handle the navigation (don't preventDefault)
+      return;
+    }
+
+    // User pages use Turbo Drive (standard SPA navigation)
+    if (isUserPage && isTargetUserPage) {
       window.PPV_NAV_STATE.isNavigating = true;
       $(this).addClass("navigating");
 
@@ -120,7 +136,7 @@ jQuery(document).ready(function ($) {
         $(".ppv-bottom-nav .nav-item").removeClass("navigating");
       }, throttleTime);
 
-      // Let Turbo handle the navigation (don't preventDefault)
+      // Let Turbo Drive handle the navigation (don't preventDefault)
       return;
     }
 
@@ -138,7 +154,7 @@ jQuery(document).ready(function ($) {
     }
   });
 
-  // Turbo event handlers
+  // Turbo Drive event handlers (for user pages)
   document.addEventListener('turbo:load', function() {
     window.PPV_NAV_STATE.isNavigating = false;
     $(".ppv-bottom-nav .nav-item").removeClass("navigating");
@@ -147,6 +163,21 @@ jQuery(document).ready(function ($) {
 
   document.addEventListener('turbo:before-visit', function() {
     window.PPV_NAV_STATE.isNavigating = true;
+  });
+
+  // 🚀 Turbo Frames event handlers (for vendor pages - instant navigation)
+  document.addEventListener('turbo:frame-load', function(e) {
+    if (e.target.id === 'main-content') {
+      window.PPV_NAV_STATE.isNavigating = false;
+      $(".ppv-bottom-nav .nav-item").removeClass("navigating");
+      updateActiveNav();
+    }
+  });
+
+  document.addEventListener('turbo:before-frame-render', function(e) {
+    if (e.target.id === 'main-content') {
+      window.PPV_NAV_STATE.isNavigating = true;
+    }
   });
 
   // Handle browser back/forward buttons
