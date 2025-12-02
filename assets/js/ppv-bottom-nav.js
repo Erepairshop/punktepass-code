@@ -273,7 +273,7 @@
 
     // Setup enhancements
     setupTouchFeedback();
-    setupPrefetch();
+    // setupPrefetch(); // DISABLED - reduces server requests
 
     console.log('[SPA] Bottom Nav v4.0 initialized');
   };
