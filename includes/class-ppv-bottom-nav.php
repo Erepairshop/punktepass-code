@@ -47,6 +47,16 @@ class PPV_Bottom_Nav {
             return $tag;
         }, 10, 2);
 
+        // 🚀 Step 1: Only progress bar delay (minimal change)
+        add_action('wp_footer', function() {
+            ?>
+            <script type="module">
+            import * as Turbo from 'https://cdn.jsdelivr.net/npm/@hotwired/turbo@8.0.4/dist/turbo.es2017-esm.js';
+            Turbo.setProgressBarDelay(50);
+            </script>
+            <?php
+        }, 99);
+
 
         wp_enqueue_style(
             'ppv-bottom-nav',
