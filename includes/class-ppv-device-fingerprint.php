@@ -33,8 +33,43 @@ class PPV_Device_Fingerprint {
     // Device deletion log table
     const DEVICE_DELETION_LOG_TABLE = 'ppv_device_deletion_log';
 
-    // Maximum devices per user (store owner)
+    // Maximum devices per user (store owner) - BASE value
     const MAX_DEVICES_PER_USER = 2;
+
+    /**
+     * 🏢 Get dynamic max devices for store (base + 1 per filiale)
+     * Base: 2 devices
+     * Each filiale adds +1 device slot
+     *
+     * @param int $store_id Store ID (can be parent or child)
+     * @return int Maximum allowed devices
+     */
+    public static function get_max_devices_for_store($store_id) {
+        global $wpdb;
+
+        if ($store_id <= 0) {
+            return self::MAX_DEVICES_PER_USER;
+        }
+
+        // Get parent store ID
+        $parent_id = $wpdb->get_var($wpdb->prepare(
+            "SELECT COALESCE(parent_store_id, id) FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
+            $store_id
+        ));
+
+        if (!$parent_id) {
+            return self::MAX_DEVICES_PER_USER;
+        }
+
+        // Count filialen (children of parent)
+        $filiale_count = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_stores WHERE parent_store_id = %d",
+            $parent_id
+        ));
+
+        // Base (2) + 1 per filiale
+        return self::MAX_DEVICES_PER_USER + intval($filiale_count);
+    }
 
     // Fingerprint validation constants
     const FINGERPRINT_MIN_LENGTH = 16;
@@ -1186,11 +1221,13 @@ class PPV_Device_Fingerprint {
         $parent_store_id = self::get_parent_store_id($store_id);
         $devices = self::get_user_devices($parent_store_id);
 
+        $max_devices = self::get_max_devices_for_store($parent_store_id);
+
         return new WP_REST_Response([
             'success' => true,
             'devices' => $devices,
-            'max_devices' => self::MAX_DEVICES_PER_USER,
-            'can_add_more' => count($devices) < self::MAX_DEVICES_PER_USER
+            'max_devices' => $max_devices,
+            'can_add_more' => count($devices) < $max_devices
         ], 200);
     }
 
@@ -1264,9 +1301,10 @@ class PPV_Device_Fingerprint {
             ], 200);
         }
 
-        // Check device limit
+        // Check device limit (dynamic: base + 1 per filiale)
         $device_count = self::get_user_device_count($parent_store_id);
-        if ($device_count >= self::MAX_DEVICES_PER_USER) {
+        $max_devices = self::get_max_devices_for_store($parent_store_id);
+        if ($device_count >= $max_devices) {
             // Check if there's an available slot to claim
             $available_slot = self::get_available_device_slot($parent_store_id);
             if (!$available_slot) {
@@ -1275,7 +1313,7 @@ class PPV_Device_Fingerprint {
                     'message' => 'Gerätelimit erreicht. Bitte Admin-Genehmigung anfordern.',
                     'limit_reached' => true,
                     'device_count' => $device_count,
-                    'max_devices' => self::MAX_DEVICES_PER_USER
+                    'max_devices' => $max_devices
                 ], 200);
             }
 
@@ -1411,7 +1449,7 @@ class PPV_Device_Fingerprint {
                 'is_registered' => false,
                 'can_use_scanner' => false, // Block scanner - require device registration
                 'device_count' => 0,
-                'max_devices' => self::MAX_DEVICES_PER_USER,
+                'max_devices' => self::get_max_devices_for_store($store_id),
                 'message' => 'Kein Fingerprint',
                 'gps' => $gps_data
             ], 200);
@@ -1532,7 +1570,7 @@ class PPV_Device_Fingerprint {
             'is_registered' => $is_registered,
             'can_use_scanner' => $can_use_scanner,
             'device_count' => $device_count,
-            'max_devices' => self::MAX_DEVICES_PER_USER,
+            'max_devices' => self::get_max_devices_for_store($parent_store_id),
             'available_slots' => $available_slots, // Pre-approved slots ready to claim
             // Device info
             'device_id' => $device_id,
