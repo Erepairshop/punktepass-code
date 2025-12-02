@@ -634,11 +634,11 @@ private static function get_today_hours($opening_hours) {
             
             <!-- Logo + Avatar/Email -->
             <div class="ppv-header-left">
-                <img src="<?php echo PPV_PLUGIN_URL; ?>assets/img/logo.webp" alt="PunktePass" class="ppv-header-logo-tiny">
+                <img src="<?php echo PPV_PLUGIN_URL; ?>assets/img/logo.webp" alt="PunktePass" class="ppv-header-logo-tiny" width="32" height="32">
                 <?php if (!empty($avatar_url)): ?>
                 <!-- Avatar (links to settings) -->
                 <a href="<?php echo esc_url($settings_url); ?>" class="ppv-header-avatar-link" title="<?php echo esc_attr($email); ?>">
-                    <img src="<?php echo esc_url($avatar_url); ?>" alt="Avatar" class="ppv-header-avatar">
+                    <img src="<?php echo esc_url($avatar_url); ?>" alt="Avatar" class="ppv-header-avatar" width="36" height="36">
                 </a>
                 <?php else: ?>
                 <!-- Email (fallback) -->

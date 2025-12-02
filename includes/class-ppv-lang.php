@@ -101,29 +101,31 @@ if (!$lang && !empty($_GET['lang'])) {
             ppv_log("🌍 [PPV_Lang] Using session → {$lang}");
         }
 
-        // 5️⃣ Geo fallback - OPTIMIZED: Session cache + short timeout
+        // 5️⃣ Browser Accept-Language fallback (FREE, instant, no API call!)
         if (!$lang) {
-            // Check session cache first to avoid repeated HTTP calls
-            if (!empty($_SESSION['ppv_geo_lang'])) {
-                $lang = $_SESSION['ppv_geo_lang'];
-                ppv_log("🌍 [PPV_Lang] Geo from session cache → {$lang}");
+            // Check session cache first
+            if (!empty($_SESSION['ppv_browser_lang'])) {
+                $lang = $_SESSION['ppv_browser_lang'];
+                ppv_log("🌍 [PPV_Lang] Browser lang from session → {$lang}");
             } else {
-                // Default to German
-                $lang = 'de';
+                // Parse Accept-Language header (e.g. "hu-HU,hu;q=0.9,de;q=0.8")
+                $accept = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '';
+                $lang = 'de'; // Default
 
-                // Try geo lookup with 1 second timeout (non-blocking)
-                $ip = $_SERVER['REMOTE_ADDR'] ?? '';
-                if ($ip && $ip !== '127.0.0.1' && $ip !== '::1') {
-                    $ctx = stream_context_create(['http' => ['timeout' => 1]]);
-                    $geo = @json_decode(@file_get_contents("http://ip-api.com/json/{$ip}?fields=countryCode", false, $ctx), true);
-                    $cc = strtolower($geo['countryCode'] ?? '');
-                    if ($cc === 'hu') $lang = 'hu';
-                    elseif ($cc === 'ro') $lang = 'ro';
+                if ($accept) {
+                    // Check for Hungarian
+                    if (preg_match('/\bhu\b/i', $accept)) {
+                        $lang = 'hu';
+                    }
+                    // Check for Romanian
+                    elseif (preg_match('/\bro\b/i', $accept)) {
+                        $lang = 'ro';
+                    }
                 }
 
-                // Cache in session to avoid future HTTP calls
-                $_SESSION['ppv_geo_lang'] = $lang;
-                ppv_log("🌍 [PPV_Lang] Geo fallback → {$lang}");
+                // Cache in session
+                $_SESSION['ppv_browser_lang'] = $lang;
+                ppv_log("🌍 [PPV_Lang] Browser Accept-Language → {$lang}");
             }
         }
 

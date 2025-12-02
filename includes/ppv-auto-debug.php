@@ -6,6 +6,13 @@
  */
 
 if (!defined('ABSPATH')) exit;
+
+// ⏱️ START TIMER IMMEDIATELY (before anything else loads)
+if (!defined('PPV_PAGE_START_TIME')) {
+    define('PPV_PAGE_START_TIME', microtime(true));
+    define('PPV_PAGE_START_MEMORY', memory_get_usage());
+}
+
 if (class_exists('PPV_Auto_Debug')) return;
 
 class PPV_Auto_Debug {
@@ -217,6 +224,41 @@ class PPV_Auto_Debug {
 // ============================================================
 add_action('plugins_loaded', ['PPV_Auto_Debug', 'enable']);
 add_action('init', ['PPV_Auto_Debug', 'run_health_checks']);
+
+// ============================================================
+// ⏱️ PERFORMANCE TIMING - Page load time measurement
+// ============================================================
+add_action('wp_footer', function() {
+    // Use the early-defined constants for accurate timing
+    $start_time = defined('PPV_PAGE_START_TIME') ? PPV_PAGE_START_TIME : microtime(true);
+    $start_memory = defined('PPV_PAGE_START_MEMORY') ? PPV_PAGE_START_MEMORY : memory_get_usage();
+
+    $end_time = microtime(true);
+    $duration_ms = round(($end_time - $start_time) * 1000, 2);
+    $memory_mb = round((memory_get_usage() - $start_memory) / 1024 / 1024, 2);
+    $peak_memory_mb = round(memory_get_peak_usage() / 1024 / 1024, 2);
+    $query_count = get_num_queries();
+    $page = $_SERVER['REQUEST_URI'] ?? '/';
+
+    $timing_data = [
+        'page' => $page,
+        'duration_ms' => $duration_ms,
+        'queries' => $query_count,
+        'memory_mb' => $memory_mb,
+        'peak_memory_mb' => $peak_memory_mb
+    ];
+
+    // Console output
+    echo "<script>\n";
+    echo "console.log('%c⏱️ PPV Performance', 'color: #00ff00; font-weight: bold', " . json_encode($timing_data) . ");\n";
+    if ($duration_ms > 1000) {
+        echo "console.warn('🐢 SLOW PAGE: {$duration_ms}ms');\n";
+    }
+    echo "</script>\n";
+
+    // HTML comment
+    echo "<!-- ⏱️ PPV: {$duration_ms}ms | {$query_count} queries | {$peak_memory_mb}MB -->\n";
+}, 9999);
 
 /**
  * ============================================================

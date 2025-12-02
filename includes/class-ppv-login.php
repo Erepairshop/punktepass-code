@@ -101,60 +101,26 @@ class PPV_Login {
     }
 
     /** ============================================================
-     * 🌍 Detect Language by Country (GeoIP)
+     * 🌍 Detect Language by Browser (Accept-Language header)
      * ============================================================ */
     private static function detect_language_by_country() {
-        // Check cache first (1 hour)
-        $cache_key = 'ppv_geo_' . md5(self::get_client_ip());
-        $cached = get_transient($cache_key);
-        if ($cached !== false) {
-            return $cached;
-        }
+        // Use browser's Accept-Language header (FREE, instant, no API!)
+        $accept = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '';
+        $detected_lang = 'de'; // Default German
 
-        $ip = self::get_client_ip();
-
-        // Skip for localhost/private IPs
-        if ($ip === '127.0.0.1' || strpos($ip, '192.168.') === 0 || strpos($ip, '10.') === 0) {
-            return 'de';
-        }
-
-        try {
-            // Use ip-api.com (free, no API key needed, 45 req/min limit)
-            $response = wp_remote_get("http://ip-api.com/json/{$ip}?fields=countryCode", [
-                'timeout' => 2, // Fast timeout to not slow down page
-                'sslverify' => false
-            ]);
-
-            if (!is_wp_error($response)) {
-                $data = json_decode(wp_remote_retrieve_body($response), true);
-                $country = $data['countryCode'] ?? '';
-
-                // Map country to language
-                $country_lang_map = [
-                    'DE' => 'de', // Germany
-                    'AT' => 'de', // Austria
-                    'CH' => 'de', // Switzerland
-                    'LI' => 'de', // Liechtenstein
-                    'HU' => 'hu', // Hungary
-                    'RO' => 'ro', // Romania
-                    'MD' => 'ro', // Moldova (Romanian)
-                ];
-
-                $detected_lang = $country_lang_map[$country] ?? 'de';
-
-                // Cache for 1 hour
-                set_transient($cache_key, $detected_lang, HOUR_IN_SECONDS);
-
-                ppv_log("🌍 [PPV_Login] GeoIP: IP={$ip}, Country={$country}, Lang={$detected_lang}");
-
-                return $detected_lang;
+        if ($accept) {
+            // Check for Hungarian (hu, hu-HU)
+            if (preg_match('/\bhu\b/i', $accept)) {
+                $detected_lang = 'hu';
             }
-        } catch (Exception $e) {
-            ppv_log("⚠️ [PPV_Login] GeoIP error: " . $e->getMessage());
+            // Check for Romanian (ro, ro-RO)
+            elseif (preg_match('/\bro\b/i', $accept)) {
+                $detected_lang = 'ro';
+            }
         }
 
-        // Fallback to locale
-        return substr(get_locale(), 0, 2);
+        ppv_log("🌍 [PPV_Login] Browser Accept-Language → {$detected_lang}");
+        return $detected_lang;
     }
 
     /** ============================================================
@@ -309,7 +275,7 @@ public static function render_landing_page($atts) {
             <header class="ppv-landing-header">
                 <div class="ppv-header-content">
                     <div class="ppv-logo-section">
-                        <img src="<?php echo PPV_PLUGIN_URL; ?>assets/img/logo.webp" alt="PunktePass" class="ppv-logo">
+                        <img src="<?php echo PPV_PLUGIN_URL; ?>assets/img/logo.webp" alt="PunktePass" class="ppv-logo" width="80" height="80" fetchpriority="high">
                         <h1>PunktePass</h1>
                     </div>
                     <p class="ppv-slogan"><?php echo PPV_Lang::t('landing_slogan'); ?></p>

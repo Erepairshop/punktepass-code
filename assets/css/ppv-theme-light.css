@@ -8,6 +8,55 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@500;600;700;800;900&display=swap');
 
 /* ==========================================================================
+   🚀 SCROLL PERFORMANCE OPTIMIZATION
+   Disable expensive effects during scroll for smooth 60fps
+   ========================================================================== */
+
+/* Optimize scrolling containers */
+#ppv-my-points-app,
+#ppv-dashboard-root,
+.ppv-dashboard-netto,
+.ppv-my-points-app {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    contain: layout style;
+}
+
+/* Disable backdrop-filter on scroll for performance (JS adds .is-scrolling class) */
+body.is-scrolling .ppv-section,
+body.is-scrolling .ppv-header-bar,
+body.is-scrolling .glass-section,
+body.is-scrolling .ppv-point-card,
+body.is-scrolling .ppv-store-card-enhanced {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+/* Pause animations during scroll */
+body.is-scrolling * {
+    animation-play-state: paused !important;
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+
+    .ppv-section,
+    .ppv-header-bar,
+    .glass-section {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+}
+
+/* ==========================================================================
    🍎 SAFARI-SPECIFIC FIXES (iOS + macOS)
    FIX: Logo flash, transition stuttering, rendering issues
    ========================================================================== */

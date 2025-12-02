@@ -221,6 +221,7 @@ $core_modules = [
     'includes/class-ppv-permissions.php',
     'includes/class-ppv-session.php',
     'includes/ppv-auto-debug.php',
+    'includes/class-ppv-performance.php', // Performance optimization (Critical CSS, Lazy Loading, CLS fixes)
     'includes/class-ppv-core.php',
     'includes/class-ppv-rest.php',
     'includes/class-ppv-pages.php',

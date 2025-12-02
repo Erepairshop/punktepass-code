@@ -227,25 +227,34 @@ class PPV_Belohnungen {
         ", $user_id));
 
         // Merge redeemed stores that aren't in store_points
-        // FIX: Also get user's points for these stores from ppv_points table
+        // FIX N+1: Batch query all missing stores at once instead of per-store queries
         $existing_store_ids = array_column($store_points, 'store_id');
-        foreach ($redeemed_store_ids as $store_id) {
-            if (!in_array($store_id, $existing_store_ids)) {
-                // Get store info (show even if inactive, user already has history there)
-                $store_data = $wpdb->get_row($wpdb->prepare("
-                    SELECT id AS store_id, company_name AS store_name, logo_url, active AS is_active
-                    FROM {$wpdb->prefix}ppv_stores
-                    WHERE id = %d
-                ", $store_id));
-                if ($store_data) {
-                    // Get user's current points at this store
-                    $store_data->points = (int)$wpdb->get_var($wpdb->prepare("
-                        SELECT COALESCE(SUM(points), 0)
-                        FROM {$wpdb->prefix}ppv_points
-                        WHERE user_id = %d AND store_id = %d
-                    ", $user_id, $store_id));
-                    $store_points[] = $store_data;
-                }
+        $missing_store_ids = array_diff($redeemed_store_ids, $existing_store_ids);
+
+        if (!empty($missing_store_ids)) {
+            // Batch query: get all missing stores with their points in ONE query
+            $placeholders = implode(',', array_fill(0, count($missing_store_ids), '%d'));
+            $query_args = array_merge($missing_store_ids, [$user_id], $missing_store_ids);
+
+            $missing_stores = $wpdb->get_results($wpdb->prepare("
+                SELECT
+                    s.id AS store_id,
+                    s.company_name AS store_name,
+                    s.logo_url,
+                    s.active AS is_active,
+                    COALESCE(p.points_sum, 0) AS points
+                FROM {$wpdb->prefix}ppv_stores s
+                LEFT JOIN (
+                    SELECT store_id, SUM(points) AS points_sum
+                    FROM {$wpdb->prefix}ppv_points
+                    WHERE user_id = %d AND store_id IN ($placeholders)
+                    GROUP BY store_id
+                ) p ON s.id = p.store_id
+                WHERE s.id IN ($placeholders)
+            ", ...$query_args));
+
+            foreach ($missing_stores as $store_data) {
+                $store_points[] = $store_data;
             }
         }
 
@@ -260,34 +269,56 @@ class PPV_Belohnungen {
             'in_progress' => 0 // <70%
         ];
 
+        // FIX N+1: Batch query all rewards for all active stores at once
+        $active_store_ids = [];
         foreach ($store_points as $store) {
-            // Only get rewards for active stores - inactive stores can't have available rewards
             $is_active = isset($store->is_active) ? (bool)$store->is_active : true;
-            $rewards = [];
-
             if ($is_active) {
-                // 📅 Filter by campaign dates: show regular rewards + active campaigns
-                $today = date('Y-m-d');
-                $rewards = $wpdb->get_results($wpdb->prepare("
-                    SELECT id, title, description, required_points, is_campaign, start_date, end_date
-                    FROM {$wpdb->prefix}ppv_rewards
-                    WHERE store_id = %d AND (active = 1 OR active IS NULL)
-                    AND (
-                        is_campaign = 0 OR is_campaign IS NULL
-                        OR (
-                            is_campaign = 1
-                            AND (start_date IS NULL OR start_date <= %s)
-                            AND (end_date IS NULL OR end_date >= %s)
-                        )
-                    )
-                    ORDER BY is_campaign DESC, required_points ASC
-                ", $store->store_id, $today, $today));
+                $active_store_ids[] = (int)$store->store_id;
             }
+        }
+
+        // Pre-fetch all rewards for active stores in ONE query
+        $all_rewards_by_store = [];
+        if (!empty($active_store_ids)) {
+            $today = date('Y-m-d');
+            $placeholders = implode(',', array_fill(0, count($active_store_ids), '%d'));
+            $query_args = array_merge($active_store_ids, [$today, $today]);
+
+            $all_rewards = $wpdb->get_results($wpdb->prepare("
+                SELECT id, store_id, title, description, required_points, is_campaign, start_date, end_date
+                FROM {$wpdb->prefix}ppv_rewards
+                WHERE store_id IN ($placeholders) AND (active = 1 OR active IS NULL)
+                AND (
+                    is_campaign = 0 OR is_campaign IS NULL
+                    OR (
+                        is_campaign = 1
+                        AND (start_date IS NULL OR start_date <= %s)
+                        AND (end_date IS NULL OR end_date >= %s)
+                    )
+                )
+                ORDER BY store_id, is_campaign DESC, required_points ASC
+            ", ...$query_args));
+
+            // Group rewards by store_id
+            foreach ($all_rewards as $reward) {
+                $sid = (int)$reward->store_id;
+                if (!isset($all_rewards_by_store[$sid])) {
+                    $all_rewards_by_store[$sid] = [];
+                }
+                $all_rewards_by_store[$sid][] = $reward;
+            }
+        }
+
+        // Build rewards_by_store using pre-fetched data
+        foreach ($store_points as $store) {
+            $is_active = isset($store->is_active) ? (bool)$store->is_active : true;
+            $rewards = $is_active ? ($all_rewards_by_store[(int)$store->store_id] ?? []) : [];
 
             // Include store even if it has no rewards - show store with points
             $store_data = [
                 'store' => $store,
-                'rewards' => $rewards ?: [],
+                'rewards' => $rewards,
                 'ready_count' => 0,
                 'is_active' => $is_active,
             ];
@@ -397,7 +428,7 @@ class PPV_Belohnungen {
                             <div class="ppv-rw-store-header" onclick="ppvToggleStore(this)">
                                 <div class="ppv-rw-store-left">
                                     <?php if (!empty($store->logo_url)): ?>
-                                        <img src="<?php echo esc_url($store->logo_url); ?>" alt="" class="ppv-rw-store-logo">
+                                        <img src="<?php echo esc_url($store->logo_url); ?>" alt="" class="ppv-rw-store-logo" width="48" height="48" loading="lazy">
                                     <?php else: ?>
                                         <div class="ppv-rw-store-logo-placeholder">
                                             <i class="ri-store-2-fill"></i>

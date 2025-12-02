@@ -498,7 +498,7 @@ class PPV_User_Settings {
 
             <!-- Avatar -->
             <div class="ppv-avatar-block">
-                <img src="<?php echo esc_url($avatar); ?>" id="ppv-avatar-preview" alt="Avatar">
+                <img src="<?php echo esc_url($avatar); ?>" id="ppv-avatar-preview" alt="Avatar" width="100" height="100">
                 <label for="ppv-avatar-upload" class="upload-btn"><i class="ri-camera-line"></i></label>
                 <input type="file" id="ppv-avatar-upload" name="avatar" accept="image/*" hidden>
             </div>
