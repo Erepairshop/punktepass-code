@@ -6,6 +6,13 @@
  */
 
 if (!defined('ABSPATH')) exit;
+
+// ⏱️ START TIMER IMMEDIATELY (before anything else loads)
+if (!defined('PPV_PAGE_START_TIME')) {
+    define('PPV_PAGE_START_TIME', microtime(true));
+    define('PPV_PAGE_START_MEMORY', memory_get_usage());
+}
+
 if (class_exists('PPV_Auto_Debug')) return;
 
 class PPV_Auto_Debug {
@@ -221,90 +228,37 @@ add_action('init', ['PPV_Auto_Debug', 'run_health_checks']);
 // ============================================================
 // ⏱️ PERFORMANCE TIMING - Page load time measurement
 // ============================================================
-class PPV_Performance_Timer {
-    private static $start_time;
-    private static $start_memory;
-    private static $start_queries;
-    private static $enabled = true; // Set to false to disable
+add_action('wp_footer', function() {
+    // Use the early-defined constants for accurate timing
+    $start_time = defined('PPV_PAGE_START_TIME') ? PPV_PAGE_START_TIME : microtime(true);
+    $start_memory = defined('PPV_PAGE_START_MEMORY') ? PPV_PAGE_START_MEMORY : memory_get_usage();
 
-    public static function init() {
-        if (!self::$enabled) return;
+    $end_time = microtime(true);
+    $duration_ms = round(($end_time - $start_time) * 1000, 2);
+    $memory_mb = round((memory_get_usage() - $start_memory) / 1024 / 1024, 2);
+    $peak_memory_mb = round(memory_get_peak_usage() / 1024 / 1024, 2);
+    $query_count = get_num_queries();
+    $page = $_SERVER['REQUEST_URI'] ?? '/';
 
-        self::$start_time = microtime(true);
-        self::$start_memory = memory_get_usage();
-        self::$start_queries = get_num_queries();
+    $timing_data = [
+        'page' => $page,
+        'duration_ms' => $duration_ms,
+        'queries' => $query_count,
+        'memory_mb' => $memory_mb,
+        'peak_memory_mb' => $peak_memory_mb
+    ];
 
-        // Output timing in footer (HTML comment + console.log)
-        add_action('wp_footer', [__CLASS__, 'output_timing'], 9999);
+    // Console output
+    echo "<script>\n";
+    echo "console.log('%c⏱️ PPV Performance', 'color: #00ff00; font-weight: bold', " . json_encode($timing_data) . ");\n";
+    if ($duration_ms > 1000) {
+        echo "console.warn('🐢 SLOW PAGE: {$duration_ms}ms');\n";
     }
+    echo "</script>\n";
 
-    public static function output_timing() {
-        if (!self::$enabled) return;
-
-        global $wpdb;
-
-        $end_time = microtime(true);
-        $end_memory = memory_get_usage();
-        $end_queries = get_num_queries();
-
-        $duration_ms = round(($end_time - self::$start_time) * 1000, 2);
-        $memory_mb = round(($end_memory - self::$start_memory) / 1024 / 1024, 2);
-        $peak_memory_mb = round(memory_get_peak_usage() / 1024 / 1024, 2);
-        $query_count = $end_queries - self::$start_queries;
-
-        // Get slow queries if SAVEQUERIES is enabled
-        $slow_queries = [];
-        if (defined('SAVEQUERIES') && SAVEQUERIES && !empty($wpdb->queries)) {
-            foreach ($wpdb->queries as $q) {
-                $query_time_ms = round($q[1] * 1000, 2);
-                if ($query_time_ms > 50) { // Log queries > 50ms
-                    $slow_queries[] = [
-                        'time_ms' => $query_time_ms,
-                        'query' => substr($q[0], 0, 100) . '...'
-                    ];
-                }
-            }
-            usort($slow_queries, fn($a, $b) => $b['time_ms'] <=> $a['time_ms']);
-            $slow_queries = array_slice($slow_queries, 0, 5); // Top 5 slowest
-        }
-
-        $page = $_SERVER['REQUEST_URI'] ?? '/';
-
-        // HTML comment (visible in View Source)
-        echo "\n<!-- ⏱️ PPV Performance Timer\n";
-        echo "Page: {$page}\n";
-        echo "Duration: {$duration_ms}ms\n";
-        echo "Queries: {$query_count}\n";
-        echo "Memory: {$memory_mb}MB (peak: {$peak_memory_mb}MB)\n";
-        if (!empty($slow_queries)) {
-            echo "Slow Queries:\n";
-            foreach ($slow_queries as $sq) {
-                echo "  - {$sq['time_ms']}ms: {$sq['query']}\n";
-            }
-        }
-        echo "-->\n";
-
-        // Console.log for DevTools
-        $timing_data = [
-            'page' => $page,
-            'duration_ms' => $duration_ms,
-            'queries' => $query_count,
-            'memory_mb' => $memory_mb,
-            'peak_memory_mb' => $peak_memory_mb,
-            'slow_queries' => $slow_queries
-        ];
-
-        echo "<script>console.log('⏱️ PPV Performance:', " . json_encode($timing_data) . ");</script>\n";
-
-        // Warning if slow
-        if ($duration_ms > 1000) {
-            echo "<script>console.warn('🐢 SLOW PAGE: {$duration_ms}ms - check slow queries!');</script>\n";
-        }
-    }
-}
-
-// Start timer as early as possible
-PPV_Performance_Timer::init();
+    // HTML comment
+    echo "<!-- ⏱️ PPV: {$duration_ms}ms | {$query_count} queries | {$peak_memory_mb}MB -->\n";
+}, 9999);
 
 /**
  * ============================================================
