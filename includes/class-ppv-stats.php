@@ -73,24 +73,13 @@ class PPV_Stats {
             return [];
         }
 
-        // 🔧 FIX: Always resolve to PARENT store first
-        // If base_store_id is a child filiale, get its parent
-        $parent_id = $wpdb->get_var($wpdb->prepare(
-            "SELECT COALESCE(parent_store_id, id) FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
-            $base_store_id
-        ));
-
-        if (!$parent_id) {
-            $parent_id = $base_store_id;
-        }
-
-        // Get all stores: parent + all children
+        // Get all stores: parent + children
         $filialen = $wpdb->get_results($wpdb->prepare("
             SELECT id, name, company_name, address, city, plz
             FROM {$wpdb->prefix}ppv_stores
             WHERE id = %d OR parent_store_id = %d
             ORDER BY (id = %d) DESC, name ASC
-        ", $parent_id, $parent_id, $parent_id));
+        ", $base_store_id, $base_store_id, $base_store_id));
 
         return $filialen ?: [];
     }
@@ -1503,7 +1492,8 @@ class PPV_Stats {
                             <option value="all"><?php echo esc_html($T['all_branches'] ?? 'Összes filiale'); ?></option>
                             <?php foreach ($filialen as $fil): ?>
                                 <option value="<?php echo intval($fil->id); ?>">
-                                    <?php echo esc_html($fil->company_name ?: $fil->name ?: 'Filiale #' . $fil->id); ?>
+                                    <?php echo esc_html($fil->name ?: $fil->company_name ?: 'Filiale #' . $fil->id); ?>
+                                    <?php if ($fil->city): ?> – <?php echo esc_html($fil->city); ?><?php endif; ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>

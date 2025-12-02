@@ -58,7 +58,7 @@ class PPV_Rewards_Management {
             'ppv-rewards-management',
             PPV_PLUGIN_URL . 'assets/js/ppv-rewards-management.js',
             ['jquery'],
-            time(),
+            filemtime(PPV_PLUGIN_DIR . 'assets/js/ppv-rewards-management.js'),
             true
         );
 
@@ -154,24 +154,13 @@ class PPV_Rewards_Management {
             return [];
         }
 
-        // 🔧 FIX: Always resolve to PARENT store first
-        // If vendor_store_id is a child filiale, get its parent
-        $parent_id = $wpdb->get_var($wpdb->prepare(
-            "SELECT COALESCE(parent_store_id, id) FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
-            $vendor_store_id
-        ));
-
-        if (!$parent_id) {
-            $parent_id = $vendor_store_id;
-        }
-
-        // Get all stores: parent + all children
+        // Get all stores: parent + children
         $filialen = $wpdb->get_results($wpdb->prepare("
             SELECT id, name, company_name, address, city, plz
             FROM {$wpdb->prefix}ppv_stores
             WHERE id = %d OR parent_store_id = %d
             ORDER BY (id = %d) DESC, name ASC
-        ", $parent_id, $parent_id, $parent_id));
+        ", $vendor_store_id, $vendor_store_id, $vendor_store_id));
 
         return $filialen ?: [];
     }
@@ -312,8 +301,8 @@ class PPV_Rewards_Management {
                                 <?php foreach ($filialen as $fil): ?>
                                     <?php if (intval($fil->id) !== $store_id): ?>
                                     <option value="<?php echo intval($fil->id); ?>">
-                                        <?php echo esc_html($fil->company_name ?: $fil->name); ?>
-                                        <?php if ($fil->city): ?>(<?php echo esc_html($fil->city); ?>)<?php endif; ?>
+                                        <?php echo esc_html($fil->name ?: $fil->company_name); ?>
+                                        <?php if ($fil->city): ?> – <?php echo esc_html($fil->city); ?><?php endif; ?>
                                     </option>
                                     <?php endif; ?>
                                 <?php endforeach; ?>
@@ -1366,14 +1355,8 @@ class PPV_Rewards_Management {
         $start_date  = !empty($data['start_date']) ? sanitize_text_field($data['start_date']) : null;
         $end_date    = !empty($data['end_date']) ? sanitize_text_field($data['end_date']) : null;
 
-        // Currency automatikus
-        $store = $wpdb->get_row($wpdb->prepare(
-            "SELECT country FROM {$wpdb->prefix}ppv_stores WHERE id=%d",
-            $store_id
-        ));
-        $country = $store->country ?? 'DE';
-        $currency_map = ['DE' => 'EUR', 'HU' => 'HUF', 'RO' => 'RON'];
-        $currency = $currency_map[$country] ?? 'EUR';
+        // 🏢 Apply to all filialen?
+        $apply_to_all = !empty($data['apply_to_all']);
 
         if (!$id || !$store_id || !$title || $points <= 0) {
             $msg = class_exists('PPV_Lang') ? PPV_Lang::t('rewards_error_invalid') : 'Érvénytelen bevitel.';
@@ -1383,26 +1366,106 @@ class PPV_Rewards_Management {
             ], 400);
         }
 
+        // Build update data array
+        $update_data = [
+            'title'           => $title,
+            'required_points' => $points,
+            'points_given'    => $points_given,
+            'description'     => $desc,
+            'action_type'     => $type,
+            'action_value'    => $value,
+            'start_date'      => $start_date,
+            'end_date'        => $end_date,
+            'is_campaign'     => $is_campaign
+        ];
+
+        // 🏢 APPLY TO ALL FILIALEN?
+        if ($apply_to_all) {
+            $filialen = self::get_filialen_for_vendor();
+            $updated_count = 0;
+            $created_count = 0;
+
+            foreach ($filialen as $fil) {
+                $filiale_id = intval($fil->id);
+
+                // Get currency for this filiale
+                $store = $wpdb->get_row($wpdb->prepare(
+                    "SELECT country FROM {$wpdb->prefix}ppv_stores WHERE id=%d",
+                    $filiale_id
+                ));
+                $country = $store->country ?? 'DE';
+                $currency_map = ['DE' => 'EUR', 'HU' => 'HUF', 'RO' => 'RON'];
+                $currency = $currency_map[$country] ?? 'EUR';
+
+                $filiale_data = $update_data;
+                $filiale_data['currency'] = $currency;
+
+                if ($filiale_id === $store_id) {
+                    // Current store - update existing reward
+                    $wpdb->update(
+                        "{$wpdb->prefix}ppv_rewards",
+                        $filiale_data,
+                        ['id' => $id, 'store_id' => $filiale_id]
+                    );
+                    $updated_count++;
+                } else {
+                    // Other filiale - check if reward with same title exists
+                    $existing = $wpdb->get_var($wpdb->prepare(
+                        "SELECT id FROM {$wpdb->prefix}ppv_rewards WHERE store_id = %d AND title = %s LIMIT 1",
+                        $filiale_id,
+                        $title
+                    ));
+
+                    if ($existing) {
+                        // Update existing reward
+                        $wpdb->update(
+                            "{$wpdb->prefix}ppv_rewards",
+                            $filiale_data,
+                            ['id' => $existing, 'store_id' => $filiale_id]
+                        );
+                        $updated_count++;
+                    } else {
+                        // Create new reward for this filiale
+                        $filiale_data['store_id'] = $filiale_id;
+                        $filiale_data['active'] = 1;
+                        $filiale_data['created_at'] = current_time('mysql');
+                        $wpdb->insert("{$wpdb->prefix}ppv_rewards", $filiale_data);
+                        $created_count++;
+                    }
+                }
+
+                // 📡 Ably: Notify each filiale
+                if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
+                    PPV_Ably::trigger_reward_update($filiale_id, [
+                        'action' => 'updated',
+                        'title' => $title,
+                        'required_points' => $points,
+                    ]);
+                }
+            }
+
+            return new WP_REST_Response([
+                'success' => true,
+                'message' => "✅ Auf alle Filialen angewendet ({$updated_count} aktualisiert, {$created_count} neu erstellt)",
+                'updated' => $updated_count,
+                'created' => $created_count,
+            ], 200);
+        }
+
+        // Single store update (original behavior)
+        $store = $wpdb->get_row($wpdb->prepare(
+            "SELECT country FROM {$wpdb->prefix}ppv_stores WHERE id=%d",
+            $store_id
+        ));
+        $country = $store->country ?? 'DE';
+        $currency_map = ['DE' => 'EUR', 'HU' => 'HUF', 'RO' => 'RON'];
+        $currency = $currency_map[$country] ?? 'EUR';
+        $update_data['currency'] = $currency;
+
         $wpdb->update(
             "{$wpdb->prefix}ppv_rewards",
-            [
-                'title'           => $title,
-                'required_points' => $points,
-                'points_given'    => $points_given,
-                'description'     => $desc,
-                'action_type'     => $type,
-                'action_value'    => $value,
-                'currency'        => $currency,
-                'start_date'      => $start_date,
-                'end_date'        => $end_date,
-                'is_campaign'     => $is_campaign
-            ],
-            [
-                'id'       => $id,
-                'store_id' => $store_id
-            ],
-            ['%s', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%d'],
-            ['%d', '%d']
+            $update_data,
+            ['id' => $id, 'store_id' => $store_id]
         );
 
         // 📡 Ably: Notify real-time about updated reward

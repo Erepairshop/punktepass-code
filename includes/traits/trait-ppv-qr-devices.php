@@ -52,7 +52,8 @@ trait PPV_QR_Devices_Trait {
         $devices = [];
         $max_devices = 2;
         if (class_exists('PPV_Device_Fingerprint')) {
-            $max_devices = PPV_Device_Fingerprint::MAX_DEVICES_PER_USER;
+            // Dynamic limit: base (2) + 1 per filiale
+            $max_devices = PPV_Device_Fingerprint::get_max_devices_for_store($parent_id);
             if ($parent_id) {
                 $devices = PPV_Device_Fingerprint::get_user_devices($parent_id);
             }
@@ -106,6 +107,10 @@ trait PPV_QR_Devices_Trait {
                         <!-- Button for registered users to request additional device slot -->
                         <button id="ppv-request-new-slot-btn" class="ppv-btn-outline" type="button" style="display: none; margin-left: 10px; color: #ff9800; border-color: #ff9800;">
                             <i class="ri-add-circle-line"></i> <?php echo self::t('request_new_device_slot', 'További készülék kérése'); ?>
+                        </button>
+                        <!-- Button to copy link for new device registration -->
+                        <button id="ppv-copy-link-btn" class="ppv-btn-outline" type="button" style="display: none; margin-left: 10px; color: #2196f3; border-color: #2196f3;">
+                            <i class="ri-link"></i> <?php echo self::t('copy_registration_link', 'Link másolása új készülékhez'); ?>
                         </button>
                     </div>
                 </div>
@@ -346,16 +351,35 @@ trait PPV_QR_Devices_Trait {
                         $('#ppv-device-registered-badge').hide();
                         $('#ppv-request-add-btn').hide();
                         $('#ppv-request-new-slot-btn').hide();
+                        $('#ppv-copy-link-btn').hide();
                     } else if (data.is_registered) {
                         // Device is registered
-                        $('#ppv-device-status').html('<span style="color: #4caf50;">✅ <?php echo esc_js(self::t('device_is_registered', 'Dieses Gerät ist registriert und kann den Scanner verwenden.')); ?></span>');
+                        const deviceCount = parseInt(data.device_count, 10);
+                        const maxDevices = parseInt(data.max_devices, 10);
+                        const remainingSlots = maxDevices - deviceCount;
+
+                        let statusHtml = '<span style="color: #4caf50;">✅ <?php echo esc_js(self::t('device_is_registered', 'Dieses Gerät ist registriert und kann den Scanner verwenden.')); ?></span>';
+
+                        // Show info about remaining device slots if there's capacity
+                        if (remainingSlots > 0) {
+                            const slotsText = remainingSlots === 1
+                                ? '<?php echo esc_js(self::t('one_more_device', '1 további készüléket')); ?>'
+                                : remainingSlots + ' <?php echo esc_js(self::t('more_devices', 'további készüléket')); ?>';
+                            statusHtml += '<br><span style="color: #2196f3; font-size: 12px; margin-top: 5px; display: inline-block;"><i class="ri-information-line"></i> <?php echo esc_js(self::t('can_add_more_devices', 'Még regisztrálhat')); ?> ' + slotsText + '. <?php echo esc_js(self::t('register_on_new_device', 'Nyissa meg ezt az oldalt az új készüléken.')); ?></span>';
+                            // Show copy link button
+                            $('#ppv-copy-link-btn').show();
+                        } else {
+                            $('#ppv-copy-link-btn').hide();
+                        }
+
+                        $('#ppv-device-status').html(statusHtml);
                         $('#ppv-device-registered-badge').show();
                         $('#ppv-register-device-btn').hide();
                         $('#ppv-request-add-btn').hide();
 
                         // Check if limit is reached - show button to request additional device slot
                         // But NOT for scanner users - they cannot request additional devices
-                        if (parseInt(data.device_count, 10) >= parseInt(data.max_devices, 10) && !isScanner) {
+                        if (deviceCount >= maxDevices && !isScanner) {
                             $('#ppv-request-new-slot-btn').show();
                         } else {
                             $('#ppv-request-new-slot-btn').hide();
@@ -367,6 +391,7 @@ trait PPV_QR_Devices_Trait {
                         $('#ppv-device-registered-badge').hide();
                         $('#ppv-request-add-btn').hide();
                         $('#ppv-request-new-slot-btn').hide();
+                        $('#ppv-copy-link-btn').hide();
                     } else if (parseInt(data.device_count, 10) < parseInt(data.max_devices, 10)) {
                         // Can add more devices
                         $('#ppv-device-status').html('<span style="color: #ff9800;">⚠️ <?php echo esc_js(self::t('device_not_registered', 'Dieses Gerät ist nicht registriert.')); ?></span>');
@@ -374,6 +399,7 @@ trait PPV_QR_Devices_Trait {
                         $('#ppv-device-registered-badge').hide();
                         $('#ppv-request-add-btn').hide();
                         $('#ppv-request-new-slot-btn').hide();
+                        $('#ppv-copy-link-btn').hide();
                     } else {
                         // Limit reached AND device NOT registered
                         // Check if there are available slots (pre-approved by admin)
@@ -385,6 +411,7 @@ trait PPV_QR_Devices_Trait {
                             $('#ppv-device-registered-badge').hide();
                             $('#ppv-request-add-btn').hide();
                             $('#ppv-request-new-slot-btn').hide();
+                            $('#ppv-copy-link-btn').hide();
                         } else {
                             // No available slots - need admin approval for THIS device
                             // But NOT for scanner users - they cannot request additional devices
@@ -397,6 +424,7 @@ trait PPV_QR_Devices_Trait {
                             $('#ppv-device-registered-badge').hide();
                             $('#ppv-request-add-btn').toggle(!isScanner); // Hide for scanner users
                             $('#ppv-request-new-slot-btn').hide();
+                            $('#ppv-copy-link-btn').hide();
                         }
                     }
                 } catch (e) {
@@ -514,6 +542,33 @@ trait PPV_QR_Devices_Trait {
                     alert('<?php echo esc_js(self::t('network_error', 'Netzwerkfehler')); ?>');
                     $btn.prop('disabled', false).html('<i class="ri-add-circle-line"></i> <?php echo esc_js(self::t('request_new_device_slot', 'Weiteres Gerät anfordern')); ?>');
                 }
+            });
+
+            // Copy registration link for new device
+            $('#ppv-copy-link-btn').on('click', function() {
+                const $btn = $(this);
+                const currentUrl = window.location.href;
+
+                navigator.clipboard.writeText(currentUrl).then(() => {
+                    // Show success feedback
+                    const originalHtml = $btn.html();
+                    $btn.html('<i class="ri-check-line"></i> <?php echo esc_js(self::t('link_copied', 'Link másolva!')); ?>');
+                    $btn.css({ 'background': '#4caf50', 'color': 'white', 'border-color': '#4caf50' });
+
+                    setTimeout(() => {
+                        $btn.html(originalHtml);
+                        $btn.css({ 'background': '', 'color': '#2196f3', 'border-color': '#2196f3' });
+                    }, 2000);
+                }).catch(() => {
+                    // Fallback for older browsers
+                    const textArea = document.createElement('textarea');
+                    textArea.value = currentUrl;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    alert('<?php echo esc_js(self::t('link_copied', 'Link másolva!')); ?>\n\n' + currentUrl);
+                });
             });
 
             // Direct device deletion (no admin approval needed)
