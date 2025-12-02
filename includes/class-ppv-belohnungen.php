@@ -189,89 +189,66 @@ class PPV_Belohnungen {
             return '<script>window.location.href = "' . esc_js(home_url('/login/')) . '";</script>';
         }
 
-        // Get total points
-        $total_points = (int)$wpdb->get_var($wpdb->prepare(
-            "SELECT COALESCE(SUM(points), 0) FROM {$wpdb->prefix}ppv_points WHERE user_id = %d",
-            $user_id
-        ));
+        // 🚀 Check fragment cache first (1 minute TTL per user+lang)
+        $cache_key = "ppv_rewards_page_{$user_id}_{$lang}";
+        $cached_data = get_transient($cache_key);
 
-        // Get points per store (stores where user has collected points OR redeemed rewards)
-        // FIX: Removed s.active = 1 filter - show stores where user has points even if inactive
-        // Users should see all their points, not just from active stores
-        // FIX: Check if logo_url column exists (some installations may not have it)
-        $has_logo_col = $wpdb->get_results("SHOW COLUMNS FROM {$wpdb->prefix}ppv_stores LIKE 'logo_url'");
-        $logo_select = !empty($has_logo_col) ? "s.logo_url," : "NULL AS logo_url,";
-        $logo_group = !empty($has_logo_col) ? ", s.logo_url" : "";
+        if ($cached_data !== false) {
+            // Use cached data
+            extract($cached_data);
+        } else {
+            // ✅ OPTIMIZED: Single query for total points + store points combined
+            $store_points = $wpdb->get_results($wpdb->prepare("
+                SELECT
+                    s.id AS store_id,
+                    s.company_name AS store_name,
+                    s.logo_url,
+                    s.active AS is_active,
+                    COALESCE(SUM(p.points), 0) AS points
+                FROM {$wpdb->prefix}ppv_stores s
+                INNER JOIN {$wpdb->prefix}ppv_points p ON s.id = p.store_id
+                WHERE p.user_id = %d
+                GROUP BY s.id, s.company_name, s.active, s.logo_url
+                ORDER BY points DESC
+            ", $user_id));
 
-        $store_points = $wpdb->get_results($wpdb->prepare("
-            SELECT
-                s.id AS store_id,
-                s.company_name AS store_name,
-                {$logo_select}
-                s.active AS is_active,
-                COALESCE(SUM(p.points), 0) AS points
-            FROM {$wpdb->prefix}ppv_stores s
-            INNER JOIN {$wpdb->prefix}ppv_points p ON s.id = p.store_id
-            WHERE p.user_id = %d
-            GROUP BY s.id, s.company_name, s.active{$logo_group}
-            ORDER BY points DESC
-        ", $user_id));
+            // Calculate total points from the result (no extra query needed)
+            $total_points = array_sum(array_column($store_points, 'points'));
 
-        // Also get stores where user has redeemed rewards (in case they're not in points table)
-        // FIX: Use r.store_id directly from ppv_rewards_redeemed instead of joining ppv_rewards
-        // This ensures stores show up even if the reward was deleted
-        $redeemed_store_ids = $wpdb->get_col($wpdb->prepare("
-            SELECT DISTINCT r.store_id
-            FROM {$wpdb->prefix}ppv_rewards_redeemed r
-            WHERE r.user_id = %d AND r.store_id IS NOT NULL
-        ", $user_id));
+            // ✅ OPTIMIZED: Get redeemed stores + their points in ONE query
+            $redeemed_stores = $wpdb->get_results($wpdb->prepare("
+                SELECT DISTINCT
+                    s.id AS store_id,
+                    s.company_name AS store_name,
+                    s.logo_url,
+                    s.active AS is_active,
+                    COALESCE((SELECT SUM(points) FROM {$wpdb->prefix}ppv_points WHERE user_id = %d AND store_id = s.id), 0) AS points
+                FROM {$wpdb->prefix}ppv_rewards_redeemed r
+                INNER JOIN {$wpdb->prefix}ppv_stores s ON r.store_id = s.id
+                WHERE r.user_id = %d AND r.store_id IS NOT NULL
+            ", $user_id, $user_id));
 
-        // Merge redeemed stores that aren't in store_points
-        // FIX: Also get user's points for these stores from ppv_points table
-        $existing_store_ids = array_column($store_points, 'store_id');
-        foreach ($redeemed_store_ids as $store_id) {
-            if (!in_array($store_id, $existing_store_ids)) {
-                // Get store info (show even if inactive, user already has history there)
-                $store_data = $wpdb->get_row($wpdb->prepare("
-                    SELECT id AS store_id, company_name AS store_name, logo_url, active AS is_active
-                    FROM {$wpdb->prefix}ppv_stores
-                    WHERE id = %d
-                ", $store_id));
-                if ($store_data) {
-                    // Get user's current points at this store
-                    $store_data->points = (int)$wpdb->get_var($wpdb->prepare("
-                        SELECT COALESCE(SUM(points), 0)
-                        FROM {$wpdb->prefix}ppv_points
-                        WHERE user_id = %d AND store_id = %d
-                    ", $user_id, $store_id));
-                    $store_points[] = $store_data;
+            // Merge redeemed stores that aren't in store_points
+            $existing_store_ids = array_column($store_points, 'store_id');
+            foreach ($redeemed_stores as $rs) {
+                if (!in_array($rs->store_id, $existing_store_ids)) {
+                    $store_points[] = $rs;
                 }
             }
-        }
 
-        // Check if user has any store connections (for empty state logic)
-        $has_store_points = !empty($store_points);
+            // Check if user has any store connections
+            $has_store_points = !empty($store_points);
 
-        // Get rewards for each store + calculate progress stats
-        $rewards_by_store = [];
-        $progress_stats = [
-            'ready' => 0,      // 100%+
-            'almost' => 0,     // 70-99%
-            'in_progress' => 0 // <70%
-        ];
-
-        foreach ($store_points as $store) {
-            // Only get rewards for active stores - inactive stores can't have available rewards
-            $is_active = isset($store->is_active) ? (bool)$store->is_active : true;
-            $rewards = [];
-
-            if ($is_active) {
-                // 📅 Filter by campaign dates: show regular rewards + active campaigns
+            // ✅ OPTIMIZED: Get ALL rewards for ALL user's stores in ONE query (eliminates N+1)
+            $store_ids = array_column($store_points, 'store_id');
+            $all_rewards = [];
+            if (!empty($store_ids)) {
+                $placeholders = implode(',', array_fill(0, count($store_ids), '%d'));
                 $today = date('Y-m-d');
-                $rewards = $wpdb->get_results($wpdb->prepare("
-                    SELECT id, title, description, required_points, is_campaign, start_date, end_date
+                $rewards_query = $wpdb->get_results($wpdb->prepare("
+                    SELECT id, store_id, title, description, required_points, is_campaign, start_date, end_date
                     FROM {$wpdb->prefix}ppv_rewards
-                    WHERE store_id = %d AND (active = 1 OR active IS NULL)
+                    WHERE store_id IN ($placeholders) AND (active = 1 OR active IS NULL)
                     AND (
                         is_campaign = 0 OR is_campaign IS NULL
                         OR (
@@ -280,20 +257,30 @@ class PPV_Belohnungen {
                             AND (end_date IS NULL OR end_date >= %s)
                         )
                     )
-                    ORDER BY is_campaign DESC, required_points ASC
-                ", $store->store_id, $today, $today));
+                    ORDER BY store_id, is_campaign DESC, required_points ASC
+                ", array_merge($store_ids, [$today, $today])));
+
+                // Group rewards by store_id
+                foreach ($rewards_query as $reward) {
+                    $all_rewards[$reward->store_id][] = $reward;
+                }
             }
 
-            // Include store even if it has no rewards - show store with points
-            $store_data = [
-                'store' => $store,
-                'rewards' => $rewards ?: [],
-                'ready_count' => 0,
-                'is_active' => $is_active,
-            ];
+            // Build rewards_by_store + progress stats
+            $rewards_by_store = [];
+            $progress_stats = ['ready' => 0, 'almost' => 0, 'in_progress' => 0];
 
-            // Calculate progress for each reward (if any)
-            if (!empty($rewards)) {
+            foreach ($store_points as $store) {
+                $is_active = isset($store->is_active) ? (bool)$store->is_active : true;
+                $rewards = ($is_active && isset($all_rewards[$store->store_id])) ? $all_rewards[$store->store_id] : [];
+
+                $store_data = [
+                    'store' => $store,
+                    'rewards' => $rewards,
+                    'ready_count' => 0,
+                    'is_active' => $is_active,
+                ];
+
                 foreach ($rewards as $reward) {
                     $progress = min(100, ((int)$store->points / max(1, (int)$reward->required_points)) * 100);
                     if ($progress >= 100) {
@@ -305,25 +292,34 @@ class PPV_Belohnungen {
                         $progress_stats['in_progress']++;
                     }
                 }
+
+                $rewards_by_store[] = $store_data;
             }
 
-            $rewards_by_store[] = $store_data;
-        }
+            // Get completed redemptions
+            $history = $wpdb->get_results($wpdb->prepare("
+                SELECT
+                    rw.title AS reward_title,
+                    s.company_name AS store_name,
+                    r.points_spent,
+                    r.redeemed_at
+                FROM {$wpdb->prefix}ppv_rewards_redeemed r
+                INNER JOIN {$wpdb->prefix}ppv_rewards rw ON r.reward_id = rw.id
+                LEFT JOIN {$wpdb->prefix}ppv_stores s ON r.store_id = s.id
+                WHERE r.user_id = %d AND r.status = 'approved'
+                ORDER BY r.redeemed_at DESC
+                LIMIT 10
+            ", $user_id));
 
-        // Get completed redemptions (approved only)
-        $history = $wpdb->get_results($wpdb->prepare("
-            SELECT
-                rw.title AS reward_title,
-                s.company_name AS store_name,
-                r.points_spent,
-                r.redeemed_at
-            FROM {$wpdb->prefix}ppv_rewards_redeemed r
-            INNER JOIN {$wpdb->prefix}ppv_rewards rw ON r.reward_id = rw.id
-            LEFT JOIN {$wpdb->prefix}ppv_stores s ON r.store_id = s.id
-            WHERE r.user_id = %d AND r.status = 'approved'
-            ORDER BY r.redeemed_at DESC
-            LIMIT 10
-        ", $user_id));
+            // Cache for 1 minute
+            set_transient($cache_key, [
+                'total_points' => $total_points,
+                'has_store_points' => $has_store_points,
+                'rewards_by_store' => $rewards_by_store,
+                'progress_stats' => $progress_stats,
+                'history' => $history,
+            ], 60);
+        }
 
         // Calculate total rewards count
         $total_rewards = $progress_stats['ready'] + $progress_stats['almost'] + $progress_stats['in_progress'];
