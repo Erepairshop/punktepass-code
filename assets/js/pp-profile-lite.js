@@ -380,36 +380,9 @@
                     document.getElementById('ppv-last-updated').textContent =
                         `${this.t('last_updated')}: ${new Date().toLocaleString()}`;
 
-                    // ✅ Frissítjük a form mezőket és reload cache-bust URL-lel
-
+                    // ✅ Frissítjük a form mezőket (no reload - Turbo SPA)
                     if (data.data?.store) {
                         this.updateFormFields(data.data.store);
-
-                        // ✅ FIX: Store success in sessionStorage to verify after reload
-                        sessionStorage.setItem('ppv_last_save', JSON.stringify({
-                            timestamp: Date.now(),
-                            store_id: data.data.store_id,
-                            store_name: data.data.store?.name
-                        }));
-
-                        // ✅ Force reload with cache-bust parameter + preserve current tab
-                        setTimeout(() => {
-                            const url = new URL(window.location.href);
-                            url.searchParams.set('_t', Date.now());
-                            // Save current active tab to hash
-                            const activeTab = document.querySelector('.ppv-tab-btn.active');
-                            if (activeTab?.dataset.tab) {
-                                url.hash = 'tab-' + activeTab.dataset.tab;
-                            }
-                            // ✅ FIX: Use Turbo.visit with action: "replace" to bypass cache
-                            if (typeof Turbo !== 'undefined' && Turbo.visit) {
-                                Turbo.visit(url.toString(), { action: 'replace' });
-                            } else {
-                                window.location.replace(url.toString());
-                            }
-                        }, 500);
-                    } else {
-                        console.warn('⚠️ [Profile] No store data in response!');
                     }
                 } else {
                     this.showAlert(data.data?.msg || this.t('profile_save_error'), 'error');
