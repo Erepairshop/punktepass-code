@@ -13,11 +13,27 @@ if (!defined('ABSPATH')) exit;
 
 class PPV_Session {
 
+    /** @var object|null Request-level cache for store */
+    private static $cached_store = null;
+    private static $cache_checked = false;
+
+    /** Cache and return store */
+    private static function cache_and_return($store) {
+        self::$cached_store = $store;
+        self::$cache_checked = true;
+        return $store;
+    }
+
     /** =============================
-     *  Aktív Store lekérése
+     *  Aktív Store lekérése (CACHED)
      * ============================= */
     public static function current_store($fallback_user_id = 0) {
         global $wpdb;
+
+        // 🚀 Request-level cache - avoid repeated DB queries
+        if (self::$cache_checked && self::$cached_store !== null) {
+            return self::$cached_store;
+        }
 
         // 🔹 REST kompatibilitás – ne módosítson session-t REST alatt
         $is_rest = false;
@@ -45,7 +61,7 @@ class PPV_Session {
                 $GLOBALS['ppv_active_token'] = $token;
                 $GLOBALS['ppv_is_pos'] = true;
                 ppv_log("✅ [PPV_Session] Token priority active → Store={$store->id}");
-                return $store;
+                return self::cache_and_return($store);
             }
         }
 
@@ -75,7 +91,7 @@ class PPV_Session {
             if ($store) {
                 $GLOBALS['ppv_preview_store'] = $store;
                 ppv_log("👁️ [PPV_Session] Admin preview store={$store->id}");
-                return $store;
+                return self::cache_and_return($store);
             }
         }
 
@@ -88,7 +104,7 @@ class PPV_Session {
                 $_SESSION['ppv_active_store'] = $store->id;
                 $GLOBALS['ppv_active_store'] = $store;
                 $GLOBALS['ppv_is_pos'] = false;
-                return $store;
+                return self::cache_and_return($store);
             }
         }
 
@@ -102,7 +118,7 @@ class PPV_Session {
                 $_SESSION['ppv_active_store'] = $store->id;
                 $GLOBALS['ppv_active_store'] = $store;
                 $GLOBALS['ppv_is_pos'] = false;
-                return $store;
+                return self::cache_and_return($store);
             }
         }
 
@@ -122,7 +138,7 @@ class PPV_Session {
                 if ($store) {
                     $GLOBALS['ppv_active_store'] = $store;
                     $GLOBALS['ppv_is_pos'] = true;
-                    return $store;
+                    return self::cache_and_return($store);
                 }
             }
         }
@@ -143,7 +159,7 @@ class PPV_Session {
                 $GLOBALS['ppv_active_store'] = $store;
                 $GLOBALS['ppv_active_store_id'] = $store->id;
                 $GLOBALS['ppv_is_pos'] = false;
-                return $store;
+                return self::cache_and_return($store);
             }
         }
 
@@ -162,7 +178,7 @@ class PPV_Session {
                 $GLOBALS['ppv_active_store'] = $store;
                 $GLOBALS['ppv_active_store_id'] = $store->id;
                 $GLOBALS['ppv_is_pos'] = false;
-                return $store;
+                return self::cache_and_return($store);
             }
         }
 
@@ -177,7 +193,7 @@ class PPV_Session {
                 ));
                 if ($store) {
                     $GLOBALS['ppv_active_store'] = $store;
-                    return $store;
+                    return self::cache_and_return($store);
                 }
             }
         }
@@ -203,13 +219,14 @@ class PPV_Session {
             ));
             if ($store) {
                 $GLOBALS['ppv_active_store'] = $store;
-                return $store;
+                return self::cache_and_return($store);
             }
         }
 
         // 6️⃣ Admin fallback
         if (current_user_can('manage_options')) {
-            return $wpdb->get_row("SELECT * FROM {$wpdb->prefix}ppv_stores ORDER BY id ASC LIMIT 1");
+            $store = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}ppv_stores ORDER BY id ASC LIMIT 1");
+            return self::cache_and_return($store);
         }
 
         // 🔹 Globális változók frissítése, ha eddig nem voltak beállítva
@@ -220,6 +237,8 @@ class PPV_Session {
             $GLOBALS['ppv_active_token'] = sanitize_text_field($_COOKIE['ppv_pos_token']);
         }
 
+        // Mark as checked even if null
+        self::$cache_checked = true;
         return null;
     }
 
