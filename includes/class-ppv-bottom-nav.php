@@ -62,6 +62,12 @@ class PPV_Bottom_Nav {
             echo '<meta name="turbo-prefetch" content="true">' . "\n";
         }, 1);
 
+        // 🚀 Resource hints: preconnect to CDN (faster Turbo + Icons load)
+        add_action('wp_head', function() {
+            echo '<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>' . "\n";
+            echo '<link rel="dns-prefetch" href="https://cdn.jsdelivr.net">' . "\n";
+        }, 1);
+
 
         wp_enqueue_style(
             'ppv-bottom-nav',
