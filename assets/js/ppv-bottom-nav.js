@@ -1,16 +1,12 @@
 /**
- * PunktePass – Bottom Nav v4.0 (Turbo Frames Edition)
+ * PunktePass – Bottom Nav v3.1 (Turbo Drive Edition)
  *
  * Features:
- * - Turbo Frames SPA navigation (instant content swap, no page refresh)
+ * - Turbo Drive SPA navigation (faster than full page refresh)
  * - Same-page navigation skip (prevents unnecessary re-renders)
  * - Improved debounce and throttle
  * - Global navigation state sync
  * - Safari optimizations
- *
- * v4.0 Changes:
- * - Turbo Frames support for vendor pages (instant ~100ms navigation)
- * - Better active state handling for frame navigation
  */
 jQuery(document).ready(function ($) {
 
@@ -23,10 +19,10 @@ jQuery(document).ready(function ($) {
   // Detect Safari
   const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
-  // User dashboard pages - these use Turbo for SPA navigation
+  // User dashboard pages - Turbo Drive SPA
   const userPages = ['/user_dashboard', '/meine-punkte', '/belohnungen', '/einstellungen', '/punkte'];
 
-  // Vendor/Handler pages - also use Turbo for SPA navigation
+  // Vendor/Handler pages - Turbo Drive SPA
   const vendorPages = ['/qr-center', '/mein-profil', '/rewards', '/statistik', '/profile-lite'];
 
   const isUserPagePath = (path) => {
@@ -72,8 +68,6 @@ jQuery(document).ready(function ($) {
 
   // Navigation click handler
   $(".ppv-bottom-nav .nav-item").on("click", function (e) {
-    // 📳 Haptic feedback removed - pages handle their own feedback to avoid double vibration
-
     const href = $(this).attr("href");
     if (!href || href === '#') return;
 
@@ -83,7 +77,6 @@ jQuery(document).ready(function ($) {
     // SKIP if already on the same page
     if (targetPath === currentPathNow) {
       e.preventDefault();
-      // Just scroll to top instead
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
@@ -105,27 +98,10 @@ jQuery(document).ready(function ($) {
     const isTargetUserPage = isUserPagePath(targetPath);
     const isTargetVendorPage = isVendorPagePath(targetPath);
 
-    // 🚀 Vendor pages use Turbo Frames (instant navigation via data-turbo-frame attribute)
-    if (isVendorPage && isTargetVendorPage) {
-      window.PPV_NAV_STATE.isNavigating = true;
-      $(this).addClass("navigating");
+    // Same-type navigation = Turbo Drive SPA (user→user OR vendor→vendor)
+    const isSameTypeNav = (isUserPage && isTargetUserPage) || (isVendorPage && isTargetVendorPage);
 
-      // Immediately update active state for instant feedback
-      $(".ppv-bottom-nav .nav-item").removeClass("active");
-      $(this).addClass("active");
-
-      // Reset navigation state after frame loads (or timeout as fallback)
-      setTimeout(() => {
-        window.PPV_NAV_STATE.isNavigating = false;
-        $(".ppv-bottom-nav .nav-item").removeClass("navigating");
-      }, 500);
-
-      // Let Turbo Frames handle the navigation (don't preventDefault)
-      return;
-    }
-
-    // User pages use Turbo Drive (standard SPA navigation)
-    if (isUserPage && isTargetUserPage) {
+    if (isSameTypeNav) {
       window.PPV_NAV_STATE.isNavigating = true;
       $(this).addClass("navigating");
 
@@ -154,7 +130,7 @@ jQuery(document).ready(function ($) {
     }
   });
 
-  // Turbo Drive event handlers (for user pages)
+  // Turbo Drive event handlers
   document.addEventListener('turbo:load', function() {
     window.PPV_NAV_STATE.isNavigating = false;
     $(".ppv-bottom-nav .nav-item").removeClass("navigating");
@@ -163,21 +139,6 @@ jQuery(document).ready(function ($) {
 
   document.addEventListener('turbo:before-visit', function() {
     window.PPV_NAV_STATE.isNavigating = true;
-  });
-
-  // 🚀 Turbo Frames event handlers (for vendor pages - instant navigation)
-  document.addEventListener('turbo:frame-load', function(e) {
-    if (e.target.id === 'main-content') {
-      window.PPV_NAV_STATE.isNavigating = false;
-      $(".ppv-bottom-nav .nav-item").removeClass("navigating");
-      updateActiveNav();
-    }
-  });
-
-  document.addEventListener('turbo:before-frame-render', function(e) {
-    if (e.target.id === 'main-content') {
-      window.PPV_NAV_STATE.isNavigating = true;
-    }
   });
 
   // Handle browser back/forward buttons
