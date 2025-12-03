@@ -96,7 +96,7 @@ class PPV_SessionBridge {
             ppv_log("🔍 [SessionBridge] Database query result: " . ($user ? "FOUND user ID={$user->id}" : "NO USER FOUND"));
             ppv_log("🔍 [SessionBridge] Last SQL error: " . ($wpdb->last_error ?: 'none'));
 
-            if ($user) {
+            if ($user && !empty($user->email)) {
                 $_SESSION['ppv_user_id'] = $user->id;
                 $_SESSION['ppv_user_email'] = $user->email;
 

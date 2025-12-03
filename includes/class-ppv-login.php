@@ -252,9 +252,25 @@ public static function check_already_logged_in() {
 
     // 🔐 USER already logged in (only if no store association)
     if (!empty($_SESSION['ppv_user_id']) && ($_SESSION['ppv_user_type'] ?? '') === 'user') {
-        ppv_log("🔄 [PPV_Login] User redirect from login page (session check)");
-        wp_safe_redirect(home_url('/user_dashboard'));
-        exit;
+        // ✅ FIX: Verify user actually exists in database before redirect
+        global $wpdb;
+        $user_exists = $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM {$wpdb->prefix}ppv_users WHERE id = %d AND active = 1 LIMIT 1",
+            intval($_SESSION['ppv_user_id'])
+        ));
+
+        if ($user_exists) {
+            ppv_log("🔄 [PPV_Login] User redirect from login page (session check, user verified)");
+            wp_safe_redirect(home_url('/user_dashboard'));
+            exit;
+        } else {
+            // ❌ Invalid session - clear it
+            ppv_log("⚠️ [PPV_Login] Invalid ppv_user_id={$_SESSION['ppv_user_id']} - user not found, clearing session");
+            unset($_SESSION['ppv_user_id'], $_SESSION['ppv_user_email'], $_SESSION['ppv_user_type']);
+            // Also clear the cookie
+            $cookie_domain = !empty($_SERVER['HTTP_HOST']) ? str_replace('www.', '', $_SERVER['HTTP_HOST']) : '';
+            setcookie('ppv_user_token', '', time() - 3600, '/', $cookie_domain, true, true);
+        }
     }
 
     // ⚠️ If we reach here, session restore failed or no valid login
