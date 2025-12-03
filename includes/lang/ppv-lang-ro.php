@@ -432,7 +432,13 @@ return [
     'login_button' => 'Conectare',
     'login_no_account' => 'Nu ai cont?',
     'login_register_now' => 'Înregistrează-te acum',
-    
+
+    // App Download
+    'login_download_app' => 'Descarcă aplicația',
+    'login_download_android' => 'Android',
+    'login_download_ios' => 'iOS',
+    'login_pwa_install_hint' => 'Deschide meniul browserului și selectează "Adaugă pe ecranul principal".',
+
     // Footer
     'landing_footer_copyright' => '© 2025 PunktePass. Toate drepturile rezervate.',
     'landing_footer_privacy' => 'Confidențialitate',
