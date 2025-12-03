@@ -279,6 +279,7 @@ $core_modules = [
     'includes/class-ppv-admin-vendors.php',
     'includes/class-ppv-roi-calculator.php',
     'includes/class-ppv-standalone-admin.php',
+    'includes/class-ppv-device-fingerprint.php',
 ];
 
 // Debug only if enabled
