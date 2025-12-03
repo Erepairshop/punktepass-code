@@ -97,12 +97,16 @@ class PPV_Standalone_DBHealth {
             $health_message = 'FIGYELEM: Az adatbázis mérete közelít a limithez.';
         }
 
-        // Scaling recommendation
-        $max_stores_estimate = 200; // Default
+        // Scaling recommendation - conservative estimate based on current usage
+        $max_stores_estimate = 500; // Default for Cloud Standard
         if ($store_count > 0 && $ppv_mb > 0) {
             $mb_per_store = $ppv_mb / $store_count;
-            $available_mb = self::DB_WARNING_MB - $total_mb;
-            $max_stores_estimate = $store_count + floor($available_mb / max($mb_per_store, 0.1));
+            // Use 1 GB as practical limit for estimation (not the warning limit)
+            $practical_limit_mb = 1000;
+            $available_mb = max(0, $practical_limit_mb - $total_mb);
+            $max_stores_estimate = $store_count + floor($available_mb / max($mb_per_store, 0.5));
+            // Cap at reasonable maximum based on hosting tier
+            $max_stores_estimate = min($max_stores_estimate, 500);
         }
 
         self::render_html($db_size, $ppv_tables, $store_count, $log_stats, $archive_tables, $health_status, $health_message, $total_mb, $ppv_mb, $max_stores_estimate, $accurate_counts);
