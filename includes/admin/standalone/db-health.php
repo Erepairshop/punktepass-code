@@ -10,10 +10,12 @@ if (!defined('ABSPATH')) exit;
 
 class PPV_Standalone_DBHealth {
 
-    // Hostinger Business limits (approximate)
-    const DB_WARNING_MB = 500;    // Start warning at 500 MB
-    const DB_CRITICAL_MB = 800;   // Critical at 800 MB
-    const ROWS_WARNING = 1000000; // 1M rows warning
+    // Hostinger Cloud Standard limits (200 GB disk, 3 GB RAM, 2 CPU)
+    // MySQL database limits (conservative for optimal performance)
+    const DB_WARNING_MB = 2000;    // Start warning at 2 GB
+    const DB_CRITICAL_MB = 5000;   // Critical at 5 GB
+    const DB_MAX_DISPLAY_MB = 10000; // Max display 10 GB
+    const ROWS_WARNING = 5000000;  // 5M rows warning
 
     /**
      * Render DB health page
@@ -51,7 +53,7 @@ class PPV_Standalone_DBHealth {
         // Get store count
         $store_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ppv_stores");
 
-        // Get log stats
+        // Get log stats (accurate COUNT for pos_log - most important table)
         $log_stats = $wpdb->get_row("
             SELECT
                 COUNT(*) as total_rows,
@@ -61,6 +63,15 @@ class PPV_Standalone_DBHealth {
                 COUNT(CASE WHEN type = 'qr_scan' THEN 1 END) as scan_count
             FROM {$wpdb->prefix}ppv_pos_log
         ");
+
+        // Get accurate row counts for key tables (info_schema table_rows is only an estimate)
+        $accurate_counts = [];
+        $key_tables = ['ppv_pos_log', 'ppv_einloesungen', 'ppv_transactions', 'ppv_user_devices'];
+        foreach ($key_tables as $tbl) {
+            $full_name = $wpdb->prefix . $tbl;
+            $count = $wpdb->get_var("SELECT COUNT(*) FROM {$full_name}");
+            $accurate_counts[$full_name] = $count !== null ? (int)$count : null;
+        }
 
         // Get archived tables
         $archive_tables = $wpdb->get_results("
@@ -94,13 +105,13 @@ class PPV_Standalone_DBHealth {
             $max_stores_estimate = $store_count + floor($available_mb / max($mb_per_store, 0.1));
         }
 
-        self::render_html($db_size, $ppv_tables, $store_count, $log_stats, $archive_tables, $health_status, $health_message, $total_mb, $ppv_mb, $max_stores_estimate);
+        self::render_html($db_size, $ppv_tables, $store_count, $log_stats, $archive_tables, $health_status, $health_message, $total_mb, $ppv_mb, $max_stores_estimate, $accurate_counts);
     }
 
     /**
      * Render HTML
      */
-    private static function render_html($db_size, $ppv_tables, $store_count, $log_stats, $archive_tables, $health_status, $health_message, $total_mb, $ppv_mb, $max_stores_estimate) {
+    private static function render_html($db_size, $ppv_tables, $store_count, $log_stats, $archive_tables, $health_status, $health_message, $total_mb, $ppv_mb, $max_stores_estimate, $accurate_counts) {
         $status_colors = [
             'good' => '#4ade80',
             'warning' => '#fbbf24',
@@ -346,19 +357,21 @@ class PPV_Standalone_DBHealth {
 
                 <!-- Progress Bar -->
                 <div class="progress-bar-container">
-                    <h3>Adatbázis kapacitás (Hostinger Business: ~1 GB ajánlott)</h3>
+                    <h3>Adatbázis kapacitás (Hostinger Cloud Standard: ~10 GB ajánlott max)</h3>
                     <div class="progress-bar">
                         <?php
-                        $percent = min(100, ($total_mb / 1000) * 100);
+                        $percent = min(100, ($total_mb / self::DB_MAX_DISPLAY_MB) * 100);
+                        $display_max = $total_mb >= 1000 ? number_format(self::DB_MAX_DISPLAY_MB / 1000, 0) . ' GB' : self::DB_MAX_DISPLAY_MB . ' MB';
+                        $display_current = $total_mb >= 1000 ? number_format($total_mb / 1000, 2) . ' GB' : number_format($total_mb, 1) . ' MB';
                         ?>
                         <div class="progress-fill <?php echo $health_status; ?>" style="width: <?php echo $percent; ?>%"></div>
-                        <span class="progress-text"><?php echo number_format($total_mb, 1); ?> MB / 1000 MB</span>
+                        <span class="progress-text"><?php echo $display_current; ?> / <?php echo $display_max; ?></span>
                     </div>
                     <div class="progress-labels">
-                        <span>0 MB</span>
-                        <span style="color: #fbbf24;">500 MB (figyelmeztetés)</span>
-                        <span style="color: #f87171;">800 MB (kritikus)</span>
-                        <span>1000 MB</span>
+                        <span>0</span>
+                        <span style="color: #fbbf24;">2 GB (figyelmeztetés)</span>
+                        <span style="color: #f87171;">5 GB (kritikus)</span>
+                        <span>10 GB</span>
                     </div>
                 </div>
 
@@ -403,10 +416,20 @@ class PPV_Standalone_DBHealth {
                             $table_name = str_replace($GLOBALS['wpdb']->prefix, '', $table->table_name);
                             $size_mb = $table->total_size / 1024 / 1024;
                             $bar_width = ($table->total_size / $max_size) * 100;
+                            // Use accurate count if available, otherwise use estimate
+                            $row_count = isset($accurate_counts[$table->table_name])
+                                ? $accurate_counts[$table->table_name]
+                                : $table->table_rows;
+                            $is_accurate = isset($accurate_counts[$table->table_name]);
                         ?>
                         <tr>
                             <td><strong><?php echo esc_html($table_name); ?></strong></td>
-                            <td><?php echo number_format($table->table_rows); ?></td>
+                            <td>
+                                <?php echo number_format($row_count); ?>
+                                <?php if (!$is_accurate): ?>
+                                    <span style="color: #666; font-size: 10px;" title="Becsült érték">~</span>
+                                <?php endif; ?>
+                            </td>
                             <td><?php echo number_format($table->data_length / 1024, 1); ?> KB</td>
                             <td><?php echo number_format($table->index_length / 1024, 1); ?> KB</td>
                             <td><strong><?php echo number_format($size_mb, 2); ?> MB</strong></td>
@@ -450,21 +473,21 @@ class PPV_Standalone_DBHealth {
                     <?php if ($health_status === 'good'): ?>
                     <div class="recommendation-item">
                         <i class="ri-checkbox-circle-fill"></i>
-                        <span>Az adatbázis mérete rendben van. Jelenleg ~<?php echo number_format($max_stores_estimate); ?> boltig skálázható.</span>
+                        <span>Az adatbázis mérete rendben van. A Cloud Standard csomagon ~<?php echo number_format($max_stores_estimate); ?> boltig skálázható.</span>
                     </div>
                     <?php endif; ?>
 
                     <?php if ($health_status === 'warning'): ?>
                     <div class="recommendation-item">
                         <i class="ri-error-warning-fill" style="color: #fbbf24;"></i>
-                        <span>Fontold meg a Hostinger Cloud vagy VPS csomagra váltást a további növekedéshez.</span>
+                        <span>Az adatbázis kezd nagyobb lenni. Fontold meg a régi logok archiválását vagy Cloud Professional csomagra váltást.</span>
                     </div>
                     <?php endif; ?>
 
                     <?php if ($health_status === 'critical'): ?>
                     <div class="recommendation-item">
                         <i class="ri-alarm-warning-fill" style="color: #f87171;"></i>
-                        <span><strong>AZONNAL</strong> szükséges a szerver upgrade! Válts VPS-re vagy dedikált szerverre.</span>
+                        <span><strong>FONTOS:</strong> Az adatbázis nagyon nagy. Szükséges a logok törlése/archiválása vagy Cloud Professional/VPS csomagra váltás.</span>
                     </div>
                     <?php endif; ?>
 
@@ -482,11 +505,11 @@ class PPV_Standalone_DBHealth {
                     </div>
 
                     <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #0f3460;">
-                        <strong style="color: #888;">Skálázási útmutató:</strong>
+                        <strong style="color: #888;">Skálázási útmutató (Cloud Standard: 200 GB, 3 GB RAM, 2 CPU):</strong>
                         <table style="margin-top: 10px; font-size: 13px;">
-                            <tr><td style="padding: 5px 15px 5px 0;">1-200 bolt</td><td style="color: #4ade80;">Hostinger Business</td></tr>
-                            <tr><td style="padding: 5px 15px 5px 0;">200-500 bolt</td><td style="color: #fbbf24;">Hostinger Cloud / VPS</td></tr>
-                            <tr><td style="padding: 5px 15px 5px 0;">500+ bolt</td><td style="color: #f87171;">Dedikált szerver / AWS</td></tr>
+                            <tr><td style="padding: 5px 15px 5px 0;">1-500 bolt</td><td style="color: #4ade80;">Cloud Standard (jelenlegi)</td></tr>
+                            <tr><td style="padding: 5px 15px 5px 0;">500-1500 bolt</td><td style="color: #fbbf24;">Cloud Professional / VPS</td></tr>
+                            <tr><td style="padding: 5px 15px 5px 0;">1500+ bolt</td><td style="color: #f87171;">Dedikált szerver / AWS</td></tr>
                         </table>
                     </div>
                 </div>
