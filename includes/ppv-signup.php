@@ -424,15 +424,6 @@ class PPV_Signup {
             padding: 0 16px !important;
         }
 
-        .ppv-logo {
-            width: 36px !important;
-            height: 36px !important;
-        }
-
-        .ppv-logo-section h1 {
-            font-size: 18px !important;
-        }
-
         .ppv-slogan {
             display: none !important;
         }
