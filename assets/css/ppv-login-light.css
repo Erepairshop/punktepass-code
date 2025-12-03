@@ -116,7 +116,6 @@ html, body {
     width: 48px;
     height: 48px;
     object-fit: contain;
-    mix-blend-mode: multiply;
 }
 
 .ppv-logo-section h1 {
@@ -814,8 +813,7 @@ html, body {
     .ppv-logo {
         width: 36px;
         height: 36px;
-        mix-blend-mode: multiply;
-    }
+        }
 
     .ppv-logo-section {
         gap: 8px;
@@ -902,8 +900,7 @@ html, body {
     .ppv-logo {
         width: 32px;
         height: 32px;
-        mix-blend-mode: multiply;
-    }
+        }
 
     .ppv-logo-section h1 {
         font-size: 14px;

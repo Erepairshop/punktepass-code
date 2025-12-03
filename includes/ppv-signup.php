@@ -427,7 +427,6 @@ class PPV_Signup {
         .ppv-logo {
             width: 36px !important;
             height: 36px !important;
-            mix-blend-mode: multiply !important;
         }
 
         .ppv-logo-section h1 {
