@@ -437,6 +437,7 @@ return [
     'login_download_app' => 'Descarcă aplicația',
     'login_download_android' => 'Android',
     'login_download_ios' => 'iOS',
+    'login_open_in_chrome' => 'Deschide în Chrome',
     'login_pwa_install_hint' => 'Deschide meniul browserului și selectează "Adaugă pe ecranul principal".',
 
     // Footer

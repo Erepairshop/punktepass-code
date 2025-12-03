@@ -425,6 +425,7 @@ return [
     'login_download_app' => 'App letöltése',
     'login_download_android' => 'Android',
     'login_download_ios' => 'iOS',
+    'login_open_in_chrome' => 'Megnyitás Chrome-ban',
     'login_pwa_install_hint' => 'Nyisd meg a böngésző menüjét és válaszd a "Hozzáadás a kezdőképernyőhöz" opciót.',
 
     // Footer

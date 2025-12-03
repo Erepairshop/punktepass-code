@@ -398,6 +398,7 @@ return [
     'login_download_app' => 'App herunterladen',
     'login_download_android' => 'Android',
     'login_download_ios' => 'iOS',
+    'login_open_in_chrome' => 'In Chrome öffnen',
     'login_pwa_install_hint' => 'Öffne das Browser-Menü und wähle "Zum Startbildschirm hinzufügen".',
 
     // Footer
