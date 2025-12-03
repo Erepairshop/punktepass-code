@@ -267,13 +267,13 @@ if ($is_rest_api) {
 }
 
 // ========================================
-// 🔹 LOGIN PAGE modules
+// 🔹 FRONTEND modules (shortcodes must always be registered)
 // ========================================
-if ($is_login) {
+if (!$is_rest_api && !$is_admin) {
     $core_modules = array_merge($core_modules, [
-        'includes/class-ppv-login.php',
+        'includes/class-ppv-login.php',      // Login shortcode
         'includes/class-ppv-logout.php',
-        'includes/ppv-signup.php',
+        'includes/ppv-signup.php',           // Signup shortcode
         'includes/class-ppv-referral-handler.php',
         'includes/class-ppv-pages.php',
     ]);
