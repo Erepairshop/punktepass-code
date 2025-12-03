@@ -214,93 +214,164 @@ add_filter('rest_authentication_errors', function ($result) {
 });
 
 // ========================================
-// 📦 MODULE LOADING
+// 📦 MODULE LOADING (OPTIMIZED)
+// ========================================
+// ✅ PERFORMANCE: Only load what's needed for current request
+
+$uri = $_SERVER['REQUEST_URI'] ?? '';
+$is_rest_api = str_contains($uri, '/wp-json/');
+$is_admin = is_admin();
+$is_login = str_contains($uri, '/login') || str_contains($uri, '/signup') || str_contains($uri, '/anmelden');
+$is_user_dashboard = str_contains($uri, '/user_dashboard') || str_contains($uri, '/meine-punkte') || str_contains($uri, '/belohnungen');
+$is_handler_page = str_contains($uri, '/qr-center') || str_contains($uri, '/mein-profil') || str_contains($uri, '/statistik');
+$is_pos = str_contains($uri, 'pos') || str_contains($uri, 'kasse') || str_contains($uri, 'bridge') || str_contains($uri, 'terminal');
+
+// ========================================
+// 🔹 ALWAYS LOAD (Core infrastructure)
 // ========================================
 $core_modules = [
- 'includes/ppv-security-guard.php',
+    'includes/ppv-security-guard.php',
     'includes/class-ppv-permissions.php',
     'includes/class-ppv-session.php',
-    'includes/ppv-auto-debug.php',
-    'includes/class-ppv-performance.php', // Performance optimization (Critical CSS, Lazy Loading, CLS fixes)
-    'includes/class-ppv-core.php',
-    'includes/class-ppv-rest.php',
-    'includes/class-ppv-pages.php',
-    'includes/class-ppv-settings.php',
-    'includes/class-ppv-public.php',
-    'includes/class-ppv-store-public.php',
-    'includes/class-ppv-qr.php',
-    'includes/class-ppv-qr-generator.php',
-    'includes/class-ppv-rewards.php',
-    'includes/class-ppv-redeem.php',
-    'includes/class-ppv-redeem-admin.php',
-    'includes/class-ppv-stats.php',
-    'includes/class-ppv-user-dashboard.php',
-    'includes/class-ppv-my-points.php',
-    'includes/class-ppv-my-points-rest.php',
-    'includes/class-ppv-referral-handler.php',
-    'includes/class-ppv-belohnungen.php',
-    'includes/class-ppv-user-settings.php',
-    'includes/class-ppv-login.php',
-    'includes/class-ppv-logout.php',
-    'includes/class-ppv-account-delete.php',
-    'includes/class-ppv-auth.php',
-    'includes/class-ppv-bridge.php',
-    'includes/class-ppv-pwa-bridge.php',
-    'includes/class-ppv-lang.php',
-    'includes/class-ppv-lang-switcher.php',
-    // 'includes/class-ppv-campaigns.php', // REMOVED: Campaigns now handled by class-ppv-qr.php
-    'includes/class-ppv-poster.php',
-    'includes/class-ppv-bonus-days.php',
-    'includes/class-ppv-filiale.php',
-    'includes/api/ppv-stores.php',
-    'includes/pp-profile-lite.php',
-    'includes/tools/generate-pos-keys.php',
     'includes/class-ppv-sessionbridge.php',
-    'includes/class-ppv-bottom-nav.php',
-    'includes/class-ppv-pos-devices.php',
-    // 'includes/class-ppv-scanner.php', // DISABLED: Conflicts with class-ppv-qr.php endpoint (punktepass/v1/pos/scan)
-     'includes/ppv-signup.php',
-     'includes/class-ppv-analytics-api.php' ,
-     'includes/class-ppv-theme-handler.php',
-     'includes/class-ppv-rewards-management.php',
-     'includes/class-ppv-invoices.php' ,
-     'includes/class-ppv-receipts.php' ,
-     'includes/class-ppv-expense-receipt.php' ,
-     'includes/class-ppv-onboarding.php',
-     'includes/admin/class-ppv-admin-handlers.php',
-     'includes/class-ppv-legal.php',
-     'includes/class-ppv-user-level.php',
-     'includes/class-ppv-vip-settings.php',
-     'includes/class-ppv-ably.php',
-     'includes/class-ppv-scan-monitoring.php',
-     'includes/class-ppv-weekly-report.php', // Weekly email reports to store owners
-     'includes/class-ppv-google-review-request.php', // Automated Google review requests
-     'includes/class-ppv-whatsapp.php', // WhatsApp Cloud API integration for marketing & support
-     'includes/class-ppv-whatsapp-chat.php', // WhatsApp Support Chat UI
-     'includes/class-ppv-smtp.php', // SMTP configuration for reliable email delivery
-     'includes/admin/class-ppv-admin-suspicious-scans.php',
-     'includes/admin/class-ppv-admin-suspicious-devices.php', // Admin panel for suspicious devices
-     'includes/class-ppv-user-qr.php', // Timed QR endpoint
-     'includes/class-ppv-device-fingerprint.php', // Device fingerprint for fraud prevention
-     'includes/class-ppv-customer-insights.php', // Customer insights for store owners (visit patterns, VIP status)
-     'includes/class-ppv-standalone-admin.php', // Standalone admin panel at /admin
-     'includes/class-ppv-roi-calculator.php', // ROI calculator landing page at /rechner
-
+    'includes/class-ppv-auth.php',
+    'includes/class-ppv-lang.php',
 ];
 
-// Conditional POS modules
-$uri = $_SERVER['REQUEST_URI'] ?? '';
-if (str_contains($uri, 'pos') || str_contains($uri, 'kasse') || str_contains($uri, 'bridge') || str_contains($uri, 'terminal')) {
+// Debug only if enabled
+if (defined('PPV_DEBUG') && PPV_DEBUG) {
+    $core_modules[] = 'includes/ppv-auto-debug.php';
+}
+
+// ========================================
+// 🔹 REST API modules (only for API calls)
+// ========================================
+if ($is_rest_api) {
     $core_modules = array_merge($core_modules, [
-        'includes/class-ppv-pos-admin.php',
-        'includes/class-ppv-pos-rest.php',
-        'includes/api/ppv-pos.php',
-        'includes/api/ppv-pos-scan.php',
-        'includes/api/ppv-pos-api.php',
-        'includes/api/class-ppv-pos-dock.php',
+        'includes/class-ppv-rest.php',
+        'includes/class-ppv-my-points-rest.php',
+        'includes/class-ppv-user-qr.php',
+        'includes/api/ppv-stores.php',
+    ]);
+
+    // POS API
+    if ($is_pos) {
+        $core_modules = array_merge($core_modules, [
+            'includes/class-ppv-pos-rest.php',
+            'includes/api/ppv-pos.php',
+            'includes/api/ppv-pos-scan.php',
+            'includes/api/ppv-pos-api.php',
+            'includes/api/class-ppv-pos-dock.php',
+        ]);
+    }
+}
+
+// ========================================
+// 🔹 LOGIN PAGE modules
+// ========================================
+if ($is_login) {
+    $core_modules = array_merge($core_modules, [
+        'includes/class-ppv-login.php',
+        'includes/class-ppv-logout.php',
+        'includes/ppv-signup.php',
+        'includes/class-ppv-referral-handler.php',
+        'includes/class-ppv-pages.php',
+    ]);
+}
+
+// ========================================
+// 🔹 USER DASHBOARD modules (user pages)
+// ========================================
+if ($is_user_dashboard) {
+    $core_modules = array_merge($core_modules, [
+        'includes/class-ppv-core.php',
+        'includes/class-ppv-pages.php',
+        'includes/class-ppv-user-dashboard.php',
+        'includes/class-ppv-my-points.php',
+        'includes/class-ppv-my-points-rest.php',
+        'includes/class-ppv-belohnungen.php',
+        'includes/class-ppv-bottom-nav.php',
+        'includes/class-ppv-user-level.php',
+        'includes/class-ppv-user-settings.php',
+        'includes/class-ppv-user-qr.php',
+        'includes/class-ppv-logout.php',
+        'includes/class-ppv-referral-handler.php',
+        'includes/class-ppv-ably.php',
+        'includes/api/ppv-stores.php',
+    ]);
+}
+
+// ========================================
+// 🔹 HANDLER/STORE modules (business pages)
+// ========================================
+if ($is_handler_page || $is_pos) {
+    $core_modules = array_merge($core_modules, [
+        'includes/class-ppv-core.php',
+        'includes/class-ppv-pages.php',
+        'includes/class-ppv-qr.php',
+        'includes/class-ppv-qr-generator.php',
+        'includes/class-ppv-rewards.php',
+        'includes/class-ppv-rewards-management.php',
+        'includes/class-ppv-redeem.php',
+        'includes/class-ppv-stats.php',
+        'includes/class-ppv-vip-settings.php',
+        'includes/class-ppv-filiale.php',
+        'includes/class-ppv-pos-devices.php',
+        'includes/pp-profile-lite.php',
+        'includes/class-ppv-bottom-nav.php',
+        'includes/class-ppv-invoices.php',
+        'includes/class-ppv-receipts.php',
+        'includes/class-ppv-customer-insights.php',
+        'includes/class-ppv-ably.php',
+        'includes/api/ppv-stores.php',
+    ]);
+
+    if ($is_pos) {
+        $core_modules = array_merge($core_modules, [
+            'includes/class-ppv-pos-admin.php',
+            'includes/class-ppv-pos-rest.php',
+            'includes/api/ppv-pos.php',
+            'includes/api/ppv-pos-scan.php',
+            'includes/api/ppv-pos-api.php',
+            'includes/api/class-ppv-pos-dock.php',
+        ]);
+    }
+}
+
+// ========================================
+// 🔹 ADMIN modules (wp-admin only)
+// ========================================
+if ($is_admin) {
+    $core_modules = array_merge($core_modules, [
+        'includes/class-ppv-settings.php',
+        'includes/admin/class-ppv-admin-handlers.php',
+        'includes/admin/class-ppv-admin-suspicious-scans.php',
+        'includes/admin/class-ppv-admin-suspicious-devices.php',
         'includes/class-ppv-admin-vendors.php',
     ]);
 }
+
+// ========================================
+// 🔹 LAZY LOAD - Only on specific pages
+// ========================================
+// These modules have their own URL detection or are rarely used
+$lazy_modules = [
+    'includes/class-ppv-onboarding.php',
+    'includes/class-ppv-legal.php',
+    'includes/class-ppv-roi-calculator.php',
+    'includes/class-ppv-standalone-admin.php',
+    'includes/class-ppv-theme-handler.php',
+    'includes/class-ppv-public.php',
+    'includes/class-ppv-store-public.php',
+];
+
+// Only load lazy modules if not on critical paths
+if (!$is_rest_api && !$is_login) {
+    $core_modules = array_merge($core_modules, $lazy_modules);
+}
+
+// Remove duplicates
+$core_modules = array_unique($core_modules);
 
 // Load modules
 foreach ($core_modules as $module) {
@@ -397,7 +468,7 @@ add_action('wp_enqueue_scripts', function() {
         'ppv-handler-light',
         PPV_PLUGIN_URL . 'assets/css/handler-light.css',
         [],
-        time()
+        PPV_VERSION
     );
 
     // 🔹 HANDLER SESSION = HANDLER DARK THEME (optional override)
@@ -408,7 +479,7 @@ add_action('wp_enqueue_scripts', function() {
                 'ppv-handler-dark',
                 PPV_PLUGIN_URL . 'assets/css/handler-dark.css',
                 ['ppv-handler-light'],
-                time()
+                PPV_VERSION
             );
         }
     }
@@ -439,6 +510,34 @@ add_action('wp_enqueue_scripts', function() {
         'rest_url' => rest_url('ppv/v1/theme/'),
     ]);
 }, 99);
+
+// ========================================
+// ⚡ SCRIPT DEFER - Add defer to all PPV scripts
+// ========================================
+add_filter('script_loader_tag', function($tag, $handle, $src) {
+    // Only defer PPV scripts (not critical system scripts)
+    if (strpos($handle, 'ppv-') !== 0 && strpos($handle, 'pp-') !== 0) {
+        return $tag;
+    }
+
+    // Don't add defer if already has defer or async
+    if (strpos($tag, 'defer') !== false || strpos($tag, 'async') !== false) {
+        return $tag;
+    }
+
+    // Critical scripts that should NOT be deferred
+    $no_defer = [
+        'ppv-theme-loader',     // Theme must load first to prevent flash
+        'ppv-global-init-lock', // Must run before other scripts
+    ];
+
+    if (in_array($handle, $no_defer)) {
+        return $tag;
+    }
+
+    // Add defer attribute
+    return str_replace(' src=', ' defer src=', $tag);
+}, 10, 3);
 
 // 🚀 DISABLED: Using Turbo.js instead (faster, more reliable)
 // add_action('wp_enqueue_scripts', function() {
@@ -531,9 +630,11 @@ foreach (['pp-vendor-signup.php', 'pp-user-signup.php'] as $signup) {
 }
 
 // ========================================
-// 🎨 PWA META TAGS
+// 🎨 PWA META TAGS + CRITICAL CSS PRELOAD
 // ========================================
 add_action('wp_head', function () { ?>
+    <link rel="preload" href="<?php echo PPV_PLUGIN_URL; ?>assets/css/ppv-theme-light.css?ver=<?php echo PPV_VERSION; ?>" as="style">
+    <link rel="preload" href="<?php echo PPV_PLUGIN_URL; ?>assets/css/handler-light.css?ver=<?php echo PPV_VERSION; ?>" as="style">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#fafdff">
     <meta name="apple-mobile-web-app-capable" content="yes">
