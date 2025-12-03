@@ -609,7 +609,7 @@ add_action('wp_head', function() {
 
     if ($is_dynamic_page) {
         echo '<meta name="turbo-cache-control" content="no-cache">' . "\n";
-        echo '<meta name="turbo-visit-control" content="reload">' . "\n";
+        // Note: turbo-visit-control: reload removed - was forcing full page reloads
     }
 }, 2);
 
