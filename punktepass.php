@@ -214,20 +214,7 @@ add_filter('rest_authentication_errors', function ($result) {
 });
 
 // ========================================
-// 📦 MODULE LOADING (OPTIMIZED)
-// ========================================
-// ✅ PERFORMANCE: Only load what's needed for current request
-
-$uri = $_SERVER['REQUEST_URI'] ?? '';
-$is_rest_api = str_contains($uri, '/wp-json/');
-$is_admin = is_admin();
-$is_login = str_contains($uri, '/login') || str_contains($uri, '/signup') || str_contains($uri, '/anmelden');
-$is_user_dashboard = str_contains($uri, '/user_dashboard') || str_contains($uri, '/meine-punkte') || str_contains($uri, '/belohnungen');
-$is_handler_page = str_contains($uri, '/qr-center') || str_contains($uri, '/mein-profil') || str_contains($uri, '/statistik');
-$is_pos = str_contains($uri, 'pos') || str_contains($uri, 'kasse') || str_contains($uri, 'bridge') || str_contains($uri, 'terminal');
-
-// ========================================
-// 🔹 ALWAYS LOAD (Core infrastructure)
+// 📦 MODULE LOADING
 // ========================================
 $core_modules = [
     'includes/ppv-security-guard.php',
@@ -236,142 +223,68 @@ $core_modules = [
     'includes/class-ppv-sessionbridge.php',
     'includes/class-ppv-auth.php',
     'includes/class-ppv-lang.php',
+    'includes/class-ppv-core.php',
+    'includes/class-ppv-rest.php',
+    'includes/class-ppv-pages.php',
+    'includes/class-ppv-settings.php',
+    'includes/class-ppv-public.php',
+    'includes/class-ppv-store-public.php',
+    'includes/class-ppv-qr.php',
+    'includes/class-ppv-qr-generator.php',
+    'includes/class-ppv-rewards.php',
+    'includes/class-ppv-redeem.php',
+    'includes/class-ppv-redeem-admin.php',
+    'includes/class-ppv-stats.php',
+    'includes/class-ppv-user-dashboard.php',
+    'includes/class-ppv-my-points.php',
+    'includes/class-ppv-my-points-rest.php',
+    'includes/class-ppv-referral-handler.php',
+    'includes/class-ppv-belohnungen.php',
+    'includes/class-ppv-user-settings.php',
+    'includes/class-ppv-login.php',
+    'includes/class-ppv-logout.php',
+    'includes/class-ppv-account-delete.php',
+    'includes/class-ppv-bridge.php',
+    'includes/class-ppv-pwa-bridge.php',
+    'includes/class-ppv-lang-switcher.php',
+    'includes/class-ppv-poster.php',
+    'includes/class-ppv-bonus-days.php',
+    'includes/class-ppv-filiale.php',
+    'includes/api/ppv-stores.php',
+    'includes/pp-profile-lite.php',
+    'includes/tools/generate-pos-keys.php',
+    'includes/class-ppv-bottom-nav.php',
+    'includes/class-ppv-pos-devices.php',
+    'includes/ppv-signup.php',
+    'includes/class-ppv-analytics-api.php',
+    'includes/class-ppv-theme-handler.php',
+    'includes/class-ppv-rewards-management.php',
+    'includes/class-ppv-invoices.php',
+    'includes/class-ppv-receipts.php',
+    'includes/class-ppv-expense-receipt.php',
+    'includes/class-ppv-onboarding.php',
+    'includes/admin/class-ppv-admin-handlers.php',
+    'includes/class-ppv-legal.php',
+    'includes/class-ppv-user-level.php',
+    'includes/class-ppv-vip-settings.php',
+    'includes/class-ppv-user-qr.php',
+    'includes/class-ppv-ably.php',
+    'includes/class-ppv-pos-admin.php',
+    'includes/class-ppv-pos-rest.php',
+    'includes/api/ppv-pos.php',
+    'includes/api/ppv-pos-scan.php',
+    'includes/api/ppv-pos-api.php',
+    'includes/api/class-ppv-pos-dock.php',
+    'includes/class-ppv-customer-insights.php',
+    'includes/class-ppv-admin-vendors.php',
+    'includes/class-ppv-roi-calculator.php',
+    'includes/class-ppv-standalone-admin.php',
 ];
 
 // Debug only if enabled
 if (defined('PPV_DEBUG') && PPV_DEBUG) {
     $core_modules[] = 'includes/ppv-auto-debug.php';
 }
-
-// ========================================
-// 🔹 REST API modules (only for API calls)
-// ========================================
-if ($is_rest_api) {
-    $core_modules = array_merge($core_modules, [
-        'includes/class-ppv-rest.php',
-        'includes/class-ppv-my-points-rest.php',
-        'includes/class-ppv-user-qr.php',
-        'includes/api/ppv-stores.php',
-    ]);
-
-    // POS API
-    if ($is_pos) {
-        $core_modules = array_merge($core_modules, [
-            'includes/class-ppv-pos-rest.php',
-            'includes/api/ppv-pos.php',
-            'includes/api/ppv-pos-scan.php',
-            'includes/api/ppv-pos-api.php',
-            'includes/api/class-ppv-pos-dock.php',
-        ]);
-    }
-}
-
-// ========================================
-// 🔹 FRONTEND modules (shortcodes must always be registered)
-// ========================================
-if (!$is_rest_api && !$is_admin) {
-    $core_modules = array_merge($core_modules, [
-        'includes/class-ppv-login.php',      // Login shortcode
-        'includes/class-ppv-logout.php',
-        'includes/ppv-signup.php',           // Signup shortcode
-        'includes/class-ppv-referral-handler.php',
-        'includes/class-ppv-pages.php',
-    ]);
-}
-
-// ========================================
-// 🔹 USER DASHBOARD modules (user pages)
-// ========================================
-if ($is_user_dashboard) {
-    $core_modules = array_merge($core_modules, [
-        'includes/class-ppv-core.php',
-        'includes/class-ppv-pages.php',
-        'includes/class-ppv-user-dashboard.php',
-        'includes/class-ppv-my-points.php',
-        'includes/class-ppv-my-points-rest.php',
-        'includes/class-ppv-belohnungen.php',
-        'includes/class-ppv-bottom-nav.php',
-        'includes/class-ppv-user-level.php',
-        'includes/class-ppv-user-settings.php',
-        'includes/class-ppv-user-qr.php',
-        'includes/class-ppv-logout.php',
-        'includes/class-ppv-referral-handler.php',
-        'includes/class-ppv-ably.php',
-        'includes/api/ppv-stores.php',
-    ]);
-}
-
-// ========================================
-// 🔹 HANDLER/STORE modules (business pages)
-// ========================================
-if ($is_handler_page || $is_pos) {
-    $core_modules = array_merge($core_modules, [
-        'includes/class-ppv-core.php',
-        'includes/class-ppv-pages.php',
-        'includes/class-ppv-qr.php',
-        'includes/class-ppv-qr-generator.php',
-        'includes/class-ppv-rewards.php',
-        'includes/class-ppv-rewards-management.php',
-        'includes/class-ppv-redeem.php',
-        'includes/class-ppv-stats.php',
-        'includes/class-ppv-vip-settings.php',
-        'includes/class-ppv-filiale.php',
-        'includes/class-ppv-pos-devices.php',
-        'includes/pp-profile-lite.php',
-        'includes/class-ppv-bottom-nav.php',
-        'includes/class-ppv-invoices.php',
-        'includes/class-ppv-receipts.php',
-        'includes/class-ppv-customer-insights.php',
-        'includes/class-ppv-ably.php',
-        'includes/api/ppv-stores.php',
-    ]);
-
-    if ($is_pos) {
-        $core_modules = array_merge($core_modules, [
-            'includes/class-ppv-pos-admin.php',
-            'includes/class-ppv-pos-rest.php',
-            'includes/api/ppv-pos.php',
-            'includes/api/ppv-pos-scan.php',
-            'includes/api/ppv-pos-api.php',
-            'includes/api/class-ppv-pos-dock.php',
-        ]);
-    }
-}
-
-// ========================================
-// 🔹 ADMIN modules (wp-admin only)
-// ========================================
-if ($is_admin) {
-    $core_modules = array_merge($core_modules, [
-        'includes/class-ppv-settings.php',
-        'includes/admin/class-ppv-admin-handlers.php',
-        'includes/admin/class-ppv-admin-suspicious-scans.php',
-        'includes/admin/class-ppv-admin-suspicious-devices.php',
-        'includes/class-ppv-admin-vendors.php',
-    ]);
-}
-
-// ========================================
-// 🔹 LAZY LOAD - Only on specific pages
-// ========================================
-// These modules have their own URL detection or are rarely used
-$lazy_modules = [
-    'includes/class-ppv-onboarding.php',
-    'includes/class-ppv-legal.php',
-    'includes/class-ppv-roi-calculator.php',
-    'includes/class-ppv-standalone-admin.php',
-    'includes/class-ppv-theme-handler.php',
-    'includes/class-ppv-public.php',
-    'includes/class-ppv-store-public.php',
-];
-
-// Only load lazy modules if not on critical paths
-if (!$is_rest_api && !$is_login) {
-    $core_modules = array_merge($core_modules, $lazy_modules);
-}
-
-// Remove duplicates
-$core_modules = array_unique($core_modules);
 
 // Load modules
 foreach ($core_modules as $module) {
