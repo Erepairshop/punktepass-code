@@ -26,8 +26,8 @@ window.PPV_SLIDER_FETCH_IN_PROGRESS = false;
 window.PPV_CURRENT_DISTANCE = 10;
 window.PPV_ABORT_CONTROLLER = null; // For cancelling in-flight requests
 
-// ✅ OPTIMIZATION: Translation object as top-level constant (created once, not per render)
-const PPV_TRANSLATIONS = {
+// ✅ OPTIMIZATION: Translation object (Turbo-safe - uses window namespace)
+window.PPV_TRANSLATIONS = window.PPV_TRANSLATIONS || {
   de: {
     welcome: "Willkommen bei PunktePass",
     points: "Meine Punkte",
@@ -213,10 +213,8 @@ const PPV_TRANSLATIONS = {
   }
 };
 
-// 🍎 Safari detection
-const PPV_IS_SAFARI = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-if (PPV_IS_SAFARI) {
-}
+// 🍎 Safari detection (Turbo-safe)
+window.PPV_IS_SAFARI = window.PPV_IS_SAFARI ?? /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
 // Cleanup function - call before navigation or re-init
 // v3.0: Uses PPV_CLEAR_FLAG for auto-reset, aborts in-flight requests
