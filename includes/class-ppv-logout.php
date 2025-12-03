@@ -53,6 +53,33 @@ class PPV_Logout {
         
         ppv_log("🚪 [PPV_Logout] Starting logout - Domain: {$domain}");
 
+        // 0️⃣ CRITICAL: Clear login_token in database FIRST!
+        global $wpdb;
+        $user_token = $_COOKIE['ppv_user_token'] ?? '';
+        $user_id = $_SESSION['ppv_user_id'] ?? 0;
+
+        if (!empty($user_token)) {
+            $wpdb->update(
+                $wpdb->prefix . 'ppv_users',
+                ['login_token' => null],
+                ['login_token' => $user_token],
+                ['%s'],
+                ['%s']
+            );
+            ppv_log("✅ [PPV_Logout] Cleared login_token from database (by token)");
+        }
+
+        if (!empty($user_id)) {
+            $wpdb->update(
+                $wpdb->prefix . 'ppv_users',
+                ['login_token' => null],
+                ['id' => intval($user_id)],
+                ['%s'],
+                ['%d']
+            );
+            ppv_log("✅ [PPV_Logout] Cleared login_token from database (by user_id={$user_id})");
+        }
+
         // 1️⃣ WP logout
         if (is_user_logged_in()) {
             wp_logout();
