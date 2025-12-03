@@ -42,6 +42,33 @@ class PPV_Stats {
     }
 
     // ========================================
+    // ⚡ CACHE HELPER (5 min transient)
+    // ========================================
+    private static function get_cached($cache_key, $callback, $ttl = 300) {
+        // Try to get cached data
+        $cached = get_transient($cache_key);
+        if ($cached !== false) {
+            ppv_log("⚡ [Stats Cache] HIT: {$cache_key}");
+            return $cached;
+        }
+
+        // Cache miss - run callback to get fresh data
+        ppv_log("🔄 [Stats Cache] MISS: {$cache_key} - fetching fresh data");
+        $data = $callback();
+
+        // Store in cache
+        set_transient($cache_key, $data, $ttl);
+        return $data;
+    }
+
+    private static function build_cache_key($endpoint, $store_ids) {
+        sort($store_ids); // Normalize order
+        $stores_hash = md5(implode('_', $store_ids));
+        $date = current_time('Y-m-d');
+        return "ppv_stats_{$endpoint}_{$stores_hash}_{$date}";
+    }
+
+    // ========================================
     // 🏢 HELPER: Get All Filialen for Handler
     // ========================================
     public static function get_handler_filialen() {
@@ -331,11 +358,9 @@ class PPV_Stats {
     }
 
     // ========================================
-    // 📊 REST: BASIC STATS
+    // 📊 REST: BASIC STATS (cached 5 min)
     // ========================================
     public static function rest_stats($req) {
-        global $wpdb;
-
         ppv_log("📊 [REST] stats() called");
 
         // Get filiale parameter from request
@@ -346,16 +371,26 @@ class PPV_Stats {
             return new WP_REST_Response(['success' => false, 'error' => 'No store'], 403);
         }
 
-        // Build IN clause for multiple stores
-        $placeholders = implode(',', array_fill(0, count($store_ids), '%d'));
+        // ⚡ Use cache (5 min TTL)
+        $cache_key = self::build_cache_key('stats', $store_ids);
+        $data = self::get_cached($cache_key, function() use ($store_ids, $filiale_param) {
+            return self::fetch_stats_data($store_ids, $filiale_param);
+        });
 
+        return new WP_REST_Response($data, 200, ['Cache-Control' => 'no-store, no-cache, must-revalidate']);
+    }
+
+    private static function fetch_stats_data($store_ids, $filiale_param) {
+        global $wpdb;
+
+        $placeholders = implode(',', array_fill(0, count($store_ids), '%d'));
         $table_points = $wpdb->prefix . 'ppv_points';
         $table_redeemed = $wpdb->prefix . 'ppv_rewards_redeemed';
         $today = current_time('Y-m-d');
         $week_start = date('Y-m-d', strtotime('monday this week', strtotime($today)));
         $month_start = date('Y-m-01', strtotime($today));
 
-        // Main stats - with IN clause for multiple stores
+        // Main stats
         $daily = (int) $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(*) FROM $table_points WHERE store_id IN ($placeholders) AND DATE(created)=%s",
             array_merge($store_ids, [$today])
@@ -377,7 +412,7 @@ class PPV_Stats {
             $store_ids
         ));
 
-        // Chart (7-day) - OPTIMIZED: Single query with GROUP BY instead of 7 queries
+        // Chart (7-day)
         $week_ago = date('Y-m-d', strtotime("-6 days", strtotime($today)));
         $chart_results = $wpdb->get_results($wpdb->prepare(
             "SELECT DATE(created) as date, COUNT(*) as count
@@ -387,13 +422,11 @@ class PPV_Stats {
             array_merge($store_ids, [$week_ago])
         ));
 
-        // Build lookup map from results
         $chart_map = [];
         foreach ($chart_results as $row) {
             $chart_map[$row->date] = (int) $row->count;
         }
 
-        // Fill in all 7 days (including zero-count days)
         $chart = [];
         for ($i = 6; $i >= 0; $i--) {
             $date = date('Y-m-d', strtotime("-$i days", strtotime($today)));
@@ -469,9 +502,9 @@ class PPV_Stats {
             ];
         }
 
-        ppv_log("✅ [REST] stats() complete");
+        ppv_log("✅ [REST] stats() data fetched");
 
-        return new WP_REST_Response([
+        return [
             'success' => true,
             'store_ids' => $store_ids,
             'filiale_mode' => $filiale_param === 'all' ? 'all' : 'single',
@@ -489,7 +522,7 @@ class PPV_Stats {
                 'points_spent' => $rewards_spent
             ],
             'peak_hours' => $peak_formatted
-        ], 200, ['Cache-Control' => 'no-store, no-cache, must-revalidate']);
+        ];
     }
 
     // ========================================
@@ -540,20 +573,29 @@ class PPV_Stats {
     }
 
     // ========================================
-    // 📈 REST: TREND
+    // 📈 REST: TREND (cached 5 min)
     // ========================================
     public static function rest_trend($req) {
-        global $wpdb;
-
         ppv_log("📈 [Trend] Start");
 
-        // Get filiale parameter from request
         $filiale_param = $req->get_param('filiale_id');
         $store_ids = self::get_store_ids_for_query($filiale_param);
 
         if (empty($store_ids)) {
             return new WP_REST_Response(['success' => false, 'error' => 'No store'], 403);
         }
+
+        // ⚡ Use cache (5 min TTL)
+        $cache_key = self::build_cache_key('trend', $store_ids);
+        $data = self::get_cached($cache_key, function() use ($store_ids) {
+            return self::fetch_trend_data($store_ids);
+        });
+
+        return new WP_REST_Response($data, 200, ['Cache-Control' => 'no-store']);
+    }
+
+    private static function fetch_trend_data($store_ids) {
+        global $wpdb;
 
         $placeholders = implode(',', array_fill(0, count($store_ids), '%d'));
         $table = $wpdb->prefix . 'ppv_points';
@@ -591,7 +633,7 @@ class PPV_Stats {
         ));
         $month_trend = $previous_month > 0 ? (($current_month - $previous_month) / $previous_month) * 100 : 0;
 
-        // Daily breakdown - OPTIMIZED: Single query with GROUP BY instead of 7 queries
+        // Daily breakdown
         $daily_results = $wpdb->get_results($wpdb->prepare(
             "SELECT DATE(created) as date, COUNT(*) as count
              FROM $table
@@ -600,13 +642,11 @@ class PPV_Stats {
             array_merge($store_ids, [$week_start, $week_end])
         ));
 
-        // Build lookup map from results
         $daily_map = [];
         foreach ($daily_results as $row) {
             $daily_map[$row->date] = (int) $row->count;
         }
 
-        // Fill in all 7 days (including zero-count days)
         $daily_week = [];
         for ($i = 0; $i < 7; $i++) {
             $date = date('Y-m-d', strtotime($week_start . " +$i days"));
@@ -617,9 +657,9 @@ class PPV_Stats {
             ];
         }
 
-        ppv_log("✅ [Trend] Complete");
+        ppv_log("✅ [Trend] data fetched");
 
-        return new WP_REST_Response([
+        return [
             'success' => true,
             'week' => [
                 'current' => $current_week,
@@ -634,18 +674,15 @@ class PPV_Stats {
                 'trend_up' => $month_trend >= 0
             ],
             'daily_breakdown' => $daily_week
-        ], 200, ['Cache-Control' => 'no-store']);
+        ];
     }
 
     // ========================================
-    // 💰 REST: SPENDING
+    // 💰 REST: SPENDING (cached 5 min)
     // ========================================
     public static function rest_spending($req) {
-        global $wpdb;
-
         ppv_log("💰 [Spending] Start");
 
-        // Get filiale parameter from request
         $filiale_param = $req->get_param('filiale_id');
         $store_ids = self::get_store_ids_for_query($filiale_param);
 
@@ -653,13 +690,24 @@ class PPV_Stats {
             return new WP_REST_Response(['success' => false, 'error' => 'No store'], 403);
         }
 
+        // ⚡ Use cache (5 min TTL)
+        $cache_key = self::build_cache_key('spending', $store_ids);
+        $data = self::get_cached($cache_key, function() use ($store_ids) {
+            return self::fetch_spending_data($store_ids);
+        });
+
+        return new WP_REST_Response($data, 200, ['Cache-Control' => 'no-store']);
+    }
+
+    private static function fetch_spending_data($store_ids) {
+        global $wpdb;
+
         $placeholders = implode(',', array_fill(0, count($store_ids), '%d'));
         $table_redeemed = $wpdb->prefix . 'ppv_rewards_redeemed';
         $today = current_time('Y-m-d');
         $week_start = date('Y-m-d', strtotime('monday this week', strtotime($today)));
         $month_start = date('Y-m-01', strtotime($today));
 
-        // Spending by period
         $daily_spending = (int) $wpdb->get_var($wpdb->prepare(
             "SELECT SUM(points_spent) FROM $table_redeemed WHERE store_id IN ($placeholders) AND DATE(redeemed_at)=%s AND status IN ('approved', 'bestätigt')",
             array_merge($store_ids, [$today])
@@ -675,13 +723,11 @@ class PPV_Stats {
             array_merge($store_ids, [$month_start])
         )) ?? 0;
 
-        // Average reward
         $avg_reward = (int) $wpdb->get_var($wpdb->prepare(
             "SELECT AVG(points_spent) FROM $table_redeemed WHERE store_id IN ($placeholders) AND status IN ('approved', 'bestätigt')",
             $store_ids
         )) ?? 0;
 
-        // Top rewards
         $top_rewards = $wpdb->get_results($wpdb->prepare(
             "SELECT reward_id, SUM(points_spent) as total, COUNT(*) as count
              FROM $table_redeemed
@@ -701,7 +747,6 @@ class PPV_Stats {
             ];
         }
 
-        // By status
         $pending = (int) $wpdb->get_var($wpdb->prepare(
             "SELECT SUM(points_spent) FROM $table_redeemed WHERE store_id IN ($placeholders) AND status IN ('pending', 'offen')",
             $store_ids
@@ -717,9 +762,9 @@ class PPV_Stats {
             $store_ids
         )) ?? 0;
 
-        ppv_log("✅ [Spending] Complete");
+        ppv_log("✅ [Spending] data fetched");
 
-        return new WP_REST_Response([
+        return [
             'success' => true,
             'spending' => [
                 'daily' => $daily_spending,
@@ -733,18 +778,15 @@ class PPV_Stats {
                 'pending' => $pending,
                 'rejected' => $rejected
             ]
-        ], 200, ['Cache-Control' => 'no-store']);
+        ];
     }
 
     // ========================================
-    // 📊 REST: CONVERSION
+    // 📊 REST: CONVERSION (cached 5 min)
     // ========================================
     public static function rest_conversion($req) {
-        global $wpdb;
-
         ppv_log("📊 [Conversion] Start");
 
-        // Get filiale parameter from request
         $filiale_param = $req->get_param('filiale_id');
         $store_ids = self::get_store_ids_for_query($filiale_param);
 
@@ -752,11 +794,22 @@ class PPV_Stats {
             return new WP_REST_Response(['success' => false, 'error' => 'No store'], 403);
         }
 
+        // ⚡ Use cache (5 min TTL)
+        $cache_key = self::build_cache_key('conversion', $store_ids);
+        $data = self::get_cached($cache_key, function() use ($store_ids) {
+            return self::fetch_conversion_data($store_ids);
+        });
+
+        return new WP_REST_Response($data, 200, ['Cache-Control' => 'no-store']);
+    }
+
+    private static function fetch_conversion_data($store_ids) {
+        global $wpdb;
+
         $placeholders = implode(',', array_fill(0, count($store_ids), '%d'));
         $table_points = $wpdb->prefix . 'ppv_points';
         $table_redeemed = $wpdb->prefix . 'ppv_rewards_redeemed';
 
-        // Users
         $total_users = (int) $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(DISTINCT user_id) FROM $table_points WHERE store_id IN ($placeholders)",
             $store_ids
@@ -769,7 +822,6 @@ class PPV_Stats {
 
         $conversion_rate = $total_users > 0 ? ($redeemed_users / $total_users) * 100 : 0;
 
-        // Averages
         $avg_points_per_user = (int) $wpdb->get_var($wpdb->prepare(
             "SELECT AVG(total) FROM (
                 SELECT user_id, SUM(points) as total
@@ -787,7 +839,6 @@ class PPV_Stats {
             )) ?? 0
             : 0;
 
-        // Repeat customers - need to count users with >1 visit across selected stores
         $repeat_customers = (int) $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(*) FROM (
                 SELECT user_id FROM $table_points
@@ -800,9 +851,9 @@ class PPV_Stats {
 
         $repeat_rate = $total_users > 0 ? ($repeat_customers / $total_users) * 100 : 0;
 
-        ppv_log("✅ [Conversion] Complete");
+        ppv_log("✅ [Conversion] data fetched");
 
-        return new WP_REST_Response([
+        return [
             'success' => true,
             'total_users' => $total_users,
             'redeemed_users' => $redeemed_users,
@@ -811,7 +862,7 @@ class PPV_Stats {
             'repeat_rate' => round($repeat_rate, 1),
             'average_points_per_user' => $avg_points_per_user,
             'average_redemptions_per_user' => round($avg_redemptions_per_user, 1)
-        ], 200, ['Cache-Control' => 'no-store']);
+        ];
     }
 
     // ========================================
