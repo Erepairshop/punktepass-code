@@ -216,6 +216,9 @@ add_filter('rest_authentication_errors', function ($result) {
 // ========================================
 // 📦 MODULE LOADING
 // ========================================
+// ⏱️ TIMING DEBUG - remove after testing
+$_ppv_start = microtime(true);
+
 $core_modules = [
     'includes/ppv-security-guard.php',
     'includes/class-ppv-permissions.php',
@@ -293,6 +296,10 @@ foreach ($core_modules as $module) {
         require_once $path;
     }
 }
+
+// ⏱️ TIMING DEBUG - module load time
+$_ppv_modules_time = round((microtime(true) - $_ppv_start) * 1000, 2);
+error_log("PPV TIMING: Modules loaded in {$_ppv_modules_time}ms");
 
 // ========================================
 // 🎨 THEME & ASSET LOADING (OPTIMIZED)
@@ -503,6 +510,8 @@ $whitelist = [
 // ========================================
 // 🧩 MODULE HOOKS
 // ========================================
+$_ppv_hooks_start = microtime(true);
+
 if (class_exists('PPV_Security_Guard')) PPV_Security_Guard::hooks();
 if (class_exists('PPV_Core')) PPV_Core::hooks();
 if (class_exists('PPV_REST')) PPV_REST::hooks();
@@ -541,6 +550,11 @@ foreach (['pp-vendor-signup.php', 'pp-user-signup.php'] as $signup) {
         if (class_exists($class)) $class::hooks();
     }
 }
+
+// ⏱️ TIMING DEBUG - hooks time
+$_ppv_hooks_time = round((microtime(true) - $_ppv_hooks_start) * 1000, 2);
+$_ppv_total_time = round((microtime(true) - $_ppv_start) * 1000, 2);
+error_log("PPV TIMING: Hooks registered in {$_ppv_hooks_time}ms | Total plugin init: {$_ppv_total_time}ms");
 
 // ========================================
 // 🎨 PWA META TAGS + CRITICAL CSS PRELOAD
