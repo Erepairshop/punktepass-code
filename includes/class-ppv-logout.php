@@ -85,16 +85,44 @@ class PPV_Logout {
             wp_logout();
         }
 
-        // 2️⃣ Session destroy
-        if (session_status() === PHP_SESSION_ACTIVE) {
-            $_SESSION = [];
-            session_destroy();
-            ppv_log("✅ [PPV_Logout] Session destroyed");
-        } elseif (session_status() === PHP_SESSION_NONE) {
+        // 2️⃣ Session destroy - COMPLETE destruction
+        if (session_status() === PHP_SESSION_NONE) {
             @session_start();
-            $_SESSION = [];
-            session_destroy();
         }
+
+        // Clear all session data
+        $_SESSION = [];
+
+        // Get session cookie params BEFORE destroying
+        $params = session_get_cookie_params();
+
+        // Destroy the session
+        session_destroy();
+
+        // ✅ CRITICAL: Delete session cookie with SAME parameters it was created with
+        setcookie(
+            session_name(),           // PHPSESSID or custom name
+            '',                       // Empty value
+            time() - 42000,          // Expired
+            $params['path'],
+            $params['domain'],
+            $params['secure'],
+            $params['httponly']
+        );
+
+        // Also try with SameSite (PHP 7.3+)
+        if (PHP_VERSION_ID >= 70300) {
+            setcookie(session_name(), '', [
+                'expires' => time() - 42000,
+                'path' => $params['path'],
+                'domain' => $params['domain'],
+                'secure' => $params['secure'],
+                'httponly' => $params['httponly'],
+                'samesite' => $params['samesite'] ?? 'Lax'
+            ]);
+        }
+
+        ppv_log("✅ [PPV_Logout] Session completely destroyed, cookie deleted");
 
         // 3️⃣ Cookie cleanup
         $cookie_names = [
