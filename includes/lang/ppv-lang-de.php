@@ -400,6 +400,9 @@ return [
     'login_download_ios' => 'iOS',
     'login_open_in_chrome' => 'In Chrome öffnen',
     'login_pwa_install_hint' => 'Öffne das Browser-Menü und wähle "Zum Startbildschirm hinzufügen".',
+    'login_pwa_banner_title' => 'PunktePass App installieren',
+    'login_pwa_banner_desc' => 'Installiere die App für schnelleren Zugriff!',
+    'login_pwa_banner_install' => 'Installieren',
 
     // Footer
     'landing_footer_copyright' => '© 2025 PunktePass. Alle Rechte vorbehalten.',

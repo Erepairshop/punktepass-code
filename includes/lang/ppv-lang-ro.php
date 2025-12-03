@@ -439,6 +439,9 @@ return [
     'login_download_ios' => 'iOS',
     'login_open_in_chrome' => 'Deschide în Chrome',
     'login_pwa_install_hint' => 'Deschide meniul browserului și selectează "Adaugă pe ecranul principal".',
+    'login_pwa_banner_title' => 'Instalează aplicația PunktePass',
+    'login_pwa_banner_desc' => 'Instalează aplicația pentru acces mai rapid!',
+    'login_pwa_banner_install' => 'Instalează',
 
     // Footer
     'landing_footer_copyright' => '© 2025 PunktePass. Toate drepturile rezervate.',

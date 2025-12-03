@@ -559,6 +559,19 @@ public static function render_landing_page($atts) {
                 </div>
             </div>
             
+            <!-- PWA Install Banner (auto-popup on Chrome Android) -->
+            <div id="ppv-pwa-banner" class="ppv-pwa-banner" style="display:none;">
+                <div class="ppv-pwa-banner-content">
+                    <img src="<?php echo PPV_PLUGIN_URL; ?>assets/images/logo.png" alt="PunktePass" class="ppv-pwa-banner-icon">
+                    <div class="ppv-pwa-banner-text">
+                        <strong><?php echo PPV_Lang::t('login_pwa_banner_title', 'PunktePass App telepítése'); ?></strong>
+                        <p><?php echo PPV_Lang::t('login_pwa_banner_desc', 'Telepítsd az appot a gyorsabb hozzáféréshez!'); ?></p>
+                    </div>
+                    <button type="button" id="ppv-pwa-banner-install" class="ppv-pwa-banner-btn"><?php echo PPV_Lang::t('login_pwa_banner_install', 'Telepítés'); ?></button>
+                    <button type="button" id="ppv-pwa-banner-close" class="ppv-pwa-banner-close">&times;</button>
+                </div>
+            </div>
+
             <!-- Footer -->
             <footer class="ppv-landing-footer">
                 <p><?php echo PPV_Lang::t('landing_footer_copyright'); ?></p>
@@ -621,12 +634,16 @@ public static function render_landing_page($atts) {
             let deferredPrompt = null;
             const installBtn = document.getElementById('ppv-pwa-install-btn');
             const chromeLink = document.getElementById('ppv-android-chrome-link');
+            const pwaBanner = document.getElementById('ppv-pwa-banner');
+            const bannerInstall = document.getElementById('ppv-pwa-banner-install');
+            const bannerClose = document.getElementById('ppv-pwa-banner-close');
             const pwaInstallHint = <?php echo json_encode(PPV_Lang::t('login_pwa_install_hint', 'Nyisd meg a böngésző menüjét és válaszd a "Hozzáadás a kezdőképernyőhöz" opciót.')); ?>;
 
             // Detect device & browser
             const isAndroid = /Android/i.test(navigator.userAgent);
             const isChrome = /Chrome/i.test(navigator.userAgent) && !/Edge|OPR|Opera/i.test(navigator.userAgent);
             const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+            const bannerDismissed = localStorage.getItem('ppv_pwa_banner_dismissed');
 
             // On Android non-Chrome: show "Open in Chrome" link
             if (isAndroid && !isChrome && !isStandalone && chromeLink) {
@@ -637,14 +654,22 @@ public static function render_landing_page($atts) {
             window.addEventListener('beforeinstallprompt', (e) => {
                 e.preventDefault();
                 deferredPrompt = e;
-                // Show install button, hide chrome link
+
+                // Show install button in download section
                 if (installBtn && isAndroid && !isStandalone) {
                     installBtn.style.display = 'inline-flex';
                     if (chromeLink) chromeLink.style.display = 'none';
                 }
+
+                // AUTO-SHOW BANNER on Android Chrome (if not dismissed)
+                if (isAndroid && !isStandalone && !bannerDismissed && pwaBanner) {
+                    setTimeout(() => {
+                        pwaBanner.style.display = 'flex';
+                    }, 1500); // Show after 1.5s for better UX
+                }
             });
 
-            // Handle install button click
+            // Handle install button click (in download section)
             if (installBtn) {
                 installBtn.addEventListener('click', async () => {
                     if (!deferredPrompt) {
@@ -656,13 +681,36 @@ public static function render_landing_page($atts) {
                     console.log('PWA install outcome:', outcome);
                     deferredPrompt = null;
                     installBtn.style.display = 'none';
+                    if (pwaBanner) pwaBanner.style.display = 'none';
                 });
             }
 
-            // Hide button if already installed
+            // Handle banner install button
+            if (bannerInstall) {
+                bannerInstall.addEventListener('click', async () => {
+                    if (!deferredPrompt) return;
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    console.log('PWA install outcome:', outcome);
+                    deferredPrompt = null;
+                    if (pwaBanner) pwaBanner.style.display = 'none';
+                    if (installBtn) installBtn.style.display = 'none';
+                });
+            }
+
+            // Handle banner close
+            if (bannerClose) {
+                bannerClose.addEventListener('click', () => {
+                    if (pwaBanner) pwaBanner.style.display = 'none';
+                    localStorage.setItem('ppv_pwa_banner_dismissed', '1');
+                });
+            }
+
+            // Hide everything if already installed
             window.addEventListener('appinstalled', () => {
                 if (installBtn) installBtn.style.display = 'none';
                 if (chromeLink) chromeLink.style.display = 'none';
+                if (pwaBanner) pwaBanner.style.display = 'none';
                 deferredPrompt = null;
             });
         })();
