@@ -25,7 +25,7 @@ define('PPV_APPLE_CLIENT_ID', 'de.punktepass');
 // ========================================
 // 🐛 DEBUG MODE - SET TO false FOR PRODUCTION!
 // ========================================
-define('PPV_DEBUG', false);
+define('PPV_DEBUG', true); // ⏱️ TEMPORARILY ENABLED FOR TIMING TEST
 
 /**
  * Global debug logger - only logs when PPV_DEBUG is true
