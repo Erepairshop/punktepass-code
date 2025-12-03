@@ -243,7 +243,15 @@ class PPV_Rewards {
 
         ob_start();
         ?>
-        <script>window.PPV_STORE_ID = <?php echo intval($store->id); ?>;</script>
+        <script>
+        window.PPV_STORE_ID = <?php echo intval($store->id); ?>;
+        window.ppv_rewards_config = <?php echo wp_json_encode([
+            'base' => esc_url(rest_url('ppv/v1/')),
+            'nonce' => wp_create_nonce('wp_rest'),
+            'store_id' => $store_id,
+            'plugin_url' => defined('PPV_PLUGIN_URL') ? esc_url(PPV_PLUGIN_URL) : esc_url(plugin_dir_url(dirname(__FILE__))),
+        ]); ?>;
+        </script>
 
         <div class="ppv-einloesungen-admin" data-store-id="<?php echo esc_attr($store->id); ?>" data-currency="<?php echo esc_attr($currency); ?>">
 
