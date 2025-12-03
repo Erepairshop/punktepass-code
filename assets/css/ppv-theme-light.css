@@ -10979,6 +10979,7 @@ select.ppv-support-input {
     width: 75px;
     height: 75px;
     object-fit: contain;
+    mix-blend-mode: multiply;
 }
 
 .ppv-logo-section h1 {
@@ -11636,6 +11637,7 @@ select.ppv-support-input {
     .ppv-logo {
         width: 60px;
         height: 60px;
+        mix-blend-mode: multiply;
     }
 
     .ppv-logo-section h1 {

@@ -145,7 +145,7 @@ class PPV_Performance {
         }
 
         /* Fixed aspect ratios for common images - prevents CLS */
-        .ppv-logo, .ppv-header-logo-tiny { width: 32px; height: 32px; }
+        .ppv-logo, .ppv-header-logo-tiny { width: 32px; height: 32px; mix-blend-mode: multiply; }
         .ppv-header-avatar { width: 36px; height: 36px; border-radius: 50%; }
         .ppv-rw-store-logo { width: 48px; height: 48px; border-radius: 8px; object-fit: cover; }
         #ppv-avatar-preview { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; }
@@ -180,6 +180,7 @@ class PPV_Performance {
         .ppv-logo-section .ppv-logo {
             width: 80px;
             height: 80px;
+            mix-blend-mode: multiply;
         }
 
         /* Hide content until CSS loads */

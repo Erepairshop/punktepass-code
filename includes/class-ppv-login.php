@@ -60,7 +60,7 @@ class PPV_Login {
             .ppv-lang-btn{padding:6px 12px;background:transparent;border:none;border-radius:6px;font-size:13px;font-weight:600;color:#6B7280;cursor:pointer}
             .ppv-lang-btn.active{background:var(--pp-primary);color:white}
             .ppv-login-card{background:var(--ppv-card-glass);backdrop-filter:blur(20px);border-radius:16px;border:1px solid var(--ppv-border-glass);padding:28px}
-            @media(max-width:640px){.ppv-landing-header{padding:8px 0;padding-top:calc(8px + var(--safe-area-top))}.ppv-header-content{gap:8px;padding:0 12px}.ppv-logo{width:36px;height:36px}.ppv-logo-section{gap:8px}.ppv-logo-section h1{font-size:16px}.ppv-lang-switcher{padding:2px}.ppv-lang-btn{padding:4px 8px;font-size:12px}}
+            @media(max-width:640px){.ppv-landing-header{padding:8px 0;padding-top:calc(8px + var(--safe-area-top))}.ppv-header-content{gap:8px;padding:0 12px}.ppv-logo{width:36px;height:36px;mix-blend-mode:multiply}.ppv-logo-section{gap:8px}.ppv-logo-section h1{font-size:16px}.ppv-lang-switcher{padding:2px}.ppv-lang-btn{padding:4px 8px;font-size:12px}}
         </style>
 
         <!-- Google Fonts - async loading to not block render -->

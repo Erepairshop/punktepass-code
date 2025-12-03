@@ -814,6 +814,7 @@ html, body {
     .ppv-logo {
         width: 36px;
         height: 36px;
+        mix-blend-mode: multiply;
     }
 
     .ppv-logo-section {
@@ -901,6 +902,7 @@ html, body {
     .ppv-logo {
         width: 32px;
         height: 32px;
+        mix-blend-mode: multiply;
     }
 
     .ppv-logo-section h1 {
