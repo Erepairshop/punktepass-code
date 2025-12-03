@@ -44,7 +44,7 @@ class PPV_Login {
         <link rel="preconnect" href="https://accounts.google.com" crossorigin>
 
         <!-- ⚡ PERFORMANCE: Preload critical assets -->
-        <link rel="preload" href="<?php echo PPV_PLUGIN_URL; ?>assets/img/logo.webp" as="image" type="image/webp">
+        <link rel="preload" href="<?php echo PPV_PLUGIN_URL; ?>assets/img/logo.webp?v=2" as="image" type="image/webp">
 
         <!-- ⚡ PERFORMANCE: Inline Critical CSS for instant first paint -->
         <style id="ppv-critical-css">
@@ -275,7 +275,7 @@ public static function render_landing_page($atts) {
             <header class="ppv-landing-header">
                 <div class="ppv-header-content">
                     <div class="ppv-logo-section">
-                        <img src="<?php echo PPV_PLUGIN_URL; ?>assets/img/logo.webp" alt="PunktePass" class="ppv-logo" fetchpriority="high">
+                        <img src="<?php echo PPV_PLUGIN_URL; ?>assets/img/logo.webp?v=2" alt="PunktePass" class="ppv-logo" fetchpriority="high">
                         <h1>PunktePass</h1>
                     </div>
                     <p class="ppv-slogan"><?php echo PPV_Lang::t('landing_slogan'); ?></p>
