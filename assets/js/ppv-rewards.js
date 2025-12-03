@@ -233,7 +233,10 @@
     try {
       const res = await fetch(`${base}einloesungen/update`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-WP-Nonce': config.nonce
+        },
         body: JSON.stringify({ id, status })
       });
       const data = await res.json();
@@ -376,7 +379,10 @@
     try {
       const res = await fetch(`${base}einloesungen/monthly-receipt`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-WP-Nonce': config.nonce
+        },
         body: JSON.stringify({ month: parseInt(month), year: parseInt(year) })
       });
       const data = await res.json();
@@ -417,7 +423,10 @@
     try {
       const res = await fetch(`${base}einloesungen/date-receipt`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-WP-Nonce': config.nonce
+        },
         body: JSON.stringify({ date_from: dateFrom, date_to: dateTo })
       });
       const data = await res.json();
@@ -511,7 +520,10 @@
     try {
       const res = await fetch(`${base}einloesungen/generate-receipt`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-WP-Nonce': config.nonce
+        },
         body: JSON.stringify({ redeem_id: redeemId })
       });
       const data = await res.json();

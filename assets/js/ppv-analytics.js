@@ -3,7 +3,11 @@
  * ✅ Fully translated
  * ✅ Supports: German, Hungarian, Romanian
  * ✅ getLabels() function
+ * ✅ Turbo-safe
  */
+
+// Turbo-safe: Only define class if not already defined
+if (typeof PPV_Analytics === 'undefined') {
 
 class PPV_Analytics {
   constructor() {
@@ -634,8 +638,10 @@ class PPV_Analytics {
   }
 }
 
-// Global instance
-window.ppv_analytics = new PPV_Analytics();
+} // End Turbo-safe if block
+
+// Global instance (only create if not exists)
+window.ppv_analytics = window.ppv_analytics || new PPV_Analytics();
 
 // ✅ FIX: Don't auto-init on DOMContentLoaded - MyPoints handles this
 // The analytics container is dynamically created by my-points.js after rendering,

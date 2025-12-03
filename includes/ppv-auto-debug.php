@@ -220,91 +220,97 @@ class PPV_Auto_Debug {
 }
 
 // ============================================================
-// ✅ Aktiválás
+// ✅ Aktiválás - ONLY IF PPV_DEBUG IS TRUE
 // ============================================================
-add_action('plugins_loaded', ['PPV_Auto_Debug', 'enable']);
-add_action('init', ['PPV_Auto_Debug', 'run_health_checks']);
+if (defined('PPV_DEBUG') && PPV_DEBUG === true) {
+    add_action('plugins_loaded', ['PPV_Auto_Debug', 'enable']);
+    add_action('init', ['PPV_Auto_Debug', 'run_health_checks']);
+}
 
 // ============================================================
-// ⏱️ PERFORMANCE TIMING - Page load time measurement
+// ⏱️ PERFORMANCE TIMING - DISABLED IN PRODUCTION
 // ============================================================
-add_action('wp_footer', function() {
-    // Use the early-defined constants for accurate timing
-    $start_time = defined('PPV_PAGE_START_TIME') ? PPV_PAGE_START_TIME : microtime(true);
-    $start_memory = defined('PPV_PAGE_START_MEMORY') ? PPV_PAGE_START_MEMORY : memory_get_usage();
+if (defined('PPV_DEBUG') && PPV_DEBUG === true) {
+    add_action('wp_footer', function() {
+        // Use the early-defined constants for accurate timing
+        $start_time = defined('PPV_PAGE_START_TIME') ? PPV_PAGE_START_TIME : microtime(true);
+        $start_memory = defined('PPV_PAGE_START_MEMORY') ? PPV_PAGE_START_MEMORY : memory_get_usage();
 
-    $end_time = microtime(true);
-    $duration_ms = round(($end_time - $start_time) * 1000, 2);
-    $memory_mb = round((memory_get_usage() - $start_memory) / 1024 / 1024, 2);
-    $peak_memory_mb = round(memory_get_peak_usage() / 1024 / 1024, 2);
-    $query_count = get_num_queries();
-    $page = $_SERVER['REQUEST_URI'] ?? '/';
+        $end_time = microtime(true);
+        $duration_ms = round(($end_time - $start_time) * 1000, 2);
+        $memory_mb = round((memory_get_usage() - $start_memory) / 1024 / 1024, 2);
+        $peak_memory_mb = round(memory_get_peak_usage() / 1024 / 1024, 2);
+        $query_count = get_num_queries();
+        $page = $_SERVER['REQUEST_URI'] ?? '/';
 
-    $timing_data = [
-        'page' => $page,
-        'duration_ms' => $duration_ms,
-        'queries' => $query_count,
-        'memory_mb' => $memory_mb,
-        'peak_memory_mb' => $peak_memory_mb
-    ];
+        $timing_data = [
+            'page' => $page,
+            'duration_ms' => $duration_ms,
+            'queries' => $query_count,
+            'memory_mb' => $memory_mb,
+            'peak_memory_mb' => $peak_memory_mb
+        ];
 
-    // Console output
-    echo "<script>\n";
-    echo "console.log('%c⏱️ PPV Performance', 'color: #00ff00; font-weight: bold', " . json_encode($timing_data) . ");\n";
-    if ($duration_ms > 1000) {
-        echo "console.warn('🐢 SLOW PAGE: {$duration_ms}ms');\n";
-    }
-    echo "</script>\n";
+        // Console output
+        echo "<script>\n";
+        echo "console.log('%c⏱️ PPV Performance', 'color: #00ff00; font-weight: bold', " . json_encode($timing_data) . ");\n";
+        if ($duration_ms > 1000) {
+            echo "console.warn('🐢 SLOW PAGE: {$duration_ms}ms');\n";
+        }
+        echo "</script>\n";
 
-    // HTML comment
-    echo "<!-- ⏱️ PPV: {$duration_ms}ms | {$query_count} queries | {$peak_memory_mb}MB -->\n";
-}, 9999);
+        // HTML comment
+        echo "<!-- ⏱️ PPV: {$duration_ms}ms | {$query_count} queries | {$peak_memory_mb}MB -->\n";
+    }, 9999);
+}
 
 /**
  * ============================================================
- *  🧠 SMART TRACE MODE – minden PHP hívás automatikusan felismeri a forrást
+ *  🧠 SMART TRACE MODE - DISABLED IN PRODUCTION
  * ============================================================
  */
-add_action('init', function () {
-    if (!class_exists('PPV_Auto_Debug') || defined('PPV_SMART_TRACE_ACTIVE')) return;
-    define('PPV_SMART_TRACE_ACTIVE', true);
+if (defined('PPV_DEBUG') && PPV_DEBUG === true) {
+    add_action('init', function () {
+        if (!class_exists('PPV_Auto_Debug') || defined('PPV_SMART_TRACE_ACTIVE')) return;
+        define('PPV_SMART_TRACE_ACTIVE', true);
 
-    PPV_Auto_Debug::log('🧠 SMART TRACE MODE aktiviert');
+        PPV_Auto_Debug::log('🧠 SMART TRACE MODE aktiviert');
 
-    // 🔹 Globális trace helper
-    if (!function_exists('ppv_trace')) {
-        function ppv_trace($context = null) {
-            $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 5);
-            $origin = $trace[1] ?? $trace[0] ?? [];
-            $class  = $origin['class']  ?? '(no class)';
-            $func   = $origin['function'] ?? '(no func)';
-            $file   = basename($origin['file'] ?? '(no file)');
-            $line   = $origin['line']   ?? 0;
+        // 🔹 Globális trace helper
+        if (!function_exists('ppv_trace')) {
+            function ppv_trace($context = null) {
+                $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 5);
+                $origin = $trace[1] ?? $trace[0] ?? [];
+                $class  = $origin['class']  ?? '(no class)';
+                $func   = $origin['function'] ?? '(no func)';
+                $file   = basename($origin['file'] ?? '(no file)');
+                $line   = $origin['line']   ?? 0;
 
-            $session = sprintf(
-                "[user=%s | store=%s | pos=%s]",
-                $_SESSION['ppv_user_id'] ?? get_current_user_id() ?? '–',
-                $_SESSION['ppv_store_id'] ?? '–',
-                ($_SESSION['ppv_is_pos'] ?? false) ? 'yes' : 'no'
-            );
+                $session = sprintf(
+                    "[user=%s | store=%s | pos=%s]",
+                    $_SESSION['ppv_user_id'] ?? get_current_user_id() ?? '–',
+                    $_SESSION['ppv_store_id'] ?? '–',
+                    ($_SESSION['ppv_is_pos'] ?? false) ? 'yes' : 'no'
+                );
 
-            $msg = "🧩 TRACE → {$class}::{$func}() in {$file}:{$line} {$session}";
-            if ($context !== null) {
-                $msg .= " | Context: " . (is_array($context) ? json_encode($context, JSON_UNESCAPED_UNICODE) : $context);
+                $msg = "🧩 TRACE → {$class}::{$func}() in {$file}:{$line} {$session}";
+                if ($context !== null) {
+                    $msg .= " | Context: " . (is_array($context) ? json_encode($context, JSON_UNESCAPED_UNICODE) : $context);
+                }
+                PPV_Auto_Debug::log($msg);
             }
-            PPV_Auto_Debug::log($msg);
         }
-    }
 
-    // 🔹 Automatikus hook-figyelés
-    add_action('all', function ($tag = null) {
-        static $last = null;
-        if ($tag === $last) return;
-        $last = $tag;
-        if (strpos($tag, 'wp_') === 0 || strpos($tag, 'ppv_') === 0) {
-            $bt = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3);
-            $origin = basename($bt[0]['file'] ?? '(no file)');
-            PPV_Auto_Debug::log("🔁 HOOK → {$tag} (source: {$origin})");
-        }
+        // 🔹 Automatikus hook-figyelés
+        add_action('all', function ($tag = null) {
+            static $last = null;
+            if ($tag === $last) return;
+            $last = $tag;
+            if (strpos($tag, 'wp_') === 0 || strpos($tag, 'ppv_') === 0) {
+                $bt = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3);
+                $origin = basename($bt[0]['file'] ?? '(no file)');
+                PPV_Auto_Debug::log("🔁 HOOK → {$tag} (source: {$origin})");
+            }
+        });
     });
-});
+}

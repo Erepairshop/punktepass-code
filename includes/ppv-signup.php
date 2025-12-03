@@ -176,7 +176,7 @@ class PPV_Signup {
             <header class="ppv-landing-header">
                 <div class="ppv-header-content">
                     <div class="ppv-logo-section">
-                        <img src="<?php echo PPV_PLUGIN_URL; ?>assets/img/logo.webp" alt="PunktePass" class="ppv-logo">
+                        <img src="<?php echo PPV_PLUGIN_URL; ?>assets/img/logo.webp?v=2" alt="PunktePass" class="ppv-logo">
                         <h1>PunktePass</h1>
                     </div>
                     <p class="ppv-slogan"><?php echo PPV_Lang::t('signup_slogan'); ?></p>
@@ -422,15 +422,6 @@ class PPV_Signup {
 
         .ppv-header-content {
             padding: 0 16px !important;
-        }
-
-        .ppv-logo {
-            width: 36px !important;
-            height: 36px !important;
-        }
-
-        .ppv-logo-section h1 {
-            font-size: 18px !important;
         }
 
         .ppv-slogan {

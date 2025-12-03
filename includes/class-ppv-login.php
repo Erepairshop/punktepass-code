@@ -44,7 +44,7 @@ class PPV_Login {
         <link rel="preconnect" href="https://accounts.google.com" crossorigin>
 
         <!-- ⚡ PERFORMANCE: Preload critical assets -->
-        <link rel="preload" href="<?php echo PPV_PLUGIN_URL; ?>assets/img/logo.webp" as="image" type="image/webp">
+        <link rel="preload" href="<?php echo PPV_PLUGIN_URL; ?>assets/img/logo.webp?v=2" as="image" type="image/webp">
 
         <!-- ⚡ PERFORMANCE: Inline Critical CSS for instant first paint -->
         <style id="ppv-critical-css">
@@ -53,14 +53,11 @@ class PPV_Login {
             .ppv-landing-container{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;height:100%;height:100dvh;display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:none}
             .ppv-landing-header{position:sticky;top:0;z-index:100;background:var(--ppv-card-glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--ppv-border-glass);padding:10px 0;padding-top:calc(10px + var(--safe-area-top));flex-shrink:0}
             .ppv-header-content{max-width:1200px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;gap:24px}
-            .ppv-logo-section{display:flex;align-items:center;gap:12px}
-            .ppv-logo{width:48px;height:48px;object-fit:contain}
-            .ppv-logo-section h1{font-size:20px;font-weight:700;color:var(--ppv-text);margin:0}
             .ppv-lang-switcher{display:flex;gap:4px;background:var(--ppv-bg);border:1px solid #E5E7EB;border-radius:8px;padding:4px}
             .ppv-lang-btn{padding:6px 12px;background:transparent;border:none;border-radius:6px;font-size:13px;font-weight:600;color:#6B7280;cursor:pointer}
             .ppv-lang-btn.active{background:var(--pp-primary);color:white}
             .ppv-login-card{background:var(--ppv-card-glass);backdrop-filter:blur(20px);border-radius:16px;border:1px solid var(--ppv-border-glass);padding:28px}
-            @media(max-width:640px){.ppv-landing-header{padding:8px 0;padding-top:calc(8px + var(--safe-area-top))}.ppv-header-content{gap:8px;padding:0 12px}.ppv-logo{width:36px;height:36px}.ppv-logo-section{gap:8px}.ppv-logo-section h1{font-size:16px}.ppv-lang-switcher{padding:2px}.ppv-lang-btn{padding:4px 8px;font-size:12px}}
+            @media(max-width:640px){.ppv-landing-header{padding:8px 0;padding-top:calc(8px + var(--safe-area-top))}.ppv-header-content{gap:8px;padding:0 12px}.ppv-lang-switcher{padding:2px}.ppv-lang-btn{padding:4px 8px;font-size:12px}}
         </style>
 
         <!-- Google Fonts - async loading to not block render -->
@@ -252,9 +249,25 @@ public static function check_already_logged_in() {
 
     // 🔐 USER already logged in (only if no store association)
     if (!empty($_SESSION['ppv_user_id']) && ($_SESSION['ppv_user_type'] ?? '') === 'user') {
-        ppv_log("🔄 [PPV_Login] User redirect from login page (session check)");
-        wp_safe_redirect(home_url('/user_dashboard'));
-        exit;
+        // ✅ FIX: Verify user actually exists in database before redirect
+        global $wpdb;
+        $user_exists = $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM {$wpdb->prefix}ppv_users WHERE id = %d AND active = 1 LIMIT 1",
+            intval($_SESSION['ppv_user_id'])
+        ));
+
+        if ($user_exists) {
+            ppv_log("🔄 [PPV_Login] User redirect from login page (session check, user verified)");
+            wp_safe_redirect(home_url('/user_dashboard'));
+            exit;
+        } else {
+            // ❌ Invalid session - clear it
+            ppv_log("⚠️ [PPV_Login] Invalid ppv_user_id={$_SESSION['ppv_user_id']} - user not found, clearing session");
+            unset($_SESSION['ppv_user_id'], $_SESSION['ppv_user_email'], $_SESSION['ppv_user_type']);
+            // Also clear the cookie
+            $cookie_domain = !empty($_SERVER['HTTP_HOST']) ? str_replace('www.', '', $_SERVER['HTTP_HOST']) : '';
+            setcookie('ppv_user_token', '', time() - 3600, '/', $cookie_domain, true, true);
+        }
     }
 
     // ⚠️ If we reach here, session restore failed or no valid login
@@ -275,7 +288,7 @@ public static function render_landing_page($atts) {
             <header class="ppv-landing-header">
                 <div class="ppv-header-content">
                     <div class="ppv-logo-section">
-                        <img src="<?php echo PPV_PLUGIN_URL; ?>assets/img/logo.webp" alt="PunktePass" class="ppv-logo" fetchpriority="high">
+                        <img src="<?php echo PPV_PLUGIN_URL; ?>assets/img/logo.webp?v=2" alt="PunktePass" class="ppv-logo" fetchpriority="high">
                         <h1>PunktePass</h1>
                     </div>
                     <p class="ppv-slogan"><?php echo PPV_Lang::t('landing_slogan'); ?></p>

@@ -5,6 +5,32 @@
  * ✅ Global 401 handler - automatikus login redirect
  */
 
+// ============================================================
+// 🔇 PRODUCTION MODE - Disable all console output
+// ============================================================
+(function() {
+  // Check if debug mode is enabled via PHP
+  const isDebug = window.PPV_DEBUG === true;
+
+  if (!isDebug) {
+    // Save original console methods (for emergencies)
+    window._console = {
+      log: console.log,
+      warn: console.warn,
+      error: console.error,
+      debug: console.debug,
+      info: console.info
+    };
+
+    // Override console methods to do nothing
+    console.log = function() {};
+    console.debug = function() {};
+    console.info = function() {};
+    // Keep warn and error for critical issues
+    // console.warn = function() {};
+    // console.error = function() {};
+  }
+})();
 
 // ============================================================
 // 🔐 GLOBAL 401 HANDLER - Session expired redirect
