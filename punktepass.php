@@ -410,21 +410,24 @@ add_action('wp_enqueue_scripts', function() {
 add_action('wp_enqueue_scripts', function() {
     if (ppv_is_login_page()) return;
 
-    // 🚀 Turbo.js for SPA-like navigation (no full page reloads)
+    // 🚀 Turbo.js - TEMPORARILY DISABLED for debugging
+    // The ESM module format causes issues with WordPress script loading
+    // TODO: Find a better Turbo integration or use UMD version
+    /*
     wp_enqueue_script(
         'turbo',
         'https://cdn.jsdelivr.net/npm/@hotwired/turbo@8.0.4/dist/turbo.es2017-esm.js',
         [],
         '8.0.4',
-        false  // In head, not footer - must load early
+        false
     );
-    // Add type="module" to Turbo script
     add_filter('script_loader_tag', function($tag, $handle) {
         if ($handle === 'turbo') {
             return str_replace(' src=', ' type="module" src=', $tag);
         }
         return $tag;
     }, 10, 2);
+    */
 
     wp_enqueue_script(
         'ppv-theme-loader',
