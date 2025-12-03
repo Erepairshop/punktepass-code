@@ -116,6 +116,9 @@ html, body {
     width: 48px;
     height: 48px;
     object-fit: contain;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
 }
 
 .ppv-logo-section h1 {
