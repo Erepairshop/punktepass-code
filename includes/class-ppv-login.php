@@ -54,7 +54,7 @@ class PPV_Login {
             .ppv-landing-header{position:sticky;top:0;z-index:100;background:var(--ppv-card-glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--ppv-border-glass);padding:10px 0;padding-top:calc(10px + var(--safe-area-top));flex-shrink:0}
             .ppv-header-content{max-width:1200px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;gap:24px}
             .ppv-logo-section{display:flex;align-items:center;gap:12px}
-            .ppv-logo{width:48px;height:48px;object-fit:contain}
+            .ppv-logo{width:48px;height:48px;object-fit:contain;mix-blend-mode:multiply}
             .ppv-logo-section h1{font-size:20px;font-weight:700;color:var(--ppv-text);margin:0}
             .ppv-lang-switcher{display:flex;gap:4px;background:var(--ppv-bg);border:1px solid #E5E7EB;border-radius:8px;padding:4px}
             .ppv-lang-btn{padding:6px 12px;background:transparent;border:none;border-radius:6px;font-size:13px;font-weight:600;color:#6B7280;cursor:pointer}
