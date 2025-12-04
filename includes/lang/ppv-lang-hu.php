@@ -890,6 +890,7 @@ return [
 'scanner_password' => 'Jelszó',
 'enter_password' => 'Jelszó megadása',
 'generate' => 'Generálás',
+'scanner_filiale' => 'Fiók hozzárendelése',
 'create' => 'Létrehozás',
 'email_password_required' => 'E-mail és jelszó kötelező',
 'creating' => 'Létrehozás...',

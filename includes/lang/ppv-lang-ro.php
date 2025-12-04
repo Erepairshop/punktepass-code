@@ -903,6 +903,7 @@ return [
 'scanner_password' => 'Parolă',
 'enter_password' => 'Introduceți parola',
 'generate' => 'Generare',
+'scanner_filiale' => 'Atribuie filiala',
 'create' => 'Creare',
 'email_password_required' => 'E-mail și parolă sunt obligatorii',
 'creating' => 'Creare...',

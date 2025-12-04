@@ -915,6 +915,7 @@ return [
 'scanner_password' => 'Passwort',
 'enter_password' => 'Passwort eingeben',
 'generate' => 'Generieren',
+'scanner_filiale' => 'Filiale zuweisen',
 'create' => 'Erstellen',
 'email_password_required' => 'E-Mail und Passwort sind erforderlich',
 'creating' => 'Erstellen...',
