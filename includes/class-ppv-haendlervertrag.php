@@ -299,9 +299,11 @@ class PPV_Haendlervertrag {
         $steuernummer = esc_html($data['steuernummer'] ?? '-');
         $imei = esc_html($data['imei'] ?? '-');
         $datumHaendler = esc_html($data['datumHaendler'] ?? date('Y-m-d'));
+        $datumAnbieter = esc_html($data['datumAnbieter'] ?? date('Y-m-d'));
         $zubehoer = is_array($data['zubehoer'] ?? []) ? implode(', ', $data['zubehoer']) : esc_html($data['zubehoer'] ?? '-');
         $zustand = esc_html($data['zustand'] ?? '-');
         $signatureHaendler = $data['signatureHaendler'] ?? '';
+        $signatureAnbieter = $data['signatureAnbieter'] ?? '';
 
         return "
 <!DOCTYPE html>
@@ -309,112 +311,129 @@ class PPV_Haendlervertrag {
 <head>
     <meta charset='UTF-8'>
     <style>
-        @page { margin: 20mm; }
+        @page { margin: 12mm; }
         body {
             font-family: DejaVu Sans, Arial, sans-serif;
-            font-size: 11pt;
-            line-height: 1.5;
+            font-size: 9pt;
+            line-height: 1.3;
             color: #333;
         }
         .header {
             text-align: center;
-            border-bottom: 3px solid #00bfff;
-            padding-bottom: 15px;
-            margin-bottom: 20px;
+            border-bottom: 2px solid #00bfff;
+            padding-bottom: 8px;
+            margin-bottom: 10px;
         }
         .header h1 {
             color: #00bfff;
-            font-size: 22pt;
-            margin: 0 0 5px 0;
+            font-size: 16pt;
+            margin: 0 0 3px 0;
         }
         .header p {
             color: #666;
             margin: 0;
+            font-size: 9pt;
+        }
+        .two-col {
+            width: 100%;
+            margin-bottom: 8px;
+        }
+        .two-col td {
+            width: 50%;
+            vertical-align: top;
+            padding-right: 10px;
         }
         .section {
-            margin-bottom: 20px;
+            margin-bottom: 8px;
         }
         .section-title {
             background: #00bfff;
             color: white;
-            padding: 8px 12px;
-            font-size: 12pt;
+            padding: 4px 8px;
+            font-size: 9pt;
             font-weight: bold;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
         }
         .info-box {
             background: #f5f5f5;
-            padding: 12px;
-            border-left: 4px solid #00bfff;
-        }
-        .field {
-            margin-bottom: 6px;
-        }
-        .field-label {
-            font-weight: bold;
-            color: #555;
-            display: inline-block;
-            width: 140px;
-        }
-        .field-value {
-            color: #333;
+            padding: 6px 8px;
+            border-left: 3px solid #00bfff;
+            font-size: 8pt;
         }
         .test-phase {
             background: #e8f5e9;
-            padding: 12px;
-            border-left: 4px solid #22c55e;
-            margin: 15px 0;
+            padding: 6px 8px;
+            border-left: 3px solid #22c55e;
+            margin: 8px 0;
+            font-size: 8pt;
         }
         .test-phase h3 {
             color: #22c55e;
-            margin: 0 0 8px 0;
+            margin: 0 0 4px 0;
+            font-size: 9pt;
         }
         .geraete-box {
             background: #f9f9f9;
-            padding: 12px;
+            padding: 6px 8px;
             border: 1px solid #ddd;
-            margin: 10px 0;
+            font-size: 8pt;
         }
         .price-info {
             background: #fff8e1;
-            padding: 12px;
-            border-left: 4px solid #f59e0b;
-            margin: 15px 0;
+            padding: 6px 8px;
+            border-left: 3px solid #f59e0b;
+            margin: 8px 0;
+            font-size: 8pt;
         }
-        .signature-section {
-            margin-top: 30px;
-            page-break-inside: avoid;
+        .signatures {
+            width: 100%;
+            margin-top: 15px;
+        }
+        .signatures td {
+            width: 50%;
+            vertical-align: top;
+            padding: 5px;
         }
         .signature-box {
             border: 1px solid #ccc;
-            padding: 15px;
-            margin-top: 10px;
-            min-height: 100px;
+            padding: 8px;
+            min-height: 70px;
+            text-align: center;
+        }
+        .signature-box h4 {
+            margin: 0 0 5px 0;
+            font-size: 9pt;
+            color: #333;
         }
         .signature-img {
-            max-width: 250px;
-            max-height: 80px;
+            max-width: 180px;
+            max-height: 50px;
+        }
+        .signature-date {
+            font-size: 8pt;
+            color: #666;
+            margin-top: 5px;
         }
         .footer {
-            margin-top: 30px;
-            padding-top: 15px;
+            margin-top: 10px;
+            padding-top: 8px;
             border-top: 1px solid #ddd;
             text-align: center;
-            font-size: 9pt;
+            font-size: 7pt;
             color: #666;
         }
-        table.device-table {
+        table.data-table {
             width: 100%;
             border-collapse: collapse;
-            margin: 10px 0;
+            font-size: 8pt;
         }
-        table.device-table td {
-            padding: 6px 10px;
+        table.data-table td {
+            padding: 3px 6px;
             border: 1px solid #ddd;
         }
-        table.device-table td:first-child {
+        table.data-table td:first-child {
             font-weight: bold;
-            width: 150px;
+            width: 120px;
             background: #f9f9f9;
         }
     </style>
@@ -425,78 +444,77 @@ class PPV_Haendlervertrag {
         <p>30 Tage kostenlos testen + Geräteübergabe</p>
     </div>
 
-    <div class='section'>
-        <div class='section-title'>Anbieter (Dienstleister)</div>
-        <div class='info-box'>
-            <strong>Erik Borota</strong><br>
-            PunktePass<br>
-            Siedlungsring 51<br>
-            89415 Lauingen<br><br>
-            Telefon: 0176 84831021<br>
-            E-Mail: info@punktepass.de<br>
-            USt-IdNr.: DE308874569
-        </div>
-    </div>
-
-    <div class='section'>
-        <div class='section-title'>Händlerdaten</div>
-        <table class='device-table'>
-            <tr><td>Händlername</td><td>$haendlername</td></tr>
-            <tr><td>Adresse</td><td>$adresse</td></tr>
-            <tr><td>PLZ / Ort</td><td>$plz $ort</td></tr>
-            <tr><td>Ansprechpartner</td><td>$ansprechpartner</td></tr>
-            <tr><td>E-Mail</td><td>$email</td></tr>
-            <tr><td>Telefon</td><td>$telefon</td></tr>
-            <tr><td>Steuernummer</td><td>$steuernummer</td></tr>
-        </table>
-    </div>
+    <table class='two-col'>
+        <tr>
+            <td>
+                <div class='section-title'>Anbieter</div>
+                <div class='info-box'>
+                    <strong>Erik Borota</strong> – PunktePass<br>
+                    Siedlungsring 51, 89415 Lauingen<br>
+                    Tel: 0176 84831021 | info@punktepass.de<br>
+                    USt-IdNr.: DE308874569
+                </div>
+            </td>
+            <td>
+                <div class='section-title'>Händler</div>
+                <div class='info-box'>
+                    <strong>$haendlername</strong><br>
+                    $adresse, $plz $ort<br>
+                    $ansprechpartner | $telefon<br>
+                    $email" . ($steuernummer != '-' ? "<br>St-Nr: $steuernummer" : "") . "
+                </div>
+            </td>
+        </tr>
+    </table>
 
     <div class='test-phase'>
         <h3>30 Tage kostenlose Testphase</h3>
-        <p>Mit dieser Anmeldung wurde eine <strong>30-tägige kostenlose Testphase</strong> gestartet.
-        Der Händler erhält ein Smartphone und einen Handy-Ständer als Leihgabe zur Nutzung des PunktePass Systems.
-        Die Testphase kann jederzeit gekündigt werden.</p>
+        Mit dieser Anmeldung wird eine 30-tägige kostenlose Testphase gestartet. Der Händler erhält ein Smartphone und einen Handy-Ständer als Leihgabe. Die Testphase kann jederzeit gekündigt werden.
     </div>
 
     <div class='section'>
         <div class='section-title'>Bereitgestellte Geräte (Leihgabe)</div>
         <div class='geraete-box'>
-            <p>• <strong>Smartphone:</strong> Xiaomi Redmi A5 – 4G – 64GB (Neu)<br>
-            • <strong>Handy-Ständer</strong></p>
-            <p style='margin-top: 10px; font-size: 10pt; color: #666;'>
-            Beide Geräte bleiben Eigentum des Anbieters. Bei Kündigung oder Vertragsende sind sie innerhalb von 7 Tagen zurückzugeben, ansonsten wird der Neuwert berechnet.</p>
+            • <strong>Smartphone:</strong> Xiaomi Redmi A5 – 4G – 64GB (Neu) &nbsp;&nbsp; • <strong>Handy-Ständer</strong><br>
+            <span style='color: #666; font-size: 7pt;'>Beide Geräte bleiben Eigentum des Anbieters. Bei Kündigung/Vertragsende innerhalb 7 Tagen zurückzugeben.</span>
         </div>
     </div>
 
     <div class='section'>
-        <div class='section-title'>Übergabeprotokoll Geräte</div>
-        <table class='device-table'>
-            <tr><td>Smartphone</td><td>Xiaomi Redmi A5 – 4G – 64GB</td></tr>
-            <tr><td>IMEI</td><td>$imei</td></tr>
-            <tr><td>Ständer</td><td>Handy-Ständer (Eigentum des Anbieters)</td></tr>
-            <tr><td>Zubehör</td><td>$zubehoer</td></tr>
-            <tr><td>Zustand</td><td>$zustand</td></tr>
+        <div class='section-title'>Übergabeprotokoll</div>
+        <table class='data-table'>
+            <tr><td>Smartphone</td><td>Xiaomi Redmi A5 – 4G – 64GB</td><td style='width:80px;'>IMEI</td><td>$imei</td></tr>
+            <tr><td>Ständer</td><td>Handy-Ständer</td><td>Zubehör</td><td>$zubehoer</td></tr>
+            <tr><td>Zustand</td><td colspan='3'>$zustand</td></tr>
         </table>
     </div>
 
     <div class='price-info'>
-        <strong>Preise nach der Testphase (zur Information):</strong><br>
-        Nach der Testphase: <strong>30 € netto / Monat</strong> (Mindestlaufzeit: 6 Monate)<br><br>
-        <small style='color: #666;'><strong>Hinweis:</strong> Der aktuelle Preis von 30 € netto/Monat gilt ausschließlich für die in einem späteren Vertrag vereinbarte Laufzeit. Bei einer Vertragsverlängerung kann der Preis angepasst werden. Es gibt keine automatische Verlängerung.</small>
+        <strong>Preise nach Testphase:</strong> 30 € netto/Monat (Mindestlaufzeit: 6 Monate)<br>
+        <span style='font-size: 7pt; color: #666;'>Hinweis: Preis gilt nur für die Vertragslaufzeit. Bei Verlängerung kann der Preis angepasst werden. Keine automatische Verlängerung.</span>
     </div>
 
-    <div class='signature-section'>
-        <div class='section-title'>Unterschrift Händler</div>
-        <div class='signature-box'>
-            " . (!empty($signatureHaendler) ? "<img src='$signatureHaendler' class='signature-img' alt='Unterschrift'><br>" : "") . "
-            <p style='margin-top: 10px;'><strong>Datum:</strong> $datumHaendler</p>
-            <p style='font-size: 9pt; color: #666;'>Digital unterzeichnet</p>
-        </div>
-    </div>
+    <table class='signatures'>
+        <tr>
+            <td>
+                <div class='signature-box'>
+                    <h4>Unterschrift Händler</h4>
+                    " . (!empty($signatureHaendler) ? "<img src='$signatureHaendler' class='signature-img' alt='Unterschrift Händler'>" : "<div style='height:40px;'></div>") . "
+                    <div class='signature-date'>Datum: $datumHaendler</div>
+                </div>
+            </td>
+            <td>
+                <div class='signature-box'>
+                    <h4>Unterschrift Anbieter</h4>
+                    " . (!empty($signatureAnbieter) ? "<img src='$signatureAnbieter' class='signature-img' alt='Unterschrift Anbieter'>" : "<div style='height:40px;'></div>") . "
+                    <div class='signature-date'>Datum: $datumAnbieter</div>
+                </div>
+            </td>
+        </tr>
+    </table>
 
     <div class='footer'>
-        <p>© " . date('Y') . " PunktePass | Erik Borota | info@punktepass.de</p>
-        <p>Dieses Dokument wurde digital erstellt am " . date('d.m.Y H:i') . " Uhr</p>
+        © " . date('Y') . " PunktePass | Erik Borota | info@punktepass.de | Dokument erstellt am " . date('d.m.Y H:i') . " Uhr
     </div>
 </body>
 </html>";
