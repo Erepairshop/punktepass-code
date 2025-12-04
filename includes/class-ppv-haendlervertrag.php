@@ -74,6 +74,9 @@ class PPV_Haendlervertrag {
         // Build email content
         $email_body = self::build_email_body($data);
 
+        // Save contract to server
+        self::save_contract_to_server($haendlername, $email_body, $data);
+
         // Send to admin
         $admin_email = 'info@punktepass.de';
         $subject = "Neuer Händlervertrag - $haendlername";
@@ -100,6 +103,36 @@ class PPV_Haendlervertrag {
         }
 
         return new WP_Error('email_failed', 'E-Mail konnte nicht gesendet werden', ['status' => 500]);
+    }
+
+    /**
+     * Save contract copy to server
+     */
+    private static function save_contract_to_server($haendlername, $html_content, $data) {
+        // Create contracts directory if it doesn't exist
+        $upload_dir = wp_upload_dir();
+        $contracts_dir = $upload_dir['basedir'] . '/punktepass-vertraege';
+
+        if (!file_exists($contracts_dir)) {
+            wp_mkdir_p($contracts_dir);
+            // Add .htaccess to protect directory
+            file_put_contents($contracts_dir . '/.htaccess', 'deny from all');
+        }
+
+        // Create safe filename from händlername
+        $safe_name = sanitize_file_name($haendlername);
+        $safe_name = preg_replace('/[^a-zA-Z0-9_-]/', '_', $safe_name);
+        $date = date('Y-m-d_H-i-s');
+        $filename = "{$safe_name}_{$date}.html";
+
+        // Save HTML contract
+        file_put_contents($contracts_dir . '/' . $filename, $html_content);
+
+        // Also save JSON data for easy processing
+        $json_filename = "{$safe_name}_{$date}.json";
+        file_put_contents($contracts_dir . '/' . $json_filename, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+
+        return $filename;
     }
 
     /**
@@ -151,11 +184,13 @@ class PPV_Haendlervertrag {
         <div class='content'>
             <div class='section'>
                 <div class='section-title'>Anbieter (Dienstleister)</div>
-                <p><strong>Erik Borota – PunktePass</strong><br>
-                Adresse: Lauingen, Deutschland<br>
+                <p><strong>Erik Borota</strong><br>
+                PunktePass<br>
+                Siedlungsring 51<br>
+                89415 Lauingen<br><br>
+                Telefon: 0176 84831021<br>
                 E-Mail: info@punktepass.de<br>
-                Telefon: +49 176 61860854<br>
-                Steuernummer: 151/219/51051</p>
+                USt-IdNr.: DE308874569</p>
             </div>
 
             <div class='section'>
@@ -179,12 +214,16 @@ class PPV_Haendlervertrag {
                     <p>Der Händler erhält eine 30-tägige Testphase kostenlos. Erfolgt bis zum Ende dieser Phase keine Kündigung, tritt der 6-Monatsvertrag in Kraft.</p>
                 </div>
                 <div class='term'>
-                    <h4>§3 Bereitgestelltes Gerät – Leihgabe</h4>
-                    <p>Der Händler erhält für die Laufzeit ein Gerät zur Nutzung des PunktePass Systems: Xiaomi Redmi A5 – 4G – 64GB (Neu). Das Gerät bleibt Eigentum des Anbieters.</p>
+                    <h4>§3 Bereitgestellte Geräte – Leihgabe</h4>
+                    <p>Der Händler erhält für die Laufzeit folgende Geräte zur Nutzung des PunktePass Systems:<br>
+                    • Smartphone: Xiaomi Redmi A5 – 4G – 64GB (Neu)<br>
+                    • Handy-Ständer<br>
+                    Beide Geräte bleiben Eigentum des Anbieters und sind bei Vertragsende zurückzugeben.</p>
                 </div>
                 <div class='term'>
                     <h4>§4 Gebühren & Zahlung</h4>
-                    <p>Monatliche Gebühr nach Testphase: 30 € netto. Zahlung erfolgt wahlweise per Banküberweisung oder PayPal innerhalb von 7 Tagen nach Rechnungserhalt.</p>
+                    <p>Monatliche Gebühr nach Testphase: 30 € netto. Zahlung erfolgt wahlweise per Banküberweisung oder PayPal innerhalb von 7 Tagen nach Rechnungserhalt.<br><br>
+                    <strong>Hinweis:</strong> Der aktuelle Preis von 30 € netto/Monat gilt ausschließlich für die in diesem Vertrag vereinbarte Laufzeit. Bei einer Vertragsverlängerung kann der Preis angepasst werden.</p>
                 </div>
                 <div class='term'>
                     <h4>§5 Verlängerungsoption</h4>
@@ -193,9 +232,10 @@ class PPV_Haendlervertrag {
             </div>
 
             <div class='section' style='margin-top: 25px;'>
-                <div class='section-title'>Übergabeprotokoll Gerät</div>
-                <div class='field'><span class='field-label'>Gerät:</span> <span class='field-value'>Xiaomi Redmi A5 – 4G – 64GB</span></div>
+                <div class='section-title'>Übergabeprotokoll Geräte</div>
+                <div class='field'><span class='field-label'>Smartphone:</span> <span class='field-value'>Xiaomi Redmi A5 – 4G – 64GB</span></div>
                 <div class='field'><span class='field-label'>IMEI:</span> <span class='field-value'>$imei</span></div>
+                <div class='field'><span class='field-label'>Ständer:</span> <span class='field-value'>Handy-Ständer (Eigentum des Anbieters)</span></div>
                 <div class='field'><span class='field-label'>Zubehör:</span> <span class='field-value'>$zubehoer</span></div>
                 <div class='field'><span class='field-label'>Zustand:</span> <span class='field-value'>$zustand</span></div>
             </div>
@@ -223,8 +263,8 @@ class PPV_Haendlervertrag {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PunktePass Händlervertrag</title>
-    <meta name="description" content="PunktePass Händlervertrag - Werden Sie Partner und bieten Sie Ihren Kunden ein digitales Bonussystem.">
+    <title>PunktePass Testphase - 30 Tage kostenlos</title>
+    <meta name="description" content="Starten Sie Ihre 30-tägige kostenlose PunktePass Testphase. Geräteübergabe und Registrierung für Händler.">
     <link rel="icon" href="<?php echo PPV_PLUGIN_URL; ?>assets/img/favicon.ico">
     <style>
         * {
@@ -700,8 +740,8 @@ class PPV_Haendlervertrag {
     <div class="contract-container">
         <div class="contract-header">
             <div class="logo">P</div>
-            <h1>PunktePass Händlervertrag</h1>
-            <p class="subtitle">Partnerschaft für digitale Kundenbindung</p>
+            <h1>PunktePass Testphase</h1>
+            <p class="subtitle">30 Tage kostenlos testen + Geräteübergabe</p>
         </div>
 
         <div class="contract-body">
@@ -709,11 +749,13 @@ class PPV_Haendlervertrag {
             <div class="section">
                 <div class="section-title">Anbieter (Dienstleister)</div>
                 <div class="provider-info">
-                    <p><strong>Erik Borota – PunktePass</strong></p>
-                    <p>Adresse: Lauingen, Deutschland</p>
+                    <p><strong>Erik Borota</strong></p>
+                    <p>PunktePass</p>
+                    <p>Siedlungsring 51</p>
+                    <p>89415 Lauingen</p>
+                    <p style="margin-top: 10px;">Telefon: 0176 84831021</p>
                     <p>E-Mail: info@punktepass.de</p>
-                    <p>Telefon: +49 176 61860854</p>
-                    <p>Steuernummer: 151/219/51051</p>
+                    <p style="margin-top: 10px;">USt-IdNr.: DE308874569</p>
                 </div>
             </div>
 
@@ -756,34 +798,25 @@ class PPV_Haendlervertrag {
                         </div>
                     </div>
 
-                    <!-- Contract Terms -->
+                    <!-- Test Phase Info -->
                     <div class="terms-section">
-                        <div class="term">
-                            <h3>§1 Vertragslaufzeit</h3>
-                            <p>Die Mindestvertragslaufzeit beträgt <strong>6 Monate</strong> und beginnt nach Ablauf der 30-tägigen kostenlosen Testphase. Der Vertrag endet automatisch nach Ablauf der vereinbarten Laufzeit. Eine Verlängerung erfolgt nur auf ausdrücklichen Wunsch des Händlers – es gibt keine automatische Verlängerung.</p>
+                        <div class="term" style="background: #e8f5e9; padding: 15px; border-radius: 8px; border-left: 4px solid #22c55e;">
+                            <h3 style="color: #22c55e;">30 Tage kostenlose Testphase</h3>
+                            <p>Mit dieser Anmeldung starten Sie eine <strong>30-tägige kostenlose Testphase</strong>. Sie erhalten ein Smartphone und einen Handy-Ständer als Leihgabe zur Nutzung des PunktePass Systems. Sie können jederzeit während der Testphase kündigen.</p>
                         </div>
 
                         <div class="term">
-                            <h3>§2 Testphase (0 € – 30 Tage)</h3>
-                            <p>Der Händler erhält eine <strong>30-tägige Testphase kostenlos</strong>. Erfolgt bis zum Ende dieser Phase keine Kündigung, tritt der 6-Monatsvertrag in Kraft. Der Händler kann während oder nach der Testphase jederzeit kündigen.</p>
+                            <h3>Bereitgestellte Geräte (Leihgabe)</h3>
+                            <p>Sie erhalten folgende Geräte zur Nutzung des PunktePass Systems:<br>
+                            • <strong>Smartphone:</strong> Xiaomi Redmi A5 – 4G – 64GB (Neu)<br>
+                            • <strong>Handy-Ständer</strong><br><br>
+                            Beide Geräte bleiben Eigentum des Anbieters. Bei Kündigung oder Vertragsende sind sie innerhalb von 7 Tagen zurückzugeben, ansonsten wird der Neuwert berechnet.</p>
                         </div>
 
-                        <div class="term">
-                            <h3>§3 Bereitgestelltes Gerät – Leihgabe</h3>
-                            <p>Der Händler erhält für die Laufzeit ein Gerät zur Nutzung des PunktePass Systems:<br>
-                            <strong>Xiaomi Redmi A5 – 4G – 64GB (Neu)</strong><br>
-                            Das Gerät bleibt Eigentum des Anbieters. Bei Vertragsende oder Kündigung ist es innerhalb von 7 Tagen zurückzugeben, ansonsten wird der Neuwert berechnet.</p>
-                        </div>
-
-                        <div class="term">
-                            <h3>§4 Gebühren & Zahlung</h3>
-                            <p>Monatliche Gebühr nach Testphase: <strong>30 € netto</strong><br>
-                            Zahlung erfolgt wahlweise per Banküberweisung oder PayPal innerhalb von 7 Tagen nach Rechnungserhalt. Bei Zahlungsverzug darf der Anbieter den Systemzugang vorübergehend sperren.</p>
-                        </div>
-
-                        <div class="term">
-                            <h3>§5 Verlängerungsoption</h3>
-                            <p>Der Händler kann den Vertrag vor Ablauf <strong>freiwillig</strong> um weitere 6 Monate verlängern. Eine automatische Verlängerung findet <strong>nicht</strong> statt. Jede Verlängerung muss aktiv vom Händler angefordert werden.</p>
+                        <div class="term" style="background: #fff8e1; padding: 15px; border-radius: 8px;">
+                            <h3>Preise nach der Testphase (zur Information)</h3>
+                            <p>Nach der Testphase: <strong>30 € netto / Monat</strong> (Mindestlaufzeit: 6 Monate)<br><br>
+                            <small style="color: #666;"><strong>Hinweis:</strong> Der aktuelle Preis von 30 € netto/Monat gilt ausschließlich für die in einem späteren Vertrag vereinbarte Laufzeit. Bei einer Vertragsverlängerung kann der Preis angepasst werden. Es gibt keine automatische Verlängerung.</small></p>
                         </div>
                     </div>
 
@@ -818,15 +851,19 @@ class PPV_Haendlervertrag {
 
                     <!-- Appendix - Device Handover -->
                     <div class="appendix">
-                        <h2>Anhang – Übergabeprotokoll Gerät</h2>
+                        <h2>Übergabeprotokoll Geräte</h2>
                         <div class="device-info">
                             <div class="device-field">
-                                <label>Gerät:</label>
+                                <label>Smartphone:</label>
                                 <span>Xiaomi Redmi A5 – 4G – 64GB</span>
                             </div>
                             <div class="device-field">
                                 <label>IMEI:</label>
                                 <input type="text" id="imei" name="imei" placeholder="IMEI-Nummer">
+                            </div>
+                            <div class="device-field">
+                                <label>Ständer:</label>
+                                <span>Handy-Ständer (Eigentum des Anbieters)</span>
                             </div>
                         </div>
 
@@ -835,6 +872,9 @@ class PPV_Haendlervertrag {
                             <div class="checkbox-row">
                                 <label class="checkbox-item">
                                     <input type="checkbox" name="zubehoer" value="Kabel"> Kabel
+                                </label>
+                                <label class="checkbox-item">
+                                    <input type="checkbox" name="zubehoer" value="Ständer"> Ständer
                                 </label>
                                 <label class="checkbox-item">
                                     <input type="checkbox" name="zubehoer" value="Netzteil"> Netzteil
