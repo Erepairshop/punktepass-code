@@ -559,6 +559,7 @@ return [
     'general_info' => 'Informații Generale',
     'store_name' => 'Numele Magazinului',
     'store_name_placeholder' => 'ex. Cafeneaua Meșteșugului',
+    'store_name_hint' => 'Acest nume va fi afișat pe pagina principală a utilizatorilor',
     'slogan' => 'Slogan',
     'slogan_placeholder' => 'ex. Calitate. Viteză. Local.',
     'category' => 'Categorie',

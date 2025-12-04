@@ -1364,7 +1364,7 @@ async function initUserDashboard() {
         <div class="ppv-store-header">
           <img src="${escapeHtml(logo)}" alt="Logo" class="ppv-store-logo">
           <div class="ppv-store-info">
-            <h4>${escapeHtml(store.company_name || store.name)}</h4>
+            <h4>${escapeHtml(store.name || store.company_name)}</h4>
             <div class="ppv-store-badges">
               ${statusBadge}
               ${distanceBadge}

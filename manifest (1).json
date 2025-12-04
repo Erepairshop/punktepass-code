@@ -45,16 +45,32 @@
 
   "screenshots": [
     {
-      "src": "/wp-content/plugins/punktepass/assets/img/screenshot-login.png",
-      "sizes": "1871x862",
+      "src": "/wp-content/plugins/punktepass/assets/img/screenshot-dashboard.png",
+      "sizes": "394x834",
       "type": "image/png",
-      "label": "Login"
+      "form_factor": "narrow",
+      "label": "Dashboard - Hier Punkte sammeln"
     },
     {
-      "src": "/wp-content/plugins/punktepass/assets/img/screenshot-dashboard.png",
-      "sizes": "1850x792",
+      "src": "/wp-content/plugins/punktepass/assets/img/screenshot-qrcode.png",
+      "sizes": "394x834",
       "type": "image/png",
-      "label": "User Dashboard"
+      "form_factor": "narrow",
+      "label": "QR-Code für Punktesammlung"
+    },
+    {
+      "src": "/wp-content/plugins/punktepass/assets/img/screenshot-points.png",
+      "sizes": "394x834",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Meine Punkte & Level"
+    },
+    {
+      "src": "/wp-content/plugins/punktepass/assets/img/screenshot-rewards.png",
+      "sizes": "394x834",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Meine Belohnungen"
     }
   ],
 

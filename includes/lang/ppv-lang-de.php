@@ -522,6 +522,7 @@ return [
     'general_info' => 'Allgemeine Informationen',
     'store_name' => 'Geschäftsname',
     'store_name_placeholder' => 'z. B. Kézműves Kávé',
+    'store_name_hint' => 'Dieser Name wird auf der Hauptseite der Benutzer angezeigt',
     'slogan' => 'Slogan',
     'slogan_placeholder' => 'z. B. Schnell. Fair. Lokal.',
     'category' => 'Kategorie',

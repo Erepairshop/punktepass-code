@@ -547,6 +547,7 @@ return [
     'general_info' => 'Általános Információk',
     'store_name' => 'Üzlet Neve',
     'store_name_placeholder' => 'pl. Kézműves Kávézó',
+    'store_name_hint' => 'Ez a név jelenik meg a felhasználók főoldalán',
     'slogan' => 'Szlogó',
     'slogan_placeholder' => 'pl. Minőség. Gyorsaság. Helyi.',
     'category' => 'Kategória',
