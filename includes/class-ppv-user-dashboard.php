@@ -1314,7 +1314,7 @@ public static function render_dashboard() {
     // ✅ FIX: Added 'country' field for currency symbol display
     // ✅ FIX: Added VIP fields for shop card display
     $stores = $wpdb->get_results("
-        SELECT id, company_name, address, city, plz, latitude, longitude,
+        SELECT id, name, company_name, address, city, plz, latitude, longitude,
                phone, website, logo, qr_logo, opening_hours, description,
                gallery, facebook, instagram, tiktok, country,
                vip_fix_enabled, vip_fix_bronze, vip_fix_silver, vip_fix_gold, vip_fix_platinum,
@@ -1323,7 +1323,7 @@ public static function render_dashboard() {
                vip_daily_enabled, vip_daily_bronze, vip_daily_silver, vip_daily_gold, vip_daily_platinum
         FROM {$prefix}ppv_stores
         WHERE active = 1
-        ORDER BY company_name ASC
+        ORDER BY name ASC
     ");
 
     if (empty($stores)) {
@@ -1486,7 +1486,8 @@ public static function render_dashboard() {
 
         $result[] = [
             'id' => (int)$store->id,
-            'company_name' => $store->company_name,
+            'name' => $store->name,  // Store name (üzlet neve)
+            'company_name' => $store->company_name,  // Company name (cégnév)
             'address' => $store->address,
             'city' => $store->city,
             'plz' => $store->plz,
