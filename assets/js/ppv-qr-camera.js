@@ -171,8 +171,8 @@
         if (this.scanning && this.state === 'scanning') {
           this.triggerRefocus();
         }
-      }, 3000);
-      ppvLog('[Camera] Periodic refocus started (3s interval)');
+      }, 8000);
+      ppvLog('[Camera] Periodic refocus started (8s interval)');
     }
 
     stopPeriodicRefocus() {
@@ -631,7 +631,7 @@
 
         const options = {
           preferredCamera: 'environment',
-          maxScansPerSecond: 10, // Balanced: fast detection, reasonable CPU usage
+          maxScansPerSecond: 5, // Reduced for better performance on entry-level phones (Xiaomi Redmi A5)
           highlightScanRegion: true,
           highlightCodeOutline: true,
           returnDetailedScanResult: true,
@@ -692,8 +692,6 @@
               if (this.refocusBtn) {
                 this.refocusBtn.style.display = 'inline-flex';
               }
-              // Immediate focus on camera start for faster first scan
-              setTimeout(() => this.triggerRefocus(), 300);
               this.startPeriodicRefocus();
             }
           }
@@ -827,7 +825,7 @@
         if (code && code.data) this.onScanSuccess(code.data);
       }
 
-      if (this.scanning) setTimeout(() => this.jsQRScanLoop(), 100); // ~10fps scan loop
+      if (this.scanning) setTimeout(() => this.jsQRScanLoop(), 200); // ~5fps scan loop (optimized for entry-level phones)
     }
 
     onScanSuccess(qrCode) {
