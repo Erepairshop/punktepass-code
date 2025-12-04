@@ -319,6 +319,7 @@ private static function render_tab_general($store) {
         <div class="ppv-form-group">
             <label data-i18n="store_name"><?php echo esc_html(PPV_Lang::t('store_name')); ?> *</label>
             <input type="text" name="store_name" value="<?php echo esc_attr($store->name ?? ''); ?>" required>
+            <small class="ppv-field-hint" data-i18n="store_name_hint"><?php echo esc_html(PPV_Lang::t('store_name_hint')); ?></small>
         </div>
 
         <!-- SLOGAN -->
