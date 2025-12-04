@@ -435,6 +435,7 @@ return [
 
     // App Download
     'login_download_app' => 'Descarcă aplicația',
+    'header_install_app' => 'Instalează aplicația',
     'login_download_android' => 'Android',
     'login_download_ios' => 'iOS',
     'login_open_in_chrome' => 'Deschide în Chrome',

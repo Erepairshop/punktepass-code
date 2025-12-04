@@ -423,6 +423,7 @@ return [
 
     // App Download
     'login_download_app' => 'App letöltése',
+    'header_install_app' => 'App telepítése',
     'login_download_android' => 'Android',
     'login_download_ios' => 'iOS',
     'login_open_in_chrome' => 'Megnyitás Chrome-ban',

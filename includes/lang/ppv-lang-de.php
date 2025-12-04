@@ -396,6 +396,7 @@ return [
 
     // App Download
     'login_download_app' => 'App herunterladen',
+    'header_install_app' => 'App installieren',
     'login_download_android' => 'Android',
     'login_download_ios' => 'iOS',
     'login_open_in_chrome' => 'In Chrome öffnen',
