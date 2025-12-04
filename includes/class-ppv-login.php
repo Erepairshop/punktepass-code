@@ -664,6 +664,11 @@ public static function render_landing_page($atts) {
                 iosHeaderLink.style.display = 'inline-flex';
             }
 
+            // On Android Chrome: always show header install button (even after uninstall)
+            if (isAndroid && isChrome && !isStandalone && androidHeaderBtn) {
+                androidHeaderBtn.style.display = 'inline-flex';
+            }
+
             // On Android non-Chrome: show "Open in Chrome" link
             if (isAndroid && !isChrome && !isStandalone && chromeLink) {
                 chromeLink.style.display = 'inline-flex';
@@ -673,11 +678,6 @@ public static function render_landing_page($atts) {
             window.addEventListener('beforeinstallprompt', (e) => {
                 e.preventDefault();
                 deferredPrompt = e;
-
-                // Show Android header install button (only when PWA install is available)
-                if (androidHeaderBtn && isAndroid && !isStandalone) {
-                    androidHeaderBtn.style.display = 'inline-flex';
-                }
 
                 // Show install button in download section
                 if (installBtn && isAndroid && !isStandalone) {
@@ -693,17 +693,24 @@ public static function render_landing_page($atts) {
                 }
             });
 
-            // Handle Android header button click - direct install
+            // Handle Android header button click
             if (androidHeaderBtn) {
                 androidHeaderBtn.addEventListener('click', async () => {
-                    if (!deferredPrompt) return;
-                    deferredPrompt.prompt();
-                    const { outcome } = await deferredPrompt.userChoice;
-                    console.log('PWA install outcome:', outcome);
-                    deferredPrompt = null;
-                    androidHeaderBtn.style.display = 'none';
-                    if (installBtn) installBtn.style.display = 'none';
-                    if (pwaBanner) pwaBanner.style.display = 'none';
+                    if (deferredPrompt) {
+                        // Direct install if prompt available
+                        deferredPrompt.prompt();
+                        const { outcome } = await deferredPrompt.userChoice;
+                        console.log('PWA install outcome:', outcome);
+                        deferredPrompt = null;
+                        if (outcome === 'accepted') {
+                            androidHeaderBtn.style.display = 'none';
+                            if (installBtn) installBtn.style.display = 'none';
+                            if (pwaBanner) pwaBanner.style.display = 'none';
+                        }
+                    } else {
+                        // Show manual install hint if no prompt available
+                        alert(pwaInstallHint);
+                    }
                 });
             }
 
