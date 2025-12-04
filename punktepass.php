@@ -278,6 +278,7 @@ $core_modules = [
     'includes/class-ppv-customer-insights.php',
     'includes/class-ppv-admin-vendors.php',
     'includes/class-ppv-roi-calculator.php',
+    'includes/class-ppv-haendlervertrag.php',
     'includes/class-ppv-standalone-admin.php',
     'includes/class-ppv-device-fingerprint.php',
 ];
