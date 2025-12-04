@@ -7,9 +7,9 @@
  */
 
 // Turbo-safe: Only define class if not already defined
-if (typeof PPV_Analytics === 'undefined') {
+if (typeof window.PPV_Analytics === 'undefined') {
 
-class PPV_Analytics {
+window.PPV_Analytics = class PPV_Analytics {
   constructor() {
     this.data = null;
     this.stores = null;
@@ -641,7 +641,7 @@ class PPV_Analytics {
 } // End Turbo-safe if block
 
 // Global instance (only create if not exists)
-window.ppv_analytics = window.ppv_analytics || new PPV_Analytics();
+window.ppv_analytics = window.ppv_analytics || new window.PPV_Analytics();
 
 // ✅ FIX: Don't auto-init on DOMContentLoaded - MyPoints handles this
 // The analytics container is dynamically created by my-points.js after rendering,
