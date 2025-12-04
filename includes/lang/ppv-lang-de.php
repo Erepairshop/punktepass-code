@@ -393,7 +393,17 @@ return [
     'login_button' => 'Anmelden',
     'login_no_account' => 'Noch kein Konto?',
     'login_register_now' => 'Jetzt registrieren',
-    
+
+    // App Download
+    'login_download_app' => 'App herunterladen',
+    'login_download_android' => 'Android',
+    'login_download_ios' => 'iOS',
+    'login_open_in_chrome' => 'In Chrome öffnen',
+    'login_pwa_install_hint' => 'Öffne das Browser-Menü und wähle "Zum Startbildschirm hinzufügen".',
+    'login_pwa_banner_title' => 'PunktePass App installieren',
+    'login_pwa_banner_desc' => 'Installiere die App für schnelleren Zugriff!',
+    'login_pwa_banner_install' => 'Installieren',
+
     // Footer
     'landing_footer_copyright' => '© 2025 PunktePass. Alle Rechte vorbehalten.',
     'landing_footer_privacy' => 'Datenschutz',

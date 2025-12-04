@@ -420,7 +420,17 @@ return [
     'login_button' => 'Bejelentkezés',
     'login_no_account' => 'Még nincs fiókod?',
     'login_register_now' => 'Regisztráció most',
-    
+
+    // App Download
+    'login_download_app' => 'App letöltése',
+    'login_download_android' => 'Android',
+    'login_download_ios' => 'iOS',
+    'login_open_in_chrome' => 'Megnyitás Chrome-ban',
+    'login_pwa_install_hint' => 'Nyisd meg a böngésző menüjét és válaszd a "Hozzáadás a kezdőképernyőhöz" opciót.',
+    'login_pwa_banner_title' => 'PunktePass App telepítése',
+    'login_pwa_banner_desc' => 'Telepítsd az appot a gyorsabb hozzáféréshez!',
+    'login_pwa_banner_install' => 'Telepítés',
+
     // Footer
     'landing_footer_copyright' => '© 2025 PunktePass. Minden jog fenntartva.',
     'landing_footer_privacy' => 'Adatvédelem',

@@ -149,6 +149,12 @@ class PPV_Belohnungen {
     }
 
     public static function enqueue_assets() {
+        // Only load on pages with ppv_rewards_page shortcode
+        global $post;
+        if (!isset($post->post_content) || !has_shortcode($post->post_content, 'ppv_rewards_page')) {
+            return;
+        }
+
         $plugin_url = defined('PPV_PLUGIN_URL') ? PPV_PLUGIN_URL : plugin_dir_url(dirname(__FILE__));
         $lang = self::get_lang();
 

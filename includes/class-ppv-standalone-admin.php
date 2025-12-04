@@ -296,6 +296,16 @@ class PPV_Standalone_Admin {
             self::handle_deactivate_mobile();
         } elseif ($path === '/admin/deactivate-device-mobile') {
             self::handle_deactivate_device_mobile();
+        } elseif ($path === '/admin/handler-extend') {
+            self::handle_handler_extend();
+        } elseif ($path === '/admin/handler-activate') {
+            self::handle_handler_activate();
+        } elseif ($path === '/admin/handler-mobile') {
+            self::handle_handler_mobile();
+        } elseif ($path === '/admin/handler-filialen') {
+            self::handle_handler_filialen();
+        } elseif ($path === '/admin/device-mobile-enable') {
+            self::handle_device_mobile_enable();
         } elseif (preg_match('#/admin/approve/([a-zA-Z0-9]+)#', $path, $matches)) {
             self::handle_approve($matches[1]);
         } elseif (preg_match('#/admin/reject/([a-zA-Z0-9]+)#', $path, $matches)) {
@@ -509,6 +519,272 @@ class PPV_Standalone_Admin {
             wp_redirect('/admin/handlers?device_mobile_deactivated=' . urlencode($device->device_name));
         } else {
             wp_redirect('/admin/handlers?error=deactivate_failed');
+        }
+        exit;
+    }
+
+    /**
+     * Handler előfizetés meghosszabbítása napokkal
+     */
+    private static function handle_handler_extend() {
+        global $wpdb;
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            wp_redirect('/admin/handlers');
+            exit;
+        }
+
+        $handler_id = intval($_POST['handler_id'] ?? 0);
+        $days = intval($_POST['days'] ?? 0);
+
+        if (empty($handler_id) || $days < 1 || $days > 365) {
+            wp_redirect('/admin/handlers?error=Hibás paraméterek');
+            exit;
+        }
+
+        $handler = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+            $handler_id
+        ));
+
+        if (!$handler) {
+            wp_redirect('/admin/handlers?error=Handler nem található');
+            exit;
+        }
+
+        // Meghosszabbítás: ha van subscription_expires_at, ahhoz adunk, ha nincs, mai naptól
+        $current_end = !empty($handler->subscription_expires_at) ? $handler->subscription_expires_at : date('Y-m-d');
+        $new_end = date('Y-m-d', strtotime($current_end . ' + ' . $days . ' days'));
+
+        $result = $wpdb->update(
+            $wpdb->prefix . 'ppv_stores',
+            ['subscription_expires_at' => $new_end],
+            ['id' => $handler_id],
+            ['%s'],
+            ['%d']
+        );
+
+        if ($result !== false) {
+            $admin_email = $_SESSION['ppv_admin_email'] ?? 'admin';
+            ppv_log("📅 [Admin Handler Extend] handler_id={$handler_id}, name={$handler->name}, days={$days}, new_end={$new_end}, by={$admin_email}");
+            wp_redirect('/admin/handlers?success=extended');
+        } else {
+            wp_redirect('/admin/handlers?error=Hiba a meghosszabbítás során');
+        }
+        exit;
+    }
+
+    /**
+     * Handler aktiválása (trial -> active, 6 hónap)
+     */
+    private static function handle_handler_activate() {
+        global $wpdb;
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            wp_redirect('/admin/handlers');
+            exit;
+        }
+
+        $handler_id = intval($_POST['handler_id'] ?? 0);
+
+        if (empty($handler_id)) {
+            wp_redirect('/admin/handlers?error=Hibás paraméterek');
+            exit;
+        }
+
+        $handler = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+            $handler_id
+        ));
+
+        if (!$handler) {
+            wp_redirect('/admin/handlers?error=Handler nem található');
+            exit;
+        }
+
+        $subscription_end = date('Y-m-d', strtotime('+6 months'));
+
+        $result = $wpdb->update(
+            $wpdb->prefix . 'ppv_stores',
+            [
+                'subscription_status' => 'active',
+                'subscription_expires_at' => $subscription_end
+            ],
+            ['id' => $handler_id],
+            ['%s', '%s'],
+            ['%d']
+        );
+
+        if ($result !== false) {
+            $admin_email = $_SESSION['ppv_admin_email'] ?? 'admin';
+            ppv_log("✅ [Admin Handler Activate] handler_id={$handler_id}, name={$handler->name}, expires={$subscription_end}, by={$admin_email}");
+            wp_redirect('/admin/handlers?success=activated');
+        } else {
+            wp_redirect('/admin/handlers?error=Hiba az aktiválás során');
+        }
+        exit;
+    }
+
+    /**
+     * Handler mobile scanner mód beállítása
+     */
+    private static function handle_handler_mobile() {
+        global $wpdb;
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            wp_redirect('/admin/handlers');
+            exit;
+        }
+
+        $handler_id = intval($_POST['handler_id'] ?? 0);
+        $mobile_mode = sanitize_text_field($_POST['mobile_mode'] ?? 'off');
+
+        if (empty($handler_id)) {
+            wp_redirect('/admin/handlers?error=Hibás paraméterek');
+            exit;
+        }
+
+        $handler = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+            $handler_id
+        ));
+
+        if (!$handler) {
+            wp_redirect('/admin/handlers?error=Handler nem található');
+            exit;
+        }
+
+        $scanner_type = ($mobile_mode === 'global') ? 'mobile' : 'fixed';
+
+        $result = $wpdb->update(
+            $wpdb->prefix . 'ppv_stores',
+            ['scanner_type' => $scanner_type],
+            ['id' => $handler_id],
+            ['%s'],
+            ['%d']
+        );
+
+        // Ha global mobile mód, akkor az összes eszközön is bekapcsoljuk
+        if ($mobile_mode === 'global') {
+            $wpdb->update(
+                $wpdb->prefix . 'ppv_user_devices',
+                ['mobile_scanner' => 1],
+                ['store_id' => $handler_id],
+                ['%d'],
+                ['%d']
+            );
+        } elseif ($mobile_mode === 'off') {
+            $wpdb->update(
+                $wpdb->prefix . 'ppv_user_devices',
+                ['mobile_scanner' => 0],
+                ['store_id' => $handler_id],
+                ['%d'],
+                ['%d']
+            );
+        }
+
+        if ($result !== false) {
+            $admin_email = $_SESSION['ppv_admin_email'] ?? 'admin';
+            ppv_log("📱 [Admin Handler Mobile] handler_id={$handler_id}, name={$handler->name}, mode={$mobile_mode}, by={$admin_email}");
+            wp_redirect('/admin/handlers?success=mobile_updated');
+        } else {
+            wp_redirect('/admin/handlers?error=Hiba a mentés során');
+        }
+        exit;
+    }
+
+    /**
+     * Handler fiók limit beállítása
+     */
+    private static function handle_handler_filialen() {
+        global $wpdb;
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            wp_redirect('/admin/handlers');
+            exit;
+        }
+
+        $handler_id = intval($_POST['handler_id'] ?? 0);
+        $max_filialen = intval($_POST['max_filialen'] ?? 1);
+
+        if (empty($handler_id) || $max_filialen < 1 || $max_filialen > 100) {
+            wp_redirect('/admin/handlers?error=Hibás paraméterek');
+            exit;
+        }
+
+        $handler = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+            $handler_id
+        ));
+
+        if (!$handler) {
+            wp_redirect('/admin/handlers?error=Handler nem található');
+            exit;
+        }
+
+        $result = $wpdb->update(
+            $wpdb->prefix . 'ppv_stores',
+            ['max_filialen' => $max_filialen],
+            ['id' => $handler_id],
+            ['%d'],
+            ['%d']
+        );
+
+        if ($result !== false) {
+            $admin_email = $_SESSION['ppv_admin_email'] ?? 'admin';
+            ppv_log("🏢 [Admin Handler Filialen] handler_id={$handler_id}, name={$handler->name}, max_filialen={$max_filialen}, by={$admin_email}");
+            wp_redirect('/admin/handlers?success=filialen_updated');
+        } else {
+            wp_redirect('/admin/handlers?error=Hiba a mentés során');
+        }
+        exit;
+    }
+
+    /**
+     * Eszköz mobile scanner engedélyezése
+     */
+    private static function handle_device_mobile_enable() {
+        global $wpdb;
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            wp_redirect('/admin/handlers');
+            exit;
+        }
+
+        $device_id = intval($_POST['device_id'] ?? 0);
+
+        if (empty($device_id)) {
+            wp_redirect('/admin/handlers?error=Hibás paraméterek');
+            exit;
+        }
+
+        $device = $wpdb->get_row($wpdb->prepare(
+            "SELECT d.*, s.name as store_name
+             FROM {$wpdb->prefix}ppv_user_devices d
+             LEFT JOIN {$wpdb->prefix}ppv_stores s ON d.store_id = s.id
+             WHERE d.id = %d",
+            $device_id
+        ));
+
+        if (!$device) {
+            wp_redirect('/admin/handlers?error=Eszköz nem található');
+            exit;
+        }
+
+        $result = $wpdb->update(
+            $wpdb->prefix . 'ppv_user_devices',
+            ['mobile_scanner' => 1],
+            ['id' => $device_id],
+            ['%d'],
+            ['%d']
+        );
+
+        if ($result !== false) {
+            $admin_email = $_SESSION['ppv_admin_email'] ?? 'admin';
+            ppv_log("📱 [Admin Device Mobile Enable] device_id={$device_id}, device={$device->device_name}, store={$device->store_name}, by={$admin_email}");
+            wp_redirect('/admin/handlers?success=device_mobile_enabled');
+        } else {
+            wp_redirect('/admin/handlers?error=Hiba az engedélyezés során');
         }
         exit;
     }
@@ -1617,10 +1893,10 @@ class PPV_Standalone_Admin {
              ORDER BY s.name ASC"
         );
 
-        // Eszközök lekérése handler-enként (device_info-val együtt)
+        // Eszközök lekérése handler-enként (device_info-val és mobile_scanner-rel együtt)
         $devices_by_store = [];
         $all_devices = $wpdb->get_results(
-            "SELECT id, store_id, fingerprint_hash, device_name, user_agent, device_info, ip_address, registered_at, last_used_at, status
+            "SELECT id, store_id, fingerprint_hash, device_name, user_agent, device_info, ip_address, registered_at, last_used_at, status, mobile_scanner
              FROM {$wpdb->prefix}ppv_user_devices WHERE status = 'active' ORDER BY registered_at DESC"
         );
         foreach ($all_devices as $device) {
@@ -1631,6 +1907,7 @@ class PPV_Standalone_Admin {
         $store_deleted = $_GET['store'] ?? '';
         $mobile_deactivated = $_GET['mobile_deactivated'] ?? '';
         $device_mobile_deactivated = $_GET['device_mobile_deactivated'] ?? '';
+        $success = $_GET['success'] ?? '';
         $error = $_GET['error'] ?? '';
 
         self::get_admin_header('handlers');
@@ -1646,6 +1923,17 @@ class PPV_Standalone_Admin {
         <?php if ($device_mobile_deactivated): ?>
             <div class="success-msg">📵 Mobile Scanner deaktiválva (Készülék): <strong><?php echo esc_html($device_mobile_deactivated); ?></strong></div>
         <?php endif; ?>
+        <?php if ($success === 'extended'): ?>
+            <div class="success-msg">✅ Előfizetés sikeresen meghosszabbítva!</div>
+        <?php elseif ($success === 'activated'): ?>
+            <div class="success-msg">✅ Handler sikeresen aktiválva!</div>
+        <?php elseif ($success === 'mobile_updated'): ?>
+            <div class="success-msg">✅ Mobile Scanner beállítás frissítve!</div>
+        <?php elseif ($success === 'filialen_updated'): ?>
+            <div class="success-msg">✅ Fiók limit frissítve!</div>
+        <?php elseif ($success === 'device_mobile_enabled'): ?>
+            <div class="success-msg">✅ Mobile Scanner engedélyezve a készüléken!</div>
+        <?php endif; ?>
         <?php if ($error === 'missing_reason'): ?>
             <div class="error-msg">❌ Add meg az indokot!</div>
         <?php elseif ($error === 'device_not_found'): ?>
@@ -1656,6 +1944,8 @@ class PPV_Standalone_Admin {
             <div class="error-msg">❌ Hiba a törlés során!</div>
         <?php elseif ($error === 'deactivate_failed'): ?>
             <div class="error-msg">❌ Hiba a Mobile Scanner deaktiválása során!</div>
+        <?php elseif ($error): ?>
+            <div class="error-msg">❌ <?php echo esc_html($error); ?></div>
         <?php endif; ?>
 
         <div class="card">
@@ -1673,294 +1963,522 @@ class PPV_Standalone_Admin {
                 <tbody>
                     <?php foreach ($handlers as $handler):
                         $handler_devices = $devices_by_store[$handler->id] ?? [];
+                        // Készülék adatok előkészítése JSON-hoz
+                        $devices_json = array_map(function($d) {
+                            $info = self::parse_device_info($d->user_agent ?? '');
+                            $fp = self::format_device_info_json($d->device_info ?? '');
+                            return [
+                                'id' => $d->id,
+                                'name' => $d->device_name,
+                                'model' => $info['model'],
+                                'os' => $info['os'],
+                                'mobile_scanner' => !empty($d->mobile_scanner),
+                                'ip' => $d->ip_address,
+                                'registered_at' => $d->registered_at,
+                                'fingerprint' => $fp
+                            ];
+                        }, $handler_devices);
+
+                        $handler_data = json_encode([
+                            'id' => $handler->id,
+                            'name' => $handler->name,
+                            'company_name' => $handler->company_name ?? '',
+                            'city' => $handler->city ?? '',
+                            'email' => $handler->email ?? '',
+                            'scanner_type' => $handler->scanner_type ?? 'fixed',
+                            'subscription_status' => $handler->subscription_status ?? 'trial',
+                            'trial_ends_at' => $handler->trial_ends_at ?? null,
+                            'subscription_expires_at' => $handler->subscription_expires_at ?? null,
+                            'max_filialen' => $handler->max_filialen ?? 1,
+                            'filiale_count' => intval($handler->filiale_count),
+                            'device_count' => count($handler_devices),
+                            'devices' => $devices_json
+                        ], JSON_HEX_APOS | JSON_HEX_QUOT);
                     ?>
-                        <tr>
+                        <tr class="clickable-row" onclick='openHandlerModal(<?php echo $handler_data; ?>)' style="cursor: pointer;">
                             <td>#<?php echo $handler->id; ?></td>
                             <td><strong><?php echo esc_html($handler->name); ?></strong></td>
                             <td><?php echo esc_html($handler->city ?: '-'); ?></td>
                             <td>
                                 <?php if ($handler->scanner_type === 'mobile'): ?>
                                     <span class="badge badge-mobile">Mobile</span>
-                                    <button type="button" class="btn btn-sm" style="background: rgba(156,39,176,0.2); color: #9c27b0; border: 1px solid rgba(156,39,176,0.3); padding: 4px 8px; font-size: 11px; margin-left: 5px;"
-                                            onclick="openMobileDeactivateModal(<?php echo $handler->id; ?>, '<?php echo esc_js($handler->name); ?>')">
-                                        <i class="ri-close-line"></i> Deaktiválás
-                                    </button>
                                 <?php else: ?>
                                     <span class="badge" style="background: rgba(255,255,255,0.1); color: #888;">Fixed</span>
                                 <?php endif; ?>
                             </td>
                             <td>
                                 <?php if (empty($handler_devices)): ?>
-                                    <span style="color: #f44336;">0</span>
+                                    <span style="color: #666;">0</span>
                                 <?php else: ?>
                                     <strong style="color: #4caf50;"><?php echo count($handler_devices); ?></strong>
                                 <?php endif; ?>
                             </td>
-                            <td><?php echo intval($handler->filiale_count); ?></td>
-                        </tr>
-                        <?php if (!empty($handler_devices)): ?>
-                        <tr>
-                            <td colspan="6" style="padding: 0; background: rgba(0,230,255,0.05);">
-                                <div style="padding: 15px 20px 15px 50px;">
-                                    <strong style="color: #00e6ff; font-size: 12px;">📱 REGISZTRÁLT ESZKÖZÖK:</strong>
-                                    <table style="margin-top: 10px; background: transparent;">
-                                        <thead>
-                                            <tr style="background: rgba(0,0,0,0.2);">
-                                                <th style="padding: 8px; font-size: 11px;">Név</th>
-                                                <th style="padding: 8px; font-size: 11px;">Modell</th>
-                                                <th style="padding: 8px; font-size: 11px;">Mobile</th>
-                                                <th style="padding: 8px; font-size: 11px;">OS</th>
-                                                <th style="padding: 8px; font-size: 11px;">Regisztrálva</th>
-                                                <th style="padding: 8px; font-size: 11px;">IP</th>
-                                                <th style="padding: 8px; font-size: 11px;">Művelet</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <?php foreach ($handler_devices as $device):
-                                                $device_info = self::parse_device_info($device->user_agent ?? '');
-                                                $fp_info = self::format_device_info_json($device->device_info ?? '');
-                                            ?>
-                                            <tr style="background: transparent;">
-                                                <td style="padding: 8px;"><?php echo esc_html($device->device_name); ?></td>
-                                                <td style="padding: 8px;">
-                                                    <strong style="color: #00e6ff;"><?php echo esc_html($device_info['model']); ?></strong>
-                                                </td>
-                                                <td style="padding: 8px;">
-                                                    <?php if (!empty($device->mobile_scanner)): ?>
-                                                        <span class="badge badge-mobile" style="font-size: 10px;">Mobile</span>
-                                                        <button type="button" class="btn btn-sm" style="background: rgba(156,39,176,0.2); color: #9c27b0; border: 1px solid rgba(156,39,176,0.3); padding: 2px 6px; font-size: 10px; margin-left: 3px;"
-                                                                onclick="openDeviceMobileDeactivateModal(<?php echo $device->id; ?>, '<?php echo esc_js($device->device_name); ?>', '<?php echo esc_js($handler->name); ?>')">
-                                                            <i class="ri-close-line"></i>
-                                                        </button>
-                                                    <?php else: ?>
-                                                        <span style="color: #666; font-size: 11px;">-</span>
-                                                    <?php endif; ?>
-                                                </td>
-                                                <td style="padding: 8px; color: #aaa; font-size: 12px;"><?php echo esc_html($device_info['os'] ?: '-'); ?></td>
-                                                <td style="padding: 8px; color: #888; font-size: 11px;">
-                                                    <?php echo date('Y.m.d H:i', strtotime($device->registered_at)); ?>
-                                                </td>
-                                                <td style="padding: 8px; color: #666; font-size: 11px;"><?php echo esc_html($device->ip_address); ?></td>
-                                                <td style="padding: 8px;">
-                                                    <button type="button" class="btn btn-reject btn-sm"
-                                                            onclick="openDeleteModal(<?php echo $device->id; ?>, '<?php echo esc_js($device->device_name); ?>', '<?php echo esc_js($device_info['model']); ?>', '<?php echo esc_js($handler->name); ?>')">
-                                                        <i class="ri-delete-bin-line"></i> Törlés
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                            <?php if ($fp_info): // FingerprintJS részletek ha elérhetők ?>
-                                            <tr style="background: rgba(0,230,255,0.03);">
-                                                <td colspan="7" style="padding: 5px 8px 10px 30px;">
-                                                    <div style="display: flex; flex-wrap: wrap; gap: 10px; font-size: 11px;">
-                                                        <?php if (!empty($fp_info['screen'])): ?>
-                                                            <span style="background: rgba(255,255,255,0.05); padding: 3px 8px; border-radius: 4px;">
-                                                                <i class="ri-computer-line" style="color: #00e6ff;"></i> <?php echo esc_html($fp_info['screen']); ?>
-                                                            </span>
-                                                        <?php endif; ?>
-                                                        <?php if (!empty($fp_info['memory'])): ?>
-                                                            <span style="background: rgba(255,255,255,0.05); padding: 3px 8px; border-radius: 4px;">
-                                                                <i class="ri-database-line" style="color: #4caf50;"></i> <?php echo esc_html($fp_info['memory']); ?>
-                                                            </span>
-                                                        <?php endif; ?>
-                                                        <?php if (!empty($fp_info['cpuCores'])): ?>
-                                                            <span style="background: rgba(255,255,255,0.05); padding: 3px 8px; border-radius: 4px;">
-                                                                <i class="ri-cpu-line" style="color: #ff9800;"></i> <?php echo esc_html($fp_info['cpuCores']); ?>
-                                                            </span>
-                                                        <?php endif; ?>
-                                                        <?php if (!empty($fp_info['touch'])): ?>
-                                                            <span style="background: rgba(255,255,255,0.05); padding: 3px 8px; border-radius: 4px;">
-                                                                <i class="ri-hand-coin-line" style="color: #e91e63;"></i> Touch: <?php echo esc_html($fp_info['touch']); ?>
-                                                            </span>
-                                                        <?php endif; ?>
-                                                        <?php if (!empty($fp_info['platform'])): ?>
-                                                            <span style="background: rgba(255,255,255,0.05); padding: 3px 8px; border-radius: 4px;">
-                                                                <i class="ri-device-line" style="color: #9c27b0;"></i> <?php echo esc_html($fp_info['platform']); ?>
-                                                            </span>
-                                                        <?php endif; ?>
-                                                        <?php if (!empty($fp_info['vendor'])): ?>
-                                                            <span style="background: rgba(255,255,255,0.05); padding: 3px 8px; border-radius: 4px;">
-                                                                <i class="ri-building-line" style="color: #2196f3;"></i> <?php echo esc_html($fp_info['vendor']); ?>
-                                                            </span>
-                                                        <?php endif; ?>
-                                                        <?php if (!empty($fp_info['timezone'])): ?>
-                                                            <span style="background: rgba(255,255,255,0.05); padding: 3px 8px; border-radius: 4px;">
-                                                                <i class="ri-time-line" style="color: #ffeb3b;"></i> <?php echo esc_html($fp_info['timezone']); ?>
-                                                            </span>
-                                                        <?php endif; ?>
-                                                        <?php if (!empty($fp_info['gpu'])): ?>
-                                                            <span style="background: rgba(255,255,255,0.05); padding: 3px 8px; border-radius: 4px; color: #888;" title="<?php echo esc_attr($fp_info['gpu']); ?>">
-                                                                <i class="ri-palette-line" style="color: #00bcd4;"></i> GPU
-                                                            </span>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                            <?php endif; ?>
-                                            <?php endforeach; ?>
-                                        </tbody>
-                                    </table>
-                                </div>
+                            <td>
+                                <?php
+                                $current_filialen = intval($handler->filiale_count) + 1;
+                                $max_filialen = intval($handler->max_filialen ?? 1);
+                                ?>
+                                <span style="color: <?php echo $current_filialen >= $max_filialen ? '#f44336' : '#4caf50'; ?>;">
+                                    <?php echo $current_filialen; ?>/<?php echo $max_filialen; ?>
+                                </span>
                             </td>
                         </tr>
-                        <?php endif; ?>
                     <?php endforeach; ?>
                 </tbody>
             </table>
         </div>
 
-        <!-- Törlés megerősítő modal -->
-        <div id="deleteModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center;">
-            <div style="background: #1a1a2e; border: 1px solid rgba(255,255,255,0.1); border-radius: 15px; padding: 30px; max-width: 450px; width: 90%;">
-                <h3 style="color: #f44336; margin: 0 0 20px 0;"><i class="ri-alert-line"></i> Eszköz törlése</h3>
-                <p style="color: #ccc; margin-bottom: 15px;">
-                    Biztosan törölni szeretnéd az alábbi eszközt?
-                </p>
-                <div style="background: rgba(244,67,54,0.1); border: 1px solid rgba(244,67,54,0.3); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-                    <p style="margin: 0; color: #fff;"><strong id="deleteDeviceName"></strong></p>
-                    <p style="margin: 5px 0 0 0; color: #00e6ff;" id="deleteDeviceModel"></p>
-                    <p style="margin: 5px 0 0 0; color: #888; font-size: 12px;">Handler: <span id="deleteStoreName"></span></p>
+        <!-- Handler Details Modal -->
+        <div id="handlerModal" class="handler-modal-overlay">
+            <div class="handler-modal">
+                <div class="handler-modal-header">
+                    <div>
+                        <h2 id="handlerModalTitle"><i class="ri-store-2-line"></i> Handler</h2>
+                        <div class="handler-modal-stats" id="handlerModalStats"></div>
+                    </div>
+                    <button class="handler-modal-close" onclick="closeHandlerModal()"><i class="ri-close-line"></i></button>
                 </div>
-                <form method="POST" action="/admin/delete-device" id="deleteForm">
-                    <input type="hidden" name="device_id" id="deleteDeviceId">
-                    <div style="margin-bottom: 20px;">
-                        <label style="display: block; color: #fff; margin-bottom: 8px;">Törlés oka: <span style="color: #f44336;">*</span></label>
-                        <textarea name="reason" id="deleteReason" required rows="3"
-                                  style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; color: #fff; font-size: 14px; resize: none;"
-                                  placeholder="pl. Ügyfél kérése, elveszett eszköz, új készülék..."></textarea>
+                <div class="handler-modal-body">
+                    <!-- Tabs -->
+                    <div class="handler-tabs">
+                        <button class="handler-tab-btn active" onclick="switchHandlerTab('devices')"><i class="ri-smartphone-line"></i> Készülékek</button>
+                        <button class="handler-tab-btn" onclick="switchHandlerTab('subscription')"><i class="ri-calendar-line"></i> Előfizetés</button>
+                        <button class="handler-tab-btn" onclick="switchHandlerTab('mobile')"><i class="ri-phone-line"></i> Mobile Scanner</button>
+                        <button class="handler-tab-btn" onclick="switchHandlerTab('filialen')"><i class="ri-building-line"></i> Fiókok</button>
                     </div>
-                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                        <button type="button" onclick="closeDeleteModal()" class="btn" style="background: rgba(255,255,255,0.1); color: #fff;">
-                            Mégse
-                        </button>
-                        <button type="submit" class="btn btn-reject">
-                            <i class="ri-delete-bin-line"></i> Véglegesen törlés
-                        </button>
+
+                    <!-- Tab: Devices -->
+                    <div id="handler-tab-devices" class="handler-tab-content active">
+                        <div id="handlerDeviceList" class="handler-device-list"></div>
                     </div>
-                </form>
+
+                    <!-- Tab: Subscription -->
+                    <div id="handler-tab-subscription" class="handler-tab-content">
+                        <div id="handlerSubscriptionInfo" class="handler-subscription-info"></div>
+
+                        <div class="handler-info-box">
+                            <h4><i class="ri-time-line"></i> Előfizetés meghosszabbítása</h4>
+                            <p>Add meg a napok számát amivel meg szeretnéd hosszabbítani</p>
+                        </div>
+                        <form method="POST" action="/admin/handler-extend" style="margin-bottom: 25px;">
+                            <input type="hidden" name="handler_id" id="extendHandlerId">
+                            <div style="display: flex; gap: 10px; align-items: flex-end;">
+                                <div style="flex: 1;">
+                                    <label style="display: block; font-size: 12px; color: #888; margin-bottom: 6px;">Napok száma</label>
+                                    <input type="number" name="days" min="1" max="365" value="30" required
+                                           style="width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff;">
+                                </div>
+                                <button type="submit" class="btn" style="background: #00e6ff; color: #000;">
+                                    <i class="ri-add-line"></i> Meghosszabbítás
+                                </button>
+                            </div>
+                        </form>
+
+                        <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 25px 0;">
+
+                        <div class="handler-info-box handler-info-box-success" id="activateBox">
+                            <h4><i class="ri-checkbox-circle-line"></i> Aktiválás</h4>
+                            <p>Trial státuszból aktív előfizetésre váltás (6 hónap)</p>
+                        </div>
+                        <form method="POST" action="/admin/handler-activate" id="activateForm">
+                            <input type="hidden" name="handler_id" id="activateHandlerId">
+                            <button type="submit" class="btn" id="activateBtn" style="background: rgba(76,175,80,0.3); color: #81c784; border: 1px solid rgba(76,175,80,0.4);">
+                                <i class="ri-check-line"></i> Aktiválás (6 hónap)
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Tab: Mobile Scanner -->
+                    <div id="handler-tab-mobile" class="handler-tab-content">
+                        <div class="handler-info-box">
+                            <h4><i class="ri-phone-line"></i> Mobile Scanner Mód</h4>
+                            <p>Állítsd be hogy a handler használhat-e mobile scannert (GPS nélkül)</p>
+                        </div>
+                        <form method="POST" action="/admin/handler-mobile">
+                            <input type="hidden" name="handler_id" id="mobileHandlerId">
+
+                            <div style="margin-bottom: 20px;">
+                                <label class="handler-toggle-option">
+                                    <input type="radio" name="mobile_mode" value="off">
+                                    <div>
+                                        <strong>Kikapcsolva (Fixed)</strong>
+                                        <span style="display: block; font-size: 11px; color: #888;">GPS kötelező minden scanneléshez</span>
+                                    </div>
+                                </label>
+
+                                <label class="handler-toggle-option">
+                                    <input type="radio" name="mobile_mode" value="global">
+                                    <div>
+                                        <strong>Globális Mobile Mód</strong>
+                                        <span style="display: block; font-size: 11px; color: #888;">Összes jelenlegi és jövőbeli készülékre érvényes</span>
+                                    </div>
+                                </label>
+
+                                <label class="handler-toggle-option">
+                                    <input type="radio" name="mobile_mode" value="per_device">
+                                    <div>
+                                        <strong>Készülékenként</strong>
+                                        <span style="display: block; font-size: 11px; color: #888;">Csak kiválasztott készülékekre (a Készülékek tabon állítható)</span>
+                                    </div>
+                                </label>
+                            </div>
+
+                            <button type="submit" class="btn" style="background: rgba(156,39,176,0.3); color: #ce93d8; border: 1px solid rgba(156,39,176,0.4);">
+                                <i class="ri-save-line"></i> Mentés
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Tab: Filialen -->
+                    <div id="handler-tab-filialen" class="handler-tab-content">
+                        <div id="handlerFilialenInfo"></div>
+
+                        <div class="handler-info-box">
+                            <h4><i class="ri-building-line"></i> Fiók limit</h4>
+                            <p>Állítsd be hány fiókot (filiále) hozhat létre a handler</p>
+                        </div>
+                        <form method="POST" action="/admin/handler-filialen">
+                            <input type="hidden" name="handler_id" id="filialenHandlerId">
+                            <div style="display: flex; gap: 10px; align-items: flex-end;">
+                                <div style="flex: 1;">
+                                    <label style="display: block; font-size: 12px; color: #888; margin-bottom: 6px;">Maximum fiókok száma</label>
+                                    <input type="number" name="max_filialen" id="maxFilialenInput" min="1" max="100" value="1" required
+                                           style="width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff;">
+                                </div>
+                                <button type="submit" class="btn" style="background: #00e6ff; color: #000;">
+                                    <i class="ri-save-line"></i> Mentés
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Mobile Scanner deaktiválás modal (Handler szintű - legacy) -->
-        <div id="mobileDeactivateModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center;">
-            <div style="background: #1a1a2e; border: 1px solid rgba(255,255,255,0.1); border-radius: 15px; padding: 30px; max-width: 450px; width: 90%;">
-                <h3 style="color: #9c27b0; margin: 0 0 20px 0;"><i class="ri-smartphone-line"></i> Mobile Scanner deaktiválása (Handler)</h3>
-                <p style="color: #ccc; margin-bottom: 15px;">
-                    Biztosan deaktiválni szeretnéd a Mobile Scanner jogosultságot?
-                </p>
-                <div style="background: rgba(156,39,176,0.1); border: 1px solid rgba(156,39,176,0.3); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-                    <p style="margin: 0; color: #fff;"><strong id="mobileStoreName"></strong></p>
-                    <p style="margin: 5px 0 0 0; color: #9c27b0; font-size: 12px;">A handler visszaáll Fixed Scanner módra</p>
+        <!-- Delete Device Modal -->
+        <div id="deleteModal" class="handler-modal-overlay">
+            <div class="handler-modal" style="max-width: 450px;">
+                <div class="handler-modal-header">
+                    <h2 style="color: #f44336;"><i class="ri-alert-line"></i> Eszköz törlése</h2>
+                    <button class="handler-modal-close" onclick="closeDeleteModal()"><i class="ri-close-line"></i></button>
                 </div>
-                <form method="POST" action="/admin/deactivate-mobile" id="mobileDeactivateForm">
-                    <input type="hidden" name="store_id" id="mobileStoreId">
-                    <div style="margin-bottom: 20px;">
-                        <label style="display: block; color: #fff; margin-bottom: 8px;">Deaktiválás oka: <span style="color: #f44336;">*</span></label>
-                        <textarea name="reason" id="mobileDeactivateReason" required rows="3"
-                                  style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; color: #fff; font-size: 14px; resize: none;"
-                                  placeholder="pl. GPS kötelező lett, visszaélés, helyszín változott..."></textarea>
+                <div class="handler-modal-body">
+                    <div style="background: rgba(244,67,54,0.1); border: 1px solid rgba(244,67,54,0.3); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                        <p style="margin: 0; color: #fff;"><strong id="deleteDeviceName"></strong></p>
+                        <p style="margin: 5px 0 0 0; color: #00e6ff;" id="deleteDeviceModel"></p>
+                        <p style="margin: 5px 0 0 0; color: #888; font-size: 12px;">Handler: <span id="deleteStoreName"></span></p>
                     </div>
-                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                        <button type="button" onclick="closeMobileDeactivateModal()" class="btn" style="background: rgba(255,255,255,0.1); color: #fff;">
-                            Mégse
-                        </button>
-                        <button type="submit" class="btn" style="background: rgba(156,39,176,0.3); color: #9c27b0; border: 1px solid rgba(156,39,176,0.5);">
-                            <i class="ri-close-line"></i> Deaktiválás
-                        </button>
-                    </div>
-                </form>
+                    <form method="POST" action="/admin/delete-device">
+                        <input type="hidden" name="device_id" id="deleteDeviceId">
+                        <div style="margin-bottom: 20px;">
+                            <label style="display: block; color: #fff; margin-bottom: 8px;">Törlés oka:</label>
+                            <textarea name="reason" required rows="2"
+                                      style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; color: #fff; font-size: 14px; resize: none;"
+                                      placeholder="pl. Ügyfél kérése, elveszett eszköz..."></textarea>
+                        </div>
+                        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                            <button type="button" onclick="closeDeleteModal()" class="btn" style="background: rgba(255,255,255,0.1); color: #fff;">Mégse</button>
+                            <button type="submit" class="btn btn-reject"><i class="ri-delete-bin-line"></i> Törlés</button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
 
-        <!-- Mobile Scanner deaktiválás modal (Készülék szintű - per-device) -->
-        <div id="deviceMobileDeactivateModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center;">
-            <div style="background: #1a1a2e; border: 1px solid rgba(255,255,255,0.1); border-radius: 15px; padding: 30px; max-width: 450px; width: 90%;">
-                <h3 style="color: #9c27b0; margin: 0 0 20px 0;"><i class="ri-smartphone-line"></i> Mobile Scanner deaktiválása (Készülék)</h3>
-                <p style="color: #ccc; margin-bottom: 15px;">
-                    Biztosan deaktiválni szeretnéd a Mobile Scanner jogosultságot ezen az eszközön?
-                </p>
-                <div style="background: rgba(156,39,176,0.1); border: 1px solid rgba(156,39,176,0.3); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-                    <p style="margin: 0; color: #fff;"><strong id="deviceMobileName"></strong></p>
-                    <p style="margin: 5px 0 0 0; color: #888; font-size: 12px;">Handler: <span id="deviceMobileStoreName"></span></p>
-                    <p style="margin: 5px 0 0 0; color: #9c27b0; font-size: 12px;">Az eszköz visszaáll GPS-köteles módra</p>
-                </div>
-                <form method="POST" action="/admin/deactivate-device-mobile" id="deviceMobileDeactivateForm">
-                    <input type="hidden" name="device_id" id="deviceMobileId">
-                    <div style="margin-bottom: 20px;">
-                        <label style="display: block; color: #fff; margin-bottom: 8px;">Deaktiválás oka: <span style="color: #f44336;">*</span></label>
-                        <textarea name="reason" id="deviceMobileDeactivateReason" required rows="3"
-                                  style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; color: #fff; font-size: 14px; resize: none;"
-                                  placeholder="pl. Visszaélés, eszköz cseréje, helyszínhez kötés..."></textarea>
-                    </div>
-                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                        <button type="button" onclick="closeDeviceMobileDeactivateModal()" class="btn" style="background: rgba(255,255,255,0.1); color: #fff;">
-                            Mégse
-                        </button>
-                        <button type="submit" class="btn" style="background: rgba(156,39,176,0.3); color: #9c27b0; border: 1px solid rgba(156,39,176,0.5);">
-                            <i class="ri-close-line"></i> Deaktiválás
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+        <style>
+        .handler-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.85);
+            z-index: 1000;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 30px 20px;
+            overflow-y: auto;
+        }
+        .handler-modal-overlay.active { display: flex; }
+        .handler-modal {
+            background: #1a1a2e;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 900px;
+        }
+        .handler-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 20px 24px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .handler-modal-header h2 { font-size: 18px; color: #00e6ff; margin: 0; }
+        .handler-modal-stats { display: flex; gap: 15px; margin-top: 8px; flex-wrap: wrap; font-size: 12px; color: #888; }
+        .handler-modal-close {
+            background: none;
+            border: none;
+            color: #888;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+        }
+        .handler-modal-close:hover { color: #fff; }
+        .handler-modal-body { padding: 24px; }
+        .handler-tabs { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+        .handler-tab-btn {
+            padding: 10px 16px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            color: #aaa;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .handler-tab-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+        .handler-tab-btn.active { background: rgba(0,230,255,0.2); color: #00e6ff; border-color: rgba(0,230,255,0.3); }
+        .handler-tab-content { display: none; }
+        .handler-tab-content.active { display: block; }
+        .handler-device-list { }
+        .handler-device-item {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .handler-device-item:hover { background: rgba(255,255,255,0.05); }
+        .handler-device-name { font-weight: 600; color: #00e6ff; }
+        .handler-device-meta { font-size: 11px; color: #888; margin-top: 4px; }
+        .handler-device-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+        .handler-device-badge {
+            background: rgba(255,255,255,0.05);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            color: #aaa;
+        }
+        .handler-device-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        .handler-info-box {
+            background: rgba(0,230,255,0.1);
+            border: 1px solid rgba(0,230,255,0.2);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .handler-info-box h4 { color: #fff; margin: 0 0 5px 0; font-size: 14px; }
+        .handler-info-box p { color: #aaa; font-size: 12px; margin: 0; }
+        .handler-info-box-success { background: rgba(76,175,80,0.1); border-color: rgba(76,175,80,0.2); }
+        .handler-subscription-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .handler-sub-card {
+            background: rgba(255,255,255,0.03);
+            border-radius: 10px;
+            padding: 15px;
+        }
+        .handler-sub-card .label { font-size: 11px; color: #888; margin-bottom: 5px; }
+        .handler-sub-card .value { font-size: 18px; font-weight: 600; }
+        .handler-sub-card .value.active { color: #81c784; }
+        .handler-sub-card .value.trial { color: #ffb74d; }
+        .handler-sub-card .value.expired { color: #ef5350; }
+        .handler-toggle-option {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+        .handler-toggle-option:hover { background: rgba(255,255,255,0.05); }
+        .handler-toggle-option input { width: 18px; height: 18px; }
+        .handler-toggle-option strong { color: #fff; font-size: 13px; }
+        tr.clickable-row:hover { background: rgba(0,230,255,0.1); }
+        </style>
 
         <script>
-        // === Eszköz törlés modal ===
+        let currentHandler = null;
+
+        function openHandlerModal(handler) {
+            currentHandler = handler;
+
+            // Set title & stats
+            document.getElementById('handlerModalTitle').innerHTML = '<i class="ri-store-2-line"></i> ' + escapeHtml(handler.name || handler.company_name);
+            document.getElementById('handlerModalStats').innerHTML =
+                '<span><i class="ri-map-pin-line"></i> ' + escapeHtml(handler.city || '-') + '</span>' +
+                '<span><i class="ri-mail-line"></i> ' + escapeHtml(handler.email || '-') + '</span>' +
+                '<span><strong>' + handler.device_count + '</strong> készülék</span>';
+
+            // Set hidden IDs
+            document.getElementById('extendHandlerId').value = handler.id;
+            document.getElementById('activateHandlerId').value = handler.id;
+            document.getElementById('mobileHandlerId').value = handler.id;
+            document.getElementById('filialenHandlerId').value = handler.id;
+
+            // Render tabs
+            renderDevices(handler);
+            renderSubscription(handler);
+            setMobileMode(handler.scanner_type);
+            renderFilialen(handler);
+
+            // Show modal
+            document.getElementById('handlerModal').classList.add('active');
+            switchHandlerTab('devices');
+        }
+
+        function closeHandlerModal() {
+            document.getElementById('handlerModal').classList.remove('active');
+            currentHandler = null;
+        }
+
+        function switchHandlerTab(tabId) {
+            document.querySelectorAll('.handler-tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.handler-tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelector('[onclick="switchHandlerTab(\'' + tabId + '\')"]').classList.add('active');
+            document.getElementById('handler-tab-' + tabId).classList.add('active');
+        }
+
+        function renderDevices(handler) {
+            const container = document.getElementById('handlerDeviceList');
+            if (!handler.devices || handler.devices.length === 0) {
+                container.innerHTML = '<div style="text-align: center; padding: 40px; color: #888;"><i class="ri-smartphone-line" style="font-size: 32px; display: block; margin-bottom: 10px;"></i>Nincs regisztrált készülék</div>';
+                return;
+            }
+            container.innerHTML = handler.devices.map(d => {
+                const fp = d.fingerprint || {};
+                return '<div class="handler-device-item">' +
+                    '<div style="flex: 1; min-width: 200px;">' +
+                        '<div class="handler-device-name">' + escapeHtml(d.name) + '</div>' +
+                        '<div class="handler-device-meta">' +
+                            '<strong style="color: #00e6ff;">' + escapeHtml(d.model) + '</strong> &bull; ' +
+                            escapeHtml(d.os || '-') + ' &bull; IP: ' + escapeHtml(d.ip) + ' &bull; ' + formatDate(d.registered_at) +
+                        '</div>' +
+                        '<div class="handler-device-badges">' +
+                            (fp.screen ? '<span class="handler-device-badge"><i class="ri-computer-line"></i> ' + fp.screen + '</span>' : '') +
+                            (fp.memory ? '<span class="handler-device-badge"><i class="ri-database-line"></i> ' + fp.memory + '</span>' : '') +
+                            (fp.cpuCores ? '<span class="handler-device-badge"><i class="ri-cpu-line"></i> ' + fp.cpuCores + '</span>' : '') +
+                            (fp.touch ? '<span class="handler-device-badge"><i class="ri-hand-coin-line"></i> ' + fp.touch + '</span>' : '') +
+                            (fp.timezone ? '<span class="handler-device-badge"><i class="ri-time-line"></i> ' + fp.timezone + '</span>' : '') +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="handler-device-actions">' +
+                        (d.mobile_scanner
+                            ? '<span class="badge badge-mobile">Mobile</span>'
+                            : '<button class="btn btn-sm" style="background: rgba(156,39,176,0.2); color: #ce93d8; border: 1px solid rgba(156,39,176,0.3);" onclick="enableDeviceMobile(' + d.id + ')"><i class="ri-smartphone-line"></i> Mobile BE</button>'
+                        ) +
+                        '<button class="btn btn-sm btn-reject" onclick="openDeleteModal(' + d.id + ', \'' + escapeHtml(d.name).replace(/'/g, "\\'") + '\', \'' + escapeHtml(d.model).replace(/'/g, "\\'") + '\', \'' + escapeHtml(currentHandler.name).replace(/'/g, "\\'") + '\')"><i class="ri-delete-bin-line"></i></button>' +
+                    '</div>' +
+                '</div>';
+            }).join('');
+        }
+
+        function renderSubscription(handler) {
+            const now = new Date();
+            const trialEnd = handler.trial_ends_at ? new Date(handler.trial_ends_at) : null;
+            const subEnd = handler.subscription_expires_at ? new Date(handler.subscription_expires_at) : null;
+            const trialDays = trialEnd ? Math.max(0, Math.ceil((trialEnd - now) / 86400000)) : 0;
+            const subDays = subEnd ? Math.max(0, Math.ceil((subEnd - now) / 86400000)) : 0;
+
+            let statusClass = 'trial', statusText = 'Trial', daysLeft = trialDays;
+            if (handler.subscription_status === 'active') {
+                statusClass = subDays > 0 ? 'active' : 'expired';
+                statusText = subDays > 0 ? 'Aktív' : 'Lejárt';
+                daysLeft = subDays;
+            } else {
+                statusClass = trialDays > 0 ? 'trial' : 'expired';
+                statusText = trialDays > 0 ? 'Trial' : 'Lejárt';
+            }
+
+            document.getElementById('handlerSubscriptionInfo').innerHTML =
+                '<div class="handler-sub-card"><div class="label">Státusz</div><div class="value ' + statusClass + '">' + statusText + '</div></div>' +
+                '<div class="handler-sub-card"><div class="label">Hátralévő</div><div class="value ' + statusClass + '">' + daysLeft + ' nap</div></div>' +
+                '<div class="handler-sub-card"><div class="label">Trial vége</div><div class="value">' + (trialEnd ? formatDate(handler.trial_ends_at) : '-') + '</div></div>' +
+                '<div class="handler-sub-card"><div class="label">Előfizetés vége</div><div class="value">' + (subEnd ? formatDate(handler.subscription_expires_at) : '-') + '</div></div>';
+
+            // Hide activate button if already active
+            const isActive = handler.subscription_status === 'active' && subDays > 0;
+            document.getElementById('activateBox').style.display = isActive ? 'none' : 'block';
+            document.getElementById('activateBtn').style.display = isActive ? 'none' : 'inline-flex';
+        }
+
+        function setMobileMode(scannerType) {
+            document.querySelectorAll('input[name="mobile_mode"]').forEach(r => r.checked = false);
+            if (scannerType === 'mobile') {
+                document.querySelector('input[name="mobile_mode"][value="global"]').checked = true;
+            } else {
+                document.querySelector('input[name="mobile_mode"][value="off"]').checked = true;
+            }
+        }
+
+        function renderFilialen(handler) {
+            const current = parseInt(handler.filiale_count) + 1;
+            const max = parseInt(handler.max_filialen) || 1;
+            document.getElementById('handlerFilialenInfo').innerHTML =
+                '<div class="handler-subscription-info" style="margin-bottom: 20px;">' +
+                    '<div class="handler-sub-card"><div class="label">Jelenlegi</div><div class="value" style="color: #00e6ff;">' + current + '</div></div>' +
+                    '<div class="handler-sub-card"><div class="label">Maximum</div><div class="value" style="color: #81c784;">' + max + '</div></div>' +
+                    '<div class="handler-sub-card"><div class="label">Szabad</div><div class="value" style="color: ' + (max - current > 0 ? '#81c784' : '#ef5350') + ';">' + Math.max(0, max - current) + '</div></div>' +
+                '</div>';
+            document.getElementById('maxFilialenInput').value = max;
+        }
+
+        function enableDeviceMobile(deviceId) {
+            if (!confirm('Biztosan engedélyezed a Mobile Scanner módot erre a készülékre?')) return;
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/admin/device-mobile-enable';
+            form.innerHTML = '<input type="hidden" name="device_id" value="' + deviceId + '"><input type="hidden" name="handler_id" value="' + currentHandler.id + '">';
+            document.body.appendChild(form);
+            form.submit();
+        }
+
         function openDeleteModal(deviceId, deviceName, deviceModel, storeName) {
             document.getElementById('deleteDeviceId').value = deviceId;
             document.getElementById('deleteDeviceName').textContent = deviceName;
             document.getElementById('deleteDeviceModel').textContent = deviceModel;
             document.getElementById('deleteStoreName').textContent = storeName;
-            document.getElementById('deleteReason').value = '';
-            document.getElementById('deleteModal').style.display = 'flex';
+            document.getElementById('deleteModal').classList.add('active');
         }
 
         function closeDeleteModal() {
-            document.getElementById('deleteModal').style.display = 'none';
+            document.getElementById('deleteModal').classList.remove('active');
         }
 
-        // === Mobile Scanner deaktiválás modal ===
-        function openMobileDeactivateModal(storeId, storeName) {
-            document.getElementById('mobileStoreId').value = storeId;
-            document.getElementById('mobileStoreName').textContent = storeName;
-            document.getElementById('mobileDeactivateReason').value = '';
-            document.getElementById('mobileDeactivateModal').style.display = 'flex';
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
 
-        function closeMobileDeactivateModal() {
-            document.getElementById('mobileDeactivateModal').style.display = 'none';
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('hu-HU', { year: 'numeric', month: '2-digit', day: '2-digit' });
         }
 
-        // === Készülék szintű Mobile Scanner deaktiválás modal ===
-        function openDeviceMobileDeactivateModal(deviceId, deviceName, storeName) {
-            document.getElementById('deviceMobileId').value = deviceId;
-            document.getElementById('deviceMobileName').textContent = deviceName;
-            document.getElementById('deviceMobileStoreName').textContent = storeName;
-            document.getElementById('deviceMobileDeactivateReason').value = '';
-            document.getElementById('deviceMobileDeactivateModal').style.display = 'flex';
-        }
-
-        function closeDeviceMobileDeactivateModal() {
-            document.getElementById('deviceMobileDeactivateModal').style.display = 'none';
-        }
-
-        // ESC billentyű
+        // ESC & background click
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
+                closeHandlerModal();
                 closeDeleteModal();
-                closeMobileDeactivateModal();
-                closeDeviceMobileDeactivateModal();
             }
         });
-
-        // Kattintás a háttérre
+        document.getElementById('handlerModal').addEventListener('click', function(e) {
+            if (e.target === this) closeHandlerModal();
+        });
         document.getElementById('deleteModal').addEventListener('click', function(e) {
             if (e.target === this) closeDeleteModal();
-        });
-        document.getElementById('mobileDeactivateModal').addEventListener('click', function(e) {
-            if (e.target === this) closeMobileDeactivateModal();
-        });
-        document.getElementById('deviceMobileDeactivateModal').addEventListener('click', function(e) {
-            if (e.target === this) closeDeviceMobileDeactivateModal();
         });
         </script>
         <?php
