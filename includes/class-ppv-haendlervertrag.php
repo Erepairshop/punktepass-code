@@ -71,13 +71,16 @@ class PPV_Haendlervertrag {
         $zubehoer = is_array($data['zubehoer'] ?? []) ? implode(', ', $data['zubehoer']) : ($data['zubehoer'] ?? '');
         $zustand = sanitize_text_field($data['zustand'] ?? '');
 
-        // Build email content
+        // Build email content (for email body - shorter version)
         $email_body = self::build_email_body($data);
 
-        // Save contract to server
-        self::save_contract_to_server($haendlername, $email_body, $data);
+        // Build PDF content (full contract with signature)
+        $pdf_html = self::build_pdf_html($data);
 
-        // Send to admin
+        // Save contract to server and generate PDF
+        $pdf_path = self::save_contract_to_server($haendlername, $pdf_html, $data);
+
+        // Send to admin with PDF attachment
         $admin_email = 'info@punktepass.de';
         $subject = "Neuer Händlervertrag - $haendlername";
 
@@ -87,16 +90,18 @@ class PPV_Haendlervertrag {
             "Reply-To: $ansprechpartner <$email>",
         ];
 
-        $sent_admin = wp_mail($admin_email, $subject, $email_body, $headers);
+        $attachments = $pdf_path ? [$pdf_path] : [];
 
-        // Send copy to dealer
+        $sent_admin = wp_mail($admin_email, $subject, $email_body, $headers, $attachments);
+
+        // Send copy to dealer with PDF attachment
         $dealer_subject = "Ihr PunktePass Händlervertrag - Kopie";
         $dealer_headers = [
             'Content-Type: text/html; charset=UTF-8',
             'From: PunktePass <noreply@punktepass.de>',
         ];
 
-        $sent_dealer = wp_mail($email, $dealer_subject, $email_body, $dealer_headers);
+        $sent_dealer = wp_mail($email, $dealer_subject, $email_body, $dealer_headers, $attachments);
 
         if ($sent_admin || $sent_dealer) {
             return ['success' => true, 'message' => 'Vertrag erfolgreich gesendet'];
@@ -106,7 +111,8 @@ class PPV_Haendlervertrag {
     }
 
     /**
-     * Save contract copy to server
+     * Save contract copy to server and generate PDF
+     * @return string|false PDF file path or false on failure
      */
     private static function save_contract_to_server($haendlername, $html_content, $data) {
         // Create contracts directory if it doesn't exist
@@ -123,16 +129,48 @@ class PPV_Haendlervertrag {
         $safe_name = sanitize_file_name($haendlername);
         $safe_name = preg_replace('/[^a-zA-Z0-9_-]/', '_', $safe_name);
         $date = date('Y-m-d_H-i-s');
-        $filename = "{$safe_name}_{$date}.html";
 
         // Save HTML contract
-        file_put_contents($contracts_dir . '/' . $filename, $html_content);
+        $html_filename = "{$safe_name}_{$date}.html";
+        file_put_contents($contracts_dir . '/' . $html_filename, $html_content);
 
-        // Also save JSON data for easy processing
+        // Save JSON data for easy processing
         $json_filename = "{$safe_name}_{$date}.json";
         file_put_contents($contracts_dir . '/' . $json_filename, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
-        return $filename;
+        // Generate PDF
+        $pdf_filename = "{$safe_name}_{$date}.pdf";
+        $pdf_path = $contracts_dir . '/' . $pdf_filename;
+
+        try {
+            $dompdf_autoload = PPV_PLUGIN_DIR . 'libs/dompdf/vendor/autoload.php';
+            if (!file_exists($dompdf_autoload)) {
+                // Try alternative path
+                $dompdf_autoload = PPV_PLUGIN_DIR . 'libs/dompdf/autoload.inc.php';
+            }
+
+            if (file_exists($dompdf_autoload)) {
+                require_once $dompdf_autoload;
+
+                $options = new \Dompdf\Options();
+                $options->set('isRemoteEnabled', true);
+                $options->set('isHtml5ParserEnabled', true);
+                $options->set('defaultFont', 'DejaVu Sans');
+
+                $dompdf = new \Dompdf\Dompdf($options);
+                $dompdf->loadHtml($html_content, 'UTF-8');
+                $dompdf->setPaper('A4', 'portrait');
+                $dompdf->render();
+
+                file_put_contents($pdf_path, $dompdf->output());
+
+                return $pdf_path;
+            }
+        } catch (Exception $e) {
+            error_log('PunktePass Vertrag PDF Error: ' . $e->getMessage());
+        }
+
+        return false;
     }
 
     /**
@@ -242,6 +280,223 @@ class PPV_Haendlervertrag {
         <div class='footer'>
             <p>© " . date('Y') . " PunktePass | info@punktepass.de</p>
         </div>
+    </div>
+</body>
+</html>";
+    }
+
+    /**
+     * Build PDF HTML (full contract with signature for PDF generation)
+     */
+    private static function build_pdf_html($data) {
+        $haendlername = esc_html($data['haendlername']);
+        $adresse = esc_html($data['adresse']);
+        $plz = esc_html($data['plz']);
+        $ort = esc_html($data['ort']);
+        $ansprechpartner = esc_html($data['ansprechpartner']);
+        $email = esc_html($data['email']);
+        $telefon = esc_html($data['telefon']);
+        $steuernummer = esc_html($data['steuernummer'] ?? '-');
+        $imei = esc_html($data['imei'] ?? '-');
+        $datumHaendler = esc_html($data['datumHaendler'] ?? date('Y-m-d'));
+        $zubehoer = is_array($data['zubehoer'] ?? []) ? implode(', ', $data['zubehoer']) : esc_html($data['zubehoer'] ?? '-');
+        $zustand = esc_html($data['zustand'] ?? '-');
+        $signatureHaendler = $data['signatureHaendler'] ?? '';
+
+        return "
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='UTF-8'>
+    <style>
+        @page { margin: 20mm; }
+        body {
+            font-family: DejaVu Sans, Arial, sans-serif;
+            font-size: 11pt;
+            line-height: 1.5;
+            color: #333;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #00bfff;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            color: #00bfff;
+            font-size: 22pt;
+            margin: 0 0 5px 0;
+        }
+        .header p {
+            color: #666;
+            margin: 0;
+        }
+        .section {
+            margin-bottom: 20px;
+        }
+        .section-title {
+            background: #00bfff;
+            color: white;
+            padding: 8px 12px;
+            font-size: 12pt;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .info-box {
+            background: #f5f5f5;
+            padding: 12px;
+            border-left: 4px solid #00bfff;
+        }
+        .field {
+            margin-bottom: 6px;
+        }
+        .field-label {
+            font-weight: bold;
+            color: #555;
+            display: inline-block;
+            width: 140px;
+        }
+        .field-value {
+            color: #333;
+        }
+        .test-phase {
+            background: #e8f5e9;
+            padding: 12px;
+            border-left: 4px solid #22c55e;
+            margin: 15px 0;
+        }
+        .test-phase h3 {
+            color: #22c55e;
+            margin: 0 0 8px 0;
+        }
+        .geraete-box {
+            background: #f9f9f9;
+            padding: 12px;
+            border: 1px solid #ddd;
+            margin: 10px 0;
+        }
+        .price-info {
+            background: #fff8e1;
+            padding: 12px;
+            border-left: 4px solid #f59e0b;
+            margin: 15px 0;
+        }
+        .signature-section {
+            margin-top: 30px;
+            page-break-inside: avoid;
+        }
+        .signature-box {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin-top: 10px;
+            min-height: 100px;
+        }
+        .signature-img {
+            max-width: 250px;
+            max-height: 80px;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
+            text-align: center;
+            font-size: 9pt;
+            color: #666;
+        }
+        table.device-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+        table.device-table td {
+            padding: 6px 10px;
+            border: 1px solid #ddd;
+        }
+        table.device-table td:first-child {
+            font-weight: bold;
+            width: 150px;
+            background: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <div class='header'>
+        <h1>PunktePass Testphase</h1>
+        <p>30 Tage kostenlos testen + Geräteübergabe</p>
+    </div>
+
+    <div class='section'>
+        <div class='section-title'>Anbieter (Dienstleister)</div>
+        <div class='info-box'>
+            <strong>Erik Borota</strong><br>
+            PunktePass<br>
+            Siedlungsring 51<br>
+            89415 Lauingen<br><br>
+            Telefon: 0176 84831021<br>
+            E-Mail: info@punktepass.de<br>
+            USt-IdNr.: DE308874569
+        </div>
+    </div>
+
+    <div class='section'>
+        <div class='section-title'>Händlerdaten</div>
+        <table class='device-table'>
+            <tr><td>Händlername</td><td>$haendlername</td></tr>
+            <tr><td>Adresse</td><td>$adresse</td></tr>
+            <tr><td>PLZ / Ort</td><td>$plz $ort</td></tr>
+            <tr><td>Ansprechpartner</td><td>$ansprechpartner</td></tr>
+            <tr><td>E-Mail</td><td>$email</td></tr>
+            <tr><td>Telefon</td><td>$telefon</td></tr>
+            <tr><td>Steuernummer</td><td>$steuernummer</td></tr>
+        </table>
+    </div>
+
+    <div class='test-phase'>
+        <h3>30 Tage kostenlose Testphase</h3>
+        <p>Mit dieser Anmeldung wurde eine <strong>30-tägige kostenlose Testphase</strong> gestartet.
+        Der Händler erhält ein Smartphone und einen Handy-Ständer als Leihgabe zur Nutzung des PunktePass Systems.
+        Die Testphase kann jederzeit gekündigt werden.</p>
+    </div>
+
+    <div class='section'>
+        <div class='section-title'>Bereitgestellte Geräte (Leihgabe)</div>
+        <div class='geraete-box'>
+            <p>• <strong>Smartphone:</strong> Xiaomi Redmi A5 – 4G – 64GB (Neu)<br>
+            • <strong>Handy-Ständer</strong></p>
+            <p style='margin-top: 10px; font-size: 10pt; color: #666;'>
+            Beide Geräte bleiben Eigentum des Anbieters. Bei Kündigung oder Vertragsende sind sie innerhalb von 7 Tagen zurückzugeben, ansonsten wird der Neuwert berechnet.</p>
+        </div>
+    </div>
+
+    <div class='section'>
+        <div class='section-title'>Übergabeprotokoll Geräte</div>
+        <table class='device-table'>
+            <tr><td>Smartphone</td><td>Xiaomi Redmi A5 – 4G – 64GB</td></tr>
+            <tr><td>IMEI</td><td>$imei</td></tr>
+            <tr><td>Ständer</td><td>Handy-Ständer (Eigentum des Anbieters)</td></tr>
+            <tr><td>Zubehör</td><td>$zubehoer</td></tr>
+            <tr><td>Zustand</td><td>$zustand</td></tr>
+        </table>
+    </div>
+
+    <div class='price-info'>
+        <strong>Preise nach der Testphase (zur Information):</strong><br>
+        Nach der Testphase: <strong>30 € netto / Monat</strong> (Mindestlaufzeit: 6 Monate)<br><br>
+        <small style='color: #666;'><strong>Hinweis:</strong> Der aktuelle Preis von 30 € netto/Monat gilt ausschließlich für die in einem späteren Vertrag vereinbarte Laufzeit. Bei einer Vertragsverlängerung kann der Preis angepasst werden. Es gibt keine automatische Verlängerung.</small>
+    </div>
+
+    <div class='signature-section'>
+        <div class='section-title'>Unterschrift Händler</div>
+        <div class='signature-box'>
+            " . (!empty($signatureHaendler) ? "<img src='$signatureHaendler' class='signature-img' alt='Unterschrift'><br>" : "") . "
+            <p style='margin-top: 10px;'><strong>Datum:</strong> $datumHaendler</p>
+            <p style='font-size: 9pt; color: #666;'>Digital unterzeichnet</p>
+        </div>
+    </div>
+
+    <div class='footer'>
+        <p>© " . date('Y') . " PunktePass | Erik Borota | info@punktepass.de</p>
+        <p>Dieses Dokument wurde digital erstellt am " . date('d.m.Y H:i') . " Uhr</p>
     </div>
 </body>
 </html>";
