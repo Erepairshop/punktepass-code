@@ -562,7 +562,7 @@ public static function render_landing_page($atts) {
             <!-- PWA Install Banner (auto-popup on Chrome Android) -->
             <div id="ppv-pwa-banner" class="ppv-pwa-banner" style="display:none;">
                 <div class="ppv-pwa-banner-content">
-                    <img src="<?php echo PPV_PLUGIN_URL; ?>assets/images/logo.png" alt="PunktePass" class="ppv-pwa-banner-icon">
+                    <img src="<?php echo PPV_PLUGIN_URL; ?>assets/img/pwa-icon-192.png" alt="PunktePass" class="ppv-pwa-banner-icon">
                     <div class="ppv-pwa-banner-text">
                         <strong><?php echo PPV_Lang::t('login_pwa_banner_title', 'PunktePass App telepítése'); ?></strong>
                         <p><?php echo PPV_Lang::t('login_pwa_banner_desc', 'Telepítsd az appot a gyorsabb hozzáféréshez!'); ?></p>
