@@ -151,6 +151,7 @@ class PPV_Haendlervertrag {
         $datumHaendler = esc_html($data['datumHaendler'] ?? date('Y-m-d'));
         $zubehoer = is_array($data['zubehoer'] ?? []) ? implode(', ', $data['zubehoer']) : esc_html($data['zubehoer'] ?? '-');
         $zustand = esc_html($data['zustand'] ?? '-');
+        $signatureHaendler = $data['signatureHaendler'] ?? '';
 
         return "
 <!DOCTYPE html>
@@ -168,18 +169,19 @@ class PPV_Haendlervertrag {
         .field { margin-bottom: 10px; }
         .field-label { font-weight: bold; color: #666; }
         .field-value { color: #333; }
-        .terms { background: #fff; padding: 20px; border-radius: 8px; margin-top: 20px; }
-        .term { margin-bottom: 15px; }
-        .term h4 { color: #1a1a2e; margin-bottom: 5px; }
-        .term p { color: #555; font-size: 14px; margin: 0; }
+        .test-phase { background: #e8f5e9; padding: 15px; border-radius: 8px; border-left: 4px solid #22c55e; margin-bottom: 20px; }
+        .test-phase h3 { color: #22c55e; margin-bottom: 10px; }
+        .price-info { background: #fff8e1; padding: 15px; border-radius: 8px; margin-top: 15px; }
         .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
-        .signature-note { background: #fff3cd; padding: 15px; border-radius: 8px; margin-top: 20px; }
+        .signature-section { background: #fff; padding: 20px; border-radius: 8px; margin-top: 20px; border: 1px solid #ddd; }
+        .signature-img { max-width: 300px; border: 1px solid #ccc; border-radius: 4px; margin-top: 10px; }
     </style>
 </head>
 <body>
     <div class='container'>
         <div class='header'>
-            <h1>PunktePass Händlervertrag</h1>
+            <h1>PunktePass Testphase</h1>
+            <p style='margin: 10px 0 0 0; opacity: 0.9;'>30 Tage kostenlos testen + Geräteübergabe</p>
         </div>
         <div class='content'>
             <div class='section'>
@@ -204,34 +206,19 @@ class PPV_Haendlervertrag {
                 <div class='field'><span class='field-label'>Steuernummer:</span> <span class='field-value'>$steuernummer</span></div>
             </div>
 
-            <div class='terms'>
-                <div class='term'>
-                    <h4>§1 Vertragslaufzeit</h4>
-                    <p>Die Mindestvertragslaufzeit beträgt 6 Monate und beginnt nach Ablauf der 30-tägigen kostenlosen Testphase. Der Vertrag endet automatisch nach Ablauf der vereinbarten Laufzeit. Eine Verlängerung erfolgt nur auf ausdrücklichen Wunsch des Händlers – es gibt keine automatische Verlängerung.</p>
-                </div>
-                <div class='term'>
-                    <h4>§2 Testphase (0 € – 30 Tage)</h4>
-                    <p>Der Händler erhält eine 30-tägige Testphase kostenlos. Erfolgt bis zum Ende dieser Phase keine Kündigung, tritt der 6-Monatsvertrag in Kraft.</p>
-                </div>
-                <div class='term'>
-                    <h4>§3 Bereitgestellte Geräte – Leihgabe</h4>
-                    <p>Der Händler erhält für die Laufzeit folgende Geräte zur Nutzung des PunktePass Systems:<br>
-                    • Smartphone: Xiaomi Redmi A5 – 4G – 64GB (Neu)<br>
-                    • Handy-Ständer<br>
-                    Beide Geräte bleiben Eigentum des Anbieters und sind bei Vertragsende zurückzugeben.</p>
-                </div>
-                <div class='term'>
-                    <h4>§4 Gebühren & Zahlung</h4>
-                    <p>Monatliche Gebühr nach Testphase: 30 € netto. Zahlung erfolgt wahlweise per Banküberweisung oder PayPal innerhalb von 7 Tagen nach Rechnungserhalt.<br><br>
-                    <strong>Hinweis:</strong> Der aktuelle Preis von 30 € netto/Monat gilt ausschließlich für die in diesem Vertrag vereinbarte Laufzeit. Bei einer Vertragsverlängerung kann der Preis angepasst werden.</p>
-                </div>
-                <div class='term'>
-                    <h4>§5 Verlängerungsoption</h4>
-                    <p>Der Händler kann den Vertrag vor Ablauf freiwillig um weitere 6 Monate verlängern. Eine automatische Verlängerung findet nicht statt.</p>
-                </div>
+            <div class='test-phase'>
+                <h3>30 Tage kostenlose Testphase</h3>
+                <p>Mit dieser Anmeldung wurde eine <strong>30-tägige kostenlose Testphase</strong> gestartet. Der Händler erhält ein Smartphone und einen Handy-Ständer als Leihgabe zur Nutzung des PunktePass Systems.</p>
             </div>
 
-            <div class='section' style='margin-top: 25px;'>
+            <div class='section'>
+                <div class='section-title'>Bereitgestellte Geräte (Leihgabe)</div>
+                <p>• <strong>Smartphone:</strong> Xiaomi Redmi A5 – 4G – 64GB (Neu)<br>
+                • <strong>Handy-Ständer</strong><br><br>
+                Beide Geräte bleiben Eigentum des Anbieters. Bei Kündigung oder Vertragsende sind sie innerhalb von 7 Tagen zurückzugeben.</p>
+            </div>
+
+            <div class='section'>
                 <div class='section-title'>Übergabeprotokoll Geräte</div>
                 <div class='field'><span class='field-label'>Smartphone:</span> <span class='field-value'>Xiaomi Redmi A5 – 4G – 64GB</span></div>
                 <div class='field'><span class='field-label'>IMEI:</span> <span class='field-value'>$imei</span></div>
@@ -240,9 +227,16 @@ class PPV_Haendlervertrag {
                 <div class='field'><span class='field-label'>Zustand:</span> <span class='field-value'>$zustand</span></div>
             </div>
 
-            <div class='signature-note'>
-                <strong>Unterschrift Händler:</strong> Digital unterzeichnet am $datumHaendler<br>
-                <small>Die digitale Unterschrift wurde online erfasst.</small>
+            <div class='price-info'>
+                <strong>Preise nach der Testphase (zur Information):</strong><br>
+                Nach der Testphase: 30 € netto / Monat (Mindestlaufzeit: 6 Monate)<br><br>
+                <small style='color: #666;'><strong>Hinweis:</strong> Der aktuelle Preis von 30 € netto/Monat gilt ausschließlich für die in einem späteren Vertrag vereinbarte Laufzeit. Bei einer Vertragsverlängerung kann der Preis angepasst werden. Es gibt keine automatische Verlängerung.</small>
+            </div>
+
+            <div class='signature-section'>
+                <strong>Unterschrift Händler:</strong><br>
+                " . (!empty($signatureHaendler) ? "<img src='$signatureHaendler' alt='Unterschrift' class='signature-img'><br>" : "") . "
+                <small>Digital unterzeichnet am $datumHaendler</small>
             </div>
         </div>
         <div class='footer'>
