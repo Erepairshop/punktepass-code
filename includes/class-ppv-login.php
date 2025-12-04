@@ -70,7 +70,7 @@ class PPV_Login {
     }
     
     /** ============================================================
-     * 🔹 Get Current Language (Cookie > GET > GeoIP > Locale)
+     * 🔹 Get Current Language (Cookie > GET > Domain > Browser)
      * ============================================================ */
     private static function get_current_lang() {
         static $lang = null;
@@ -84,7 +84,11 @@ class PPV_Login {
         elseif (isset($_GET['lang'])) {
             $lang = sanitize_text_field($_GET['lang']);
         }
-        // 3. GeoIP detection (country-based)
+        // 3. Check domain (punktepass.ro → Romanian)
+        elseif (self::detect_language_by_domain()) {
+            $lang = self::detect_language_by_domain();
+        }
+        // 4. Browser language detection
         else {
             $lang = self::detect_language_by_country();
         }
@@ -95,6 +99,24 @@ class PPV_Login {
         }
 
         return $lang;
+    }
+
+    /** ============================================================
+     * 🌍 Detect Language by Domain (.ro → Romanian, .hu → Hungarian)
+     * ============================================================ */
+    private static function detect_language_by_domain() {
+        $host = $_SERVER['HTTP_HOST'] ?? '';
+
+        // punktepass.ro → Romanian
+        if (preg_match('/\.ro$/i', $host)) {
+            return 'ro';
+        }
+        // punktepass.hu → Hungarian (for future use)
+        if (preg_match('/\.hu$/i', $host)) {
+            return 'hu';
+        }
+
+        return null;
     }
 
     /** ============================================================
