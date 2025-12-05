@@ -1898,14 +1898,22 @@ www.punktepass.de
             return;
         }
 
-        // Update active status (PPV users: 1 = active, 0 = disabled)
-        $new_status = $action === 'enable' ? 1 : 0;
+        // Update status and user_type
+        // When disabled: user_type becomes 'user' (can still login as regular user)
+        // When enabled: user_type becomes 'scanner' (has scanner privileges)
+        if ($action === 'disable') {
+            $update_data = ['active' => 0, 'user_type' => 'user'];
+            $update_format = ['%d', '%s'];
+        } else {
+            $update_data = ['active' => 1, 'user_type' => 'scanner'];
+            $update_format = ['%d', '%s'];
+        }
 
         $update_result = $wpdb->update(
             "{$wpdb->prefix}ppv_users",
-            ['active' => $new_status],
+            $update_data,
             ['id' => $scanner_user_id],
-            ['%d'],
+            $update_format,
             ['%d']
         );
 
@@ -1915,12 +1923,14 @@ www.punktepass.de
             return;
         }
 
-        $status_text = $action === 'disable' ? 'deaktiviert' : 'aktiviert';
+        $status_text = $action === 'disable' ? 'deaktiviert (jetzt normaler Benutzer)' : 'aktiviert';
 
         ppv_log("✅ [PPV_Scanner] Scanner {$status_text}: ID={$scanner_user_id}, Email={$scanner_user->email}");
 
         wp_send_json_success([
-            'message' => "✅ Scanner erfolgreich {$status_text}!",
+            'message' => $action === 'disable'
+                ? "✅ Scanner deaktiviert! Benutzer kann sich weiterhin als normaler Nutzer einloggen."
+                : "✅ Scanner erfolgreich aktiviert!",
             'new_status' => $action === 'enable' ? 'active' : 'disabled'
         ]);
     }
