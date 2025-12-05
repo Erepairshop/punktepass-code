@@ -1985,7 +1985,7 @@ class PPV_Standalone_Admin {
             <table id="handlersTable">
                 <thead>
                     <tr>
-                        <th>ID</th>
+                        <th>Email</th>
                         <th>Név</th>
                         <th>Város</th>
                         <th>Abo hátra</th>
@@ -2052,7 +2052,7 @@ class PPV_Standalone_Admin {
                             data-email="<?php echo esc_attr(strtolower($handler->email ?? '')); ?>"
                             data-status="<?php echo esc_attr($status_for_filter); ?>"
                             data-scanner="<?php echo esc_attr($handler->scanner_type ?? 'fixed'); ?>">
-                            <td>#<?php echo $handler->id; ?></td>
+                            <td style="font-size: 12px; color: #00e6ff;"><?php echo esc_html($handler->email ?: '-'); ?></td>
                             <td><strong><?php echo esc_html($handler->name); ?></strong></td>
                             <td><?php echo esc_html($handler->city ?: '-'); ?></td>
                             <td>
