@@ -177,33 +177,9 @@ class PPV_My_Points {
             $lang = 'de';
         }
 
-        // 🍎 iOS scroll fix CSS - NO nested scroll containers!
-        $ios_scroll_css = '
-        <style>
-        /* iOS: Remove any separate scrolling - let main page handle it */
-        .ppv-mypoints-tab-content,
-        .ppv-analytics-wrapper {
-            overflow: visible !important;
-            height: auto !important;
-            max-height: none !important;
-        }
-        .ppv-analytics-wrapper {
-            padding-bottom: 120px;
-        }
-        /* Fix iOS body scroll */
-        @supports (-webkit-touch-callout: none) {
-            body.ppv-my-points {
-                -webkit-overflow-scrolling: touch;
-                overflow-y: scroll;
-            }
-        }
-        </style>
-        ';
-
         // ✅ SAME AS USER DASHBOARD - No user check here, let JS/REST API handle it!
         // This fixes Google/Facebook/TikTok login where session might not be ready yet
-        $html = $ios_scroll_css;
-        $html .= '<div id="ppv-my-points-app" data-lang="' . esc_attr($lang) . '"></div>';
+        $html = '<div id="ppv-my-points-app" data-lang="' . esc_attr($lang) . '"></div>';
         $html .= do_shortcode('[ppv_bottom_nav]');
 
         ppv_log("✅ [PPV_My_Points] Shell rendered, lang={$lang}");
