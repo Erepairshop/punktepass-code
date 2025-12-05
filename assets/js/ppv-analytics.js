@@ -206,88 +206,84 @@ window.PPV_Analytics = class PPV_Analytics {
     const lang = window.ppv_mypoints?.lang || 'de';
     const l = this.getLabels(lang);
 
+    // NO WRAPPER - render directly like "Meine Punkte" tab does
     const html = `
-      <div class="ppv-analytics-wrapper">
-        <!-- Header -->
-        <div class="ppv-analytics-header">
-          <h3><i class="ri-bar-chart-2-line"></i> ${l.analytics_title}</h3>
-          <div class="ppv-analytics-controls">
-            <label>${l.analytics_range_label}</label>
-            <select id="ppv-analytics-range" class="ppv-analytics-range-select">
-              <option value="7">${l.analytics_range_7}</option>
-              <option value="30" selected>${l.analytics_range_30}</option>
-              <option value="90">${l.analytics_range_90}</option>
-              <option value="365">${l.analytics_range_365}</option>
-            </select>
+      <!-- Header -->
+      <div class="ppv-analytics-header">
+        <h3><i class="ri-bar-chart-2-line"></i> ${l.analytics_title}</h3>
+        <div class="ppv-analytics-controls">
+          <label>${l.analytics_range_label}</label>
+          <select id="ppv-analytics-range" class="ppv-analytics-range-select">
+            <option value="7">${l.analytics_range_7}</option>
+            <option value="30" selected>${l.analytics_range_30}</option>
+            <option value="90">${l.analytics_range_90}</option>
+            <option value="365">${l.analytics_range_365}</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Summary Cards -->
+      <div class="ppv-analytics-summary">
+        <div class="ppv-summary-card">
+          <div class="card-icon"><i class="ri-calendar-event-fill"></i></div>
+          <div class="card-content">
+            <div class="label">${l.analytics_this_week}</div>
+            <div class="value" id="ppv-week-points">0</div>
+            <div class="unit">${l.analytics_points_unit}</div>
           </div>
         </div>
 
-        <!-- Summary Cards -->
-        <div class="ppv-analytics-summary">
-          <div class="ppv-summary-card">
-            <div class="card-icon"><i class="ri-calendar-event-fill"></i></div>
-            <div class="card-content">
-              <div class="label">${l.analytics_this_week}</div>
-              <div class="value" id="ppv-week-points">0</div>
-              <div class="unit">${l.analytics_points_unit}</div>
-            </div>
-          </div>
-
-          <div class="ppv-summary-card">
-            <div class="card-icon"><i class="ri-calendar-2-fill"></i></div>
-            <div class="card-content">
-              <div class="label">${l.analytics_this_month}</div>
-              <div class="value" id="ppv-month-points">0</div>
-              <div class="unit">${l.analytics_points_unit}</div>
-            </div>
-          </div>
-
-          <div class="ppv-summary-card">
-            <div class="card-icon"><i class="ri-calendar-year-fill"></i></div>
-            <div class="card-content">
-              <div class="label">${l.analytics_this_year}</div>
-              <div class="value" id="ppv-year-points">0</div>
-              <div class="unit">${l.analytics_points_unit}</div>
-            </div>
-          </div>
-
-          <div class="ppv-summary-card">
-            <div class="card-icon"><i class="ri-fire-fill"></i></div>
-            <div class="card-content">
-              <div class="label">${l.analytics_current_streak}</div>
-              <div class="value" id="ppv-streak">0</div>
-              <div class="unit">${l.analytics_days_unit}</div>
-            </div>
+        <div class="ppv-summary-card">
+          <div class="card-icon"><i class="ri-calendar-2-fill"></i></div>
+          <div class="card-content">
+            <div class="label">${l.analytics_this_month}</div>
+            <div class="value" id="ppv-month-points">0</div>
+            <div class="unit">${l.analytics_points_unit}</div>
           </div>
         </div>
 
-        <!-- Trend Chart -->
-        <div class="ppv-analytics-section">
-          <h4>${l.analytics_trend_title}</h4>
-          <div id="ppv-chart-trend" class="ppv-chart-container"></div>
-        </div>
-
-        <!-- Store Breakdown Chart -->
-        <div class="ppv-analytics-section">
-          <h4>${l.analytics_stores_title}</h4>
-          <div class="ppv-stores-breakdown">
-            <div id="ppv-chart-stores" class="ppv-chart-container ppv-chart-pie"></div>
-            <div id="ppv-stores-list" class="ppv-stores-list"></div>
+        <div class="ppv-summary-card">
+          <div class="card-icon"><i class="ri-calendar-year-fill"></i></div>
+          <div class="card-content">
+            <div class="label">${l.analytics_this_year}</div>
+            <div class="value" id="ppv-year-points">0</div>
+            <div class="unit">${l.analytics_points_unit}</div>
           </div>
         </div>
 
-        <!-- Best Day Info -->
-        <div class="ppv-analytics-section">
-          <h4>${l.analytics_best_day_title}</h4>
-          <div id="ppv-best-day" class="ppv-best-day-card"></div>
+        <div class="ppv-summary-card">
+          <div class="card-icon"><i class="ri-fire-fill"></i></div>
+          <div class="card-content">
+            <div class="label">${l.analytics_current_streak}</div>
+            <div class="value" id="ppv-streak">0</div>
+            <div class="unit">${l.analytics_days_unit}</div>
+          </div>
         </div>
+      </div>
+
+      <!-- Trend Chart -->
+      <div class="ppv-analytics-section">
+        <h4>${l.analytics_trend_title}</h4>
+        <div id="ppv-chart-trend" class="ppv-chart-container"></div>
+      </div>
+
+      <!-- Store Breakdown Chart -->
+      <div class="ppv-analytics-section">
+        <h4>${l.analytics_stores_title}</h4>
+        <div class="ppv-stores-breakdown">
+          <div id="ppv-chart-stores" class="ppv-chart-container ppv-chart-pie"></div>
+          <div id="ppv-stores-list" class="ppv-stores-list"></div>
+        </div>
+      </div>
+
+      <!-- Best Day Info -->
+      <div class="ppv-analytics-section">
+        <h4>${l.analytics_best_day_title}</h4>
+        <div id="ppv-best-day" class="ppv-best-day-card"></div>
       </div>
     `;
 
     this.container.innerHTML = html;
-
-    // 🍎 iOS scroll fix - prevent overscroll bounce from blocking parent scroll
-    this.fixIOSScroll();
 
     // Populate data
     this.populateSummary();
@@ -295,45 +291,6 @@ window.PPV_Analytics = class PPV_Analytics {
     this.renderStoresChart();
     this.renderStoresList();
     this.renderBestDay();
-  }
-
-  /** ============================================================
-   * 🍎 iOS SCROLL FIX
-   * ============================================================ */
-  fixIOSScroll() {
-    // Only apply on iOS
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    if (!isIOS) return;
-
-    const wrapper = this.container.querySelector('.ppv-analytics-wrapper');
-    if (!wrapper) return;
-
-    // Find the main scrollable container (ppv-dashboard-netto)
-    const scrollContainer = document.querySelector('.ppv-dashboard-netto');
-    if (!scrollContainer) return;
-
-    let startY = 0;
-
-    wrapper.addEventListener('touchstart', (e) => {
-      startY = e.touches[0].pageY;
-    }, { passive: true });
-
-    wrapper.addEventListener('touchmove', (e) => {
-      const currentY = e.touches[0].pageY;
-      const deltaY = currentY - startY;
-
-      const atTop = scrollContainer.scrollTop <= 0;
-      const atBottom = scrollContainer.scrollTop + scrollContainer.clientHeight >= scrollContainer.scrollHeight - 1;
-
-      // If at top and scrolling up, or at bottom and scrolling down, let it pass through
-      if ((atTop && deltaY > 0) || (atBottom && deltaY < 0)) {
-        // Don't prevent - let the body handle it or rubber-band naturally
-        return;
-      }
-    }, { passive: true });
-
-    this.log('🍎 iOS scroll fix applied');
   }
 
   /** ============================================================
