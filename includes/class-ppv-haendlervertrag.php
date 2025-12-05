@@ -226,7 +226,14 @@ class PPV_Haendlervertrag {
         $email = sanitize_email($data['email']);
         $telefon = sanitize_text_field($data['telefon']);
         $steuernummer = sanitize_text_field($data['steuernummer'] ?? '');
-        $imei = sanitize_text_field($data['imei'] ?? '');
+        $imei = preg_replace('/[^0-9]/', '', $data['imei'] ?? ''); // Only digits
+
+        // Validate IMEI if device is included
+        $device_included = !empty($data['device_included']);
+        if ($device_included && !empty($imei) && strlen($imei) !== 15) {
+            return new WP_Error('invalid_imei', 'IMEI muss genau 15 Ziffern haben', ['status' => 400]);
+        }
+
         $datumHaendler = sanitize_text_field($data['datumHaendler'] ?? date('Y-m-d'));
         $zubehoer = is_array($data['zubehoer'] ?? []) ? implode(', ', $data['zubehoer']) : ($data['zubehoer'] ?? '');
         $zustand = sanitize_text_field($data['zustand'] ?? '');
@@ -299,7 +306,16 @@ class PPV_Haendlervertrag {
 
         $sent_dealer = wp_mail($email, $dealer_subject, $email_body, $dealer_headers, $attachments);
 
-        if ($sent_admin || $sent_dealer || $contract_id) {
+        // Send copy to sales user with PDF attachment
+        $sales_subject = "Vertrag erstellt: $haendlername - Ihre Kopie";
+        $sales_headers = [
+            'Content-Type: text/html; charset=UTF-8',
+            'From: PunktePass <noreply@punktepass.de>',
+        ];
+
+        $sent_sales = wp_mail($sales_user['email'], $sales_subject, $email_body, $sales_headers, $attachments);
+
+        if ($sent_admin || $sent_dealer || $sent_sales || $contract_id) {
             return [
                 'success' => true,
                 'message' => 'Vertrag erfolgreich gesendet',
@@ -1656,7 +1672,8 @@ class PPV_Haendlervertrag {
                             </div>
                             <div class="device-field">
                                 <label>IMEI:</label>
-                                <input type="text" id="imei" name="imei" placeholder="IMEI-Nummer">
+                                <input type="text" id="imei" name="imei" placeholder="15-stellige IMEI-Nummer" pattern="[0-9]{15}" maxlength="15" title="IMEI muss genau 15 Ziffern haben">
+                                <small style="color: #666; font-size: 11px;">Genau 15 Ziffern (auf Gerät: *#06#)</small>
                             </div>
                             <div class="device-field">
                                 <label>Ständer:</label>
@@ -1883,6 +1900,17 @@ class PPV_Haendlervertrag {
             if (isCanvasEmpty('signatureHaendler')) {
                 alert('Bitte unterschreiben Sie den Vertrag.');
                 return;
+            }
+
+            // Validate IMEI if device is included
+            const deviceIncluded = document.getElementById('device_included').checked;
+            if (deviceIncluded) {
+                const imei = document.getElementById('imei').value.trim();
+                if (imei && !/^\d{15}$/.test(imei)) {
+                    alert('IMEI muss genau 15 Ziffern haben.');
+                    document.getElementById('imei').focus();
+                    return;
+                }
             }
 
             const submitBtn = document.getElementById('submitBtn');
