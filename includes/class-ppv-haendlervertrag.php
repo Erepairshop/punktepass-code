@@ -86,13 +86,38 @@ class PPV_Haendlervertrag {
             wp_send_json_error(['message' => 'E-Mail und Passwort erforderlich']);
         }
 
-        // Check in ppv_users table
+        $user_id = null;
+        $user_email = null;
+        $user_type = null;
+
+        // 1. Check in ppv_users table first
         $user = $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM {$prefix}ppv_users WHERE email = %s AND active = 1 LIMIT 1",
             $email
         ));
 
-        if (!$user || !password_verify($password, $user->password)) {
+        if ($user && password_verify($password, $user->password)) {
+            $user_id = $user->id;
+            $user_email = $user->email;
+            $user_type = $user->user_type;
+        }
+
+        // 2. If not found, check in ppv_stores table (handlers)
+        if (!$user_id) {
+            $store = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM {$prefix}ppv_stores WHERE email = %s AND active = 1 LIMIT 1",
+                $email
+            ));
+
+            if ($store && password_verify($password, $store->password)) {
+                $user_id = $store->id;
+                $user_email = $store->email;
+                $user_type = 'handler';
+            }
+        }
+
+        // 3. No valid login found
+        if (!$user_id) {
             wp_send_json_error(['message' => 'Ungültige Anmeldedaten']);
         }
 
@@ -102,14 +127,14 @@ class PPV_Haendlervertrag {
         }
 
         // Set session
-        $_SESSION['ppv_vertrag_user_id'] = $user->id;
-        $_SESSION['ppv_vertrag_user_email'] = $user->email;
-        $_SESSION['ppv_vertrag_user_type'] = $user->user_type;
+        $_SESSION['ppv_vertrag_user_id'] = $user_id;
+        $_SESSION['ppv_vertrag_user_email'] = $user_email;
+        $_SESSION['ppv_vertrag_user_type'] = $user_type;
 
         wp_send_json_success([
             'message' => 'Erfolgreich eingeloggt',
-            'user_email' => $user->email,
-            'user_type' => $user->user_type
+            'user_email' => $user_email,
+            'user_type' => $user_type
         ]);
     }
 
