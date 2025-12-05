@@ -1966,17 +1966,17 @@ class PPV_Standalone_Admin {
                        oninput="filterHandlers()">
             </div>
             <select id="statusFilter" onchange="filterHandlers()"
-                    style="padding: 10px 15px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff; font-size: 14px;">
-                <option value="">Összes státusz</option>
-                <option value="active">Aktív</option>
-                <option value="trial">Trial</option>
-                <option value="expired">Lejárt</option>
+                    style="padding: 10px 15px; background: #1a1a2e; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; font-size: 14px;">
+                <option value="" style="background: #1a1a2e; color: #fff;">Összes státusz</option>
+                <option value="active" style="background: #1a1a2e; color: #4caf50;">Aktív</option>
+                <option value="trial" style="background: #1a1a2e; color: #ff9800;">Trial</option>
+                <option value="expired" style="background: #1a1a2e; color: #f44336;">Lejárt</option>
             </select>
             <select id="scannerFilter" onchange="filterHandlers()"
-                    style="padding: 10px 15px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff; font-size: 14px;">
-                <option value="">Összes scanner</option>
-                <option value="mobile">Mobile</option>
-                <option value="fixed">Fixed</option>
+                    style="padding: 10px 15px; background: #1a1a2e; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; font-size: 14px;">
+                <option value="" style="background: #1a1a2e; color: #fff;">Összes scanner</option>
+                <option value="mobile" style="background: #1a1a2e; color: #00e6ff;">Mobile</option>
+                <option value="fixed" style="background: #1a1a2e; color: #888;">Fixed</option>
             </select>
             <span id="handlerCount" style="color: #888; font-size: 13px;"></span>
         </div>
