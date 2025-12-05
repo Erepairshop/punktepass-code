@@ -478,6 +478,15 @@ class PPV_Haendlervertrag {
                 <small style='color: #666;'><strong>Hinweis:</strong> Der aktuelle Preis von 30 € netto/Monat gilt ausschließlich für die in einem späteren Vertrag vereinbarte Laufzeit. Bei einer Vertragsverlängerung kann der Preis angepasst werden. Es gibt keine automatische Verlängerung.</small>
             </div>
 
+            <div class='section' style='background: #e3f2fd; padding: 15px; border-radius: 8px; border-left: 4px solid #2196f3; margin-bottom: 20px;'>
+                <div class='section-title' style='color: #1976d2; border-bottom-color: #2196f3;'>Vertragsverlängerung</div>
+                <p><strong>Wichtig:</strong> Der Vertrag verlängert sich <strong>nicht automatisch</strong>. Der Händler muss die Verlängerung selbst aktiv vornehmen.<br><br>
+                <strong>Verlängerungsmöglichkeiten:</strong><br>
+                • Im PunktePass System (verfügbar 7 Tage vor Ablauf der Testphase)<br>
+                • Per Telefon: 0176 84831021<br>
+                • Per E-Mail: info@punktepass.de</p>
+            </div>
+
             <div class='signature-section'>
                 <strong>Unterschrift Händler:</strong><br>
                 " . (!empty($signatureHaendler) ? "<img src='$signatureHaendler' alt='Unterschrift' class='signature-img'><br>" : "") . "
@@ -706,6 +715,14 @@ class PPV_Haendlervertrag {
     <div class='price-info'>
         <strong>Preise nach Testphase:</strong> 30 € netto/Monat (Mindestlaufzeit: 6 Monate)<br>
         <span style='font-size: 7pt; color: #666;'>Hinweis: Preis gilt nur für die Vertragslaufzeit. Bei Verlängerung kann der Preis angepasst werden. Keine automatische Verlängerung.</span>
+    </div>
+
+    <div class='section' style='margin-top: 8px;'>
+        <div class='section-title' style='background: #1976d2;'>Vertragsverlängerung</div>
+        <div style='background: #e3f2fd; padding: 6px 8px; font-size: 8pt;'>
+            <strong>Wichtig:</strong> Der Vertrag verlängert sich <strong>nicht automatisch</strong>. Der Händler muss die Verlängerung selbst aktiv vornehmen.<br>
+            <strong>Möglichkeiten:</strong> Im PunktePass System (7 Tage vor Ablauf) | Tel: 0176 84831021 | E-Mail: info@punktepass.de
+        </div>
     </div>
 
     <table class='signatures'>
@@ -1566,6 +1583,15 @@ class PPV_Haendlervertrag {
                             <h3>Preise nach der Testphase (zur Information)</h3>
                             <p>Nach der Testphase: <strong>30 € netto / Monat</strong> (Mindestlaufzeit: 6 Monate)<br><br>
                             <small style="color: #666;"><strong>Hinweis:</strong> Der aktuelle Preis von 30 € netto/Monat gilt ausschließlich für die in einem späteren Vertrag vereinbarte Laufzeit. Bei einer Vertragsverlängerung kann der Preis angepasst werden. Es gibt keine automatische Verlängerung.</small></p>
+                        </div>
+
+                        <div class="term" style="background: #e3f2fd; padding: 15px; border-radius: 8px; border-left: 4px solid #2196f3;">
+                            <h3 style="color: #1976d2;">Vertragsverlängerung</h3>
+                            <p><strong>Wichtig:</strong> Der Vertrag verlängert sich <strong>nicht automatisch</strong>. Der Händler muss die Verlängerung selbst aktiv vornehmen.<br><br>
+                            <strong>Verlängerungsmöglichkeiten:</strong><br>
+                            • Im PunktePass System (verfügbar 7 Tage vor Ablauf der Testphase)<br>
+                            • Per Telefon: 0176 84831021<br>
+                            • Per E-Mail: info@punktepass.de</p>
                         </div>
                     </div>
 
