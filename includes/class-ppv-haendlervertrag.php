@@ -226,11 +226,12 @@ class PPV_Haendlervertrag {
         $email = sanitize_email($data['email']);
         $telefon = sanitize_text_field($data['telefon']);
         $steuernummer = sanitize_text_field($data['steuernummer'] ?? '');
-        $imei = preg_replace('/[^0-9]/', '', $data['imei'] ?? ''); // Only digits
+        $imei_unknown = !empty($data['imei_unknown']);
+        $imei = $imei_unknown ? 'Noch unbekannt' : preg_replace('/[^0-9]/', '', $data['imei'] ?? '');
 
-        // Validate IMEI if device is included
+        // Validate IMEI if device is included and not marked as unknown
         $device_included = !empty($data['device_included']);
-        if ($device_included && !empty($imei) && strlen($imei) !== 15) {
+        if ($device_included && !$imei_unknown && !empty($imei) && strlen($imei) !== 15) {
             return new WP_Error('invalid_imei', 'IMEI muss genau 15 Ziffern haben', ['status' => 400]);
         }
 
@@ -1672,8 +1673,15 @@ class PPV_Haendlervertrag {
                             </div>
                             <div class="device-field">
                                 <label>IMEI:</label>
-                                <input type="text" id="imei" name="imei" placeholder="15-stellige IMEI-Nummer" pattern="[0-9]{15}" maxlength="15" title="IMEI muss genau 15 Ziffern haben">
-                                <small style="color: #666; font-size: 11px;">Genau 15 Ziffern (auf Gerät: *#06#)</small>
+                                <div style="display: flex; flex-direction: column; gap: 8px;">
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <input type="text" id="imei" name="imei" placeholder="15-stellige IMEI-Nummer" pattern="[0-9]{15}" maxlength="15" title="IMEI muss genau 15 Ziffern haben" style="flex: 1;">
+                                        <label style="display: flex; align-items: center; gap: 5px; white-space: nowrap; cursor: pointer;">
+                                            <input type="checkbox" id="imei_unknown" name="imei_unknown" value="1"> Noch unbekannt
+                                        </label>
+                                    </div>
+                                    <small style="color: #666; font-size: 11px;">Genau 15 Ziffern (auf Gerät: *#06#) oder "Noch unbekannt" wenn Gerät später kommt</small>
+                                </div>
                             </div>
                             <div class="device-field">
                                 <label>Ständer:</label>
@@ -1892,6 +1900,20 @@ class PPV_Haendlervertrag {
             });
         });
 
+        // IMEI unknown checkbox toggle
+        const imeiUnknown = document.getElementById('imei_unknown');
+        const imeiInput = document.getElementById('imei');
+        imeiUnknown.addEventListener('change', function() {
+            if (this.checked) {
+                imeiInput.disabled = true;
+                imeiInput.value = '';
+                imeiInput.placeholder = 'Wird nachgereicht';
+            } else {
+                imeiInput.disabled = false;
+                imeiInput.placeholder = '15-stellige IMEI-Nummer';
+            }
+        });
+
         // Form submission
         document.getElementById('contractForm').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -1902,9 +1924,10 @@ class PPV_Haendlervertrag {
                 return;
             }
 
-            // Validate IMEI if device is included
+            // Validate IMEI if device is included and not marked as unknown
             const deviceIncluded = document.getElementById('device_included').checked;
-            if (deviceIncluded) {
+            const imeiUnknownChecked = document.getElementById('imei_unknown').checked;
+            if (deviceIncluded && !imeiUnknownChecked) {
                 const imei = document.getElementById('imei').value.trim();
                 if (imei && !/^\d{15}$/.test(imei)) {
                     alert('IMEI muss genau 15 Ziffern haben.');
