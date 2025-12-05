@@ -243,7 +243,7 @@ window.PPV_Analytics = class PPV_Analytics {
         </div>
 
         <div class="ppv-summary-card">
-          <div class="card-icon"><i class="ri-calendar-year-fill"></i></div>
+          <div class="card-icon"><i class="ri-calendar-check-fill"></i></div>
           <div class="card-content">
             <div class="label">${l.analytics_this_year}</div>
             <div class="value" id="ppv-year-points">0</div>
@@ -264,14 +264,14 @@ window.PPV_Analytics = class PPV_Analytics {
       <!-- Trend Chart -->
       <div class="ppv-analytics-section">
         <h4>${l.analytics_trend_title}</h4>
-        <div id="ppv-chart-trend" class="ppv-chart-container"></div>
+        <div id="ppv-chart-trend" class="ppv-chart-container" style="touch-action: pan-y;"></div>
       </div>
 
       <!-- Store Breakdown Chart -->
       <div class="ppv-analytics-section">
         <h4>${l.analytics_stores_title}</h4>
-        <div class="ppv-stores-breakdown">
-          <div id="ppv-chart-stores" class="ppv-chart-container ppv-chart-pie"></div>
+        <div class="ppv-stores-breakdown" style="touch-action: pan-y;">
+          <div id="ppv-chart-stores" class="ppv-chart-container ppv-chart-pie" style="touch-action: pan-y;"></div>
           <div id="ppv-stores-list" class="ppv-stores-list"></div>
         </div>
       </div>
@@ -504,7 +504,7 @@ window.PPV_Analytics = class PPV_Analytics {
     });
 
     return `
-      <svg viewBox="0 0 ${width} ${height}" class="ppv-trend-chart">
+      <svg viewBox="0 0 ${width} ${height}" class="ppv-trend-chart" style="touch-action: none; pointer-events: none;">
         <defs>
           <linearGradient id="grad1" x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" style="stop-color:#667eea;stop-opacity:0.3" />
@@ -586,7 +586,7 @@ window.PPV_Analytics = class PPV_Analytics {
     });
 
     return `
-      <svg viewBox="0 0 ${size} ${size}" class="ppv-pie-chart">
+      <svg viewBox="0 0 ${size} ${size}" class="ppv-pie-chart" style="touch-action: none; pointer-events: none;">
         ${slicesHtml}
       </svg>
     `;
