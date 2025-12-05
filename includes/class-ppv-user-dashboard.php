@@ -1323,6 +1323,8 @@ public static function render_dashboard() {
                vip_daily_enabled, vip_daily_bronze, vip_daily_silver, vip_daily_gold, vip_daily_platinum
         FROM {$prefix}ppv_stores
         WHERE active = 1
+          AND name IS NOT NULL
+          AND name != ''
         ORDER BY name ASC
     ");
 
