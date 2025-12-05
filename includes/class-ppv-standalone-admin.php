@@ -1958,13 +1958,37 @@ class PPV_Standalone_Admin {
             <div class="error-msg">❌ <?php echo esc_html($error); ?></div>
         <?php endif; ?>
 
+        <!-- Keresés és szűrés -->
+        <div class="filter-bar" style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; align-items: center;">
+            <div style="flex: 1; min-width: 200px;">
+                <input type="text" id="handlerSearch" placeholder="Keresés név, város vagy email alapján..."
+                       style="width: 100%; padding: 10px 15px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff; font-size: 14px;"
+                       oninput="filterHandlers()">
+            </div>
+            <select id="statusFilter" onchange="filterHandlers()"
+                    style="padding: 10px 15px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff; font-size: 14px;">
+                <option value="">Összes státusz</option>
+                <option value="active">Aktív</option>
+                <option value="trial">Trial</option>
+                <option value="expired">Lejárt</option>
+            </select>
+            <select id="scannerFilter" onchange="filterHandlers()"
+                    style="padding: 10px 15px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff; font-size: 14px;">
+                <option value="">Összes scanner</option>
+                <option value="mobile">Mobile</option>
+                <option value="fixed">Fixed</option>
+            </select>
+            <span id="handlerCount" style="color: #888; font-size: 13px;"></span>
+        </div>
+
         <div class="card">
-            <table>
+            <table id="handlersTable">
                 <thead>
                     <tr>
                         <th>ID</th>
                         <th>Név</th>
                         <th>Város</th>
+                        <th>Abo hátra</th>
                         <th>Scanner</th>
                         <th>Készülékek</th>
                         <th>Fiókok</th>
@@ -1989,6 +2013,21 @@ class PPV_Standalone_Admin {
                             ];
                         }, $handler_devices);
 
+                        // Abo hátra számítás
+                        $sub_status = $handler->subscription_status ?? 'trial';
+                        $days_remaining = null;
+                        $status_for_filter = $sub_status;
+
+                        if ($sub_status === 'trial' && $handler->trial_ends_at) {
+                            $days_remaining = (int) ((strtotime($handler->trial_ends_at) - time()) / 86400);
+                        } elseif ($sub_status === 'active' && $handler->subscription_expires_at) {
+                            $days_remaining = (int) ((strtotime($handler->subscription_expires_at) - time()) / 86400);
+                        }
+
+                        if ($days_remaining !== null && $days_remaining < 0) {
+                            $status_for_filter = 'expired';
+                        }
+
                         $handler_data = json_encode([
                             'id' => $handler->id,
                             'name' => $handler->name,
@@ -2005,10 +2044,31 @@ class PPV_Standalone_Admin {
                             'devices' => $devices_json
                         ], JSON_HEX_APOS | JSON_HEX_QUOT);
                     ?>
-                        <tr class="clickable-row" onclick='openHandlerModal(<?php echo $handler_data; ?>)' style="cursor: pointer;">
+                        <tr class="clickable-row handler-row"
+                            onclick='openHandlerModal(<?php echo $handler_data; ?>)'
+                            style="cursor: pointer;"
+                            data-name="<?php echo esc_attr(strtolower($handler->name)); ?>"
+                            data-city="<?php echo esc_attr(strtolower($handler->city ?? '')); ?>"
+                            data-email="<?php echo esc_attr(strtolower($handler->email ?? '')); ?>"
+                            data-status="<?php echo esc_attr($status_for_filter); ?>"
+                            data-scanner="<?php echo esc_attr($handler->scanner_type ?? 'fixed'); ?>">
                             <td>#<?php echo $handler->id; ?></td>
                             <td><strong><?php echo esc_html($handler->name); ?></strong></td>
                             <td><?php echo esc_html($handler->city ?: '-'); ?></td>
+                            <td>
+                                <?php if ($days_remaining === null): ?>
+                                    <span style="color: #666;">-</span>
+                                <?php elseif ($days_remaining < 0): ?>
+                                    <span style="color: #f44336; font-weight: 600;">Lejárt</span>
+                                <?php elseif ($days_remaining <= 7): ?>
+                                    <span style="color: #ff9800; font-weight: 600;"><?php echo $days_remaining; ?> nap</span>
+                                <?php else: ?>
+                                    <span style="color: #4caf50;"><?php echo $days_remaining; ?> nap</span>
+                                <?php endif; ?>
+                                <small style="display: block; color: #666; font-size: 10px;">
+                                    <?php echo $sub_status === 'trial' ? 'Trial' : ($sub_status === 'active' ? 'Aktív' : $sub_status); ?>
+                                </small>
+                            </td>
                             <td>
                                 <?php if ($handler->scanner_type === 'mobile'): ?>
                                     <span class="badge badge-mobile">Mobile</span>
@@ -2318,6 +2378,47 @@ class PPV_Standalone_Admin {
 
         <script>
         let currentHandler = null;
+
+        // Handler szűrés és keresés
+        function filterHandlers() {
+            const searchTerm = document.getElementById('handlerSearch').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+            const scannerFilter = document.getElementById('scannerFilter').value;
+            const rows = document.querySelectorAll('.handler-row');
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                const name = row.dataset.name || '';
+                const city = row.dataset.city || '';
+                const email = row.dataset.email || '';
+                const status = row.dataset.status || '';
+                const scanner = row.dataset.scanner || '';
+
+                // Keresés ellenőrzés
+                const matchesSearch = !searchTerm ||
+                    name.includes(searchTerm) ||
+                    city.includes(searchTerm) ||
+                    email.includes(searchTerm);
+
+                // Státusz szűrés
+                const matchesStatus = !statusFilter || status === statusFilter;
+
+                // Scanner szűrés
+                const matchesScanner = !scannerFilter || scanner === scannerFilter;
+
+                if (matchesSearch && matchesStatus && matchesScanner) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            document.getElementById('handlerCount').textContent = visibleCount + ' / ' + rows.length + ' handler';
+        }
+
+        // Oldal betöltéskor számoljuk meg
+        document.addEventListener('DOMContentLoaded', filterHandlers);
 
         function openHandlerModal(handler) {
             currentHandler = handler;
