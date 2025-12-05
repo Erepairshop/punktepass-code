@@ -1875,7 +1875,25 @@ www.punktepass.de
             return;
         }
 
-        if ($scanner_user->vendor_store_id != $handler_store_id) {
+        // Check if scanner belongs to handler's store OR any of their filialen
+        $scanner_store_id = intval($scanner_user->vendor_store_id);
+        $has_permission = false;
+
+        if ($scanner_store_id == $handler_store_id) {
+            $has_permission = true;
+        } else {
+            // Check if scanner's store is a filiale of handler's store
+            $is_filiale = $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_stores
+                 WHERE id = %d AND parent_store_id = %d",
+                $scanner_store_id, $handler_store_id
+            ));
+            if ($is_filiale > 0) {
+                $has_permission = true;
+            }
+        }
+
+        if (!$has_permission) {
             wp_send_json_error(['message' => 'Keine Berechtigung für diesen Benutzer']);
             return;
         }
