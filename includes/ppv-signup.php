@@ -1843,7 +1843,7 @@ www.punktepass.de
         }
 
         $scanner_user_id = intval($_POST['user_id'] ?? 0);
-        $action = sanitize_text_field($_POST['action_type'] ?? '');
+        $action = sanitize_text_field($_POST['toggle_action'] ?? '');
 
         if (!$scanner_user_id || !in_array($action, ['enable', 'disable'])) {
             wp_send_json_error(['message' => 'Ungültige Parameter']);
