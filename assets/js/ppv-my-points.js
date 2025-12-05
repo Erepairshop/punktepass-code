@@ -522,8 +522,8 @@
           </div>
 
           <!-- 📑 TAB CONTENT: ANALYTICS -->
-          <div class="ppv-mypoints-tab-content" id="ppv-tab-analytics">
-            <div id="ppv-analytics-section"></div>
+          <div class="ppv-mypoints-tab-content" id="ppv-tab-analytics" style="-webkit-overflow-scrolling: touch; overflow: visible;">
+            <div id="ppv-analytics-section" style="-webkit-overflow-scrolling: touch; overflow: visible;"></div>
           </div>
 
         </div>
