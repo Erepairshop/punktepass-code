@@ -2425,10 +2425,16 @@ class PPV_Standalone_Admin {
 
             // Set title & stats
             document.getElementById('handlerModalTitle').innerHTML = '<i class="ri-store-2-line"></i> ' + escapeHtml(handler.name || handler.company_name);
+
+            const emailHtml = handler.email
+                ? '<a href="mailto:' + escapeHtml(handler.email) + '" style="color: #00e6ff; text-decoration: none;">' + escapeHtml(handler.email) + '</a>'
+                : '-';
+
             document.getElementById('handlerModalStats').innerHTML =
                 '<span><i class="ri-map-pin-line"></i> ' + escapeHtml(handler.city || '-') + '</span>' +
-                '<span><i class="ri-mail-line"></i> ' + escapeHtml(handler.email || '-') + '</span>' +
-                '<span><strong>' + handler.device_count + '</strong> készülék</span>';
+                '<span><i class="ri-mail-line"></i> ' + emailHtml + '</span>' +
+                '<span><strong>' + handler.device_count + '</strong> készülék</span>' +
+                '<span style="color: #888;">#' + handler.id + '</span>';
 
             // Set hidden IDs
             document.getElementById('extendHandlerId').value = handler.id;
