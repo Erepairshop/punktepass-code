@@ -1500,6 +1500,41 @@ class PPV_Stats {
 
         ob_start(); ?>
 
+        <!-- Mobile Stats CSS Fix -->
+        <style>
+            @media (max-width: 600px) {
+                .ppv-stats-tabs {
+                    flex-wrap: nowrap;
+                    overflow-x: auto;
+                    -webkit-overflow-scrolling: touch;
+                    scrollbar-width: none;
+                    -ms-overflow-style: none;
+                    padding-bottom: 8px;
+                }
+                .ppv-stats-tabs::-webkit-scrollbar {
+                    display: none;
+                }
+                .ppv-stats-tab {
+                    flex: 0 0 auto;
+                    min-width: auto;
+                    padding: 10px 14px;
+                    font-size: 12px;
+                    white-space: nowrap;
+                }
+                .ppv-stats-tab i {
+                    font-size: 14px;
+                }
+                /* iOS scroll fix */
+                .ppv-stats-wrapper {
+                    -webkit-overflow-scrolling: touch;
+                    overflow-y: auto;
+                }
+                .ppv-stats-tab-content {
+                    -webkit-overflow-scrolling: touch;
+                }
+            }
+        </style>
+
         <div class="ppv-stats-wrapper">
 
             <!-- TABS NAVIGATION -->
