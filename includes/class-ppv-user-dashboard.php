@@ -1325,6 +1325,7 @@ public static function render_dashboard() {
         WHERE active = 1
           AND name IS NOT NULL
           AND name != ''
+          AND name != 'Mein Geschäft'
         ORDER BY name ASC
     ");
 
