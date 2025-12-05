@@ -396,6 +396,7 @@ return [
 
     // App Download
     'login_download_app' => 'App herunterladen',
+    'header_install_app' => 'App installieren',
     'login_download_android' => 'Android',
     'login_download_ios' => 'iOS',
     'login_open_in_chrome' => 'In Chrome öffnen',
@@ -604,6 +605,9 @@ return [
     'contact_data' => 'Kontaktdaten',
     'phone' => 'Telefon',
     'phone_placeholder' => '+49 (0) 123 456789',
+    'public_email' => 'Öffentliche E-Mail',
+    'public_email_placeholder' => 'Wird auf Store-Karte angezeigt',
+    'public_email_hint' => 'Diese E-Mail wird Kunden auf Ihrer Store-Karte angezeigt (nicht Ihre Login-E-Mail)',
     'email' => 'E-Mail',
     'email_placeholder' => 'hello@example.de',
     'website' => 'Website',
@@ -914,6 +918,10 @@ return [
 'scanner_password' => 'Passwort',
 'enter_password' => 'Passwort eingeben',
 'generate' => 'Generieren',
+'scanner_filiale' => 'Filiale zuweisen',
+'change_filiale' => 'Filiale ändern',
+'change_filiale_title' => 'Filiale ändern',
+'select_new_filiale' => 'Neue Filiale auswählen',
 'create' => 'Erstellen',
 'email_password_required' => 'E-Mail und Passwort sind erforderlich',
 'creating' => 'Erstellen...',

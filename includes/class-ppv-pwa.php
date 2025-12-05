@@ -3,7 +3,7 @@ if (!defined('ABSPATH')) exit;
 
 /**
  * PunktePass – PWA & App Mode Handler
- * Version: 1.0
+ * Version: 1.1
  */
 
 class PPV_PWA {
@@ -12,6 +12,47 @@ class PPV_PWA {
         add_action('wp_head', [__CLASS__, 'meta_tags']);
         add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
         add_action('wp_footer', [__CLASS__, 'inject_scripts'], 99);
+
+        // Serve manifest.json and sw.js from plugin folder
+        add_action('init', [__CLASS__, 'register_pwa_routes']);
+        add_action('template_redirect', [__CLASS__, 'serve_pwa_files']);
+    }
+
+    /** 🔹 Register rewrite rules for PWA files */
+    public static function register_pwa_routes() {
+        add_rewrite_rule('^manifest\.json$', 'index.php?ppv_pwa_file=manifest', 'top');
+        add_rewrite_rule('^sw\.js$', 'index.php?ppv_pwa_file=sw', 'top');
+        add_filter('query_vars', function($vars) {
+            $vars[] = 'ppv_pwa_file';
+            return $vars;
+        });
+    }
+
+    /** 🔹 Serve PWA files from plugin folder */
+    public static function serve_pwa_files() {
+        $file = get_query_var('ppv_pwa_file');
+        if (!$file) return;
+
+        if ($file === 'manifest') {
+            $path = PPV_PLUGIN_DIR . 'manifest.json';
+            if (file_exists($path)) {
+                header('Content-Type: application/manifest+json');
+                header('Cache-Control: public, max-age=86400');
+                readfile($path);
+                exit;
+            }
+        }
+
+        if ($file === 'sw') {
+            $path = PPV_PLUGIN_DIR . 'sw.js';
+            if (file_exists($path)) {
+                header('Content-Type: application/javascript');
+                header('Cache-Control: no-cache');
+                header('Service-Worker-Allowed: /');
+                readfile($path);
+                exit;
+            }
+        }
     }
 
     /** 🔹 Meta tag-ek az iOS és Android app módhoz */

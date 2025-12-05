@@ -242,6 +242,21 @@ class PPV_User_Settings {
             if (!$existing) {
                 $update_data['email'] = $new_email;
                 $update_format[] = '%s';
+
+                // ✅ HANDLER EMAIL SYNC: If user is vendor/handler, also update ppv_stores.email
+                $user_type = $current_user->user_type ?? '';
+                $vendor_store_id = $current_user->vendor_store_id ?? 0;
+
+                if (($user_type === 'vendor' || $user_type === 'store') && $vendor_store_id > 0) {
+                    $wpdb->update(
+                        $wpdb->prefix . 'ppv_stores',
+                        ['email' => $new_email],
+                        ['id' => $vendor_store_id],
+                        ['%s'],
+                        ['%d']
+                    );
+                    ppv_log("✅ [PPV_User_Settings] Handler email synced to ppv_stores: user_id={$user_id}, store_id={$vendor_store_id}, new_email={$new_email}");
+                }
             }
         }
 

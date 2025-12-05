@@ -70,7 +70,7 @@ class PPV_Login {
     }
     
     /** ============================================================
-     * 🔹 Get Current Language (Cookie > GET > GeoIP > Locale)
+     * 🔹 Get Current Language (Cookie > GET > Domain > Browser)
      * ============================================================ */
     private static function get_current_lang() {
         static $lang = null;
@@ -84,7 +84,11 @@ class PPV_Login {
         elseif (isset($_GET['lang'])) {
             $lang = sanitize_text_field($_GET['lang']);
         }
-        // 3. GeoIP detection (country-based)
+        // 3. Check domain (punktepass.ro → Romanian)
+        elseif (self::detect_language_by_domain()) {
+            $lang = self::detect_language_by_domain();
+        }
+        // 4. Browser language detection
         else {
             $lang = self::detect_language_by_country();
         }
@@ -95,6 +99,24 @@ class PPV_Login {
         }
 
         return $lang;
+    }
+
+    /** ============================================================
+     * 🌍 Detect Language by Domain (.ro → Romanian, .hu → Hungarian)
+     * ============================================================ */
+    private static function detect_language_by_domain() {
+        $host = $_SERVER['HTTP_HOST'] ?? '';
+
+        // punktepass.ro → Romanian
+        if (preg_match('/\.ro$/i', $host)) {
+            return 'ro';
+        }
+        // punktepass.hu → Hungarian (for future use)
+        if (preg_match('/\.hu$/i', $host)) {
+            return 'hu';
+        }
+
+        return null;
     }
 
     /** ============================================================
@@ -297,6 +319,11 @@ public static function render_landing_page($atts) {
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
                         <span>App Store</span>
                     </a>
+                    <!-- Android PWA Install Button (compact, header) -->
+                    <button type="button" class="ppv-header-app-link ppv-android-header-btn" id="ppv-android-header-link" style="display:none;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.6 11.48V7.66h-2.08v3.82h2.08zm-5.92 0V7.66H9.6v3.82h2.08zm3.84-7.8L16.88 2l-.88-.88-1.68 1.68A6.24 6.24 0 0 0 12 2.4c-.8 0-1.56.12-2.32.4L8 1.12 7.12 2l1.36 1.68A6.2 6.2 0 0 0 6 8.4v.48h12v-.48c0-1.84-.8-3.52-2.08-4.72h-.4zM6 20.16c0 .72.56 1.28 1.28 1.28h.96v3.28c0 .88.72 1.6 1.6 1.6s1.6-.72 1.6-1.6v-3.28h.96v3.28c0 .88.72 1.6 1.6 1.6s1.6-.72 1.6-1.6v-3.28h.96c.72 0 1.28-.56 1.28-1.28V9.28H6v10.88zm-2.4-10.4c-.88 0-1.6.72-1.6 1.6v7.2c0 .88.72 1.6 1.6 1.6s1.6-.72 1.6-1.6v-7.2c0-.88-.72-1.6-1.6-1.6zm16.8 0c-.88 0-1.6.72-1.6 1.6v7.2c0 .88.72 1.6 1.6 1.6s1.6-.72 1.6-1.6v-7.2c0-.88-.72-1.6-1.6-1.6z"/></svg>
+                        <span><?php echo PPV_Lang::t('header_install_app', 'App installieren'); ?></span>
+                    </button>
 
                     <!-- Language Switcher -->
                     <?php if (class_exists('PPV_Lang_Switcher')): ?>
@@ -470,12 +497,13 @@ public static function render_landing_page($atts) {
                                         </svg>
                                         <?php echo PPV_Lang::t('login_email_label'); ?>
                                     </label>
-                                    <input 
-                                        type="email" 
-                                        id="ppv-email" 
-                                        name="email" 
+                                    <input
+                                        type="text"
+                                        inputmode="email"
+                                        id="ppv-email"
+                                        name="email"
                                         placeholder="<?php echo PPV_Lang::t('login_email_placeholder'); ?>"
-                                        autocomplete="email"
+                                        autocomplete="off"
                                         required
                                     >
                                 </div>
@@ -643,6 +671,7 @@ public static function render_landing_page($atts) {
             const pwaBanner = document.getElementById('ppv-pwa-banner');
             const bannerInstall = document.getElementById('ppv-pwa-banner-install');
             const bannerClose = document.getElementById('ppv-pwa-banner-close');
+            const androidHeaderBtn = document.getElementById('ppv-android-header-link');
             const pwaInstallHint = <?php echo json_encode(PPV_Lang::t('login_pwa_install_hint', 'Nyisd meg a böngésző menüjét és válaszd a "Hozzáadás a kezdőképernyőhöz" opciót.')); ?>;
 
             // Detect device & browser
@@ -656,6 +685,11 @@ public static function render_landing_page($atts) {
             // On iOS: show App Store link in header
             if (isIOS && !isStandalone && iosHeaderLink) {
                 iosHeaderLink.style.display = 'inline-flex';
+            }
+
+            // On Android Chrome: always show header install button (even after uninstall)
+            if (isAndroid && isChrome && !isStandalone && androidHeaderBtn) {
+                androidHeaderBtn.style.display = 'inline-flex';
             }
 
             // On Android non-Chrome: show "Open in Chrome" link
@@ -681,6 +715,27 @@ public static function render_landing_page($atts) {
                     }, 1500); // Show after 1.5s for better UX
                 }
             });
+
+            // Handle Android header button click
+            if (androidHeaderBtn) {
+                androidHeaderBtn.addEventListener('click', async () => {
+                    if (deferredPrompt) {
+                        // Direct install if prompt available
+                        deferredPrompt.prompt();
+                        const { outcome } = await deferredPrompt.userChoice;
+                        console.log('PWA install outcome:', outcome);
+                        deferredPrompt = null;
+                        if (outcome === 'accepted') {
+                            androidHeaderBtn.style.display = 'none';
+                            if (installBtn) installBtn.style.display = 'none';
+                            if (pwaBanner) pwaBanner.style.display = 'none';
+                        }
+                    } else {
+                        // Show manual install hint if no prompt available
+                        alert(pwaInstallHint);
+                    }
+                });
+            }
 
             // Handle install button click (in download section)
             if (installBtn) {
@@ -724,6 +779,7 @@ public static function render_landing_page($atts) {
                 if (installBtn) installBtn.style.display = 'none';
                 if (chromeLink) chromeLink.style.display = 'none';
                 if (pwaBanner) pwaBanner.style.display = 'none';
+                if (androidHeaderBtn) androidHeaderBtn.style.display = 'none';
                 deferredPrompt = null;
             });
         })();
@@ -842,34 +898,42 @@ public static function render_landing_page($atts) {
             if ($db_user_type === 'scanner') {
                 ppv_log("🔍 [PPV_Login] Scanner user detected: #{$user->id}");
 
-                // Check if scanner is active
-                if ($user->active != 1) {
-                    ppv_log("❌ [PPV_Login] Scanner user is disabled: #{$user->id}");
-                    wp_send_json_error(['message' => 'Ihr Konto wurde deaktiviert.']);
-                }
+                // Check if scanner is active - if not, login as regular user
+                $scanner_is_active = ($user->active == 1);
 
-                // Get handler's store
-                if (!empty($user->vendor_store_id)) {
-                    $handler_store = $wpdb->get_row($wpdb->prepare(
-                        "SELECT id, active FROM {$prefix}ppv_stores WHERE id=%d LIMIT 1",
-                        $user->vendor_store_id
-                    ));
+                if ($scanner_is_active) {
+                    // Get handler's store
+                    if (!empty($user->vendor_store_id)) {
+                        $handler_store = $wpdb->get_row($wpdb->prepare(
+                            "SELECT id, active FROM {$prefix}ppv_stores WHERE id=%d LIMIT 1",
+                            $user->vendor_store_id
+                        ));
 
-                    if (!$handler_store || $handler_store->active != 1) {
-                        ppv_log("❌ [PPV_Login] Scanner's handler store inactive: #{$user->vendor_store_id}");
-                        wp_send_json_error(['message' => 'Der Handler ist inaktiv.']);
+                        if (!$handler_store || $handler_store->active != 1) {
+                            ppv_log("❌ [PPV_Login] Scanner's handler store inactive: #{$user->vendor_store_id}");
+                            wp_send_json_error(['message' => 'Der Handler ist inaktiv.']);
+                        }
                     }
-                }
 
-                // Set scanner session
-                $_SESSION['ppv_user_id'] = $user->id;
-                $_SESSION['ppv_user_type'] = 'scanner';
-                $_SESSION['ppv_user_email'] = $user->email;
-                if (!empty($user->vendor_store_id)) {
-                    $_SESSION['ppv_store_id'] = $user->vendor_store_id;
-                }
+                    // Set scanner session
+                    $_SESSION['ppv_user_id'] = $user->id;
+                    $_SESSION['ppv_user_type'] = 'scanner';
+                    $_SESSION['ppv_user_email'] = $user->email;
+                    if (!empty($user->vendor_store_id)) {
+                        $_SESSION['ppv_store_id'] = $user->vendor_store_id;
+                    }
 
-                $GLOBALS['ppv_role'] = 'scanner';
+                    $GLOBALS['ppv_role'] = 'scanner';
+                } else {
+                    // Disabled scanner → login as regular user (no scanner privileges)
+                    ppv_log("⚠️ [PPV_Login] Scanner disabled, logging in as regular user: #{$user->id}");
+
+                    $_SESSION['ppv_user_id'] = $user->id;
+                    $_SESSION['ppv_user_type'] = 'user';
+                    $_SESSION['ppv_user_email'] = $user->email;
+
+                    $GLOBALS['ppv_role'] = 'user';
+                }
 
                 // Generate/reuse token
                 $token = $user->login_token;
@@ -889,16 +953,29 @@ public static function render_landing_page($atts) {
                     PPV_Device_Fingerprint::track_login($user->id, $fingerprint, 'password');
                 }
 
-                ppv_log("✅ [PPV_Login] Scanner logged in (#{$user->id}, store={$user->vendor_store_id})");
+                // Return appropriate role and redirect based on scanner status
+                if ($scanner_is_active) {
+                    ppv_log("✅ [PPV_Login] Scanner logged in (#{$user->id}, store={$user->vendor_store_id})");
 
-                wp_send_json_success([
-                    'message' => PPV_Lang::t('login_success'),
-                    'role' => 'scanner',
-                    'user_id' => (int)$user->id,
-                    'store_id' => (int)($user->vendor_store_id ?? 0),
-                    'user_token' => $token,
-                    'redirect' => home_url('/qr-center')
-                ]);
+                    wp_send_json_success([
+                        'message' => PPV_Lang::t('login_success'),
+                        'role' => 'scanner',
+                        'user_id' => (int)$user->id,
+                        'store_id' => (int)($user->vendor_store_id ?? 0),
+                        'user_token' => $token,
+                        'redirect' => home_url('/qr-center')
+                    ]);
+                } else {
+                    ppv_log("✅ [PPV_Login] Disabled scanner logged in as user (#{$user->id})");
+
+                    wp_send_json_success([
+                        'message' => PPV_Lang::t('login_success'),
+                        'role' => 'user',
+                        'user_id' => (int)$user->id,
+                        'user_token' => $token,
+                        'redirect' => home_url('/user_dashboard')
+                    ]);
+                }
             }
 
             // 👤 REGULAR USER LOGIN

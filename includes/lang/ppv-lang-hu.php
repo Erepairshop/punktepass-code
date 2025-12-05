@@ -423,6 +423,7 @@ return [
 
     // App Download
     'login_download_app' => 'App letöltése',
+    'header_install_app' => 'App telepítése',
     'login_download_android' => 'Android',
     'login_download_ios' => 'iOS',
     'login_open_in_chrome' => 'Megnyitás Chrome-ban',
@@ -624,6 +625,9 @@ return [
     'contact_data' => 'Elérhetőségi Adatok',
     'phone' => 'Telefon',
     'phone_placeholder' => '+36 (0) 123 456789',
+    'public_email' => 'Nyilvános E-mail',
+    'public_email_placeholder' => 'Az üzlet kártyán jelenik meg',
+    'public_email_hint' => 'Ez az e-mail jelenik meg a vásárlóknak az üzlet kártyán (nem a bejelentkezési e-mail)',
     'email' => 'E-mail',
     'email_placeholder' => 'hello@example.hu',
     'website' => 'Weboldal',
@@ -889,6 +893,10 @@ return [
 'scanner_password' => 'Jelszó',
 'enter_password' => 'Jelszó megadása',
 'generate' => 'Generálás',
+'scanner_filiale' => 'Fiók hozzárendelése',
+'change_filiale' => 'Fiók módosítása',
+'change_filiale_title' => 'Fiók módosítása',
+'select_new_filiale' => 'Új fiók kiválasztása',
 'create' => 'Létrehozás',
 'email_password_required' => 'E-mail és jelszó kötelező',
 'creating' => 'Létrehozás...',

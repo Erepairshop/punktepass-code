@@ -335,6 +335,9 @@ class PPV_Standalone_Admin {
         } elseif ($path === '/admin/db-health') {
             require_once __DIR__ . '/admin/standalone/db-health.php';
             PPV_Standalone_DBHealth::render();
+        } elseif ($path === '/admin/contracts') {
+            require_once __DIR__ . '/admin/standalone/contracts.php';
+            PPV_Standalone_Contracts::render();
         } else {
             self::render_dashboard();
         }
@@ -1163,15 +1166,19 @@ class PPV_Standalone_Admin {
                 }
                 .admin-nav {
                     display: flex;
-                    gap: 10px;
+                    gap: 6px;
+                    flex-wrap: wrap;
+                    justify-content: center;
+                    max-width: 900px;
                 }
                 .admin-nav a {
                     color: #888;
                     text-decoration: none;
-                    padding: 10px 16px;
-                    border-radius: 8px;
+                    padding: 6px 10px;
+                    border-radius: 6px;
                     transition: all 0.3s;
-                    font-size: 14px;
+                    font-size: 12px;
+                    white-space: nowrap;
                 }
                 .admin-nav a:hover, .admin-nav a.active {
                     color: #fff;
@@ -1426,6 +1433,9 @@ class PPV_Standalone_Admin {
                     </a>
                     <a href="/admin/whatsapp" class="<?php echo $current_page === 'whatsapp' ? 'active' : ''; ?>">
                         <i class="ri-whatsapp-line"></i> WhatsApp
+                    </a>
+                    <a href="/admin/contracts" class="<?php echo $current_page === 'contracts' ? 'active' : ''; ?>">
+                        <i class="ri-file-text-line"></i> Szerződések
                     </a>
                 </nav>
                 <div class="admin-user">
@@ -1948,13 +1958,37 @@ class PPV_Standalone_Admin {
             <div class="error-msg">❌ <?php echo esc_html($error); ?></div>
         <?php endif; ?>
 
+        <!-- Keresés és szűrés -->
+        <div class="filter-bar" style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; align-items: center;">
+            <div style="flex: 1; min-width: 200px;">
+                <input type="text" id="handlerSearch" placeholder="Keresés név, város vagy email alapján..."
+                       style="width: 100%; padding: 10px 15px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff; font-size: 14px;"
+                       oninput="filterHandlers()">
+            </div>
+            <select id="statusFilter" onchange="filterHandlers()"
+                    style="padding: 10px 15px; background: #1a1a2e; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; font-size: 14px;">
+                <option value="" style="background: #1a1a2e; color: #fff;">Összes státusz</option>
+                <option value="active" style="background: #1a1a2e; color: #4caf50;">Aktív</option>
+                <option value="trial" style="background: #1a1a2e; color: #ff9800;">Trial</option>
+                <option value="expired" style="background: #1a1a2e; color: #f44336;">Lejárt</option>
+            </select>
+            <select id="scannerFilter" onchange="filterHandlers()"
+                    style="padding: 10px 15px; background: #1a1a2e; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; font-size: 14px;">
+                <option value="" style="background: #1a1a2e; color: #fff;">Összes scanner</option>
+                <option value="mobile" style="background: #1a1a2e; color: #00e6ff;">Mobile</option>
+                <option value="fixed" style="background: #1a1a2e; color: #888;">Fixed</option>
+            </select>
+            <span id="handlerCount" style="color: #888; font-size: 13px;"></span>
+        </div>
+
         <div class="card">
-            <table>
+            <table id="handlersTable">
                 <thead>
                     <tr>
-                        <th>ID</th>
+                        <th>Email</th>
                         <th>Név</th>
                         <th>Város</th>
+                        <th>Abo hátra</th>
                         <th>Scanner</th>
                         <th>Készülékek</th>
                         <th>Fiókok</th>
@@ -1979,6 +2013,21 @@ class PPV_Standalone_Admin {
                             ];
                         }, $handler_devices);
 
+                        // Abo hátra számítás
+                        $sub_status = $handler->subscription_status ?? 'trial';
+                        $days_remaining = null;
+                        $status_for_filter = $sub_status;
+
+                        if ($sub_status === 'trial' && $handler->trial_ends_at) {
+                            $days_remaining = (int) ((strtotime($handler->trial_ends_at) - time()) / 86400);
+                        } elseif ($sub_status === 'active' && $handler->subscription_expires_at) {
+                            $days_remaining = (int) ((strtotime($handler->subscription_expires_at) - time()) / 86400);
+                        }
+
+                        if ($days_remaining !== null && $days_remaining < 0) {
+                            $status_for_filter = 'expired';
+                        }
+
                         $handler_data = json_encode([
                             'id' => $handler->id,
                             'name' => $handler->name,
@@ -1995,10 +2044,31 @@ class PPV_Standalone_Admin {
                             'devices' => $devices_json
                         ], JSON_HEX_APOS | JSON_HEX_QUOT);
                     ?>
-                        <tr class="clickable-row" onclick='openHandlerModal(<?php echo $handler_data; ?>)' style="cursor: pointer;">
-                            <td>#<?php echo $handler->id; ?></td>
+                        <tr class="clickable-row handler-row"
+                            onclick='openHandlerModal(<?php echo $handler_data; ?>)'
+                            style="cursor: pointer;"
+                            data-name="<?php echo esc_attr(strtolower($handler->name)); ?>"
+                            data-city="<?php echo esc_attr(strtolower($handler->city ?? '')); ?>"
+                            data-email="<?php echo esc_attr(strtolower($handler->email ?? '')); ?>"
+                            data-status="<?php echo esc_attr($status_for_filter); ?>"
+                            data-scanner="<?php echo esc_attr($handler->scanner_type ?? 'fixed'); ?>">
+                            <td style="font-size: 12px; color: #00e6ff;"><?php echo esc_html($handler->email ?: '-'); ?></td>
                             <td><strong><?php echo esc_html($handler->name); ?></strong></td>
                             <td><?php echo esc_html($handler->city ?: '-'); ?></td>
+                            <td>
+                                <?php if ($days_remaining === null): ?>
+                                    <span style="color: #666;">-</span>
+                                <?php elseif ($days_remaining < 0): ?>
+                                    <span style="color: #f44336; font-weight: 600;">Lejárt</span>
+                                <?php elseif ($days_remaining <= 7): ?>
+                                    <span style="color: #ff9800; font-weight: 600;"><?php echo $days_remaining; ?> nap</span>
+                                <?php else: ?>
+                                    <span style="color: #4caf50;"><?php echo $days_remaining; ?> nap</span>
+                                <?php endif; ?>
+                                <small style="display: block; color: #666; font-size: 10px;">
+                                    <?php echo $sub_status === 'trial' ? 'Trial' : ($sub_status === 'active' ? 'Aktív' : $sub_status); ?>
+                                </small>
+                            </td>
                             <td>
                                 <?php if ($handler->scanner_type === 'mobile'): ?>
                                     <span class="badge badge-mobile">Mobile</span>
@@ -2309,15 +2379,62 @@ class PPV_Standalone_Admin {
         <script>
         let currentHandler = null;
 
+        // Handler szűrés és keresés
+        function filterHandlers() {
+            const searchTerm = document.getElementById('handlerSearch').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+            const scannerFilter = document.getElementById('scannerFilter').value;
+            const rows = document.querySelectorAll('.handler-row');
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                const name = row.dataset.name || '';
+                const city = row.dataset.city || '';
+                const email = row.dataset.email || '';
+                const status = row.dataset.status || '';
+                const scanner = row.dataset.scanner || '';
+
+                // Keresés ellenőrzés
+                const matchesSearch = !searchTerm ||
+                    name.includes(searchTerm) ||
+                    city.includes(searchTerm) ||
+                    email.includes(searchTerm);
+
+                // Státusz szűrés
+                const matchesStatus = !statusFilter || status === statusFilter;
+
+                // Scanner szűrés
+                const matchesScanner = !scannerFilter || scanner === scannerFilter;
+
+                if (matchesSearch && matchesStatus && matchesScanner) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            document.getElementById('handlerCount').textContent = visibleCount + ' / ' + rows.length + ' handler';
+        }
+
+        // Oldal betöltéskor számoljuk meg
+        document.addEventListener('DOMContentLoaded', filterHandlers);
+
         function openHandlerModal(handler) {
             currentHandler = handler;
 
             // Set title & stats
             document.getElementById('handlerModalTitle').innerHTML = '<i class="ri-store-2-line"></i> ' + escapeHtml(handler.name || handler.company_name);
+
+            const emailHtml = handler.email
+                ? '<a href="mailto:' + escapeHtml(handler.email) + '" style="color: #00e6ff; text-decoration: none;">' + escapeHtml(handler.email) + '</a>'
+                : '-';
+
             document.getElementById('handlerModalStats').innerHTML =
                 '<span><i class="ri-map-pin-line"></i> ' + escapeHtml(handler.city || '-') + '</span>' +
-                '<span><i class="ri-mail-line"></i> ' + escapeHtml(handler.email || '-') + '</span>' +
-                '<span><strong>' + handler.device_count + '</strong> készülék</span>';
+                '<span><i class="ri-mail-line"></i> ' + emailHtml + '</span>' +
+                '<span><strong>' + handler.device_count + '</strong> készülék</span>' +
+                '<span style="color: #888;">#' + handler.id + '</span>';
 
             // Set hidden IDs
             document.getElementById('extendHandlerId').value = handler.id;

@@ -1314,16 +1314,20 @@ public static function render_dashboard() {
     // ✅ FIX: Added 'country' field for currency symbol display
     // ✅ FIX: Added VIP fields for shop card display
     $stores = $wpdb->get_results("
-        SELECT id, name, company_name, address, city, plz, latitude, longitude,
-               phone, website, logo, qr_logo, opening_hours, description,
-               gallery, facebook, instagram, tiktok, country,
-               vip_fix_enabled, vip_fix_bronze, vip_fix_silver, vip_fix_gold, vip_fix_platinum,
-               vip_streak_enabled, vip_streak_count, vip_streak_type,
-               vip_streak_bronze, vip_streak_silver, vip_streak_gold, vip_streak_platinum,
-               vip_daily_enabled, vip_daily_bronze, vip_daily_silver, vip_daily_gold, vip_daily_platinum
-        FROM {$prefix}ppv_stores
-        WHERE active = 1
-        ORDER BY name ASC
+        SELECT s.id, s.name, s.company_name, s.address, s.city, s.plz, s.latitude, s.longitude,
+               s.phone, s.public_email, s.website, s.logo, s.qr_logo, s.opening_hours, s.description,
+               s.gallery, s.facebook, s.instagram, s.tiktok, s.country,
+               s.vip_fix_enabled, s.vip_fix_bronze, s.vip_fix_silver, s.vip_fix_gold, s.vip_fix_platinum,
+               s.vip_streak_enabled, s.vip_streak_count, s.vip_streak_type,
+               s.vip_streak_bronze, s.vip_streak_silver, s.vip_streak_gold, s.vip_streak_platinum,
+               s.vip_daily_enabled, s.vip_daily_bronze, s.vip_daily_silver, s.vip_daily_gold, s.vip_daily_platinum
+        FROM {$prefix}ppv_stores s
+        WHERE s.active = 1
+          AND s.name IS NOT NULL
+          AND s.name != ''
+          AND s.name != 'Mein Geschäft'
+          AND EXISTS (SELECT 1 FROM {$prefix}ppv_rewards r WHERE r.store_id = s.id)
+        ORDER BY s.name ASC
     ");
 
     if (empty($stores)) {
@@ -1497,6 +1501,7 @@ public static function render_dashboard() {
             'open_now' => $is_open,
             'open_hours_today' => $today_hours,
             'phone' => $store->phone,
+            'public_email' => $store->public_email,
             'website' => esc_url($store->website),
             // ✅ FIX: Validate logo URL - return null if empty/invalid
             'logo' => (!empty($store->logo) && $store->logo !== 'null') ? esc_url($store->logo) : null,

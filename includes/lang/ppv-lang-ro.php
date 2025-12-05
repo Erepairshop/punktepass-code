@@ -435,6 +435,7 @@ return [
 
     // App Download
     'login_download_app' => 'Descarcă aplicația',
+    'header_install_app' => 'Instalează aplicația',
     'login_download_android' => 'Android',
     'login_download_ios' => 'iOS',
     'login_open_in_chrome' => 'Deschide în Chrome',
@@ -902,6 +903,10 @@ return [
 'scanner_password' => 'Parolă',
 'enter_password' => 'Introduceți parola',
 'generate' => 'Generare',
+'scanner_filiale' => 'Atribuie filiala',
+'change_filiale' => 'Schimbă filiala',
+'change_filiale_title' => 'Schimbă filiala',
+'select_new_filiale' => 'Selectează filiala nouă',
 'create' => 'Creare',
 'email_password_required' => 'E-mail și parolă sunt obligatorii',
 'creating' => 'Creare...',

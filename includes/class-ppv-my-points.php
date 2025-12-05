@@ -177,9 +177,39 @@ class PPV_My_Points {
             $lang = 'de';
         }
 
+        // 🍎 iOS scroll fix CSS
+        $ios_scroll_css = '
+        <style>
+        /* iOS scroll fixes for Analytics tab */
+        .ppv-mypoints-tab-content {
+            -webkit-overflow-scrolling: touch;
+            overflow-y: auto;
+            overscroll-behavior-y: contain;
+        }
+        .ppv-mypoints-tab-content#ppv-tab-analytics {
+            min-height: 400px;
+            max-height: calc(100vh - 300px);
+        }
+        .ppv-analytics-wrapper {
+            -webkit-overflow-scrolling: touch;
+            overflow-y: auto;
+            overscroll-behavior-y: contain;
+            padding-bottom: 100px;
+        }
+        /* Prevent body scroll when in analytics */
+        @supports (-webkit-touch-callout: none) {
+            .ppv-analytics-wrapper {
+                -webkit-transform: translateZ(0);
+                transform: translateZ(0);
+            }
+        }
+        </style>
+        ';
+
         // ✅ SAME AS USER DASHBOARD - No user check here, let JS/REST API handle it!
         // This fixes Google/Facebook/TikTok login where session might not be ready yet
-        $html = '<div id="ppv-my-points-app" data-lang="' . esc_attr($lang) . '"></div>';
+        $html = $ios_scroll_css;
+        $html .= '<div id="ppv-my-points-app" data-lang="' . esc_attr($lang) . '"></div>';
         $html .= do_shortcode('[ppv_bottom_nav]');
 
         ppv_log("✅ [PPV_My_Points] Shell rendered, lang={$lang}");

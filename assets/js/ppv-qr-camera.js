@@ -631,7 +631,7 @@
 
         const options = {
           preferredCamera: 'environment',
-          maxScansPerSecond: 30, // Aggressive scanning for faster detection
+          maxScansPerSecond: 5, // Reduced for better performance on entry-level phones (Xiaomi Redmi A5)
           highlightScanRegion: true,
           highlightCodeOutline: true,
           returnDetailedScanResult: true,
@@ -825,7 +825,7 @@
         if (code && code.data) this.onScanSuccess(code.data);
       }
 
-      if (this.scanning) setTimeout(() => this.jsQRScanLoop(), 25); // ~40fps scan loop
+      if (this.scanning) setTimeout(() => this.jsQRScanLoop(), 200); // ~5fps scan loop (optimized for entry-level phones)
     }
 
     onScanSuccess(qrCode) {

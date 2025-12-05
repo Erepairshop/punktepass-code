@@ -1401,6 +1401,7 @@ async function initUserDashboard() {
               <i class="ri-route-fill"></i> ${T.route}
             </button>
             ${store.phone ? `<a href="tel:${escapeHtml(store.phone)}" class="ppv-action-btn ppv-call"><i class="ri-phone-fill"></i> ${T.call}</a>` : ''}
+            ${store.public_email ? `<a href="mailto:${escapeHtml(store.public_email)}" class="ppv-action-btn ppv-email"><i class="ri-mail-fill"></i> E-Mail</a>` : ''}
             ${store.website ? `<a href="${escapeHtml(store.website)}" target="_blank" rel="noopener" class="ppv-action-btn ppv-web"><i class="ri-global-line"></i> ${T.website}</a>` : ''}
           </div>
         </div>

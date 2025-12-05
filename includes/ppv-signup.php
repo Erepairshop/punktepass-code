@@ -1843,7 +1843,7 @@ www.punktepass.de
         }
 
         $scanner_user_id = intval($_POST['user_id'] ?? 0);
-        $action = sanitize_text_field($_POST['action_type'] ?? '');
+        $action = sanitize_text_field($_POST['toggle_action'] ?? '');
 
         if (!$scanner_user_id || !in_array($action, ['enable', 'disable'])) {
             wp_send_json_error(['message' => 'Ungültige Parameter']);
@@ -1875,12 +1875,31 @@ www.punktepass.de
             return;
         }
 
-        if ($scanner_user->vendor_store_id != $handler_store_id) {
+        // Check if scanner belongs to handler's store OR any of their filialen
+        $scanner_store_id = intval($scanner_user->vendor_store_id);
+        $has_permission = false;
+
+        if ($scanner_store_id == $handler_store_id) {
+            $has_permission = true;
+        } else {
+            // Check if scanner's store is a filiale of handler's store
+            $is_filiale = $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_stores
+                 WHERE id = %d AND parent_store_id = %d",
+                $scanner_store_id, $handler_store_id
+            ));
+            if ($is_filiale > 0) {
+                $has_permission = true;
+            }
+        }
+
+        if (!$has_permission) {
             wp_send_json_error(['message' => 'Keine Berechtigung für diesen Benutzer']);
             return;
         }
 
-        // Update active status (PPV users: 1 = active, 0 = disabled)
+        // Update only active status (user_type stays 'scanner' so they appear in list)
+        // Disabled scanners can still login but without scanner privileges
         $new_status = $action === 'enable' ? 1 : 0;
 
         $update_result = $wpdb->update(
@@ -1902,7 +1921,9 @@ www.punktepass.de
         ppv_log("✅ [PPV_Scanner] Scanner {$status_text}: ID={$scanner_user_id}, Email={$scanner_user->email}");
 
         wp_send_json_success([
-            'message' => "✅ Scanner erfolgreich {$status_text}!",
+            'message' => $action === 'disable'
+                ? "✅ Scanner deaktiviert! Benutzer kann sich weiterhin als normaler Nutzer einloggen."
+                : "✅ Scanner erfolgreich aktiviert!",
             'new_status' => $action === 'enable' ? 'active' : 'disabled'
         ]);
     }
