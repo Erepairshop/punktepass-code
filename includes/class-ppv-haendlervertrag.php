@@ -1654,38 +1654,40 @@ class PPV_Haendlervertrag {
                         </div>
 
                         <div id="device-section" class="device-info">
-                            <div class="device-field">
+                            <!-- Row 1: Smartphone (full width) -->
+                            <div class="device-field" style="grid-column: 1 / -1;">
                                 <label>Smartphone:</label>
                                 <input type="text" id="smartphone_model" name="smartphone_model" value="Xiaomi Redmi A5 – 4G – 64GB" placeholder="Smartphone-Modell">
                             </div>
-                            <div class="device-field">
-                                <label>Gerätepreis:</label>
-                                <div style="display: flex; gap: 15px; align-items: center;">
-                                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
-                                        <input type="radio" name="device_price_type" value="kostenlos" checked> Kostenlos (Leihgabe)
-                                    </label>
-                                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
-                                        <input type="radio" name="device_price_type" value="custom"> Preis:
-                                    </label>
-                                    <input type="number" id="device_price" name="device_price" placeholder="€" step="0.01" min="0" style="width: 100px;" disabled>
-                                    <span>€</span>
-                                </div>
-                            </div>
+
+                            <!-- Row 2: IMEI + Ständer -->
                             <div class="device-field">
                                 <label>IMEI:</label>
-                                <div style="display: flex; flex-direction: column; gap: 8px;">
-                                    <div style="display: flex; align-items: center; gap: 10px;">
-                                        <input type="text" id="imei" name="imei" placeholder="15-stellige IMEI-Nummer" pattern="[0-9]{15}" maxlength="15" title="IMEI muss genau 15 Ziffern haben" style="flex: 1;">
-                                        <label style="display: flex; align-items: center; gap: 5px; white-space: nowrap; cursor: pointer;">
-                                            <input type="checkbox" id="imei_unknown" name="imei_unknown" value="1"> Noch unbekannt
-                                        </label>
-                                    </div>
-                                    <small style="color: #666; font-size: 11px;">Genau 15 Ziffern (auf Gerät: *#06#) oder "Noch unbekannt" wenn Gerät später kommt</small>
+                                <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
+                                    <input type="text" id="imei" name="imei" placeholder="15 Ziffern" pattern="[0-9]{15}" maxlength="15" title="IMEI: 15 Ziffern" style="flex: 1; min-width: 120px;">
+                                    <label style="display: flex; align-items: center; gap: 4px; white-space: nowrap; cursor: pointer; font-weight: normal; font-size: 13px;">
+                                        <input type="checkbox" id="imei_unknown" name="imei_unknown" value="1"> Unbekannt
+                                    </label>
                                 </div>
                             </div>
                             <div class="device-field">
                                 <label>Ständer:</label>
-                                <span>Handy-Ständer (Eigentum des Anbieters)</span>
+                                <span style="color: #666;">Handy-Ständer (Leihgabe)</span>
+                            </div>
+
+                            <!-- Row 3: Gerätepreis (full width) -->
+                            <div class="device-field" style="grid-column: 1 / -1; flex-wrap: wrap;">
+                                <label>Gerätepreis:</label>
+                                <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+                                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-weight: normal;">
+                                        <input type="radio" name="device_price_type" value="kostenlos" checked> Kostenlos (Leihgabe)
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-weight: normal;">
+                                        <input type="radio" name="device_price_type" value="custom"> Preis:
+                                        <input type="number" id="device_price" name="device_price" placeholder="0.00" step="0.01" min="0" style="width: 80px; padding: 6px;" disabled>
+                                        <span>€</span>
+                                    </label>
+                                </div>
                             </div>
                         </div>
 
