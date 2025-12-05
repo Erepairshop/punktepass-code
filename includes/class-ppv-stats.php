@@ -1500,8 +1500,19 @@ class PPV_Stats {
 
         ob_start(); ?>
 
-        <!-- Mobile Stats CSS Fix -->
+        <!-- Mobile Stats CSS Fix + iOS Scroll Fix -->
         <style>
+            /* iOS scroll fix - apply globally */
+            .ppv-stats-wrapper {
+                position: relative;
+                overflow: visible !important;
+                -webkit-overflow-scrolling: touch;
+            }
+            .ppv-stats-tab-content {
+                overflow: visible !important;
+                -webkit-overflow-scrolling: touch;
+            }
+
             @media (max-width: 600px) {
                 .ppv-stats-tabs {
                     flex-wrap: nowrap;
@@ -1523,14 +1534,6 @@ class PPV_Stats {
                 }
                 .ppv-stats-tab i {
                     font-size: 14px;
-                }
-                /* iOS scroll fix */
-                .ppv-stats-wrapper {
-                    -webkit-overflow-scrolling: touch;
-                    overflow-y: auto;
-                }
-                .ppv-stats-tab-content {
-                    -webkit-overflow-scrolling: touch;
                 }
             }
         </style>
