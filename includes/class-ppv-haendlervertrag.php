@@ -230,6 +230,10 @@ class PPV_Haendlervertrag {
         $datumHaendler = sanitize_text_field($data['datumHaendler'] ?? date('Y-m-d'));
         $zubehoer = is_array($data['zubehoer'] ?? []) ? implode(', ', $data['zubehoer']) : ($data['zubehoer'] ?? '');
         $zustand = sanitize_text_field($data['zustand'] ?? '');
+        $smartphone_model = sanitize_text_field($data['smartphone_model'] ?? 'Xiaomi Redmi A5 – 4G – 64GB');
+        $device_included = !empty($data['device_included']);
+        $device_price_type = sanitize_text_field($data['device_price_type'] ?? 'kostenlos');
+        $device_price = floatval($data['device_price'] ?? 0);
 
         // Build email content (for email body - shorter version)
         $email_body = self::build_email_body($data);
@@ -259,7 +263,9 @@ class PPV_Haendlervertrag {
             'status'             => 'signed',
             'pdf_path'           => $pdf_path ?: '',
             'signed_at'          => current_time('mysql'),
-            'notes'              => "Zubehör: $zubehoer, Zustand: $zustand"
+            'notes'              => $device_included
+                ? "Gerät: $smartphone_model (" . ($device_price_type === 'kostenlos' ? 'Kostenlos/Leihgabe' : number_format($device_price, 2, ',', '.') . '€') . "), IMEI: $imei, Zubehör: $zubehoer, Zustand: $zustand"
+                : "Ohne Gerät"
         ], [
             '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s',
             '%d', '%s', '%s', '%s', '%s', '%s', '%s'
@@ -383,6 +389,11 @@ class PPV_Haendlervertrag {
         $datumHaendler = esc_html($data['datumHaendler'] ?? date('Y-m-d'));
         $zubehoer = is_array($data['zubehoer'] ?? []) ? implode(', ', $data['zubehoer']) : esc_html($data['zubehoer'] ?? '-');
         $zustand = esc_html($data['zustand'] ?? '-');
+        $smartphone_model = esc_html($data['smartphone_model'] ?? 'Xiaomi Redmi A5 – 4G – 64GB');
+        $device_included = !empty($data['device_included']);
+        $device_price_type = esc_html($data['device_price_type'] ?? 'kostenlos');
+        $device_price = floatval($data['device_price'] ?? 0);
+        $device_price_text = ($device_price_type === 'kostenlos') ? 'Kostenlos (Leihgabe)' : number_format($device_price, 2, ',', '.') . ' €';
         $signatureHaendler = $data['signatureHaendler'] ?? '';
 
         return "
@@ -440,24 +451,26 @@ class PPV_Haendlervertrag {
 
             <div class='test-phase'>
                 <h3>30 Tage kostenlose Testphase</h3>
-                <p>Mit dieser Anmeldung wurde eine <strong>30-tägige kostenlose Testphase</strong> gestartet. Der Händler erhält ein Smartphone und einen Handy-Ständer als Leihgabe zur Nutzung des PunktePass Systems.</p>
+                <p>Mit dieser Anmeldung wurde eine <strong>30-tägige kostenlose Testphase</strong> gestartet." . ($device_included ? " Der Händler erhält ein Smartphone und einen Handy-Ständer als Leihgabe zur Nutzung des PunktePass Systems." : "") . "</p>
             </div>
-
+" . ($device_included ? "
             <div class='section'>
-                <div class='section-title'>Bereitgestellte Geräte (Leihgabe)</div>
-                <p>• <strong>Smartphone:</strong> Xiaomi Redmi A5 – 4G – 64GB (Neu)<br>
+                <div class='section-title'>Bereitgestellte Geräte" . ($device_price_type === 'kostenlos' ? ' (Leihgabe)' : '') . "</div>
+                <p>• <strong>Smartphone:</strong> $smartphone_model – <strong>$device_price_text</strong><br>
                 • <strong>Handy-Ständer</strong><br><br>
-                Beide Geräte bleiben Eigentum des Anbieters. Bei Kündigung oder Vertragsende sind sie innerhalb von 7 Tagen zurückzugeben.</p>
+                " . ($device_price_type === 'kostenlos' ? "Beide Geräte bleiben Eigentum des Anbieters. Bei Kündigung oder Vertragsende sind sie innerhalb von 7 Tagen zurückzugeben." : "Der Händler erwirbt das Smartphone zum angegebenen Preis.") . "</p>
             </div>
 
             <div class='section'>
                 <div class='section-title'>Übergabeprotokoll Geräte</div>
-                <div class='field'><span class='field-label'>Smartphone:</span> <span class='field-value'>Xiaomi Redmi A5 – 4G – 64GB</span></div>
+                <div class='field'><span class='field-label'>Smartphone:</span> <span class='field-value'>$smartphone_model</span></div>
+                <div class='field'><span class='field-label'>Preis:</span> <span class='field-value'>$device_price_text</span></div>
                 <div class='field'><span class='field-label'>IMEI:</span> <span class='field-value'>$imei</span></div>
                 <div class='field'><span class='field-label'>Ständer:</span> <span class='field-value'>Handy-Ständer (Eigentum des Anbieters)</span></div>
                 <div class='field'><span class='field-label'>Zubehör:</span> <span class='field-value'>$zubehoer</span></div>
                 <div class='field'><span class='field-label'>Zustand:</span> <span class='field-value'>$zustand</span></div>
             </div>
+" : "") . "
 
             <div class='price-info'>
                 <strong>Preise nach der Testphase (zur Information):</strong><br>
@@ -496,6 +509,11 @@ class PPV_Haendlervertrag {
         $datumAnbieter = esc_html($data['datumAnbieter'] ?? date('Y-m-d'));
         $zubehoer = is_array($data['zubehoer'] ?? []) ? implode(', ', $data['zubehoer']) : esc_html($data['zubehoer'] ?? '-');
         $zustand = esc_html($data['zustand'] ?? '-');
+        $smartphone_model = esc_html($data['smartphone_model'] ?? 'Xiaomi Redmi A5 – 4G – 64GB');
+        $device_included = !empty($data['device_included']);
+        $device_price_type = esc_html($data['device_price_type'] ?? 'kostenlos');
+        $device_price = floatval($data['device_price'] ?? 0);
+        $device_price_text = ($device_price_type === 'kostenlos') ? 'Kostenlos (Leihgabe)' : number_format($device_price, 2, ',', '.') . ' €';
         $signatureHaendler = $data['signatureHaendler'] ?? '';
         $signatureAnbieter = $data['signatureAnbieter'] ?? '';
 
@@ -663,25 +681,27 @@ class PPV_Haendlervertrag {
 
     <div class='test-phase'>
         <h3>30 Tage kostenlose Testphase</h3>
-        Mit dieser Anmeldung wird eine 30-tägige kostenlose Testphase gestartet. Der Händler erhält ein Smartphone und einen Handy-Ständer als Leihgabe. Die Testphase kann jederzeit gekündigt werden.
+        Mit dieser Anmeldung wird eine 30-tägige kostenlose Testphase gestartet." . ($device_included ? " Der Händler erhält ein Smartphone und einen Handy-Ständer als Leihgabe." : "") . " Die Testphase kann jederzeit gekündigt werden.
     </div>
-
+" . ($device_included ? "
     <div class='section'>
-        <div class='section-title'>Bereitgestellte Geräte (Leihgabe)</div>
+        <div class='section-title'>Bereitgestellte Geräte" . ($device_price_type === 'kostenlos' ? ' (Leihgabe)' : '') . "</div>
         <div class='geraete-box'>
-            • <strong>Smartphone:</strong> Xiaomi Redmi A5 – 4G – 64GB (Neu) &nbsp;&nbsp; • <strong>Handy-Ständer</strong><br>
-            <span style='color: #666; font-size: 7pt;'>Beide Geräte bleiben Eigentum des Anbieters. Bei Kündigung/Vertragsende innerhalb 7 Tagen zurückzugeben.</span>
+            • <strong>Smartphone:</strong> $smartphone_model – <strong>$device_price_text</strong> &nbsp;&nbsp; • <strong>Handy-Ständer</strong><br>
+            <span style='color: #666; font-size: 7pt;'>" . ($device_price_type === 'kostenlos' ? "Beide Geräte bleiben Eigentum des Anbieters. Bei Kündigung/Vertragsende innerhalb 7 Tagen zurückzugeben." : "Der Händler erwirbt das Smartphone zum angegebenen Preis.") . "</span>
         </div>
     </div>
 
     <div class='section'>
         <div class='section-title'>Übergabeprotokoll</div>
         <table class='data-table'>
-            <tr><td>Smartphone</td><td>Xiaomi Redmi A5 – 4G – 64GB</td><td style='width:80px;'>IMEI</td><td>$imei</td></tr>
+            <tr><td>Smartphone</td><td>$smartphone_model</td><td style='width:80px;'>Preis</td><td>$device_price_text</td></tr>
+            <tr><td>IMEI</td><td colspan='3'>$imei</td></tr>
             <tr><td>Ständer</td><td>Handy-Ständer</td><td>Zubehör</td><td>$zubehoer</td></tr>
             <tr><td>Zustand</td><td colspan='3'>$zustand</td></tr>
         </table>
     </div>
+" : "") . "
 
     <div class='price-info'>
         <strong>Preise nach Testphase:</strong> 30 € netto/Monat (Mindestlaufzeit: 6 Monate)<br>
@@ -1533,15 +1553,13 @@ class PPV_Haendlervertrag {
                     <div class="terms-section">
                         <div class="term" style="background: #e8f5e9; padding: 15px; border-radius: 8px; border-left: 4px solid #22c55e;">
                             <h3 style="color: #22c55e;">30 Tage kostenlose Testphase</h3>
-                            <p>Mit dieser Anmeldung starten Sie eine <strong>30-tägige kostenlose Testphase</strong>. Sie erhalten ein Smartphone und einen Handy-Ständer als Leihgabe zur Nutzung des PunktePass Systems. Sie können jederzeit während der Testphase kündigen.</p>
+                            <p>Mit dieser Anmeldung starten Sie eine <strong>30-tägige kostenlose Testphase</strong>. Sie können jederzeit während der Testphase kündigen.</p>
                         </div>
 
-                        <div class="term">
-                            <h3>Bereitgestellte Geräte (Leihgabe)</h3>
-                            <p>Sie erhalten folgende Geräte zur Nutzung des PunktePass Systems:<br>
-                            • <strong>Smartphone:</strong> Xiaomi Redmi A5 – 4G – 64GB (Neu)<br>
-                            • <strong>Handy-Ständer</strong><br><br>
-                            Beide Geräte bleiben Eigentum des Anbieters. Bei Kündigung oder Vertragsende sind sie innerhalb von 7 Tagen zurückzugeben, ansonsten wird der Neuwert berechnet.</p>
+                        <div id="device-info-section" class="term">
+                            <h3>Bereitgestellte Geräte</h3>
+                            <p>Bitte geben Sie die Gerätedaten im Übergabeprotokoll unten ein.<br><br>
+                            <small style="color: #666;">Bei Leihgabe bleiben die Geräte Eigentum des Anbieters. Bei Kündigung oder Vertragsende sind sie innerhalb von 7 Tagen zurückzugeben.</small></p>
                         </div>
 
                         <div class="term" style="background: #fff8e1; padding: 15px; border-radius: 8px;">
@@ -1583,10 +1601,32 @@ class PPV_Haendlervertrag {
                     <!-- Appendix - Device Handover -->
                     <div class="appendix">
                         <h2>Übergabeprotokoll Geräte</h2>
-                        <div class="device-info">
+
+                        <!-- Device Toggle -->
+                        <div class="device-toggle" style="margin-bottom: 15px; padding: 12px; background: #f5f5f5; border-radius: 8px;">
+                            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600;">
+                                <input type="checkbox" id="device_included" name="device_included" value="1" checked style="width: 20px; height: 20px;">
+                                Gerät wird übergeben (Leihgabe)
+                            </label>
+                        </div>
+
+                        <div id="device-section" class="device-info">
                             <div class="device-field">
                                 <label>Smartphone:</label>
-                                <span>Xiaomi Redmi A5 – 4G – 64GB</span>
+                                <input type="text" id="smartphone_model" name="smartphone_model" value="Xiaomi Redmi A5 – 4G – 64GB" placeholder="Smartphone-Modell">
+                            </div>
+                            <div class="device-field">
+                                <label>Gerätepreis:</label>
+                                <div style="display: flex; gap: 15px; align-items: center;">
+                                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                                        <input type="radio" name="device_price_type" value="kostenlos" checked> Kostenlos (Leihgabe)
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                                        <input type="radio" name="device_price_type" value="custom"> Preis:
+                                    </label>
+                                    <input type="number" id="device_price" name="device_price" placeholder="€" step="0.01" min="0" style="width: 100px;" disabled>
+                                    <span>€</span>
+                                </div>
                             </div>
                             <div class="device-field">
                                 <label>IMEI:</label>
@@ -1778,6 +1818,36 @@ class PPV_Haendlervertrag {
         document.getElementById('datumHaendler').value = today;
         document.getElementById('datumAnbieter').value = today;
         document.getElementById('datumUebergabe').value = today;
+
+        // Device section toggle
+        const deviceToggle = document.getElementById('device_included');
+        const deviceSection = document.getElementById('device-section');
+        const deviceInfoSection = document.getElementById('device-info-section');
+        const devicePriceInput = document.getElementById('device_price');
+        const priceRadios = document.querySelectorAll('input[name="device_price_type"]');
+
+        deviceToggle.addEventListener('change', function() {
+            if (this.checked) {
+                deviceSection.style.display = 'block';
+                if (deviceInfoSection) deviceInfoSection.style.display = 'block';
+            } else {
+                deviceSection.style.display = 'none';
+                if (deviceInfoSection) deviceInfoSection.style.display = 'none';
+            }
+        });
+
+        // Price type radio toggle
+        priceRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.value === 'custom') {
+                    devicePriceInput.disabled = false;
+                    devicePriceInput.focus();
+                } else {
+                    devicePriceInput.disabled = true;
+                    devicePriceInput.value = '';
+                }
+            });
+        });
 
         // Form submission
         document.getElementById('contractForm').addEventListener('submit', async function(e) {
