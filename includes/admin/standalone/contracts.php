@@ -1,8 +1,8 @@
 <?php
 /**
- * PunktePass Standalone Admin - Verträge (Contracts)
+ * PunktePass Standalone Admin - Szerződések (Contracts)
  * Route: /admin/contracts
- * Shows contracts created via /vertrag page with sales user tracking
+ * Shows contracts created via /invoice page with sales user tracking
  */
 
 if (!defined('ABSPATH')) exit;
@@ -90,11 +90,11 @@ class PPV_Standalone_Contracts {
     private static function render_no_table() {
         ?>
         <!DOCTYPE html>
-        <html lang="de">
+        <html lang="hu">
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Verträge - PunktePass Admin</title>
+            <title>Szerződések - PunktePass Admin</title>
             <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
             <style>
                 body {
@@ -122,11 +122,11 @@ class PPV_Standalone_Contracts {
         <body>
             <div class="message-box">
                 <i class="ri-file-warning-line"></i>
-                <h2>Verträge-Tabelle nicht gefunden</h2>
-                <p>Die Verträge-Tabelle wurde noch nicht erstellt.
-                Bitte besuchen Sie die <a href="<?php echo home_url('/invoice'); ?>">/invoice</a> Seite,
-                um die Tabelle automatisch zu erstellen.</p>
-                <a href="/admin/dashboard">Zurück zum Dashboard</a>
+                <h2>Szerződések tábla nem található</h2>
+                <p>A szerződések tábla még nem lett létrehozva.
+                Kérjük, látogassa meg a <a href="<?php echo home_url('/invoice'); ?>">/invoice</a> oldalt,
+                hogy automatikusan létrejöjjön a tábla.</p>
+                <a href="/admin/dashboard">Vissza a Dashboardra</a>
             </div>
         </body>
         </html>
@@ -139,11 +139,11 @@ class PPV_Standalone_Contracts {
     private static function render_html($contracts, $sales_stats, $total, $signed, $pending, $sales_filter, $status_filter) {
         ?>
         <!DOCTYPE html>
-        <html lang="de">
+        <html lang="hu">
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Verträge - PunktePass Admin</title>
+            <title>Szerződések - PunktePass Admin</title>
             <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
             <style>
                 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -313,8 +313,8 @@ class PPV_Standalone_Contracts {
         </head>
         <body>
             <header class="admin-header">
-                <h1><i class="ri-file-text-line"></i> Verträge</h1>
-                <a href="/admin/dashboard" class="back-link"><i class="ri-arrow-left-line"></i> Zurück zum Dashboard</a>
+                <h1><i class="ri-file-text-line"></i> Szerződések</h1>
+                <a href="/admin/dashboard" class="back-link"><i class="ri-arrow-left-line"></i> Vissza a Dashboardra</a>
             </header>
 
             <div class="container">
@@ -322,50 +322,50 @@ class PPV_Standalone_Contracts {
                 <div class="stats-grid">
                     <div class="stat-card">
                         <div class="stat-value"><?php echo $total; ?></div>
-                        <div class="stat-label">Gesamt Verträge</div>
+                        <div class="stat-label">Összes szerződés</div>
                     </div>
                     <div class="stat-card success">
                         <div class="stat-value"><?php echo $signed; ?></div>
-                        <div class="stat-label">Unterschrieben</div>
+                        <div class="stat-label">Aláírt</div>
                     </div>
                     <div class="stat-card warning">
                         <div class="stat-value"><?php echo $pending; ?></div>
-                        <div class="stat-label">Ausstehend</div>
+                        <div class="stat-label">Függőben</div>
                     </div>
                     <div class="stat-card purple">
                         <div class="stat-value"><?php echo count($sales_stats); ?></div>
-                        <div class="stat-label">Sales Mitarbeiter</div>
+                        <div class="stat-label">Sales munkatárs</div>
                     </div>
                 </div>
 
                 <!-- Sales Statistics -->
                 <?php if (!empty($sales_stats)): ?>
                 <div class="sales-section">
-                    <h3><i class="ri-user-star-line"></i> Verträge pro Mitarbeiter</h3>
+                    <h3><i class="ri-user-star-line"></i> Szerződések munkatársanként</h3>
                     <table>
                         <thead>
                             <tr>
-                                <th>Mitarbeiter</th>
-                                <th>Typ</th>
-                                <th>Anzahl Verträge</th>
-                                <th>Letzter Vertrag</th>
-                                <th>Aktion</th>
+                                <th>Munkatárs</th>
+                                <th>Típus</th>
+                                <th>Szerződések száma</th>
+                                <th>Utolsó szerződés</th>
+                                <th>Művelet</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php foreach ($sales_stats as $stat): ?>
                             <tr>
-                                <td class="sales-email"><?php echo esc_html($stat->sales_user_email ?: 'Unbekannt'); ?></td>
+                                <td class="sales-email"><?php echo esc_html($stat->sales_user_email ?: 'Ismeretlen'); ?></td>
                                 <td>
                                     <span class="badge badge-<?php echo esc_attr($stat->sales_user_type ?: 'user'); ?>">
                                         <?php echo esc_html($stat->sales_user_type ?: 'user'); ?>
                                     </span>
                                 </td>
                                 <td><strong style="color: #00d9ff; font-size: 18px;"><?php echo intval($stat->contract_count); ?></strong></td>
-                                <td class="date-info"><?php echo date('d.m.Y H:i', strtotime($stat->last_contract)); ?></td>
+                                <td class="date-info"><?php echo date('Y.m.d H:i', strtotime($stat->last_contract)); ?></td>
                                 <td>
                                     <a href="?sales_user=<?php echo intval($stat->sales_user_id); ?>" class="filter-btn">
-                                        <i class="ri-filter-line"></i> Filtern
+                                        <i class="ri-filter-line"></i> Szűrés
                                     </a>
                                 </td>
                             </tr>
@@ -378,7 +378,7 @@ class PPV_Standalone_Contracts {
                 <!-- Filter Section -->
                 <form class="filter-section" method="get">
                     <select name="sales_user">
-                        <option value="">Alle Mitarbeiter</option>
+                        <option value="">Összes munkatárs</option>
                         <?php foreach ($sales_stats as $stat): ?>
                         <option value="<?php echo intval($stat->sales_user_id); ?>"
                                 <?php echo $sales_filter == $stat->sales_user_id ? 'selected' : ''; ?>>
@@ -387,37 +387,37 @@ class PPV_Standalone_Contracts {
                         <?php endforeach; ?>
                     </select>
                     <select name="status">
-                        <option value="">Alle Status</option>
-                        <option value="signed" <?php echo $status_filter === 'signed' ? 'selected' : ''; ?>>Unterschrieben</option>
-                        <option value="pending" <?php echo $status_filter === 'pending' ? 'selected' : ''; ?>>Ausstehend</option>
+                        <option value="">Összes státusz</option>
+                        <option value="signed" <?php echo $status_filter === 'signed' ? 'selected' : ''; ?>>Aláírt</option>
+                        <option value="pending" <?php echo $status_filter === 'pending' ? 'selected' : ''; ?>>Függőben</option>
                     </select>
-                    <button type="submit"><i class="ri-filter-line"></i> Filtern</button>
+                    <button type="submit"><i class="ri-filter-line"></i> Szűrés</button>
                     <?php if ($sales_filter || $status_filter): ?>
-                    <a href="/admin/contracts" class="clear">Filter löschen</a>
+                    <a href="/admin/contracts" class="clear">Szűrők törlése</a>
                     <?php endif; ?>
                 </form>
 
                 <!-- Contracts List -->
                 <div class="contracts-section">
-                    <h3><i class="ri-list-check"></i> Alle Verträge (<?php echo count($contracts); ?>)</h3>
+                    <h3><i class="ri-list-check"></i> Összes szerződés (<?php echo count($contracts); ?>)</h3>
 
                     <?php if (empty($contracts)): ?>
                     <div class="empty-state">
                         <i class="ri-file-text-line"></i>
-                        <p>Keine Verträge gefunden</p>
+                        <p>Nincs találat</p>
                     </div>
                     <?php else: ?>
                     <table>
                         <thead>
                             <tr>
                                 <th>ID</th>
-                                <th>Händler</th>
-                                <th>Kontakt</th>
-                                <th>Ort</th>
+                                <th>Kereskedő</th>
+                                <th>Kapcsolat</th>
+                                <th>Város</th>
                                 <th>IMEI</th>
-                                <th>Sales Mitarbeiter</th>
-                                <th>Status</th>
-                                <th>Datum</th>
+                                <th>Sales munkatárs</th>
+                                <th>Státusz</th>
+                                <th>Dátum</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -435,7 +435,7 @@ class PPV_Standalone_Contracts {
                                 <td><?php echo esc_html($contract->haendler_plz . ' ' . $contract->haendler_ort); ?></td>
                                 <td><?php echo esc_html($contract->imei ?: '-'); ?></td>
                                 <td>
-                                    <span class="sales-email"><?php echo esc_html($contract->sales_user_email ?: 'Unbekannt'); ?></span>
+                                    <span class="sales-email"><?php echo esc_html($contract->sales_user_email ?: 'Ismeretlen'); ?></span>
                                     <?php if ($contract->sales_user_type): ?>
                                     <br>
                                     <span class="badge badge-<?php echo esc_attr($contract->sales_user_type); ?>">
@@ -445,11 +445,11 @@ class PPV_Standalone_Contracts {
                                 </td>
                                 <td>
                                     <span class="badge badge-<?php echo esc_attr($contract->status); ?>">
-                                        <?php echo $contract->status === 'signed' ? 'Unterschrieben' : ucfirst($contract->status); ?>
+                                        <?php echo $contract->status === 'signed' ? 'Aláírt' : ($contract->status === 'pending' ? 'Függőben' : ucfirst($contract->status)); ?>
                                     </span>
                                 </td>
                                 <td class="date-info">
-                                    <?php echo date('d.m.Y', strtotime($contract->created_at)); ?><br>
+                                    <?php echo date('Y.m.d', strtotime($contract->created_at)); ?><br>
                                     <?php echo date('H:i', strtotime($contract->created_at)); ?>
                                 </td>
                             </tr>
