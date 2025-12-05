@@ -2285,6 +2285,23 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
                     ['%s'],
                     ['%d']
                 );
+                ppv_log("[PPV_ACCOUNT] Store email synced for store #{$store_id}");
+            }
+
+            // ✅ Also update ppv_users email if handler/vendor
+            $ppv_user_id = $_SESSION['ppv_user_id'] ?? 0;
+            if ($ppv_user_id > 0) {
+                $wpdb->update(
+                    "{$wpdb->prefix}ppv_users",
+                    ['email' => $new_email],
+                    ['id' => $ppv_user_id],
+                    ['%s'],
+                    ['%d']
+                );
+                ppv_log("[PPV_ACCOUNT] PPV user email synced for ppv_user #{$ppv_user_id}");
+
+                // Update session email
+                $_SESSION['ppv_user_email'] = $new_email;
             }
 
             ppv_log("[PPV_ACCOUNT] Email changed for user #{$user_id} to: {$new_email}");
