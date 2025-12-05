@@ -522,9 +522,7 @@
           </div>
 
           <!-- 📑 TAB CONTENT: ANALYTICS -->
-          <div class="ppv-mypoints-tab-content" id="ppv-tab-analytics">
-            <div id="ppv-analytics-section"></div>
-          </div>
+          <div class="ppv-mypoints-tab-content" id="ppv-tab-analytics"></div>
 
         </div>
       </div>
@@ -536,11 +534,11 @@
     // Init tab switching
     initTabSwitching(container);
 
-    // Init analytics when tab is shown
+    // Init analytics directly into tab (no extra wrapper = better iOS scroll)
     if (window.ppv_analytics) {
       setTimeout(() => {
         try {
-          window.ppv_analytics.init('ppv-analytics-section');
+          window.ppv_analytics.init('ppv-tab-analytics');
           log('✅ Analytics initialized');
         } catch (err) {
           warn('⚠️ Analytics error:', err.message);

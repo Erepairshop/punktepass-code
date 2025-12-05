@@ -514,9 +514,13 @@ private static function render_tab_general($store) {
                     <label data-i18n="logo"><?php echo esc_html(PPV_Lang::t('logo')); ?></label>
                     <p class="ppv-help" data-i18n="logo_info"><?php echo esc_html(PPV_Lang::t('logo_info')); ?></p>
                     <input type="file" name="logo" accept="image/jpeg,image/png,image/webp" class="ppv-file-input">
-               <div id="ppv-logo-preview" class="ppv-media-preview" style="display: flex; align-items: center; justify-content: center; min-height: 120px; border: 1px solid #ddd; border-radius: 4px;">
+                    <input type="hidden" name="delete_logo" id="ppv-delete-logo" value="0">
+               <div id="ppv-logo-preview" class="ppv-media-preview" style="display: flex; align-items: center; justify-content: center; min-height: 120px; border: 1px solid #ddd; border-radius: 4px; position: relative;">
     <?php if (!empty($store->logo)): ?>
         <img src="<?php echo esc_url($store->logo); ?>" alt="Logo" style="max-width: 100%; max-height: 100px; object-fit: contain;">
+        <button type="button" id="ppv-delete-logo-btn" class="ppv-delete-logo-btn" style="position: absolute; top: 5px; right: 5px; background: #ef4444; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px;" title="Logo löschen">
+            <i class="ri-delete-bin-line"></i>
+        </button>
     <?php endif; ?>
 </div>
                 </div>
@@ -1288,6 +1292,19 @@ if (!empty($store->gallery)) {
                         });
                     });
                 }
+
+                // Logo delete button handler
+                const deleteLogoBtn = document.getElementById('ppv-delete-logo-btn');
+                const deleteLogoInput = document.getElementById('ppv-delete-logo');
+                const logoPreview = document.getElementById('ppv-logo-preview');
+                if (deleteLogoBtn && deleteLogoInput && logoPreview) {
+                    deleteLogoBtn.addEventListener('click', function() {
+                        if (confirm('Möchten Sie das Logo wirklich löschen?')) {
+                            deleteLogoInput.value = '1';
+                            logoPreview.innerHTML = '<span style="color: #64748b; font-size: 13px;">Logo wird beim Speichern gelöscht</span>';
+                        }
+                    });
+                }
             });
             </script>
             <?php
@@ -1503,8 +1520,11 @@ public static function ajax_save_profile() {
         $store_id
     ));
 
-    // Logo upload
-    if (!empty($_FILES['logo']['name'])) {
+    // Logo upload or delete
+    if (!empty($_POST['delete_logo']) && $_POST['delete_logo'] === '1') {
+        // 🗑️ Delete logo
+        $_POST['logo'] = '';
+    } elseif (!empty($_FILES['logo']['name'])) {
         $tmp_file = $_FILES['logo']['tmp_name'];
         $filename = basename($_FILES['logo']['name']);
         $new_file = $upload_dir['path'] . '/' . $filename;

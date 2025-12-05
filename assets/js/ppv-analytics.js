@@ -206,81 +206,80 @@ window.PPV_Analytics = class PPV_Analytics {
     const lang = window.ppv_mypoints?.lang || 'de';
     const l = this.getLabels(lang);
 
+    // NO WRAPPER - render directly like "Meine Punkte" tab does
     const html = `
-      <div class="ppv-analytics-wrapper">
-        <!-- Header -->
-        <div class="ppv-analytics-header">
-          <h3><i class="ri-bar-chart-2-line"></i> ${l.analytics_title}</h3>
-          <div class="ppv-analytics-controls">
-            <label>${l.analytics_range_label}</label>
-            <select id="ppv-analytics-range" class="ppv-analytics-range-select">
-              <option value="7">${l.analytics_range_7}</option>
-              <option value="30" selected>${l.analytics_range_30}</option>
-              <option value="90">${l.analytics_range_90}</option>
-              <option value="365">${l.analytics_range_365}</option>
-            </select>
+      <!-- Header -->
+      <div class="ppv-analytics-header">
+        <h3><i class="ri-bar-chart-2-line"></i> ${l.analytics_title}</h3>
+        <div class="ppv-analytics-controls">
+          <label>${l.analytics_range_label}</label>
+          <select id="ppv-analytics-range" class="ppv-analytics-range-select">
+            <option value="7">${l.analytics_range_7}</option>
+            <option value="30" selected>${l.analytics_range_30}</option>
+            <option value="90">${l.analytics_range_90}</option>
+            <option value="365">${l.analytics_range_365}</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Summary Cards -->
+      <div class="ppv-analytics-summary">
+        <div class="ppv-summary-card">
+          <div class="card-icon"><i class="ri-calendar-event-fill"></i></div>
+          <div class="card-content">
+            <div class="label">${l.analytics_this_week}</div>
+            <div class="value" id="ppv-week-points">0</div>
+            <div class="unit">${l.analytics_points_unit}</div>
           </div>
         </div>
 
-        <!-- Summary Cards -->
-        <div class="ppv-analytics-summary">
-          <div class="ppv-summary-card">
-            <div class="card-icon"><i class="ri-calendar-event-fill"></i></div>
-            <div class="card-content">
-              <div class="label">${l.analytics_this_week}</div>
-              <div class="value" id="ppv-week-points">0</div>
-              <div class="unit">${l.analytics_points_unit}</div>
-            </div>
-          </div>
-
-          <div class="ppv-summary-card">
-            <div class="card-icon"><i class="ri-calendar-2-fill"></i></div>
-            <div class="card-content">
-              <div class="label">${l.analytics_this_month}</div>
-              <div class="value" id="ppv-month-points">0</div>
-              <div class="unit">${l.analytics_points_unit}</div>
-            </div>
-          </div>
-
-          <div class="ppv-summary-card">
-            <div class="card-icon"><i class="ri-calendar-year-fill"></i></div>
-            <div class="card-content">
-              <div class="label">${l.analytics_this_year}</div>
-              <div class="value" id="ppv-year-points">0</div>
-              <div class="unit">${l.analytics_points_unit}</div>
-            </div>
-          </div>
-
-          <div class="ppv-summary-card">
-            <div class="card-icon"><i class="ri-fire-fill"></i></div>
-            <div class="card-content">
-              <div class="label">${l.analytics_current_streak}</div>
-              <div class="value" id="ppv-streak">0</div>
-              <div class="unit">${l.analytics_days_unit}</div>
-            </div>
+        <div class="ppv-summary-card">
+          <div class="card-icon"><i class="ri-calendar-2-fill"></i></div>
+          <div class="card-content">
+            <div class="label">${l.analytics_this_month}</div>
+            <div class="value" id="ppv-month-points">0</div>
+            <div class="unit">${l.analytics_points_unit}</div>
           </div>
         </div>
 
-        <!-- Trend Chart -->
-        <div class="ppv-analytics-section">
-          <h4>${l.analytics_trend_title}</h4>
-          <div id="ppv-chart-trend" class="ppv-chart-container"></div>
-        </div>
-
-        <!-- Store Breakdown Chart -->
-        <div class="ppv-analytics-section">
-          <h4>${l.analytics_stores_title}</h4>
-          <div class="ppv-stores-breakdown">
-            <div id="ppv-chart-stores" class="ppv-chart-container ppv-chart-pie"></div>
-            <div id="ppv-stores-list" class="ppv-stores-list"></div>
+        <div class="ppv-summary-card">
+          <div class="card-icon"><i class="ri-calendar-check-fill"></i></div>
+          <div class="card-content">
+            <div class="label">${l.analytics_this_year}</div>
+            <div class="value" id="ppv-year-points">0</div>
+            <div class="unit">${l.analytics_points_unit}</div>
           </div>
         </div>
 
-        <!-- Best Day Info -->
-        <div class="ppv-analytics-section">
-          <h4>${l.analytics_best_day_title}</h4>
-          <div id="ppv-best-day" class="ppv-best-day-card"></div>
+        <div class="ppv-summary-card">
+          <div class="card-icon"><i class="ri-fire-fill"></i></div>
+          <div class="card-content">
+            <div class="label">${l.analytics_current_streak}</div>
+            <div class="value" id="ppv-streak">0</div>
+            <div class="unit">${l.analytics_days_unit}</div>
+          </div>
         </div>
+      </div>
+
+      <!-- Trend Chart -->
+      <div class="ppv-analytics-section">
+        <h4>${l.analytics_trend_title}</h4>
+        <div id="ppv-chart-trend" class="ppv-chart-container" style="touch-action: pan-y;"></div>
+      </div>
+
+      <!-- Store Breakdown Chart -->
+      <div class="ppv-analytics-section">
+        <h4>${l.analytics_stores_title}</h4>
+        <div class="ppv-stores-breakdown" style="touch-action: pan-y;">
+          <div id="ppv-chart-stores" class="ppv-chart-container ppv-chart-pie" style="touch-action: pan-y;"></div>
+          <div id="ppv-stores-list" class="ppv-stores-list"></div>
+        </div>
+      </div>
+
+      <!-- Best Day Info -->
+      <div class="ppv-analytics-section">
+        <h4>${l.analytics_best_day_title}</h4>
+        <div id="ppv-best-day" class="ppv-best-day-card"></div>
       </div>
     `;
 
@@ -505,7 +504,7 @@ window.PPV_Analytics = class PPV_Analytics {
     });
 
     return `
-      <svg viewBox="0 0 ${width} ${height}" class="ppv-trend-chart">
+      <svg viewBox="0 0 ${width} ${height}" class="ppv-trend-chart" style="touch-action: none; pointer-events: none;">
         <defs>
           <linearGradient id="grad1" x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" style="stop-color:#667eea;stop-opacity:0.3" />
@@ -587,7 +586,7 @@ window.PPV_Analytics = class PPV_Analytics {
     });
 
     return `
-      <svg viewBox="0 0 ${size} ${size}" class="ppv-pie-chart">
+      <svg viewBox="0 0 ${size} ${size}" class="ppv-pie-chart" style="touch-action: none; pointer-events: none;">
         ${slicesHtml}
       </svg>
     `;
