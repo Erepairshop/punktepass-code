@@ -335,6 +335,9 @@ class PPV_Standalone_Admin {
         } elseif ($path === '/admin/db-health') {
             require_once __DIR__ . '/admin/standalone/db-health.php';
             PPV_Standalone_DBHealth::render();
+        } elseif ($path === '/admin/contracts') {
+            require_once __DIR__ . '/admin/standalone/contracts.php';
+            PPV_Standalone_Contracts::render();
         } else {
             self::render_dashboard();
         }
@@ -1426,6 +1429,9 @@ class PPV_Standalone_Admin {
                     </a>
                     <a href="/admin/whatsapp" class="<?php echo $current_page === 'whatsapp' ? 'active' : ''; ?>">
                         <i class="ri-whatsapp-line"></i> WhatsApp
+                    </a>
+                    <a href="/admin/contracts" class="<?php echo $current_page === 'contracts' ? 'active' : ''; ?>">
+                        <i class="ri-file-text-line"></i> Verträge
                     </a>
                 </nav>
                 <div class="admin-user">

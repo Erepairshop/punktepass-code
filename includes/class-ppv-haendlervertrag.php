@@ -2,6 +2,7 @@
 /**
  * PPV Händlervertrag
  * Standalone contract page at /vertrag for dealers
+ * With mandatory login and contract tracking
  */
 
 if (!defined('ABSPATH')) exit;
@@ -10,8 +11,57 @@ class PPV_Haendlervertrag {
 
     public static function hooks() {
         add_action('init', [__CLASS__, 'add_rewrite_rules']);
+        add_action('init', [__CLASS__, 'maybe_create_table']);
         add_action('template_redirect', [__CLASS__, 'handle_vertrag_page']);
         add_action('rest_api_init', [__CLASS__, 'register_rest_routes']);
+        add_action('wp_ajax_ppv_vertrag_login', [__CLASS__, 'ajax_login']);
+        add_action('wp_ajax_nopriv_ppv_vertrag_login', [__CLASS__, 'ajax_login']);
+    }
+
+    /**
+     * Create contracts table if not exists
+     */
+    public static function maybe_create_table() {
+        global $wpdb;
+        $table = $wpdb->prefix . 'ppv_contracts';
+
+        // Check if table exists
+        if ($wpdb->get_var("SHOW TABLES LIKE '$table'") === $table) {
+            return;
+        }
+
+        $charset_collate = $wpdb->get_charset_collate();
+
+        $sql = "CREATE TABLE $table (
+            id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            contract_type varchar(50) NOT NULL DEFAULT 'testphase_30',
+            haendler_name varchar(255) NOT NULL,
+            haendler_email varchar(255) NOT NULL,
+            haendler_telefon varchar(100) DEFAULT '',
+            haendler_adresse varchar(255) DEFAULT '',
+            haendler_plz varchar(20) DEFAULT '',
+            haendler_ort varchar(100) DEFAULT '',
+            ansprechpartner varchar(255) DEFAULT '',
+            steuernummer varchar(100) DEFAULT '',
+            imei varchar(50) DEFAULT '',
+            sales_user_id bigint(20) UNSIGNED DEFAULT NULL,
+            sales_user_type varchar(50) DEFAULT NULL,
+            sales_user_email varchar(255) DEFAULT NULL,
+            status varchar(50) NOT NULL DEFAULT 'pending',
+            pdf_path varchar(500) DEFAULT '',
+            created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            signed_at datetime DEFAULT NULL,
+            expires_at datetime DEFAULT NULL,
+            notes text DEFAULT '',
+            PRIMARY KEY (id),
+            KEY sales_user_id (sales_user_id),
+            KEY contract_type (contract_type),
+            KEY status (status),
+            KEY created_at (created_at)
+        ) $charset_collate;";
+
+        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+        dbDelta($sql);
     }
 
     /**
@@ -23,11 +73,89 @@ class PPV_Haendlervertrag {
     }
 
     /**
+     * Handle AJAX login for vertrag page
+     */
+    public static function ajax_login() {
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+
+        $email = sanitize_email($_POST['email'] ?? '');
+        $password = $_POST['password'] ?? '';
+
+        if (empty($email) || empty($password)) {
+            wp_send_json_error(['message' => 'E-Mail und Passwort erforderlich']);
+        }
+
+        // Check in ppv_users table
+        $user = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$prefix}ppv_users WHERE email = %s AND active = 1 LIMIT 1",
+            $email
+        ));
+
+        if (!$user || !password_verify($password, $user->password)) {
+            wp_send_json_error(['message' => 'Ungültige Anmeldedaten']);
+        }
+
+        // Start session if not started
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+
+        // Set session
+        $_SESSION['ppv_vertrag_user_id'] = $user->id;
+        $_SESSION['ppv_vertrag_user_email'] = $user->email;
+        $_SESSION['ppv_vertrag_user_type'] = $user->user_type;
+
+        wp_send_json_success([
+            'message' => 'Erfolgreich eingeloggt',
+            'user_email' => $user->email,
+            'user_type' => $user->user_type
+        ]);
+    }
+
+    /**
+     * Check if user is logged in for vertrag
+     */
+    private static function get_logged_in_user() {
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+
+        if (!empty($_SESSION['ppv_vertrag_user_id'])) {
+            return [
+                'id' => $_SESSION['ppv_vertrag_user_id'],
+                'email' => $_SESSION['ppv_vertrag_user_email'] ?? '',
+                'type' => $_SESSION['ppv_vertrag_user_type'] ?? 'user'
+            ];
+        }
+
+        return null;
+    }
+
+    /**
      * Handle /vertrag page directly (no WordPress page needed)
      */
     public static function handle_vertrag_page() {
         if (get_query_var('ppv_vertrag') == 1) {
-            self::render_page();
+            // Check logout action
+            if (isset($_GET['logout'])) {
+                if (session_status() === PHP_SESSION_NONE) {
+                    @session_start();
+                }
+                unset($_SESSION['ppv_vertrag_user_id']);
+                unset($_SESSION['ppv_vertrag_user_email']);
+                unset($_SESSION['ppv_vertrag_user_type']);
+                wp_redirect(home_url('/vertrag'));
+                exit;
+            }
+
+            $user = self::get_logged_in_user();
+
+            if (!$user) {
+                self::render_login_page();
+            } else {
+                self::render_page($user);
+            }
             exit;
         }
     }
@@ -47,7 +175,14 @@ class PPV_Haendlervertrag {
      * Handle contract submission
      */
     public static function handle_contract_submit($request) {
+        global $wpdb;
         $data = $request->get_json_params();
+
+        // Get logged-in sales user
+        $sales_user = self::get_logged_in_user();
+        if (!$sales_user) {
+            return new WP_Error('not_logged_in', 'Bitte melden Sie sich an', ['status' => 401]);
+        }
 
         // Validate required fields
         $required = ['haendlername', 'adresse', 'plz', 'ort', 'ansprechpartner', 'email', 'telefon'];
@@ -80,6 +215,33 @@ class PPV_Haendlervertrag {
         // Save contract to server and generate PDF
         $pdf_path = self::save_contract_to_server($haendlername, $pdf_html, $data);
 
+        // Save contract to database
+        $table = $wpdb->prefix . 'ppv_contracts';
+        $wpdb->insert($table, [
+            'contract_type'      => 'testphase_30',
+            'haendler_name'      => $haendlername,
+            'haendler_email'     => $email,
+            'haendler_telefon'   => $telefon,
+            'haendler_adresse'   => $adresse,
+            'haendler_plz'       => $plz,
+            'haendler_ort'       => $ort,
+            'ansprechpartner'    => $ansprechpartner,
+            'steuernummer'       => $steuernummer,
+            'imei'               => $imei,
+            'sales_user_id'      => $sales_user['id'],
+            'sales_user_type'    => $sales_user['type'],
+            'sales_user_email'   => $sales_user['email'],
+            'status'             => 'signed',
+            'pdf_path'           => $pdf_path ?: '',
+            'signed_at'          => current_time('mysql'),
+            'notes'              => "Zubehör: $zubehoer, Zustand: $zustand"
+        ], [
+            '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s',
+            '%d', '%s', '%s', '%s', '%s', '%s', '%s'
+        ]);
+
+        $contract_id = $wpdb->insert_id;
+
         // Send to admin with PDF attachment
         $admin_email = 'info@punktepass.de';
         $subject = "Neuer Händlervertrag - $haendlername";
@@ -92,6 +254,9 @@ class PPV_Haendlervertrag {
 
         $attachments = $pdf_path ? [$pdf_path] : [];
 
+        // Add sales user info to email subject
+        $subject .= " (von: {$sales_user['email']})";
+
         $sent_admin = wp_mail($admin_email, $subject, $email_body, $headers, $attachments);
 
         // Send copy to dealer with PDF attachment
@@ -103,8 +268,12 @@ class PPV_Haendlervertrag {
 
         $sent_dealer = wp_mail($email, $dealer_subject, $email_body, $dealer_headers, $attachments);
 
-        if ($sent_admin || $sent_dealer) {
-            return ['success' => true, 'message' => 'Vertrag erfolgreich gesendet'];
+        if ($sent_admin || $sent_dealer || $contract_id) {
+            return [
+                'success' => true,
+                'message' => 'Vertrag erfolgreich gesendet',
+                'contract_id' => $contract_id
+            ];
         }
 
         return new WP_Error('email_failed', 'E-Mail konnte nicht gesendet werden', ['status' => 500]);
@@ -521,9 +690,211 @@ class PPV_Haendlervertrag {
     }
 
     /**
+     * Render the login page for vertrag
+     */
+    private static function render_login_page() {
+        ?>
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PunktePass Vertrag - Anmelden</title>
+    <link rel="icon" href="<?php echo PPV_PLUGIN_URL; ?>assets/img/favicon.ico">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .login-container {
+            max-width: 420px;
+            width: 100%;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .login-header {
+            background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+            color: #fff;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        .login-header .logo {
+            width: 70px;
+            height: 70px;
+            background: #fff;
+            border-radius: 14px;
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: bold;
+            color: #00d4ff;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .login-header h1 { font-size: 1.5rem; margin-bottom: 5px; }
+        .login-header p { font-size: 0.95rem; opacity: 0.9; }
+        .login-body { padding: 35px 30px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #1a1a2e;
+            font-size: 0.95rem;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 0 4px rgba(0, 212, 255, 0.1);
+        }
+        .btn-login {
+            width: 100%;
+            background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+            color: #fff;
+            border: none;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
+        }
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 212, 255, 0.4);
+        }
+        .btn-login:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            font-size: 0.9rem;
+        }
+        .error-message.show { display: block; }
+        .info-box {
+            background: #e8f4fd;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+        .loading {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <div class="logo">P</div>
+            <h1>PunktePass Vertrag</h1>
+            <p>Bitte melden Sie sich an</p>
+        </div>
+        <div class="login-body">
+            <div class="error-message" id="errorMessage"></div>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">E-Mail-Adresse</label>
+                    <input type="email" id="email" name="email" required placeholder="ihre@email.de">
+                </div>
+                <div class="form-group">
+                    <label for="password">Passwort</label>
+                    <input type="password" id="password" name="password" required placeholder="Ihr Passwort">
+                </div>
+                <button type="submit" class="btn-login" id="loginBtn">Anmelden</button>
+            </form>
+            <div class="info-box">
+                <strong>Hinweis:</strong> Bitte verwenden Sie Ihre PunktePass-Zugangsdaten. Falls Sie noch keinen Zugang haben, wenden Sie sich an info@punktepass.de
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const btn = document.getElementById('loginBtn');
+        const errorEl = document.getElementById('errorMessage');
+        const originalText = btn.innerHTML;
+
+        btn.innerHTML = '<span class="loading"></span>Wird geprüft...';
+        btn.disabled = true;
+        errorEl.classList.remove('show');
+
+        const formData = new FormData(this);
+        formData.append('action', 'ppv_vertrag_login');
+
+        try {
+            const response = await fetch('<?php echo admin_url('admin-ajax.php'); ?>', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                window.location.reload();
+            } else {
+                errorEl.textContent = result.data?.message || 'Anmeldung fehlgeschlagen';
+                errorEl.classList.add('show');
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            errorEl.textContent = 'Verbindungsfehler. Bitte versuchen Sie es erneut.';
+            errorEl.classList.add('show');
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    });
+    </script>
+</body>
+</html>
+        <?php
+    }
+
+    /**
      * Render the contract page
      */
-    public static function render_page() {
+    public static function render_page($user = null) {
         ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -546,6 +917,63 @@ class PPV_Haendlervertrag {
             min-height: 100vh;
             padding: 20px;
             color: #333;
+        }
+
+        .user-bar {
+            max-width: 900px;
+            margin: 0 auto 15px;
+            background: rgba(255,255,255,0.95);
+            padding: 12px 20px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .user-bar .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.95rem;
+            color: #1a1a2e;
+        }
+        .user-bar .user-info .user-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+        .user-bar .user-email { font-weight: 600; }
+        .user-bar .user-type {
+            background: #e8f4fd;
+            color: #0099cc;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .user-bar .btn-logout {
+            background: #ff6b6b;
+            color: #fff;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        .user-bar .btn-logout:hover {
+            background: #ee5a5a;
+            transform: translateY(-1px);
         }
 
         .contract-container {
@@ -1004,6 +1432,17 @@ class PPV_Haendlervertrag {
     </style>
 </head>
 <body>
+    <?php if ($user): ?>
+    <div class="user-bar">
+        <div class="user-info">
+            <div class="user-icon"><?php echo strtoupper(substr($user['email'], 0, 1)); ?></div>
+            <span class="user-email"><?php echo esc_html($user['email']); ?></span>
+            <span class="user-type"><?php echo esc_html($user['type']); ?></span>
+        </div>
+        <a href="<?php echo home_url('/vertrag?logout=1'); ?>" class="btn-logout">Abmelden</a>
+    </div>
+    <?php endif; ?>
+
     <div class="contract-container">
         <div class="contract-header">
             <div class="logo">P</div>
