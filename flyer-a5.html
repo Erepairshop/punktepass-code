@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PunktePass Flyer A5</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        @page {
+            size: A5 portrait;
+            margin: 0;
+        }
+
+        @media print {
+            body {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+
+        body {
+            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .print-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: transform 0.2s;
+        }
+
+        .print-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .flyer {
+            /* A5 size: 148mm x 210mm */
+            width: 148mm;
+            height: 210mm;
+            background: linear-gradient(180deg, #ffffff 0%, #f8f9ff 100%);
+            border-radius: 0;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            position: relative;
+        }
+
+        /* Decorative top wave */
+        .top-decoration {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 45mm;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+            clip-path: ellipse(80% 100% at 50% 0%);
+        }
+
+        .content {
+            position: relative;
+            z-index: 1;
+            padding: 8mm 10mm;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Logo */
+        .logo-container {
+            text-align: center;
+            margin-bottom: 4mm;
+        }
+
+        .logo {
+            height: 18mm;
+            filter: brightness(0) invert(1);
+        }
+
+        /* Main headline */
+        .headline {
+            text-align: center;
+            margin-bottom: 5mm;
+        }
+
+        .headline h1 {
+            color: white;
+            font-size: 7.5mm;
+            font-weight: 800;
+            line-height: 1.2;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .headline h1 span {
+            display: block;
+            font-size: 6mm;
+            font-weight: 600;
+        }
+
+        /* Subheadline */
+        .subheadline {
+            text-align: center;
+            color: #4b5563;
+            font-size: 3.8mm;
+            font-weight: 500;
+            margin-bottom: 6mm;
+            margin-top: 8mm;
+        }
+
+        /* Steps section */
+        .steps-title {
+            text-align: center;
+            color: #6366f1;
+            font-size: 4mm;
+            font-weight: 700;
+            margin-bottom: 4mm;
+        }
+
+        .steps {
+            display: flex;
+            flex-direction: column;
+            gap: 3mm;
+            margin-bottom: 5mm;
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 3mm;
+            background: white;
+            padding: 3mm 4mm;
+            border-radius: 3mm;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
+            border-left: 1mm solid #6366f1;
+        }
+
+        .step-number {
+            width: 8mm;
+            height: 8mm;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 4mm;
+            flex-shrink: 0;
+        }
+
+        .step-text {
+            color: #1f2937;
+            font-size: 3.5mm;
+            font-weight: 500;
+        }
+
+        /* QR Section */
+        .qr-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-top: 3mm;
+        }
+
+        .qr-box {
+            background: white;
+            padding: 4mm;
+            border-radius: 4mm;
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.2);
+            border: 0.5mm solid #e0e7ff;
+        }
+
+        .qr-code {
+            width: 38mm;
+            height: 38mm;
+            display: block;
+        }
+
+        .cta {
+            text-align: center;
+            margin-top: 4mm;
+        }
+
+        .cta-text {
+            color: #6366f1;
+            font-size: 4.5mm;
+            font-weight: 700;
+            margin-bottom: 1mm;
+        }
+
+        .cta-url {
+            display: inline-block;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+            padding: 2mm 6mm;
+            border-radius: 5mm;
+            font-size: 4mm;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        /* Bottom decoration */
+        .bottom-decoration {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 8mm;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+        }
+
+        .bottom-text {
+            position: absolute;
+            bottom: 2mm;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: white;
+            font-size: 2.5mm;
+            font-weight: 500;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <button class="print-btn no-print" onclick="window.print()">🖨️ Drucken / Nyomtatás</button>
+
+    <div class="flyer">
+        <div class="top-decoration"></div>
+
+        <div class="content">
+            <!-- Logo -->
+            <div class="logo-container">
+                <img src="assets/img/logo.webp" alt="PunktePass" class="logo">
+            </div>
+
+            <!-- Main Headline -->
+            <div class="headline">
+                <h1>
+                    Punkte sammeln
+                    <span>Prämien erhalten!</span>
+                </h1>
+            </div>
+
+            <!-- Subheadline -->
+            <p class="subheadline">Mit PunktePass wird jeder Einkauf belohnt.</p>
+
+            <!-- Steps -->
+            <div class="steps-title">So einfach geht's:</div>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-text">App herunterladen</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-text">Schnelle & einfache Registrierung</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-text">QR-Code im Shop scannen</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-text">Punkte sammeln & Prämien erhalten</div>
+                </div>
+            </div>
+
+            <!-- QR Code Section -->
+            <div class="qr-section">
+                <div class="qr-box">
+                    <img src="assets/img/screenshot-qrcode.png" alt="QR Code" class="qr-code">
+                </div>
+                <div class="cta">
+                    <div class="cta-text">Jetzt Vorteile sichern!</div>
+                    <div class="cta-url">Punktepass.de</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bottom-decoration"></div>
+        <div class="bottom-text">Scannen Sie den QR-Code und starten Sie sofort!</div>
+    </div>
+</body>
+</html>
