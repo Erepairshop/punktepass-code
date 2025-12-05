@@ -183,22 +183,17 @@ class PPV_My_Points {
         /* iOS scroll fixes for Analytics tab */
         .ppv-mypoints-tab-content {
             -webkit-overflow-scrolling: touch;
-            overflow-y: auto;
             overscroll-behavior-y: contain;
-        }
-        .ppv-mypoints-tab-content#ppv-tab-analytics {
-            min-height: 400px;
-            max-height: calc(100vh - 300px);
         }
         .ppv-analytics-wrapper {
             -webkit-overflow-scrolling: touch;
-            overflow-y: auto;
             overscroll-behavior-y: contain;
-            padding-bottom: 100px;
+            padding-bottom: 120px;
         }
-        /* Prevent body scroll when in analytics */
+        /* iOS hardware acceleration */
         @supports (-webkit-touch-callout: none) {
-            .ppv-analytics-wrapper {
+            .ppv-analytics-wrapper,
+            .ppv-mypoints-tab-content {
                 -webkit-transform: translateZ(0);
                 transform: translateZ(0);
             }
