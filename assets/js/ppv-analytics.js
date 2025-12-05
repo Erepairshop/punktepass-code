@@ -207,7 +207,7 @@ class PPV_Analytics {
     const l = this.getLabels(lang);
 
     const html = `
-      <div class="ppv-analytics-wrapper" style="-webkit-overflow-scrolling: touch; overflow: visible;">
+      <div class="ppv-analytics-wrapper">
         <!-- Header -->
         <div class="ppv-analytics-header">
           <h3><i class="ri-bar-chart-2-line"></i> ${l.analytics_title}</h3>
