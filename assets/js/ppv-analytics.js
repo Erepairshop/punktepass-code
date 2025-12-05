@@ -7,9 +7,9 @@
  */
 
 // Turbo-safe: Only define class if not already defined
-if (typeof PPV_Analytics === 'undefined') {
+if (typeof window.PPV_Analytics === 'undefined') {
 
-class PPV_Analytics {
+window.PPV_Analytics = class PPV_Analytics {
   constructor() {
     this.data = null;
     this.stores = null;
