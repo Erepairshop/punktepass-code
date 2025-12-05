@@ -1166,15 +1166,19 @@ class PPV_Standalone_Admin {
                 }
                 .admin-nav {
                     display: flex;
-                    gap: 10px;
+                    gap: 6px;
+                    flex-wrap: wrap;
+                    justify-content: center;
+                    max-width: 900px;
                 }
                 .admin-nav a {
                     color: #888;
                     text-decoration: none;
-                    padding: 10px 16px;
-                    border-radius: 8px;
+                    padding: 6px 10px;
+                    border-radius: 6px;
                     transition: all 0.3s;
-                    font-size: 14px;
+                    font-size: 12px;
+                    white-space: nowrap;
                 }
                 .admin-nav a:hover, .admin-nav a.active {
                     color: #fff;
@@ -1431,7 +1435,7 @@ class PPV_Standalone_Admin {
                         <i class="ri-whatsapp-line"></i> WhatsApp
                     </a>
                     <a href="/admin/contracts" class="<?php echo $current_page === 'contracts' ? 'active' : ''; ?>">
-                        <i class="ri-file-text-line"></i> Verträge
+                        <i class="ri-file-text-line"></i> Szerződések
                     </a>
                 </nav>
                 <div class="admin-user">
