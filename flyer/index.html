@@ -40,7 +40,7 @@
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: #f1f5f9;
+            background: #e2e8f0;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -77,22 +77,22 @@
             position: relative;
         }
 
-        /* Header with gradient */
+        /* Header */
         .header {
-            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #6366f1 100%);
-            padding: 8mm 10mm 10mm;
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #7c3aed 100%);
+            padding: 10mm 10mm 12mm;
             text-align: center;
             position: relative;
+            overflow: hidden;
         }
 
-        /* Decorative circles */
         .header::before {
             content: '';
             position: absolute;
-            top: -20mm;
-            right: -20mm;
-            width: 60mm;
-            height: 60mm;
+            top: -30mm;
+            right: -30mm;
+            width: 80mm;
+            height: 80mm;
             background: rgba(255,255,255,0.1);
             border-radius: 50%;
         }
@@ -100,23 +100,20 @@
         .header::after {
             content: '';
             position: absolute;
-            bottom: -15mm;
-            left: -15mm;
-            width: 40mm;
-            height: 40mm;
+            bottom: -20mm;
+            left: -20mm;
+            width: 50mm;
+            height: 50mm;
             background: rgba(255,255,255,0.08);
             border-radius: 50%;
         }
 
-        .logo-container {
+        .logo {
+            height: 22mm;
+            margin-bottom: 5mm;
             position: relative;
             z-index: 1;
-            margin-bottom: 4mm;
-        }
-
-        .logo {
-            height: 20mm;
-            filter: brightness(0) invert(1) drop-shadow(0 2px 8px rgba(0,0,0,0.2));
+            filter: brightness(0) invert(1) drop-shadow(0 3px 10px rgba(0,0,0,0.3));
         }
 
         .headline {
@@ -126,158 +123,138 @@
 
         .headline h1 {
             color: #ffffff;
-            font-size: 8.5mm;
+            font-size: 9mm;
             font-weight: 800;
             line-height: 1.15;
-            margin-bottom: 2mm;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 3mm;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.15);
         }
 
         .subheadline {
             position: relative;
             z-index: 1;
             color: rgba(255,255,255,0.9);
-            font-size: 3.5mm;
+            font-size: 4mm;
             font-weight: 500;
         }
 
         /* Content */
         .content {
-            padding: 6mm 8mm 4mm;
+            padding: 7mm 10mm 5mm;
         }
 
         .steps-title {
             text-align: center;
             color: #1e293b;
-            font-size: 4.5mm;
+            font-size: 5mm;
             font-weight: 700;
-            margin-bottom: 4mm;
+            margin-bottom: 5mm;
         }
 
         .steps {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 2.5mm;
-            margin-bottom: 5mm;
+            gap: 3mm;
+            margin-bottom: 6mm;
         }
 
         .step {
             background: #f8fafc;
             border: 1px solid #e2e8f0;
-            padding: 3mm;
+            padding: 3.5mm;
             border-radius: 3mm;
             display: flex;
             align-items: center;
-            gap: 2.5mm;
+            gap: 3mm;
         }
 
         .step-number {
-            width: 7mm;
-            height: 7mm;
+            width: 8mm;
+            height: 8mm;
             background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
-            border-radius: 2mm;
+            border-radius: 2.5mm;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
             font-weight: 800;
-            font-size: 3.5mm;
+            font-size: 4mm;
             flex-shrink: 0;
         }
 
         .step-text {
             color: #334155;
-            font-size: 2.8mm;
+            font-size: 3.2mm;
             font-weight: 600;
-            line-height: 1.25;
+            line-height: 1.3;
         }
 
         /* QR Section */
         .qr-section {
             text-align: center;
-            padding: 0 8mm;
-        }
-
-        .scan-label {
-            display: inline-flex;
-            align-items: center;
-            gap: 3mm;
-            margin-bottom: 3mm;
-            color: #64748b;
-            font-size: 2.8mm;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .scan-label::before,
-        .scan-label::after {
-            content: '';
-            width: 12mm;
-            height: 0.3mm;
-            background: linear-gradient(90deg, transparent, #cbd5e1, transparent);
+            padding: 0 10mm;
         }
 
         .qr-container {
             display: inline-block;
             background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-            padding: 1.2mm;
-            border-radius: 4mm;
-            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.25);
+            padding: 1.5mm;
+            border-radius: 5mm;
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.3);
         }
 
         .qr-inner {
             background: white;
-            padding: 3mm;
-            border-radius: 3mm;
+            padding: 3.5mm;
+            border-radius: 4mm;
         }
 
         .qr-code {
-            width: 34mm;
-            height: 34mm;
+            width: 38mm;
+            height: 38mm;
             display: block;
         }
 
         /* CTA */
         .cta {
-            margin-top: 4mm;
+            margin-top: 5mm;
             text-align: center;
         }
 
-        .cta-text {
+        .cta-main {
             color: #1e293b;
-            font-size: 4mm;
-            font-weight: 700;
-            margin-bottom: 2mm;
+            font-size: 5mm;
+            font-weight: 800;
+            margin-bottom: 3mm;
         }
 
         .cta-badge {
             display: inline-block;
             background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
             color: white;
-            padding: 2.5mm 8mm;
+            padding: 3mm 10mm;
             border-radius: 50px;
-            font-size: 4.5mm;
+            font-size: 5.5mm;
             font-weight: 700;
             letter-spacing: 0.3px;
-            box-shadow: 0 3px 10px rgba(34, 197, 94, 0.3);
+            box-shadow: 0 4px 15px rgba(34, 197, 94, 0.35);
         }
 
-        /* Bonus text */
-        .bonus-section {
-            margin-top: 4mm;
+        /* Highlight box */
+        .highlight-box {
+            margin-top: 5mm;
             text-align: center;
         }
 
-        .bonus-text {
+        .highlight-text {
             display: inline-block;
-            background: linear-gradient(135deg, #fef3c7, #fde68a);
-            border: 1px solid #f59e0b;
-            color: #92400e;
-            padding: 2mm 5mm;
-            border-radius: 2mm;
-            font-size: 2.8mm;
-            font-weight: 600;
+            background: linear-gradient(135deg, #fef9c3, #fde047);
+            border: 2px solid #eab308;
+            color: #854d0e;
+            padding: 3mm 8mm;
+            border-radius: 3mm;
+            font-size: 4mm;
+            font-weight: 700;
         }
 
         /* Footer */
@@ -287,13 +264,13 @@
             left: 0;
             right: 0;
             background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
-            padding: 3mm 8mm;
+            padding: 4mm 10mm;
             text-align: center;
         }
 
         .footer-text {
-            color: rgba(255,255,255,0.95);
-            font-size: 2.8mm;
+            color: white;
+            font-size: 3.5mm;
             font-weight: 600;
         }
     </style>
@@ -304,9 +281,7 @@
     <div class="flyer">
         <!-- Header -->
         <div class="header">
-            <div class="logo-container">
-                <img src="../assets/img/logo.webp" alt="PunktePass" class="logo">
-            </div>
+            <img src="../assets/img/logo.webp" alt="PunktePass" class="logo">
             <div class="headline">
                 <h1>Punkte sammeln<br>Prämien erhalten!</h1>
             </div>
@@ -337,7 +312,6 @@
 
             <!-- QR Code -->
             <div class="qr-section">
-                <div class="scan-label">Jetzt scannen</div>
                 <div class="qr-container">
                     <div class="qr-inner">
                         <img src="../assets/img/punktepass-qr-code.png" alt="QR Code" class="qr-code">
@@ -347,19 +321,19 @@
 
             <!-- CTA -->
             <div class="cta">
-                <div class="cta-text">Jetzt Vorteile sichern!</div>
+                <div class="cta-main">Jetzt Vorteile sichern!</div>
                 <div class="cta-badge">Punktepass.de</div>
             </div>
 
-            <!-- Bonus -->
-            <div class="bonus-section">
-                <div class="bonus-text">Kostenlos registrieren & sofort Punkte sammeln!</div>
+            <!-- Highlight -->
+            <div class="highlight-box">
+                <div class="highlight-text">Hier Punkte sammeln!</div>
             </div>
         </div>
 
         <!-- Footer -->
         <div class="footer">
-            <div class="footer-text">Scannen Sie den QR-Code und starten Sie sofort!</div>
+            <div class="footer-text">Kostenlos registrieren & sofort starten!</div>
         </div>
     </div>
 </body>
