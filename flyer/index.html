@@ -21,8 +21,8 @@
             html, body {
                 width: 148mm;
                 height: 210mm;
-                margin: 0;
-                padding: 0;
+                margin: 0 !important;
+                padding: 0 !important;
             }
             body {
                 -webkit-print-color-adjust: exact !important;
@@ -35,6 +35,9 @@
             .flyer {
                 box-shadow: none !important;
                 margin: 0 !important;
+                position: absolute;
+                top: 0;
+                left: 0;
             }
         }
 
@@ -75,6 +78,8 @@
             overflow: hidden;
             box-shadow: 0 25px 80px rgba(0,0,0,0.15);
             position: relative;
+            display: flex;
+            flex-direction: column;
         }
 
         /* Header */
@@ -110,17 +115,17 @@
 
         .logo-wrapper {
             display: inline-block;
-            background: rgba(255,255,255,0.95);
+            background: #0f172a;
             padding: 3mm 5mm;
             border-radius: 4mm;
             margin-bottom: 5mm;
             position: relative;
             z-index: 1;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
 
         .logo {
-            height: 18mm;
+            height: 16mm;
             display: block;
         }
 
@@ -131,30 +136,33 @@
 
         .headline h1 {
             color: #ffffff;
-            font-size: 9mm;
+            font-size: 10mm;
             font-weight: 800;
             line-height: 1.15;
             margin-bottom: 3mm;
-            text-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            text-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
 
         .subheadline {
             position: relative;
             z-index: 1;
             color: rgba(255,255,255,0.9);
-            font-size: 4mm;
+            font-size: 4.5mm;
             font-weight: 500;
         }
 
         /* Content */
         .content {
-            padding: 7mm 10mm 5mm;
+            flex: 1;
+            padding: 6mm 10mm;
+            display: flex;
+            flex-direction: column;
         }
 
         .steps-title {
             text-align: center;
             color: #1e293b;
-            font-size: 5mm;
+            font-size: 5.5mm;
             font-weight: 700;
             margin-bottom: 5mm;
         }
@@ -163,13 +171,13 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 3mm;
-            margin-bottom: 6mm;
+            margin-bottom: 5mm;
         }
 
         .step {
             background: #f8fafc;
             border: 1px solid #e2e8f0;
-            padding: 3.5mm;
+            padding: 3mm;
             border-radius: 3mm;
             display: flex;
             align-items: center;
@@ -192,15 +200,19 @@
 
         .step-text {
             color: #334155;
-            font-size: 3.2mm;
+            font-size: 3.5mm;
             font-weight: 600;
-            line-height: 1.3;
+            line-height: 1.25;
         }
 
         /* QR Section */
         .qr-section {
             text-align: center;
-            padding: 0 10mm;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
 
         .qr-container {
@@ -213,25 +225,25 @@
 
         .qr-inner {
             background: white;
-            padding: 3.5mm;
+            padding: 3mm;
             border-radius: 4mm;
         }
 
         .qr-code {
-            width: 34mm;
-            height: 34mm;
+            width: 38mm;
+            height: 38mm;
             display: block;
         }
 
         /* CTA */
         .cta {
-            margin-top: 5mm;
+            margin-top: 4mm;
             text-align: center;
         }
 
         .cta-main {
             color: #1e293b;
-            font-size: 5mm;
+            font-size: 5.5mm;
             font-weight: 800;
             margin-bottom: 3mm;
         }
@@ -240,37 +252,16 @@
             display: inline-block;
             background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
             color: white;
-            padding: 3mm 10mm;
+            padding: 3mm 12mm;
             border-radius: 50px;
-            font-size: 5.5mm;
+            font-size: 6mm;
             font-weight: 700;
             letter-spacing: 0.3px;
             box-shadow: 0 4px 15px rgba(34, 197, 94, 0.35);
         }
 
-        /* Highlight box */
-        .highlight-box {
-            margin-top: 5mm;
-            text-align: center;
-        }
-
-        .highlight-text {
-            display: inline-block;
-            background: linear-gradient(135deg, #fef9c3, #fde047);
-            border: 2px solid #eab308;
-            color: #854d0e;
-            padding: 3mm 8mm;
-            border-radius: 3mm;
-            font-size: 4mm;
-            font-weight: 700;
-        }
-
         /* Footer */
         .footer {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
             background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
             padding: 4mm 10mm;
             text-align: center;
@@ -278,7 +269,7 @@
 
         .footer-text {
             color: white;
-            font-size: 3.5mm;
+            font-size: 4mm;
             font-weight: 600;
         }
     </style>
@@ -293,7 +284,7 @@
                 <img src="../assets/img/logo.webp" alt="PunktePass" class="logo">
             </div>
             <div class="headline">
-                <h1>Punkte sammeln<br>Prämien erhalten!</h1>
+                <h1>Hier Punkte sammeln<br>Prämien erhalten!</h1>
             </div>
             <p class="subheadline">Mit PunktePass wird jeder Einkauf belohnt.</p>
         </div>
@@ -304,15 +295,15 @@
             <div class="steps">
                 <div class="step">
                     <div class="step-number">1</div>
-                    <div class="step-text">App herunter-<br>laden</div>
+                    <div class="step-text">App herunterladen</div>
                 </div>
                 <div class="step">
                     <div class="step-number">2</div>
-                    <div class="step-text">Schnelle & einfache Registrierung</div>
+                    <div class="step-text">Schnell & einfach registrieren</div>
                 </div>
                 <div class="step">
                     <div class="step-number">3</div>
-                    <div class="step-text">QR-Code im Shop scannen</div>
+                    <div class="step-text">QR-Code scannen</div>
                 </div>
                 <div class="step">
                     <div class="step-number">4</div>
@@ -333,11 +324,6 @@
             <div class="cta">
                 <div class="cta-main">Jetzt Vorteile sichern!</div>
                 <div class="cta-badge">Punktepass.de</div>
-            </div>
-
-            <!-- Highlight -->
-            <div class="highlight-box">
-                <div class="highlight-text">Hier Punkte sammeln!</div>
             </div>
         </div>
 
