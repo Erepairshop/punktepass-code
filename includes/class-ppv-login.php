@@ -497,12 +497,13 @@ public static function render_landing_page($atts) {
                                         </svg>
                                         <?php echo PPV_Lang::t('login_email_label'); ?>
                                     </label>
-                                    <input 
-                                        type="email" 
-                                        id="ppv-email" 
-                                        name="email" 
+                                    <input
+                                        type="text"
+                                        inputmode="email"
+                                        id="ppv-email"
+                                        name="email"
                                         placeholder="<?php echo PPV_Lang::t('login_email_placeholder'); ?>"
-                                        autocomplete="email"
+                                        autocomplete="off"
                                         required
                                     >
                                 </div>
