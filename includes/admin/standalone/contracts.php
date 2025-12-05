@@ -124,7 +124,7 @@ class PPV_Standalone_Contracts {
                 <i class="ri-file-warning-line"></i>
                 <h2>Verträge-Tabelle nicht gefunden</h2>
                 <p>Die Verträge-Tabelle wurde noch nicht erstellt.
-                Bitte besuchen Sie die <a href="<?php echo home_url('/vertrag'); ?>">/vertrag</a> Seite,
+                Bitte besuchen Sie die <a href="<?php echo home_url('/invoice'); ?>">/invoice</a> Seite,
                 um die Tabelle automatisch zu erstellen.</p>
                 <a href="/admin/dashboard">Zurück zum Dashboard</a>
             </div>

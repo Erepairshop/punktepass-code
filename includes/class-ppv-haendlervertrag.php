@@ -65,10 +65,10 @@ class PPV_Haendlervertrag {
     }
 
     /**
-     * Add rewrite rule for /vertrag
+     * Add rewrite rule for /invoice
      */
     public static function add_rewrite_rules() {
-        add_rewrite_rule('^vertrag/?$', 'index.php?ppv_vertrag=1', 'top');
+        add_rewrite_rule('^invoice/?$', 'index.php?ppv_vertrag=1', 'top');
         add_rewrite_tag('%ppv_vertrag%', '1');
     }
 
@@ -145,7 +145,7 @@ class PPV_Haendlervertrag {
                 unset($_SESSION['ppv_vertrag_user_id']);
                 unset($_SESSION['ppv_vertrag_user_email']);
                 unset($_SESSION['ppv_vertrag_user_type']);
-                wp_redirect(home_url('/vertrag'));
+                wp_redirect(home_url('/invoice'));
                 exit;
             }
 
@@ -1439,7 +1439,7 @@ class PPV_Haendlervertrag {
             <span class="user-email"><?php echo esc_html($user['email']); ?></span>
             <span class="user-type"><?php echo esc_html($user['type']); ?></span>
         </div>
-        <a href="<?php echo home_url('/vertrag?logout=1'); ?>" class="btn-logout">Abmelden</a>
+        <a href="<?php echo home_url('/invoice?logout=1'); ?>" class="btn-logout">Abmelden</a>
     </div>
     <?php endif; ?>
 
