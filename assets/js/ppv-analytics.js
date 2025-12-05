@@ -638,10 +638,10 @@ class PPV_Analytics {
   }
 }
 
-} // End Turbo-safe if block
-
-// Global instance (only create if not exists)
+// Global instance (must be inside the if block because class is block-scoped)
 window.ppv_analytics = window.ppv_analytics || new PPV_Analytics();
+
+} // End Turbo-safe if block
 
 // ✅ FIX: Don't auto-init on DOMContentLoaded - MyPoints handles this
 // The analytics container is dynamically created by my-points.js after rendering,
