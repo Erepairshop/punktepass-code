@@ -80,7 +80,7 @@
         /* Header */
         .header {
             background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #7c3aed 100%);
-            padding: 10mm 10mm 12mm;
+            padding: 8mm 10mm 10mm;
             text-align: center;
             position: relative;
             overflow: hidden;
@@ -108,12 +108,20 @@
             border-radius: 50%;
         }
 
-        .logo {
-            height: 22mm;
+        .logo-wrapper {
+            display: inline-block;
+            background: rgba(255,255,255,0.95);
+            padding: 3mm 5mm;
+            border-radius: 4mm;
             margin-bottom: 5mm;
             position: relative;
             z-index: 1;
-            filter: brightness(0) invert(1) drop-shadow(0 3px 10px rgba(0,0,0,0.3));
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+
+        .logo {
+            height: 18mm;
+            display: block;
         }
 
         .headline {
@@ -210,8 +218,8 @@
         }
 
         .qr-code {
-            width: 38mm;
-            height: 38mm;
+            width: 34mm;
+            height: 34mm;
             display: block;
         }
 
@@ -281,7 +289,9 @@
     <div class="flyer">
         <!-- Header -->
         <div class="header">
-            <img src="../assets/img/logo.webp" alt="PunktePass" class="logo">
+            <div class="logo-wrapper">
+                <img src="../assets/img/logo.webp" alt="PunktePass" class="logo">
+            </div>
             <div class="headline">
                 <h1>Punkte sammeln<br>Prämien erhalten!</h1>
             </div>
