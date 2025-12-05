@@ -1315,7 +1315,7 @@ public static function render_dashboard() {
     // ✅ FIX: Added VIP fields for shop card display
     $stores = $wpdb->get_results("
         SELECT s.id, s.name, s.company_name, s.address, s.city, s.plz, s.latitude, s.longitude,
-               s.phone, s.website, s.logo, s.qr_logo, s.opening_hours, s.description,
+               s.phone, s.public_email, s.website, s.logo, s.qr_logo, s.opening_hours, s.description,
                s.gallery, s.facebook, s.instagram, s.tiktok, s.country,
                s.vip_fix_enabled, s.vip_fix_bronze, s.vip_fix_silver, s.vip_fix_gold, s.vip_fix_platinum,
                s.vip_streak_enabled, s.vip_streak_count, s.vip_streak_type,
@@ -1501,6 +1501,7 @@ public static function render_dashboard() {
             'open_now' => $is_open,
             'open_hours_today' => $today_hours,
             'phone' => $store->phone,
+            'public_email' => $store->public_email,
             'website' => esc_url($store->website),
             // ✅ FIX: Validate logo URL - return null if empty/invalid
             'logo' => (!empty($store->logo) && $store->logo !== 'null') ? esc_url($store->logo) : null,

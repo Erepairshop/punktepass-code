@@ -559,8 +559,11 @@ if (!empty($store->gallery)) {
                 </div>
 
                 <div class="ppv-form-group">
-                    <label data-i18n="email"><?php echo esc_html(PPV_Lang::t('email')); ?></label>
-                    <input type="email" name="email" value="<?php echo esc_attr($store->email ?? ''); ?>">
+                    <label data-i18n="public_email"><?php echo esc_html(PPV_Lang::t('public_email') ?: 'Öffentliche E-Mail'); ?></label>
+                    <input type="email" name="public_email" value="<?php echo esc_attr($store->public_email ?? ''); ?>" placeholder="<?php echo esc_attr(PPV_Lang::t('public_email_placeholder') ?: 'Wird auf Store-Karte angezeigt'); ?>">
+                    <small class="ppv-field-hint" style="color: #888; font-size: 12px; margin-top: 4px; display: block;">
+                        <?php echo esc_html(PPV_Lang::t('public_email_hint') ?: 'Diese E-Mail wird Kunden auf Ihrer Store-Karte angezeigt (nicht Ihre Login-E-Mail)'); ?>
+                    </small>
                 </div>
 
                 <div class="ppv-form-group">
@@ -1577,7 +1580,7 @@ public static function ajax_save_profile() {
         'is_taxable' => !empty($_POST['is_taxable']) ? 1 : 0,
         
         'phone' => sanitize_text_field($_POST['phone'] ?? ''),
-        'email' => sanitize_email($_POST['email'] ?? ''),
+        'public_email' => sanitize_email($_POST['public_email'] ?? ''),
         'website' => esc_url_raw($_POST['website'] ?? ''),
         'whatsapp' => sanitize_text_field($_POST['whatsapp'] ?? ''),
         'facebook' => esc_url_raw($_POST['facebook'] ?? ''),
@@ -1650,7 +1653,7 @@ $format_specs = [
     '%s',  // tax_id
     '%d',  // is_taxable
     '%s',  // phone
-    '%s',  // email
+    '%s',  // public_email
     '%s',  // website
     '%s',  // whatsapp
     '%s',  // facebook
