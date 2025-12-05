@@ -4,3 +4,6 @@
 
 /* iOS Analytics touch/scroll fix */
 .ppv-analytics-wrapper,.ppv-analytics-wrapper *,.ppv-chart-container,.ppv-chart-container *,#ppv-analytics-section,#ppv-analytics-section *{touch-action:pan-y!important;-webkit-user-select:none;user-select:none}.ppv-analytics-wrapper svg,.ppv-chart-container svg{pointer-events:none!important}
+
+/* iOS overscroll fix - ensure no nested scroll contexts */
+#ppv-tab-analytics,#ppv-tab-analytics *{-webkit-transform:translateZ(0);transform:translateZ(0)}.ppv-analytics-wrapper{position:relative}.ppv-summary-card,.ppv-chart-container,.ppv-stores-list,.ppv-best-day-card{touch-action:manipulation}

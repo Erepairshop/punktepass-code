@@ -286,12 +286,54 @@ window.PPV_Analytics = class PPV_Analytics {
 
     this.container.innerHTML = html;
 
+    // 🍎 iOS scroll fix - prevent overscroll bounce from blocking parent scroll
+    this.fixIOSScroll();
+
     // Populate data
     this.populateSummary();
     this.renderTrendChart();
     this.renderStoresChart();
     this.renderStoresList();
     this.renderBestDay();
+  }
+
+  /** ============================================================
+   * 🍎 iOS SCROLL FIX
+   * ============================================================ */
+  fixIOSScroll() {
+    // Only apply on iOS
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (!isIOS) return;
+
+    const wrapper = this.container.querySelector('.ppv-analytics-wrapper');
+    if (!wrapper) return;
+
+    // Find the main scrollable container (ppv-dashboard-netto)
+    const scrollContainer = document.querySelector('.ppv-dashboard-netto');
+    if (!scrollContainer) return;
+
+    let startY = 0;
+
+    wrapper.addEventListener('touchstart', (e) => {
+      startY = e.touches[0].pageY;
+    }, { passive: true });
+
+    wrapper.addEventListener('touchmove', (e) => {
+      const currentY = e.touches[0].pageY;
+      const deltaY = currentY - startY;
+
+      const atTop = scrollContainer.scrollTop <= 0;
+      const atBottom = scrollContainer.scrollTop + scrollContainer.clientHeight >= scrollContainer.scrollHeight - 1;
+
+      // If at top and scrolling up, or at bottom and scrolling down, let it pass through
+      if ((atTop && deltaY > 0) || (atBottom && deltaY < 0)) {
+        // Don't prevent - let the body handle it or rubber-band naturally
+        return;
+      }
+    }, { passive: true });
+
+    this.log('🍎 iOS scroll fix applied');
   }
 
   /** ============================================================
