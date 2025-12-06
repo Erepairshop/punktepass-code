@@ -289,6 +289,8 @@ return [
   'show_this_code_to_collect' => 'Mutasd ezt a kódot a pontgyűjtéshez.',
   'your_punktepass_qr' => 'A te PunktePass QR-kódod',
   'qr_daily_limit_warning' => 'Üzletenként naponta csak 1 beolvasás lehetséges!',
+  'brightness_tip' => 'Növeld a képernyő fényerejét a jobb beolvasáshoz',
+  'fullscreen' => 'Teljes képernyő',
   'stores_near_you' => 'Üzletek a közeledben',
   'store_list_auto_update' => 'A lista automatikusan frissül a pozíciód alapján.',
 
@@ -427,6 +429,7 @@ return [
     'login_download_android' => 'Android',
     'login_download_ios' => 'iOS',
     'login_open_in_chrome' => 'Megnyitás Chrome-ban',
+    'login_download_apk' => 'APK letöltése',
     'login_pwa_install_hint' => 'Nyisd meg a böngésző menüjét és válaszd a "Hozzáadás a kezdőképernyőhöz" opciót.',
     'login_pwa_banner_title' => 'PunktePass App telepítése',
     'login_pwa_banner_desc' => 'Telepítsd az appot a gyorsabb hozzáféréshez!',
@@ -1749,4 +1752,98 @@ return [
     'password_changed_success' => 'Jelszó sikeresen módosítva!',
     'confirm_email_change' => 'Biztosan módosítja az e-mail címet?',
     'confirm_password_change' => 'Biztosan módosítja a jelszót?',
+
+    // ============================================================
+    // FAQ - GYAKRAN ISMÉTELT KÉRDÉSEK
+    // ============================================================
+    'faq_title' => 'Gyakran ismételt kérdések',
+    'faq_subtitle' => 'Minden, amit a PunktePass-ról tudni kell',
+
+    // Alapok
+    'faq_basics_title' => 'Alapok',
+
+    'faq_q1' => 'Hogyan gyűjthetek pontokat?',
+    'faq_a1' => 'Mutasd meg személyes QR-kódodat a pénztárnál az üzletben. A kereskedő beolvassa a kódot és automatikusan jóváírják a pontjaidat.',
+
+    'faq_q2' => 'Hol találom a QR-kódomat?',
+    'faq_a2' => 'Koppints a "QR-kód megjelenítése" gombra a kezdőoldalon vagy a menüben. A személyes kódod megjelenik és 30 percig érvényes.',
+
+    'faq_q3' => 'Milyen gyakran gyűjthetek pontokat?',
+    'faq_a3' => 'Üzletenként naponta egyszer gyűjthetsz pontokat. Különböző üzletekben egy nap többször is beolvastathatod a kódodat.',
+
+    'faq_q4' => 'Miért csak 30 percig érvényes a QR-kódom?',
+    'faq_a4' => 'Biztonsági okokból. 30 perc után egyszerűen koppints a "Frissítés" gombra az új kódért.',
+
+    // Jutalmak
+    'faq_rewards_title' => 'Jutalmak',
+
+    'faq_q5' => 'Hogyan válthatom be a jutalmamat?',
+    'faq_a5' => 'Ha elég pontod van, a beolvasás után megjelenik egy ablak "Beváltod a pontjaid?" üzenettel. Válaszd ki a kívánt jutalmat és a kereskedő megerősíti a beváltást.',
+
+    'faq_q6' => 'Mi történik a jutalom kiválasztása után?',
+    'faq_a6' => 'A kiválasztás után ezt látod: "Várakozás a kereskedő megerősítésére...". A kereskedő látja a kérésedet a készülékén és megerősíti a beváltást. Ezután megkapod a jutalmadat.',
+
+    'faq_q7' => 'Mit jelent a "KÉSZ" felirat egy jutalomnál?',
+    'faq_a7' => 'Ha "KÉSZ" feliratot látsz, elegendő pontod van ehhez a jutalomhoz. A következő beolvasáskor beválthatod.',
+
+    'faq_q8' => 'Mi történik, ha a "Később"-re nyomok?',
+    'faq_a8' => 'A pontjaid megmaradnak. A következő látogatáskor újra felajánlják a beváltást.',
+
+    'faq_q9' => 'Elutasíthatja a kereskedő a beváltásomat?',
+    'faq_a9' => 'Igen, ritka esetekben (pl. ha a jutalom nem elérhető). Ekkor üzenetet kapsz az okkal és megtartod a pontjaidat.',
+
+    // Folyamat lépésről lépésre
+    'faq_flow_title' => 'Beváltás lépésről lépésre',
+
+    'faq_q10' => 'Hogyan zajlik pontosan a beváltás?',
+    'faq_a10_intro' => 'Így működik a beváltás:',
+    'faq_a10_step1' => '1. Mutasd meg a QR-kódodat a pénztárnál',
+    'faq_a10_step2' => '2. A kereskedő beolvassa a kódodat',
+    'faq_a10_step3' => '3. A telefonodon megjelenik: "Beváltod a pontjaid?"',
+    'faq_a10_step4' => '4. Válaszd ki a kívánt jutalmat',
+    'faq_a10_step5' => '5. Várj egy pillanatot a kereskedő megerősítésére',
+    'faq_a10_step6' => '6. A kereskedő átadja a jutalmat',
+    'faq_a10_step7' => '7. Kész! A pontok automatikusan levonódnak',
+
+    // VIP & Bónuszok
+    'faq_vip_title' => 'VIP & Bónuszok',
+
+    'faq_q11' => 'Mik azok a VIP szintek?',
+    'faq_a11' => 'Minél többet gyűjtesz, annál magasabbra jutsz: Kezdő → Bronz → Ezüst → Arany → Platina. A magasabb szintek jobb bónuszokat hoznak!',
+
+    'faq_q12' => 'Kapok születésnapi bónuszt?',
+    'faq_a12' => 'Ha az üzlet aktiválta ezt a funkciót, a születésnapodon bónuszpontokat kapsz. Add meg a születési dátumodat a beállításokban, hogy élvezheted ezt az előnyt.',
+
+    'faq_q13' => 'Mi az a visszatérő bónusz?',
+    'faq_a13' => 'Egyes üzletek üdvözlő bónuszt kínálnak, ha több mint 30 napig nem jártál náluk. Hogy ez aktív-e, azt minden üzlet maga dönti el.',
+
+    // Technikai kérdések
+    'faq_tech_title' => 'Technikai kérdések',
+
+    'faq_q14' => 'Működik a PunktePass offline módban?',
+    'faq_a14' => 'Igen! A QR-kódod mentésre kerül. Internet nélkül is megmutathatod. A pontok szinkronizálódnak, amint újra online leszel.',
+
+    'faq_q15' => 'Miért látom a "Várakozás megerősítésre" üzenetet?',
+    'faq_a15' => 'A kereskedőnek meg kell erősítenie a beváltást a készülékén. Ez általában csak néhány másodpercet vesz igénybe.',
+
+    'faq_q16' => 'Mi történik, ha az ablak automatikusan bezárul?',
+    'faq_a16' => '60 másodperc tétlenség után automatikusan a "Később" opció lesz kiválasztva. A pontjaid megmaradnak és legközelebb beválthatod.',
+
+    'faq_q17' => 'Telepíthetem a PunktePass-t alkalmazásként?',
+    'faq_a17' => 'Igen! Koppints a böngészőben a "Hozzáadás a kezdőképernyőhöz" opcióra és a PunktePass normál alkalmazásként fog működni.',
+
+    // Biztonság
+    'faq_security_title' => 'Biztonság',
+
+    'faq_q18' => 'Biztonságban vannak az adataim?',
+    'faq_a18' => 'Igen! Minden adat titkosítva kerül továbbításra. A QR-kódod egyedi és időkorlátosan érvényes.',
+
+    'faq_q19' => 'Visszaélhet valaki a QR-kódommal?',
+    'faq_a19' => 'Nem. A kód csak 30 percig érvényes és üzletenként naponta csak egyszer használható.',
+
+    // Kapcsolat
+    'faq_contact_title' => 'Segítség & Kapcsolat',
+
+    'faq_q20' => 'Problémám van - mit tegyek?',
+    'faq_a20' => 'Használd a Visszajelzés gombot a navigáció alján, vagy lépj kapcsolatba a támogatással a beállításokon keresztül.',
 ];

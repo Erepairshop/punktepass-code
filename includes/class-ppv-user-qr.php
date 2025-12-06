@@ -109,9 +109,11 @@ class PPV_User_QR {
     
 
     public static function enqueue_styles() {
-        
-        wp_enqueue_script('ppv-user-qr', plugin_dir_url(__FILE__) . '../assets/js/ppv-user-qr.js', [], time(), true);
+        // 🎨 QR Code Generator library (local generation, offline support)
+        wp_enqueue_script('qrcode-generator', plugin_dir_url(__FILE__) . '../assets/js/vendor/qrcode-generator.min.js', [], '1.4.4', true);
 
+        // User QR script (depends on qrcode-generator)
+        wp_enqueue_script('ppv-user-qr', plugin_dir_url(__FILE__) . '../assets/js/ppv-user-qr.js', ['qrcode-generator'], time(), true);
     }
 
     public static function render_qr() {
@@ -148,7 +150,19 @@ class PPV_User_QR {
 
             <!-- QR Display (hidden initially, shown by JS) -->
             <div id="ppvQrDisplay" class="ppv-qr-display" style="display:none;">
+                <!-- Brightness Tip -->
+                <div class="ppv-brightness-tip">
+                    <i class="ri-sun-line"></i>
+                    <span><?php echo esc_html(PPV_Lang::t('brightness_tip')); ?></span>
+                </div>
+
                 <img id="ppvQrImg" src="" alt="Dein QR-Code" class="ppv-user-qr-img">
+
+                <!-- Fullscreen Button - Below QR -->
+                <button class="ppv-qr-fullscreen-btn" id="ppvQrFullscreenBtn" type="button">
+                    <i class="ri-fullscreen-line"></i>
+                    <span><?php echo esc_html(PPV_Lang::t('fullscreen')); ?></span>
+                </button>
 
                 <!-- Timer -->
                 <div id="ppvQrTimer" class="ppv-qr-timer">

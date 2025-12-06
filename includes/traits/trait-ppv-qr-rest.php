@@ -2382,6 +2382,19 @@ trait PPV_QR_REST_Trait {
             }
 
             $wpdb->insert("{$wpdb->prefix}ppv_rewards_redeemed", $redemption_data);
+            $redeem_id = $wpdb->insert_id;
+
+            // 🧾 Auto-generate Einzelbeleg (receipt) for this redemption
+            if ($redeem_id && class_exists('PPV_Expense_Receipt')) {
+                try {
+                    $receipt_path = PPV_Expense_Receipt::generate_for_redeem($redeem_id);
+                    if ($receipt_path) {
+                        ppv_log("🧾 [PPV_QR] Auto-generated Einzelbeleg: {$receipt_path}");
+                    }
+                } catch (Exception $e) {
+                    ppv_log("⚠️ [PPV_QR] Einzelbeleg generation failed: " . $e->getMessage());
+                }
+            }
 
             // 4. Update prompt status
             $wpdb->update(

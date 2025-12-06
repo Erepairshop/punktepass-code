@@ -651,6 +651,200 @@ class PPV_User_Settings {
                 </div>
             </form>
 
+            <!-- FAQ Section -->
+            <div class="ppv-faq-section">
+                <div class="ppv-section">
+                    <h3><i class="ri-question-answer-line"></i> <?php echo self::t('faq_title'); ?></h3>
+                    <p class="ppv-faq-subtitle"><?php echo self::t('faq_subtitle'); ?></p>
+
+                    <!-- Basics -->
+                    <div class="ppv-faq-category">
+                        <h4><i class="ri-lightbulb-line"></i> <?php echo self::t('faq_basics_title'); ?></h4>
+                        <div class="ppv-faq-item">
+                            <button class="ppv-faq-question" type="button">
+                                <span><?php echo self::t('faq_q1'); ?></span>
+                                <i class="ri-arrow-down-s-line"></i>
+                            </button>
+                            <div class="ppv-faq-answer"><?php echo self::t('faq_a1'); ?></div>
+                        </div>
+                        <div class="ppv-faq-item">
+                            <button class="ppv-faq-question" type="button">
+                                <span><?php echo self::t('faq_q2'); ?></span>
+                                <i class="ri-arrow-down-s-line"></i>
+                            </button>
+                            <div class="ppv-faq-answer"><?php echo self::t('faq_a2'); ?></div>
+                        </div>
+                        <div class="ppv-faq-item">
+                            <button class="ppv-faq-question" type="button">
+                                <span><?php echo self::t('faq_q3'); ?></span>
+                                <i class="ri-arrow-down-s-line"></i>
+                            </button>
+                            <div class="ppv-faq-answer"><?php echo self::t('faq_a3'); ?></div>
+                        </div>
+                        <div class="ppv-faq-item">
+                            <button class="ppv-faq-question" type="button">
+                                <span><?php echo self::t('faq_q4'); ?></span>
+                                <i class="ri-arrow-down-s-line"></i>
+                            </button>
+                            <div class="ppv-faq-answer"><?php echo self::t('faq_a4'); ?></div>
+                        </div>
+                    </div>
+
+                    <!-- Rewards -->
+                    <div class="ppv-faq-category">
+                        <h4><i class="ri-gift-line"></i> <?php echo self::t('faq_rewards_title'); ?></h4>
+                        <div class="ppv-faq-item">
+                            <button class="ppv-faq-question" type="button">
+                                <span><?php echo self::t('faq_q5'); ?></span>
+                                <i class="ri-arrow-down-s-line"></i>
+                            </button>
+                            <div class="ppv-faq-answer"><?php echo self::t('faq_a5'); ?></div>
+                        </div>
+                        <div class="ppv-faq-item">
+                            <button class="ppv-faq-question" type="button">
+                                <span><?php echo self::t('faq_q6'); ?></span>
+                                <i class="ri-arrow-down-s-line"></i>
+                            </button>
+                            <div class="ppv-faq-answer"><?php echo self::t('faq_a6'); ?></div>
+                        </div>
+                        <div class="ppv-faq-item">
+                            <button class="ppv-faq-question" type="button">
+                                <span><?php echo self::t('faq_q7'); ?></span>
+                                <i class="ri-arrow-down-s-line"></i>
+                            </button>
+                            <div class="ppv-faq-answer"><?php echo self::t('faq_a7'); ?></div>
+                        </div>
+                        <div class="ppv-faq-item">
+                            <button class="ppv-faq-question" type="button">
+                                <span><?php echo self::t('faq_q8'); ?></span>
+                                <i class="ri-arrow-down-s-line"></i>
+                            </button>
+                            <div class="ppv-faq-answer"><?php echo self::t('faq_a8'); ?></div>
+                        </div>
+                        <div class="ppv-faq-item">
+                            <button class="ppv-faq-question" type="button">
+                                <span><?php echo self::t('faq_q9'); ?></span>
+                                <i class="ri-arrow-down-s-line"></i>
+                            </button>
+                            <div class="ppv-faq-answer"><?php echo self::t('faq_a9'); ?></div>
+                        </div>
+                    </div>
+
+                    <!-- Step by Step -->
+                    <div class="ppv-faq-category">
+                        <h4><i class="ri-list-ordered"></i> <?php echo self::t('faq_flow_title'); ?></h4>
+                        <div class="ppv-faq-item">
+                            <button class="ppv-faq-question" type="button">
+                                <span><?php echo self::t('faq_q10'); ?></span>
+                                <i class="ri-arrow-down-s-line"></i>
+                            </button>
+                            <div class="ppv-faq-answer">
+                                <p><?php echo self::t('faq_a10_intro'); ?></p>
+                                <ol class="ppv-faq-steps">
+                                    <li><?php echo self::t('faq_a10_step1'); ?></li>
+                                    <li><?php echo self::t('faq_a10_step2'); ?></li>
+                                    <li><?php echo self::t('faq_a10_step3'); ?></li>
+                                    <li><?php echo self::t('faq_a10_step4'); ?></li>
+                                    <li><?php echo self::t('faq_a10_step5'); ?></li>
+                                    <li><?php echo self::t('faq_a10_step6'); ?></li>
+                                    <li><?php echo self::t('faq_a10_step7'); ?></li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- VIP & Bonuses -->
+                    <div class="ppv-faq-category">
+                        <h4><i class="ri-vip-crown-line"></i> <?php echo self::t('faq_vip_title'); ?></h4>
+                        <div class="ppv-faq-item">
+                            <button class="ppv-faq-question" type="button">
+                                <span><?php echo self::t('faq_q11'); ?></span>
+                                <i class="ri-arrow-down-s-line"></i>
+                            </button>
+                            <div class="ppv-faq-answer"><?php echo self::t('faq_a11'); ?></div>
+                        </div>
+                        <div class="ppv-faq-item">
+                            <button class="ppv-faq-question" type="button">
+                                <span><?php echo self::t('faq_q12'); ?></span>
+                                <i class="ri-arrow-down-s-line"></i>
+                            </button>
+                            <div class="ppv-faq-answer"><?php echo self::t('faq_a12'); ?></div>
+                        </div>
+                        <div class="ppv-faq-item">
+                            <button class="ppv-faq-question" type="button">
+                                <span><?php echo self::t('faq_q13'); ?></span>
+                                <i class="ri-arrow-down-s-line"></i>
+                            </button>
+                            <div class="ppv-faq-answer"><?php echo self::t('faq_a13'); ?></div>
+                        </div>
+                    </div>
+
+                    <!-- Technical -->
+                    <div class="ppv-faq-category">
+                        <h4><i class="ri-tools-line"></i> <?php echo self::t('faq_tech_title'); ?></h4>
+                        <div class="ppv-faq-item">
+                            <button class="ppv-faq-question" type="button">
+                                <span><?php echo self::t('faq_q14'); ?></span>
+                                <i class="ri-arrow-down-s-line"></i>
+                            </button>
+                            <div class="ppv-faq-answer"><?php echo self::t('faq_a14'); ?></div>
+                        </div>
+                        <div class="ppv-faq-item">
+                            <button class="ppv-faq-question" type="button">
+                                <span><?php echo self::t('faq_q15'); ?></span>
+                                <i class="ri-arrow-down-s-line"></i>
+                            </button>
+                            <div class="ppv-faq-answer"><?php echo self::t('faq_a15'); ?></div>
+                        </div>
+                        <div class="ppv-faq-item">
+                            <button class="ppv-faq-question" type="button">
+                                <span><?php echo self::t('faq_q16'); ?></span>
+                                <i class="ri-arrow-down-s-line"></i>
+                            </button>
+                            <div class="ppv-faq-answer"><?php echo self::t('faq_a16'); ?></div>
+                        </div>
+                        <div class="ppv-faq-item">
+                            <button class="ppv-faq-question" type="button">
+                                <span><?php echo self::t('faq_q17'); ?></span>
+                                <i class="ri-arrow-down-s-line"></i>
+                            </button>
+                            <div class="ppv-faq-answer"><?php echo self::t('faq_a17'); ?></div>
+                        </div>
+                    </div>
+
+                    <!-- Security -->
+                    <div class="ppv-faq-category">
+                        <h4><i class="ri-shield-check-line"></i> <?php echo self::t('faq_security_title'); ?></h4>
+                        <div class="ppv-faq-item">
+                            <button class="ppv-faq-question" type="button">
+                                <span><?php echo self::t('faq_q18'); ?></span>
+                                <i class="ri-arrow-down-s-line"></i>
+                            </button>
+                            <div class="ppv-faq-answer"><?php echo self::t('faq_a18'); ?></div>
+                        </div>
+                        <div class="ppv-faq-item">
+                            <button class="ppv-faq-question" type="button">
+                                <span><?php echo self::t('faq_q19'); ?></span>
+                                <i class="ri-arrow-down-s-line"></i>
+                            </button>
+                            <div class="ppv-faq-answer"><?php echo self::t('faq_a19'); ?></div>
+                        </div>
+                    </div>
+
+                    <!-- Contact -->
+                    <div class="ppv-faq-category">
+                        <h4><i class="ri-customer-service-2-line"></i> <?php echo self::t('faq_contact_title'); ?></h4>
+                        <div class="ppv-faq-item">
+                            <button class="ppv-faq-question" type="button">
+                                <span><?php echo self::t('faq_q20'); ?></span>
+                                <i class="ri-arrow-down-s-line"></i>
+                            </button>
+                            <div class="ppv-faq-answer"><?php echo self::t('faq_a20'); ?></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Delete Account Modal -->
             <div id="ppv-delete-modal" class="ppv-modal">
                 <div class="ppv-modal-content">

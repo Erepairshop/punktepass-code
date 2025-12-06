@@ -324,6 +324,11 @@ public static function render_landing_page($atts) {
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.6 11.48V7.66h-2.08v3.82h2.08zm-5.92 0V7.66H9.6v3.82h2.08zm3.84-7.8L16.88 2l-.88-.88-1.68 1.68A6.24 6.24 0 0 0 12 2.4c-.8 0-1.56.12-2.32.4L8 1.12 7.12 2l1.36 1.68A6.2 6.2 0 0 0 6 8.4v.48h12v-.48c0-1.84-.8-3.52-2.08-4.72h-.4zM6 20.16c0 .72.56 1.28 1.28 1.28h.96v3.28c0 .88.72 1.6 1.6 1.6s1.6-.72 1.6-1.6v-3.28h.96v3.28c0 .88.72 1.6 1.6 1.6s1.6-.72 1.6-1.6v-3.28h.96c.72 0 1.28-.56 1.28-1.28V9.28H6v10.88zm-2.4-10.4c-.88 0-1.6.72-1.6 1.6v7.2c0 .88.72 1.6 1.6 1.6s1.6-.72 1.6-1.6v-7.2c0-.88-.72-1.6-1.6-1.6zm16.8 0c-.88 0-1.6.72-1.6 1.6v7.2c0 .88.72 1.6 1.6 1.6s1.6-.72 1.6-1.6v-7.2c0-.88-.72-1.6-1.6-1.6z"/></svg>
                         <span><?php echo PPV_Lang::t('header_install_app', 'App installieren'); ?></span>
                     </button>
+                    <!-- Android APK Download (header, fallback when PWA not available) -->
+                    <a href="https://punktepass.de/wp-content/plugins/punktepass/assets/app/punktepass.apk" class="ppv-header-app-link ppv-android-header-btn" id="ppv-android-header-apk" style="display:none;" download>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.6 11.48V7.66h-2.08v3.82h2.08zm-5.92 0V7.66H9.6v3.82h2.08zm3.84-7.8L16.88 2l-.88-.88-1.68 1.68A6.24 6.24 0 0 0 12 2.4c-.8 0-1.56.12-2.32.4L8 1.12 7.12 2l1.36 1.68A6.2 6.2 0 0 0 6 8.4v.48h12v-.48c0-1.84-.8-3.52-2.08-4.72h-.4zM6 20.16c0 .72.56 1.28 1.28 1.28h.96v3.28c0 .88.72 1.6 1.6 1.6s1.6-.72 1.6-1.6v-3.28h.96v3.28c0 .88.72 1.6 1.6 1.6s1.6-.72 1.6-1.6v-3.28h.96c.72 0 1.28-.56 1.28-1.28V9.28H6v10.88zm-2.4-10.4c-.88 0-1.6.72-1.6 1.6v7.2c0 .88.72 1.6 1.6 1.6s1.6-.72 1.6-1.6v-7.2c0-.88-.72-1.6-1.6-1.6zm16.8 0c-.88 0-1.6.72-1.6 1.6v7.2c0 .88.72 1.6 1.6 1.6s1.6-.72 1.6-1.6v-7.2c0-.88-.72-1.6-1.6-1.6z"/></svg>
+                        <span><?php echo PPV_Lang::t('login_download_apk', 'APK herunterladen'); ?></span>
+                    </a>
 
                     <!-- Language Switcher -->
                     <?php if (class_exists('PPV_Lang_Switcher')): ?>
@@ -581,6 +586,11 @@ public static function render_landing_page($atts) {
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4483-.9993.9993-.9993c.5511 0 .9993.4483.9993.9993.0001.5511-.4482.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4483.9993.9993 0 .5511-.4483.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5902 8.2439 13.8533 7.8508 12 7.8508s-3.5902.3931-5.1367 1.0989L4.841 5.4467a.4161.4161 0 00-.5677-.1521.4157.4157 0 00-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3435-4.1021-2.6892-7.5743-6.1185-9.4396"/></svg>
                                         <span><?php echo PPV_Lang::t('login_open_in_chrome', 'Megnyitás Chrome-ban'); ?></span>
                                     </a>
+                                    <!-- Android APK Download (fallback when PWA not available) -->
+                                    <a href="https://punktepass.de/wp-content/plugins/punktepass/assets/app/punktepass.apk" id="ppv-android-apk-link" class="ppv-download-btn ppv-android-btn" style="display:none;" download>
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4483-.9993.9993-.9993c.5511 0 .9993.4483.9993.9993.0001.5511-.4482.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4483.9993.9993 0 .5511-.4483.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5902 8.2439 13.8533 7.8508 12 7.8508s-3.5902.3931-5.1367 1.0989L4.841 5.4467a.4161.4161 0 00-.5677-.1521.4157.4157 0 00-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3435-4.1021-2.6892-7.5743-6.1185-9.4396"/></svg>
+                                        <span><?php echo PPV_Lang::t('login_download_apk', 'APK letöltése'); ?></span>
+                                    </a>
                                     <!-- iOS App Store -->
                                     <a href="https://apps.apple.com/app/punktepass/id6755680197" target="_blank" rel="noopener" class="ppv-download-btn ppv-ios-btn">
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
@@ -668,11 +678,14 @@ public static function render_landing_page($atts) {
             let deferredPrompt = null;
             const installBtn = document.getElementById('ppv-pwa-install-btn');
             const chromeLink = document.getElementById('ppv-android-chrome-link');
+            const apkLink = document.getElementById('ppv-android-apk-link');
+            const apkHeaderLink = document.getElementById('ppv-android-header-apk');
             const pwaBanner = document.getElementById('ppv-pwa-banner');
             const bannerInstall = document.getElementById('ppv-pwa-banner-install');
             const bannerClose = document.getElementById('ppv-pwa-banner-close');
             const androidHeaderBtn = document.getElementById('ppv-android-header-link');
             const pwaInstallHint = <?php echo json_encode(PPV_Lang::t('login_pwa_install_hint', 'Nyisd meg a böngésző menüjét és válaszd a "Hozzáadás a kezdőképernyőhöz" opciót.')); ?>;
+            let pwaPromptReceived = false;
 
             // Detect device & browser
             const isAndroid = /Android/i.test(navigator.userAgent);
@@ -692,15 +705,31 @@ public static function render_landing_page($atts) {
                 androidHeaderBtn.style.display = 'inline-flex';
             }
 
-            // On Android non-Chrome: show "Open in Chrome" link
-            if (isAndroid && !isChrome && !isStandalone && chromeLink) {
-                chromeLink.style.display = 'inline-flex';
+            // On Android non-Chrome: show APK download link directly (header + download section)
+            if (isAndroid && !isChrome && !isStandalone) {
+                if (apkLink) apkLink.style.display = 'inline-flex';
+                if (apkHeaderLink) apkHeaderLink.style.display = 'inline-flex';
+            }
+
+            // On Android Chrome: if PWA prompt doesn't fire in 3s, show APK as fallback
+            if (isAndroid && isChrome && !isStandalone) {
+                setTimeout(() => {
+                    if (!pwaPromptReceived) {
+                        if (apkLink) apkLink.style.display = 'inline-flex';
+                        if (apkHeaderLink) apkHeaderLink.style.display = 'inline-flex';
+                        if (androidHeaderBtn) androidHeaderBtn.style.display = 'none';
+                    }
+                }, 3000);
             }
 
             // Listen for install prompt (only fires in Chrome/Chromium)
             window.addEventListener('beforeinstallprompt', (e) => {
                 e.preventDefault();
                 deferredPrompt = e;
+                pwaPromptReceived = true;
+                // Hide APK links if PWA prompt is available
+                if (apkLink) apkLink.style.display = 'none';
+                if (apkHeaderLink) apkHeaderLink.style.display = 'none';
 
                 // Show install button in download section
                 if (installBtn && isAndroid && !isStandalone) {

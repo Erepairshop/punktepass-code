@@ -302,6 +302,8 @@ return [
   'show_this_code_to_collect' => 'Arată acest cod în magazin pentru a colecta puncte.',
   'your_punktepass_qr' => 'Codul tău PunktePass QR',
   'qr_daily_limit_warning' => 'Doar 1 scanare pe zi este permisă per magazin!',
+  'brightness_tip' => 'Măriți luminozitatea ecranului pentru scanare mai bună',
+  'fullscreen' => 'Ecran complet',
   'stores_near_you' => 'Magazine în apropiere',
   'store_list_auto_update' => 'Lista se actualizează automat în funcție de poziția ta.' ,
   // === MyPoints REST-kompatibilis kulcsok (română) ===
@@ -439,6 +441,7 @@ return [
     'login_download_android' => 'Android',
     'login_download_ios' => 'iOS',
     'login_open_in_chrome' => 'Deschide în Chrome',
+    'login_download_apk' => 'Descarcă APK',
     'login_pwa_install_hint' => 'Deschide meniul browserului și selectează "Adaugă pe ecranul principal".',
     'login_pwa_banner_title' => 'Instalează aplicația PunktePass',
     'login_pwa_banner_desc' => 'Instalează aplicația pentru acces mai rapid!',
@@ -1754,4 +1757,98 @@ return [
     'password_changed_success' => 'Parola a fost schimbată cu succes!',
     'confirm_email_change' => 'Sigur doriți să schimbați adresa de e-mail?',
     'confirm_password_change' => 'Sigur doriți să schimbați parola?',
+
+    // ============================================================
+    // FAQ - ÎNTREBĂRI FRECVENTE
+    // ============================================================
+    'faq_title' => 'Întrebări frecvente',
+    'faq_subtitle' => 'Tot ce trebuie să știi despre PunktePass',
+
+    // Bazele
+    'faq_basics_title' => 'Bazele',
+
+    'faq_q1' => 'Cum colectez puncte?',
+    'faq_a1' => 'Arată codul QR personal la casă în magazin. Comerciantul scanează codul și primești automat puncte.',
+
+    'faq_q2' => 'Unde găsesc codul meu QR?',
+    'faq_a2' => 'Apasă pe "Arată codul QR" pe pagina principală sau în meniu. Codul tău personal apare și este valid 30 de minute.',
+
+    'faq_q3' => 'Cât de des pot colecta puncte?',
+    'faq_a3' => 'Poți colecta puncte o dată pe zi per magazin. La magazine diferite poți scana de mai multe ori pe zi.',
+
+    'faq_q4' => 'De ce codul meu QR este valid doar 30 de minute?',
+    'faq_a4' => 'Din motive de securitate. După 30 de minute, apasă simplu pe "Reîmprospătare" pentru un cod nou.',
+
+    // Recompense
+    'faq_rewards_title' => 'Recompense',
+
+    'faq_q5' => 'Cum răscumpăr o recompensă?',
+    'faq_a5' => 'Când ai suficiente puncte, după scanare apare o fereastră cu "Răscumperi punctele?". Alege recompensa dorită și comerciantul confirmă răscumpărarea.',
+
+    'faq_q6' => 'Ce se întâmplă după alegerea unei recompense?',
+    'faq_a6' => 'După selectare vezi: "Se așteaptă confirmarea comerciantului...". Comerciantul vede cererea ta pe dispozitivul său și confirmă răscumpărarea. Apoi primești recompensa.',
+
+    'faq_q7' => 'Ce înseamnă "GATA" la o recompensă?',
+    'faq_a7' => 'Când vezi "GATA", ai suficiente puncte pentru această recompensă. La următoarea scanare o poți răscumpăra.',
+
+    'faq_q8' => 'Ce se întâmplă dacă apăs "Mai târziu"?',
+    'faq_a8' => 'Punctele tale rămân. La următoarea vizită răscumpărarea va fi oferită din nou.',
+
+    'faq_q9' => 'Poate comerciantul să refuze răscumpărarea mea?',
+    'faq_a9' => 'Da, în cazuri rare (de ex. dacă recompensa nu este disponibilă). Primești un mesaj cu motivul și îți păstrezi punctele.',
+
+    // Pași pentru răscumpărare
+    'faq_flow_title' => 'Răscumpărare pas cu pas',
+
+    'faq_q10' => 'Cum funcționează exact răscumpărarea?',
+    'faq_a10_intro' => 'Așa funcționează răscumpărarea:',
+    'faq_a10_step1' => '1. Arată codul QR la casă',
+    'faq_a10_step2' => '2. Comerciantul scanează codul tău',
+    'faq_a10_step3' => '3. Pe telefonul tău apare "Răscumperi punctele?"',
+    'faq_a10_step4' => '4. Alege recompensa dorită',
+    'faq_a10_step5' => '5. Așteaptă un moment confirmarea comerciantului',
+    'faq_a10_step6' => '6. Comerciantul îți dă recompensa',
+    'faq_a10_step7' => '7. Gata! Punctele sunt scăzute automat',
+
+    // VIP & Bonusuri
+    'faq_vip_title' => 'VIP & Bonusuri',
+
+    'faq_q11' => 'Ce sunt nivelurile VIP?',
+    'faq_a11' => 'Cu cât colectezi mai mult, cu atât urci mai sus: Începător → Bronz → Argint → Aur → Platină. Nivelurile mai înalte aduc bonusuri mai bune!',
+
+    'faq_q12' => 'Primesc bonus de ziua de naștere?',
+    'faq_a12' => 'Dacă magazinul a activat această funcție, primești puncte bonus de ziua ta. Adaugă data nașterii în setări pentru a beneficia de acest avantaj.',
+
+    'faq_q13' => 'Ce este bonusul de revenire?',
+    'faq_a13' => 'Unele magazine oferă un bonus de bun venit dacă nu ai fost la ele mai mult de 30 de zile. Fiecare magazin decide dacă acest bonus este activ.',
+
+    // Întrebări tehnice
+    'faq_tech_title' => 'Întrebări tehnice',
+
+    'faq_q14' => 'Funcționează PunktePass offline?',
+    'faq_a14' => 'Da! Codul tău QR este salvat. Îl poți arăta și fără internet. Punctele se sincronizează când ești din nou online.',
+
+    'faq_q15' => 'De ce văd "Se așteaptă confirmarea"?',
+    'faq_a15' => 'Comerciantul trebuie să confirme răscumpărarea pe dispozitivul său. De obicei durează doar câteva secunde.',
+
+    'faq_q16' => 'Ce se întâmplă dacă fereastra se închide automat?',
+    'faq_a16' => 'După 60 de secunde fără acțiune, "Mai târziu" este selectat automat. Punctele rămân și poți răscumpăra data viitoare.',
+
+    'faq_q17' => 'Pot instala PunktePass ca aplicație?',
+    'faq_a17' => 'Da! Apasă în browser pe "Adaugă pe ecranul principal" și PunktePass va funcționa ca o aplicație normală.',
+
+    // Securitate
+    'faq_security_title' => 'Securitate',
+
+    'faq_q18' => 'Sunt datele mele în siguranță?',
+    'faq_a18' => 'Da! Toate datele sunt transmise criptat. Codul tău QR este unic și valid temporar.',
+
+    'faq_q19' => 'Poate cineva să abuzeze de codul meu QR?',
+    'faq_a19' => 'Nu. Codul este valid doar 30 de minute și poate fi folosit o singură dată pe zi per magazin.',
+
+    // Contact
+    'faq_contact_title' => 'Ajutor & Contact',
+
+    'faq_q20' => 'Am o problemă - ce fac?',
+    'faq_a20' => 'Folosește butonul Feedback din partea de jos a navigației sau contactează suportul prin setări.',
 ];

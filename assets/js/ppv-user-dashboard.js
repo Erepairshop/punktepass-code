@@ -15,6 +15,42 @@
  * - Enhanced error handling
  */
 
+// ═══════════════════════════════════════════════════════════════
+// 🎨 LOCAL QR CODE GENERATION (using qrcode-generator library)
+// ═══════════════════════════════════════════════════════════════
+function ppvGenerateQRCodeDataURL(text, size = 300) {
+  if (typeof qrcode === 'undefined') {
+    console.error('qrcode-generator library not loaded!');
+    return null;
+  }
+  try {
+    const qr = qrcode(0, 'M');
+    qr.addData(text, 'Byte');
+    qr.make();
+    const moduleCount = qr.getModuleCount();
+    const cellSize = Math.floor(size / moduleCount);
+    const margin = Math.floor((size - (cellSize * moduleCount)) / 2);
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, size, size);
+    ctx.fillStyle = '#000000';
+    for (let row = 0; row < moduleCount; row++) {
+      for (let col = 0; col < moduleCount; col++) {
+        if (qr.isDark(row, col)) {
+          ctx.fillRect(margin + col * cellSize, margin + row * cellSize, cellSize, cellSize);
+        }
+      }
+    }
+    return canvas.toDataURL('image/png');
+  } catch (e) {
+    console.error('QR generation error:', e);
+    return null;
+  }
+}
+
 // Global state for Turbo navigation cleanup
 window.PPV_POLL_INTERVAL_ID = null;
 window.PPV_VISIBILITY_HANDLER = null;
@@ -23,7 +59,12 @@ window.PPV_SLIDER_INITIALIZED = false;
 window.PPV_STORES_LOADING = false;
 window.PPV_POLLING_IN_PROGRESS = false;
 window.PPV_SLIDER_FETCH_IN_PROGRESS = false;
-window.PPV_CURRENT_DISTANCE = 10;
+window.PPV_CURRENT_DISTANCE = (() => {
+  try {
+    const saved = localStorage.getItem('ppv_user_distance');
+    return saved ? parseInt(saved, 10) : 10;
+  } catch (e) { return 10; }
+})();
 window.PPV_ABORT_CONTROLLER = null; // For cancelling in-flight requests
 
 // ✅ OPTIMIZATION: Translation object (Turbo-safe - uses window namespace)
@@ -88,6 +129,8 @@ window.PPV_TRANSLATIONS = window.PPV_TRANSLATIONS || {
     qr_new_generated: "Neuer QR-Code (30 Min)",
     reward_valid_until: "Gültig bis:",
     points_unit: "Punkte",
+    geo_denied_tip: "📍 Standort aktivieren für Entfernungen",
+    load_more_stores: "Weitere Geschäfte laden",
   },
   hu: {
     welcome: "Üdv a PunktePassban",
@@ -149,6 +192,8 @@ window.PPV_TRANSLATIONS = window.PPV_TRANSLATIONS || {
     qr_new_generated: "Új QR-kód (30 perc)",
     reward_valid_until: "Érvényes:",
     points_unit: "pont",
+    geo_denied_tip: "📍 Engedélyezd a helymeghatározást a távolságokhoz",
+    load_more_stores: "További üzletek betöltése",
   },
   ro: {
     welcome: "Bun venit la PunktePass",
@@ -210,6 +255,8 @@ window.PPV_TRANSLATIONS = window.PPV_TRANSLATIONS || {
     qr_new_generated: "Cod QR nou (30 min)",
     reward_valid_until: "Valid până:",
     points_unit: "puncte",
+    geo_denied_tip: "📍 Activează locația pentru distanțe",
+    load_more_stores: "Încarcă mai multe magazine",
   }
 };
 
@@ -276,7 +323,13 @@ function cleanupPolling() {
   clearFlag('PPV_POLLING_IN_PROGRESS');
   clearFlag('PPV_SLIDER_FETCH_IN_PROGRESS');
 
-  window.PPV_CURRENT_DISTANCE = 10;
+  // 📌 Restore saved distance from localStorage (preserve user preference)
+  try {
+    const saved = localStorage.getItem('ppv_user_distance');
+    window.PPV_CURRENT_DISTANCE = saved ? parseInt(saved, 10) : 10;
+  } catch (e) {
+    window.PPV_CURRENT_DISTANCE = 10;
+  }
 
   // Safari: Force garbage collection hint
   if (PPV_IS_SAFARI && typeof window.gc === 'function') {
@@ -607,9 +660,7 @@ async function initUserDashboard() {
 
       if (action === 'decline') {
         closeRedemptionModal();
-        if (window.ppvShowPointToast && data.message) {
-          window.ppvShowPointToast('info', 0, 'PunktePass', data.message);
-        }
+        // No toast needed for "Später" - user knows they clicked later
       }
       // If accept, we wait for Ably notification (redemption-approved/rejected)
 
@@ -625,7 +676,53 @@ async function initUserDashboard() {
 
   // ✅ FIX: Store globally for cleanup on navigation
   window.PPV_QR_COUNTDOWN_INTERVAL = null;
+  window.PPV_WAKE_LOCK = null;
   let qrExpiresAt = null;
+
+  // 🔆 BRIGHTNESS BOOST - Wake Lock API (prevents screen dimming)
+  const requestWakeLock = async () => {
+    try {
+      if ('wakeLock' in navigator) {
+        window.PPV_WAKE_LOCK = await navigator.wakeLock.request('screen');
+        console.log('🔆 Wake Lock activated - screen stays bright');
+      }
+    } catch (e) {
+      console.log('Wake Lock not available:', e.message);
+    }
+  };
+
+  const releaseWakeLock = () => {
+    if (window.PPV_WAKE_LOCK) {
+      window.PPV_WAKE_LOCK.release();
+      window.PPV_WAKE_LOCK = null;
+      console.log('🔅 Wake Lock released');
+    }
+  };
+
+  // 📺 FULLSCREEN API
+  const enterFullscreen = (element) => {
+    if (element.requestFullscreen) {
+      element.requestFullscreen();
+    } else if (element.webkitRequestFullscreen) {
+      element.webkitRequestFullscreen(); // iOS Safari
+    } else if (element.msRequestFullscreen) {
+      element.msRequestFullscreen();
+    }
+  };
+
+  const exitFullscreen = () => {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    } else if (document.webkitExitFullscreen) {
+      document.webkitExitFullscreen(); // iOS Safari
+    } else if (document.msExitFullscreen) {
+      document.msExitFullscreen();
+    }
+  };
+
+  const isFullscreen = () => {
+    return !!(document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement);
+  };
 
   const initQRToggle = () => {
     const btn = document.querySelector(".ppv-btn-qr");
@@ -633,6 +730,7 @@ async function initUserDashboard() {
     const overlay = document.getElementById("ppv-qr-overlay");
     const closeBtn = document.querySelector(".ppv-qr-close");
     const refreshBtn = document.getElementById("ppv-qr-refresh-btn");
+    const fullscreenBtn = document.getElementById("ppv-qr-fullscreen-btn");
 
     if (!btn || !modal || !overlay) {
       console.warn("⚠️ [QR] Elements not found");
@@ -651,16 +749,31 @@ async function initUserDashboard() {
       if (navigator.vibrate) navigator.vibrate(30);
       modal.offsetHeight;
 
+      // 🔆 Activate brightness boost (Wake Lock)
+      await requestWakeLock();
+
       // Load timed QR on open
       await loadTimedQR();
     };
 
     const closeQR = () => {
+      // Reset zoomed state
+      modal.classList.remove("ppv-qr-zoomed");
+
       modal.classList.remove("show");
       overlay.classList.remove("show");
       document.body.classList.remove("qr-modal-open");
       document.body.style.overflow = "";
       if (navigator.vibrate) navigator.vibrate(10);
+
+      // 🔅 Release brightness boost
+      releaseWakeLock();
+
+      // Reset fullscreen button text
+      const fsBtn = document.getElementById("ppv-qr-fullscreen-btn");
+      if (fsBtn) {
+        fsBtn.innerHTML = '<i class="ri-fullscreen-line"></i> <span>' + (lang === 'de' ? 'Vollbild' : lang === 'hu' ? 'Teljes képernyő' : 'Ecran complet') + '</span>';
+      }
     };
 
     btn.addEventListener("click", openQR);
@@ -680,15 +793,120 @@ async function initUserDashboard() {
       });
     }
 
+    // 📺 Fullscreen button - CSS zoom for iOS compatibility
+    if (fullscreenBtn) {
+      let isZoomed = false;
+
+      fullscreenBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (isZoomed) {
+          // Exit zoomed mode
+          modal.classList.remove('ppv-qr-zoomed');
+          fullscreenBtn.innerHTML = '<i class="ri-fullscreen-line"></i> <span>' + (lang === 'de' ? 'Vollbild' : lang === 'hu' ? 'Teljes képernyő' : 'Ecran complet') + '</span>';
+          isZoomed = false;
+        } else {
+          // Enter zoomed mode (works on iOS too!)
+          modal.classList.add('ppv-qr-zoomed');
+          fullscreenBtn.innerHTML = '<i class="ri-fullscreen-exit-line"></i> <span>' + (lang === 'de' ? 'Verkleinern' : lang === 'hu' ? 'Kicsinyítés' : 'Micșorare') + '</span>';
+          isZoomed = true;
+        }
+        if (navigator.vibrate) navigator.vibrate(20);
+      });
+    }
+
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && modal.classList.contains("show")) closeQR();
+    });
+
+    // Re-acquire wake lock if it gets released (e.g., tab visibility change)
+    document.addEventListener('visibilitychange', async () => {
+      if (document.visibilityState === 'visible' && modal.classList.contains("show")) {
+        await requestWakeLock();
+      }
     });
 
   };
 
   // ============================================================
-  // 🔄 LOAD TIMED QR FROM REST API
+  // 🔄 LOAD TIMED QR FROM REST API (with offline fallback)
   // ============================================================
+  const QR_CACHE_KEY = 'ppv_dashboard_qr_cache';
+  const STATIC_QR_CACHE_KEY = 'ppv_static_qr_cache';
+
+  // 💾 Cache timed QR for offline use
+  const cacheQRData = (userId, data, qrDataUrl) => {
+    try {
+      const cacheData = {
+        user_id: userId,
+        qr_url: qrDataUrl,
+        qr_value: data.qr_value,
+        expires_at: data.expires_at,
+        cached_at: Math.floor(Date.now() / 1000)
+      };
+      localStorage.setItem(QR_CACHE_KEY + '_' + userId, JSON.stringify(cacheData));
+    } catch (e) {
+      console.warn('Failed to cache QR:', e);
+    }
+  };
+
+  // 💾 Load timed QR from cache
+  const loadQRFromCache = (userId) => {
+    try {
+      const cached = localStorage.getItem(QR_CACHE_KEY + '_' + userId);
+      if (!cached) return null;
+      return JSON.parse(cached);
+    } catch (e) {
+      return null;
+    }
+  };
+
+  // 🔐 Cache STATIC QR for offline fallback (never expires)
+  const cacheStaticQR = (userId, qrValue, qrDataUrl) => {
+    try {
+      const cacheData = {
+        user_id: userId,
+        qr_url: qrDataUrl,
+        qr_value: qrValue,
+        cached_at: Math.floor(Date.now() / 1000)
+      };
+      localStorage.setItem(STATIC_QR_CACHE_KEY + '_' + userId, JSON.stringify(cacheData));
+      console.log('💾 Static QR cached for offline fallback');
+    } catch (e) {
+      console.warn('Failed to cache static QR:', e);
+    }
+  };
+
+  // 🔐 Load STATIC QR from cache
+  const loadStaticQRFromCache = (userId) => {
+    try {
+      const cached = localStorage.getItem(STATIC_QR_CACHE_KEY + '_' + userId);
+      if (!cached) return null;
+      return JSON.parse(cached);
+    } catch (e) {
+      return null;
+    }
+  };
+
+  // 🔐 Fetch and cache static QR (call once when online)
+  const fetchAndCacheStaticQR = async () => {
+    if (!boot.uid) return;
+    try {
+      const res = await fetch(API + "user/qr?user_id=" + boot.uid);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.qr_value) {
+        const qrDataUrl = ppvGenerateQRCodeDataURL(data.qr_value, 300);
+        if (qrDataUrl) {
+          cacheStaticQR(boot.uid, data.qr_value, qrDataUrl);
+        }
+      }
+    } catch (e) {
+      // Silently fail - static QR is just a fallback
+    }
+  };
+
   const loadTimedQR = async (forceNew = false) => {
     const qrImg = document.getElementById("ppv-qr-image");
     const qrLoading = document.getElementById("ppv-qr-loading");
@@ -718,11 +936,20 @@ async function initUserDashboard() {
         return;
       }
 
-      // Display QR
-      if (qrImg) qrImg.src = data.qr_url;
+      // Display QR - Generate locally (offline-ready)
+      let qrDataUrl = null;
+      if (qrImg && data.qr_value) {
+        qrDataUrl = ppvGenerateQRCodeDataURL(data.qr_value, 300);
+        qrImg.src = qrDataUrl || data.qr_url;
+      }
       if (qrLoading) qrLoading.style.display = "none";
       if (qrDisplay) qrDisplay.style.display = "block";
       if (qrExpired) qrExpired.style.display = "none";
+
+      // 💾 Cache for offline use
+      if (qrDataUrl && boot.uid) {
+        cacheQRData(boot.uid, data, qrDataUrl);
+      }
 
       // Start countdown
       startQRCountdown(data.expires_at);
@@ -738,8 +965,54 @@ async function initUserDashboard() {
 
     } catch (err) {
       console.error("❌ [QR] Load error:", err);
+
+      // 📱 OFFLINE FALLBACK - Try to load from cache
+      const cached = loadQRFromCache(boot.uid);
+      const now = Math.floor(Date.now() / 1000);
+
+      // Check if timed QR is still valid
+      if (cached && cached.qr_value && cached.expires_at && cached.expires_at > now) {
+        // Timed QR still valid - use it
+        let qrDataUrl = cached.qr_url;
+        if (!qrDataUrl || !qrDataUrl.startsWith('data:')) {
+          qrDataUrl = ppvGenerateQRCodeDataURL(cached.qr_value, 300);
+        }
+
+        if (qrDataUrl && qrImg) {
+          qrImg.src = qrDataUrl;
+          if (qrLoading) qrLoading.style.display = "none";
+          if (qrDisplay) qrDisplay.style.display = "block";
+          startQRCountdown(cached.expires_at);
+          showQRStatus("📱 Offline - Gespeicherter QR-Code", "warning");
+          return;
+        }
+      }
+
+      // 🔐 STATIC QR FALLBACK - Timed QR expired or unavailable
+      const staticQR = loadStaticQRFromCache(boot.uid);
+      if (staticQR && staticQR.qr_value) {
+        let qrDataUrl = staticQR.qr_url;
+        if (!qrDataUrl || !qrDataUrl.startsWith('data:')) {
+          qrDataUrl = ppvGenerateQRCodeDataURL(staticQR.qr_value, 300);
+        }
+
+        if (qrDataUrl && qrImg) {
+          qrImg.src = qrDataUrl;
+          if (qrLoading) qrLoading.style.display = "none";
+          if (qrDisplay) qrDisplay.style.display = "block";
+
+          // Hide timer for static QR (no expiration)
+          const timerEl = document.getElementById("ppv-qr-timer");
+          if (timerEl) timerEl.style.display = "none";
+
+          showQRStatus("📱 Offline - Tages-QR (1x pro Geschäft)", "warning");
+          return;
+        }
+      }
+
+      // No cache available at all
       if (qrLoading) qrLoading.style.display = "none";
-      showQRStatus("❌ Netzwerkfehler", "error");
+      showQRStatus("❌ Offline - Bitte einmal online laden", "error");
     }
   };
 
@@ -1365,6 +1638,7 @@ async function initUserDashboard() {
           <img src="${escapeHtml(logo)}" alt="Logo" class="ppv-store-logo">
           <div class="ppv-store-info">
             <h4>${escapeHtml(store.name || store.company_name)}</h4>
+            ${store.slogan ? `<p class="ppv-store-slogan">${escapeHtml(store.slogan)}</p>` : ''}
             <div class="ppv-store-badges">
               ${statusBadge}
               ${distanceBadge}
@@ -1431,6 +1705,7 @@ async function initUserDashboard() {
 
       const newDistance = parseInt(e.target.value, 10);
       window.PPV_CURRENT_DISTANCE = newDistance; // ✅ FIX: Track current value globally
+      try { localStorage.setItem('ppv_user_distance', newDistance); } catch (e) {} // 📌 Persist
       const valueSpan = document.getElementById('ppv-distance-value');
       if (valueSpan) valueSpan.textContent = newDistance;
 
@@ -1452,20 +1727,10 @@ async function initUserDashboard() {
           const res = await fetch(newUrl);
           const newStores = await res.json();
 
-          const dynamicSliderHTML = `
-            <div class="ppv-distance-filter">
-              <label><i class="ri-ruler-line"></i> ${T.distance_label}: <span id="ppv-distance-value">${newDistance}</span> km</label>
-              <input type="range" id="ppv-distance-slider" min="10" max="1000" value="${newDistance}" step="10">
-              <div class="ppv-distance-labels"><span>10 km</span><span>1000 km</span></div>
-            </div>
-          `;
-
-          const storeCards = newStores.map(renderStoreCard).join('');
+          // 📦 Use renderStoreList for consistent pagination
           const storeListDiv = document.getElementById('ppv-store-list');
           if (storeListDiv) {
-            storeListDiv.innerHTML = dynamicSliderHTML + storeCards;
-            // ✅ FIX: Only attach store listeners, route is already handled there
-            attachStoreListeners();
+            renderStoreList(storeListDiv, newStores, userLat, userLng, true);
           }
 
         } catch (err) {
@@ -1609,6 +1874,8 @@ async function initUserDashboard() {
         },
         (err) => {
           clearTimeout(timeout);
+          // Track if permission denied for tip display
+          if (err.code === 1) window.PPV_GEO_DENIED = true;
           resolve(null);
         },
         { timeout: geoTimeoutMs, maximumAge: 600000, enableHighAccuracy: false }
@@ -1659,19 +1926,64 @@ async function initUserDashboard() {
   };
 
   // Helper function to render store list (avoids duplicate code)
-  // ✅ FIX: Preserve current slider value instead of always resetting to 10
+  // ✅ FIX: Always use saved distance from localStorage (PPV_CURRENT_DISTANCE)
+  // 📦 PAGINATION: Show max 20 stores at a time with "Load more" button
+  const STORES_PER_PAGE = 20;
+  let allStores = [];
+  let displayedCount = 0;
+
   const renderStoreList = (box, stores, userLat, userLng, preserveSliderValue = false) => {
-    const currentDistance = preserveSliderValue ? window.PPV_CURRENT_DISTANCE : 10;
+    allStores = stores;
+    displayedCount = 0;
+
+    const currentDistance = window.PPV_CURRENT_DISTANCE || 10; // 📌 Always use saved preference
+    // 📍 Geo denied tip (compact)
+    const geoTipHTML = (!userLat && !userLng && window.PPV_GEO_DENIED)
+      ? `<div class="ppv-geo-tip">${T.geo_denied_tip}</div>`
+      : '';
     const sliderHTML = `
       <div class="ppv-distance-filter">
         <label><i class="ri-ruler-line"></i> ${T.distance_label}: <span id="ppv-distance-value">${currentDistance}</span> km</label>
         <input type="range" id="ppv-distance-slider" min="10" max="1000" value="${currentDistance}" step="10">
         <div class="ppv-distance-labels"><span>10 km</span><span>1000 km</span></div>
+        ${geoTipHTML}
       </div>
     `;
-    box.innerHTML = sliderHTML + stores.map(renderStoreCard).join('');
+
+    // Show first batch of stores
+    const firstBatch = stores.slice(0, STORES_PER_PAGE);
+    displayedCount = firstBatch.length;
+
+    const loadMoreHTML = stores.length > STORES_PER_PAGE
+      ? `<button class="ppv-load-more-btn" id="ppv-load-more"><i class="ri-add-line"></i> ${T.load_more_stores}</button>`
+      : '';
+
+    box.innerHTML = sliderHTML +
+      `<div id="ppv-stores-container">${firstBatch.map(renderStoreCard).join('')}</div>` +
+      loadMoreHTML;
+
     initDistanceSlider(sliderHTML, userLat, userLng, currentDistance);
     attachStoreListeners();
+
+    // Attach load more handler
+    const loadMoreBtn = document.getElementById('ppv-load-more');
+    if (loadMoreBtn) {
+      loadMoreBtn.addEventListener('click', () => {
+        const nextBatch = allStores.slice(displayedCount, displayedCount + STORES_PER_PAGE);
+        displayedCount += nextBatch.length;
+
+        const container = document.getElementById('ppv-stores-container');
+        if (container) {
+          container.insertAdjacentHTML('beforeend', nextBatch.map(renderStoreCard).join(''));
+          attachStoreListeners();
+        }
+
+        // Hide button if no more stores
+        if (displayedCount >= allStores.length) {
+          loadMoreBtn.style.display = 'none';
+        }
+      });
+    }
   };
 
   // ============================================================
@@ -1710,7 +2022,19 @@ async function initUserDashboard() {
 
           <!-- QR Display -->
           <div id="ppv-qr-display" style="display: none;">
+            <!-- Brightness Tip for Mobile -->
+            <div class="ppv-brightness-tip" id="ppv-brightness-tip">
+              <i class="ri-sun-line"></i>
+              <span>${lang === 'de' ? 'Bildschirmhelligkeit erhöhen für besseres Scannen' : lang === 'hu' ? 'Növeld a képernyő fényerejét a jobb beolvasáshoz' : 'Măriți luminozitatea ecranului pentru scanare mai bună'}</span>
+            </div>
+
             <img src="" alt="My QR Code" class="ppv-qr-image" id="ppv-qr-image">
+
+            <!-- Fullscreen Button - Below QR -->
+            <button class="ppv-qr-fullscreen-btn" id="ppv-qr-fullscreen-btn" type="button">
+              <i class="ri-fullscreen-line"></i>
+              <span>${lang === 'de' ? 'Vollbild' : lang === 'hu' ? 'Teljes képernyő' : 'Ecran complet'}</span>
+            </button>
 
             <!-- Countdown Timer -->
             <div class="ppv-qr-timer" id="ppv-qr-timer">
@@ -1760,6 +2084,9 @@ async function initUserDashboard() {
   // ============================================================
   initQRToggle();
   initPointSync();
+
+  // 🔐 Cache static QR for offline fallback (runs in background)
+  fetchAndCacheStaticQR();
 
   // DOM is already rendered above, call initStores directly
   // Using requestAnimationFrame to ensure DOM is painted

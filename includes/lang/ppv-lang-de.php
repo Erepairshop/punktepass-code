@@ -258,6 +258,8 @@ return [
   'show_this_code_to_collect' => 'Zeig diesen Code im Geschäft, um Punkte zu sammeln.',
   'your_punktepass_qr' => 'Dein PunktePass-QR',
   'qr_daily_limit_warning' => 'Pro Geschäft ist nur 1 Scan pro Tag möglich!',
+  'brightness_tip' => 'Bildschirmhelligkeit erhöhen für besseres Scannen',
+  'fullscreen' => 'Vollbild',
   'stores_near_you' => 'Geschäfte in deiner Nähe',
   'store_list_auto_update' => 'Die Liste wird automatisch aktualisiert anhand deiner Position.' , 
   
@@ -400,6 +402,7 @@ return [
     'login_download_android' => 'Android',
     'login_download_ios' => 'iOS',
     'login_open_in_chrome' => 'In Chrome öffnen',
+    'login_download_apk' => 'APK herunterladen',
     'login_pwa_install_hint' => 'Öffne das Browser-Menü und wähle "Zum Startbildschirm hinzufügen".',
     'login_pwa_banner_title' => 'PunktePass App installieren',
     'login_pwa_banner_desc' => 'Installiere die App für schnelleren Zugriff!',
@@ -1772,5 +1775,99 @@ return [
     'password_changed_success' => 'Passwort erfolgreich geändert!',
     'confirm_email_change' => 'Sind Sie sicher, dass Sie die E-Mail-Adresse ändern möchten?',
     'confirm_password_change' => 'Sind Sie sicher, dass Sie das Passwort ändern möchten?',
+
+    // ============================================================
+    // FAQ - HÄUFIG GESTELLTE FRAGEN
+    // ============================================================
+    'faq_title' => 'Häufig gestellte Fragen',
+    'faq_subtitle' => 'Alles was du über PunktePass wissen musst',
+
+    // Grundlagen
+    'faq_basics_title' => 'Grundlagen',
+
+    'faq_q1' => 'Wie sammle ich Punkte?',
+    'faq_a1' => 'Zeige deinen persönlichen QR-Code an der Kasse im Geschäft. Der Händler scannt den Code und du bekommst automatisch Punkte gutgeschrieben.',
+
+    'faq_q2' => 'Wo finde ich meinen QR-Code?',
+    'faq_a2' => 'Tippe auf "QR-Code zeigen" auf der Startseite oder im Menü. Dein persönlicher Code wird angezeigt und ist 30 Minuten gültig.',
+
+    'faq_q3' => 'Wie oft kann ich Punkte sammeln?',
+    'faq_a3' => 'Du kannst pro Geschäft einmal täglich Punkte sammeln. Bei verschiedenen Geschäften kannst du mehrmals am Tag scannen lassen.',
+
+    'faq_q4' => 'Warum ist mein QR-Code nur 30 Minuten gültig?',
+    'faq_a4' => 'Aus Sicherheitsgründen. Nach 30 Minuten kannst du einfach auf "Aktualisieren" tippen, um einen neuen Code zu bekommen.',
+
+    // Belohnungen
+    'faq_rewards_title' => 'Belohnungen',
+
+    'faq_q5' => 'Wie löse ich eine Belohnung ein?',
+    'faq_a5' => 'Wenn du genug Punkte hast, erscheint nach dem Scannen ein Fenster mit "Punkte einlösen?". Wähle deine gewünschte Belohnung aus und der Händler bestätigt die Einlösung.',
+
+    'faq_q6' => 'Was passiert nach dem Auswählen einer Belohnung?',
+    'faq_a6' => 'Nach der Auswahl siehst du "Warte auf Bestätigung vom Händler...". Der Händler sieht deine Anfrage auf seinem Gerät und bestätigt die Einlösung. Danach erhältst du deine Belohnung.',
+
+    'faq_q7' => 'Was bedeutet "BEREIT" bei einer Belohnung?',
+    'faq_a7' => 'Wenn du "BEREIT" siehst, hast du genug Punkte für diese Belohnung. Beim nächsten Scannen kannst du sie einlösen.',
+
+    'faq_q8' => 'Was passiert wenn ich "Später" drücke?',
+    'faq_a8' => 'Deine Punkte bleiben erhalten. Beim nächsten Besuch wird die Einlösung erneut angeboten.',
+
+    'faq_q9' => 'Kann der Händler meine Einlösung ablehnen?',
+    'faq_a9' => 'Ja, in seltenen Fällen (z.B. wenn die Belohnung nicht verfügbar ist). Du erhältst dann eine Nachricht mit dem Grund und behältst deine Punkte.',
+
+    // Ablauf Schritt für Schritt
+    'faq_flow_title' => 'Einlösung Schritt für Schritt',
+
+    'faq_q10' => 'Wie läuft eine Einlösung genau ab?',
+    'faq_a10_intro' => 'So funktioniert die Einlösung:',
+    'faq_a10_step1' => '1. Zeige deinen QR-Code an der Kasse',
+    'faq_a10_step2' => '2. Der Händler scannt deinen Code',
+    'faq_a10_step3' => '3. Auf deinem Handy erscheint "Punkte einlösen?"',
+    'faq_a10_step4' => '4. Wähle die gewünschte Belohnung aus',
+    'faq_a10_step5' => '5. Warte kurz auf die Bestätigung des Händlers',
+    'faq_a10_step6' => '6. Der Händler gibt dir die Belohnung',
+    'faq_a10_step7' => '7. Fertig! Die Punkte werden automatisch abgezogen',
+
+    // VIP & Boni
+    'faq_vip_title' => 'VIP & Boni',
+
+    'faq_q11' => 'Was sind VIP-Stufen?',
+    'faq_a11' => 'Je mehr du sammelst, desto höher steigst du auf: Starter → Bronze → Silber → Gold → Platin. Höhere Stufen bringen bessere Boni!',
+
+    'faq_q12' => 'Bekomme ich einen Geburtstagsbonus?',
+    'faq_a12' => 'Wenn das Geschäft diese Funktion aktiviert hat, erhältst du an deinem Geburtstag Bonuspunkte. Trage dein Geburtsdatum in den Einstellungen ein, um davon zu profitieren.',
+
+    'faq_q13' => 'Was ist ein Comeback-Bonus?',
+    'faq_a13' => 'Manche Geschäfte bieten einen Willkommens-Bonus, wenn du länger als 30 Tage nicht dort warst. Ob dieser aktiv ist, entscheidet jedes Geschäft selbst.',
+
+    // Technische Fragen
+    'faq_tech_title' => 'Technische Fragen',
+
+    'faq_q14' => 'Funktioniert PunktePass offline?',
+    'faq_a14' => 'Ja! Dein QR-Code wird zwischengespeichert. Du kannst ihn auch ohne Internet zeigen. Die Punkte werden synchronisiert, sobald du wieder online bist.',
+
+    'faq_q15' => 'Warum sehe ich "Warte auf Bestätigung"?',
+    'faq_a15' => 'Der Händler muss deine Einlösung auf seinem Gerät bestätigen. Das dauert normalerweise nur wenige Sekunden.',
+
+    'faq_q16' => 'Was passiert, wenn das Fenster sich automatisch schließt?',
+    'faq_a16' => 'Nach 60 Sekunden ohne Aktion wird "Später" automatisch gewählt. Deine Punkte bleiben erhalten und du kannst beim nächsten Mal einlösen.',
+
+    'faq_q17' => 'Kann ich PunktePass als App installieren?',
+    'faq_a17' => 'Ja! Tippe im Browser auf "Zum Startbildschirm hinzufügen" und PunktePass funktioniert wie eine normale App.',
+
+    // Sicherheit
+    'faq_security_title' => 'Sicherheit',
+
+    'faq_q18' => 'Sind meine Daten sicher?',
+    'faq_a18' => 'Ja! Alle Daten werden verschlüsselt übertragen. Dein QR-Code ist einzigartig und zeitlich begrenzt gültig.',
+
+    'faq_q19' => 'Kann jemand meinen QR-Code missbrauchen?',
+    'faq_a19' => 'Nein. Der Code ist nur 30 Minuten gültig und kann pro Geschäft nur einmal täglich verwendet werden.',
+
+    // Kontakt
+    'faq_contact_title' => 'Hilfe & Kontakt',
+
+    'faq_q20' => 'Ich habe ein Problem - was tun?',
+    'faq_a20' => 'Nutze den Feedback-Button unten in der Navigation oder kontaktiere den Support über die Einstellungen.',
 ];
 

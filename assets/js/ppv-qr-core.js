@@ -242,29 +242,76 @@
   }
 
   // ============================================================
-  // SOUND EFFECTS
+  // SOUND EFFECTS (iOS/Safari compatible)
   // ============================================================
-  const SOUNDS = { success: null, error: null };
+  const SOUNDS = { success: null, error: null, reward: null };
+  let audioUnlocked = false;
 
   function preloadSounds() {
     try {
       const baseUrl = window.PPV_ASSETS_URL || '/wp-content/plugins/punktepass/assets';
       SOUNDS.success = new Audio(`${baseUrl}/sounds/scan-beep.wav`);
       SOUNDS.error = new Audio(`${baseUrl}/sounds/error.mp3`);
-      SOUNDS.success.load();
-      SOUNDS.error.load();
+      SOUNDS.reward = new Audio(`${baseUrl}/sounds/aesome-notify-351946.mp3`);
+
+      // Set attributes for iOS compatibility
+      Object.values(SOUNDS).forEach(sound => {
+        if (sound) {
+          sound.setAttribute('playsinline', '');
+          sound.load();
+        }
+      });
+
       ppvLog('[Sound] Sounds preloaded');
     } catch (e) {
       ppvWarn('[Sound] Failed to preload sounds:', e);
     }
   }
 
+  // 📱 iOS Audio Unlock - must be called on first user interaction
+  function unlockAudio() {
+    if (audioUnlocked) return;
+
+    try {
+      // Play and immediately pause each sound to unlock on iOS
+      Object.values(SOUNDS).forEach(sound => {
+        if (sound) {
+          sound.muted = true;
+          sound.play().then(() => {
+            sound.pause();
+            sound.muted = false;
+            sound.currentTime = 0;
+          }).catch(() => {});
+        }
+      });
+
+      audioUnlocked = true;
+      ppvLog('[Sound] Audio unlocked for iOS');
+
+      // Remove listeners after unlock
+      document.removeEventListener('touchstart', unlockAudio);
+      document.removeEventListener('click', unlockAudio);
+    } catch (e) {}
+  }
+
+  // Add unlock listeners for iOS
+  document.addEventListener('touchstart', unlockAudio, { once: true });
+  document.addEventListener('click', unlockAudio, { once: true });
+
   function playSound(type) {
     try {
       const sound = SOUNDS[type];
       if (sound) {
         sound.currentTime = 0;
-        sound.play().catch(() => {});
+        const playPromise = sound.play();
+        if (playPromise) {
+          playPromise.catch(() => {
+            // If blocked, try to unlock and retry once
+            if (!audioUnlocked) {
+              unlockAudio();
+            }
+          });
+        }
       }
     } catch (e) {}
   }

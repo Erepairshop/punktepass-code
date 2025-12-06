@@ -325,7 +325,7 @@ private static function render_tab_general($store) {
         <!-- SLOGAN -->
         <div class="ppv-form-group">
             <label data-i18n="slogan"><?php echo esc_html(PPV_Lang::t('slogan')); ?></label>
-            <input type="text" name="slogan" value="<?php echo esc_attr($store->slogan ?? ''); ?>">
+            <input type="text" name="slogan" value="<?php echo esc_attr($store->slogan ?? ''); ?>" maxlength="50">
         </div>
 
         <!-- CATEGORY -->
@@ -1585,7 +1585,7 @@ public static function ajax_save_profile() {
         'latitude' => floatval($_POST['latitude'] ?? 0),
         'longitude' => floatval($_POST['longitude'] ?? 0),
         
-        'slogan' => sanitize_text_field($_POST['slogan'] ?? ''),
+        'slogan' => mb_substr(sanitize_text_field($_POST['slogan'] ?? ''), 0, 50),
         'category' => sanitize_text_field($_POST['category'] ?? ''),
         'address' => sanitize_text_field($_POST['address'] ?? ''),
         'plz' => sanitize_text_field($_POST['plz'] ?? ''),

@@ -634,17 +634,8 @@
           maxScansPerSecond: 5, // Reduced for better performance on entry-level phones (Xiaomi Redmi A5)
           highlightScanRegion: true,
           highlightCodeOutline: true,
-          returnDetailedScanResult: true,
-          // Scan center 60% of video for faster processing
-          calculateScanRegion: (video) => {
-            const size = Math.min(video.videoWidth, video.videoHeight) * 0.6;
-            return {
-              x: (video.videoWidth - size) / 2,
-              y: (video.videoHeight - size) / 2,
-              width: size,
-              height: size
-            };
-          }
+          returnDetailedScanResult: true
+          // Note: No calculateScanRegion = scan full video frame
         };
 
         this.scanner = new QrScanner(
@@ -858,7 +849,12 @@
         .then(res => res.json())
         .then(data => {
           if (data.success) {
-            playSound('success');
+            // 🎁 If user has rewards available, play reward sound instead of success
+            if (data.has_rewards || data.redemption_prompt) {
+              playSound('reward');
+            } else {
+              playSound('success');
+            }
             this.updateStatus('success', '✅ ' + (data.message || L.scanner_success_msg || 'Erfolgreich!'));
             window.ppvToast(data.message || L.scanner_point_added || '✅ Punkt hinzugefügt!', 'success');
 
@@ -889,7 +885,12 @@
 
             this.startPauseCountdown();
           } else {
-            playSound('error');
+            // 🎁 If user has rewards available, play reward sound instead of error
+            if (data.has_rewards || data.redemption_prompt) {
+              playSound('reward');
+            } else {
+              playSound('error');
+            }
             this.updateStatus('warning', '⚠️ ' + (data.message || L.error_generic || 'Fehler'));
             window.ppvToast(data.message || '⚠️ Fehler', 'warning');
 
@@ -967,7 +968,8 @@
 
     /**
      * 📊 Show customer insights panel to Händler after successful scan
-     * Compact display optimized for small screens (XCover 4S)
+     * Modern card design with VIP badge & progress ring
+     * Optimized for 5.8" - 6.8" screens
      */
     showCustomerInsights(customerName, insights) {
       if (!insights || !insights.display) return;
@@ -976,34 +978,265 @@
       const existing = document.getElementById('ppv-customer-insights');
       if (existing) existing.remove();
 
+      // Inject CSS if not present
+      if (!document.getElementById('ppv-insights-styles')) {
+        const style = document.createElement('style');
+        style.id = 'ppv-insights-styles';
+        style.textContent = `
+          .ppv-insights-card {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 24px);
+            max-width: 380px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.1);
+            z-index: 9999;
+            animation: ppvInsightsSlideIn 0.3s ease-out;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          }
+          @keyframes ppvInsightsSlideIn {
+            from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+          }
+          .ppv-insights-card.hiding {
+            animation: ppvInsightsSlideOut 0.3s ease-in forwards;
+          }
+          @keyframes ppvInsightsSlideOut {
+            to { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+          }
+          .ppv-insights-top {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+          }
+          .ppv-insights-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 600;
+            color: #fff;
+            flex-shrink: 0;
+          }
+          .ppv-insights-info {
+            flex: 1;
+            min-width: 0;
+          }
+          .ppv-insights-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+          .ppv-insights-status {
+            font-size: 13px;
+            color: rgba(255,255,255,0.9);
+            margin-top: 2px;
+          }
+          .ppv-insights-vip {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+          .ppv-vip-starter { background: #374151; color: #9ca3af; }
+          .ppv-vip-bronze { background: linear-gradient(135deg, #92400e, #b45309); color: #fef3c7; }
+          .ppv-vip-silver { background: linear-gradient(135deg, #4b5563, #6b7280); color: #f3f4f6; }
+          .ppv-vip-gold { background: linear-gradient(135deg, #b45309, #d97706); color: #fef3c7; }
+          .ppv-vip-platinum { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; }
+          .ppv-insights-close {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 28px;
+            height: 28px;
+            border: none;
+            background: rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.6);
+            border-radius: 50%;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+          .ppv-insights-stats {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+          }
+          .ppv-insights-stat {
+            flex: 1;
+            background: rgba(255,255,255,0.08);
+            border-radius: 10px;
+            padding: 10px 8px;
+            text-align: center;
+          }
+          .ppv-stat-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #ffffff !important;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+          }
+          .ppv-stat-label {
+            font-size: 11px;
+            color: rgba(255,255,255,0.85);
+            text-transform: uppercase;
+            margin-top: 2px;
+            letter-spacing: 0.5px;
+          }
+          .ppv-insights-progress {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            padding: 10px 12px;
+          }
+          .ppv-progress-ring {
+            width: 44px;
+            height: 44px;
+            flex-shrink: 0;
+          }
+          .ppv-progress-ring circle {
+            fill: none;
+            stroke-width: 4;
+          }
+          .ppv-progress-bg { stroke: rgba(255,255,255,0.1); }
+          .ppv-progress-bar {
+            stroke: #10b981;
+            stroke-linecap: round;
+            transform: rotate(-90deg);
+            transform-origin: center;
+            transition: stroke-dashoffset 0.5s ease;
+          }
+          .ppv-progress-text {
+            flex: 1;
+          }
+          .ppv-progress-main {
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+          }
+          .ppv-progress-sub {
+            font-size: 12px;
+            color: rgba(255,255,255,0.5);
+          }
+          .ppv-insights-birthday {
+            margin-top: 10px;
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            border-radius: 8px;
+            padding: 8px 12px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+          }
+          .ppv-insights-pattern {
+            margin-top: 10px;
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+          }
+          .ppv-pattern-tag {
+            background: rgba(99,102,241,0.2);
+            color: #a5b4fc;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+          }
+          @media (max-width: 360px) {
+            .ppv-insights-card { padding: 12px; }
+            .ppv-insights-avatar { width: 40px; height: 40px; font-size: 16px; }
+            .ppv-insights-name { font-size: 14px; }
+            .ppv-stat-value { font-size: 16px; }
+            .ppv-progress-ring { width: 38px; height: 38px; }
+          }
+        `;
+        document.head.appendChild(style);
+      }
+
       const d = insights.display;
-      const name = customerName || '';
+      const name = customerName || 'Kunde';
+      const initial = name.charAt(0).toUpperCase();
+      const vipLevel = insights.vip_level || 'starter';
+      const vipLabel = insights.vip_label || 'Starter';
+      const visitCount = insights.visit_count || 1;
+      const currentPoints = insights.current_points || 0;
+      const pointsToReward = insights.points_to_reward;
+      const totalNeeded = pointsToReward !== null ? currentPoints + pointsToReward : 100;
+      const progressPercent = pointsToReward !== null ? Math.min(100, (currentPoints / totalNeeded) * 100) : 0;
+      const circumference = 2 * Math.PI * 18;
+      const dashOffset = circumference - (progressPercent / 100) * circumference;
 
-      // Build compact info lines
+      // Avatar colors based on name hash
+      const avatarColors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#3b82f6', '#8b5cf6', '#ec4899'];
+      const colorIndex = name.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) % avatarColors.length;
+      const avatarBg = avatarColors[colorIndex];
+
       let html = `
-        <div id="ppv-customer-insights" class="ppv-insights-panel">
-          <div class="ppv-insights-header">
-            <span class="ppv-insights-name">${this.escapeHtml(name)}</span>
-            <button class="ppv-insights-close" onclick="this.parentElement.parentElement.remove()">×</button>
+        <div id="ppv-customer-insights" class="ppv-insights-card">
+          <button class="ppv-insights-close" onclick="this.parentElement.remove()">×</button>
+
+          <div class="ppv-insights-top">
+            <div class="ppv-insights-avatar" style="background:${avatarBg}">${initial}</div>
+            <div class="ppv-insights-info">
+              <div class="ppv-insights-name">${this.escapeHtml(name)}</div>
+              <div class="ppv-insights-status">${this.escapeHtml(d.line1?.replace(/^[🆕👋📊⭐]\s*/, '') || '')}</div>
+            </div>
+            <span class="ppv-insights-vip ppv-vip-${vipLevel}">${vipLabel}</span>
           </div>
-          <div class="ppv-insights-body">
-            <div class="ppv-insights-line1">${this.escapeHtml(d.line1 || '')}</div>
-      `;
 
-      if (d.line2) {
-        html += `<div class="ppv-insights-line2">${this.escapeHtml(d.line2)}</div>`;
-      }
-
-      if (d.line3) {
-        html += `<div class="ppv-insights-line3">${this.escapeHtml(d.line3)}</div>`;
-      }
-
-      if (d.birthday) {
-        html += `<div class="ppv-insights-birthday">${this.escapeHtml(d.birthday)}</div>`;
-      }
-
-      html += `
+          <div class="ppv-insights-stats">
+            <div class="ppv-insights-stat">
+              <span style="display:block;color:#ffffff;font-size:22px;font-weight:800;text-shadow:0 1px 3px rgba(0,0,0,0.5)">${visitCount}×</span>
+              <span style="display:block;color:#d1d5db;font-size:11px;text-transform:uppercase;margin-top:4px">Besuche</span>
+            </div>
+            <div class="ppv-insights-stat">
+              <span style="display:block;color:#ffffff;font-size:22px;font-weight:800;text-shadow:0 1px 3px rgba(0,0,0,0.5)">${currentPoints}</span>
+              <span style="display:block;color:#d1d5db;font-size:11px;text-transform:uppercase;margin-top:4px">Punkte</span>
+            </div>
+            <div class="ppv-insights-stat">
+              <span style="display:block;color:#ffffff;font-size:22px;font-weight:800;text-shadow:0 1px 3px rgba(0,0,0,0.5)">${insights.avg_frequency_days || '—'}</span>
+              <span style="display:block;color:#d1d5db;font-size:11px;text-transform:uppercase;margin-top:4px">Ø Tage</span>
+            </div>
           </div>
+
+          ${pointsToReward !== null ? `
+          <div class="ppv-insights-progress">
+            <svg class="ppv-progress-ring" viewBox="0 0 44 44">
+              <circle class="ppv-progress-bg" cx="22" cy="22" r="18"/>
+              <circle class="ppv-progress-bar" cx="22" cy="22" r="18"
+                stroke-dasharray="${circumference}"
+                stroke-dashoffset="${dashOffset}"/>
+            </svg>
+            <div class="ppv-progress-text">
+              <div class="ppv-progress-main">${pointsToReward <= 0 ? '🎁 Belohnung bereit!' : `Noch ${pointsToReward} Punkte`}</div>
+              <div class="ppv-progress-sub">${Math.round(progressPercent)}% zur Belohnung</div>
+            </div>
+          </div>
+          ` : ''}
+
+          ${insights.has_pattern && d.line2 ? `
+          <div class="ppv-insights-pattern">
+            ${insights.common_day ? `<span class="ppv-pattern-tag">📅 ${insights.common_day}</span>` : ''}
+            ${insights.common_time ? `<span class="ppv-pattern-tag">🕐 ${insights.common_time} Uhr</span>` : ''}
+          </div>
+          ` : ''}
+
+          ${d.birthday ? `<div class="ppv-insights-birthday">🎂 ${this.escapeHtml(d.birthday)}</div>` : ''}
         </div>
       `;
 
@@ -1019,8 +1252,8 @@
       setTimeout(() => {
         const panel = document.getElementById('ppv-customer-insights');
         if (panel) {
-          panel.classList.add('ppv-insights-hiding');
-          setTimeout(() => panel.remove(), 500);
+          panel.classList.add('hiding');
+          setTimeout(() => panel.remove(), 300);
         }
       }, 15000);
     }
