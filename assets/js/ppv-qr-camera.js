@@ -621,6 +621,25 @@
     async startQrScanner() {
       if (!this.readerDiv || !window.QrScanner) return;
 
+      // Add CSS to maximize scan region overlay
+      if (!document.getElementById('ppv-scan-region-style')) {
+        const style = document.createElement('style');
+        style.id = 'ppv-scan-region-style';
+        style.textContent = `
+          .scan-region-highlight {
+            width: 95% !important;
+            height: 95% !important;
+            left: 2.5% !important;
+            top: 2.5% !important;
+          }
+          .scan-region-highlight-svg {
+            width: 100% !important;
+            height: 100% !important;
+          }
+        `;
+        document.head.appendChild(style);
+      }
+
       try {
         let videoEl = this.readerDiv.querySelector('video');
         if (!videoEl) {
