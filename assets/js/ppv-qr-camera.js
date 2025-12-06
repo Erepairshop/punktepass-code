@@ -1201,16 +1201,16 @@
 
           <div class="ppv-insights-stats">
             <div class="ppv-insights-stat">
-              <div class="ppv-stat-value" style="color:#fff!important;font-size:22px;font-weight:800">${visitCount}×</div>
-              <div class="ppv-stat-label" style="color:#e5e7eb!important;font-size:11px">Besuche</div>
+              <span style="display:block;color:#ffffff;font-size:22px;font-weight:800;text-shadow:0 1px 3px rgba(0,0,0,0.5)">${visitCount}×</span>
+              <span style="display:block;color:#d1d5db;font-size:11px;text-transform:uppercase;margin-top:4px">Besuche</span>
             </div>
             <div class="ppv-insights-stat">
-              <div class="ppv-stat-value" style="color:#fff!important;font-size:22px;font-weight:800">${currentPoints}</div>
-              <div class="ppv-stat-label" style="color:#e5e7eb!important;font-size:11px">Punkte</div>
+              <span style="display:block;color:#ffffff;font-size:22px;font-weight:800;text-shadow:0 1px 3px rgba(0,0,0,0.5)">${currentPoints}</span>
+              <span style="display:block;color:#d1d5db;font-size:11px;text-transform:uppercase;margin-top:4px">Punkte</span>
             </div>
             <div class="ppv-insights-stat">
-              <div class="ppv-stat-value" style="color:#fff!important;font-size:22px;font-weight:800">${insights.avg_frequency_days || '—'}</div>
-              <div class="ppv-stat-label" style="color:#e5e7eb!important;font-size:11px">Ø Tage</div>
+              <span style="display:block;color:#ffffff;font-size:22px;font-weight:800;text-shadow:0 1px 3px rgba(0,0,0,0.5)">${insights.avg_frequency_days || '—'}</span>
+              <span style="display:block;color:#d1d5db;font-size:11px;text-transform:uppercase;margin-top:4px">Ø Tage</span>
             </div>
           </div>
 
