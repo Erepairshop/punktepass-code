@@ -429,6 +429,7 @@ return [
     'login_download_android' => 'Android',
     'login_download_ios' => 'iOS',
     'login_open_in_chrome' => 'Megnyitás Chrome-ban',
+    'login_download_apk' => 'APK letöltése',
     'login_pwa_install_hint' => 'Nyisd meg a böngésző menüjét és válaszd a "Hozzáadás a kezdőképernyőhöz" opciót.',
     'login_pwa_banner_title' => 'PunktePass App telepítése',
     'login_pwa_banner_desc' => 'Telepítsd az appot a gyorsabb hozzáféréshez!',
