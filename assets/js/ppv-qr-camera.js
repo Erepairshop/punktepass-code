@@ -890,12 +890,9 @@
             this.startPauseCountdown();
           } else {
             // 🎁 If user has rewards available, play reward sound instead of error
-            console.log('[PPV Scan] Response:', { success: data.success, has_rewards: data.has_rewards, has_prompt: !!data.redemption_prompt });
             if (data.has_rewards || data.redemption_prompt) {
-              console.log('[PPV Scan] → Playing REWARD sound');
               playSound('reward');
             } else {
-              console.log('[PPV Scan] → Playing ERROR sound');
               playSound('error');
             }
             this.updateStatus('warning', '⚠️ ' + (data.message || L.error_generic || 'Fehler'));
