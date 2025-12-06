@@ -607,9 +607,7 @@ async function initUserDashboard() {
 
       if (action === 'decline') {
         closeRedemptionModal();
-        if (window.ppvShowPointToast && data.message) {
-          window.ppvShowPointToast('info', 0, 'PunktePass', data.message);
-        }
+        // No toast needed for "Später" - user knows they clicked later
       }
       // If accept, we wait for Ably notification (redemption-approved/rejected)
 
