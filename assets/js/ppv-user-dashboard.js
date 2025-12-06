@@ -721,8 +721,37 @@ async function initUserDashboard() {
   };
 
   // ============================================================
-  // 🔄 LOAD TIMED QR FROM REST API
+  // 🔄 LOAD TIMED QR FROM REST API (with offline fallback)
   // ============================================================
+  const QR_CACHE_KEY = 'ppv_dashboard_qr_cache';
+
+  // 💾 Cache QR for offline use
+  const cacheQRData = (userId, data, qrDataUrl) => {
+    try {
+      const cacheData = {
+        user_id: userId,
+        qr_url: qrDataUrl,
+        qr_value: data.qr_value,
+        expires_at: data.expires_at,
+        cached_at: Math.floor(Date.now() / 1000)
+      };
+      localStorage.setItem(QR_CACHE_KEY + '_' + userId, JSON.stringify(cacheData));
+    } catch (e) {
+      console.warn('Failed to cache QR:', e);
+    }
+  };
+
+  // 💾 Load QR from cache
+  const loadQRFromCache = (userId) => {
+    try {
+      const cached = localStorage.getItem(QR_CACHE_KEY + '_' + userId);
+      if (!cached) return null;
+      return JSON.parse(cached);
+    } catch (e) {
+      return null;
+    }
+  };
+
   const loadTimedQR = async (forceNew = false) => {
     const qrImg = document.getElementById("ppv-qr-image");
     const qrLoading = document.getElementById("ppv-qr-loading");
@@ -753,13 +782,19 @@ async function initUserDashboard() {
       }
 
       // Display QR - Generate locally (offline-ready)
+      let qrDataUrl = null;
       if (qrImg && data.qr_value) {
-        const localQR = ppvGenerateQRCodeDataURL(data.qr_value, 300);
-        qrImg.src = localQR || data.qr_url;
+        qrDataUrl = ppvGenerateQRCodeDataURL(data.qr_value, 300);
+        qrImg.src = qrDataUrl || data.qr_url;
       }
       if (qrLoading) qrLoading.style.display = "none";
       if (qrDisplay) qrDisplay.style.display = "block";
       if (qrExpired) qrExpired.style.display = "none";
+
+      // 💾 Cache for offline use
+      if (qrDataUrl && boot.uid) {
+        cacheQRData(boot.uid, data, qrDataUrl);
+      }
 
       // Start countdown
       startQRCountdown(data.expires_at);
@@ -775,8 +810,38 @@ async function initUserDashboard() {
 
     } catch (err) {
       console.error("❌ [QR] Load error:", err);
+
+      // 📱 OFFLINE FALLBACK - Try to load from cache
+      const cached = loadQRFromCache(boot.uid);
+      if (cached && cached.qr_value) {
+        // Generate QR locally from cached qr_value
+        let qrDataUrl = cached.qr_url;
+
+        // If cached URL is not base64, regenerate
+        if (!qrDataUrl || !qrDataUrl.startsWith('data:')) {
+          qrDataUrl = ppvGenerateQRCodeDataURL(cached.qr_value, 300);
+        }
+
+        if (qrDataUrl && qrImg) {
+          qrImg.src = qrDataUrl;
+          if (qrLoading) qrLoading.style.display = "none";
+          if (qrDisplay) qrDisplay.style.display = "block";
+
+          // Check if expired
+          const now = Math.floor(Date.now() / 1000);
+          if (cached.expires_at && cached.expires_at > now) {
+            startQRCountdown(cached.expires_at);
+            showQRStatus("📱 Offline - Gespeicherter QR-Code", "warning");
+          } else {
+            showQRStatus("⚠️ Offline - QR-Code abgelaufen", "warning");
+          }
+          return;
+        }
+      }
+
+      // No cache available
       if (qrLoading) qrLoading.style.display = "none";
-      showQRStatus("❌ Netzwerkfehler", "error");
+      showQRStatus("❌ Netzwerkfehler - Offline Modus", "error");
     }
   };
 
