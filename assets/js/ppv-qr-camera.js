@@ -858,7 +858,12 @@
         .then(res => res.json())
         .then(data => {
           if (data.success) {
-            playSound('success');
+            // 🎁 If user has rewards available, play reward sound instead of success
+            if (data.has_rewards || data.redemption_prompt) {
+              playSound('reward');
+            } else {
+              playSound('success');
+            }
             this.updateStatus('success', '✅ ' + (data.message || L.scanner_success_msg || 'Erfolgreich!'));
             window.ppvToast(data.message || L.scanner_point_added || '✅ Punkt hinzugefügt!', 'success');
 
