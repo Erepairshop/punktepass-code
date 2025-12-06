@@ -59,7 +59,12 @@ window.PPV_SLIDER_INITIALIZED = false;
 window.PPV_STORES_LOADING = false;
 window.PPV_POLLING_IN_PROGRESS = false;
 window.PPV_SLIDER_FETCH_IN_PROGRESS = false;
-window.PPV_CURRENT_DISTANCE = 10;
+window.PPV_CURRENT_DISTANCE = (() => {
+  try {
+    const saved = localStorage.getItem('ppv_user_distance');
+    return saved ? parseInt(saved, 10) : 10;
+  } catch (e) { return 10; }
+})();
 window.PPV_ABORT_CONTROLLER = null; // For cancelling in-flight requests
 
 // ✅ OPTIMIZATION: Translation object (Turbo-safe - uses window namespace)
@@ -312,7 +317,13 @@ function cleanupPolling() {
   clearFlag('PPV_POLLING_IN_PROGRESS');
   clearFlag('PPV_SLIDER_FETCH_IN_PROGRESS');
 
-  window.PPV_CURRENT_DISTANCE = 10;
+  // 📌 Restore saved distance from localStorage (preserve user preference)
+  try {
+    const saved = localStorage.getItem('ppv_user_distance');
+    window.PPV_CURRENT_DISTANCE = saved ? parseInt(saved, 10) : 10;
+  } catch (e) {
+    window.PPV_CURRENT_DISTANCE = 10;
+  }
 
   // Safari: Force garbage collection hint
   if (PPV_IS_SAFARI && typeof window.gc === 'function') {
@@ -1687,6 +1698,7 @@ async function initUserDashboard() {
 
       const newDistance = parseInt(e.target.value, 10);
       window.PPV_CURRENT_DISTANCE = newDistance; // ✅ FIX: Track current value globally
+      try { localStorage.setItem('ppv_user_distance', newDistance); } catch (e) {} // 📌 Persist
       const valueSpan = document.getElementById('ppv-distance-value');
       if (valueSpan) valueSpan.textContent = newDistance;
 
@@ -1915,9 +1927,9 @@ async function initUserDashboard() {
   };
 
   // Helper function to render store list (avoids duplicate code)
-  // ✅ FIX: Preserve current slider value instead of always resetting to 10
+  // ✅ FIX: Always use saved distance from localStorage (PPV_CURRENT_DISTANCE)
   const renderStoreList = (box, stores, userLat, userLng, preserveSliderValue = false) => {
-    const currentDistance = preserveSliderValue ? window.PPV_CURRENT_DISTANCE : 10;
+    const currentDistance = window.PPV_CURRENT_DISTANCE || 10; // 📌 Always use saved preference
     const sliderHTML = `
       <div class="ppv-distance-filter">
         <label><i class="ri-ruler-line"></i> ${T.distance_label}: <span id="ppv-distance-value">${currentDistance}</span> km</label>
