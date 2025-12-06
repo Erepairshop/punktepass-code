@@ -295,8 +295,11 @@ trait PPV_QR_Devices_Trait {
                             const cacheAge = Date.now() - (parsedCache.timestamp || 0);
                             if (cacheAge < FP_CACHE_TTL && parsedCache.visitorId) {
                                 console.log('[Devices] Using cached fingerprint (age: ' + Math.round(cacheAge / 1000 / 60) + ' min)');
-                                // Still extract device info from cache if available
-                                if (parsedCache.components) {
+                                // Use deviceInfo if available (preferred), otherwise components
+                                if (parsedCache.deviceInfo) {
+                                    currentDeviceInfo = parsedCache.deviceInfo;
+                                } else if (parsedCache.components) {
+                                    // Components from scanner - use as-is for now
                                     currentDeviceInfo = parsedCache.components;
                                 }
                                 return parsedCache.visitorId;
@@ -315,11 +318,23 @@ trait PPV_QR_Devices_Trait {
                         currentDeviceInfo = extractDeviceInfo(result.components);
                         console.log('[Devices] 📱 Device info collected:', currentDeviceInfo);
 
-                        // Cache the fingerprint (shared with scanner)
+                        // Extract raw components for scanner compatibility
+                        const rawComponents = {};
+                        const stableKeys = ['platform', 'timezone', 'languages', 'colorDepth', 'deviceMemory',
+                                           'hardwareConcurrency', 'screenResolution', 'vendor', 'vendorFlavors',
+                                           'cookiesEnabled', 'colorGamut', 'audio', 'canvas', 'webGlBasics'];
+                        for (const key of stableKeys) {
+                            if (result.components[key]) {
+                                rawComponents[key] = result.components[key].value;
+                            }
+                        }
+
+                        // Cache the fingerprint with BOTH formats (shared with scanner)
                         try {
                             localStorage.setItem(FP_CACHE_KEY, JSON.stringify({
                                 visitorId: result.visitorId,
-                                components: currentDeviceInfo,
+                                components: rawComponents,  // For scanner similarity matching
+                                deviceInfo: currentDeviceInfo,  // For device registration display
                                 timestamp: Date.now()
                             }));
                             console.log('[Devices] Fingerprint cached in localStorage');
@@ -330,7 +345,7 @@ trait PPV_QR_Devices_Trait {
                         return result.visitorId;
                     }
 
-                    // Fallback fingerprint (must be at least 16 chars)
+                    // Fallback fingerprint (must be at least 16 chars, alphanumeric only - no underscore!)
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
                     ctx.textBaseline = 'top';
@@ -344,13 +359,15 @@ trait PPV_QR_Devices_Trait {
                         hash2 = ((hash2 << 7) - hash2) + data.charCodeAt(i);
                         hash2 = hash2 & hash2;
                     }
-                    const fallbackId = 'fp_' + Math.abs(hash1).toString(16).padStart(8, '0') + Math.abs(hash2).toString(16).padStart(8, '0');
+                    // Use 'fb' prefix (fallback) - alphanumeric only, total 18 chars
+                    const fallbackId = 'fb' + Math.abs(hash1).toString(16).padStart(8, '0') + Math.abs(hash2).toString(16).padStart(8, '0');
 
                     // Cache fallback fingerprint too
                     try {
                         localStorage.setItem(FP_CACHE_KEY, JSON.stringify({
                             visitorId: fallbackId,
                             components: null,
+                            deviceInfo: null,
                             timestamp: Date.now()
                         }));
                     } catch (cacheErr) {}

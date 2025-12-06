@@ -527,11 +527,12 @@
             }
           }
 
-          // Cache the fingerprint in localStorage
+          // Cache the fingerprint in localStorage (compatible with Geräte tab)
           try {
             localStorage.setItem(CACHE_KEY, JSON.stringify({
               visitorId: result.visitorId,
               components: components,
+              deviceInfo: null, // Will be filled by Geräte tab if needed
               timestamp: Date.now()
             }));
             ppvLog('[Scanner] Fingerprint cached in localStorage');
@@ -543,6 +544,7 @@
         }
 
         // Fallback: generate simple fingerprint without components
+        // Note: alphanumeric only (no underscore) for PHP validation
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         ctx.textBaseline = 'top';
@@ -556,13 +558,15 @@
           hash2 = ((hash2 << 7) - hash2) + data.charCodeAt(i);
           hash2 = hash2 & hash2;
         }
-        const fallbackId = 'fp_' + Math.abs(hash1).toString(16).padStart(8, '0') + Math.abs(hash2).toString(16).padStart(8, '0');
+        // Use 'fb' prefix (fallback) - alphanumeric only, total 18 chars
+        const fallbackId = 'fb' + Math.abs(hash1).toString(16).padStart(8, '0') + Math.abs(hash2).toString(16).padStart(8, '0');
 
         // Cache fallback fingerprint too
         try {
           localStorage.setItem(CACHE_KEY, JSON.stringify({
             visitorId: fallbackId,
             components: null,
+            deviceInfo: null,
             timestamp: Date.now()
           }));
         } catch (cacheErr) {}
