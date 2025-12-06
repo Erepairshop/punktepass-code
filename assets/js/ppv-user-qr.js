@@ -6,6 +6,7 @@
  */
 
 const QR_CACHE_KEY = 'ppv_qr_cache';
+const STATIC_QR_CACHE_KEY = 'ppv_static_qr_cache';
 
 // ═══════════════════════════════════════════════════════════════
 // 🎨 LOCAL QR CODE GENERATION (using qrcode-generator library)
@@ -84,27 +85,40 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (!navigator.onLine) {
     // Try to load from cache when offline
     const cached = loadFromCache(userId);
-    if (cached) {
+    const now = Math.floor(Date.now() / 1000);
+
+    // Check if timed QR is still valid
+    if (cached && !cached._isExpired && cached.expires_at > now) {
       showOfflineBanner();
       displayQR(cached);
       startCountdown(cached.expires_at);
-
-      // Show appropriate status message
-      if (cached._imageNotCached) {
-        showStatus("⚠️ Offline - QR-Bild nicht im Cache", "warning");
-      } else if (cached._isExpired) {
-        showStatus("⏰ Offline - QR-Code abgelaufen (trotzdem anzeigbar)", "warning");
-      } else {
-        showStatus("📱 Offline-Modus - Gespeicherter QR-Code", "success");
-      }
+      showStatus("📱 Offline-Modus - Gespeicherter QR-Code", "success");
     } else {
-      showStatus("📡 Offline - Kein gespeicherter QR-Code", "error");
-      hideLoading();
+      // 🔐 STATIC QR FALLBACK - Timed QR expired or unavailable
+      const staticQR = loadStaticQRFromCache(userId);
+      if (staticQR && staticQR.qr_value) {
+        showOfflineBanner();
+        displayQR(staticQR);
+        // Hide timer for static QR
+        const timerEl = document.getElementById("ppvQrTimer");
+        if (timerEl) timerEl.style.display = "none";
+        showStatus("📱 Offline - Tages-QR (1x pro Geschäft)", "warning");
+      } else if (cached) {
+        // Fallback: show expired timed QR if no static available
+        showOfflineBanner();
+        displayQR(cached);
+        showStatus("⏰ Offline - QR-Code abgelaufen", "warning");
+      } else {
+        showStatus("📡 Offline - Bitte einmal online laden", "error");
+        hideLoading();
+      }
     }
     // Don't return - still setup refresh button for when back online
   } else {
     // Load initial timed QR (only when online)
     await loadTimedQR(userId);
+    // 🔐 Cache static QR for offline fallback (runs in background)
+    fetchAndCacheStaticQR(userId);
   }
 
   // Refresh button click handler
@@ -188,24 +202,41 @@ async function loadTimedQR(userId, forceNew = false) {
 
     // 📱 Offline fallback - try to load cached QR
     const cached = loadFromCache(userId);
-    if (cached) {
+    const now = Math.floor(Date.now() / 1000);
+
+    // Check if timed QR is still valid
+    if (cached && cached.expires_at && cached.expires_at > now) {
       showOfflineBanner();
       displayQR(cached);
       startCountdown(cached.expires_at);
-      showStatus("📱 Offline - Gespeicherter QR-Code wird angezeigt", "warning");
+      showStatus("📱 Offline - Gespeicherter QR-Code", "warning");
       return;
     }
 
-    // No cache available
+    // 🔐 STATIC QR FALLBACK - Timed QR expired or unavailable
+    const staticQR = loadStaticQRFromCache(userId);
+    if (staticQR && staticQR.qr_value) {
+      showOfflineBanner();
+      displayQR(staticQR);
+      // Hide timer for static QR
+      const timerEl = document.getElementById("ppvQrTimer");
+      if (timerEl) timerEl.style.display = "none";
+      showStatus("📱 Offline - Tages-QR (1x pro Geschäft)", "warning");
+      return;
+    }
+
+    // Last resort: show expired timed QR if available
+    if (cached) {
+      showOfflineBanner();
+      displayQR(cached);
+      showStatus("⏰ Offline - QR-Code abgelaufen", "warning");
+      return;
+    }
+
+    // No cache available at all
     hideLoading();
     showOfflineBanner();
-
-    // Show helpful message based on offline status
-    if (!navigator.onLine) {
-      showStatus("📡 Offline - Bitte App einmal online laden, um QR-Code zu speichern", "error");
-    } else {
-      showStatus("❌ Netzwerkfehler - Bitte später erneut versuchen", "error");
-    }
+    showStatus("📡 Offline - Bitte einmal online laden", "error");
   }
 }
 
@@ -462,6 +493,51 @@ function loadFromCache(userId) {
     return data;
   } catch (e) {
     return null;
+  }
+}
+
+// 🔐 Cache STATIC QR for offline fallback (never expires)
+function cacheStaticQR(userId, qrValue, qrDataUrl) {
+  try {
+    const cacheData = {
+      user_id: userId,
+      qr_url: qrDataUrl,
+      qr_value: qrValue,
+      cached_at: Math.floor(Date.now() / 1000)
+    };
+    localStorage.setItem(STATIC_QR_CACHE_KEY + '_' + userId, JSON.stringify(cacheData));
+    console.log('💾 Static QR cached for offline fallback');
+  } catch (e) {
+    console.warn('Failed to cache static QR:', e);
+  }
+}
+
+// 🔐 Load STATIC QR from cache
+function loadStaticQRFromCache(userId) {
+  try {
+    const cached = localStorage.getItem(STATIC_QR_CACHE_KEY + '_' + userId);
+    if (!cached) return null;
+    return JSON.parse(cached);
+  } catch (e) {
+    return null;
+  }
+}
+
+// 🔐 Fetch and cache static QR (call once when online)
+async function fetchAndCacheStaticQR(userId) {
+  if (!userId) return;
+  try {
+    const res = await fetch("/wp-json/ppv/v1/user/qr?user_id=" + userId);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data.qr_value) {
+      const qrDataUrl = generateQRCodeDataURL(data.qr_value, 364);
+      if (qrDataUrl) {
+        cacheStaticQR(userId, data.qr_value, qrDataUrl);
+      }
+    }
+  } catch (e) {
+    // Silently fail - static QR is just a fallback
   }
 }
 
