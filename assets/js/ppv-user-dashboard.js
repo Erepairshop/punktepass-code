@@ -15,6 +15,42 @@
  * - Enhanced error handling
  */
 
+// ═══════════════════════════════════════════════════════════════
+// 🎨 LOCAL QR CODE GENERATION (using qrcode-generator library)
+// ═══════════════════════════════════════════════════════════════
+function ppvGenerateQRCodeDataURL(text, size = 300) {
+  if (typeof qrcode === 'undefined') {
+    console.error('qrcode-generator library not loaded!');
+    return null;
+  }
+  try {
+    const qr = qrcode(0, 'M');
+    qr.addData(text, 'Byte');
+    qr.make();
+    const moduleCount = qr.getModuleCount();
+    const cellSize = Math.floor(size / moduleCount);
+    const margin = Math.floor((size - (cellSize * moduleCount)) / 2);
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, size, size);
+    ctx.fillStyle = '#000000';
+    for (let row = 0; row < moduleCount; row++) {
+      for (let col = 0; col < moduleCount; col++) {
+        if (qr.isDark(row, col)) {
+          ctx.fillRect(margin + col * cellSize, margin + row * cellSize, cellSize, cellSize);
+        }
+      }
+    }
+    return canvas.toDataURL('image/png');
+  } catch (e) {
+    console.error('QR generation error:', e);
+    return null;
+  }
+}
+
 // Global state for Turbo navigation cleanup
 window.PPV_POLL_INTERVAL_ID = null;
 window.PPV_VISIBILITY_HANDLER = null;
@@ -716,8 +752,11 @@ async function initUserDashboard() {
         return;
       }
 
-      // Display QR
-      if (qrImg) qrImg.src = data.qr_url;
+      // Display QR - Generate locally (offline-ready)
+      if (qrImg && data.qr_value) {
+        const localQR = ppvGenerateQRCodeDataURL(data.qr_value, 300);
+        qrImg.src = localQR || data.qr_url;
+      }
       if (qrLoading) qrLoading.style.display = "none";
       if (qrDisplay) qrDisplay.style.display = "block";
       if (qrExpired) qrExpired.style.display = "none";

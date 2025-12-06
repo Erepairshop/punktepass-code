@@ -889,8 +889,11 @@ private static function get_today_hours($opening_hours) {
             null
         );
 
+        // 🎨 QR Code Generator library (local generation, offline support)
+        wp_enqueue_script('qrcode-generator', PPV_PLUGIN_URL . 'assets/js/vendor/qrcode-generator.min.js', [], '1.4.4', true);
+
         // 📡 ABLY: Load JS SDK + shared manager if enabled
-        $dependencies = ['jquery'];
+        $dependencies = ['jquery', 'qrcode-generator'];
         if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
             PPV_Ably::enqueue_scripts();
             $dependencies[] = 'ppv-ably-manager';

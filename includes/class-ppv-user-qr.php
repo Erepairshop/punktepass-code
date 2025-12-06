@@ -109,9 +109,11 @@ class PPV_User_QR {
     
 
     public static function enqueue_styles() {
-        
-        wp_enqueue_script('ppv-user-qr', plugin_dir_url(__FILE__) . '../assets/js/ppv-user-qr.js', [], time(), true);
+        // 🎨 QR Code Generator library (local generation, offline support)
+        wp_enqueue_script('qrcode-generator', plugin_dir_url(__FILE__) . '../assets/js/vendor/qrcode-generator.min.js', [], '1.4.4', true);
 
+        // User QR script (depends on qrcode-generator)
+        wp_enqueue_script('ppv-user-qr', plugin_dir_url(__FILE__) . '../assets/js/ppv-user-qr.js', ['qrcode-generator'], time(), true);
     }
 
     public static function render_qr() {
