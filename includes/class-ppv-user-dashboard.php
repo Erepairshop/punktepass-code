@@ -1319,7 +1319,7 @@ public static function render_dashboard() {
     $stores = $wpdb->get_results("
         SELECT s.id, s.name, s.company_name, s.address, s.city, s.plz, s.latitude, s.longitude,
                s.phone, s.public_email, s.website, s.logo, s.qr_logo, s.opening_hours, s.description,
-               s.gallery, s.facebook, s.instagram, s.tiktok, s.country,
+               s.gallery, s.facebook, s.instagram, s.tiktok, s.country, s.slogan,
                s.vip_fix_enabled, s.vip_fix_bronze, s.vip_fix_silver, s.vip_fix_gold, s.vip_fix_platinum,
                s.vip_streak_enabled, s.vip_streak_count, s.vip_streak_type,
                s.vip_streak_bronze, s.vip_streak_silver, s.vip_streak_gold, s.vip_streak_platinum,
@@ -1495,6 +1495,7 @@ public static function render_dashboard() {
             'id' => (int)$store->id,
             'name' => $store->name,  // Store name (üzlet neve)
             'company_name' => $store->company_name,  // Company name (cégnév)
+            'slogan' => $store->slogan ?? null,  // Store slogan
             'address' => $store->address,
             'city' => $store->city,
             'plz' => $store->plz,

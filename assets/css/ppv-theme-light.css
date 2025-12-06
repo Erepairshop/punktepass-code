@@ -86,3 +86,9 @@ div.ppv-user-qr.ppv-qr-zoomed{
   margin:10px auto!important
 }
 .ppv-user-qr.ppv-qr-zoomed h2{display:none!important}
+
+/* ═══════════════════════════════════════════════════════════════
+   🏷️ STORE SLOGAN
+   ═══════════════════════════════════════════════════════════════ */
+.ppv-store-slogan{font-size:12px;font-weight:500;color:var(--pp-text-3);margin:0 0 6px;font-style:italic;line-height:1.3;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.ppv-store-card-enhanced:hover .ppv-store-slogan{color:var(--pp-text-2)}
