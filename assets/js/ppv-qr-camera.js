@@ -1040,7 +1040,7 @@
           }
           .ppv-insights-status {
             font-size: 13px;
-            color: rgba(255,255,255,0.7);
+            color: rgba(255,255,255,0.9);
             margin-top: 2px;
           }
           .ppv-insights-vip {
@@ -1079,21 +1079,23 @@
           }
           .ppv-insights-stat {
             flex: 1;
-            background: rgba(255,255,255,0.05);
+            background: rgba(255,255,255,0.08);
             border-radius: 10px;
             padding: 10px 8px;
             text-align: center;
           }
           .ppv-stat-value {
-            font-size: 18px;
+            font-size: 20px;
             font-weight: 700;
-            color: #fff;
+            color: #ffffff !important;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
           }
           .ppv-stat-label {
-            font-size: 10px;
-            color: rgba(255,255,255,0.5);
+            font-size: 11px;
+            color: rgba(255,255,255,0.85);
             text-transform: uppercase;
             margin-top: 2px;
+            letter-spacing: 0.5px;
           }
           .ppv-insights-progress {
             display: flex;
