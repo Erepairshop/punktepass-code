@@ -314,6 +314,9 @@ trait PPV_QR_Devices_Trait {
                         const fp = await FingerprintJS.load();
                         const result = await fp.get();
 
+                        // Sanitize visitorId - keep only alphanumeric chars (some devices like Xiaomi generate +/= etc)
+                        const visitorId = (result.visitorId || '').replace(/[^a-zA-Z0-9]/g, '');
+
                         // 📱 Tároljuk a készülék infókat
                         currentDeviceInfo = extractDeviceInfo(result.components);
                         console.log('[Devices] 📱 Device info collected:', currentDeviceInfo);
@@ -332,7 +335,7 @@ trait PPV_QR_Devices_Trait {
                         // Cache the fingerprint with BOTH formats (shared with scanner)
                         try {
                             localStorage.setItem(FP_CACHE_KEY, JSON.stringify({
-                                visitorId: result.visitorId,
+                                visitorId: visitorId,
                                 components: rawComponents,  // For scanner similarity matching
                                 deviceInfo: currentDeviceInfo,  // For device registration display
                                 timestamp: Date.now()
@@ -342,7 +345,7 @@ trait PPV_QR_Devices_Trait {
                             console.warn('[Devices] Could not cache fingerprint:', cacheErr);
                         }
 
-                        return result.visitorId;
+                        return visitorId;
                     }
 
                     // Fallback fingerprint (must be at least 16 chars, alphanumeric only - no underscore!)

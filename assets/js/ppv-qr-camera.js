@@ -513,6 +513,10 @@
         if (window.FingerprintJS) {
           const fp = await FingerprintJS.load();
           const result = await fp.get();
+
+          // Sanitize visitorId - keep only alphanumeric chars (some devices generate +/= etc)
+          const visitorId = (result.visitorId || '').replace(/[^a-zA-Z0-9]/g, '');
+
           // Extract key components for similarity comparison
           const components = {};
           if (result.components) {
@@ -530,7 +534,7 @@
           // Cache the fingerprint in localStorage (compatible with Geräte tab)
           try {
             localStorage.setItem(CACHE_KEY, JSON.stringify({
-              visitorId: result.visitorId,
+              visitorId: visitorId,
               components: components,
               deviceInfo: null, // Will be filled by Geräte tab if needed
               timestamp: Date.now()
@@ -540,7 +544,7 @@
             ppvWarn('[Scanner] Could not cache fingerprint:', cacheErr);
           }
 
-          return { visitorId: result.visitorId, components };
+          return { visitorId: visitorId, components };
         }
 
         // Fallback: generate simple fingerprint without components
