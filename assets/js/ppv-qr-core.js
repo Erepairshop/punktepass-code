@@ -244,15 +244,17 @@
   // ============================================================
   // SOUND EFFECTS
   // ============================================================
-  const SOUNDS = { success: null, error: null };
+  const SOUNDS = { success: null, error: null, reward: null };
 
   function preloadSounds() {
     try {
       const baseUrl = window.PPV_ASSETS_URL || '/wp-content/plugins/punktepass/assets';
       SOUNDS.success = new Audio(`${baseUrl}/sounds/scan-beep.wav`);
       SOUNDS.error = new Audio(`${baseUrl}/sounds/error.mp3`);
+      SOUNDS.reward = new Audio(`${baseUrl}/sounds/aesome-notify-351946.mp3`);
       SOUNDS.success.load();
       SOUNDS.error.load();
+      SOUNDS.reward.load();
       ppvLog('[Sound] Sounds preloaded');
     } catch (e) {
       ppvWarn('[Sound] Failed to preload sounds:', e);

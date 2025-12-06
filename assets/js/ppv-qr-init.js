@@ -359,7 +359,7 @@
     document.body.appendChild(modal);
     activeRedemptionModal = modal;
 
-    playSound('success');
+    playSound('reward');  // 🎁 Play reward notification sound
 
     requestAnimationFrame(() => {
       modal.classList.add('show');
