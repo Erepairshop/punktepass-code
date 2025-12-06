@@ -258,6 +258,8 @@ return [
   'show_this_code_to_collect' => 'Zeig diesen Code im Geschäft, um Punkte zu sammeln.',
   'your_punktepass_qr' => 'Dein PunktePass-QR',
   'qr_daily_limit_warning' => 'Pro Geschäft ist nur 1 Scan pro Tag möglich!',
+  'brightness_tip' => 'Bildschirmhelligkeit erhöhen für besseres Scannen',
+  'fullscreen' => 'Vollbild',
   'stores_near_you' => 'Geschäfte in deiner Nähe',
   'store_list_auto_update' => 'Die Liste wird automatisch aktualisiert anhand deiner Position.' , 
   

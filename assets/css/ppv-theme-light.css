@@ -26,3 +26,27 @@
 .ppv-user-qr:-webkit-full-screen .ppv-qr-instructions{display:none}
 .ppv-user-qr:fullscreen .ppv-qr-warning,
 .ppv-user-qr:-webkit-full-screen .ppv-qr-warning{max-width:400px}
+
+/* ═══════════════════════════════════════════════════════════════
+   🔆 BRIGHTNESS TIP + FULLSCREEN BUTTON (v2 - Below QR)
+   ═══════════════════════════════════════════════════════════════ */
+.ppv-brightness-tip{display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 12px;margin-bottom:12px;background:linear-gradient(135deg,#fef3c7 0%,#fde68a 100%);border:1px solid #fbbf24;border-radius:10px;font-size:12px;color:#92400e;font-weight:500}
+.ppv-brightness-tip i{font-size:16px;color:#f59e0b}
+
+/* Fullscreen button - styled as action button below QR */
+.ppv-qr-fullscreen-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;max-width:200px;margin:12px auto;padding:12px 20px;background:linear-gradient(135deg,var(--pp-primary) 0%,var(--pp-primary-dark) 100%);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;transition:all .3s ease;box-shadow:0 4px 12px rgba(14,165,233,.25)}
+.ppv-qr-fullscreen-btn:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(14,165,233,.35)}
+.ppv-qr-fullscreen-btn:active{transform:translateY(0)}
+.ppv-qr-fullscreen-btn i{font-size:18px}
+
+/* Zoomed mode (CSS alternative to Fullscreen API - works on iOS!) */
+.ppv-user-qr.ppv-qr-zoomed{position:fixed!important;top:0!important;left:0!important;right:0!important;bottom:0!important;width:100vw!important;max-width:100vw!important;height:100vh!important;max-height:100vh!important;border-radius:0!important;margin:0!important;padding:20px!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;background:#fff!important;z-index:99999!important}
+.ppv-user-qr.ppv-qr-zoomed .ppv-qr-image{width:min(85vw,380px)!important;height:min(85vw,380px)!important}
+.ppv-user-qr.ppv-qr-zoomed .ppv-qr-close{top:15px;right:15px;width:44px;height:44px;font-size:22px}
+.ppv-user-qr.ppv-qr-zoomed .ppv-qr-instructions,.ppv-user-qr.ppv-qr-zoomed .ppv-qr-warning,.ppv-user-qr.ppv-qr-zoomed .qr-info{display:none!important}
+.ppv-user-qr.ppv-qr-zoomed .ppv-brightness-tip{display:none!important}
+.ppv-user-qr.ppv-qr-zoomed .ppv-qr-timer{margin:15px 0}
+.ppv-user-qr.ppv-qr-zoomed .ppv-qr-fullscreen-btn{margin-top:15px}
+
+/* Remove old header button styles */
+.ppv-qr-header-buttons{display:none}

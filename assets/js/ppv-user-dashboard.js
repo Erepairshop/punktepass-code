@@ -740,10 +740,8 @@ async function initUserDashboard() {
     };
 
     const closeQR = () => {
-      // Exit fullscreen if active
-      if (isFullscreen()) {
-        exitFullscreen();
-      }
+      // Reset zoomed state
+      modal.classList.remove("ppv-qr-zoomed");
 
       modal.classList.remove("show");
       overlay.classList.remove("show");
@@ -753,6 +751,12 @@ async function initUserDashboard() {
 
       // 🔅 Release brightness boost
       releaseWakeLock();
+
+      // Reset fullscreen button text
+      const fsBtn = document.getElementById("ppv-qr-fullscreen-btn");
+      if (fsBtn) {
+        fsBtn.innerHTML = '<i class="ri-fullscreen-line"></i> <span>' + (lang === 'de' ? 'Vollbild' : lang === 'hu' ? 'Teljes képernyő' : 'Ecran complet') + '</span>';
+      }
     };
 
     btn.addEventListener("click", openQR);
@@ -772,28 +776,26 @@ async function initUserDashboard() {
       });
     }
 
-    // 📺 Fullscreen button
+    // 📺 Fullscreen button - CSS zoom for iOS compatibility
     if (fullscreenBtn) {
+      let isZoomed = false;
+
       fullscreenBtn.addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();
-        if (isFullscreen()) {
-          exitFullscreen();
-          fullscreenBtn.innerHTML = '<i class="ri-fullscreen-line"></i>';
+
+        if (isZoomed) {
+          // Exit zoomed mode
+          modal.classList.remove('ppv-qr-zoomed');
+          fullscreenBtn.innerHTML = '<i class="ri-fullscreen-line"></i> <span>' + (lang === 'de' ? 'Vollbild' : lang === 'hu' ? 'Teljes képernyő' : 'Ecran complet') + '</span>';
+          isZoomed = false;
         } else {
-          enterFullscreen(modal);
-          fullscreenBtn.innerHTML = '<i class="ri-fullscreen-exit-line"></i>';
+          // Enter zoomed mode (works on iOS too!)
+          modal.classList.add('ppv-qr-zoomed');
+          fullscreenBtn.innerHTML = '<i class="ri-fullscreen-exit-line"></i> <span>' + (lang === 'de' ? 'Verkleinern' : lang === 'hu' ? 'Kicsinyítés' : 'Micșorare') + '</span>';
+          isZoomed = true;
         }
         if (navigator.vibrate) navigator.vibrate(20);
-      });
-
-      // Update button icon when fullscreen changes
-      document.addEventListener('fullscreenchange', () => {
-        if (fullscreenBtn) {
-          fullscreenBtn.innerHTML = isFullscreen()
-            ? '<i class="ri-fullscreen-exit-line"></i>'
-            : '<i class="ri-fullscreen-line"></i>';
-        }
       });
     }
 
@@ -1952,14 +1954,9 @@ async function initUserDashboard() {
         <div class="ppv-qr-overlay" id="ppv-qr-overlay"></div>
 
         <div id="ppv-user-qr" class="ppv-user-qr">
-          <div class="ppv-qr-header-buttons">
-            <button class="ppv-qr-fullscreen" id="ppv-qr-fullscreen-btn" type="button" title="Vollbild">
-              <i class="ri-fullscreen-line"></i>
-            </button>
-            <button class="ppv-qr-close" type="button">
-              <i class="ri-close-line"></i>
-            </button>
-          </div>
+          <button class="ppv-qr-close" type="button">
+            <i class="ri-close-line"></i>
+          </button>
 
           <!-- Loading State -->
           <div class="ppv-qr-loading" id="ppv-qr-loading" style="display: flex;">
@@ -1969,7 +1966,19 @@ async function initUserDashboard() {
 
           <!-- QR Display -->
           <div id="ppv-qr-display" style="display: none;">
+            <!-- Brightness Tip for Mobile -->
+            <div class="ppv-brightness-tip" id="ppv-brightness-tip">
+              <i class="ri-sun-line"></i>
+              <span>${lang === 'de' ? 'Bildschirmhelligkeit erhöhen für besseres Scannen' : lang === 'hu' ? 'Növeld a képernyő fényerejét a jobb beolvasáshoz' : 'Măriți luminozitatea ecranului pentru scanare mai bună'}</span>
+            </div>
+
             <img src="" alt="My QR Code" class="ppv-qr-image" id="ppv-qr-image">
+
+            <!-- Fullscreen Button - Below QR -->
+            <button class="ppv-qr-fullscreen-btn" id="ppv-qr-fullscreen-btn" type="button">
+              <i class="ri-fullscreen-line"></i>
+              <span>${lang === 'de' ? 'Vollbild' : lang === 'hu' ? 'Teljes képernyő' : 'Ecran complet'}</span>
+            </button>
 
             <!-- Countdown Timer -->
             <div class="ppv-qr-timer" id="ppv-qr-timer">

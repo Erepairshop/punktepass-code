@@ -302,6 +302,8 @@ return [
   'show_this_code_to_collect' => 'Arată acest cod în magazin pentru a colecta puncte.',
   'your_punktepass_qr' => 'Codul tău PunktePass QR',
   'qr_daily_limit_warning' => 'Doar 1 scanare pe zi este permisă per magazin!',
+  'brightness_tip' => 'Măriți luminozitatea ecranului pentru scanare mai bună',
+  'fullscreen' => 'Ecran complet',
   'stores_near_you' => 'Magazine în apropiere',
   'store_list_auto_update' => 'Lista se actualizează automat în funcție de poziția ta.' ,
   // === MyPoints REST-kompatibilis kulcsok (română) ===

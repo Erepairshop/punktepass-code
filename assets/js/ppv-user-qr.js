@@ -196,28 +196,26 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  // 📺 Fullscreen button handler
+  // 📺 Fullscreen button handler - CSS zoom for iOS compatibility
   const fullscreenBtn = document.getElementById("ppvQrFullscreenBtn");
   if (fullscreenBtn) {
+    let isZoomed = false;
+
     fullscreenBtn.addEventListener("click", (e) => {
       e.preventDefault();
-      if (isFullscreen()) {
-        exitFullscreen();
-        fullscreenBtn.innerHTML = '<i class="ri-fullscreen-line"></i>';
+
+      if (isZoomed) {
+        // Exit zoomed mode
+        qrBox.classList.remove('ppv-qr-zoomed');
+        fullscreenBtn.innerHTML = '<i class="ri-fullscreen-line"></i> <span>Vollbild</span>';
+        isZoomed = false;
       } else {
-        enterFullscreen(qrBox);
-        fullscreenBtn.innerHTML = '<i class="ri-fullscreen-exit-line"></i>';
+        // Enter zoomed mode (works on iOS too!)
+        qrBox.classList.add('ppv-qr-zoomed');
+        fullscreenBtn.innerHTML = '<i class="ri-fullscreen-exit-line"></i> <span>Verkleinern</span>';
+        isZoomed = true;
       }
       if (navigator.vibrate) navigator.vibrate(20);
-    });
-
-    // Update button icon when fullscreen changes
-    document.addEventListener('fullscreenchange', () => {
-      if (fullscreenBtn) {
-        fullscreenBtn.innerHTML = isFullscreen()
-          ? '<i class="ri-fullscreen-exit-line"></i>'
-          : '<i class="ri-fullscreen-line"></i>';
-      }
     });
   }
 
