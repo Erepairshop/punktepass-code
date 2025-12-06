@@ -201,22 +201,31 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (fullscreenBtn) {
     let isZoomed = false;
 
-    fullscreenBtn.addEventListener("click", (e) => {
+    const toggleZoom = (e) => {
       e.preventDefault();
+      e.stopPropagation();
 
       if (isZoomed) {
         // Exit zoomed mode
         qrBox.classList.remove('ppv-qr-zoomed');
+        document.body.style.overflow = '';
         fullscreenBtn.innerHTML = '<i class="ri-fullscreen-line"></i> <span>Vollbild</span>';
         isZoomed = false;
       } else {
         // Enter zoomed mode (works on iOS too!)
         qrBox.classList.add('ppv-qr-zoomed');
+        document.body.style.overflow = 'hidden';
         fullscreenBtn.innerHTML = '<i class="ri-fullscreen-exit-line"></i> <span>Verkleinern</span>';
         isZoomed = true;
       }
       if (navigator.vibrate) navigator.vibrate(20);
-    });
+    };
+
+    // Both click and touchend for iOS compatibility
+    fullscreenBtn.addEventListener("click", toggleZoom);
+    fullscreenBtn.addEventListener("touchend", toggleZoom);
+  } else {
+    console.warn('Fullscreen button not found: ppvQrFullscreenBtn');
   }
 
   // 🔆 Activate Wake Lock to keep screen bright
