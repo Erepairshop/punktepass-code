@@ -92,3 +92,8 @@ div.ppv-user-qr.ppv-qr-zoomed{
    ═══════════════════════════════════════════════════════════════ */
 .ppv-store-slogan{font-size:12px;font-weight:500;color:var(--pp-text-3);margin:0 0 6px;font-style:italic;line-height:1.3;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 .ppv-store-card-enhanced:hover .ppv-store-slogan{color:var(--pp-text-2)}
+
+/* ═══════════════════════════════════════════════════════════════
+   📱 QR ICON FIX - Same size/animation in all modes
+   ═══════════════════════════════════════════════════════════════ */
+.ppv-qr-text i{font-size:48px!important;background:linear-gradient(135deg,#00d4ff 0,#00a8cc 50%,#0088a8 100%)!important;-webkit-background-clip:text!important;-webkit-text-fill-color:transparent!important;background-clip:text!important;filter:drop-shadow(0 4px 12px rgba(0, 168, 204, .35))!important;animation:qrIconFloat 3s ease-in-out infinite!important}
