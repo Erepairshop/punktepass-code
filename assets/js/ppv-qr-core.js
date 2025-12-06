@@ -249,26 +249,36 @@
   function preloadSounds() {
     try {
       const baseUrl = window.PPV_ASSETS_URL || '/wp-content/plugins/punktepass/assets';
+      console.log('[PPV Sound] Preloading from:', baseUrl);
       SOUNDS.success = new Audio(`${baseUrl}/sounds/scan-beep.wav`);
       SOUNDS.error = new Audio(`${baseUrl}/sounds/error.mp3`);
       SOUNDS.reward = new Audio(`${baseUrl}/sounds/aesome-notify-351946.mp3`);
       SOUNDS.success.load();
       SOUNDS.error.load();
       SOUNDS.reward.load();
-      ppvLog('[Sound] Sounds preloaded');
+      console.log('[PPV Sound] Reward sound URL:', SOUNDS.reward.src);
+      ppvLog('[Sound] Sounds preloaded (success, error, reward)');
     } catch (e) {
+      console.error('[PPV Sound] Preload error:', e);
       ppvWarn('[Sound] Failed to preload sounds:', e);
     }
   }
 
   function playSound(type) {
     try {
+      console.log('[PPV Sound] Playing:', type, 'Available:', Object.keys(SOUNDS).filter(k => SOUNDS[k]));
       const sound = SOUNDS[type];
       if (sound) {
         sound.currentTime = 0;
-        sound.play().catch(() => {});
+        sound.play().catch((err) => {
+          console.warn('[PPV Sound] Play failed:', type, err);
+        });
+      } else {
+        console.warn('[PPV Sound] Sound not found:', type);
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error('[PPV Sound] Error:', e);
+    }
   }
 
   // ============================================================
