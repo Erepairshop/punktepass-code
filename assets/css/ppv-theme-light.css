@@ -124,3 +124,21 @@ table#ppv-pos-log {
   background: transparent !important;
 }
 
+
+
+/* Remove inner card borders from device list - keep only outer container border */
+.ppv-device-card,
+.ppv-device-card.glass-card {
+  border: none !important;
+  box-shadow: none !important;
+  border-left: 4px solid #4caf50 !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  margin-bottom: 0 !important;
+  padding: 15px 15px 15px 20px !important;
+}
+
+.ppv-device-card + .ppv-device-card {
+  border-top: 1px solid rgba(0,168,204,0.1) !important;
+}
+
