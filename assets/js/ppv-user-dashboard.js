@@ -129,6 +129,7 @@ window.PPV_TRANSLATIONS = window.PPV_TRANSLATIONS || {
     qr_new_generated: "Neuer QR-Code (30 Min)",
     reward_valid_until: "Gültig bis:",
     points_unit: "Punkte",
+    geo_denied_tip: "📍 Standort aktivieren für Entfernungen",
   },
   hu: {
     welcome: "Üdv a PunktePassban",
@@ -190,6 +191,7 @@ window.PPV_TRANSLATIONS = window.PPV_TRANSLATIONS || {
     qr_new_generated: "Új QR-kód (30 perc)",
     reward_valid_until: "Érvényes:",
     points_unit: "pont",
+    geo_denied_tip: "📍 Engedélyezd a helymeghatározást a távolságokhoz",
   },
   ro: {
     welcome: "Bun venit la PunktePass",
@@ -251,6 +253,7 @@ window.PPV_TRANSLATIONS = window.PPV_TRANSLATIONS || {
     qr_new_generated: "Cod QR nou (30 min)",
     reward_valid_until: "Valid până:",
     points_unit: "puncte",
+    geo_denied_tip: "📍 Activează locația pentru distanțe",
   }
 };
 
@@ -1878,6 +1881,8 @@ async function initUserDashboard() {
         },
         (err) => {
           clearTimeout(timeout);
+          // Track if permission denied for tip display
+          if (err.code === 1) window.PPV_GEO_DENIED = true;
           resolve(null);
         },
         { timeout: geoTimeoutMs, maximumAge: 600000, enableHighAccuracy: false }
@@ -1931,11 +1936,16 @@ async function initUserDashboard() {
   // ✅ FIX: Always use saved distance from localStorage (PPV_CURRENT_DISTANCE)
   const renderStoreList = (box, stores, userLat, userLng, preserveSliderValue = false) => {
     const currentDistance = window.PPV_CURRENT_DISTANCE || 10; // 📌 Always use saved preference
+    // 📍 Geo denied tip (compact)
+    const geoTipHTML = (!userLat && !userLng && window.PPV_GEO_DENIED)
+      ? `<div class="ppv-geo-tip">${T.geo_denied_tip}</div>`
+      : '';
     const sliderHTML = `
       <div class="ppv-distance-filter">
         <label><i class="ri-ruler-line"></i> ${T.distance_label}: <span id="ppv-distance-value">${currentDistance}</span> km</label>
         <input type="range" id="ppv-distance-slider" min="10" max="1000" value="${currentDistance}" step="10">
         <div class="ppv-distance-labels"><span>10 km</span><span>1000 km</span></div>
+        ${geoTipHTML}
       </div>
     `;
     box.innerHTML = sliderHTML + stores.map(renderStoreCard).join('');

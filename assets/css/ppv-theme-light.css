@@ -97,3 +97,6 @@ div.ppv-user-qr.ppv-qr-zoomed{
    📱 QR ICON FIX - Same size/animation in all modes
    ═══════════════════════════════════════════════════════════════ */
 .ppv-qr-text i{font-size:48px!important;background:linear-gradient(135deg,#00d4ff 0,#00a8cc 50%,#0088a8 100%)!important;-webkit-background-clip:text!important;-webkit-text-fill-color:transparent!important;background-clip:text!important;filter:drop-shadow(0 4px 12px rgba(0, 168, 204, .35))!important;animation:qrIconFloat 3s ease-in-out infinite!important}
+
+/* 📍 Geo denied tip */
+.ppv-geo-tip{margin-top:10px;padding:8px 12px;font-size:12px;color:var(--pp-warning);background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);border-radius:8px;text-align:center}
