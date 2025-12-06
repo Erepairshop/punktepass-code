@@ -479,9 +479,37 @@
     /**
      * Get device fingerprint with components for similarity matching
      * Returns { visitorId, components } or null
+     *
+     * Uses localStorage caching to ensure fingerprint stability across app restarts
+     * (especially important for TWA/APK on Android devices)
      */
     async getDeviceFingerprintFull() {
+      const CACHE_KEY = 'ppv_device_fingerprint';
+      const CACHE_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days
+
       try {
+        // Check localStorage cache first
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) {
+          try {
+            const parsedCache = JSON.parse(cached);
+            const cacheAge = Date.now() - (parsedCache.timestamp || 0);
+
+            // Use cached fingerprint if not expired
+            if (cacheAge < CACHE_TTL && parsedCache.visitorId) {
+              ppvLog('[Scanner] Using cached fingerprint (age: ' + Math.round(cacheAge / 1000 / 60) + ' min)');
+              return {
+                visitorId: parsedCache.visitorId,
+                components: parsedCache.components || null
+              };
+            }
+          } catch (parseErr) {
+            // Invalid cache, will regenerate
+            ppvLog('[Scanner] Invalid fingerprint cache, regenerating...');
+          }
+        }
+
+        // Generate new fingerprint
         if (window.FingerprintJS) {
           const fp = await FingerprintJS.load();
           const result = await fp.get();
@@ -498,6 +526,19 @@
               }
             }
           }
+
+          // Cache the fingerprint in localStorage
+          try {
+            localStorage.setItem(CACHE_KEY, JSON.stringify({
+              visitorId: result.visitorId,
+              components: components,
+              timestamp: Date.now()
+            }));
+            ppvLog('[Scanner] Fingerprint cached in localStorage');
+          } catch (cacheErr) {
+            ppvWarn('[Scanner] Could not cache fingerprint:', cacheErr);
+          }
+
           return { visitorId: result.visitorId, components };
         }
 
@@ -515,14 +556,35 @@
           hash2 = ((hash2 << 7) - hash2) + data.charCodeAt(i);
           hash2 = hash2 & hash2;
         }
+        const fallbackId = 'fp_' + Math.abs(hash1).toString(16).padStart(8, '0') + Math.abs(hash2).toString(16).padStart(8, '0');
+
+        // Cache fallback fingerprint too
+        try {
+          localStorage.setItem(CACHE_KEY, JSON.stringify({
+            visitorId: fallbackId,
+            components: null,
+            timestamp: Date.now()
+          }));
+        } catch (cacheErr) {}
+
         return {
-          visitorId: 'fp_' + Math.abs(hash1).toString(16).padStart(8, '0') + Math.abs(hash2).toString(16).padStart(8, '0'),
+          visitorId: fallbackId,
           components: null
         };
       } catch (e) {
         ppvWarn('[Scanner] Fingerprint error:', e);
         return null;
       }
+    }
+
+    /**
+     * Clear cached fingerprint (call when device is re-registered)
+     */
+    clearCachedFingerprint() {
+      try {
+        localStorage.removeItem('ppv_device_fingerprint');
+        ppvLog('[Scanner] Fingerprint cache cleared');
+      } catch (e) {}
     }
 
     // Legacy method for backwards compatibility
