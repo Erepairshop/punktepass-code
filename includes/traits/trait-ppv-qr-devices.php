@@ -281,8 +281,32 @@ trait PPV_QR_Devices_Trait {
             }
 
             // Get device fingerprint (must be at least 16 chars for PHP validation)
+            // Uses localStorage cache to ensure same fingerprint as scanner
+            const FP_CACHE_KEY = 'ppv_device_fingerprint';
+            const FP_CACHE_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days
+
             async function getDeviceFingerprint() {
                 try {
+                    // Check localStorage cache first (same as scanner)
+                    const cached = localStorage.getItem(FP_CACHE_KEY);
+                    if (cached) {
+                        try {
+                            const parsedCache = JSON.parse(cached);
+                            const cacheAge = Date.now() - (parsedCache.timestamp || 0);
+                            if (cacheAge < FP_CACHE_TTL && parsedCache.visitorId) {
+                                console.log('[Devices] Using cached fingerprint (age: ' + Math.round(cacheAge / 1000 / 60) + ' min)');
+                                // Still extract device info from cache if available
+                                if (parsedCache.components) {
+                                    currentDeviceInfo = parsedCache.components;
+                                }
+                                return parsedCache.visitorId;
+                            }
+                        } catch (parseErr) {
+                            console.log('[Devices] Invalid fingerprint cache, regenerating...');
+                        }
+                    }
+
+                    // Generate new fingerprint
                     if (window.FingerprintJS) {
                         const fp = await FingerprintJS.load();
                         const result = await fp.get();
@@ -290,6 +314,18 @@ trait PPV_QR_Devices_Trait {
                         // 📱 Tároljuk a készülék infókat
                         currentDeviceInfo = extractDeviceInfo(result.components);
                         console.log('[Devices] 📱 Device info collected:', currentDeviceInfo);
+
+                        // Cache the fingerprint (shared with scanner)
+                        try {
+                            localStorage.setItem(FP_CACHE_KEY, JSON.stringify({
+                                visitorId: result.visitorId,
+                                components: currentDeviceInfo,
+                                timestamp: Date.now()
+                            }));
+                            console.log('[Devices] Fingerprint cached in localStorage');
+                        } catch (cacheErr) {
+                            console.warn('[Devices] Could not cache fingerprint:', cacheErr);
+                        }
 
                         return result.visitorId;
                     }
@@ -308,7 +344,18 @@ trait PPV_QR_Devices_Trait {
                         hash2 = ((hash2 << 7) - hash2) + data.charCodeAt(i);
                         hash2 = hash2 & hash2;
                     }
-                    return 'fp_' + Math.abs(hash1).toString(16).padStart(8, '0') + Math.abs(hash2).toString(16).padStart(8, '0');
+                    const fallbackId = 'fp_' + Math.abs(hash1).toString(16).padStart(8, '0') + Math.abs(hash2).toString(16).padStart(8, '0');
+
+                    // Cache fallback fingerprint too
+                    try {
+                        localStorage.setItem(FP_CACHE_KEY, JSON.stringify({
+                            visitorId: fallbackId,
+                            components: null,
+                            timestamp: Date.now()
+                        }));
+                    } catch (cacheErr) {}
+
+                    return fallbackId;
                 } catch (e) {
                     console.error('[Devices] Fingerprint error:', e);
                     return null;
