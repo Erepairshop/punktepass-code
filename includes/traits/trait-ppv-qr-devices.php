@@ -139,7 +139,7 @@ trait PPV_QR_Devices_Trait {
                             </div>
                             <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 15px; flex-wrap: wrap;">
                                 <div style="flex: 1; min-width: 200px;">
-                                    <div style="font-weight: bold; font-size: 16px; margin-bottom: 5px; color: #fff; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                    <div style="font-weight: bold; font-size: 16px; margin-bottom: 5px; color: #1a1a2e; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                                         <?php echo esc_html($device_type['icon']); ?> <?php echo esc_html($device->device_name ?: $device_type['name']); ?>
                                         <?php if ($is_mobile_scanner): ?>
                                         <span style="background: linear-gradient(135deg, #9c27b0, #673ab7); color: white; padding: 3px 10px; border-radius: 10px; font-size: 11px; font-weight: normal;">
