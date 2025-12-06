@@ -621,25 +621,6 @@
     async startQrScanner() {
       if (!this.readerDiv || !window.QrScanner) return;
 
-      // Add CSS to maximize scan region overlay
-      if (!document.getElementById('ppv-scan-region-style')) {
-        const style = document.createElement('style');
-        style.id = 'ppv-scan-region-style';
-        style.textContent = `
-          .scan-region-highlight {
-            width: 95% !important;
-            height: 95% !important;
-            left: 2.5% !important;
-            top: 2.5% !important;
-          }
-          .scan-region-highlight-svg {
-            width: 100% !important;
-            height: 100% !important;
-          }
-        `;
-        document.head.appendChild(style);
-      }
-
       try {
         let videoEl = this.readerDiv.querySelector('video');
         if (!videoEl) {
@@ -653,17 +634,8 @@
           maxScansPerSecond: 5, // Reduced for better performance on entry-level phones (Xiaomi Redmi A5)
           highlightScanRegion: true,
           highlightCodeOutline: true,
-          returnDetailedScanResult: true,
-          // Scan 95% of video for maximum coverage
-          calculateScanRegion: (video) => {
-            const size = Math.min(video.videoWidth, video.videoHeight) * 0.95;
-            return {
-              x: (video.videoWidth - size) / 2,
-              y: (video.videoHeight - size) / 2,
-              width: size,
-              height: size
-            };
-          }
+          returnDetailedScanResult: true
+          // Note: No calculateScanRegion = scan full video frame
         };
 
         this.scanner = new QrScanner(
@@ -676,15 +648,6 @@
 
         await this.scanner.start();
         ppvLog('[Camera] QrScanner started successfully');
-
-        // 🔲 Maximize scan region overlay (override library inline styles)
-        setTimeout(() => {
-          const overlay = this.readerDiv.querySelector('.scan-region-highlight');
-          if (overlay) {
-            overlay.style.cssText = 'position:absolute;width:95%!important;height:95%!important;left:2.5%!important;top:2.5%!important;pointer-events:none;';
-            ppvLog('[Camera] Scan region overlay maximized to 95%');
-          }
-        }, 100);
 
         try {
           const stream = videoEl.srcObject;
