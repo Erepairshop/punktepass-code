@@ -889,7 +889,12 @@
 
             this.startPauseCountdown();
           } else {
-            playSound('error');
+            // 🎁 If user has rewards available, play reward sound instead of error
+            if (data.has_rewards || data.redemption_prompt) {
+              playSound('reward');
+            } else {
+              playSound('error');
+            }
             this.updateStatus('warning', '⚠️ ' + (data.message || L.error_generic || 'Fehler'));
             window.ppvToast(data.message || '⚠️ Fehler', 'warning');
 
