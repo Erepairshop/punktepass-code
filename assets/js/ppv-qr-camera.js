@@ -1201,16 +1201,16 @@
 
           <div class="ppv-insights-stats">
             <div class="ppv-insights-stat">
-              <div class="ppv-stat-value">${visitCount}×</div>
-              <div class="ppv-stat-label">Besuche</div>
+              <div class="ppv-stat-value" style="color:#fff!important;font-size:22px;font-weight:800">${visitCount}×</div>
+              <div class="ppv-stat-label" style="color:#e5e7eb!important;font-size:11px">Besuche</div>
             </div>
             <div class="ppv-insights-stat">
-              <div class="ppv-stat-value">${currentPoints}</div>
-              <div class="ppv-stat-label">Punkte</div>
+              <div class="ppv-stat-value" style="color:#fff!important;font-size:22px;font-weight:800">${currentPoints}</div>
+              <div class="ppv-stat-label" style="color:#e5e7eb!important;font-size:11px">Punkte</div>
             </div>
             <div class="ppv-insights-stat">
-              <div class="ppv-stat-value">${insights.avg_frequency_days || '—'}</div>
-              <div class="ppv-stat-label">Ø Tage</div>
+              <div class="ppv-stat-value" style="color:#fff!important;font-size:22px;font-weight:800">${insights.avg_frequency_days || '—'}</div>
+              <div class="ppv-stat-label" style="color:#e5e7eb!important;font-size:11px">Ø Tage</div>
             </div>
           </div>
 
