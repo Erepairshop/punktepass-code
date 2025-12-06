@@ -635,9 +635,9 @@
           highlightScanRegion: true,
           highlightCodeOutline: true,
           returnDetailedScanResult: true,
-          // Scan center 60% of video for faster processing
+          // Scan 95% of video for maximum coverage
           calculateScanRegion: (video) => {
-            const size = Math.min(video.videoWidth, video.videoHeight) * 0.6;
+            const size = Math.min(video.videoWidth, video.videoHeight) * 0.95;
             return {
               x: (video.videoWidth - size) / 2,
               y: (video.videoHeight - size) / 2,
