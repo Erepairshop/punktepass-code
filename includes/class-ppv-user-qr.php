@@ -135,6 +135,11 @@ class PPV_User_QR {
 
         ob_start(); ?>
         <div class="ppv-user-qr glass-card" data-user-id="<?php echo esc_attr($user_id); ?>">
+            <div class="ppv-qr-header-buttons">
+                <button class="ppv-qr-fullscreen" id="ppvQrFullscreenBtn" type="button" title="Vollbild">
+                    <i class="ri-fullscreen-line"></i>
+                </button>
+            </div>
             <h2>🎟️ <?php echo esc_html(PPV_Lang::t('your_punktepass_qr')); ?></h2>
 
             <div class="ppv-qr-warning">

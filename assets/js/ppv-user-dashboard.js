@@ -659,7 +659,53 @@ async function initUserDashboard() {
 
   // ✅ FIX: Store globally for cleanup on navigation
   window.PPV_QR_COUNTDOWN_INTERVAL = null;
+  window.PPV_WAKE_LOCK = null;
   let qrExpiresAt = null;
+
+  // 🔆 BRIGHTNESS BOOST - Wake Lock API (prevents screen dimming)
+  const requestWakeLock = async () => {
+    try {
+      if ('wakeLock' in navigator) {
+        window.PPV_WAKE_LOCK = await navigator.wakeLock.request('screen');
+        console.log('🔆 Wake Lock activated - screen stays bright');
+      }
+    } catch (e) {
+      console.log('Wake Lock not available:', e.message);
+    }
+  };
+
+  const releaseWakeLock = () => {
+    if (window.PPV_WAKE_LOCK) {
+      window.PPV_WAKE_LOCK.release();
+      window.PPV_WAKE_LOCK = null;
+      console.log('🔅 Wake Lock released');
+    }
+  };
+
+  // 📺 FULLSCREEN API
+  const enterFullscreen = (element) => {
+    if (element.requestFullscreen) {
+      element.requestFullscreen();
+    } else if (element.webkitRequestFullscreen) {
+      element.webkitRequestFullscreen(); // iOS Safari
+    } else if (element.msRequestFullscreen) {
+      element.msRequestFullscreen();
+    }
+  };
+
+  const exitFullscreen = () => {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    } else if (document.webkitExitFullscreen) {
+      document.webkitExitFullscreen(); // iOS Safari
+    } else if (document.msExitFullscreen) {
+      document.msExitFullscreen();
+    }
+  };
+
+  const isFullscreen = () => {
+    return !!(document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement);
+  };
 
   const initQRToggle = () => {
     const btn = document.querySelector(".ppv-btn-qr");
@@ -667,6 +713,7 @@ async function initUserDashboard() {
     const overlay = document.getElementById("ppv-qr-overlay");
     const closeBtn = document.querySelector(".ppv-qr-close");
     const refreshBtn = document.getElementById("ppv-qr-refresh-btn");
+    const fullscreenBtn = document.getElementById("ppv-qr-fullscreen-btn");
 
     if (!btn || !modal || !overlay) {
       console.warn("⚠️ [QR] Elements not found");
@@ -685,16 +732,27 @@ async function initUserDashboard() {
       if (navigator.vibrate) navigator.vibrate(30);
       modal.offsetHeight;
 
+      // 🔆 Activate brightness boost (Wake Lock)
+      await requestWakeLock();
+
       // Load timed QR on open
       await loadTimedQR();
     };
 
     const closeQR = () => {
+      // Exit fullscreen if active
+      if (isFullscreen()) {
+        exitFullscreen();
+      }
+
       modal.classList.remove("show");
       overlay.classList.remove("show");
       document.body.classList.remove("qr-modal-open");
       document.body.style.overflow = "";
       if (navigator.vibrate) navigator.vibrate(10);
+
+      // 🔅 Release brightness boost
+      releaseWakeLock();
     };
 
     btn.addEventListener("click", openQR);
@@ -714,8 +772,40 @@ async function initUserDashboard() {
       });
     }
 
+    // 📺 Fullscreen button
+    if (fullscreenBtn) {
+      fullscreenBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (isFullscreen()) {
+          exitFullscreen();
+          fullscreenBtn.innerHTML = '<i class="ri-fullscreen-line"></i>';
+        } else {
+          enterFullscreen(modal);
+          fullscreenBtn.innerHTML = '<i class="ri-fullscreen-exit-line"></i>';
+        }
+        if (navigator.vibrate) navigator.vibrate(20);
+      });
+
+      // Update button icon when fullscreen changes
+      document.addEventListener('fullscreenchange', () => {
+        if (fullscreenBtn) {
+          fullscreenBtn.innerHTML = isFullscreen()
+            ? '<i class="ri-fullscreen-exit-line"></i>'
+            : '<i class="ri-fullscreen-line"></i>';
+        }
+      });
+    }
+
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && modal.classList.contains("show")) closeQR();
+    });
+
+    // Re-acquire wake lock if it gets released (e.g., tab visibility change)
+    document.addEventListener('visibilitychange', async () => {
+      if (document.visibilityState === 'visible' && modal.classList.contains("show")) {
+        await requestWakeLock();
+      }
     });
 
   };
@@ -1862,9 +1952,14 @@ async function initUserDashboard() {
         <div class="ppv-qr-overlay" id="ppv-qr-overlay"></div>
 
         <div id="ppv-user-qr" class="ppv-user-qr">
-          <button class="ppv-qr-close" type="button">
-            <i class="ri-close-line"></i>
-          </button>
+          <div class="ppv-qr-header-buttons">
+            <button class="ppv-qr-fullscreen" id="ppv-qr-fullscreen-btn" type="button" title="Vollbild">
+              <i class="ri-fullscreen-line"></i>
+            </button>
+            <button class="ppv-qr-close" type="button">
+              <i class="ri-close-line"></i>
+            </button>
+          </div>
 
           <!-- Loading State -->
           <div class="ppv-qr-loading" id="ppv-qr-loading" style="display: flex;">

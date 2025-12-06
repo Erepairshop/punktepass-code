@@ -69,6 +69,56 @@ function generateQRCodeDataURL(text, size = 300) {
 let countdownInterval = null;
 let expiresAt = null;
 let currentUserId = null;
+let wakeLock = null;
+
+// ═══════════════════════════════════════════════════════════════
+// 🔆 BRIGHTNESS BOOST - Wake Lock API (prevents screen dimming)
+// ═══════════════════════════════════════════════════════════════
+async function requestWakeLock() {
+  try {
+    if ('wakeLock' in navigator) {
+      wakeLock = await navigator.wakeLock.request('screen');
+      console.log('🔆 Wake Lock activated - screen stays bright');
+    }
+  } catch (e) {
+    console.log('Wake Lock not available:', e.message);
+  }
+}
+
+function releaseWakeLock() {
+  if (wakeLock) {
+    wakeLock.release();
+    wakeLock = null;
+    console.log('🔅 Wake Lock released');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 📺 FULLSCREEN API
+// ═══════════════════════════════════════════════════════════════
+function enterFullscreen(element) {
+  if (element.requestFullscreen) {
+    element.requestFullscreen();
+  } else if (element.webkitRequestFullscreen) {
+    element.webkitRequestFullscreen(); // iOS Safari
+  } else if (element.msRequestFullscreen) {
+    element.msRequestFullscreen();
+  }
+}
+
+function exitFullscreen() {
+  if (document.exitFullscreen) {
+    document.exitFullscreen();
+  } else if (document.webkitExitFullscreen) {
+    document.webkitExitFullscreen(); // iOS Safari
+  } else if (document.msExitFullscreen) {
+    document.msExitFullscreen();
+  }
+}
+
+function isFullscreen() {
+  return !!(document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement);
+}
 
 document.addEventListener("DOMContentLoaded", async () => {
   const qrBox = document.querySelector(".ppv-user-qr");
@@ -145,6 +195,41 @@ document.addEventListener("DOMContentLoaded", async () => {
       showStatus("📋 QR-Code kopiert!", "success");
     });
   }
+
+  // 📺 Fullscreen button handler
+  const fullscreenBtn = document.getElementById("ppvQrFullscreenBtn");
+  if (fullscreenBtn) {
+    fullscreenBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (isFullscreen()) {
+        exitFullscreen();
+        fullscreenBtn.innerHTML = '<i class="ri-fullscreen-line"></i>';
+      } else {
+        enterFullscreen(qrBox);
+        fullscreenBtn.innerHTML = '<i class="ri-fullscreen-exit-line"></i>';
+      }
+      if (navigator.vibrate) navigator.vibrate(20);
+    });
+
+    // Update button icon when fullscreen changes
+    document.addEventListener('fullscreenchange', () => {
+      if (fullscreenBtn) {
+        fullscreenBtn.innerHTML = isFullscreen()
+          ? '<i class="ri-fullscreen-exit-line"></i>'
+          : '<i class="ri-fullscreen-line"></i>';
+      }
+    });
+  }
+
+  // 🔆 Activate Wake Lock to keep screen bright
+  requestWakeLock();
+
+  // Re-acquire wake lock if it gets released (e.g., tab visibility change)
+  document.addEventListener('visibilitychange', async () => {
+    if (document.visibilityState === 'visible') {
+      await requestWakeLock();
+    }
+  });
 });
 
 // ═══════════════════════════════════════════════════════════════
