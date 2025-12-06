@@ -130,6 +130,7 @@ window.PPV_TRANSLATIONS = window.PPV_TRANSLATIONS || {
     reward_valid_until: "Gültig bis:",
     points_unit: "Punkte",
     geo_denied_tip: "📍 Standort aktivieren für Entfernungen",
+    load_more_stores: "Weitere Geschäfte laden",
   },
   hu: {
     welcome: "Üdv a PunktePassban",
@@ -192,6 +193,7 @@ window.PPV_TRANSLATIONS = window.PPV_TRANSLATIONS || {
     reward_valid_until: "Érvényes:",
     points_unit: "pont",
     geo_denied_tip: "📍 Engedélyezd a helymeghatározást a távolságokhoz",
+    load_more_stores: "További üzletek betöltése",
   },
   ro: {
     welcome: "Bun venit la PunktePass",
@@ -254,6 +256,7 @@ window.PPV_TRANSLATIONS = window.PPV_TRANSLATIONS || {
     reward_valid_until: "Valid până:",
     points_unit: "puncte",
     geo_denied_tip: "📍 Activează locația pentru distanțe",
+    load_more_stores: "Încarcă mai multe magazine",
   }
 };
 
@@ -1724,20 +1727,10 @@ async function initUserDashboard() {
           const res = await fetch(newUrl);
           const newStores = await res.json();
 
-          const dynamicSliderHTML = `
-            <div class="ppv-distance-filter">
-              <label><i class="ri-ruler-line"></i> ${T.distance_label}: <span id="ppv-distance-value">${newDistance}</span> km</label>
-              <input type="range" id="ppv-distance-slider" min="10" max="1000" value="${newDistance}" step="10">
-              <div class="ppv-distance-labels"><span>10 km</span><span>1000 km</span></div>
-            </div>
-          `;
-
-          const storeCards = newStores.map(renderStoreCard).join('');
+          // 📦 Use renderStoreList for consistent pagination
           const storeListDiv = document.getElementById('ppv-store-list');
           if (storeListDiv) {
-            storeListDiv.innerHTML = dynamicSliderHTML + storeCards;
-            // ✅ FIX: Only attach store listeners, route is already handled there
-            attachStoreListeners();
+            renderStoreList(storeListDiv, newStores, userLat, userLng, true);
           }
 
         } catch (err) {
@@ -1934,7 +1927,15 @@ async function initUserDashboard() {
 
   // Helper function to render store list (avoids duplicate code)
   // ✅ FIX: Always use saved distance from localStorage (PPV_CURRENT_DISTANCE)
+  // 📦 PAGINATION: Show max 20 stores at a time with "Load more" button
+  const STORES_PER_PAGE = 20;
+  let allStores = [];
+  let displayedCount = 0;
+
   const renderStoreList = (box, stores, userLat, userLng, preserveSliderValue = false) => {
+    allStores = stores;
+    displayedCount = 0;
+
     const currentDistance = window.PPV_CURRENT_DISTANCE || 10; // 📌 Always use saved preference
     // 📍 Geo denied tip (compact)
     const geoTipHTML = (!userLat && !userLng && window.PPV_GEO_DENIED)
@@ -1948,9 +1949,41 @@ async function initUserDashboard() {
         ${geoTipHTML}
       </div>
     `;
-    box.innerHTML = sliderHTML + stores.map(renderStoreCard).join('');
+
+    // Show first batch of stores
+    const firstBatch = stores.slice(0, STORES_PER_PAGE);
+    displayedCount = firstBatch.length;
+
+    const loadMoreHTML = stores.length > STORES_PER_PAGE
+      ? `<button class="ppv-load-more-btn" id="ppv-load-more"><i class="ri-add-line"></i> ${T.load_more_stores}</button>`
+      : '';
+
+    box.innerHTML = sliderHTML +
+      `<div id="ppv-stores-container">${firstBatch.map(renderStoreCard).join('')}</div>` +
+      loadMoreHTML;
+
     initDistanceSlider(sliderHTML, userLat, userLng, currentDistance);
     attachStoreListeners();
+
+    // Attach load more handler
+    const loadMoreBtn = document.getElementById('ppv-load-more');
+    if (loadMoreBtn) {
+      loadMoreBtn.addEventListener('click', () => {
+        const nextBatch = allStores.slice(displayedCount, displayedCount + STORES_PER_PAGE);
+        displayedCount += nextBatch.length;
+
+        const container = document.getElementById('ppv-stores-container');
+        if (container) {
+          container.insertAdjacentHTML('beforeend', nextBatch.map(renderStoreCard).join(''));
+          attachStoreListeners();
+        }
+
+        // Hide button if no more stores
+        if (displayedCount >= allStores.length) {
+          loadMoreBtn.style.display = 'none';
+        }
+      });
+    }
   };
 
   // ============================================================
