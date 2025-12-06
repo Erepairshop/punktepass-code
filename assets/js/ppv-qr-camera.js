@@ -677,6 +677,15 @@
         await this.scanner.start();
         ppvLog('[Camera] QrScanner started successfully');
 
+        // 🔲 Maximize scan region overlay (override library inline styles)
+        setTimeout(() => {
+          const overlay = this.readerDiv.querySelector('.scan-region-highlight');
+          if (overlay) {
+            overlay.style.cssText = 'position:absolute;width:95%!important;height:95%!important;left:2.5%!important;top:2.5%!important;pointer-events:none;';
+            ppvLog('[Camera] Scan region overlay maximized to 95%');
+          }
+        }, 100);
+
         try {
           const stream = videoEl.srcObject;
           if (stream) {
