@@ -42,10 +42,6 @@
       this.torchOn = false;
       this.videoTrack = null;
       this.refocusInterval = null;
-      // NFC support
-      this.nfcReader = null;
-      this.nfcSupported = 'NDEFReader' in window;
-      this.nfcAbortController = null;
     }
 
     init() {
@@ -181,64 +177,6 @@
         this.refocusInterval = null;
         ppvLog('[Camera] Periodic refocus stopped');
       }
-    }
-
-    // ============================================================
-    // NFC SUPPORT (Phone-to-Phone)
-    // ============================================================
-    async startNfcReader() {
-      if (!this.nfcSupported) {
-        ppvLog('[NFC] Not supported in this browser');
-        return;
-      }
-
-      try {
-        this.nfcReader = new NDEFReader();
-        this.nfcAbortController = new AbortController();
-
-        await this.nfcReader.scan({ signal: this.nfcAbortController.signal });
-
-        this.nfcReader.addEventListener('reading', ({ message }) => {
-          for (const record of message.records) {
-            if (record.recordType === 'text') {
-              const decoder = new TextDecoder(record.encoding || 'utf-8');
-              const data = decoder.decode(record.data);
-
-              // Check if it's a PunktePass NFC message (ppv:QRCODE)
-              if (data.startsWith('ppv:')) {
-                const qrCode = data.substring(4); // Remove 'ppv:' prefix
-                ppvLog('[NFC] 📡 Received PunktePass data:', qrCode);
-                this.onScanSuccess(qrCode);
-              }
-            }
-          }
-        });
-
-        this.nfcReader.addEventListener('readingerror', () => {
-          ppvWarn('[NFC] Reading error');
-        });
-
-        ppvLog('[NFC] 📡 NFC reader started - waiting for tap');
-        window.ppvToast('📡 NFC aktív - érintsd oda a telefont!', 'info');
-
-      } catch (e) {
-        if (e.name === 'NotAllowedError') {
-          ppvLog('[NFC] Permission denied');
-        } else if (e.name === 'NotSupportedError') {
-          ppvLog('[NFC] Not supported');
-        } else {
-          ppvWarn('[NFC] Start error:', e);
-        }
-      }
-    }
-
-    stopNfcReader() {
-      if (this.nfcAbortController) {
-        this.nfcAbortController.abort();
-        this.nfcAbortController = null;
-        ppvLog('[NFC] Reader stopped');
-      }
-      this.nfcReader = null;
     }
 
     // ============================================================
@@ -381,7 +319,6 @@
 
       if (this.countdownInterval) { clearInterval(this.countdownInterval); this.countdownInterval = null; }
       this.stopPeriodicRefocus();
-      this.stopNfcReader();
       this.saveScannerState(false);
     }
 
@@ -400,9 +337,6 @@
 
       if (this.toolbar) this.toolbar.style.display = 'flex';
       this.saveScannerState(true);
-
-      // Start NFC reader alongside camera
-      this.startNfcReader();
 
       await this.loadLibrary();
     }
@@ -479,12 +413,44 @@
     /**
      * Get device fingerprint with components for similarity matching
      * Returns { visitorId, components } or null
+     *
+     * Uses localStorage caching to ensure fingerprint stability across app restarts
+     * (especially important for TWA/APK on Android devices)
      */
     async getDeviceFingerprintFull() {
+      const CACHE_KEY = 'ppv_device_fingerprint';
+      const CACHE_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days
+
       try {
+        // Check localStorage cache first
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) {
+          try {
+            const parsedCache = JSON.parse(cached);
+            const cacheAge = Date.now() - (parsedCache.timestamp || 0);
+
+            // Use cached fingerprint if not expired
+            if (cacheAge < CACHE_TTL && parsedCache.visitorId) {
+              ppvLog('[Scanner] Using cached fingerprint (age: ' + Math.round(cacheAge / 1000 / 60) + ' min)');
+              return {
+                visitorId: parsedCache.visitorId,
+                components: parsedCache.components || null
+              };
+            }
+          } catch (parseErr) {
+            // Invalid cache, will regenerate
+            ppvLog('[Scanner] Invalid fingerprint cache, regenerating...');
+          }
+        }
+
+        // Generate new fingerprint
         if (window.FingerprintJS) {
           const fp = await FingerprintJS.load();
           const result = await fp.get();
+
+          // Sanitize visitorId - keep only alphanumeric chars (some devices generate +/= etc)
+          const visitorId = (result.visitorId || '').replace(/[^a-zA-Z0-9]/g, '');
+
           // Extract key components for similarity comparison
           const components = {};
           if (result.components) {
@@ -498,10 +464,25 @@
               }
             }
           }
-          return { visitorId: result.visitorId, components };
+
+          // Cache the fingerprint in localStorage (compatible with Geräte tab)
+          try {
+            localStorage.setItem(CACHE_KEY, JSON.stringify({
+              visitorId: visitorId,
+              components: components,
+              deviceInfo: null, // Will be filled by Geräte tab if needed
+              timestamp: Date.now()
+            }));
+            ppvLog('[Scanner] Fingerprint cached in localStorage');
+          } catch (cacheErr) {
+            ppvWarn('[Scanner] Could not cache fingerprint:', cacheErr);
+          }
+
+          return { visitorId: visitorId, components };
         }
 
         // Fallback: generate simple fingerprint without components
+        // Note: alphanumeric only (no underscore) for PHP validation
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         ctx.textBaseline = 'top';
@@ -515,14 +496,37 @@
           hash2 = ((hash2 << 7) - hash2) + data.charCodeAt(i);
           hash2 = hash2 & hash2;
         }
+        // Use 'fb' prefix (fallback) - alphanumeric only, total 18 chars
+        const fallbackId = 'fb' + Math.abs(hash1).toString(16).padStart(8, '0') + Math.abs(hash2).toString(16).padStart(8, '0');
+
+        // Cache fallback fingerprint too
+        try {
+          localStorage.setItem(CACHE_KEY, JSON.stringify({
+            visitorId: fallbackId,
+            components: null,
+            deviceInfo: null,
+            timestamp: Date.now()
+          }));
+        } catch (cacheErr) {}
+
         return {
-          visitorId: 'fp_' + Math.abs(hash1).toString(16).padStart(8, '0') + Math.abs(hash2).toString(16).padStart(8, '0'),
+          visitorId: fallbackId,
           components: null
         };
       } catch (e) {
         ppvWarn('[Scanner] Fingerprint error:', e);
         return null;
       }
+    }
+
+    /**
+     * Clear cached fingerprint (call when device is re-registered)
+     */
+    clearCachedFingerprint() {
+      try {
+        localStorage.removeItem('ppv_device_fingerprint');
+        ppvLog('[Scanner] Fingerprint cache cleared');
+      } catch (e) {}
     }
 
     // Legacy method for backwards compatibility

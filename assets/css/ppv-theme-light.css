@@ -106,3 +106,39 @@ div.ppv-user-qr.ppv-qr-zoomed{
 .ppv-load-more-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(14,165,233,.35)}
 .ppv-load-more-btn:active{transform:translateY(0)}
 .ppv-load-more-btn i{font-size:18px}
+
+
+/* Remove double border from scan list - only item borders needed */
+#ppv-pos-log,
+.glass-table#ppv-pos-log,
+table#ppv-pos-log {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+}
+
+#ppv-pos-log tbody,
+.glass-table#ppv-pos-log tbody {
+  border: none !important;
+  background: transparent !important;
+}
+
+
+
+/* Remove inner card borders from device list - keep only outer container border */
+.ppv-device-card,
+.ppv-device-card.glass-card {
+  border: none !important;
+  box-shadow: none !important;
+  border-left: 4px solid #4caf50 !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  margin-bottom: 0 !important;
+  padding: 15px 15px 15px 20px !important;
+}
+
+.ppv-device-card + .ppv-device-card {
+  border-top: 1px solid rgba(0,168,204,0.1) !important;
+}
+

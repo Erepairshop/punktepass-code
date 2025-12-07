@@ -1592,8 +1592,13 @@ class PPV_Haendlervertrag {
 
                         <div id="device-info-section" class="term">
                             <h3>Bereitgestellte Geräte</h3>
-                            <p>Bitte geben Sie die Gerätedaten im Übergabeprotokoll unten ein.<br><br>
-                            <small style="color: #666;">Bei Leihgabe bleiben die Geräte Eigentum des Anbieters. Bei Kündigung oder Vertragsende sind sie innerhalb von 7 Tagen zurückzugeben.</small></p>
+                            <p>Bitte geben Sie die Gerätedaten im Übergabeprotokoll unten ein.</p>
+                            <div id="device-loan-notice" style="background: #fff3e0; padding: 12px; border-radius: 8px; border-left: 4px solid #ff9800; margin-top: 10px;">
+                                <strong style="color: #e65100;">⚠️ Wichtiger Hinweis zur Leihgabe:</strong><br>
+                                <span style="color: #333;">Die bereitgestellten Geräte (Smartphone und Ständer) bleiben <strong>Eigentum des Anbieters (PunktePass)</strong>.<br>
+                                Bei Kündigung oder Vertragsende sind die Geräte <strong>innerhalb von 7 Tagen</strong> an den Anbieter zurückzugeben.<br>
+                                Bei Beschädigung oder Verlust haftet der Händler.</span>
+                            </div>
                         </div>
 
                         <div class="term" style="background: #fff8e1; padding: 15px; border-radius: 8px;">
@@ -1780,16 +1785,32 @@ class PPV_Haendlervertrag {
             let isDrawing = false;
             let lastX = 0;
             let lastY = 0;
+            let hasDrawn = false; // Track if user has drawn anything
 
-            // Set canvas size
+            // Set canvas size (preserve content on resize)
             function resizeCanvas() {
                 const rect = canvas.getBoundingClientRect();
+                // Save current content before resize
+                let imageData = null;
+                if (hasDrawn && canvas.width > 0 && canvas.height > 0) {
+                    try {
+                        imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    } catch (e) {}
+                }
+
                 canvas.width = rect.width;
                 canvas.height = rect.height;
                 ctx.strokeStyle = '#1a1a2e';
                 ctx.lineWidth = 2;
                 ctx.lineCap = 'round';
                 ctx.lineJoin = 'round';
+
+                // Restore content after resize (if any)
+                if (imageData) {
+                    try {
+                        ctx.putImageData(imageData, 0, 0);
+                    } catch (e) {}
+                }
             }
 
             resizeCanvas();
@@ -1812,6 +1833,7 @@ class PPV_Haendlervertrag {
             function startDrawing(e) {
                 e.preventDefault();
                 isDrawing = true;
+                hasDrawn = true; // Mark as drawn when user starts drawing
                 canvas.classList.add('signing');
                 const pos = getPosition(e);
                 lastX = pos.x;
@@ -1845,19 +1867,25 @@ class PPV_Haendlervertrag {
             canvas.addEventListener('touchmove', draw);
             canvas.addEventListener('touchend', stopDrawing);
 
-            signatureCanvases[canvasId] = { canvas, ctx };
+            signatureCanvases[canvasId] = { canvas, ctx, hasDrawn: () => hasDrawn, resetDrawn: () => { hasDrawn = false; } };
         }
 
         function clearSignature(canvasId) {
-            const { canvas, ctx } = signatureCanvases[canvasId];
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            canvas.classList.remove('signing');
+            const sig = signatureCanvases[canvasId];
+            sig.ctx.clearRect(0, 0, sig.canvas.width, sig.canvas.height);
+            sig.canvas.classList.remove('signing');
+            sig.resetDrawn(); // Reset the hasDrawn flag
         }
 
         function isCanvasEmpty(canvasId) {
-            const { canvas, ctx } = signatureCanvases[canvasId];
+            const sig = signatureCanvases[canvasId];
+            // First check the hasDrawn flag (more reliable)
+            if (!sig.hasDrawn()) {
+                return true;
+            }
+            // Fallback: also check pixel data
             const pixelBuffer = new Uint32Array(
-                ctx.getImageData(0, 0, canvas.width, canvas.height).data.buffer
+                sig.ctx.getImageData(0, 0, sig.canvas.width, sig.canvas.height).data.buffer
             );
             return !pixelBuffer.some(color => color !== 0);
         }
@@ -1890,6 +1918,16 @@ class PPV_Haendlervertrag {
         });
 
         // Price type radio toggle
+        const deviceLoanNotice = document.getElementById('device-loan-notice');
+
+        function updateLoanNotice() {
+            const selectedPriceType = document.querySelector('input[name="device_price_type"]:checked');
+            if (deviceLoanNotice) {
+                // Show loan notice only when "kostenlos" (loan) is selected
+                deviceLoanNotice.style.display = (selectedPriceType && selectedPriceType.value === 'kostenlos') ? 'block' : 'none';
+            }
+        }
+
         priceRadios.forEach(radio => {
             radio.addEventListener('change', function() {
                 if (this.value === 'custom') {
@@ -1899,8 +1937,12 @@ class PPV_Haendlervertrag {
                     devicePriceInput.disabled = true;
                     devicePriceInput.value = '';
                 }
+                updateLoanNotice();
             });
         });
+
+        // Initialize loan notice visibility
+        updateLoanNotice();
 
         // IMEI unknown checkbox toggle
         const imeiUnknown = document.getElementById('imei_unknown');
