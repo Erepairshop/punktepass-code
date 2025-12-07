@@ -1320,10 +1320,11 @@ class PPV_Stats {
         ppv_log("📱 [Device Activity] Found " . count($device_details) . " registered devices");
 
         // 2️⃣ Get scan activity from ppv_points table (using device_fingerprint)
-        // device_fingerprint in ppv_points matches fingerprint_hash in ppv_user_devices
+        // NOTE: ppv_points stores RAW fingerprint, ppv_user_devices stores SHA256 HASH
+        // So we need to hash the fingerprint in SQL using SHA2() function
         $device_scans = $wpdb->get_results($wpdb->prepare("
             SELECT
-                p.device_fingerprint,
+                SHA2(p.device_fingerprint, 256) as fingerprint_hash,
                 DATE(p.created) as scan_date,
                 COUNT(*) as scan_count
             FROM {$table_points} p
@@ -1333,16 +1334,16 @@ class PPV_Stats {
               AND DATE(p.created) <= %s
               AND p.device_fingerprint IS NOT NULL
               AND p.device_fingerprint != ''
-            GROUP BY p.device_fingerprint, scan_date
-            ORDER BY p.device_fingerprint, scan_date
+            GROUP BY fingerprint_hash, scan_date
+            ORDER BY fingerprint_hash, scan_date
         ", array_merge($store_ids, [$date_start, $date_end])));
 
         ppv_log("📱 [Device Activity] Found " . count($device_scans) . " scan records with device fingerprint");
 
-        // Create scan lookup by fingerprint_hash
+        // Create scan lookup by fingerprint_hash (now hashed to match ppv_user_devices)
         $scan_lookup = [];
         foreach ($device_scans as $scan) {
-            $fp = $scan->device_fingerprint;
+            $fp = $scan->fingerprint_hash;
             if (empty($fp)) continue;
 
             if (!isset($scan_lookup[$fp])) {
