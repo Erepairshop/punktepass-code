@@ -352,12 +352,14 @@ public static function ajax_register_user() {
                 if (!$exists) {
                     // 🔹 QR token generálás a Google-regisztrált felhasználónak
                     $qr_token = wp_generate_password(10, false, false);
+                    $display_name = trim($first . ' ' . $last);
 
                     $wpdb->insert($table, [
                         'email'      => $email,
                         'google_id'  => $google_id,
                         'first_name' => $first,
                         'last_name'  => $last,
+                        'display_name' => $display_name,
                         'avatar'     => $avatar,
                         'qr_token'   => $qr_token,
                         'active'     => 1,

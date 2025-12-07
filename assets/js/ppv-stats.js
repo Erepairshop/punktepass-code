@@ -650,6 +650,12 @@ jQuery(document).ready(function($) {
             loadSuspiciousScans();
             suspiciousStatsLoaded = true;
         }
+
+        // Load device activity on first view
+        if (tab === 'device-activity' && !deviceActivityLoaded) {
+            loadDeviceActivity();
+            deviceActivityLoaded = true;
+        }
     });
 
     // ============================================================

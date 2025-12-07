@@ -418,3 +418,78 @@ window.ppvErrorMsg = (function() {
   // Also handle touch scroll on mobile
   document.addEventListener('touchmove', onScroll, { passive: true });
 })();
+
+// ============================================================
+// 📱 APP RESUME HANDLER - PWA Background Return Optimization
+// ============================================================
+// When app returns from background after 30+ seconds:
+// 1. Force Ably reconnection (real-time)
+// 2. Pre-warm API connections
+// 3. Dispatch event for other scripts to refresh
+// ============================================================
+
+(function() {
+  let lastActiveTime = Date.now();
+  let isHidden = document.hidden;
+  const BACKGROUND_THRESHOLD = 30 * 1000; // 30 seconds
+
+  // Track when page becomes hidden
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      isHidden = true;
+      lastActiveTime = Date.now();
+    } else if (isHidden) {
+      isHidden = false;
+      const timeInBackground = Date.now() - lastActiveTime;
+
+      // Only trigger resume if was in background for 30+ seconds
+      if (timeInBackground > BACKGROUND_THRESHOLD) {
+        handleAppResume(timeInBackground);
+      }
+    }
+  });
+
+  function handleAppResume(timeInBackground) {
+    const seconds = Math.round(timeInBackground / 1000);
+    console.log(`📱 [APP_RESUME] Returning after ${seconds}s in background`);
+
+    // 1. Force Ably reconnection if available
+    if (window.PPV_ABLY_MANAGER) {
+      const state = window.PPV_ABLY_MANAGER.getState();
+      if (state !== 'connected') {
+        console.log('📡 [APP_RESUME] Reconnecting Ably...');
+        // Ably auto-reconnects, but we can force it
+        if (window.PPV_ABLY_MANAGER.instance?.connection) {
+          window.PPV_ABLY_MANAGER.instance.connection.connect();
+        }
+      }
+    }
+
+    // 2. Pre-warm API connection with a lightweight ping
+    // This establishes TCP/TLS connection before real requests
+    if (window.PPV_API_BASE) {
+      fetch(window.PPV_API_BASE + '/ping', {
+        method: 'GET',
+        cache: 'no-store',
+        priority: 'high'
+      }).catch(() => {}); // Ignore errors, just warming connection
+    }
+
+    // 3. Dispatch custom event for other scripts to handle
+    const resumeEvent = new CustomEvent('ppv:app-resume', {
+      detail: {
+        timeInBackground: timeInBackground,
+        timestamp: Date.now()
+      }
+    });
+    document.dispatchEvent(resumeEvent);
+
+    // 4. Also trigger a generic refresh for polling-based scripts
+    if (window.PPV_VISIBILITY_HANDLER) {
+      // Already handled by individual scripts
+    }
+  }
+
+  // Expose for manual triggering if needed
+  window.ppvTriggerResume = () => handleAppResume(BACKGROUND_THRESHOLD + 1000);
+})();

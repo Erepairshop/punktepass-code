@@ -2,17 +2,29 @@
   "name": "PunktePass",
   "short_name": "PunktePass",
   "description": "Digitales Treuepunkt-System mit QR-Code, Belohnungen und POS-Integration.",
-  
+
   "id": "/",
   "start_url": "/login?source=pwa",
   "scope": "/",
+  "dir": "ltr",
+
+  "serviceworker": {
+    "src": "/sw.js",
+    "scope": "/",
+    "type": "classic"
+  },
 
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
   "orientation": "portrait",
   "lang": "de",
-  
+
   "theme_color": "#00BFFF",
   "background_color": "#0B0F17",
+
+  "launch_handler": {
+    "client_mode": "focus-existing"
+  },
 
   "categories": ["shopping", "business", "lifestyle"],
 
@@ -88,6 +100,16 @@
       "url": "/user_dashboard"
     }
   ],
+
+  "share_target": {
+    "action": "/share-receiver",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
 
   "handle_links": "preferred"
 }

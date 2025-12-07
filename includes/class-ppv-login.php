@@ -1324,6 +1324,7 @@ public static function render_landing_page($atts) {
 
         // 🆕 Create new user if doesn't exist
         if (!$user) {
+            $display_name = trim($first_name . ' ' . $last_name);
             $insert_result = $wpdb->insert(
                 "{$prefix}ppv_users",
                 [
@@ -1331,12 +1332,13 @@ public static function render_landing_page($atts) {
                     'password' => password_hash(wp_generate_password(32), PASSWORD_DEFAULT),
                     'first_name' => $first_name,
                     'last_name' => $last_name,
+                    'display_name' => $display_name,
                     'google_id' => $google_id,
                     'language' => $browser_lang,
                     'created_at' => current_time('mysql'),
                     'active' => 1
                 ],
-                ['%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d']
+                ['%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d']
             );
             
             if ($insert_result === false) {
@@ -1583,6 +1585,7 @@ public static function render_landing_page($atts) {
                 $email = $apple_id . '@privaterelay.appleid.com';
             }
 
+            $display_name = trim($first_name . ' ' . $last_name);
             $insert_result = $wpdb->insert(
                 "{$prefix}ppv_users",
                 [
@@ -1590,12 +1593,13 @@ public static function render_landing_page($atts) {
                     'password' => password_hash(wp_generate_password(32), PASSWORD_DEFAULT),
                     'first_name' => $first_name,
                     'last_name' => $last_name,
+                    'display_name' => $display_name,
                     'apple_id' => $apple_id,
                     'language' => $browser_lang,
                     'created_at' => current_time('mysql'),
                     'active' => 1
                 ],
-                ['%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d']
+                ['%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d']
             );
 
             if ($insert_result === false) {
@@ -1823,6 +1827,7 @@ public static function render_landing_page($atts) {
 
         // Create new user if doesn't exist
         if (!$user) {
+            $display_name = trim($first_name . ' ' . $last_name);
             $insert_result = $wpdb->insert(
                 "{$prefix}ppv_users",
                 [
@@ -1830,11 +1835,12 @@ public static function render_landing_page($atts) {
                     'password' => password_hash(wp_generate_password(32), PASSWORD_DEFAULT),
                     'first_name' => $first_name,
                     'last_name' => $last_name,
+                    'display_name' => $display_name,
                     'facebook_id' => $facebook_id,
                     'created_at' => current_time('mysql'),
                     'active' => 1
                 ],
-                ['%s', '%s', '%s', '%s', '%s', '%s', '%d']
+                ['%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d']
             );
 
             if ($insert_result === false) {
@@ -2007,11 +2013,12 @@ public static function render_landing_page($atts) {
                     'password' => password_hash(wp_generate_password(32), PASSWORD_DEFAULT),
                     'first_name' => $first_name,
                     'last_name' => $last_name,
+                    'display_name' => $display_name,
                     'tiktok_id' => $tiktok_id,
                     'created_at' => current_time('mysql'),
                     'active' => 1
                 ],
-                ['%s', '%s', '%s', '%s', '%s', '%s', '%d']
+                ['%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d']
             );
 
             if ($insert_result === false) {

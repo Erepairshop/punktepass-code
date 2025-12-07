@@ -836,12 +836,14 @@ class PPV_Signup {
         // Create new user if doesn't exist
         if (!$user) {
             $qr_token = wp_generate_password(10, false, false);
+            $display_name = trim($first_name . ' ' . $last_name);
 
             $insert_data = [
                 'email' => $email,
                 'password' => password_hash(wp_generate_password(32), PASSWORD_DEFAULT),
                 'first_name' => $first_name,
                 'last_name' => $last_name,
+                'display_name' => $display_name,
                 'google_id' => $google_id,
                 'avatar' => $picture,
                 'qr_token' => $qr_token,
@@ -851,7 +853,7 @@ class PPV_Signup {
                 'updated_at' => current_time('mysql')
             ];
 
-            $insert_format = ['%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s'];
+            $insert_format = ['%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s'];
 
             $insert_result = $wpdb->insert("{$prefix}ppv_users", $insert_data, $insert_format);
 

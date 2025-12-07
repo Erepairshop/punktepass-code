@@ -161,9 +161,8 @@ trait PPV_QR_REST_Trait {
     public static function rest_process_scan(WP_REST_Request $r) {
         global $wpdb;
 
-        // 🔒 SECURITY: Rate limiting
-        // 1. General rate limit for ALL requests (prevents spam/DoS) - 20/min
-        $rate_check_all = PPV_Permissions::check_rate_limit('pos_scan_all', 20, 60);
+        // 🔒 SECURITY: Basic DoS protection - 60 requests/min (applies to everyone)
+        $rate_check_all = PPV_Permissions::check_rate_limit('pos_scan_all', 60, 60);
         if (is_wp_error($rate_check_all)) {
             return new WP_REST_Response([
                 'success' => false,
@@ -171,15 +170,6 @@ trait PPV_QR_REST_Trait {
             ], 429);
         }
         PPV_Permissions::increment_rate_limit('pos_scan_all', 60);
-
-        // 2. Successful scan rate limit - 3/min (checked here, incremented on success)
-        $rate_check_success = PPV_Permissions::check_rate_limit('pos_scan_success', 3, 60);
-        if (is_wp_error($rate_check_success)) {
-            return new WP_REST_Response([
-                'success' => false,
-                'message' => '⚠️ Zu viele erfolgreiche Scans. Bitte warte 1 Minute.'
-            ], 429);
-        }
 
         $data = $r->get_json_params();
         $qr_code = sanitize_text_field($data['qr'] ?? '');
@@ -247,18 +237,37 @@ trait PPV_QR_REST_Trait {
 
         // ═══════════════════════════════════════════════════════════
         // 🎭 DEMO MODE CHECK - Bypass ALL restrictions for demo stores
+        // Check BOTH current store AND parent store (for filialen)
         // ═══════════════════════════════════════════════════════════
-        $demo_mode_value = $wpdb->get_var($wpdb->prepare(
-            "SELECT demo_mode FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+        $demo_check = $wpdb->get_row($wpdb->prepare(
+            "SELECT s.demo_mode, s.parent_store_id,
+                    (SELECT ps.demo_mode FROM {$wpdb->prefix}ppv_stores ps WHERE ps.id = s.parent_store_id) as parent_demo_mode
+             FROM {$wpdb->prefix}ppv_stores s WHERE s.id = %d",
             $store_id
         ));
-        $is_demo_mode = ((int) $demo_mode_value === 1);
+
+        $demo_mode_value = $demo_check->demo_mode ?? 0;
+        $parent_demo_mode = $demo_check->parent_demo_mode ?? 0;
+        $is_demo_mode = ((int) $demo_mode_value === 1) || ((int) $parent_demo_mode === 1);
 
         // Debug log
-        ppv_log("🎭 [PPV_QR] DEMO CHECK: store_id={$store_id}, demo_mode_value={$demo_mode_value}, is_demo=" . ($is_demo_mode ? 'YES' : 'NO'));
+        ppv_log("🎭 [PPV_QR] DEMO CHECK: store_id={$store_id}, demo_mode={$demo_mode_value}, parent_id=" . ($demo_check->parent_store_id ?? 'NULL') . ", parent_demo={$parent_demo_mode}, is_demo=" . ($is_demo_mode ? 'YES' : 'NO'));
 
         if ($is_demo_mode) {
             ppv_log("🎭 [PPV_QR] DEMO MODE ACTIVE: Store {$store_id} - ALL restrictions bypassed!");
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // 🔒 SUCCESSFUL SCAN RATE LIMIT - Skip for demo mode
+        // ═══════════════════════════════════════════════════════════
+        if (!$is_demo_mode) {
+            $rate_check_success = PPV_Permissions::check_rate_limit('pos_scan_success', 3, 60);
+            if (is_wp_error($rate_check_success)) {
+                return new WP_REST_Response([
+                    'success' => false,
+                    'message' => '⚠️ Zu viele erfolgreiche Scans. Bitte warte 1 Minute.'
+                ], 429);
+            }
         }
 
         // ═══════════════════════════════════════════════════════════
@@ -343,10 +352,12 @@ trait PPV_QR_REST_Trait {
 
             // Get user info for error response
             $user_info = $wpdb->get_row($wpdb->prepare("
-                SELECT first_name, last_name, email, avatar
+                SELECT display_name, first_name, last_name, email, avatar
                 FROM {$wpdb->prefix}ppv_users WHERE id = %d
             ", $user_id));
-            $customer_name = trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
+            $customer_name = !empty($user_info->display_name)
+                ? $user_info->display_name
+                : trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
             $store_name = $wpdb->get_var($wpdb->prepare(
                 "SELECT name FROM {$wpdb->prefix}ppv_stores WHERE id=%d LIMIT 1",
                 $store_id
@@ -449,10 +460,12 @@ trait PPV_QR_REST_Trait {
 
                 // Get user info for response
                 $user_info = $wpdb->get_row($wpdb->prepare("
-                    SELECT first_name, last_name, email, avatar
+                    SELECT display_name, first_name, last_name, email, avatar
                     FROM {$wpdb->prefix}ppv_users WHERE id = %d
                 ", $user_id));
-                $customer_name = trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
+                $customer_name = !empty($user_info->display_name)
+                    ? $user_info->display_name
+                    : trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
 
                 $error_message = self::t('err_gps_too_far', '❌ Túl messze vagy az üzlettől ({distance}m). Maximum: {max}m');
                 $error_message = str_replace(['{distance}', '{max}'], [$distance, $max_allowed], $error_message);
@@ -498,10 +511,12 @@ trait PPV_QR_REST_Trait {
 
                     // BLOCK the scan - GPS spoofing detected
                     $user_info = $wpdb->get_row($wpdb->prepare("
-                        SELECT first_name, last_name, email, avatar
+                        SELECT display_name, first_name, last_name, email, avatar
                         FROM {$wpdb->prefix}ppv_users WHERE id = %d
                     ", $user_id));
-                    $customer_name = trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
+                    $customer_name = !empty($user_info->display_name)
+                        ? $user_info->display_name
+                        : trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
 
                     return new WP_REST_Response([
                         'success' => false,
@@ -908,7 +923,8 @@ trait PPV_QR_REST_Trait {
                 LIMIT 1
             ", $user_id, $store_id));
 
-            if ($recent_insert) {
+            // Skip duplicate check in demo mode
+            if (!$is_demo_mode && $recent_insert) {
                 $wpdb->query('ROLLBACK');
                 ppv_log("⚠️ [PPV_QR] Duplicate scan blocked: user={$user_id}, store={$store_id}, existing_id={$recent_insert}");
                 return new WP_REST_Response([
@@ -1072,10 +1088,13 @@ trait PPV_QR_REST_Trait {
 
         // ✅ Get user info for response AND Ably notification
         $user_info = $wpdb->get_row($wpdb->prepare("
-            SELECT first_name, last_name, email, avatar
+            SELECT display_name, first_name, last_name, email, avatar
             FROM {$wpdb->prefix}ppv_users WHERE id = %d
         ", $user_id));
-        $customer_name = trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
+        // Priority: display_name > first_name + last_name
+        $customer_name = !empty($user_info->display_name)
+            ? $user_info->display_name
+            : trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
 
         // 📡 ABLY: Send real-time notification (non-blocking)
         if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
@@ -2178,11 +2197,13 @@ trait PPV_QR_REST_Trait {
 
         // Get user info for handler notification
         $user_info = $wpdb->get_row($wpdb->prepare("
-            SELECT first_name, last_name, email, avatar
+            SELECT display_name, first_name, last_name, email, avatar
             FROM {$wpdb->prefix}ppv_users WHERE id = %d
         ", $prompt->user_id));
 
-        $customer_name = trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
+        $customer_name = !empty($user_info->display_name)
+            ? $user_info->display_name
+            : trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
 
         // Get store name
         $store_name = $wpdb->get_var($wpdb->prepare(
@@ -2276,11 +2297,13 @@ trait PPV_QR_REST_Trait {
 
         // Get user info
         $user_info = $wpdb->get_row($wpdb->prepare("
-            SELECT first_name, last_name, email
+            SELECT display_name, first_name, last_name, email
             FROM {$wpdb->prefix}ppv_users WHERE id = %d
         ", $prompt->user_id));
 
-        $customer_name = trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
+        $customer_name = !empty($user_info->display_name)
+            ? $user_info->display_name
+            : trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
 
         if ($action === 'reject') {
             // Handler rejected
