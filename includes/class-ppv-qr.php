@@ -366,6 +366,28 @@ class PPV_QR {
         // Get user agent
         $user_agent = sanitize_text_field($_SERVER['HTTP_USER_AGENT'] ?? '');
 
+        // ═══════════════════════════════════════════════════════════
+        // 🔒 DUPLICATE ERROR LOG PREVENTION
+        // Skip if same error type was logged in last 60 seconds from same IP
+        // ═══════════════════════════════════════════════════════════
+        if ($type === 'error' && $error_type !== null) {
+            $recent_error = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}ppv_pos_log
+                 WHERE store_id = %d
+                   AND type = 'error'
+                   AND ip_address = %s
+                   AND JSON_EXTRACT(metadata, '$.error_type') = %s
+                   AND created_at > DATE_SUB(NOW(), INTERVAL 60 SECOND)
+                 LIMIT 1",
+                $store_id, $ip_address, $error_type
+            ));
+
+            if ($recent_error) {
+                ppv_log("🔄 [Log] Skipping duplicate error log: {$error_type} from {$ip_address}");
+                return null; // Skip duplicate
+            }
+        }
+
         // Prepare metadata (can be extended with additional info)
         $metadata_array = [
             'timestamp' => current_time('mysql'),
