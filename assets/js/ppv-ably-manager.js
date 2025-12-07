@@ -269,5 +269,15 @@
         }
     });
 
+    // 📱 Handle app resume - force reconnect if suspended
+    document.addEventListener('ppv:app-resume', function(e) {
+        if (window.PPV_ABLY_MANAGER && window.PPV_ABLY_MANAGER.instance) {
+            const state = window.PPV_ABLY_MANAGER.connectionState;
+            if (state === 'suspended' || state === 'disconnected') {
+                console.log('📡 [ABLY_MANAGER] App resumed - forcing reconnect from:', state);
+                window.PPV_ABLY_MANAGER.instance.connection.connect();
+            }
+        }
+    });
 
 })();
