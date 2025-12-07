@@ -247,15 +247,21 @@ trait PPV_QR_REST_Trait {
 
         // ═══════════════════════════════════════════════════════════
         // 🎭 DEMO MODE CHECK - Bypass ALL restrictions for demo stores
+        // Check BOTH current store AND parent store (for filialen)
         // ═══════════════════════════════════════════════════════════
-        $demo_mode_value = $wpdb->get_var($wpdb->prepare(
-            "SELECT demo_mode FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+        $demo_check = $wpdb->get_row($wpdb->prepare(
+            "SELECT s.demo_mode, s.parent_store_id,
+                    (SELECT ps.demo_mode FROM {$wpdb->prefix}ppv_stores ps WHERE ps.id = s.parent_store_id) as parent_demo_mode
+             FROM {$wpdb->prefix}ppv_stores s WHERE s.id = %d",
             $store_id
         ));
-        $is_demo_mode = ((int) $demo_mode_value === 1);
+
+        $demo_mode_value = $demo_check->demo_mode ?? 0;
+        $parent_demo_mode = $demo_check->parent_demo_mode ?? 0;
+        $is_demo_mode = ((int) $demo_mode_value === 1) || ((int) $parent_demo_mode === 1);
 
         // Debug log
-        ppv_log("🎭 [PPV_QR] DEMO CHECK: store_id={$store_id}, demo_mode_value={$demo_mode_value}, is_demo=" . ($is_demo_mode ? 'YES' : 'NO'));
+        ppv_log("🎭 [PPV_QR] DEMO CHECK: store_id={$store_id}, demo_mode={$demo_mode_value}, parent_id=" . ($demo_check->parent_store_id ?? 'NULL') . ", parent_demo={$parent_demo_mode}, is_demo=" . ($is_demo_mode ? 'YES' : 'NO'));
 
         if ($is_demo_mode) {
             ppv_log("🎭 [PPV_QR] DEMO MODE ACTIVE: Store {$store_id} - ALL restrictions bypassed!");
