@@ -142,3 +142,27 @@ table#ppv-pos-log {
   border-top: 1px solid rgba(0,168,204,0.1) !important;
 }
 
+
+
+/* iOS Safe Area - fullscreen webapp support */
+@supports (padding-top: env(safe-area-inset-top)) {
+  body.ppv-app-mode,
+  body.ppv-user-dashboard,
+  body.ppv-handler-mode {
+    padding-top: env(safe-area-inset-top);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .ppv-header-bar,
+  .ppv-bottom-nav {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  .ppv-bottom-nav {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
