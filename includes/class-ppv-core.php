@@ -263,6 +263,23 @@ class PPV_Core {
 
             update_option('ppv_db_migration_version', '2.0');
         }
+
+        // Migration 2.1: Add demo_mode column to stores for sales demonstrations
+        if (version_compare($migration_version, '2.1', '<')) {
+            $table = $wpdb->prefix . 'ppv_stores';
+
+            // Check if column exists
+            $demo_col = $wpdb->get_results("SHOW COLUMNS FROM {$table} LIKE 'demo_mode'");
+
+            if (empty($demo_col)) {
+                $wpdb->query("ALTER TABLE {$table}
+                    ADD COLUMN demo_mode TINYINT(1) DEFAULT 0 COMMENT 'Demo mode: bypass all scan restrictions (opening hours, cooldown, etc.)'
+                ");
+                ppv_log("✅ [PPV_Core] demo_mode column added to ppv_stores table");
+            }
+
+            update_option('ppv_db_migration_version', '2.1');
+        }
     }
 
     /**

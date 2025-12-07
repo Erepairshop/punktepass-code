@@ -246,10 +246,23 @@ trait PPV_QR_REST_Trait {
         }
 
         // ═══════════════════════════════════════════════════════════
+        // 🎭 DEMO MODE CHECK - Bypass ALL restrictions for demo stores
+        // ═══════════════════════════════════════════════════════════
+        $is_demo_mode = $wpdb->get_var($wpdb->prepare(
+            "SELECT demo_mode FROM {$wpdb->prefix}ppv_stores WHERE id=%d LIMIT 1",
+            $store_id
+        ));
+        $is_demo_mode = (bool) $is_demo_mode;
+
+        if ($is_demo_mode) {
+            ppv_log("🎭 [PPV_QR] DEMO MODE: Store {$store_id} is in demo mode - bypassing all restrictions");
+        }
+
+        // ═══════════════════════════════════════════════════════════
         // 🕒 OPENING HOURS CHECK - Block scans outside business hours
         // ═══════════════════════════════════════════════════════════
         $opening_check = self::is_store_open_for_scan($store_id);
-        if (!$opening_check['open']) {
+        if (!$is_demo_mode && !$opening_check['open']) {
             $store_name = $wpdb->get_var($wpdb->prepare(
                 "SELECT name FROM {$wpdb->prefix}ppv_stores WHERE id=%d LIMIT 1",
                 $store_id
@@ -299,8 +312,9 @@ trait PPV_QR_REST_Trait {
             ], 403);
         }
 
+        // Skip rate limit check in demo mode
         $rate_check = self::check_rate_limit($user_id, $store_id);
-        if ($rate_check['limited']) {
+        if (!$is_demo_mode && $rate_check['limited']) {
             $response_data = $rate_check['response']->get_data();
             $error_type = $response_data['error_type'] ?? null;
 
