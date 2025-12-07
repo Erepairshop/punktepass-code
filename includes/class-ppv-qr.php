@@ -368,7 +368,7 @@ class PPV_QR {
 
         // ═══════════════════════════════════════════════════════════
         // 🔒 DUPLICATE ERROR LOG PREVENTION
-        // Skip if same error type was logged in last 60 seconds from same IP
+        // Skip if same error type was logged in last 1 hour from same IP
         // ═══════════════════════════════════════════════════════════
         if ($type === 'error' && $error_type !== null) {
             $recent_error = $wpdb->get_var($wpdb->prepare(
@@ -377,7 +377,7 @@ class PPV_QR {
                    AND type = 'error'
                    AND ip_address = %s
                    AND JSON_EXTRACT(metadata, '$.error_type') = %s
-                   AND created_at > DATE_SUB(NOW(), INTERVAL 60 SECOND)
+                   AND created_at > DATE_SUB(NOW(), INTERVAL 1 HOUR)
                  LIMIT 1",
                 $store_id, $ip_address, $error_type
             ));
