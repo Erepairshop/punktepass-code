@@ -572,7 +572,7 @@ add_action('wp_head', function () { ?>
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#fafdff">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="PunktePass">
     <link rel="apple-touch-icon" href="<?php echo PPV_PLUGIN_URL; ?>assets/img/icons/icon-192.png">
     <!-- ❌ REMOVED: apple-touch-startup-image - caused big logo flash on iOS -->
