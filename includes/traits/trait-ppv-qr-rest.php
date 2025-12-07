@@ -352,10 +352,12 @@ trait PPV_QR_REST_Trait {
 
             // Get user info for error response
             $user_info = $wpdb->get_row($wpdb->prepare("
-                SELECT first_name, last_name, email, avatar
+                SELECT display_name, first_name, last_name, email, avatar
                 FROM {$wpdb->prefix}ppv_users WHERE id = %d
             ", $user_id));
-            $customer_name = trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
+            $customer_name = !empty($user_info->display_name)
+                ? $user_info->display_name
+                : trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
             $store_name = $wpdb->get_var($wpdb->prepare(
                 "SELECT name FROM {$wpdb->prefix}ppv_stores WHERE id=%d LIMIT 1",
                 $store_id
@@ -458,10 +460,12 @@ trait PPV_QR_REST_Trait {
 
                 // Get user info for response
                 $user_info = $wpdb->get_row($wpdb->prepare("
-                    SELECT first_name, last_name, email, avatar
+                    SELECT display_name, first_name, last_name, email, avatar
                     FROM {$wpdb->prefix}ppv_users WHERE id = %d
                 ", $user_id));
-                $customer_name = trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
+                $customer_name = !empty($user_info->display_name)
+                    ? $user_info->display_name
+                    : trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
 
                 $error_message = self::t('err_gps_too_far', '❌ Túl messze vagy az üzlettől ({distance}m). Maximum: {max}m');
                 $error_message = str_replace(['{distance}', '{max}'], [$distance, $max_allowed], $error_message);
@@ -507,10 +511,12 @@ trait PPV_QR_REST_Trait {
 
                     // BLOCK the scan - GPS spoofing detected
                     $user_info = $wpdb->get_row($wpdb->prepare("
-                        SELECT first_name, last_name, email, avatar
+                        SELECT display_name, first_name, last_name, email, avatar
                         FROM {$wpdb->prefix}ppv_users WHERE id = %d
                     ", $user_id));
-                    $customer_name = trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
+                    $customer_name = !empty($user_info->display_name)
+                        ? $user_info->display_name
+                        : trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
 
                     return new WP_REST_Response([
                         'success' => false,
@@ -1082,10 +1088,13 @@ trait PPV_QR_REST_Trait {
 
         // ✅ Get user info for response AND Ably notification
         $user_info = $wpdb->get_row($wpdb->prepare("
-            SELECT first_name, last_name, email, avatar
+            SELECT display_name, first_name, last_name, email, avatar
             FROM {$wpdb->prefix}ppv_users WHERE id = %d
         ", $user_id));
-        $customer_name = trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
+        // Priority: display_name > first_name + last_name
+        $customer_name = !empty($user_info->display_name)
+            ? $user_info->display_name
+            : trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
 
         // 📡 ABLY: Send real-time notification (non-blocking)
         if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
@@ -2188,11 +2197,13 @@ trait PPV_QR_REST_Trait {
 
         // Get user info for handler notification
         $user_info = $wpdb->get_row($wpdb->prepare("
-            SELECT first_name, last_name, email, avatar
+            SELECT display_name, first_name, last_name, email, avatar
             FROM {$wpdb->prefix}ppv_users WHERE id = %d
         ", $prompt->user_id));
 
-        $customer_name = trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
+        $customer_name = !empty($user_info->display_name)
+            ? $user_info->display_name
+            : trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
 
         // Get store name
         $store_name = $wpdb->get_var($wpdb->prepare(
@@ -2286,11 +2297,13 @@ trait PPV_QR_REST_Trait {
 
         // Get user info
         $user_info = $wpdb->get_row($wpdb->prepare("
-            SELECT first_name, last_name, email
+            SELECT display_name, first_name, last_name, email
             FROM {$wpdb->prefix}ppv_users WHERE id = %d
         ", $prompt->user_id));
 
-        $customer_name = trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
+        $customer_name = !empty($user_info->display_name)
+            ? $user_info->display_name
+            : trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
 
         if ($action === 'reject') {
             // Handler rejected
