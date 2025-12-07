@@ -248,14 +248,16 @@ trait PPV_QR_REST_Trait {
         // ═══════════════════════════════════════════════════════════
         // 🎭 DEMO MODE CHECK - Bypass ALL restrictions for demo stores
         // ═══════════════════════════════════════════════════════════
+        // Check both current store AND parent store (for filialen)
         $is_demo_mode = $wpdb->get_var($wpdb->prepare(
-            "SELECT demo_mode FROM {$wpdb->prefix}ppv_stores WHERE id=%d LIMIT 1",
-            $store_id
+            "SELECT MAX(COALESCE(demo_mode, 0)) FROM {$wpdb->prefix}ppv_stores
+             WHERE id = %d OR id = (SELECT parent_id FROM {$wpdb->prefix}ppv_stores WHERE id = %d)",
+            $store_id, $store_id
         ));
         $is_demo_mode = (bool) $is_demo_mode;
 
         if ($is_demo_mode) {
-            ppv_log("🎭 [PPV_QR] DEMO MODE: Store {$store_id} is in demo mode - bypassing all restrictions");
+            ppv_log("🎭 [PPV_QR] DEMO MODE ACTIVE: Store {$store_id} - ALL restrictions bypassed!");
         }
 
         // ═══════════════════════════════════════════════════════════
