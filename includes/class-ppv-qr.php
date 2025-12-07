@@ -754,20 +754,20 @@ class PPV_QR {
                 <button class="ppv-tab active" data-tab="scanner" id="ppv-tab-scanner">
                     <i class="ri-qr-scan-2-line"></i> <?php echo self::t('tab_scanner', 'Kassenscanner'); ?>
                 </button>
+                <button class="ppv-tab" data-tab="devices" id="ppv-tab-devices">
+                    <i class="ri-smartphone-line"></i> <?php echo self::t('tab_devices', 'Geräte'); ?>
+                </button>
                 <?php if (!$is_scanner): ?>
                 <button class="ppv-tab" data-tab="vip" id="ppv-tab-vip">
-                    <i class="ri-vip-crown-line"></i> <?php echo self::t('tab_vip', 'VIP Beállítások'); ?>
+                    <i class="ri-vip-crown-line"></i> <?php echo self::t('tab_vip', 'VIP Einstellungen'); ?>
                 </button>
                 <button class="ppv-tab" data-tab="rewards" id="ppv-tab-rewards">
                     <i class="ri-gift-line"></i> <?php echo self::t('tab_rewards', 'Prämien'); ?>
                 </button>
                 <button class="ppv-tab" data-tab="scanner-users" id="ppv-tab-scanner-users">
-                    <i class="ri-team-line"></i> <?php echo self::t('tab_scanner_users', 'Scanner Felhasználók'); ?>
+                    <i class="ri-team-line"></i> <?php echo self::t('tab_scanner_users', 'Scanner Benutzer'); ?>
                 </button>
                 <?php endif; ?>
-                <button class="ppv-tab" data-tab="devices" id="ppv-tab-devices">
-                    <i class="ri-smartphone-line"></i> <?php echo self::t('tab_devices', 'Készülékek'); ?>
-                </button>
             </div>
 
             <!-- TAB CONTENT: SCANNER -->
@@ -775,8 +775,13 @@ class PPV_QR {
                 <?php self::render_pos_scanner(); ?>
             </div>
 
+            <!-- TAB CONTENT: GERÄTE -->
+            <div class="ppv-tab-content" id="tab-devices">
+                <?php self::render_user_devices($is_scanner); ?>
+            </div>
+
             <?php if (!$is_scanner): ?>
-            <!-- TAB CONTENT: VIP BEÁLLÍTÁSOK -->
+            <!-- TAB CONTENT: VIP EINSTELLUNGEN -->
             <div class="ppv-tab-content" id="tab-vip">
                 <?php echo do_shortcode('[ppv_vip_settings]'); ?>
             </div>
@@ -786,16 +791,11 @@ class PPV_QR {
                 <?php echo do_shortcode('[ppv_rewards_management]'); ?>
             </div>
 
-            <!-- TAB CONTENT: SCANNER FELHASZNÁLÓK -->
+            <!-- TAB CONTENT: SCANNER BENUTZER -->
             <div class="ppv-tab-content" id="tab-scanner-users">
                 <?php self::render_scanner_users(); ?>
             </div>
             <?php endif; ?>
-
-            <!-- TAB CONTENT: KÉSZÜLÉKEK -->
-            <div class="ppv-tab-content" id="tab-devices">
-                <?php self::render_user_devices($is_scanner); ?>
-            </div>
         </div>
 
         <script>
