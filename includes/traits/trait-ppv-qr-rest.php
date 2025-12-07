@@ -161,9 +161,8 @@ trait PPV_QR_REST_Trait {
     public static function rest_process_scan(WP_REST_Request $r) {
         global $wpdb;
 
-        // 🔒 SECURITY: Rate limiting
-        // 1. General rate limit for ALL requests (prevents spam/DoS) - 20/min
-        $rate_check_all = PPV_Permissions::check_rate_limit('pos_scan_all', 20, 60);
+        // 🔒 SECURITY: Basic DoS protection - 60 requests/min (applies to everyone)
+        $rate_check_all = PPV_Permissions::check_rate_limit('pos_scan_all', 60, 60);
         if (is_wp_error($rate_check_all)) {
             return new WP_REST_Response([
                 'success' => false,
@@ -171,15 +170,6 @@ trait PPV_QR_REST_Trait {
             ], 429);
         }
         PPV_Permissions::increment_rate_limit('pos_scan_all', 60);
-
-        // 2. Successful scan rate limit - 3/min (checked here, incremented on success)
-        $rate_check_success = PPV_Permissions::check_rate_limit('pos_scan_success', 3, 60);
-        if (is_wp_error($rate_check_success)) {
-            return new WP_REST_Response([
-                'success' => false,
-                'message' => '⚠️ Zu viele erfolgreiche Scans. Bitte warte 1 Minute.'
-            ], 429);
-        }
 
         $data = $r->get_json_params();
         $qr_code = sanitize_text_field($data['qr'] ?? '');
@@ -265,6 +255,19 @@ trait PPV_QR_REST_Trait {
 
         if ($is_demo_mode) {
             ppv_log("🎭 [PPV_QR] DEMO MODE ACTIVE: Store {$store_id} - ALL restrictions bypassed!");
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // 🔒 SUCCESSFUL SCAN RATE LIMIT - Skip for demo mode
+        // ═══════════════════════════════════════════════════════════
+        if (!$is_demo_mode) {
+            $rate_check_success = PPV_Permissions::check_rate_limit('pos_scan_success', 3, 60);
+            if (is_wp_error($rate_check_success)) {
+                return new WP_REST_Response([
+                    'success' => false,
+                    'message' => '⚠️ Zu viele erfolgreiche Scans. Bitte warte 1 Minute.'
+                ], 429);
+            }
         }
 
         // ═══════════════════════════════════════════════════════════
