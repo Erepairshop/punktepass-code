@@ -14,8 +14,8 @@
     "type": "classic"
   },
 
-  "display": "standalone",
-  "display_override": ["standalone", "minimal-ui", "browser"],
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone", "minimal-ui"],
   "orientation": "portrait",
   "lang": "de",
 
