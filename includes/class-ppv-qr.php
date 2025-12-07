@@ -758,14 +758,14 @@ class PPV_QR {
                     <i class="ri-smartphone-line"></i> <?php echo self::t('tab_devices', 'Geräte'); ?>
                 </button>
                 <?php if (!$is_scanner): ?>
-                <button class="ppv-tab" data-tab="vip" id="ppv-tab-vip">
-                    <i class="ri-vip-crown-line"></i> <?php echo self::t('tab_vip', 'VIP Einstellungen'); ?>
-                </button>
                 <button class="ppv-tab" data-tab="rewards" id="ppv-tab-rewards">
                     <i class="ri-gift-line"></i> <?php echo self::t('tab_rewards', 'Prämien'); ?>
                 </button>
                 <button class="ppv-tab" data-tab="scanner-users" id="ppv-tab-scanner-users">
                     <i class="ri-team-line"></i> <?php echo self::t('tab_scanner_users', 'Scanner Benutzer'); ?>
+                </button>
+                <button class="ppv-tab" data-tab="vip" id="ppv-tab-vip">
+                    <i class="ri-vip-crown-line"></i> <?php echo self::t('tab_vip', 'VIP Einstellungen'); ?>
                 </button>
                 <?php endif; ?>
             </div>
@@ -781,11 +781,6 @@ class PPV_QR {
             </div>
 
             <?php if (!$is_scanner): ?>
-            <!-- TAB CONTENT: VIP EINSTELLUNGEN -->
-            <div class="ppv-tab-content" id="tab-vip">
-                <?php echo do_shortcode('[ppv_vip_settings]'); ?>
-            </div>
-
             <!-- TAB CONTENT: PRÄMIEN -->
             <div class="ppv-tab-content" id="tab-rewards">
                 <?php echo do_shortcode('[ppv_rewards_management]'); ?>
@@ -794,6 +789,11 @@ class PPV_QR {
             <!-- TAB CONTENT: SCANNER BENUTZER -->
             <div class="ppv-tab-content" id="tab-scanner-users">
                 <?php self::render_scanner_users(); ?>
+            </div>
+
+            <!-- TAB CONTENT: VIP EINSTELLUNGEN -->
+            <div class="ppv-tab-content" id="tab-vip">
+                <?php echo do_shortcode('[ppv_vip_settings]'); ?>
             </div>
             <?php endif; ?>
         </div>
