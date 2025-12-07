@@ -1767,7 +1767,7 @@ class PPV_Stats {
             <!-- ═══════════════════════════════════════════════════════════ -->
             <!-- TAB 5: DEVICE ACTIVITY -->
             <!-- ═══════════════════════════════════════════════════════════ -->
-            <div class="ppv-stats-tab-content" id="ppv-tab-device-activity" style="display:none;">
+            <div class="ppv-stats-tab-content" id="ppv-tab-device-activity">
                 <div class="ppv-stats-section">
                     <h3 class="ppv-section-title">📱 <?php echo esc_html($T['device_activity'] ?? 'Geräte-Aktivität'); ?></h3>
                     <p class="ppv-section-desc"><?php echo esc_html($T['device_activity_desc'] ?? 'Übersicht der Scan-Aktivitäten pro Gerät (letzte 7 Tage).'); ?></p>
