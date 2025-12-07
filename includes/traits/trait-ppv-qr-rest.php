@@ -248,11 +248,14 @@ trait PPV_QR_REST_Trait {
         // ═══════════════════════════════════════════════════════════
         // 🎭 DEMO MODE CHECK - Bypass ALL restrictions for demo stores
         // ═══════════════════════════════════════════════════════════
-        // Check both current store AND parent store (for filialen)
+        // Check: current store, parent store, OR any child store (filiale)
+        // This allows setting demo_mode on ANY store in the chain
         $is_demo_mode = $wpdb->get_var($wpdb->prepare(
             "SELECT MAX(COALESCE(demo_mode, 0)) FROM {$wpdb->prefix}ppv_stores
-             WHERE id = %d OR id = (SELECT parent_id FROM {$wpdb->prefix}ppv_stores WHERE id = %d)",
-            $store_id, $store_id
+             WHERE id = %d
+                OR id = (SELECT parent_id FROM {$wpdb->prefix}ppv_stores WHERE id = %d)
+                OR parent_id = %d",
+            $store_id, $store_id, $store_id
         ));
         $is_demo_mode = (bool) $is_demo_mode;
 
