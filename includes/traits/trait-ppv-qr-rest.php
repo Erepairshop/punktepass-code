@@ -917,7 +917,8 @@ trait PPV_QR_REST_Trait {
                 LIMIT 1
             ", $user_id, $store_id));
 
-            if ($recent_insert) {
+            // Skip duplicate check in demo mode
+            if (!$is_demo_mode && $recent_insert) {
                 $wpdb->query('ROLLBACK');
                 ppv_log("⚠️ [PPV_QR] Duplicate scan blocked: user={$user_id}, store={$store_id}, existing_id={$recent_insert}");
                 return new WP_REST_Response([
