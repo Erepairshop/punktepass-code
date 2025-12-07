@@ -2,10 +2,16 @@
   "name": "PunktePass",
   "short_name": "PunktePass",
   "description": "Digitales Treuepunkt-System mit QR-Code, Belohnungen und POS-Integration.",
-  
+
   "id": "/",
   "start_url": "/login?source=pwa",
   "scope": "/",
+
+  "serviceworker": {
+    "src": "/sw.js",
+    "scope": "/",
+    "type": "classic"
+  },
 
   "display": "standalone",
   "orientation": "portrait",
