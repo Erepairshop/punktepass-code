@@ -9,9 +9,9 @@
 // ✅ Force old cache deletion
 // ✅ Dynamic pages (handler/user) never cached - fixes onboarding/profile state issues
 
-const CACHE_VERSION = "v6.0";
+const CACHE_VERSION = "v6.1";
 const CACHE_NAME = "punktepass-" + CACHE_VERSION;
-const API_CACHE = "punktepass-api-v6.0";
+const API_CACHE = "punktepass-api-v6.1";
 
 // Only cache critical files
 const ASSETS = [
@@ -351,12 +351,12 @@ self.addEventListener("sync", e => {
 self.addEventListener("push", e => {
   try {
     const data = e.data ? e.data.json() : {};
-    
+
     e.waitUntil(
       self.registration.showNotification(data.title || "PunktePass", {
         body: data.body || "Új esemény érkezett!",
-        icon: "/wp-content/plugins/punktepass/assets/img/icons/icon-192.png",
-        badge: "/wp-content/plugins/punktepass/assets/img/icons/icon-96.png",
+        icon: "/wp-content/plugins/punktepass/assets/img/pwa-icon-192.png",
+        badge: "/wp-content/plugins/punktepass/assets/img/pwa-icon-192.png",
         tag: "punktepass-notification",
         requireInteraction: false
       }).catch(err => {})

@@ -64,7 +64,7 @@ class PPV_PWA {
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
         <meta name="apple-mobile-web-app-title" content="PunktePass">
         <link rel="manifest" href="<?php echo esc_url(home_url('/manifest.json')); ?>">
-        <link rel="apple-touch-icon" href="<?php echo esc_url(PPV_PLUGIN_URL . 'assets/img/punktepass-icon-512.png'); ?>">
+        <link rel="apple-touch-icon" href="<?php echo esc_url(PPV_PLUGIN_URL . 'assets/img/pwa-icon-512.png'); ?>">
         <?php
     }
 
