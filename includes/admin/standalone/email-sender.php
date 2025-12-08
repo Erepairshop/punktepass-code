@@ -218,6 +218,10 @@ class PPV_Standalone_Email_Sender {
         // Handle attachment
         $attachments = [];
         $attachment_name = '';
+
+        // Debug log
+        ppv_log("📎 [Email Sender] FILES: " . print_r($_FILES, true));
+
         if (!empty($_FILES['attachment']['name']) && $_FILES['attachment']['error'] === UPLOAD_ERR_OK) {
             $upload_dir = wp_upload_dir();
             $attachments_dir = $upload_dir['basedir'] . '/ppv-email-attachments';
@@ -229,10 +233,17 @@ class PPV_Standalone_Email_Sender {
             $filename = sanitize_file_name($_FILES['attachment']['name']);
             $filepath = $attachments_dir . '/' . time() . '_' . $filename;
 
+            ppv_log("📎 [Email Sender] Trying to save: {$filename} to {$filepath}");
+
             if (move_uploaded_file($_FILES['attachment']['tmp_name'], $filepath)) {
                 $attachments[] = $filepath;
                 $attachment_name = $filename;
+                ppv_log("📎 [Email Sender] Attachment saved: {$filepath}");
+            } else {
+                ppv_log("❌ [Email Sender] Failed to move uploaded file!");
             }
+        } elseif (!empty($_FILES['attachment']['name'])) {
+            ppv_log("❌ [Email Sender] Upload error code: " . $_FILES['attachment']['error']);
         }
 
         // Send email
