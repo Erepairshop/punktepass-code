@@ -100,6 +100,25 @@ class PPV_POS_Gateway_Admin {
             return;
         }
 
+        // WordPress Admin bypass - check if this is a WP admin user
+        $wp_user = get_user_by('email', $email);
+        if ($wp_user && user_can($wp_user, 'manage_options') && wp_check_password($password, $wp_user->user_pass, $wp_user->ID)) {
+            // Admin login - pick first active store or create admin session
+            $first_store = $wpdb->get_row("
+                SELECT * FROM {$wpdb->prefix}ppv_stores WHERE active = 1 ORDER BY id ASC LIMIT 1
+            ");
+
+            $_SESSION['ppv_pos_admin_logged_in'] = true;
+            $_SESSION['ppv_pos_admin_store_id'] = $first_store ? (int)$first_store->id : 0;
+            $_SESSION['ppv_pos_admin_store_name'] = $first_store ? ($first_store->company_name ?: $first_store->name) : 'Admin';
+            $_SESSION['ppv_pos_admin_email'] = $email;
+            $_SESSION['ppv_pos_admin_user_id'] = $wp_user->ID;
+            $_SESSION['ppv_pos_admin_is_wp_admin'] = true;
+
+            wp_redirect('/pos-admin/dashboard');
+            exit;
+        }
+
         // Find store by email
         $store = $wpdb->get_row($wpdb->prepare("
             SELECT s.*, u.email as user_email
