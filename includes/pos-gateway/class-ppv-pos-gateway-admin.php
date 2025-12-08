@@ -52,9 +52,18 @@ class PPV_POS_Gateway_Admin {
         }
 
         // Check authentication
+        // Also allow if logged into main /admin panel
         if (empty($_SESSION['ppv_pos_admin_logged_in'])) {
-            self::render_login_page();
-            exit;
+            // Bridge from /admin session
+            if (!empty($_SESSION['ppv_admin_logged_in']) && !empty($_SESSION['ppv_admin_store_id'])) {
+                $_SESSION['ppv_pos_admin_logged_in'] = true;
+                $_SESSION['ppv_pos_admin_store_id'] = (int)$_SESSION['ppv_admin_store_id'];
+                $_SESSION['ppv_pos_admin_store_name'] = $_SESSION['ppv_admin_store_name'] ?? 'Store';
+                $_SESSION['ppv_pos_admin_email'] = $_SESSION['ppv_admin_email'] ?? '';
+            } else {
+                self::render_login_page();
+                exit;
+            }
         }
 
         // Route to appropriate page
