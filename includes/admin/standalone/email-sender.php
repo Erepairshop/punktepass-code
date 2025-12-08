@@ -24,6 +24,10 @@ class PPV_Standalone_Email_Sender {
                 self::handle_send_email();
             } elseif (isset($_POST['delete_log'])) {
                 self::handle_delete_log();
+            } elseif (isset($_POST['save_template'])) {
+                self::handle_save_template();
+            } elseif (isset($_POST['delete_template'])) {
+                self::handle_delete_template();
             }
         }
 
@@ -68,36 +72,94 @@ class PPV_Standalone_Email_Sender {
     }
 
     /**
-     * Create table if not exists
+     * Create tables if not exists
      */
     private static function maybe_create_table() {
         global $wpdb;
-        $table = $wpdb->prefix . 'ppv_email_logs';
+        $charset_collate = $wpdb->get_charset_collate();
+        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
 
-        if ($wpdb->get_var("SHOW TABLES LIKE '$table'") === $table) {
-            return;
+        // Email logs table
+        $table = $wpdb->prefix . 'ppv_email_logs';
+        if ($wpdb->get_var("SHOW TABLES LIKE '$table'") !== $table) {
+            $sql = "CREATE TABLE $table (
+                id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+                recipient_email varchar(255) NOT NULL,
+                recipient_name varchar(255) DEFAULT '',
+                subject varchar(500) NOT NULL,
+                message_preview text,
+                attachment_name varchar(255) DEFAULT '',
+                status varchar(50) NOT NULL DEFAULT 'sent',
+                sent_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                notes text DEFAULT '',
+                PRIMARY KEY (id),
+                KEY recipient_email (recipient_email),
+                KEY status (status),
+                KEY sent_at (sent_at)
+            ) $charset_collate;";
+            dbDelta($sql);
         }
 
-        $charset_collate = $wpdb->get_charset_collate();
+        // Email templates table
+        $templates_table = $wpdb->prefix . 'ppv_email_templates';
+        if ($wpdb->get_var("SHOW TABLES LIKE '$templates_table'") !== $templates_table) {
+            $sql = "CREATE TABLE $templates_table (
+                id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+                name varchar(255) NOT NULL,
+                subject varchar(500) NOT NULL,
+                message longtext NOT NULL,
+                created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (id)
+            ) $charset_collate;";
+            dbDelta($sql);
+        }
+    }
 
-        $sql = "CREATE TABLE $table (
-            id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-            recipient_email varchar(255) NOT NULL,
-            recipient_name varchar(255) DEFAULT '',
-            subject varchar(500) NOT NULL,
-            message_preview text,
-            attachment_name varchar(255) DEFAULT '',
-            status varchar(50) NOT NULL DEFAULT 'sent',
-            sent_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            notes text DEFAULT '',
-            PRIMARY KEY (id),
-            KEY recipient_email (recipient_email),
-            KEY status (status),
-            KEY sent_at (sent_at)
-        ) $charset_collate;";
+    /**
+     * Handle save template
+     */
+    private static function handle_save_template() {
+        global $wpdb;
 
-        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-        dbDelta($sql);
+        $name = sanitize_text_field($_POST['template_name'] ?? '');
+        $subject = sanitize_text_field($_POST['template_subject'] ?? '');
+        $message = wp_kses_post($_POST['template_message'] ?? '');
+
+        if (empty($name) || empty($message)) {
+            wp_redirect("/admin/email-sender?error=template_empty");
+            exit;
+        }
+
+        $wpdb->insert(
+            $wpdb->prefix . 'ppv_email_templates',
+            [
+                'name' => $name,
+                'subject' => $subject,
+                'message' => $message
+            ],
+            ['%s', '%s', '%s']
+        );
+
+        ppv_log("📝 [Email Sender] Template mentve: {$name}");
+        wp_redirect("/admin/email-sender?success=template_saved");
+        exit;
+    }
+
+    /**
+     * Handle delete template
+     */
+    private static function handle_delete_template() {
+        global $wpdb;
+
+        $id = intval($_POST['template_id'] ?? 0);
+
+        if ($id > 0) {
+            $wpdb->delete($wpdb->prefix . 'ppv_email_templates', ['id' => $id], ['%d']);
+            ppv_log("🗑️ [Email Sender] Template törölve: #{$id}");
+        }
+
+        wp_redirect("/admin/email-sender?success=template_deleted");
+        exit;
     }
 
     /**
@@ -130,6 +192,15 @@ class PPV_Standalone_Email_Sender {
         ));
 
         if ($already_sent && !$force_send) {
+            // Store form data in transient for re-display
+            set_transient('ppv_email_form_data', [
+                'to_email' => $to_email,
+                'to_name' => $to_name,
+                'subject' => $subject,
+                'message' => $message,
+                'notes' => $notes
+            ], 300); // 5 minutes
+
             wp_redirect("/admin/email-sender?error=duplicate&email=" . urlencode($to_email));
             exit;
         }
@@ -257,9 +328,22 @@ class PPV_Standalone_Email_Sender {
      * Render HTML
      */
     private static function render_html($logs, $filter, $search, $total_sent, $today_sent, $failed_count) {
+        global $wpdb;
+
         $success = isset($_GET['success']) ? $_GET['success'] : '';
         $error = isset($_GET['error']) ? $_GET['error'] : '';
         $duplicate_email = isset($_GET['email']) ? $_GET['email'] : '';
+
+        // Load saved templates
+        $templates = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}ppv_email_templates ORDER BY name ASC");
+
+        // Get saved form data from transient (for duplicate re-send)
+        $saved_form_data = get_transient('ppv_email_form_data');
+        if ($saved_form_data && $error === 'duplicate') {
+            delete_transient('ppv_email_form_data');
+        } else {
+            $saved_form_data = null;
+        }
 
         // Default template
         $default_template = 'Guten Tag,
@@ -284,12 +368,7 @@ Im Anhang finden Sie eine übersichtliche Präsentation mit allen Details.
 
 Gerne stelle ich Ihnen PunktePass persönlich in 1 Minute vor.
 
-Ich freue mich über eine kurze Rückmeldung, falls Interesse besteht oder ein mögliches Kennenlernen passt.
-
-Mit freundlichen Grüßen
-Erik Borota
-Erepairshop / PunktePass
-Tel/WhatsApp: 017698479520';
+Ich freue mich über eine kurze Rückmeldung, falls Interesse besteht oder ein mögliches Kennenlernen passt.';
 
         ?>
         <!DOCTYPE html>
@@ -757,6 +836,16 @@ Tel/WhatsApp: 017698479520';
                         <i class="ri-checkbox-circle-fill"></i>
                         Email sikeresen elküldve: <?php echo esc_html($_GET['to'] ?? ''); ?>
                     </div>
+                <?php elseif ($success === 'template_saved'): ?>
+                    <div class="success-msg">
+                        <i class="ri-checkbox-circle-fill"></i>
+                        Sablon sikeresen mentve!
+                    </div>
+                <?php elseif ($success === 'template_deleted'): ?>
+                    <div class="success-msg">
+                        <i class="ri-checkbox-circle-fill"></i>
+                        Sablon törölve!
+                    </div>
                 <?php elseif ($success === 'deleted'): ?>
                     <div class="success-msg">
                         <i class="ri-checkbox-circle-fill"></i>
@@ -776,7 +865,7 @@ Tel/WhatsApp: 017698479520';
                     <div class="error-msg">
                         <i class="ri-error-warning-fill"></i> Email küldés sikertelen!
                     </div>
-                <?php elseif ($error === 'duplicate'): ?>
+                <?php elseif ($error === 'duplicate' && $saved_form_data): ?>
                     <div class="warning-msg">
                         <i class="ri-alert-fill"></i>
                         <strong>Figyelem:</strong> Erre az email címre már küldtél korábban: <?php echo esc_html($duplicate_email); ?>
@@ -784,11 +873,11 @@ Tel/WhatsApp: 017698479520';
                             <form method="post" enctype="multipart/form-data" style="display: inline;">
                                 <input type="hidden" name="send_email" value="1">
                                 <input type="hidden" name="force_send" value="1">
-                                <input type="hidden" name="to_email" value="<?php echo esc_attr($duplicate_email); ?>">
-                                <input type="hidden" name="to_name" value="<?php echo esc_attr($_POST['to_name'] ?? ''); ?>">
-                                <input type="hidden" name="subject" value="<?php echo esc_attr($_POST['subject'] ?? ''); ?>">
-                                <input type="hidden" name="message" value="<?php echo esc_attr($_POST['message'] ?? ''); ?>">
-                                <input type="hidden" name="notes" value="<?php echo esc_attr($_POST['notes'] ?? ''); ?>">
+                                <input type="hidden" name="to_email" value="<?php echo esc_attr($saved_form_data['to_email']); ?>">
+                                <input type="hidden" name="to_name" value="<?php echo esc_attr($saved_form_data['to_name']); ?>">
+                                <input type="hidden" name="subject" value="<?php echo esc_attr($saved_form_data['subject']); ?>">
+                                <input type="hidden" name="message" value="<?php echo esc_attr($saved_form_data['message']); ?>">
+                                <input type="hidden" name="notes" value="<?php echo esc_attr($saved_form_data['notes']); ?>">
                                 <button type="submit" class="btn btn-primary btn-sm">Mégis küldöm</button>
                             </form>
                             <a href="/admin/email-sender" class="btn btn-secondary btn-sm">Mégsem</a>
@@ -823,6 +912,30 @@ Tel/WhatsApp: 017698479520';
                                 <div class="form-group">
                                     <label><i class="ri-text"></i> Tárgy *</label>
                                     <input type="text" name="subject" id="subject" required value="PunktePass – Digitales Kundenbindungsprogramm für Ihr Geschäft">
+                                </div>
+
+                                <!-- Template selector -->
+                                <div class="form-group">
+                                    <label><i class="ri-bookmark-line"></i> Sablon</label>
+                                    <div style="display: flex; gap: 10px; align-items: center;">
+                                        <select id="template-select" onchange="loadTemplate()" style="flex: 1; padding: 10px 12px; background: #0a1628; border: 1px solid #1f2b4d; border-radius: 6px; color: #fff; font-size: 13px;">
+                                            <option value="">-- Válassz sablont --</option>
+                                            <option value="default">📄 Alapértelmezett sablon</option>
+                                            <?php foreach ($templates as $tpl): ?>
+                                                <option value="<?php echo $tpl->id; ?>" data-subject="<?php echo esc_attr($tpl->subject); ?>" data-message="<?php echo esc_attr($tpl->message); ?>">
+                                                    📝 <?php echo esc_html($tpl->name); ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                        <button type="button" class="btn btn-secondary btn-sm" onclick="showSaveTemplateModal()" title="Sablon mentése">
+                                            <i class="ri-save-line"></i>
+                                        </button>
+                                        <?php if (!empty($templates)): ?>
+                                        <button type="button" class="btn btn-danger btn-sm" onclick="deleteSelectedTemplate()" title="Sablon törlése" id="delete-template-btn" style="display: none;">
+                                            <i class="ri-delete-bin-line"></i>
+                                        </button>
+                                        <?php endif; ?>
+                                    </div>
                                 </div>
 
                                 <div class="form-group">
@@ -927,17 +1040,100 @@ Tel/WhatsApp: 017698479520';
                 </div>
             </div>
 
+            <!-- Save Template Modal -->
+            <div class="modal-overlay" id="saveTemplateModal">
+                <div class="modal" style="max-width: 500px;">
+                    <div class="modal-header">
+                        <h2><i class="ri-save-line"></i> Sablon mentése</h2>
+                        <button class="modal-close" onclick="closeSaveTemplateModal()">&times;</button>
+                    </div>
+                    <div class="modal-body" style="padding: 25px;">
+                        <form method="post" id="save-template-form">
+                            <input type="hidden" name="save_template" value="1">
+                            <input type="hidden" name="template_subject" id="save-template-subject">
+                            <input type="hidden" name="template_message" id="save-template-message">
+
+                            <div class="form-group">
+                                <label style="color: #fff;">Sablon neve *</label>
+                                <input type="text" name="template_name" id="template-name" required placeholder="pl. PunktePass bemutatkozás" style="width: 100%; padding: 12px; background: #0a1628; border: 1px solid #1f2b4d; border-radius: 8px; color: #fff; font-size: 14px;">
+                            </div>
+
+                            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                                <button type="submit" class="btn btn-primary" style="flex: 1;">
+                                    <i class="ri-save-line"></i> Mentés
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="closeSaveTemplateModal()">Mégsem</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Delete Template Form (hidden) -->
+            <form method="post" id="delete-template-form" style="display: none;">
+                <input type="hidden" name="delete_template" value="1">
+                <input type="hidden" name="template_id" id="delete-template-id">
+            </form>
+
             <script>
             const defaultTemplate = <?php echo json_encode($default_template); ?>;
+            const defaultSubject = 'PunktePass – Digitales Kundenbindungsprogramm für Ihr Geschäft';
             const logoUrl = '<?php echo site_url('/wp-content/plugins/punktepass/assets/img/logo.webp'); ?>';
 
             function resetForm() {
                 document.getElementById('to_email').value = '';
                 document.getElementById('to_name').value = '';
                 document.getElementById('notes').value = '';
-                document.getElementById('subject').value = 'PunktePass – Digitales Kundenbindungsprogramm für Ihr Geschäft';
+                document.getElementById('subject').value = defaultSubject;
                 document.getElementById('message').value = defaultTemplate;
+                document.getElementById('template-select').value = '';
+                document.getElementById('delete-template-btn')?.style.setProperty('display', 'none');
             }
+
+            // Template functions
+            function loadTemplate() {
+                const select = document.getElementById('template-select');
+                const option = select.options[select.selectedIndex];
+                const deleteBtn = document.getElementById('delete-template-btn');
+
+                if (select.value === 'default') {
+                    document.getElementById('subject').value = defaultSubject;
+                    document.getElementById('message').value = defaultTemplate;
+                    if (deleteBtn) deleteBtn.style.display = 'none';
+                } else if (select.value && option.dataset.message) {
+                    document.getElementById('subject').value = option.dataset.subject || defaultSubject;
+                    document.getElementById('message').value = option.dataset.message;
+                    if (deleteBtn) deleteBtn.style.display = 'inline-flex';
+                } else {
+                    if (deleteBtn) deleteBtn.style.display = 'none';
+                }
+            }
+
+            function showSaveTemplateModal() {
+                document.getElementById('save-template-subject').value = document.getElementById('subject').value;
+                document.getElementById('save-template-message').value = document.getElementById('message').value;
+                document.getElementById('template-name').value = '';
+                document.getElementById('saveTemplateModal').classList.add('active');
+            }
+
+            function closeSaveTemplateModal() {
+                document.getElementById('saveTemplateModal').classList.remove('active');
+            }
+
+            function deleteSelectedTemplate() {
+                const select = document.getElementById('template-select');
+                if (!select.value || select.value === 'default') return;
+
+                if (confirm('Biztosan törlöd ezt a sablont?')) {
+                    document.getElementById('delete-template-id').value = select.value;
+                    document.getElementById('delete-template-form').submit();
+                }
+            }
+
+            // Close save template modal on overlay click
+            document.getElementById('saveTemplateModal').addEventListener('click', function(e) {
+                if (e.target === this) closeSaveTemplateModal();
+            });
 
             function previewEmail() {
                 const message = document.getElementById('message').value;
