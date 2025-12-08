@@ -145,7 +145,7 @@ add_filter('rest_authentication_errors', function ($result) {
     
     // Allow PunktePass REST endpoints
     if (str_contains($uri, '/wp-json/ppv/v1/') || str_contains($uri, '/wp-json/punktepass/v1/')) {
-        
+
         // Anonymous endpoints
         $anon_endpoints = [
             '/wp-json/ppv/v1/auth/',
@@ -158,6 +158,8 @@ add_filter('rest_authentication_errors', function ($result) {
             '/wp-json/ppv/v1/pos/stats',
             '/wp-json/punktepass/v1/pos/scan',
             '/wp-json/punktepass/v1/pos/dock',
+            // POS Gateway endpoints (authenticated via X-POS-API-Key header)
+            '/wp-json/punktepass/v1/pos-gateway/',
         ];
         
         foreach ($anon_endpoints as $endpoint) {
@@ -281,6 +283,7 @@ $core_modules = [
     'includes/class-ppv-haendlervertrag.php',
     'includes/class-ppv-standalone-admin.php',
     'includes/class-ppv-device-fingerprint.php',
+    'includes/pos-gateway/class-ppv-pos-gateway.php', // POS Gateway for external POS integrations
 ];
 
 // Debug only if enabled
