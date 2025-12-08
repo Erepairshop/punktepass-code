@@ -338,6 +338,9 @@ class PPV_Standalone_Admin {
         } elseif ($path === '/admin/contracts') {
             require_once __DIR__ . '/admin/standalone/contracts.php';
             PPV_Standalone_Contracts::render();
+        } elseif ($path === '/admin/email-sender') {
+            require_once __DIR__ . '/admin/standalone/email-sender.php';
+            PPV_Standalone_Email_Sender::render();
         } else {
             self::render_dashboard();
         }
@@ -1436,6 +1439,9 @@ class PPV_Standalone_Admin {
                     </a>
                     <a href="/admin/contracts" class="<?php echo $current_page === 'contracts' ? 'active' : ''; ?>">
                         <i class="ri-file-text-line"></i> Szerződések
+                    </a>
+                    <a href="/admin/email-sender" class="<?php echo $current_page === 'email-sender' ? 'active' : ''; ?>">
+                        <i class="ri-mail-send-line"></i> Email Sender
                     </a>
                 </nav>
                 <div class="admin-user">
