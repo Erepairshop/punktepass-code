@@ -1286,7 +1286,7 @@ class PPV_Stats {
         }
 
         $placeholders = implode(',', array_fill(0, count($store_ids), '%d'));
-        $table_log = $wpdb->prefix . 'ppv_pos_log';
+        $table_points = $wpdb->prefix . 'ppv_points';
         $table_devices = $wpdb->prefix . 'ppv_user_devices';
 
         // Date range: last 7 days
@@ -1319,33 +1319,37 @@ class PPV_Stats {
 
         ppv_log("📱 [Device Activity] Found " . count($device_details) . " registered devices");
 
-        // 2️⃣ Get scan activity from pos_log (using scanner_id from metadata)
-        // Scans store scanner_id in metadata, which corresponds to device ID
+        // 2️⃣ Get scan activity from ppv_points table (using device_fingerprint)
+        // NOTE: ppv_points stores RAW fingerprint, ppv_user_devices stores SHA256 HASH
+        // So we need to hash the fingerprint in SQL using SHA2() function
         $device_scans = $wpdb->get_results($wpdb->prepare("
             SELECT
-                JSON_UNQUOTE(JSON_EXTRACT(l.metadata, '$.scanner_id')) as scanner_id,
-                DATE(l.created_at) as scan_date,
+                SHA2(p.device_fingerprint, 256) as fingerprint_hash,
+                DATE(p.created) as scan_date,
                 COUNT(*) as scan_count
-            FROM {$table_log} l
-            WHERE l.store_id IN ({$placeholders})
-              AND l.type = 'qr_scan'
-              AND DATE(l.created_at) >= %s
-              AND DATE(l.created_at) <= %s
-              AND JSON_EXTRACT(l.metadata, '$.scanner_id') IS NOT NULL
-            GROUP BY scanner_id, scan_date
-            ORDER BY scanner_id, scan_date
+            FROM {$table_points} p
+            WHERE p.store_id IN ({$placeholders})
+              AND p.type = 'qr_scan'
+              AND DATE(p.created) >= %s
+              AND DATE(p.created) <= %s
+              AND p.device_fingerprint IS NOT NULL
+              AND p.device_fingerprint != ''
+            GROUP BY fingerprint_hash, scan_date
+            ORDER BY fingerprint_hash, scan_date
         ", array_merge($store_ids, [$date_start, $date_end])));
 
-        // Create scan lookup by scanner_id (device_id)
+        ppv_log("📱 [Device Activity] Found " . count($device_scans) . " scan records with device fingerprint");
+
+        // Create scan lookup by fingerprint_hash (now hashed to match ppv_user_devices)
         $scan_lookup = [];
         foreach ($device_scans as $scan) {
-            $scanner_id = $scan->scanner_id;
-            if (empty($scanner_id) || $scanner_id === 'null') continue;
+            $fp = $scan->fingerprint_hash;
+            if (empty($fp)) continue;
 
-            if (!isset($scan_lookup[$scanner_id])) {
-                $scan_lookup[$scanner_id] = [];
+            if (!isset($scan_lookup[$fp])) {
+                $scan_lookup[$fp] = [];
             }
-            $scan_lookup[$scanner_id][$scan->scan_date] = intval($scan->scan_count);
+            $scan_lookup[$fp][$scan->scan_date] = intval($scan->scan_count);
         }
 
         // 3️⃣ Build device data - show ALL registered devices
@@ -1374,12 +1378,13 @@ class PPV_Stats {
                 elseif (stripos($d->user_agent, 'Linux') !== false) $os = 'Linux';
             }
 
-            // Get daily scans for this device (using device_id as scanner_id)
+            // Get daily scans for this device (using fingerprint_hash to match)
             $daily_scans = array_fill_keys($dates, 0);
             $total_scans = 0;
 
-            if (isset($scan_lookup[$device_id])) {
-                foreach ($scan_lookup[$device_id] as $date => $count) {
+            // Match by fingerprint_hash
+            if (isset($scan_lookup[$fp])) {
+                foreach ($scan_lookup[$fp] as $date => $count) {
                     if (isset($daily_scans[$date])) {
                         $daily_scans[$date] = $count;
                         $total_scans += $count;

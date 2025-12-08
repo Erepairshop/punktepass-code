@@ -1492,6 +1492,7 @@ class PPV_Device_Fingerprint {
             if ($similar_device) {
                 // Found a similar device - auto-update the fingerprint hash
                 $similarity_score = $similar_device['similarity'];
+                $old_fingerprint_hash = $similar_device['fingerprint_hash'];
                 ppv_log("📱 [Auto-Update] Found similar device #{$similar_device['device_id']} ({$similar_device['device_name']}) with {$similarity_score}% similarity");
 
                 // Update the fingerprint hash for this device
@@ -1508,7 +1509,20 @@ class PPV_Device_Fingerprint {
                 );
 
                 if ($updated !== false) {
-                    ppv_log("✅ [Auto-Update] Fingerprint auto-updated for device #{$similar_device['device_id']}");
+                    // Also update old scan records in ppv_points to maintain statistics continuity
+                    // NOTE: ppv_points stores RAW fingerprint, not hash
+                    // We need to match by hash (SHA2) and update to new RAW fingerprint
+                    $points_updated = $wpdb->query($wpdb->prepare(
+                        "UPDATE {$wpdb->prefix}ppv_points
+                         SET device_fingerprint = %s
+                         WHERE SHA2(device_fingerprint, 256) = %s
+                           AND store_id = %d",
+                        $fingerprint, // NEW raw fingerprint
+                        $old_fingerprint_hash, // OLD hash to match
+                        $parent_store_id
+                    ));
+
+                    ppv_log("✅ [Auto-Update] Fingerprint auto-updated for device #{$similar_device['device_id']}, points_records_updated={$points_updated}");
                     $is_registered = true;
                     $auto_updated = true;
                 } else {
@@ -1693,10 +1707,26 @@ class PPV_Device_Fingerprint {
         );
 
         if ($result !== false) {
-            ppv_log("📱 [Device Update] Fingerprint updated: device_id={$device_id}, old_hash=" . substr($device->fingerprint_hash, 0, 16) . "..., new_hash=" . substr($new_fingerprint_hash, 0, 16) . "...");
+            $old_fingerprint_hash = $device->fingerprint_hash;
+
+            // Also update old scan records in ppv_points to maintain statistics continuity
+            // NOTE: ppv_points stores RAW fingerprint, not hash
+            // We need to match by hash (SHA2) and update to new RAW fingerprint
+            $points_updated = $wpdb->query($wpdb->prepare(
+                "UPDATE {$wpdb->prefix}ppv_points
+                 SET device_fingerprint = %s
+                 WHERE SHA2(device_fingerprint, 256) = %s
+                   AND store_id = %d",
+                $new_fingerprint, // NEW raw fingerprint
+                $old_fingerprint_hash, // OLD hash to match
+                $parent_store_id
+            ));
+
+            ppv_log("📱 [Device Update] Fingerprint updated: device_id={$device_id}, old_hash=" . substr($old_fingerprint_hash, 0, 16) . "..., new_hash=" . substr($new_fingerprint_hash, 0, 16) . "..., points_records_updated={$points_updated}");
             return new WP_REST_Response([
                 'success' => true,
-                'message' => 'Fingerprint erfolgreich aktualisiert'
+                'message' => 'Fingerprint erfolgreich aktualisiert',
+                'points_updated' => $points_updated
             ], 200);
         }
 

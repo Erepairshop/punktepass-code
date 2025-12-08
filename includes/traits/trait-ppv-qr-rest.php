@@ -1327,6 +1327,7 @@ trait PPV_QR_REST_Trait {
                 l.type,
                 l.metadata,
                 u.email,
+                u.display_name,
                 u.first_name,
                 u.last_name,
                 u.avatar
@@ -1346,10 +1347,10 @@ trait PPV_QR_REST_Trait {
                 $points = $m[1];
             }
 
-            // Build display: Name > Email > #ID
-            $first = trim($log->first_name ?? '');
-            $last = trim($log->last_name ?? '');
-            $full_name = trim("$first $last");
+            // Build display: display_name > first+last > Email > #ID
+            $full_name = !empty($log->display_name)
+                ? $log->display_name
+                : trim(($log->first_name ?? '') . ' ' . ($log->last_name ?? ''));
             $email = $log->email ?? '';
 
             // Parse metadata for scanner info

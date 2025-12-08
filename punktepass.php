@@ -624,7 +624,7 @@ add_action('wp_head', function() {
 // ========================================
 add_action('wp_footer', function() {
     if (is_admin()) return;
-    if (ppv_is_login_page()) return; // Skip on login
+    // Note: SW must be registered on ALL pages including login for PWA detection
     ?>
     <script>
     if ('serviceWorker' in navigator) {
