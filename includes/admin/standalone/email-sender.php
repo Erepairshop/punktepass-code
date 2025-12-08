@@ -214,6 +214,7 @@ class PPV_Standalone_Email_Sender {
      */
     private static function build_html_email($message) {
         $message = nl2br($message);
+        $logo_url = site_url('/wp-content/plugins/punktepass/assets/img/logo.webp');
 
         return '<!DOCTYPE html>
 <html>
@@ -224,7 +225,7 @@ class PPV_Standalone_Email_Sender {
         body { font-family: "Segoe UI", Tahoma, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background: #f4f4f4; }
         .email-container { max-width: 600px; margin: 20px auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
         .email-header { background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%); padding: 30px; text-align: center; }
-        .email-header .logo { width: 60px; height: 60px; background: #fff; border-radius: 12px; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; font-weight: bold; color: #00d4ff; }
+        .email-header img.logo { width: 80px; height: auto; margin-bottom: 15px; }
         .email-header h1 { color: #fff; margin: 0; font-size: 1.5rem; }
         .email-body { padding: 35px; }
         .email-body p { margin-bottom: 15px; }
@@ -236,7 +237,7 @@ class PPV_Standalone_Email_Sender {
 <body>
     <div class="email-container">
         <div class="email-header">
-            <div class="logo">P</div>
+            <img src="' . $logo_url . '" alt="PunktePass" class="logo">
             <h1>PunktePass</h1>
         </div>
         <div class="email-body">' . $message . '</div>
@@ -928,6 +929,7 @@ Tel/WhatsApp: 017698479520';
 
             <script>
             const defaultTemplate = <?php echo json_encode($default_template); ?>;
+            const logoUrl = '<?php echo site_url('/wp-content/plugins/punktepass/assets/img/logo.webp'); ?>';
 
             function resetForm() {
                 document.getElementById('to_email').value = '';
@@ -958,7 +960,7 @@ Tel/WhatsApp: 017698479520';
                         </div>
                         <div style="max-width: 600px; margin: 20px auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
                             <div style="background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%); padding: 30px; text-align: center;">
-                                <div style="width: 60px; height: 60px; background: #fff; border-radius: 12px; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; font-weight: bold; color: #00d4ff;">P</div>
+                                <img src="${logoUrl}" alt="PunktePass" style="width: 80px; height: auto; margin-bottom: 15px;">
                                 <h1 style="color: #fff; margin: 0; font-size: 1.5rem;">PunktePass</h1>
                             </div>
                             <div style="padding: 35px; line-height: 1.7;">${htmlMessage}</div>
