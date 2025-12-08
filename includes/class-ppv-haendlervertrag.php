@@ -450,7 +450,7 @@ class PPV_Haendlervertrag {
                 PunktePass<br>
                 Siedlungsring 51<br>
                 89415 Lauingen<br><br>
-                Telefon: 0176 84831021<br>
+                Telefon: 0176 98479520<br>
                 E-Mail: info@punktepass.de<br>
                 USt-IdNr.: DE308874569</p>
             </div>
@@ -500,7 +500,7 @@ class PPV_Haendlervertrag {
                 <p><strong>Wichtig:</strong> Der Vertrag verlängert sich <strong>nicht automatisch</strong>. Der Händler muss die Verlängerung selbst aktiv vornehmen.<br><br>
                 <strong>Verlängerungsmöglichkeiten:</strong><br>
                 • Im PunktePass System (verfügbar 7 Tage vor Ablauf der Testphase)<br>
-                • Per Telefon: 0176 84831021<br>
+                • Per Telefon: 0176 98479520<br>
                 • Per E-Mail: info@punktepass.de</p>
             </div>
 
@@ -689,7 +689,7 @@ class PPV_Haendlervertrag {
                 <div class='info-box'>
                     <strong>Erik Borota</strong> – PunktePass<br>
                     Siedlungsring 51, 89415 Lauingen<br>
-                    Tel: 0176 84831021 | info@punktepass.de<br>
+                    Tel: 0176 98479520 | info@punktepass.de<br>
                     USt-IdNr.: DE308874569
                 </div>
             </td>
@@ -738,7 +738,7 @@ class PPV_Haendlervertrag {
         <div class='section-title' style='background: #1976d2;'>Vertragsverlängerung</div>
         <div style='background: #e3f2fd; padding: 6px 8px; font-size: 8pt;'>
             <strong>Wichtig:</strong> Der Vertrag verlängert sich <strong>nicht automatisch</strong>. Der Händler muss die Verlängerung selbst aktiv vornehmen.<br>
-            <strong>Möglichkeiten:</strong> Im PunktePass System (7 Tage vor Ablauf) | Tel: 0176 84831021 | E-Mail: info@punktepass.de
+            <strong>Möglichkeiten:</strong> Im PunktePass System (7 Tage vor Ablauf) | Tel: 0176 98479520 | E-Mail: info@punktepass.de
         </div>
     </div>
 
@@ -1538,7 +1538,7 @@ class PPV_Haendlervertrag {
                     <p>PunktePass</p>
                     <p>Siedlungsring 51</p>
                     <p>89415 Lauingen</p>
-                    <p style="margin-top: 10px;">Telefon: 0176 84831021</p>
+                    <p style="margin-top: 10px;">Telefon: 0176 98479520</p>
                     <p>E-Mail: info@punktepass.de</p>
                     <p style="margin-top: 10px;">USt-IdNr.: DE308874569</p>
                 </div>
@@ -1612,7 +1612,7 @@ class PPV_Haendlervertrag {
                             <p><strong>Wichtig:</strong> Der Vertrag verlängert sich <strong>nicht automatisch</strong>. Der Händler muss die Verlängerung selbst aktiv vornehmen.<br><br>
                             <strong>Verlängerungsmöglichkeiten:</strong><br>
                             • Im PunktePass System (verfügbar 7 Tage vor Ablauf der Testphase)<br>
-                            • Per Telefon: 0176 84831021<br>
+                            • Per Telefon: 0176 98479520<br>
                             • Per E-Mail: info@punktepass.de</p>
                         </div>
                     </div>
