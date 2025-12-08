@@ -341,6 +341,9 @@ class PPV_Standalone_Admin {
         } elseif ($path === '/admin/email-sender') {
             require_once __DIR__ . '/admin/standalone/email-sender.php';
             PPV_Standalone_Email_Sender::render();
+        } elseif ($path === '/admin/sales-map') {
+            require_once __DIR__ . '/admin/standalone/sales-map.php';
+            PPV_Standalone_Sales_Map::render();
         } else {
             self::render_dashboard();
         }
@@ -1442,6 +1445,9 @@ class PPV_Standalone_Admin {
                     </a>
                     <a href="/admin/email-sender" class="<?php echo $current_page === 'email-sender' ? 'active' : ''; ?>">
                         <i class="ri-mail-send-line"></i> Email Sender
+                    </a>
+                    <a href="/admin/sales-map" class="<?php echo $current_page === 'sales-map' ? 'active' : ''; ?>">
+                        <i class="ri-map-pin-line"></i> Sales Map
                     </a>
                 </nav>
                 <div class="admin-user">
