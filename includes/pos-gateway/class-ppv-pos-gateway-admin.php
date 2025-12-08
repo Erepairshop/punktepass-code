@@ -12,7 +12,7 @@
 
 if (!defined('ABSPATH')) exit;
 
-class PPV_POS_Admin {
+class PPV_POS_Gateway_Admin {
 
     /**
      * Initialize hooks

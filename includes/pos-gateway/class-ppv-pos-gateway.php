@@ -44,7 +44,7 @@ class PPV_POS_Gateway {
         PPV_POS_Gateway_REST::hooks();
 
         // Initialize POS Admin panel (/pos-admin)
-        PPV_POS_Admin::hooks();
+        PPV_POS_Gateway_Admin::hooks();
 
         // Add admin hooks if in admin
         if (is_admin()) {
@@ -65,7 +65,7 @@ class PPV_POS_Gateway {
         // Core classes
         require_once $base_path . '/class-ppv-pos-gateway-db.php';
         require_once $base_path . '/class-ppv-pos-gateway-rest.php';
-        require_once $base_path . '/class-ppv-pos-admin.php';
+        require_once $base_path . '/class-ppv-pos-gateway-admin.php';
 
         // Adapter interface and implementations
         require_once $base_path . '/adapters/interface-pos-adapter.php';
