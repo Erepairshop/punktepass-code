@@ -3,3 +3,4 @@ includes/log/*.log
 .DS_Store
 .env
 includes/log/*.log
+docs/POS-API-CREDENTIALS.md
