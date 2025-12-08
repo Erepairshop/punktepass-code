@@ -168,33 +168,12 @@ class PPV_Standalone_Email_Sender {
     private static function handle_send_email() {
         global $wpdb;
 
+        $to_email = sanitize_email($_POST['to_email'] ?? '');
+        $to_name = sanitize_text_field($_POST['to_name'] ?? '');
+        $subject = sanitize_text_field($_POST['subject'] ?? '');
+        $message = wp_kses_post($_POST['message'] ?? '');
+        $notes = sanitize_textarea_field($_POST['notes'] ?? '');
         $force_send = isset($_POST['force_send']);
-
-        // If force sending, get data from transient (hidden form fields may have encoding issues)
-        if ($force_send) {
-            $saved_data = get_transient('ppv_email_form_data');
-            if ($saved_data) {
-                $to_email = $saved_data['to_email'];
-                $to_name = $saved_data['to_name'];
-                $subject = $saved_data['subject'];
-                $message = $saved_data['message'];
-                $notes = $saved_data['notes'];
-                delete_transient('ppv_email_form_data');
-            } else {
-                // Fallback to POST if transient expired
-                $to_email = sanitize_email($_POST['to_email'] ?? '');
-                $to_name = sanitize_text_field($_POST['to_name'] ?? '');
-                $subject = sanitize_text_field($_POST['subject'] ?? '');
-                $message = wp_kses_post($_POST['message'] ?? '');
-                $notes = sanitize_textarea_field($_POST['notes'] ?? '');
-            }
-        } else {
-            $to_email = sanitize_email($_POST['to_email'] ?? '');
-            $to_name = sanitize_text_field($_POST['to_name'] ?? '');
-            $subject = sanitize_text_field($_POST['subject'] ?? '');
-            $message = wp_kses_post($_POST['message'] ?? '');
-            $notes = sanitize_textarea_field($_POST['notes'] ?? '');
-        }
 
         if (empty($to_email) || !is_email($to_email)) {
             wp_redirect("/admin/email-sender?error=invalid_email");
@@ -359,10 +338,11 @@ class PPV_Standalone_Email_Sender {
         $templates = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}ppv_email_templates ORDER BY name ASC");
 
         // Get saved form data from transient (for duplicate re-send)
-        // Note: Don't delete transient here - it will be deleted after force send in handle_send_email
-        $saved_form_data = null;
-        if ($error === 'duplicate') {
-            $saved_form_data = get_transient('ppv_email_form_data');
+        $saved_form_data = get_transient('ppv_email_form_data');
+        if ($saved_form_data && $error === 'duplicate') {
+            delete_transient('ppv_email_form_data');
+        } else {
+            $saved_form_data = null;
         }
 
         // Default template
