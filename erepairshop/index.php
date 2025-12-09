@@ -103,6 +103,10 @@
                 <div class="hidden md:flex items-center gap-8">
                     <a href="#services" class="hover:text-primary transition">Leistungen</a>
                     <a href="#about" class="hover:text-primary transition">Uber uns</a>
+                    <a href="#punktepass" class="hover:text-primary transition flex items-center gap-1">
+                        <span class="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs px-2 py-0.5 rounded-full">NEU</span>
+                        Treueprogramm
+                    </a>
                     <a href="#reviews" class="hover:text-primary transition">Bewertungen</a>
                     <a href="#faq" class="hover:text-primary transition">FAQ</a>
                     <a href="#contact" class="hover:text-primary transition">Kontakt</a>
