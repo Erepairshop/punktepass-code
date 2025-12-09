@@ -395,6 +395,7 @@ return [
     'login_button' => 'Anmelden',
     'login_no_account' => 'Noch kein Konto?',
     'login_register_now' => 'Jetzt registrieren',
+    'login_demo_button' => 'So funktioniert PunktePass',
 
     // App Download
     'login_download_app' => 'App herunterladen',

@@ -422,6 +422,7 @@ return [
     'login_button' => 'Bejelentkezés',
     'login_no_account' => 'Még nincs fiókod?',
     'login_register_now' => 'Regisztráció most',
+    'login_demo_button' => 'Így működik a PunktePass',
 
     // App Download
     'login_download_app' => 'App letöltése',
