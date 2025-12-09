@@ -346,6 +346,102 @@
         </div>
     </section>
 
+    <!-- PunktePass Section -->
+    <section id="punktepass" class="py-20 relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-pink-600/20"></div>
+        <div class="absolute top-0 right-0 w-96 h-96 bg-purple-500/30 rounded-full blur-3xl"></div>
+        <div class="absolute bottom-0 left-0 w-96 h-96 bg-pink-500/30 rounded-full blur-3xl"></div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+            <div class="grid lg:grid-cols-2 gap-12 items-center">
+                <div>
+                    <div class="inline-flex items-center gap-2 bg-purple-500/20 border border-purple-500/30 px-4 py-2 rounded-full mb-6">
+                        <i class="ri-gift-fill text-purple-400"></i>
+                        <span class="text-purple-300 font-medium">NEU: Treueprogramm</span>
+                    </div>
+
+                    <h2 class="text-3xl sm:text-4xl font-bold mb-6">
+                        Punkte sammeln mit<br>
+                        <span class="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">PunktePass</span>
+                    </h2>
+
+                    <p class="text-xl text-gray-300 mb-8">
+                        Jetzt bei jeder Reparatur Punkte sammeln und bei Ihrem nachsten Besuch sparen!
+                    </p>
+
+                    <div class="space-y-4 mb-8">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center">
+                                <i class="ri-smartphone-fill text-purple-400 text-xl"></i>
+                            </div>
+                            <div>
+                                <p class="font-semibold">App herunterladen</p>
+                                <p class="text-gray-400 text-sm">Kostenlos fur iOS und Android</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center">
+                                <i class="ri-qr-scan-2-line text-purple-400 text-xl"></i>
+                            </div>
+                            <div>
+                                <p class="font-semibold">QR-Code scannen</p>
+                                <p class="text-gray-400 text-sm">Nach jeder Reparatur Punkte sammeln</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center">
+                                <i class="ri-money-euro-circle-fill text-green-400 text-xl"></i>
+                            </div>
+                            <div>
+                                <p class="font-semibold">10€ Rabatt</p>
+                                <p class="text-gray-400 text-sm">Schon beim 2. Besuch einlosen!</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <a href="https://punktepass.de" target="_blank"
+                       class="inline-flex items-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 px-8 py-4 rounded-full font-semibold text-lg hover:opacity-90 transition transform hover:scale-105">
+                        <i class="ri-download-2-fill"></i>
+                        PunktePass App herunterladen
+                    </a>
+                </div>
+
+                <div class="flex justify-center">
+                    <div class="relative">
+                        <!-- Decorative Phone Frame -->
+                        <div class="w-64 h-[500px] bg-gradient-to-b from-purple-500/20 to-pink-500/20 rounded-[3rem] border-4 border-white/10 p-3 shadow-2xl">
+                            <div class="w-full h-full bg-dark rounded-[2.5rem] flex flex-col items-center justify-center p-6 text-center">
+                                <div class="w-20 h-20 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mb-6">
+                                    <span class="text-3xl font-bold">PP</span>
+                                </div>
+                                <h3 class="text-2xl font-bold mb-2">PunktePass</h3>
+                                <p class="text-gray-400 mb-6">Sammle Punkte bei jedem Einkauf</p>
+                                <div class="glass rounded-xl p-4 w-full mb-4">
+                                    <p class="text-sm text-gray-400">Ihre Punkte</p>
+                                    <p class="text-3xl font-bold gradient-text">250</p>
+                                </div>
+                                <div class="glass rounded-xl p-4 w-full">
+                                    <p class="text-sm text-gray-400">Nachster Rabatt</p>
+                                    <p class="text-xl font-bold text-green-400">10€ bei 500 Punkten</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Floating Elements -->
+                        <div class="absolute -top-4 -right-4 glass px-4 py-2 rounded-full float-animation">
+                            <span class="text-green-400 font-bold">+50 Punkte</span>
+                        </div>
+                        <div class="absolute -bottom-4 -left-4 glass px-4 py-2 rounded-full float-animation" style="animation-delay: 1s;">
+                            <span class="text-purple-400 font-bold">2. Besuch = 10€</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Reviews Section -->
     <section id="reviews" class="py-20">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
