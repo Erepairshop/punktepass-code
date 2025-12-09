@@ -31,8 +31,8 @@
         },
         "geo": {
             "@type": "GeoCoordinates",
-            "latitude": 48.5677,
-            "longitude": 10.4294
+            "latitude": 48.5697,
+            "longitude": 10.4285
         },
         "telephone": "+49 176 98479520",
         "email": "info@erepairshop.de",
@@ -646,12 +646,13 @@
                     <!-- Map -->
                     <div class="glass rounded-2xl overflow-hidden h-80">
                         <iframe
-                            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2654.5!2d10.4294!3d48.5677!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNDjCsDM0JzAzLjciTiAxMMKwMjUnNDUuOCJF!5e0!3m2!1sde!2sde!4v1234567890"
+                            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2654.8!2d10.4285!3d48.5697!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x479e9f5a3e8b4a5d%3A0x1234567890abcdef!2sSiedlungsring%2051%2C%2089415%20Lauingen%20(Donau)!5e0!3m2!1sde!2sde!4v1702300000000"
                             width="100%"
                             height="100%"
                             style="border:0;"
                             allowfullscreen=""
-                            loading="lazy">
+                            loading="lazy"
+                            referrerpolicy="no-referrer-when-downgrade">
                         </iframe>
                     </div>
 
