@@ -24,7 +24,7 @@
         "description": "Professionelle Handyreparatur in Lauingen",
         "address": {
             "@type": "PostalAddress",
-            "streetAddress": "Herzog-Georg-Strasse 49",
+            "streetAddress": "Siedlungsring 51",
             "addressLocality": "Lauingen",
             "postalCode": "89415",
             "addressCountry": "DE"
@@ -34,7 +34,7 @@
             "latitude": 48.5677,
             "longitude": 10.4294
         },
-        "telephone": "+49 176 9847 9520",
+        "telephone": "+49 176 98479520",
         "email": "info@erepairshop.de",
         "url": "https://www.erepairshop.de",
         "openingHoursSpecification": [
@@ -107,7 +107,7 @@
                     <a href="#faq" class="hover:text-primary transition">FAQ</a>
                     <a href="#contact" class="hover:text-primary transition">Kontakt</a>
                 </div>
-                <a href="tel:+491769847952" class="gradient-bg px-4 py-2 rounded-full font-semibold hover:opacity-90 transition flex items-center gap-2">
+                <a href="tel:+4917698479520" class="gradient-bg px-4 py-2 rounded-full font-semibold hover:opacity-90 transition flex items-center gap-2">
                     <i class="ri-phone-fill"></i>
                     <span class="hidden sm:inline">Anrufen</span>
                 </a>
@@ -142,7 +142,7 @@
                 </p>
 
                 <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                    <a href="https://wa.me/491769847952?text=Hallo,%20ich%20brauche%20eine%20Handy-Reparatur"
+                    <a href="https://wa.me/4917698479520?text=Hallo,%20ich%20brauche%20eine%20Handy-Reparatur"
                        target="_blank"
                        class="inline-flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 px-8 py-4 rounded-full font-semibold text-lg transition transform hover:scale-105">
                         <i class="ri-whatsapp-fill text-2xl"></i>
@@ -242,12 +242,10 @@
             <div class="mt-16 text-center">
                 <p class="text-gray-500 mb-6">Wir reparieren alle Marken</p>
                 <div class="flex flex-wrap justify-center gap-8 text-3xl text-gray-600">
-                    <i class="ri-apple-fill hover:text-white transition cursor-pointer"></i>
+                    <i class="ri-apple-fill hover:text-white transition cursor-pointer" title="iPhone"></i>
                     <span class="font-bold hover:text-white transition cursor-pointer">Samsung</span>
                     <span class="font-bold hover:text-white transition cursor-pointer">Huawei</span>
                     <span class="font-bold hover:text-white transition cursor-pointer">Xiaomi</span>
-                    <span class="font-bold hover:text-white transition cursor-pointer">OnePlus</span>
-                    <span class="font-bold hover:text-white transition cursor-pointer">Google</span>
                 </div>
             </div>
         </div>
@@ -338,7 +336,7 @@
                             <i class="ri-map-pin-fill text-primary text-xl"></i>
                             <div>
                                 <p class="font-semibold">Erepairshop</p>
-                                <p class="text-gray-400">Herzog-Georg-Strasse 49</p>
+                                <p class="text-gray-400">Siedlungsring 51</p>
                                 <p class="text-gray-400">89415 Lauingen</p>
                             </div>
                         </div>
@@ -563,13 +561,13 @@
 
                     <!-- Contact Info Cards -->
                     <div class="grid sm:grid-cols-2 gap-4">
-                        <a href="tel:+491769847952" class="glass rounded-xl p-4 hover:bg-white/10 transition flex items-center gap-4">
+                        <a href="tel:+4917698479520" class="glass rounded-xl p-4 hover:bg-white/10 transition flex items-center gap-4">
                             <div class="w-12 h-12 gradient-bg rounded-xl flex items-center justify-center">
                                 <i class="ri-phone-fill text-xl"></i>
                             </div>
                             <div>
                                 <p class="text-sm text-gray-400">Telefon</p>
-                                <p class="font-semibold">0176 9847 9520</p>
+                                <p class="font-semibold">0176 98479520</p>
                             </div>
                         </a>
 
@@ -583,7 +581,7 @@
                             </div>
                         </a>
 
-                        <a href="https://wa.me/491769847952" target="_blank" class="glass rounded-xl p-4 hover:bg-white/10 transition flex items-center gap-4">
+                        <a href="https://wa.me/4917698479520" target="_blank" class="glass rounded-xl p-4 hover:bg-white/10 transition flex items-center gap-4">
                             <div class="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center">
                                 <i class="ri-whatsapp-fill text-xl"></i>
                             </div>
@@ -593,7 +591,7 @@
                             </div>
                         </a>
 
-                        <a href="https://maps.google.com/?q=Herzog-Georg-Strasse+49,+89415+Lauingen" target="_blank" class="glass rounded-xl p-4 hover:bg-white/10 transition flex items-center gap-4">
+                        <a href="https://maps.google.com/?q=Siedlungsring+51,+89415+Lauingen" target="_blank" class="glass rounded-xl p-4 hover:bg-white/10 transition flex items-center gap-4">
                             <div class="w-12 h-12 gradient-bg rounded-xl flex items-center justify-center">
                                 <i class="ri-map-pin-fill text-xl"></i>
                             </div>
@@ -642,9 +640,9 @@
                 <div>
                     <h4 class="font-bold mb-4">Kontakt</h4>
                     <ul class="space-y-2 text-gray-400 text-sm">
-                        <li>Herzog-Georg-Strasse 49</li>
+                        <li>Siedlungsring 51</li>
                         <li>89415 Lauingen</li>
-                        <li>0176 9847 9520</li>
+                        <li>0176 98479520</li>
                         <li>info@erepairshop.de</li>
                     </ul>
                 </div>
@@ -662,7 +660,7 @@
     </footer>
 
     <!-- WhatsApp Floating Button -->
-    <a href="https://wa.me/491769847952?text=Hallo,%20ich%20brauche%20eine%20Handy-Reparatur"
+    <a href="https://wa.me/4917698479520?text=Hallo,%20ich%20brauche%20eine%20Handy-Reparatur"
        target="_blank"
        class="fixed bottom-6 right-6 w-16 h-16 bg-green-500 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition z-50 group">
         <i class="ri-whatsapp-fill text-3xl"></i>
