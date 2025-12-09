@@ -420,18 +420,18 @@
                                 <p class="text-gray-400 mb-6">Sammle Punkte bei jedem Einkauf</p>
                                 <div class="glass rounded-xl p-4 w-full mb-4">
                                     <p class="text-sm text-gray-400">Ihre Punkte</p>
-                                    <p class="text-3xl font-bold gradient-text">250</p>
+                                    <p class="text-3xl font-bold gradient-text">2</p>
                                 </div>
                                 <div class="glass rounded-xl p-4 w-full">
                                     <p class="text-sm text-gray-400">Nachster Rabatt</p>
-                                    <p class="text-xl font-bold text-green-400">10€ bei 500 Punkten</p>
+                                    <p class="text-xl font-bold text-green-400">10€ bei 4 Punkten</p>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Floating Elements -->
                         <div class="absolute -top-4 -right-4 glass px-4 py-2 rounded-full float-animation">
-                            <span class="text-green-400 font-bold">+50 Punkte</span>
+                            <span class="text-green-400 font-bold">+2 Punkte</span>
                         </div>
                         <div class="absolute -bottom-4 -left-4 glass px-4 py-2 rounded-full float-animation" style="animation-delay: 1s;">
                             <span class="text-purple-400 font-bold">2. Besuch = 10€</span>
