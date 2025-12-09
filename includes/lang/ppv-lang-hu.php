@@ -706,7 +706,8 @@ return [
     'transaction' => 'Tranzakció',
     'transactions' => 'Tranzakciók',
     'logout' => 'Kijelentkezés',
-    
+    'session_expired' => 'Munkamenet lejárt',
+
     // ========== FOOTER ==========
     'footer_about' => 'A PunktePass-ról',
     'footer_privacy' => 'Adatvédelem',

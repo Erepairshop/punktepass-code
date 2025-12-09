@@ -411,17 +411,17 @@ private static function get_today_hours($opening_hours) {
                         <div class="ppv-header-left">
                             <span class="ppv-session-msg">
                                 <i class="ri-error-warning-line"></i>
-                                Sitzung abgelaufen
+                                <?php echo PPV_Lang::t('session_expired'); ?>
                             </span>
                         </div>
                         <div class="ppv-header-right">
                             <a href="<?php echo esc_url(home_url('?ppv_logout=1')); ?>" class="ppv-logout-btn">
                                 <i class="ri-logout-box-line"></i>
-                                Logout
+                                <?php echo PPV_Lang::t('logout'); ?>
                             </a>
                             <a href="<?php echo esc_url($login_url); ?>" class="ppv-login-btn">
                                 <i class="ri-login-box-line"></i>
-                                Anmelden
+                                <?php echo PPV_Lang::t('login_button'); ?>
                             </a>
                         </div>
                     </div>

@@ -686,7 +686,8 @@ return [
     'transaction' => 'Transaktion',
     'transactions' => 'Transaktionen',
     'logout' => 'Abmelden',
-    
+    'session_expired' => 'Sitzung abgelaufen',
+
     // ========== FOOTER ==========
     'footer_about' => 'Über PunktePass',
     'footer_privacy' => 'Datenschutz',

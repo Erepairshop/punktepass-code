@@ -715,7 +715,8 @@ return [
     'transaction' => 'Tranzacție',
     'transactions' => 'Tranzacții',
     'logout' => 'Deconectare',
-    
+    'session_expired' => 'Sesiune expirată',
+
     // ========== FOOTER ==========
     'footer_about' => 'Despre PunktePass',
     'footer_privacy' => 'Confidențialitate',
