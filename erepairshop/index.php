@@ -48,7 +48,7 @@
                 "@type": "OpeningHoursSpecification",
                 "dayOfWeek": "Saturday",
                 "opens": "10:00",
-                "closes": "14:00"
+                "closes": "16:00"
             }
         ],
         "priceRange": "$$",
@@ -319,7 +319,7 @@
                         </div>
                         <div class="flex justify-between items-center py-2 border-b border-white/10">
                             <span>Samstag</span>
-                            <span class="font-semibold">10:00 - 14:00</span>
+                            <span class="font-semibold">10:00 - 16:00</span>
                         </div>
                         <div class="flex justify-between items-center py-2">
                             <span>Sonntag</span>
@@ -811,7 +811,7 @@
                     statusText = 'Morgen wieder geoffnet ab 10:00 Uhr';
                 }
             } else if (day === 6) { // Saturday
-                if (time >= 10 && time < 14) {
+                if (time >= 10 && time < 16) {
                     isOpen = true;
                     statusText = 'Jetzt geoffnet';
                 } else if (time < 10) {
