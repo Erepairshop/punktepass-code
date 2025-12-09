@@ -415,6 +415,10 @@ private static function get_today_hours($opening_hours) {
                             </span>
                         </div>
                         <div class="ppv-header-right">
+                            <a href="<?php echo esc_url(home_url('?ppv_logout=1')); ?>" class="ppv-logout-btn">
+                                <i class="ri-logout-box-line"></i>
+                                Logout
+                            </a>
                             <a href="<?php echo esc_url($login_url); ?>" class="ppv-login-btn">
                                 <i class="ri-login-box-line"></i>
                                 Anmelden
@@ -452,6 +456,30 @@ private static function get_today_hours($opening_hours) {
                 }
                 .ppv-session-msg i {
                     font-size: 18px;
+                }
+                .ppv-header-right {
+                    display: flex;
+                    gap: 8px;
+                }
+                .ppv-logout-btn {
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    padding: 10px 16px;
+                    background: rgba(0, 0, 0, 0.1);
+                    color: #92400E;
+                    border-radius: 10px;
+                    font-size: 14px;
+                    font-weight: 600;
+                    text-decoration: none;
+                    transition: all 0.3s ease;
+                }
+                .ppv-logout-btn:hover {
+                    background: #DC2626;
+                    color: white;
+                }
+                .ppv-logout-btn i {
+                    font-size: 16px;
                 }
                 .ppv-login-btn {
                     display: flex;
