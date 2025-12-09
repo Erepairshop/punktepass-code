@@ -1,0 +1,16 @@
+90,1[\t]
+
+
+255,DatecsSalesServer[\t]0[\t]193.84.86.73:54214/DS/FWSR/TSM/REQUEST[\t]
+255,DatecsSalesServer[\t]1[\t]193.84.86.74:54215/DS/FWSR/TSM/REQUEST[\t]
+255,DatecsSalesServer[\t]2[\t]193.84.86.75:54216/DS/FWSR/TSM/REQUEST[\t]
+255,DatecsSalesServer[\t]3[\t]193.84.86.76:54217/DS/FWSR/TSM/REQUEST[\t]
+255,DatecsSalesServer[\t]4[\t]193.84.86.77:54218/DS/FWSR/TSM/REQUEST[\t]
+255,DatecsSalesServer[\t]5[\t]193.84.86.78:54219/DS/FWSR/TSM/REQUEST[\t]
+255,DatecsSalesSrvPeriod[\t][\t]5[\t]
+
+255,VendingConfig[\t][\t]1[\t]
+255,ModemModel[\t][\t][\t]
+
+255,VendingConfig[\t][\t][\t]
+255,DatecsSalesServer[\t]0[\t][\t]
