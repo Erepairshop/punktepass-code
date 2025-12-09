@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PunktePass Kassza</title>
+    <link rel="stylesheet" href="kassza.css">
+</head>
+<body>
+    <div class="kassza-app">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">PP</span>
+                <span class="logo-text">PunktePass Kassza</span>
+            </div>
+            <div class="header-info">
+                <span class="operator">Operator: <strong id="operatorName">Kassza 1</strong></span>
+                <span class="datetime" id="currentDateTime"></span>
+                <span class="connection-status" id="connectionStatus">
+                    <span class="status-dot offline"></span>
+                    Kapcsolat...
+                </span>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Left Panel - Products & Input -->
+            <section class="left-panel">
+                <!-- Product Input -->
+                <div class="product-input-section">
+                    <div class="input-row">
+                        <input type="text" id="barcodeInput" class="barcode-input"
+                               placeholder="Vonalkod / Termeknev" autofocus>
+                        <button class="btn btn-search" onclick="searchProduct()">
+                            <span>Kereses</span>
+                        </button>
+                    </div>
+                    <div class="manual-input">
+                        <input type="text" id="productName" placeholder="Termek neve" class="input-field">
+                        <input type="number" id="productPrice" placeholder="Ar (RON)" step="0.01" class="input-field input-price">
+                        <input type="number" id="productQty" placeholder="Menny." value="1" min="0.001" step="0.001" class="input-field input-qty">
+                        <select id="productVat" class="input-field input-vat">
+                            <option value="1">19% AFA</option>
+                            <option value="2">9% AFA</option>
+                            <option value="3">5% AFA</option>
+                            <option value="4">0% AFA</option>
+                        </select>
+                        <button class="btn btn-add" onclick="addManualProduct()">+ Hozzaad</button>
+                    </div>
+                </div>
+
+                <!-- Quick Products -->
+                <div class="quick-products">
+                    <h3>Gyors termekek</h3>
+                    <div class="quick-grid" id="quickProducts">
+                        <!-- Filled by JS -->
+                    </div>
+                </div>
+
+                <!-- PunktePass Member -->
+                <div class="punktepass-section">
+                    <h3>PunktePass Tag</h3>
+                    <div class="member-input-row">
+                        <input type="text" id="memberIdInput" placeholder="PunktePass ID / Telefon" class="member-input">
+                        <button class="btn btn-member" onclick="lookupMember()">Kereses</button>
+                        <button class="btn btn-member-clear" onclick="clearMember()">X</button>
+                    </div>
+                    <div class="member-info" id="memberInfo" style="display: none;">
+                        <div class="member-card">
+                            <div class="member-name" id="memberName">-</div>
+                            <div class="member-details">
+                                <span>Pontok: <strong id="memberPoints">0</strong></span>
+                                <span>Szint: <strong id="memberLevel">-</strong></span>
+                            </div>
+                            <div class="member-discount">
+                                Elerheto kedvezmeny: <strong id="memberDiscount">0%</strong>
+                            </div>
+                            <div class="apply-discount-row">
+                                <input type="number" id="applyDiscountPercent" placeholder="%" min="0" max="100" class="discount-input">
+                                <button class="btn btn-apply-discount" onclick="applyMemberDiscount()">Kedvezmeny alkalmazasa</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Panel - Cart -->
+            <section class="right-panel">
+                <div class="cart-header">
+                    <h2>Kosar</h2>
+                    <button class="btn btn-clear-cart" onclick="clearCart()">Kosar uritese</button>
+                </div>
+
+                <div class="cart-items" id="cartItems">
+                    <div class="cart-empty">A kosar ures</div>
+                </div>
+
+                <!-- Totals -->
+                <div class="cart-totals">
+                    <div class="total-row">
+                        <span>Reszosszeg:</span>
+                        <span id="subtotal">0.00 RON</span>
+                    </div>
+                    <div class="total-row discount-row" id="discountRow" style="display: none;">
+                        <span>Kedvezmeny (<span id="discountPercent">0</span>%):</span>
+                        <span id="discountAmount">-0.00 RON</span>
+                    </div>
+                    <div class="total-row total-final">
+                        <span>VEGOSSZEG:</span>
+                        <span id="grandTotal">0.00 RON</span>
+                    </div>
+                </div>
+
+                <!-- Payment Buttons -->
+                <div class="payment-section">
+                    <div class="payment-buttons">
+                        <button class="btn btn-payment btn-cash" onclick="processPayment(0)">
+                            <span class="payment-icon">$</span>
+                            <span>Keszpenz</span>
+                        </button>
+                        <button class="btn btn-payment btn-card" onclick="processPayment(1)">
+                            <span class="payment-icon">card</span>
+                            <span>Kartya</span>
+                        </button>
+                    </div>
+                    <div class="action-buttons">
+                        <button class="btn btn-void" onclick="voidTransaction()">Sztorno</button>
+                        <button class="btn btn-drawer" onclick="openDrawer()">Fiok</button>
+                        <button class="btn btn-xreport" onclick="printXReport()">X</button>
+                        <button class="btn btn-zreport" onclick="printZReport()">Z</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Status Bar -->
+        <footer class="status-bar">
+            <span id="statusMessage">Kesz</span>
+        </footer>
+    </div>
+
+    <!-- Payment Modal -->
+    <div class="modal" id="paymentModal" style="display: none;">
+        <div class="modal-content">
+            <h2>Fizetes</h2>
+            <div class="payment-info">
+                <div class="payment-total">
+                    Fizetendo: <strong id="modalTotal">0.00 RON</strong>
+                </div>
+                <div class="payment-input-row">
+                    <label>Kapott osszeg:</label>
+                    <input type="number" id="receivedAmount" step="0.01" class="received-input" onkeyup="calculateChange()">
+                </div>
+                <div class="payment-change">
+                    Visszajaro: <strong id="changeAmount">0.00 RON</strong>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-cancel" onclick="closePaymentModal()">Megse</button>
+                <button class="btn btn-confirm" onclick="confirmPayment()">Fizetes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="../datecs/datecs-client.js"></script>
+    <script src="kassza.js"></script>
+</body>
+</html>
