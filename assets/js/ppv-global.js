@@ -493,3 +493,146 @@ window.ppvErrorMsg = (function() {
   // Expose for manual triggering if needed
   window.ppvTriggerResume = () => handleAppResume(BACKGROUND_THRESHOLD + 1000);
 })();
+
+// ============================================================
+// 🍎 iOS PWA RECOVERY - Fix White Screen on Resume
+// ============================================================
+// iOS Safari PWA aggressively caches pages (BFCache) and can cause
+// white screens when returning from background. This handles:
+// 1. pageshow event with persisted flag (BFCache restore)
+// 2. Force reload if PWA was in background > 60 seconds
+// ============================================================
+
+(function() {
+  'use strict';
+
+  // Detect iOS
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+  // Detect PWA standalone mode
+  const isPWA = window.matchMedia('(display-mode: standalone)').matches ||
+                window.matchMedia('(display-mode: fullscreen)').matches ||
+                window.navigator.standalone === true;
+
+  // Track background time
+  let backgroundStartTime = null;
+  const FORCE_RELOAD_THRESHOLD = 60 * 1000; // 60 seconds
+
+  // Store in window for debugging
+  window.PPV_IOS_PWA = { isIOS, isPWA };
+
+  if (!isPWA) {
+    return; // Only apply fixes for PWA mode
+  }
+
+  console.log('🍎 [PWA_RECOVERY] iOS PWA mode detected, enabling recovery handlers');
+
+  // ============================================================
+  // 1. PAGESHOW EVENT - BFCache Recovery
+  // ============================================================
+  // iOS Safari uses BFCache (Back-Forward Cache) which can cause
+  // the page to appear frozen/white when restored
+  window.addEventListener('pageshow', function(event) {
+    if (event.persisted) {
+      console.log('🍎 [PWA_RECOVERY] Page restored from BFCache - reloading');
+      // Page was restored from BFCache - force full reload
+      window.location.reload();
+      return;
+    }
+  });
+
+  // ============================================================
+  // 2. VISIBILITY CHANGE - Track Background Time
+  // ============================================================
+  document.addEventListener('visibilitychange', function() {
+    if (document.hidden) {
+      // Going to background - record time
+      backgroundStartTime = Date.now();
+      console.log('🍎 [PWA_RECOVERY] PWA going to background');
+    } else {
+      // Coming back from background
+      if (backgroundStartTime) {
+        const timeInBackground = Date.now() - backgroundStartTime;
+        console.log('🍎 [PWA_RECOVERY] PWA returning after ' + Math.round(timeInBackground / 1000) + 's');
+
+        // If in background > 60 seconds, force reload
+        if (timeInBackground > FORCE_RELOAD_THRESHOLD) {
+          console.log('🍎 [PWA_RECOVERY] Background time exceeded threshold - forcing reload');
+          window.location.reload();
+          return;
+        }
+
+        // Check if DOM is broken (white screen detection)
+        setTimeout(function() {
+          const body = document.body;
+          if (!body || !body.innerHTML || body.innerHTML.trim().length < 100) {
+            console.log('🍎 [PWA_RECOVERY] DOM appears empty - forcing reload');
+            window.location.reload();
+          }
+        }, 500);
+      }
+      backgroundStartTime = null;
+    }
+  });
+
+  // ============================================================
+  // 3. PAGEHIDE - iOS Safari specific cleanup
+  // ============================================================
+  window.addEventListener('pagehide', function(event) {
+    if (event.persisted) {
+      console.log('🍎 [PWA_RECOVERY] Page being cached to BFCache');
+      // Page is being cached - mark time
+      backgroundStartTime = Date.now();
+    }
+  });
+
+  // ============================================================
+  // 4. FREEZE/RESUME Events (Page Lifecycle API)
+  // ============================================================
+  // Modern browsers support freeze/resume events
+  if ('onfreeze' in document) {
+    document.addEventListener('freeze', function() {
+      console.log('🍎 [PWA_RECOVERY] Page frozen');
+      backgroundStartTime = Date.now();
+    });
+
+    document.addEventListener('resume', function() {
+      console.log('🍎 [PWA_RECOVERY] Page resumed from freeze');
+      if (backgroundStartTime) {
+        const timeInBackground = Date.now() - backgroundStartTime;
+        if (timeInBackground > FORCE_RELOAD_THRESHOLD) {
+          window.location.reload();
+        }
+      }
+    });
+  }
+
+  // ============================================================
+  // 5. HEARTBEAT - Detect Frozen State
+  // ============================================================
+  // If the page becomes unresponsive, this helps detect it
+  let lastHeartbeat = Date.now();
+
+  setInterval(function() {
+    const now = Date.now();
+    const elapsed = now - lastHeartbeat;
+
+    // If more than 5 seconds passed since last heartbeat,
+    // the page was likely frozen/suspended
+    if (elapsed > 5000 && !document.hidden) {
+      console.log('🍎 [PWA_RECOVERY] Heartbeat gap detected: ' + Math.round(elapsed / 1000) + 's');
+
+      // If gap is huge (> 60s), consider reloading
+      if (elapsed > FORCE_RELOAD_THRESHOLD) {
+        console.log('🍎 [PWA_RECOVERY] Large heartbeat gap - checking DOM integrity');
+        const body = document.body;
+        if (!body || body.children.length < 3) {
+          window.location.reload();
+        }
+      }
+    }
+
+    lastHeartbeat = now;
+  }, 1000);
+
+})();

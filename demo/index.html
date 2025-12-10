@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PunktePass Demo - So funktioniert's</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --secondary: #22d3ee;
+            --accent: #f472b6;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #0f0f1a 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #6366f1, #22d3ee, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Phone mockup */
+        .phone {
+            width: 280px;
+            height: 560px;
+            background: linear-gradient(145deg, #1a1a2e, #252542);
+            border-radius: 40px;
+            padding: 12px;
+            box-shadow:
+                0 50px 100px rgba(0, 0, 0, 0.5),
+                inset 0 1px 1px rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+
+        .phone-screen {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #1e1e32 0%, #141424 100%);
+            border-radius: 32px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .phone-notch {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 28px;
+            background: #0a0a14;
+            border-radius: 0 0 20px 20px;
+            z-index: 10;
+        }
+
+        /* Step indicators */
+        .step-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transition: all 0.5s ease;
+            cursor: pointer;
+        }
+
+        .step-dot.active {
+            background: linear-gradient(135deg, #6366f1, #22d3ee);
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
+            transform: scale(1.3);
+        }
+
+        .step-dot.completed {
+            background: #22c55e;
+        }
+
+        /* Animations */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.05); }
+        }
+
+        @keyframes scanLine {
+            0% { top: 20%; }
+            50% { top: 80%; }
+            100% { top: 20%; }
+        }
+
+        @keyframes pointsUp {
+            0% { opacity: 0; transform: translateY(20px); }
+            50% { opacity: 1; transform: translateY(-10px); }
+            100% { opacity: 0; transform: translateY(-30px); }
+        }
+
+        @keyframes checkmark {
+            0% { stroke-dashoffset: 100; }
+            100% { stroke-dashoffset: 0; }
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-float {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .animate-pulse-slow {
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .scan-line {
+            position: absolute;
+            left: 10%;
+            right: 10%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #22d3ee, transparent);
+            animation: scanLine 2s ease-in-out infinite;
+            box-shadow: 0 0 20px #22d3ee;
+        }
+
+        .points-popup {
+            animation: pointsUp 1.5s ease-out forwards;
+        }
+
+        /* QR Code styling */
+        .qr-code {
+            width: 160px;
+            height: 160px;
+            background: white;
+            border-radius: 12px;
+            padding: 12px;
+            display: grid;
+            grid-template-columns: repeat(11, 1fr);
+            grid-template-rows: repeat(11, 1fr);
+            gap: 2px;
+        }
+
+        .qr-cell {
+            background: #000;
+            border-radius: 2px;
+        }
+
+        /* Step content transitions */
+        .step-content {
+            display: none;
+            opacity: 0;
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        .step-content.active {
+            display: flex;
+        }
+
+        /* Button styles */
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 40px rgba(99, 102, 241, 0.4);
+        }
+
+        /* Progress bar */
+        .progress-bar {
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #6366f1, #22d3ee);
+            transition: width 0.5s ease;
+        }
+
+        /* Card animation */
+        .loyalty-card {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+            border-radius: 16px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .loyalty-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                45deg,
+                transparent 40%,
+                rgba(255, 255, 255, 0.1) 50%,
+                transparent 60%
+            );
+            animation: shine 3s infinite;
+        }
+
+        @keyframes shine {
+            0% { transform: translateX(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) rotate(45deg); }
+        }
+
+        /* Confetti */
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+            animation: confettiFall 3s ease-out forwards;
+        }
+
+        @keyframes confettiFall {
+            0% {
+                opacity: 1;
+                transform: translateY(0) rotate(0deg);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(300px) rotate(720deg);
+            }
+        }
+
+        /* Navigation arrows */
+        .nav-arrow {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .nav-arrow:hover {
+            background: rgba(99, 102, 241, 0.3);
+            transform: scale(1.1);
+        }
+
+        .nav-arrow.disabled {
+            opacity: 0.3;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="text-white">
+    <!-- Header -->
+    <header class="fixed top-0 left-0 right-0 z-50 glass">
+        <div class="container mx-auto px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-400 flex items-center justify-center font-bold text-lg">
+                    P
+                </div>
+                <span class="font-bold text-xl">PunktePass</span>
+                <span class="text-xs bg-indigo-500/30 text-indigo-300 px-2 py-1 rounded-full">DEMO</span>
+            </div>
+            <a href="https://punktepass.de" target="_blank" class="btn-primary px-5 py-2 rounded-full text-sm font-medium">
+                Jetzt starten <i class="fas fa-arrow-right ml-2"></i>
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Demo Area -->
+    <main class="pt-24 pb-16 min-h-screen flex flex-col">
+        <!-- Title -->
+        <div class="text-center py-8">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4">
+                So funktioniert <span class="gradient-text">PunktePass</span>
+            </h1>
+            <p class="text-gray-400 text-lg">Klicken Sie durch die Demo oder nutzen Sie die Pfeiltasten</p>
+        </div>
+
+        <!-- Progress -->
+        <div class="container mx-auto px-6 mb-8">
+            <div class="progress-bar max-w-2xl mx-auto">
+                <div class="progress-fill" id="progressFill" style="width: 25%"></div>
+            </div>
+        </div>
+
+        <!-- Step Indicators -->
+        <div class="flex justify-center gap-4 mb-8">
+            <div class="step-dot active" data-step="1" onclick="goToStep(1)"></div>
+            <div class="step-dot" data-step="2" onclick="goToStep(2)"></div>
+            <div class="step-dot" data-step="3" onclick="goToStep(3)"></div>
+            <div class="step-dot" data-step="4" onclick="goToStep(4)"></div>
+        </div>
+
+        <!-- Demo Container -->
+        <div class="flex-1 container mx-auto px-6">
+            <div class="flex items-center justify-center gap-8">
+                <!-- Left Arrow -->
+                <button class="nav-arrow disabled" id="prevBtn" onclick="prevStep()">
+                    <i class="fas fa-chevron-left text-xl"></i>
+                </button>
+
+                <!-- Step Contents -->
+                <div class="flex-1 max-w-4xl">
+
+                    <!-- Step 1: QR Code Scan -->
+                    <div class="step-content active" id="step1">
+                        <div class="flex flex-col md:flex-row items-center justify-center gap-12">
+                            <!-- Phone with QR Scanner -->
+                            <div class="phone animate-float">
+                                <div class="phone-screen">
+                                    <div class="phone-notch"></div>
+                                    <div class="flex flex-col h-full pt-10 px-4">
+                                        <!-- Header -->
+                                        <div class="text-center mb-4">
+                                            <div class="inline-flex items-center gap-2 bg-indigo-500/20 px-4 py-2 rounded-full">
+                                                <i class="fas fa-qrcode text-indigo-400"></i>
+                                                <span class="text-sm text-indigo-300">QR-Scanner</span>
+                                            </div>
+                                        </div>
+
+                                        <!-- QR Scanner Area -->
+                                        <div class="flex-1 flex items-center justify-center relative">
+                                            <div class="w-48 h-48 border-2 border-cyan-400 rounded-2xl relative">
+                                                <!-- Corner markers -->
+                                                <div class="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-cyan-400 rounded-tl-lg"></div>
+                                                <div class="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-cyan-400 rounded-tr-lg"></div>
+                                                <div class="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-cyan-400 rounded-bl-lg"></div>
+                                                <div class="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-cyan-400 rounded-br-lg"></div>
+
+                                                <!-- Scan line -->
+                                                <div class="scan-line"></div>
+
+                                                <!-- QR placeholder -->
+                                                <div class="absolute inset-4 opacity-30">
+                                                    <div class="qr-code transform scale-75" id="qrCode1"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Bottom text -->
+                                        <div class="text-center pb-8">
+                                            <p class="text-gray-400 text-sm">QR-Code des Kunden scannen</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Description -->
+                            <div class="max-w-md text-center md:text-left">
+                                <div class="inline-flex items-center gap-2 bg-cyan-500/20 text-cyan-300 px-4 py-2 rounded-full text-sm mb-4">
+                                    <span class="w-6 h-6 bg-cyan-500 rounded-full flex items-center justify-center text-white font-bold text-xs">1</span>
+                                    Schritt 1
+                                </div>
+                                <h2 class="text-3xl font-bold mb-4">QR-Code scannen</h2>
+                                <p class="text-gray-400 text-lg leading-relaxed">
+                                    Der Kunde zeigt seinen persönlichen QR-Code vor.
+                                    Der Händler scannt ihn mit der PunktePass-App oder dem POS-System.
+                                </p>
+                                <div class="mt-6 flex flex-wrap gap-3">
+                                    <span class="bg-white/10 px-3 py-1 rounded-full text-sm"><i class="fas fa-mobile-alt mr-2"></i>App</span>
+                                    <span class="bg-white/10 px-3 py-1 rounded-full text-sm"><i class="fas fa-desktop mr-2"></i>POS</span>
+                                    <span class="bg-white/10 px-3 py-1 rounded-full text-sm"><i class="fas fa-tablet-alt mr-2"></i>Tablet</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Customer Recognition -->
+                    <div class="step-content" id="step2">
+                        <div class="flex flex-col md:flex-row items-center justify-center gap-12">
+                            <!-- Phone with Customer Profile -->
+                            <div class="phone animate-float">
+                                <div class="phone-screen">
+                                    <div class="phone-notch"></div>
+                                    <div class="flex flex-col h-full pt-10 px-4">
+                                        <!-- Success indicator -->
+                                        <div class="text-center mb-4">
+                                            <div class="inline-flex items-center gap-2 bg-green-500/20 px-4 py-2 rounded-full">
+                                                <i class="fas fa-check-circle text-green-400"></i>
+                                                <span class="text-sm text-green-300">Kunde erkannt</span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Customer Card -->
+                                        <div class="loyalty-card mb-4">
+                                            <div class="flex items-center gap-4 relative z-10">
+                                                <div class="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-2xl font-bold">
+                                                    MK
+                                                </div>
+                                                <div>
+                                                    <div class="font-bold text-lg">Max Kundenmann</div>
+                                                    <div class="text-white/70 text-sm">Stammkunde seit 2024</div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Points Display -->
+                                        <div class="glass rounded-2xl p-4 mb-4">
+                                            <div class="text-center">
+                                                <div class="text-gray-400 text-sm mb-1">Aktueller Punktestand</div>
+                                                <div class="text-4xl font-bold gradient-text">127</div>
+                                                <div class="text-gray-400 text-sm">Punkte</div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Stats -->
+                                        <div class="grid grid-cols-2 gap-3">
+                                            <div class="glass rounded-xl p-3 text-center">
+                                                <div class="text-xl font-bold text-cyan-400">23</div>
+                                                <div class="text-xs text-gray-400">Besuche</div>
+                                            </div>
+                                            <div class="glass rounded-xl p-3 text-center">
+                                                <div class="text-xl font-bold text-pink-400">€156</div>
+                                                <div class="text-xs text-gray-400">Gespart</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Description -->
+                            <div class="max-w-md text-center md:text-left">
+                                <div class="inline-flex items-center gap-2 bg-green-500/20 text-green-300 px-4 py-2 rounded-full text-sm mb-4">
+                                    <span class="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-xs">2</span>
+                                    Schritt 2
+                                </div>
+                                <h2 class="text-3xl font-bold mb-4">Kunde erkannt</h2>
+                                <p class="text-gray-400 text-lg leading-relaxed">
+                                    Das System zeigt sofort den Kunden mit allen wichtigen Infos:
+                                    Punktestand, Besuchshistorie und verfügbare Prämien.
+                                </p>
+                                <div class="mt-6 space-y-2">
+                                    <div class="flex items-center gap-3 text-gray-300">
+                                        <i class="fas fa-check text-green-400"></i>
+                                        <span>Sofortige Kundenidentifikation</span>
+                                    </div>
+                                    <div class="flex items-center gap-3 text-gray-300">
+                                        <i class="fas fa-check text-green-400"></i>
+                                        <span>Komplette Punktehistorie</span>
+                                    </div>
+                                    <div class="flex items-center gap-3 text-gray-300">
+                                        <i class="fas fa-check text-green-400"></i>
+                                        <span>Verfügbare Prämien anzeigen</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Add Points -->
+                    <div class="step-content" id="step3">
+                        <div class="flex flex-col md:flex-row items-center justify-center gap-12">
+                            <!-- Phone with Points Animation -->
+                            <div class="phone animate-float">
+                                <div class="phone-screen">
+                                    <div class="phone-notch"></div>
+                                    <div class="flex flex-col h-full pt-10 px-4">
+                                        <!-- Header -->
+                                        <div class="text-center mb-4">
+                                            <div class="inline-flex items-center gap-2 bg-indigo-500/20 px-4 py-2 rounded-full">
+                                                <i class="fas fa-plus-circle text-indigo-400"></i>
+                                                <span class="text-sm text-indigo-300">Punkte gutschreiben</span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Points Animation Area -->
+                                        <div class="flex-1 flex flex-col items-center justify-center relative" id="pointsAnimationArea">
+                                            <!-- Current points -->
+                                            <div class="text-gray-400 text-sm mb-2">Aktuell</div>
+                                            <div class="text-3xl font-bold text-gray-500 mb-4">127</div>
+
+                                            <!-- Plus animation -->
+                                            <div class="w-16 h-16 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center mb-4 animate-pulse-slow">
+                                                <span class="text-2xl font-bold">+2</span>
+                                            </div>
+
+                                            <!-- New points -->
+                                            <div class="text-gray-400 text-sm mb-2">Neu</div>
+                                            <div class="text-5xl font-bold gradient-text" id="newPointsDisplay">129</div>
+                                            <div class="text-gray-400 mt-2">Punkte</div>
+
+                                            <!-- Floating +2 animations -->
+                                            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 points-popup text-green-400 font-bold text-xl" style="animation-delay: 0s">+2</div>
+                                            <div class="absolute top-1/2 left-1/3 points-popup text-cyan-400 font-bold text-lg" style="animation-delay: 0.5s">+2</div>
+                                            <div class="absolute top-1/2 right-1/3 points-popup text-pink-400 font-bold text-lg" style="animation-delay: 1s">+2</div>
+                                        </div>
+
+                                        <!-- Confirm button -->
+                                        <div class="pb-8 px-2">
+                                            <button class="w-full btn-primary py-4 rounded-2xl font-bold text-lg">
+                                                <i class="fas fa-check mr-2"></i> Bestätigen
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Description -->
+                            <div class="max-w-md text-center md:text-left">
+                                <div class="inline-flex items-center gap-2 bg-indigo-500/20 text-indigo-300 px-4 py-2 rounded-full text-sm mb-4">
+                                    <span class="w-6 h-6 bg-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-xs">3</span>
+                                    Schritt 3
+                                </div>
+                                <h2 class="text-3xl font-bold mb-4">Punkte sammeln</h2>
+                                <p class="text-gray-400 text-lg leading-relaxed">
+                                    Bei jedem Einkauf erhält der Kunde automatisch Punkte.
+                                    Die Gutschrift erfolgt sofort und ist für beide Seiten transparent.
+                                </p>
+                                <div class="mt-6 glass rounded-2xl p-4">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <div class="text-sm text-gray-400">Beispiel</div>
+                                            <div class="font-bold">1 Einkauf = 2 Punkte</div>
+                                        </div>
+                                        <div class="text-3xl">🎯</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 4: Redeem Rewards -->
+                    <div class="step-content" id="step4">
+                        <div class="flex flex-col md:flex-row items-center justify-center gap-12">
+                            <!-- Phone with Rewards -->
+                            <div class="phone animate-float" id="rewardsPhone">
+                                <div class="phone-screen">
+                                    <div class="phone-notch"></div>
+                                    <div class="flex flex-col h-full pt-10 px-4 relative overflow-hidden">
+                                        <!-- Header -->
+                                        <div class="text-center mb-4">
+                                            <div class="inline-flex items-center gap-2 bg-pink-500/20 px-4 py-2 rounded-full">
+                                                <i class="fas fa-gift text-pink-400"></i>
+                                                <span class="text-sm text-pink-300">Prämie einlösen</span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Success Message -->
+                                        <div class="flex-1 flex flex-col items-center justify-center">
+                                            <!-- Checkmark -->
+                                            <div class="w-24 h-24 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center mb-6">
+                                                <svg class="w-12 h-12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
+                                                    <path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/>
+                                                </svg>
+                                            </div>
+
+                                            <div class="text-2xl font-bold mb-2">Geschafft!</div>
+                                            <div class="text-gray-400 text-center mb-6">Prämie erfolgreich eingelöst</div>
+
+                                            <!-- Reward Card -->
+                                            <div class="glass rounded-2xl p-4 w-full">
+                                                <div class="flex items-center gap-4">
+                                                    <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center text-2xl">
+                                                        🎁
+                                                    </div>
+                                                    <div>
+                                                        <div class="font-bold">10€ Rabatt</div>
+                                                        <div class="text-sm text-gray-400">4 Punkte eingelöst</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Confetti container -->
+                                        <div id="confettiContainer"></div>
+
+                                        <!-- New balance -->
+                                        <div class="pb-8 text-center">
+                                            <div class="text-sm text-gray-400">Neuer Punktestand</div>
+                                            <div class="text-2xl font-bold gradient-text">125 Punkte</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Description -->
+                            <div class="max-w-md text-center md:text-left">
+                                <div class="inline-flex items-center gap-2 bg-pink-500/20 text-pink-300 px-4 py-2 rounded-full text-sm mb-4">
+                                    <span class="w-6 h-6 bg-pink-500 rounded-full flex items-center justify-center text-white font-bold text-xs">4</span>
+                                    Schritt 4
+                                </div>
+                                <h2 class="text-3xl font-bold mb-4">Prämien einlösen</h2>
+                                <p class="text-gray-400 text-lg leading-relaxed">
+                                    Gesammelte Punkte können jederzeit gegen Prämien eingetauscht werden:
+                                    Rabatte, Gratisprodukte oder exklusive Vorteile.
+                                </p>
+                                <div class="mt-6 space-y-3">
+                                    <div class="glass rounded-xl p-3 flex items-center gap-4">
+                                        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center">💶</div>
+                                        <div>
+                                            <div class="font-medium">10€ Rabatt</div>
+                                            <div class="text-sm text-gray-400">Ab 4 Punkten</div>
+                                        </div>
+                                    </div>
+                                    <div class="glass rounded-xl p-3 flex items-center gap-4">
+                                        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center">☕</div>
+                                        <div>
+                                            <div class="font-medium">Gratis Kaffee</div>
+                                            <div class="text-sm text-gray-400">Ab 2 Punkten</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Right Arrow -->
+                <button class="nav-arrow" id="nextBtn" onclick="nextStep()">
+                    <i class="fas fa-chevron-right text-xl"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- CTA Section -->
+        <div class="container mx-auto px-6 mt-12">
+            <div class="glass rounded-3xl p-8 text-center max-w-2xl mx-auto">
+                <h3 class="text-2xl font-bold mb-4">Bereit für Ihre eigene Kundenbindung?</h3>
+                <p class="text-gray-400 mb-6">Starten Sie jetzt mit PunktePass und begeistern Sie Ihre Kunden!</p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <a href="https://punktepass.de" target="_blank" class="btn-primary px-8 py-4 rounded-xl font-bold text-lg inline-flex items-center justify-center gap-2">
+                        <i class="fas fa-rocket"></i> Jetzt starten
+                    </a>
+                    <a href="mailto:info@punktepass.de" class="bg-white/10 hover:bg-white/20 px-8 py-4 rounded-xl font-medium transition inline-flex items-center justify-center gap-2">
+                        <i class="fas fa-envelope"></i> Kontakt
+                    </a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="py-8 text-center text-gray-500 text-sm">
+        <p>&copy; 2024 PunktePass. Alle Rechte vorbehalten.</p>
+    </footer>
+
+    <script>
+        let currentStep = 1;
+        const totalSteps = 4;
+
+        // Generate QR code pattern
+        function generateQRPattern(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            const pattern = [
+                1,1,1,1,1,1,1,0,1,1,1,
+                1,0,0,0,0,0,1,0,0,1,0,
+                1,0,1,1,1,0,1,0,1,0,1,
+                1,0,1,1,1,0,1,0,0,1,1,
+                1,0,1,1,1,0,1,0,1,1,0,
+                1,0,0,0,0,0,1,0,0,0,1,
+                1,1,1,1,1,1,1,0,1,0,1,
+                0,0,0,0,0,0,0,0,0,1,0,
+                1,0,1,1,1,0,1,0,1,1,1,
+                0,1,0,0,1,0,0,0,0,1,0,
+                1,1,1,0,1,1,1,0,1,1,1
+            ];
+
+            container.innerHTML = '';
+            pattern.forEach(cell => {
+                const div = document.createElement('div');
+                if (cell) div.className = 'qr-cell';
+                container.appendChild(div);
+            });
+        }
+
+        // Initialize QR codes
+        generateQRPattern('qrCode1');
+
+        function updateUI() {
+            // Update step dots
+            document.querySelectorAll('.step-dot').forEach((dot, index) => {
+                dot.classList.remove('active', 'completed');
+                if (index + 1 === currentStep) {
+                    dot.classList.add('active');
+                } else if (index + 1 < currentStep) {
+                    dot.classList.add('completed');
+                }
+            });
+
+            // Update step content
+            document.querySelectorAll('.step-content').forEach((content, index) => {
+                content.classList.remove('active');
+                if (index + 1 === currentStep) {
+                    content.classList.add('active');
+                }
+            });
+
+            // Update progress bar
+            document.getElementById('progressFill').style.width = `${(currentStep / totalSteps) * 100}%`;
+
+            // Update navigation buttons
+            document.getElementById('prevBtn').classList.toggle('disabled', currentStep === 1);
+            document.getElementById('nextBtn').classList.toggle('disabled', currentStep === totalSteps);
+
+            // Trigger confetti on step 4
+            if (currentStep === 4) {
+                setTimeout(createConfetti, 500);
+            }
+        }
+
+        function nextStep() {
+            if (currentStep < totalSteps) {
+                currentStep++;
+                updateUI();
+            }
+        }
+
+        function prevStep() {
+            if (currentStep > 1) {
+                currentStep--;
+                updateUI();
+            }
+        }
+
+        function goToStep(step) {
+            currentStep = step;
+            updateUI();
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                nextStep();
+            } else if (e.key === 'ArrowLeft') {
+                prevStep();
+            }
+        });
+
+        // Confetti effect
+        function createConfetti() {
+            const container = document.getElementById('confettiContainer');
+            if (!container) return;
+
+            container.innerHTML = '';
+            const colors = ['#6366f1', '#22d3ee', '#f472b6', '#22c55e', '#eab308'];
+
+            for (let i = 0; i < 30; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.left = Math.random() * 100 + '%';
+                confetti.style.top = '-10px';
+                confetti.style.animationDelay = Math.random() * 0.5 + 's';
+                container.appendChild(confetti);
+            }
+        }
+
+        // Auto-advance demo (optional)
+        let autoAdvance = false;
+        function toggleAutoAdvance() {
+            autoAdvance = !autoAdvance;
+            if (autoAdvance) {
+                setInterval(() => {
+                    if (autoAdvance && currentStep < totalSteps) {
+                        nextStep();
+                    } else if (currentStep === totalSteps) {
+                        currentStep = 1;
+                        updateUI();
+                    }
+                }, 4000);
+            }
+        }
+
+        // Touch/swipe support for mobile
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        document.addEventListener('touchstart', e => {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+
+        document.addEventListener('touchend', e => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+
+        function handleSwipe() {
+            const swipeThreshold = 50;
+            const diff = touchStartX - touchEndX;
+
+            if (diff > swipeThreshold) {
+                nextStep();
+            } else if (diff < -swipeThreshold) {
+                prevStep();
+            }
+        }
+    </script>
+</body>
+</html>

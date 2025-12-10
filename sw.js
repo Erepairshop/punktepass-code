@@ -1,5 +1,5 @@
 // PunktePass PWA Service Worker
-// Version: 6.0 - Global cache fix for dynamic pages
+// Version: 6.2 - iOS PWA white screen fix
 // ✅ Timeout protection (6s for iOS)
 // ✅ Safari compatible with retry
 // ✅ No POST blocking
@@ -8,10 +8,11 @@
 // ✅ Login pages never cached
 // ✅ Force old cache deletion
 // ✅ Dynamic pages (handler/user) never cached - fixes onboarding/profile state issues
+// ✅ PWA standalone mode: Skip cache for HTML navigation (v6.2)
 
-const CACHE_VERSION = "v6.1";
+const CACHE_VERSION = "v6.2";
 const CACHE_NAME = "punktepass-" + CACHE_VERSION;
-const API_CACHE = "punktepass-api-v6.1";
+const API_CACHE = "punktepass-api-v6.2";
 
 // Only cache critical files
 const ASSETS = [
@@ -68,6 +69,35 @@ function fetchWithTimeout(req, timeout = 5000) {
 self.addEventListener("fetch", e => {
   const req = e.request;
   const url = new URL(req.url);
+
+  // ✅ PWA STANDALONE MODE - Always fresh HTML to prevent white screen
+  // Check if request comes from PWA (display-mode: standalone)
+  // The Sec-Fetch-Dest header tells us if this is a document request
+  const isNavigationRequest = req.mode === 'navigate' || req.destination === 'document';
+  const isPWARequest = req.headers.get('Sec-Fetch-Mode') === 'navigate' &&
+                       (url.searchParams.has('source') && url.searchParams.get('source') === 'pwa');
+
+  // For PWA navigation requests, ALWAYS fetch fresh (no cache)
+  // This prevents white screen issues on iOS when returning from background
+  if (isNavigationRequest) {
+    const referer = req.headers.get('Referer') || '';
+    const isPWANavigation = referer.includes('source=pwa') ||
+                            url.searchParams.get('source') === 'pwa' ||
+                            req.headers.get('X-PWA-Request') === 'true';
+
+    // Check for PWA via service worker client info
+    if (isPWANavigation || isPWARequest) {
+      e.respondWith(
+        fetch(req, { cache: 'no-store' }).catch(() => {
+          return new Response(
+            '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Offline</title></head><body style="font-family:system-ui;text-align:center;padding:40px;background:#0f172a;color:#e2e8f0;"><h1>📱 Offline</h1><p>Bitte überprüfe deine Internetverbindung.</p><button onclick="location.reload()" style="margin-top:20px;padding:12px 24px;background:#3b82f6;color:white;border:none;border-radius:8px;font-size:16px;cursor:pointer;">Erneut versuchen</button></body></html>',
+            { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+          );
+        })
+      );
+      return;
+    }
+  }
 
   // ✅ CRITICAL: Skip ALL non-GET requests (POST, PUT, DELETE, etc.)
   if (req.method !== 'GET') {

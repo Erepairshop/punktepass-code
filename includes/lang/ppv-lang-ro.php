@@ -434,6 +434,7 @@ return [
     'login_button' => 'Conectare',
     'login_no_account' => 'Nu ai cont?',
     'login_register_now' => 'Înregistrează-te acum',
+    'login_demo_button' => 'Cum funcționează PunktePass',
 
     // App Download
     'login_download_app' => 'Descarcă aplicația',
