@@ -772,6 +772,14 @@
 
         let currentLang = 'de';
 
+        // Get cookie value helper
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+            return null;
+        }
+
         function setLanguage(lang) {
             currentLang = lang;
             const t = translations[lang];
@@ -791,9 +799,6 @@
 
             // Update HTML lang attribute
             document.documentElement.lang = lang;
-
-            // Save preference
-            localStorage.setItem('ppv_demo_lang', lang);
         }
 
         // Language button click handlers
@@ -801,11 +806,19 @@
             btn.addEventListener('click', () => setLanguage(btn.dataset.lang));
         });
 
-        // Load saved language or detect from browser
-        const savedLang = localStorage.getItem('ppv_demo_lang');
+        // Priority: 1. ppv_lang cookie, 2. ppv_lang localStorage, 3. browser language, 4. default 'de'
+        const cookieLang = getCookie('ppv_lang');
+        const storedLang = localStorage.getItem('ppv_lang');
         const browserLang = navigator.language.slice(0, 2);
-        const defaultLang = savedLang || (['de', 'hu', 'ro'].includes(browserLang) ? browserLang : 'de');
-        setLanguage(defaultLang);
+        const detectedLang = cookieLang || storedLang || (['de', 'hu', 'ro'].includes(browserLang) ? browserLang : 'de');
+
+        // If language is already set from PunktePass, hide the switcher
+        if (cookieLang || storedLang) {
+            const switcher = document.querySelector('.lang-switcher');
+            if (switcher) switcher.style.display = 'none';
+        }
+
+        setLanguage(detectedLang);
 
         // ============================================================
         // DEMO NAVIGATION
