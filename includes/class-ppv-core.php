@@ -280,6 +280,37 @@ class PPV_Core {
 
             update_option('ppv_db_migration_version', '2.1');
         }
+
+        // Migration 2.2: Add push_subscriptions table for push notifications (iOS/Android/Web)
+        if (version_compare($migration_version, '2.2', '<')) {
+            $table_push = $wpdb->prefix . 'ppv_push_subscriptions';
+
+            $sql = "CREATE TABLE IF NOT EXISTS {$table_push} (
+                id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+                user_id BIGINT(20) UNSIGNED NOT NULL COMMENT 'PPV user ID',
+                store_id BIGINT(20) UNSIGNED NULL COMMENT 'Store ID for POS devices (NULL for regular users)',
+                device_token VARCHAR(255) NOT NULL COMMENT 'FCM/APNs/Web Push token',
+                platform ENUM('ios', 'android', 'web') NOT NULL DEFAULT 'web' COMMENT 'Device platform',
+                device_name VARCHAR(100) NULL COMMENT 'Device name for identification',
+                is_active TINYINT(1) DEFAULT 1 COMMENT 'Subscription active status',
+                language VARCHAR(5) DEFAULT 'de' COMMENT 'User language for localized notifications',
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                last_used_at DATETIME NULL COMMENT 'Last successful notification sent',
+                PRIMARY KEY (id),
+                UNIQUE KEY unique_token (device_token),
+                KEY idx_user (user_id),
+                KEY idx_store (store_id),
+                KEY idx_platform (platform),
+                KEY idx_active (is_active)
+            ) {$wpdb->get_charset_collate()};";
+
+            require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+            dbDelta($sql);
+
+            ppv_log("✅ [PPV_Core] ppv_push_subscriptions table created for push notifications");
+            update_option('ppv_db_migration_version', '2.2');
+        }
     }
 
     /**

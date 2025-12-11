@@ -344,6 +344,9 @@ class PPV_Standalone_Admin {
         } elseif ($path === '/admin/sales-map') {
             require_once __DIR__ . '/admin/standalone/sales-map.php';
             PPV_Standalone_Sales_Map::render();
+        } elseif ($path === '/admin/push-sender') {
+            require_once __DIR__ . '/admin/standalone/push-sender.php';
+            PPV_Standalone_Push_Sender::render();
         } else {
             self::render_dashboard();
         }

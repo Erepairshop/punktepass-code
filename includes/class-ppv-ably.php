@@ -164,6 +164,15 @@ class PPV_Ably {
     public static function trigger_user_points($user_id, $data) {
         $channel = 'user-' . intval($user_id);
         ppv_log("📡 [PPV_Ably] trigger_user_points: channel={$channel}, user_id={$user_id}, data=" . json_encode($data));
+
+        // Also send push notification for background/closed app
+        if (class_exists('PPV_Push') && PPV_Push::is_enabled()) {
+            $points = intval($data['points'] ?? 1);
+            $store_name = $data['store'] ?? $data['store_name'] ?? 'PunktePass';
+            $total = intval($data['total'] ?? $data['total_points'] ?? 0);
+            PPV_Push::notify_points_received($user_id, $points, $store_name, $total);
+        }
+
         return self::publish($channel, 'points-update', $data);
     }
 
@@ -176,6 +185,14 @@ class PPV_Ably {
      */
     public static function trigger_reward_request($store_id, $data) {
         $channel = 'store-' . intval($store_id);
+
+        // Also send push notification to store POS devices
+        if (class_exists('PPV_Push') && PPV_Push::is_enabled()) {
+            $user_name = $data['user_name'] ?? $data['user'] ?? 'Kunde';
+            $reward_name = $data['reward_name'] ?? $data['reward'] ?? 'Belohnung';
+            PPV_Push::notify_store_reward_request($store_id, $user_name, $reward_name);
+        }
+
         return self::publish($channel, 'reward-request', $data);
     }
 
@@ -188,6 +205,14 @@ class PPV_Ably {
      */
     public static function trigger_reward_approved($user_id, $data) {
         $channel = 'user-' . intval($user_id);
+
+        // Also send push notification
+        if (class_exists('PPV_Push') && PPV_Push::is_enabled()) {
+            $reward_name = $data['reward_name'] ?? $data['reward'] ?? 'Belohnung';
+            $store_name = $data['store_name'] ?? $data['store'] ?? 'PunktePass';
+            PPV_Push::notify_reward_approved($user_id, $reward_name, $store_name);
+        }
+
         return self::publish($channel, 'reward-approved', $data);
     }
 
