@@ -39,6 +39,16 @@
             // Request permission state on init
             this.checkPermissionState();
 
+            // For iOS: Auto-request permission and token on init
+            if (this.platform === 'ios') {
+                console.log('[PPV Push] iOS detected, requesting permission...');
+                setTimeout(() => {
+                    this.requestPermission();
+                    // Also request token directly (in case permission was already granted)
+                    setTimeout(() => this.requestToken(), 500);
+                }, 1000);
+            }
+
             this.initialized = true;
             console.log('[PPV Push] Bridge initialized');
         },
@@ -123,10 +133,10 @@
          */
         checkPermissionState: function() {
             if (this.platform === 'ios') {
-                // iOS: Call native function
-                if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.push) {
+                // iOS: Call native function using correct handler name
+                if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers['push-permission-state']) {
                     try {
-                        window.webkit.messageHandlers.push.postMessage({ action: 'getState' });
+                        window.webkit.messageHandlers['push-permission-state'].postMessage({});
                     } catch (e) {
                         console.log('[PPV Push] iOS bridge not available for state check');
                     }
@@ -146,10 +156,10 @@
             const self = this;
 
             if (this.platform === 'ios') {
-                // iOS: Call native function via message handler
-                if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.push) {
+                // iOS: Call native function via correct message handler
+                if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers['push-permission-request']) {
                     try {
-                        window.webkit.messageHandlers.push.postMessage({ action: 'requestPermission' });
+                        window.webkit.messageHandlers['push-permission-request'].postMessage({});
                         return Promise.resolve(true);
                     } catch (e) {
                         console.error('[PPV Push] iOS permission request failed:', e);
@@ -177,9 +187,10 @@
          */
         requestToken: function() {
             if (this.platform === 'ios') {
-                if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.push) {
+                // iOS: Use correct handler name 'push-token'
+                if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers['push-token']) {
                     try {
-                        window.webkit.messageHandlers.push.postMessage({ action: 'getToken' });
+                        window.webkit.messageHandlers['push-token'].postMessage({});
                     } catch (e) {
                         console.log('[PPV Push] iOS token request not available');
                     }
