@@ -158,6 +158,8 @@ add_filter('rest_authentication_errors', function ($result) {
             '/wp-json/ppv/v1/pos/stats',
             '/wp-json/punktepass/v1/pos/scan',
             '/wp-json/punktepass/v1/pos/dock',
+            '/wp-json/punktepass/v1/push/register',
+            '/wp-json/punktepass/v1/push/unregister',
         ];
         
         foreach ($anon_endpoints as $endpoint) {
@@ -281,6 +283,7 @@ $core_modules = [
     'includes/class-ppv-haendlervertrag.php',
     'includes/class-ppv-standalone-admin.php',
     'includes/class-ppv-device-fingerprint.php',
+    'includes/class-ppv-push.php',
 ];
 
 // Debug only if enabled
@@ -410,6 +413,37 @@ add_action('wp_enqueue_scripts', function() {
  */
 add_action('wp_enqueue_scripts', function() {
     if (ppv_is_login_page()) return;
+
+    // Push Notification Bridge (iOS/Android/Web)
+    wp_enqueue_script(
+        'ppv-push-bridge',
+        PPV_PLUGIN_URL . 'assets/js/ppv-push-bridge.js',
+        [],
+        PPV_VERSION,
+        true
+    );
+
+    // Pass user ID to JS for push registration
+    $ppv_user_id = 0;
+    if (!empty($_SESSION['ppv_user_id'])) {
+        $ppv_user_id = intval($_SESSION['ppv_user_id']);
+    } elseif (is_user_logged_in()) {
+        global $wpdb;
+        $ppv_user_id = (int)$wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM {$wpdb->prefix}ppv_users WHERE wp_user_id = %d",
+            get_current_user_id()
+        ));
+    }
+
+    if ($ppv_user_id) {
+        wp_localize_script('ppv-push-bridge', 'ppvPushConfig', [
+            'userId' => $ppv_user_id,
+            'storeId' => !empty($_SESSION['ppv_store_id']) ? intval($_SESSION['ppv_store_id']) : 0,
+            'lang' => isset($_COOKIE['ppv_lang']) ? sanitize_text_field($_COOKIE['ppv_lang']) : 'de',
+        ]);
+        // Also set global for backwards compatibility
+        wp_add_inline_script('ppv-push-bridge', 'window.ppvUserId = ' . $ppv_user_id . ';', 'before');
+    }
 
     // 🚀 Turbo.js - TEMPORARILY DISABLED for debugging
     // The ESM module format causes issues with WordPress script loading
@@ -549,6 +583,7 @@ if (class_exists('PPV_My_Points')) PPV_My_Points::hooks();  // ← ÚJ!
 if (class_exists('PPV_Device_Fingerprint')) PPV_Device_Fingerprint::hooks(); // Device fingerprint fraud prevention
 if (class_exists('PPV_Standalone_Admin')) PPV_Standalone_Admin::hooks(); // Standalone admin panel at /admin
 if (class_exists('PPV_SMTP')) PPV_SMTP::hooks(); // SMTP email configuration
+if (class_exists('PPV_Push')) PPV_Push::hooks(); // Push notifications (FCM)
 
 if (class_exists('PPV_Theme_Handler')) PPV_Theme_Handler::hooks();
 
@@ -774,7 +809,24 @@ add_action('init', function () {
     add_rewrite_rule('^r/([A-Za-z0-9]+)/([^/]+)/?$', 'index.php?ppv_referral_code=$matches[1]&ppv_referral_store=$matches[2]', 'top');
     // iOS Google OAuth callback
     add_rewrite_rule('^google-callback/?$', 'index.php?ppv_google_callback=1', 'top');
+    // Demo page
+    add_rewrite_rule('^demo/?$', 'index.php?ppv_demo=1', 'top');
+    add_rewrite_tag('%ppv_demo%', '1');
 }, 10);
+
+// ========================================
+// 🎮 DEMO PAGE HANDLER
+// ========================================
+add_action('template_redirect', function() {
+    if (get_query_var('ppv_demo')) {
+        $demo_file = PPV_PLUGIN_DIR . 'demo/index.html';
+        if (file_exists($demo_file)) {
+            header('Content-Type: text/html; charset=UTF-8');
+            readfile($demo_file);
+            exit;
+        }
+    }
+}, 1);
 
 // ========================================
 // 📱 iOS GOOGLE OAUTH CALLBACK
@@ -841,6 +893,8 @@ register_activation_hook(__FILE__, function () {
     add_rewrite_rule('^store/([^/]*)/?$', 'index.php?pagename=store&store=$matches[1]', 'top');
     add_rewrite_rule('^r/([A-Za-z0-9]+)/([^/]+)/?$', 'index.php?ppv_referral_code=$matches[1]&ppv_referral_store=$matches[2]', 'top');
     add_rewrite_rule('^google-callback/?$', 'index.php?ppv_google_callback=1', 'top');
+    add_rewrite_rule('^demo/?$', 'index.php?ppv_demo=1', 'top');
+    add_rewrite_tag('%ppv_demo%', '1');
     flush_rewrite_rules();
 });
 

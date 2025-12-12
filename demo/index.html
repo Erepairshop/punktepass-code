@@ -326,16 +326,20 @@
         <!-- Progress -->
         <div class="container mx-auto px-6 mb-6">
             <div class="progress-bar max-w-2xl mx-auto">
-                <div class="progress-fill" id="progressFill" style="width: 25%"></div>
+                <div class="progress-fill" id="progressFill" style="width: 14.3%"></div>
             </div>
         </div>
 
         <!-- Step Indicators -->
-        <div class="flex justify-center gap-4 mb-6">
+        <div class="flex justify-center gap-3 mb-6 flex-wrap px-4">
             <div class="step-dot active" data-step="1" onclick="goToStep(1)"></div>
             <div class="step-dot" data-step="2" onclick="goToStep(2)"></div>
             <div class="step-dot" data-step="3" onclick="goToStep(3)"></div>
             <div class="step-dot" data-step="4" onclick="goToStep(4)"></div>
+            <div class="step-dot" data-step="5" onclick="goToStep(5)"></div>
+            <div class="step-dot" data-step="6" onclick="goToStep(6)"></div>
+            <div class="step-dot" data-step="7" onclick="goToStep(7)"></div>
+            <div class="step-dot" data-step="8" onclick="goToStep(8)"></div>
         </div>
 
         <!-- Demo Container -->
@@ -603,6 +607,379 @@
                         </div>
                     </div>
 
+                    <!-- Step 5: Store Dashboard -->
+                    <div class="step-content" id="step5">
+                        <div class="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12">
+                            <!-- Dashboard View -->
+                            <div class="w-full max-w-md glass rounded-3xl p-6 animate-float">
+                                <div class="flex items-center justify-between mb-6">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-xl">☕</div>
+                                        <div>
+                                            <div class="font-bold text-lg">Café Sonnenschein</div>
+                                            <div class="text-sm text-gray-400" data-i18n="dashboard_subtitle">Händler-Dashboard</div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-2 bg-green-500/20 px-3 py-1 rounded-full">
+                                        <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                                        <span class="text-xs text-green-400">Live</span>
+                                    </div>
+                                </div>
+                                <!-- Stats Grid -->
+                                <div class="grid grid-cols-3 gap-3 mb-6">
+                                    <div class="bg-white/5 rounded-xl p-3 text-center">
+                                        <div class="text-2xl font-bold text-cyan-400">248</div>
+                                        <div class="text-xs text-gray-400" data-i18n="dash_customers">Kunden</div>
+                                    </div>
+                                    <div class="bg-white/5 rounded-xl p-3 text-center">
+                                        <div class="text-2xl font-bold text-green-400">47</div>
+                                        <div class="text-xs text-gray-400" data-i18n="dash_today">Heute</div>
+                                    </div>
+                                    <div class="bg-white/5 rounded-xl p-3 text-center">
+                                        <div class="text-2xl font-bold text-pink-400">12</div>
+                                        <div class="text-xs text-gray-400" data-i18n="dash_rewards">Prämien</div>
+                                    </div>
+                                </div>
+                                <!-- Recent Activity -->
+                                <div class="text-sm text-gray-400 mb-3" data-i18n="dash_recent">Letzte Aktivitäten</div>
+                                <div class="space-y-2">
+                                    <div class="flex items-center gap-3 bg-white/5 rounded-xl p-3">
+                                        <div class="w-8 h-8 rounded-full bg-indigo-500/30 flex items-center justify-center text-sm">👩</div>
+                                        <div class="flex-1">
+                                            <div class="text-sm font-medium">Maria S.</div>
+                                            <div class="text-xs text-gray-500" data-i18n="dash_collected">+10 Punkte</div>
+                                        </div>
+                                        <div class="text-xs text-gray-500">vor 2 Min</div>
+                                    </div>
+                                    <div class="flex items-center gap-3 bg-white/5 rounded-xl p-3">
+                                        <div class="w-8 h-8 rounded-full bg-pink-500/30 flex items-center justify-center text-sm">👨</div>
+                                        <div class="flex-1">
+                                            <div class="text-sm font-medium">Thomas K.</div>
+                                            <div class="text-xs text-green-400" data-i18n="dash_redeemed">Prämie eingelöst</div>
+                                        </div>
+                                        <div class="text-xs text-gray-500">vor 15 Min</div>
+                                    </div>
+                                    <div class="flex items-center gap-3 bg-white/5 rounded-xl p-3">
+                                        <div class="w-8 h-8 rounded-full bg-cyan-500/30 flex items-center justify-center text-sm">👶</div>
+                                        <div class="flex-1">
+                                            <div class="text-sm font-medium">Lisa M.</div>
+                                            <div class="text-xs text-cyan-400" data-i18n="dash_new">Neuer Kunde</div>
+                                        </div>
+                                        <div class="text-xs text-gray-500">vor 1 Std</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Description -->
+                            <div class="max-w-md text-center md:text-left">
+                                <div class="inline-flex items-center gap-2 bg-indigo-500/20 text-indigo-300 px-4 py-2 rounded-full text-sm mb-4">
+                                    <span class="w-6 h-6 bg-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-xs">5</span>
+                                    <span data-i18n="step">Schritt</span> 5
+                                </div>
+                                <h2 class="text-2xl md:text-3xl font-bold mb-4" data-i18n="step5_title">Händler-Dashboard</h2>
+                                <p class="text-gray-400 text-base md:text-lg leading-relaxed" data-i18n="step5_desc">
+                                    Behalten Sie alles im Blick: Live-Statistiken, Kundenaktivitäten und Umsatzentwicklung – in Echtzeit auf Ihrem Dashboard.
+                                </p>
+                                <div class="mt-6 space-y-2">
+                                    <div class="flex items-center gap-3 text-gray-300">
+                                        <i class="fas fa-check text-green-400"></i>
+                                        <span data-i18n="dash_feat_1">Echtzeit-Statistiken</span>
+                                    </div>
+                                    <div class="flex items-center gap-3 text-gray-300">
+                                        <i class="fas fa-check text-green-400"></i>
+                                        <span data-i18n="dash_feat_2">Kundenübersicht</span>
+                                    </div>
+                                    <div class="flex items-center gap-3 text-gray-300">
+                                        <i class="fas fa-check text-green-400"></i>
+                                        <span data-i18n="dash_feat_3">CSV-Export</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 6: Push Notifications -->
+                    <div class="step-content" id="step6">
+                        <div class="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12">
+                            <!-- Push Demo -->
+                            <div class="w-full max-w-md">
+                                <!-- Composer -->
+                                <div class="glass rounded-3xl p-6 mb-4 animate-float">
+                                    <div class="flex items-center gap-2 mb-4">
+                                        <i class="fas fa-bell text-purple-400"></i>
+                                        <span class="font-bold" data-i18n="push_title">Push-Nachricht senden</span>
+                                    </div>
+                                    <div class="bg-white/5 rounded-xl p-4 mb-4">
+                                        <div class="text-xs text-gray-500 mb-2" data-i18n="push_preview">Vorschau</div>
+                                        <div class="flex items-start gap-3">
+                                            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shrink-0">☕</div>
+                                            <div>
+                                                <div class="font-medium text-sm">Café Sonnenschein</div>
+                                                <div class="text-sm text-gray-400" data-i18n="push_example">Diese Woche: Doppelte Punkte auf alle Kaffeespezialitäten! ☕✨</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button class="w-full btn-primary py-3 rounded-xl font-medium flex items-center justify-center gap-2" id="sendPushBtn" onclick="simulatePush()">
+                                        <i class="fas fa-paper-plane"></i>
+                                        <span data-i18n="push_send">An 248 Kunden senden</span>
+                                    </button>
+                                </div>
+                                <!-- Phone receiving push -->
+                                <div class="relative">
+                                    <div class="phone mx-auto transform scale-75 origin-top" style="height: 300px;">
+                                        <div class="phone-screen flex flex-col justify-center px-4">
+                                            <div class="phone-notch"></div>
+                                            <div id="pushNotification" class="mt-8 glass rounded-2xl p-4 transform translate-y-[-100px] opacity-0 transition-all duration-500">
+                                                <div class="flex items-start gap-3">
+                                                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shrink-0">☕</div>
+                                                    <div>
+                                                        <div class="flex items-center gap-2">
+                                                            <span class="font-medium text-sm">Café Sonnenschein</span>
+                                                            <span class="text-xs text-gray-500">jetzt</span>
+                                                        </div>
+                                                        <div class="text-sm text-gray-300" data-i18n="push_example">Diese Woche: Doppelte Punkte auf alle Kaffeespezialitäten! ☕✨</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Description -->
+                            <div class="max-w-md text-center md:text-left">
+                                <div class="inline-flex items-center gap-2 bg-purple-500/20 text-purple-300 px-4 py-2 rounded-full text-sm mb-4">
+                                    <span class="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center text-white font-bold text-xs">6</span>
+                                    <span data-i18n="step">Schritt</span> 6
+                                </div>
+                                <h2 class="text-2xl md:text-3xl font-bold mb-4" data-i18n="step6_title">Push-Nachrichten</h2>
+                                <p class="text-gray-400 text-base md:text-lg leading-relaxed" data-i18n="step6_desc">
+                                    Erreichen Sie Ihre Kunden direkt auf dem Smartphone. Versenden Sie Angebote, Aktionen oder Neuigkeiten – einmal pro Woche kostenlos.
+                                </p>
+                                <div class="mt-6 glass rounded-2xl p-4">
+                                    <div class="flex items-center gap-3 text-yellow-400 mb-2">
+                                        <i class="fas fa-crown"></i>
+                                        <span class="font-medium" data-i18n="push_feature">Exklusiv für Händler</span>
+                                    </div>
+                                    <div class="text-sm text-gray-400" data-i18n="push_limit">1 Push-Nachricht pro Woche inklusive</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 7: Marketing Automation -->
+                    <div class="step-content" id="step7">
+                        <div class="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12">
+                            <!-- Marketing Features -->
+                            <div class="w-full max-w-md space-y-4 animate-float">
+                                <!-- VIP System -->
+                                <div class="glass rounded-2xl p-5">
+                                    <div class="flex items-center gap-3 mb-4">
+                                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center text-xl">👑</div>
+                                        <div>
+                                            <div class="font-bold" data-i18n="vip_title">VIP-System</div>
+                                            <div class="text-sm text-gray-400" data-i18n="vip_subtitle">Bronze → Silber → Gold → Platin</div>
+                                        </div>
+                                    </div>
+                                    <div class="h-3 bg-white/10 rounded-full overflow-hidden">
+                                        <div class="h-full bg-gradient-to-r from-amber-600 via-yellow-400 to-amber-300 rounded-full" style="width: 65%"></div>
+                                    </div>
+                                    <div class="flex justify-between text-xs text-gray-500 mt-2">
+                                        <span>Bronze</span>
+                                        <span class="text-yellow-400">→ Silber: 35 Punkte</span>
+                                    </div>
+                                </div>
+
+                                <!-- Birthday Bonus -->
+                                <div class="glass rounded-2xl p-5">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center text-xl">🎂</div>
+                                        <div class="flex-1">
+                                            <div class="font-bold" data-i18n="birthday_title">Geburtstags-Bonus</div>
+                                            <div class="text-sm text-gray-400" data-i18n="birthday_subtitle">Automatisch Extra-Punkte am Geburtstag</div>
+                                        </div>
+                                        <div class="text-2xl font-bold text-pink-400">+20</div>
+                                    </div>
+                                </div>
+
+                                <!-- Comeback Campaign -->
+                                <div class="glass rounded-2xl p-5">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-xl">🔄</div>
+                                        <div class="flex-1">
+                                            <div class="font-bold" data-i18n="comeback_title">Comeback-Kampagne</div>
+                                            <div class="text-sm text-gray-400" data-i18n="comeback_subtitle">Inaktive Kunden zurückholen</div>
+                                        </div>
+                                        <div class="text-green-400 text-sm font-medium">+15%</div>
+                                    </div>
+                                </div>
+
+                                <!-- Referral -->
+                                <div class="glass rounded-2xl p-5">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center text-xl">👥</div>
+                                        <div class="flex-1">
+                                            <div class="font-bold" data-i18n="referral_title">Empfehlungsprogramm</div>
+                                            <div class="text-sm text-gray-400" data-i18n="referral_subtitle">Freunde werben Freunde</div>
+                                        </div>
+                                        <div class="text-emerald-400 text-sm font-medium" data-i18n="referral_bonus">2x Punkte</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Description -->
+                            <div class="max-w-md text-center md:text-left">
+                                <div class="inline-flex items-center gap-2 bg-emerald-500/20 text-emerald-300 px-4 py-2 rounded-full text-sm mb-4">
+                                    <span class="w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center text-white font-bold text-xs">7</span>
+                                    <span data-i18n="step">Schritt</span> 7
+                                </div>
+                                <h2 class="text-2xl md:text-3xl font-bold mb-4" data-i18n="step7_title">Marketing-Automatisierung</h2>
+                                <p class="text-gray-400 text-base md:text-lg leading-relaxed" data-i18n="step7_desc">
+                                    Alles läuft automatisch: VIP-Stufen, Geburtstags-Boni, Comeback-Kampagnen und Empfehlungen. Sie müssen nichts tun – PunktePass arbeitet für Sie.
+                                </p>
+                                <div class="mt-6 space-y-2">
+                                    <div class="flex items-center gap-3 text-gray-300">
+                                        <i class="fas fa-robot text-emerald-400"></i>
+                                        <span data-i18n="auto_feat_1">100% automatisch</span>
+                                    </div>
+                                    <div class="flex items-center gap-3 text-gray-300">
+                                        <i class="fas fa-chart-line text-emerald-400"></i>
+                                        <span data-i18n="auto_feat_2">+15-35% mehr Stammkunden</span>
+                                    </div>
+                                    <div class="flex items-center gap-3 text-gray-300">
+                                        <i class="fas fa-euro-sign text-emerald-400"></i>
+                                        <span data-i18n="auto_feat_3">Kein zusätzlicher Aufwand</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 8: User Dashboard / Store Cards -->
+                    <div class="step-content" id="step8">
+                        <div class="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12">
+                            <!-- Phone with Store Cards -->
+                            <div class="phone animate-float">
+                                <div class="phone-screen">
+                                    <div class="phone-notch"></div>
+                                    <div class="flex flex-col h-full pt-10 px-3 overflow-hidden">
+                                        <div class="text-center mb-3">
+                                            <div class="inline-flex items-center gap-2 bg-indigo-500/20 px-3 py-1.5 rounded-full">
+                                                <i class="fas fa-store text-indigo-400 text-sm"></i>
+                                                <span class="text-xs text-indigo-300" data-i18n="phone_nearby">Geschäfte in der Nähe</span>
+                                            </div>
+                                        </div>
+                                        <!-- Distance Slider -->
+                                        <div class="flex items-center gap-2 mb-3 bg-white/5 rounded-lg px-2 py-1.5">
+                                            <i class="fas fa-location-dot text-cyan-400 text-xs"></i>
+                                            <input type="range" min="1" max="50" value="10" class="flex-1 h-1 bg-white/20 rounded-full accent-cyan-400" style="cursor:pointer">
+                                            <span class="text-xs text-cyan-400">10 km</span>
+                                        </div>
+                                        <!-- Store Cards -->
+                                        <div class="flex-1 space-y-2 overflow-y-auto pb-4" style="scrollbar-width:none;">
+                                            <!-- Store Card 1 -->
+                                            <div class="bg-white/5 rounded-xl p-3 border border-white/10">
+                                                <div class="flex items-start gap-3">
+                                                    <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-lg shrink-0">☕</div>
+                                                    <div class="flex-1 min-w-0">
+                                                        <div class="font-medium text-sm truncate">Café Sonnenschein</div>
+                                                        <div class="text-xs text-gray-500 italic truncate" data-i18n="slogan_cafe">„Der beste Kaffee der Stadt"</div>
+                                                        <div class="flex items-center gap-2 mt-1">
+                                                            <span class="text-[10px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded" data-i18n="open">Geöffnet</span>
+                                                            <span class="text-[10px] text-gray-500">0.8 km</span>
+                                                        </div>
+                                                        <div class="flex items-center gap-1.5 mt-1.5">
+                                                            <span class="text-[10px] bg-pink-500/20 text-pink-400 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                                                <i class="fas fa-gift text-[8px]"></i> 3
+                                                            </span>
+                                                            <span class="text-[10px] bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                                                <i class="fas fa-crown text-[8px]"></i> VIP
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <button class="text-gray-400 text-sm mt-1"><i class="fas fa-chevron-down"></i></button>
+                                                </div>
+                                            </div>
+                                            <!-- Store Card 2 -->
+                                            <div class="bg-white/5 rounded-xl p-3 border border-white/10">
+                                                <div class="flex items-start gap-3">
+                                                    <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center text-lg shrink-0">💇</div>
+                                                    <div class="flex-1 min-w-0">
+                                                        <div class="font-medium text-sm truncate">Salon Bella</div>
+                                                        <div class="text-xs text-gray-500 italic truncate" data-i18n="slogan_salon">„Schönheit, die begeistert"</div>
+                                                        <div class="flex items-center gap-2 mt-1">
+                                                            <span class="text-[10px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded" data-i18n="open">Geöffnet</span>
+                                                            <span class="text-[10px] text-gray-500">1.2 km</span>
+                                                        </div>
+                                                        <div class="flex items-center gap-1.5 mt-1.5">
+                                                            <span class="text-[10px] bg-pink-500/20 text-pink-400 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                                                <i class="fas fa-gift text-[8px]"></i> 5
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <button class="text-gray-400 text-sm mt-1"><i class="fas fa-chevron-down"></i></button>
+                                                </div>
+                                            </div>
+                                            <!-- Store Card 3 -->
+                                            <div class="bg-white/5 rounded-xl p-3 border border-white/10">
+                                                <div class="flex items-start gap-3">
+                                                    <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center text-lg shrink-0">🍕</div>
+                                                    <div class="flex-1 min-w-0">
+                                                        <div class="font-medium text-sm truncate">Pizzeria Milano</div>
+                                                        <div class="text-xs text-gray-500 italic truncate" data-i18n="slogan_pizza">„Echte italienische Küche"</div>
+                                                        <div class="flex items-center gap-2 mt-1">
+                                                            <span class="text-[10px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded" data-i18n="closed">Geschlossen</span>
+                                                            <span class="text-[10px] text-gray-500">2.5 km</span>
+                                                        </div>
+                                                        <div class="flex items-center gap-1.5 mt-1.5">
+                                                            <span class="text-[10px] bg-pink-500/20 text-pink-400 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                                                <i class="fas fa-gift text-[8px]"></i> 2
+                                                            </span>
+                                                            <span class="text-[10px] bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                                                <i class="fas fa-crown text-[8px]"></i> VIP
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <button class="text-gray-400 text-sm mt-1"><i class="fas fa-chevron-down"></i></button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Description -->
+                            <div class="max-w-md text-center md:text-left">
+                                <div class="inline-flex items-center gap-2 bg-cyan-500/20 text-cyan-300 px-4 py-2 rounded-full text-sm mb-4">
+                                    <span class="w-6 h-6 bg-cyan-500 rounded-full flex items-center justify-center text-white font-bold text-xs">8</span>
+                                    <span data-i18n="step">Schritt</span> 8
+                                </div>
+                                <h2 class="text-2xl md:text-3xl font-bold mb-4" data-i18n="step8_title">Kunden-App</h2>
+                                <p class="text-gray-400 text-base md:text-lg leading-relaxed" data-i18n="step8_desc">
+                                    Ihre Kunden finden alle teilnehmenden Geschäfte in ihrer Nähe. Mit Öffnungszeiten, Prämien, VIP-Status und direkter Routenplanung – alles in einer App.
+                                </p>
+                                <div class="mt-6 space-y-2">
+                                    <div class="flex items-center gap-3 text-gray-300">
+                                        <i class="fas fa-map-marker-alt text-cyan-400"></i>
+                                        <span data-i18n="app_feat_1">GPS-basierte Geschäftssuche</span>
+                                    </div>
+                                    <div class="flex items-center gap-3 text-gray-300">
+                                        <i class="fas fa-gift text-cyan-400"></i>
+                                        <span data-i18n="app_feat_2">Alle Prämien auf einen Blick</span>
+                                    </div>
+                                    <div class="flex items-center gap-3 text-gray-300">
+                                        <i class="fas fa-route text-cyan-400"></i>
+                                        <span data-i18n="app_feat_3">Direkte Navigation zum Geschäft</span>
+                                    </div>
+                                    <div class="flex items-center gap-3 text-gray-300">
+                                        <i class="fas fa-ad text-cyan-400"></i>
+                                        <span data-i18n="app_feat_4">Werbeplatz für Händler</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
 
                 <!-- Right Arrow -->
@@ -680,7 +1057,58 @@
                 cta_text: 'Starten Sie jetzt mit PunktePass und begeistern Sie Ihre Kunden!',
                 cta_start: 'Jetzt starten',
                 contact: 'Kontakt',
-                rights: 'Alle Rechte vorbehalten.'
+                rights: 'Alle Rechte vorbehalten.',
+                // Step 5 - Dashboard
+                dashboard_subtitle: 'Händler-Dashboard',
+                step5_title: 'Händler-Dashboard',
+                step5_desc: 'Behalten Sie alles im Blick: Live-Statistiken, Kundenaktivitäten und Umsatzentwicklung – in Echtzeit auf Ihrem Dashboard.',
+                dash_customers: 'Kunden',
+                dash_today: 'Heute',
+                dash_rewards: 'Prämien',
+                dash_recent: 'Letzte Aktivitäten',
+                dash_collected: '+10 Punkte',
+                dash_redeemed: 'Prämie eingelöst',
+                dash_new: 'Neuer Kunde',
+                dash_feat_1: 'Echtzeit-Statistiken',
+                dash_feat_2: 'Kundenübersicht',
+                dash_feat_3: 'CSV-Export',
+                // Step 6 - Push
+                step6_title: 'Push-Nachrichten',
+                step6_desc: 'Erreichen Sie Ihre Kunden direkt auf dem Smartphone. Versenden Sie Angebote, Aktionen oder Neuigkeiten – einmal pro Woche kostenlos.',
+                push_title: 'Push-Nachricht senden',
+                push_preview: 'Vorschau',
+                push_example: 'Diese Woche: Doppelte Punkte auf alle Kaffeespezialitäten! ☕✨',
+                push_send: 'An 248 Kunden senden',
+                push_feature: 'Exklusiv für Händler',
+                push_limit: '1 Push-Nachricht pro Woche inklusive',
+                // Step 7 - Marketing
+                step7_title: 'Marketing-Automatisierung',
+                step7_desc: 'Alles läuft automatisch: VIP-Stufen, Geburtstags-Boni, Comeback-Kampagnen und Empfehlungen. Sie müssen nichts tun – PunktePass arbeitet für Sie.',
+                vip_title: 'VIP-System',
+                vip_subtitle: 'Bronze → Silber → Gold → Platin',
+                birthday_title: 'Geburtstags-Bonus',
+                birthday_subtitle: 'Automatisch Extra-Punkte am Geburtstag',
+                comeback_title: 'Comeback-Kampagne',
+                comeback_subtitle: 'Inaktive Kunden zurückholen',
+                referral_title: 'Empfehlungsprogramm',
+                referral_subtitle: 'Freunde werben Freunde',
+                referral_bonus: '2x Punkte',
+                auto_feat_1: '100% automatisch',
+                auto_feat_2: '+15-35% mehr Stammkunden',
+                auto_feat_3: 'Kein zusätzlicher Aufwand',
+                // Step 8 - User App
+                step8_title: 'Kunden-App',
+                step8_desc: 'Ihre Kunden finden alle teilnehmenden Geschäfte in ihrer Nähe. Mit Öffnungszeiten, Prämien, VIP-Status und direkter Routenplanung – alles in einer App.',
+                phone_nearby: 'Geschäfte in der Nähe',
+                slogan_cafe: '„Der beste Kaffee der Stadt"',
+                slogan_salon: '„Schönheit, die begeistert"',
+                slogan_pizza: '„Echte italienische Küche"',
+                open: 'Geöffnet',
+                closed: 'Geschlossen',
+                app_feat_1: 'GPS-basierte Geschäftssuche',
+                app_feat_2: 'Alle Prämien auf einen Blick',
+                app_feat_3: 'Direkte Navigation zum Geschäft',
+                app_feat_4: 'Werbeplatz für Händler'
             },
             hu: {
                 title_prefix: 'Így működik a',
@@ -723,7 +1151,58 @@
                 cta_text: 'Kezdd el most a PunktePass-szal és lepd meg vásárlóidat!',
                 cta_start: 'Kezdés',
                 contact: 'Kapcsolat',
-                rights: 'Minden jog fenntartva.'
+                rights: 'Minden jog fenntartva.',
+                // Step 5 - Dashboard
+                dashboard_subtitle: 'Kereskedői vezérlőpult',
+                step5_title: 'Kereskedői vezérlőpult',
+                step5_desc: 'Tartsd szemmel mindent: élő statisztikák, ügyféltevékenységek és forgalom – valós időben a vezérlőpultodon.',
+                dash_customers: 'Ügyfelek',
+                dash_today: 'Ma',
+                dash_rewards: 'Jutalmak',
+                dash_recent: 'Utolsó aktivitások',
+                dash_collected: '+10 pont',
+                dash_redeemed: 'Jutalom beváltva',
+                dash_new: 'Új ügyfél',
+                dash_feat_1: 'Valós idejű statisztikák',
+                dash_feat_2: 'Ügyfél áttekintés',
+                dash_feat_3: 'CSV export',
+                // Step 6 - Push
+                step6_title: 'Push üzenetek',
+                step6_desc: 'Érj el ügyfeleidet közvetlenül a telefonjukon. Küldj ajánlatokat, akciókat vagy híreket – hetente egyszer ingyenes.',
+                push_title: 'Push üzenet küldése',
+                push_preview: 'Előnézet',
+                push_example: 'Ezen a héten: Dupla pontok minden kávékülönlegességre! ☕✨',
+                push_send: '248 ügyfélnek küldés',
+                push_feature: 'Kizárólag kereskedőknek',
+                push_limit: 'Heti 1 push üzenet ingyenes',
+                // Step 7 - Marketing
+                step7_title: 'Marketing automatizálás',
+                step7_desc: 'Minden automatikusan működik: VIP szintek, születésnapi bónuszok, visszatérő kampányok és ajánlások. Neked semmit sem kell tenned – a PunktePass dolgozik helyetted.',
+                vip_title: 'VIP rendszer',
+                vip_subtitle: 'Bronz → Ezüst → Arany → Platina',
+                birthday_title: 'Születésnapi bónusz',
+                birthday_subtitle: 'Automatikus extra pontok születésnapkor',
+                comeback_title: 'Visszatérő kampány',
+                comeback_subtitle: 'Inaktív ügyfelek visszahozása',
+                referral_title: 'Ajánlási program',
+                referral_subtitle: 'Barátok hoznak barátokat',
+                referral_bonus: '2x pont',
+                auto_feat_1: '100% automatikus',
+                auto_feat_2: '+15-35% több törzsvendég',
+                auto_feat_3: 'Nincs extra munka',
+                // Step 8 - User App
+                step8_title: 'Ügyfél-alkalmazás',
+                step8_desc: 'Ügyfeleid megtalálják a közelükben lévő összes résztvevő üzletet. Nyitvatartással, jutalmakkal, VIP-státusszal és közvetlen útvonaltervezéssel – minden egy appban.',
+                phone_nearby: 'Közeli üzletek',
+                slogan_cafe: '„A város legjobb kávéja"',
+                slogan_salon: '„Szépség, ami elvarázsol"',
+                slogan_pizza: '„Valódi olasz konyha"',
+                open: 'Nyitva',
+                closed: 'Zárva',
+                app_feat_1: 'GPS-alapú üzletkeresés',
+                app_feat_2: 'Összes jutalom egy helyen',
+                app_feat_3: 'Közvetlen navigáció az üzlethez',
+                app_feat_4: 'Hirdetési hely kereskedőknek'
             },
             ro: {
                 title_prefix: 'Cum funcționează',
@@ -766,7 +1245,58 @@
                 cta_text: 'Începe acum cu PunktePass și încântă-ți clienții!',
                 cta_start: 'Începe acum',
                 contact: 'Contact',
-                rights: 'Toate drepturile rezervate.'
+                rights: 'Toate drepturile rezervate.',
+                // Step 5 - Dashboard
+                dashboard_subtitle: 'Panou de control comerciant',
+                step5_title: 'Panou de control',
+                step5_desc: 'Ține totul sub control: statistici live, activitățile clienților și evoluția vânzărilor – în timp real pe panoul tău.',
+                dash_customers: 'Clienți',
+                dash_today: 'Astăzi',
+                dash_rewards: 'Recompense',
+                dash_recent: 'Ultimele activități',
+                dash_collected: '+10 puncte',
+                dash_redeemed: 'Recompensă revendicată',
+                dash_new: 'Client nou',
+                dash_feat_1: 'Statistici în timp real',
+                dash_feat_2: 'Prezentare generală clienți',
+                dash_feat_3: 'Export CSV',
+                // Step 6 - Push
+                step6_title: 'Notificări push',
+                step6_desc: 'Ajunge la clienții tăi direct pe telefon. Trimite oferte, promoții sau noutăți – o dată pe săptămână gratuit.',
+                push_title: 'Trimite notificare push',
+                push_preview: 'Previzualizare',
+                push_example: 'Săptămâna aceasta: Puncte duble la toate specialitățile de cafea! ☕✨',
+                push_send: 'Trimite la 248 clienți',
+                push_feature: 'Exclusiv pentru comercianți',
+                push_limit: '1 notificare push pe săptămână inclusă',
+                // Step 7 - Marketing
+                step7_title: 'Automatizare marketing',
+                step7_desc: 'Totul funcționează automat: niveluri VIP, bonusuri de zi de naștere, campanii de revenire și recomandări. Nu trebuie să faci nimic – PunktePass lucrează pentru tine.',
+                vip_title: 'Sistem VIP',
+                vip_subtitle: 'Bronz → Argint → Aur → Platină',
+                birthday_title: 'Bonus de zi de naștere',
+                birthday_subtitle: 'Puncte extra automate de ziua de naștere',
+                comeback_title: 'Campanie de revenire',
+                comeback_subtitle: 'Adu înapoi clienții inactivi',
+                referral_title: 'Program de recomandări',
+                referral_subtitle: 'Prietenii aduc prieteni',
+                referral_bonus: '2x puncte',
+                auto_feat_1: '100% automat',
+                auto_feat_2: '+15-35% mai mulți clienți fideli',
+                auto_feat_3: 'Fără efort suplimentar',
+                // Step 8 - User App
+                step8_title: 'Aplicația pentru clienți',
+                step8_desc: 'Clienții tăi găsesc toate magazinele participante din apropiere. Cu program de funcționare, recompense, statut VIP și navigare directă – totul într-o singură aplicație.',
+                phone_nearby: 'Magazine din apropiere',
+                slogan_cafe: '„Cea mai bună cafea din oraș"',
+                slogan_salon: '„Frumusețe care impresionează"',
+                slogan_pizza: '„Bucătărie italiană autentică"',
+                open: 'Deschis',
+                closed: 'Închis',
+                app_feat_1: 'Căutare magazine pe bază de GPS',
+                app_feat_2: 'Toate recompensele la un loc',
+                app_feat_3: 'Navigare directă către magazin',
+                app_feat_4: 'Spațiu publicitar pentru comercianți'
             }
         };
 
@@ -824,7 +1354,37 @@
         // DEMO NAVIGATION
         // ============================================================
         let currentStep = 1;
-        const totalSteps = 4;
+        const totalSteps = 8;
+
+        // Push notification simulation
+        function simulatePush() {
+            const btn = document.getElementById('sendPushBtn');
+            const notification = document.getElementById('pushNotification');
+
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Wird gesendet...</span>';
+            btn.disabled = true;
+
+            setTimeout(() => {
+                btn.innerHTML = '<i class="fas fa-check"></i> <span>Gesendet!</span>';
+                btn.classList.add('bg-green-500');
+
+                // Show notification animation
+                if (notification) {
+                    notification.style.transform = 'translateY(0)';
+                    notification.style.opacity = '1';
+                }
+
+                setTimeout(() => {
+                    btn.innerHTML = '<i class="fas fa-paper-plane"></i> <span data-i18n="push_send">An 248 Kunden senden</span>';
+                    btn.classList.remove('bg-green-500');
+                    btn.disabled = false;
+                    if (notification) {
+                        notification.style.transform = 'translateY(-100px)';
+                        notification.style.opacity = '0';
+                    }
+                }, 3000);
+            }, 1500);
+        }
 
         function generateQRPattern(containerId) {
             const container = document.getElementById(containerId);
