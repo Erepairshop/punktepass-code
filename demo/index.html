@@ -339,6 +339,7 @@
             <div class="step-dot" data-step="5" onclick="goToStep(5)"></div>
             <div class="step-dot" data-step="6" onclick="goToStep(6)"></div>
             <div class="step-dot" data-step="7" onclick="goToStep(7)"></div>
+            <div class="step-dot" data-step="8" onclick="goToStep(8)"></div>
         </div>
 
         <!-- Demo Container -->
@@ -854,6 +855,131 @@
                         </div>
                     </div>
 
+                    <!-- Step 8: User Dashboard / Store Cards -->
+                    <div class="step-content" id="step8">
+                        <div class="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12">
+                            <!-- Phone with Store Cards -->
+                            <div class="phone animate-float">
+                                <div class="phone-screen">
+                                    <div class="phone-notch"></div>
+                                    <div class="flex flex-col h-full pt-10 px-3 overflow-hidden">
+                                        <div class="text-center mb-3">
+                                            <div class="inline-flex items-center gap-2 bg-indigo-500/20 px-3 py-1.5 rounded-full">
+                                                <i class="fas fa-store text-indigo-400 text-sm"></i>
+                                                <span class="text-xs text-indigo-300" data-i18n="phone_nearby">Geschäfte in der Nähe</span>
+                                            </div>
+                                        </div>
+                                        <!-- Distance Slider -->
+                                        <div class="flex items-center gap-2 mb-3 bg-white/5 rounded-lg px-2 py-1.5">
+                                            <i class="fas fa-location-dot text-cyan-400 text-xs"></i>
+                                            <input type="range" min="1" max="50" value="10" class="flex-1 h-1 bg-white/20 rounded-full accent-cyan-400" style="cursor:pointer">
+                                            <span class="text-xs text-cyan-400">10 km</span>
+                                        </div>
+                                        <!-- Store Cards -->
+                                        <div class="flex-1 space-y-2 overflow-y-auto pb-4" style="scrollbar-width:none;">
+                                            <!-- Store Card 1 -->
+                                            <div class="bg-white/5 rounded-xl p-3 border border-white/10">
+                                                <div class="flex items-start gap-3">
+                                                    <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-lg shrink-0">☕</div>
+                                                    <div class="flex-1 min-w-0">
+                                                        <div class="font-medium text-sm truncate">Café Sonnenschein</div>
+                                                        <div class="text-xs text-gray-500 italic truncate" data-i18n="slogan_cafe">„Der beste Kaffee der Stadt"</div>
+                                                        <div class="flex items-center gap-2 mt-1">
+                                                            <span class="text-[10px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded" data-i18n="open">Geöffnet</span>
+                                                            <span class="text-[10px] text-gray-500">0.8 km</span>
+                                                        </div>
+                                                        <div class="flex items-center gap-1.5 mt-1.5">
+                                                            <span class="text-[10px] bg-pink-500/20 text-pink-400 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                                                <i class="fas fa-gift text-[8px]"></i> 3
+                                                            </span>
+                                                            <span class="text-[10px] bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                                                <i class="fas fa-crown text-[8px]"></i> VIP
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <button class="text-gray-400 text-sm mt-1"><i class="fas fa-chevron-down"></i></button>
+                                                </div>
+                                            </div>
+                                            <!-- Store Card 2 -->
+                                            <div class="bg-white/5 rounded-xl p-3 border border-white/10">
+                                                <div class="flex items-start gap-3">
+                                                    <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center text-lg shrink-0">💇</div>
+                                                    <div class="flex-1 min-w-0">
+                                                        <div class="font-medium text-sm truncate">Salon Bella</div>
+                                                        <div class="text-xs text-gray-500 italic truncate" data-i18n="slogan_salon">„Schönheit, die begeistert"</div>
+                                                        <div class="flex items-center gap-2 mt-1">
+                                                            <span class="text-[10px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded" data-i18n="open">Geöffnet</span>
+                                                            <span class="text-[10px] text-gray-500">1.2 km</span>
+                                                        </div>
+                                                        <div class="flex items-center gap-1.5 mt-1.5">
+                                                            <span class="text-[10px] bg-pink-500/20 text-pink-400 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                                                <i class="fas fa-gift text-[8px]"></i> 5
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <button class="text-gray-400 text-sm mt-1"><i class="fas fa-chevron-down"></i></button>
+                                                </div>
+                                            </div>
+                                            <!-- Store Card 3 -->
+                                            <div class="bg-white/5 rounded-xl p-3 border border-white/10">
+                                                <div class="flex items-start gap-3">
+                                                    <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center text-lg shrink-0">🍕</div>
+                                                    <div class="flex-1 min-w-0">
+                                                        <div class="font-medium text-sm truncate">Pizzeria Milano</div>
+                                                        <div class="text-xs text-gray-500 italic truncate" data-i18n="slogan_pizza">„Echte italienische Küche"</div>
+                                                        <div class="flex items-center gap-2 mt-1">
+                                                            <span class="text-[10px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded" data-i18n="closed">Geschlossen</span>
+                                                            <span class="text-[10px] text-gray-500">2.5 km</span>
+                                                        </div>
+                                                        <div class="flex items-center gap-1.5 mt-1.5">
+                                                            <span class="text-[10px] bg-pink-500/20 text-pink-400 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                                                <i class="fas fa-gift text-[8px]"></i> 2
+                                                            </span>
+                                                            <span class="text-[10px] bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                                                <i class="fas fa-crown text-[8px]"></i> VIP
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <button class="text-gray-400 text-sm mt-1"><i class="fas fa-chevron-down"></i></button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Description -->
+                            <div class="max-w-md text-center md:text-left">
+                                <div class="inline-flex items-center gap-2 bg-cyan-500/20 text-cyan-300 px-4 py-2 rounded-full text-sm mb-4">
+                                    <span class="w-6 h-6 bg-cyan-500 rounded-full flex items-center justify-center text-white font-bold text-xs">8</span>
+                                    <span data-i18n="step">Schritt</span> 8
+                                </div>
+                                <h2 class="text-2xl md:text-3xl font-bold mb-4" data-i18n="step8_title">Kunden-App</h2>
+                                <p class="text-gray-400 text-base md:text-lg leading-relaxed" data-i18n="step8_desc">
+                                    Ihre Kunden finden alle teilnehmenden Geschäfte in ihrer Nähe. Mit Öffnungszeiten, Prämien, VIP-Status und direkter Routenplanung – alles in einer App.
+                                </p>
+                                <div class="mt-6 space-y-2">
+                                    <div class="flex items-center gap-3 text-gray-300">
+                                        <i class="fas fa-map-marker-alt text-cyan-400"></i>
+                                        <span data-i18n="app_feat_1">GPS-basierte Geschäftssuche</span>
+                                    </div>
+                                    <div class="flex items-center gap-3 text-gray-300">
+                                        <i class="fas fa-gift text-cyan-400"></i>
+                                        <span data-i18n="app_feat_2">Alle Prämien auf einen Blick</span>
+                                    </div>
+                                    <div class="flex items-center gap-3 text-gray-300">
+                                        <i class="fas fa-route text-cyan-400"></i>
+                                        <span data-i18n="app_feat_3">Direkte Navigation zum Geschäft</span>
+                                    </div>
+                                    <div class="flex items-center gap-3 text-gray-300">
+                                        <i class="fas fa-ad text-cyan-400"></i>
+                                        <span data-i18n="app_feat_4">Werbeplatz für Händler</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
 
                 <!-- Right Arrow -->
@@ -969,7 +1095,20 @@
                 referral_bonus: '2x Punkte',
                 auto_feat_1: '100% automatisch',
                 auto_feat_2: '+15-35% mehr Stammkunden',
-                auto_feat_3: 'Kein zusätzlicher Aufwand'
+                auto_feat_3: 'Kein zusätzlicher Aufwand',
+                // Step 8 - User App
+                step8_title: 'Kunden-App',
+                step8_desc: 'Ihre Kunden finden alle teilnehmenden Geschäfte in ihrer Nähe. Mit Öffnungszeiten, Prämien, VIP-Status und direkter Routenplanung – alles in einer App.',
+                phone_nearby: 'Geschäfte in der Nähe',
+                slogan_cafe: '„Der beste Kaffee der Stadt"',
+                slogan_salon: '„Schönheit, die begeistert"',
+                slogan_pizza: '„Echte italienische Küche"',
+                open: 'Geöffnet',
+                closed: 'Geschlossen',
+                app_feat_1: 'GPS-basierte Geschäftssuche',
+                app_feat_2: 'Alle Prämien auf einen Blick',
+                app_feat_3: 'Direkte Navigation zum Geschäft',
+                app_feat_4: 'Werbeplatz für Händler'
             },
             hu: {
                 title_prefix: 'Így működik a',
@@ -1050,7 +1189,20 @@
                 referral_bonus: '2x pont',
                 auto_feat_1: '100% automatikus',
                 auto_feat_2: '+15-35% több törzsvendég',
-                auto_feat_3: 'Nincs extra munka'
+                auto_feat_3: 'Nincs extra munka',
+                // Step 8 - User App
+                step8_title: 'Ügyfél-alkalmazás',
+                step8_desc: 'Ügyfeleid megtalálják a közelükben lévő összes résztvevő üzletet. Nyitvatartással, jutalmakkal, VIP-státusszal és közvetlen útvonaltervezéssel – minden egy appban.',
+                phone_nearby: 'Közeli üzletek',
+                slogan_cafe: '„A város legjobb kávéja"',
+                slogan_salon: '„Szépség, ami elvarázsol"',
+                slogan_pizza: '„Valódi olasz konyha"',
+                open: 'Nyitva',
+                closed: 'Zárva',
+                app_feat_1: 'GPS-alapú üzletkeresés',
+                app_feat_2: 'Összes jutalom egy helyen',
+                app_feat_3: 'Közvetlen navigáció az üzlethez',
+                app_feat_4: 'Hirdetési hely kereskedőknek'
             },
             ro: {
                 title_prefix: 'Cum funcționează',
@@ -1131,7 +1283,20 @@
                 referral_bonus: '2x puncte',
                 auto_feat_1: '100% automat',
                 auto_feat_2: '+15-35% mai mulți clienți fideli',
-                auto_feat_3: 'Fără efort suplimentar'
+                auto_feat_3: 'Fără efort suplimentar',
+                // Step 8 - User App
+                step8_title: 'Aplicația pentru clienți',
+                step8_desc: 'Clienții tăi găsesc toate magazinele participante din apropiere. Cu program de funcționare, recompense, statut VIP și navigare directă – totul într-o singură aplicație.',
+                phone_nearby: 'Magazine din apropiere',
+                slogan_cafe: '„Cea mai bună cafea din oraș"',
+                slogan_salon: '„Frumusețe care impresionează"',
+                slogan_pizza: '„Bucătărie italiană autentică"',
+                open: 'Deschis',
+                closed: 'Închis',
+                app_feat_1: 'Căutare magazine pe bază de GPS',
+                app_feat_2: 'Toate recompensele la un loc',
+                app_feat_3: 'Navigare directă către magazin',
+                app_feat_4: 'Spațiu publicitar pentru comercianți'
             }
         };
 
@@ -1189,7 +1354,7 @@
         // DEMO NAVIGATION
         // ============================================================
         let currentStep = 1;
-        const totalSteps = 7;
+        const totalSteps = 8;
 
         // Push notification simulation
         function simulatePush() {
