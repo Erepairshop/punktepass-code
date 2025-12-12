@@ -4,6 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PunktePass Demo - So funktioniert's</title>
+
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-NDVQK1WSG3"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-NDVQK1WSG3');
+    </script>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -900,6 +910,24 @@
                                                     <button class="text-gray-400 text-sm mt-1"><i class="fas fa-chevron-down"></i></button>
                                                 </div>
                                             </div>
+                                            <!-- AD Banner - Werbeplatz -->
+                                            <div class="relative rounded-xl overflow-hidden border border-purple-500/30 bg-gradient-to-r from-purple-600/20 via-pink-500/20 to-orange-500/20">
+                                                <div class="absolute top-1 right-1 bg-black/40 text-[8px] text-gray-400 px-1.5 py-0.5 rounded" data-i18n="ad_label">Anzeige</div>
+                                                <div class="p-3">
+                                                    <div class="flex items-center gap-3">
+                                                        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-lg shrink-0">💅</div>
+                                                        <div class="flex-1 min-w-0">
+                                                            <div class="font-medium text-sm text-white truncate">Nagelstudio Glamour</div>
+                                                            <div class="text-xs text-purple-300 font-medium" data-i18n="ad_promo">-20% diese Woche!</div>
+                                                            <div class="flex items-center gap-1.5 mt-1">
+                                                                <span class="text-[10px] bg-purple-500/30 text-purple-300 px-1.5 py-0.5 rounded" data-i18n="ad_new">NEU</span>
+                                                                <span class="text-[10px] text-gray-400">3.1 km</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="h-0.5 bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500"></div>
+                                            </div>
                                             <!-- Store Card 2 -->
                                             <div class="bg-white/5 rounded-xl p-3 border border-white/10">
                                                 <div class="flex items-start gap-3">
@@ -1002,6 +1030,29 @@
                         <i class="fas fa-envelope"></i> <span data-i18n="contact">Kontakt</span>
                     </a>
                 </div>
+            </div>
+        </div>
+
+        <!-- Kostenlose Beratung Section -->
+        <div class="container mx-auto px-6 mt-6">
+            <div class="glass rounded-3xl p-6 md:p-8 text-center max-w-2xl mx-auto border border-green-500/30">
+                <div class="inline-flex items-center gap-2 bg-green-500/20 text-green-400 px-4 py-2 rounded-full text-sm mb-4">
+                    <i class="fas fa-headset"></i>
+                    <span data-i18n="free_consultation">Kostenlose Beratung</span>
+                </div>
+                <h3 class="text-xl md:text-2xl font-bold mb-2" data-i18n="consultation_title">Haben Sie Fragen?</h3>
+                <p class="text-gray-400 mb-6" data-i18n="consultation_text">Wir helfen Ihnen gerne – unverbindlich und kostenlos!</p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <a href="https://wa.me/4917698479520" target="_blank" class="bg-green-500 hover:bg-green-600 px-6 py-3 md:px-8 md:py-4 rounded-xl font-bold text-base md:text-lg inline-flex items-center justify-center gap-2 transition">
+                        <i class="fab fa-whatsapp text-xl"></i> <span data-i18n="whatsapp_btn">WhatsApp schreiben</span>
+                    </a>
+                    <a href="mailto:info@punktepass.de" class="bg-white/10 hover:bg-white/20 px-6 py-3 md:px-8 md:py-4 rounded-xl font-bold text-base md:text-lg inline-flex items-center justify-center gap-2 transition">
+                        <i class="fas fa-envelope"></i> <span data-i18n="email_btn">E-Mail schreiben</span>
+                    </a>
+                </div>
+                <p class="text-xs text-gray-500 mt-4">
+                    <i class="fas fa-phone-alt mr-1"></i> +49 176 98479520
+                </p>
             </div>
         </div>
     </main>
@@ -1108,7 +1159,16 @@
                 app_feat_1: 'GPS-basierte Geschäftssuche',
                 app_feat_2: 'Alle Prämien auf einen Blick',
                 app_feat_3: 'Direkte Navigation zum Geschäft',
-                app_feat_4: 'Werbeplatz für Händler'
+                app_feat_4: 'Werbeplatz für Händler',
+                ad_label: 'Anzeige',
+                ad_promo: '-20% diese Woche!',
+                ad_new: 'NEU',
+                // Kostenlose Beratung
+                free_consultation: 'Kostenlose Beratung',
+                consultation_title: 'Haben Sie Fragen?',
+                consultation_text: 'Wir helfen Ihnen gerne – unverbindlich und kostenlos!',
+                whatsapp_btn: 'WhatsApp schreiben',
+                email_btn: 'E-Mail schreiben'
             },
             hu: {
                 title_prefix: 'Így működik a',
@@ -1202,7 +1262,16 @@
                 app_feat_1: 'GPS-alapú üzletkeresés',
                 app_feat_2: 'Összes jutalom egy helyen',
                 app_feat_3: 'Közvetlen navigáció az üzlethez',
-                app_feat_4: 'Hirdetési hely kereskedőknek'
+                app_feat_4: 'Hirdetési hely kereskedőknek',
+                ad_label: 'Hirdetés',
+                ad_promo: '-20% ezen a héten!',
+                ad_new: 'ÚJ',
+                // Kostenlose Beratung
+                free_consultation: 'Ingyenes tanácsadás',
+                consultation_title: 'Kérdésed van?',
+                consultation_text: 'Szívesen segítünk – kötelezettség nélkül és ingyen!',
+                whatsapp_btn: 'Írj WhatsAppon',
+                email_btn: 'E-mail küldése'
             },
             ro: {
                 title_prefix: 'Cum funcționează',
@@ -1296,7 +1365,16 @@
                 app_feat_1: 'Căutare magazine pe bază de GPS',
                 app_feat_2: 'Toate recompensele la un loc',
                 app_feat_3: 'Navigare directă către magazin',
-                app_feat_4: 'Spațiu publicitar pentru comercianți'
+                app_feat_4: 'Spațiu publicitar pentru comercianți',
+                ad_label: 'Reclamă',
+                ad_promo: '-20% săptămâna aceasta!',
+                ad_new: 'NOU',
+                // Kostenlose Beratung
+                free_consultation: 'Consultanță gratuită',
+                consultation_title: 'Ai întrebări?',
+                consultation_text: 'Te ajutăm cu plăcere – fără obligații și gratuit!',
+                whatsapp_btn: 'Scrie pe WhatsApp',
+                email_btn: 'Trimite e-mail'
             }
         };
 
