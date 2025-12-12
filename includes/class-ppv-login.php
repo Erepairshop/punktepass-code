@@ -574,7 +574,7 @@ public static function render_landing_page($atts) {
 
                             <!-- Demo Link -->
                             <div class="ppv-demo-link" style="text-align: center; margin: 16px 0;">
-                                <a href="https://punktepass.de/wp-content/plugins/punktepass/demo/index.html"
+                                <a href="/demo"
                                    target="_blank"
                                    style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border-radius: 12px; text-decoration: none; font-weight: 600; font-size: 14px; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);"
                                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(99, 102, 241, 0.4)';"

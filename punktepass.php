@@ -809,7 +809,24 @@ add_action('init', function () {
     add_rewrite_rule('^r/([A-Za-z0-9]+)/([^/]+)/?$', 'index.php?ppv_referral_code=$matches[1]&ppv_referral_store=$matches[2]', 'top');
     // iOS Google OAuth callback
     add_rewrite_rule('^google-callback/?$', 'index.php?ppv_google_callback=1', 'top');
+    // Demo page
+    add_rewrite_rule('^demo/?$', 'index.php?ppv_demo=1', 'top');
+    add_rewrite_tag('%ppv_demo%', '1');
 }, 10);
+
+// ========================================
+// 🎮 DEMO PAGE HANDLER
+// ========================================
+add_action('template_redirect', function() {
+    if (get_query_var('ppv_demo')) {
+        $demo_file = PPV_PLUGIN_DIR . 'demo/index.html';
+        if (file_exists($demo_file)) {
+            header('Content-Type: text/html; charset=UTF-8');
+            readfile($demo_file);
+            exit;
+        }
+    }
+}, 1);
 
 // ========================================
 // 📱 iOS GOOGLE OAUTH CALLBACK
@@ -876,6 +893,8 @@ register_activation_hook(__FILE__, function () {
     add_rewrite_rule('^store/([^/]*)/?$', 'index.php?pagename=store&store=$matches[1]', 'top');
     add_rewrite_rule('^r/([A-Za-z0-9]+)/([^/]+)/?$', 'index.php?ppv_referral_code=$matches[1]&ppv_referral_store=$matches[2]', 'top');
     add_rewrite_rule('^google-callback/?$', 'index.php?ppv_google_callback=1', 'top');
+    add_rewrite_rule('^demo/?$', 'index.php?ppv_demo=1', 'top');
+    add_rewrite_tag('%ppv_demo%', '1');
     flush_rewrite_rules();
 });
 
