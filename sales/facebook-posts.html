@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PunktePass - Facebook Posts</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #1a1a2e;
+            color: #fff;
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            font-size: 28px;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #00bfff, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 40px;
+        }
+        .posts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 40px;
+        }
+        @media (max-width: 600px) {
+            .posts-grid { grid-template-columns: 1fr; }
+        }
+        .post-container {
+            background: #16213e;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        .post-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #2a2a4a;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .post-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00bfff, #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 18px;
+        }
+        .post-meta .name {
+            font-weight: 600;
+            font-size: 15px;
+        }
+        .post-meta .time {
+            font-size: 12px;
+            color: #888;
+        }
+        .post-text {
+            padding: 20px;
+            font-size: 15px;
+            line-height: 1.6;
+            white-space: pre-line;
+        }
+        .post-text .highlight {
+            color: #00bfff;
+        }
+        .post-text .emoji {
+            font-size: 18px;
+        }
+
+        /* Facebook Image Styles */
+        .fb-image {
+            width: 100%;
+            aspect-ratio: 1.91 / 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Post 1: Gradient with Phone */
+        .fb-image-1 {
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+        .fb-image-1 .content {
+            text-align: center;
+            z-index: 1;
+        }
+        .fb-image-1 .big-text {
+            font-size: 42px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #00bfff, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 15px;
+        }
+        .fb-image-1 .sub-text {
+            font-size: 20px;
+            color: #cbd5e1;
+        }
+        .fb-image-1 .phone-mockup {
+            position: absolute;
+            right: 40px;
+            bottom: -20px;
+            width: 160px;
+            height: 320px;
+            background: #1e1e1e;
+            border-radius: 24px;
+            border: 3px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        .fb-image-1 .phone-mockup .qr {
+            width: 100px;
+            height: 100px;
+            background: #fff;
+            border-radius: 12px;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(5, 1fr);
+            gap: 2px;
+            padding: 8px;
+        }
+        .fb-image-1 .phone-mockup .qr span {
+            background: #000;
+            border-radius: 2px;
+        }
+        .fb-image-1 .phone-mockup .qr span:nth-child(odd) {
+            background: transparent;
+        }
+
+        /* Post 2: Stats */
+        .fb-image-2 {
+            background: linear-gradient(135deg, #134e5e, #71b280);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+        .fb-image-2 .stat-row {
+            display: flex;
+            gap: 40px;
+            margin-bottom: 30px;
+        }
+        .fb-image-2 .stat {
+            text-align: center;
+        }
+        .fb-image-2 .stat-value {
+            font-size: 56px;
+            font-weight: 900;
+            color: #fff;
+        }
+        .fb-image-2 .stat-label {
+            font-size: 16px;
+            color: rgba(255,255,255,0.8);
+        }
+        .fb-image-2 .tagline {
+            font-size: 22px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        /* Post 3: Problem/Solution */
+        .fb-image-3 {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            display: flex;
+            padding: 0;
+        }
+        .fb-image-3 .side {
+            flex: 1;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .fb-image-3 .side.problem {
+            background: rgba(239, 68, 68, 0.1);
+            border-right: 3px solid #ef4444;
+        }
+        .fb-image-3 .side.solution {
+            background: rgba(34, 197, 94, 0.1);
+        }
+        .fb-image-3 .side-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .fb-image-3 .side.problem .side-title { color: #f87171; }
+        .fb-image-3 .side.solution .side-title { color: #4ade80; }
+        .fb-image-3 .side ul {
+            list-style: none;
+            font-size: 14px;
+            color: #cbd5e1;
+        }
+        .fb-image-3 .side ul li {
+            padding: 6px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .fb-image-3 .side.problem li::before {
+            content: '✗';
+            color: #ef4444;
+            font-weight: bold;
+        }
+        .fb-image-3 .side.solution li::before {
+            content: '✓';
+            color: #22c55e;
+            font-weight: bold;
+        }
+
+        /* Post 4: Price */
+        .fb-image-4 {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            padding: 40px;
+        }
+        .fb-image-4 .trial {
+            background: rgba(0,0,0,0.3);
+            padding: 10px 25px;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #4ade80;
+        }
+        .fb-image-4 .price {
+            display: flex;
+            align-items: baseline;
+            gap: 5px;
+        }
+        .fb-image-4 .currency {
+            font-size: 28px;
+            color: rgba(255,255,255,0.7);
+        }
+        .fb-image-4 .amount {
+            font-size: 80px;
+            font-weight: 900;
+            color: #fff;
+        }
+        .fb-image-4 .period {
+            font-size: 22px;
+            color: rgba(255,255,255,0.7);
+        }
+        .fb-image-4 .includes {
+            margin-top: 20px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .fb-image-4 .includes span {
+            background: rgba(255,255,255,0.15);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+        }
+
+        /* Post 5: How it works */
+        .fb-image-5 {
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            padding: 40px 20px;
+        }
+        .fb-image-5 .step {
+            text-align: center;
+            flex: 1;
+        }
+        .fb-image-5 .step-num {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #00bfff, #0077b6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-weight: 900;
+            margin: 0 auto 15px;
+        }
+        .fb-image-5 .step-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        .fb-image-5 .step-desc {
+            font-size: 13px;
+            color: #94a3b8;
+        }
+        .fb-image-5 .arrow {
+            font-size: 30px;
+            color: #00bfff;
+        }
+
+        /* Post 6: Birthday Bonus */
+        .fb-image-6 {
+            background: linear-gradient(135deg, #ec4899, #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            padding: 40px;
+            text-align: center;
+        }
+        .fb-image-6 .cake {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+        .fb-image-6 .title {
+            font-size: 36px;
+            font-weight: 900;
+            margin-bottom: 10px;
+        }
+        .fb-image-6 .desc {
+            font-size: 18px;
+            color: rgba(255,255,255,0.9);
+            max-width: 400px;
+        }
+
+        /* Post 7: Friseur specific */
+        .fb-image-7 {
+            background: linear-gradient(135deg, #1e3a5f, #0d1b2a);
+            position: relative;
+            overflow: hidden;
+        }
+        .fb-image-7::before {
+            content: '✂️';
+            position: absolute;
+            font-size: 200px;
+            right: -30px;
+            bottom: -30px;
+            opacity: 0.1;
+        }
+        .fb-image-7 .content {
+            padding: 40px;
+            position: relative;
+            z-index: 1;
+        }
+        .fb-image-7 .badge {
+            background: #f59e0b;
+            color: #000;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+        .fb-image-7 .title {
+            font-size: 32px;
+            font-weight: 900;
+            margin-bottom: 20px;
+            line-height: 1.2;
+        }
+        .fb-image-7 .benefits {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .fb-image-7 .benefit {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 16px;
+        }
+        .fb-image-7 .benefit i {
+            color: #4ade80;
+            font-size: 20px;
+        }
+
+        /* Post actions */
+        .post-actions {
+            padding: 15px 20px;
+            border-top: 1px solid #2a2a4a;
+            display: flex;
+            gap: 20px;
+            color: #888;
+            font-size: 14px;
+        }
+        .post-actions span {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+        }
+        .post-actions span:hover {
+            color: #00bfff;
+        }
+
+        .post-label {
+            background: #00bfff;
+            color: #000;
+            padding: 8px 16px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .copy-text {
+            background: #0d0d1a;
+            padding: 15px 20px;
+            border-top: 1px solid #2a2a4a;
+            font-size: 12px;
+            color: #666;
+        }
+        .copy-text code {
+            display: block;
+            white-space: pre-wrap;
+            color: #888;
+            font-family: monospace;
+        }
+
+        /* Download hint */
+        .download-hint {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            background: rgba(0,191,255,0.1);
+            border-radius: 12px;
+            border: 1px solid rgba(0,191,255,0.2);
+        }
+        .download-hint h3 {
+            color: #00bfff;
+            margin-bottom: 10px;
+        }
+        .download-hint p {
+            color: #888;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 PunktePass Facebook Posts</h1>
+        <p class="subtitle">Klicke rechts auf das Bild → "Bild speichern unter" zum Download</p>
+
+        <div class="posts-grid">
+
+            <!-- POST 1: Main Branding -->
+            <div class="post-container">
+                <div class="post-label">Post 1 - Hauptwerbung</div>
+                <div class="post-header">
+                    <div class="post-avatar">PP</div>
+                    <div class="post-meta">
+                        <div class="name">PunktePass</div>
+                        <div class="time">Gesponsert · <i class="ri-global-line"></i></div>
+                    </div>
+                </div>
+                <div class="post-text">🎯 Noch Stempelkarten? Das geht besser!
+
+PunktePass ist die digitale Lösung für Ihr Treueprogramm:
+✅ Kein Papierkram mehr
+✅ Kunden haben alles auf dem Handy
+✅ Sie sehen, wer wirklich oft kommt
+
+<span class="highlight">30 Tage kostenlos testen!</span>
+
+👉 punktepass.de</div>
+                <div class="fb-image fb-image-1">
+                    <div class="content">
+                        <div class="big-text">Stempelkarten?<br>Das war gestern.</div>
+                        <div class="sub-text">PunktePass – Das digitale Treueprogramm</div>
+                    </div>
+                    <div class="phone-mockup">
+                        <div class="qr">
+                            <span></span><span></span><span></span><span></span><span></span>
+                            <span></span><span></span><span></span><span></span><span></span>
+                            <span></span><span></span><span></span><span></span><span></span>
+                            <span></span><span></span><span></span><span></span><span></span>
+                            <span></span><span></span><span></span><span></span><span></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="post-actions">
+                    <span><i class="ri-thumb-up-line"></i> Gefällt mir</span>
+                    <span><i class="ri-chat-1-line"></i> Kommentieren</span>
+                    <span><i class="ri-share-forward-line"></i> Teilen</span>
+                </div>
+            </div>
+
+            <!-- POST 2: Stats -->
+            <div class="post-container">
+                <div class="post-label">Post 2 - Statistiken</div>
+                <div class="post-header">
+                    <div class="post-avatar">PP</div>
+                    <div class="post-meta">
+                        <div class="name">PunktePass</div>
+                        <div class="time">Gesponsert · <i class="ri-global-line"></i></div>
+                    </div>
+                </div>
+                <div class="post-text">📊 Was bringt ein digitales Treueprogramm wirklich?
+
+Die Zahlen sprechen für sich! 👇
+
+Unsere Partner berichten:
+• Mehr Stammkunden
+• Weniger verlorene "Stempelkarten"
+• Endlich wissen, wer wirklich oft kommt
+
+<span class="highlight">Starten Sie jetzt – 30 Tage gratis!</span>
+👉 punktepass.de</div>
+                <div class="fb-image fb-image-2">
+                    <div class="stat-row">
+                        <div class="stat">
+                            <div class="stat-value">+25%</div>
+                            <div class="stat-label">mehr wiederkehrende Kunden</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">0%</div>
+                            <div class="stat-label">verlorene Karten</div>
+                        </div>
+                    </div>
+                    <div class="tagline">PunktePass – Mehr Stammkunden. Weniger Aufwand.</div>
+                </div>
+                <div class="post-actions">
+                    <span><i class="ri-thumb-up-line"></i> Gefällt mir</span>
+                    <span><i class="ri-chat-1-line"></i> Kommentieren</span>
+                    <span><i class="ri-share-forward-line"></i> Teilen</span>
+                </div>
+            </div>
+
+            <!-- POST 3: Problem vs Solution -->
+            <div class="post-container">
+                <div class="post-label">Post 3 - Vergleich</div>
+                <div class="post-header">
+                    <div class="post-avatar">PP</div>
+                    <div class="post-meta">
+                        <div class="name">PunktePass</div>
+                        <div class="time">Gesponsert · <i class="ri-global-line"></i></div>
+                    </div>
+                </div>
+                <div class="post-text">❌ Papierstempelkarten vs. ✅ PunktePass Digital
+
+Der Unterschied ist deutlich!
+
+Ihre Kunden vergessen keine Karten mehr,
+Sie wissen genau wer wie oft kommt,
+und Ihr Geschäft wirkt professioneller.
+
+<span class="highlight">Jetzt 30 Tage kostenlos testen!</span>
+👉 punktepass.de</div>
+                <div class="fb-image fb-image-3">
+                    <div class="side problem">
+                        <div class="side-title"><i class="ri-close-circle-fill"></i> Stempelkarten</div>
+                        <ul>
+                            <li>Karten werden vergessen</li>
+                            <li>Betrug möglich</li>
+                            <li>Keine Kundenübersicht</li>
+                            <li>Unprofessionell</li>
+                        </ul>
+                    </div>
+                    <div class="side solution">
+                        <div class="side-title"><i class="ri-checkbox-circle-fill"></i> PunktePass</div>
+                        <ul>
+                            <li>Immer auf dem Handy</li>
+                            <li>Fälschungssicher</li>
+                            <li>Volle Statistiken</li>
+                            <li>Modern & professionell</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="post-actions">
+                    <span><i class="ri-thumb-up-line"></i> Gefällt mir</span>
+                    <span><i class="ri-chat-1-line"></i> Kommentieren</span>
+                    <span><i class="ri-share-forward-line"></i> Teilen</span>
+                </div>
+            </div>
+
+            <!-- POST 4: Price -->
+            <div class="post-container">
+                <div class="post-label">Post 4 - Preis</div>
+                <div class="post-header">
+                    <div class="post-avatar">PP</div>
+                    <div class="post-meta">
+                        <div class="name">PunktePass</div>
+                        <div class="time">Gesponsert · <i class="ri-global-line"></i></div>
+                    </div>
+                </div>
+                <div class="post-text">💰 Was kostet ein professionelles Treueprogramm?
+
+Weniger als Sie denken!
+
+Alles inklusive:
+✅ Unbegrenzte Kunden
+✅ Gratis Smartphone als Scanner
+✅ WhatsApp Support
+✅ Eigenes Branding
+
+<span class="highlight">Erste 30 Tage komplett kostenlos!</span>
+
+👉 punktepass.de</div>
+                <div class="fb-image fb-image-4">
+                    <div class="trial">✨ 30 Tage kostenlos testen!</div>
+                    <div class="price">
+                        <span class="currency">€</span>
+                        <span class="amount">30</span>
+                        <span class="period">/ Monat</span>
+                    </div>
+                    <div class="includes">
+                        <span>✓ Unbegrenzte Kunden</span>
+                        <span>✓ Gratis Smartphone</span>
+                        <span>✓ WhatsApp Support</span>
+                    </div>
+                </div>
+                <div class="post-actions">
+                    <span><i class="ri-thumb-up-line"></i> Gefällt mir</span>
+                    <span><i class="ri-chat-1-line"></i> Kommentieren</span>
+                    <span><i class="ri-share-forward-line"></i> Teilen</span>
+                </div>
+            </div>
+
+            <!-- POST 5: How it works -->
+            <div class="post-container">
+                <div class="post-label">Post 5 - So funktioniert's</div>
+                <div class="post-header">
+                    <div class="post-avatar">PP</div>
+                    <div class="post-meta">
+                        <div class="name">PunktePass</div>
+                        <div class="time">Gesponsert · <i class="ri-global-line"></i></div>
+                    </div>
+                </div>
+                <div class="post-text">⚡ So einfach geht's mit PunktePass:
+
+1️⃣ Kunde zeigt QR-Code auf seinem Handy
+2️⃣ Sie scannen kurz
+3️⃣ Fertig – Punkte sind drauf!
+
+Kein Papierkram. Kein Stempeln. Keine verlorenen Karten.
+
+<span class="highlight">Jetzt kostenlos testen!</span>
+👉 punktepass.de</div>
+                <div class="fb-image fb-image-5">
+                    <div class="step">
+                        <div class="step-num">1</div>
+                        <div class="step-title">QR-Code zeigen</div>
+                        <div class="step-desc">Kunde öffnet App</div>
+                    </div>
+                    <div class="arrow">→</div>
+                    <div class="step">
+                        <div class="step-num">2</div>
+                        <div class="step-title">Scannen</div>
+                        <div class="step-desc">3 Sekunden</div>
+                    </div>
+                    <div class="arrow">→</div>
+                    <div class="step">
+                        <div class="step-num">3</div>
+                        <div class="step-title">Fertig!</div>
+                        <div class="step-desc">Punkte gutgeschrieben</div>
+                    </div>
+                </div>
+                <div class="post-actions">
+                    <span><i class="ri-thumb-up-line"></i> Gefällt mir</span>
+                    <span><i class="ri-chat-1-line"></i> Kommentieren</span>
+                    <span><i class="ri-share-forward-line"></i> Teilen</span>
+                </div>
+            </div>
+
+            <!-- POST 6: Birthday Bonus -->
+            <div class="post-container">
+                <div class="post-label">Post 6 - Geburtstags-Bonus</div>
+                <div class="post-header">
+                    <div class="post-avatar">PP</div>
+                    <div class="post-meta">
+                        <div class="name">PunktePass</div>
+                        <div class="time">Gesponsert · <i class="ri-global-line"></i></div>
+                    </div>
+                </div>
+                <div class="post-text">🎂 Das Feature, das Ihre Kunden lieben werden:
+
+Der automatische Geburtstags-Bonus!
+
+Ihre Kunden bekommen am Geburtstag automatisch Extra-Punkte –
+und kommen garantiert vorbei, um sie einzulösen!
+
+Kein manueller Aufwand für Sie. Alles läuft automatisch.
+
+<span class="highlight">Jetzt entdecken!</span>
+👉 punktepass.de</div>
+                <div class="fb-image fb-image-6">
+                    <div class="cake">🎂</div>
+                    <div class="title">Geburtstags-Bonus</div>
+                    <div class="desc">Automatische Extra-Punkte am Geburtstag – Ihre Kunden kommen garantiert!</div>
+                </div>
+                <div class="post-actions">
+                    <span><i class="ri-thumb-up-line"></i> Gefällt mir</span>
+                    <span><i class="ri-chat-1-line"></i> Kommentieren</span>
+                    <span><i class="ri-share-forward-line"></i> Teilen</span>
+                </div>
+            </div>
+
+            <!-- POST 7: Friseur specific -->
+            <div class="post-container">
+                <div class="post-label">Post 7 - Speziell für Friseure</div>
+                <div class="post-header">
+                    <div class="post-avatar">PP</div>
+                    <div class="post-meta">
+                        <div class="name">PunktePass</div>
+                        <div class="time">Gesponsert · <i class="ri-global-line"></i></div>
+                    </div>
+                </div>
+                <div class="post-text">✂️ Aufgepasst, Friseure!
+
+Kennt Ihr das?
+• Kunde vergisst Stempelkarte
+• "Hab ich schon 8 Stempel?"
+• Manche stempeln sich selbst...
+
+Mit PunktePass ist das vorbei!
+
+Digitales Treueprogramm speziell für Salons:
+✅ Kunde hat alles auf dem Handy
+✅ Automatischer Geburtstags-Bonus
+✅ Comeback-Kampagne holt inaktive Kunden zurück
+
+<span class="highlight">30 Tage kostenlos – inklusive Gratis-Smartphone!</span>
+
+👉 punktepass.de</div>
+                <div class="fb-image fb-image-7">
+                    <div class="content">
+                        <div class="badge">FÜR FRISEURSALONS</div>
+                        <div class="title">Digitale Treue-<br>punkte für<br>Ihren Salon</div>
+                        <div class="benefits">
+                            <div class="benefit"><i class="ri-check-line"></i> Geburtstags-Bonus automatisch</div>
+                            <div class="benefit"><i class="ri-check-line"></i> Comeback-Kampagne</div>
+                            <div class="benefit"><i class="ri-check-line"></i> Gratis Smartphone inklusive</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="post-actions">
+                    <span><i class="ri-thumb-up-line"></i> Gefällt mir</span>
+                    <span><i class="ri-chat-1-line"></i> Kommentieren</span>
+                    <span><i class="ri-share-forward-line"></i> Teilen</span>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="download-hint">
+            <h3>💡 Tipp zum Speichern der Bilder</h3>
+            <p>Rechtsklick auf das Bild → "Bild speichern unter" oder Screenshot machen.<br>
+            Die Bilder sind im Facebook-Format (1.91:1 Ratio) optimiert.</p>
+        </div>
+
+    </div>
+</body>
+</html>
