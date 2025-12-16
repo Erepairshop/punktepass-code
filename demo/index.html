@@ -3,7 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PunktePass Demo - So funktioniert's</title>
+    <title>PunktePass Demo - So funktioniert's | Digitales Treuepunkt-System</title>
+
+    <!-- Preconnect for faster loading -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.tailwindcss.com">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="dns-prefetch" href="https://www.googletagmanager.com">
+
+    <!-- Favicon & App Icons -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%236366f1' rx='20' width='100' height='100'/><text x='50' y='68' font-size='55' font-weight='bold' text-anchor='middle' fill='white'>P</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%236366f1' rx='20' width='100' height='100'/><text x='50' y='68' font-size='55' font-weight='bold' text-anchor='middle' fill='white'>P</text></svg>">
+    <meta name="theme-color" content="#6366f1">
+    <meta name="msapplication-TileColor" content="#6366f1">
 
     <!-- Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-NDVQK1WSG3"></script>
@@ -312,11 +325,53 @@
     <meta property="og:url" content="https://punktepass.de/demo/">
     <meta property="og:site_name" content="PunktePass">
     <meta property="og:locale" content="de_DE">
+    <meta property="og:locale:alternate" content="hu_HU">
+    <meta property="og:locale:alternate" content="ro_RO">
+    <meta property="og:image" content="https://punktepass.de/assets/images/punktepass-og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="PunktePass - Digitales Treuepunkt-System mit QR-Code">
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="PunktePass - Digitales Treuepunkt-System">
     <meta name="twitter:description" content="QR-Code basiertes Kundenbindungssystem für Einzelhandel und Gastronomie.">
+    <meta name="twitter:image" content="https://punktepass.de/assets/images/punktepass-og-image.png">
+    <meta name="twitter:image:alt" content="PunktePass - Digitales Treuepunkt-System mit QR-Code">
+    <meta name="twitter:site" content="@punktepass">
+
+    <!-- Hreflang for multilingual support -->
+    <link rel="alternate" hreflang="de" href="https://punktepass.de/demo/">
+    <link rel="alternate" hreflang="hu" href="https://punktepass.de/demo/?lang=hu">
+    <link rel="alternate" hreflang="ro" href="https://punktepass.de/demo/?lang=ro">
+    <link rel="alternate" hreflang="x-default" href="https://punktepass.de/demo/">
+
+    <!-- Schema.org Organization -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "PunktePass",
+        "url": "https://punktepass.de",
+        "logo": "https://punktepass.de/assets/images/punktepass-logo.png",
+        "description": "Digitales Treuepunkt-System mit QR-Code für Einzelhandel und Gastronomie",
+        "email": "info@punktepass.de",
+        "telephone": "+49 176 98479520",
+        "address": {
+            "@type": "PostalAddress",
+            "addressCountry": "DE"
+        },
+        "sameAs": [
+            "https://wa.me/4917698479520"
+        ],
+        "contactPoint": {
+            "@type": "ContactPoint",
+            "telephone": "+49 176 98479520",
+            "contactType": "customer service",
+            "availableLanguage": ["German", "Hungarian", "Romanian"]
+        }
+    }
+    </script>
 
     <!-- Schema.org SoftwareApplication -->
     <script type="application/ld+json">

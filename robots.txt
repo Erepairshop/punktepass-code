@@ -43,8 +43,24 @@ Allow: /
 User-agent: cohere-ai
 Allow: /
 
+User-agent: meta-externalagent
+Allow: /
+
+User-agent: FacebookBot
+Allow: /
+
+User-agent: Applebot
+Allow: /
+
+User-agent: Bytespider
+Allow: /
+
 # Sitemap location
 Sitemap: https://punktepass.de/sitemap.xml
 
 # LLMs.txt for AI assistants
 # See: https://punktepass.de/llms.txt
+
+# AI-friendly pages
+# /demo/ - Interactive demo with multilingual support (DE, HU, RO)
+# /llms.txt - Structured information for AI assistants
