@@ -1,0 +1,50 @@
+# PunktePass Robots.txt
+# https://punktepass.de
+
+# Allow all search engines
+User-agent: *
+Allow: /
+Disallow: /wp-admin/
+Disallow: /wp-includes/
+Disallow: /cgi-bin/
+
+# AI Crawlers - Explicitly Allowed
+# ChatGPT/OpenAI
+User-agent: GPTBot
+Allow: /
+Allow: /llms.txt
+
+User-agent: ChatGPT-User
+Allow: /
+
+# Google AI (Gemini/Bard)
+User-agent: Google-Extended
+Allow: /
+
+# Anthropic Claude
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+# Microsoft Copilot/Bing
+User-agent: Bingbot
+Allow: /
+
+# Perplexity AI
+User-agent: PerplexityBot
+Allow: /
+
+# Other AI crawlers
+User-agent: CCBot
+Allow: /
+
+User-agent: cohere-ai
+Allow: /
+
+# Sitemap location
+Sitemap: https://punktepass.de/sitemap.xml
+
+# LLMs.txt for AI assistants
+# See: https://punktepass.de/llms.txt
