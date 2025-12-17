@@ -15,8 +15,20 @@
     <meta property="og:description" content="Digitales Treueprogramm ohne App. 30 Tage kostenlos testen.">
     <meta property="og:image" content="https://punktepass.de/assets/images/punktepass-og-image.png">
 
-    <!-- Facebook Pixel (placeholder) -->
-    <!-- <script>!function(f,b,e,v,n,t,s){...}('YOUR_PIXEL_ID');</script> -->
+    <!-- Facebook Pixel -->
+    <script>
+    !function(f,b,e,v,n,t,s)
+    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+    n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];
+    s.parentNode.insertBefore(t,s)}(window, document,'script',
+    'https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', 'YOUR_PIXEL_ID');
+    fbq('track', 'PageView');
+    </script>
+    <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=YOUR_PIXEL_ID&ev=PageView&noscript=1"/></noscript>
 
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%236366f1' rx='20' width='100' height='100'/><text x='50' y='68' font-size='55' font-weight='bold' text-anchor='middle' fill='white'>P</text></svg>">
@@ -230,6 +242,63 @@
 
         .form-note i {
             color: var(--accent);
+        }
+
+        .form-success {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.1));
+            border: 2px solid rgba(16, 185, 129, 0.4);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            animation: fadeInUp 0.5s ease;
+        }
+
+        .form-success i {
+            font-size: 48px;
+            color: var(--accent);
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .form-success h3 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #fff;
+        }
+
+        .form-success p {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .phone-link {
+            display: block;
+            text-align: center;
+            margin-top: 16px;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .phone-link a {
+            color: var(--primary-light);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .phone-link a:hover {
+            text-decoration: underline;
         }
 
         /* ============================================
@@ -746,6 +815,10 @@
                     <i class="ri-shield-check-line"></i>
                     Keine Kreditkarte · Keine versteckten Kosten
                 </p>
+
+                <p class="phone-link">
+                    <i class="ri-phone-line"></i> Oder direkt anrufen: <a href="tel:+4917698479520">+49 176 98479520</a>
+                </p>
             </div>
         </div>
     </section>
@@ -962,29 +1035,70 @@
             if (e.target === this) closeExitPopup();
         });
 
-        // Form submission (placeholder - connect to your backend)
+        // Show success message helper
+        function showSuccessMessage(formCard) {
+            formCard.innerHTML = `
+                <div class="form-success">
+                    <i class="ri-checkbox-circle-fill"></i>
+                    <h3>Danke für Ihre Anfrage!</h3>
+                    <p>Wir melden uns heute oder morgen bei Ihnen.</p>
+                </div>
+                <p class="phone-link" style="margin-top: 20px;">
+                    <i class="ri-phone-line"></i> Oder direkt anrufen: <a href="tel:+4917698479520">+49 176 98479520</a>
+                </p>
+            `;
+        }
+
+        // Track Lead event (Meta Pixel)
+        function trackLead(business, contact) {
+            if (typeof fbq !== 'undefined') {
+                fbq('track', 'Lead', {
+                    content_name: business,
+                    content_category: 'landing_page'
+                });
+            }
+        }
+
+        // Form submission - Main form
         document.getElementById('leadForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const business = document.getElementById('business').value;
             const contact = document.getElementById('contact').value;
+            const formCard = this.closest('.form-card');
 
-            // Send to WhatsApp as fallback
+            // Track Lead conversion
+            trackLead(business, contact);
+
+            // Send to WhatsApp
             const message = `Hallo, ich interessiere mich für PunktePass.\n\nGeschäft: ${business}\nKontakt: ${contact}`;
             window.open(`https://wa.me/4917698479520?text=${encodeURIComponent(message)}`, '_blank');
 
-            // Show thank you
-            alert('Vielen Dank! Wir melden uns innerhalb von 24 Stunden bei Ihnen.');
+            // Show inline success message
+            showSuccessMessage(formCard);
         });
 
+        // Form submission - CTA form
         document.getElementById('leadForm2').addEventListener('submit', function(e) {
             e.preventDefault();
             const business = this.querySelector('[name="business2"]').value;
             const contact = this.querySelector('[name="contact2"]').value;
+            const ctaCard = this.closest('.cta-card');
 
+            // Track Lead conversion
+            trackLead(business, contact);
+
+            // Send to WhatsApp
             const message = `Hallo, ich interessiere mich für PunktePass.\n\nGeschäft: ${business}\nKontakt: ${contact}`;
             window.open(`https://wa.me/4917698479520?text=${encodeURIComponent(message)}`, '_blank');
 
-            alert('Vielen Dank! Wir melden uns innerhalb von 24 Stunden bei Ihnen.');
+            // Show inline success message
+            ctaCard.innerHTML = `
+                <div class="form-success" style="background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.3);">
+                    <i class="ri-checkbox-circle-fill" style="color: #fff;"></i>
+                    <h3>Danke für Ihre Anfrage!</h3>
+                    <p style="color: rgba(255,255,255,0.8);">Wir melden uns heute oder morgen bei Ihnen.</p>
+                </div>
+            `;
         });
     </script>
 </body>
