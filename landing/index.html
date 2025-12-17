@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PunktePass - Mehr Stammkunden für dein Geschäft | 30 Tage kostenlos</title>
+
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Digitales Treueprogramm für lokale Geschäfte. Ohne App, ohne Vertrag. 30 Tage kostenlos testen. Einrichtung in 5 Minuten.">
+    <meta name="robots" content="index, follow">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Mehr Stammkunden für dein Geschäft">
+    <meta property="og:description" content="Digitales Treueprogramm ohne App. 30 Tage kostenlos testen.">
+    <meta property="og:image" content="https://punktepass.de/assets/images/punktepass-og-image.png">
+
+    <!-- Facebook Pixel (placeholder) -->
+    <!-- <script>!function(f,b,e,v,n,t,s){...}('YOUR_PIXEL_ID');</script> -->
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%236366f1' rx='20' width='100' height='100'/><text x='50' y='68' font-size='55' font-weight='bold' text-anchor='middle' fill='white'>P</text></svg>">
+    <meta name="theme-color" content="#6366f1">
+
+    <!-- Preconnect -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --secondary: #22d3ee;
+            --accent: #10b981;
+            --bg-dark: #030712;
+            --bg-card: rgba(255, 255, 255, 0.03);
+            --text: #e2e8f0;
+            --text-muted: #94a3b8;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                radial-gradient(ellipse at 20% 0%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 100%, rgba(34, 211, 238, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(16, 185, 129, 0.05) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 0 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ============================================
+           SECTION 1: ABOVE THE FOLD - HERO + FORM
+           ============================================ */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 40px 0;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #10b981;
+            padding: 8px 16px;
+            border-radius: 100px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 24px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .hero h1 {
+            font-size: clamp(28px, 7vw, 42px);
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #fff 0%, #e2e8f0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero h1 span {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-subtitle {
+            font-size: 18px;
+            color: var(--text-muted);
+            margin-bottom: 32px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .hero-subtitle span {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .hero-subtitle i {
+            color: var(--accent);
+        }
+
+        /* FORM */
+        .form-card {
+            background: linear-gradient(145deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 32px;
+            backdrop-filter: blur(20px);
+        }
+
+        .form-card h2 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 16px 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: #fff;
+            font-size: 16px;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
+        }
+
+        .form-group input::placeholder {
+            color: #64748b;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 18px 32px;
+            background: linear-gradient(135deg, var(--primary) 0%, #8b5cf6 100%);
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 40px rgba(99, 102, 241, 0.4);
+        }
+
+        .submit-btn i {
+            font-size: 20px;
+        }
+
+        .form-note {
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 16px;
+        }
+
+        .form-note i {
+            color: var(--accent);
+        }
+
+        /* ============================================
+           SECTION 2: TRUST BADGES
+           ============================================ */
+        .trust-section {
+            padding: 40px 0;
+        }
+
+        .trust-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .trust-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+        }
+
+        .trust-item i {
+            font-size: 20px;
+            color: var(--accent);
+        }
+
+        .trust-item span {
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .trust-person {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 20px;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.05));
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 16px;
+            margin-top: 16px;
+        }
+
+        .trust-avatar {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .trust-info h4 {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .trust-info p {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        /* ============================================
+           SECTION 3: PROBLEM → SOLUTION
+           ============================================ */
+        .problem-section {
+            padding: 60px 0;
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .problem-grid {
+            display: grid;
+            gap: 16px;
+        }
+
+        .problem-card {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            padding: 20px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 16px;
+        }
+
+        .problem-card i {
+            font-size: 24px;
+            color: #ef4444;
+            flex-shrink: 0;
+        }
+
+        .problem-card p {
+            font-size: 15px;
+        }
+
+        .solution-card {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            padding: 20px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 16px;
+        }
+
+        .solution-card i {
+            font-size: 24px;
+            color: var(--accent);
+            flex-shrink: 0;
+        }
+
+        .solution-card p {
+            font-size: 15px;
+        }
+
+        .arrow-down {
+            text-align: center;
+            padding: 16px 0;
+        }
+
+        .arrow-down i {
+            font-size: 32px;
+            color: var(--primary);
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(10px); }
+        }
+
+        /* ============================================
+           SECTION 4: 3 MAIN BENEFITS
+           ============================================ */
+        .benefits-section {
+            padding: 60px 0;
+        }
+
+        .benefits-grid {
+            display: grid;
+            gap: 16px;
+        }
+
+        .benefit-card {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 24px;
+            background: linear-gradient(145deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .benefit-card:hover {
+            transform: translateX(8px);
+            border-color: var(--primary);
+        }
+
+        .benefit-icon {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            flex-shrink: 0;
+        }
+
+        .benefit-text h3 {
+            font-size: 17px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .benefit-text p {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        /* ============================================
+           SECTION 5: SOCIAL PROOF
+           ============================================ */
+        .social-proof {
+            padding: 60px 0;
+            text-align: center;
+        }
+
+        .social-proof h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 24px;
+            color: var(--text-muted);
+        }
+
+        .industries {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .industry-tag {
+            padding: 10px 20px;
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 100px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .locations {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .locations i {
+            color: var(--primary);
+            margin-right: 6px;
+        }
+
+        /* ============================================
+           SECTION 6: SECOND CTA
+           ============================================ */
+        .cta-section {
+            padding: 60px 0 80px;
+        }
+
+        .cta-card {
+            background: linear-gradient(135deg, var(--primary), #8b5cf6);
+            border-radius: 24px;
+            padding: 40px 32px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
+            animation: rotate 20s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .cta-card > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-card h2 {
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .cta-card p {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 24px;
+        }
+
+        .cta-form {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .cta-form input {
+            padding: 16px 20px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            color: #fff;
+            font-size: 16px;
+            font-family: inherit;
+        }
+
+        .cta-form input:focus {
+            outline: none;
+            border-color: #fff;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .cta-form input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .cta-form button {
+            padding: 18px 32px;
+            background: #fff;
+            border: none;
+            border-radius: 12px;
+            color: var(--primary);
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .cta-form button:hover {
+            transform: scale(1.02);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        /* ============================================
+           FLOATING WHATSAPP BUTTON
+           ============================================ */
+        .whatsapp-float {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 60px;
+            height: 60px;
+            background: #25d366;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 32px;
+            text-decoration: none;
+            box-shadow: 0 8px 24px rgba(37, 211, 102, 0.4);
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        .whatsapp-float:hover {
+            transform: scale(1.1);
+            box-shadow: 0 12px 32px rgba(37, 211, 102, 0.5);
+        }
+
+        /* ============================================
+           FOOTER
+           ============================================ */
+        .footer {
+            padding: 24px 0;
+            text-align: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .footer p {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .footer a {
+            color: var(--text-muted);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            color: var(--primary);
+        }
+
+        /* ============================================
+           MOBILE RESPONSIVE
+           ============================================ */
+        @media (max-width: 600px) {
+            .hero h1 {
+                font-size: 28px;
+            }
+
+            .form-card {
+                padding: 24px;
+            }
+
+            .trust-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .benefit-card {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .whatsapp-float {
+                bottom: 16px;
+                right: 16px;
+                width: 54px;
+                height: 54px;
+                font-size: 28px;
+            }
+        }
+
+        /* ============================================
+           EXIT POPUP
+           ============================================ */
+        .exit-popup {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .exit-popup.active {
+            display: flex;
+        }
+
+        .exit-popup-content {
+            background: linear-gradient(145deg, #1e293b, #0f172a);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 40px;
+            max-width: 420px;
+            text-align: center;
+            position: relative;
+        }
+
+        .exit-popup-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .exit-popup-content h2 {
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 12px;
+        }
+
+        .exit-popup-content p {
+            color: var(--text-muted);
+            margin-bottom: 24px;
+        }
+
+        .exit-popup-content .submit-btn {
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- ============================================
+         SECTION 1: HERO + FORM (ABOVE THE FOLD)
+         ============================================ -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-badge">
+                <i class="ri-gift-line"></i>
+                30 Tage kostenlos testen
+            </div>
+
+            <h1>
+                Mehr <span>Stammkunden</span> für dein Geschäft
+            </h1>
+
+            <div class="hero-subtitle">
+                <span><i class="ri-check-line"></i> Ohne App</span>
+                <span><i class="ri-check-line"></i> Ohne Vertrag</span>
+                <span><i class="ri-check-line"></i> In 5 Min. startklar</span>
+            </div>
+
+            <!-- HAUPTFORMULAR -->
+            <div class="form-card">
+                <h2>Jetzt kostenlos starten</h2>
+
+                <form id="leadForm" action="#" method="POST">
+                    <div class="form-group">
+                        <label for="business">Geschäftsname</label>
+                        <input type="text" id="business" name="business" placeholder="z.B. Café Müller" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="contact">Telefon oder E-Mail</label>
+                        <input type="text" id="contact" name="contact" placeholder="+49 123 456789 oder email@beispiel.de" required>
+                    </div>
+
+                    <button type="submit" class="submit-btn">
+                        <i class="ri-rocket-line"></i>
+                        Kostenlos & unverbindlich testen
+                    </button>
+                </form>
+
+                <p class="form-note">
+                    <i class="ri-shield-check-line"></i>
+                    Keine Kreditkarte · Keine versteckten Kosten
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================
+         SECTION 2: TRUST BADGES
+         ============================================ -->
+    <section class="trust-section">
+        <div class="container">
+            <div class="trust-grid">
+                <div class="trust-item">
+                    <i class="ri-map-pin-line"></i>
+                    <span>Lokale Geschäfte aus Bayern</span>
+                </div>
+                <div class="trust-item">
+                    <i class="ri-shield-check-line"></i>
+                    <span>DSGVO-konform</span>
+                </div>
+                <div class="trust-item">
+                    <i class="ri-file-forbid-line"></i>
+                    <span>Kein Vertrag · jederzeit kündbar</span>
+                </div>
+                <div class="trust-item">
+                    <i class="ri-customer-service-2-line"></i>
+                    <span>Persönlicher Support</span>
+                </div>
+            </div>
+
+            <div class="trust-person">
+                <div class="trust-avatar">EB</div>
+                <div class="trust-info">
+                    <h4>Erik Borota</h4>
+                    <p>Ihr persönlicher Ansprechpartner · WhatsApp & Telefon</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================
+         SECTION 3: PROBLEM → SOLUTION
+         ============================================ -->
+    <section class="problem-section">
+        <div class="container">
+            <h2 class="section-title">Das Problem kennen Sie...</h2>
+
+            <div class="problem-grid">
+                <div class="problem-card">
+                    <i class="ri-emotion-sad-line"></i>
+                    <p><strong>Kunden kommen einmal</strong> – aber nicht wieder zurück</p>
+                </div>
+                <div class="problem-card">
+                    <i class="ri-file-damage-line"></i>
+                    <p><strong>Papier-Stempelkarten</strong> gehen verloren oder werden vergessen</p>
+                </div>
+            </div>
+
+            <div class="arrow-down">
+                <i class="ri-arrow-down-line"></i>
+            </div>
+
+            <div class="problem-grid">
+                <div class="solution-card">
+                    <i class="ri-qr-code-line"></i>
+                    <p><strong>Digitale Punkte per QR-Code</strong> – Kunden scannen, sammeln, kommen wieder</p>
+                </div>
+                <div class="solution-card">
+                    <i class="ri-line-chart-line"></i>
+                    <p><strong>Sie sehen alles im Dashboard</strong> – Punkte, Kunden, Belohnungen</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================
+         SECTION 4: 3 MAIN BENEFITS
+         ============================================ -->
+    <section class="benefits-section">
+        <div class="container">
+            <h2 class="section-title">Ihre Vorteile</h2>
+
+            <div class="benefits-grid">
+                <div class="benefit-card">
+                    <div class="benefit-icon">
+                        <i class="ri-smartphone-line"></i>
+                    </div>
+                    <div class="benefit-text">
+                        <h3>Keine App für Kunden nötig</h3>
+                        <p>Funktioniert im Browser – auf jedem Handy</p>
+                    </div>
+                </div>
+
+                <div class="benefit-card">
+                    <div class="benefit-icon">
+                        <i class="ri-flashlight-line"></i>
+                    </div>
+                    <div class="benefit-text">
+                        <h3>Sofort einsatzbereit</h3>
+                        <p>Einrichtung in nur 5 Minuten – wir helfen Ihnen</p>
+                    </div>
+                </div>
+
+                <div class="benefit-card">
+                    <div class="benefit-icon">
+                        <i class="ri-money-euro-circle-line"></i>
+                    </div>
+                    <div class="benefit-text">
+                        <h3>Mehr Wiederkäufer & Umsatz</h3>
+                        <p>Kunden kommen öfter – nachweislich</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================
+         SECTION 5: SOCIAL PROOF
+         ============================================ -->
+    <section class="social-proof">
+        <div class="container">
+            <h3>Bereits von lokalen Geschäften genutzt</h3>
+
+            <div class="industries">
+                <span class="industry-tag">🥐 Bäckerei</span>
+                <span class="industry-tag">☕ Café</span>
+                <span class="industry-tag">💇 Friseur</span>
+                <span class="industry-tag">🛍️ Einzelhandel</span>
+                <span class="industry-tag">🍕 Restaurant</span>
+                <span class="industry-tag">💅 Nagelstudio</span>
+            </div>
+
+            <p class="locations">
+                <i class="ri-map-pin-2-fill"></i>
+                Lauingen · Dillingen · Gundelfingen · Günzburg · Augsburg
+            </p>
+        </div>
+    </section>
+
+    <!-- ============================================
+         SECTION 6: SECOND CTA
+         ============================================ -->
+    <section class="cta-section">
+        <div class="container">
+            <div class="cta-card">
+                <h2>30 Tage kostenlos testen</h2>
+                <p>Ohne Risiko · Ohne Vertrag · Ohne Kreditkarte</p>
+
+                <form class="cta-form" id="leadForm2">
+                    <input type="text" name="business2" placeholder="Geschäftsname" required>
+                    <input type="text" name="contact2" placeholder="Telefon oder E-Mail" required>
+                    <button type="submit">
+                        <i class="ri-arrow-right-line"></i> Jetzt starten
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="container">
+            <p>
+                © 2024 PunktePass ·
+                <a href="tel:+4917698479520">+49 176 98479520</a> ·
+                <a href="mailto:info@punktepass.de">info@punktepass.de</a>
+            </p>
+            <p style="margin-top: 8px;">
+                <a href="https://punktepass.de/datenschutz">Datenschutz</a> ·
+                <a href="https://punktepass.de/impressum">Impressum</a>
+            </p>
+        </div>
+    </footer>
+
+    <!-- FLOATING WHATSAPP -->
+    <a href="https://wa.me/4917698479520?text=Hallo%2C%20ich%20interessiere%20mich%20f%C3%BCr%20PunktePass" class="whatsapp-float" target="_blank" rel="noopener">
+        <i class="ri-whatsapp-line"></i>
+    </a>
+
+    <!-- EXIT POPUP -->
+    <div class="exit-popup" id="exitPopup">
+        <div class="exit-popup-content">
+            <button class="exit-popup-close" onclick="closeExitPopup()">
+                <i class="ri-close-line"></i>
+            </button>
+            <h2>Warten Sie! 🎁</h2>
+            <p>Testen Sie PunktePass <strong>30 Tage kostenlos</strong> – ohne Risiko, ohne Vertrag.</p>
+            <button class="submit-btn" onclick="scrollToForm()">
+                <i class="ri-gift-line"></i>
+                Kostenlos testen
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Exit Intent Popup
+        let exitShown = false;
+        document.addEventListener('mouseout', function(e) {
+            if (e.clientY < 10 && !exitShown) {
+                document.getElementById('exitPopup').classList.add('active');
+                exitShown = true;
+            }
+        });
+
+        function closeExitPopup() {
+            document.getElementById('exitPopup').classList.remove('active');
+        }
+
+        function scrollToForm() {
+            closeExitPopup();
+            document.querySelector('.form-card').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Close popup on outside click
+        document.getElementById('exitPopup').addEventListener('click', function(e) {
+            if (e.target === this) closeExitPopup();
+        });
+
+        // Form submission (placeholder - connect to your backend)
+        document.getElementById('leadForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const business = document.getElementById('business').value;
+            const contact = document.getElementById('contact').value;
+
+            // Send to WhatsApp as fallback
+            const message = `Hallo, ich interessiere mich für PunktePass.\n\nGeschäft: ${business}\nKontakt: ${contact}`;
+            window.open(`https://wa.me/4917698479520?text=${encodeURIComponent(message)}`, '_blank');
+
+            // Show thank you
+            alert('Vielen Dank! Wir melden uns innerhalb von 24 Stunden bei Ihnen.');
+        });
+
+        document.getElementById('leadForm2').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const business = this.querySelector('[name="business2"]').value;
+            const contact = this.querySelector('[name="contact2"]').value;
+
+            const message = `Hallo, ich interessiere mich für PunktePass.\n\nGeschäft: ${business}\nKontakt: ${contact}`;
+            window.open(`https://wa.me/4917698479520?text=${encodeURIComponent(message)}`, '_blank');
+
+            alert('Vielen Dank! Wir melden uns innerhalb von 24 Stunden bei Ihnen.');
+        });
+    </script>
+</body>
+</html>
