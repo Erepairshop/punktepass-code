@@ -296,39 +296,198 @@ class PPV_Standalone_Email_Sender {
      */
     private static function build_html_email($message) {
         $message = nl2br($message);
-        $logo_url = site_url('/wp-content/plugins/punktepass/assets/img/logo.webp');
+        $year = date('Y');
 
         return '<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light">
+    <meta name="supported-color-schemes" content="light">
+    <!--[if mso]>
+    <noscript>
+        <xml>
+            <o:OfficeDocumentSettings>
+                <o:PixelsPerInch>96</o:PixelsPerInch>
+            </o:OfficeDocumentSettings>
+        </xml>
+    </noscript>
+    <![endif]-->
     <style>
-        body { font-family: "Segoe UI", Tahoma, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background: #f4f4f4; }
-        .email-container { max-width: 600px; margin: 20px auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
-        .email-header { background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%); padding: 30px; text-align: center; }
-        .email-header img.logo { width: 80px; height: auto; margin-bottom: 15px; }
-        .email-header h1 { color: #fff; margin: 0; font-size: 1.5rem; }
-        .email-body { padding: 35px; }
-        .email-body p { margin-bottom: 15px; }
-        .email-footer { background: #1a1a2e; color: #fff; padding: 25px 35px; text-align: center; }
-        .email-footer p { margin: 5px 0; font-size: 0.9rem; opacity: 0.9; }
-        .email-footer a { color: #00d4ff; text-decoration: none; }
+        @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
+        * { box-sizing: border-box; }
+        body {
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.6;
+            color: #1f2937;
+            margin: 0;
+            padding: 0;
+            background: #f3f4f6;
+        }
+
+        .email-wrapper {
+            padding: 30px 20px;
+        }
+
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .email-body {
+            padding: 40px 35px 35px;
+            font-size: 15px;
+            color: #374151;
+            line-height: 1.8;
+        }
+
+        .email-body p {
+            margin-bottom: 16px;
+        }
+
+        .email-body strong {
+            color: #1f2937;
+        }
+
+        /* ========== COMPACT FOOTER ========== */
+        .email-footer {
+            background: #1e293b;
+            padding: 24px 35px;
+        }
+
+        .footer-main {
+            display: table;
+            width: 100%;
+        }
+
+        .footer-left {
+            display: table-cell;
+            vertical-align: middle;
+        }
+
+        .footer-right {
+            display: table-cell;
+            vertical-align: middle;
+            text-align: right;
+        }
+
+        .footer-name {
+            font-size: 15px;
+            font-weight: 600;
+            color: #fff;
+            margin: 0 0 2px 0;
+        }
+
+        .footer-title {
+            font-size: 12px;
+            color: #94a3b8;
+            margin: 0;
+        }
+
+        .footer-links {
+            margin: 0;
+            padding: 0;
+        }
+
+        .footer-links a {
+            display: inline-block;
+            width: 32px;
+            height: 32px;
+            line-height: 32px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: #94a3b8;
+            text-decoration: none;
+            font-size: 14px;
+            margin-left: 8px;
+        }
+
+        .footer-bottom {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: table;
+            width: 100%;
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .footer-contact {
+            display: table-cell;
+            vertical-align: middle;
+        }
+
+        .footer-contact a {
+            color: #94a3b8;
+            text-decoration: none;
+            margin-right: 16px;
+        }
+
+        .footer-legal {
+            display: table-cell;
+            vertical-align: middle;
+            text-align: right;
+        }
+
+        .footer-legal a {
+            color: #64748b;
+            text-decoration: none;
+            margin-left: 12px;
+        }
+
+        /* Mobile */
+        @media only screen and (max-width: 600px) {
+            .email-wrapper { padding: 15px; }
+            .email-body { padding: 30px 25px 25px; font-size: 14px; }
+            .email-footer { padding: 20px 25px; }
+            .footer-left, .footer-right { display: block; text-align: center; }
+            .footer-right { margin-top: 15px; }
+            .footer-links a { margin: 0 4px; }
+            .footer-contact, .footer-legal { display: block; text-align: center; }
+            .footer-legal { margin-top: 10px; }
+            .footer-contact a { display: block; margin: 5px 0; }
+        }
     </style>
 </head>
 <body>
-    <div class="email-container">
-        <div class="email-header">
-            <img src="' . $logo_url . '" alt="PunktePass" class="logo">
-            <h1>PunktePass</h1>
-        </div>
-        <div class="email-body">' . $message . '</div>
-        <div class="email-footer">
-            <p><strong>Erik Borota</strong></p>
-            <p>Erepairshop / PunktePass</p>
-            <p>Tel/WhatsApp: <a href="tel:+4917698479520">0176 98479520</a></p>
-            <p>E-Mail: <a href="mailto:info@punktepass.de">info@punktepass.de</a></p>
-            <p style="margin-top: 15px; font-size: 0.8rem; opacity: 0.7;">© ' . date('Y') . ' PunktePass - Digitales Kundenbindungsprogramm</p>
+    <div class="email-wrapper">
+        <div class="email-container">
+            <!-- ========== BODY ========== -->
+            <div class="email-body">' . $message . '</div>
+
+            <!-- ========== COMPACT FOOTER ========== -->
+            <div class="email-footer">
+                <div class="footer-main">
+                    <div class="footer-left">
+                        <p class="footer-name">Erik Borota</p>
+                        <p class="footer-title">Erepairshop · PunktePass</p>
+                    </div>
+                    <div class="footer-right">
+                        <div class="footer-links">
+                            <a href="https://wa.me/4917698479520" title="WhatsApp">✦</a>
+                            <a href="https://punktepass.de" title="Website">◉</a>
+                            <a href="https://punktepass.de/demo/" title="Demo">▶</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="footer-bottom">
+                    <div class="footer-contact">
+                        <a href="tel:+4917698479520">+49 176 98479520</a>
+                        <a href="mailto:info@punktepass.de">info@punktepass.de</a>
+                        <span style="color: #64748b;">Siedlungsring 51, 89415 Lauingen</span>
+                    </div>
+                    <div class="footer-legal">
+                        <a href="https://punktepass.de">punktepass.de</a>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </body>
@@ -1157,25 +1316,56 @@ Ich freue mich über eine kurze Rückmeldung, falls Interesse besteht oder ein m
                     <html>
                     <head>
                         <meta charset="UTF-8">
+                        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
                         <style>
-                            body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 0; background: #f4f4f4; }
+                            * { box-sizing: border-box; }
+                            body {
+                                font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                                margin: 0;
+                                padding: 0;
+                                background: #f3f4f6;
+                            }
                         </style>
                     </head>
                     <body>
-                        <div style="padding: 15px; background: #1a1a2e; color: #fff; font-size: 14px;">
-                            <strong>Tárgy:</strong> ${escapeHtml(subject)}
+                        <div style="padding: 12px 20px; background: #0f172a; color: #94a3b8; font-size: 13px; display: flex; align-items: center; gap: 10px;">
+                            <span style="background: linear-gradient(135deg, #6366f1, #a855f7); color: #fff; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600;">ELŐNÉZET</span>
+                            <strong style="color: #fff;">Tárgy:</strong> ${escapeHtml(subject)}
                         </div>
-                        <div style="max-width: 600px; margin: 20px auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
-                            <div style="background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%); padding: 30px; text-align: center;">
-                                <img src="${logoUrl}" alt="PunktePass" style="width: 80px; height: auto; margin-bottom: 15px;">
-                                <h1 style="color: #fff; margin: 0; font-size: 1.5rem;">PunktePass</h1>
-                            </div>
-                            <div style="padding: 35px; line-height: 1.7;">${htmlMessage}</div>
-                            <div style="background: #1a1a2e; color: #fff; padding: 25px 35px; text-align: center;">
-                                <p style="margin: 5px 0;"><strong>Erik Borota</strong></p>
-                                <p style="margin: 5px 0;">Erepairshop / PunktePass</p>
-                                <p style="margin: 5px 0;">Tel/WhatsApp: 0176 98479520</p>
-                                <p style="margin: 5px 0;">E-Mail: info@punktepass.de</p>
+                        <div style="padding: 30px 20px;">
+                            <div style="max-width: 600px; margin: 0 auto; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
+                                <!-- BODY -->
+                                <div style="padding: 40px 35px 35px; font-size: 15px; color: #374151; line-height: 1.8;">${htmlMessage}</div>
+                                <!-- COMPACT FOOTER -->
+                                <div style="background: #1e293b; padding: 24px 35px;">
+                                    <table style="width: 100%; border-collapse: collapse;">
+                                        <tr>
+                                            <td style="vertical-align: middle;">
+                                                <p style="font-size: 15px; font-weight: 600; color: #fff; margin: 0 0 2px 0;">Erik Borota</p>
+                                                <p style="font-size: 12px; color: #94a3b8; margin: 0;">Erepairshop · PunktePass</p>
+                                            </td>
+                                            <td style="vertical-align: middle; text-align: right;">
+                                                <a href="#" style="display: inline-block; width: 32px; height: 32px; line-height: 32px; text-align: center; background: rgba(255,255,255,0.1); border-radius: 8px; color: #94a3b8; text-decoration: none; font-size: 14px; margin-left: 8px;">✦</a>
+                                                <a href="#" style="display: inline-block; width: 32px; height: 32px; line-height: 32px; text-align: center; background: rgba(255,255,255,0.1); border-radius: 8px; color: #94a3b8; text-decoration: none; font-size: 14px; margin-left: 8px;">◉</a>
+                                                <a href="#" style="display: inline-block; width: 32px; height: 32px; line-height: 32px; text-align: center; background: rgba(255,255,255,0.1); border-radius: 8px; color: #94a3b8; text-decoration: none; font-size: 14px; margin-left: 8px;">▶</a>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                    <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);">
+                                        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                                            <tr>
+                                                <td style="color: #94a3b8;">
+                                                    <a href="#" style="color: #94a3b8; text-decoration: none; margin-right: 16px;">+49 176 98479520</a>
+                                                    <a href="#" style="color: #94a3b8; text-decoration: none; margin-right: 16px;">info@punktepass.de</a>
+                                                    <span style="color: #64748b;">Siedlungsring 51, 89415 Lauingen</span>
+                                                </td>
+                                                <td style="text-align: right;">
+                                                    <a href="#" style="color: #64748b; text-decoration: none;">punktepass.de</a>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </body>

@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+
+    <!-- ============================================
+         PUNKTEPASS HAUPTSEITEN
+         ============================================ -->
+
+    <!-- Homepage -->
+    <url>
+        <loc>https://punktepass.de/</loc>
+        <lastmod>2024-12-16</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>1.0</priority>
+    </url>
+
+    <!-- Demo Page - Multilingual (German) -->
+    <url>
+        <loc>https://punktepass.de/demo/</loc>
+        <xhtml:link rel="alternate" hreflang="de" href="https://punktepass.de/demo/"/>
+        <xhtml:link rel="alternate" hreflang="hu" href="https://punktepass.de/demo/?lang=hu"/>
+        <xhtml:link rel="alternate" hreflang="ro" href="https://punktepass.de/demo/?lang=ro"/>
+        <xhtml:link rel="alternate" hreflang="x-default" href="https://punktepass.de/demo/"/>
+        <lastmod>2024-12-16</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.9</priority>
+    </url>
+
+    <!-- Demo Page - Hungarian -->
+    <url>
+        <loc>https://punktepass.de/demo/?lang=hu</loc>
+        <xhtml:link rel="alternate" hreflang="de" href="https://punktepass.de/demo/"/>
+        <xhtml:link rel="alternate" hreflang="hu" href="https://punktepass.de/demo/?lang=hu"/>
+        <xhtml:link rel="alternate" hreflang="ro" href="https://punktepass.de/demo/?lang=ro"/>
+        <lastmod>2024-12-16</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.8</priority>
+    </url>
+
+    <!-- Demo Page - Romanian -->
+    <url>
+        <loc>https://punktepass.de/demo/?lang=ro</loc>
+        <xhtml:link rel="alternate" hreflang="de" href="https://punktepass.de/demo/"/>
+        <xhtml:link rel="alternate" hreflang="hu" href="https://punktepass.de/demo/?lang=hu"/>
+        <xhtml:link rel="alternate" hreflang="ro" href="https://punktepass.de/demo/?lang=ro"/>
+        <lastmod>2024-12-16</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.8</priority>
+    </url>
+
+    <!-- ============================================
+         SALES & PARTNER PAGES
+         ============================================ -->
+
+    <!-- Partner Info - B2B Landing Page -->
+    <url>
+        <loc>https://punktepass.de/sales/punktepass-partner-info.html</loc>
+        <lastmod>2024-12-16</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.8</priority>
+    </url>
+
+    <!-- ============================================
+         USER DASHBOARD PAGES (Login Required)
+         Note: These are app pages, lower priority
+         ============================================ -->
+
+    <!-- User Dashboard -->
+    <url>
+        <loc>https://punktepass.de/user_dashboard</loc>
+        <lastmod>2024-12-16</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>0.6</priority>
+    </url>
+
+    <!-- Meine Punkte - Points Overview -->
+    <url>
+        <loc>https://punktepass.de/meine-punkte</loc>
+        <lastmod>2024-12-16</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>0.6</priority>
+    </url>
+
+    <!-- Belohnungen - Rewards -->
+    <url>
+        <loc>https://punktepass.de/belohnungen</loc>
+        <lastmod>2024-12-16</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.6</priority>
+    </url>
+
+    <!-- Einstellungen - User Settings -->
+    <url>
+        <loc>https://punktepass.de/einstellungen</loc>
+        <lastmod>2024-12-16</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.5</priority>
+    </url>
+
+    <!-- ============================================
+         HÄNDLER / VENDOR PAGES (Login Required)
+         ============================================ -->
+
+    <!-- QR Center - Main Scanning Page -->
+    <url>
+        <loc>https://punktepass.de/qr-center</loc>
+        <lastmod>2024-12-16</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.6</priority>
+    </url>
+
+    <!-- Rewards Management -->
+    <url>
+        <loc>https://punktepass.de/rewards</loc>
+        <lastmod>2024-12-16</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.6</priority>
+    </url>
+
+    <!-- Vendor Profile -->
+    <url>
+        <loc>https://punktepass.de/mein-profil</loc>
+        <lastmod>2024-12-16</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.5</priority>
+    </url>
+
+    <!-- Statistics Dashboard -->
+    <url>
+        <loc>https://punktepass.de/statistik</loc>
+        <lastmod>2024-12-16</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>0.6</priority>
+    </url>
+
+    <!-- ============================================
+         AI DISCOVERY & TECHNICAL
+         ============================================ -->
+
+    <!-- LLMs.txt for AI Assistants -->
+    <url>
+        <loc>https://punktepass.de/llms.txt</loc>
+        <lastmod>2024-12-16</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.5</priority>
+    </url>
+
+</urlset>
