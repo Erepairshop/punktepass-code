@@ -481,6 +481,7 @@ class PPV_Standalone_Email_Sender {
                     <div class="footer-contact">
                         <a href="tel:+4917698479520">+49 176 98479520</a>
                         <a href="mailto:info@punktepass.de">info@punktepass.de</a>
+                        <span style="color: #64748b;">Siedlungsring 51, 89415 Lauingen</span>
                     </div>
                     <div class="footer-legal">
                         <a href="https://punktepass.de">punktepass.de</a>
@@ -1355,7 +1356,8 @@ Ich freue mich über eine kurze Rückmeldung, falls Interesse besteht oder ein m
                                             <tr>
                                                 <td style="color: #94a3b8;">
                                                     <a href="#" style="color: #94a3b8; text-decoration: none; margin-right: 16px;">+49 176 98479520</a>
-                                                    <a href="#" style="color: #94a3b8; text-decoration: none;">info@punktepass.de</a>
+                                                    <a href="#" style="color: #94a3b8; text-decoration: none; margin-right: 16px;">info@punktepass.de</a>
+                                                    <span style="color: #64748b;">Siedlungsring 51, 89415 Lauingen</span>
                                                 </td>
                                                 <td style="text-align: right;">
                                                     <a href="#" style="color: #64748b; text-decoration: none;">punktepass.de</a>
