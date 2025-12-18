@@ -30,13 +30,15 @@
     </script>
     <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=YOUR_PIXEL_ID&ev=PageView&noscript=1"/></noscript>
 
-    <!-- Google Analytics -->
+    <!-- Google Analytics + Google Ads -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-NDVQK1WSG3"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
         gtag('js', new Date());
         gtag('config', 'G-NDVQK1WSG3');
+        // Google Ads Conversion Tracking - ADD YOUR CONVERSION ID BELOW:
+        // gtag('config', 'AW-XXXXXXXXX');
     </script>
 
     <!-- Favicon -->
@@ -1059,12 +1061,20 @@
             `;
         }
 
-        // Track Lead event (Meta Pixel)
+        // Track Lead event (Meta Pixel + Google Ads)
         function trackLead(business, contact) {
+            // Meta Pixel
             if (typeof fbq !== 'undefined') {
                 fbq('track', 'Lead', {
                     content_name: business,
                     content_category: 'landing_page'
+                });
+            }
+            // Google Ads Conversion
+            if (typeof gtag !== 'undefined') {
+                gtag('event', 'conversion_event_submit_lead_form', {
+                    'value': 1.0,
+                    'currency': 'EUR'
                 });
             }
         }
