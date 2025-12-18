@@ -92,6 +92,16 @@
 </head>
 <body class="bg-dark text-white">
 
+    <!-- Vacation Banner -->
+    <div id="vacationBanner" class="hidden fixed top-0 left-0 right-0 z-[60] bg-gradient-to-r from-orange-500 to-red-500 text-white py-3 px-4 text-center">
+        <div class="flex items-center justify-center gap-3 flex-wrap">
+            <i class="ri-calendar-event-fill text-xl"></i>
+            <span class="font-semibold">Betriebsurlaub: 24.12.2024 - 12.01.2025</span>
+            <span class="hidden sm:inline">|</span>
+            <span>Ab 13. Januar sind wir wieder für Sie da!</span>
+        </div>
+    </div>
+
     <!-- Navigation -->
     <nav class="fixed top-0 left-0 right-0 z-50 glass">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -750,7 +760,7 @@
             </div>
 
             <div class="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-                <p class="text-gray-500 text-sm">&copy; 2024 Erepairshop. Alle Rechte vorbehalten.</p>
+                <p class="text-gray-500 text-sm">&copy; 2025 Erepairshop. Alle Rechte vorbehalten.</p>
                 <div class="flex gap-4">
                     <a href="#" class="text-gray-400 hover:text-white transition"><i class="ri-facebook-fill text-xl"></i></a>
                     <a href="#" class="text-gray-400 hover:text-white transition"><i class="ri-instagram-fill text-xl"></i></a>
@@ -790,6 +800,18 @@
     </div>
 
     <script>
+        // Vacation Period Check
+        function isVacationPeriod() {
+            const now = new Date();
+            const year = now.getFullYear();
+
+            // Vacation: Dec 24, 2024 - Jan 12, 2025
+            const vacationStart = new Date(2024, 11, 24, 0, 0, 0); // Dec 24, 2024
+            const vacationEnd = new Date(2025, 0, 12, 23, 59, 59);   // Jan 12, 2025
+
+            return now >= vacationStart && now <= vacationEnd;
+        }
+
         // Opening Hours Status
         function updateOpenStatus() {
             const now = new Date();
@@ -797,6 +819,25 @@
             const hour = now.getHours();
             const minute = now.getMinutes();
             const time = hour + minute / 60;
+
+            const statusBadge = document.getElementById('statusBadge');
+            const currentStatus = document.getElementById('currentStatus');
+            const vacationBanner = document.getElementById('vacationBanner');
+            const nav = document.querySelector('nav');
+
+            // Check vacation period first
+            if (isVacationPeriod()) {
+                // Show vacation banner
+                vacationBanner.classList.remove('hidden');
+                nav.style.top = '52px'; // Push nav below banner
+                document.body.style.paddingTop = '52px';
+
+                // Show closed status
+                statusBadge.innerHTML = '<span class="w-3 h-3 bg-orange-500 rounded-full"></span><span class="text-sm">Betriebsurlaub</span>';
+                currentStatus.className = 'mt-6 p-4 rounded-xl bg-orange-500/20 border border-orange-500/30';
+                currentStatus.innerHTML = '<div class="flex items-center gap-3"><i class="ri-calendar-event-fill text-orange-400 text-xl"></i><div><span class="font-semibold text-orange-400">Betriebsurlaub</span><p class="text-sm text-gray-400 mt-1">24.12.2024 - 12.01.2025</p><p class="text-sm text-gray-400">Ab 13. Januar wieder geöffnet!</p></div></div>';
+                return;
+            }
 
             let isOpen = false;
             let statusText = '';
@@ -827,9 +868,6 @@
             } else { // Sunday
                 statusText = 'Montag wieder geoffnet ab 10:00 Uhr';
             }
-
-            const statusBadge = document.getElementById('statusBadge');
-            const currentStatus = document.getElementById('currentStatus');
 
             if (isOpen) {
                 statusBadge.innerHTML = '<span class="w-3 h-3 bg-green-500 rounded-full pulse-green"></span><span class="text-sm">' + statusText + '</span>';

@@ -48,7 +48,7 @@ header('Content-Type: text/html; charset=utf-8');
         <p>Sollten einzelne Bestimmungen dieser AGB unwirksam sein, bleibt der Vertrag im Übrigen wirksam. Es gilt deutsches Recht.</p>
 
         <footer class="mt-5">
-            <p>© 2024 Erepairshop</p>
+            <p>© 2025 Erepairshop</p>
         </footer>
     </div>
 </body>
