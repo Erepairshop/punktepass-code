@@ -805,8 +805,8 @@
             const now = new Date();
             const year = now.getFullYear();
 
-            // Vacation: Dec 24, 2024 - Jan 12, 2025
-            const vacationStart = new Date(2024, 11, 24, 0, 0, 0); // Dec 24, 2024
+            // Vacation: Dec 18, 2024 - Jan 12, 2025 (starts now for visibility)
+            const vacationStart = new Date(2024, 11, 18, 0, 0, 0); // Dec 18, 2024
             const vacationEnd = new Date(2025, 0, 12, 23, 59, 59);   // Jan 12, 2025
 
             return now >= vacationStart && now <= vacationEnd;
