@@ -1108,11 +1108,28 @@
             showFinalSuccess();
         }
 
-        // Send via Email
+        // Send via Email (using FormSubmit service)
         function sendViaEmail(business, contact) {
-            const subject = `PunktePass Anfrage - ${business}`;
-            const body = `Hallo,\n\nich interessiere mich für PunktePass.\n\nGeschäft: ${business}\nKontakt: ${contact}\n\nBitte kontaktieren Sie mich.\n\nMit freundlichen Grüßen`;
-            window.location.href = `mailto:info@punktepass.de?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            const formData = new FormData();
+            formData.append('email', 'info@punktepass.de');
+            formData.append('_subject', `PunktePass Anfrage - ${business}`);
+            formData.append('Geschäft', business);
+            formData.append('Kontakt', contact);
+            formData.append('_captcha', 'false');
+            formData.append('_template', 'table');
+
+            fetch('https://formsubmit.co/ajax/info@punktepass.de', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Email sent:', data);
+            })
+            .catch(error => {
+                console.error('Email error:', error);
+            });
+
             showFinalSuccess();
         }
 
