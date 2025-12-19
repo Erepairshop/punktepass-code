@@ -847,7 +847,7 @@
                 <iframe
                     width="320"
                     height="568"
-                    src="https://www.youtube.com/embed/vUzUOOBhMsc"
+                    src="https://www.youtube.com/embed/RsQpeWpC1Jg"
                     title="PunktePass Erklärvideo"
                     frameborder="0"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -1071,22 +1071,72 @@
             if (e.target === this) closeExitPopup();
         });
 
-        // Show success message helper
-        function showSuccessMessage(formCard) {
+        // Show contact choice helper
+        function showContactChoice(formCard, business, contact, isDarkBg = false) {
+            const bgStyle = isDarkBg ? 'background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.3);' : '';
+            const textStyle = isDarkBg ? 'color: rgba(255,255,255,0.8);' : '';
+            const btnStyle = isDarkBg
+                ? 'background: #fff; color: var(--primary);'
+                : 'background: linear-gradient(135deg, var(--primary) 0%, #8b5cf6 100%); color: #fff;';
+
             formCard.innerHTML = `
-                <div class="form-success">
-                    <i class="ri-checkbox-circle-fill"></i>
-                    <h3>Danke für Ihre Anfrage!</h3>
-                    <p>Wir melden uns heute oder morgen bei Ihnen.</p>
+                <div class="form-success" style="${bgStyle}">
+                    <i class="ri-checkbox-circle-fill" ${isDarkBg ? 'style="color: #fff;"' : ''}></i>
+                    <h3>Wie möchten Sie kontaktiert werden?</h3>
+                    <p style="${textStyle}">Wählen Sie Ihre bevorzugte Kontaktmethode:</p>
                 </div>
-                <a href="https://punktepass.de/demo" class="submit-btn" style="margin-top: 20px; text-decoration: none;">
-                    <i class="ri-play-circle-line"></i>
-                    Jetzt Demo ansehen
-                </a>
+                <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
+                    <button onclick="sendViaWhatsApp('${business.replace(/'/g, "\\'")}', '${contact.replace(/'/g, "\\'")}')" class="submit-btn" style="${btnStyle} border: none; cursor: pointer;">
+                        <i class="ri-whatsapp-line"></i>
+                        WhatsApp
+                    </button>
+                    <button onclick="sendViaEmail('${business.replace(/'/g, "\\'")}', '${contact.replace(/'/g, "\\'")}')" class="submit-btn" style="${btnStyle} border: none; cursor: pointer;">
+                        <i class="ri-mail-line"></i>
+                        E-Mail
+                    </button>
+                </div>
                 <p class="phone-link" style="margin-top: 16px;">
                     <i class="ri-phone-line"></i> Oder direkt anrufen: <a href="tel:+4917698479520">+49 176 98479520</a>
                 </p>
             `;
+        }
+
+        // Send via WhatsApp
+        function sendViaWhatsApp(business, contact) {
+            const message = `Hallo, ich interessiere mich für PunktePass.\n\nGeschäft: ${business}\nKontakt: ${contact}`;
+            window.open(`https://wa.me/4917698479520?text=${encodeURIComponent(message)}`, '_blank');
+            showFinalSuccess();
+        }
+
+        // Send via Email
+        function sendViaEmail(business, contact) {
+            const subject = `PunktePass Anfrage - ${business}`;
+            const body = `Hallo,\n\nich interessiere mich für PunktePass.\n\nGeschäft: ${business}\nKontakt: ${contact}\n\nBitte kontaktieren Sie mich.\n\nMit freundlichen Grüßen`;
+            window.location.href = `mailto:info@punktepass.de?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            showFinalSuccess();
+        }
+
+        // Show final success after contact method chosen
+        function showFinalSuccess() {
+            const formCards = document.querySelectorAll('.form-card, .cta-card');
+            formCards.forEach(card => {
+                if (card.querySelector('.form-success')) {
+                    card.innerHTML = `
+                        <div class="form-success">
+                            <i class="ri-checkbox-circle-fill"></i>
+                            <h3>Danke für Ihre Anfrage!</h3>
+                            <p>Wir melden uns heute oder morgen bei Ihnen.</p>
+                        </div>
+                        <a href="https://punktepass.de/demo" class="submit-btn" style="margin-top: 20px; text-decoration: none;">
+                            <i class="ri-play-circle-line"></i>
+                            Jetzt Demo ansehen
+                        </a>
+                        <p class="phone-link" style="margin-top: 16px;">
+                            <i class="ri-phone-line"></i> Oder direkt anrufen: <a href="tel:+4917698479520">+49 176 98479520</a>
+                        </p>
+                    `;
+                }
+            });
         }
 
         // Track Lead event (Meta Pixel + Google Ads)
@@ -1117,12 +1167,8 @@
             // Track Lead conversion
             trackLead(business, contact);
 
-            // Send to WhatsApp
-            const message = `Hallo, ich interessiere mich für PunktePass.\n\nGeschäft: ${business}\nKontakt: ${contact}`;
-            window.open(`https://wa.me/4917698479520?text=${encodeURIComponent(message)}`, '_blank');
-
-            // Show inline success message
-            showSuccessMessage(formCard);
+            // Show contact choice (Email or WhatsApp)
+            showContactChoice(formCard, business, contact, false);
         });
 
         // Form submission - CTA form
@@ -1135,22 +1181,8 @@
             // Track Lead conversion
             trackLead(business, contact);
 
-            // Send to WhatsApp
-            const message = `Hallo, ich interessiere mich für PunktePass.\n\nGeschäft: ${business}\nKontakt: ${contact}`;
-            window.open(`https://wa.me/4917698479520?text=${encodeURIComponent(message)}`, '_blank');
-
-            // Show inline success message
-            ctaCard.innerHTML = `
-                <div class="form-success" style="background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.3);">
-                    <i class="ri-checkbox-circle-fill" style="color: #fff;"></i>
-                    <h3>Danke für Ihre Anfrage!</h3>
-                    <p style="color: rgba(255,255,255,0.8);">Wir melden uns heute oder morgen bei Ihnen.</p>
-                </div>
-                <a href="https://punktepass.de/demo" style="display: inline-flex; align-items: center; gap: 8px; margin-top: 20px; padding: 14px 28px; background: #fff; color: var(--primary); border-radius: 12px; text-decoration: none; font-weight: 700; font-size: 16px;">
-                    <i class="ri-play-circle-line"></i>
-                    Jetzt Demo ansehen
-                </a>
-            `;
+            // Show contact choice (Email or WhatsApp) - dark background style
+            showContactChoice(ctaCard, business, contact, true);
         });
     </script>
 </body>
