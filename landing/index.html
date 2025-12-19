@@ -1103,6 +1103,22 @@
 
         // Send via WhatsApp
         function sendViaWhatsApp(business, contact) {
+            // Also send email notification
+            const formData = new FormData();
+            formData.append('email', 'info@punktepass.de');
+            formData.append('_subject', `PunktePass Anfrage (WhatsApp) - ${business}`);
+            formData.append('Geschäft', business);
+            formData.append('Kontakt', contact);
+            formData.append('Kontaktmethode', '📱 WhatsApp gewählt');
+            formData.append('_captcha', 'false');
+            formData.append('_template', 'table');
+
+            fetch('https://formsubmit.co/ajax/info@punktepass.de', {
+                method: 'POST',
+                body: formData
+            }).catch(error => console.error('Email error:', error));
+
+            // Open WhatsApp
             const message = `Hallo, ich interessiere mich für PunktePass.\n\nGeschäft: ${business}\nKontakt: ${contact}`;
             window.open(`https://wa.me/4917698479520?text=${encodeURIComponent(message)}`, '_blank');
             showFinalSuccess();
@@ -1112,9 +1128,10 @@
         function sendViaEmail(business, contact) {
             const formData = new FormData();
             formData.append('email', 'info@punktepass.de');
-            formData.append('_subject', `PunktePass Anfrage - ${business}`);
+            formData.append('_subject', `PunktePass Anfrage (E-Mail) - ${business}`);
             formData.append('Geschäft', business);
             formData.append('Kontakt', contact);
+            formData.append('Kontaktmethode', '✉️ E-Mail gewählt');
             formData.append('_captcha', 'false');
             formData.append('_template', 'table');
 
