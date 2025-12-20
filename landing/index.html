@@ -1232,6 +1232,30 @@
             }
         }
 
+        // Send immediate email notification when form is submitted
+        function sendInitialNotification(business, contact) {
+            const formData = new FormData();
+            formData.append('email', 'info@punktepass.de');
+            formData.append('_subject', `🆕 Neue Anfrage - ${business}`);
+            formData.append('Geschäft', business);
+            formData.append('Kontakt', contact);
+            formData.append('Status', '⏳ Wartet auf Kontaktmethode-Auswahl (WhatsApp/Email)');
+            formData.append('_captcha', 'false');
+            formData.append('_template', 'table');
+
+            fetch('https://formsubmit.co/ajax/info@punktepass.de', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Initial notification sent:', data);
+            })
+            .catch(error => {
+                console.error('Initial notification error:', error);
+            });
+        }
+
         // Form submission - Main form
         document.getElementById('leadForm').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -1241,6 +1265,9 @@
 
             // Track Lead conversion
             trackLead(business, contact);
+
+            // Send immediate email notification
+            sendInitialNotification(business, contact);
 
             // Show contact choice (Email or WhatsApp)
             showContactChoice(formCard, business, contact, false);
@@ -1255,6 +1282,9 @@
 
             // Track Lead conversion
             trackLead(business, contact);
+
+            // Send immediate email notification
+            sendInitialNotification(business, contact);
 
             // Show contact choice (Email or WhatsApp) - dark background style
             showContactChoice(ctaCard, business, contact, true);
