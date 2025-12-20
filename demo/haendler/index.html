@@ -1,0 +1,1579 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PunktePass Händler Demo - Dashboard Übersicht</title>
+
+    <!-- SEO -->
+    <meta name="description" content="Interaktive Demo des PunktePass Händler-Dashboards. Entdecken Sie alle Funktionen: QR-Scanner, Prämien, Statistiken und mehr.">
+    <meta name="robots" content="index, follow">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%236366f1' rx='20' width='100' height='100'/><text x='50' y='68' font-size='55' font-weight='bold' text-anchor='middle' fill='white'>P</text></svg>">
+    <meta name="theme-color" content="#6366f1">
+
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --secondary: #22d3ee;
+            --accent: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg-dark: #0a0f1a;
+            --bg-card: rgba(255, 255, 255, 0.05);
+            --bg-card-hover: rgba(255, 255, 255, 0.08);
+            --text: #e2e8f0;
+            --text-muted: #94a3b8;
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, var(--bg-dark) 0%, #111827 50%, var(--bg-dark) 100%);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+            padding-bottom: 80px;
+        }
+
+        /* Header */
+        .demo-header {
+            background: rgba(10, 15, 26, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 16px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 500px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 18px;
+        }
+
+        .demo-badge {
+            background: linear-gradient(135deg, var(--warning), #d97706);
+            color: #000;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        /* Language Switcher */
+        .lang-switcher {
+            display: flex;
+            gap: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 4px;
+            border-radius: 8px;
+        }
+
+        .lang-btn {
+            padding: 6px 10px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .lang-btn:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+        .lang-btn.active { background: var(--primary); color: white; }
+
+        /* Main Content */
+        .main-content {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 16px;
+        }
+
+        /* Store Info */
+        .store-info {
+            background: linear-gradient(135deg, var(--primary), #8b5cf6);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .store-info::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        }
+
+        .store-name {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            position: relative;
+        }
+
+        .store-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #22c55e;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+            background: var(--bg-card-hover);
+            transform: translateY(-2px);
+        }
+
+        .stat-icon {
+            width: 44px;
+            height: 44px;
+            margin: 0 auto 10px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .tabs::-webkit-scrollbar { display: none; }
+
+        .tab-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover {
+            background: var(--bg-card-hover);
+            color: var(--text);
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .tab-btn i { font-size: 16px; }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-title i {
+            color: var(--primary);
+        }
+
+        /* Scanner Section */
+        .scanner-area {
+            background: linear-gradient(145deg, #1a1f2e, #0d1117);
+            border: 2px dashed var(--border);
+            border-radius: 20px;
+            padding: 40px 20px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .scanner-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 16px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            animation: scanPulse 2s infinite;
+        }
+
+        @keyframes scanPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
+            50% { box-shadow: 0 0 0 20px rgba(99, 102, 241, 0); }
+        }
+
+        .scanner-text {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .scanner-hint {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        /* Demo Button */
+        .demo-scan-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 28px;
+            background: linear-gradient(135deg, var(--accent), #059669);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 16px;
+            transition: all 0.3s;
+        }
+
+        .demo-scan-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.4);
+        }
+
+        /* Activity List */
+        .activity-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            transition: all 0.2s;
+        }
+
+        .activity-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .activity-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .activity-avatar.scan { background: linear-gradient(135deg, var(--primary), var(--secondary)); }
+        .activity-avatar.reward { background: linear-gradient(135deg, var(--accent), #059669); }
+        .activity-avatar.new { background: linear-gradient(135deg, var(--warning), #d97706); }
+
+        .activity-info { flex: 1; }
+
+        .activity-name {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 2px;
+        }
+
+        .activity-detail {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .activity-time {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .activity-points {
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--accent);
+        }
+
+        /* Rewards Management */
+        .reward-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 14px;
+            margin-bottom: 12px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .reward-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .reward-info { flex: 1; }
+
+        .reward-name {
+            font-weight: 700;
+            font-size: 15px;
+            margin-bottom: 4px;
+        }
+
+        .reward-cost {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .reward-toggle {
+            width: 50px;
+            height: 28px;
+            background: var(--accent);
+            border-radius: 14px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .reward-toggle::after {
+            content: '';
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            background: white;
+            border-radius: 50%;
+            top: 3px;
+            right: 3px;
+            transition: all 0.2s;
+        }
+
+        .reward-toggle.off {
+            background: #475569;
+        }
+
+        .reward-toggle.off::after {
+            right: auto;
+            left: 3px;
+        }
+
+        /* Stats Charts */
+        .chart-placeholder {
+            background: linear-gradient(145deg, rgba(99, 102, 241, 0.1), rgba(34, 211, 238, 0.05));
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 16px;
+        }
+
+        .chart-bars {
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+            height: 120px;
+            margin-bottom: 12px;
+        }
+
+        .chart-bar {
+            flex: 1;
+            background: linear-gradient(to top, var(--primary), var(--secondary));
+            border-radius: 6px 6px 0 0;
+            min-height: 20px;
+            transition: all 0.3s;
+        }
+
+        .chart-bar:hover {
+            filter: brightness(1.2);
+        }
+
+        .chart-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+
+        /* Profile Section */
+        .profile-field {
+            margin-bottom: 16px;
+        }
+
+        .profile-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .profile-input {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text);
+            font-size: 15px;
+            font-family: inherit;
+        }
+
+        .profile-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+
+        /* Opening Hours */
+        .hours-grid {
+            display: grid;
+            gap: 10px;
+        }
+
+        .hours-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+        }
+
+        .hours-day {
+            width: 80px;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .hours-time {
+            flex: 1;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .hours-status {
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        .hours-status.open {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--accent);
+        }
+
+        .hours-status.closed {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(10, 15, 26, 0.98);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid var(--border);
+            padding: 10px 0;
+            padding-bottom: max(10px, env(safe-area-inset-bottom));
+            z-index: 1000;
+        }
+
+        .bottom-nav-content {
+            max-width: 500px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-around;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 8px 16px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 10px;
+            font-weight: 600;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .nav-item i {
+            font-size: 24px;
+        }
+
+        .nav-item:hover {
+            color: var(--text);
+        }
+
+        .nav-item.active {
+            color: var(--primary);
+        }
+
+        .nav-item.active i {
+            transform: scale(1.1);
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--accent);
+            color: white;
+            padding: 14px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 14px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            z-index: 2000;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        /* VIP Section */
+        .vip-tier {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 14px;
+            margin-bottom: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .vip-badge {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .vip-badge.bronze { background: linear-gradient(135deg, #cd7f32, #8b4513); }
+        .vip-badge.silver { background: linear-gradient(135deg, #c0c0c0, #808080); }
+        .vip-badge.gold { background: linear-gradient(135deg, #ffd700, #daa520); }
+        .vip-badge.platinum { background: linear-gradient(135deg, #e5e4e2, #a0a0a0); }
+
+        .vip-info { flex: 1; }
+
+        .vip-name {
+            font-weight: 700;
+            font-size: 15px;
+            margin-bottom: 4px;
+        }
+
+        .vip-requirement {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .vip-bonus {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        /* Help Tooltips */
+        .help-tip {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 18px;
+            height: 18px;
+            background: var(--primary);
+            border-radius: 50%;
+            font-size: 11px;
+            cursor: help;
+            margin-left: 6px;
+        }
+
+        /* Section Descriptions */
+        .section-desc {
+            background: rgba(99, 102, 241, 0.1);
+            border-left: 3px solid var(--primary);
+            padding: 12px 16px;
+            border-radius: 0 12px 12px 0;
+            margin-bottom: 20px;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .section-desc strong {
+            color: var(--text);
+        }
+
+        /* Responsive */
+        @media (max-width: 400px) {
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+            }
+
+            .stat-card {
+                padding: 12px;
+            }
+
+            .stat-value {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="demo-header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">P</div>
+                <span>PunktePass</span>
+            </div>
+            <span class="demo-badge">DEMO</span>
+            <div class="lang-switcher">
+                <button class="lang-btn active" data-lang="de">DE</button>
+                <button class="lang-btn" data-lang="en">EN</button>
+                <button class="lang-btn" data-lang="hu">HU</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Store Info -->
+        <div class="store-info">
+            <div class="store-name" data-i18n="store_name">Demo Café München</div>
+            <div class="store-status">
+                <span class="status-dot"></span>
+                <span data-i18n="store_open">Geöffnet · 08:00 - 18:00</span>
+            </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="ri-user-heart-line"></i></div>
+                <div class="stat-value" id="stat-customers">247</div>
+                <div class="stat-label" data-i18n="stat_customers">Stammkunden</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="ri-scan-line"></i></div>
+                <div class="stat-value" id="stat-scans">38</div>
+                <div class="stat-label" data-i18n="stat_scans_today">Scans heute</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="ri-gift-line"></i></div>
+                <div class="stat-value" id="stat-rewards">12</div>
+                <div class="stat-label" data-i18n="stat_rewards">Einlösungen</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="ri-line-chart-line"></i></div>
+                <div class="stat-value" id="stat-revenue">+18%</div>
+                <div class="stat-label" data-i18n="stat_revenue">Umsatz ↑</div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="scanner">
+                <i class="ri-qr-scan-2-line"></i>
+                <span data-i18n="tab_scanner">Scanner</span>
+            </button>
+            <button class="tab-btn" data-tab="rewards">
+                <i class="ri-gift-line"></i>
+                <span data-i18n="tab_rewards">Prämien</span>
+            </button>
+            <button class="tab-btn" data-tab="stats">
+                <i class="ri-bar-chart-grouped-line"></i>
+                <span data-i18n="tab_stats">Statistik</span>
+            </button>
+            <button class="tab-btn" data-tab="vip">
+                <i class="ri-vip-crown-line"></i>
+                <span data-i18n="tab_vip">VIP</span>
+            </button>
+            <button class="tab-btn" data-tab="profile">
+                <i class="ri-store-2-line"></i>
+                <span data-i18n="tab_profile">Profil</span>
+            </button>
+        </div>
+
+        <!-- Tab: Scanner -->
+        <div class="tab-content active" id="tab-scanner">
+            <div class="section-desc">
+                <strong data-i18n="scanner_title">QR-Code Scanner</strong><br>
+                <span data-i18n="scanner_desc">Scannen Sie den QR-Code Ihrer Kunden, um Punkte zu vergeben. Jeder Scan = 10 Punkte.</span>
+            </div>
+
+            <div class="scanner-area">
+                <div class="scanner-icon">
+                    <i class="ri-qr-scan-2-line"></i>
+                </div>
+                <div class="scanner-text" data-i18n="scanner_ready">Scanner bereit</div>
+                <div class="scanner-hint" data-i18n="scanner_hint">Halten Sie den QR-Code des Kunden vor die Kamera</div>
+                <button class="demo-scan-btn" onclick="simulateScan()">
+                    <i class="ri-play-line"></i>
+                    <span data-i18n="btn_demo_scan">Demo-Scan starten</span>
+                </button>
+            </div>
+
+            <div class="card">
+                <div class="card-title">
+                    <i class="ri-history-line"></i>
+                    <span data-i18n="recent_activity">Letzte Aktivitäten</span>
+                </div>
+                <div class="activity-list" id="activity-list">
+                    <div class="activity-item">
+                        <div class="activity-avatar scan">MS</div>
+                        <div class="activity-info">
+                            <div class="activity-name">Maria Schmidt</div>
+                            <div class="activity-detail" data-i18n="activity_scan">QR-Code gescannt</div>
+                        </div>
+                        <div class="activity-time">vor 5 min</div>
+                        <div class="activity-points">+10</div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-avatar reward">TM</div>
+                        <div class="activity-info">
+                            <div class="activity-name">Thomas Müller</div>
+                            <div class="activity-detail" data-i18n="activity_reward">Prämie eingelöst</div>
+                        </div>
+                        <div class="activity-time">vor 12 min</div>
+                        <div class="activity-points">-100</div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-avatar new">AW</div>
+                        <div class="activity-info">
+                            <div class="activity-name">Anna Weber</div>
+                            <div class="activity-detail" data-i18n="activity_new">Neuer Kunde</div>
+                        </div>
+                        <div class="activity-time">vor 18 min</div>
+                        <div class="activity-points">+10</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Rewards -->
+        <div class="tab-content" id="tab-rewards">
+            <div class="section-desc">
+                <strong data-i18n="rewards_title">Prämien verwalten</strong><br>
+                <span data-i18n="rewards_desc">Erstellen und verwalten Sie Prämien, die Ihre Kunden mit gesammelten Punkten einlösen können.</span>
+            </div>
+
+            <div class="card">
+                <div class="card-title">
+                    <i class="ri-gift-line"></i>
+                    <span data-i18n="active_rewards">Aktive Prämien</span>
+                </div>
+
+                <div class="reward-item">
+                    <div class="reward-icon">☕</div>
+                    <div class="reward-info">
+                        <div class="reward-name" data-i18n="reward_coffee">Gratis Kaffee</div>
+                        <div class="reward-cost">100 <span data-i18n="points">Punkte</span></div>
+                    </div>
+                    <div class="reward-toggle" onclick="this.classList.toggle('off')"></div>
+                </div>
+
+                <div class="reward-item">
+                    <div class="reward-icon">🥐</div>
+                    <div class="reward-info">
+                        <div class="reward-name" data-i18n="reward_croissant">Gratis Croissant</div>
+                        <div class="reward-cost">150 <span data-i18n="points">Punkte</span></div>
+                    </div>
+                    <div class="reward-toggle" onclick="this.classList.toggle('off')"></div>
+                </div>
+
+                <div class="reward-item">
+                    <div class="reward-icon">🎂</div>
+                    <div class="reward-info">
+                        <div class="reward-name" data-i18n="reward_cake">Stück Kuchen</div>
+                        <div class="reward-cost">200 <span data-i18n="points">Punkte</span></div>
+                    </div>
+                    <div class="reward-toggle" onclick="this.classList.toggle('off')"></div>
+                </div>
+
+                <div class="reward-item">
+                    <div class="reward-icon">🎁</div>
+                    <div class="reward-info">
+                        <div class="reward-name" data-i18n="reward_discount">10% Rabatt</div>
+                        <div class="reward-cost">300 <span data-i18n="points">Punkte</span></div>
+                    </div>
+                    <div class="reward-toggle off" onclick="this.classList.toggle('off')"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">
+                    <i class="ri-time-line"></i>
+                    <span data-i18n="pending_redemptions">Offene Einlösungen</span>
+                </div>
+
+                <div class="activity-list">
+                    <div class="activity-item">
+                        <div class="activity-avatar reward">SB</div>
+                        <div class="activity-info">
+                            <div class="activity-name">Stefan Bauer</div>
+                            <div class="activity-detail">☕ Gratis Kaffee</div>
+                        </div>
+                        <button style="padding: 8px 16px; background: var(--accent); border: none; border-radius: 8px; color: white; font-weight: 600; cursor: pointer;" data-i18n="btn_confirm">Bestätigen</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Statistics -->
+        <div class="tab-content" id="tab-stats">
+            <div class="section-desc">
+                <strong data-i18n="stats_title">Statistiken & Analyse</strong><br>
+                <span data-i18n="stats_desc">Behalten Sie den Überblick über Ihre Kundenaktivitäten, Umsätze und Trends.</span>
+            </div>
+
+            <div class="card">
+                <div class="card-title">
+                    <i class="ri-line-chart-line"></i>
+                    <span data-i18n="weekly_scans">Scans diese Woche</span>
+                </div>
+                <div class="chart-placeholder">
+                    <div class="chart-bars">
+                        <div class="chart-bar" style="height: 45%;"></div>
+                        <div class="chart-bar" style="height: 60%;"></div>
+                        <div class="chart-bar" style="height: 35%;"></div>
+                        <div class="chart-bar" style="height: 80%;"></div>
+                        <div class="chart-bar" style="height: 95%;"></div>
+                        <div class="chart-bar" style="height: 70%;"></div>
+                        <div class="chart-bar" style="height: 50%;"></div>
+                    </div>
+                    <div class="chart-labels">
+                        <span>Mo</span>
+                        <span>Di</span>
+                        <span>Mi</span>
+                        <span>Do</span>
+                        <span>Fr</span>
+                        <span>Sa</span>
+                        <span>So</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">1.247</div>
+                    <div class="stat-label" data-i18n="total_scans">Gesamt Scans</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">89</div>
+                    <div class="stat-label" data-i18n="rewards_given">Prämien vergeben</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">
+                    <i class="ri-trophy-line"></i>
+                    <span data-i18n="top_customers">Top 5 Kunden</span>
+                </div>
+                <div class="activity-list">
+                    <div class="activity-item">
+                        <div class="activity-avatar" style="background: linear-gradient(135deg, #ffd700, #daa520);">1</div>
+                        <div class="activity-info">
+                            <div class="activity-name">Maria Schmidt</div>
+                            <div class="activity-detail">VIP Gold</div>
+                        </div>
+                        <div class="activity-points">890 Pkt</div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-avatar" style="background: linear-gradient(135deg, #c0c0c0, #808080);">2</div>
+                        <div class="activity-info">
+                            <div class="activity-name">Thomas Müller</div>
+                            <div class="activity-detail">VIP Silber</div>
+                        </div>
+                        <div class="activity-points">654 Pkt</div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-avatar" style="background: linear-gradient(135deg, #cd7f32, #8b4513);">3</div>
+                        <div class="activity-info">
+                            <div class="activity-name">Anna Weber</div>
+                            <div class="activity-detail">VIP Bronze</div>
+                        </div>
+                        <div class="activity-points">432 Pkt</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: VIP -->
+        <div class="tab-content" id="tab-vip">
+            <div class="section-desc">
+                <strong data-i18n="vip_title">VIP-Stufen System</strong><br>
+                <span data-i18n="vip_desc">Belohnen Sie Ihre treuesten Kunden mit VIP-Stufen und Bonuspunkten.</span>
+            </div>
+
+            <div class="card">
+                <div class="card-title">
+                    <i class="ri-vip-crown-line"></i>
+                    <span data-i18n="vip_tiers">VIP-Stufen</span>
+                </div>
+
+                <div class="vip-tier">
+                    <div class="vip-badge bronze">🥉</div>
+                    <div class="vip-info">
+                        <div class="vip-name">Bronze</div>
+                        <div class="vip-requirement" data-i18n="vip_bronze_req">Ab 100 Punkten</div>
+                    </div>
+                    <div class="vip-bonus">+5%</div>
+                </div>
+
+                <div class="vip-tier">
+                    <div class="vip-badge silver">🥈</div>
+                    <div class="vip-info">
+                        <div class="vip-name">Silber</div>
+                        <div class="vip-requirement" data-i18n="vip_silver_req">Ab 500 Punkten</div>
+                    </div>
+                    <div class="vip-bonus">+10%</div>
+                </div>
+
+                <div class="vip-tier">
+                    <div class="vip-badge gold">🥇</div>
+                    <div class="vip-info">
+                        <div class="vip-name">Gold</div>
+                        <div class="vip-requirement" data-i18n="vip_gold_req">Ab 1.000 Punkten</div>
+                    </div>
+                    <div class="vip-bonus">+15%</div>
+                </div>
+
+                <div class="vip-tier">
+                    <div class="vip-badge platinum">💎</div>
+                    <div class="vip-info">
+                        <div class="vip-name">Platin</div>
+                        <div class="vip-requirement" data-i18n="vip_platinum_req">Ab 2.500 Punkten</div>
+                    </div>
+                    <div class="vip-bonus">+25%</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">
+                    <i class="ri-gift-2-line"></i>
+                    <span data-i18n="auto_bonuses">Automatische Boni</span>
+                </div>
+
+                <div class="reward-item">
+                    <div class="reward-icon">🎂</div>
+                    <div class="reward-info">
+                        <div class="reward-name" data-i18n="birthday_bonus">Geburtstagsbonus</div>
+                        <div class="reward-cost" data-i18n="birthday_desc">+50 Punkte am Geburtstag</div>
+                    </div>
+                    <div class="reward-toggle" onclick="this.classList.toggle('off')"></div>
+                </div>
+
+                <div class="reward-item">
+                    <div class="reward-icon">👋</div>
+                    <div class="reward-info">
+                        <div class="reward-name" data-i18n="comeback_bonus">Comeback-Bonus</div>
+                        <div class="reward-cost" data-i18n="comeback_desc">+20 Punkte nach 30 Tagen Pause</div>
+                    </div>
+                    <div class="reward-toggle" onclick="this.classList.toggle('off')"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Profile -->
+        <div class="tab-content" id="tab-profile">
+            <div class="section-desc">
+                <strong data-i18n="profile_title">Geschäftsprofil</strong><br>
+                <span data-i18n="profile_desc">Verwalten Sie Ihre Geschäftsdaten, Öffnungszeiten und Kontaktinformationen.</span>
+            </div>
+
+            <div class="card">
+                <div class="card-title">
+                    <i class="ri-store-2-line"></i>
+                    <span data-i18n="store_details">Geschäftsdaten</span>
+                </div>
+
+                <div class="profile-field">
+                    <label class="profile-label" data-i18n="field_name">Geschäftsname</label>
+                    <input type="text" class="profile-input" value="Demo Café München">
+                </div>
+
+                <div class="profile-field">
+                    <label class="profile-label" data-i18n="field_address">Adresse</label>
+                    <input type="text" class="profile-input" value="Marienplatz 1">
+                </div>
+
+                <div class="profile-field">
+                    <label class="profile-label" data-i18n="field_city">Stadt</label>
+                    <input type="text" class="profile-input" value="80331 München">
+                </div>
+
+                <div class="profile-field">
+                    <label class="profile-label" data-i18n="field_phone">Telefon</label>
+                    <input type="text" class="profile-input" value="+49 89 123456">
+                </div>
+
+                <div class="profile-field">
+                    <label class="profile-label" data-i18n="field_email">E-Mail</label>
+                    <input type="text" class="profile-input" value="info@demo-cafe.de">
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">
+                    <i class="ri-time-line"></i>
+                    <span data-i18n="opening_hours">Öffnungszeiten</span>
+                </div>
+
+                <div class="hours-grid">
+                    <div class="hours-row">
+                        <span class="hours-day" data-i18n="day_mon">Montag</span>
+                        <span class="hours-time">08:00 - 18:00</span>
+                        <span class="hours-status open" data-i18n="status_open">Offen</span>
+                    </div>
+                    <div class="hours-row">
+                        <span class="hours-day" data-i18n="day_tue">Dienstag</span>
+                        <span class="hours-time">08:00 - 18:00</span>
+                        <span class="hours-status open" data-i18n="status_open">Offen</span>
+                    </div>
+                    <div class="hours-row">
+                        <span class="hours-day" data-i18n="day_wed">Mittwoch</span>
+                        <span class="hours-time">08:00 - 18:00</span>
+                        <span class="hours-status open" data-i18n="status_open">Offen</span>
+                    </div>
+                    <div class="hours-row">
+                        <span class="hours-day" data-i18n="day_thu">Donnerstag</span>
+                        <span class="hours-time">08:00 - 18:00</span>
+                        <span class="hours-status open" data-i18n="status_open">Offen</span>
+                    </div>
+                    <div class="hours-row">
+                        <span class="hours-day" data-i18n="day_fri">Freitag</span>
+                        <span class="hours-time">08:00 - 20:00</span>
+                        <span class="hours-status open" data-i18n="status_open">Offen</span>
+                    </div>
+                    <div class="hours-row">
+                        <span class="hours-day" data-i18n="day_sat">Samstag</span>
+                        <span class="hours-time">09:00 - 16:00</span>
+                        <span class="hours-status open" data-i18n="status_open">Offen</span>
+                    </div>
+                    <div class="hours-row">
+                        <span class="hours-day" data-i18n="day_sun">Sonntag</span>
+                        <span class="hours-time">—</span>
+                        <span class="hours-status closed" data-i18n="status_closed">Geschlossen</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <div class="bottom-nav-content">
+            <div class="nav-item active" data-nav="scanner">
+                <i class="ri-qr-scan-2-line"></i>
+                <span data-i18n="nav_scanner">Scanner</span>
+            </div>
+            <div class="nav-item" data-nav="rewards">
+                <i class="ri-gift-line"></i>
+                <span data-i18n="nav_rewards">Prämien</span>
+            </div>
+            <div class="nav-item" data-nav="stats">
+                <i class="ri-bar-chart-grouped-line"></i>
+                <span data-i18n="nav_stats">Statistik</span>
+            </div>
+            <div class="nav-item" data-nav="profile">
+                <i class="ri-store-2-line"></i>
+                <span data-i18n="nav_profile">Profil</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+    // ===========================
+    // TRANSLATIONS
+    // ===========================
+    const translations = {
+        de: {
+            store_name: 'Demo Café München',
+            store_open: 'Geöffnet · 08:00 - 18:00',
+            stat_customers: 'Stammkunden',
+            stat_scans_today: 'Scans heute',
+            stat_rewards: 'Einlösungen',
+            stat_revenue: 'Umsatz ↑',
+            tab_scanner: 'Scanner',
+            tab_rewards: 'Prämien',
+            tab_stats: 'Statistik',
+            tab_vip: 'VIP',
+            tab_profile: 'Profil',
+            scanner_title: 'QR-Code Scanner',
+            scanner_desc: 'Scannen Sie den QR-Code Ihrer Kunden, um Punkte zu vergeben. Jeder Scan = 10 Punkte.',
+            scanner_ready: 'Scanner bereit',
+            scanner_hint: 'Halten Sie den QR-Code des Kunden vor die Kamera',
+            btn_demo_scan: 'Demo-Scan starten',
+            recent_activity: 'Letzte Aktivitäten',
+            activity_scan: 'QR-Code gescannt',
+            activity_reward: 'Prämie eingelöst',
+            activity_new: 'Neuer Kunde',
+            rewards_title: 'Prämien verwalten',
+            rewards_desc: 'Erstellen und verwalten Sie Prämien, die Ihre Kunden mit gesammelten Punkten einlösen können.',
+            active_rewards: 'Aktive Prämien',
+            reward_coffee: 'Gratis Kaffee',
+            reward_croissant: 'Gratis Croissant',
+            reward_cake: 'Stück Kuchen',
+            reward_discount: '10% Rabatt',
+            points: 'Punkte',
+            pending_redemptions: 'Offene Einlösungen',
+            btn_confirm: 'Bestätigen',
+            stats_title: 'Statistiken & Analyse',
+            stats_desc: 'Behalten Sie den Überblick über Ihre Kundenaktivitäten, Umsätze und Trends.',
+            weekly_scans: 'Scans diese Woche',
+            total_scans: 'Gesamt Scans',
+            rewards_given: 'Prämien vergeben',
+            top_customers: 'Top 5 Kunden',
+            vip_title: 'VIP-Stufen System',
+            vip_desc: 'Belohnen Sie Ihre treuesten Kunden mit VIP-Stufen und Bonuspunkten.',
+            vip_tiers: 'VIP-Stufen',
+            vip_bronze_req: 'Ab 100 Punkten',
+            vip_silver_req: 'Ab 500 Punkten',
+            vip_gold_req: 'Ab 1.000 Punkten',
+            vip_platinum_req: 'Ab 2.500 Punkten',
+            auto_bonuses: 'Automatische Boni',
+            birthday_bonus: 'Geburtstagsbonus',
+            birthday_desc: '+50 Punkte am Geburtstag',
+            comeback_bonus: 'Comeback-Bonus',
+            comeback_desc: '+20 Punkte nach 30 Tagen Pause',
+            profile_title: 'Geschäftsprofil',
+            profile_desc: 'Verwalten Sie Ihre Geschäftsdaten, Öffnungszeiten und Kontaktinformationen.',
+            store_details: 'Geschäftsdaten',
+            field_name: 'Geschäftsname',
+            field_address: 'Adresse',
+            field_city: 'Stadt',
+            field_phone: 'Telefon',
+            field_email: 'E-Mail',
+            opening_hours: 'Öffnungszeiten',
+            day_mon: 'Montag',
+            day_tue: 'Dienstag',
+            day_wed: 'Mittwoch',
+            day_thu: 'Donnerstag',
+            day_fri: 'Freitag',
+            day_sat: 'Samstag',
+            day_sun: 'Sonntag',
+            status_open: 'Offen',
+            status_closed: 'Geschlossen',
+            nav_scanner: 'Scanner',
+            nav_rewards: 'Prämien',
+            nav_stats: 'Statistik',
+            nav_profile: 'Profil',
+            toast_scan_success: '✅ Scan erfolgreich! +10 Punkte für'
+        },
+        en: {
+            store_name: 'Demo Café Munich',
+            store_open: 'Open · 08:00 - 18:00',
+            stat_customers: 'Regular Customers',
+            stat_scans_today: 'Scans Today',
+            stat_rewards: 'Redemptions',
+            stat_revenue: 'Revenue ↑',
+            tab_scanner: 'Scanner',
+            tab_rewards: 'Rewards',
+            tab_stats: 'Statistics',
+            tab_vip: 'VIP',
+            tab_profile: 'Profile',
+            scanner_title: 'QR Code Scanner',
+            scanner_desc: 'Scan your customers\' QR code to award points. Each scan = 10 points.',
+            scanner_ready: 'Scanner Ready',
+            scanner_hint: 'Hold the customer\'s QR code in front of the camera',
+            btn_demo_scan: 'Start Demo Scan',
+            recent_activity: 'Recent Activity',
+            activity_scan: 'QR code scanned',
+            activity_reward: 'Reward redeemed',
+            activity_new: 'New customer',
+            rewards_title: 'Manage Rewards',
+            rewards_desc: 'Create and manage rewards that your customers can redeem with collected points.',
+            active_rewards: 'Active Rewards',
+            reward_coffee: 'Free Coffee',
+            reward_croissant: 'Free Croissant',
+            reward_cake: 'Piece of Cake',
+            reward_discount: '10% Discount',
+            points: 'Points',
+            pending_redemptions: 'Pending Redemptions',
+            btn_confirm: 'Confirm',
+            stats_title: 'Statistics & Analysis',
+            stats_desc: 'Keep track of your customer activities, revenue and trends.',
+            weekly_scans: 'Scans This Week',
+            total_scans: 'Total Scans',
+            rewards_given: 'Rewards Given',
+            top_customers: 'Top 5 Customers',
+            vip_title: 'VIP Tier System',
+            vip_desc: 'Reward your most loyal customers with VIP tiers and bonus points.',
+            vip_tiers: 'VIP Tiers',
+            vip_bronze_req: 'From 100 points',
+            vip_silver_req: 'From 500 points',
+            vip_gold_req: 'From 1,000 points',
+            vip_platinum_req: 'From 2,500 points',
+            auto_bonuses: 'Automatic Bonuses',
+            birthday_bonus: 'Birthday Bonus',
+            birthday_desc: '+50 points on birthday',
+            comeback_bonus: 'Comeback Bonus',
+            comeback_desc: '+20 points after 30 days inactive',
+            profile_title: 'Business Profile',
+            profile_desc: 'Manage your business data, opening hours and contact information.',
+            store_details: 'Business Details',
+            field_name: 'Business Name',
+            field_address: 'Address',
+            field_city: 'City',
+            field_phone: 'Phone',
+            field_email: 'Email',
+            opening_hours: 'Opening Hours',
+            day_mon: 'Monday',
+            day_tue: 'Tuesday',
+            day_wed: 'Wednesday',
+            day_thu: 'Thursday',
+            day_fri: 'Friday',
+            day_sat: 'Saturday',
+            day_sun: 'Sunday',
+            status_open: 'Open',
+            status_closed: 'Closed',
+            nav_scanner: 'Scanner',
+            nav_rewards: 'Rewards',
+            nav_stats: 'Statistics',
+            nav_profile: 'Profile',
+            toast_scan_success: '✅ Scan successful! +10 points for'
+        },
+        hu: {
+            store_name: 'Demo Kávézó München',
+            store_open: 'Nyitva · 08:00 - 18:00',
+            stat_customers: 'Törzsvásárlók',
+            stat_scans_today: 'Mai szkennelések',
+            stat_rewards: 'Beváltások',
+            stat_revenue: 'Bevétel ↑',
+            tab_scanner: 'Szkennelő',
+            tab_rewards: 'Jutalmak',
+            tab_stats: 'Statisztika',
+            tab_vip: 'VIP',
+            tab_profile: 'Profil',
+            scanner_title: 'QR-kód szkennelő',
+            scanner_desc: 'Szkennelje be ügyfelei QR-kódját a pontok jóváírásához. Minden szkennelés = 10 pont.',
+            scanner_ready: 'Szkennelő kész',
+            scanner_hint: 'Tartsa az ügyfél QR-kódját a kamera elé',
+            btn_demo_scan: 'Demo szkennelés indítása',
+            recent_activity: 'Legutóbbi tevékenységek',
+            activity_scan: 'QR-kód szkennelve',
+            activity_reward: 'Jutalom beváltva',
+            activity_new: 'Új ügyfél',
+            rewards_title: 'Jutalmak kezelése',
+            rewards_desc: 'Hozzon létre és kezeljen jutalmakat, amelyeket ügyfelei összegyűjtött pontjaikkal válthatnak be.',
+            active_rewards: 'Aktív jutalmak',
+            reward_coffee: 'Ingyenes kávé',
+            reward_croissant: 'Ingyenes croissant',
+            reward_cake: 'Szelet torta',
+            reward_discount: '10% kedvezmény',
+            points: 'Pont',
+            pending_redemptions: 'Függő beváltások',
+            btn_confirm: 'Megerősítés',
+            stats_title: 'Statisztikák és elemzés',
+            stats_desc: 'Kövesse nyomon ügyfél-aktivitásait, bevételeit és trendjeit.',
+            weekly_scans: 'Szkennelések ezen a héten',
+            total_scans: 'Összes szkennelés',
+            rewards_given: 'Kiadott jutalmak',
+            top_customers: 'Top 5 ügyfél',
+            vip_title: 'VIP szint rendszer',
+            vip_desc: 'Jutalmazza leghűségesebb ügyfeleit VIP szintekkel és bónuszpontokkal.',
+            vip_tiers: 'VIP szintek',
+            vip_bronze_req: '100 ponttól',
+            vip_silver_req: '500 ponttól',
+            vip_gold_req: '1.000 ponttól',
+            vip_platinum_req: '2.500 ponttól',
+            auto_bonuses: 'Automatikus bónuszok',
+            birthday_bonus: 'Születésnapi bónusz',
+            birthday_desc: '+50 pont születésnapon',
+            comeback_bonus: 'Visszatérő bónusz',
+            comeback_desc: '+20 pont 30 nap szünet után',
+            profile_title: 'Üzletprofil',
+            profile_desc: 'Kezelje üzleti adatait, nyitvatartási időit és elérhetőségeit.',
+            store_details: 'Üzlet adatai',
+            field_name: 'Üzlet neve',
+            field_address: 'Cím',
+            field_city: 'Város',
+            field_phone: 'Telefon',
+            field_email: 'E-mail',
+            opening_hours: 'Nyitvatartás',
+            day_mon: 'Hétfő',
+            day_tue: 'Kedd',
+            day_wed: 'Szerda',
+            day_thu: 'Csütörtök',
+            day_fri: 'Péntek',
+            day_sat: 'Szombat',
+            day_sun: 'Vasárnap',
+            status_open: 'Nyitva',
+            status_closed: 'Zárva',
+            nav_scanner: 'Szkennelő',
+            nav_rewards: 'Jutalmak',
+            nav_stats: 'Statisztika',
+            nav_profile: 'Profil',
+            toast_scan_success: '✅ Sikeres szkennelés! +10 pont:'
+        }
+    };
+
+    let currentLang = localStorage.getItem('ppv_demo_lang') || 'de';
+
+    // Apply translations
+    function applyTranslations(lang) {
+        const strings = translations[lang] || translations.de;
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.dataset.i18n;
+            if (strings[key]) {
+                el.textContent = strings[key];
+            }
+        });
+
+        // Update active button
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.lang === lang);
+        });
+
+        localStorage.setItem('ppv_demo_lang', lang);
+        currentLang = lang;
+    }
+
+    // ===========================
+    // TAB NAVIGATION
+    // ===========================
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tab = btn.dataset.tab;
+
+            // Update tab buttons
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.add('active');
+
+            // Update bottom nav
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            const navItem = document.querySelector(`.nav-item[data-nav="${tab}"]`);
+            if (navItem) navItem.classList.add('active');
+        });
+    });
+
+    // Bottom nav
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const nav = item.dataset.nav;
+            const tabBtn = document.querySelector(`.tab-btn[data-tab="${nav}"]`);
+            if (tabBtn) tabBtn.click();
+        });
+    });
+
+    // ===========================
+    // DEMO SCAN SIMULATION
+    // ===========================
+    const demoCustomers = [
+        { name: 'Lisa Hoffmann', initials: 'LH' },
+        { name: 'Max Schneider', initials: 'MS' },
+        { name: 'Julia Klein', initials: 'JK' },
+        { name: 'Markus Wagner', initials: 'MW' },
+        { name: 'Sophie Fischer', initials: 'SF' }
+    ];
+
+    function simulateScan() {
+        const customer = demoCustomers[Math.floor(Math.random() * demoCustomers.length)];
+        const strings = translations[currentLang];
+
+        // Show toast
+        const toast = document.getElementById('toast');
+        toast.textContent = `${strings.toast_scan_success} ${customer.name}`;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 3000);
+
+        // Add to activity list
+        const activityList = document.getElementById('activity-list');
+        const newActivity = document.createElement('div');
+        newActivity.className = 'activity-item';
+        newActivity.innerHTML = `
+            <div class="activity-avatar scan">${customer.initials}</div>
+            <div class="activity-info">
+                <div class="activity-name">${customer.name}</div>
+                <div class="activity-detail">${strings.activity_scan}</div>
+            </div>
+            <div class="activity-time">gerade eben</div>
+            <div class="activity-points">+10</div>
+        `;
+        newActivity.style.opacity = '0';
+        newActivity.style.transform = 'translateY(-20px)';
+        activityList.insertBefore(newActivity, activityList.firstChild);
+
+        // Animate in
+        setTimeout(() => {
+            newActivity.style.transition = 'all 0.3s ease';
+            newActivity.style.opacity = '1';
+            newActivity.style.transform = 'translateY(0)';
+        }, 50);
+
+        // Update stats
+        const scansEl = document.getElementById('stat-scans');
+        scansEl.textContent = parseInt(scansEl.textContent) + 1;
+
+        const customersEl = document.getElementById('stat-customers');
+        if (Math.random() > 0.7) {
+            customersEl.textContent = parseInt(customersEl.textContent) + 1;
+        }
+    }
+
+    // ===========================
+    // INIT
+    // ===========================
+    document.addEventListener('DOMContentLoaded', () => {
+        // Apply saved language
+        applyTranslations(currentLang);
+
+        // Language switcher
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                applyTranslations(btn.dataset.lang);
+            });
+        });
+    });
+    </script>
+</body>
+</html>
