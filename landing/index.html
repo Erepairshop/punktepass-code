@@ -30,13 +30,15 @@
     </script>
     <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=YOUR_PIXEL_ID&ev=PageView&noscript=1"/></noscript>
 
-    <!-- Google Analytics -->
+    <!-- Google Analytics + Google Ads -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-NDVQK1WSG3"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
         gtag('js', new Date());
         gtag('config', 'G-NDVQK1WSG3');
+        // Google Ads Conversion Tracking
+        gtag('config', 'AW-1779265512');
     </script>
 
     <!-- Favicon -->
@@ -308,6 +310,150 @@
 
         .phone-link a:hover {
             text-decoration: underline;
+        }
+
+        /* Trial CTA Link */
+        .trial-cta {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 24px;
+            padding: 16px 24px;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.05));
+            border: 2px solid rgba(16, 185, 129, 0.4);
+            border-radius: 16px;
+            color: #10b981;
+            font-size: 15px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .trial-cta:hover {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(16, 185, 129, 0.1));
+            border-color: #10b981;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.2);
+        }
+
+        .trial-cta i:first-child {
+            font-size: 22px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .trial-cta i:last-child {
+            font-size: 16px;
+            opacity: 0.7;
+        }
+
+        /* Bonus Box */
+        .bonus-box {
+            margin-top: 20px;
+            padding: 16px;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.1));
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .bonus-box i.bonus-icon {
+            font-size: 28px;
+            color: var(--primary-light);
+        }
+
+        .bonus-box .bonus-text {
+            flex: 1;
+        }
+
+        .bonus-box .bonus-text strong {
+            display: block;
+            font-size: 14px;
+            color: #fff;
+            margin-bottom: 2px;
+        }
+
+        .bonus-box .bonus-text span {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .bonus-box .info-btn {
+            width: 24px;
+            height: 24px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 50%;
+            color: var(--text-muted);
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .bonus-box .info-btn:hover {
+            background: rgba(255,255,255,0.2);
+            color: #fff;
+        }
+
+        /* Info Modal */
+        .info-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 3000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .info-modal.active {
+            display: flex;
+        }
+
+        .info-modal-content {
+            background: linear-gradient(145deg, #1e293b, #0f172a);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 32px;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .info-modal-content i.modal-icon {
+            font-size: 48px;
+            color: var(--primary);
+            margin-bottom: 16px;
+        }
+
+        .info-modal-content h3 {
+            font-size: 20px;
+            margin-bottom: 12px;
+        }
+
+        .info-modal-content p {
+            font-size: 14px;
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .info-modal-content button {
+            padding: 12px 24px;
+            background: var(--primary);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
         }
 
         /* ============================================
@@ -825,9 +971,46 @@
                     Keine Kreditkarte · Keine versteckten Kosten
                 </p>
 
+                <!-- Bonus: Free Phone + Stand -->
+                <div class="bonus-box">
+                    <i class="ri-gift-2-fill bonus-icon"></i>
+                    <div class="bonus-text">
+                        <strong>Gratis: Android-Handy + Ständer</strong>
+                        <span>Alles fertig eingerichtet für Sie</span>
+                    </div>
+                    <button class="info-btn" onclick="showBonusInfo()">
+                        <i class="ri-question-line"></i>
+                    </button>
+                </div>
+
                 <p class="phone-link">
                     <i class="ri-phone-line"></i> Oder direkt anrufen: <a href="tel:+4917698479520">+49 176 98479520</a>
                 </p>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ============================================
+         VIDEO SECTION
+         ============================================ -->
+    <section class="video-section" style="padding: 40px 0;">
+        <div class="container" style="text-align: center;">
+            <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 20px; color: var(--text);">
+                <i class="ri-play-circle-fill" style="color: var(--primary);"></i>
+                So funktioniert PunktePass
+            </h3>
+            <div class="video-wrapper" style="max-width: 320px; margin: 0 auto; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 60px rgba(99, 102, 241, 0.3);">
+                <iframe
+                    width="320"
+                    height="568"
+                    src="https://www.youtube.com/embed/RsQpeWpC1Jg"
+                    title="PunktePass Erklärvideo"
+                    frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen
+                    style="display: block; width: 100%; aspect-ratio: 9/16;">
+                </iframe>
             </div>
         </div>
     </section>
@@ -840,7 +1023,7 @@
             <div class="trust-grid">
                 <div class="trust-item">
                     <i class="ri-map-pin-line"></i>
-                    <span>Lokale Geschäfte aus Bayern</span>
+                    <span>Deutschlandweit im Einsatz</span>
                 </div>
                 <div class="trust-item">
                     <i class="ri-shield-check-line"></i>
@@ -960,7 +1143,7 @@
 
             <p class="locations">
                 <i class="ri-map-pin-2-fill"></i>
-                Verfügbar in: Lauingen · Dillingen · Günzburg · Augsburg & Umgebung
+                Deutschlandweit verfügbar · Online-Einrichtung in 5 Minuten
             </p>
         </div>
     </section>
@@ -1021,7 +1204,33 @@
         </div>
     </div>
 
+    <!-- BONUS INFO MODAL -->
+    <div class="info-modal" id="bonusInfoModal">
+        <div class="info-modal-content">
+            <i class="ri-box-3-fill modal-icon"></i>
+            <h3>Gratis Starter-Paket</h3>
+            <p>
+                Nach dem Ausfüllen des Formulars und der Kontaktaufnahme erhalten Sie Ihr Starter-Paket –
+                <strong>persönlich oder per Post</strong>.<br><br>
+                <i class="ri-smartphone-fill" style="color: var(--primary);"></i> <strong>Android-Smartphone</strong> – fertig eingerichtet<br>
+                <i class="ri-layout-bottom-line" style="color: var(--primary);"></i> <strong>Handy-Ständer</strong> – für Ihre Theke<br><br>
+                Alles ist bereits vorkonfiguriert. Sie müssen sich nur anmelden – und es läuft automatisch!
+            </p>
+            <button onclick="closeBonusInfo()">Verstanden</button>
+        </div>
+    </div>
+
     <script>
+        // Bonus Info Modal
+        function showBonusInfo() {
+            document.getElementById('bonusInfoModal').classList.add('active');
+        }
+        function closeBonusInfo() {
+            document.getElementById('bonusInfoModal').classList.remove('active');
+        }
+        document.getElementById('bonusInfoModal').addEventListener('click', function(e) {
+            if (e.target === this) closeBonusInfo();
+        });
         // Exit Intent Popup
         let exitShown = false;
         document.addEventListener('mouseout', function(e) {
@@ -1045,28 +1254,153 @@
             if (e.target === this) closeExitPopup();
         });
 
-        // Show success message helper
-        function showSuccessMessage(formCard) {
+        // Show contact choice helper
+        function showContactChoice(formCard, business, contact, isDarkBg = false) {
+            const bgStyle = isDarkBg ? 'background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.3);' : '';
+            const textStyle = isDarkBg ? 'color: rgba(255,255,255,0.8);' : '';
+            const btnStyle = isDarkBg
+                ? 'background: #fff; color: var(--primary);'
+                : 'background: linear-gradient(135deg, var(--primary) 0%, #8b5cf6 100%); color: #fff;';
+
             formCard.innerHTML = `
-                <div class="form-success">
-                    <i class="ri-checkbox-circle-fill"></i>
-                    <h3>Danke für Ihre Anfrage!</h3>
-                    <p>Wir melden uns heute oder morgen bei Ihnen.</p>
+                <div class="form-success" style="${bgStyle}">
+                    <i class="ri-checkbox-circle-fill" ${isDarkBg ? 'style="color: #fff;"' : ''}></i>
+                    <h3>Wie möchten Sie kontaktiert werden?</h3>
+                    <p style="${textStyle}">Wählen Sie Ihre bevorzugte Kontaktmethode:</p>
                 </div>
-                <p class="phone-link" style="margin-top: 20px;">
+                <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
+                    <button onclick="sendViaWhatsApp('${business.replace(/'/g, "\\'")}', '${contact.replace(/'/g, "\\'")}')" class="submit-btn" style="${btnStyle} border: none; cursor: pointer;">
+                        <i class="ri-whatsapp-line"></i>
+                        WhatsApp
+                    </button>
+                    <button onclick="sendViaEmail('${business.replace(/'/g, "\\'")}', '${contact.replace(/'/g, "\\'")}')" class="submit-btn" style="${btnStyle} border: none; cursor: pointer;">
+                        <i class="ri-mail-line"></i>
+                        E-Mail
+                    </button>
+                </div>
+                <p class="phone-link" style="margin-top: 16px;">
                     <i class="ri-phone-line"></i> Oder direkt anrufen: <a href="tel:+4917698479520">+49 176 98479520</a>
                 </p>
             `;
         }
 
-        // Track Lead event (Meta Pixel)
+        // Send via WhatsApp
+        function sendViaWhatsApp(business, contact) {
+            // Also send email notification
+            const formData = new FormData();
+            formData.append('email', 'info@punktepass.de');
+            formData.append('_subject', `PunktePass Anfrage (WhatsApp) - ${business}`);
+            formData.append('Geschäft', business);
+            formData.append('Kontakt', contact);
+            formData.append('Kontaktmethode', '📱 WhatsApp gewählt');
+            formData.append('_captcha', 'false');
+            formData.append('_template', 'table');
+
+            fetch('https://formsubmit.co/ajax/info@punktepass.de', {
+                method: 'POST',
+                body: formData
+            }).catch(error => console.error('Email error:', error));
+
+            // Open WhatsApp
+            const message = `Hallo, ich interessiere mich für PunktePass.\n\nGeschäft: ${business}\nKontakt: ${contact}`;
+            window.open(`https://wa.me/4917698479520?text=${encodeURIComponent(message)}`, '_blank');
+            showFinalSuccess();
+        }
+
+        // Send via Email (using FormSubmit service)
+        function sendViaEmail(business, contact) {
+            const formData = new FormData();
+            formData.append('email', 'info@punktepass.de');
+            formData.append('_subject', `PunktePass Anfrage (E-Mail) - ${business}`);
+            formData.append('Geschäft', business);
+            formData.append('Kontakt', contact);
+            formData.append('Kontaktmethode', '✉️ E-Mail gewählt');
+            formData.append('_captcha', 'false');
+            formData.append('_template', 'table');
+
+            fetch('https://formsubmit.co/ajax/info@punktepass.de', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Email sent:', data);
+            })
+            .catch(error => {
+                console.error('Email error:', error);
+            });
+
+            showFinalSuccess();
+        }
+
+        // Show final success after contact method chosen
+        function showFinalSuccess() {
+            const formCards = document.querySelectorAll('.form-card, .cta-card');
+            formCards.forEach(card => {
+                if (card.querySelector('.form-success')) {
+                    card.innerHTML = `
+                        <div class="form-success">
+                            <i class="ri-checkbox-circle-fill"></i>
+                            <h3>Danke für Ihre Anfrage!</h3>
+                            <p>Wir melden uns heute oder am nächsten Werktag bei Ihnen.</p>
+                        </div>
+                        <a href="https://punktepass.de/signup/" class="trial-cta" style="margin-top: 24px;">
+                            <i class="ri-rocket-2-fill"></i>
+                            <span>Oder starten Sie jetzt Ihre 30 Tage Testversion</span>
+                            <i class="ri-arrow-right-line"></i>
+                        </a>
+                        <a href="https://punktepass.de/demo" class="submit-btn" style="margin-top: 16px; text-decoration: none; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);">
+                            <i class="ri-play-circle-line"></i>
+                            Demo ansehen
+                        </a>
+                        <p class="phone-link" style="margin-top: 16px;">
+                            <i class="ri-phone-line"></i> Oder direkt anrufen: <a href="tel:+4917698479520">+49 176 98479520</a>
+                        </p>
+                    `;
+                }
+            });
+        }
+
+        // Track Lead event (Meta Pixel + Google Ads)
         function trackLead(business, contact) {
+            // Meta Pixel
             if (typeof fbq !== 'undefined') {
                 fbq('track', 'Lead', {
                     content_name: business,
                     content_category: 'landing_page'
                 });
             }
+            // Google Ads Conversion
+            if (typeof gtag !== 'undefined') {
+                gtag('event', 'conversion_event_submit_lead_form', {
+                    'value': 1.0,
+                    'currency': 'EUR'
+                });
+            }
+        }
+
+        // Send immediate email notification when form is submitted
+        function sendInitialNotification(business, contact) {
+            const formData = new FormData();
+            formData.append('email', 'info@punktepass.de');
+            formData.append('_subject', `🆕 Neue Anfrage - ${business}`);
+            formData.append('Geschäft', business);
+            formData.append('Kontakt', contact);
+            formData.append('Status', '⏳ Wartet auf Kontaktmethode-Auswahl (WhatsApp/Email)');
+            formData.append('_captcha', 'false');
+            formData.append('_template', 'table');
+
+            fetch('https://formsubmit.co/ajax/info@punktepass.de', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Initial notification sent:', data);
+            })
+            .catch(error => {
+                console.error('Initial notification error:', error);
+            });
         }
 
         // Form submission - Main form
@@ -1079,12 +1413,11 @@
             // Track Lead conversion
             trackLead(business, contact);
 
-            // Send to WhatsApp
-            const message = `Hallo, ich interessiere mich für PunktePass.\n\nGeschäft: ${business}\nKontakt: ${contact}`;
-            window.open(`https://wa.me/4917698479520?text=${encodeURIComponent(message)}`, '_blank');
+            // Send immediate email notification
+            sendInitialNotification(business, contact);
 
-            // Show inline success message
-            showSuccessMessage(formCard);
+            // Show contact choice (Email or WhatsApp)
+            showContactChoice(formCard, business, contact, false);
         });
 
         // Form submission - CTA form
@@ -1097,18 +1430,11 @@
             // Track Lead conversion
             trackLead(business, contact);
 
-            // Send to WhatsApp
-            const message = `Hallo, ich interessiere mich für PunktePass.\n\nGeschäft: ${business}\nKontakt: ${contact}`;
-            window.open(`https://wa.me/4917698479520?text=${encodeURIComponent(message)}`, '_blank');
+            // Send immediate email notification
+            sendInitialNotification(business, contact);
 
-            // Show inline success message
-            ctaCard.innerHTML = `
-                <div class="form-success" style="background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.3);">
-                    <i class="ri-checkbox-circle-fill" style="color: #fff;"></i>
-                    <h3>Danke für Ihre Anfrage!</h3>
-                    <p style="color: rgba(255,255,255,0.8);">Wir melden uns heute oder morgen bei Ihnen.</p>
-                </div>
-            `;
+            // Show contact choice (Email or WhatsApp) - dark background style
+            showContactChoice(ctaCard, business, contact, true);
         });
     </script>
 </body>

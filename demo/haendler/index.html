@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PunktePass Händler-Handbuch - Alle Funktionen erklärt</title>
+
+    <!-- SEO -->
+    <meta name="description" content="Komplettes Händler-Handbuch für PunktePass. Lernen Sie alle Funktionen: QR-Scanner, Prämien, VIP-System, Statistiken und mehr.">
+    <meta name="robots" content="index, follow">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%236366f1' rx='20' width='100' height='100'/><text x='50' y='68' font-size='55' font-weight='bold' text-anchor='middle' fill='white'>P</text></svg>">
+    <meta name="theme-color" content="#6366f1">
+
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --secondary: #22d3ee;
+            --accent: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg-dark: #0a0f1a;
+            --bg-card: rgba(255, 255, 255, 0.05);
+            --text: #e2e8f0;
+            --text-muted: #94a3b8;
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, var(--bg-dark) 0%, #111827 50%, var(--bg-dark) 100%);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* Header */
+        .header {
+            background: rgba(10, 15, 26, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            font-size: 18px;
+            text-decoration: none;
+            color: var(--text);
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 20px;
+        }
+
+        /* Language Switcher */
+        .lang-switcher {
+            display: flex;
+            gap: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 4px;
+            border-radius: 8px;
+        }
+
+        .lang-btn {
+            padding: 6px 12px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .lang-btn:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+        .lang-btn.active { background: var(--primary); color: white; }
+
+        /* Main Content */
+        .main {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 24px 20px 60px;
+        }
+
+        /* Hero */
+        .hero {
+            text-align: center;
+            padding: 40px 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 40px;
+        }
+
+        .hero h1 {
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, #fff, var(--primary-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 16px;
+            color: var(--text-muted);
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        /* Table of Contents */
+        .toc {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 40px;
+        }
+
+        .toc h2 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .toc h2 i { color: var(--primary); }
+
+        .toc-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 8px;
+            list-style: none;
+        }
+
+        .toc-list a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            color: var(--text);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .toc-list a:hover {
+            background: rgba(99, 102, 241, 0.2);
+            transform: translateX(4px);
+        }
+
+        .toc-list a i {
+            font-size: 20px;
+            color: var(--primary);
+        }
+
+        /* Section */
+        .section {
+            margin-bottom: 48px;
+            scroll-margin-top: 80px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid var(--primary);
+        }
+
+        .section-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            flex-shrink: 0;
+        }
+
+        .section-title h2 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .section-title p {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        /* Card */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .card h3 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card h3 i {
+            color: var(--accent);
+            font-size: 20px;
+        }
+
+        .card p {
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+
+        /* Steps */
+        .steps {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .step {
+            display: flex;
+            gap: 16px;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            border-left: 3px solid var(--primary);
+        }
+
+        .step-number {
+            width: 32px;
+            height: 32px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .step-content h4 {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .step-content p {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        /* Feature List */
+        .feature-list {
+            display: grid;
+            gap: 12px;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 14px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+        }
+
+        .feature-item i {
+            font-size: 20px;
+            color: var(--accent);
+            margin-top: 2px;
+        }
+
+        .feature-item strong {
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .feature-item span {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        /* Tip Box */
+        .tip-box {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 16px;
+        }
+
+        .tip-box.warning {
+            background: rgba(245, 158, 11, 0.1);
+            border-color: rgba(245, 158, 11, 0.3);
+        }
+
+        .tip-box h4 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tip-box h4 i {
+            color: var(--accent);
+        }
+
+        .tip-box.warning h4 i {
+            color: var(--warning);
+        }
+
+        .tip-box p {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        /* VIP Tiers */
+        .vip-tiers {
+            display: grid;
+            gap: 12px;
+        }
+
+        .vip-tier {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+        }
+
+        .vip-badge {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .vip-badge.bronze { background: linear-gradient(135deg, #cd7f32, #8b4513); }
+        .vip-badge.silver { background: linear-gradient(135deg, #c0c0c0, #808080); }
+        .vip-badge.gold { background: linear-gradient(135deg, #ffd700, #daa520); }
+        .vip-badge.platinum { background: linear-gradient(135deg, #e5e4e2, #a0a0a0); }
+
+        .vip-info { flex: 1; }
+        .vip-info strong { font-size: 15px; }
+        .vip-info span { font-size: 13px; color: var(--text-muted); display: block; }
+
+        .vip-bonus {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        /* Screenshot placeholder */
+        .screenshot {
+            background: linear-gradient(145deg, rgba(99, 102, 241, 0.1), rgba(34, 211, 238, 0.05));
+            border: 1px dashed var(--border);
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            margin: 16px 0;
+        }
+
+        .screenshot i {
+            font-size: 48px;
+            color: var(--primary);
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .screenshot span {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        /* Back to top */
+        .back-to-top {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 48px;
+            height: 48px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            text-decoration: none;
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+            transition: all 0.3s;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .back-to-top.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .back-to-top:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.5);
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 24px;
+            border-top: 1px solid var(--border);
+            margin-top: 40px;
+        }
+
+        .footer p {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .footer a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .hero h1 { font-size: 26px; }
+            .section-header { flex-direction: column; text-align: center; }
+            .toc-list { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <a href="https://punktepass.de" class="logo">
+                <div class="logo-icon">P</div>
+                <span>PunktePass</span>
+            </a>
+            <div class="lang-switcher">
+                <button class="lang-btn active" data-lang="de">DE</button>
+                <button class="lang-btn" data-lang="en">EN</button>
+                <button class="lang-btn" data-lang="hu">HU</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <!-- Hero -->
+        <div class="hero">
+            <h1 data-i18n="hero_title">Händler-Handbuch</h1>
+            <p data-i18n="hero_desc">Alles, was Sie über PunktePass wissen müssen. Schritt-für-Schritt-Anleitungen für alle Funktionen.</p>
+        </div>
+
+        <!-- Table of Contents -->
+        <nav class="toc">
+            <h2><i class="ri-list-check-2"></i> <span data-i18n="toc_title">Inhalt</span></h2>
+            <ul class="toc-list">
+                <li><a href="#scanner"><i class="ri-qr-scan-2-line"></i> <span data-i18n="nav_scanner">QR-Scanner</span></a></li>
+                <li><a href="#rewards"><i class="ri-gift-line"></i> <span data-i18n="nav_rewards">Prämien</span></a></li>
+                <li><a href="#vip"><i class="ri-vip-crown-line"></i> <span data-i18n="nav_vip">VIP-System</span></a></li>
+                <li><a href="#stats"><i class="ri-bar-chart-grouped-line"></i> <span data-i18n="nav_stats">Statistiken</span></a></li>
+                <li><a href="#profile"><i class="ri-store-2-line"></i> <span data-i18n="nav_profile">Profil</span></a></li>
+                <li><a href="#devices"><i class="ri-smartphone-line"></i> <span data-i18n="nav_devices">Geräte</span></a></li>
+                <li><a href="#users"><i class="ri-team-line"></i> <span data-i18n="nav_users">Mitarbeiter</span></a></li>
+                <li><a href="#tips"><i class="ri-lightbulb-line"></i> <span data-i18n="nav_tips">Tipps</span></a></li>
+            </ul>
+        </nav>
+
+        <!-- Section: QR Scanner -->
+        <section class="section" id="scanner">
+            <div class="section-header">
+                <div class="section-icon"><i class="ri-qr-scan-2-line"></i></div>
+                <div class="section-title">
+                    <h2 data-i18n="scanner_title">QR-Scanner (Kassenscanner)</h2>
+                    <p data-i18n="scanner_subtitle">Punkte an Kunden vergeben</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3><i class="ri-question-line"></i> <span data-i18n="what_is_it">Was ist das?</span></h3>
+                <p data-i18n="scanner_what">Der QR-Scanner ist das Herzstück von PunktePass. Damit scannen Sie die QR-Codes Ihrer Kunden und vergeben automatisch Punkte für jeden Besuch.</p>
+            </div>
+
+            <div class="card">
+                <h3><i class="ri-play-circle-line"></i> <span data-i18n="how_it_works">So funktioniert's</span></h3>
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4 data-i18n="scanner_step1_title">Kunde zeigt QR-Code</h4>
+                            <p data-i18n="scanner_step1_desc">Der Kunde öffnet die PunktePass-App oder Website und zeigt seinen persönlichen QR-Code.</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4 data-i18n="scanner_step2_title">Sie scannen den Code</h4>
+                            <p data-i18n="scanner_step2_desc">Öffnen Sie den QR-Scanner in Ihrem Dashboard und halten Sie die Kamera auf den QR-Code.</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4 data-i18n="scanner_step3_title">Punkte werden gutgeschrieben</h4>
+                            <p data-i18n="scanner_step3_desc">Automatisch werden 10 Punkte (oder Ihr eingestellter Wert) dem Kunden gutgeschrieben. Beide sehen eine Bestätigung.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tip-box">
+                    <h4><i class="ri-lightbulb-line"></i> <span data-i18n="tip">Tipp</span></h4>
+                    <p data-i18n="scanner_tip">Jeder Kunde kann nur einmal pro Tag bei Ihnen Punkte sammeln. Das verhindert Missbrauch.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Rewards -->
+        <section class="section" id="rewards">
+            <div class="section-header">
+                <div class="section-icon"><i class="ri-gift-line"></i></div>
+                <div class="section-title">
+                    <h2 data-i18n="rewards_title">Prämien verwalten</h2>
+                    <p data-i18n="rewards_subtitle">Belohnungen für Ihre Kunden erstellen</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3><i class="ri-question-line"></i> <span data-i18n="what_is_it">Was ist das?</span></h3>
+                <p data-i18n="rewards_what">Prämien sind Belohnungen, die Ihre Kunden mit gesammelten Punkten einlösen können. Sie bestimmen selbst, welche Prämien Sie anbieten und wie viele Punkte sie kosten.</p>
+            </div>
+
+            <div class="card">
+                <h3><i class="ri-add-circle-line"></i> <span data-i18n="rewards_create">Prämie erstellen</span></h3>
+                <div class="feature-list">
+                    <div class="feature-item">
+                        <i class="ri-edit-line"></i>
+                        <div>
+                            <strong data-i18n="rewards_name">Name der Prämie</strong>
+                            <span data-i18n="rewards_name_desc">z.B. "Gratis Kaffee", "10% Rabatt", "Überraschungsgeschenk"</span>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="ri-coin-line"></i>
+                        <div>
+                            <strong data-i18n="rewards_cost">Punktekosten</strong>
+                            <span data-i18n="rewards_cost_desc">Wie viele Punkte der Kunde für diese Prämie braucht (z.B. 100 Punkte)</span>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="ri-toggle-line"></i>
+                        <div>
+                            <strong data-i18n="rewards_status">Aktiv/Inaktiv</strong>
+                            <span data-i18n="rewards_status_desc">Deaktivierte Prämien sind für Kunden nicht sichtbar</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3><i class="ri-check-double-line"></i> <span data-i18n="rewards_redeem">Einlösung bestätigen</span></h3>
+                <p data-i18n="rewards_redeem_desc">Wenn ein Kunde eine Prämie einlöst, erscheint sie in Ihrer Liste "Offene Einlösungen". Klicken Sie auf "Bestätigen", nachdem Sie die Prämie übergeben haben.</p>
+
+                <div class="tip-box warning">
+                    <h4><i class="ri-error-warning-line"></i> <span data-i18n="important">Wichtig</span></h4>
+                    <p data-i18n="rewards_warning">Bestätigen Sie Einlösungen erst, nachdem Sie die Prämie tatsächlich übergeben haben. Nach der Bestätigung werden die Punkte vom Kunden abgezogen.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: VIP -->
+        <section class="section" id="vip">
+            <div class="section-header">
+                <div class="section-icon"><i class="ri-vip-crown-line"></i></div>
+                <div class="section-title">
+                    <h2 data-i18n="vip_title">VIP-System</h2>
+                    <p data-i18n="vip_subtitle">Treue Kunden besonders belohnen</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3><i class="ri-question-line"></i> <span data-i18n="what_is_it">Was ist das?</span></h3>
+                <p data-i18n="vip_what">Das VIP-System belohnt Ihre treuesten Kunden automatisch mit Bonuspunkten. Je mehr Punkte ein Kunde gesammelt hat, desto höher seine VIP-Stufe und desto mehr Bonuspunkte erhält er bei jedem Scan.</p>
+            </div>
+
+            <div class="card">
+                <h3><i class="ri-medal-line"></i> <span data-i18n="vip_tiers">VIP-Stufen</span></h3>
+                <div class="vip-tiers">
+                    <div class="vip-tier">
+                        <div class="vip-badge bronze">🥉</div>
+                        <div class="vip-info">
+                            <strong>Bronze</strong>
+                            <span data-i18n="vip_bronze">Ab 100 Gesamtpunkten</span>
+                        </div>
+                        <div class="vip-bonus">+5%</div>
+                    </div>
+                    <div class="vip-tier">
+                        <div class="vip-badge silver">🥈</div>
+                        <div class="vip-info">
+                            <strong>Silber</strong>
+                            <span data-i18n="vip_silver">Ab 500 Gesamtpunkten</span>
+                        </div>
+                        <div class="vip-bonus">+10%</div>
+                    </div>
+                    <div class="vip-tier">
+                        <div class="vip-badge gold">🥇</div>
+                        <div class="vip-info">
+                            <strong>Gold</strong>
+                            <span data-i18n="vip_gold">Ab 1.000 Gesamtpunkten</span>
+                        </div>
+                        <div class="vip-bonus">+15%</div>
+                    </div>
+                    <div class="vip-tier">
+                        <div class="vip-badge platinum">💎</div>
+                        <div class="vip-info">
+                            <strong>Platin</strong>
+                            <span data-i18n="vip_platinum">Ab 2.500 Gesamtpunkten</span>
+                        </div>
+                        <div class="vip-bonus">+25%</div>
+                    </div>
+                </div>
+
+                <div class="tip-box">
+                    <h4><i class="ri-lightbulb-line"></i> <span data-i18n="example">Beispiel</span></h4>
+                    <p data-i18n="vip_example">Ein Gold-Kunde erhält bei einem Scan nicht 10, sondern 11,5 Punkte (10 + 15% Bonus).</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3><i class="ri-gift-2-line"></i> <span data-i18n="auto_bonuses">Automatische Boni</span></h3>
+                <div class="feature-list">
+                    <div class="feature-item">
+                        <i class="ri-cake-2-line"></i>
+                        <div>
+                            <strong data-i18n="birthday_bonus">Geburtstagsbonus</strong>
+                            <span data-i18n="birthday_desc">Kunden erhalten automatisch Bonuspunkte an ihrem Geburtstag.</span>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="ri-user-heart-line"></i>
+                        <div>
+                            <strong data-i18n="comeback_bonus">Comeback-Bonus</strong>
+                            <span data-i18n="comeback_desc">Kunden, die 30+ Tage nicht da waren, erhalten beim nächsten Besuch Bonuspunkte.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Statistics -->
+        <section class="section" id="stats">
+            <div class="section-header">
+                <div class="section-icon"><i class="ri-bar-chart-grouped-line"></i></div>
+                <div class="section-title">
+                    <h2 data-i18n="stats_title">Statistiken</h2>
+                    <p data-i18n="stats_subtitle">Ihre Kundenaktivitäten im Überblick</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3><i class="ri-question-line"></i> <span data-i18n="what_is_it">Was ist das?</span></h3>
+                <p data-i18n="stats_what">Das Statistik-Dashboard zeigt Ihnen alle wichtigen Zahlen: Wie viele Kunden Sie haben, wie oft sie kommen, welche Prämien beliebt sind und mehr.</p>
+            </div>
+
+            <div class="card">
+                <h3><i class="ri-pie-chart-line"></i> <span data-i18n="stats_available">Verfügbare Statistiken</span></h3>
+                <div class="feature-list">
+                    <div class="feature-item">
+                        <i class="ri-line-chart-line"></i>
+                        <div>
+                            <strong data-i18n="stats_daily">Tägliche Scans</strong>
+                            <span data-i18n="stats_daily_desc">Wie viele Kunden haben heute/diese Woche gescannt?</span>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="ri-trophy-line"></i>
+                        <div>
+                            <strong data-i18n="stats_top">Top Kunden</strong>
+                            <span data-i18n="stats_top_desc">Ihre 5 treuesten Kunden mit den meisten Punkten.</span>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="ri-time-line"></i>
+                        <div>
+                            <strong data-i18n="stats_peak">Stoßzeiten</strong>
+                            <span data-i18n="stats_peak_desc">Zu welchen Uhrzeiten kommen die meisten Kunden?</span>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="ri-gift-line"></i>
+                        <div>
+                            <strong data-i18n="stats_rewards">Einlösungen</strong>
+                            <span data-i18n="stats_rewards_desc">Welche Prämien werden am häufigsten eingelöst?</span>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="ri-download-line"></i>
+                        <div>
+                            <strong data-i18n="stats_export">Daten-Export</strong>
+                            <span data-i18n="stats_export_desc">Exportieren Sie alle Daten als CSV für Excel.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Profile -->
+        <section class="section" id="profile">
+            <div class="section-header">
+                <div class="section-icon"><i class="ri-store-2-line"></i></div>
+                <div class="section-title">
+                    <h2 data-i18n="profile_title">Geschäftsprofil</h2>
+                    <p data-i18n="profile_subtitle">Ihre Geschäftsdaten verwalten</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3><i class="ri-question-line"></i> <span data-i18n="what_is_it">Was ist das?</span></h3>
+                <p data-i18n="profile_what">Im Profil verwalten Sie alle Informationen zu Ihrem Geschäft, die Kunden in der App sehen: Name, Adresse, Öffnungszeiten, Logo und mehr.</p>
+            </div>
+
+            <div class="card">
+                <h3><i class="ri-settings-3-line"></i> <span data-i18n="profile_settings">Einstellungen</span></h3>
+                <div class="feature-list">
+                    <div class="feature-item">
+                        <i class="ri-store-2-line"></i>
+                        <div>
+                            <strong data-i18n="profile_name">Geschäftsname</strong>
+                            <span data-i18n="profile_name_desc">Der Name, der Kunden angezeigt wird.</span>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="ri-map-pin-line"></i>
+                        <div>
+                            <strong data-i18n="profile_address">Adresse</strong>
+                            <span data-i18n="profile_address_desc">Straße, PLZ, Stadt - für die Kartenanzeige.</span>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="ri-time-line"></i>
+                        <div>
+                            <strong data-i18n="profile_hours">Öffnungszeiten</strong>
+                            <span data-i18n="profile_hours_desc">Für jeden Wochentag einzeln einstellbar.</span>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="ri-image-line"></i>
+                        <div>
+                            <strong data-i18n="profile_logo">Logo & Bilder</strong>
+                            <span data-i18n="profile_logo_desc">Ihr Logo und Fotos vom Geschäft.</span>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="ri-phone-line"></i>
+                        <div>
+                            <strong data-i18n="profile_contact">Kontaktdaten</strong>
+                            <span data-i18n="profile_contact_desc">Telefon, E-Mail, Website, Social Media.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Devices -->
+        <section class="section" id="devices">
+            <div class="section-header">
+                <div class="section-icon"><i class="ri-smartphone-line"></i></div>
+                <div class="section-title">
+                    <h2 data-i18n="devices_title">Geräte</h2>
+                    <p data-i18n="devices_subtitle">Scanner-Geräte verwalten</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3><i class="ri-question-line"></i> <span data-i18n="what_is_it">Was ist das?</span></h3>
+                <p data-i18n="devices_what">Hier sehen Sie alle Geräte (Smartphones, Tablets), die für Ihr Geschäft als Scanner registriert sind. Sie können neue Geräte hinzufügen oder alte entfernen.</p>
+            </div>
+
+            <div class="card">
+                <h3><i class="ri-add-circle-line"></i> <span data-i18n="devices_add">Gerät hinzufügen</span></h3>
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4 data-i18n="devices_step1_title">Neues Gerät öffnen</h4>
+                            <p data-i18n="devices_step1_desc">Öffnen Sie punktepass.de auf dem neuen Gerät.</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4 data-i18n="devices_step2_title">QR-Code scannen</h4>
+                            <p data-i18n="devices_step2_desc">Klicken Sie auf "Gerät hinzufügen" und scannen Sie den angezeigten QR-Code mit dem neuen Gerät.</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4 data-i18n="devices_step3_title">Fertig!</h4>
+                            <p data-i18n="devices_step3_desc">Das Gerät ist jetzt mit Ihrem Geschäft verbunden und kann als Scanner verwendet werden.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Users -->
+        <section class="section" id="users">
+            <div class="section-header">
+                <div class="section-icon"><i class="ri-team-line"></i></div>
+                <div class="section-title">
+                    <h2 data-i18n="users_title">Mitarbeiter (Scanner-Benutzer)</h2>
+                    <p data-i18n="users_subtitle">Team-Zugänge verwalten</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3><i class="ri-question-line"></i> <span data-i18n="what_is_it">Was ist das?</span></h3>
+                <p data-i18n="users_what">Sie können Ihren Mitarbeitern eigene Zugänge geben, damit sie Kunden scannen können - ohne Zugriff auf Ihre Einstellungen oder Statistiken.</p>
+            </div>
+
+            <div class="card">
+                <h3><i class="ri-shield-user-line"></i> <span data-i18n="users_permissions">Berechtigungen</span></h3>
+                <div class="feature-list">
+                    <div class="feature-item">
+                        <i class="ri-admin-line"></i>
+                        <div>
+                            <strong data-i18n="users_admin">Administrator (Sie)</strong>
+                            <span data-i18n="users_admin_desc">Voller Zugriff auf alle Funktionen, Einstellungen und Statistiken.</span>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="ri-user-3-line"></i>
+                        <div>
+                            <strong data-i18n="users_scanner">Scanner-Benutzer</strong>
+                            <span data-i18n="users_scanner_desc">Kann nur QR-Codes scannen und Einlösungen bestätigen. Kein Zugriff auf Einstellungen.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tip-box">
+                    <h4><i class="ri-lightbulb-line"></i> <span data-i18n="tip">Tipp</span></h4>
+                    <p data-i18n="users_tip">Erstellen Sie für jeden Mitarbeiter einen eigenen Scanner-Zugang. So sehen Sie später, wer welche Scans gemacht hat.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Tips -->
+        <section class="section" id="tips">
+            <div class="section-header">
+                <div class="section-icon"><i class="ri-lightbulb-line"></i></div>
+                <div class="section-title">
+                    <h2 data-i18n="tips_title">Tipps für mehr Erfolg</h2>
+                    <p data-i18n="tips_subtitle">Best Practices für Ihr Treueprogramm</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3><i class="ri-number-1"></i> <span data-i18n="tip1_title">Aktiv bewerben</span></h3>
+                <p data-i18n="tip1_desc">Weisen Sie jeden Kunden aktiv auf Ihr Treueprogramm hin. Ein Aufsteller an der Kasse oder ein Hinweis auf der Rechnung hilft.</p>
+            </div>
+
+            <div class="card">
+                <h3><i class="ri-number-2"></i> <span data-i18n="tip2_title">Attraktive Prämien</span></h3>
+                <p data-i18n="tip2_desc">Bieten Sie Prämien an, die Ihre Kunden wirklich wollen. Eine Mischung aus kleinen (50-100 Punkte) und großen Prämien (300+ Punkte) funktioniert am besten.</p>
+            </div>
+
+            <div class="card">
+                <h3><i class="ri-number-3"></i> <span data-i18n="tip3_title">Regelmäßig scannen</span></h3>
+                <p data-i18n="tip3_desc">Machen Sie das Scannen zur Routine. Fragen Sie bei jedem Kunden: "Sammeln Sie PunktePass-Punkte?"</p>
+            </div>
+
+            <div class="card">
+                <h3><i class="ri-number-4"></i> <span data-i18n="tip4_title">VIP nutzen</span></h3>
+                <p data-i18n="tip4_desc">Aktivieren Sie das VIP-System! Kunden lieben es, in eine höhere Stufe aufzusteigen - das motiviert sie, öfter zu kommen.</p>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p data-i18n="footer_help">Noch Fragen? <a href="https://wa.me/4917698479520">WhatsApp Support</a> · <a href="mailto:info@punktepass.de">E-Mail</a></p>
+            <p style="margin-top: 8px;">© 2025 PunktePass</p>
+        </footer>
+    </main>
+
+    <!-- Back to Top -->
+    <a href="#" class="back-to-top" id="backToTop"><i class="ri-arrow-up-line"></i></a>
+
+    <script>
+    // ===========================
+    // TRANSLATIONS
+    // ===========================
+    const translations = {
+        de: {
+            hero_title: 'Händler-Handbuch',
+            hero_desc: 'Alles, was Sie über PunktePass wissen müssen. Schritt-für-Schritt-Anleitungen für alle Funktionen.',
+            toc_title: 'Inhalt',
+            nav_scanner: 'QR-Scanner',
+            nav_rewards: 'Prämien',
+            nav_vip: 'VIP-System',
+            nav_stats: 'Statistiken',
+            nav_profile: 'Profil',
+            nav_devices: 'Geräte',
+            nav_users: 'Mitarbeiter',
+            nav_tips: 'Tipps',
+            what_is_it: 'Was ist das?',
+            how_it_works: 'So funktioniert\'s',
+            tip: 'Tipp',
+            example: 'Beispiel',
+            important: 'Wichtig',
+            scanner_title: 'QR-Scanner (Kassenscanner)',
+            scanner_subtitle: 'Punkte an Kunden vergeben',
+            scanner_what: 'Der QR-Scanner ist das Herzstück von PunktePass. Damit scannen Sie die QR-Codes Ihrer Kunden und vergeben automatisch Punkte für jeden Besuch.',
+            scanner_step1_title: 'Kunde zeigt QR-Code',
+            scanner_step1_desc: 'Der Kunde öffnet die PunktePass-App oder Website und zeigt seinen persönlichen QR-Code.',
+            scanner_step2_title: 'Sie scannen den Code',
+            scanner_step2_desc: 'Öffnen Sie den QR-Scanner in Ihrem Dashboard und halten Sie die Kamera auf den QR-Code.',
+            scanner_step3_title: 'Punkte werden gutgeschrieben',
+            scanner_step3_desc: 'Automatisch werden 10 Punkte (oder Ihr eingestellter Wert) dem Kunden gutgeschrieben. Beide sehen eine Bestätigung.',
+            scanner_tip: 'Jeder Kunde kann nur einmal pro Tag bei Ihnen Punkte sammeln. Das verhindert Missbrauch.',
+            rewards_title: 'Prämien verwalten',
+            rewards_subtitle: 'Belohnungen für Ihre Kunden erstellen',
+            rewards_what: 'Prämien sind Belohnungen, die Ihre Kunden mit gesammelten Punkten einlösen können. Sie bestimmen selbst, welche Prämien Sie anbieten und wie viele Punkte sie kosten.',
+            rewards_create: 'Prämie erstellen',
+            rewards_name: 'Name der Prämie',
+            rewards_name_desc: 'z.B. "Gratis Kaffee", "10% Rabatt", "Überraschungsgeschenk"',
+            rewards_cost: 'Punktekosten',
+            rewards_cost_desc: 'Wie viele Punkte der Kunde für diese Prämie braucht (z.B. 100 Punkte)',
+            rewards_status: 'Aktiv/Inaktiv',
+            rewards_status_desc: 'Deaktivierte Prämien sind für Kunden nicht sichtbar',
+            rewards_redeem: 'Einlösung bestätigen',
+            rewards_redeem_desc: 'Wenn ein Kunde eine Prämie einlöst, erscheint sie in Ihrer Liste "Offene Einlösungen". Klicken Sie auf "Bestätigen", nachdem Sie die Prämie übergeben haben.',
+            rewards_warning: 'Bestätigen Sie Einlösungen erst, nachdem Sie die Prämie tatsächlich übergeben haben. Nach der Bestätigung werden die Punkte vom Kunden abgezogen.',
+            vip_title: 'VIP-System',
+            vip_subtitle: 'Treue Kunden besonders belohnen',
+            vip_what: 'Das VIP-System belohnt Ihre treuesten Kunden automatisch mit Bonuspunkten. Je mehr Punkte ein Kunde gesammelt hat, desto höher seine VIP-Stufe und desto mehr Bonuspunkte erhält er bei jedem Scan.',
+            vip_tiers: 'VIP-Stufen',
+            vip_bronze: 'Ab 100 Gesamtpunkten',
+            vip_silver: 'Ab 500 Gesamtpunkten',
+            vip_gold: 'Ab 1.000 Gesamtpunkten',
+            vip_platinum: 'Ab 2.500 Gesamtpunkten',
+            vip_example: 'Ein Gold-Kunde erhält bei einem Scan nicht 10, sondern 11,5 Punkte (10 + 15% Bonus).',
+            auto_bonuses: 'Automatische Boni',
+            birthday_bonus: 'Geburtstagsbonus',
+            birthday_desc: 'Kunden erhalten automatisch Bonuspunkte an ihrem Geburtstag.',
+            comeback_bonus: 'Comeback-Bonus',
+            comeback_desc: 'Kunden, die 30+ Tage nicht da waren, erhalten beim nächsten Besuch Bonuspunkte.',
+            stats_title: 'Statistiken',
+            stats_subtitle: 'Ihre Kundenaktivitäten im Überblick',
+            stats_what: 'Das Statistik-Dashboard zeigt Ihnen alle wichtigen Zahlen: Wie viele Kunden Sie haben, wie oft sie kommen, welche Prämien beliebt sind und mehr.',
+            stats_available: 'Verfügbare Statistiken',
+            stats_daily: 'Tägliche Scans',
+            stats_daily_desc: 'Wie viele Kunden haben heute/diese Woche gescannt?',
+            stats_top: 'Top Kunden',
+            stats_top_desc: 'Ihre 5 treuesten Kunden mit den meisten Punkten.',
+            stats_peak: 'Stoßzeiten',
+            stats_peak_desc: 'Zu welchen Uhrzeiten kommen die meisten Kunden?',
+            stats_rewards: 'Einlösungen',
+            stats_rewards_desc: 'Welche Prämien werden am häufigsten eingelöst?',
+            stats_export: 'Daten-Export',
+            stats_export_desc: 'Exportieren Sie alle Daten als CSV für Excel.',
+            profile_title: 'Geschäftsprofil',
+            profile_subtitle: 'Ihre Geschäftsdaten verwalten',
+            profile_what: 'Im Profil verwalten Sie alle Informationen zu Ihrem Geschäft, die Kunden in der App sehen: Name, Adresse, Öffnungszeiten, Logo und mehr.',
+            profile_settings: 'Einstellungen',
+            profile_name: 'Geschäftsname',
+            profile_name_desc: 'Der Name, der Kunden angezeigt wird.',
+            profile_address: 'Adresse',
+            profile_address_desc: 'Straße, PLZ, Stadt - für die Kartenanzeige.',
+            profile_hours: 'Öffnungszeiten',
+            profile_hours_desc: 'Für jeden Wochentag einzeln einstellbar.',
+            profile_logo: 'Logo & Bilder',
+            profile_logo_desc: 'Ihr Logo und Fotos vom Geschäft.',
+            profile_contact: 'Kontaktdaten',
+            profile_contact_desc: 'Telefon, E-Mail, Website, Social Media.',
+            devices_title: 'Geräte',
+            devices_subtitle: 'Scanner-Geräte verwalten',
+            devices_what: 'Hier sehen Sie alle Geräte (Smartphones, Tablets), die für Ihr Geschäft als Scanner registriert sind. Sie können neue Geräte hinzufügen oder alte entfernen.',
+            devices_add: 'Gerät hinzufügen',
+            devices_step1_title: 'Neues Gerät öffnen',
+            devices_step1_desc: 'Öffnen Sie punktepass.de auf dem neuen Gerät.',
+            devices_step2_title: 'QR-Code scannen',
+            devices_step2_desc: 'Klicken Sie auf "Gerät hinzufügen" und scannen Sie den angezeigten QR-Code mit dem neuen Gerät.',
+            devices_step3_title: 'Fertig!',
+            devices_step3_desc: 'Das Gerät ist jetzt mit Ihrem Geschäft verbunden und kann als Scanner verwendet werden.',
+            users_title: 'Mitarbeiter (Scanner-Benutzer)',
+            users_subtitle: 'Team-Zugänge verwalten',
+            users_what: 'Sie können Ihren Mitarbeitern eigene Zugänge geben, damit sie Kunden scannen können - ohne Zugriff auf Ihre Einstellungen oder Statistiken.',
+            users_permissions: 'Berechtigungen',
+            users_admin: 'Administrator (Sie)',
+            users_admin_desc: 'Voller Zugriff auf alle Funktionen, Einstellungen und Statistiken.',
+            users_scanner: 'Scanner-Benutzer',
+            users_scanner_desc: 'Kann nur QR-Codes scannen und Einlösungen bestätigen. Kein Zugriff auf Einstellungen.',
+            users_tip: 'Erstellen Sie für jeden Mitarbeiter einen eigenen Scanner-Zugang. So sehen Sie später, wer welche Scans gemacht hat.',
+            tips_title: 'Tipps für mehr Erfolg',
+            tips_subtitle: 'Best Practices für Ihr Treueprogramm',
+            tip1_title: 'Aktiv bewerben',
+            tip1_desc: 'Weisen Sie jeden Kunden aktiv auf Ihr Treueprogramm hin. Ein Aufsteller an der Kasse oder ein Hinweis auf der Rechnung hilft.',
+            tip2_title: 'Attraktive Prämien',
+            tip2_desc: 'Bieten Sie Prämien an, die Ihre Kunden wirklich wollen. Eine Mischung aus kleinen (50-100 Punkte) und großen Prämien (300+ Punkte) funktioniert am besten.',
+            tip3_title: 'Regelmäßig scannen',
+            tip3_desc: 'Machen Sie das Scannen zur Routine. Fragen Sie bei jedem Kunden: "Sammeln Sie PunktePass-Punkte?"',
+            tip4_title: 'VIP nutzen',
+            tip4_desc: 'Aktivieren Sie das VIP-System! Kunden lieben es, in eine höhere Stufe aufzusteigen - das motiviert sie, öfter zu kommen.',
+            footer_help: 'Noch Fragen? <a href="https://wa.me/4917698479520">WhatsApp Support</a> · <a href="mailto:info@punktepass.de">E-Mail</a>'
+        },
+        en: {
+            hero_title: 'Merchant Handbook',
+            hero_desc: 'Everything you need to know about PunktePass. Step-by-step guides for all features.',
+            toc_title: 'Contents',
+            nav_scanner: 'QR Scanner',
+            nav_rewards: 'Rewards',
+            nav_vip: 'VIP System',
+            nav_stats: 'Statistics',
+            nav_profile: 'Profile',
+            nav_devices: 'Devices',
+            nav_users: 'Staff',
+            nav_tips: 'Tips',
+            what_is_it: 'What is this?',
+            how_it_works: 'How it works',
+            tip: 'Tip',
+            example: 'Example',
+            important: 'Important',
+            scanner_title: 'QR Scanner',
+            scanner_subtitle: 'Award points to customers',
+            scanner_what: 'The QR scanner is the heart of PunktePass. Use it to scan your customers\' QR codes and automatically award points for each visit.',
+            scanner_step1_title: 'Customer shows QR code',
+            scanner_step1_desc: 'The customer opens the PunktePass app or website and shows their personal QR code.',
+            scanner_step2_title: 'You scan the code',
+            scanner_step2_desc: 'Open the QR scanner in your dashboard and point the camera at the QR code.',
+            scanner_step3_title: 'Points are credited',
+            scanner_step3_desc: 'Automatically, 10 points (or your set value) are credited to the customer. Both see a confirmation.',
+            scanner_tip: 'Each customer can only collect points once per day at your location. This prevents abuse.',
+            rewards_title: 'Manage Rewards',
+            rewards_subtitle: 'Create rewards for your customers',
+            rewards_what: 'Rewards are prizes that your customers can redeem with collected points. You decide which rewards to offer and how many points they cost.',
+            rewards_create: 'Create Reward',
+            rewards_name: 'Reward Name',
+            rewards_name_desc: 'e.g. "Free Coffee", "10% Discount", "Surprise Gift"',
+            rewards_cost: 'Point Cost',
+            rewards_cost_desc: 'How many points the customer needs for this reward (e.g. 100 points)',
+            rewards_status: 'Active/Inactive',
+            rewards_status_desc: 'Deactivated rewards are not visible to customers',
+            rewards_redeem: 'Confirm Redemption',
+            rewards_redeem_desc: 'When a customer redeems a reward, it appears in your "Pending Redemptions" list. Click "Confirm" after handing over the reward.',
+            rewards_warning: 'Only confirm redemptions after you have actually handed over the reward. After confirmation, points are deducted from the customer.',
+            vip_title: 'VIP System',
+            vip_subtitle: 'Specially reward loyal customers',
+            vip_what: 'The VIP system automatically rewards your most loyal customers with bonus points. The more points a customer has collected, the higher their VIP level and the more bonus points they receive with each scan.',
+            vip_tiers: 'VIP Tiers',
+            vip_bronze: 'From 100 total points',
+            vip_silver: 'From 500 total points',
+            vip_gold: 'From 1,000 total points',
+            vip_platinum: 'From 2,500 total points',
+            vip_example: 'A Gold customer receives not 10, but 11.5 points per scan (10 + 15% bonus).',
+            auto_bonuses: 'Automatic Bonuses',
+            birthday_bonus: 'Birthday Bonus',
+            birthday_desc: 'Customers automatically receive bonus points on their birthday.',
+            comeback_bonus: 'Comeback Bonus',
+            comeback_desc: 'Customers who haven\'t visited for 30+ days receive bonus points on their next visit.',
+            stats_title: 'Statistics',
+            stats_subtitle: 'Overview of your customer activities',
+            stats_what: 'The statistics dashboard shows you all important numbers: How many customers you have, how often they come, which rewards are popular, and more.',
+            stats_available: 'Available Statistics',
+            stats_daily: 'Daily Scans',
+            stats_daily_desc: 'How many customers have scanned today/this week?',
+            stats_top: 'Top Customers',
+            stats_top_desc: 'Your 5 most loyal customers with the most points.',
+            stats_peak: 'Peak Times',
+            stats_peak_desc: 'At what times do most customers come?',
+            stats_rewards: 'Redemptions',
+            stats_rewards_desc: 'Which rewards are redeemed most often?',
+            stats_export: 'Data Export',
+            stats_export_desc: 'Export all data as CSV for Excel.',
+            profile_title: 'Business Profile',
+            profile_subtitle: 'Manage your business data',
+            profile_what: 'In the profile, you manage all information about your business that customers see in the app: Name, address, opening hours, logo, and more.',
+            profile_settings: 'Settings',
+            profile_name: 'Business Name',
+            profile_name_desc: 'The name shown to customers.',
+            profile_address: 'Address',
+            profile_address_desc: 'Street, postal code, city - for map display.',
+            profile_hours: 'Opening Hours',
+            profile_hours_desc: 'Configurable for each day of the week.',
+            profile_logo: 'Logo & Images',
+            profile_logo_desc: 'Your logo and photos of the business.',
+            profile_contact: 'Contact Info',
+            profile_contact_desc: 'Phone, email, website, social media.',
+            devices_title: 'Devices',
+            devices_subtitle: 'Manage scanner devices',
+            devices_what: 'Here you can see all devices (smartphones, tablets) registered as scanners for your business. You can add new devices or remove old ones.',
+            devices_add: 'Add Device',
+            devices_step1_title: 'Open new device',
+            devices_step1_desc: 'Open punktepass.de on the new device.',
+            devices_step2_title: 'Scan QR code',
+            devices_step2_desc: 'Click "Add Device" and scan the displayed QR code with the new device.',
+            devices_step3_title: 'Done!',
+            devices_step3_desc: 'The device is now connected to your business and can be used as a scanner.',
+            users_title: 'Staff (Scanner Users)',
+            users_subtitle: 'Manage team access',
+            users_what: 'You can give your employees their own access so they can scan customers - without access to your settings or statistics.',
+            users_permissions: 'Permissions',
+            users_admin: 'Administrator (You)',
+            users_admin_desc: 'Full access to all features, settings, and statistics.',
+            users_scanner: 'Scanner User',
+            users_scanner_desc: 'Can only scan QR codes and confirm redemptions. No access to settings.',
+            users_tip: 'Create a separate scanner access for each employee. This way you can later see who made which scans.',
+            tips_title: 'Tips for Success',
+            tips_subtitle: 'Best practices for your loyalty program',
+            tip1_title: 'Actively Promote',
+            tip1_desc: 'Actively point out your loyalty program to every customer. A display at the checkout or a note on the receipt helps.',
+            tip2_title: 'Attractive Rewards',
+            tip2_desc: 'Offer rewards that your customers really want. A mix of small (50-100 points) and large rewards (300+ points) works best.',
+            tip3_title: 'Scan Regularly',
+            tip3_desc: 'Make scanning a routine. Ask every customer: "Are you collecting PunktePass points?"',
+            tip4_title: 'Use VIP',
+            tip4_desc: 'Activate the VIP system! Customers love advancing to a higher tier - it motivates them to come more often.',
+            footer_help: 'Questions? <a href="https://wa.me/4917698479520">WhatsApp Support</a> · <a href="mailto:info@punktepass.de">Email</a>'
+        },
+        hu: {
+            hero_title: 'Kereskedői kézikönyv',
+            hero_desc: 'Minden, amit a PunktePass-ról tudnia kell. Lépésről lépésre útmutatók minden funkcióhoz.',
+            toc_title: 'Tartalom',
+            nav_scanner: 'QR-szkenner',
+            nav_rewards: 'Jutalmak',
+            nav_vip: 'VIP rendszer',
+            nav_stats: 'Statisztikák',
+            nav_profile: 'Profil',
+            nav_devices: 'Eszközök',
+            nav_users: 'Munkatársak',
+            nav_tips: 'Tippek',
+            what_is_it: 'Mi ez?',
+            how_it_works: 'Hogyan működik',
+            tip: 'Tipp',
+            example: 'Példa',
+            important: 'Fontos',
+            scanner_title: 'QR-szkenner (Pénztár szkenner)',
+            scanner_subtitle: 'Pontok jóváírása ügyfeleknek',
+            scanner_what: 'A QR-szkenner a PunktePass szíve. Ezzel szkenneli be ügyfelei QR-kódjait és automatikusan pontokat ír jóvá minden látogatásért.',
+            scanner_step1_title: 'Az ügyfél megmutatja a QR-kódot',
+            scanner_step1_desc: 'Az ügyfél megnyitja a PunktePass alkalmazást vagy weboldalt és megmutatja személyes QR-kódját.',
+            scanner_step2_title: 'Ön beolvassa a kódot',
+            scanner_step2_desc: 'Nyissa meg a QR-szkennert az irányítópulton és irányítsa a kamerát a QR-kódra.',
+            scanner_step3_title: 'A pontok jóváírásra kerülnek',
+            scanner_step3_desc: 'Automatikusan 10 pont (vagy az Ön által beállított érték) jóváírásra kerül az ügyfélnek. Mindketten látják a megerősítést.',
+            scanner_tip: 'Minden ügyfél naponta csak egyszer gyűjthet pontot az Ön üzletében. Ez megakadályozza a visszaélést.',
+            rewards_title: 'Jutalmak kezelése',
+            rewards_subtitle: 'Jutalmak létrehozása ügyfelei számára',
+            rewards_what: 'A jutalmak olyan nyeremények, amelyeket ügyfelei összegyűjtött pontjaikkal válthatnak be. Ön dönti el, milyen jutalmakat kínál és hány pontba kerülnek.',
+            rewards_create: 'Jutalom létrehozása',
+            rewards_name: 'Jutalom neve',
+            rewards_name_desc: 'pl. "Ingyenes kávé", "10% kedvezmény", "Meglepetés ajándék"',
+            rewards_cost: 'Pont költség',
+            rewards_cost_desc: 'Hány pont kell az ügyfélnek ehhez a jutalomhoz (pl. 100 pont)',
+            rewards_status: 'Aktív/Inaktív',
+            rewards_status_desc: 'A deaktivált jutalmak nem láthatók az ügyfelek számára',
+            rewards_redeem: 'Beváltás megerősítése',
+            rewards_redeem_desc: 'Amikor egy ügyfél beváltja a jutalmat, az megjelenik a "Függőben lévő beváltások" listájában. Kattintson a "Megerősítés" gombra, miután átadta a jutalmat.',
+            rewards_warning: 'Csak akkor erősítse meg a beváltásokat, ha ténylegesen átadta a jutalmat. A megerősítés után a pontok levonásra kerülnek az ügyféltől.',
+            vip_title: 'VIP rendszer',
+            vip_subtitle: 'Hűséges ügyfelek különleges jutalmazása',
+            vip_what: 'A VIP rendszer automatikusan bónuszpontokkal jutalmazza leghűségesebb ügyfeleit. Minél több pontot gyűjtött egy ügyfél, annál magasabb a VIP szintje és annál több bónuszpontot kap minden szkenneléskor.',
+            vip_tiers: 'VIP szintek',
+            vip_bronze: '100 összpontszámtól',
+            vip_silver: '500 összpontszámtól',
+            vip_gold: '1.000 összpontszámtól',
+            vip_platinum: '2.500 összpontszámtól',
+            vip_example: 'Egy Gold ügyfél nem 10, hanem 11,5 pontot kap szkenneléskor (10 + 15% bónusz).',
+            auto_bonuses: 'Automatikus bónuszok',
+            birthday_bonus: 'Születésnapi bónusz',
+            birthday_desc: 'Az ügyfelek automatikusan bónuszpontokat kapnak születésnapjukon.',
+            comeback_bonus: 'Visszatérő bónusz',
+            comeback_desc: 'Azok az ügyfelek, akik 30+ napja nem jártak nálunk, bónuszpontokat kapnak következő látogatásukkor.',
+            stats_title: 'Statisztikák',
+            stats_subtitle: 'Ügyfél-aktivitások áttekintése',
+            stats_what: 'A statisztikai irányítópult megmutatja az összes fontos számot: Hány ügyfele van, milyen gyakran jönnek, mely jutalmak népszerűek és még sok más.',
+            footer_help: 'Kérdése van? <a href="https://wa.me/4917698479520">WhatsApp támogatás</a> · <a href="mailto:info@punktepass.de">E-mail</a>'
+        }
+    };
+
+    let currentLang = localStorage.getItem('ppv_guide_lang') || 'de';
+
+    function applyTranslations(lang) {
+        const strings = translations[lang] || translations.de;
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.dataset.i18n;
+            if (strings[key]) {
+                if (el.innerHTML.includes('<a')) {
+                    el.innerHTML = strings[key];
+                } else {
+                    el.textContent = strings[key];
+                }
+            }
+        });
+
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.lang === lang);
+        });
+
+        localStorage.setItem('ppv_guide_lang', lang);
+        currentLang = lang;
+    }
+
+    // Back to top button
+    const backToTop = document.getElementById('backToTop');
+    window.addEventListener('scroll', () => {
+        backToTop.classList.toggle('visible', window.scrollY > 300);
+    });
+
+    // Init
+    document.addEventListener('DOMContentLoaded', () => {
+        applyTranslations(currentLang);
+
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                applyTranslations(btn.dataset.lang);
+            });
+        });
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+    });
+    </script>
+</body>
+</html>

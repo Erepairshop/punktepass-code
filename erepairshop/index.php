@@ -96,7 +96,7 @@
     <div id="vacationBanner" class="hidden fixed top-0 left-0 right-0 z-[60] bg-gradient-to-r from-orange-500 to-red-500 text-white py-3 px-4 text-center">
         <div class="flex items-center justify-center gap-3 flex-wrap">
             <i class="ri-calendar-event-fill text-xl"></i>
-            <span class="font-semibold">Betriebsurlaub: 24.12.2024 - 12.01.2025</span>
+            <span class="font-semibold">Betriebsurlaub: 24.12.2025 - 12.01.2026</span>
             <span class="hidden sm:inline">|</span>
             <span>Ab 13. Januar sind wir wieder für Sie da!</span>
         </div>
@@ -805,9 +805,9 @@
             const now = new Date();
             const year = now.getFullYear();
 
-            // Vacation: Dec 24, 2024 - Jan 12, 2025
-            const vacationStart = new Date(2024, 11, 24, 0, 0, 0); // Dec 24, 2024
-            const vacationEnd = new Date(2025, 0, 12, 23, 59, 59);   // Jan 12, 2025
+            // Vacation: Dec 18, 2025 - Jan 12, 2026
+            const vacationStart = new Date(2025, 11, 18, 0, 0, 0); // Dec 18, 2025
+            const vacationEnd = new Date(2026, 0, 12, 23, 59, 59);   // Jan 12, 2026
 
             return now >= vacationStart && now <= vacationEnd;
         }
@@ -835,7 +835,7 @@
                 // Show closed status
                 statusBadge.innerHTML = '<span class="w-3 h-3 bg-orange-500 rounded-full"></span><span class="text-sm">Betriebsurlaub</span>';
                 currentStatus.className = 'mt-6 p-4 rounded-xl bg-orange-500/20 border border-orange-500/30';
-                currentStatus.innerHTML = '<div class="flex items-center gap-3"><i class="ri-calendar-event-fill text-orange-400 text-xl"></i><div><span class="font-semibold text-orange-400">Betriebsurlaub</span><p class="text-sm text-gray-400 mt-1">24.12.2024 - 12.01.2025</p><p class="text-sm text-gray-400">Ab 13. Januar wieder geöffnet!</p></div></div>';
+                currentStatus.innerHTML = '<div class="flex items-center gap-3"><i class="ri-calendar-event-fill text-orange-400 text-xl"></i><div><span class="font-semibold text-orange-400">Betriebsurlaub</span><p class="text-sm text-gray-400 mt-1">24.12.2025 - 12.01.2026</p><p class="text-sm text-gray-400">Ab 13. Januar wieder geöffnet!</p></div></div>';
                 return;
             }
 

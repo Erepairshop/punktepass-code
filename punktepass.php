@@ -815,6 +815,9 @@ add_action('init', function () {
     // Landing page (Meta Ads)
     add_rewrite_rule('^landing/?$', 'index.php?ppv_landing=1', 'top');
     add_rewrite_tag('%ppv_landing%', '1');
+    // Händler Demo page
+    add_rewrite_rule('^demo/haendler/?$', 'index.php?ppv_demo_haendler=1', 'top');
+    add_rewrite_tag('%ppv_demo_haendler%', '1');
 }, 10);
 
 // ========================================
@@ -840,6 +843,20 @@ add_action('template_redirect', function() {
         if (file_exists($landing_file)) {
             header('Content-Type: text/html; charset=UTF-8');
             readfile($landing_file);
+            exit;
+        }
+    }
+}, 1);
+
+// ========================================
+// 🏪 HÄNDLER DEMO PAGE HANDLER
+// ========================================
+add_action('template_redirect', function() {
+    if (get_query_var('ppv_demo_haendler')) {
+        $demo_file = PPV_PLUGIN_DIR . 'demo/haendler/index.html';
+        if (file_exists($demo_file)) {
+            header('Content-Type: text/html; charset=UTF-8');
+            readfile($demo_file);
             exit;
         }
     }
@@ -914,6 +931,8 @@ register_activation_hook(__FILE__, function () {
     add_rewrite_tag('%ppv_demo%', '1');
     add_rewrite_rule('^landing/?$', 'index.php?ppv_landing=1', 'top');
     add_rewrite_tag('%ppv_landing%', '1');
+    add_rewrite_rule('^demo/haendler/?$', 'index.php?ppv_demo_haendler=1', 'top');
+    add_rewrite_tag('%ppv_demo_haendler%', '1');
     flush_rewrite_rules();
 });
 
