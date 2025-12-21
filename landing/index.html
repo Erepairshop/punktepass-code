@@ -347,6 +347,115 @@
             opacity: 0.7;
         }
 
+        /* Bonus Box */
+        .bonus-box {
+            margin-top: 20px;
+            padding: 16px;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.1));
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .bonus-box i.bonus-icon {
+            font-size: 28px;
+            color: var(--primary-light);
+        }
+
+        .bonus-box .bonus-text {
+            flex: 1;
+        }
+
+        .bonus-box .bonus-text strong {
+            display: block;
+            font-size: 14px;
+            color: #fff;
+            margin-bottom: 2px;
+        }
+
+        .bonus-box .bonus-text span {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .bonus-box .info-btn {
+            width: 24px;
+            height: 24px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 50%;
+            color: var(--text-muted);
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .bonus-box .info-btn:hover {
+            background: rgba(255,255,255,0.2);
+            color: #fff;
+        }
+
+        /* Info Modal */
+        .info-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 3000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .info-modal.active {
+            display: flex;
+        }
+
+        .info-modal-content {
+            background: linear-gradient(145deg, #1e293b, #0f172a);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 32px;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .info-modal-content i.modal-icon {
+            font-size: 48px;
+            color: var(--primary);
+            margin-bottom: 16px;
+        }
+
+        .info-modal-content h3 {
+            font-size: 20px;
+            margin-bottom: 12px;
+        }
+
+        .info-modal-content p {
+            font-size: 14px;
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .info-modal-content button {
+            padding: 12px 24px;
+            background: var(--primary);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
         /* ============================================
            SECTION 2: TRUST BADGES
            ============================================ */
@@ -862,6 +971,18 @@
                     Keine Kreditkarte · Keine versteckten Kosten
                 </p>
 
+                <!-- Bonus: Free Phone + Stand -->
+                <div class="bonus-box">
+                    <i class="ri-smartphone-line bonus-icon"></i>
+                    <div class="bonus-text">
+                        <strong>🎁 Gratis: Android-Handy + Ständer</strong>
+                        <span>Alles fertig eingerichtet für Sie</span>
+                    </div>
+                    <button class="info-btn" onclick="showBonusInfo()">
+                        <i class="ri-information-line"></i>
+                    </button>
+                </div>
+
                 <p class="phone-link">
                     <i class="ri-phone-line"></i> Oder direkt anrufen: <a href="tel:+4917698479520">+49 176 98479520</a>
                 </p>
@@ -1083,7 +1204,33 @@
         </div>
     </div>
 
+    <!-- BONUS INFO MODAL -->
+    <div class="info-modal" id="bonusInfoModal">
+        <div class="info-modal-content">
+            <i class="ri-smartphone-line modal-icon"></i>
+            <h3>Gratis Starter-Paket</h3>
+            <p>
+                Nach dem Ausfüllen des Formulars und der Kontaktaufnahme erhalten Sie Ihr Starter-Paket –
+                <strong>persönlich oder per Post</strong>.<br><br>
+                📱 <strong>Android-Smartphone</strong> – fertig eingerichtet<br>
+                🧲 <strong>Ständer mit QR-Code</strong> – für Ihre Theke<br><br>
+                Alles ist bereits vorkonfiguriert. Sie müssen sich nur anmelden – und es läuft automatisch!
+            </p>
+            <button onclick="closeBonusInfo()">Verstanden</button>
+        </div>
+    </div>
+
     <script>
+        // Bonus Info Modal
+        function showBonusInfo() {
+            document.getElementById('bonusInfoModal').classList.add('active');
+        }
+        function closeBonusInfo() {
+            document.getElementById('bonusInfoModal').classList.remove('active');
+        }
+        document.getElementById('bonusInfoModal').addEventListener('click', function(e) {
+            if (e.target === this) closeBonusInfo();
+        });
         // Exit Intent Popup
         let exitShown = false;
         document.addEventListener('mouseout', function(e) {
