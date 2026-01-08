@@ -316,20 +316,6 @@ class PPV_Scan_Monitoring {
         global $wpdb;
 
         // ═══════════════════════════════════════════════════════════════
-        // SCANNER USER EXCEPTION - Skip GPS for scanner users
-        // ═══════════════════════════════════════════════════════════════
-        if (class_exists('PPV_Permissions') && PPV_Permissions::is_scanner_user()) {
-            ppv_log("[GPS] 👤 Scanner user detected - GPS check SKIPPED for store #{$store_id}");
-            return [
-                'valid' => true,
-                'distance' => null,
-                'reason' => null,
-                'action' => 'none',
-                'skipped' => 'scanner_user'
-            ];
-        }
-
-        // ═══════════════════════════════════════════════════════════════
         // MOBILE SCANNER EXCEPTION - Skip GPS for mobile scanner devices
         // ═══════════════════════════════════════════════════════════════
 
