@@ -860,11 +860,11 @@ public static function render_landing_page($atts) {
         if (empty($email) || empty($password)) {
             wp_send_json_error(['message' => PPV_Lang::t('login_error_empty')]);
         }
-        
-        // 🔹 USER LOGIN (PPV Custom Table)
+
+        // 🔹 USER LOGIN (PPV Custom Table) - Support both email and username
         $user = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM {$prefix}ppv_users WHERE email=%s LIMIT 1", 
-            $email
+            "SELECT * FROM {$prefix}ppv_users WHERE email=%s OR username=%s LIMIT 1",
+            $email, $email
         ));
         
         if ($user && password_verify($password, $user->password)) {
@@ -1189,10 +1189,10 @@ public static function render_landing_page($atts) {
             ]);
         }
 
-        // 🔹 SCANNER USER LOGIN (PPV Custom Users)
+        // 🔹 SCANNER USER LOGIN (PPV Custom Users) - Support both email and username
         $scanner_user = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM {$prefix}ppv_users WHERE email=%s AND user_type='scanner' LIMIT 1",
-            $email
+            "SELECT * FROM {$prefix}ppv_users WHERE (email=%s OR username=%s) AND user_type='scanner' LIMIT 1",
+            $email, $email
         ));
 
         if ($scanner_user && password_verify($password, $scanner_user->password)) {
