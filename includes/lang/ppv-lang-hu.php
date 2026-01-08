@@ -1848,4 +1848,20 @@ return [
 
     'faq_q20' => 'Problémám van - mit tegyek?',
     'faq_a20' => 'Használd a Visszajelzés gombot a navigáció alján, vagy lépj kapcsolatba a támogatással a beállításokon keresztül.',
+
+    // ============================================================
+    // Scanner User Management - Hiányzó fordítások
+    // ============================================================
+    'scanner_login' => 'E-mail vagy Felhasználónév',
+    'scanner_login_placeholder' => 'scanner1 vagy scanner@example.com',
+    'scanner_username' => 'Felhasználónév',
+    'scanner_username_placeholder' => 'pl. scanner1',
+    'scanner_users_title' => 'Scanner Felhasználók',
+    'add_scanner_user' => 'Új Scanner Létrehozása',
+    'no_scanner_users' => 'Még nincs scanner felhasználó létrehozva.',
+    'err_fill_fields' => 'Kérjük töltse ki az összes mezőt',
+    'create_error' => 'Hiba a létrehozás során',
+    'network_error' => 'Hálózati hiba',
+    'save' => 'Mentés',
+    'main_location' => 'Főhelyszín',
 ];
