@@ -844,7 +844,8 @@ public static function render_landing_page($atts) {
         
         check_ajax_referer('ppv_login_nonce', 'nonce');
 
-        $email = sanitize_email($_POST['email'] ?? '');
+        // Accept both email and username - use sanitize_text_field instead of sanitize_email
+        $login = sanitize_text_field($_POST['email'] ?? '');
         $password = $_POST['password'] ?? '';
         $remember = isset($_POST['remember']) && $_POST['remember'] === 'true';
 
@@ -857,14 +858,14 @@ public static function render_landing_page($atts) {
             $fingerprint = sanitize_text_field($_POST['device_fingerprint']);
         }
 
-        if (empty($email) || empty($password)) {
+        if (empty($login) || empty($password)) {
             wp_send_json_error(['message' => PPV_Lang::t('login_error_empty')]);
         }
 
         // 🔹 USER LOGIN (PPV Custom Table) - Support both email and username
         $user = $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM {$prefix}ppv_users WHERE email=%s OR username=%s LIMIT 1",
-            $email, $email
+            $login, $login
         ));
         
         if ($user && password_verify($password, $user->password)) {
@@ -1072,8 +1073,8 @@ public static function render_landing_page($atts) {
         
         // 🔹 STORE/HANDLER LOGIN
         $store = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM {$prefix}ppv_stores WHERE email=%s AND active=1 LIMIT 1", 
-            $email
+            "SELECT * FROM {$prefix}ppv_stores WHERE email=%s AND active=1 LIMIT 1",
+            $login
         ));
         
         if ($store && password_verify($password, $store->password)) {
@@ -1192,7 +1193,7 @@ public static function render_landing_page($atts) {
         // 🔹 SCANNER USER LOGIN (PPV Custom Users) - Support both email and username
         $scanner_user = $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM {$prefix}ppv_users WHERE (email=%s OR username=%s) AND user_type='scanner' LIMIT 1",
-            $email, $email
+            $login, $login
         ));
 
         if ($scanner_user && password_verify($password, $scanner_user->password)) {
@@ -1274,7 +1275,7 @@ public static function render_landing_page($atts) {
         }
 
         // 🔹 LOGIN FAILED
-        ppv_log("❌ [PPV_Login] Failed login attempt for: {$email}");
+        ppv_log("❌ [PPV_Login] Failed login attempt for: {$login}");
         wp_send_json_error(['message' => PPV_Lang::t('login_error_invalid')]);
     }
 /** ============================================================
