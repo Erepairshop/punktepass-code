@@ -274,7 +274,6 @@ class PPV_Scan_Monitoring {
         global $wpdb;
 
         if (empty($device_fingerprint)) {
-            ppv_log("[GPS] ❌ Mobile scanner check FAILED: Empty device_fingerprint");
             return false;
         }
 
@@ -284,8 +283,6 @@ class PPV_Scan_Monitoring {
             $store_id
         ));
 
-        ppv_log("[GPS] 🔍 Checking mobile_scanner: store={$store_id}, parent={$parent_store_id}, fingerprint=" . substr($device_fingerprint, 0, 20) . "...");
-
         // Check if device has mobile_scanner flag
         $mobile_scanner = $wpdb->get_var($wpdb->prepare(
             "SELECT mobile_scanner FROM {$wpdb->prefix}ppv_user_devices
@@ -294,13 +291,7 @@ class PPV_Scan_Monitoring {
             $device_fingerprint
         ));
 
-        ppv_log("[GPS] 🔍 Mobile scanner query result: " . ($mobile_scanner ? "mobile_scanner={$mobile_scanner}" : "NOT FOUND or NULL"));
-        ppv_log("[GPS] 🔍 Last SQL: " . $wpdb->last_query);
-
-        $is_mobile = !empty($mobile_scanner);
-        ppv_log("[GPS] " . ($is_mobile ? "✅ Device IS mobile scanner" : "❌ Device is NOT mobile scanner"));
-
-        return $is_mobile;
+        return !empty($mobile_scanner);
     }
 
     /**
@@ -323,8 +314,6 @@ class PPV_Scan_Monitoring {
      */
     public static function validate_scan_location($store_id, $scan_lat, $scan_lng, $device_fingerprint = null) {
         global $wpdb;
-
-        ppv_log("[GPS] 🚀 validate_scan_location called: store={$store_id}, lat={$scan_lat}, lng={$scan_lng}, fingerprint=" . ($device_fingerprint ? substr($device_fingerprint, 0, 20) . "..." : "NULL"));
 
         // ═══════════════════════════════════════════════════════════════
         // MOBILE SCANNER EXCEPTION - Skip GPS for mobile scanner devices
