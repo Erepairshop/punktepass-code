@@ -1682,8 +1682,6 @@ www.punktepass.de
         $login = sanitize_text_field($_POST['login'] ?? '');
         $password = $_POST['password'] ?? '';
 
-        ppv_log("🔍 [PPV_Scanner] Create attempt - Login: '{$login}', Filiale: {$filiale_id}");
-
         // Login field is required
         if (empty($login) || empty($password)) {
             wp_send_json_error(['message' => 'Benutzername/E-Mail und Passwort sind erforderlich']);
@@ -1695,11 +1693,8 @@ www.punktepass.de
         $email = null;
         $username = null;
 
-        ppv_log("🔍 [PPV_Scanner] is_email check: " . ($is_email ? 'YES (email)' : 'NO (username)'));
-
         if ($is_email) {
             $email = sanitize_email($login);
-            ppv_log("🔍 [PPV_Scanner] Saving as EMAIL: '{$email}'");
             // Check if email already exists
             $existing = $wpdb->get_var($wpdb->prepare(
                 "SELECT id FROM {$wpdb->prefix}ppv_users WHERE email = %s LIMIT 1",
@@ -1711,14 +1706,12 @@ www.punktepass.de
             }
         } else {
             $username = $login;
-            ppv_log("🔍 [PPV_Scanner] Saving as USERNAME: '{$username}'");
             // Check if username already exists
             $existing = $wpdb->get_var($wpdb->prepare(
                 "SELECT id FROM {$wpdb->prefix}ppv_users WHERE username = %s LIMIT 1",
                 $username
             ));
             if ($existing) {
-                ppv_log("❌ [PPV_Scanner] Username '{$username}' already exists");
                 wp_send_json_error(['message' => 'Dieser Benutzername ist bereits vergeben']);
                 return;
             }
@@ -1750,8 +1743,6 @@ www.punktepass.de
             'created_at' => current_time('mysql')
         ];
 
-        ppv_log("🔍 [PPV_Scanner] Insert data: email=" . ($email ?: 'NULL') . ", username=" . ($username ?: 'NULL') . ", store={$filiale_id}");
-
         $insert_result = $wpdb->insert(
             "{$wpdb->prefix}ppv_users",
             $insert_data,
@@ -1760,8 +1751,7 @@ www.punktepass.de
 
         if ($insert_result === false) {
             ppv_log("❌ [PPV_Scanner] Failed to create scanner user: " . $wpdb->last_error);
-            ppv_log("❌ [PPV_Scanner] Last query: " . $wpdb->last_query);
-            wp_send_json_error(['message' => 'Fehler beim Erstellen des Benutzers: ' . $wpdb->last_error]);
+            wp_send_json_error(['message' => 'Fehler beim Erstellen des Benutzers']);
             return;
         }
 
