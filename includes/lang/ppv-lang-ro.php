@@ -1853,4 +1853,20 @@ return [
 
     'faq_q20' => 'Am o problemă - ce fac?',
     'faq_a20' => 'Folosește butonul Feedback din partea de jos a navigației sau contactează suportul prin setări.',
+
+    // ============================================================
+    // Scanner User Management - Traduceri lipsă
+    // ============================================================
+    'scanner_login' => 'E-mail sau Nume de utilizator',
+    'scanner_login_placeholder' => 'scanner1 sau scanner@example.com',
+    'scanner_username' => 'Nume de utilizator',
+    'scanner_username_placeholder' => 'de ex. scanner1',
+    'scanner_users_title' => 'Utilizatori Scanner',
+    'add_scanner_user' => 'Creează Scanner Nou',
+    'no_scanner_users' => 'Nu există încă utilizatori scanner creați.',
+    'err_fill_fields' => 'Vă rugăm să completați toate câmpurile',
+    'create_error' => 'Eroare la creare',
+    'network_error' => 'Eroare de rețea',
+    'save' => 'Salvează',
+    'main_location' => 'Locația principală',
 ];

@@ -1679,28 +1679,42 @@ www.punktepass.de
             return;
         }
 
-        $email = sanitize_email($_POST['email'] ?? '');
+        $login = sanitize_text_field($_POST['login'] ?? '');
         $password = $_POST['password'] ?? '';
 
-        if (empty($email) || empty($password)) {
-            wp_send_json_error(['message' => 'E-Mail und Passwort sind erforderlich']);
+        // Login field is required
+        if (empty($login) || empty($password)) {
+            wp_send_json_error(['message' => 'Benutzername/E-Mail und Passwort sind erforderlich']);
             return;
         }
 
-        if (!is_email($email)) {
-            wp_send_json_error(['message' => 'Ungültige E-Mail-Adresse']);
-            return;
-        }
+        // Detect if login is email or username
+        $is_email = is_email($login);
+        $email = null;
+        $username = null;
 
-        // Check if email already exists in PPV users
-        $existing = $wpdb->get_var($wpdb->prepare(
-            "SELECT id FROM {$wpdb->prefix}ppv_users WHERE email = %s LIMIT 1",
-            $email
-        ));
-
-        if ($existing) {
-            wp_send_json_error(['message' => 'Diese E-Mail ist bereits registriert']);
-            return;
+        if ($is_email) {
+            $email = sanitize_email($login);
+            // Check if email already exists
+            $existing = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}ppv_users WHERE email = %s LIMIT 1",
+                $email
+            ));
+            if ($existing) {
+                wp_send_json_error(['message' => 'Diese E-Mail ist bereits registriert']);
+                return;
+            }
+        } else {
+            $username = $login;
+            // Check if username already exists
+            $existing = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}ppv_users WHERE username = %s LIMIT 1",
+                $username
+            ));
+            if ($existing) {
+                wp_send_json_error(['message' => 'Dieser Benutzername ist bereits vergeben']);
+                return;
+            }
         }
 
         // Generate unique QR token
@@ -1716,20 +1730,23 @@ www.punktepass.de
         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
         // Insert scanner user into PPV users table (with selected filiale)
+        $insert_data = [
+            'email' => !empty($email) ? $email : null,
+            'username' => $username,
+            'password' => $hashed_password,
+            'first_name' => '',
+            'last_name' => '',
+            'user_type' => 'scanner',
+            'vendor_store_id' => $filiale_id,
+            'qr_token' => $qr_token,
+            'active' => 1,
+            'created_at' => current_time('mysql')
+        ];
+
         $insert_result = $wpdb->insert(
             "{$wpdb->prefix}ppv_users",
-            [
-                'email' => $email,
-                'password' => $hashed_password,
-                'first_name' => '',
-                'last_name' => '',
-                'user_type' => 'scanner',
-                'vendor_store_id' => $filiale_id,
-                'qr_token' => $qr_token,
-                'active' => 1,
-                'created_at' => current_time('mysql')
-            ],
-            ['%s', '%s', '%s', '%s', '%s', '%d', '%s', '%d', '%s']
+            $insert_data,
+            ['%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%d', '%s']
         );
 
         if ($insert_result === false) {
@@ -1740,12 +1757,19 @@ www.punktepass.de
 
         $user_id = $wpdb->insert_id;
 
-        ppv_log("✅ [PPV_Scanner] Scanner user created: ID={$user_id}, Email={$email}, Store={$handler_store_id}, QR={$qr_token}");
+        $log_msg = "✅ [PPV_Scanner] Scanner user created: ID={$user_id}, Store={$filiale_id}, QR={$qr_token}";
+        if ($username) {
+            $log_msg .= ", Username={$username}";
+        }
+        if ($email) {
+            $log_msg .= ", Email={$email}";
+        }
+        ppv_log($log_msg);
 
         wp_send_json_success([
             'message' => '✅ Scanner Benutzer erfolgreich erstellt!',
             'user_id' => $user_id,
-            'email' => $email
+            'login' => $login
         ]);
     }
 

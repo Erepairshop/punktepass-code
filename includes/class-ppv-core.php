@@ -311,6 +311,22 @@ class PPV_Core {
             ppv_log("✅ [PPV_Core] ppv_push_subscriptions table created for push notifications");
             update_option('ppv_db_migration_version', '2.2');
         }
+
+        // Migration 2.3: Add username column to ppv_users for scanner login
+        if (version_compare($migration_version, '2.3', '<')) {
+            $users_table = $wpdb->prefix . 'ppv_users';
+
+            // Check if username column exists
+            $username_col = $wpdb->get_results("SHOW COLUMNS FROM {$users_table} LIKE 'username'");
+
+            if (empty($username_col)) {
+                $wpdb->query("ALTER TABLE {$users_table} ADD COLUMN username VARCHAR(100) NULL COMMENT 'Login username for scanner users' AFTER email");
+                $wpdb->query("ALTER TABLE {$users_table} ADD UNIQUE KEY idx_username (username)");
+                ppv_log("✅ [PPV_Core] Added 'username' column to ppv_users table for scanner login");
+            }
+
+            update_option('ppv_db_migration_version', '2.3');
+        }
     }
 
     /**

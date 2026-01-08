@@ -1871,5 +1871,21 @@ return [
 
     'faq_q20' => 'Ich habe ein Problem - was tun?',
     'faq_a20' => 'Nutze den Feedback-Button unten in der Navigation oder kontaktiere den Support über die Einstellungen.',
+
+    // ============================================================
+    // Scanner User Management - Missing translations
+    // ============================================================
+    'scanner_login' => 'E-Mail oder Benutzername',
+    'scanner_login_placeholder' => 'scanner1 oder scanner@example.com',
+    'scanner_username' => 'Benutzername',
+    'scanner_username_placeholder' => 'z.B. scanner1',
+    'scanner_users_title' => 'Scanner Benutzer',
+    'add_scanner_user' => 'Neuen Scanner erstellen',
+    'no_scanner_users' => 'Noch keine Scanner Benutzer erstellt.',
+    'err_fill_fields' => 'Bitte alle Felder ausfüllen',
+    'create_error' => 'Fehler beim Erstellen',
+    'network_error' => 'Netzwerkfehler',
+    'save' => 'Speichern',
+    'main_location' => 'Hauptstandort',
 ];
 
