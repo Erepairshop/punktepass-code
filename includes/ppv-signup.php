@@ -1679,42 +1679,40 @@ www.punktepass.de
             return;
         }
 
-        $email = sanitize_email($_POST['email'] ?? '');
-        $username = sanitize_text_field($_POST['username'] ?? '');
+        $login = sanitize_text_field($_POST['login'] ?? '');
         $password = $_POST['password'] ?? '';
 
-        // Username is required, email is optional
-        if (empty($username) || empty($password)) {
-            wp_send_json_error(['message' => 'Benutzername und Passwort sind erforderlich']);
+        // Login field is required
+        if (empty($login) || empty($password)) {
+            wp_send_json_error(['message' => 'Benutzername/E-Mail und Passwort sind erforderlich']);
             return;
         }
 
-        // Validate email if provided
-        if (!empty($email) && !is_email($email)) {
-            wp_send_json_error(['message' => 'Ungültige E-Mail-Adresse']);
-            return;
-        }
+        // Detect if login is email or username
+        $is_email = is_email($login);
+        $email = null;
+        $username = null;
 
-        // Check if username already exists in PPV users
-        $existing_username = $wpdb->get_var($wpdb->prepare(
-            "SELECT id FROM {$wpdb->prefix}ppv_users WHERE username = %s LIMIT 1",
-            $username
-        ));
-
-        if ($existing_username) {
-            wp_send_json_error(['message' => 'Dieser Benutzername ist bereits vergeben']);
-            return;
-        }
-
-        // Check if email already exists (if email was provided)
-        if (!empty($email)) {
+        if ($is_email) {
+            $email = sanitize_email($login);
+            // Check if email already exists
             $existing = $wpdb->get_var($wpdb->prepare(
                 "SELECT id FROM {$wpdb->prefix}ppv_users WHERE email = %s LIMIT 1",
                 $email
             ));
-
             if ($existing) {
                 wp_send_json_error(['message' => 'Diese E-Mail ist bereits registriert']);
+                return;
+            }
+        } else {
+            $username = $login;
+            // Check if username already exists
+            $existing = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}ppv_users WHERE username = %s LIMIT 1",
+                $username
+            ));
+            if ($existing) {
+                wp_send_json_error(['message' => 'Dieser Benutzername ist bereits vergeben']);
                 return;
             }
         }
@@ -1759,13 +1757,19 @@ www.punktepass.de
 
         $user_id = $wpdb->insert_id;
 
-        ppv_log("✅ [PPV_Scanner] Scanner user created: ID={$user_id}, Username={$username}, Email={$email}, Store={$filiale_id}, QR={$qr_token}");
+        $log_msg = "✅ [PPV_Scanner] Scanner user created: ID={$user_id}, Store={$filiale_id}, QR={$qr_token}";
+        if ($username) {
+            $log_msg .= ", Username={$username}";
+        }
+        if ($email) {
+            $log_msg .= ", Email={$email}";
+        }
+        ppv_log($log_msg);
 
         wp_send_json_success([
             'message' => '✅ Scanner Benutzer erfolgreich erstellt!',
             'user_id' => $user_id,
-            'username' => $username,
-            'email' => $email
+            'login' => $login
         ]);
     }
 

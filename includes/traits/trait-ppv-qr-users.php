@@ -146,14 +146,9 @@ trait PPV_QR_Users_Trait {
                     <h3 style="margin-top: 0; color: #fff;"><i class="ri-user-add-line"></i> <?php echo self::t('create_scanner_title', 'Új Scanner Létrehozása'); ?></h3>
 
                     <label style="color: #fff; font-size: 13px; display: block; margin-bottom: 5px;">
-                        <?php echo self::t('scanner_email', 'E-mail cím'); ?>
+                        <?php echo self::t('scanner_login', 'E-mail vagy Benutzername'); ?> <span style="color: #ff5252;">*</span>
                     </label>
-                    <input type="email" id="ppv-scanner-email" class="ppv-input" placeholder="scanner@example.com" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #0f0f1e; color: #fff; margin-bottom: 15px;">
-
-                    <label style="color: #fff; font-size: 13px; display: block; margin-bottom: 5px;">
-                        <?php echo self::t('scanner_username', 'Benutzername'); ?> <span style="color: #ff5252;">*</span>
-                    </label>
-                    <input type="text" id="ppv-scanner-username" class="ppv-input" placeholder="<?php echo self::t('scanner_username_placeholder', 'z.B. scanner1'); ?>" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #0f0f1e; color: #fff; margin-bottom: 15px;">
+                    <input type="text" id="ppv-scanner-login" class="ppv-input" placeholder="<?php echo self::t('scanner_login_placeholder', 'scanner1 oder scanner@example.com'); ?>" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #0f0f1e; color: #fff; margin-bottom: 15px;">
 
                     <label style="color: #fff; font-size: 13px; display: block; margin-bottom: 5px;">
                         <?php echo self::t('scanner_password', 'Jelszó'); ?> <span style="color: #ff5252;">*</span>
@@ -254,8 +249,7 @@ trait PPV_QR_Users_Trait {
             // Show create scanner modal
             $('#ppv-new-scanner-btn').on('click', function(){
                 $('#ppv-scanner-modal').css('display', 'flex').hide().fadeIn(200);
-                $('#ppv-scanner-email').val('');
-                $('#ppv-scanner-username').val('').focus();
+                $('#ppv-scanner-login').val('').focus();
                 $('#ppv-scanner-password').val('');
                 $('#ppv-scanner-error').hide();
                 $('#ppv-scanner-success').hide();
@@ -276,15 +270,14 @@ trait PPV_QR_Users_Trait {
 
             // Create scanner user
             $('#ppv-scanner-create').on('click', function(){
-                const email = $('#ppv-scanner-email').val().trim();
-                const username = $('#ppv-scanner-username').val().trim();
+                const login = $('#ppv-scanner-login').val().trim();
                 const password = $('#ppv-scanner-password').val().trim();
                 const filialeId = $('#ppv-scanner-filiale').val();
                 const $btn = $(this);
                 const $error = $('#ppv-scanner-error');
                 const $success = $('#ppv-scanner-success');
 
-                if(!username || !password) {
+                if(!login || !password) {
                     $error.text('<?php echo esc_js(self::t('err_fill_fields', 'Bitte alle Felder ausfüllen')); ?>').show();
                     return;
                 }
@@ -298,8 +291,7 @@ trait PPV_QR_Users_Trait {
                     type: 'POST',
                     data: {
                         action: 'ppv_create_scanner_user',
-                        email: email,
-                        username: username,
+                        login: login,
                         password: password,
                         filiale_id: filialeId,
                         nonce: '<?php echo wp_create_nonce('ppv_scanner_nonce'); ?>'
