@@ -1462,38 +1462,28 @@ class PPV_Device_Fingerprint {
         // Get components for similarity matching (auto-update feature)
         $components = $data['components'] ?? null;
 
-        // Debug: Log the check
-        ppv_log("📱 [Device Check] store_id={$store_id}, parent_store_id={$parent_store_id}, fp_hash=" . substr($fingerprint_hash, 0, 16) . "..., has_components=" . (!empty($components) ? 'YES' : 'NO'));
-
         // Get all registered hashes for comparison
         $registered_hashes = $wpdb->get_col($wpdb->prepare(
             "SELECT fingerprint_hash FROM {$wpdb->prefix}" . self::USER_DEVICES_TABLE . " WHERE store_id = %d AND status = 'active'",
             $parent_store_id
         ));
 
-        ppv_log("📱 [Device Check] Registered hashes: " . json_encode(array_map(fn($h) => substr($h, 0, 16) . '...', $registered_hashes)));
-
         $is_registered = self::is_device_registered_for_user($parent_store_id, $fingerprint_hash);
         $device_count = self::get_user_device_count($parent_store_id);
         $auto_updated = false;
         $similarity_score = null;
-
-        ppv_log("📱 [Device Check] is_registered=" . ($is_registered ? 'YES' : 'NO') . ", device_count={$device_count}");
 
         // ========================================
         // 🔄 AUTO FINGERPRINT UPDATE (Similarity Matching)
         // ========================================
         // If device not registered but we have components, try similarity matching
         if (!$is_registered && !empty($components) && is_array($components)) {
-            ppv_log("📱 [Device Check] Exact match failed - trying similarity matching...");
-
             $similar_device = self::find_similar_device($parent_store_id, $components, 80);
 
             if ($similar_device) {
                 // Found a similar device - auto-update the fingerprint hash
                 $similarity_score = $similar_device['similarity'];
                 $old_fingerprint_hash = $similar_device['fingerprint_hash'];
-                ppv_log("📱 [Auto-Update] Found similar device #{$similar_device['device_id']} ({$similar_device['device_name']}) with {$similarity_score}% similarity");
 
                 // Update the fingerprint hash for this device
                 $updated = $wpdb->update(
@@ -1522,14 +1512,9 @@ class PPV_Device_Fingerprint {
                         $parent_store_id
                     ));
 
-                    ppv_log("✅ [Auto-Update] Fingerprint auto-updated for device #{$similar_device['device_id']}, points_records_updated={$points_updated}");
                     $is_registered = true;
                     $auto_updated = true;
-                } else {
-                    ppv_log("❌ [Auto-Update] Failed to update fingerprint: " . $wpdb->last_error);
                 }
-            } else {
-                ppv_log("📱 [Device Check] No similar device found (threshold: 80%)");
             }
         }
 
@@ -1579,7 +1564,8 @@ class PPV_Device_Fingerprint {
         // Check for available slots (pre-approved by admin)
         $available_slots = self::get_available_slot_count($parent_store_id);
 
-        return new WP_REST_Response([
+        // Build response data
+        $response_data = [
             'success' => true,
             'is_registered' => $is_registered,
             'can_use_scanner' => $can_use_scanner,
@@ -1595,17 +1581,14 @@ class PPV_Device_Fingerprint {
             'is_mobile_scanner' => $is_mobile_scanner,
             'device_mobile_scanner' => $device_mobile_scanner,
             'store_mobile_scanner' => $store_is_mobile, // Legacy store-level
-            // GPS geofencing data (only relevant if NOT mobile scanner)
-            'gps' => $gps_data,
-            // Debug info
-            'debug' => [
-                'current_hash' => substr($fingerprint_hash, 0, 16) . '...',
-                'registered_hashes' => array_map(fn($h) => substr($h, 0, 16) . '...', $registered_hashes),
-                'store_id' => $parent_store_id,
-                'auto_updated' => $auto_updated,
-                'similarity' => $similarity_score
-            ]
-        ], 200);
+        ];
+
+        // Only include GPS data if NOT a mobile scanner (mobile scanners skip GPS checks)
+        if (!$is_mobile_scanner) {
+            $response_data['gps'] = $gps_data;
+        }
+
+        return new WP_REST_Response($response_data, 200);
     }
 
     /**
