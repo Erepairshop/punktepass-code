@@ -184,11 +184,12 @@ function initLogin() {
     function initFormValidation() {
         const $email = $('#ppv-email');
         const $password = $('#ppv-password');
-        
-        // Email validation
+
+        // Email/Username validation - only validate email format if it looks like an email
         $email.on('blur', function() {
-            const email = $(this).val().trim();
-            if (email && !isValidEmail(email)) {
+            const input = $(this).val().trim();
+            // Only validate as email if it contains @ symbol
+            if (input && input.includes('@') && !isValidEmail(input)) {
                 showFieldError($(this), 'Bitte geben Sie eine gültige Email-Adresse ein');
             } else {
                 clearFieldError($(this));
@@ -576,8 +577,9 @@ function initLogin() {
                 showAlert('Bitte füllen Sie alle Felder aus', 'error');
                 return;
             }
-            
-            if (!isValidEmail(email)) {
+
+            // Only validate email format if input contains @ (looks like an email)
+            if (email.includes('@') && !isValidEmail(email)) {
                 showAlert('Bitte geben Sie eine gültige Email-Adresse ein', 'error');
                 $('#ppv-email').focus();
                 return;
