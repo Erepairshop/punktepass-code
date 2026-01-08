@@ -123,6 +123,9 @@ class PPV_Bottom_Nav {
 
         ob_start();
 
+        // Check if scanner user (limited navigation)
+        $is_scanner = (class_exists('PPV_Permissions') && PPV_Permissions::is_scanner_user());
+
         // Determine user type for feedback modal
         $feedback_user_type = 'user';
         if ($is_vendor || $is_pos) {
@@ -140,6 +143,15 @@ class PPV_Bottom_Nav {
                 <a href="#" class="nav-item" id="ppv-feedback-nav-btn" title="Feedback"><i class="ri-feedback-line"></i></a>
             </nav>
             <?php self::render_feedback_modal('user'); ?>
+        <?php
+        // --- Scanner navigáció (simplified for scanner users) ---
+        elseif ($is_scanner): ?>
+            <nav class="ppv-bottom-nav" data-nav-type="scanner">
+                <a href="/qr-center" class="nav-item" data-spa="true" title="Scanner"><i class="ri-qr-scan-2-line"></i></a>
+                <a href="/mein-profil" class="nav-item" data-spa="true" title="Profil"><i class="ri-user-3-line"></i></a>
+                <a href="#" class="nav-item" id="ppv-feedback-nav-btn" title="Feedback"><i class="ri-feedback-line"></i></a>
+            </nav>
+            <?php self::render_feedback_modal('handler'); ?>
         <?php
         // --- Händler / POS navigáció ---
         elseif ($is_vendor || $is_pos): ?>
