@@ -1337,7 +1337,7 @@ if (!empty($store->gallery)) {
 
                 <hr>
 
-                <h3>Wartungsmodus / Karbantartás / Mod de Întreținere</h3>
+                <h3 data-i18n="maintenance_section"><?php echo esc_html(PPV_Lang::t('maintenance_section')); ?></h3>
 
                 <div class="ppv-checkbox-group">
                     <label class="ppv-checkbox">
@@ -1359,7 +1359,19 @@ if (!empty($store->gallery)) {
 
                 <hr>
 
-                <h3>Zeitzone / Időzóna / Fus Orar</h3>
+                <h3 data-i18n="opening_hours_section"><?php echo esc_html(PPV_Lang::t('opening_hours_section')); ?></h3>
+
+                <div class="ppv-checkbox-group">
+                    <label class="ppv-checkbox">
+                        <input type="checkbox" name="enforce_opening_hours" value="1" <?php checked($store->enforce_opening_hours ?? 1, 1); ?>>
+                        <strong data-i18n="enforce_opening_hours"><?php echo esc_html(PPV_Lang::t('enforce_opening_hours')); ?></strong>
+                        <small data-i18n="enforce_opening_hours_help"><?php echo esc_html(PPV_Lang::t('enforce_opening_hours_help')); ?></small>
+                    </label>
+                </div>
+
+                <hr>
+
+                <h3 data-i18n="timezone_section"><?php echo esc_html(PPV_Lang::t('timezone_section')); ?></h3>
 
                 <div class="ppv-form-group">
                     <label data-i18n="timezone"><?php echo esc_html(PPV_Lang::t('timezone')); ?></label>
@@ -1611,6 +1623,7 @@ public static function ajax_save_profile() {
         'visible' => !empty($_POST['visible']) ? 1 : 0,
         'maintenance_mode' => !empty($_POST['maintenance_mode']) ? 1 : 0,
         'maintenance_message' => wp_kses_post($_POST['maintenance_message'] ?? ''),
+        'enforce_opening_hours' => !empty($_POST['enforce_opening_hours']) ? 1 : 0,
         'timezone' => sanitize_text_field($_POST['timezone'] ?? 'Europe/Berlin'),
         'updated_at' => current_time('mysql'),
         'logo' => sanitize_text_field($_POST['logo'] ?? ''),
@@ -1684,6 +1697,7 @@ $format_specs = [
     '%d',  // visible
     '%d',  // maintenance_mode
     '%s',  // maintenance_message
+    '%d',  // enforce_opening_hours
     '%s',  // timezone
     '%s',  // updated_at
     '%s',  // logo

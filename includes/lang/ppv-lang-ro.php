@@ -726,13 +726,20 @@ return [
     'footer_legal' => '© 2025 PunktePass. Toate drepturile rezervate.',
     
     // ========== MAINTENANCE MODE ==========
+    'maintenance_section' => 'Întreținere',
     'maintenance_mode' => 'Mod de Întreținere',
     'maintenance_mode_help' => 'Activează modul de întreținere pentru a pune magazinul temporar offline',
     'maintenance_message' => 'Mesaj de Întreținere',
     'maintenance_message_placeholder' => 'de ex. Revenim în curând! Vă mulțumim pentru răbdare.',
     'maintenance_message_help' => 'Acest mesaj va fi afișat clienților tăi',
 
+    // ========== OPENING HOURS ENFORCEMENT ==========
+    'opening_hours_section' => 'Program',
+    'enforce_opening_hours' => 'Respectă programul de funcționare',
+    'enforce_opening_hours_help' => 'Dacă este activat, clienții pot scana doar în timpul programului. Dacă este dezactivat, scanarea este posibilă oricând.',
+
     // ========== TIMEZONE ==========
+    'timezone_section' => 'Fus Orar',
     'timezone' => 'Fus Orar / Regiune',
     'timezone_help' => 'Selectează fusul tău orar pentru orele de funcționare corecte',
     'timezone_berlin' => 'Europe/Berlin (Germania)',

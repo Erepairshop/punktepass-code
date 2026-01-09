@@ -160,11 +160,18 @@ class PPV_QR {
     private static function is_store_open_for_scan($store_id) {
         global $wpdb;
 
-        // Get opening_hours from store
-        $opening_hours = $wpdb->get_var($wpdb->prepare(
-            "SELECT opening_hours FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
+        // Get opening_hours and enforce_opening_hours flag from store
+        $store_data = $wpdb->get_row($wpdb->prepare(
+            "SELECT opening_hours, enforce_opening_hours FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
             $store_id
         ));
+
+        // Check if opening hours enforcement is disabled
+        if (!empty($store_data) && $store_data->enforce_opening_hours == 0) {
+            return ['open' => true, 'hours' => null, 'reason' => 'enforcement_disabled'];
+        }
+
+        $opening_hours = $store_data->opening_hours ?? null;
 
         // If no opening hours set, assume always open (backwards compatibility)
         if (empty($opening_hours)) {

@@ -327,6 +327,21 @@ class PPV_Core {
 
             update_option('ppv_db_migration_version', '2.3');
         }
+
+        // Migration 2.4: Add enforce_opening_hours column to ppv_stores for optional opening hours enforcement
+        if (version_compare($migration_version, '2.4', '<')) {
+            $stores_table = $wpdb->prefix . 'ppv_stores';
+
+            // Check if enforce_opening_hours column exists
+            $enforce_col = $wpdb->get_results("SHOW COLUMNS FROM {$stores_table} LIKE 'enforce_opening_hours'");
+
+            if (empty($enforce_col)) {
+                $wpdb->query("ALTER TABLE {$stores_table} ADD COLUMN enforce_opening_hours TINYINT(1) DEFAULT 1 COMMENT 'Enforce opening hours restriction (1=enabled, 0=disabled)' AFTER opening_hours");
+                ppv_log("✅ [PPV_Core] Added 'enforce_opening_hours' column to ppv_stores table");
+            }
+
+            update_option('ppv_db_migration_version', '2.4');
+        }
     }
 
     /**

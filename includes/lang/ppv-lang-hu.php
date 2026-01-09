@@ -717,13 +717,20 @@ return [
     'footer_legal' => '© 2025 PunktePass. Minden jog fenntartva.',
     
     // ========== MAINTENANCE MODE ==========
+    'maintenance_section' => 'Karbantartás',
     'maintenance_mode' => 'Karbantartási mód',
     'maintenance_mode_help' => 'Aktiváld a karbantartási módot az üzlet ideiglenes lekapcsolásához',
     'maintenance_message' => 'Karbantartási üzenet',
     'maintenance_message_placeholder' => 'pl. Hamarosan visszatérünk! Köszönjük a türelmedet.',
     'maintenance_message_help' => 'Ez az üzenet megjelenik az ügyfelek számára',
 
+    // ========== OPENING HOURS ENFORCEMENT ==========
+    'opening_hours_section' => 'Nyitvatartás',
+    'enforce_opening_hours' => 'Nyitvatartási idő betartatása',
+    'enforce_opening_hours_help' => 'Ha be van kapcsolva, az ügyfelek csak nyitvatartási időben tudnak scannelni. Ha ki van kapcsolva, bármikor lehet scannelni.',
+
     // ========== TIMEZONE ==========
+    'timezone_section' => 'Időzóna',
     'timezone' => 'Időzóna / Régió',
     'timezone_help' => 'Válaszd ki az időzónádat a helyes nyitvatartáshoz',
     'timezone_berlin' => 'Europe/Berlin (Németország)',
