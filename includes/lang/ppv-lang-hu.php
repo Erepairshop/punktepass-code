@@ -662,6 +662,16 @@ return [
     'nav_start' => 'Kezdés',
     'nav_statistics' => 'Statisztika',
 
+    // ========== SIGNUP ==========
+    'signup_title' => '👤 PunktePass Regisztráció',
+    'signup_email_label' => 'E-mail *',
+    'signup_password_label' => 'Jelszó *',
+    'signup_password_placeholder' => 'Min. 8 karakter, nagybetű, szám, speciális karakter',
+    'signup_password_repeat_label' => 'Jelszó megerősítése *',
+    'signup_button' => 'Regisztráció',
+    'signup_or' => 'vagy',
+    'signup_google_button' => 'Bejelentkezés Google-lal',
+
     // ========== SETTINGS TAB ==========
     'profile_settings' => 'Profilbeállítások',
     'activation_section' => 'Aktiválás',

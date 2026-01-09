@@ -671,6 +671,16 @@ return [
     'nav_start' => 'Start',
     'nav_statistics' => 'Statistici',
 
+    // ========== SIGNUP ==========
+    'signup_title' => '👤 Înregistrare PunktePass',
+    'signup_email_label' => 'E-mail *',
+    'signup_password_label' => 'Parolă *',
+    'signup_password_placeholder' => 'Min. 8 caractere, literă mare, număr, caracter special',
+    'signup_password_repeat_label' => 'Repetă parola *',
+    'signup_button' => 'Înregistrare',
+    'signup_or' => 'sau',
+    'signup_google_button' => 'Conectare cu Google',
+
     // ========== SETTINGS TAB ==========
     'profile_settings' => 'Setări Profil',
     'activation_section' => 'Activare',

@@ -40,7 +40,7 @@ wp_add_inline_script('ppv-user-signup', "window.ppv_user_signup = {$__json};", '
             <input type="hidden" name="action" value="ppv_user_signup">
             <input type="hidden" name="device_fingerprint" id="ppv_device_fingerprint" value="">
 
-            <h2>👤 PunktePass Benutzerregistrierung</h2>
+            <h2><?php echo PPV_Lang::t('signup_title'); ?></h2>
 
             <!-- 📱 Device limit warning box (hidden by default) -->
             <div id="ppv_device_warning" style="display:none; padding:12px; border-radius:8px; margin-bottom:15px; font-size:14px;">
@@ -48,21 +48,21 @@ wp_add_inline_script('ppv-user-signup', "window.ppv_user_signup = {$__json};", '
                 <span id="ppv_device_warning_text"></span>
             </div>
 
-            <label>E-Mail *</label>
+            <label><?php echo PPV_Lang::t('signup_email_label'); ?></label>
             <input type="email" name="email" required>
 
-            <label>Passwort *</label>
+            <label><?php echo PPV_Lang::t('signup_password_label'); ?></label>
             <input type="password" name="password" id="ppv_user_password"
-                placeholder="Mind. 8 Zeichen, Großbuchstabe, Zahl, Sonderzeichen" required>
+                placeholder="<?php echo esc_attr(PPV_Lang::t('signup_password_placeholder')); ?>" required>
 
-            <label>Passwort wiederholen *</label>
+            <label><?php echo PPV_Lang::t('signup_password_repeat_label'); ?></label>
             <input type="password" name="password_repeat" id="ppv_user_password_repeat" required>
 
-            <p><button type="submit" class="ppv-btn">Registrieren</button></p>
-            <p style="text-align:center;">oder</p>
+            <p><button type="submit" class="ppv-btn"><?php echo PPV_Lang::t('signup_button'); ?></button></p>
+            <p style="text-align:center;"><?php echo PPV_Lang::t('signup_or'); ?></p>
             <p style="text-align:center;">
                 <a href="<?php echo esc_url($google_url); ?>" id="ppv_google_login_btn" class="ppv-btn" style="background:#4285F4;">
-                    Mit Google anmelden
+                    <?php echo PPV_Lang::t('signup_google_button'); ?>
                 </a>
             </p>
 

@@ -642,6 +642,16 @@ return [
     'nav_start' => 'Start',
     'nav_statistics' => 'Statistik',
 
+    // ========== SIGNUP ==========
+    'signup_title' => '👤 PunktePass Benutzerregistrierung',
+    'signup_email_label' => 'E-Mail *',
+    'signup_password_label' => 'Passwort *',
+    'signup_password_placeholder' => 'Mind. 8 Zeichen, Großbuchstabe, Zahl, Sonderzeichen',
+    'signup_password_repeat_label' => 'Passwort wiederholen *',
+    'signup_button' => 'Registrieren',
+    'signup_or' => 'oder',
+    'signup_google_button' => 'Mit Google anmelden',
+
     // ========== SETTINGS TAB ==========
     'profile_settings' => 'Profileinstellungen',
     'activation_section' => 'Aktivierung',
