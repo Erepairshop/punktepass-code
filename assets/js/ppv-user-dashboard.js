@@ -20,7 +20,7 @@
 // ═══════════════════════════════════════════════════════════════
 function ppvGenerateQRCodeDataURL(text, size = 300) {
   if (typeof qrcode === 'undefined') {
-    console.error('qrcode-generator library not loaded!');
+    ppvLog.error('qrcode-generator library not loaded!');
     return null;
   }
   try {
@@ -46,7 +46,7 @@ function ppvGenerateQRCodeDataURL(text, size = 300) {
     }
     return canvas.toDataURL('image/png');
   } catch (e) {
-    console.error('QR generation error:', e);
+    ppvLog.error('QR generation error:', e);
     return null;
   }
 }
@@ -665,7 +665,7 @@ async function initUserDashboard() {
       // If accept, we wait for Ably notification (redemption-approved/rejected)
 
     } catch (err) {
-      console.error('🎁 [Redemption] Error:', err);
+      ppvLog.error('🎁 [Redemption] Error:', err);
       closeRedemptionModal();
     }
   };
@@ -684,10 +684,10 @@ async function initUserDashboard() {
     try {
       if ('wakeLock' in navigator) {
         window.PPV_WAKE_LOCK = await navigator.wakeLock.request('screen');
-        console.log('🔆 Wake Lock activated - screen stays bright');
+        ppvLog('🔆 Wake Lock activated - screen stays bright');
       }
     } catch (e) {
-      console.log('Wake Lock not available:', e.message);
+      ppvLog('Wake Lock not available:', e.message);
     }
   };
 
@@ -695,7 +695,7 @@ async function initUserDashboard() {
     if (window.PPV_WAKE_LOCK) {
       window.PPV_WAKE_LOCK.release();
       window.PPV_WAKE_LOCK = null;
-      console.log('🔅 Wake Lock released');
+      ppvLog('🔅 Wake Lock released');
     }
   };
 
@@ -733,7 +733,7 @@ async function initUserDashboard() {
     const fullscreenBtn = document.getElementById("ppv-qr-fullscreen-btn");
 
     if (!btn || !modal || !overlay) {
-      console.warn("⚠️ [QR] Elements not found");
+      ppvLog.warn("⚠️ [QR] Elements not found");
       return;
     }
 
@@ -847,7 +847,7 @@ async function initUserDashboard() {
       };
       localStorage.setItem(QR_CACHE_KEY + '_' + userId, JSON.stringify(cacheData));
     } catch (e) {
-      console.warn('Failed to cache QR:', e);
+      ppvLog.warn('Failed to cache QR:', e);
     }
   };
 
@@ -872,9 +872,9 @@ async function initUserDashboard() {
         cached_at: Math.floor(Date.now() / 1000)
       };
       localStorage.setItem(STATIC_QR_CACHE_KEY + '_' + userId, JSON.stringify(cacheData));
-      console.log('💾 Static QR cached for offline fallback');
+      ppvLog('💾 Static QR cached for offline fallback');
     } catch (e) {
-      console.warn('Failed to cache static QR:', e);
+      ppvLog.warn('Failed to cache static QR:', e);
     }
   };
 
@@ -964,7 +964,7 @@ async function initUserDashboard() {
 
 
     } catch (err) {
-      console.error("❌ [QR] Load error:", err);
+      ppvLog.error("❌ [QR] Load error:", err);
 
       // 📱 OFFLINE FALLBACK - Try to load from cache
       const cached = loadQRFromCache(boot.uid);
@@ -1136,7 +1136,7 @@ async function initUserDashboard() {
 
     // Initialize shared connection
     if (!manager.init({ key: boot.ably.key, channel: channelName })) {
-      console.warn('📡 [Ably] Shared manager init failed, falling back to polling');
+      ppvLog.warn('📡 [Ably] Shared manager init failed, falling back to polling');
       initPollingSync();
       return;
     }
@@ -1148,7 +1148,7 @@ async function initUserDashboard() {
     manager.onStateChange((state) => {
       if (state === 'connected') {
       } else if (state === 'failed') {
-        console.warn('📡 [Ably] Connection failed, falling back to polling');
+        ppvLog.warn('📡 [Ably] Connection failed, falling back to polling');
         initPollingSync();
       }
     });
@@ -1280,7 +1280,7 @@ async function initUserDashboard() {
 
         if (!res.ok) {
           if (res.status === 503) {
-            console.warn('⚠️ [Polling] Server busy (503), will retry next interval');
+            ppvLog.warn('⚠️ [Polling] Server busy (503), will retry next interval');
           }
           return;
         }
@@ -1321,7 +1321,7 @@ async function initUserDashboard() {
 
         if (isFirstPoll) isFirstPoll = false;
       } catch (e) {
-        console.warn('[Polling] Error:', e.message);
+        ppvLog.warn('[Polling] Error:', e.message);
       } finally {
         const clearFlag = window.PPV_CLEAR_FLAG || ((name) => { window[name] = false; });
         clearFlag('PPV_POLLING_IN_PROGRESS');
@@ -1495,7 +1495,7 @@ async function initUserDashboard() {
                 const typeLabel = c.campaign_type ? ` (${c.campaign_type})` : '';
                 campaignReward = `<i class="ri-lightbulb-line"></i> ${T.special_offer}${typeLabel}`;
                 scanPoints = 1;
-                console.warn("⚠️ Unknown campaign type:", c.campaign_type);
+                ppvLog.warn("⚠️ Unknown campaign type:", c.campaign_type);
               }
             }
 
@@ -1734,7 +1734,7 @@ async function initUserDashboard() {
           }
 
         } catch (err) {
-          console.error("[Slider] Filter error:", err);
+          ppvLog.error("[Slider] Filter error:", err);
         } finally {
           const clearFlag = window.PPV_CLEAR_FLAG || ((name) => { window[name] = false; });
           clearFlag('PPV_SLIDER_FETCH_IN_PROGRESS');
@@ -1782,7 +1782,7 @@ async function initUserDashboard() {
         const lng = routeBtn.getAttribute('data-lng');
 
         if (!lat || !lng) {
-          console.error("❌ [Route] No coordinates");
+          ppvLog.error("❌ [Route] No coordinates");
           return;
         }
 
@@ -1917,7 +1917,7 @@ async function initUserDashboard() {
       }
 
     } catch (e) {
-      console.error('❌ [Stores] Load failed:', e.message);
+      ppvLog.error('❌ [Stores] Load failed:', e.message);
       box.innerHTML = `<p class="ppv-error"><i class="ri-error-warning-line"></i> ${T.no_stores}</p>`;
     }
 

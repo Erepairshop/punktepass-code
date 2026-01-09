@@ -7,7 +7,7 @@
 
 // 🍎 GLOBAL iOS Google callback - ALWAYS AVAILABLE for native iOS app
 window.handleGoogleCallback = function(data) {
-    console.log("🍎 Native Google token received", data);
+    ppvLog("🍎 Native Google token received", data);
 
     if (!data || !data.credential) {
         alert("Google Login fehlgeschlagen");
@@ -22,7 +22,7 @@ window.handleGoogleCallback = function(data) {
         ? ppvLogin.nonce
         : '';
 
-    console.log("🍎 Sending to:", ajaxUrl);
+    ppvLog("🍎 Sending to:", ajaxUrl);
 
     jQuery.ajax({
         url: ajaxUrl,
@@ -34,7 +34,7 @@ window.handleGoogleCallback = function(data) {
             device_fingerprint: ""
         },
         success: function(res) {
-            console.log("🍎 Server response:", res);
+            ppvLog("🍎 Server response:", res);
             if (res.success) {
                 window.location.href = res.data.redirect || "/";
             } else {
@@ -42,7 +42,7 @@ window.handleGoogleCallback = function(data) {
             }
         },
         error: function(xhr, status, error) {
-            console.error("🍎 AJAX error:", status, error);
+            ppvLog.error("🍎 AJAX error:", status, error);
             alert("Verbindungsfehler");
         }
     });
@@ -70,7 +70,7 @@ window.handleGoogleCallback = function(data) {
             loadFingerprint();
         } else {
             // Fallback: wait for script to load (shouldn't happen normally)
-            console.warn('📱 FingerprintJS not yet loaded, waiting...');
+            ppvLog.warn('📱 FingerprintJS not yet loaded, waiting...');
             setTimeout(initFingerprintJS, 100);
         }
     }
@@ -83,10 +83,10 @@ window.handleGoogleCallback = function(data) {
             FingerprintJS.load().then(fp => {
                 fp.get().then(result => {
                     deviceFingerprint = result.visitorId;
-                    console.log('📱 Device fingerprint loaded for login tracking');
+                    ppvLog('📱 Device fingerprint loaded for login tracking');
                 });
             }).catch(err => {
-                console.warn('📱 FingerprintJS error:', err);
+                ppvLog.warn('📱 FingerprintJS error:', err);
             });
         }
     }
@@ -256,7 +256,7 @@ function initLogin() {
     // 🔍 DEBUG MODE (set to false for production)
     const GOOGLE_DEBUG = false;
     function glog(...args) {
-        if (GOOGLE_DEBUG) console.log('[GOOGLE]', ...args);
+        if (GOOGLE_DEBUG) ppvLog('[GOOGLE]', ...args);
     }
 
     function initGoogleLogin() {
@@ -271,13 +271,13 @@ function initLogin() {
         // 🍎 iOS native app handles Google login natively - skip web SDK initialization
         if (window.isNativeIOSApp) {
             glog('🍎 Native iOS app detected - skipping Google SDK initialization');
-            console.log('🍎 Google login will be handled natively by iOS app');
+            ppvLog('🍎 Google login will be handled natively by iOS app');
             // Button remains enabled - iOS native handler will intercept clicks
             return;
         }
 
         if (!clientId) {
-            console.warn('Google Client ID not configured');
+            ppvLog.warn('Google Client ID not configured');
             return;
         }
 
@@ -688,7 +688,7 @@ function initLogin() {
     function initFacebookLogin() {
         // Check if ppvLogin object exists
         if (typeof ppvLogin === 'undefined') {
-            console.error('❌ ppvLogin object not found - wp_localize_script may not have loaded');
+            ppvLog.error('❌ ppvLogin object not found - wp_localize_script may not have loaded');
             $('#ppv-facebook-login-btn').prop('disabled', true).css('opacity', '0.5');
             return;
         }
@@ -698,7 +698,7 @@ function initLogin() {
         const appId = ppvLogin.facebook_app_id;
 
         if (!appId || appId === '') {
-            console.warn('⚠️ Facebook App ID is empty');
+            ppvLog.warn('⚠️ Facebook App ID is empty');
             $('#ppv-facebook-login-btn').prop('disabled', true).css('opacity', '0.5');
             return;
         }
@@ -793,7 +793,7 @@ function initLogin() {
         const clientKey = ppvLogin.tiktok_client_key;
 
         if (!clientKey) {
-            console.warn('TikTok Client Key not configured');
+            ppvLog.warn('TikTok Client Key not configured');
             $('#ppv-tiktok-login-btn').prop('disabled', true).css('opacity', '0.5');
             return;
         }
@@ -890,7 +890,7 @@ function initLogin() {
         const redirectUri = ppvLogin.apple_redirect_uri || window.location.origin + '/login';
 
         if (!clientId) {
-            console.warn('🍎 Apple Client ID not configured');
+            ppvLog.warn('🍎 Apple Client ID not configured');
             $('#ppv-apple-login-btn').prop('disabled', true).css('opacity', '0.5');
             return;
         }
@@ -920,7 +920,7 @@ function initLogin() {
                 usePopup: true
             });
         } catch (error) {
-            console.error('🍎 Apple auth init error:', error);
+            ppvLog.error('🍎 Apple auth init error:', error);
         }
 
         // Button click handler
@@ -938,7 +938,7 @@ function initLogin() {
                 handleAppleResponse(response, $btn);
 
             } catch (error) {
-                console.error('🍎 Apple Sign In error:', error);
+                ppvLog.error('🍎 Apple Sign In error:', error);
                 if (error.error !== 'popup_closed_by_user') {
                     showAlert('Apple Login fehlgeschlagen', 'error');
                 }

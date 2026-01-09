@@ -321,6 +321,22 @@ add_action('wp_enqueue_scripts', function() {
     );
 }, 1);  // Priority: 1 = LEGELŐBB! Minden más előtt
 
+// 🐛 DEBUG LOGGER - Production-safe logging utility
+// ========================================
+add_action('wp_enqueue_scripts', function() {
+    wp_enqueue_script(
+        'ppv-debug',
+        PPV_PLUGIN_URL . 'assets/js/ppv-debug.js',
+        [],
+        PPV_VERSION,
+        false  // In header - needed before other scripts
+    );
+
+    // Set debug mode flag (true in development, false in production)
+    $is_debug = defined('WP_DEBUG') && WP_DEBUG === true;
+    wp_add_inline_script('ppv-debug', 'window.PPV_DEBUG = ' . ($is_debug ? 'true' : 'false') . ';', 'before');
+}, 2);  // Priority: 2 = After init-lock, before everything else
+
 
 add_action('wp_enqueue_scripts', function() {
     // 🔹 LOGIN PAGE = DISABLED - Using inline assets in class-ppv-login.php instead

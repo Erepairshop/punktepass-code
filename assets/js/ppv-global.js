@@ -64,7 +64,7 @@
     if (!shouldRedirect()) return;
 
     isRedirecting = true;
-    console.warn('🔐 [PPV_GLOBAL] Session expired (401) - redirecting to login');
+    ppvLog.warn('🔐 [PPV_GLOBAL] Session expired (401) - redirecting to login');
 
     // Show toast if available
     if (window.ppvShowPointToast) {
@@ -106,7 +106,7 @@
         );
 
         if (isApiCall) {
-          console.warn('🔐 [PPV_GLOBAL] 401 detected on API call:', url);
+          ppvLog.warn('🔐 [PPV_GLOBAL] 401 detected on API call:', url);
           handle401();
         }
       }
@@ -137,7 +137,7 @@
         );
 
         if (isApiCall) {
-          console.warn('🔐 [PPV_GLOBAL] 401 detected on XHR:', this._ppvUrl);
+          ppvLog.warn('🔐 [PPV_GLOBAL] 401 detected on XHR:', this._ppvUrl);
           handle401();
         }
       }
@@ -451,13 +451,13 @@ window.ppvErrorMsg = (function() {
 
   function handleAppResume(timeInBackground) {
     const seconds = Math.round(timeInBackground / 1000);
-    console.log(`📱 [APP_RESUME] Returning after ${seconds}s in background`);
+    ppvLog(`📱 [APP_RESUME] Returning after ${seconds}s in background`);
 
     // 1. Force Ably reconnection if available
     if (window.PPV_ABLY_MANAGER) {
       const state = window.PPV_ABLY_MANAGER.getState();
       if (state !== 'connected') {
-        console.log('📡 [APP_RESUME] Reconnecting Ably...');
+        ppvLog('📡 [APP_RESUME] Reconnecting Ably...');
         // Ably auto-reconnects, but we can force it
         if (window.PPV_ABLY_MANAGER.instance?.connection) {
           window.PPV_ABLY_MANAGER.instance.connection.connect();
@@ -525,7 +525,7 @@ window.ppvErrorMsg = (function() {
     return; // Only apply fixes for PWA mode
   }
 
-  console.log('🍎 [PWA_RECOVERY] iOS PWA mode detected, enabling recovery handlers');
+  ppvLog('🍎 [PWA_RECOVERY] iOS PWA mode detected, enabling recovery handlers');
 
   // ============================================================
   // 1. PAGESHOW EVENT - BFCache Recovery
@@ -534,7 +534,7 @@ window.ppvErrorMsg = (function() {
   // the page to appear frozen/white when restored
   window.addEventListener('pageshow', function(event) {
     if (event.persisted) {
-      console.log('🍎 [PWA_RECOVERY] Page restored from BFCache - reloading');
+      ppvLog('🍎 [PWA_RECOVERY] Page restored from BFCache - reloading');
       // Page was restored from BFCache - force full reload
       window.location.reload();
       return;
@@ -548,16 +548,16 @@ window.ppvErrorMsg = (function() {
     if (document.hidden) {
       // Going to background - record time
       backgroundStartTime = Date.now();
-      console.log('🍎 [PWA_RECOVERY] PWA going to background');
+      ppvLog('🍎 [PWA_RECOVERY] PWA going to background');
     } else {
       // Coming back from background
       if (backgroundStartTime) {
         const timeInBackground = Date.now() - backgroundStartTime;
-        console.log('🍎 [PWA_RECOVERY] PWA returning after ' + Math.round(timeInBackground / 1000) + 's');
+        ppvLog('🍎 [PWA_RECOVERY] PWA returning after ' + Math.round(timeInBackground / 1000) + 's');
 
         // If in background > 60 seconds, force reload
         if (timeInBackground > FORCE_RELOAD_THRESHOLD) {
-          console.log('🍎 [PWA_RECOVERY] Background time exceeded threshold - forcing reload');
+          ppvLog('🍎 [PWA_RECOVERY] Background time exceeded threshold - forcing reload');
           window.location.reload();
           return;
         }
@@ -566,7 +566,7 @@ window.ppvErrorMsg = (function() {
         setTimeout(function() {
           const body = document.body;
           if (!body || !body.innerHTML || body.innerHTML.trim().length < 100) {
-            console.log('🍎 [PWA_RECOVERY] DOM appears empty - forcing reload');
+            ppvLog('🍎 [PWA_RECOVERY] DOM appears empty - forcing reload');
             window.location.reload();
           }
         }, 500);
@@ -580,7 +580,7 @@ window.ppvErrorMsg = (function() {
   // ============================================================
   window.addEventListener('pagehide', function(event) {
     if (event.persisted) {
-      console.log('🍎 [PWA_RECOVERY] Page being cached to BFCache');
+      ppvLog('🍎 [PWA_RECOVERY] Page being cached to BFCache');
       // Page is being cached - mark time
       backgroundStartTime = Date.now();
     }
@@ -592,12 +592,12 @@ window.ppvErrorMsg = (function() {
   // Modern browsers support freeze/resume events
   if ('onfreeze' in document) {
     document.addEventListener('freeze', function() {
-      console.log('🍎 [PWA_RECOVERY] Page frozen');
+      ppvLog('🍎 [PWA_RECOVERY] Page frozen');
       backgroundStartTime = Date.now();
     });
 
     document.addEventListener('resume', function() {
-      console.log('🍎 [PWA_RECOVERY] Page resumed from freeze');
+      ppvLog('🍎 [PWA_RECOVERY] Page resumed from freeze');
       if (backgroundStartTime) {
         const timeInBackground = Date.now() - backgroundStartTime;
         if (timeInBackground > FORCE_RELOAD_THRESHOLD) {
@@ -620,11 +620,11 @@ window.ppvErrorMsg = (function() {
     // If more than 5 seconds passed since last heartbeat,
     // the page was likely frozen/suspended
     if (elapsed > 5000 && !document.hidden) {
-      console.log('🍎 [PWA_RECOVERY] Heartbeat gap detected: ' + Math.round(elapsed / 1000) + 's');
+      ppvLog('🍎 [PWA_RECOVERY] Heartbeat gap detected: ' + Math.round(elapsed / 1000) + 's');
 
       // If gap is huge (> 60s), consider reloading
       if (elapsed > FORCE_RELOAD_THRESHOLD) {
-        console.log('🍎 [PWA_RECOVERY] Large heartbeat gap - checking DOM integrity');
+        ppvLog('🍎 [PWA_RECOVERY] Large heartbeat gap - checking DOM integrity');
         const body = document.body;
         if (!body || body.children.length < 3) {
           window.location.reload();
