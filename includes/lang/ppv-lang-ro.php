@@ -732,6 +732,10 @@ return [
     'maintenance_message_placeholder' => 'de ex. Revenim în curând! Vă mulțumim pentru răbdare.',
     'maintenance_message_help' => 'Acest mesaj va fi afișat clienților tăi',
 
+    // ========== OPENING HOURS ENFORCEMENT ==========
+    'enforce_opening_hours' => 'Respectă programul de funcționare',
+    'enforce_opening_hours_help' => 'Dacă este activat, clienții pot scana doar în timpul programului. Dacă este dezactivat, scanarea este posibilă oricând.',
+
     // ========== TIMEZONE ==========
     'timezone' => 'Fus Orar / Regiune',
     'timezone_help' => 'Selectează fusul tău orar pentru orele de funcționare corecte',

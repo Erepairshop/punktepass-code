@@ -1359,6 +1359,18 @@ if (!empty($store->gallery)) {
 
                 <hr>
 
+                <h3>Öffnungszeiten / Nyitvatartás / Program</h3>
+
+                <div class="ppv-checkbox-group">
+                    <label class="ppv-checkbox">
+                        <input type="checkbox" name="enforce_opening_hours" value="1" <?php checked($store->enforce_opening_hours ?? 1, 1); ?>>
+                        <strong data-i18n="enforce_opening_hours"><?php echo esc_html(PPV_Lang::t('enforce_opening_hours')); ?></strong>
+                        <small data-i18n="enforce_opening_hours_help"><?php echo esc_html(PPV_Lang::t('enforce_opening_hours_help')); ?></small>
+                    </label>
+                </div>
+
+                <hr>
+
                 <h3>Zeitzone / Időzóna / Fus Orar</h3>
 
                 <div class="ppv-form-group">

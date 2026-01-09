@@ -723,6 +723,10 @@ return [
     'maintenance_message_placeholder' => 'pl. Hamarosan visszatérünk! Köszönjük a türelmedet.',
     'maintenance_message_help' => 'Ez az üzenet megjelenik az ügyfelek számára',
 
+    // ========== OPENING HOURS ENFORCEMENT ==========
+    'enforce_opening_hours' => 'Nyitvatartási idő betartatása',
+    'enforce_opening_hours_help' => 'Ha be van kapcsolva, az ügyfelek csak nyitvatartási időben tudnak scannelni. Ha ki van kapcsolva, bármikor lehet scannelni.',
+
     // ========== TIMEZONE ==========
     'timezone' => 'Időzóna / Régió',
     'timezone_help' => 'Válaszd ki az időzónádat a helyes nyitvatartáshoz',

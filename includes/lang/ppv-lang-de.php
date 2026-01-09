@@ -703,6 +703,10 @@ return [
     'maintenance_message_placeholder' => 'z.B. Wir sind in Kürze zurück! Danke für deine Geduld.',
     'maintenance_message_help' => 'Diese Nachricht wird deinen Kunden angezeigt',
 
+    // ========== OPENING HOURS ENFORCEMENT ==========
+    'enforce_opening_hours' => 'Öffnungszeiten durchsetzen',
+    'enforce_opening_hours_help' => 'Wenn aktiviert, können Kunden nur während der Öffnungszeiten scannen. Wenn deaktiviert, ist Scannen jederzeit möglich.',
+
     // ========== TIMEZONE ==========
     'timezone' => 'Zeitzone / Region',
     'timezone_help' => 'Wähle deine Zeitzone für korrekte Öffnungszeiten',
