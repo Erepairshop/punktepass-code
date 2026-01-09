@@ -697,6 +697,7 @@ return [
     'footer_legal' => '© 2025 PunktePass. Alle Rechte vorbehalten.',
     
     // ========== MAINTENANCE MODE ==========
+    'maintenance_section' => 'Wartungsmodus',
     'maintenance_mode' => 'Wartungsmodus',
     'maintenance_mode_help' => 'Aktiviere den Wartungsmodus, um dein Geschäft vorübergehend offline zu nehmen',
     'maintenance_message' => 'Wartungsnachricht',
@@ -704,10 +705,12 @@ return [
     'maintenance_message_help' => 'Diese Nachricht wird deinen Kunden angezeigt',
 
     // ========== OPENING HOURS ENFORCEMENT ==========
+    'opening_hours_section' => 'Öffnungszeiten',
     'enforce_opening_hours' => 'Öffnungszeiten durchsetzen',
     'enforce_opening_hours_help' => 'Wenn aktiviert, können Kunden nur während der Öffnungszeiten scannen. Wenn deaktiviert, ist Scannen jederzeit möglich.',
 
     // ========== TIMEZONE ==========
+    'timezone_section' => 'Zeitzone',
     'timezone' => 'Zeitzone / Region',
     'timezone_help' => 'Wähle deine Zeitzone für korrekte Öffnungszeiten',
     'timezone_berlin' => 'Europe/Berlin (Deutschland)',

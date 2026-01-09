@@ -1337,7 +1337,7 @@ if (!empty($store->gallery)) {
 
                 <hr>
 
-                <h3>Wartungsmodus / Karbantartás / Mod de Întreținere</h3>
+                <h3 data-i18n="maintenance_section"><?php echo esc_html(PPV_Lang::t('maintenance_section')); ?></h3>
 
                 <div class="ppv-checkbox-group">
                     <label class="ppv-checkbox">
@@ -1359,7 +1359,7 @@ if (!empty($store->gallery)) {
 
                 <hr>
 
-                <h3>Öffnungszeiten / Nyitvatartás / Program</h3>
+                <h3 data-i18n="opening_hours_section"><?php echo esc_html(PPV_Lang::t('opening_hours_section')); ?></h3>
 
                 <div class="ppv-checkbox-group">
                     <label class="ppv-checkbox">
@@ -1371,7 +1371,7 @@ if (!empty($store->gallery)) {
 
                 <hr>
 
-                <h3>Zeitzone / Időzóna / Fus Orar</h3>
+                <h3 data-i18n="timezone_section"><?php echo esc_html(PPV_Lang::t('timezone_section')); ?></h3>
 
                 <div class="ppv-form-group">
                     <label data-i18n="timezone"><?php echo esc_html(PPV_Lang::t('timezone')); ?></label>
