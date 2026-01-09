@@ -110,6 +110,34 @@ class PPV_Signup {
             PPV_VERSION
         );
 
+        // Add password generator button CSS
+        wp_add_inline_style('ppv-login', '
+            .ppv-generate-password-btn {
+                position: absolute;
+                right: 48px;
+                top: 50%;
+                transform: translateY(-50%);
+                background: #6366f1;
+                border: none;
+                border-radius: 6px;
+                padding: 8px;
+                cursor: pointer;
+                color: white;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.2s;
+                z-index: 10;
+            }
+            .ppv-generate-password-btn:hover {
+                background: #4f46e5;
+                transform: translateY(-50%) scale(1.05);
+            }
+            .ppv-generate-password-btn:active {
+                transform: translateY(-50%) scale(0.95);
+            }
+        ');
+
         // Signup JS
         wp_enqueue_script(
             'ppv-signup',
@@ -296,6 +324,13 @@ class PPV_Signup {
                                             autocomplete="new-password"
                                             required
                                         >
+                                        <button type="button" id="ppv-generate-password" class="ppv-generate-password-btn" title="<?php echo esc_attr(PPV_Lang::t('signup_generate_password')); ?>">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                                                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                                                <path d="M12 15v2"/>
+                                            </svg>
+                                        </button>
                                         <button type="button" class="ppv-password-toggle" aria-label="<?php echo PPV_Lang::t('signup_show_password'); ?>">
                                             <svg class="ppv-eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>

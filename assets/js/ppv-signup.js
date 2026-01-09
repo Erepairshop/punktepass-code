@@ -22,6 +22,7 @@
      */
     function initSignup() {
         initPasswordToggle();
+        initPasswordGenerator();
         initPasswordStrength();
         initPasswordMatch();
         initFormValidation();
@@ -39,7 +40,7 @@
             const $input = $btn.closest('.ppv-password-wrapper').find('input');
             const $eyeOpen = $btn.find('.ppv-eye-open');
             const $eyeClosed = $btn.find('.ppv-eye-closed');
-            
+
             if ($input.attr('type') === 'password') {
                 $input.attr('type', 'text');
                 $eyeOpen.hide();
@@ -51,7 +52,50 @@
             }
         });
     }
-    
+
+    /**
+     * Password Generator
+     */
+    function initPasswordGenerator() {
+        $('#ppv-generate-password').on('click', function() {
+            const length = 16;
+            const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_-+=<>?{}[]~';
+            let password = '';
+
+            // Ensure at least one of each required type
+            const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            const lower = 'abcdefghijklmnopqrstuvwxyz';
+            const numbers = '0123456789';
+            const special = '!@#$%^&*()_-+=<>?{}[]~';
+
+            password += upper[Math.floor(Math.random() * upper.length)];
+            password += lower[Math.floor(Math.random() * lower.length)];
+            password += numbers[Math.floor(Math.random() * numbers.length)];
+            password += special[Math.floor(Math.random() * special.length)];
+
+            // Fill the rest randomly
+            for (let i = password.length; i < length; i++) {
+                password += charset[Math.floor(Math.random() * charset.length)];
+            }
+
+            // Shuffle the password
+            password = password.split('').sort(() => Math.random() - 0.5).join('');
+
+            // Set both password fields
+            $('#ppv-password, #ppv-password-confirm').val(password).attr('type', 'text');
+
+            // Trigger password strength check
+            $('#ppv-password').trigger('input');
+
+            // Show visual feedback
+            const $btn = $(this);
+            $btn.css({ background: '#10b981', transform: 'scale(1.05)' });
+            setTimeout(() => {
+                $btn.css({ background: '', transform: '' });
+            }, 300);
+        });
+    }
+
     /**
      * Password Strength Indicator
      */
