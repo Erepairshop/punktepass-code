@@ -176,12 +176,18 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
                 return;
             }
 
-            // 🔹 ALWAYS USE LIGHT CSS (contains all dark mode styles via body.ppv-dark selectors)
+            // 🔹 MODULAR CSS - Load core + profile components
             wp_enqueue_style(
-                'ppv-theme-light',
-                PPV_PLUGIN_URL . 'assets/css/ppv-theme-light.css',
+                'ppv-theme-core',
+                PPV_PLUGIN_URL . 'assets/css/ppv-theme-core.css',
                 [],
-                filemtime(PPV_PLUGIN_DIR . 'assets/css/ppv-theme-light.css')
+                PPV_VERSION
+            );
+            wp_enqueue_style(
+                'ppv-theme-profile',
+                PPV_PLUGIN_URL . 'assets/css/ppv-theme-profile.css',
+                ['ppv-theme-core'],
+                PPV_VERSION
             );
             // Google Maps JS API
 if (defined('PPV_GOOGLE_MAPS_KEY') && PPV_GOOGLE_MAPS_KEY) {
