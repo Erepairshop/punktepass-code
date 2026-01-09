@@ -651,6 +651,7 @@ return [
     'signup_button' => 'Registrieren',
     'signup_or' => 'oder',
     'signup_google_button' => 'Mit Google anmelden',
+    'signup_generate_password' => 'Generieren',
 
     // ========== SETTINGS TAB ==========
     'profile_settings' => 'Profileinstellungen',

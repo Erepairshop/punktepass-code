@@ -680,6 +680,7 @@ return [
     'signup_button' => 'Înregistrare',
     'signup_or' => 'sau',
     'signup_google_button' => 'Conectare cu Google',
+    'signup_generate_password' => 'Generează',
 
     // ========== SETTINGS TAB ==========
     'profile_settings' => 'Setări Profil',

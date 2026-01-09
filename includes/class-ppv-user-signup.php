@@ -34,7 +34,7 @@ wp_add_inline_script('ppv-user-signup', "window.ppv_user_signup = {$__json};", '
     public static function render_form() {
         $google_url = add_query_arg('ppv_google_start', '1', home_url('/user_dashboard'));
         ob_start(); ?>
-        
+
         <form id="ppv_user_form" method="post">
             <?php wp_nonce_field('ppv_user_signup', 'ppv_user_nonce'); ?>
             <input type="hidden" name="action" value="ppv_user_signup">
@@ -52,8 +52,13 @@ wp_add_inline_script('ppv-user-signup', "window.ppv_user_signup = {$__json};", '
             <input type="email" name="email" required>
 
             <label><?php echo PPV_Lang::t('signup_password_label'); ?></label>
-            <input type="password" name="password" id="ppv_user_password"
-                placeholder="<?php echo esc_attr(PPV_Lang::t('signup_password_placeholder')); ?>" required>
+            <div style="position:relative;">
+                <input type="password" name="password" id="ppv_user_password"
+                    placeholder="<?php echo esc_attr(PPV_Lang::t('signup_password_placeholder')); ?>" required>
+                <button type="button" id="ppv_generate_password" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:#10b981; color:#fff; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-size:12px; font-weight:600;">
+                    🔑 <?php echo PPV_Lang::t('signup_generate_password'); ?>
+                </button>
+            </div>
 
             <label><?php echo PPV_Lang::t('signup_password_repeat_label'); ?></label>
             <input type="password" name="password_repeat" id="ppv_user_password_repeat" required>
@@ -140,6 +145,41 @@ wp_add_inline_script('ppv-user-signup', "window.ppv_user_signup = {$__json};", '
                     });
                 });
             }
+
+            // 🔑 Password Generator
+            $('#ppv_generate_password').on('click', function() {
+                const length = 16;
+                const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_-+=<>?{}[]~';
+                let password = '';
+
+                // Ensure at least one of each required type
+                const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                const lower = 'abcdefghijklmnopqrstuvwxyz';
+                const numbers = '0123456789';
+                const special = '!@#$%^&*()_-+=<>?{}[]~';
+
+                password += upper[Math.floor(Math.random() * upper.length)];
+                password += lower[Math.floor(Math.random() * lower.length)];
+                password += numbers[Math.floor(Math.random() * numbers.length)];
+                password += special[Math.floor(Math.random() * special.length)];
+
+                // Fill the rest randomly
+                for (let i = password.length; i < length; i++) {
+                    password += charset[Math.floor(Math.random() * charset.length)];
+                }
+
+                // Shuffle the password
+                password = password.split('').sort(() => Math.random() - 0.5).join('');
+
+                // Set both password fields
+                $('#ppv_user_password, #ppv_user_password_repeat').val(password).attr('type', 'text');
+
+                // Change button text temporarily
+                $(this).text('✓ Generiert!').css('background', '#059669');
+                setTimeout(() => {
+                    $(this).html('🔑 <?php echo esc_js(PPV_Lang::t('signup_generate_password')); ?>').css('background', '#10b981');
+                }, 2000);
+            });
 
             // 📱 Intercept Google login to pass fingerprint
             $('#ppv_google_login_btn').on('click', function(e) {

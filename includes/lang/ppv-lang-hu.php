@@ -671,6 +671,7 @@ return [
     'signup_button' => 'Regisztráció',
     'signup_or' => 'vagy',
     'signup_google_button' => 'Bejelentkezés Google-lal',
+    'signup_generate_password' => 'Generálás',
 
     // ========== SETTINGS TAB ==========
     'profile_settings' => 'Profilbeállítások',
