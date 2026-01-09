@@ -1623,6 +1623,7 @@ public static function ajax_save_profile() {
         'visible' => !empty($_POST['visible']) ? 1 : 0,
         'maintenance_mode' => !empty($_POST['maintenance_mode']) ? 1 : 0,
         'maintenance_message' => wp_kses_post($_POST['maintenance_message'] ?? ''),
+        'enforce_opening_hours' => !empty($_POST['enforce_opening_hours']) ? 1 : 0,
         'timezone' => sanitize_text_field($_POST['timezone'] ?? 'Europe/Berlin'),
         'updated_at' => current_time('mysql'),
         'logo' => sanitize_text_field($_POST['logo'] ?? ''),
@@ -1696,6 +1697,7 @@ $format_specs = [
     '%d',  // visible
     '%d',  // maintenance_mode
     '%s',  // maintenance_message
+    '%d',  // enforce_opening_hours
     '%s',  // timezone
     '%s',  // updated_at
     '%s',  // logo
