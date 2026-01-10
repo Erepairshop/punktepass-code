@@ -141,10 +141,12 @@ wp_add_inline_script('ppv-redeem', "window.ppv_redeem = {$__json};", 'before');
             }
 
             // 🔹 Ellenőrizzük, van-e már függő vagy friss redeem (extended to 5 minutes, use reward_id)
+            // 🔒 CRITICAL FIX: Add FOR UPDATE to prevent race condition (double redemption)
             $existing = $wpdb->get_var($wpdb->prepare("
                 SELECT COUNT(*) FROM $requests_table
                 WHERE user_id=%d AND reward_id=%d AND store_id=%d
                 AND created_at > DATE_SUB(NOW(), INTERVAL 5 MINUTE)
+                FOR UPDATE
             ", $user_id, $reward_id, $store_id));
 
             if ($existing > 0) {
