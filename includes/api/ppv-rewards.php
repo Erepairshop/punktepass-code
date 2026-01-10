@@ -202,6 +202,19 @@ class PPV_Rewards_API {
             ]);
         }
 
+        // 🔒 CRITICAL FIX: MySQL advisory lock to prevent race condition
+        // This prevents two concurrent requests from redeeming the same reward
+        $lock_name = "ppv_redeem_{$user_id}_{$reward->id}";
+        $lock_acquired = $wpdb->get_var($wpdb->prepare("SELECT GET_LOCK(%s, 3)", $lock_name));
+
+        if ($lock_acquired != 1) {
+            ppv_log("⚠️ [PPV_Rewards_API] Failed to acquire lock: {$lock_name} - another redemption in progress");
+            return rest_ensure_response([
+                'success' => false,
+                'message' => '⚠️ Es läuft bereits eine Einlösung. Bitte warten Sie einen Moment.'
+            ]);
+        }
+
         // 🔒 CRITICAL FIX: Start transaction BEFORE validation to prevent race condition
         $wpdb->query('START TRANSACTION');
 
@@ -213,6 +226,7 @@ class PPV_Rewards_API {
 
             if ($current_points < $reward->required_points) {
                 $wpdb->query('ROLLBACK');
+                $wpdb->get_var($wpdb->prepare("SELECT RELEASE_LOCK(%s)", $lock_name));
                 return rest_ensure_response([
                     'success' => false,
                     'message' => 'Not enough points',
@@ -221,16 +235,16 @@ class PPV_Rewards_API {
                 ]);
             }
 
-            // 🔒 CRITICAL FIX: Check for duplicate redemption (5-minute window with row lock)
+            // 🔒 CRITICAL FIX: Check for duplicate redemption (5-minute window)
             $existing = $wpdb->get_var($wpdb->prepare("
                 SELECT COUNT(*) FROM {$wpdb->prefix}ppv_reward_requests
                 WHERE user_id=%d AND reward_id=%d AND store_id=%d
                 AND created_at > DATE_SUB(NOW(), INTERVAL 5 MINUTE)
-                FOR UPDATE
             ", $user_id, $reward->id, $store_id));
 
             if ($existing > 0) {
                 $wpdb->query('ROLLBACK');
+                $wpdb->get_var($wpdb->prepare("SELECT RELEASE_LOCK(%s)", $lock_name));
                 return rest_ensure_response([
                     'success' => false,
                     'message' => '⚠️ Es gibt bereits eine offene Anfrage.'
@@ -260,9 +274,14 @@ class PPV_Rewards_API {
             // ✅ COMMIT transaction - all operations successful
             $wpdb->query('COMMIT');
 
+            // 🔒 RELEASE advisory lock
+            $wpdb->get_var($wpdb->prepare("SELECT RELEASE_LOCK(%s)", $lock_name));
+
         } catch (Exception $e) {
             // 🔒 ROLLBACK on any error
             $wpdb->query('ROLLBACK');
+            // 🔒 RELEASE advisory lock
+            $wpdb->get_var($wpdb->prepare("SELECT RELEASE_LOCK(%s)", $lock_name));
             ppv_log("❌ [PPV_Rewards_API] Transaction failed: " . $e->getMessage());
             return rest_ensure_response(['success' => false, 'message' => 'DB transaction failed']);
         }
