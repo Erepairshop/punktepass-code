@@ -123,6 +123,19 @@ wp_add_inline_script('ppv-redeem', "window.ppv_redeem = {$__json};", 'before');
             return new WP_REST_Response(['success' => false, 'message' => 'Prämie nicht gefunden.'], 404);
         }
 
+        // 🔒 CRITICAL FIX: MySQL advisory lock to prevent race condition
+        // This prevents two concurrent requests from redeeming the same reward
+        $lock_name = "ppv_redeem_{$user_id}_{$reward_id}";
+        $lock_acquired = $wpdb->get_var($wpdb->prepare("SELECT GET_LOCK(%s, 3)", $lock_name));
+
+        if ($lock_acquired != 1) {
+            ppv_log("⚠️ [PPV_Redeem] Failed to acquire lock: {$lock_name} - another redemption in progress");
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => '⚠️ Es läuft bereits eine Einlösung. Bitte warten Sie einen Moment.'
+            ], 409);
+        }
+
         // 🔒 SECURITY FIX: Use transaction with row locking to prevent race condition
         $wpdb->query('START TRANSACTION');
 
@@ -134,6 +147,7 @@ wp_add_inline_script('ppv-redeem', "window.ppv_redeem = {$__json};", 'before');
 
             if ($user_points < $reward->required_points) {
                 $wpdb->query('ROLLBACK');
+                $wpdb->get_var($wpdb->prepare("SELECT RELEASE_LOCK(%s)", $lock_name));
                 return new WP_REST_Response([
                     'success' => false,
                     'message' => 'Nicht genügend Punkte (' . $user_points . ' / ' . $reward->required_points . ')'
@@ -149,6 +163,7 @@ wp_add_inline_script('ppv-redeem', "window.ppv_redeem = {$__json};", 'before');
 
             if ($existing > 0) {
                 $wpdb->query('ROLLBACK');
+                $wpdb->get_var($wpdb->prepare("SELECT RELEASE_LOCK(%s)", $lock_name));
                 return new WP_REST_Response([
                     'success' => false,
                     'message' => '⚠️ Es gibt bereits eine offene Anfrage.'
@@ -200,6 +215,9 @@ wp_add_inline_script('ppv-redeem', "window.ppv_redeem = {$__json};", 'before');
             // ✅ COMMIT transaction - all operations successful
             $wpdb->query('COMMIT');
 
+            // 🔒 RELEASE advisory lock
+            $wpdb->get_var($wpdb->prepare("SELECT RELEASE_LOCK(%s)", $lock_name));
+
             // Calculate new balance (deduct required, add bonus)
             $new_balance = $user_points - $reward->required_points + $points_given;
 
@@ -221,6 +239,8 @@ wp_add_inline_script('ppv-redeem', "window.ppv_redeem = {$__json};", 'before');
         } catch (Exception $e) {
             // 🔒 ROLLBACK on any error
             $wpdb->query('ROLLBACK');
+            // 🔒 RELEASE advisory lock
+            $wpdb->get_var($wpdb->prepare("SELECT RELEASE_LOCK(%s)", $lock_name));
             ppv_log("❌ [PPV_Redeem] Transaction failed: " . $e->getMessage());
             return new WP_REST_Response([
                 'success' => false,
