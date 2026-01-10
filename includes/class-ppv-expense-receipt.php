@@ -192,15 +192,16 @@ class PPV_Expense_Receipt {
         $filename = sprintf("monthly-receipt-%d-%04d%02d.html", $store_id, $year, $month);
         $filepath = $dir . $filename;
 
-        // 7️⃣ HTML mentése fájlként
-        $bytes = file_put_contents($filepath, $html);
+        // 7️⃣ HTML mentése fájlként UTF-8 BOM-mal (román ékezetek miatt)
+        $utf8_bom = "\xEF\xBB\xBF";
+        $bytes = file_put_contents($filepath, $utf8_bom . $html);
 
         if ($bytes === false) {
             ppv_log("❌ [PPV_EXPENSE_RECEIPT] Fájl írás sikertelen: {$filepath}");
             return false;
         }
 
-        ppv_log("✅ [PPV_EXPENSE_RECEIPT] Havi bizonylat mentve: {$filename} ({$bytes} bytes)");
+        ppv_log("✅ [PPV_EXPENSE_RECEIPT] Havi bizonylat mentve UTF-8: {$filename} ({$bytes} bytes)");
 
         // ✅ Relatív útvonal visszaadása
         return 'ppv_receipts/' . $filename;
@@ -299,15 +300,16 @@ class PPV_Expense_Receipt {
         $filename = sprintf("date-range-receipt-%d-%s-%s.html", $store_id, str_replace('-', '', $date_from), str_replace('-', '', $date_to));
         $filepath = $dir . $filename;
 
-        // 7️⃣ HTML mentése fájlként
-        $bytes = file_put_contents($filepath, $html);
+        // 7️⃣ HTML mentése fájlként UTF-8 BOM-mal (román ékezetek miatt)
+        $utf8_bom = "\xEF\xBB\xBF";
+        $bytes = file_put_contents($filepath, $utf8_bom . $html);
 
         if ($bytes === false) {
             ppv_log("❌ [PPV_EXPENSE_RECEIPT] Fájl írás sikertelen: {$filepath}");
             return false;
         }
 
-        ppv_log("✅ [PPV_EXPENSE_RECEIPT] Időszak bizonylat mentve: {$filename} ({$bytes} bytes)");
+        ppv_log("✅ [PPV_EXPENSE_RECEIPT] Időszak bizonylat mentve UTF-8: {$filename} ({$bytes} bytes)");
 
         // ✅ Relatív útvonal visszaadása
         return 'ppv_receipts/' . $filename;
