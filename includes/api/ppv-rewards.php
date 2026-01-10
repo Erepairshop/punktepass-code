@@ -189,23 +189,55 @@ class PPV_Rewards_API {
             return rest_ensure_response(['success' => false, 'message' => 'Reward not found']);
         }
 
-        // 🔹 Pont ellenőrzés
-        $current_points = (int)$wpdb->get_var($wpdb->prepare("
-            SELECT COALESCE(SUM(points),0) FROM {$wpdb->prefix}ppv_points WHERE user_id=%d
-        ", $user_id));
+        // 🔒 SECURITY FIX: Verify user has history with this store (prevents arbitrary user_id manipulation)
+        $user_has_store_history = $wpdb->get_var($wpdb->prepare("
+            SELECT COUNT(*) FROM {$wpdb->prefix}ppv_points
+            WHERE user_id = %d AND store_id = %d
+        ", $user_id, $store_id));
 
-        if ($current_points < $reward->required_points) {
+        if (!$user_has_store_history) {
             return rest_ensure_response([
                 'success' => false,
-                'message' => 'Not enough points',
-                'needed'  => (int)$reward->required_points,
-                'current' => $current_points
+                'message' => '❌ Benutzer hat keine Verbindung zu diesem Geschäft.'
             ]);
         }
 
-        // 🔹 Tranzakciós pontlevonás + log
+        // 🔒 CRITICAL FIX: Start transaction BEFORE validation to prevent race condition
         $wpdb->query('START TRANSACTION');
+
         try {
+            // 🔹 Pont ellenőrzés WITH ROW LOCKING (FOR UPDATE)
+            $current_points = (int)$wpdb->get_var($wpdb->prepare("
+                SELECT COALESCE(SUM(points),0) FROM {$wpdb->prefix}ppv_points WHERE user_id=%d FOR UPDATE
+            ", $user_id));
+
+            if ($current_points < $reward->required_points) {
+                $wpdb->query('ROLLBACK');
+                return rest_ensure_response([
+                    'success' => false,
+                    'message' => 'Not enough points',
+                    'needed'  => (int)$reward->required_points,
+                    'current' => $current_points
+                ]);
+            }
+
+            // 🔒 CRITICAL FIX: Check for duplicate redemption (5-minute window with row lock)
+            $existing = $wpdb->get_var($wpdb->prepare("
+                SELECT COUNT(*) FROM {$wpdb->prefix}ppv_reward_requests
+                WHERE user_id=%d AND reward_id=%d AND store_id=%d
+                AND created_at > DATE_SUB(NOW(), INTERVAL 5 MINUTE)
+                FOR UPDATE
+            ", $user_id, $reward->id, $store_id));
+
+            if ($existing > 0) {
+                $wpdb->query('ROLLBACK');
+                return rest_ensure_response([
+                    'success' => false,
+                    'message' => '⚠️ Es gibt bereits eine offene Anfrage.'
+                ]);
+            }
+
+            // 🔹 Pontlevonás
             $wpdb->insert("{$wpdb->prefix}ppv_points", [
                 'user_id' => $user_id,
                 'store_id' => $store_id,
@@ -215,17 +247,23 @@ class PPV_Rewards_API {
                 'created' => current_time('mysql')
             ]);
 
+            // 🔹 Reward Request log
             $wpdb->insert("{$wpdb->prefix}ppv_reward_requests", [
                 'user_id' => $user_id,
                 'store_id' => $store_id,
                 'reward_id' => $reward->id,
                 'status' => 'approved',
-                'created_at' => current_time('mysql')
+                'created_at' => current_time('mysql'),
+                'updated_at' => current_time('mysql')
             ]);
 
+            // ✅ COMMIT transaction - all operations successful
             $wpdb->query('COMMIT');
+
         } catch (Exception $e) {
+            // 🔒 ROLLBACK on any error
             $wpdb->query('ROLLBACK');
+            ppv_log("❌ [PPV_Rewards_API] Transaction failed: " . $e->getMessage());
             return rest_ensure_response(['success' => false, 'message' => 'DB transaction failed']);
         }
 

@@ -348,15 +348,15 @@ class PPV_Expense_Receipt {
      * 🎨 HTML - Német verzió (DE) - Professional Design
      */
     private static function html_receipt_de($redeem, $customer_name, $receipt_num, $amount) {
-        $company = htmlspecialchars($redeem['company_name'] ?? 'Unternehmen');
-        $address = htmlspecialchars($redeem['address'] ?? '');
-        $plz = htmlspecialchars($redeem['plz'] ?? '');
-        $city = htmlspecialchars($redeem['city'] ?? '');
-        $tax_id = htmlspecialchars($redeem['tax_id'] ?? '');
+        $company = htmlspecialchars($redeem['company_name'] ?? 'Unternehmen', ENT_QUOTES, 'UTF-8');
+        $address = htmlspecialchars($redeem['address'] ?? '', ENT_QUOTES, 'UTF-8');
+        $plz = htmlspecialchars($redeem['plz'] ?? '', ENT_QUOTES, 'UTF-8');
+        $city = htmlspecialchars($redeem['city'] ?? '', ENT_QUOTES, 'UTF-8');
+        $tax_id = htmlspecialchars($redeem['tax_id'] ?? '', ENT_QUOTES, 'UTF-8');
 
-        $customer = htmlspecialchars($customer_name);
-        $email = htmlspecialchars($redeem['user_email'] ?? '');
-        $reward = htmlspecialchars($redeem['reward_title'] ?? 'Prämie');
+        $customer = htmlspecialchars($customer_name, ENT_QUOTES, 'UTF-8');
+        $email = htmlspecialchars($redeem['user_email'] ?? '', ENT_QUOTES, 'UTF-8');
+        $reward = htmlspecialchars($redeem['reward_title'] ?? 'Prämie', ENT_QUOTES, 'UTF-8');
         $points = intval($redeem['points_spent'] ?? 0);
         $date = date('d.m.Y', strtotime($redeem['redeemed_at']));
         $time = date('H:i', strtotime($redeem['redeemed_at']));
@@ -674,15 +674,15 @@ HTML;
      * 🎨 HTML - Román verzió (RO) - Professional Design
      */
     private static function html_receipt_ro($redeem, $customer_name, $receipt_num, $amount) {
-        $company = htmlspecialchars($redeem['company_name'] ?? 'Societate');
-        $address = htmlspecialchars($redeem['address'] ?? '');
-        $plz = htmlspecialchars($redeem['plz'] ?? '');
-        $city = htmlspecialchars($redeem['city'] ?? '');
-        $tax_id = htmlspecialchars($redeem['tax_id'] ?? '');
+        $company = htmlspecialchars($redeem['company_name'] ?? 'Societate', ENT_QUOTES, 'UTF-8');
+        $address = htmlspecialchars($redeem['address'] ?? '', ENT_QUOTES, 'UTF-8');
+        $plz = htmlspecialchars($redeem['plz'] ?? '', ENT_QUOTES, 'UTF-8');
+        $city = htmlspecialchars($redeem['city'] ?? '', ENT_QUOTES, 'UTF-8');
+        $tax_id = htmlspecialchars($redeem['tax_id'] ?? '', ENT_QUOTES, 'UTF-8');
 
-        $customer = htmlspecialchars($customer_name);
-        $email = htmlspecialchars($redeem['user_email'] ?? '');
-        $reward = htmlspecialchars($redeem['reward_title'] ?? 'Recompensă');
+        $customer = htmlspecialchars($customer_name, ENT_QUOTES, 'UTF-8');
+        $email = htmlspecialchars($redeem['user_email'] ?? '', ENT_QUOTES, 'UTF-8');
+        $reward = htmlspecialchars($redeem['reward_title'] ?? 'Recompensă', ENT_QUOTES, 'UTF-8');
         $points = intval($redeem['points_spent'] ?? 0);
         $date = date('d.m.Y', strtotime($redeem['redeemed_at']));
         $time = date('H:i', strtotime($redeem['redeemed_at']));
@@ -1038,11 +1038,11 @@ HTML;
      * 🎨 HTML - Havi bizonylat NÉMET verzió - Professional Design
      */
     private static function html_monthly_receipt_de($store, $redeems, $year, $month, $total_amount, $total_points) {
-        $company = htmlspecialchars($store['company_name'] ?? 'Unternehmen');
-        $address = htmlspecialchars($store['address'] ?? '');
-        $plz = htmlspecialchars($store['plz'] ?? '');
-        $city = htmlspecialchars($store['city'] ?? '');
-        $tax_id = htmlspecialchars($store['tax_id'] ?? '');
+        $company = htmlspecialchars($store['company_name'] ?? 'Unternehmen', ENT_QUOTES, 'UTF-8');
+        $address = htmlspecialchars($store['address'] ?? '', ENT_QUOTES, 'UTF-8');
+        $plz = htmlspecialchars($store['plz'] ?? '', ENT_QUOTES, 'UTF-8');
+        $city = htmlspecialchars($store['city'] ?? '', ENT_QUOTES, 'UTF-8');
+        $tax_id = htmlspecialchars($store['tax_id'] ?? '', ENT_QUOTES, 'UTF-8');
 
         // German month names
         $german_months = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
@@ -1053,11 +1053,11 @@ HTML;
 
         $rows = '';
         foreach ($redeems as $r) {
-            $customer = htmlspecialchars(trim(($r->first_name ?? '') . ' ' . ($r->last_name ?? '')));
+            $customer = htmlspecialchars(trim(($r->first_name ?? '') . ' ' . ($r->last_name ?? '')), ENT_QUOTES, 'UTF-8');
             if (!$customer) {
-                $customer = htmlspecialchars($r->user_email ?? 'Unbekannt');
+                $customer = htmlspecialchars($r->user_email ?? 'Unbekannt', ENT_QUOTES, 'UTF-8');
             }
-            $reward = htmlspecialchars($r->reward_title ?? 'Prämie');
+            $reward = htmlspecialchars($r->reward_title ?? 'Prämie', ENT_QUOTES, 'UTF-8');
             $points = intval($r->points_spent ?? 0);
             $amount = self::calculate_item_amount($r);
             $amount_fmt = number_format($amount, 2, ',', '.');
@@ -1340,11 +1340,11 @@ HTML;
      * 🎨 HTML - Havi bizonylat ROMÁN verzió - Professional Design
      */
     private static function html_monthly_receipt_ro($store, $redeems, $year, $month, $total_amount, $total_points) {
-        $company = htmlspecialchars($store['company_name'] ?? 'Societate');
-        $address = htmlspecialchars($store['address'] ?? '');
-        $plz = htmlspecialchars($store['plz'] ?? '');
-        $city = htmlspecialchars($store['city'] ?? '');
-        $tax_id = htmlspecialchars($store['tax_id'] ?? '');
+        $company = htmlspecialchars($store['company_name'] ?? 'Societate', ENT_QUOTES, 'UTF-8');
+        $address = htmlspecialchars($store['address'] ?? '', ENT_QUOTES, 'UTF-8');
+        $plz = htmlspecialchars($store['plz'] ?? '', ENT_QUOTES, 'UTF-8');
+        $city = htmlspecialchars($store['city'] ?? '', ENT_QUOTES, 'UTF-8');
+        $tax_id = htmlspecialchars($store['tax_id'] ?? '', ENT_QUOTES, 'UTF-8');
 
         // Romanian month names
         $romanian_months = ['Ianuarie', 'Februarie', 'Martie', 'Aprilie', 'Mai', 'Iunie', 'Iulie', 'August', 'Septembrie', 'Octombrie', 'Noiembrie', 'Decembrie'];
@@ -1355,11 +1355,11 @@ HTML;
 
         $rows = '';
         foreach ($redeems as $r) {
-            $customer = htmlspecialchars(trim(($r->first_name ?? '') . ' ' . ($r->last_name ?? '')));
+            $customer = htmlspecialchars(trim(($r->first_name ?? '') . ' ' . ($r->last_name ?? '')), ENT_QUOTES, 'UTF-8');
             if (!$customer) {
-                $customer = htmlspecialchars($r->user_email ?? 'Necunoscut');
+                $customer = htmlspecialchars($r->user_email ?? 'Necunoscut', ENT_QUOTES, 'UTF-8');
             }
-            $reward = htmlspecialchars($r->reward_title ?? 'Recompensă');
+            $reward = htmlspecialchars($r->reward_title ?? 'Recompensă', ENT_QUOTES, 'UTF-8');
             $points = intval($r->points_spent ?? 0);
             $amount = self::calculate_item_amount($r);
             $amount_fmt = number_format($amount, 2, ',', '.');
@@ -1732,11 +1732,11 @@ HTML;
      * 🎨 HTML - Időszak bizonylat NÉMET verzió - Professional Design
      */
     private static function html_date_range_receipt_de($store, $redeems, $date_from, $date_to, $total_amount, $total_points) {
-        $company = htmlspecialchars($store['company_name'] ?? 'Unternehmen');
-        $address = htmlspecialchars($store['address'] ?? '');
-        $plz = htmlspecialchars($store['plz'] ?? '');
-        $city = htmlspecialchars($store['city'] ?? '');
-        $tax_id = htmlspecialchars($store['tax_id'] ?? '');
+        $company = htmlspecialchars($store['company_name'] ?? 'Unternehmen', ENT_QUOTES, 'UTF-8');
+        $address = htmlspecialchars($store['address'] ?? '', ENT_QUOTES, 'UTF-8');
+        $plz = htmlspecialchars($store['plz'] ?? '', ENT_QUOTES, 'UTF-8');
+        $city = htmlspecialchars($store['city'] ?? '', ENT_QUOTES, 'UTF-8');
+        $tax_id = htmlspecialchars($store['tax_id'] ?? '', ENT_QUOTES, 'UTF-8');
 
         // Date range formatting
         $from_formatted = date('d.m.Y', strtotime($date_from));
@@ -1748,11 +1748,11 @@ HTML;
 
         $rows = '';
         foreach ($redeems as $r) {
-            $customer = htmlspecialchars(trim(($r->first_name ?? '') . ' ' . ($r->last_name ?? '')));
+            $customer = htmlspecialchars(trim(($r->first_name ?? '') . ' ' . ($r->last_name ?? '')), ENT_QUOTES, 'UTF-8');
             if (!$customer) {
-                $customer = htmlspecialchars($r->user_email ?? 'Unbekannt');
+                $customer = htmlspecialchars($r->user_email ?? 'Unbekannt', ENT_QUOTES, 'UTF-8');
             }
-            $reward = htmlspecialchars($r->reward_title ?? 'Prämie');
+            $reward = htmlspecialchars($r->reward_title ?? 'Prämie', ENT_QUOTES, 'UTF-8');
             $points = intval($r->points_spent ?? 0);
             $amount = self::calculate_item_amount($r);
             $amount_fmt = number_format($amount, 2, ',', '.');
@@ -2037,11 +2037,11 @@ HTML;
      * 🎨 HTML - Időszak bizonylat ROMÁN verzió
      */
     private static function html_date_range_receipt_ro($store, $redeems, $date_from, $date_to, $total_amount, $total_points) {
-        $company = htmlspecialchars($store['company_name'] ?? 'Companie');
-        $address = htmlspecialchars($store['address'] ?? '');
-        $plz = htmlspecialchars($store['plz'] ?? '');
-        $city = htmlspecialchars($store['city'] ?? '');
-        $tax_id = htmlspecialchars($store['tax_id'] ?? '');
+        $company = htmlspecialchars($store['company_name'] ?? 'Companie', ENT_QUOTES, 'UTF-8');
+        $address = htmlspecialchars($store['address'] ?? '', ENT_QUOTES, 'UTF-8');
+        $plz = htmlspecialchars($store['plz'] ?? '', ENT_QUOTES, 'UTF-8');
+        $city = htmlspecialchars($store['city'] ?? '', ENT_QUOTES, 'UTF-8');
+        $tax_id = htmlspecialchars($store['tax_id'] ?? '', ENT_QUOTES, 'UTF-8');
 
         // Date range formatting
         $from_formatted = date('d.m.Y', strtotime($date_from));
@@ -2053,11 +2053,11 @@ HTML;
 
         $rows = '';
         foreach ($redeems as $r) {
-            $customer = htmlspecialchars(trim(($r->first_name ?? '') . ' ' . ($r->last_name ?? '')));
+            $customer = htmlspecialchars(trim(($r->first_name ?? '') . ' ' . ($r->last_name ?? '')), ENT_QUOTES, 'UTF-8');
             if (!$customer) {
-                $customer = htmlspecialchars($r->user_email ?? 'Necunoscut');
+                $customer = htmlspecialchars($r->user_email ?? 'Necunoscut', ENT_QUOTES, 'UTF-8');
             }
-            $reward = htmlspecialchars($r->reward_title ?? 'Premiu');
+            $reward = htmlspecialchars($r->reward_title ?? 'Premiu', ENT_QUOTES, 'UTF-8');
             $points = intval($r->points_spent ?? 0);
             $amount = self::calculate_item_amount($r);
             $amount_fmt = number_format($amount, 2, ',', '.');
@@ -2280,11 +2280,11 @@ HTML;
      * 🎨 HTML - Időszak bizonylat MAGYAR verzió
      */
     private static function html_date_range_receipt_hu($store, $redeems, $date_from, $date_to, $total_amount, $total_points) {
-        $company = htmlspecialchars($store['company_name'] ?? 'Vállalkozás');
-        $address = htmlspecialchars($store['address'] ?? '');
-        $plz = htmlspecialchars($store['plz'] ?? '');
-        $city = htmlspecialchars($store['city'] ?? '');
-        $tax_id = htmlspecialchars($store['tax_id'] ?? '');
+        $company = htmlspecialchars($store['company_name'] ?? 'Vállalkozás', ENT_QUOTES, 'UTF-8');
+        $address = htmlspecialchars($store['address'] ?? '', ENT_QUOTES, 'UTF-8');
+        $plz = htmlspecialchars($store['plz'] ?? '', ENT_QUOTES, 'UTF-8');
+        $city = htmlspecialchars($store['city'] ?? '', ENT_QUOTES, 'UTF-8');
+        $tax_id = htmlspecialchars($store['tax_id'] ?? '', ENT_QUOTES, 'UTF-8');
 
         // Date range formatting
         $from_formatted = date('Y.m.d', strtotime($date_from));
@@ -2296,11 +2296,11 @@ HTML;
 
         $rows = '';
         foreach ($redeems as $r) {
-            $customer = htmlspecialchars(trim(($r->first_name ?? '') . ' ' . ($r->last_name ?? '')));
+            $customer = htmlspecialchars(trim(($r->first_name ?? '') . ' ' . ($r->last_name ?? '')), ENT_QUOTES, 'UTF-8');
             if (!$customer) {
-                $customer = htmlspecialchars($r->user_email ?? 'Ismeretlen');
+                $customer = htmlspecialchars($r->user_email ?? 'Ismeretlen', ENT_QUOTES, 'UTF-8');
             }
-            $reward = htmlspecialchars($r->reward_title ?? 'Jutalom');
+            $reward = htmlspecialchars($r->reward_title ?? 'Jutalom', ENT_QUOTES, 'UTF-8');
             $points = intval($r->points_spent ?? 0);
             $amount = self::calculate_item_amount($r);
             $amount_fmt = number_format($amount, 0, ',', ' ');
@@ -2523,11 +2523,11 @@ HTML;
      * 🎨 HTML - Havi bizonylat MAGYAR verzió
      */
     private static function html_monthly_receipt_hu($store, $redeems, $year, $month, $total_amount, $total_points) {
-        $company = htmlspecialchars($store['company_name'] ?? 'Vállalkozás');
-        $address = htmlspecialchars($store['address'] ?? '');
-        $plz = htmlspecialchars($store['plz'] ?? '');
-        $city = htmlspecialchars($store['city'] ?? '');
-        $tax_id = htmlspecialchars($store['tax_id'] ?? '');
+        $company = htmlspecialchars($store['company_name'] ?? 'Vállalkozás', ENT_QUOTES, 'UTF-8');
+        $address = htmlspecialchars($store['address'] ?? '', ENT_QUOTES, 'UTF-8');
+        $plz = htmlspecialchars($store['plz'] ?? '', ENT_QUOTES, 'UTF-8');
+        $city = htmlspecialchars($store['city'] ?? '', ENT_QUOTES, 'UTF-8');
+        $tax_id = htmlspecialchars($store['tax_id'] ?? '', ENT_QUOTES, 'UTF-8');
 
         // Hungarian month names
         $hungarian_months = ['Január', 'Február', 'Március', 'Április', 'Május', 'Június', 'Július', 'Augusztus', 'Szeptember', 'Október', 'November', 'December'];
@@ -2538,11 +2538,11 @@ HTML;
 
         $rows = '';
         foreach ($redeems as $r) {
-            $customer = htmlspecialchars(trim(($r->first_name ?? '') . ' ' . ($r->last_name ?? '')));
+            $customer = htmlspecialchars(trim(($r->first_name ?? '') . ' ' . ($r->last_name ?? '')), ENT_QUOTES, 'UTF-8');
             if (!$customer) {
-                $customer = htmlspecialchars($r->user_email ?? 'Ismeretlen');
+                $customer = htmlspecialchars($r->user_email ?? 'Ismeretlen', ENT_QUOTES, 'UTF-8');
             }
-            $reward = htmlspecialchars($r->reward_title ?? 'Jutalom');
+            $reward = htmlspecialchars($r->reward_title ?? 'Jutalom', ENT_QUOTES, 'UTF-8');
             $points = intval($r->points_spent ?? 0);
             $amount = self::calculate_item_amount($r);
             $amount_fmt = number_format($amount, 0, ',', ' ');
