@@ -698,7 +698,7 @@ HTML;
         @page { margin: 15mm; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Helvetica Neue', Arial, sans-serif;
+            font-family: 'DejaVu Sans', Arial, sans-serif;
             font-size: 11pt;
             line-height: 1.4;
             color: #2c3e50;
@@ -1668,8 +1668,9 @@ HTML;
             $options = new \Dompdf\Options();
             $options->set('isHtml5ParserEnabled', true);
             $options->set('isRemoteEnabled', true);
-            $options->set('defaultFont', 'Arial');
+            $options->set('defaultFont', 'DejaVu Sans');
             $options->set('isPhpEnabled', false);
+            $options->set('isFontSubsettingEnabled', true);
 
             $dompdf = new \Dompdf\Dompdf($options);
             $dompdf->loadHtml($html, 'UTF-8');
