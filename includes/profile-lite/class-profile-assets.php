@@ -49,18 +49,12 @@ class PPV_Profile_Assets {
             return;
         }
 
-        // CSS - Modular loading (core + profile components)
+        // CSS - Light theme (contains dark mode via body.ppv-dark)
         wp_enqueue_style(
-            'ppv-theme-core',
-            PPV_PLUGIN_URL . 'assets/css/ppv-theme-core.css',
+            'ppv-theme-light',
+            PPV_PLUGIN_URL . 'assets/css/ppv-theme-light.css',
             [],
-            PPV_VERSION
-        );
-        wp_enqueue_style(
-            'ppv-theme-profile',
-            PPV_PLUGIN_URL . 'assets/css/ppv-theme-profile.css',
-            ['ppv-theme-core'],
-            PPV_VERSION
+            filemtime(PPV_PLUGIN_DIR . 'assets/css/ppv-theme-light.css')
         );
 
         // Google Maps API (if configured)

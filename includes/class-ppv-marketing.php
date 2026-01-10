@@ -154,7 +154,7 @@ if($type==='flyer'){
   $options = new Options();
   $options->set('isRemoteEnabled', true);
   $dompdf = new Dompdf($options);
-  $dompdf->loadHtml($html);
+  $dompdf->loadHtml($html, 'UTF-8');
   $dompdf->setPaper('A4', 'portrait');
   $dompdf->render();
   $dompdf->stream("Flyer-".$store->name.".pdf", ["Attachment"=>true]);

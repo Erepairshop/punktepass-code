@@ -35,17 +35,11 @@ class PPV_Account_Delete {
             null
         );
 
-        // 🔹 MODULAR CSS - Load core + profile components
+        // 🔹 ALWAYS USE LIGHT CSS (contains all dark mode styles via body.ppv-dark selectors)
         wp_enqueue_style(
-            'ppv-theme-core',
-            PPV_PLUGIN_URL . 'assets/css/ppv-theme-core.css',
+            'ppv-theme-light',
+            PPV_PLUGIN_URL . 'assets/css/ppv-theme-light.css',
             [],
-            defined('PPV_VERSION') ? PPV_VERSION : time()
-        );
-        wp_enqueue_style(
-            'ppv-theme-profile',
-            PPV_PLUGIN_URL . 'assets/css/ppv-theme-profile.css',
-            ['ppv-theme-core'],
             defined('PPV_VERSION') ? PPV_VERSION : time()
         );
     }
