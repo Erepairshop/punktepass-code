@@ -265,7 +265,7 @@ public static function force_visible() {
         }
 
         // 🧹 Minden PPV CSS törlése (kivéve whitelist)
-        $whitelist = ['ppv-theme-core', 'ppv-theme-dashboard', 'ppv-theme-qr', 'ppv-theme-stores', 'ppv-theme-profile', 'ppv-theme-analytics', 'ppv-theme-dark', 'ppv-login-light', 'ppv-handler-light', 'ppv-handler-dark'];
+        $whitelist = ['ppv-theme-light', 'ppv-login-light', 'ppv-handler-light', 'ppv-handler-dark'];
         foreach (wp_styles()->queue as $handle) {
             if (strpos($handle, 'ppv-') === 0 && !in_array($handle, $whitelist)) {
                 wp_dequeue_style($handle);
@@ -273,15 +273,14 @@ public static function force_visible() {
             }
         }
 
-        // 🔹 MODULAR CSS - Only load core (components loaded conditionally in punktepass.php)
-        if (!wp_style_is('ppv-theme-core', 'enqueued')) {
-            wp_enqueue_style(
-                'ppv-theme-core',
-                PPV_PLUGIN_URL . 'assets/css/ppv-theme-core.css',
-                [],
-                defined('PPV_VERSION') ? PPV_VERSION : time()
-            );
-        }
+        // 🔹 ALWAYS USE LIGHT CSS (contains all dark mode styles via body.ppv-dark selectors)
+        // Theme switching is handled via body class (ppv-light/ppv-dark) by theme-loader.js
+        wp_enqueue_style(
+            'ppv-theme-light',
+            PPV_PLUGIN_URL . 'assets/css/ppv-theme-light.css',
+            [],
+            defined('PPV_VERSION') ? PPV_VERSION : time()
+        );
 
         // 🔹 Globális JS
         wp_enqueue_script(

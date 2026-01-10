@@ -418,46 +418,9 @@ add_action('wp_enqueue_scripts', function() {
         }
     }
     
-    // 🔹 MODULAR CSS LOADING - Load only what's needed per page
-    // Core CSS is always loaded (9.3KB), components are conditional
-
-    // 1. Always load core (variables, base styles, fonts)
-    wp_enqueue_style('ppv-theme-core', PPV_PLUGIN_URL . 'assets/css/ppv-theme-core.css', [], PPV_VERSION);
-
-    // 2. Detect current page and load appropriate components
-    global $post;
-    $current_url = $_SERVER['REQUEST_URI'] ?? '';
-    $page_slug = $post->post_name ?? '';
-
-    // Dashboard pages
-    if (strpos($current_url, '/user_dashboard') !== false || strpos($current_url, '/user-dashboard') !== false || $page_slug === 'user-dashboard') {
-        wp_enqueue_style('ppv-theme-dashboard', PPV_PLUGIN_URL . 'assets/css/ppv-theme-dashboard.css', ['ppv-theme-core'], PPV_VERSION);
-        wp_enqueue_style('ppv-theme-stores', PPV_PLUGIN_URL . 'assets/css/ppv-theme-stores.css', ['ppv-theme-core'], PPV_VERSION);
-    }
-
-    // QR Scanner pages
-    if (strpos($current_url, '/qr-center') !== false || strpos($current_url, '/scanner') !== false || $page_slug === 'qr-center') {
-        wp_enqueue_style('ppv-theme-qr', PPV_PLUGIN_URL . 'assets/css/ppv-theme-qr.css', ['ppv-theme-core'], PPV_VERSION);
-    }
-
-    // Profile pages
-    if (strpos($current_url, '/mein-profil') !== false || strpos($current_url, '/einstellungen') !== false ||
-        $page_slug === 'mein-profil' || $page_slug === 'einstellungen' || $page_slug === 'profile') {
-        wp_enqueue_style('ppv-theme-profile', PPV_PLUGIN_URL . 'assets/css/ppv-theme-profile.css', ['ppv-theme-core'], PPV_VERSION);
-    }
-
-    // Analytics/Stats pages
-    if (strpos($current_url, '/analytics') !== false || strpos($current_url, '/statistics') !== false ||
-        strpos($current_url, '/stats') !== false || $page_slug === 'analytics') {
-        wp_enqueue_style('ppv-theme-analytics', PPV_PLUGIN_URL . 'assets/css/ppv-theme-analytics.css', ['ppv-theme-core'], PPV_VERSION);
-    }
-
-    // 3. Dark mode CSS loaded dynamically via JavaScript (ppv-theme-loader.js)
-    // Register but don't enqueue - JS will load it when dark mode is active
-    wp_register_style('ppv-theme-dark', PPV_PLUGIN_URL . 'assets/css/ppv-theme-dark.css', ['ppv-theme-core'], PPV_VERSION);
-
-    // 4. Fallback: Keep original monolithic CSS for backwards compatibility
-    // wp_enqueue_style('ppv-theme-light', PPV_PLUGIN_URL . 'assets/css/ppv-theme-light.css', [], PPV_VERSION);
+    // 🔹 ALWAYS USE LIGHT CSS (contains all dark mode styles via body.ppv-dark selectors)
+    // Theme switching is handled via body class (ppv-light/ppv-dark) by theme-loader.js
+    wp_enqueue_style('ppv-theme-light', PPV_PLUGIN_URL . 'assets/css/ppv-theme-light.css', [], PPV_VERSION);
 }, 100);
 
 /**

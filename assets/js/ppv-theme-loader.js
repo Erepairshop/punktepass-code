@@ -27,9 +27,22 @@
   }
 
   // ============================================================
-  // 🔹 LOAD CSS (MODULAR - Core loaded by PHP, dark CSS loaded dynamically)
+  // 🔹 LOAD CSS (Always use LIGHT CSS - contains all dark mode styles via body.ppv-dark)
   // ============================================================
   function loadThemeCSS(theme, forceReload = false) {
+    // ALWAYS use light CSS - it contains both light and dark styles via body.ppv-dark selectors
+    const cssPath = 'ppv-theme-light.css';
+
+    // Check if light CSS is already loaded (by PHP wp_enqueue_style or previous JS call)
+    const existingLinks = document.querySelectorAll('link[rel="stylesheet"]');
+    let lightCSSLoaded = false;
+
+    existingLinks.forEach(link => {
+      if (link.href && link.href.includes(cssPath)) {
+        lightCSSLoaded = true;
+      }
+    });
+
     // Update body classes and data-theme attribute for theme switching
     document.documentElement.setAttribute('data-theme', theme);
     if (document.body) {
@@ -38,48 +51,31 @@
       log('INFO', `✅ Theme applied via body class: ppv-${theme}`);
     }
 
-    // Check if dark CSS is already loaded
-    const existingLinks = document.querySelectorAll('link[rel="stylesheet"]');
-    let darkCSSLoaded = false;
-    existingLinks.forEach(link => {
-      if (link.href && link.href.includes('ppv-theme-dark.css')) {
-        darkCSSLoaded = true;
-      }
-    });
-
-    // Dark mode: Load dark CSS if not already loaded
-    if (theme === 'dark') {
-      if (!darkCSSLoaded || forceReload) {
-        const id = 'ppv-theme-dark-css';
-        const href = `/wp-content/plugins/punktepass/assets/css/ppv-theme-dark.css?v=${Date.now()}`;
-
-        // Remove old dark CSS
-        if (forceReload) {
-          document.querySelectorAll(`link[id="${id}"]`).forEach(e => e.remove());
-        }
-
-        const link = document.createElement('link');
-        link.id = id;
-        link.rel = 'stylesheet';
-        link.href = href;
-        link.onload = () => {
-          log('INFO', '✅ Dark CSS loaded (126KB of dark mode overrides)');
-        };
-        link.onerror = () => {
-          log('ERROR', '❌ Dark CSS failed to load:', href);
-        };
-
-        document.head.appendChild(link);
-      } else {
-        log('DEBUG', '⏩ Dark CSS already loaded');
-      }
-    } else {
-      // Light mode: Remove dark CSS if present (saves 126KB)
-      document.querySelectorAll('link[id="ppv-theme-dark-css"]').forEach(e => {
-        e.remove();
-        log('INFO', '🗑️ Dark CSS removed (light mode active)');
-      });
+    // If light CSS already loaded, we're done (classes are updated above)
+    if (lightCSSLoaded) {
+      log('DEBUG', '⏩ Light CSS already loaded, theme switched via body class');
+      return;
     }
+
+    // Load light CSS if not already loaded
+    const id = 'ppv-theme-css';
+    const href = `/wp-content/plugins/punktepass/assets/css/ppv-theme-light.css?v=${Date.now()}`;
+
+    // Remove any old JS-loaded CSS
+    document.querySelectorAll(`link[id="${id}"]`).forEach(e => e.remove());
+
+    const link = document.createElement('link');
+    link.id = id;
+    link.rel = 'stylesheet';
+    link.href = href;
+    link.onload = () => {
+      log('INFO', '✅ Light CSS loaded (contains all theme styles)');
+    };
+    link.onerror = () => {
+      log('ERROR', '❌ Light CSS failed to load:', href);
+    };
+
+    document.head.appendChild(link);
   }
 
   // ============================================================
