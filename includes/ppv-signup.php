@@ -112,9 +112,12 @@ class PPV_Signup {
 
         // Add password generator button CSS
         wp_add_inline_style('ppv-login', '
+            .ppv-password-wrapper input[type="password"] {
+                padding-right: 100px !important;
+            }
             .ppv-generate-password-btn {
                 position: absolute;
-                right: 60px;
+                right: 48px;
                 top: 50%;
                 transform: translateY(-50%);
                 background: #6366f1;
@@ -135,6 +138,9 @@ class PPV_Signup {
             }
             .ppv-generate-password-btn:active {
                 transform: translateY(-50%) scale(0.95);
+            }
+            .ppv-password-wrapper .ppv-password-toggle {
+                right: 8px;
             }
         ');
 

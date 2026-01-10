@@ -1924,9 +1924,13 @@ if (empty($address) || empty($city) || empty($country)) {
     ];
     $country_name = $country_names[$country] ?? 'Germany';
 
+    // ✅ TISZTÍTÁS: Remove extra commas from address field
+    // Utca mezőben lehet "Siedlungsring, 51" -> "Siedlungsring 51"
+    $address_clean = str_replace(',', '', $address);
+
     // ✅ JOBB FORMÁTUM (vessző, ország)
-    $full_address = "{$address}, {$plz} {$city}, {$country_name}";
-    
+    $full_address = "{$address_clean}, {$plz} {$city}, {$country_name}";
+
     ppv_log("🔍 [PPV_GEOCODE] Keresés: {$full_address}");
 
     $google_api_key = defined('PPV_GOOGLE_MAPS_KEY') ? PPV_GOOGLE_MAPS_KEY : '';
@@ -1940,10 +1944,10 @@ if ($google_api_key) {
     
     // Több keresési variáns
     $search_variants = [
-        $full_address, // Teljes: "Str. Noua 742, 447080 Capleni, Romania"
-        "{$address}, {$plz} {$city}, {$country_name}",
-        "{$address}, {$city}, {$country_name}",
-        str_replace(['Str.', 'str.'], 'Strada', $address) . ", {$plz} {$city}, {$country_name}",
+        $full_address, // Teljes: "Siedlungsring 51, 89415 Lauingen, Deutschland"
+        "{$address_clean}, {$plz} {$city}, {$country_name}",
+        "{$address_clean}, {$city}, {$country_name}",
+        str_replace(['Str.', 'str.'], 'Strada', $address_clean) . ", {$plz} {$city}, {$country_name}",
     ];
 
     foreach ($search_variants as $search_query) {
@@ -2051,33 +2055,50 @@ ppv_log("❌ [PPV_GEOCODE] Város sem találva!");
 // 2️⃣ OPENSTREETMAP (Nominatim) - FALLBACK (Multistep search)
 // ============================================================
 
+// ✅ COUNTRY-SPECIFIC BOUNDING BOXES (optional, improves accuracy)
+$bounding_boxes = [
+    'DE' => '5.8,47.2,15.1,55.1',      // Germany
+    'RO' => '20.2,43.6,29.8,48.3',     // Romania
+    'HU' => '16.1,45.7,22.9,48.6',     // Hungary
+];
+$viewbox = $bounding_boxes[$country] ?? null;
+
 $search_variants = [
-    // 1. Teljes: "Str. Noua 742, 447080 Capleni, Romania"
-    "{$address}, {$plz} {$city}, {$country_name}",
-    
-    // 2. "Strada Noua" helyett (román forma)
-    str_replace(['Str.', 'str.'], 'Strada', "{$address}, {$plz} {$city}, {$country_name}"),
-    
-    // 3. Csak házszám nélkül: "Str. Noua, 447080 Capleni, Romania"
-    "{$address}, {$plz} {$city}, {$country_name}",
-    
-    // 4. Vezetéknév nélkül: "Noua 742, Capleni, Romania"
-    preg_replace('/^Str\.\s*/', '', $address) . ", {$city}, {$country_name}",
+    // 1. Teljes: "Siedlungsring 51, 89415 Lauingen, Deutschland"
+    "{$address_clean}, {$plz} {$city}, {$country_name}",
+
+    // 2. "Strada" forma (román címekhez)
+    str_replace(['Str.', 'str.'], 'Strada', "{$address_clean}, {$plz} {$city}, {$country_name}"),
+
+    // 3. PLZ nélkül: "Siedlungsring 51, Lauingen, Deutschland"
+    "{$address_clean}, {$city}, {$country_name}",
+
+    // 4. Vezetéknév nélkül: "51, Lauingen, Deutschland"
+    preg_replace('/^Str\.\s*/', '', $address_clean) . ", {$city}, {$country_name}",
 ];
 
 foreach ($search_variants as $idx => $search_query) {
     ppv_log("🔍 [PPV_GEOCODE] Keresési variáns #" . ($idx + 1) . ": {$search_query}");
-    
+
     $url = 'https://nominatim.openstreetmap.org/search';
+
+    // Build query args
+    $query_args = [
+        'format' => 'json',
+        'q' => $search_query,
+        'limit' => 10,
+        'addressdetails' => 1,
+    ];
+
+    // ✅ Add bounding box only if country-specific box exists
+    if ($viewbox) {
+        $query_args['bounded'] = 1;
+        $query_args['viewbox'] = $viewbox;
+        ppv_log("   🗺️ Bounding box: {$viewbox}");
+    }
+
     $response = wp_remote_get(
-        add_query_arg([
-            'format' => 'json',
-            'q' => $search_query,
-            'limit' => 10,
-            'addressdetails' => 1,
-            'bounded' => 1,
-            'viewbox' => '20.2,43.6,29.8,48.3' // Romania bounding box
-        ], $url),
+        add_query_arg($query_args, $url),
         [
             'timeout' => 10,
             'headers' => [

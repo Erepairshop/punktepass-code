@@ -319,13 +319,21 @@ class PPV_Expense_Receipt {
      * 🎨 HTML generálás EGYSZERI bizonylathoz
      */
     private static function generate_html_for_redeem($redeem, $lang) {
+        global $wpdb;
+
         $customer_name = trim(($redeem['first_name'] ?? '') . ' ' . ($redeem['last_name'] ?? ''));
         if (!$customer_name) {
             $customer_name = $redeem['user_email'] ?? 'Unbekannt';
         }
 
-        // ✅ HELYES DÁTUM FORMÁZÁS
-        $receipt_num = date('Y-m-', strtotime($redeem['redeemed_at'])) . sprintf('%04d', $redeem['id']);
+        // ✅ STORE-SPECIFIC RECEIPT NUMBER
+        // Count how many redeems this store has had up to this point
+        $store_redeem_count = (int)$wpdb->get_var($wpdb->prepare("
+            SELECT COUNT(*) FROM {$wpdb->prefix}ppv_rewards_redeemed
+            WHERE store_id = %d AND id <= %d
+        ", $redeem['store_id'], $redeem['id']));
+
+        $receipt_num = date('Y-m-', strtotime($redeem['redeemed_at'])) . sprintf('%05d', $store_redeem_count);
 
         // ✅ Amount calculation: actual_amount → action_value → free_product_value → 0
         $amount = 0;
@@ -698,7 +706,7 @@ HTML;
         @page { margin: 15mm; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Helvetica Neue', Arial, sans-serif;
+            font-family: 'DejaVu Sans', Arial, sans-serif;
             font-size: 11pt;
             line-height: 1.4;
             color: #2c3e50;
@@ -1668,8 +1676,9 @@ HTML;
             $options = new \Dompdf\Options();
             $options->set('isHtml5ParserEnabled', true);
             $options->set('isRemoteEnabled', true);
-            $options->set('defaultFont', 'Arial');
+            $options->set('defaultFont', 'DejaVu Sans');
             $options->set('isPhpEnabled', false);
+            $options->set('isFontSubsettingEnabled', true);
 
             $dompdf = new \Dompdf\Dompdf($options);
             $dompdf->loadHtml($html, 'UTF-8');

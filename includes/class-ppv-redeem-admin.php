@@ -159,6 +159,13 @@ wp_add_inline_script('ppv-redeem-admin', "window.ppv_redeem_admin = {$__json}; w
             'callback' => [__CLASS__, 'rest_update_status'],
             'permission_callback' => ['PPV_Permissions', 'check_handler']
         ]);
+
+        register_rest_route('ppv/v1', '/redeem/delete', [
+            'methods'  => 'POST',
+            'callback' => [__CLASS__, 'rest_delete_redeem'],
+            'permission_callback' => ['PPV_Permissions', 'check_handler']
+        ]);
+
         register_rest_route('ppv/v1', '/redeem/log', [
     'methods'  => 'GET',
     'callback' => [__CLASS__, 'rest_recent_logs'],
@@ -356,8 +363,84 @@ return [
 
 }
 
-    
-    
+    /** ============================================================
+     *  🔹 REST: Beváltás törlése (Delete Redemption)
+     * ============================================================ */
+    public static function rest_delete_redeem($req) {
+        global $wpdb;
+        self::ensure_session();
+
+        $id = intval($req['id']);
+
+        // 🏪 FILIALE SUPPORT: Use session-aware store ID
+        $store_id = self::get_store_id();
+
+        if (!$id) {
+            return ['success' => false, 'message' => 'Ungültige ID'];
+        }
+
+        $table = $wpdb->prefix . 'ppv_rewards_redeemed';
+
+        // 🔒 SECURITY: Verify this redemption belongs to current store
+        $redeem = $wpdb->get_row($wpdb->prepare("
+            SELECT * FROM $table WHERE id = %d AND store_id = %d
+        ", $id, $store_id), ARRAY_A);
+
+        if (!$redeem) {
+            return ['success' => false, 'message' => '❌ Beváltás nem található vagy nincs jogosultságod'];
+        }
+
+        // 🔹 Pontok visszaadása (ha le voltak vonva)
+        if ($redeem['status'] === 'approved') {
+            $points_spent = intval($redeem['points_spent']);
+            if ($points_spent > 0) {
+                $wpdb->insert(
+                    $wpdb->prefix . 'ppv_points',
+                    [
+                        'user_id'   => intval($redeem['user_id']),
+                        'store_id'  => $store_id,
+                        'points'    => $points_spent, // visszaadjuk a pontokat
+                        'type'      => 'refund',
+                        'reference' => 'REFUND-REDEEM-' . $id,
+                        'created'   => current_time('mysql')
+                    ],
+                    ['%d', '%d', '%d', '%s', '%s', '%s']
+                );
+                ppv_log("♻️ [PPV_REDEEM_ADMIN] Pontok visszaadva: {$points_spent} pont user_id={$redeem['user_id']}");
+            }
+        }
+
+        // 🗑️ Beváltás törlése
+        $deleted = $wpdb->delete($table, ['id' => $id], ['%d']);
+
+        if ($deleted === false || $wpdb->last_error) {
+            ppv_log('❌ [PPV_REDEEM_ADMIN] Delete Error: ' . $wpdb->last_error);
+            return ['success' => false, 'message' => 'Törlés sikertelen'];
+        }
+
+        // 🔹 Receipt PDF törlése (ha van)
+        if (!empty($redeem['receipt_pdf_path'])) {
+            $upload_dir = wp_upload_dir();
+            $file_path = $upload_dir['basedir'] . '/' . $redeem['receipt_pdf_path'];
+            if (file_exists($file_path)) {
+                @unlink($file_path);
+                ppv_log("🗑️ [PPV_REDEEM_ADMIN] Receipt PDF törölve: {$file_path}");
+            }
+        }
+
+        // 🔹 Ping-Update (cache-safe)
+        $now = time();
+        update_option('ppv_last_redeem_update', $now);
+
+        ppv_log("✅ [PPV_REDEEM_ADMIN] Beváltás törölve: ID={$id}");
+
+        return [
+            'success' => true,
+            'message' => '✅ Beváltás sikeresen törölve'
+        ];
+    }
+
+
 
     /** ============================================================
      *  🔹 Pontlevonás (jóváhagyás után)
