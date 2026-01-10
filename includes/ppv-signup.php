@@ -114,7 +114,7 @@ class PPV_Signup {
         wp_add_inline_style('ppv-login', '
             .ppv-generate-password-btn {
                 position: absolute;
-                right: 48px;
+                right: 60px;
                 top: 50%;
                 transform: translateY(-50%);
                 background: #6366f1;
