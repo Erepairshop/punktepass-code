@@ -365,7 +365,7 @@ window.ppv_plugin_url = '" . esc_url(PPV_PLUGIN_URL) . "';",
             $options->set('defaultFont', 'DejaVu Sans');
 
             $dompdf = new Dompdf\Dompdf($options);
-            $dompdf->loadHtml($html);
+            $dompdf->loadHtml($html, 'UTF-8');
             $dompdf->setPaper('A4', 'portrait');
             $dompdf->render();
 
@@ -421,7 +421,7 @@ public static function rest_download_monthly_receipt($request) {
         $options->set('defaultFont', 'DejaVu Sans');
 
         $dompdf = new Dompdf\Dompdf($options);
-        $dompdf->loadHtml($html);
+        $dompdf->loadHtml($html, 'UTF-8');
         $dompdf->setPaper('A4', 'portrait');
         $dompdf->render();
 
