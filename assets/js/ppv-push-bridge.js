@@ -14,7 +14,7 @@
 
     // Prevent multiple initializations
     if (window.PPVPushBridge) {
-        console.log('[PPV Push] Bridge already initialized');
+        ppvLog('[PPV Push] Bridge already initialized');
         return;
     }
 
@@ -31,7 +31,7 @@
             if (this.initialized) return;
 
             this.platform = this.detectPlatform();
-            console.log('[PPV Push] Platform detected:', this.platform);
+            ppvLog('[PPV Push] Platform detected:', this.platform);
 
             // Set up event listeners based on platform
             this.setupEventListeners();
@@ -41,7 +41,7 @@
 
             // For iOS: Auto-request permission and token on init
             if (this.platform === 'ios') {
-                console.log('[PPV Push] iOS detected, requesting permission...');
+                ppvLog('[PPV Push] iOS detected, requesting permission...');
                 setTimeout(() => {
                     this.requestPermission();
                     // Also request token directly (in case permission was already granted)
@@ -50,7 +50,7 @@
             }
 
             this.initialized = true;
-            console.log('[PPV Push] Bridge initialized');
+            ppvLog('[PPV Push] Bridge initialized');
         },
 
         /**
@@ -88,7 +88,7 @@
 
             // iOS native events (from PushNotifications.swift)
             window.addEventListener('push-token', function(e) {
-                console.log('[PPV Push] Received push-token event:', e.detail);
+                ppvLog('[PPV Push] Received push-token event:', e.detail);
                 if (e.detail && e.detail !== 'ERROR GET TOKEN') {
                     self.token = e.detail;
                     self.registerToken(e.detail);
@@ -96,7 +96,7 @@
             });
 
             window.addEventListener('push-permission-request', function(e) {
-                console.log('[PPV Push] Permission result:', e.detail);
+                ppvLog('[PPV Push] Permission result:', e.detail);
                 self.permissionState = e.detail;
                 if (e.detail === 'granted') {
                     // Request token after permission granted
@@ -105,17 +105,17 @@
             });
 
             window.addEventListener('push-permission-state', function(e) {
-                console.log('[PPV Push] Permission state:', e.detail);
+                ppvLog('[PPV Push] Permission state:', e.detail);
                 self.permissionState = e.detail;
             });
 
             window.addEventListener('push-notification', function(e) {
-                console.log('[PPV Push] Notification received:', e.detail);
+                ppvLog('[PPV Push] Notification received:', e.detail);
                 self.handleNotification(e.detail);
             });
 
             window.addEventListener('push-notification-click', function(e) {
-                console.log('[PPV Push] Notification clicked:', e.detail);
+                ppvLog('[PPV Push] Notification clicked:', e.detail);
                 self.handleNotificationClick(e.detail);
             });
 
@@ -138,7 +138,7 @@
                     try {
                         window.webkit.messageHandlers['push-permission-state'].postMessage({});
                     } catch (e) {
-                        console.log('[PPV Push] iOS bridge not available for state check');
+                        ppvLog('[PPV Push] iOS bridge not available for state check');
                     }
                 }
             } else if (this.platform === 'web') {
@@ -162,7 +162,7 @@
                         window.webkit.messageHandlers['push-permission-request'].postMessage({});
                         return Promise.resolve(true);
                     } catch (e) {
-                        console.error('[PPV Push] iOS permission request failed:', e);
+                        ppvLog.error('[PPV Push] iOS permission request failed:', e);
                         return Promise.reject(e);
                     }
                 }
@@ -192,7 +192,7 @@
                     try {
                         window.webkit.messageHandlers['push-token'].postMessage({});
                     } catch (e) {
-                        console.log('[PPV Push] iOS token request not available');
+                        ppvLog('[PPV Push] iOS token request not available');
                     }
                 }
             }
@@ -205,7 +205,7 @@
             const self = this;
 
             if (!token || token === 'ERROR GET TOKEN') {
-                console.error('[PPV Push] Invalid token');
+                ppvLog.error('[PPV Push] Invalid token');
                 return;
             }
 
@@ -215,7 +215,7 @@
             const language = window.ppvLang || document.documentElement.lang || 'de';
 
             if (!userId) {
-                console.log('[PPV Push] No user ID available, skipping registration');
+                ppvLog('[PPV Push] No user ID available, skipping registration');
                 return;
             }
 
@@ -228,7 +228,7 @@
                 device_name: this.getDeviceName()
             };
 
-            console.log('[PPV Push] Registering token:', data);
+            ppvLog('[PPV Push] Registering token:', data);
 
             fetch('/wp-json/punktepass/v1/push/register', {
                 method: 'POST',
@@ -241,7 +241,7 @@
             .then(function(response) { return response.json(); })
             .then(function(result) {
                 if (result.success) {
-                    console.log('[PPV Push] Token registered successfully');
+                    ppvLog('[PPV Push] Token registered successfully');
                     self.token = token;
                     // Store locally for reference
                     try {
@@ -249,11 +249,11 @@
                         localStorage.setItem('ppv_push_registered', Date.now().toString());
                     } catch (e) {}
                 } else {
-                    console.error('[PPV Push] Registration failed:', result.message);
+                    ppvLog.error('[PPV Push] Registration failed:', result.message);
                 }
             })
             .catch(function(error) {
-                console.error('[PPV Push] Registration error:', error);
+                ppvLog.error('[PPV Push] Registration error:', error);
             });
         },
 
@@ -264,7 +264,7 @@
             const token = this.token || localStorage.getItem('ppv_push_token');
 
             if (!token) {
-                console.log('[PPV Push] No token to unregister');
+                ppvLog('[PPV Push] No token to unregister');
                 return Promise.resolve(true);
             }
 
@@ -278,7 +278,7 @@
             })
             .then(function(response) { return response.json(); })
             .then(function(result) {
-                console.log('[PPV Push] Unregister result:', result);
+                ppvLog('[PPV Push] Unregister result:', result);
                 try {
                     localStorage.removeItem('ppv_push_token');
                     localStorage.removeItem('ppv_push_registered');
@@ -374,7 +374,7 @@
         subscribeWebPush: function() {
             // TODO: Implement Web Push subscription
             // Requires VAPID keys and service worker setup
-            console.log('[PPV Push] Web Push subscription not yet implemented');
+            ppvLog('[PPV Push] Web Push subscription not yet implemented');
             return Promise.resolve(false);
         },
 

@@ -176,12 +176,18 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
                 return;
             }
 
-            // 🔹 ALWAYS USE LIGHT CSS (contains all dark mode styles via body.ppv-dark selectors)
+            // 🔹 MODULAR CSS - Load core + profile components
             wp_enqueue_style(
-                'ppv-theme-light',
-                PPV_PLUGIN_URL . 'assets/css/ppv-theme-light.css',
+                'ppv-theme-core',
+                PPV_PLUGIN_URL . 'assets/css/ppv-theme-core.css',
                 [],
-                filemtime(PPV_PLUGIN_DIR . 'assets/css/ppv-theme-light.css')
+                PPV_VERSION
+            );
+            wp_enqueue_style(
+                'ppv-theme-profile',
+                PPV_PLUGIN_URL . 'assets/css/ppv-theme-profile.css',
+                ['ppv-theme-core'],
+                PPV_VERSION
             );
             // Google Maps JS API
 if (defined('PPV_GOOGLE_MAPS_KEY') && PPV_GOOGLE_MAPS_KEY) {
@@ -518,7 +524,7 @@ private static function render_tab_general($store) {
                <div id="ppv-logo-preview" class="ppv-media-preview" style="display: flex; align-items: center; justify-content: center; min-height: 120px; border: 1px solid #ddd; border-radius: 4px; position: relative;">
     <?php if (!empty($store->logo)): ?>
         <img src="<?php echo esc_url($store->logo); ?>" alt="Logo" style="max-width: 100%; max-height: 100px; object-fit: contain;">
-        <button type="button" id="ppv-delete-logo-btn" class="ppv-delete-logo-btn" style="position: absolute; top: 5px; right: 5px; background: #ef4444; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px;" title="Logo löschen">
+        <button type="button" id="ppv-delete-logo-btn" class="ppv-delete-logo-btn" style="position: absolute; top: 5px; right: 5px; background: #ef4444; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px;" title="<?php echo esc_attr(PPV_Lang::t('delete_logo')); ?>">
             <i class="ri-delete-bin-line"></i>
         </button>
     <?php endif; ?>
@@ -1317,7 +1323,7 @@ if (!empty($store->gallery)) {
             <div class="ppv-tab-content" id="tab-settings">
                 <h2 data-i18n="profile_settings"><?php echo esc_html(PPV_Lang::t('profile_settings')); ?></h2>
 
-                <h3 style="margin-top: 0;">Aktivierung</h3>
+                <h3 style="margin-top: 0;" data-i18n="activation_section"><?php echo esc_html(PPV_Lang::t('activation_section')); ?></h3>
 
                 <div class="ppv-checkbox-group">
                     <label class="ppv-checkbox">
@@ -1400,7 +1406,7 @@ if (!empty($store->gallery)) {
                 <!-- ============================================================
                      ONBOARDING RESET (TRIAL ONLY)
                      ============================================================ -->
-                <h3>Onboarding</h3>
+                <h3 data-i18n="onboarding_section"><?php echo esc_html(PPV_Lang::t('onboarding_section')); ?></h3>
 
                 <div class="ppv-form-group">
                     <p class="ppv-help" data-i18n="onboarding_reset_help" style="margin-bottom: 12px;">

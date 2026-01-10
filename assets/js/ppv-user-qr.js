@@ -20,7 +20,7 @@ const STATIC_QR_CACHE_KEY = 'ppv_static_qr_cache';
  */
 function generateQRCodeDataURL(text, size = 300) {
   if (typeof qrcode === 'undefined') {
-    console.error('qrcode-generator library not loaded!');
+    ppvLog.error('qrcode-generator library not loaded!');
     return null;
   }
 
@@ -62,7 +62,7 @@ function generateQRCodeDataURL(text, size = 300) {
 
     return canvas.toDataURL('image/png');
   } catch (e) {
-    console.error('QR generation error:', e);
+    ppvLog.error('QR generation error:', e);
     return null;
   }
 }
@@ -78,10 +78,10 @@ async function requestWakeLock() {
   try {
     if ('wakeLock' in navigator) {
       wakeLock = await navigator.wakeLock.request('screen');
-      console.log('🔆 Wake Lock activated - screen stays bright');
+      ppvLog('🔆 Wake Lock activated - screen stays bright');
     }
   } catch (e) {
-    console.log('Wake Lock not available:', e.message);
+    ppvLog('Wake Lock not available:', e.message);
   }
 }
 
@@ -89,7 +89,7 @@ function releaseWakeLock() {
   if (wakeLock) {
     wakeLock.release();
     wakeLock = null;
-    console.log('🔅 Wake Lock released');
+    ppvLog('🔅 Wake Lock released');
   }
 }
 
@@ -225,7 +225,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     fullscreenBtn.addEventListener("click", toggleZoom);
     fullscreenBtn.addEventListener("touchend", toggleZoom);
   } else {
-    console.warn('Fullscreen button not found: ppvQrFullscreenBtn');
+    ppvLog.warn('Fullscreen button not found: ppvQrFullscreenBtn');
   }
 
   // 🔆 Activate Wake Lock to keep screen bright
@@ -290,7 +290,7 @@ async function loadTimedQR(userId, forceNew = false) {
     }
 
   } catch (err) {
-    console.error("QR Load Error:", err);
+    ppvLog.error("QR Load Error:", err);
 
     // 📱 Offline fallback - try to load cached QR
     const cached = loadFromCache(userId);
@@ -530,12 +530,12 @@ async function cacheQRData(userId, data) {
     localStorage.setItem(QR_CACHE_KEY + '_' + userId, JSON.stringify(cacheData));
 
     if (cacheSuccess) {
-      console.log('💾 QR cached for offline use (local generation)');
+      ppvLog('💾 QR cached for offline use (local generation)');
     } else {
-      console.log('💾 QR value cached - will regenerate image when needed');
+      ppvLog('💾 QR value cached - will regenerate image when needed');
     }
   } catch (e) {
-    console.warn('Failed to cache QR:', e);
+    ppvLog.warn('Failed to cache QR:', e);
   }
 }
 
@@ -598,9 +598,9 @@ function cacheStaticQR(userId, qrValue, qrDataUrl) {
       cached_at: Math.floor(Date.now() / 1000)
     };
     localStorage.setItem(STATIC_QR_CACHE_KEY + '_' + userId, JSON.stringify(cacheData));
-    console.log('💾 Static QR cached for offline fallback');
+    ppvLog('💾 Static QR cached for offline fallback');
   } catch (e) {
-    console.warn('Failed to cache static QR:', e);
+    ppvLog.warn('Failed to cache static QR:', e);
   }
 }
 
@@ -674,7 +674,7 @@ function hideOfflineBanner() {
 // ═══════════════════════════════════════════════════════════════
 
 window.addEventListener('online', () => {
-  console.log('🟢 Back online');
+  ppvLog('🟢 Back online');
   hideOfflineBanner();
   // Reload QR when back online
   if (currentUserId) {
@@ -683,7 +683,7 @@ window.addEventListener('online', () => {
 });
 
 window.addEventListener('offline', () => {
-  console.log('🔴 Went offline');
+  ppvLog('🔴 Went offline');
   showOfflineBanner();
   showStatus("📡 Offline - QR-Code weiterhin verfügbar", "warning");
 });

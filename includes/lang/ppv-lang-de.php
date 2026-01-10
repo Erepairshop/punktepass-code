@@ -631,12 +631,37 @@ return [
     'link_valid' => '✓ Gültig',
     'link_invalid' => '✗ Ungültig',
     
+    // ========== NAVIGATION ==========
+    'nav_dashboard' => 'Dashboard',
+    'nav_my_points' => 'Meine Punkte',
+    'nav_rewards' => 'Belohnungen',
+    'nav_settings' => 'Einstellungen',
+    'nav_feedback' => 'Feedback',
+    'nav_scanner' => 'Scanner',
+    'nav_profile' => 'Profil',
+    'nav_start' => 'Start',
+    'nav_statistics' => 'Statistik',
+
+    // ========== SIGNUP ==========
+    'signup_title' => '👤 PunktePass Benutzerregistrierung',
+    'signup_email_label' => 'E-Mail *',
+    'signup_password_label' => 'Passwort *',
+    'signup_password_placeholder' => 'Mind. 8 Zeichen, Großbuchstabe, Zahl, Sonderzeichen',
+    'signup_password_repeat_label' => 'Passwort wiederholen *',
+    'signup_button' => 'Registrieren',
+    'signup_or' => 'oder',
+    'signup_google_button' => 'Mit Google anmelden',
+    'signup_generate_password' => 'Generieren',
+
     // ========== SETTINGS TAB ==========
     'profile_settings' => 'Profileinstellungen',
+    'activation_section' => 'Aktivierung',
+    'onboarding_section' => 'Onboarding',
+    'delete_logo' => 'Logo löschen',
     'store_active' => 'Geschäft ist aktiv',
     'store_visible' => 'Öffentlich sichtbar',
     'pos_enabled' => 'POS-System aktiviert',
-    
+
     'store_active_help' => 'Nur aktive Geschäfte erscheinen in der App',
     'store_visible_help' => 'Privat oder öffentlich sichtbar für Kunden',
     'pos_enabled_help' => 'Aktiviere das POS-System zur Punktevergabe',

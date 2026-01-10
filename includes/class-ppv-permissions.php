@@ -24,6 +24,11 @@ function ppv_perm_log($msg) {
 
 class PPV_Permissions {
 
+    // 🚀 PERFORMANCE: Request-scope caches (reduces duplicate DB queries)
+    private static $validated_users = [];
+    private static $validated_stores = [];
+    private static $store_subscription_cache = [];
+
     /**
      * Check if user is authenticated via any method
      * - Session authentication ($_SESSION['ppv_user_id'])
@@ -45,15 +50,24 @@ class PPV_Permissions {
 
         // 1. Check session authentication
         if (!empty($_SESSION['ppv_user_id'])) {
+            $user_id = intval($_SESSION['ppv_user_id']);
+
+            // 🚀 CACHE HIT: Check if already validated in this request
+            if (isset(self::$validated_users[$user_id])) {
+                ppv_perm_log("✅ [PPV_Permissions] Auth via SESSION (CACHED): user_id=" . $user_id);
+                return true;
+            }
+
             // 🔒 SECURITY: Validate user still exists and is active
             global $wpdb;
-            $user_id = intval($_SESSION['ppv_user_id']);
             $user_exists = $wpdb->get_var($wpdb->prepare(
                 "SELECT id FROM {$wpdb->prefix}ppv_users WHERE id = %d AND active = 1",
                 $user_id
             ));
 
             if ($user_exists) {
+                // Cache the validation result for this request
+                self::$validated_users[$user_id] = true;
                 ppv_perm_log("✅ [PPV_Permissions] Auth via SESSION: user_id=" . $user_id);
                 return true;
             } else {
@@ -66,15 +80,24 @@ class PPV_Permissions {
 
         // 1b. 🏪 TRIAL HANDLER SUPPORT: Check ppv_vendor_store_id (händler trial has this set)
         if (!empty($_SESSION['ppv_vendor_store_id'])) {
+            $store_id = intval($_SESSION['ppv_vendor_store_id']);
+
+            // 🚀 CACHE HIT: Check if already validated in this request
+            if (isset(self::$validated_stores[$store_id])) {
+                ppv_perm_log("✅ [PPV_Permissions] Auth via SESSION (CACHED): vendor_store_id=" . $store_id);
+                return true;
+            }
+
             // 🔒 SECURITY: Validate store still exists and is active
             global $wpdb;
-            $store_id = intval($_SESSION['ppv_vendor_store_id']);
             $store_exists = $wpdb->get_var($wpdb->prepare(
                 "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE id = %d AND status = 'active'",
                 $store_id
             ));
 
             if ($store_exists) {
+                // Cache the validation result for this request
+                self::$validated_stores[$store_id] = true;
                 ppv_perm_log("✅ [PPV_Permissions] Auth via SESSION: vendor_store_id=" . $store_id);
                 return true;
             } else {
@@ -252,47 +275,63 @@ class PPV_Permissions {
         }
 
         if ($store_id_to_check) {
-            ppv_perm_log("🔍 [PPV_Permissions] Checking subscription expiry for store_id={$store_id_to_check}");
+            // 🚀 CACHE HIT: Check if subscription already validated in this request
+            if (isset(self::$store_subscription_cache[$store_id_to_check])) {
+                $cached_result = self::$store_subscription_cache[$store_id_to_check];
+                if (is_wp_error($cached_result)) {
+                    ppv_perm_log("❌ [PPV_Permissions] Subscription check (CACHED): EXPIRED");
+                    return $cached_result;
+                }
+                ppv_perm_log("✅ [PPV_Permissions] Subscription check (CACHED): VALID");
+                // Continue to return true at end of method
+            } else {
+                ppv_perm_log("🔍 [PPV_Permissions] Checking subscription expiry for store_id={$store_id_to_check}");
 
-            $store = $wpdb->get_row($wpdb->prepare(
-                "SELECT subscription_status, trial_ends_at, subscription_expires_at
-                FROM {$wpdb->prefix}ppv_stores
-                WHERE id = %d
-                LIMIT 1",
-                $store_id_to_check
-            ));
+                $store = $wpdb->get_row($wpdb->prepare(
+                    "SELECT subscription_status, trial_ends_at, subscription_expires_at
+                    FROM {$wpdb->prefix}ppv_stores
+                    WHERE id = %d
+                    LIMIT 1",
+                    $store_id_to_check
+                ));
 
-            if ($store) {
-                $now = current_time('timestamp');
-                $is_expired = false;
+                if ($store) {
+                    $now = current_time('timestamp');
+                    $is_expired = false;
 
-                // Check trial expiry
-                if ($store->subscription_status === 'trial' && !empty($store->trial_ends_at)) {
-                    $trial_end = strtotime($store->trial_ends_at);
-                    if ($trial_end < $now) {
-                        $is_expired = true;
-                        ppv_perm_log("❌ [PPV_Permissions] TRIAL EXPIRED: trial_ends_at={$store->trial_ends_at}");
+                    // Check trial expiry
+                    if ($store->subscription_status === 'trial' && !empty($store->trial_ends_at)) {
+                        $trial_end = strtotime($store->trial_ends_at);
+                        if ($trial_end < $now) {
+                            $is_expired = true;
+                            ppv_perm_log("❌ [PPV_Permissions] TRIAL EXPIRED: trial_ends_at={$store->trial_ends_at}");
+                        }
                     }
-                }
 
-                // Check active subscription expiry
-                if ($store->subscription_status === 'active' && !empty($store->subscription_expires_at)) {
-                    $sub_end = strtotime($store->subscription_expires_at);
-                    if ($sub_end < $now) {
-                        $is_expired = true;
-                        ppv_perm_log("❌ [PPV_Permissions] SUBSCRIPTION EXPIRED: subscription_expires_at={$store->subscription_expires_at}");
+                    // Check active subscription expiry
+                    if ($store->subscription_status === 'active' && !empty($store->subscription_expires_at)) {
+                        $sub_end = strtotime($store->subscription_expires_at);
+                        if ($sub_end < $now) {
+                            $is_expired = true;
+                            ppv_perm_log("❌ [PPV_Permissions] SUBSCRIPTION EXPIRED: subscription_expires_at={$store->subscription_expires_at}");
+                        }
                     }
-                }
 
-                if ($is_expired) {
-                    return new WP_Error(
-                        'subscription_expired',
-                        'Ihr Abonnement ist abgelaufen. Bitte verlängern Sie Ihr Abo.',
-                        ['status' => 403]
-                    );
-                }
+                    if ($is_expired) {
+                        $error = new WP_Error(
+                            'subscription_expired',
+                            'Ihr Abonnement ist abgelaufen. Bitte verlängern Sie Ihr Abo.',
+                            ['status' => 403]
+                        );
+                        // Cache the error result for this request
+                        self::$store_subscription_cache[$store_id_to_check] = $error;
+                        return $error;
+                    }
 
-                ppv_perm_log("✅ [PPV_Permissions] Subscription is VALID");
+                    ppv_perm_log("✅ [PPV_Permissions] Subscription is VALID");
+                    // Cache the valid result for this request
+                    self::$store_subscription_cache[$store_id_to_check] = true;
+                }
             }
         }
 

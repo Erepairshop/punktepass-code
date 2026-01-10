@@ -8,7 +8,7 @@
 
     // Guard against multiple loads
     if (window.PPV_PROFILE_LOADED) {
-        console.log('[Profile-Init] Already loaded, skipping');
+        ppvLog('[Profile-Init] Already loaded, skipping');
         return;
     }
     window.PPV_PROFILE_LOADED = true;
@@ -37,18 +37,18 @@
             this.$form = document.getElementById('ppv-profile-form');
 
             if (!this.$form) {
-                console.log('[Profile-Init] No profile form found');
+                ppvLog('[Profile-Init] No profile form found');
                 return;
             }
 
             // Prevent duplicate initialization
             if (this.$form.dataset.ppvBound === 'true') {
-                console.log('[Profile-Init] Already bound, skipping');
+                ppvLog('[Profile-Init] Already bound, skipping');
                 return;
             }
             this.$form.dataset.ppvBound = 'true';
 
-            console.log('[Profile-Init] Initializing...');
+            ppvLog('[Profile-Init] Initializing...');
 
             // Initialize global state
             const { initState } = getModule();
@@ -69,7 +69,7 @@
             // Update UI translations
             this.updateUI();
 
-            console.log('[Profile-Init] Initialization complete');
+            ppvLog('[Profile-Init] Initialization complete');
         }
 
         /**
@@ -78,7 +78,7 @@
         initTabManager() {
             const { TabManager } = getModule();
             if (!TabManager) {
-                console.error('[Profile-Init] TabManager not found!');
+                ppvLog.error('[Profile-Init] TabManager not found!');
                 return;
             }
             this.tabManager = new TabManager();
@@ -92,7 +92,7 @@
         initFormManager() {
             const { FormManager } = getModule();
             if (!FormManager) {
-                console.error('[Profile-Init] FormManager not found!');
+                ppvLog.error('[Profile-Init] FormManager not found!');
                 return;
             }
             this.formManager = new FormManager(this.$form, this.tabManager);
@@ -106,7 +106,7 @@
         initMediaManager() {
             const { MediaManager } = getModule();
             if (!MediaManager) {
-                console.error('[Profile-Init] MediaManager not found!');
+                ppvLog.error('[Profile-Init] MediaManager not found!');
                 return;
             }
             this.mediaManager = new MediaManager(this.$form);
@@ -120,7 +120,7 @@
         initGeocodingManager() {
             const { GeocodingManager } = getModule();
             if (!GeocodingManager) {
-                console.error('[Profile-Init] GeocodingManager not found!');
+                ppvLog.error('[Profile-Init] GeocodingManager not found!');
                 return;
             }
             this.geocodingManager = new GeocodingManager();
@@ -165,7 +165,7 @@
                         this.resetOnboardingButton(resetBtn, L);
                     }
                 } catch (err) {
-                    console.error('[Profile] Onboarding reset error:', err);
+                    ppvLog.error('[Profile] Onboarding reset error:', err);
                     showAlert(L.onboarding_reset_error || '❌ Error occurred!', 'error');
                     this.resetOnboardingButton(resetBtn, L);
                 }
@@ -234,7 +234,7 @@
                         showAlert(data.data?.msg || L.error || '❌ Hiba történt!', 'error');
                     }
                 } catch (err) {
-                    console.error('[Profile] Email change error:', err);
+                    ppvLog.error('[Profile] Email change error:', err);
                     showAlert(L.error || '❌ Hiba történt!', 'error');
                 }
 
@@ -309,7 +309,7 @@
                         showAlert(data.data?.msg || L.error || '❌ Hiba történt!', 'error');
                     }
                 } catch (err) {
-                    console.error('[Profile] Password change error:', err);
+                    ppvLog.error('[Profile] Password change error:', err);
                     showAlert(L.error || '❌ Hiba történt!', 'error');
                 }
 
@@ -330,7 +330,7 @@
                     if (timeDiff < 10000) {
                         const storeNameInput = this.$form.querySelector('[name="store_name"]');
                         if (saveData.store_name !== storeNameInput?.value) {
-                            console.warn('[Profile] MISMATCH! Saved name differs from current form!');
+                            ppvLog.warn('[Profile] MISMATCH! Saved name differs from current form!');
                         }
                     }
                     sessionStorage.removeItem('ppv_last_save');
@@ -450,6 +450,6 @@
     // Legacy global export
     window.ppvProfileForm = profileController;
 
-    console.log('[Profile-Init] Module loaded v3.0');
+    ppvLog('[Profile-Init] Module loaded v3.0');
 
 })();

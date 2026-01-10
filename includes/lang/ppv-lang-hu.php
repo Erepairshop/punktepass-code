@@ -651,12 +651,37 @@ return [
     'link_valid' => '✓ Érvényes',
     'link_invalid' => '✗ Érvénytelen',
     
+    // ========== NAVIGATION ==========
+    'nav_dashboard' => 'Kezdőlap',
+    'nav_my_points' => 'Pontjaim',
+    'nav_rewards' => 'Jutalmak',
+    'nav_settings' => 'Beállítások',
+    'nav_feedback' => 'Visszajelzés',
+    'nav_scanner' => 'Szkenner',
+    'nav_profile' => 'Profil',
+    'nav_start' => 'Kezdés',
+    'nav_statistics' => 'Statisztika',
+
+    // ========== SIGNUP ==========
+    'signup_title' => '👤 PunktePass Regisztráció',
+    'signup_email_label' => 'E-mail *',
+    'signup_password_label' => 'Jelszó *',
+    'signup_password_placeholder' => 'Min. 8 karakter, nagybetű, szám, speciális karakter',
+    'signup_password_repeat_label' => 'Jelszó megerősítése *',
+    'signup_button' => 'Regisztráció',
+    'signup_or' => 'vagy',
+    'signup_google_button' => 'Bejelentkezés Google-lal',
+    'signup_generate_password' => 'Generálás',
+
     // ========== SETTINGS TAB ==========
     'profile_settings' => 'Profilbeállítások',
+    'activation_section' => 'Aktiválás',
+    'onboarding_section' => 'Regisztrációs folyamat',
+    'delete_logo' => 'Logó törlése',
     'store_active' => 'Üzlet Aktív',
     'store_visible' => 'Nyilvánosan Látható',
     'pos_enabled' => 'POS-Rendszer Engedélyezve',
-    
+
     'store_active_help' => 'Csak az aktív üzletek jelennek meg az alkalmazásban',
     'store_visible_help' => 'Privát vagy nyilvánosan látható az ügyfeleknek',
     'pos_enabled_help' => 'Engedélyezd a POS-rendszert a pontok megadásához',

@@ -342,6 +342,52 @@ class PPV_Core {
 
             update_option('ppv_db_migration_version', '2.4');
         }
+
+        // Migration 2.5: Add performance indexes for frequently queried columns
+        if (version_compare($migration_version, '2.5', '<')) {
+            ppv_log("🚀 [PPV_Core] Starting Migration 2.5: Adding performance indexes...");
+
+            // 1. User devices - fingerprint and store lookup optimization
+            $devices_table = $wpdb->prefix . 'ppv_user_devices';
+            $result = $wpdb->query("SHOW INDEX FROM {$devices_table} WHERE Key_name = 'idx_fingerprint_store'");
+            if ($result === 0) {
+                $wpdb->query("ALTER TABLE {$devices_table} ADD INDEX idx_fingerprint_store (fingerprint_hash, store_id, status)");
+                ppv_log("✅ [PPV_Core] Added idx_fingerprint_store index to ppv_user_devices");
+            }
+
+            // 2. Users - email and active status lookup (login optimization)
+            $users_table = $wpdb->prefix . 'ppv_users';
+            $result = $wpdb->query("SHOW INDEX FROM {$users_table} WHERE Key_name = 'idx_email_active'");
+            if ($result === 0) {
+                $wpdb->query("ALTER TABLE {$users_table} ADD INDEX idx_email_active (email, active)");
+                ppv_log("✅ [PPV_Core] Added idx_email_active index to ppv_users");
+            }
+
+            // 3. Users - username and type lookup (scanner login optimization)
+            $result = $wpdb->query("SHOW INDEX FROM {$users_table} WHERE Key_name = 'idx_username_type'");
+            if ($result === 0) {
+                $wpdb->query("ALTER TABLE {$users_table} ADD INDEX idx_username_type (username, user_type, active)");
+                ppv_log("✅ [PPV_Core] Added idx_username_type index to ppv_users");
+            }
+
+            // 4. Points - user, store and date lookup (scanning and stats optimization)
+            $points_table = $wpdb->prefix . 'ppv_points';
+            $result = $wpdb->query("SHOW INDEX FROM {$points_table} WHERE Key_name = 'idx_user_store_date'");
+            if ($result === 0) {
+                $wpdb->query("ALTER TABLE {$points_table} ADD INDEX idx_user_store_date (user_id, store_id, scan_date)");
+                ppv_log("✅ [PPV_Core] Added idx_user_store_date index to ppv_points");
+            }
+
+            // 5. Points - store and created date (analytics optimization)
+            $result = $wpdb->query("SHOW INDEX FROM {$points_table} WHERE Key_name = 'idx_store_created'");
+            if ($result === 0) {
+                $wpdb->query("ALTER TABLE {$points_table} ADD INDEX idx_store_created (store_id, created)");
+                ppv_log("✅ [PPV_Core] Added idx_store_created index to ppv_points");
+            }
+
+            ppv_log("✅ [PPV_Core] Migration 2.5 completed - Performance indexes added");
+            update_option('ppv_db_migration_version', '2.5');
+        }
     }
 
     /**
@@ -471,7 +517,7 @@ class PPV_Core {
     }
         
         // 🧹 Minden korábbi PPV CSS eltávolítása (kivéve whitelistet)
-        $whitelist = ['ppv-theme-light', 'ppv-login-light', 'ppv-handler-light', 'ppv-handler-dark'];
+        $whitelist = ['ppv-theme-core', 'ppv-theme-dashboard', 'ppv-theme-qr', 'ppv-theme-stores', 'ppv-theme-profile', 'ppv-theme-analytics', 'ppv-theme-dark', 'ppv-login-light', 'ppv-handler-light', 'ppv-handler-dark'];
         foreach (wp_styles()->queue as $handle) {
             if (strpos($handle, 'ppv-') === 0 && !in_array($handle, $whitelist)) {
                 wp_dequeue_style($handle);
@@ -479,15 +525,14 @@ class PPV_Core {
             }
         }
 
-        // 🔹 ALWAYS USE LIGHT CSS (contains all dark mode styles via body.ppv-dark selectors)
-        // Theme switching is handled via body class (ppv-light/ppv-dark) by theme-loader.js
-        wp_register_style(
-            'ppv-theme-light',
-            PPV_PLUGIN_URL . 'assets/css/ppv-theme-light.css',
-            [],
-            PPV_VERSION
-        );
-        wp_enqueue_style('ppv-theme-light');
+        // 🔹 MODULAR CSS - Core is loaded here, components loaded via punktepass.php
+        // Note: Component CSS files are conditionally loaded in punktepass.php based on current page
+        // This ensures we only load the CSS needed for each page, reducing initial load time by ~90%
+
+        // Only enqueue core if not already enqueued (punktepass.php handles the full logic)
+        if (!wp_style_is('ppv-theme-core', 'enqueued')) {
+            wp_enqueue_style('ppv-theme-core', PPV_PLUGIN_URL . 'assets/css/ppv-theme-core.css', [], PPV_VERSION);
+        }
 
         // 🔹 Theme váltó JS (globálisan minden oldalra)
         wp_enqueue_script(

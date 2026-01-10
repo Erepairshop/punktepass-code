@@ -660,12 +660,37 @@ return [
     'link_valid' => '✓ Valid',
     'link_invalid' => '✗ Invalid',
     
+    // ========== NAVIGATION ==========
+    'nav_dashboard' => 'Panou de control',
+    'nav_my_points' => 'Punctele mele',
+    'nav_rewards' => 'Recompense',
+    'nav_settings' => 'Setări',
+    'nav_feedback' => 'Feedback',
+    'nav_scanner' => 'Scanner',
+    'nav_profile' => 'Profil',
+    'nav_start' => 'Start',
+    'nav_statistics' => 'Statistici',
+
+    // ========== SIGNUP ==========
+    'signup_title' => '👤 Înregistrare PunktePass',
+    'signup_email_label' => 'E-mail *',
+    'signup_password_label' => 'Parolă *',
+    'signup_password_placeholder' => 'Min. 8 caractere, literă mare, număr, caracter special',
+    'signup_password_repeat_label' => 'Repetă parola *',
+    'signup_button' => 'Înregistrare',
+    'signup_or' => 'sau',
+    'signup_google_button' => 'Conectare cu Google',
+    'signup_generate_password' => 'Generează',
+
     // ========== SETTINGS TAB ==========
     'profile_settings' => 'Setări Profil',
+    'activation_section' => 'Activare',
+    'onboarding_section' => 'Proces de înregistrare',
+    'delete_logo' => 'Șterge logo',
     'store_active' => 'Magazinul este Activ',
     'store_visible' => 'Vizibil Public',
     'pos_enabled' => 'Sistem POS Activat',
-    
+
     'store_active_help' => 'Doar magazinele active apar în aplicație',
     'store_visible_help' => 'Privat sau vizibil public pentru clienți',
     'pos_enabled_help' => 'Activează sistemul POS pentru acordarea punctelor',

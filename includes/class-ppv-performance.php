@@ -321,6 +321,7 @@ class PPV_Performance {
             'jquery',
             'wp-polyfill',
             'ppv-global-init-lock', // Must run first to prevent duplicate listeners
+            'ppv-debug', // Must load early for production-safe logging
             'ppv-critical',
         ];
 
