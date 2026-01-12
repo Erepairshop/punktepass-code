@@ -924,11 +924,11 @@ return [
 'description_required' => 'Descrierea problemei este obligatorie',
 'ticket_sent' => 'Ticket trimis cu succes! Vă vom contacta în curând.',
 
-// Scanner Users
-'tab_scanner_users' => 'Utilizatori Scanner',
-'scanner_users_title' => 'Utilizatori Scanner',
-'add_scanner_user' => 'Scanner Nou',
-'no_scanner_users' => 'Nu există utilizatori scanner creați.',
+// Angajați (Scanner Users)
+'tab_scanner_users' => 'Angajați',
+'scanner_users_title' => 'Angajați',
+'add_scanner_user' => 'Angajat Nou',
+'no_scanner_users' => 'Nu există angajați creați.',
 'created_at' => 'Creat la',
 'status_active' => 'Activ',
 'status_disabled' => 'Dezactivat',
@@ -1890,12 +1890,12 @@ return [
     // Scanner User Management - Traduceri lipsă
     // ============================================================
     'scanner_login' => 'E-mail sau Nume de utilizator',
-    'scanner_login_placeholder' => 'scanner1 sau scanner@example.com',
+    'scanner_login_placeholder' => 'angajat1 sau angajat@example.com',
     'scanner_username' => 'Nume de utilizator',
-    'scanner_username_placeholder' => 'de ex. scanner1',
-    'scanner_users_title' => 'Utilizatori Scanner',
-    'add_scanner_user' => 'Creează Scanner Nou',
-    'no_scanner_users' => 'Nu există încă utilizatori scanner creați.',
+    'scanner_username_placeholder' => 'de ex. angajat1',
+    'scanner_users_title' => 'Angajați',
+    'add_scanner_user' => 'Creează Angajat Nou',
+    'no_scanner_users' => 'Nu există încă angajați creați.',
     'err_fill_fields' => 'Vă rugăm să completați toate câmpurile',
     'create_error' => 'Eroare la creare',
     'network_error' => 'Eroare de rețea',

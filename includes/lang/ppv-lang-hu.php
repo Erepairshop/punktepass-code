@@ -914,11 +914,11 @@ return [
 'description_required' => 'Probléma leírása kötelező',
 'ticket_sent' => 'Ticket sikeresen elküldve! Hamarosan jelentkezünk.',
 
-// Scanner Users
-'tab_scanner_users' => 'Scanner Felhasználók',
-'scanner_users_title' => 'Scanner Felhasználók',
-'add_scanner_user' => 'Új Scanner',
-'no_scanner_users' => 'Még nincs scanner felhasználó létrehozva.',
+// Munkatársak (Scanner Users)
+'tab_scanner_users' => 'Munkatársak',
+'scanner_users_title' => 'Munkatársak',
+'add_scanner_user' => 'Új Munkatárs',
+'no_scanner_users' => 'Még nincs munkatárs létrehozva.',
 'created_at' => 'Létrehozva',
 'status_active' => 'Aktív',
 'status_disabled' => 'Letiltva',
@@ -1885,12 +1885,12 @@ return [
     // Scanner User Management - Hiányzó fordítások
     // ============================================================
     'scanner_login' => 'E-mail vagy Felhasználónév',
-    'scanner_login_placeholder' => 'scanner1 vagy scanner@example.com',
+    'scanner_login_placeholder' => 'munkatars1 vagy munkatars@example.com',
     'scanner_username' => 'Felhasználónév',
-    'scanner_username_placeholder' => 'pl. scanner1',
-    'scanner_users_title' => 'Scanner Felhasználók',
-    'add_scanner_user' => 'Új Scanner Létrehozása',
-    'no_scanner_users' => 'Még nincs scanner felhasználó létrehozva.',
+    'scanner_username_placeholder' => 'pl. munkatars1',
+    'scanner_users_title' => 'Munkatársak',
+    'add_scanner_user' => 'Új Munkatárs Létrehozása',
+    'no_scanner_users' => 'Még nincs munkatárs létrehozva.',
     'err_fill_fields' => 'Kérjük töltse ki az összes mezőt',
     'create_error' => 'Hiba a létrehozás során',
     'network_error' => 'Hálózati hiba',

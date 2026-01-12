@@ -939,11 +939,11 @@ return [
 'description_required' => 'Problembeschreibung ist erforderlich',
 'ticket_sent' => 'Ticket erfolgreich gesendet! Wir melden uns bald.',
 
-// Scanner Users
-'tab_scanner_users' => 'Scanner Benutzer',
-'scanner_users_title' => 'Scanner Benutzer',
-'add_scanner_user' => 'Neuer Scanner',
-'no_scanner_users' => 'Noch keine Scanner-Benutzer erstellt.',
+// Mitarbeiter (Scanner Users)
+'tab_scanner_users' => 'Mitarbeiter',
+'scanner_users_title' => 'Mitarbeiter',
+'add_scanner_user' => 'Neuer Mitarbeiter',
+'no_scanner_users' => 'Noch keine Mitarbeiter erstellt.',
 'created_at' => 'Erstellt am',
 'status_active' => 'Aktiv',
 'status_disabled' => 'Deaktiviert',
@@ -1905,15 +1905,15 @@ return [
     'faq_a20' => 'Nutze den Feedback-Button unten in der Navigation oder kontaktiere den Support über die Einstellungen.',
 
     // ============================================================
-    // Scanner User Management - Missing translations
+    // Mitarbeiter Management (Scanner User Management)
     // ============================================================
     'scanner_login' => 'E-Mail oder Benutzername',
-    'scanner_login_placeholder' => 'scanner1 oder scanner@example.com',
+    'scanner_login_placeholder' => 'mitarbeiter1 oder mitarbeiter@example.com',
     'scanner_username' => 'Benutzername',
-    'scanner_username_placeholder' => 'z.B. scanner1',
-    'scanner_users_title' => 'Scanner Benutzer',
-    'add_scanner_user' => 'Neuen Scanner erstellen',
-    'no_scanner_users' => 'Noch keine Scanner Benutzer erstellt.',
+    'scanner_username_placeholder' => 'z.B. mitarbeiter1',
+    'scanner_users_title' => 'Mitarbeiter',
+    'add_scanner_user' => 'Neuen Mitarbeiter erstellen',
+    'no_scanner_users' => 'Noch keine Mitarbeiter erstellt.',
     'err_fill_fields' => 'Bitte alle Felder ausfüllen',
     'create_error' => 'Fehler beim Erstellen',
     'network_error' => 'Netzwerkfehler',
