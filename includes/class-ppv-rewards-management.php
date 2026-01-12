@@ -507,12 +507,13 @@ class PPV_Rewards_Management {
         .ppv-form-group select,
         .ppv-form-group textarea {
             padding: 12px 16px;
-            background: var(--pp-bg-2, #f1f5f9);
-            border: 1px solid var(--pp-border, rgba(0, 168, 204, 0.15));
+            background: #ffffff;
+            border: 2px solid #cbd5e1;
             border-radius: 10px;
-            color: var(--pp-text, #1e293b);
+            color: #1e293b;
             font-size: 0.95rem;
             transition: all 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
         .ppv-form-group input:focus,
@@ -539,9 +540,10 @@ class PPV_Rewards_Management {
         [data-theme="dark"] .ppv-form-group input,
         [data-theme="dark"] .ppv-form-group select,
         [data-theme="dark"] .ppv-form-group textarea {
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid rgba(0, 168, 204, 0.2);
+            background: rgba(15, 23, 42, 0.9);
+            border: 2px solid rgba(100, 116, 139, 0.6);
             color: #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
         }
 
         /* Campaign Section */
@@ -635,10 +637,11 @@ class PPV_Rewards_Management {
 
         .ppv-date-field input {
             padding: 10px 14px;
-            background: var(--pp-bg-2, #f1f5f9);
-            border: 1px solid rgba(249, 115, 22, 0.3);
+            background: #ffffff;
+            border: 2px solid #fb923c;
             border-radius: 8px;
-            color: var(--pp-text, #1e293b);
+            color: #1e293b;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
         body.ppv-dark .ppv-date-field label,
@@ -647,8 +650,10 @@ class PPV_Rewards_Management {
         }
         body.ppv-dark .ppv-date-field input,
         [data-theme="dark"] .ppv-date-field input {
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(15, 23, 42, 0.9);
+            border: 2px solid rgba(251, 146, 60, 0.6);
             color: #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
         }
 
         /* Filiale Selector */
