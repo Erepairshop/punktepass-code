@@ -506,14 +506,14 @@ class PPV_Rewards_Management {
         .ppv-form-group input,
         .ppv-form-group select,
         .ppv-form-group textarea {
-            padding: 12px 16px;
-            background: #ffffff;
-            border: 2px solid #cbd5e1;
-            border-radius: 10px;
-            color: #1e293b;
-            font-size: 0.95rem;
-            transition: all 0.2s ease;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 12px 16px !important;
+            background: #ffffff !important;
+            border: 3px solid #94a3b8 !important;
+            border-radius: 10px !important;
+            color: #1e293b !important;
+            font-size: 0.95rem !important;
+            transition: all 0.2s ease !important;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
         }
 
         .ppv-form-group input:focus,
@@ -540,10 +540,10 @@ class PPV_Rewards_Management {
         [data-theme="dark"] .ppv-form-group input,
         [data-theme="dark"] .ppv-form-group select,
         [data-theme="dark"] .ppv-form-group textarea {
-            background: rgba(15, 23, 42, 0.9);
-            border: 2px solid rgba(100, 116, 139, 0.6);
-            color: #e2e8f0;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+            background: rgba(15, 23, 42, 0.9) !important;
+            border: 3px solid rgba(100, 116, 139, 0.8) !important;
+            color: #e2e8f0 !important;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4) !important;
         }
 
         /* Campaign Section */
@@ -636,12 +636,12 @@ class PPV_Rewards_Management {
         }
 
         .ppv-date-field input {
-            padding: 10px 14px;
-            background: #ffffff;
-            border: 2px solid #fb923c;
-            border-radius: 8px;
-            color: #1e293b;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 10px 14px !important;
+            background: #ffffff !important;
+            border: 3px solid #fb923c !important;
+            border-radius: 8px !important;
+            color: #1e293b !important;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
         }
 
         body.ppv-dark .ppv-date-field label,
@@ -650,10 +650,10 @@ class PPV_Rewards_Management {
         }
         body.ppv-dark .ppv-date-field input,
         [data-theme="dark"] .ppv-date-field input {
-            background: rgba(15, 23, 42, 0.9);
-            border: 2px solid rgba(251, 146, 60, 0.6);
-            color: #e2e8f0;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+            background: rgba(15, 23, 42, 0.9) !important;
+            border: 3px solid rgba(251, 146, 60, 0.8) !important;
+            color: #e2e8f0 !important;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4) !important;
         }
 
         /* Filiale Selector */
