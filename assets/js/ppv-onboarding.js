@@ -269,7 +269,7 @@
                         <div class="ppv-form-row">
                             <div class="ppv-form-group ppv-form-group-wide">
                                 <label>${L.onb_profile_shop_name || 'Geschäftsname'} <span class="required">*</span></label>
-                                <input type="text" name="shop_name" required placeholder="${L.onb_profile_shop_name_placeholder || 'z.B. Test Café'}">
+                                <input type="text" name="shop_name" required placeholder="${L.onb_profile_shop_name_placeholder || 'z.B. Test Café'}" style="padding: 12px 16px !important; background: #ffffff !important; border: 3px solid #94a3b8 !important; border-radius: 10px !important; color: #1e293b !important; font-size: 0.95rem !important; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;">
                                 <small>${L.onb_profile_shop_name_help || 'Dieser Name wird den Kunden angezeigt'}</small>
                             </div>
                         </div>
@@ -277,12 +277,12 @@
                         <div class="ppv-form-row">
                             <div class="ppv-form-group">
                                 <label>${L.onb_profile_company_name || 'Firmenname'}</label>
-                                <input type="text" name="company_name" placeholder="${L.onb_profile_company_name_placeholder || 'z.B. Test GmbH'}">
+                                <input type="text" name="company_name" placeholder="${L.onb_profile_company_name_placeholder || 'z.B. Test GmbH'}" style="padding: 12px 16px !important; background: #ffffff !important; border: 3px solid #94a3b8 !important; border-radius: 10px !important; color: #1e293b !important; font-size: 0.95rem !important; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;">
                                 <small>${L.onb_profile_company_name_help || 'Offizieller Firmenname (für Rechnungen)'}</small>
                             </div>
                             <div class="ppv-form-group">
                                 <label>${L.onb_profile_country || 'Land'} <span class="required">*</span></label>
-                                <select name="country" required>
+                                <select name="country" required style="padding: 12px 16px !important; background: #ffffff !important; border: 3px solid #94a3b8 !important; border-radius: 10px !important; color: #1e293b !important; font-size: 0.95rem !important; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;">
                                     <option value="">${L.onb_profile_country_placeholder || 'Auswählen...'}</option>
                                     <option value="HU">🇭🇺 ${L.country_hu || 'Ungarn'}</option>
                                     <option value="DE">🇩🇪 ${L.country_de || 'Deutschland'}</option>
@@ -305,17 +305,17 @@
 
                         <div class="ppv-form-group">
                             <label>${L.onb_profile_address || 'Straße, Hausnr.'} <span class="required">*</span></label>
-                            <input type="text" name="address" required placeholder="${L.onb_profile_address_placeholder || 'z.B. Hauptstraße 12'}">
+                            <input type="text" name="address" required placeholder="${L.onb_profile_address_placeholder || 'z.B. Hauptstraße 12'}" style="padding: 12px 16px !important; background: #ffffff !important; border: 3px solid #94a3b8 !important; border-radius: 10px !important; color: #1e293b !important; font-size: 0.95rem !important; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;">
                         </div>
 
                         <div class="ppv-form-row ppv-form-row-3">
                             <div class="ppv-form-group">
                                 <label>${L.onb_profile_zip || 'PLZ'} <span class="required">*</span></label>
-                                <input type="text" name="zip" required placeholder="${L.onb_profile_zip_placeholder || '1011'}">
+                                <input type="text" name="zip" required placeholder="${L.onb_profile_zip_placeholder || '1011'}" style="padding: 12px 16px !important; background: #ffffff !important; border: 3px solid #94a3b8 !important; border-radius: 10px !important; color: #1e293b !important; font-size: 0.95rem !important; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;">
                             </div>
                             <div class="ppv-form-group ppv-form-group-wide">
                                 <label>${L.onb_profile_city || 'Stadt'} <span class="required">*</span></label>
-                                <input type="text" name="city" required placeholder="${L.onb_profile_city_placeholder || 'Budapest'}">
+                                <input type="text" name="city" required placeholder="${L.onb_profile_city_placeholder || 'Budapest'}" style="padding: 12px 16px !important; background: #ffffff !important; border: 3px solid #94a3b8 !important; border-radius: 10px !important; color: #1e293b !important; font-size: 0.95rem !important; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;">
                             </div>
                         </div>
                     </div>
@@ -338,11 +338,11 @@
                         <div class="ppv-form-row">
                             <div class="ppv-form-group">
                                 <label>${L.onb_profile_latitude || 'Breitengrad (Lat)'}</label>
-                                <input type="text" name="latitude" id="onb-latitude" placeholder="47.5000" readonly>
+                                <input type="text" name="latitude" id="onb-latitude" placeholder="47.5000" readonly style="padding: 12px 16px !important; background: #f1f5f9 !important; border: 3px solid #94a3b8 !important; border-radius: 10px !important; color: #64748b !important; font-size: 0.95rem !important; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;">
                             </div>
                             <div class="ppv-form-group">
                                 <label>${L.onb_profile_longitude || 'Längengrad (Lng)'}</label>
-                                <input type="text" name="longitude" id="onb-longitude" placeholder="19.0400" readonly>
+                                <input type="text" name="longitude" id="onb-longitude" placeholder="19.0400" readonly style="padding: 12px 16px !important; background: #f1f5f9 !important; border: 3px solid #94a3b8 !important; border-radius: 10px !important; color: #64748b !important; font-size: 0.95rem !important; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;">
                             </div>
                         </div>
 
@@ -848,25 +848,25 @@
                 <form class="ppv-wizard-form" id="ppv-reward-form">
                     <div class="ppv-form-group">
                         <label>${L.onb_reward_name || 'Prämienname'} *</label>
-                        <input type="text" name="title" placeholder="${L.onb_reward_name_placeholder || 'z.B. Gratis Kaffee'}">
+                        <input type="text" name="title" placeholder="${L.onb_reward_name_placeholder || 'z.B. Gratis Kaffee'}" style="padding: 12px 16px !important; background: #ffffff !important; border: 3px solid #94a3b8 !important; border-radius: 10px !important; color: #1e293b !important; font-size: 0.95rem !important; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;">
                         <small style="color: #999;">${L.onb_reward_name_helper || '📝 Der Prämienname, den Kunden sehen'}</small>
                     </div>
 
                     <div class="ppv-form-group">
                         <label>${L.onb_reward_points || 'Erforderliche Punkte'} *</label>
-                        <input type="number" name="required_points" placeholder="100" min="1" value="100">
+                        <input type="number" name="required_points" placeholder="100" min="1" value="100" style="padding: 12px 16px !important; background: #ffffff !important; border: 3px solid #94a3b8 !important; border-radius: 10px !important; color: #1e293b !important; font-size: 0.95rem !important; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;">
                         <small style="color: #999;">${L.onb_reward_points_helper || '🎯 Wie viele Punkte der Kunde für diese Prämie braucht'}</small>
                     </div>
 
                     <div class="ppv-form-group">
                         <label>${L.onb_reward_description || 'Beschreibung (optional)'}</label>
-                        <textarea name="description" rows="3" placeholder="${L.onb_reward_description_placeholder || 'z.B. Ein gratis Espresso oder Cappuccino.'}"></textarea>
+                        <textarea name="description" rows="3" placeholder="${L.onb_reward_description_placeholder || 'z.B. Ein gratis Espresso oder Cappuccino.'}" style="padding: 12px 16px !important; background: #ffffff !important; border: 3px solid #94a3b8 !important; border-radius: 10px !important; color: #1e293b !important; font-size: 0.95rem !important; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;"></textarea>
                         <small style="color: #999;">${L.onb_reward_description_helper || '💬 Weitere Details zur Prämie (optional)'}</small>
                     </div>
 
                     <div class="ppv-form-group">
                         <label>${L.onb_reward_type || 'Prämienart'} *</label>
-                        <select name="action_type" id="onboarding-action-type">
+                        <select name="action_type" id="onboarding-action-type" style="padding: 12px 16px !important; background: #ffffff !important; border: 3px solid #94a3b8 !important; border-radius: 10px !important; color: #1e293b !important; font-size: 0.95rem !important; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;">
                             <option value="discount_percent">${L.onb_reward_type_percent || 'Rabatt (%)'}</option>
                             <option value="discount_fixed">${L.onb_reward_type_fixed || 'Fixrabatt'}</option>
                             <option value="free_product" selected>${L.onb_reward_type_free || 'Gratis-Produkt'}</option>
@@ -876,27 +876,27 @@
 
                     <div class="ppv-form-group" id="onboarding-action-value-wrapper">
                         <label>${L.onb_reward_value || 'Wert'} *</label>
-                        <input type="text" name="action_value" placeholder="z.B. 10" value="0">
+                        <input type="text" name="action_value" placeholder="z.B. 10" value="0" style="padding: 12px 16px !important; background: #ffffff !important; border: 3px solid #94a3b8 !important; border-radius: 10px !important; color: #1e293b !important; font-size: 0.95rem !important; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;">
                         <small style="color: #999;">${L.onb_reward_value_helper || '💶 Rabattwert (z.B. 10 = 10% oder 5 = 5 EUR)'}</small>
                     </div>
 
                     <!-- GRATIS TERMÉK NEVE (csak FREE_PRODUCT típusnál!) -->
                     <div class="ppv-form-group" id="onboarding-free-product-name-wrapper" style="display: none;">
                         <label>${L.onb_reward_free_product || '🎁 Produktname'}</label>
-                        <input type="text" name="free_product" id="onboarding-free-product-name" placeholder="${L.onb_reward_free_product_placeholder || 'z.B. Kaffee + Kuchen'}">
+                        <input type="text" name="free_product" id="onboarding-free-product-name" placeholder="${L.onb_reward_free_product_placeholder || 'z.B. Kaffee + Kuchen'}" style="padding: 12px 16px !important; background: #ffffff !important; border: 3px solid #94a3b8 !important; border-radius: 10px !important; color: #1e293b !important; font-size: 0.95rem !important; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;">
                         <small style="color: #999;">${L.onb_reward_free_product_helper || '🎁 Name des Gratis-Produkts (z.B. Kaffee + Kuchen)'}</small>
                     </div>
 
                     <!-- GRATIS TERMÉK ÉRTÉKE -->
                     <div class="ppv-form-group" id="onboarding-free-product-value-wrapper" style="display: none;">
                         <label style="color: #ff9800;">${L.onb_reward_free_product_value || '💰 Produktwert'} <span style="color: #ff0000;">*</span></label>
-                        <input type="number" name="free_product_value" id="onboarding-free-product-value" value="0" min="0.01" step="0.01" placeholder="0.00" style="border-color: #ff9800;">
+                        <input type="number" name="free_product_value" id="onboarding-free-product-value" value="0" min="0.01" step="0.01" placeholder="0.00" style="padding: 12px 16px !important; background: #ffffff !important; border: 3px solid #fb923c !important; border-radius: 10px !important; color: #1e293b !important; font-size: 0.95rem !important; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;">
                         <small style="color: #ff9800;">${L.onb_reward_free_product_value_helper || '💰 Der reguläre Preis des Produkts'}</small>
                     </div>
 
                     <div class="ppv-form-group">
                         <label>${L.onb_reward_points_given || 'Punkte bei Einlösung'} *</label>
-                        <input type="number" name="points_given" placeholder="5" min="0" value="0">
+                        <input type="number" name="points_given" placeholder="5" min="0" value="0" style="padding: 12px 16px !important; background: #ffffff !important; border: 3px solid #94a3b8 !important; border-radius: 10px !important; color: #1e293b !important; font-size: 0.95rem !important; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;">
                         <small style="color: #999;">${L.onb_reward_points_given_helper || '⭐ Diese Punkte erhält der Kunde bei Einlösung'}</small>
                     </div>
 
