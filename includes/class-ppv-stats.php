@@ -371,17 +371,33 @@ class PPV_Stats {
             return new WP_REST_Response(['success' => false, 'error' => 'No store'], 403);
         }
 
-        // ⚡ Use cache (5 min TTL)
+        // 🔍 DEBUG: Check if cache bypass is requested
+        $bypass_cache = $req->get_param('bypass_cache') === 'true' || $req->get_param('debug') === 'true';
+
+        // ⚡ Use cache (5 min TTL) unless bypassed
         $cache_key = self::build_cache_key('stats', $store_ids);
-        $data = self::get_cached($cache_key, function() use ($store_ids, $filiale_param) {
-            return self::fetch_stats_data($store_ids, $filiale_param);
-        });
+        ppv_log("🔍 [Stats] cache_key: " . $cache_key . " | bypass: " . ($bypass_cache ? 'YES' : 'NO'));
+
+        if ($bypass_cache) {
+            ppv_log("🔍 [Stats] Cache BYPASSED - forcing fresh data");
+            delete_transient($cache_key); // Clear cache
+            $data = self::fetch_stats_data($store_ids, $filiale_param);
+        } else {
+            $data = self::get_cached($cache_key, function() use ($store_ids, $filiale_param) {
+                return self::fetch_stats_data($store_ids, $filiale_param);
+            });
+        }
 
         return new WP_REST_Response($data, 200, ['Cache-Control' => 'no-store, no-cache, must-revalidate']);
     }
 
     private static function fetch_stats_data($store_ids, $filiale_param) {
         global $wpdb;
+
+        // 🔍 DEBUG: Log input parameters
+        ppv_log("🔍 [Stats] fetch_stats_data() START");
+        ppv_log("🔍 [Stats] store_ids: " . json_encode($store_ids));
+        ppv_log("🔍 [Stats] filiale_param: " . $filiale_param);
 
         $placeholders = implode(',', array_fill(0, count($store_ids), '%d'));
         $table_points = $wpdb->prefix . 'ppv_points';
@@ -390,27 +406,61 @@ class PPV_Stats {
         $week_start = date('Y-m-d', strtotime('monday this week', strtotime($today)));
         $month_start = date('Y-m-01', strtotime($today));
 
+        // 🔍 DEBUG: Log date calculations
+        ppv_log("🔍 [Stats] table_points: " . $table_points);
+        ppv_log("🔍 [Stats] today: " . $today);
+        ppv_log("🔍 [Stats] week_start: " . $week_start);
+        ppv_log("🔍 [Stats] month_start: " . $month_start);
+        ppv_log("🔍 [Stats] placeholders: " . $placeholders);
+
         // Main stats
-        $daily = (int) $wpdb->get_var($wpdb->prepare(
+        $daily_query = $wpdb->prepare(
             "SELECT COUNT(*) FROM $table_points WHERE store_id IN ($placeholders) AND DATE(created)=%s",
             array_merge($store_ids, [$today])
-        ));
-        $weekly = (int) $wpdb->get_var($wpdb->prepare(
+        );
+        ppv_log("🔍 [Stats] DAILY query: " . $daily_query);
+        $daily = (int) $wpdb->get_var($daily_query);
+        ppv_log("🔍 [Stats] DAILY result: " . $daily);
+        $weekly_query = $wpdb->prepare(
             "SELECT COUNT(*) FROM $table_points WHERE store_id IN ($placeholders) AND DATE(created) >= %s",
             array_merge($store_ids, [$week_start])
-        ));
-        $monthly = (int) $wpdb->get_var($wpdb->prepare(
+        );
+        ppv_log("🔍 [Stats] WEEKLY query: " . $weekly_query);
+        $weekly = (int) $wpdb->get_var($weekly_query);
+        ppv_log("🔍 [Stats] WEEKLY result: " . $weekly);
+
+        $monthly_query = $wpdb->prepare(
             "SELECT COUNT(*) FROM $table_points WHERE store_id IN ($placeholders) AND DATE(created) >= %s",
             array_merge($store_ids, [$month_start])
-        ));
-        $all_time = (int) $wpdb->get_var($wpdb->prepare(
+        );
+        ppv_log("🔍 [Stats] MONTHLY query: " . $monthly_query);
+        $monthly = (int) $wpdb->get_var($monthly_query);
+        ppv_log("🔍 [Stats] MONTHLY result: " . $monthly);
+
+        $all_time_query = $wpdb->prepare(
             "SELECT COUNT(*) FROM $table_points WHERE store_id IN ($placeholders)",
             $store_ids
-        ));
+        );
+        ppv_log("🔍 [Stats] ALL_TIME query: " . $all_time_query);
+        $all_time = (int) $wpdb->get_var($all_time_query);
+        ppv_log("🔍 [Stats] ALL_TIME result: " . $all_time);
+
         $unique = (int) $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(DISTINCT user_id) FROM $table_points WHERE store_id IN ($placeholders)",
             $store_ids
         ));
+        ppv_log("🔍 [Stats] UNIQUE result: " . $unique);
+
+        // 🔍 DEBUG: Check what's actually in the table
+        $recent_scans = $wpdb->get_results($wpdb->prepare(
+            "SELECT id, user_id, store_id, points, scanner_id, DATE(created) as scan_date, created
+             FROM $table_points
+             WHERE store_id IN ($placeholders)
+             ORDER BY id DESC
+             LIMIT 10",
+            $store_ids
+        ), ARRAY_A);
+        ppv_log("🔍 [Stats] Recent 10 scans in table: " . json_encode($recent_scans));
 
         // Chart (7-day)
         $week_ago = date('Y-m-d', strtotime("-6 days", strtotime($today)));
@@ -502,9 +552,7 @@ class PPV_Stats {
             ];
         }
 
-        ppv_log("✅ [REST] stats() data fetched");
-
-        return [
+        $result = [
             'success' => true,
             'store_ids' => $store_ids,
             'filiale_mode' => $filiale_param === 'all' ? 'all' : 'single',
@@ -523,6 +571,10 @@ class PPV_Stats {
             ],
             'peak_hours' => $peak_formatted
         ];
+
+        ppv_log("✅ [Stats] fetch_stats_data() COMPLETE - Returning: daily={$daily}, weekly={$weekly}, monthly={$monthly}, all_time={$all_time}, unique={$unique}");
+
+        return $result;
     }
 
     // ========================================
