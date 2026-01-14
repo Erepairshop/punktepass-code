@@ -99,6 +99,74 @@ if (isset($_POST['convert_to_handler']) && check_admin_referer('ppv_convert_hand
     }
 }
 
+// Quick convert PPV user to handler (from user list button)
+if (isset($_POST['quick_convert']) && check_admin_referer('ppv_quick_convert', 'ppv_quick_convert_nonce')) {
+    $user_id = intval($_POST['user_id']);
+
+    // Get PPV user
+    $user = $wpdb->get_row($wpdb->prepare(
+        "SELECT * FROM {$wpdb->prefix}ppv_users WHERE id = %d LIMIT 1",
+        $user_id
+    ));
+
+    if (!$user) {
+        $error_message = '❌ PPV User nem található!';
+    } else {
+        // Check if already a handler
+        $existing = $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id = %d LIMIT 1",
+            $user->id
+        ));
+
+        if ($existing) {
+            $error_message = '⚠️ Ez a user már handler (Store ID: ' . $existing . ')';
+        } else {
+            // Generate store key
+            $store_key = bin2hex(random_bytes(16));
+            $trial_ends_at = date('Y-m-d H:i:s', strtotime('+30 days'));
+
+            // Create store with minimal data
+            $result = $wpdb->insert(
+                "{$wpdb->prefix}ppv_stores",
+                [
+                    'user_id' => $user->id,
+                    'name' => $user->username ?: $user->email,
+                    'company_name' => $user->username ?: $user->email,
+                    'email' => $user->email,
+                    'country' => 'DE',
+                    'currency' => 'EUR',
+                    'store_key' => $store_key,
+                    'trial_ends_at' => $trial_ends_at,
+                    'subscription_status' => 'trial',
+                    'active' => 1,
+                    'created_at' => current_time('mysql'),
+                    'updated_at' => current_time('mysql'),
+                ],
+                ['%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s']
+            );
+
+            if ($result) {
+                $new_store_id = $wpdb->insert_id;
+                $success_message = "✅ User '{$user->username}' (ID: {$user->id}) handler-ré téve! (Store ID: {$new_store_id})";
+                ppv_log("✅ [PPV_Admin] Quick Convert: PPV User #{$user->id} ({$user->email}) → Handler Store #{$new_store_id}");
+            } else {
+                $error_message = '❌ Hiba: ' . $wpdb->last_error;
+                ppv_log("❌ [PPV_Admin] Quick Convert failed: " . $wpdb->last_error);
+            }
+        }
+    }
+}
+
+// Get all PPV users who are NOT handlers yet (user_type = 'user', NOT 'store'/'handler'/'vendor')
+$non_handler_users = $wpdb->get_results("
+    SELECT u.id, u.username, u.email, u.created_at, u.user_type
+    FROM {$wpdb->prefix}ppv_users u
+    LEFT JOIN {$wpdb->prefix}ppv_stores s ON u.id = s.user_id
+    WHERE s.id IS NULL
+    AND u.user_type IN ('user', 'customer')
+    ORDER BY u.created_at DESC
+");
+
 // Get all handlers
 $handlers = $wpdb->get_results("
     SELECT
@@ -368,6 +436,51 @@ $handlers = $wpdb->get_results("
                 <?php echo $error_message; ?>
             </div>
         <?php endif; ?>
+
+        <!-- PunktePass Users List (Not Handlers Yet) -->
+        <div class="card">
+            <h2>👥 PunktePass Userek (<?php echo count($non_handler_users); ?>)</h2>
+            <p style="color: #94a3b8; margin-bottom: 20px;">Kattints a "Handler jogot ad" gombra bármely user mellett, hogy azonnal handler-ré tedd őket.</p>
+
+            <?php if (empty($non_handler_users)): ?>
+                <p style="text-align: center; color: #94a3b8; padding: 40px;">
+                    Minden PunktePass user már handler! 🎉
+                </p>
+            <?php else: ?>
+                <table class="handlers-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>User Type</th>
+                            <th>Regisztrálva</th>
+                            <th>Művelet</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($non_handler_users as $user): ?>
+                            <tr>
+                                <td><strong><?php echo $user->id; ?></strong></td>
+                                <td><?php echo esc_html($user->username ?: '-'); ?></td>
+                                <td><?php echo esc_html($user->email); ?></td>
+                                <td><span class="badge"><?php echo $user->user_type; ?></span></td>
+                                <td><small><?php echo date('Y-m-d H:i', strtotime($user->created_at)); ?></small></td>
+                                <td>
+                                    <form method="post" style="display: inline;">
+                                        <?php wp_nonce_field('ppv_quick_convert', 'ppv_quick_convert_nonce'); ?>
+                                        <input type="hidden" name="user_id" value="<?php echo $user->id; ?>">
+                                        <button type="submit" name="quick_convert" class="btn btn-primary" style="padding: 6px 12px; font-size: 0.85rem;">
+                                            🏪 Handler jogot ad
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
+        </div>
 
         <!-- Convert User to Handler Form -->
         <div class="card">
