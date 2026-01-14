@@ -65,6 +65,23 @@ class PPV_Admin_Handlers {
             'punktepass-support-tickets',
             [__CLASS__, 'render_support_tickets_page']
         );
+
+        // 🏪 Handler Management (Standalone)
+        add_submenu_page(
+            'punktepass-admin',
+            'Handler Management',
+            '👤 → 🏪 User to Handler',
+            'manage_options',
+            'punktepass-handlers',
+            [__CLASS__, 'render_standalone_handlers']
+        );
+    }
+
+    // ============================================================
+    // 🏪 RENDER STANDALONE HANDLERS PAGE
+    // ============================================================
+    public static function render_standalone_handlers() {
+        include PPV_PLUGIN_DIR . 'includes/admin/standalone/handlers.php';
     }
 
     // ============================================================
