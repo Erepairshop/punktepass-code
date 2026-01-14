@@ -70,7 +70,7 @@ if (isset($_POST['convert_to_handler']) && check_admin_referer('ppv_convert_hand
                     'company_name' => $company_name,
                     'email' => $store_email,
                     'country' => $country,
-                    'currency' => $currency,
+                    // 'currency' removed - column doesn't exist in ppv_stores table
                     'store_key' => $store_key,
                     'trial_ends_at' => $trial_ends_at,
                     'subscription_status' => 'trial',
@@ -78,7 +78,7 @@ if (isset($_POST['convert_to_handler']) && check_admin_referer('ppv_convert_hand
                     'created_at' => current_time('mysql'),
                     'updated_at' => current_time('mysql'),
                 ],
-                ['%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s']
+                ['%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s']
             );
 
             if ($result) {
@@ -132,7 +132,6 @@ if (isset($_POST['quick_convert']) && check_admin_referer('ppv_quick_convert', '
                     'company_name' => $user->username ?: $user->email,
                     'email' => $user->email,
                     'country' => 'DE',
-                    'currency' => 'EUR',
                     'store_key' => $store_key,
                     'trial_ends_at' => $trial_ends_at,
                     'subscription_status' => 'trial',
@@ -140,7 +139,7 @@ if (isset($_POST['quick_convert']) && check_admin_referer('ppv_quick_convert', '
                     'created_at' => current_time('mysql'),
                     'updated_at' => current_time('mysql'),
                 ],
-                ['%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s']
+                ['%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s']
             );
 
             if ($result) {
