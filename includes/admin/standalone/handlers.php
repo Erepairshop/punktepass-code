@@ -157,15 +157,26 @@ if (isset($_POST['quick_convert']) && check_admin_referer('ppv_quick_convert', '
     }
 }
 
-// Get all PPV users who are NOT handlers yet (user_type = 'user', NOT 'store'/'handler'/'vendor')
+// DEBUG: Check all user types first
+$all_user_types = $wpdb->get_results("SELECT user_type, COUNT(*) as count FROM {$wpdb->prefix}ppv_users GROUP BY user_type");
+$debug_user_types = [];
+foreach ($all_user_types as $type) {
+    $debug_user_types[] = "{$type->user_type}: {$type->count}";
+}
+
+// Get all PPV users who are NOT handlers yet (exclude 'store', 'handler', 'vendor', 'scanner')
 $non_handler_users = $wpdb->get_results("
     SELECT u.id, u.username, u.email, u.created_at, u.user_type
     FROM {$wpdb->prefix}ppv_users u
     LEFT JOIN {$wpdb->prefix}ppv_stores s ON u.id = s.user_id
     WHERE s.id IS NULL
-    AND u.user_type IN ('user', 'customer')
+    AND u.user_type NOT IN ('store', 'handler', 'vendor', 'scanner', 'admin')
     ORDER BY u.created_at DESC
 ");
+
+// DEBUG: Total users
+$total_ppv_users = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ppv_users");
+$debug_message = "DEBUG: Total PPV users: {$total_ppv_users} | User types: " . implode(', ', $debug_user_types) . " | Non-handlers found: " . count($non_handler_users);
 
 // Get all handlers
 $handlers = $wpdb->get_results("
@@ -434,6 +445,12 @@ $handlers = $wpdb->get_results("
         <?php if (isset($error_message)): ?>
             <div class="alert alert-error">
                 <?php echo $error_message; ?>
+            </div>
+        <?php endif; ?>
+
+        <?php if (isset($debug_message)): ?>
+            <div style="background: rgba(255, 165, 0, 0.2); border: 1px solid rgba(255, 165, 0, 0.3); padding: 12px 20px; border-radius: 12px; margin-bottom: 20px; color: #ffa500; font-size: 0.9rem;">
+                🐛 <?php echo $debug_message; ?>
             </div>
         <?php endif; ?>
 
