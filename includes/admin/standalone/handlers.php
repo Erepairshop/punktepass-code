@@ -7,10 +7,8 @@
 // Must be accessed via WordPress
 if (!defined('ABSPATH')) exit;
 
-// Security check - only admin can access
-if (!current_user_can('manage_options')) {
-    wp_die('Nincs jogosultság / No permission');
-}
+// Security: Session-based auth is already handled by PPV_Standalone_Admin::process_admin_request()
+// No additional auth check needed here - if user reached this file, they're already authenticated
 
 global $wpdb;
 
