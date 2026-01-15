@@ -1901,4 +1901,12 @@ return [
     'network_error' => 'Eroare de rețea',
     'save' => 'Salvează',
     'main_location' => 'Locația principală',
+
+    // ============================================================
+    // App Download Modal
+    // ============================================================
+    'app_download_title' => 'Descarcă aplicația',
+    'app_download_subtitle' => 'Colectează puncte ușor de pe telefon',
+    'app_download_available' => 'Disponibil pe',
+    'app_download_dont_show' => 'Nu mai afișa',
 ];

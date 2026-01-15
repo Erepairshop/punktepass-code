@@ -352,7 +352,58 @@ public static function render_landing_page($atts) {
                     <?php endif; ?>
                 </div>
             </header>
-            
+
+            <!-- 📱 App Download Modal -->
+            <div id="ppv-app-download-modal" class="ppv-app-modal" style="display:none;">
+                <div class="ppv-app-modal-overlay"></div>
+                <div class="ppv-app-modal-content">
+                    <button type="button" class="ppv-app-modal-close" id="ppv-app-modal-close" aria-label="Close">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+
+                    <div class="ppv-app-modal-header">
+                        <img src="<?php echo PPV_PLUGIN_URL; ?>assets/img/logo.webp?v=2" alt="PunktePass" class="ppv-app-modal-logo">
+                        <h2><?php echo PPV_Lang::t('app_download_title', 'Töltsd le az appot'); ?></h2>
+                        <p><?php echo PPV_Lang::t('app_download_subtitle', 'Gyűjts pontokat egyszerűen mobilodról'); ?></p>
+                    </div>
+
+                    <div class="ppv-app-modal-buttons">
+                        <!-- iOS App Store Button -->
+                        <a href="https://apps.apple.com/app/punktepass/id6755680197" target="_blank" rel="noopener" class="ppv-app-platform-btn ppv-app-ios-btn" id="ppv-modal-ios-btn">
+                            <div class="ppv-app-btn-icon">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                                </svg>
+                            </div>
+                            <div class="ppv-app-btn-text">
+                                <span class="ppv-app-btn-label"><?php echo PPV_Lang::t('app_download_available', 'Elérhető itt'); ?></span>
+                                <span class="ppv-app-btn-name">App Store</span>
+                            </div>
+                        </a>
+
+                        <!-- Android Button (PWA or APK) -->
+                        <button type="button" class="ppv-app-platform-btn ppv-app-android-btn" id="ppv-modal-android-btn">
+                            <div class="ppv-app-btn-icon">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M17.6 11.48V7.66h-2.08v3.82h2.08zm-5.92 0V7.66H9.6v3.82h2.08zm3.84-7.8L16.88 2l-.88-.88-1.68 1.68A6.24 6.24 0 0 0 12 2.4c-.8 0-1.56.12-2.32.4L8 1.12 7.12 2l1.36 1.68A6.2 6.2 0 0 0 6 8.4v.48h12v-.48c0-1.84-.8-3.52-2.08-4.72h-.4zM6 20.16c0 .72.56 1.28 1.28 1.28h.96v3.28c0 .88.72 1.6 1.6 1.6s1.6-.72 1.6-1.6v-3.28h.96v3.28c0 .88.72 1.6 1.6 1.6s1.6-.72 1.6-1.6v-3.28h.96c.72 0 1.28-.56 1.28-1.28V9.28H6v10.88zm-2.4-10.4c-.88 0-1.6.72-1.6 1.6v7.2c0 .88.72 1.6 1.6 1.6s1.6-.72 1.6-1.6v-7.2c0-.88-.72-1.6-1.6-1.6zm16.8 0c-.88 0-1.6.72-1.6 1.6v7.2c0 .88.72 1.6 1.6 1.6s1.6-.72 1.6-1.6v-7.2c0-.88-.72-1.6-1.6-1.6z"/>
+                                </svg>
+                            </div>
+                            <div class="ppv-app-btn-text">
+                                <span class="ppv-app-btn-label"><?php echo PPV_Lang::t('app_download_available', 'Elérhető itt'); ?></span>
+                                <span class="ppv-app-btn-name">Android</span>
+                            </div>
+                        </button>
+                    </div>
+
+                    <button type="button" class="ppv-app-modal-dismiss" id="ppv-app-modal-dismiss">
+                        <?php echo PPV_Lang::t('app_download_dont_show', 'Ne mutasd többet'); ?>
+                    </button>
+                </div>
+            </div>
+
             <!-- Hero Section -->
             <div class="ppv-hero-section">
                 <!-- Animated Background -->
@@ -825,6 +876,82 @@ public static function render_landing_page($atts) {
                 if (pwaBanner) pwaBanner.style.display = 'none';
                 if (androidHeaderBtn) androidHeaderBtn.style.display = 'none';
                 deferredPrompt = null;
+            });
+        })();
+
+        // ========================================
+        // 📱 APP DOWNLOAD MODAL HANDLER
+        // ========================================
+        (function() {
+            const modal = document.getElementById('ppv-app-download-modal');
+            const closeBtn = document.getElementById('ppv-app-modal-close');
+            const dismissBtn = document.getElementById('ppv-app-modal-dismiss');
+            const androidBtn = document.getElementById('ppv-modal-android-btn');
+            const overlay = modal?.querySelector('.ppv-app-modal-overlay');
+
+            const isAndroid = /Android/i.test(navigator.userAgent);
+            const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+            const isDesktop = !isAndroid && !isIOS;
+
+            const modalDismissed = localStorage.getItem('ppv_app_modal_dismissed');
+
+            // Show modal on page load if:
+            // 1. Not already dismissed
+            // 2. Not running in standalone mode (app installed)
+            // 3. Is mobile device (Android or iOS)
+            if (modal && !modalDismissed && !isStandalone && (isAndroid || isIOS)) {
+                setTimeout(() => {
+                    modal.style.display = 'flex';
+                    setTimeout(() => modal.classList.add('ppv-app-modal-visible'), 50);
+                }, 1000); // Show after 1 second
+            }
+
+            // Close modal function
+            function closeModal() {
+                modal?.classList.remove('ppv-app-modal-visible');
+                setTimeout(() => {
+                    if (modal) modal.style.display = 'none';
+                }, 300);
+            }
+
+            // Close button
+            closeBtn?.addEventListener('click', closeModal);
+
+            // Overlay click
+            overlay?.addEventListener('click', closeModal);
+
+            // Dismiss button (don't show again)
+            dismissBtn?.addEventListener('click', () => {
+                localStorage.setItem('ppv_app_modal_dismissed', 'true');
+                closeModal();
+            });
+
+            // Android button click
+            androidBtn?.addEventListener('click', async () => {
+                // Try PWA install first
+                if (window.deferredPrompt) {
+                    try {
+                        await window.deferredPrompt.prompt();
+                        const { outcome } = await window.deferredPrompt.userChoice;
+                        if (outcome === 'accepted') {
+                            closeModal();
+                            localStorage.setItem('ppv_app_modal_dismissed', 'true');
+                        }
+                    } catch (err) {
+                        console.error('PWA install error:', err);
+                    }
+                } else {
+                    // Fallback to APK download
+                    window.location.href = '<?php echo PPV_PLUGIN_URL; ?>assets/app/punktepass.apk';
+                    closeModal();
+                }
+            });
+
+            // Make deferredPrompt available globally for modal
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                window.deferredPrompt = e;
             });
         })();
         </script>

@@ -1919,5 +1919,13 @@ return [
     'network_error' => 'Netzwerkfehler',
     'save' => 'Speichern',
     'main_location' => 'Hauptstandort',
+
+    // ============================================================
+    // App Download Modal
+    // ============================================================
+    'app_download_title' => 'App herunterladen',
+    'app_download_subtitle' => 'Sammle Punkte einfach von deinem Handy',
+    'app_download_available' => 'Verfügbar auf',
+    'app_download_dont_show' => 'Nicht mehr anzeigen',
 ];
 

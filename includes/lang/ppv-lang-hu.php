@@ -1896,4 +1896,12 @@ return [
     'network_error' => 'Hálózati hiba',
     'save' => 'Mentés',
     'main_location' => 'Főhelyszín',
+
+    // ============================================================
+    // App Download Modal
+    // ============================================================
+    'app_download_title' => 'Töltsd le az appot',
+    'app_download_subtitle' => 'Gyűjts pontokat egyszerűen mobilodról',
+    'app_download_available' => 'Elérhető itt',
+    'app_download_dont_show' => 'Ne mutasd többet',
 ];
