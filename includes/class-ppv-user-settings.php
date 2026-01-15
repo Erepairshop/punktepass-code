@@ -507,6 +507,11 @@ class PPV_User_Settings {
         $zip = $user->zip ?? '';
 
         ob_start(); ?>
+        <!-- 🧪 PHP RENDER TEST BANNER -->
+        <div style="position: fixed; top: 0; left: 0; right: 0; z-index: 999999; background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%); color: #ffffff; padding: 20px; text-align: center; font-size: 24px; font-weight: 900; box-shadow: 0 4px 20px rgba(255, 0, 0, 0.5);">
+            🔴 PHP RENDER TEST: HA EZT LÁTOD, A PHP MŰKÖDIK! 🔴
+        </div>
+
         <div class="ppv-settings-wrapper">
             <div class="ppv-header-bar">
                 <h2><i class="ri-settings-4-line"></i> <?php echo self::t('my_settings'); ?></h2>
