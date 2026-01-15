@@ -910,12 +910,7 @@ private static function get_today_hours($opening_hours) {
         <?php
     }
     public static function enqueue_assets() {
-        wp_enqueue_style(
-            'remixicons',
-            'https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css',
-            [],
-            null
-        );
+        // RemixIcons loaded globally in punktepass.php
 
         // 🎨 QR Code Generator library (local generation, offline support)
         wp_enqueue_script('qrcode-generator', PPV_PLUGIN_URL . 'assets/js/vendor/qrcode-generator.min.js', [], '1.4.4', true);

@@ -24,13 +24,7 @@ class PPV_Bottom_Nav {
      * Assets (CSS + JS)
      * ============================================================ */
     public static function enqueue_assets() {
-        // RemixIcons - always load (blocking) to prevent CLS from icon flash
-        wp_enqueue_style(
-            'remixicons',
-            'https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.min.css',
-            [],
-            null
-        );
+        // RemixIcons loaded globally in punktepass.php
 
         // 🚀 Pure SPA navigation (no Turbo - uses fetch for instant transitions)
 

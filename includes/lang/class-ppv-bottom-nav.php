@@ -16,7 +16,7 @@ class PPV_Bottom_Nav {
 
   /** 🔹 Assets */
   public static function enqueue_assets() {
-    wp_enqueue_style('remixicons', 'https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css', [], null);
+    // RemixIcons loaded globally in punktepass.php
     wp_enqueue_style('ppv-bottom-nav', PPV_PLUGIN_URL . 'assets/css/ppv-bottom-nav.css', [], time());
     wp_enqueue_script('ppv-bottom-nav', PPV_PLUGIN_URL . 'assets/js/ppv-bottom-nav.js', ['jquery'], time(), true);
   }

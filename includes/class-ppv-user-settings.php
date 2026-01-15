@@ -130,7 +130,7 @@ class PPV_User_Settings {
 
         ppv_log("🌍 [PPV_User_Settings] Active language: {$lang}");
 
-        wp_enqueue_style('remixicons', 'https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css', [], null);
+        // RemixIcons loaded globally in punktepass.php
         wp_enqueue_style('ppv-user-settings', PPV_PLUGIN_URL . 'assets/css/ppv-user-settings.css', [], time());
         wp_enqueue_script('ppv-user-settings', PPV_PLUGIN_URL . 'assets/js/ppv-user-settings.js', ['jquery'], time(), true);
 

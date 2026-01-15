@@ -22,12 +22,7 @@ class PPV_Legal {
             return;
         }
 
-        wp_enqueue_style(
-            'remixicons',
-            'https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css',
-            [],
-            null
-        );
+        // RemixIcons loaded globally in punktepass.php
 
         wp_enqueue_style(
             'ppv-legal',

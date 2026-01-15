@@ -61,13 +61,7 @@ class PPV_VIP_Settings {
             time()
         );
 
-        // Remix Icons
-        wp_enqueue_style(
-            'remix-icons',
-            'https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css',
-            [],
-            '3.5.0'
-        );
+        // RemixIcons loaded globally in punktepass.php
 
         // JS
         wp_enqueue_script(

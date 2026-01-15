@@ -397,11 +397,19 @@ add_action('wp_enqueue_scripts', function() {
         return; // Stop - don't load other themes
     }
     
+    // 🔹 REMIXICON - Load once globally (prevents duplicate loading)
+    wp_enqueue_style(
+        'remixicons',
+        'https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css',
+        [],
+        '3.5.0'
+    );
+
     // 🔹 HANDLER-LIGHT.CSS - Always load globally (contains shared UI components)
     wp_enqueue_style(
         'ppv-handler-light',
         PPV_PLUGIN_URL . 'assets/css/handler-light.css',
-        [],
+        ['remixicons'],
         PPV_VERSION
     );
 
