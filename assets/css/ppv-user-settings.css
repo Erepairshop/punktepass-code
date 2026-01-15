@@ -268,9 +268,11 @@
 .ppv-settings-wrapper .ppv-checkbox,
 .ppv-settings-wrapper .ppv-section .ppv-checkbox {
     display: flex !important;
+    flex-direction: row !important;
     align-items: center !important;
-    gap: 12px !important;
-    padding: 14px 16px !important;
+    justify-content: space-between !important;
+    gap: 16px !important;
+    padding: 16px 18px !important;
     margin-bottom: 12px !important;
     background: rgba(248, 249, 251, 0.6) !important;
     border: 1px solid #e5e7eb !important;
@@ -297,7 +299,9 @@
     width: 48px !important;
     height: 26px !important;
     min-width: 48px !important;
+    min-height: 26px !important;
     margin: 0 !important;
+    margin-left: auto !important;
     cursor: pointer !important;
     appearance: none !important;
     -webkit-appearance: none !important;
@@ -309,6 +313,7 @@
     border: none !important;
     pointer-events: auto !important;
     z-index: 10 !important;
+    order: 2 !important;
 }
 
 /* Toggle Switch - Inner Circle */
@@ -344,6 +349,9 @@
     font-size: 14px !important;
     font-weight: 500 !important;
     color: #1A1A1A !important;
+    line-height: 1.5 !important;
+    order: 1 !important;
+    margin-right: 12px !important;
     display: flex !important;
     align-items: center !important;
     gap: 6px !important;

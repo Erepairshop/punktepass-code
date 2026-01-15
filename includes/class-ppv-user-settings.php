@@ -14,7 +14,6 @@ class PPV_User_Settings {
      * ============================================================ */
     public static function hooks() {
         add_shortcode('ppv_user_settings', [__CLASS__, 'render_settings_page']);
-        add_shortcode('ppv_test_input', [__CLASS__, 'test_input']); // DEBUG TEST
         add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
         add_action('wp_ajax_ppv_save_user_settings', [__CLASS__, 'ajax_save_settings']);
         add_action('wp_ajax_nopriv_ppv_save_user_settings', [__CLASS__, 'ajax_save_settings']);
@@ -24,13 +23,6 @@ class PPV_User_Settings {
         add_action('wp_ajax_nopriv_ppv_logout_all_devices', [__CLASS__, 'ajax_logout_all_devices']);
         add_action('wp_ajax_ppv_delete_account', [__CLASS__, 'ajax_delete_account']);
         add_action('wp_ajax_nopriv_ppv_delete_account', [__CLASS__, 'ajax_delete_account']);
-    }
-
-    /** ============================================================
-     *  🔹 DEBUG TEST - Minimál input teszt
-     * ============================================================ */
-    public static function test_input() {
-        return '<div style="padding:20px;background:#fff;"><h2>TEST INPUT</h2><input type="text" name="test" value="Test Value" style="width:100%;padding:10px;border:2px solid red;font-size:18px;"></div>';
     }
 
     /** ============================================================
