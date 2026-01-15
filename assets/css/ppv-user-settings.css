@@ -148,31 +148,44 @@
    TEXT INPUTS
    ======================================== */
 
-.ppv-section input[type="text"],
-.ppv-section input[type="email"],
-.ppv-section input[type="password"],
-.ppv-section input[type="date"],
-.ppv-section input[type="tel"] {
-    width: 100%;
-    padding: 12px 14px;
-    font-size: 15px;
-    font-family: inherit;
-    color: #1A1A1A;
-    background: #ffffff;
-    border: 2px solid #e5e7eb;
-    border-radius: 10px;
-    transition: all 0.2s ease;
-    box-sizing: border-box;
+.ppv-settings-wrapper .ppv-section input[type="text"],
+.ppv-settings-wrapper .ppv-section input[type="email"],
+.ppv-settings-wrapper .ppv-section input[type="password"],
+.ppv-settings-wrapper .ppv-section input[type="date"],
+.ppv-settings-wrapper .ppv-section input[type="tel"],
+.ppv-settings-wrapper .ppv-form input[type="text"],
+.ppv-settings-wrapper .ppv-form input[type="email"],
+.ppv-settings-wrapper .ppv-form input[type="password"],
+.ppv-settings-wrapper .ppv-form input[type="date"],
+.ppv-settings-wrapper .ppv-form input[type="tel"] {
+    width: 100% !important;
+    padding: 12px 14px !important;
+    font-size: 15px !important;
+    font-family: inherit !important;
+    color: #1A1A1A !important;
+    background: #ffffff !important;
+    border: 2px solid #e5e7eb !important;
+    border-radius: 10px !important;
+    transition: all 0.2s ease !important;
+    box-sizing: border-box !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
 }
 
-.ppv-section input[type="text"]:focus,
-.ppv-section input[type="email"]:focus,
-.ppv-section input[type="password"]:focus,
-.ppv-section input[type="date"]:focus,
-.ppv-section input[type="tel"]:focus {
-    outline: none;
-    border-color: #0066FF;
-    box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.1);
+.ppv-settings-wrapper .ppv-section input[type="text"]:focus,
+.ppv-settings-wrapper .ppv-section input[type="email"]:focus,
+.ppv-settings-wrapper .ppv-section input[type="password"]:focus,
+.ppv-settings-wrapper .ppv-section input[type="date"]:focus,
+.ppv-settings-wrapper .ppv-section input[type="tel"]:focus,
+.ppv-settings-wrapper .ppv-form input[type="text"]:focus,
+.ppv-settings-wrapper .ppv-form input[type="email"]:focus,
+.ppv-settings-wrapper .ppv-form input[type="password"]:focus,
+.ppv-settings-wrapper .ppv-form input[type="date"]:focus,
+.ppv-settings-wrapper .ppv-form input[type="tel"]:focus {
+    outline: none !important;
+    border-color: #0066FF !important;
+    box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.1) !important;
 }
 
 .ppv-section input::placeholder {
@@ -236,76 +249,85 @@
    CHECKBOXES (Toggle Switches)
    ======================================== */
 
-.ppv-checkbox {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 14px 16px;
-    margin-bottom: 12px;
-    background: rgba(248, 249, 251, 0.6);
-    border: 1px solid #e5e7eb;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: all 0.2s ease;
+.ppv-settings-wrapper .ppv-checkbox,
+.ppv-settings-wrapper .ppv-section .ppv-checkbox {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 14px 16px !important;
+    margin-bottom: 12px !important;
+    background: rgba(248, 249, 251, 0.6) !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 10px !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
 }
 
-.ppv-checkbox:last-child {
-    margin-bottom: 0;
+.ppv-settings-wrapper .ppv-checkbox:last-child,
+.ppv-settings-wrapper .ppv-section .ppv-checkbox:last-child {
+    margin-bottom: 0 !important;
 }
 
-.ppv-checkbox:hover {
-    background: rgba(248, 249, 251, 1);
-    border-color: rgba(0, 102, 255, 0.3);
+.ppv-settings-wrapper .ppv-checkbox:hover,
+.ppv-settings-wrapper .ppv-section .ppv-checkbox:hover {
+    background: rgba(248, 249, 251, 1) !important;
+    border-color: rgba(0, 102, 255, 0.3) !important;
 }
 
 /* Toggle Switch */
-.ppv-checkbox input[type="checkbox"] {
-    position: relative;
-    width: 48px;
-    height: 26px;
-    min-width: 48px;
-    margin: 0;
-    cursor: pointer;
-    appearance: none;
-    -webkit-appearance: none;
-    background: #d1d5db;
-    border-radius: 13px;
-    transition: all 0.3s ease;
-    flex-shrink: 0;
+.ppv-settings-wrapper .ppv-checkbox input[type="checkbox"],
+.ppv-settings-wrapper .ppv-section .ppv-checkbox input[type="checkbox"] {
+    position: relative !important;
+    width: 48px !important;
+    height: 26px !important;
+    min-width: 48px !important;
+    margin: 0 !important;
+    cursor: pointer !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    background: #d1d5db !important;
+    border-radius: 13px !important;
+    transition: all 0.3s ease !important;
+    flex-shrink: 0 !important;
+    border: none !important;
 }
 
 /* Toggle Switch - Inner Circle */
-.ppv-checkbox input[type="checkbox"]::before {
-    content: '';
-    position: absolute;
-    top: 3px;
-    left: 3px;
-    width: 20px;
-    height: 20px;
-    background: #ffffff;
-    border-radius: 50%;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+.ppv-settings-wrapper .ppv-checkbox input[type="checkbox"]::before,
+.ppv-settings-wrapper .ppv-section .ppv-checkbox input[type="checkbox"]::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 3px !important;
+    left: 3px !important;
+    width: 20px !important;
+    height: 20px !important;
+    background: #ffffff !important;
+    border-radius: 50% !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
 }
 
 /* Toggle Switch - Checked State */
-.ppv-checkbox input[type="checkbox"]:checked {
-    background: linear-gradient(135deg, #0066FF 0%, #0052CC 100%);
+.ppv-settings-wrapper .ppv-checkbox input[type="checkbox"]:checked,
+.ppv-settings-wrapper .ppv-section .ppv-checkbox input[type="checkbox"]:checked {
+    background: linear-gradient(135deg, #0066FF 0%, #0052CC 100%) !important;
 }
 
-.ppv-checkbox input[type="checkbox"]:checked::before {
-    left: 25px;
+.ppv-settings-wrapper .ppv-checkbox input[type="checkbox"]:checked::before,
+.ppv-settings-wrapper .ppv-section .ppv-checkbox input[type="checkbox"]:checked::before {
+    left: 25px !important;
 }
 
 /* Toggle Switch Label */
-.ppv-checkbox span {
-    flex: 1;
-    font-size: 14px;
-    font-weight: 500;
-    color: #1A1A1A;
-    display: flex;
-    align-items: center;
-    gap: 6px;
+.ppv-settings-wrapper .ppv-checkbox span,
+.ppv-settings-wrapper .ppv-section .ppv-checkbox span {
+    flex: 1 !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    color: #1A1A1A !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
 }
 
 /* ========================================
