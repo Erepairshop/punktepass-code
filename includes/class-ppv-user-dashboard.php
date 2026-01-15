@@ -931,7 +931,7 @@ private static function get_today_hours($opening_hours) {
             'ppv-dashboard',
             PPV_PLUGIN_URL . 'assets/js/ppv-user-dashboard.js',
             $dependencies,
-            time(),
+            PPV_Core::asset_version(PPV_PLUGIN_DIR . 'assets/js/ppv-user-dashboard.js'),
             true
         );
 

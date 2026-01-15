@@ -19,6 +19,29 @@ class PPV_Core {
     }
 
     /** ============================================================
+     * 🔹 Smart Asset Versioning
+     * Returns appropriate version for CSS/JS assets
+     * - Development mode ON: filemtime() (fresh when file changes)
+     * - Development mode OFF: PPV_VERSION (cached, production)
+     * ============================================================ */
+    public static function asset_version($file_path = null) {
+        static $dev_mode = null;
+
+        // Cache dev_mode setting
+        if ($dev_mode === null) {
+            $dev_mode = get_option('ppv_dev_mode', false);
+        }
+
+        // Development mode: use file modification time
+        if ($dev_mode && $file_path && file_exists($file_path)) {
+            return filemtime($file_path);
+        }
+
+        // Production mode: use plugin version
+        return PPV_VERSION;
+    }
+
+    /** ============================================================
      * 🔹 Database Migrations
      * Runs once per version to add new columns
      * ============================================================ */

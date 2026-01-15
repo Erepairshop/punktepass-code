@@ -64,8 +64,8 @@ class PPV_Login {
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'">
         <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"></noscript>
 
-        <!-- Login CSS - Fresh with cache-busting -->
-        <link rel="stylesheet" href="<?php echo PPV_PLUGIN_URL; ?>assets/css/ppv-login-light.css?ver=<?php echo time(); ?>" type="text/css" media="all" id="ppv-login-main-css">
+        <!-- Login CSS - Smart versioning -->
+        <link rel="stylesheet" href="<?php echo PPV_PLUGIN_URL; ?>assets/css/ppv-login-light.css?ver=<?php echo PPV_Core::asset_version(PPV_PLUGIN_DIR . 'assets/css/ppv-login-light.css'); ?>" type="text/css" media="all" id="ppv-login-main-css">
         <?php
     }
     
@@ -698,8 +698,8 @@ public static function render_landing_page($atts) {
         <!-- FingerprintJS (local vendor - no CDN dependency) -->
         <script src="<?php echo PPV_PLUGIN_URL; ?>assets/js/vendor/fp.min.js?ver=4.6.2"></script>
 
-        <!-- Force Fresh JS Load (Bypass SW Cache) -->
-        <script src="<?php echo PPV_PLUGIN_URL; ?>assets/js/ppv-login.js?ver=<?php echo time(); ?>"></script>
+        <!-- Smart JS versioning -->
+        <script src="<?php echo PPV_PLUGIN_URL; ?>assets/js/ppv-login.js?ver=<?php echo PPV_Core::asset_version(PPV_PLUGIN_DIR . 'assets/js/ppv-login.js'); ?>"></script>
 
         <!-- Login Config -->
         <script>

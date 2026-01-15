@@ -347,6 +347,8 @@ class PPV_Standalone_Admin {
         } elseif ($path === '/admin/push-sender') {
             require_once __DIR__ . '/admin/standalone/push-sender.php';
             PPV_Standalone_Push_Sender::render();
+        } elseif ($path === '/admin/dev-settings') {
+            self::render_dev_settings();
         } else {
             self::render_dashboard();
         }
@@ -1452,6 +1454,9 @@ class PPV_Standalone_Admin {
                     <a href="/admin/sales-map" class="<?php echo $current_page === 'sales-map' ? 'active' : ''; ?>">
                         <i class="ri-map-pin-line"></i> Sales Map
                     </a>
+                    <a href="/admin/dev-settings" class="<?php echo $current_page === 'dev-settings' ? 'active' : ''; ?>">
+                        <i class="ri-settings-3-line"></i> Dev Settings
+                    </a>
                 </nav>
                 <div class="admin-user">
                     <span><?php echo esc_html($admin_email); ?></span>
@@ -2219,6 +2224,15 @@ class PPV_Standalone_Admin {
             </div>
         <?php endif; ?>
         <?php
+        self::get_admin_footer();
+    }
+
+    /**
+     * Developer Settings Page (standalone)
+     */
+    private static function render_dev_settings() {
+        self::get_admin_header('dev-settings');
+        require_once __DIR__ . '/admin/standalone/dev-settings.php';
         self::get_admin_footer();
     }
 
