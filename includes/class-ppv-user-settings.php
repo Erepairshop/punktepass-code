@@ -131,9 +131,8 @@ class PPV_User_Settings {
         ppv_log("🌍 [PPV_User_Settings] Active language: {$lang}");
 
         wp_enqueue_style('remixicons', 'https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css', [], null);
-        // ✅ Load dedicated user settings CSS AFTER theme CSS to override styles
-        wp_enqueue_style('ppv-user-settings', PPV_PLUGIN_URL . 'assets/css/ppv-user-settings.css', ['ppv-theme-light'], PPV_Core::asset_version(PPV_PLUGIN_DIR . 'assets/css/ppv-user-settings.css'));
-        wp_enqueue_script('ppv-user-settings', PPV_PLUGIN_URL . 'assets/js/ppv-user-settings.js', ['jquery'], PPV_Core::asset_version(PPV_PLUGIN_DIR . 'assets/js/ppv-user-settings.js'), true);
+        wp_enqueue_style('ppv-user-settings', PPV_PLUGIN_URL . 'assets/css/ppv-user-settings.css', [], time());
+        wp_enqueue_script('ppv-user-settings', PPV_PLUGIN_URL . 'assets/js/ppv-user-settings.js', ['jquery'], time(), true);
 
         $data = [
             'ajax_url' => admin_url('admin-ajax.php'),
