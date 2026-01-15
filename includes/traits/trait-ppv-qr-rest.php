@@ -136,6 +136,14 @@ trait PPV_QR_REST_Trait {
             'callback' => [__CLASS__, 'rest_redemption_handler_response'],
             'permission_callback' => ['PPV_Permissions', 'check_handler'],
         ]);
+
+        // 🏪 Convert user to handler (admin function)
+        // Security: check_handler_with_nonce
+        register_rest_route('punktepass/v1', '/admin/convert-to-handler', [
+            'methods' => 'POST',
+            'callback' => [__CLASS__, 'rest_convert_to_handler'],
+            'permission_callback' => ['PPV_Permissions', 'check_handler_with_nonce'],
+        ]);
     }
 
     public static function rest_get_strings(WP_REST_Request $r) {
@@ -1123,7 +1131,7 @@ trait PPV_QR_REST_Trait {
                 $user_id
             ));
             $total_rewards = (int) $wpdb->get_var($wpdb->prepare(
-                "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_reward_log WHERE user_id = %d",
+                "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_rewards_redeemed WHERE user_id = %d",
                 $user_id
             ));
 
