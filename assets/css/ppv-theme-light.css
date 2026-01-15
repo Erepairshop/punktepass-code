@@ -166,3 +166,32 @@ table#ppv-pos-log {
   }
 }
 
+
+/* 🧪 TESZT - USER SETTINGS CSS BETÖLTÉS TESZT */
+.ppv-settings-wrapper::before {
+    content: '🔴 TESZT: HA EZT LÁTOD, A CSS BETÖLTŐDÖTT! 🔴';
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 999999;
+    background: linear-gradient(135deg, #ff0000, #cc0000);
+    color: #ffffff;
+    padding: 20px;
+    text-align: center;
+    font-size: 24px;
+    font-weight: 900;
+    box-shadow: 0 4px 20px rgba(255, 0, 0, 0.5);
+    animation: testPulse 1s infinite;
+}
+
+@keyframes testPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+}
+
+/* Háttér is piros legyen hogy BIZTOSAN lássuk */
+.ppv-settings-wrapper {
+    background: linear-gradient(135deg, #ffe0e0 0%, #ffc0c0 100%) !important;
+}
