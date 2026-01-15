@@ -58,14 +58,18 @@ class PPV_Auth {
 
         // 🚀 Add indexes to existing table (if they don't exist)
         // This handles upgrades from older versions
+        $existing_indexes = $wpdb->get_results("SHOW INDEX FROM $table", ARRAY_A);
+        $index_names = array_column($existing_indexes, 'Key_name');
+
         $indexes_to_add = [
-            "ALTER TABLE $table ADD INDEX idx_expires_cleanup (expires_at, created_at)",
-            "ALTER TABLE $table ADD INDEX idx_token_validation (token, user_id, expires_at)"
+            'idx_expires_cleanup' => "ALTER TABLE $table ADD INDEX idx_expires_cleanup (expires_at, created_at)",
+            'idx_token_validation' => "ALTER TABLE $table ADD INDEX idx_token_validation (token, user_id, expires_at)"
         ];
 
-        foreach ($indexes_to_add as $index_sql) {
-            // Check if index already exists (suppress errors if it does)
-            $wpdb->query($index_sql);
+        foreach ($indexes_to_add as $index_name => $index_sql) {
+            if (!in_array($index_name, $index_names)) {
+                $wpdb->query($index_sql);
+            }
         }
     }
 

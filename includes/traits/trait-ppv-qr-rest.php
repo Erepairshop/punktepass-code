@@ -1131,7 +1131,7 @@ trait PPV_QR_REST_Trait {
                 $user_id
             ));
             $total_rewards = (int) $wpdb->get_var($wpdb->prepare(
-                "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_reward_log WHERE user_id = %d",
+                "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_rewards_redeemed WHERE user_id = %d",
                 $user_id
             ));
 
