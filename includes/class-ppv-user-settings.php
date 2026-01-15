@@ -507,6 +507,52 @@ class PPV_User_Settings {
         $zip = $user->zip ?? '';
 
         ob_start(); ?>
+        <!-- 🔍 DEBUG PANEL -->
+        <div id="ppv-debug-panel" style="position: fixed; top: 0; right: 0; width: 320px; max-height: 100vh; overflow-y: auto; background: #1a1a1a; color: #00ff00; padding: 12px; font-family: monospace; font-size: 10px; z-index: 999999; border-left: 3px solid #00ff00;">
+            <div style="font-weight: bold; margin-bottom: 8px; color: #00ff00; text-align: center;">🔍 DEBUG</div>
+            <div id="ppv-debug-content">⏳ Loading...</div>
+        </div>
+        <script>
+        (function() {
+            function log(msg, color = '#00ff00') {
+                const panel = document.getElementById('ppv-debug-content');
+                if (panel) {
+                    panel.innerHTML += '<div style="color: ' + color + '; margin: 2px 0;">' + msg + '</div>';
+                }
+            }
+
+            setTimeout(function() {
+                log('=== DOM SCAN START ===', '#ffff00');
+                log('Time: ' + new Date().toLocaleTimeString());
+
+                const wrapper = document.querySelector('.ppv-settings-wrapper');
+                log('Wrapper: ' + (wrapper ? '✅ FOUND' : '❌ MISSING'), wrapper ? '#00ff00' : '#ff0000');
+
+                const allInputs = document.querySelectorAll('input');
+                log('Total inputs: ' + allInputs.length, allInputs.length > 0 ? '#00ff00' : '#ff0000');
+
+                if (allInputs.length > 0) {
+                    allInputs.forEach((inp, i) => {
+                        log('  Input #' + (i+1) + ': type=' + inp.type + ' name=' + (inp.name || 'NO NAME'), '#00ffff');
+                    });
+                } else {
+                    log('❌ NO INPUTS FOUND!', '#ff0000');
+                }
+
+                const sections = document.querySelectorAll('.ppv-section');
+                log('Sections: ' + sections.length, '#00ffff');
+
+                if (sections.length > 0) {
+                    const firstSection = sections[0];
+                    log('First section inputs: ' + firstSection.querySelectorAll('input').length, '#00ffff');
+                    log('First section HTML length: ' + firstSection.innerHTML.length, '#00ffff');
+                }
+
+                log('=== SCAN COMPLETE ===', '#ffff00');
+            }, 500);
+        })();
+        </script>
+
         <div class="ppv-settings-wrapper">
             <div class="ppv-header-bar">
                 <h2><i class="ri-settings-4-line"></i> <?php echo self::t('my_settings'); ?></h2>
