@@ -15,6 +15,26 @@
  * - Enhanced error handling
  */
 
+// 🧪 TESZT - Force Refresh Működés Ellenőrzés
+console.log('🧪 TESZT: User Dashboard JS v5.0.1 - Force Refresh működik!');
+
+// Teszt banner megjelenítése
+(function() {
+  const testBanner = document.createElement('div');
+  testBanner.id = 'ppv-test-banner';
+  testBanner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:linear-gradient(135deg,#10b981,#059669);color:#fff;padding:12px 20px;text-align:center;font-weight:600;font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,0.15);';
+  testBanner.innerHTML = '🧪 TESZT: Force Refresh működik! (v5.0.1 - ' + new Date().toLocaleTimeString('hu-HU') + ')';
+
+  // Wait for DOM to be ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      document.body.insertBefore(testBanner, document.body.firstChild);
+    });
+  } else {
+    document.body.insertBefore(testBanner, document.body.firstChild);
+  }
+})();
+
 // ═══════════════════════════════════════════════════════════════
 // 🎨 LOCAL QR CODE GENERATION (using qrcode-generator library)
 // ═══════════════════════════════════════════════════════════════
