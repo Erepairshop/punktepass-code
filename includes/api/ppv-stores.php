@@ -55,7 +55,7 @@ class PPV_Stores_API {
 
         $results = [];
         foreach ($stores as $s) {
-            $logo = $s->logo ?: PPV_PLUGIN_URL . 'assets/img/store-default.png';
+            $logo = $s->logo ?: PPV_PLUGIN_URL . 'assets/img/store-default.webp';
             $reward_text = ($s->reward_title)
                 ? $s->reward_title . ' – ' . intval($s->required_points) . ' Punkte'
                 : '';
