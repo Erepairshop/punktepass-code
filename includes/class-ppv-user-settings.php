@@ -507,58 +507,6 @@ class PPV_User_Settings {
         $zip = $user->zip ?? '';
 
         ob_start(); ?>
-        <style>
-        /* 🔥 CRITICAL INLINE CSS - Forces inputs to be visible */
-        .ppv-settings-wrapper input[type="text"],
-        .ppv-settings-wrapper input[type="email"],
-        .ppv-settings-wrapper input[type="password"],
-        .ppv-settings-wrapper input[type="date"],
-        .ppv-settings-wrapper input[type="tel"] {
-            display: block !important;
-            width: 100% !important;
-            padding: 12px 14px !important;
-            font-size: 15px !important;
-            color: #1A1A1A !important;
-            background: #ffffff !important;
-            border: 2px solid #e5e7eb !important;
-            border-radius: 10px !important;
-            box-sizing: border-box !important;
-            visibility: visible !important;
-            opacity: 1 !important;
-            height: auto !important;
-            min-height: 44px !important;
-            margin-bottom: 16px !important;
-        }
-        .ppv-settings-wrapper input[type="checkbox"] {
-            position: relative !important;
-            width: 48px !important;
-            height: 26px !important;
-            min-width: 48px !important;
-            min-height: 26px !important;
-            appearance: none !important;
-            -webkit-appearance: none !important;
-            background: #d1d5db !important;
-            border-radius: 13px !important;
-            cursor: pointer !important;
-        }
-        .ppv-settings-wrapper input[type="checkbox"]::before {
-            content: '' !important;
-            position: absolute !important;
-            top: 3px !important;
-            left: 3px !important;
-            width: 20px !important;
-            height: 20px !important;
-            background: #ffffff !important;
-            border-radius: 50% !important;
-            transition: all 0.3s ease !important;
-        }
-        .ppv-settings-wrapper input[type="checkbox"]:checked {
-            background: #0066FF !important;
-        }
-        .ppv-settings-wrapper input[type="checkbox"]:checked::before {
-            left: 25px !important;
-        }
-        </style>
         <div class="ppv-settings-wrapper">
             <div class="ppv-header-bar">
                 <h2><i class="ri-settings-4-line"></i> <?php echo self::t('my_settings'); ?></h2>
