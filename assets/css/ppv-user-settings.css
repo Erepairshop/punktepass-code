@@ -415,6 +415,61 @@
 }
 
 /* ========================================
+   SAVE ACTIONS (Sticky Footer)
+   ======================================== */
+
+.ppv-actions {
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 12px 16px;
+    background: linear-gradient(180deg, rgba(248, 249, 251, 0.95) 0%, rgba(255, 255, 255, 0.98) 100%);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(0, 102, 255, 0.1);
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.05);
+    z-index: 100;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 -16px -120px -16px;
+}
+
+.save-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    padding: 12px 28px !important;
+    font-size: 15px !important;
+    font-weight: 600 !important;
+    font-family: inherit !important;
+    color: #ffffff !important;
+    background: linear-gradient(135deg, #0066FF 0%, #0052CC 100%) !important;
+    border: none !important;
+    border-radius: 10px !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 4px 14px rgba(0, 102, 255, 0.35) !important;
+}
+
+.save-btn:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 20px rgba(0, 102, 255, 0.45) !important;
+    background: linear-gradient(135deg, #0052CC 0%, #003d99 100%) !important;
+}
+
+.save-btn:active {
+    transform: translateY(0) !important;
+    box-shadow: 0 2px 8px rgba(0, 102, 255, 0.3) !important;
+}
+
+.save-btn i {
+    font-size: 18px !important;
+}
+
+/* ========================================
    MODAL
    ======================================== */
 
