@@ -95,46 +95,56 @@
     gap: 20px;
 }
 
-.ppv-section {
-    background: #ffffff;
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+.ppv-settings-wrapper .ppv-section,
+.ppv-settings-wrapper .ppv-form .ppv-section {
+    background: #ffffff !important;
+    padding: 20px !important;
+    border-radius: 12px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    position: relative !important;
+    z-index: 1 !important;
 }
 
-.ppv-section h3 {
-    font-size: 16px;
-    font-weight: 700;
-    color: #0066FF;
-    margin: 0 0 16px 0;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+.ppv-settings-wrapper .ppv-section h3,
+.ppv-settings-wrapper .ppv-form .ppv-section h3 {
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    color: #0066FF !important;
+    margin: 0 0 16px 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
 }
 
-.ppv-section h3 i {
-    font-size: 20px;
+.ppv-settings-wrapper .ppv-section h3 i,
+.ppv-settings-wrapper .ppv-form .ppv-section h3 i {
+    font-size: 20px !important;
 }
 
-.ppv-section.danger {
-    border: 2px solid #EF4444;
+.ppv-settings-wrapper .ppv-section.danger,
+.ppv-settings-wrapper .ppv-form .ppv-section.danger {
+    border: 2px solid #EF4444 !important;
 }
 
 /* ========================================
    LABELS
    ======================================== */
 
-.ppv-section > label:not(.ppv-checkbox) {
-    display: block;
-    font-size: 14px;
-    font-weight: 600;
-    color: #1A1A1A;
-    margin-bottom: 8px;
-    margin-top: 16px;
+.ppv-settings-wrapper .ppv-section > label:not(.ppv-checkbox),
+.ppv-settings-wrapper .ppv-form > .ppv-section > label:not(.ppv-checkbox) {
+    display: block !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    color: #1A1A1A !important;
+    margin-bottom: 8px !important;
+    margin-top: 16px !important;
 }
 
-.ppv-section > label:first-of-type {
-    margin-top: 0;
+.ppv-settings-wrapper .ppv-section > label:first-of-type,
+.ppv-settings-wrapper .ppv-form > .ppv-section > label:first-of-type {
+    margin-top: 0 !important;
 }
 
 .ppv-field-hint {
@@ -171,6 +181,12 @@
     display: block !important;
     visibility: visible !important;
     opacity: 1 !important;
+    pointer-events: auto !important;
+    position: relative !important;
+    z-index: 10 !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
 }
 
 .ppv-settings-wrapper .ppv-section input[type="text"]:focus,
@@ -285,11 +301,14 @@
     cursor: pointer !important;
     appearance: none !important;
     -webkit-appearance: none !important;
+    -moz-appearance: none !important;
     background: #d1d5db !important;
     border-radius: 13px !important;
     transition: all 0.3s ease !important;
     flex-shrink: 0 !important;
     border: none !important;
+    pointer-events: auto !important;
+    z-index: 10 !important;
 }
 
 /* Toggle Switch - Inner Circle */
