@@ -1,0 +1,535 @@
+/**
+ * PunktePass User Settings - Clean Styles
+ * Simple, working CSS for user settings page
+ */
+
+/* ========================================
+   WRAPPER & LAYOUT
+   ======================================== */
+
+.ppv-settings-wrapper {
+    padding: 20px 16px 120px;
+    max-width: 600px;
+    margin: 0 auto;
+    background: #F8F9FB;
+}
+
+/* ========================================
+   HEADER
+   ======================================== */
+
+.ppv-header-bar {
+    margin-bottom: 24px;
+    padding: 16px;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.ppv-header-bar h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1A1A1A;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.ppv-header-bar h2 i {
+    color: #0066FF;
+    font-size: 24px;
+}
+
+/* ========================================
+   AVATAR
+   ======================================== */
+
+.ppv-avatar-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px;
+    background: #ffffff;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    position: relative;
+}
+
+.ppv-avatar-block img {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #0066FF;
+}
+
+.ppv-avatar-block .upload-btn {
+    position: absolute;
+    bottom: 24px;
+    right: calc(50% - 60px);
+    width: 36px;
+    height: 36px;
+    background: #0066FF;
+    color: #ffffff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 102, 255, 0.3);
+}
+
+.ppv-avatar-block .upload-btn:hover {
+    background: #0052CC;
+}
+
+/* ========================================
+   FORM & SECTIONS
+   ======================================== */
+
+.ppv-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.ppv-section {
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.ppv-section h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0066FF;
+    margin: 0 0 16px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ppv-section h3 i {
+    font-size: 20px;
+}
+
+.ppv-section.danger {
+    border: 2px solid #EF4444;
+}
+
+/* ========================================
+   LABELS
+   ======================================== */
+
+.ppv-section > label:not(.ppv-checkbox) {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1A1A1A;
+    margin-bottom: 8px;
+    margin-top: 16px;
+}
+
+.ppv-section > label:first-of-type {
+    margin-top: 0;
+}
+
+.ppv-field-hint {
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 4px;
+    margin-bottom: 0;
+}
+
+/* ========================================
+   TEXT INPUTS
+   ======================================== */
+
+.ppv-section input[type="text"],
+.ppv-section input[type="email"],
+.ppv-section input[type="password"],
+.ppv-section input[type="date"],
+.ppv-section input[type="tel"] {
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 15px;
+    font-family: inherit;
+    color: #1A1A1A;
+    background: #ffffff;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+}
+
+.ppv-section input[type="text"]:focus,
+.ppv-section input[type="email"]:focus,
+.ppv-section input[type="password"]:focus,
+.ppv-section input[type="date"]:focus,
+.ppv-section input[type="tel"]:focus {
+    outline: none;
+    border-color: #0066FF;
+    box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.1);
+}
+
+.ppv-section input::placeholder {
+    color: #9ca3af;
+}
+
+/* ========================================
+   FORM ROW (side-by-side inputs)
+   ======================================== */
+
+.ppv-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+/* ========================================
+   SELECT DROPDOWNS
+   ======================================== */
+
+.ppv-section select,
+.ppv-phone-prefix-select {
+    padding: 12px 14px;
+    font-size: 15px;
+    font-family: inherit;
+    color: #1A1A1A;
+    background: #ffffff;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.ppv-section select:focus,
+.ppv-phone-prefix-select:focus {
+    outline: none;
+    border-color: #0066FF;
+    box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.1);
+}
+
+/* ========================================
+   PHONE INPUT GROUP
+   ======================================== */
+
+.ppv-phone-input-group {
+    display: grid;
+    grid-template-columns: 110px 1fr;
+    gap: 8px;
+}
+
+.ppv-whatsapp-phone-field {
+    margin-top: 12px;
+    padding: 16px;
+    background: rgba(0, 102, 255, 0.05);
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+}
+
+/* ========================================
+   CHECKBOXES (Toggle Switches)
+   ======================================== */
+
+.ppv-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    background: rgba(248, 249, 251, 0.6);
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.ppv-checkbox:last-child {
+    margin-bottom: 0;
+}
+
+.ppv-checkbox:hover {
+    background: rgba(248, 249, 251, 1);
+    border-color: rgba(0, 102, 255, 0.3);
+}
+
+/* Toggle Switch */
+.ppv-checkbox input[type="checkbox"] {
+    position: relative;
+    width: 48px;
+    height: 26px;
+    min-width: 48px;
+    margin: 0;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background: #d1d5db;
+    border-radius: 13px;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+/* Toggle Switch - Inner Circle */
+.ppv-checkbox input[type="checkbox"]::before {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 20px;
+    height: 20px;
+    background: #ffffff;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Toggle Switch - Checked State */
+.ppv-checkbox input[type="checkbox"]:checked {
+    background: linear-gradient(135deg, #0066FF 0%, #0052CC 100%);
+}
+
+.ppv-checkbox input[type="checkbox"]:checked::before {
+    left: 25px;
+}
+
+/* Toggle Switch Label */
+.ppv-checkbox span {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
+    color: #1A1A1A;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* ========================================
+   BUTTONS
+   ======================================== */
+
+.ppv-btn,
+.ppv-section button[type="submit"],
+.ppv-section button[type="button"] {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 24px;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: inherit;
+    color: #ffffff;
+    background: linear-gradient(135deg, #0066FF 0%, #0052CC 100%);
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(0, 102, 255, 0.3);
+}
+
+.ppv-btn:hover,
+.ppv-section button[type="submit"]:hover,
+.ppv-section button[type="button"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 102, 255, 0.4);
+}
+
+.ppv-btn:active,
+.ppv-section button[type="submit"]:active,
+.ppv-section button[type="button"]:active {
+    transform: translateY(0);
+}
+
+/* Neutral Button */
+.neutral-btn {
+    background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+    box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
+}
+
+.neutral-btn:hover {
+    box-shadow: 0 6px 16px rgba(107, 114, 128, 0.4);
+}
+
+/* Danger Button */
+.danger-btn {
+    background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.danger-btn:hover {
+    box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
+}
+
+/* ========================================
+   MODAL
+   ======================================== */
+
+.ppv-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.ppv-modal-content {
+    background: #ffffff;
+    padding: 24px;
+    border-radius: 12px;
+    max-width: 400px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    position: relative;
+}
+
+.ppv-modal-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #f3f4f6;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: #6b7280;
+}
+
+.ppv-modal-close:hover {
+    background: #EF4444;
+    color: #ffffff;
+}
+
+.ppv-modal h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1A1A1A;
+    margin-bottom: 16px;
+}
+
+.ppv-modal label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1A1A1A;
+    margin-bottom: 8px;
+}
+
+.ppv-modal input[type="password"] {
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 15px;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    margin-bottom: 16px;
+}
+
+.ppv-modal input[type="password"]:focus {
+    outline: none;
+    border-color: #0066FF;
+}
+
+.ppv-modal-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+/* ========================================
+   TOAST NOTIFICATIONS
+   ======================================== */
+
+.ppv-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    min-width: 280px;
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    z-index: 99999;
+    transform: translateX(400px);
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.ppv-toast.show {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.ppv-toast-inner {
+    padding: 14px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1A1A1A;
+}
+
+.ppv-toast.success .ppv-toast-inner {
+    background: #10B981;
+    color: #ffffff;
+    border-radius: 10px;
+}
+
+.ppv-toast.error .ppv-toast-inner {
+    background: #EF4444;
+    color: #ffffff;
+    border-radius: 10px;
+}
+
+.ppv-toast.info .ppv-toast-inner {
+    background: #0066FF;
+    color: #ffffff;
+    border-radius: 10px;
+}
+
+/* ========================================
+   MUTED TEXT
+   ======================================== */
+
+.muted {
+    color: #6b7280;
+    font-size: 13px;
+    margin-bottom: 12px;
+}
+
+/* ========================================
+   FAQ SECTION
+   ======================================== */
+
+.ppv-faq-section {
+    margin-top: 24px;
+}
+
+/* ========================================
+   MOBILE RESPONSIVE
+   ======================================== */
+
+@media (max-width: 480px) {
+    .ppv-settings-wrapper {
+        padding: 16px 12px 120px;
+    }
+
+    .ppv-form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .ppv-phone-input-group {
+        grid-template-columns: 100px 1fr;
+    }
+}

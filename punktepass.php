@@ -558,7 +558,9 @@ $whitelist = [
     'ppv-login',
     'ppv-toast-points',
     'ppv-vip-settings', // VIP settings
+    'ppv-user-settings', // User settings page
     'remix-icons',      // Icons for VIP settings
+    'remixicons',       // Remix icons CDN
     'google-platform',
     'ppv-login-js'
 ];
