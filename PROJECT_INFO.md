@@ -1,0 +1,276 @@
+# PunktePass - Projekt Információk Claude-nak
+
+## 🔑 KRITIKUS: Authentication Rendszer
+
+**NEM WordPress felhasználók vannak!**
+
+- ❌ **NINCS** `wp_users` tábla használat
+- ✅ **VAN** custom `wp_ppv_users` tábla
+- ✅ Session/token alapú bejelentkezés
+- ✅ QR kód alapú authentication
+- ✅ User ID tárolás: `$_SESSION['ppv_user_id']`
+- ✅ Token tárolás: `$_SESSION['ppv_user_token']`
+
+### User adatok lekérése:
+```php
+PPV_User_Settings::get_ppv_user_id()  // Session-ból vagy token-ből
+PPV_User_Settings::get_ppv_user($user_id)  // DB lekérdezés
+```
+
+## 🏗️ Projekt Struktúra
+
+### Fő plugin: PunktePass
+- **Cél**: Pontgyűjtő/hűségkártya rendszer
+- **Főbb funkciók**:
+  - QR kód alapú bejelentkezés
+  - Pont gyűjtés üzletekben
+  - Belépések követése
+  - Jutalmak/kuponok rendszer
+  - User settings/profil kezelés
+
+### Könyvtárszerkezet:
+```
+punktepass-code/
+├── includes/
+│   ├── class-ppv-user-settings.php    # User Settings oldal
+│   ├── class-ppv-user-dashboard.php   # Dashboard
+│   ├── class-ppv-bottom-nav.php       # Alsó navigáció
+│   ├── class-ppv-session.php          # Session kezelés
+│   └── lang/                          # Nyelvek (DE, HU, RO)
+├── assets/
+│   ├── css/
+│   │   ├── ppv-theme-light.css       # 341KB minified global CSS
+│   │   ├── ppv-user-settings.css     # 15KB dedikált settings CSS
+│   │   └── ...
+│   └── js/
+│       ├── ppv-user-settings.js
+│       ├── ppv-theme-handler.js
+│       └── ...
+└── punktepass.php                     # Main plugin file
+```
+
+## 🎨 CSS Rendszer - FONTOS!
+
+### Probléma: Nagy minified CSS
+- `ppv-theme-light.css` = **341KB**, egyetlen sorban, nehezen karbantartható
+- Megoldás: Dedikált CSS fájlok külön oldalakhoz
+
+### CSS Whitelist rendszer
+**punktepass.php** tartalmaz egy whitelist-et:
+```php
+$whitelist = [
+    'ppv-theme-light',
+    'ppv-user-settings',  // User settings oldal
+    'ppv-handler',
+    'remix-icons',
+    // ...
+];
+```
+⚠️ **Új CSS hozzáadásakor mindig frissítsd a whitelist-et!**
+
+### Asset versioning:
+```php
+PPV_Core::asset_version(PPV_PLUGIN_DIR . 'assets/css/file.css')
+```
+Ez a fájl módosítási idejét használja verzióként → cache busting!
+
+## 🚨 ELEMENTOR PROBLÉMA
+
+**⚠️ KRITIKUS: Elementor shortcode widget escape-eli a kimenetet!**
+
+### Probléma:
+- Elementor Shortcode widget **HTML escape-eli** a PHP kimenetét
+- Az inputok **nem jelennek meg a DOM-ban** (document.querySelector visszaad null-t)
+- Minden HTML szöveggé konvertálódik
+
+### Megoldás:
+✅ **KÖZVETLENÜL használd a PHP shortcode-ot**, ne Elementor widget-et
+✅ Vagy használj **Elementor HTML widget-et** raw HTML kimenethez
+
+### Használat:
+```php
+// WordPress oldal template-ben:
+<?php echo do_shortcode('[ppv_user_settings]'); ?>
+
+// VAGY közvetlenül hívd a függvényt:
+<?php echo PPV_User_Settings::render_settings_page(); ?>
+```
+
+## 📄 Főbb Oldalak
+
+### /einstellungen (User Settings)
+- **Shortcode**: `[ppv_user_settings]`
+- **PHP Class**: `PPV_User_Settings`
+- **CSS**: `ppv-user-settings.css`
+- **JS**: `ppv-user-settings.js`
+- **Tartalom**:
+  - Avatar upload
+  - Személyes adatok (név, email, születésnap)
+  - Jelszó változtatás
+  - Cím
+  - Értesítési beállítások (toggle switches)
+  - WhatsApp notification (telefonszám)
+  - Adatvédelmi beállítások
+  - Eszközök kezelése
+  - Fiók törlés
+  - **FAQ szekció** (accordion)
+
+### /meine-punkte (Dashboard)
+- Pontok megjelenítése
+- QR kód
+- Üzletek listája
+- Jutalmak
+
+### /belohnungen (Rewards)
+- Kuponok
+- Ajándékok
+
+## 🔧 Git Workflow
+
+### Branch naming:
+```bash
+claude/feature-name-sessionId
+```
+Példa: `claude/scanner-login-name-support-fpzvP`
+
+### FONTOS: Push csak claude/* branch-ekre!
+```bash
+git push -u origin claude/branch-name
+```
+⚠️ A branch névnek **claude/** prefixszel kell kezdődnie!
+
+### Commit message formátum:
+```
+FIX: Toggle switch layout improved
+ADD: FAQ section to user settings
+REMOVE: Debug code from production
+RESTORE: December 6 version with FAQ
+```
+
+## 🚀 Deploy Parancs - SSH
+
+### Formátum:
+```bash
+git fetch origin [BRANCH] && git checkout FETCH_HEAD -- [FILES]
+```
+
+### Példa (egy fájl):
+```bash
+git fetch origin claude/scanner-login-name-support-fpzvP && git checkout FETCH_HEAD -- includes/class-ppv-user-settings.php
+```
+
+### Példa (több fájl):
+```bash
+git fetch origin claude/scanner-login-name-support-fpzvP && git checkout FETCH_HEAD -- includes/class-ppv-user-settings.php assets/css/ppv-user-settings.css
+```
+
+### ⚠️ MINDIG CACHE TÖRLÉS UTÁN!
+- Browser: `Ctrl+Shift+R` vagy `Cmd+Shift+R`
+- WordPress cache plugin is törlendő
+
+## 🌐 Nyelvek
+
+### Támogatott nyelvek:
+- 🇩🇪 Német (DE) - alapértelmezett
+- 🇭🇺 Magyar (HU)
+- 🇷🇴 Román (RO)
+
+### Fordítások helye:
+```php
+includes/lang/ppv-lang-de.php
+includes/lang/ppv-lang-hu.php
+includes/lang/ppv-lang-ro.php
+```
+
+### Használat:
+```php
+PPV_User_Settings::t('key_name')
+// vagy
+PPV_Lang::t('key_name')
+```
+
+## 🐛 Gyakori Problémák
+
+### 1. Inputok nem látszanak
+**Ok**: Elementor escape-eli a shortcode-ot
+**Megoldás**: Használj közvetlen PHP shortcode-ot, ne Elementor widget-et
+
+### 2. CSS változások nem látszanak
+**Ok**: Browser vagy WordPress cache
+**Megoldás**:
+```bash
+Ctrl+Shift+R  # Browser cache törlés
+```
++ WordPress cache plugin flush
+
+### 3. CSS nem töltődik be
+**Ok**: Nincs a whitelist-en
+**Megoldás**: Add hozzá a `punktepass.php` whitelist-hez:
+```php
+$whitelist = [
+    // ...
+    'ppv-new-style',  // ← Új CSS handle
+];
+```
+
+### 4. Asset verzió nem frissül
+**Ok**: Asset versioning cache
+**Megoldás**: Módosítsd a fájlt → file modification time változik → új verzió
+
+## 📋 Debug Módszerek
+
+### Console ellenőrzés:
+```javascript
+// Input létezik-e?
+document.querySelector('input[name="name"]')  // null = NEM létezik
+
+// Computed style
+getComputedStyle(document.querySelector('input[name="name"]'))
+
+// Height
+document.querySelector('input[name="name"]').offsetHeight  // 0 = rejtett
+```
+
+### PHP Debug:
+```php
+ppv_log("🔍 Debug message");  // Custom log függvény
+error_log(print_r($data, true));  // Standard PHP log
+```
+
+### Ne használj:
+❌ Inline debug HTML-t ami szövegként jelenik meg
+❌ Style tag-eket a shortcode kimenetben (Elementor escape-eli)
+✅ Külön teszt shortcode-okat debugging-hoz
+
+## 🎯 Best Practices
+
+### CSS:
+- ✅ Dedikált CSS fájlok oldalanként (ppv-user-settings.css)
+- ✅ `!important` használata csak végső esetben
+- ✅ BEM vagy prefix naming (ppv-*)
+- ❌ Ne módosítsd a 341KB-os minified CSS-t közvetlenül
+
+### PHP:
+- ✅ Mindig `esc_attr()`, `esc_html()`, `esc_url()` használata
+- ✅ Nonce ellenőrzés AJAX-nál
+- ✅ Session indítás ellenőrzéssel: `if (session_status() === PHP_SESSION_NONE) @session_start();`
+- ❌ Ne használj WordPress user functions-t (`wp_get_current_user()`)
+
+### JavaScript:
+- ✅ jQuery használható (WordPress tartalmazza)
+- ✅ `wp_add_inline_script()` adatok átadásához
+- ✅ Event delegation hosszú listákhoz
+- ❌ Ne manipuláld a DOM-ot úgy hogy inputok törlődjék
+
+## 📞 Kapcsolat / Megjegyzések
+
+- **Ügyfél nyelve**: Magyar
+- **Projekt nyelv**: Német/Magyar/Román (multi-language)
+- **Kód nyelv**: Angol (kommentek, változók)
+- **Git commit**: Angol
+
+---
+
+**Utolsó frissítés**: 2026-01-15
+**Készítette**: Claude Code
+**Projekt**: PunktePass (Erepairshop/punktepass-code)
