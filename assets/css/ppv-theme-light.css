@@ -167,31 +167,44 @@ table#ppv-pos-log {
 }
 
 
-/* 🧪 TESZT - USER SETTINGS CSS BETÖLTÉS TESZT */
-.ppv-settings-wrapper::before {
-    content: '🔴 TESZT: HA EZT LÁTOD, A CSS BETÖLTŐDÖTT! 🔴';
-    display: block;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 999999;
-    background: linear-gradient(135deg, #ff0000, #cc0000);
-    color: #ffffff;
-    padding: 20px;
-    text-align: center;
-    font-size: 24px;
-    font-weight: 900;
-    box-shadow: 0 4px 20px rgba(255, 0, 0, 0.5);
-    animation: testPulse 1s infinite;
+/* ✅ ERŐS INPUT STÍLUSOK - User Settings */
+.ppv-settings-wrapper input[type="text"],
+.ppv-settings-wrapper input[type="email"],
+.ppv-settings-wrapper input[type="password"],
+.ppv-settings-wrapper input[type="date"],
+.ppv-settings-wrapper input[type="tel"],
+.ppv-settings-wrapper textarea {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: 100% !important;
+    padding: 14px 16px !important;
+    font-size: 15px !important;
+    font-weight: 500 !important;
+    color: var(--ppv-s-text) !important;
+    background: var(--ppv-s-card) !important;
+    border: 2px solid var(--ppv-s-border) !important;
+    border-radius: var(--ppv-s-radius-sm) !important;
+    box-shadow: var(--ppv-s-shadow) !important;
+    transition: all 0.3s ease !important;
+    font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
 }
 
-@keyframes testPulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.02); }
+.ppv-settings-wrapper input[type="text"]:focus,
+.ppv-settings-wrapper input[type="email"]:focus,
+.ppv-settings-wrapper input[type="password"]:focus,
+.ppv-settings-wrapper input[type="date"]:focus,
+.ppv-settings-wrapper input[type="tel"]:focus,
+.ppv-settings-wrapper textarea:focus {
+    border-color: var(--ppv-s-primary) !important;
+    box-shadow: 0 0 0 3px var(--ppv-s-primary-soft), var(--ppv-s-shadow-glass) !important;
+    outline: none !important;
 }
 
-/* Háttér is piros legyen hogy BIZTOSAN lássuk */
-.ppv-settings-wrapper {
-    background: linear-gradient(135deg, #ffe0e0 0%, #ffc0c0 100%) !important;
+.ppv-settings-wrapper textarea {
+    min-height: 100px !important;
+    resize: vertical !important;
 }
