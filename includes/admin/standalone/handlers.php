@@ -180,7 +180,6 @@ $handlers_list = $wpdb->get_results("
         s.email,
         s.city,
         s.country,
-        s.currency,
         s.trial_ends_at,
         s.subscription_status,
         s.subscription_expires_at,
