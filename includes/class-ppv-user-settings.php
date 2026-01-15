@@ -507,11 +507,6 @@ class PPV_User_Settings {
         $zip = $user->zip ?? '';
 
         ob_start(); ?>
-        <!-- 🧪 PHP RENDER TEST BANNER -->
-        <div style="position: fixed; top: 0; left: 0; right: 0; z-index: 999999; background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%); color: #ffffff; padding: 20px; text-align: center; font-size: 24px; font-weight: 900; box-shadow: 0 4px 20px rgba(255, 0, 0, 0.5);">
-            🔴 PHP RENDER TEST: HA EZT LÁTOD, A PHP MŰKÖDIK! 🔴
-        </div>
-
         <div class="ppv-settings-wrapper">
             <div class="ppv-header-bar">
                 <h2><i class="ri-settings-4-line"></i> <?php echo self::t('my_settings'); ?></h2>
@@ -529,11 +524,11 @@ class PPV_User_Settings {
                 <div class="ppv-section">
                     <h3><i class="ri-user-line"></i> <?php echo self::t('personal_data'); ?></h3>
                     <label><?php echo self::t('name'); ?></label>
-                    <input type="text" name="name" value="<?php echo esc_attr($display_name); ?>">
+                    <input type="text" name="name" value="<?php echo esc_attr($display_name); ?>" style="display: block !important; width: 100% !important; padding: 12px 14px !important; font-size: 15px !important; color: #1A1A1A !important; background: #ffffff !important; border: 2px solid #e5e7eb !important; border-radius: 10px !important; box-sizing: border-box !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; position: relative !important; z-index: 10 !important;">
                     <label><?php echo self::t('email'); ?></label>
-                    <input type="email" name="email" value="<?php echo esc_attr($user->email); ?>">
+                    <input type="email" name="email" value="<?php echo esc_attr($user->email); ?>" style="display: block !important; width: 100% !important; padding: 12px 14px !important; font-size: 15px !important; color: #1A1A1A !important; background: #ffffff !important; border: 2px solid #e5e7eb !important; border-radius: 10px !important; box-sizing: border-box !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; position: relative !important; z-index: 10 !important;">
                     <label><?php echo self::t('birthday'); ?></label>
-                    <input type="date" name="birthday" value="<?php echo esc_attr($birthday); ?>" max="<?php echo date('Y-m-d'); ?>">
+                    <input type="date" name="birthday" value="<?php echo esc_attr($birthday); ?>" max="<?php echo date('Y-m-d'); ?>" style="display: block !important; width: 100% !important; padding: 12px 14px !important; font-size: 15px !important; color: #1A1A1A !important; background: #ffffff !important; border: 2px solid #e5e7eb !important; border-radius: 10px !important; box-sizing: border-box !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; position: relative !important; z-index: 10 !important;">
                     <p class="ppv-field-hint"><?php echo self::t('birthday_hint'); ?></p>
                 </div>
 
