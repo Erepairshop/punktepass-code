@@ -507,52 +507,58 @@ class PPV_User_Settings {
         $zip = $user->zip ?? '';
 
         ob_start(); ?>
-        <!-- 🔍 DEBUG PANEL -->
-        <div id="ppv-debug-panel" style="position: fixed; top: 0; right: 0; width: 320px; max-height: 100vh; overflow-y: auto; background: #1a1a1a; color: #00ff00; padding: 12px; font-family: monospace; font-size: 10px; z-index: 999999; border-left: 3px solid #00ff00;">
-            <div style="font-weight: bold; margin-bottom: 8px; color: #00ff00; text-align: center;">🔍 DEBUG</div>
-            <div id="ppv-debug-content">⏳ Loading...</div>
-        </div>
-        <script>
-        (function() {
-            function log(msg, color = '#00ff00') {
-                const panel = document.getElementById('ppv-debug-content');
-                if (panel) {
-                    panel.innerHTML += '<div style="color: ' + color + '; margin: 2px 0;">' + msg + '</div>';
-                }
-            }
-
-            setTimeout(function() {
-                log('=== DOM SCAN START ===', '#ffff00');
-                log('Time: ' + new Date().toLocaleTimeString());
-
-                const wrapper = document.querySelector('.ppv-settings-wrapper');
-                log('Wrapper: ' + (wrapper ? '✅ FOUND' : '❌ MISSING'), wrapper ? '#00ff00' : '#ff0000');
-
-                const allInputs = document.querySelectorAll('input');
-                log('Total inputs: ' + allInputs.length, allInputs.length > 0 ? '#00ff00' : '#ff0000');
-
-                if (allInputs.length > 0) {
-                    allInputs.forEach((inp, i) => {
-                        log('  Input #' + (i+1) + ': type=' + inp.type + ' name=' + (inp.name || 'NO NAME'), '#00ffff');
-                    });
-                } else {
-                    log('❌ NO INPUTS FOUND!', '#ff0000');
-                }
-
-                const sections = document.querySelectorAll('.ppv-section');
-                log('Sections: ' + sections.length, '#00ffff');
-
-                if (sections.length > 0) {
-                    const firstSection = sections[0];
-                    log('First section inputs: ' + firstSection.querySelectorAll('input').length, '#00ffff');
-                    log('First section HTML length: ' + firstSection.innerHTML.length, '#00ffff');
-                }
-
-                log('=== SCAN COMPLETE ===', '#ffff00');
-            }, 500);
-        })();
-        </script>
-
+        <style>
+        /* 🔥 CRITICAL INLINE CSS - Forces inputs to be visible */
+        .ppv-settings-wrapper input[type="text"],
+        .ppv-settings-wrapper input[type="email"],
+        .ppv-settings-wrapper input[type="password"],
+        .ppv-settings-wrapper input[type="date"],
+        .ppv-settings-wrapper input[type="tel"] {
+            display: block !important;
+            width: 100% !important;
+            padding: 12px 14px !important;
+            font-size: 15px !important;
+            color: #1A1A1A !important;
+            background: #ffffff !important;
+            border: 2px solid #e5e7eb !important;
+            border-radius: 10px !important;
+            box-sizing: border-box !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            height: auto !important;
+            min-height: 44px !important;
+            margin-bottom: 16px !important;
+        }
+        .ppv-settings-wrapper input[type="checkbox"] {
+            position: relative !important;
+            width: 48px !important;
+            height: 26px !important;
+            min-width: 48px !important;
+            min-height: 26px !important;
+            appearance: none !important;
+            -webkit-appearance: none !important;
+            background: #d1d5db !important;
+            border-radius: 13px !important;
+            cursor: pointer !important;
+        }
+        .ppv-settings-wrapper input[type="checkbox"]::before {
+            content: '' !important;
+            position: absolute !important;
+            top: 3px !important;
+            left: 3px !important;
+            width: 20px !important;
+            height: 20px !important;
+            background: #ffffff !important;
+            border-radius: 50% !important;
+            transition: all 0.3s ease !important;
+        }
+        .ppv-settings-wrapper input[type="checkbox"]:checked {
+            background: #0066FF !important;
+        }
+        .ppv-settings-wrapper input[type="checkbox"]:checked::before {
+            left: 25px !important;
+        }
+        </style>
         <div class="ppv-settings-wrapper">
             <div class="ppv-header-bar">
                 <h2><i class="ri-settings-4-line"></i> <?php echo self::t('my_settings'); ?></h2>
@@ -570,11 +576,11 @@ class PPV_User_Settings {
                 <div class="ppv-section">
                     <h3><i class="ri-user-line"></i> <?php echo self::t('personal_data'); ?></h3>
                     <label><?php echo self::t('name'); ?></label>
-                    <input type="text" name="name" value="<?php echo esc_attr($display_name); ?>" style="display: block !important; width: 100% !important; padding: 12px 14px !important; font-size: 15px !important; color: #1A1A1A !important; background: #ffffff !important; border: 2px solid #e5e7eb !important; border-radius: 10px !important; box-sizing: border-box !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; position: relative !important; z-index: 10 !important;">
+                    <input type="text" name="name" value="<?php echo esc_attr($display_name); ?>">
                     <label><?php echo self::t('email'); ?></label>
-                    <input type="email" name="email" value="<?php echo esc_attr($user->email); ?>" style="display: block !important; width: 100% !important; padding: 12px 14px !important; font-size: 15px !important; color: #1A1A1A !important; background: #ffffff !important; border: 2px solid #e5e7eb !important; border-radius: 10px !important; box-sizing: border-box !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; position: relative !important; z-index: 10 !important;">
+                    <input type="email" name="email" value="<?php echo esc_attr($user->email); ?>">
                     <label><?php echo self::t('birthday'); ?></label>
-                    <input type="date" name="birthday" value="<?php echo esc_attr($birthday); ?>" max="<?php echo date('Y-m-d'); ?>" style="display: block !important; width: 100% !important; padding: 12px 14px !important; font-size: 15px !important; color: #1A1A1A !important; background: #ffffff !important; border: 2px solid #e5e7eb !important; border-radius: 10px !important; box-sizing: border-box !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; position: relative !important; z-index: 10 !important;">
+                    <input type="date" name="birthday" value="<?php echo esc_attr($birthday); ?>" max="<?php echo date('Y-m-d'); ?>">
                     <p class="ppv-field-hint"><?php echo self::t('birthday_hint'); ?></p>
                 </div>
 
