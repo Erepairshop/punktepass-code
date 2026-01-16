@@ -1686,6 +1686,7 @@ return [
     // Device Activity Tab
     'device_activity' => 'Geräte',
     'device_activity_desc' => 'Übersicht der Scan-Aktivitäten pro Gerät (letzte 7 Tage).',
+    'device' => 'Gerät',
     'total_devices' => 'Aktive Geräte',
     'mobile_scanners' => 'Mobile Scanner',
     'suspicious_devices' => 'Verdächtige Geräte',

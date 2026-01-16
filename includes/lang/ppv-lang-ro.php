@@ -1668,6 +1668,7 @@ return [
     // Device Activity Tab
     'device_activity' => 'Dispozitive',
     'device_activity_desc' => 'Activitatea de scanare pe dispozitiv (ultimele 7 zile).',
+    'device' => 'Dispozitiv',
     'total_devices' => 'Dispozitive active',
     'mobile_scanners' => 'Scanere mobile',
     'suspicious_devices' => 'Dispozitive suspecte',

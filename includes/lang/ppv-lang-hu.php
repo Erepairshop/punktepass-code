@@ -1663,6 +1663,7 @@ return [
     // Device Activity Tab
     'device_activity' => 'Eszközök',
     'device_activity_desc' => 'Szkennelési tevékenység eszközönként (utolsó 7 nap).',
+    'device' => 'Eszköz',
     'total_devices' => 'Aktív eszközök',
     'mobile_scanners' => 'Mobil szkennerek',
     'suspicious_devices' => 'Gyanús eszközök',
