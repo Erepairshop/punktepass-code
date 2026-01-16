@@ -173,12 +173,28 @@
       // Fade in new content
       currentContainer.style.opacity = '1';
 
-      // Execute inline scripts
+      // Execute inline scripts (only PPV-specific ones to avoid conflicts)
       parsed.scripts.forEach(script => {
-        const newScript = document.createElement('script');
-        newScript.textContent = script.textContent;
-        document.body.appendChild(newScript);
-        document.body.removeChild(newScript);
+        const content = script.textContent || '';
+        // Skip scripts that would cause conflicts (already declared variables)
+        if (content.includes('lazyloadRunObserver') ||
+            content.includes('already been declared') ||
+            content.includes('<!DOCTYPE') ||
+            content.includes('<html')) {
+          console.log('[SPA] Skipping conflicting script');
+          return;
+        }
+        // Only run PPV-related scripts
+        if (content.includes('ppv') || content.includes('PPV') || content.includes('punktepass')) {
+          try {
+            const newScript = document.createElement('script');
+            newScript.textContent = content;
+            document.body.appendChild(newScript);
+            document.body.removeChild(newScript);
+          } catch (e) {
+            console.warn('[SPA] Script execution error:', e);
+          }
+        }
       });
 
       // Dispatch custom event for other scripts to react
