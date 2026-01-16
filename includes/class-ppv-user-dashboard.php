@@ -1351,7 +1351,6 @@ public static function render_dashboard() {
         WHERE s.active = 1
           AND s.name IS NOT NULL
           AND s.name != ''
-          AND s.name != 'Mein Geschäft'
           AND EXISTS (SELECT 1 FROM {$prefix}ppv_rewards r WHERE r.store_id = s.id)
         ORDER BY s.name ASC
     ");

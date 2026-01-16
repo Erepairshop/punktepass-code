@@ -738,10 +738,13 @@ class PPV_Signup {
             $pos_api_key = bin2hex(random_bytes(32));
             $trial_ends_at = date('Y-m-d H:i:s', strtotime('+30 days'));
 
+            // Use email username as default store name (part before @)
+            $default_name = explode('@', $email)[0];
+
             $store_data = [
                 'user_id' => $user_id,
                 'email' => $email,
-                'name' => 'Mein Geschäft',
+                'name' => $default_name,
                 'pos_token' => $pos_token,
                 'store_key' => $store_key,
                 'qr_secret' => $qr_secret,
@@ -937,10 +940,13 @@ class PPV_Signup {
                 $pos_api_key = bin2hex(random_bytes(32));
                 $trial_ends_at = date('Y-m-d H:i:s', strtotime('+30 days'));
 
+                // Use full name or email username as default store name
+                $default_name = trim($first_name . ' ' . $last_name) ?: explode('@', $email)[0];
+
                 $store_data = [
                     'user_id' => $user_id,
                     'email' => $email,
-                    'name' => trim($first_name . ' ' . $last_name) ?: 'Mein Geschäft',
+                    'name' => $default_name,
                     'pos_token' => $pos_token,
                     'store_key' => $store_key,
                     'qr_secret' => $qr_secret,
