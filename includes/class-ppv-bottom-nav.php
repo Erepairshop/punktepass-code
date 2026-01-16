@@ -35,9 +35,17 @@ class PPV_Bottom_Nav {
             filemtime(plugin_dir_path(dirname(__FILE__)) . 'assets/css/ppv-bottom-nav.css')
         );
 
-        wp_register_script('ppv-bottom-nav', false, ['jquery'], time(), true);
+        // SPA Navigation JS (fetch-based, no page refresh)
+        wp_enqueue_script(
+            'ppv-bottom-nav',
+            plugins_url('assets/js/ppv-bottom-nav.js', dirname(__FILE__)),
+            [],
+            filemtime(plugin_dir_path(dirname(__FILE__)) . 'assets/js/ppv-bottom-nav.js'),
+            true
+        );
+
+        // Feedback modal still needs inline JS
         wp_add_inline_script('ppv-bottom-nav', self::inline_js());
-        wp_enqueue_script('ppv-bottom-nav');
     }
 
     /** ============================================================
