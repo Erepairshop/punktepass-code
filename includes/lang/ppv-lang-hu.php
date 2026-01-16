@@ -1540,6 +1540,8 @@ return [
     'rewards_date_until' => 'ig',
     'rewards_btn_create' => 'Létrehozás',
     'rewards_btn_creating' => 'Létrehozás...',
+    'rewards_select_filiale' => 'Filiale kiválasztása',
+    'rewards_all_filialen' => 'Összes filiale (csoportosítva)',
 
     // Month names
     'month_january' => 'Január',

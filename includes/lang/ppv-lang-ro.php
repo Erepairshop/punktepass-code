@@ -1545,6 +1545,8 @@ return [
     'rewards_date_until' => 'până la',
     'rewards_btn_create' => 'Creează',
     'rewards_btn_creating' => 'Se creează...',
+    'rewards_select_filiale' => 'Selectează filiala',
+    'rewards_all_filialen' => 'Toate filialele (grupate)',
 
     // Month names
     'month_january' => 'Ianuarie',

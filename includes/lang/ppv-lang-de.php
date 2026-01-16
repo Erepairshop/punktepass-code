@@ -1563,6 +1563,8 @@ return [
     'rewards_date_until' => 'bis',
     'rewards_btn_create' => 'Erstellen',
     'rewards_btn_creating' => 'Erstelle...',
+    'rewards_select_filiale' => 'Filiale auswählen',
+    'rewards_all_filialen' => 'Alle Filialen (gruppiert)',
 
     // Month names
     'month_january' => 'Januar',
