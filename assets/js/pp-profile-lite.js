@@ -10,6 +10,8 @@
 (function() {
     'use strict';
 
+    console.log('🏖️ [PPV] pp-profile-lite.js LOADED - v2.1');
+
     // ============================================================
     // 🚫 TURBO CACHE FIX - Prevent stale data on back navigation
     // ============================================================
