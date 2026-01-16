@@ -386,6 +386,10 @@ class PPV_VIP_Settings {
 
                 // Validation
                 'validation_error' => 'Die Werte müssen aufsteigend sein: Bronze ≤ Silber ≤ Gold ≤ Platin',
+
+                // Toggle
+                'toggle_on' => 'AN',
+                'toggle_off' => 'AUS',
             ],
             'hu' => [
                 'title' => 'VIP Bónusz Pontok',
@@ -421,6 +425,10 @@ class PPV_VIP_Settings {
 
                 // Validation
                 'validation_error' => 'Az értékeknek növekvő sorrendben kell lenniük: Bronz ≤ Ezüst ≤ Arany ≤ Platina',
+
+                // Toggle
+                'toggle_on' => 'BE',
+                'toggle_off' => 'KI',
             ],
             'ro' => [
                 'title' => 'Puncte Bonus VIP',
@@ -456,6 +464,10 @@ class PPV_VIP_Settings {
 
                 // Validation
                 'validation_error' => 'Valorile trebuie să fie în ordine crescătoare: Bronz ≤ Argint ≤ Aur ≤ Platină',
+
+                // Toggle
+                'toggle_on' => 'ACTIV',
+                'toggle_off' => 'INACTIV',
             ],
         ][$lang] ?? [
             'title' => 'VIP Bonus-Punkte',
@@ -484,6 +496,8 @@ class PPV_VIP_Settings {
             'streak_type_double' => 'Doppelt',
             'streak_type_triple' => 'Dreifach',
             'validation_error' => 'Die Werte müssen aufsteigend sein: Bronze ≤ Silber ≤ Gold ≤ Platin',
+            'toggle_on' => 'AN',
+            'toggle_off' => 'AUS',
         ];
 
         ob_start();
@@ -547,10 +561,13 @@ class PPV_VIP_Settings {
                 ═══════════════════════════════════════════════════════════ -->
                 <div class="ppv-vip-card" data-bonus-type="fix">
                     <div class="ppv-vip-card-header">
-                        <label class="ppv-toggle-switch">
-                            <input type="checkbox" id="ppv-fix-enabled" name="vip_fix_enabled">
-                            <span class="ppv-toggle-slider"></span>
-                        </label>
+                        <div class="ppv-toggle-wrapper">
+                            <label class="ppv-toggle-switch">
+                                <input type="checkbox" id="ppv-fix-enabled" name="vip_fix_enabled">
+                                <span class="ppv-toggle-slider"></span>
+                            </label>
+                            <span class="ppv-toggle-status" data-on="<?php echo esc_attr($T['toggle_on']); ?>" data-off="<?php echo esc_attr($T['toggle_off']); ?>"><?php echo esc_html($T['toggle_off']); ?></span>
+                        </div>
                         <div class="ppv-card-title">
                             <i class="ri-add-circle-line"></i>
                             <div>
@@ -603,10 +620,13 @@ class PPV_VIP_Settings {
                 ═══════════════════════════════════════════════════════════ -->
                 <div class="ppv-vip-card" data-bonus-type="streak">
                     <div class="ppv-vip-card-header">
-                        <label class="ppv-toggle-switch">
-                            <input type="checkbox" id="ppv-streak-enabled" name="vip_streak_enabled">
-                            <span class="ppv-toggle-slider"></span>
-                        </label>
+                        <div class="ppv-toggle-wrapper">
+                            <label class="ppv-toggle-switch">
+                                <input type="checkbox" id="ppv-streak-enabled" name="vip_streak_enabled">
+                                <span class="ppv-toggle-slider"></span>
+                            </label>
+                            <span class="ppv-toggle-status" data-on="<?php echo esc_attr($T['toggle_on']); ?>" data-off="<?php echo esc_attr($T['toggle_off']); ?>"><?php echo esc_html($T['toggle_off']); ?></span>
+                        </div>
                         <div class="ppv-card-title">
                             <i class="ri-fire-line"></i>
                             <div>

@@ -126,6 +126,15 @@
                         body.style.opacity = toggle.checked ? '1' : '0.5';
                         body.style.pointerEvents = toggle.checked ? 'auto' : 'none';
                     }
+                    // Update status text
+                    const wrapper = toggle.closest('.ppv-toggle-wrapper');
+                    if (wrapper) {
+                        const statusEl = wrapper.querySelector('.ppv-toggle-status');
+                        if (statusEl) {
+                            statusEl.textContent = toggle.checked ? statusEl.dataset.on : statusEl.dataset.off;
+                            statusEl.classList.toggle('active', toggle.checked);
+                        }
+                    }
                 }
             });
         }
@@ -189,10 +198,25 @@
             if (toggle) {
                 toggle.addEventListener('change', () => {
                     updateCardStates();
+                    updateToggleStatus(toggle);
                     validateAll();
                 });
+                // Initialize status text on load
+                updateToggleStatus(toggle);
             }
         });
+
+        // Update toggle status text (BE/KI)
+        function updateToggleStatus(toggle) {
+            const wrapper = toggle.closest('.ppv-toggle-wrapper');
+            if (!wrapper) return;
+            const statusEl = wrapper.querySelector('.ppv-toggle-status');
+            if (!statusEl) return;
+
+            const isChecked = toggle.checked;
+            statusEl.textContent = isChecked ? statusEl.dataset.on : statusEl.dataset.off;
+            statusEl.classList.toggle('active', isChecked);
+        }
 
         // Streak type change
         if (streakType) {
