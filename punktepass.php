@@ -252,6 +252,7 @@ $core_modules = [
     'includes/class-ppv-poster.php',
     'includes/class-ppv-bonus-days.php',
     'includes/class-ppv-filiale.php',
+    'includes/class-ppv-handler-notifications.php',
     'includes/api/ppv-stores.php',
     'includes/pp-profile-lite.php',
     'includes/tools/generate-pos-keys.php',

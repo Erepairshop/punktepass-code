@@ -60,6 +60,14 @@ if (isset($_POST['link_to_main']) && check_admin_referer('ppv_link_handlers', 'p
                 ['%d']
             );
 
+            // Create notifications for both parties
+            if (class_exists('PPV_Handler_Notifications')) {
+                // Notification for the main handler (someone was linked to them)
+                PPV_Handler_Notifications::create_link_notification($main_handler_id, $linked_handler_id, true);
+                // Notification for the linked handler (they were linked to main)
+                PPV_Handler_Notifications::create_link_notification($linked_handler_id, $main_handler_id, false);
+            }
+
             $link_success = '✅ <strong>' . esc_html($linked_handler->name) . '</strong> mostantól a <strong>' . esc_html($main_handler->name) . '</strong> fiókját látja!';
             ppv_log("✅ [PPV_Admin] Linked handler #{$linked_handler_id} ({$linked_handler->name}) → main handler #{$main_handler_id} ({$main_handler->name})");
         }
@@ -70,6 +78,12 @@ if (isset($_POST['link_to_main']) && check_admin_referer('ppv_link_handlers', 'p
 if (isset($_POST['unlink_handler']) && check_admin_referer('ppv_unlink_handler', 'ppv_unlink_nonce')) {
     $handler_id = intval($_POST['handler_id']);
 
+    // Get the linked_to_store_id before unlinking (for notification)
+    $was_linked_to = $wpdb->get_var($wpdb->prepare(
+        "SELECT linked_to_store_id FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+        $handler_id
+    ));
+
     $wpdb->update(
         "{$wpdb->prefix}ppv_stores",
         ['linked_to_store_id' => null],
@@ -77,6 +91,11 @@ if (isset($_POST['unlink_handler']) && check_admin_referer('ppv_unlink_handler',
         ['%s'],
         ['%d']
     );
+
+    // Create unlink notification for the handler
+    if ($was_linked_to && class_exists('PPV_Handler_Notifications')) {
+        PPV_Handler_Notifications::create_unlink_notification($handler_id, $was_linked_to);
+    }
 
     $link_success = '✅ Händler sikeresen leválasztva! Most már a saját fiókját látja.';
     ppv_log("✅ [PPV_Admin] Unlinked handler #{$handler_id} - now sees own store");
