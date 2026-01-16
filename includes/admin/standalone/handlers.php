@@ -1,7 +1,7 @@
 <?php
 /**
  * PunktePass Standalone Admin - Handler Management
- * Two tabs: 1) Handler Overview, 2) User to Handler Conversion
+ * Three tabs: 1) Handler Overview, 2) User to Handler Conversion, 3) Handler Linking
  */
 
 // Must be accessed via WordPress
@@ -9,6 +9,80 @@ if (!defined('ABSPATH')) exit;
 
 // Security: Session-based auth is already handled by PPV_Standalone_Admin::process_admin_request()
 global $wpdb;
+
+// ============================================================
+// DATABASE: Ensure linked_group_id column exists
+// ============================================================
+$column_exists = $wpdb->get_var("SHOW COLUMNS FROM {$wpdb->prefix}ppv_stores LIKE 'linked_group_id'");
+if (!$column_exists) {
+    $wpdb->query("ALTER TABLE {$wpdb->prefix}ppv_stores ADD COLUMN linked_group_id INT UNSIGNED DEFAULT NULL");
+    $wpdb->query("CREATE INDEX idx_linked_group ON {$wpdb->prefix}ppv_stores (linked_group_id)");
+    ppv_log("✅ [PPV_Admin] Added linked_group_id column to ppv_stores table");
+}
+
+// ============================================================
+// TAB 3: HANDLER LINKING - FORM SUBMISSIONS
+// ============================================================
+
+// Link handlers together
+if (isset($_POST['link_handlers']) && check_admin_referer('ppv_link_handlers', 'ppv_link_nonce')) {
+    $handler_ids = array_map('intval', $_POST['handler_ids'] ?? []);
+
+    if (count($handler_ids) < 2) {
+        $link_error = '⚠️ Legalább 2 händlert kell kiválasztani az összekapcsoláshoz!';
+    } else {
+        // Check if any of these handlers are already in a group
+        $existing_group = $wpdb->get_var($wpdb->prepare(
+            "SELECT linked_group_id FROM {$wpdb->prefix}ppv_stores
+             WHERE id IN (" . implode(',', $handler_ids) . ")
+             AND linked_group_id IS NOT NULL
+             LIMIT 1"
+        ));
+
+        // Use existing group ID or create new one
+        $group_id = $existing_group ?: time(); // Use timestamp as unique group ID
+
+        // Update all selected handlers with the group ID
+        $wpdb->query($wpdb->prepare(
+            "UPDATE {$wpdb->prefix}ppv_stores
+             SET linked_group_id = %d
+             WHERE id IN (" . implode(',', $handler_ids) . ")",
+            $group_id
+        ));
+
+        $link_success = '✅ ' . count($handler_ids) . ' händler sikeresen összekapcsolva! (Csoport ID: ' . $group_id . ')';
+        ppv_log("✅ [PPV_Admin] Linked " . count($handler_ids) . " handlers. Group ID: {$group_id}");
+    }
+}
+
+// Unlink a handler from group
+if (isset($_POST['unlink_handler']) && check_admin_referer('ppv_unlink_handler', 'ppv_unlink_nonce')) {
+    $handler_id = intval($_POST['handler_id']);
+
+    $wpdb->update(
+        "{$wpdb->prefix}ppv_stores",
+        ['linked_group_id' => null],
+        ['id' => $handler_id],
+        ['%s'],
+        ['%d']
+    );
+
+    $link_success = '✅ Händler sikeresen leválasztva a csoportról!';
+    ppv_log("✅ [PPV_Admin] Unlinked handler #{$handler_id} from group");
+}
+
+// Get linked groups for display
+$linked_groups = $wpdb->get_results("
+    SELECT linked_group_id,
+           GROUP_CONCAT(id) as handler_ids,
+           GROUP_CONCAT(name SEPARATOR ', ') as handler_names,
+           COUNT(*) as member_count
+    FROM {$wpdb->prefix}ppv_stores
+    WHERE linked_group_id IS NOT NULL
+    AND (parent_store_id IS NULL OR parent_store_id = 0)
+    GROUP BY linked_group_id
+    ORDER BY linked_group_id DESC
+");
 
 // ============================================================
 // TAB 1: HANDLER OVERVIEW DATA
@@ -682,8 +756,13 @@ function ppv_format_device_info_json($device_info_json) {
 </head>
 <body>
     <div class="container">
-        <h1>🏪 Handler Management</h1>
-        <p class="subtitle">Handler overview és user-to-handler konverzió</p>
+        <!-- Vissza gomb -->
+        <a href="?ppv_admin=1" style="display: inline-flex; align-items: center; gap: 8px; color: #00d4ff; text-decoration: none; margin-bottom: 20px; font-size: 14px;">
+            <i class="ri-arrow-left-line"></i> Vissza az admin főoldalra
+        </a>
+
+        <h1>🏪 Händler kezelés</h1>
+        <p class="subtitle">Händler áttekintés, konverzió és összekapcsolás</p>
 
         <?php if (isset($success_message)): ?>
             <div class="alert alert-success">
@@ -697,13 +776,28 @@ function ppv_format_device_info_json($device_info_json) {
             </div>
         <?php endif; ?>
 
+        <?php if (isset($link_success)): ?>
+            <div class="alert alert-success">
+                <?php echo $link_success; ?>
+            </div>
+        <?php endif; ?>
+
+        <?php if (isset($link_error)): ?>
+            <div class="alert alert-error">
+                <?php echo $link_error; ?>
+            </div>
+        <?php endif; ?>
+
         <!-- Tab Navigation -->
         <div class="tab-navigation">
             <button class="tab-button active" onclick="switchTab('overview')">
-                <i class="ri-store-2-line"></i> Handler Overview
+                <i class="ri-store-2-line"></i> Áttekintés
             </button>
             <button class="tab-button" onclick="switchTab('conversion')">
-                <i class="ri-user-add-line"></i> User to Handler
+                <i class="ri-user-add-line"></i> User → Händler
+            </button>
+            <button class="tab-button" onclick="switchTab('linking')">
+                <i class="ri-link"></i> Összekapcsolás
             </button>
         </div>
 
@@ -1023,6 +1117,116 @@ function ppv_format_device_info_json($device_info_json) {
                 <?php endif; ?>
             </div>
         </div>
+
+        <!-- ============================================================ -->
+        <!-- TAB 3: HANDLER LINKING -->
+        <!-- ============================================================ -->
+        <div id="tab-linking" class="tab-content">
+            <!-- Existing Linked Groups -->
+            <div class="card" style="margin-bottom: 25px;">
+                <h2><i class="ri-group-line"></i> Összekapcsolt händler csoportok (<?php echo count($linked_groups); ?>)</h2>
+
+                <?php if (empty($linked_groups)): ?>
+                    <p style="text-align: center; color: #94a3b8; padding: 30px;">
+                        <i class="ri-link-unlink" style="font-size: 40px; display: block; margin-bottom: 10px; opacity: 0.5;"></i>
+                        Még nincs összekapcsolt händler csoport.
+                    </p>
+                <?php else: ?>
+                    <div style="display: grid; gap: 15px;">
+                        <?php foreach ($linked_groups as $group):
+                            $member_ids = explode(',', $group->handler_ids);
+                            $members = $wpdb->get_results($wpdb->prepare(
+                                "SELECT id, name, email, company_name, city FROM {$wpdb->prefix}ppv_stores WHERE id IN (" . implode(',', array_map('intval', $member_ids)) . ")"
+                            ));
+                        ?>
+                            <div style="background: rgba(0,212,255,0.05); border: 1px solid rgba(0,212,255,0.2); border-radius: 12px; padding: 15px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                    <span style="color: #00d4ff; font-weight: 600;">
+                                        <i class="ri-link"></i> Csoport #<?php echo $group->linked_group_id; ?>
+                                        <span style="color: #888; font-weight: normal; margin-left: 10px;">(<?php echo $group->member_count; ?> tag)</span>
+                                    </span>
+                                </div>
+                                <div style="display: grid; gap: 8px;">
+                                    <?php foreach ($members as $m): ?>
+                                        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2); padding: 10px 12px; border-radius: 8px;">
+                                            <div>
+                                                <strong style="color: #fff;"><?php echo esc_html($m->name); ?></strong>
+                                                <?php if ($m->company_name): ?>
+                                                    <span style="color: #888; font-size: 12px;">(<?php echo esc_html($m->company_name); ?>)</span>
+                                                <?php endif; ?>
+                                                <div style="color: #00d4ff; font-size: 12px;"><?php echo esc_html($m->email); ?></div>
+                                            </div>
+                                            <form method="POST" style="margin: 0;" onsubmit="return confirm('Biztosan leválasztod ezt a händlert a csoportról?');">
+                                                <?php wp_nonce_field('ppv_unlink_handler', 'ppv_unlink_nonce'); ?>
+                                                <input type="hidden" name="handler_id" value="<?php echo $m->id; ?>">
+                                                <button type="submit" name="unlink_handler" class="btn" style="background: rgba(244,67,54,0.2); color: #f87171; border: 1px solid rgba(244,67,54,0.3); padding: 6px 12px; font-size: 12px;">
+                                                    <i class="ri-link-unlink"></i> Leválaszt
+                                                </button>
+                                            </form>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+            <!-- Link New Handlers -->
+            <div class="card">
+                <h2><i class="ri-link"></i> Händlerek összekapcsolása</h2>
+                <p style="color: #94a3b8; margin-bottom: 20px;">
+                    Válaszd ki a händlereket akiket össze szeretnél kapcsolni. Az összekapcsolt händlerek mindent megosztanak (store-ok, beállítások, statisztikák).
+                </p>
+
+                <form method="POST" id="linkForm">
+                    <?php wp_nonce_field('ppv_link_handlers', 'ppv_link_nonce'); ?>
+
+                    <!-- Search -->
+                    <div style="margin-bottom: 20px;">
+                        <input type="text" id="linkHandlerSearch" placeholder="Keresés név, email vagy város alapján..."
+                               style="width: 100%; padding: 12px 15px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: #fff; font-size: 14px;"
+                               oninput="filterLinkHandlers()">
+                    </div>
+
+                    <!-- Handler Selection -->
+                    <div id="linkHandlerList" style="max-height: 400px; overflow-y: auto; margin-bottom: 20px;">
+                        <?php foreach ($handlers_overview as $h):
+                            $is_linked = !empty($h->linked_group_id);
+                        ?>
+                            <label class="link-handler-item" data-name="<?php echo esc_attr(strtolower($h->name)); ?>" data-email="<?php echo esc_attr(strtolower($h->email ?? '')); ?>" data-city="<?php echo esc_attr(strtolower($h->city ?? '')); ?>" style="display: flex; align-items: center; gap: 12px; padding: 12px 15px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s;">
+                                <input type="checkbox" name="handler_ids[]" value="<?php echo $h->id; ?>" style="width: 20px; height: 20px; accent-color: #00d4ff;" <?php echo $is_linked ? 'disabled' : ''; ?>>
+                                <div style="flex: 1;">
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <strong style="color: #fff;"><?php echo esc_html($h->name); ?></strong>
+                                        <?php if ($is_linked): ?>
+                                            <span style="background: rgba(251,146,60,0.2); color: #fb923c; padding: 2px 8px; border-radius: 4px; font-size: 11px;">
+                                                <i class="ri-link"></i> Csoportban
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div style="color: #00d4ff; font-size: 12px;"><?php echo esc_html($h->email ?? 'Nincs email'); ?></div>
+                                    <?php if ($h->city): ?>
+                                        <div style="color: #888; font-size: 11px;"><i class="ri-map-pin-line"></i> <?php echo esc_html($h->city); ?></div>
+                                    <?php endif; ?>
+                                </div>
+                                <div style="text-align: right; color: #888; font-size: 11px;">
+                                    Store #<?php echo $h->id; ?>
+                                </div>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+
+                    <!-- Selected count and submit -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
+                        <span id="selectedCount" style="color: #888;">0 händler kiválasztva</span>
+                        <button type="submit" name="link_handlers" class="btn btn-primary" id="linkSubmitBtn" disabled>
+                            <i class="ri-link"></i> Összekapcsolás
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 
     <!-- Handler Details Modal -->
@@ -1238,7 +1442,64 @@ function ppv_format_device_info_json($device_info_json) {
             if (document.getElementById('handlerSearch')) {
                 filterHandlers();
             }
+            // Initialize link handler checkboxes
+            initLinkHandlers();
         });
+
+        // ============================================================
+        // HANDLER LINKING FUNCTIONS
+        // ============================================================
+
+        function filterLinkHandlers() {
+            const searchValue = document.getElementById('linkHandlerSearch').value.toLowerCase();
+            const items = document.querySelectorAll('.link-handler-item');
+
+            items.forEach(item => {
+                const name = item.dataset.name || '';
+                const email = item.dataset.email || '';
+                const city = item.dataset.city || '';
+
+                const matches = name.includes(searchValue) || email.includes(searchValue) || city.includes(searchValue);
+                item.style.display = matches ? 'flex' : 'none';
+            });
+        }
+
+        function initLinkHandlers() {
+            const checkboxes = document.querySelectorAll('#linkHandlerList input[type="checkbox"]');
+            const submitBtn = document.getElementById('linkSubmitBtn');
+            const countSpan = document.getElementById('selectedCount');
+
+            if (!checkboxes.length) return;
+
+            checkboxes.forEach(cb => {
+                cb.addEventListener('change', function() {
+                    const checked = document.querySelectorAll('#linkHandlerList input[type="checkbox"]:checked:not(:disabled)');
+                    const count = checked.length;
+
+                    countSpan.textContent = count + ' händler kiválasztva';
+
+                    if (count >= 2) {
+                        submitBtn.disabled = false;
+                        submitBtn.style.opacity = '1';
+                    } else {
+                        submitBtn.disabled = true;
+                        submitBtn.style.opacity = '0.5';
+                    }
+                });
+            });
+
+            // Style for hover effect
+            document.querySelectorAll('.link-handler-item').forEach(item => {
+                item.addEventListener('mouseenter', function() {
+                    this.style.borderColor = 'rgba(0,212,255,0.3)';
+                    this.style.background = 'rgba(0,212,255,0.05)';
+                });
+                item.addEventListener('mouseleave', function() {
+                    this.style.borderColor = 'rgba(255,255,255,0.08)';
+                    this.style.background = 'rgba(255,255,255,0.03)';
+                });
+            });
+        }
 
         // Handler modal
         let currentHandler = null;
