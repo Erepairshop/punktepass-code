@@ -757,13 +757,14 @@ return [
     'footer_contact' => 'Contact',
     'footer_legal' => '© 2025 PunktePass. Toate drepturile rezervate.',
     
-    // ========== MAINTENANCE MODE ==========
-    'maintenance_section' => 'Întreținere',
-    'maintenance_mode' => 'Mod de Întreținere',
-    'maintenance_mode_help' => 'Activează modul de întreținere pentru a pune magazinul temporar offline',
-    'maintenance_message' => 'Mesaj de Întreținere',
-    'maintenance_message_placeholder' => 'de ex. Revenim în curând! Vă mulțumim pentru răbdare.',
-    'maintenance_message_help' => 'Acest mesaj va fi afișat clienților tăi',
+    // ========== VACATION MODE ==========
+    'vacation_section' => 'Concediu',
+    'vacation_from' => 'Concediu de la',
+    'vacation_to' => 'Concediu până la',
+    'vacation_dates_help' => 'Selectează perioada în care magazinul este în concediu',
+    'vacation_message' => 'Mesaj concediu (opțional)',
+    'vacation_message_placeholder' => 'de ex. Revenim pe 15 ianuarie!',
+    'vacation_message_help' => 'Acest mesaj va fi afișat clienților în timpul concediului',
 
     // ========== OPENING HOURS ENFORCEMENT ==========
     'opening_hours_section' => 'Program',

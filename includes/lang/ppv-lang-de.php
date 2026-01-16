@@ -728,13 +728,14 @@ return [
     'footer_contact' => 'Kontakt',
     'footer_legal' => '© 2025 PunktePass. Alle Rechte vorbehalten.',
     
-    // ========== MAINTENANCE MODE ==========
-    'maintenance_section' => 'Wartungsmodus',
-    'maintenance_mode' => 'Wartungsmodus',
-    'maintenance_mode_help' => 'Aktiviere den Wartungsmodus, um dein Geschäft vorübergehend offline zu nehmen',
-    'maintenance_message' => 'Wartungsnachricht',
-    'maintenance_message_placeholder' => 'z.B. Wir sind in Kürze zurück! Danke für deine Geduld.',
-    'maintenance_message_help' => 'Diese Nachricht wird deinen Kunden angezeigt',
+    // ========== VACATION MODE ==========
+    'vacation_section' => 'Urlaubsmodus',
+    'vacation_from' => 'Urlaub von',
+    'vacation_to' => 'Urlaub bis',
+    'vacation_dates_help' => 'Wähle den Zeitraum, in dem dein Geschäft im Urlaub ist',
+    'vacation_message' => 'Urlaubsnachricht (optional)',
+    'vacation_message_placeholder' => 'z.B. Wir sind ab dem 15. Januar wieder für euch da!',
+    'vacation_message_help' => 'Diese Nachricht wird deinen Kunden während des Urlaubs angezeigt',
 
     // ========== OPENING HOURS ENFORCEMENT ==========
     'opening_hours_section' => 'Öffnungszeiten',

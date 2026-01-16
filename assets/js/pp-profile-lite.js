@@ -550,7 +550,9 @@
                 'latitude': store.latitude,
                 'longitude': store.longitude,
                 'timezone': store.timezone,
-                'maintenance_message': store.maintenance_message
+                'vacation_from': store.vacation_from,
+                'vacation_to': store.vacation_to,
+                'vacation_message': store.vacation_message
             };
 
             // Text/number/select mezők
@@ -565,8 +567,7 @@
             const checkboxMap = {
                 'is_taxable': store.is_taxable,
                 'active': store.active,
-                'visible': store.visible,
-                'maintenance_mode': store.maintenance_mode
+                'visible': store.visible
             };
 
             for (const [fieldName, value] of Object.entries(checkboxMap)) {

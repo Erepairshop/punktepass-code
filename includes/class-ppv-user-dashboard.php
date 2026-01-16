@@ -1344,7 +1344,7 @@ public static function render_dashboard() {
         SELECT s.id, s.name, s.company_name, s.address, s.city, s.plz, s.latitude, s.longitude,
                s.phone, s.public_email, s.website, s.logo, s.qr_logo, s.opening_hours, s.description,
                s.gallery, s.facebook, s.instagram, s.tiktok, s.country, s.slogan,
-               s.maintenance_mode, s.maintenance_message,
+               s.vacation_from, s.vacation_to, s.vacation_message,
                s.vip_fix_enabled, s.vip_fix_bronze, s.vip_fix_silver, s.vip_fix_gold, s.vip_fix_platinum,
                s.vip_streak_enabled, s.vip_streak_count, s.vip_streak_type,
                s.vip_streak_bronze, s.vip_streak_silver, s.vip_streak_gold, s.vip_streak_platinum,
@@ -1546,8 +1546,10 @@ public static function render_dashboard() {
             'rewards' => $rewards,
             'campaigns' => $campaigns,
             'vip' => $vip,  // ✅ NEW: VIP bonus info
-            'maintenance_mode' => !empty($store->maintenance_mode),
-            'maintenance_message' => $store->maintenance_message ?? null
+            'vacation_from' => $store->vacation_from ?? null,
+            'vacation_to' => $store->vacation_to ?? null,
+            'vacation_message' => $store->vacation_message ?? null,
+            'is_on_vacation' => self::is_store_on_vacation($store->vacation_from, $store->vacation_to)
         ];
     }
 
@@ -1562,7 +1564,18 @@ public static function render_dashboard() {
     return new WP_REST_Response($result, 200);
 }
 
- 
+    /**
+     * Check if store is currently on vacation based on date range
+     */
+    private static function is_store_on_vacation($vacation_from, $vacation_to) {
+        if (empty($vacation_from) || empty($vacation_to)) {
+            return false;
+        }
+
+        $today = date('Y-m-d');
+        return ($today >= $vacation_from && $today <= $vacation_to);
+    }
+
     private static function calculate_distance($lat1, $lon1, $lat2, $lon2) {
         $earth_radius = 6371;
 

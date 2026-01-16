@@ -1337,24 +1337,28 @@ if (!empty($store->gallery)) {
 
                 <hr>
 
-                <h3 data-i18n="maintenance_section"><?php echo esc_html(PPV_Lang::t('maintenance_section')); ?></h3>
+                <h3 data-i18n="vacation_section"><?php echo esc_html(PPV_Lang::t('vacation_section')); ?></h3>
 
-                <div class="ppv-checkbox-group">
-                    <label class="ppv-checkbox">
-                        <input type="checkbox" name="maintenance_mode" value="1" <?php checked($store->maintenance_mode ?? 0, 1); ?>>
-                        <strong data-i18n="maintenance_mode"><?php echo esc_html(PPV_Lang::t('maintenance_mode')); ?></strong>
-                        <small data-i18n="maintenance_mode_help"><?php echo esc_html(PPV_Lang::t('maintenance_mode_help')); ?></small>
-                    </label>
+                <div class="ppv-form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="ppv-form-group">
+                        <label data-i18n="vacation_from"><?php echo esc_html(PPV_Lang::t('vacation_from')); ?></label>
+                        <input type="date" name="vacation_from" value="<?php echo esc_attr($store->vacation_from ?? ''); ?>">
+                    </div>
+                    <div class="ppv-form-group">
+                        <label data-i18n="vacation_to"><?php echo esc_html(PPV_Lang::t('vacation_to')); ?></label>
+                        <input type="date" name="vacation_to" value="<?php echo esc_attr($store->vacation_to ?? ''); ?>">
+                    </div>
                 </div>
+                <p class="ppv-help" data-i18n="vacation_dates_help" style="margin-top: -8px; margin-bottom: 12px;">
+                    <?php echo esc_html(PPV_Lang::t('vacation_dates_help')); ?>
+                </p>
 
-                <div class="ppv-form-group" style="margin-top: 12px;">
-                    <label data-i18n="maintenance_message"><?php echo esc_html(PPV_Lang::t('maintenance_message')); ?></label>
-                    <p class="ppv-help" data-i18n="maintenance_message_help" style="margin-bottom: 8px;">
-                        <?php echo esc_html(PPV_Lang::t('maintenance_message_help')); ?>
+                <div class="ppv-form-group">
+                    <label data-i18n="vacation_message"><?php echo esc_html(PPV_Lang::t('vacation_message')); ?></label>
+                    <p class="ppv-help" data-i18n="vacation_message_help" style="margin-bottom: 8px;">
+                        <?php echo esc_html(PPV_Lang::t('vacation_message_help')); ?>
                     </p>
-                    <textarea name="maintenance_message" placeholder="<?php echo esc_attr(PPV_Lang::t('maintenance_message_placeholder')); ?>" style="min-height: 100px;">
-<?php echo esc_textarea($store->maintenance_message ?? ''); ?>
-                    </textarea>
+                    <textarea name="vacation_message" placeholder="<?php echo esc_attr(PPV_Lang::t('vacation_message_placeholder')); ?>" style="min-height: 80px;"><?php echo esc_textarea($store->vacation_message ?? ''); ?></textarea>
                 </div>
 
                 <hr>
@@ -1621,8 +1625,9 @@ public static function ajax_save_profile() {
         'description' => wp_kses_post($_POST['description'] ?? ''),
         'active' => !empty($_POST['active']) ? 1 : 0,
         'visible' => !empty($_POST['visible']) ? 1 : 0,
-        'maintenance_mode' => !empty($_POST['maintenance_mode']) ? 1 : 0,
-        'maintenance_message' => wp_kses_post($_POST['maintenance_message'] ?? ''),
+        'vacation_from' => !empty($_POST['vacation_from']) ? sanitize_text_field($_POST['vacation_from']) : null,
+        'vacation_to' => !empty($_POST['vacation_to']) ? sanitize_text_field($_POST['vacation_to']) : null,
+        'vacation_message' => sanitize_text_field($_POST['vacation_message'] ?? ''),
         'enforce_opening_hours' => !empty($_POST['enforce_opening_hours']) ? 1 : 0,
         'timezone' => sanitize_text_field($_POST['timezone'] ?? 'Europe/Berlin'),
         'updated_at' => current_time('mysql'),
@@ -1695,8 +1700,9 @@ $format_specs = [
     '%s',  // description
     '%d',  // active
     '%d',  // visible
-    '%d',  // maintenance_mode
-    '%s',  // maintenance_message
+    '%s',  // vacation_from
+    '%s',  // vacation_to
+    '%s',  // vacation_message
     '%d',  // enforce_opening_hours
     '%s',  // timezone
     '%s',  // updated_at
