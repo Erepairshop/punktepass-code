@@ -510,6 +510,13 @@ return [
 'signup_success' => 'Sikeres regisztráció! Átirányítás...',
 'signup_google_error' => 'Google regisztráció sikertelen',
 'signup_google_success' => 'Sikeres Google regisztráció!',
+'signup_registering' => 'Regisztráció...',
+
+// PASSWORD STRENGTH
+'password_strength_weak' => 'Gyenge',
+'password_strength_medium' => 'Közepes',
+'password_strength_good' => 'Jó',
+'password_strength_strong' => 'Erős',
 
  // ========== GLOBAL / HEADER ==========
     'language' => 'Nyelv',

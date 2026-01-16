@@ -176,6 +176,25 @@ class PPV_Signup {
             'debug' => true
         ]);
 
+        // Add translations for JavaScript
+        wp_add_inline_script('ppv-signup', 'window.ppvSignupTranslations = ' . wp_json_encode([
+            'error_fill_all' => PPV_Lang::t('signup_error_empty'),
+            'error_invalid_email' => PPV_Lang::t('signup_error_invalid_email'),
+            'error_password_mismatch' => PPV_Lang::t('signup_error_password_mismatch'),
+            'error_password_short' => PPV_Lang::t('signup_error_password_short'),
+            'error_password_requirements' => PPV_Lang::t('signup_error_password_weak'),
+            'error_terms' => PPV_Lang::t('signup_error_terms'),
+            'error_connection' => PPV_Lang::t('network_error'),
+            'error_google_unavailable' => PPV_Lang::t('signup_google_error'),
+            'error_google_failed' => PPV_Lang::t('signup_google_error'),
+            'password_strength_weak' => PPV_Lang::t('password_strength_weak'),
+            'password_strength_medium' => PPV_Lang::t('password_strength_medium'),
+            'password_strength_good' => PPV_Lang::t('password_strength_good'),
+            'password_strength_strong' => PPV_Lang::t('password_strength_strong'),
+            'registering' => PPV_Lang::t('signup_registering'),
+            'signup_google_btn' => PPV_Lang::t('signup_google_btn'),
+        ]) . ';', 'before');
+
         ppv_log("✅ [PPV_Signup] Assets enqueued");
     }
 

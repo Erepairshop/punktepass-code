@@ -522,6 +522,13 @@ return [
 'signup_success' => 'Înregistrare reușită! Redirecționare...',
 'signup_google_error' => 'Înregistrare Google eșuată',
 'signup_google_success' => 'Înregistrare Google reușită!',
+'signup_registering' => 'Înregistrare...',
+
+// PASSWORD STRENGTH
+'password_strength_weak' => 'Slab',
+'password_strength_medium' => 'Mediu',
+'password_strength_good' => 'Bun',
+'password_strength_strong' => 'Puternic',
 
 // ========== GLOBAL / HEADER ==========
     'language' => 'Limbă',

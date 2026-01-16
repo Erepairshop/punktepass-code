@@ -484,6 +484,13 @@ return [
 'signup_success' => 'Registrierung erfolgreich! Sie werden weitergeleitet...',
 'signup_google_error' => 'Google Registrierung fehlgeschlagen',
 'signup_google_success' => 'Google Registrierung erfolgreich!',
+'signup_registering' => 'Registrierung...',
+
+// PASSWORD STRENGTH
+'password_strength_weak' => 'Schwach',
+'password_strength_medium' => 'Mittel',
+'password_strength_good' => 'Gut',
+'password_strength_strong' => 'Stark',
 
 
 // ========== GLOBAL / HEADER ==========
