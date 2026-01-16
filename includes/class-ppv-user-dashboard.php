@@ -1329,8 +1329,9 @@ public static function render_dashboard() {
     $max_distance = floatval($request->get_param('max_distance') ?? 10);
 
     // ✅ Cache kulcs - now includes VIP version for cache invalidation
-    $vip_version = wp_cache_get('ppv_vip_version') ?: '1';
-    $cache_key = 'ppv_stores_list_' . md5("{$user_lat}_{$user_lng}_{$max_distance}_{$vip_version}");
+    // Version 2: Updated store name filter (name OR company_name)
+    $vip_version = wp_cache_get('ppv_vip_version') ?: '2';
+    $cache_key = 'ppv_stores_list_v2_' . md5("{$user_lat}_{$user_lng}_{$max_distance}_{$vip_version}");
     $cached = wp_cache_get($cache_key);
     if ($cached !== false) {
         return new WP_REST_Response($cached, 200);
