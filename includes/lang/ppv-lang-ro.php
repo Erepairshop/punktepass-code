@@ -759,6 +759,8 @@ return [
     
     // ========== VACATION MODE ==========
     'vacation_section' => 'Concediu',
+    'vacation_enabled' => 'Mod concediu',
+    'vacation_enabled_help' => 'Când este activat, magazinul va apărea în concediu în perioada selectată',
     'vacation_from' => 'Concediu de la',
     'vacation_to' => 'Concediu până la',
     'vacation_dates_help' => 'Selectează perioada în care magazinul este în concediu',

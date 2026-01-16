@@ -730,6 +730,8 @@ return [
     
     // ========== VACATION MODE ==========
     'vacation_section' => 'Urlaubsmodus',
+    'vacation_enabled' => 'Urlaubsmodus',
+    'vacation_enabled_help' => 'Wenn aktiviert, wird dein Geschäft im gewählten Zeitraum als im Urlaub angezeigt',
     'vacation_from' => 'Urlaub von',
     'vacation_to' => 'Urlaub bis',
     'vacation_dates_help' => 'Wähle den Zeitraum, in dem dein Geschäft im Urlaub ist',

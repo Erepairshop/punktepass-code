@@ -1344,7 +1344,7 @@ public static function render_dashboard() {
         SELECT s.id, s.name, s.company_name, s.address, s.city, s.plz, s.latitude, s.longitude,
                s.phone, s.public_email, s.website, s.logo, s.qr_logo, s.opening_hours, s.description,
                s.gallery, s.facebook, s.instagram, s.tiktok, s.country, s.slogan,
-               s.vacation_from, s.vacation_to, s.vacation_message,
+               s.vacation_enabled, s.vacation_from, s.vacation_to, s.vacation_message,
                s.vip_fix_enabled, s.vip_fix_bronze, s.vip_fix_silver, s.vip_fix_gold, s.vip_fix_platinum,
                s.vip_streak_enabled, s.vip_streak_count, s.vip_streak_type,
                s.vip_streak_bronze, s.vip_streak_silver, s.vip_streak_gold, s.vip_streak_platinum,
@@ -1549,7 +1549,7 @@ public static function render_dashboard() {
             'vacation_from' => $store->vacation_from ?? null,
             'vacation_to' => $store->vacation_to ?? null,
             'vacation_message' => $store->vacation_message ?? null,
-            'is_on_vacation' => self::is_store_on_vacation($store->vacation_from, $store->vacation_to)
+            'is_on_vacation' => self::is_store_on_vacation($store->vacation_enabled, $store->vacation_from, $store->vacation_to)
         ];
     }
 
@@ -1565,9 +1565,12 @@ public static function render_dashboard() {
 }
 
     /**
-     * Check if store is currently on vacation based on date range
+     * Check if store is currently on vacation based on enabled flag and date range
      */
-    private static function is_store_on_vacation($vacation_from, $vacation_to) {
+    private static function is_store_on_vacation($vacation_enabled, $vacation_from, $vacation_to) {
+        if (empty($vacation_enabled)) {
+            return false;
+        }
         if (empty($vacation_from) || empty($vacation_to)) {
             return false;
         }

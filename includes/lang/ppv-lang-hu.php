@@ -750,6 +750,8 @@ return [
     
     // ========== VACATION MODE ==========
     'vacation_section' => 'Szabadság',
+    'vacation_enabled' => 'Szabadság mód',
+    'vacation_enabled_help' => 'Ha be van kapcsolva, a bolt szabadságon lévőként jelenik meg a megadott időszakban',
     'vacation_from' => 'Szabadság kezdete',
     'vacation_to' => 'Szabadság vége',
     'vacation_dates_help' => 'Válaszd ki az időszakot, amikor az üzlet szabadságon van',

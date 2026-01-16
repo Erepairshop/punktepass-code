@@ -1339,26 +1339,42 @@ if (!empty($store->gallery)) {
 
                 <h3 data-i18n="vacation_section"><?php echo esc_html(PPV_Lang::t('vacation_section')); ?></h3>
 
-                <div class="ppv-form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                    <div class="ppv-form-group">
-                        <label data-i18n="vacation_from"><?php echo esc_html(PPV_Lang::t('vacation_from')); ?></label>
-                        <input type="date" name="vacation_from" value="<?php echo esc_attr($store->vacation_from ?? ''); ?>">
+                <div class="ppv-vip-toggle-row">
+                    <div class="ppv-toggle-wrapper">
+                        <label class="ppv-toggle-switch">
+                            <input type="checkbox" id="ppv-vacation-enabled" name="vacation_enabled" value="1" <?php checked($store->vacation_enabled ?? 0, 1); ?>>
+                            <span class="ppv-toggle-slider"></span>
+                        </label>
+                        <span class="ppv-toggle-status <?php echo !empty($store->vacation_enabled) ? 'active' : ''; ?>" data-on="<?php echo esc_attr(PPV_Lang::t('toggle_on')); ?>" data-off="<?php echo esc_attr(PPV_Lang::t('toggle_off')); ?>"><?php echo esc_html(!empty($store->vacation_enabled) ? PPV_Lang::t('toggle_on') : PPV_Lang::t('toggle_off')); ?></span>
                     </div>
-                    <div class="ppv-form-group">
-                        <label data-i18n="vacation_to"><?php echo esc_html(PPV_Lang::t('vacation_to')); ?></label>
-                        <input type="date" name="vacation_to" value="<?php echo esc_attr($store->vacation_to ?? ''); ?>">
+                    <div class="ppv-toggle-label">
+                        <strong data-i18n="vacation_enabled"><?php echo esc_html(PPV_Lang::t('vacation_enabled')); ?></strong>
+                        <small data-i18n="vacation_enabled_help"><?php echo esc_html(PPV_Lang::t('vacation_enabled_help')); ?></small>
                     </div>
                 </div>
-                <p class="ppv-help" data-i18n="vacation_dates_help" style="margin-top: -8px; margin-bottom: 12px;">
-                    <?php echo esc_html(PPV_Lang::t('vacation_dates_help')); ?>
-                </p>
 
-                <div class="ppv-form-group">
-                    <label data-i18n="vacation_message"><?php echo esc_html(PPV_Lang::t('vacation_message')); ?></label>
-                    <p class="ppv-help" data-i18n="vacation_message_help" style="margin-bottom: 8px;">
-                        <?php echo esc_html(PPV_Lang::t('vacation_message_help')); ?>
+                <div class="ppv-vacation-fields" style="<?php echo empty($store->vacation_enabled) ? 'opacity: 0.5; pointer-events: none;' : ''; ?>">
+                    <div class="ppv-form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div class="ppv-form-group">
+                            <label data-i18n="vacation_from"><?php echo esc_html(PPV_Lang::t('vacation_from')); ?></label>
+                            <input type="date" name="vacation_from" value="<?php echo esc_attr($store->vacation_from ?? ''); ?>">
+                        </div>
+                        <div class="ppv-form-group">
+                            <label data-i18n="vacation_to"><?php echo esc_html(PPV_Lang::t('vacation_to')); ?></label>
+                            <input type="date" name="vacation_to" value="<?php echo esc_attr($store->vacation_to ?? ''); ?>">
+                        </div>
+                    </div>
+                    <p class="ppv-help" data-i18n="vacation_dates_help" style="margin-top: -8px; margin-bottom: 12px;">
+                        <?php echo esc_html(PPV_Lang::t('vacation_dates_help')); ?>
                     </p>
-                    <textarea name="vacation_message" placeholder="<?php echo esc_attr(PPV_Lang::t('vacation_message_placeholder')); ?>" style="min-height: 80px;"><?php echo esc_textarea($store->vacation_message ?? ''); ?></textarea>
+
+                    <div class="ppv-form-group">
+                        <label data-i18n="vacation_message"><?php echo esc_html(PPV_Lang::t('vacation_message')); ?></label>
+                        <p class="ppv-help" data-i18n="vacation_message_help" style="margin-bottom: 8px;">
+                            <?php echo esc_html(PPV_Lang::t('vacation_message_help')); ?>
+                        </p>
+                        <textarea name="vacation_message" placeholder="<?php echo esc_attr(PPV_Lang::t('vacation_message_placeholder')); ?>" style="min-height: 80px;"><?php echo esc_textarea($store->vacation_message ?? ''); ?></textarea>
+                    </div>
                 </div>
 
                 <hr>
@@ -1625,6 +1641,7 @@ public static function ajax_save_profile() {
         'description' => wp_kses_post($_POST['description'] ?? ''),
         'active' => !empty($_POST['active']) ? 1 : 0,
         'visible' => !empty($_POST['visible']) ? 1 : 0,
+        'vacation_enabled' => !empty($_POST['vacation_enabled']) ? 1 : 0,
         'vacation_from' => !empty($_POST['vacation_from']) ? sanitize_text_field($_POST['vacation_from']) : null,
         'vacation_to' => !empty($_POST['vacation_to']) ? sanitize_text_field($_POST['vacation_to']) : null,
         'vacation_message' => sanitize_text_field($_POST['vacation_message'] ?? ''),
@@ -1700,6 +1717,7 @@ $format_specs = [
     '%s',  // description
     '%d',  // active
     '%d',  // visible
+    '%d',  // vacation_enabled
     '%s',  // vacation_from
     '%s',  // vacation_to
     '%s',  // vacation_message

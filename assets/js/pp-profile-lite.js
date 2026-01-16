@@ -372,6 +372,28 @@
             this.$form.querySelectorAll('.ppv-file-input').forEach(input => {
                 input.addEventListener('change', (e) => this.handleFileUpload(e));
             });
+
+            // Vacation toggle - enable/disable date fields
+            const vacationToggle = document.getElementById('ppv-vacation-enabled');
+            if (vacationToggle) {
+                vacationToggle.addEventListener('change', (e) => {
+                    const vacationFields = document.querySelector('.ppv-vacation-fields');
+                    if (vacationFields) {
+                        vacationFields.style.opacity = e.target.checked ? '1' : '0.5';
+                        vacationFields.style.pointerEvents = e.target.checked ? 'auto' : 'none';
+                    }
+
+                    // Update toggle status text
+                    const wrapper = e.target.closest('.ppv-toggle-wrapper');
+                    if (wrapper) {
+                        const statusEl = wrapper.querySelector('.ppv-toggle-status');
+                        if (statusEl) {
+                            statusEl.textContent = e.target.checked ? statusEl.dataset.on : statusEl.dataset.off;
+                            statusEl.classList.toggle('active', e.target.checked);
+                        }
+                    }
+                });
+            }
         }
 
         validateEmail(el) {
@@ -567,7 +589,8 @@
             const checkboxMap = {
                 'is_taxable': store.is_taxable,
                 'active': store.active,
-                'visible': store.visible
+                'visible': store.visible,
+                'vacation_enabled': store.vacation_enabled
             };
 
             for (const [fieldName, value] of Object.entries(checkboxMap)) {
@@ -575,6 +598,26 @@
                 if (field) {
                     // Fix: "0" string should be false, "1" or 1 should be true
                     field.checked = value === true || value === 1 || value === '1';
+
+                    // Update toggle status text if exists
+                    const wrapper = field.closest('.ppv-toggle-wrapper');
+                    if (wrapper) {
+                        const statusEl = wrapper.querySelector('.ppv-toggle-status');
+                        if (statusEl) {
+                            const isChecked = field.checked;
+                            statusEl.textContent = isChecked ? statusEl.dataset.on : statusEl.dataset.off;
+                            statusEl.classList.toggle('active', isChecked);
+                        }
+                    }
+
+                    // Update vacation fields visibility
+                    if (fieldName === 'vacation_enabled') {
+                        const vacationFields = document.querySelector('.ppv-vacation-fields');
+                        if (vacationFields) {
+                            vacationFields.style.opacity = field.checked ? '1' : '0.5';
+                            vacationFields.style.pointerEvents = field.checked ? 'auto' : 'none';
+                        }
+                    }
                 }
             }
         }
