@@ -1349,8 +1349,10 @@ public static function render_dashboard() {
                s.vip_daily_enabled, s.vip_daily_bronze, s.vip_daily_silver, s.vip_daily_gold, s.vip_daily_platinum
         FROM {$prefix}ppv_stores s
         WHERE s.active = 1
-          AND s.name IS NOT NULL
-          AND s.name != ''
+          AND (
+              (s.name IS NOT NULL AND s.name != '')
+              OR (s.company_name IS NOT NULL AND s.company_name != '')
+          )
           AND EXISTS (SELECT 1 FROM {$prefix}ppv_rewards r WHERE r.store_id = s.id)
         ORDER BY s.name ASC
     ");
