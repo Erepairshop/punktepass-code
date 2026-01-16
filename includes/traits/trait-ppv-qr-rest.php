@@ -670,12 +670,12 @@ trait PPV_QR_REST_Trait {
             ]));
 
             if ($vip_settings) {
-                // Check if user has VIP status (Bronze or higher = 100+ lifetime points)
-                $user_level = PPV_User_Level::get_vip_level_for_bonus($user_id);
+                // Check if user has VIP status (Bronze or higher = 25+ scans AT THIS STORE)
+                $user_level = PPV_User_Level::get_vip_level_for_bonus($user_id, $vip_store_id);
                 $base_points = $points_add;
 
                 // 🔍 DEBUG: Log user level
-                ppv_log("🔍 [PPV_QR] User VIP level: user_id={$user_id}, level=" . ($user_level ?? 'NULL (Starter - no VIP)'));
+                ppv_log("🔍 [PPV_QR] User VIP level at store {$vip_store_id}: user_id={$user_id}, level=" . ($user_level ?? 'NULL (Starter - no VIP)'));
 
                 // Helper to get level-specific value (returns 0 for Starter/null)
                 $getLevelValue = function($bronze, $silver, $gold, $platinum) use ($user_level) {

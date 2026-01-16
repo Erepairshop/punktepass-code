@@ -2,8 +2,9 @@
 /**
  * PunktePass – User Level System
  * Starter → Bronze → Silver → Gold → Platinum
- * Based on LIFETIME SCANS (number of QR scans, never decreases)
- * VIP bonuses start at Bronze (25+ scans)
+ * Based on LIFETIME SCANS per STORE (number of QR scans at each store)
+ * VIP bonuses start at Bronze (25+ scans at a specific store)
+ * MyPoints shows highest VIP level across all stores
  * Author: PunktePass / Erik Borota
  */
 
@@ -11,7 +12,7 @@ if (!defined('ABSPATH')) exit;
 
 class PPV_User_Level {
 
-    // Level thresholds (lifetime scans - never decreases)
+    // Level thresholds (lifetime scans per store - never decreases)
     // Starter = no VIP bonus, VIP starts at Bronze (25+ scans)
     // Each level adds +25 scans
     const LEVELS = [
@@ -41,24 +42,49 @@ class PPV_User_Level {
     ];
 
     /**
-     * Get user's LIFETIME SCANS (number of QR scans, never decreases)
+     * Get user's LIFETIME SCANS at a specific store (or globally if no store specified)
      * This is used for VIP level calculation
      * Counts rows in ppv_points table where points > 0 (only positive point entries = scans)
+     *
+     * @param int $user_id User ID
+     * @param int|null $store_id Store ID (null = global count across all stores)
+     * @return int Number of scans
      */
-    public static function get_total_scans($user_id) {
+    public static function get_total_scans($user_id, $store_id = null) {
         global $wpdb;
 
         if (!$user_id) return 0;
 
-        // Count all positive point entries (each = 1 scan)
-        $scan_count = $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*)
-             FROM {$wpdb->prefix}ppv_points
-             WHERE user_id = %d AND points > 0",
-            $user_id
-        ));
+        if ($store_id) {
+            // Per-store scan count (including parent store and filialen)
+            $scan_count = $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*)
+                 FROM {$wpdb->prefix}ppv_points p
+                 JOIN {$wpdb->prefix}ppv_stores s ON p.store_id = s.id
+                 WHERE p.user_id = %d
+                 AND p.points > 0
+                 AND (s.id = %d OR s.parent_store_id = %d)",
+                $user_id, $store_id, $store_id
+            ));
+        } else {
+            // Global scan count (all stores)
+            $scan_count = $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*)
+                 FROM {$wpdb->prefix}ppv_points
+                 WHERE user_id = %d AND points > 0",
+                $user_id
+            ));
+        }
 
         return intval($scan_count);
+    }
+
+    /**
+     * Get user's scan count at a specific store (for VIP bonus calculation)
+     * Includes parent store and all filialen
+     */
+    public static function get_scans_at_store($user_id, $store_id) {
+        return self::get_total_scans($user_id, $store_id);
     }
 
     /**
@@ -88,11 +114,15 @@ class PPV_User_Level {
     }
 
     /**
-     * Get user's level key (bronze/silver/gold/platinum)
-     * Based on total scan count
+     * Get user's level key (bronze/silver/gold/platinum) at a specific store
+     * Based on scan count at that store (or globally if no store specified)
+     *
+     * @param int $user_id User ID
+     * @param int|null $store_id Store ID (null = global/highest level)
+     * @return string Level key
      */
-    public static function get_level($user_id) {
-        $total_scans = self::get_total_scans($user_id);
+    public static function get_level($user_id, $store_id = null) {
+        $total_scans = self::get_total_scans($user_id, $store_id);
 
         foreach (self::LEVELS as $key => $level) {
             if ($total_scans >= $level['min'] && $total_scans <= $level['max']) {
@@ -104,28 +134,48 @@ class PPV_User_Level {
     }
 
     /**
+     * Get level from scan count (without user lookup)
+     */
+    public static function get_level_from_scans($scan_count) {
+        foreach (self::LEVELS as $key => $level) {
+            if ($scan_count >= $level['min'] && $scan_count <= $level['max']) {
+                return $key;
+            }
+        }
+        return 'starter';
+    }
+
+    /**
      * Get level name in specified language
      */
-    public static function get_level_name($user_id, $lang = 'de') {
-        $level = self::get_level($user_id);
+    public static function get_level_name($user_id, $lang = 'de', $store_id = null) {
+        $level = self::get_level($user_id, $store_id);
         $name_key = "name_{$lang}";
 
         return self::LEVELS[$level][$name_key] ?? self::LEVELS[$level]['name_de'];
     }
 
     /**
+     * Get level name from level key
+     */
+    public static function get_level_name_by_key($level_key, $lang = 'de') {
+        $name_key = "name_{$lang}";
+        return self::LEVELS[$level_key][$name_key] ?? self::LEVELS[$level_key]['name_de'] ?? 'Starter';
+    }
+
+    /**
      * Get level icon class
      */
-    public static function get_level_icon($user_id) {
-        $level = self::get_level($user_id);
+    public static function get_level_icon($user_id, $store_id = null) {
+        $level = self::get_level($user_id, $store_id);
         return self::ICONS[$level];
     }
 
     /**
      * Get level colors
      */
-    public static function get_level_colors($user_id) {
-        $level = self::get_level($user_id);
+    public static function get_level_colors($user_id, $store_id = null) {
+        $level = self::get_level($user_id, $store_id);
         return self::COLORS[$level];
     }
 
@@ -139,24 +189,31 @@ class PPV_User_Level {
     }
 
     /**
-     * Check if user has VIP status (Bronze or higher = 100+ lifetime points)
-     * Starter users (0-99 points) do NOT get VIP bonuses
+     * Check if user has VIP status at a specific store (Bronze or higher = 25+ scans)
+     * Starter users do NOT get VIP bonuses
+     *
+     * @param int $user_id User ID
+     * @param int|null $store_id Store ID (null = check global/any store)
      */
-    public static function has_vip($user_id) {
-        $level = self::get_level($user_id);
+    public static function has_vip($user_id, $store_id = null) {
+        $level = self::get_level($user_id, $store_id);
         return self::LEVELS[$level]['vip'] ?? false;
     }
 
     /**
-     * Get VIP level for bonus calculation (returns null for Starter)
+     * Get VIP level for bonus calculation at a specific store (returns null for Starter)
      * Used by POS scan to determine bonus amounts
+     * IMPORTANT: Always pass store_id for accurate per-store VIP calculation
+     *
+     * @param int $user_id User ID
+     * @param int|null $store_id Store ID where the scan is happening
      */
-    public static function get_vip_level_for_bonus($user_id) {
-        $total_scans = self::get_total_scans($user_id);
-        $level = self::get_level($user_id);
-        $has_vip = self::has_vip($user_id);
+    public static function get_vip_level_for_bonus($user_id, $store_id = null) {
+        $total_scans = self::get_total_scans($user_id, $store_id);
+        $level = self::get_level($user_id, $store_id);
+        $has_vip = self::has_vip($user_id, $store_id);
 
-        ppv_log("🔍 [PPV_User_Level] VIP check: user_id={$user_id}, total_scans={$total_scans}, level={$level}, has_vip=" . ($has_vip ? 'YES' : 'NO'));
+        ppv_log("🔍 [PPV_User_Level] VIP check: user_id={$user_id}, store_id=" . ($store_id ?? 'GLOBAL') . ", total_scans={$total_scans}, level={$level}, has_vip=" . ($has_vip ? 'YES' : 'NO'));
 
         if (!$has_vip) {
             return null; // No VIP bonus for Starter
@@ -165,21 +222,70 @@ class PPV_User_Level {
     }
 
     /**
-     * Check if user meets minimum level requirement
+     * Get user's HIGHEST VIP level across all stores (for MyPoints display)
+     * Returns level info with the store where they have the highest status
+     *
+     * @param int $user_id User ID
+     * @param string $lang Language code
+     * @return array ['level' => 'gold', 'store_id' => 123, 'store_name' => 'XY Store', 'scans' => 80]
      */
-    public static function meets_level($user_id, $min_level) {
+    public static function get_highest_vip_level($user_id, $lang = 'de') {
+        global $wpdb;
+
+        if (!$user_id) {
+            return ['level' => 'starter', 'store_id' => null, 'store_name' => null, 'scans' => 0];
+        }
+
+        // Get scan counts per store (grouping by parent store)
+        $store_scans = $wpdb->get_results($wpdb->prepare("
+            SELECT
+                COALESCE(s.parent_store_id, s.id) as store_id,
+                COUNT(*) as scan_count,
+                MAX(COALESCE(parent.company_name, s.company_name, s.name)) as store_name
+            FROM {$wpdb->prefix}ppv_points p
+            JOIN {$wpdb->prefix}ppv_stores s ON p.store_id = s.id
+            LEFT JOIN {$wpdb->prefix}ppv_stores parent ON s.parent_store_id = parent.id
+            WHERE p.user_id = %d AND p.points > 0
+            GROUP BY COALESCE(s.parent_store_id, s.id)
+            ORDER BY scan_count DESC
+            LIMIT 1
+        ", $user_id));
+
+        if (empty($store_scans)) {
+            return ['level' => 'starter', 'store_id' => null, 'store_name' => null, 'scans' => 0];
+        }
+
+        $top_store = $store_scans[0];
+        $level = self::get_level_from_scans($top_store->scan_count);
+
+        return [
+            'level' => $level,
+            'level_name' => self::get_level_name_by_key($level, $lang),
+            'store_id' => intval($top_store->store_id),
+            'store_name' => $top_store->store_name,
+            'scans' => intval($top_store->scan_count),
+            'icon' => self::ICONS[$level],
+            'colors' => self::COLORS[$level],
+            'has_vip' => self::LEVELS[$level]['vip'] ?? false,
+        ];
+    }
+
+    /**
+     * Check if user meets minimum level requirement at a store
+     */
+    public static function meets_level($user_id, $min_level, $store_id = null) {
         if (empty($min_level)) return true; // No requirement
 
-        $user_level = self::get_level($user_id);
+        $user_level = self::get_level($user_id, $store_id);
         return self::get_level_value($user_level) >= self::get_level_value($min_level);
     }
 
     /**
      * Get progress to next level (percentage)
      */
-    public static function get_progress($user_id) {
-        $total_scans = self::get_total_scans($user_id);
-        $level = self::get_level($user_id);
+    public static function get_progress($user_id, $store_id = null) {
+        $total_scans = self::get_total_scans($user_id, $store_id);
+        $level = self::get_level($user_id, $store_id);
 
         if ($level === 'platinum') {
             return 100; // Max level
@@ -195,9 +301,9 @@ class PPV_User_Level {
     /**
      * Get scans needed for next level
      */
-    public static function get_scans_to_next_level($user_id) {
-        $total_scans = self::get_total_scans($user_id);
-        $level = self::get_level($user_id);
+    public static function get_scans_to_next_level($user_id, $store_id = null) {
+        $total_scans = self::get_total_scans($user_id, $store_id);
+        $level = self::get_level($user_id, $store_id);
 
         if ($level === 'platinum') {
             return 0; // Already max
@@ -272,25 +378,59 @@ class PPV_User_Level {
     }
 
     /**
-     * Get all level info for a user (for API/JS)
+     * Get all level info for a user (for API/JS - MyPoints display)
+     * Shows the HIGHEST VIP level across all stores
      */
     public static function get_user_level_info($user_id, $lang = 'de') {
-        $level = self::get_level($user_id);
+        // Get highest VIP level for display
+        $highest = self::get_highest_vip_level($user_id, $lang);
+        $level = $highest['level'];
 
         return [
             'level' => $level,
-            'name' => self::get_level_name($user_id, $lang),
+            'name' => $highest['level_name'] ?? self::get_level_name_by_key($level, $lang),
             'icon' => self::ICONS[$level],
             'colors' => self::COLORS[$level],
-            'total_scans' => self::get_total_scans($user_id),  // Lifetime scans (never decreases)
-            'lifetime_points' => self::get_total_scans($user_id),  // @deprecated - kept for backward compatibility
+            'total_scans' => $highest['scans'],  // Scans at best store
+            'lifetime_points' => $highest['scans'],  // @deprecated - kept for backward compatibility
             'current_balance' => self::get_current_balance($user_id), // Spendable balance
-            'has_vip' => self::has_vip($user_id),  // true if Bronze or higher
-            'progress' => self::get_progress($user_id),
-            'scans_to_next' => self::get_scans_to_next_level($user_id),
-            'points_to_next' => self::get_scans_to_next_level($user_id),  // @deprecated - kept for backward compatibility
+            'has_vip' => $highest['has_vip'],  // true if Bronze or higher
+            'progress' => self::get_progress_from_scans($highest['scans'], $level),
+            'scans_to_next' => self::get_scans_to_next_from_count($highest['scans'], $level),
+            'points_to_next' => self::get_scans_to_next_from_count($highest['scans'], $level),  // @deprecated
             'level_value' => self::get_level_value($level),
+            // New fields for per-store info
+            'best_store_id' => $highest['store_id'],
+            'best_store_name' => $highest['store_name'],
+            'is_per_store' => true,  // Flag indicating VIP is per-store
         ];
+    }
+
+    /**
+     * Get progress from scan count (without user lookup)
+     */
+    private static function get_progress_from_scans($scan_count, $level) {
+        if ($level === 'platinum') {
+            return 100;
+        }
+
+        $current_min = self::LEVELS[$level]['min'];
+        $current_max = self::LEVELS[$level]['max'];
+
+        $progress = (($scan_count - $current_min) / ($current_max - $current_min + 1)) * 100;
+        return min(100, max(0, round($progress)));
+    }
+
+    /**
+     * Get scans needed for next level from count
+     */
+    private static function get_scans_to_next_from_count($scan_count, $level) {
+        if ($level === 'platinum') {
+            return 0;
+        }
+
+        $next_level_min = self::LEVELS[$level]['max'] + 1;
+        return max(0, $next_level_min - $scan_count);
     }
 
     /**

@@ -650,28 +650,28 @@
     // Tier labels for different languages
     const tierLabels = {
       de: {
-        your_level: 'Dein Level',
+        your_level: 'Dein bestes VIP Level',
         next_level: 'Nächstes Level',
         points_needed: 'Scans noch nötig',
         max_level: 'Maximales Level erreicht!',
-        lifetime_points: 'Gesamte Scans',
-        all_shops_info: 'Deine Scans von allen Shops zählen hierzu',
+        lifetime_points: 'Scans bei',
+        all_shops_info: 'VIP-Level wird pro Geschäft berechnet',
       },
       hu: {
-        your_level: 'Szinted',
+        your_level: 'Legjobb VIP szinted',
         next_level: 'Következő szint',
         points_needed: 'scan még szükséges',
         max_level: 'Maximális szint elérve!',
-        lifetime_points: 'Összes scan',
-        all_shops_info: 'Az összes boltból összegyűjtött scaneléseid számítanak',
+        lifetime_points: 'Scan itt:',
+        all_shops_info: 'A VIP szint üzletenként számítódik',
       },
       ro: {
-        your_level: 'Nivelul tău',
+        your_level: 'Cel mai bun nivel VIP',
         next_level: 'Următorul nivel',
         points_needed: 'scanări mai necesare',
         max_level: 'Nivel maxim atins!',
-        lifetime_points: 'Total scanări',
-        all_shops_info: 'Scanările de la toate magazinele sunt luate în calcul',
+        lifetime_points: 'Scanări la',
+        all_shops_info: 'Nivelul VIP se calculează per magazin',
       }
     };
 
@@ -734,10 +734,10 @@
           <span class="tier-level-name">${tier.name || currentLevel}</span>
         </div>
 
-        <!-- Lifetime Points -->
+        <!-- Scans at best store -->
         <div class="ppv-lifetime-points">
           <span class="points-value">${lifetimePoints}</span>
-          <span class="points-label">${t.lifetime_points}</span>
+          <span class="points-label">${t.lifetime_points} ${tier.best_store_name || ''}</span>
         </div>
 
         <!-- Progress Bar to Next Level -->

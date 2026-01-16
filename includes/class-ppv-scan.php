@@ -287,10 +287,11 @@ public static function ajax_auto_add_point() {
         ]));
 
         if ($vip_settings) {
-            $user_level = PPV_User_Level::get_vip_level_for_bonus($user_id);
+            // VIP level is now calculated PER STORE (based on scans at this store)
+            $user_level = PPV_User_Level::get_vip_level_for_bonus($user_id, $vip_store_id);
             $base_points = $points_to_add;
 
-            ppv_log("🔍 [PPV_Scan] User VIP level: user_id={$user_id}, level=" . ($user_level ?? 'NULL (Starter)'));
+            ppv_log("🔍 [PPV_Scan] User VIP level at store {$vip_store_id}: user_id={$user_id}, level=" . ($user_level ?? 'NULL (Starter)'));
 
             // Helper to get level-specific value
             $getLevelValue = function($bronze, $silver, $gold, $platinum) use ($user_level) {
