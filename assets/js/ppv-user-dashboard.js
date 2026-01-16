@@ -111,6 +111,7 @@ window.PPV_TRANSLATIONS = window.PPV_TRANSLATIONS || {
     special_offer: "Speziales Angebot",
     err_already_scanned_today: "⚠️ Heute bereits gescannt",
     err_duplicate_scan: "⚠️ Bereits gescannt. Bitte warten.",
+    maintenance_default: "Vorübergehend geschlossen",
     vip_title: "VIP Boni",
     vip_fix_title: "Fixpunkte",
     vip_streak_title: "X. Scan",
@@ -174,6 +175,7 @@ window.PPV_TRANSLATIONS = window.PPV_TRANSLATIONS || {
     special_offer: "Különleges ajánlat",
     err_already_scanned_today: "⚠️ Ma már beolvasva",
     err_duplicate_scan: "⚠️ Már beolvasva. Kérlek várj.",
+    maintenance_default: "Ideiglenesen zárva",
     vip_title: "VIP Bónuszok",
     vip_fix_title: "Fix pont",
     vip_streak_title: "X. scan",
@@ -237,6 +239,7 @@ window.PPV_TRANSLATIONS = window.PPV_TRANSLATIONS || {
     special_offer: "Ofertă specială",
     err_already_scanned_today: "⚠️ Deja scanat astăzi",
     err_duplicate_scan: "⚠️ Deja scanat. Vă rugăm așteptați.",
+    maintenance_default: "Temporar închis",
     vip_title: "Bonusuri VIP",
     vip_fix_title: "Puncte fixe",
     vip_streak_title: "Scan X",
@@ -1658,6 +1661,13 @@ async function initUserDashboard() {
             <i class="ri-arrow-down-s-line"></i>
           </button>
         </div>
+
+        ${store.maintenance_mode ? `
+          <div class="ppv-store-maintenance-banner">
+            <i class="ri-tools-fill"></i>
+            <span>${escapeHtml(store.maintenance_message || T.maintenance_default || 'Karbantartás alatt')}</span>
+          </div>
+        ` : ''}
 
         <div class="ppv-store-details">
           ${galleryHTML}

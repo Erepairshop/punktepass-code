@@ -572,7 +572,8 @@
             for (const [fieldName, value] of Object.entries(checkboxMap)) {
                 const field = this.$form.querySelector(`[name="${fieldName}"]`);
                 if (field) {
-                    field.checked = !!value;
+                    // Fix: "0" string should be false, "1" or 1 should be true
+                    field.checked = value === true || value === 1 || value === '1';
                 }
             }
         }
