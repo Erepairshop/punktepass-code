@@ -10,7 +10,7 @@ window.handleGoogleCallback = function(data) {
     ppvLog("🍎 Native Google token received", data);
 
     if (!data || !data.credential) {
-        alert("Google Login fehlgeschlagen");
+        alert(ppvLogin?.strings?.google_login_failed || "Google Login fehlgeschlagen");
         return;
     }
 
@@ -38,12 +38,12 @@ window.handleGoogleCallback = function(data) {
             if (res.success) {
                 window.location.href = res.data.redirect || "/";
             } else {
-                alert(res.data.message || "Google Login fehlgeschlagen");
+                alert(res.data.message || ppvLogin?.strings?.google_login_failed || "Google Login fehlgeschlagen");
             }
         },
         error: function(xhr, status, error) {
             ppvLog.error("🍎 AJAX error:", status, error);
-            alert("Verbindungsfehler");
+            alert(ppvLogin?.strings?.connection_error || "Verbindungsfehler");
         }
     });
 };
@@ -168,12 +168,12 @@ function initLogin() {
                 $input.attr('type', 'text');
                 $eyeOpen.hide();
                 $eyeClosed.show();
-                $btn.attr('aria-label', 'Passwort verstecken');
+                $btn.attr('aria-label', ppvLogin?.strings?.hide_password || 'Passwort verstecken');
             } else {
                 $input.attr('type', 'password');
                 $eyeOpen.show();
                 $eyeClosed.hide();
-                $btn.attr('aria-label', 'Passwort anzeigen');
+                $btn.attr('aria-label', ppvLogin?.strings?.show_password || 'Passwort anzeigen');
             }
         });
     }
@@ -190,17 +190,17 @@ function initLogin() {
             const input = $(this).val().trim();
             // Only validate as email if it contains @ symbol
             if (input && input.includes('@') && !isValidEmail(input)) {
-                showFieldError($(this), 'Bitte geben Sie eine gültige Email-Adresse ein');
+                showFieldError($(this), ppvLogin?.strings?.invalid_email || 'Bitte geben Sie eine gültige Email-Adresse ein');
             } else {
                 clearFieldError($(this));
             }
         });
-        
+
         // Password validation
         $password.on('blur', function() {
             const password = $(this).val();
             if (password && password.length < 6) {
-                showFieldError($(this), 'Passwort muss mindestens 6 Zeichen lang sein');
+                showFieldError($(this), ppvLogin?.strings?.password_min_length || 'Passwort muss mindestens 6 Zeichen lang sein');
             } else {
                 clearFieldError($(this));
             }
@@ -312,12 +312,12 @@ function initLogin() {
                     if (googleInitialized) {
                         showGooglePrompt();
                     } else {
-                        showAlert('Google Login wird geladen...', 'info');
+                        showAlert(ppvLogin?.strings?.google_loading || 'Google Login wird geladen...', 'info');
                     }
                 }, 100);
             } else {
                 glog('❌ Path C: SDK not loaded yet');
-                showAlert('Google Login wird geladen, bitte erneut klicken...', 'info');
+                showAlert(ppvLogin?.strings?.google_loading || 'Google Login wird geladen...', 'info');
                 // Try again in case SDK loads soon
                 waitForGoogleSDK(clientId);
             }
@@ -355,9 +355,9 @@ function initLogin() {
                     }
 
                     if (reason === 'browser_not_supported') {
-                        showAlert('Google Login wird von diesem Browser nicht unterstützt', 'error');
+                        showAlert(ppvLogin?.strings?.google_not_supported || 'Google Login wird von diesem Browser nicht unterstützt', 'error');
                     } else if (reason === 'invalid_client') {
-                        showAlert('Google Login Konfigurationsfehler', 'error');
+                        showAlert(ppvLogin?.strings?.google_login_failed || 'Google Login Konfigurationsfehler', 'error');
                     }
                 }
 
@@ -502,7 +502,7 @@ function initLogin() {
 
         if (!response.credential) {
             glog('❌ No credential in response!');
-            showAlert('Google Login fehlgeschlagen', 'error');
+            showAlert(ppvLogin?.strings?.google_login_failed || 'Google Login fehlgeschlagen', 'error');
             return;
         }
 
@@ -510,7 +510,7 @@ function initLogin() {
 
         // Show loading
         const $btn = $('#ppv-google-login-btn');
-        $btn.prop('disabled', true).html('<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/></path></svg><span>Anmelden...</span>');
+        $btn.prop('disabled', true).html('<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/></path></svg><span>' + (ppvLogin?.strings?.login_loading || 'Anmelden...') + '</span>');
         
         // Send to backend
         $.ajax({
@@ -534,7 +534,7 @@ function initLogin() {
                 }
             },
             error: function() {
-                showAlert('Verbindungsfehler. Bitte versuchen Sie es erneut.', 'error');
+                showAlert(ppvLogin?.strings?.connection_error || 'Verbindungsfehler. Bitte versuchen Sie es erneut.', 'error');
                 resetGoogleButton($btn);
             }
         });
@@ -551,7 +551,7 @@ function initLogin() {
                 <path d="M11.0051 28.6006C9.99973 25.6199 9.99973 22.3922 11.0051 19.4115V13.2296H3.03298C-0.371021 20.0112 -0.371021 28.0009 3.03298 34.7825L11.0051 28.6006Z" fill="#FBBC04"/>
                 <path d="M24.48 9.49932C27.9016 9.44641 31.2086 10.7339 33.6866 13.0973L40.5387 6.24523C36.2 2.17101 30.4414 -0.068932 24.48 0.00161733C15.4055 0.00161733 7.10718 5.11644 3.03296 13.2296L11.005 19.4115C12.901 13.7235 18.2187 9.49932 24.48 9.49932Z" fill="#EA4335"/>
             </svg>
-            <span>Mit Google anmelden</span>
+            <span>' + (ppvLogin?.strings?.login_with_google || 'Mit Google anmelden') + '</span>
         `);
     }
     
@@ -574,13 +574,13 @@ function initLogin() {
             
             // Validation
             if (!email || !password) {
-                showAlert('Bitte füllen Sie alle Felder aus', 'error');
+                showAlert(ppvLogin?.strings?.fill_all_fields || 'Bitte füllen Sie alle Felder aus', 'error');
                 return;
             }
 
             // Only validate email format if input contains @ (looks like an email)
             if (email.includes('@') && !isValidEmail(email)) {
-                showAlert('Bitte geben Sie eine gültige Email-Adresse ein', 'error');
+                showAlert(ppvLogin?.strings?.invalid_email || 'Bitte geben Sie eine gültige Email-Adresse ein', 'error');
                 $('#ppv-email').focus();
                 return;
             }
@@ -629,7 +629,7 @@ function initLogin() {
                     }
                 },
                 error: function() {
-                    showAlert('Verbindungsfehler. Bitte versuchen Sie es erneut.', 'error');
+                    showAlert(ppvLogin?.strings?.connection_error || 'Verbindungsfehler. Bitte versuchen Sie es erneut.', 'error');
                     resetSubmitButton($btn, $btnText, $btnLoader);
                 }
             });
@@ -731,7 +731,7 @@ function initLogin() {
                 if (response.authResponse) {
                     handleFacebookCallback(response.authResponse, $btn);
                 } else {
-                    showAlert('Facebook Login abgebrochen', 'error');
+                    showAlert(ppvLogin?.strings?.facebook_cancelled || 'Facebook Login abgebrochen', 'error');
                 }
             }, {scope: 'public_profile,email'});
         });
@@ -744,7 +744,7 @@ function initLogin() {
         const accessToken = authResponse.accessToken;
 
         // Show loading
-        $btn.prop('disabled', true).html('<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/></path></svg><span>Anmelden...</span>');
+        $btn.prop('disabled', true).html('<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/></path></svg><span>' + (ppvLogin?.strings?.login_loading || 'Anmelden...') + '</span>');
 
         // Send to backend
         $.ajax({
@@ -768,7 +768,7 @@ function initLogin() {
                 }
             },
             error: function() {
-                showAlert('Verbindungsfehler. Bitte versuchen Sie es erneut.', 'error');
+                showAlert(ppvLogin?.strings?.connection_error || 'Verbindungsfehler. Bitte versuchen Sie es erneut.', 'error');
                 resetFacebookButton($btn);
             }
         });
@@ -837,7 +837,7 @@ function initLogin() {
 
             // Show loading
             const $btn = $('#ppv-tiktok-login-btn');
-            $btn.prop('disabled', true).html('<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/></path></svg><span>Anmelden...</span>');
+            $btn.prop('disabled', true).html('<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/></path></svg><span>' + (ppvLogin?.strings?.login_loading || 'Anmelden...') + '</span>');
 
             // Send to backend
             $.ajax({
@@ -861,7 +861,7 @@ function initLogin() {
                     }
                 },
                 error: function() {
-                    showAlert('Verbindungsfehler. Bitte versuchen Sie es erneut.', 'error');
+                    showAlert(ppvLogin?.strings?.connection_error || 'Verbindungsfehler. Bitte versuchen Sie es erneut.', 'error');
                     resetTikTokButton($btn);
                 }
             });
@@ -929,7 +929,7 @@ function initLogin() {
 
             try {
                 // Show loading
-                $btn.prop('disabled', true).html('<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/></path></svg><span>Anmelden...</span>');
+                $btn.prop('disabled', true).html('<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/></path></svg><span>' + (ppvLogin?.strings?.login_loading || 'Anmelden...') + '</span>');
 
                 // Trigger Apple Sign In
                 const response = await AppleID.auth.signIn();
@@ -940,7 +940,7 @@ function initLogin() {
             } catch (error) {
                 ppvLog.error('🍎 Apple Sign In error:', error);
                 if (error.error !== 'popup_closed_by_user') {
-                    showAlert('Apple Login fehlgeschlagen', 'error');
+                    showAlert(ppvLogin?.strings?.apple_login_failed || 'Apple Login fehlgeschlagen', 'error');
                 }
                 resetAppleButton($btn);
             }
@@ -952,7 +952,7 @@ function initLogin() {
      */
     function handleAppleResponse(response, $btn) {
         if (!response.authorization || !response.authorization.id_token) {
-            showAlert('Apple Login fehlgeschlagen', 'error');
+            showAlert(ppvLogin?.strings?.apple_login_failed || 'Apple Login fehlgeschlagen', 'error');
             resetAppleButton($btn);
             return;
         }
@@ -986,7 +986,7 @@ function initLogin() {
                 }
             },
             error: function() {
-                showAlert('Verbindungsfehler. Bitte versuchen Sie es erneut.', 'error');
+                showAlert(ppvLogin?.strings?.connection_error || 'Verbindungsfehler. Bitte versuchen Sie es erneut.', 'error');
                 resetAppleButton($btn);
             }
         });

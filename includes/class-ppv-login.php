@@ -711,7 +711,24 @@ public static function render_landing_page($atts) {
             // tiktok_client_key: '<?php echo defined('PPV_TIKTOK_CLIENT_KEY') ? PPV_TIKTOK_CLIENT_KEY : get_option('ppv_tiktok_client_key', '9bb6aca5781d007d6c00fe3ed60d6734'); ?>', // TikTok disabled
             apple_client_id: '<?php echo defined('PPV_APPLE_CLIENT_ID') ? PPV_APPLE_CLIENT_ID : get_option('ppv_apple_client_id', ''); ?>',
             apple_redirect_uri: '<?php echo home_url('/login'); ?>',
-            redirect_url: '<?php echo home_url('/user_dashboard'); ?>'
+            redirect_url: '<?php echo home_url('/user_dashboard'); ?>',
+            strings: {
+                login_failed: '<?php echo esc_js(PPV_Lang::t('login_error_invalid')); ?>',
+                login_success: '<?php echo esc_js(PPV_Lang::t('login_success')); ?>',
+                login_loading: '<?php echo esc_js(PPV_Lang::t('login_logging_in')); ?>',
+                fill_all_fields: '<?php echo esc_js(PPV_Lang::t('login_error_empty')); ?>',
+                invalid_email: '<?php echo esc_js(PPV_Lang::t('signup_error_invalid_email')); ?>',
+                password_min_length: '<?php echo esc_js(PPV_Lang::t('password_min_length')); ?>',
+                connection_error: '<?php echo esc_js(PPV_Lang::t('network_error')); ?>',
+                google_login_failed: '<?php echo esc_js(PPV_Lang::t('login_google_error')); ?>',
+                google_loading: '<?php echo esc_js(PPV_Lang::t('login_logging_in')); ?>',
+                google_not_supported: '<?php echo esc_js(PPV_Lang::t('login_google_error')); ?>',
+                facebook_cancelled: '<?php echo esc_js(PPV_Lang::t('login_error_invalid')); ?>',
+                apple_login_failed: '<?php echo esc_js(PPV_Lang::t('login_error_invalid')); ?>',
+                show_password: '<?php echo esc_js(PPV_Lang::t('login_show_password')); ?>',
+                hide_password: '<?php echo esc_js(PPV_Lang::t('login_show_password')); ?>',
+                login_with_google: '<?php echo esc_js(PPV_Lang::t('login_google_btn')); ?>'
+            }
         };
         </script>
 
