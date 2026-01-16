@@ -1867,7 +1867,7 @@ return [
     'faq_vip_title' => 'VIP & Bónuszok',
 
     'faq_q11' => 'Mik azok a VIP szintek?',
-    'faq_a11' => 'Minél többet gyűjtesz, annál magasabbra jutsz: Kezdő → Bronz → Ezüst → Arany → Platina. A magasabb szintek jobb bónuszokat hoznak!',
+    'faq_a11' => 'Minél többet scanelsz, annál magasabbra jutsz: Kezdő (0-24 scan) → Bronz (25+) → Ezüst (50+) → Arany (75+) → Platina (100+ scan). A magasabb szintek jobb bónuszokat hoznak!',
 
     'faq_q12' => 'Kapok születésnapi bónuszt?',
     'faq_a12' => 'Ha az üzlet aktiválta ezt a funkciót, a születésnapodon bónuszpontokat kapsz. Add meg a születési dátumodat a beállításokban, hogy élvezheted ezt az előnyt.',

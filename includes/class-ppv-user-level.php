@@ -2,8 +2,8 @@
 /**
  * PunktePass – User Level System
  * Starter → Bronze → Silver → Gold → Platinum
- * Based on LIFETIME points (never decreases, even after redemptions)
- * VIP bonuses start at Bronze (100+ points)
+ * Based on LIFETIME SCANS (number of QR scans, never decreases)
+ * VIP bonuses start at Bronze (25+ scans)
  * Author: PunktePass / Erik Borota
  */
 
@@ -11,14 +11,15 @@ if (!defined('ABSPATH')) exit;
 
 class PPV_User_Level {
 
-    // Level thresholds (lifetime points - never decreases)
-    // Starter = no VIP bonus, VIP starts at Bronze (100+)
+    // Level thresholds (lifetime scans - never decreases)
+    // Starter = no VIP bonus, VIP starts at Bronze (25+ scans)
+    // Each level adds +25 scans
     const LEVELS = [
-        'starter'  => ['min' => 0,    'max' => 99,     'name_de' => 'Starter',  'name_hu' => 'Kezdő',    'name_ro' => 'Începător', 'vip' => false],
-        'bronze'   => ['min' => 100,  'max' => 499,    'name_de' => 'Bronze',   'name_hu' => 'Bronz',    'name_ro' => 'Bronz',     'vip' => true],
-        'silver'   => ['min' => 500,  'max' => 999,    'name_de' => 'Silber',   'name_hu' => 'Ezüst',    'name_ro' => 'Argint',    'vip' => true],
-        'gold'     => ['min' => 1000, 'max' => 1999,   'name_de' => 'Gold',     'name_hu' => 'Arany',    'name_ro' => 'Aur',       'vip' => true],
-        'platinum' => ['min' => 2000, 'max' => 999999, 'name_de' => 'Platin',   'name_hu' => 'Platina',  'name_ro' => 'Platină',   'vip' => true],
+        'starter'  => ['min' => 0,   'max' => 24,     'name_de' => 'Starter',  'name_hu' => 'Kezdő',    'name_ro' => 'Începător', 'vip' => false],
+        'bronze'   => ['min' => 25,  'max' => 49,     'name_de' => 'Bronze',   'name_hu' => 'Bronz',    'name_ro' => 'Bronz',     'vip' => true],
+        'silver'   => ['min' => 50,  'max' => 74,     'name_de' => 'Silber',   'name_hu' => 'Ezüst',    'name_ro' => 'Argint',    'vip' => true],
+        'gold'     => ['min' => 75,  'max' => 99,     'name_de' => 'Gold',     'name_hu' => 'Arany',    'name_ro' => 'Aur',       'vip' => true],
+        'platinum' => ['min' => 100, 'max' => 999999, 'name_de' => 'Platin',   'name_hu' => 'Platina',  'name_ro' => 'Platină',   'vip' => true],
     ];
 
     // Level icons (RemixIcon classes)
@@ -40,23 +41,32 @@ class PPV_User_Level {
     ];
 
     /**
-     * Get user's LIFETIME points (never decreases, even after redemptions)
+     * Get user's LIFETIME SCANS (number of QR scans, never decreases)
      * This is used for VIP level calculation
+     * Counts rows in ppv_points table where points > 0 (only positive point entries = scans)
      */
-    public static function get_total_points($user_id) {
+    public static function get_total_scans($user_id) {
         global $wpdb;
 
         if (!$user_id) return 0;
 
-        // Get lifetime_points from ppv_users table
-        $lifetime = $wpdb->get_var($wpdb->prepare(
-            "SELECT COALESCE(lifetime_points, 0)
-             FROM {$wpdb->prefix}ppv_users
-             WHERE id = %d",
+        // Count all positive point entries (each = 1 scan)
+        $scan_count = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*)
+             FROM {$wpdb->prefix}ppv_points
+             WHERE user_id = %d AND points > 0",
             $user_id
         ));
 
-        return intval($lifetime);
+        return intval($scan_count);
+    }
+
+    /**
+     * @deprecated Use get_total_scans() instead
+     * Kept for backward compatibility
+     */
+    public static function get_total_points($user_id) {
+        return self::get_total_scans($user_id);
     }
 
     /**
@@ -79,17 +89,18 @@ class PPV_User_Level {
 
     /**
      * Get user's level key (bronze/silver/gold/platinum)
+     * Based on total scan count
      */
     public static function get_level($user_id) {
-        $total = self::get_total_points($user_id);
+        $total_scans = self::get_total_scans($user_id);
 
         foreach (self::LEVELS as $key => $level) {
-            if ($total >= $level['min'] && $total <= $level['max']) {
+            if ($total_scans >= $level['min'] && $total_scans <= $level['max']) {
                 return $key;
             }
         }
 
-        return 'bronze';
+        return 'starter';
     }
 
     /**
@@ -141,11 +152,11 @@ class PPV_User_Level {
      * Used by POS scan to determine bonus amounts
      */
     public static function get_vip_level_for_bonus($user_id) {
-        $lifetime = self::get_total_points($user_id);
+        $total_scans = self::get_total_scans($user_id);
         $level = self::get_level($user_id);
         $has_vip = self::has_vip($user_id);
 
-        ppv_log("🔍 [PPV_User_Level] VIP check: user_id={$user_id}, lifetime_points={$lifetime}, level={$level}, has_vip=" . ($has_vip ? 'YES' : 'NO'));
+        ppv_log("🔍 [PPV_User_Level] VIP check: user_id={$user_id}, total_scans={$total_scans}, level={$level}, has_vip=" . ($has_vip ? 'YES' : 'NO'));
 
         if (!$has_vip) {
             return null; // No VIP bonus for Starter
@@ -167,7 +178,7 @@ class PPV_User_Level {
      * Get progress to next level (percentage)
      */
     public static function get_progress($user_id) {
-        $total = self::get_total_points($user_id);
+        $total_scans = self::get_total_scans($user_id);
         $level = self::get_level($user_id);
 
         if ($level === 'platinum') {
@@ -177,15 +188,15 @@ class PPV_User_Level {
         $current_min = self::LEVELS[$level]['min'];
         $current_max = self::LEVELS[$level]['max'];
 
-        $progress = (($total - $current_min) / ($current_max - $current_min + 1)) * 100;
+        $progress = (($total_scans - $current_min) / ($current_max - $current_min + 1)) * 100;
         return min(100, max(0, round($progress)));
     }
 
     /**
-     * Get points needed for next level
+     * Get scans needed for next level
      */
-    public static function get_points_to_next_level($user_id) {
-        $total = self::get_total_points($user_id);
+    public static function get_scans_to_next_level($user_id) {
+        $total_scans = self::get_total_scans($user_id);
         $level = self::get_level($user_id);
 
         if ($level === 'platinum') {
@@ -193,7 +204,14 @@ class PPV_User_Level {
         }
 
         $next_level_min = self::LEVELS[$level]['max'] + 1;
-        return max(0, $next_level_min - $total);
+        return max(0, $next_level_min - $total_scans);
+    }
+
+    /**
+     * @deprecated Use get_scans_to_next_level() instead
+     */
+    public static function get_points_to_next_level($user_id) {
+        return self::get_scans_to_next_level($user_id);
     }
 
     /**
@@ -264,23 +282,27 @@ class PPV_User_Level {
             'name' => self::get_level_name($user_id, $lang),
             'icon' => self::ICONS[$level],
             'colors' => self::COLORS[$level],
-            'lifetime_points' => self::get_total_points($user_id),  // Lifetime (never decreases)
+            'total_scans' => self::get_total_scans($user_id),  // Lifetime scans (never decreases)
+            'lifetime_points' => self::get_total_scans($user_id),  // @deprecated - kept for backward compatibility
             'current_balance' => self::get_current_balance($user_id), // Spendable balance
             'has_vip' => self::has_vip($user_id),  // true if Bronze or higher
             'progress' => self::get_progress($user_id),
-            'points_to_next' => self::get_points_to_next_level($user_id),
+            'scans_to_next' => self::get_scans_to_next_level($user_id),
+            'points_to_next' => self::get_scans_to_next_level($user_id),  // @deprecated - kept for backward compatibility
             'level_value' => self::get_level_value($level),
         ];
     }
 
     /**
-     * Increment user's lifetime points (called when points are ADDED, not redeemed)
+     * @deprecated No longer needed - VIP is now based on scan count from ppv_points table
+     * Kept for backward compatibility but does nothing significant
      */
     public static function add_lifetime_points($user_id, $points) {
         global $wpdb;
 
         if (!$user_id || $points <= 0) return false;
 
+        // Still update lifetime_points for backward compatibility (reports, etc.)
         $result = $wpdb->query($wpdb->prepare(
             "UPDATE {$wpdb->prefix}ppv_users
              SET lifetime_points = COALESCE(lifetime_points, 0) + %d
@@ -290,7 +312,7 @@ class PPV_User_Level {
         ));
 
         if ($result !== false) {
-            ppv_log("✅ [PPV_User_Level] Added {$points} lifetime points to user {$user_id}");
+            ppv_log("✅ [PPV_User_Level] Added {$points} lifetime points to user {$user_id} (VIP now based on scan count)");
         }
 
         return $result !== false;

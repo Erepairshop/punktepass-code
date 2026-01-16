@@ -652,26 +652,26 @@
       de: {
         your_level: 'Dein Level',
         next_level: 'Nächstes Level',
-        points_needed: 'Punkte noch nötig',
+        points_needed: 'Scans noch nötig',
         max_level: 'Maximales Level erreicht!',
-        lifetime_points: 'Lifetime Punkte',
-        all_shops_info: 'Deine Punkte von allen Shops zählen hierzu',
+        lifetime_points: 'Gesamte Scans',
+        all_shops_info: 'Deine Scans von allen Shops zählen hierzu',
       },
       hu: {
         your_level: 'Szinted',
         next_level: 'Következő szint',
-        points_needed: 'pont még szükséges',
+        points_needed: 'scan még szükséges',
         max_level: 'Maximális szint elérve!',
-        lifetime_points: 'Lifetime pontok',
-        all_shops_info: 'Az összes boltból gyűjtött pontjaid számítanak',
+        lifetime_points: 'Összes scan',
+        all_shops_info: 'Az összes boltból összegyűjtött scaneléseid számítanak',
       },
       ro: {
         your_level: 'Nivelul tău',
         next_level: 'Următorul nivel',
-        points_needed: 'puncte mai necesare',
+        points_needed: 'scanări mai necesare',
         max_level: 'Nivel maxim atins!',
-        lifetime_points: 'Puncte lifetime',
-        all_shops_info: 'Punctele de la toate magazinele sunt luate în calcul',
+        lifetime_points: 'Total scanări',
+        all_shops_info: 'Scanările de la toate magazinele sunt luate în calcul',
       }
     };
 
@@ -719,7 +719,7 @@
             <i class="${tierIcons[t]}"></i>
           </div>
           <span class="tier-name">${tierData.name || t}</span>
-          <span class="tier-points">${tierData.min || 0}+</span>
+          <span class="tier-points">${tierData.min || 0}+ scan</span>
         </div>
       `;
     });

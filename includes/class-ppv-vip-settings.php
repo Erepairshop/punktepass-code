@@ -386,8 +386,8 @@ class PPV_VIP_Settings {
 
                 // How it works
                 'how_it_works' => 'So funktioniert\'s',
-                'how_step1' => 'Kunden sammeln Punkte durch QR-Code Scans bei allen teilnehmenden PunktePass-Geschäften',
-                'how_step2' => 'Das VIP-Level basiert auf den Gesamtpunkten aus allen Geschäften (Bronze ab 100, Silber ab 500, Gold ab 1000, Platin ab 2000)',
+                'how_step1' => 'Kunden sammeln Scans durch QR-Code Scans bei allen teilnehmenden PunktePass-Geschäften',
+                'how_step2' => 'Das VIP-Level basiert auf der Anzahl der Scans (Bronze ab 25, Silber ab 50, Gold ab 75, Platin ab 100 Scans)',
                 'how_step3' => 'Die hier eingestellten Boni gelten, wenn VIP-Kunden bei dir scannen – höheres Level = mehr Bonuspunkte!',
                 'how_step4' => 'Du kannst verschiedene Bonus-Typen kombinieren: Fixpunkte pro Scan, Streak-Bonus (z.B. jeder 10. Scan) und Tagesbonus',
                 'bronze_label' => 'Bronze',
@@ -434,8 +434,8 @@ class PPV_VIP_Settings {
 
                 // How it works
                 'how_it_works' => 'Így működik',
-                'how_step1' => 'A vásárlók pontokat gyűjtenek QR-kód beolvasással az összes résztvevő PunktePass üzletben',
-                'how_step2' => 'A VIP szint az összes üzletben gyűjtött pontok alapján alakul (Bronz 100-tól, Ezüst 500-tól, Arany 1000-től, Platina 2000-től)',
+                'how_step1' => 'A vásárlók scaneléseket gyűjtenek QR-kód beolvasással az összes résztvevő PunktePass üzletben',
+                'how_step2' => 'A VIP szint a scanelések száma alapján alakul (Bronz 25-től, Ezüst 50-től, Arany 75-től, Platina 100-tól)',
                 'how_step3' => 'Az itt beállított bónuszok akkor érvényesek, amikor VIP vásárlók nálad scanelnek – magasabb szint = több bónuszpont!',
                 'how_step4' => 'Kombinálhatod a különböző bónusz típusokat: fix pont scanelésenként, streak bónusz (pl. minden 10. scan) és napi bónusz',
                 'bronze_label' => 'Bronz',
@@ -482,8 +482,8 @@ class PPV_VIP_Settings {
 
                 // How it works
                 'how_it_works' => 'Cum funcționează',
-                'how_step1' => 'Clienții colectează puncte prin scanarea codului QR la toate magazinele PunktePass participante',
-                'how_step2' => 'Nivelul VIP se bazează pe punctele totale din toate magazinele (Bronz de la 100, Argint de la 500, Aur de la 1000, Platină de la 2000)',
+                'how_step1' => 'Clienții colectează scanări prin scanarea codului QR la toate magazinele PunktePass participante',
+                'how_step2' => 'Nivelul VIP se bazează pe numărul de scanări (Bronz de la 25, Argint de la 50, Aur de la 75, Platină de la 100)',
                 'how_step3' => 'Bonusurile setate aici se aplică când clienții VIP scanează la tine – nivel mai mare = mai multe puncte bonus!',
                 'how_step4' => 'Poți combina diferite tipuri de bonus: puncte fixe per scanare, bonus streak (ex. fiecare a 10-a scanare) și bonus zilnic',
                 'bronze_label' => 'Bronz',
@@ -528,8 +528,8 @@ class PPV_VIP_Settings {
             'subtitle' => 'Gib deinen treuen Kunden extra Punkte basierend auf ihrem Level!',
             'all_branches' => 'Alle Filialen',
             'how_it_works' => 'So funktioniert\'s',
-            'how_step1' => 'Kunden sammeln Punkte durch QR-Code Scans bei allen teilnehmenden PunktePass-Geschäften',
-            'how_step2' => 'Das VIP-Level basiert auf den Gesamtpunkten aus allen Geschäften (Bronze ab 100, Silber ab 500, Gold ab 1000, Platin ab 2000)',
+            'how_step1' => 'Kunden sammeln Scans durch QR-Code Scans bei allen teilnehmenden PunktePass-Geschäften',
+            'how_step2' => 'Das VIP-Level basiert auf der Anzahl der Scans (Bronze ab 25, Silber ab 50, Gold ab 75, Platin ab 100 Scans)',
             'how_step3' => 'Die hier eingestellten Boni gelten, wenn VIP-Kunden bei dir scannen – höheres Level = mehr Bonuspunkte!',
             'how_step4' => 'Du kannst verschiedene Bonus-Typen kombinieren: Fixpunkte pro Scan, Streak-Bonus (z.B. jeder 10. Scan) und Tagesbonus',
             'bronze_label' => 'Bronze',

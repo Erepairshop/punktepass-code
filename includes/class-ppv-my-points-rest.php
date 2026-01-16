@@ -227,14 +227,15 @@ if (class_exists('PPV_Lang')) {
             if (class_exists('PPV_User_Level')) {
                 $data['tier'] = PPV_User_Level::get_user_level_info($user_id, $lang);
 
-                // All tier thresholds for display
-                $data['tiers'] = [
-                    'starter'  => ['min' => 0,    'max' => 99,   'name' => PPV_User_Level::LEVELS['starter']['name_' . $lang] ?? 'Starter'],
-                    'bronze'   => ['min' => 100,  'max' => 499,  'name' => PPV_User_Level::LEVELS['bronze']['name_' . $lang] ?? 'Bronze'],
-                    'silver'   => ['min' => 500,  'max' => 999,  'name' => PPV_User_Level::LEVELS['silver']['name_' . $lang] ?? 'Silber'],
-                    'gold'     => ['min' => 1000, 'max' => 1999, 'name' => PPV_User_Level::LEVELS['gold']['name_' . $lang] ?? 'Gold'],
-                    'platinum' => ['min' => 2000, 'max' => 999999, 'name' => PPV_User_Level::LEVELS['platinum']['name_' . $lang] ?? 'Platin'],
-                ];
+                // All tier thresholds for display (based on scan count)
+                $data['tiers'] = [];
+                foreach (PPV_User_Level::LEVELS as $level_key => $level_data) {
+                    $data['tiers'][$level_key] = [
+                        'min' => $level_data['min'],
+                        'max' => $level_data['max'],
+                        'name' => $level_data['name_' . $lang] ?? $level_data['name_de'] ?? ucfirst($level_key),
+                    ];
+                }
 
                 ppv_log("🏆 [PPV_MyPoints_REST] Tier info: level=" . ($data['tier']['level'] ?? 'unknown') . ", progress=" . ($data['tier']['progress'] ?? 0) . "%");
             }

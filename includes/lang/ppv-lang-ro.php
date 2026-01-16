@@ -1872,7 +1872,7 @@ return [
     'faq_vip_title' => 'VIP & Bonusuri',
 
     'faq_q11' => 'Ce sunt nivelurile VIP?',
-    'faq_a11' => 'Cu cât colectezi mai mult, cu atât urci mai sus: Începător → Bronz → Argint → Aur → Platină. Nivelurile mai înalte aduc bonusuri mai bune!',
+    'faq_a11' => 'Cu cât scanezi mai mult, cu atât urci mai sus: Începător (0-24 scanări) → Bronz (25+) → Argint (50+) → Aur (75+) → Platină (100+ scanări). Nivelurile mai înalte aduc bonusuri mai bune!',
 
     'faq_q12' => 'Primesc bonus de ziua de naștere?',
     'faq_a12' => 'Dacă magazinul a activat această funcție, primești puncte bonus de ziua ta. Adaugă data nașterii în setări pentru a beneficia de acest avantaj.',

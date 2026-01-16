@@ -1890,7 +1890,7 @@ return [
     'faq_vip_title' => 'VIP & Boni',
 
     'faq_q11' => 'Was sind VIP-Stufen?',
-    'faq_a11' => 'Je mehr du sammelst, desto höher steigst du auf: Starter → Bronze → Silber → Gold → Platin. Höhere Stufen bringen bessere Boni!',
+    'faq_a11' => 'Je mehr du scannst, desto höher steigst du auf: Starter (0-24 Scans) → Bronze (25+) → Silber (50+) → Gold (75+) → Platin (100+ Scans). Höhere Stufen bringen bessere Boni!',
 
     'faq_q12' => 'Bekomme ich einen Geburtstagsbonus?',
     'faq_a12' => 'Wenn das Geschäft diese Funktion aktiviert hat, erhältst du an deinem Geburtstag Bonuspunkte. Trage dein Geburtsdatum in den Einstellungen ein, um davon zu profitieren.',
