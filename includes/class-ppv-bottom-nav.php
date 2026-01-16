@@ -26,7 +26,7 @@ class PPV_Bottom_Nav {
     public static function enqueue_assets() {
         // RemixIcons loaded globally in punktepass.php
 
-        // 🚀 Pure SPA navigation (no Turbo - uses fetch for instant transitions)
+        // 🚫 SPA navigation DISABLED - caused issues (2026-01-16)
 
         wp_enqueue_style(
             'ppv-bottom-nav',
@@ -35,17 +35,9 @@ class PPV_Bottom_Nav {
             filemtime(plugin_dir_path(dirname(__FILE__)) . 'assets/css/ppv-bottom-nav.css')
         );
 
-        // SPA Navigation JS (fetch-based, no page refresh)
-        wp_enqueue_script(
-            'ppv-bottom-nav',
-            plugins_url('assets/js/ppv-bottom-nav.js', dirname(__FILE__)),
-            [],
-            filemtime(plugin_dir_path(dirname(__FILE__)) . 'assets/js/ppv-bottom-nav.js'),
-            true
-        );
-
-        // Feedback modal still needs inline JS
+        wp_register_script('ppv-bottom-nav', false, ['jquery'], time(), true);
         wp_add_inline_script('ppv-bottom-nav', self::inline_js());
+        wp_enqueue_script('ppv-bottom-nav');
     }
 
     /** ============================================================
