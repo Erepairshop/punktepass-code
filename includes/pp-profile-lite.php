@@ -1913,6 +1913,9 @@ $result = $wpdb->update(
 
 ppv_log("💾 [DEBUG] Update result: " . ($result !== false ? 'OK (rows: ' . $result . ')' : 'FAILED'));
 ppv_log("💾 [DEBUG] Last SQL error: " . $wpdb->last_error);
+ppv_log("💾 [DEBUG] Vacation enabled: " . ($update_data['vacation_enabled'] ?? 'NULL'));
+ppv_log("💾 [DEBUG] Vacation from: " . ($update_data['vacation_from'] ?? 'NULL'));
+ppv_log("💾 [DEBUG] Vacation to: " . ($update_data['vacation_to'] ?? 'NULL'));
 
     if ($result !== false) {
         // ✅ FIX: Return updated store data so JS can refresh form fields without reload
@@ -1927,7 +1930,11 @@ ppv_log("💾 [DEBUG] Last SQL error: " . $wpdb->last_error);
             'store' => $updated_store  // ✅ This enables updateFormFields() in JS
         ]);
     } else {
-        wp_send_json_error(['msg' => PPV_Lang::t('profile_save_error')]);
+        $error_msg = PPV_Lang::t('profile_save_error');
+        if (!empty($wpdb->last_error)) {
+            $error_msg .= ' | DB: ' . $wpdb->last_error;
+        }
+        wp_send_json_error(['msg' => $error_msg]);
     }
 }
 
