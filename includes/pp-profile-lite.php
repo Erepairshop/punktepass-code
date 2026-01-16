@@ -1439,6 +1439,98 @@ if (!empty($store->gallery)) {
                     </div>
                     <?php endforeach; ?>
                 </div>
+
+                <!-- Inline filiale vacation toggle handler -->
+                <script>
+                (function() {
+                    console.log('🏢 Filiale vacation script loaded');
+
+                    function initFilialeVacationToggles() {
+                        document.querySelectorAll('.ppv-filiale-vacation-toggle').forEach(function(toggle) {
+                            console.log('🏢 Found filiale toggle:', toggle.dataset.storeId);
+
+                            toggle.onchange = function() {
+                                console.log('🏢 Filiale toggle changed:', this.dataset.storeId, this.checked);
+                                var card = this.closest('.ppv-vacation-filiale-card');
+                                var body = card ? card.querySelector('.ppv-vacation-card-body') : null;
+
+                                if (body) {
+                                    body.style.display = this.checked ? 'block' : 'none';
+                                }
+
+                                if (card) {
+                                    card.classList.toggle('vacation-active', this.checked);
+                                }
+
+                                // Update status text
+                                var wrapper = this.closest('.ppv-toggle-wrapper');
+                                if (wrapper) {
+                                    var status = wrapper.querySelector('.ppv-toggle-status');
+                                    if (status) {
+                                        status.textContent = this.checked ? (status.dataset.on || 'BE') : (status.dataset.off || 'KI');
+                                        status.classList.toggle('active', this.checked);
+                                    }
+                                }
+                            };
+                        });
+
+                        // Save buttons
+                        document.querySelectorAll('.ppv-save-filiale-vacation').forEach(function(btn) {
+                            btn.onclick = function(e) {
+                                e.preventDefault();
+                                var storeId = this.dataset.storeId;
+                                var card = this.closest('.ppv-vacation-filiale-card');
+                                if (!card) return;
+
+                                var toggle = card.querySelector('.ppv-filiale-vacation-toggle');
+                                var fromInput = card.querySelector('.ppv-filiale-vacation-from');
+                                var toInput = card.querySelector('.ppv-filiale-vacation-to');
+                                var msgInput = card.querySelector('.ppv-filiale-vacation-message');
+
+                                this.innerHTML = '<i class="ri-loader-4-line"></i> ...';
+                                this.disabled = true;
+
+                                var formData = new FormData();
+                                formData.append('action', 'ppv_save_filiale_vacation');
+                                formData.append('store_id', storeId);
+                                formData.append('vacation_enabled', toggle && toggle.checked ? '1' : '0');
+                                formData.append('vacation_from', fromInput ? fromInput.value : '');
+                                formData.append('vacation_to', toInput ? toInput.value : '');
+                                formData.append('vacation_message', msgInput ? msgInput.value : '');
+
+                                var btn = this;
+                                fetch(ppv_profile.ajaxUrl, {
+                                    method: 'POST',
+                                    body: formData
+                                })
+                                .then(function(r) { return r.json(); })
+                                .then(function(data) {
+                                    btn.disabled = false;
+                                    btn.innerHTML = '<i class="ri-save-line"></i> Mentés';
+                                    if (data.success) {
+                                        alert(data.data.msg || 'Mentve!');
+                                    } else {
+                                        alert(data.data.msg || 'Hiba történt');
+                                    }
+                                })
+                                .catch(function() {
+                                    btn.disabled = false;
+                                    btn.innerHTML = '<i class="ri-save-line"></i> Mentés';
+                                    alert('Hiba történt');
+                                });
+                            };
+                        });
+                    }
+
+                    if (document.readyState === 'loading') {
+                        document.addEventListener('DOMContentLoaded', initFilialeVacationToggles);
+                    } else {
+                        initFilialeVacationToggles();
+                    }
+                    document.addEventListener('turbo:load', initFilialeVacationToggles);
+                })();
+                </script>
+
                 <?php else: ?>
                 <!-- Single store vacation settings -->
                 <div class="ppv-vip-toggle-row">
