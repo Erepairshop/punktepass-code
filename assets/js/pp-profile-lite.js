@@ -394,6 +394,82 @@
                     }
                 });
             }
+
+            // Filiale vacation toggles
+            document.querySelectorAll('.ppv-filiale-vacation-toggle').forEach(toggle => {
+                toggle.addEventListener('change', (e) => {
+                    const storeId = e.target.dataset.storeId;
+                    const card = e.target.closest('.ppv-vacation-filiale-card');
+                    const body = card?.querySelector('.ppv-vacation-card-body');
+
+                    if (body) {
+                        body.style.display = e.target.checked ? 'block' : 'none';
+                    }
+
+                    card?.classList.toggle('vacation-active', e.target.checked);
+
+                    // Update toggle status text
+                    const wrapper = e.target.closest('.ppv-toggle-wrapper');
+                    if (wrapper) {
+                        const statusEl = wrapper.querySelector('.ppv-toggle-status');
+                        if (statusEl) {
+                            statusEl.textContent = e.target.checked ? statusEl.dataset.on : statusEl.dataset.off;
+                            statusEl.classList.toggle('active', e.target.checked);
+                        }
+                    }
+                });
+            });
+
+            // Filiale vacation save buttons
+            document.querySelectorAll('.ppv-save-filiale-vacation').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    this.saveFilialVacation(e.target.closest('button'));
+                });
+            });
+        }
+
+        async saveFilialVacation(btn) {
+            const storeId = btn.dataset.storeId;
+            const card = btn.closest('.ppv-vacation-filiale-card');
+
+            if (!card || !storeId) return;
+
+            const toggle = card.querySelector('.ppv-filiale-vacation-toggle');
+            const fromInput = card.querySelector('.ppv-filiale-vacation-from');
+            const toInput = card.querySelector('.ppv-filiale-vacation-to');
+            const messageInput = card.querySelector('.ppv-filiale-vacation-message');
+
+            btn.classList.add('saving');
+            btn.innerHTML = '<i class="ri-loader-4-line"></i> ...';
+
+            try {
+                const formData = new FormData();
+                formData.append('action', 'ppv_save_filiale_vacation');
+                formData.append('store_id', storeId);
+                formData.append('vacation_enabled', toggle?.checked ? '1' : '0');
+                formData.append('vacation_from', fromInput?.value || '');
+                formData.append('vacation_to', toInput?.value || '');
+                formData.append('vacation_message', messageInput?.value || '');
+
+                const response = await fetch(ppv_profile.ajaxUrl, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    this.showAlert(data.data?.msg || 'Mentve!', 'success');
+                } else {
+                    this.showAlert(data.data?.msg || 'Hiba történt', 'error');
+                }
+            } catch (error) {
+                console.error('Filiale vacation save error:', error);
+                this.showAlert('Hiba történt', 'error');
+            } finally {
+                btn.classList.remove('saving');
+                btn.innerHTML = '<i class="ri-save-line"></i> ' + (this.t('save') || 'Mentés');
+            }
         }
 
         validateEmail(el) {

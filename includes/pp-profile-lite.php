@@ -37,6 +37,10 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
             add_action('wp_ajax_ppv_reset_trusted_device', [__CLASS__, 'ajax_reset_trusted_device']);
             add_action('wp_ajax_nopriv_ppv_reset_trusted_device', [__CLASS__, 'ajax_reset_trusted_device']); // ✅ PPV session auth
 
+            // Filiale Vacation
+            add_action('wp_ajax_ppv_save_filiale_vacation', [__CLASS__, 'ajax_save_filiale_vacation']);
+            add_action('wp_ajax_nopriv_ppv_save_filiale_vacation', [__CLASS__, 'ajax_save_filiale_vacation']);
+
             // Referral Program
             add_action('wp_ajax_ppv_activate_referral_grace_period', [__CLASS__, 'ajax_activate_referral_grace_period']);
             add_action('wp_ajax_nopriv_ppv_activate_referral_grace_period', [__CLASS__, 'ajax_activate_referral_grace_period']);
@@ -159,6 +163,31 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
             }
 
             return 0;
+        }
+
+        /** ============================================================
+         *  🏢 GET FILIALEN FOR VENDOR (parent + children stores)
+         * ============================================================ */
+        private static function get_filialen_for_vendor() {
+            global $wpdb;
+
+            // Get vendor's base store ID (not current filiale)
+            $vendor_store_id = intval($_SESSION['ppv_store_id'] ?? $_SESSION['ppv_vendor_store_id'] ?? 0);
+
+            if (!$vendor_store_id) {
+                return [];
+            }
+
+            // Get all stores: parent + children
+            $filialen = $wpdb->get_results($wpdb->prepare("
+                SELECT id, name, company_name, address, city, plz,
+                       vacation_enabled, vacation_from, vacation_to, vacation_message
+                FROM {$wpdb->prefix}ppv_stores
+                WHERE id = %d OR parent_store_id = %d
+                ORDER BY (id = %d) DESC, name ASC
+            ", $vendor_store_id, $vendor_store_id, $vendor_store_id));
+
+            return $filialen ?: [];
         }
 
         public static function ajax_get_strings() {
@@ -1339,6 +1368,79 @@ if (!empty($store->gallery)) {
 
                 <h3 data-i18n="vacation_section"><?php echo esc_html(PPV_Lang::t('vacation_section')); ?></h3>
 
+                <?php
+                // Get all filialen for vacation management
+                $filialen = self::get_filialen_for_vendor();
+                $has_multiple_filialen = count($filialen) > 1;
+                ?>
+
+                <?php if ($has_multiple_filialen): ?>
+                <style>
+                .ppv-vacation-filialen { display: flex; flex-direction: column; gap: 12px; }
+                .ppv-vacation-filiale-card { background: var(--color-bg-secondary, #f1f5f9); border: 1px solid var(--color-border, #e2e8f0); border-radius: 12px; overflow: hidden; transition: all 0.2s ease; }
+                .ppv-vacation-filiale-card.vacation-active { border-color: #3b82f6; background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(59, 130, 246, 0.02)); }
+                .ppv-vacation-card-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; gap: 12px; }
+                .ppv-vacation-card-info { display: flex; flex-direction: column; gap: 2px; }
+                .ppv-vacation-card-info strong { font-size: 14px; color: var(--color-text, #1e293b); }
+                .ppv-vacation-card-info small { font-size: 12px; color: var(--color-text-secondary, #64748b); }
+                .ppv-vacation-card-body { padding: 0 16px 16px; border-top: 1px solid var(--color-border, #e2e8f0); }
+                .ppv-vacation-dates-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+                .ppv-vacation-card-body .ppv-form-group { margin-bottom: 12px; }
+                .ppv-vacation-card-body .ppv-form-group label { font-size: 12px; font-weight: 600; color: var(--color-text-secondary, #64748b); margin-bottom: 4px; display: block; }
+                .ppv-vacation-card-body input[type="date"],
+                .ppv-vacation-card-body input[type="text"] { width: 100%; padding: 8px 12px; border: 1px solid var(--color-border, #e2e8f0); border-radius: 8px; font-size: 14px; background: var(--color-surface, #fff); }
+                .ppv-btn-small { padding: 8px 16px; font-size: 13px; border-radius: 8px; }
+                .ppv-save-filiale-vacation { background: #3b82f6; color: #fff; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+                .ppv-save-filiale-vacation:hover { background: #2563eb; }
+                .ppv-save-filiale-vacation.saving { opacity: 0.7; pointer-events: none; }
+                @media (max-width: 480px) { .ppv-vacation-dates-row { grid-template-columns: 1fr; } }
+                [data-theme="dark"] .ppv-vacation-filiale-card { background: rgba(30, 41, 59, 0.5); border-color: rgba(59, 130, 246, 0.2); }
+                [data-theme="dark"] .ppv-vacation-filiale-card.vacation-active { background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(59, 130, 246, 0.05)); }
+                [data-theme="dark"] .ppv-vacation-card-info strong { color: #e2e8f0; }
+                [data-theme="dark"] .ppv-vacation-card-body { border-top-color: rgba(59, 130, 246, 0.2); }
+                [data-theme="dark"] .ppv-vacation-card-body input { background: rgba(15, 23, 42, 0.8); border-color: rgba(59, 130, 246, 0.3); color: #e2e8f0; }
+                </style>
+                <!-- 🏢 FILIALE VACATION CARDS -->
+                <div class="ppv-vacation-filialen">
+                    <?php foreach ($filialen as $fil): ?>
+                    <div class="ppv-vacation-filiale-card <?php echo !empty($fil->vacation_enabled) ? 'vacation-active' : ''; ?>" data-store-id="<?php echo intval($fil->id); ?>">
+                        <div class="ppv-vacation-card-header">
+                            <div class="ppv-vacation-card-info">
+                                <strong><?php echo esc_html($fil->name ?: $fil->company_name); ?></strong>
+                                <?php if ($fil->city): ?><small><?php echo esc_html($fil->city); ?></small><?php endif; ?>
+                            </div>
+                            <div class="ppv-toggle-wrapper">
+                                <label class="ppv-toggle-switch">
+                                    <input type="checkbox" class="ppv-filiale-vacation-toggle" data-store-id="<?php echo intval($fil->id); ?>" <?php checked($fil->vacation_enabled ?? 0, 1); ?>>
+                                    <span class="ppv-toggle-slider"></span>
+                                </label>
+                                <span class="ppv-toggle-status <?php echo !empty($fil->vacation_enabled) ? 'active' : ''; ?>" data-on="<?php echo esc_attr(PPV_Lang::t('toggle_on')); ?>" data-off="<?php echo esc_attr(PPV_Lang::t('toggle_off')); ?>"><?php echo esc_html(!empty($fil->vacation_enabled) ? PPV_Lang::t('toggle_on') : PPV_Lang::t('toggle_off')); ?></span>
+                            </div>
+                        </div>
+                        <div class="ppv-vacation-card-body" style="<?php echo empty($fil->vacation_enabled) ? 'display: none;' : ''; ?>">
+                            <div class="ppv-vacation-dates-row">
+                                <div class="ppv-form-group">
+                                    <label><?php echo esc_html(PPV_Lang::t('vacation_from')); ?></label>
+                                    <input type="date" class="ppv-filiale-vacation-from" data-store-id="<?php echo intval($fil->id); ?>" value="<?php echo esc_attr($fil->vacation_from ?? ''); ?>">
+                                </div>
+                                <div class="ppv-form-group">
+                                    <label><?php echo esc_html(PPV_Lang::t('vacation_to')); ?></label>
+                                    <input type="date" class="ppv-filiale-vacation-to" data-store-id="<?php echo intval($fil->id); ?>" value="<?php echo esc_attr($fil->vacation_to ?? ''); ?>">
+                                </div>
+                            </div>
+                            <div class="ppv-form-group">
+                                <label><?php echo esc_html(PPV_Lang::t('vacation_message')); ?></label>
+                                <input type="text" class="ppv-filiale-vacation-message" data-store-id="<?php echo intval($fil->id); ?>" value="<?php echo esc_attr($fil->vacation_message ?? ''); ?>" placeholder="<?php echo esc_attr(PPV_Lang::t('vacation_message_placeholder')); ?>">
+                            </div>
+                            <button type="button" class="ppv-btn ppv-btn-small ppv-save-filiale-vacation" data-store-id="<?php echo intval($fil->id); ?>">
+                                <i class="ri-save-line"></i> <?php echo esc_html(PPV_Lang::t('save') ?? 'Mentés'); ?>
+                            </button>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                <?php else: ?>
+                <!-- Single store vacation settings -->
                 <div class="ppv-vip-toggle-row">
                     <div class="ppv-toggle-wrapper">
                         <label class="ppv-toggle-switch">
@@ -1376,6 +1478,7 @@ if (!empty($store->gallery)) {
                         <textarea name="vacation_message" placeholder="<?php echo esc_attr(PPV_Lang::t('vacation_message_placeholder')); ?>" style="min-height: 80px;"><?php echo esc_textarea($store->vacation_message ?? ''); ?></textarea>
                     </div>
                 </div>
+                <?php endif; ?>
 
                 <hr>
 
@@ -2237,6 +2340,73 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
                 wp_send_json_success(['message' => 'Megbízható eszköz visszaállítva']);
             } else {
                 wp_send_json_error(['message' => 'Hiba történt']);
+            }
+        }
+
+        /**
+         * ============================================================
+         * 🏖️ SAVE FILIALE VACATION SETTINGS
+         * ============================================================
+         */
+        public static function ajax_save_filiale_vacation() {
+            self::ensure_session();
+
+            $auth = self::check_auth();
+            if (!$auth['valid']) {
+                wp_send_json_error(['msg' => 'Nincs jogosultság']);
+                return;
+            }
+
+            $target_store_id = intval($_POST['store_id'] ?? 0);
+            if (!$target_store_id) {
+                wp_send_json_error(['msg' => 'Store ID hiányzik']);
+                return;
+            }
+
+            // Verify the user has access to this store (parent or child)
+            $vendor_store_id = intval($_SESSION['ppv_store_id'] ?? $_SESSION['ppv_vendor_store_id'] ?? 0);
+            if (!$vendor_store_id) {
+                wp_send_json_error(['msg' => 'Nincs jogosultság']);
+                return;
+            }
+
+            global $wpdb;
+
+            // Check if target store is the vendor's store or a child of it
+            $is_valid = $wpdb->get_var($wpdb->prepare("
+                SELECT COUNT(*) FROM {$wpdb->prefix}ppv_stores
+                WHERE id = %d AND (id = %d OR parent_store_id = %d)
+            ", $target_store_id, $vendor_store_id, $vendor_store_id));
+
+            if (!$is_valid) {
+                wp_send_json_error(['msg' => 'Nincs jogosultság ehhez a bolthoz']);
+                return;
+            }
+
+            // Update vacation settings
+            $vacation_enabled = !empty($_POST['vacation_enabled']) ? 1 : 0;
+            $vacation_from = !empty($_POST['vacation_from']) ? sanitize_text_field($_POST['vacation_from']) : null;
+            $vacation_to = !empty($_POST['vacation_to']) ? sanitize_text_field($_POST['vacation_to']) : null;
+            $vacation_message = sanitize_text_field($_POST['vacation_message'] ?? '');
+
+            $result = $wpdb->update(
+                "{$wpdb->prefix}ppv_stores",
+                [
+                    'vacation_enabled' => $vacation_enabled,
+                    'vacation_from' => $vacation_from,
+                    'vacation_to' => $vacation_to,
+                    'vacation_message' => $vacation_message
+                ],
+                ['id' => $target_store_id],
+                ['%d', '%s', '%s', '%s'],
+                ['%d']
+            );
+
+            if ($result !== false) {
+                ppv_log("[PPV_VACATION] Vacation settings updated for store #{$target_store_id}");
+                wp_send_json_success(['msg' => PPV_Lang::t('profile_saved_success') ?? 'Mentve!']);
+            } else {
+                wp_send_json_error(['msg' => 'Hiba a mentés során']);
             }
         }
 
