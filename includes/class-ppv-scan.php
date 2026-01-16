@@ -276,8 +276,7 @@ public static function ajax_auto_add_point() {
             SELECT
                 vip_fix_enabled, vip_fix_bronze, vip_fix_silver, vip_fix_gold, vip_fix_platinum,
                 vip_streak_enabled, vip_streak_count, vip_streak_type,
-                vip_streak_bronze, vip_streak_silver, vip_streak_gold, vip_streak_platinum,
-                vip_daily_enabled, vip_daily_bronze, vip_daily_silver, vip_daily_gold, vip_daily_platinum
+                vip_streak_bronze, vip_streak_silver, vip_streak_gold, vip_streak_platinum
             FROM {$wpdb->prefix}ppv_stores WHERE id = %d
         ", $vip_store_id));
 
@@ -306,7 +305,7 @@ public static function ajax_auto_add_point() {
             };
 
             // 🔒 FIX: Initialize ALL keys including 'pct' to prevent undefined array key error
-            $vip_bonus_details = ['pct' => 0, 'fix' => 0, 'streak' => 0, 'daily' => 0];
+            $vip_bonus_details = ['pct' => 0, 'fix' => 0, 'streak' => 0];
 
             // 🔒 FIX: Save TRUE base points BEFORE any bonuses for double_points calculations
             $true_base_points = $points_to_add;
@@ -355,32 +354,12 @@ public static function ajax_auto_add_point() {
                 }
             }
 
-            // 4. FIRST DAILY SCAN BONUS
-            if ($vip_settings->vip_daily_enabled && $user_level !== null) {
-                $today = date('Y-m-d');
-                $already_scanned_today = (int)$wpdb->get_var($wpdb->prepare("
-                    SELECT COUNT(*) FROM {$wpdb->prefix}ppv_points
-                    WHERE user_id = %d AND store_id = %d AND type = 'qr_scan'
-                    AND DATE(created) = %s
-                ", $user_id, $store_id, $today));
-
-                if ($already_scanned_today === 0) {
-                    $vip_bonus_details['daily'] = $getLevelValue(
-                        $vip_settings->vip_daily_bronze ?? 5,
-                        $vip_settings->vip_daily_silver,
-                        $vip_settings->vip_daily_gold,
-                        $vip_settings->vip_daily_platinum
-                    );
-                    ppv_log("☀️ [PPV_Scan] First daily scan bonus applied for user {$user_id}");
-                }
-            }
-
             // Calculate total VIP bonus
-            $vip_bonus_applied = $vip_bonus_details['pct'] + $vip_bonus_details['fix'] + $vip_bonus_details['streak'] + $vip_bonus_details['daily'];
+            $vip_bonus_applied = $vip_bonus_details['pct'] + $vip_bonus_details['fix'] + $vip_bonus_details['streak'];
 
             if ($vip_bonus_applied > 0) {
                 $points_to_add += $vip_bonus_applied;
-                ppv_log("✅ [PPV_Scan] VIP bonuses applied: level={$user_level}, pct=+{$vip_bonus_details['pct']}, fix=+{$vip_bonus_details['fix']}, streak=+{$vip_bonus_details['streak']}, daily=+{$vip_bonus_details['daily']}, total_bonus={$vip_bonus_applied}, total_points={$points_to_add}");
+                ppv_log("✅ [PPV_Scan] VIP bonuses applied: level={$user_level}, pct=+{$vip_bonus_details['pct']}, fix=+{$vip_bonus_details['fix']}, streak=+{$vip_bonus_details['streak']}, total_bonus={$vip_bonus_applied}, total_points={$points_to_add}");
             }
         }
     }

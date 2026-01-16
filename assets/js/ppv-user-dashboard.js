@@ -1596,19 +1596,6 @@ async function initUserDashboard() {
         }
       }
 
-      // 3️⃣ DAILY BÓNUSZ
-      if (vip.daily && vip.daily.enabled) {
-        rows.push(`
-          <tr class="ppv-vip-table-row">
-            <td class="ppv-vip-label-cell"><i class="ri-sun-line"></i> ${T.vip_daily_title}</td>
-            <td class="ppv-vip-cell bronze">+${vip.daily.bronze}</td>
-            <td class="ppv-vip-cell silver">+${vip.daily.silver}</td>
-            <td class="ppv-vip-cell gold">+${vip.daily.gold}</td>
-            <td class="ppv-vip-cell platinum">+${vip.daily.platinum}</td>
-          </tr>
-        `);
-      }
-
       return rows.length ? `
         <div class="ppv-store-vip-table">
           <div class="ppv-vip-table-title">
