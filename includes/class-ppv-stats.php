@@ -100,33 +100,29 @@ class PPV_Stats {
             return [];
         }
 
-        // 🔗 CHECK FOR LINKED HANDLERS: Get all store IDs in the same linked group
-        $linked_store_ids = [$base_store_id];
-        $linked_group = $wpdb->get_var($wpdb->prepare(
-            "SELECT linked_group_id FROM {$wpdb->prefix}ppv_stores WHERE id = %d AND linked_group_id IS NOT NULL",
+        // 🔗 CHECK IF HANDLER IS LINKED TO A MAIN HANDLER
+        // If linked_to_store_id is set, show the MAIN handler's stores instead
+        $linked_to = $wpdb->get_var($wpdb->prepare(
+            "SELECT linked_to_store_id FROM {$wpdb->prefix}ppv_stores WHERE id = %d AND linked_to_store_id IS NOT NULL",
             $base_store_id
         ));
 
-        if ($linked_group) {
-            // Get all stores in this linked group
-            $linked_ids = $wpdb->get_col($wpdb->prepare(
-                "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE linked_group_id = %d",
-                $linked_group
-            ));
-            $linked_store_ids = array_unique(array_merge($linked_store_ids, $linked_ids));
-            ppv_log("🔗 [Stats] Linked group #{$linked_group}: stores = " . implode(',', $linked_store_ids));
+        if ($linked_to) {
+            // This handler is linked to a main handler - use main handler's store
+            $effective_store_id = intval($linked_to);
+            ppv_log("🔗 [Stats] Handler #{$base_store_id} linked to main handler #{$effective_store_id} - showing main's stores");
+        } else {
+            // Not linked, use own store
+            $effective_store_id = $base_store_id;
         }
 
-        // Build the query with all linked store IDs
-        $placeholders = implode(',', array_fill(0, count($linked_store_ids), '%d'));
-
-        // Get all stores: linked parents + their children
+        // Get all stores: main store + children (filialen)
         $filialen = $wpdb->get_results($wpdb->prepare("
             SELECT id, name, company_name, address, city, plz
             FROM {$wpdb->prefix}ppv_stores
-            WHERE id IN ({$placeholders}) OR parent_store_id IN ({$placeholders})
+            WHERE id = %d OR parent_store_id = %d
             ORDER BY (id = %d) DESC, name ASC
-        ", ...array_merge($linked_store_ids, $linked_store_ids, [$base_store_id])));
+        ", $effective_store_id, $effective_store_id, $effective_store_id));
 
         return $filialen ?: [];
     }
