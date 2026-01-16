@@ -241,7 +241,7 @@ class PPV_User_Level {
             SELECT
                 COALESCE(s.parent_store_id, s.id) as store_id,
                 COUNT(*) as scan_count,
-                MAX(COALESCE(parent.company_name, s.company_name, s.name)) as store_name
+                MAX(COALESCE(parent.name, s.name, parent.company_name, s.company_name)) as store_name
             FROM {$wpdb->prefix}ppv_points p
             JOIN {$wpdb->prefix}ppv_stores s ON p.store_id = s.id
             LEFT JOIN {$wpdb->prefix}ppv_stores parent ON s.parent_store_id = parent.id
