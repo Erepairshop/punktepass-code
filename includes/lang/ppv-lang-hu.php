@@ -11,6 +11,9 @@ return [
 'unique' => 'Egyedi felhasználók',
 'weekly' => 'Heti',
 'monthly' => 'Havi',
+'toggle_on' => 'BE',
+'toggle_off' => 'KI',
+'save' => 'Mentés',
 
 
 'not_authorized' => '⚠️ Nincs jogosultság',
