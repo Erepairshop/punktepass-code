@@ -43,14 +43,6 @@
         const streakError = document.getElementById('ppv-streak-error');
         const streakFixedInputs = document.querySelector('.ppv-streak-fixed-inputs');
 
-        // Preview elements
-        const previewLevelButtons = document.querySelectorAll('.ppv-preview-level');
-        const previewRowFix = document.getElementById('preview-row-fix');
-        const previewRowStreak = document.getElementById('preview-row-streak');
-        const previewFixValue = document.getElementById('preview-fix-value');
-        const previewStreakValue = document.getElementById('preview-streak-value');
-        const previewTotal = document.getElementById('preview-total');
-
         // Save button
         const saveBtn = document.getElementById('ppv-vip-save');
         const statusEl = document.getElementById('ppv-vip-status');
@@ -58,9 +50,6 @@
         // Filiale selector
         const filialeSelect = document.getElementById('ppv-vip-filiale');
         let currentFilialeId = filialeSelect?.value || 'all';
-
-        // Current preview level
-        let currentPreviewLevel = 'gold';
 
         // ═══════════════════════════════════════════════════════════
         // LOAD SETTINGS
@@ -110,7 +99,7 @@
                     // Update UI state
                     updateCardStates();
                     updateStreakTypeVisibility();
-                    updatePreview();
+                    validateAll();
 
                 }
             })
@@ -192,59 +181,6 @@
         }
 
         // ═══════════════════════════════════════════════════════════
-        // LIVE PREVIEW
-        // ═══════════════════════════════════════════════════════════
-
-        function updatePreview() {
-            const basePoints = 100; // Scenario: 100 point scan
-            let total = basePoints;
-
-            // Get values based on current preview level
-            const getValue = (bronze, silver, gold, platinum) => {
-                const values = {
-                    bronze: parseInt(bronze?.value) || 0,
-                    silver: parseInt(silver?.value) || 0,
-                    gold: parseInt(gold?.value) || 0,
-                    platinum: parseInt(platinum?.value) || 0
-                };
-                return values[currentPreviewLevel] || 0;
-            };
-
-            // 1. Fixed bonus
-            if (fixEnabled?.checked) {
-                const fix = getValue(fixBronze, fixSilver, fixGold, fixPlatinum);
-                if (previewFixValue) previewFixValue.textContent = '+' + fix;
-                if (previewRowFix) previewRowFix.style.display = 'flex';
-                total += fix;
-            } else {
-                if (previewRowFix) previewRowFix.style.display = 'none';
-            }
-
-            // 2. Streak bonus (assume 10th scan in preview scenario)
-            if (streakEnabled?.checked) {
-                let streakBonus = 0;
-                if (streakType?.value === 'fixed') {
-                    streakBonus = getValue(streakBronze, streakSilver, streakGold, streakPlatinum);
-                } else if (streakType?.value === 'double') {
-                    streakBonus = basePoints; // Double means +100% = +basePoints
-                } else if (streakType?.value === 'triple') {
-                    streakBonus = basePoints * 2; // Triple means +200% = +2*basePoints
-                }
-                if (previewStreakValue) previewStreakValue.textContent = '+' + streakBonus;
-                if (previewRowStreak) previewRowStreak.style.display = 'flex';
-                total += streakBonus;
-            } else {
-                if (previewRowStreak) previewRowStreak.style.display = 'none';
-            }
-
-            // Update total
-            if (previewTotal) previewTotal.textContent = total;
-
-            // Validate
-            validateAll();
-        }
-
-        // ═══════════════════════════════════════════════════════════
         // EVENT LISTENERS
         // ═══════════════════════════════════════════════════════════
 
@@ -253,7 +189,7 @@
             if (toggle) {
                 toggle.addEventListener('change', () => {
                     updateCardStates();
-                    updatePreview();
+                    validateAll();
                 });
             }
         });
@@ -262,30 +198,19 @@
         if (streakType) {
             streakType.addEventListener('change', () => {
                 updateStreakTypeVisibility();
-                updatePreview();
+                validateAll();
             });
         }
 
-        // All input changes trigger preview update
+        // All input changes trigger validation
         const allInputs = [
             fixBronze, fixSilver, fixGold, fixPlatinum,
             streakCount, streakBronze, streakSilver, streakGold, streakPlatinum
         ];
         allInputs.forEach(input => {
             if (input) {
-                input.addEventListener('input', updatePreview);
+                input.addEventListener('input', validateAll);
             }
-        });
-
-        // Preview level selector
-        previewLevelButtons.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                previewLevelButtons.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                currentPreviewLevel = btn.dataset.level;
-                updatePreview();
-            });
         });
 
         // Filiale change listener - reload settings for selected filiale

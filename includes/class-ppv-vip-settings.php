@@ -384,14 +384,6 @@ class PPV_VIP_Settings {
                 'streak_type_double' => 'Doppelt',
                 'streak_type_triple' => 'Dreifach',
 
-                // Preview
-                'preview_title' => 'Live-Vorschau',
-                'preview_scenario' => 'Szenario: 100 Punkte Scan, 10. Besuch',
-                'preview_base' => 'Basis-Punkte',
-                'preview_fix' => 'Fixpunkte',
-                'preview_streak' => 'X. Scan Bonus',
-                'preview_total' => 'Gesamt',
-
                 // Validation
                 'validation_error' => 'Die Werte müssen aufsteigend sein: Bronze ≤ Silber ≤ Gold ≤ Platin',
             ],
@@ -426,14 +418,6 @@ class PPV_VIP_Settings {
                 'streak_type_fixed' => 'Fix pont',
                 'streak_type_double' => 'Dupla',
                 'streak_type_triple' => 'Tripla',
-
-                // Preview
-                'preview_title' => 'Élő Előnézet',
-                'preview_scenario' => 'Forgatókönyv: 100 pontos scan, 10. látogatás',
-                'preview_base' => 'Alap pontok',
-                'preview_fix' => 'Fix pont',
-                'preview_streak' => 'X. scan bónusz',
-                'preview_total' => 'Összesen',
 
                 // Validation
                 'validation_error' => 'Az értékeknek növekvő sorrendben kell lenniük: Bronz ≤ Ezüst ≤ Arany ≤ Platina',
@@ -470,14 +454,6 @@ class PPV_VIP_Settings {
                 'streak_type_double' => 'Dublu',
                 'streak_type_triple' => 'Triplu',
 
-                // Preview
-                'preview_title' => 'Previzualizare Live',
-                'preview_scenario' => 'Scenariu: scanare 100 puncte, a 10-a vizită',
-                'preview_base' => 'Puncte de bază',
-                'preview_fix' => 'Puncte fixe',
-                'preview_streak' => 'Bonus scanare X',
-                'preview_total' => 'Total',
-
                 // Validation
                 'validation_error' => 'Valorile trebuie să fie în ordine crescătoare: Bronz ≤ Argint ≤ Aur ≤ Platină',
             ],
@@ -507,12 +483,6 @@ class PPV_VIP_Settings {
             'streak_type_fixed' => 'Fixpunkte',
             'streak_type_double' => 'Doppelt',
             'streak_type_triple' => 'Dreifach',
-            'preview_title' => 'Live-Vorschau',
-            'preview_scenario' => 'Szenario: 100 Punkte Scan, 10. Besuch',
-            'preview_base' => 'Basis-Punkte',
-            'preview_fix' => 'Fixpunkte',
-            'preview_streak' => 'X. Scan Bonus',
-            'preview_total' => 'Gesamt',
             'validation_error' => 'Die Werte müssen aufsteigend sein: Bronze ≤ Silber ≤ Gold ≤ Platin',
         ];
 
@@ -697,41 +667,6 @@ class PPV_VIP_Settings {
                             </div>
                         </div>
                         <div class="ppv-validation-error" id="ppv-streak-error"></div>
-                    </div>
-                </div>
-
-                <!-- ═══════════════════════════════════════════════════════════
-                     LIVE PREVIEW
-                ═══════════════════════════════════════════════════════════ -->
-                <div class="ppv-vip-preview-extended" id="ppv-vip-preview">
-                    <h4><i class="ri-eye-line"></i> <?php echo esc_html($T['preview_title']); ?></h4>
-                    <p class="ppv-preview-scenario"><?php echo esc_html($T['preview_scenario']); ?></p>
-
-                    <!-- Level selector for preview -->
-                    <div class="ppv-preview-level-selector">
-                        <button type="button" class="ppv-preview-level" data-level="bronze"><?php echo esc_html($T['bronze_label']); ?></button>
-                        <button type="button" class="ppv-preview-level" data-level="silver"><?php echo esc_html($T['silver_label']); ?></button>
-                        <button type="button" class="ppv-preview-level active" data-level="gold"><?php echo esc_html($T['gold_label']); ?></button>
-                        <button type="button" class="ppv-preview-level" data-level="platinum"><?php echo esc_html($T['platinum_label']); ?></button>
-                    </div>
-
-                    <div class="ppv-preview-breakdown">
-                        <div class="ppv-preview-row">
-                            <span><?php echo esc_html($T['preview_base']); ?></span>
-                            <strong id="preview-base">100</strong>
-                        </div>
-                        <div class="ppv-preview-row" id="preview-row-fix">
-                            <span>+ <?php echo esc_html($T['preview_fix']); ?></span>
-                            <strong id="preview-fix-value">+2</strong>
-                        </div>
-                        <div class="ppv-preview-row" id="preview-row-streak">
-                            <span>+ <?php echo esc_html($T['preview_streak']); ?></span>
-                            <strong id="preview-streak-value">+2</strong>
-                        </div>
-                        <div class="ppv-preview-row ppv-preview-total">
-                            <span><?php echo esc_html($T['preview_total']); ?></span>
-                            <strong id="preview-total">124</strong>
-                        </div>
                     </div>
                 </div>
 
