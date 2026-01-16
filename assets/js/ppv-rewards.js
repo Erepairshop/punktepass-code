@@ -370,6 +370,8 @@
     const btn = document.getElementById('ppv-ea-generate-receipt');
     const month = document.getElementById('ppv-ea-receipt-month')?.value;
     const year = document.getElementById('ppv-ea-receipt-year')?.value;
+    const filialeSelect = document.getElementById('ppv-ea-receipt-filiale');
+    const filialeId = filialeSelect?.value || 'all';
 
     if (!month || !year) return;
 
@@ -383,7 +385,7 @@
           'Content-Type': 'application/json',
           'X-WP-Nonce': config.nonce
         },
-        body: JSON.stringify({ month: parseInt(month), year: parseInt(year) })
+        body: JSON.stringify({ month: parseInt(month), year: parseInt(year), filiale_id: filialeId })
       });
       const data = await res.json();
 
@@ -408,6 +410,8 @@
     const btn = document.getElementById('ppv-ea-generate-date-receipt');
     const dateFrom = document.getElementById('ppv-ea-receipt-date-from')?.value;
     const dateTo = document.getElementById('ppv-ea-receipt-date-to')?.value;
+    const filialeSelect = document.getElementById('ppv-ea-receipt-filiale');
+    const filialeId = filialeSelect?.value || 'all';
 
     if (!dateFrom || !dateTo) return;
 
@@ -427,7 +431,7 @@
           'Content-Type': 'application/json',
           'X-WP-Nonce': config.nonce
         },
-        body: JSON.stringify({ date_from: dateFrom, date_to: dateTo })
+        body: JSON.stringify({ date_from: dateFrom, date_to: dateTo, filiale_id: filialeId })
       });
       const data = await res.json();
 

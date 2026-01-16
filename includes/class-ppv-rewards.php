@@ -152,6 +152,49 @@ class PPV_Rewards {
     }
 
     /** ============================================================
+     *  GET HANDLER FILIALEN
+     * ============================================================ */
+    public static function get_handler_filialen() {
+        global $wpdb;
+
+        // Get the base store ID (not filiale-specific)
+        $base_store_id = null;
+
+        if (!empty($_SESSION['ppv_store_id'])) {
+            $base_store_id = intval($_SESSION['ppv_store_id']);
+        } elseif (!empty($_SESSION['ppv_vendor_store_id'])) {
+            $base_store_id = intval($_SESSION['ppv_vendor_store_id']);
+        } elseif (!empty($GLOBALS['ppv_active_store_id'])) {
+            $base_store_id = intval($GLOBALS['ppv_active_store_id']);
+        }
+
+        if (!$base_store_id) {
+            // Try DB fallback
+            $uid = get_current_user_id();
+            if ($uid > 0) {
+                $base_store_id = $wpdb->get_var($wpdb->prepare(
+                    "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id=%d LIMIT 1",
+                    $uid
+                ));
+            }
+        }
+
+        if (!$base_store_id) {
+            return [];
+        }
+
+        // Get all stores: parent + children
+        $filialen = $wpdb->get_results($wpdb->prepare("
+            SELECT id, name, company_name, address, city, plz
+            FROM {$wpdb->prefix}ppv_stores
+            WHERE id = %d OR parent_store_id = %d
+            ORDER BY (id = %d) DESC, name ASC
+        ", $base_store_id, $base_store_id, $base_store_id));
+
+        return $filialen ?: [];
+    }
+
+    /** ============================================================
      *  ASSETS
      * ============================================================ */
     public static function enqueue_assets() {
@@ -239,6 +282,10 @@ class PPV_Rewards {
         // Month names from translations
         $month_keys = ['month_january', 'month_february', 'month_march', 'month_april', 'month_may', 'month_june',
                        'month_july', 'month_august', 'month_september', 'month_october', 'month_november', 'month_december'];
+
+        // Get filialen for selector
+        $filialen = self::get_handler_filialen();
+        $has_multiple_filialen = count($filialen) > 1;
 
         ob_start();
         ?>
@@ -329,6 +376,25 @@ class PPV_Rewards {
 
             <!-- TAB CONTENT: RECEIPTS -->
             <div class="ppv-ea-tab-content" id="tab-receipts">
+                <?php if ($has_multiple_filialen): ?>
+                <!-- Filiale Selector -->
+                <div class="ppv-ea-filiale-selector" style="margin-bottom: 20px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 10px;">
+                    <label style="display: flex; align-items: center; gap: 10px; color: #ccc; font-weight: 500;">
+                        <i class="ri-store-3-line"></i>
+                        <?php echo esc_html($t('rewards_select_filiale') ?: 'Filiale auswählen'); ?>
+                    </label>
+                    <select id="ppv-ea-receipt-filiale" class="ppv-ea-select" style="margin-top: 8px; width: 100%; max-width: 400px;">
+                        <option value="all"><?php echo esc_html($t('rewards_all_filialen') ?: 'Alle Filialen (gruppiert)'); ?></option>
+                        <?php foreach ($filialen as $filiale): ?>
+                            <option value="<?php echo esc_attr($filiale->id); ?>">
+                                <?php echo esc_html($filiale->name ?: $filiale->company_name); ?>
+                                <?php if ($filiale->city): ?> – <?php echo esc_html($filiale->city); ?><?php endif; ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <?php endif; ?>
+
                 <!-- Receipt Generators -->
                 <div class="ppv-ea-receipt-generators">
                     <!-- Monthly Receipt Generator -->
@@ -700,6 +766,7 @@ class PPV_Rewards {
         $store_id = self::get_store_id();
         $year = intval($data['year'] ?? date('Y'));
         $month = intval($data['month'] ?? date('m'));
+        $filiale_id = sanitize_text_field($data['filiale_id'] ?? 'all');
 
         if (!$store_id || $month < 1 || $month > 12) {
             return new WP_REST_Response(['success' => false, 'message' => 'Invalid parameters'], 400);
@@ -714,7 +781,11 @@ class PPV_Rewards {
             }
         }
 
-        $receipt_path = PPV_Expense_Receipt::generate_monthly_receipt($store_id, $year, $month);
+        // Handle filiale selection
+        $target_store_id = ($filiale_id !== 'all' && is_numeric($filiale_id)) ? intval($filiale_id) : $store_id;
+        $group_by_filiale = ($filiale_id === 'all');
+
+        $receipt_path = PPV_Expense_Receipt::generate_monthly_receipt($target_store_id, $year, $month, $group_by_filiale);
 
         if (!$receipt_path) {
             return new WP_REST_Response(['success' => false, 'message' => 'Keine Einlösungen für diesen Zeitraum'], 400);
@@ -774,6 +845,7 @@ class PPV_Rewards {
         $store_id = self::get_store_id();
         $date_from = sanitize_text_field($data['date_from'] ?? '');
         $date_to = sanitize_text_field($data['date_to'] ?? '');
+        $filiale_id = sanitize_text_field($data['filiale_id'] ?? 'all');
 
         if (!$store_id || !$date_from || !$date_to) {
             return new WP_REST_Response(['success' => false, 'message' => 'Ungültige Parameter'], 400);
@@ -793,7 +865,11 @@ class PPV_Rewards {
             }
         }
 
-        $receipt_path = PPV_Expense_Receipt::generate_date_range_receipt($store_id, $date_from, $date_to);
+        // Handle filiale selection
+        $target_store_id = ($filiale_id !== 'all' && is_numeric($filiale_id)) ? intval($filiale_id) : $store_id;
+        $group_by_filiale = ($filiale_id === 'all');
+
+        $receipt_path = PPV_Expense_Receipt::generate_date_range_receipt($target_store_id, $date_from, $date_to, $group_by_filiale);
 
         if (!$receipt_path) {
             return new WP_REST_Response(['success' => false, 'message' => 'Keine Einlösungen für diesen Zeitraum'], 400);
