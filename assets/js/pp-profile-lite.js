@@ -375,8 +375,13 @@
 
             // Vacation toggle - enable/disable date fields
             const vacationToggle = document.getElementById('ppv-vacation-enabled');
+            console.log('[PPV] Vacation toggle found:', !!vacationToggle);
             if (vacationToggle) {
-                vacationToggle.addEventListener('change', (e) => {
+                // Remove old listener if exists (for Turbo re-init)
+                vacationToggle.removeEventListener('change', vacationToggle._ppvHandler);
+
+                vacationToggle._ppvHandler = (e) => {
+                    console.log('[PPV] Vacation toggle changed:', e.target.checked);
                     const vacationFields = document.querySelector('.ppv-vacation-fields');
                     if (vacationFields) {
                         vacationFields.style.opacity = e.target.checked ? '1' : '0.5';
@@ -392,7 +397,8 @@
                             statusEl.classList.toggle('active', e.target.checked);
                         }
                     }
-                });
+                };
+                vacationToggle.addEventListener('change', vacationToggle._ppvHandler);
             }
 
             // Filiale vacation toggles
