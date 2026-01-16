@@ -1388,6 +1388,10 @@ async function initUserDashboard() {
       ? `<span class="ppv-hours"><i class="ri-time-line"></i> ${escapeHtml(store.open_hours_today)}</span>`
       : '';
 
+    // Currency symbol based on store country
+    const currencyMap = { 'DE': '€', 'HU': 'Ft', 'RO': 'RON' };
+    const currencySymbol = currencyMap[store.country] || '€';
+
     // ✅ REWARDS - FULLY TRANSLATED - MODERN ICONS ✅
     const rewardsHTML = store.rewards && store.rewards.length > 0 ? `
       <div class="ppv-store-rewards">
@@ -1397,12 +1401,19 @@ async function initUserDashboard() {
         <div class="ppv-rewards-list">
           ${store.rewards.map((r, idx) => {
             let rewardText = '';
+            // Format number - remove excessive decimals
+            const formattedValue = parseFloat(r.action_value).toFixed(0);
             if (r.action_type === 'discount_percent') {
-              rewardText = `${r.action_value}${T.discount_percent_text}`;
+              rewardText = `${formattedValue}${T.discount_percent_text}`;
             } else if (r.action_type === 'discount_fixed') {
-              rewardText = `€${r.action_value} ${T.discount_fixed_text}`;
+              // Currency position: € before, Ft/RON after
+              if (currencySymbol === '€') {
+                rewardText = `${currencySymbol}${formattedValue} ${T.discount_fixed_text}`;
+              } else {
+                rewardText = `${formattedValue} ${currencySymbol} ${T.discount_fixed_text}`;
+              }
             } else {
-              rewardText = `${r.action_value} ${r.currency || 'pont'}`;
+              rewardText = `${formattedValue} ${r.currency || 'pont'}`;
             }
 
             // Format end_date if available
