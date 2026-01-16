@@ -1659,6 +1659,22 @@ return [
     'advanced' => 'Részletes',
     'scanner_stats' => 'Munkatársak',
     'suspicious_scans' => 'Gyanús szkennelések',
+
+    // Device Activity Tab
+    'device_activity' => 'Eszközök',
+    'device_activity_desc' => 'Szkennelési tevékenység eszközönként (utolsó 7 nap).',
+    'total_devices' => 'Aktív eszközök',
+    'mobile_scanners' => 'Mobil szkennerek',
+    'suspicious_devices' => 'Gyanús eszközök',
+    'no_device_data' => 'Még nincs eszközadat.',
+    'device_name' => 'Eszköz neve',
+    'last_scan' => 'Utolsó szkennelés',
+    'scan_count' => 'Szkennelések száma',
+    'device_status' => 'Státusz',
+    'device_registered' => 'Regisztrált',
+    'device_unregistered' => 'Nem regisztrált',
+    'device_suspicious' => 'Gyanús',
+
     'employee_scans' => 'Munkatársi szkennelések',
     'employee_scans_desc' => 'Áttekintés arról, hogy melyik munkatárs hány szkennelést végzett.',
     'total_scanners' => 'Összes szkenner',

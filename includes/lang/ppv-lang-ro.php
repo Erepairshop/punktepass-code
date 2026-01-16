@@ -1664,6 +1664,22 @@ return [
     'advanced' => 'Avansat',
     'scanner_stats' => 'Angajați',
     'suspicious_scans' => 'Scanări suspecte',
+
+    // Device Activity Tab
+    'device_activity' => 'Dispozitive',
+    'device_activity_desc' => 'Activitatea de scanare pe dispozitiv (ultimele 7 zile).',
+    'total_devices' => 'Dispozitive active',
+    'mobile_scanners' => 'Scanere mobile',
+    'suspicious_devices' => 'Dispozitive suspecte',
+    'no_device_data' => 'Nu există încă date despre dispozitive.',
+    'device_name' => 'Nume dispozitiv',
+    'last_scan' => 'Ultima scanare',
+    'scan_count' => 'Număr scanări',
+    'device_status' => 'Status',
+    'device_registered' => 'Înregistrat',
+    'device_unregistered' => 'Neînregistrat',
+    'device_suspicious' => 'Suspect',
+
     'employee_scans' => 'Scanări angajați',
     'employee_scans_desc' => 'Prezentare generală a câte scanări a efectuat fiecare angajat.',
     'total_scanners' => 'Total scanere',

@@ -1682,6 +1682,22 @@ return [
     'advanced' => 'Erweitert',
     'scanner_stats' => 'Mitarbeiter',
     'suspicious_scans' => 'Verdächtige Scans',
+
+    // Device Activity Tab
+    'device_activity' => 'Geräte',
+    'device_activity_desc' => 'Übersicht der Scan-Aktivitäten pro Gerät (letzte 7 Tage).',
+    'total_devices' => 'Aktive Geräte',
+    'mobile_scanners' => 'Mobile Scanner',
+    'suspicious_devices' => 'Verdächtige Geräte',
+    'no_device_data' => 'Noch keine Gerätedaten vorhanden.',
+    'device_name' => 'Gerätename',
+    'last_scan' => 'Letzter Scan',
+    'scan_count' => 'Anzahl Scans',
+    'device_status' => 'Status',
+    'device_registered' => 'Registriert',
+    'device_unregistered' => 'Nicht registriert',
+    'device_suspicious' => 'Verdächtig',
+
     'employee_scans' => 'Mitarbeiter Scans',
     'employee_scans_desc' => 'Übersicht welcher Mitarbeiter wie viele Scans durchgeführt hat.',
     'total_scanners' => 'Scanner gesamt',
