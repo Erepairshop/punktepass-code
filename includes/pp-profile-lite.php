@@ -1480,6 +1480,48 @@ if (!empty($store->gallery)) {
                 </div>
                 <?php endif; ?>
 
+                <!-- Inline vacation toggle handler (fallback) -->
+                <script>
+                (function() {
+                    console.log('🏖️ Inline vacation script loaded');
+
+                    function initVacationToggle() {
+                        var toggle = document.getElementById('ppv-vacation-enabled');
+                        var fields = document.querySelector('.ppv-vacation-fields');
+
+                        console.log('🏖️ Toggle element:', toggle);
+                        console.log('🏖️ Fields element:', fields);
+
+                        if (toggle && fields) {
+                            toggle.onchange = function() {
+                                console.log('🏖️ Toggle changed to:', this.checked);
+                                fields.style.opacity = this.checked ? '1' : '0.5';
+                                fields.style.pointerEvents = this.checked ? 'auto' : 'none';
+
+                                // Update status text
+                                var wrapper = toggle.closest('.ppv-toggle-wrapper');
+                                if (wrapper) {
+                                    var status = wrapper.querySelector('.ppv-toggle-status');
+                                    if (status) {
+                                        status.textContent = this.checked ? (status.dataset.on || 'BE') : (status.dataset.off || 'KI');
+                                        status.classList.toggle('active', this.checked);
+                                    }
+                                }
+                            };
+                            console.log('🏖️ Event handler attached!');
+                        }
+                    }
+
+                    // Run on DOM ready and Turbo load
+                    if (document.readyState === 'loading') {
+                        document.addEventListener('DOMContentLoaded', initVacationToggle);
+                    } else {
+                        initVacationToggle();
+                    }
+                    document.addEventListener('turbo:load', initVacationToggle);
+                })();
+                </script>
+
                 <hr>
 
                 <h3 data-i18n="opening_hours_section"><?php echo esc_html(PPV_Lang::t('opening_hours_section')); ?></h3>
