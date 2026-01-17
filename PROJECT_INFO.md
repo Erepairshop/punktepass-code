@@ -354,6 +354,60 @@ Ha új komponensben kell ikon, csak használd - már be van töltve!
 - `/datenschutz`, `/agb`, `/impressum`
 - `/store/{slug}` - publikus store oldal
 
+## 🍪 Cookie Kezelés - FONTOS!
+
+### Nyelv cookie (PPV_Lang)
+```php
+// ✅ HELYES - domain nélkül (konzisztens JS-sel)
+setcookie('PPV_Lang', $lang, time() + 86400*365, '/');
+
+// ❌ HIBÁS - domain paraméterrel
+setcookie('PPV_Lang', $lang, time() + 86400*365, '/', '.punktepass.de');
+```
+
+**⚠️ Ne használj domain paramétert!** A JS (`ppv-handler.js`) domain nélkül állítja a cookie-t:
+```javascript
+document.cookie = "PPV_Lang=" + lang + ";path=/;max-age=31536000";
+```
+
+Ha PHP-ben domain-nel, JS-ben domain nélkül állítod → **két külön cookie jön létre** → nyelv nem vált megfelelően!
+
+## 💡 Tips Rendszer (User Tippek)
+
+### Shortcode:
+```php
+[ppv_user_tips]
+```
+
+### AJAX endpoint-ok:
+- `GET /wp-json/ppv/v1/tips/pending` - Függőben lévő tippek
+- `POST /wp-json/ppv/v1/tips/dismiss` - Tipp elrejtése
+
+### PHP Class:
+- `includes/class-ppv-user-tips.php`
+
+### Frontend viselkedés:
+- Tippek **NEM tűnnek el automatikusan** (nincs auto-hide)
+- Emoji ikonok használata (pl. 💡, ✅) RemixIcon helyett (CLS optimalizálás)
+- X gombbal bezárható, `dismissed` státuszba kerül
+
+## 🔐 REST API Permission Callbacks
+
+### Helyes használat:
+```php
+'permission_callback' => [$this, 'check_logged_in_user']
+```
+
+### A check függvény:
+```php
+public function check_logged_in_user() {
+    $user_id = PPV_User_Settings::get_ppv_user_id();
+    return !empty($user_id);
+}
+```
+
+**⚠️ Használj létező metódust!** Ne `check_user`, az nem létezik → 500 error!
+
 ## 📞 Kapcsolat / Megjegyzések
 
 - **Ügyfél nyelve**: Magyar
@@ -364,6 +418,6 @@ Ha új komponensben kell ikon, csak használd - már be van töltve!
 
 ---
 
-**Utolsó frissítés**: 2026-01-16
+**Utolsó frissítés**: 2026-01-17
 **Készítette**: Claude Code
 **Projekt**: PunktePass (Erepairshop/punktepass-code)
