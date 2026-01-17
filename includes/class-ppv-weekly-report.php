@@ -313,6 +313,145 @@ class PPV_Weekly_Report {
     }
 
     /**
+     * Get store features status for tips
+     */
+    private static function get_store_features($store_id) {
+        global $wpdb;
+
+        $store = $wpdb->get_row($wpdb->prepare("
+            SELECT vip_enabled, google_review_enabled, google_review_url,
+                   whatsapp_marketing_enabled, whatsapp_enabled,
+                   comeback_enabled, birthday_bonus_enabled
+            FROM {$wpdb->prefix}ppv_stores
+            WHERE id = %d
+        ", $store_id));
+
+        // Count active rewards
+        $rewards_count = (int) $wpdb->get_var($wpdb->prepare("
+            SELECT COUNT(*) FROM {$wpdb->prefix}ppv_rewards
+            WHERE store_id = %d AND active = 1
+        ", $store_id));
+
+        // Count scanners/employees
+        $scanner_count = (int) $wpdb->get_var($wpdb->prepare("
+            SELECT COUNT(*) FROM {$wpdb->prefix}ppv_users
+            WHERE vendor_store_id = %d AND user_type = 'scanner' AND active = 1
+        ", $store_id));
+
+        return [
+            'vip_enabled' => !empty($store->vip_enabled),
+            'google_review_enabled' => !empty($store->google_review_enabled) && !empty($store->google_review_url),
+            'whatsapp_marketing' => !empty($store->whatsapp_marketing_enabled),
+            'whatsapp_enabled' => !empty($store->whatsapp_enabled),
+            'comeback_enabled' => !empty($store->comeback_enabled),
+            'birthday_enabled' => !empty($store->birthday_bonus_enabled),
+            'rewards_count' => $rewards_count,
+            'scanner_count' => $scanner_count,
+        ];
+    }
+
+    /**
+     * Generate personalized tips based on store data and features
+     */
+    private static function generate_tips($stats, $features, $T) {
+        $tips = [];
+
+        // Tip 1: VIP not enabled
+        if (!$features['vip_enabled']) {
+            $tips[] = [
+                'icon' => '⭐',
+                'text' => $T['tip_vip'],
+                'priority' => 1
+            ];
+        }
+
+        // Tip 2: Low returning customer rate
+        if ($stats['returning_percent'] < 30 && $stats['unique_users'] >= 5) {
+            $tips[] = [
+                'icon' => '🔄',
+                'text' => $T['tip_loyalty'],
+                'priority' => 2
+            ];
+        }
+
+        // Tip 3: Google Review not set up
+        if (!$features['google_review_enabled']) {
+            $tips[] = [
+                'icon' => '⭐',
+                'text' => $T['tip_google_review'],
+                'priority' => 3
+            ];
+        }
+
+        // Tip 4: No rewards set up
+        if ($features['rewards_count'] == 0) {
+            $tips[] = [
+                'icon' => '🎁',
+                'text' => $T['tip_rewards'],
+                'priority' => 1
+            ];
+        }
+
+        // Tip 5: Few rewards (1-2)
+        if ($features['rewards_count'] > 0 && $features['rewards_count'] < 3) {
+            $tips[] = [
+                'icon' => '🎁',
+                'text' => $T['tip_more_rewards'],
+                'priority' => 4
+            ];
+        }
+
+        // Tip 6: WhatsApp not enabled
+        if (!$features['whatsapp_enabled']) {
+            $tips[] = [
+                'icon' => '💬',
+                'text' => $T['tip_whatsapp'],
+                'priority' => 5
+            ];
+        }
+
+        // Tip 7: Comeback campaign not enabled
+        if (!$features['comeback_enabled']) {
+            $tips[] = [
+                'icon' => '👋',
+                'text' => $T['tip_comeback'],
+                'priority' => 3
+            ];
+        }
+
+        // Tip 8: Birthday bonus not enabled
+        if (!$features['birthday_enabled']) {
+            $tips[] = [
+                'icon' => '🎂',
+                'text' => $T['tip_birthday'],
+                'priority' => 4
+            ];
+        }
+
+        // Tip 9: High returning rate - congratulate!
+        if ($stats['returning_percent'] >= 50 && $stats['unique_users'] >= 5) {
+            $tips[] = [
+                'icon' => '🏆',
+                'text' => sprintf($T['tip_great_loyalty'], $stats['returning_percent']),
+                'priority' => 0
+            ];
+        }
+
+        // Tip 8: Growth trend - congratulate!
+        if ($stats['trend'] >= 20) {
+            $tips[] = [
+                'icon' => '📈',
+                'text' => sprintf($T['tip_great_growth'], '+' . $stats['trend'] . '%'),
+                'priority' => 0
+            ];
+        }
+
+        // Sort by priority and limit to 2 tips
+        usort($tips, fn($a, $b) => $a['priority'] - $b['priority']);
+        return array_slice($tips, 0, 2);
+    }
+
+    /**
      * Build HTML email body
      */
     private static function build_email_body($store, $stats, $T) {
@@ -394,6 +533,22 @@ class PPV_Weekly_Report {
             $filiale_html .= '</table></div>';
         }
 
+        // Personalized tips section
+        $tips_html = '';
+        $features = self::get_store_features($store->id);
+        $tips = self::generate_tips($stats, $features, $T);
+        if (!empty($tips)) {
+            $tips_html = '<div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 10px; padding: 20px; margin-bottom: 20px;">
+                <h3 style="margin: 0 0 15px; font-size: 16px; color: #92400e;">💡 ' . $T['tips_title'] . '</h3>';
+            foreach ($tips as $tip) {
+                $tips_html .= '<div style="background: white; border-radius: 8px; padding: 12px; margin-bottom: 10px; display: flex; align-items: flex-start; gap: 10px;">
+                    <span style="font-size: 20px;">' . $tip['icon'] . '</span>
+                    <span style="color: #78350f; font-size: 14px;">' . $tip['text'] . '</span>
+                </div>';
+            }
+            $tips_html .= '</div>';
+        }
+
         $html = '
 <!DOCTYPE html>
 <html>
@@ -469,6 +624,8 @@ class PPV_Weekly_Report {
                 ' . $scanner_html . '
             </div>
 
+            ' . $tips_html . '
+
             <!-- Summary -->
             <div style="background: #f0fdf4; border-radius: 10px; padding: 15px; text-align: center;">
                 <p style="margin: 0; color: #166534;">
@@ -520,6 +677,17 @@ class PPV_Weekly_Report {
                 'busiest_day' => 'Aktivster Tag',
                 'scans_text' => 'Scans',
                 'days' => ['Sunday' => 'Sonntag', 'Monday' => 'Montag', 'Tuesday' => 'Dienstag', 'Wednesday' => 'Mittwoch', 'Thursday' => 'Donnerstag', 'Friday' => 'Freitag', 'Saturday' => 'Samstag'],
+                'tips_title' => 'Tipps für Sie',
+                'tip_vip' => 'Aktivieren Sie VIP-Stufen! Belohnen Sie Ihre treuesten Kunden mit Bonuspunkten.',
+                'tip_loyalty' => 'Ihre Stammkundenrate ist niedrig. Erstellen Sie attraktivere Prämien, um Kunden zurückzubringen!',
+                'tip_google_review' => 'Richten Sie automatische Google-Bewertungsanfragen ein, um Ihre Online-Präsenz zu stärken.',
+                'tip_rewards' => 'Erstellen Sie Prämien! Kunden sind motivierter, wenn sie wissen, wofür sie Punkte sammeln.',
+                'tip_more_rewards' => 'Fügen Sie mehr Prämien hinzu! Vielfalt hält Kunden engagiert.',
+                'tip_whatsapp' => 'Aktivieren Sie WhatsApp-Benachrichtigungen für bessere Kundenkommunikation.',
+                'tip_comeback' => 'Aktivieren Sie die Comeback-Kampagne! Belohnen Sie Kunden, die lange nicht da waren.',
+                'tip_birthday' => 'Aktivieren Sie den Geburtstags-Bonus! Überraschen Sie Kunden an ihrem Ehrentag.',
+                'tip_great_loyalty' => 'Fantastisch! %s%% Ihrer Kunden kehren zurück. Weiter so!',
+                'tip_great_growth' => 'Beeindruckend! %s Wachstum diese Woche. Ihr Geschäft boomt!',
             ],
             'hu' => [
                 'email_subject' => 'Heti jelentés - %s',
@@ -541,6 +709,17 @@ class PPV_Weekly_Report {
                 'busiest_day' => 'Legaktívabb nap',
                 'scans_text' => 'scan',
                 'days' => ['Sunday' => 'Vasárnap', 'Monday' => 'Hétfő', 'Tuesday' => 'Kedd', 'Wednesday' => 'Szerda', 'Thursday' => 'Csütörtök', 'Friday' => 'Péntek', 'Saturday' => 'Szombat'],
+                'tips_title' => 'Tippek Önnek',
+                'tip_vip' => 'Aktiváld a VIP szinteket! Jutalmazd meg a leghűségesebb vásárlóidat bónusz pontokkal.',
+                'tip_loyalty' => 'Alacsony a visszatérő vásárlók aránya. Készíts vonzóbb jutalmakat!',
+                'tip_google_review' => 'Állítsd be az automatikus Google értékelés kérést az online jelenlét erősítéséhez.',
+                'tip_rewards' => 'Hozz létre jutalmakat! A vásárlók motiváltabbak, ha tudják, miért gyűjtenek pontokat.',
+                'tip_more_rewards' => 'Adj hozzá több jutalmat! A változatosság fenntartja a vásárlók érdeklődését.',
+                'tip_whatsapp' => 'Aktiváld a WhatsApp értesítéseket a jobb ügyfélkommunikációért.',
+                'tip_comeback' => 'Aktiváld a Comeback kampányt! Jutalmazd a régóta távol lévő vásárlókat.',
+                'tip_birthday' => 'Aktiváld a születésnapi bónuszt! Lepd meg a vásárlókat a nagy napjukon.',
+                'tip_great_loyalty' => 'Fantasztikus! Vásárlóid %s%%-a visszatér. Így tovább!',
+                'tip_great_growth' => 'Lenyűgöző! %s növekedés ezen a héten. Az üzleted virágzik!',
             ],
             'ro' => [
                 'email_subject' => 'Raport săptămânal - %s',
@@ -562,6 +741,17 @@ class PPV_Weekly_Report {
                 'busiest_day' => 'Cea mai activă zi',
                 'scans_text' => 'scanări',
                 'days' => ['Sunday' => 'Duminică', 'Monday' => 'Luni', 'Tuesday' => 'Marți', 'Wednesday' => 'Miercuri', 'Thursday' => 'Joi', 'Friday' => 'Vineri', 'Saturday' => 'Sâmbătă'],
+                'tips_title' => 'Sfaturi pentru dumneavoastră',
+                'tip_vip' => 'Activați nivelurile VIP! Recompensați clienții fideli cu puncte bonus.',
+                'tip_loyalty' => 'Rata clienților fideli este scăzută. Creați recompense mai atractive!',
+                'tip_google_review' => 'Configurați solicitări automate de recenzii Google pentru a vă întări prezența online.',
+                'tip_rewards' => 'Creați recompense! Clienții sunt mai motivați când știu pentru ce colectează puncte.',
+                'tip_more_rewards' => 'Adăugați mai multe recompense! Varietatea menține clienții implicați.',
+                'tip_whatsapp' => 'Activați notificările WhatsApp pentru o comunicare mai bună cu clienții.',
+                'tip_comeback' => 'Activați campania Comeback! Recompensați clienții care nu au mai venit de mult.',
+                'tip_birthday' => 'Activați bonusul de ziua de naștere! Surprindeți clienții în ziua lor specială.',
+                'tip_great_loyalty' => 'Fantastic! %s%% din clienții dvs. revin. Continuați așa!',
+                'tip_great_growth' => 'Impresionant! %s creștere săptămâna aceasta. Afacerea dvs. prosperă!',
             ],
         ];
 
