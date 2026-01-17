@@ -291,7 +291,7 @@
         }
 
         deleteGalleryImage(imageUrl) {
-            if (!confirm(this.strings.confirm_delete_image || 'Bild löschen?')) return;
+            if (!confirm(this.strings.confirm_delete_image || 'Kép törlése?')) return;
 
             const formData = new FormData();
             formData.append('action', 'ppv_delete_gallery_image');
@@ -306,14 +306,14 @@
             .then(r => r.json())
             .then(data => {
                 if (data.success) {
-                    this.showAlert(this.strings.image_deleted || 'Bild gelöscht!', 'success');
+                    this.showAlert(this.strings.image_deleted || 'Kép törölve!', 'success');
                     location.reload();
                 } else {
-                    this.showAlert(data.data?.msg || this.strings.delete_error || 'Fehler beim Löschen', 'error');
+                    this.showAlert(data.data?.msg || this.strings.delete_error || 'Hiba a törlés során', 'error');
                 }
             })
             .catch(err => {
-                this.showAlert(this.strings.delete_error || 'Fehler beim Löschen', 'error');
+                this.showAlert(this.strings.delete_error || 'Hiba a törlés során', 'error');
             });
         }
 
@@ -1076,9 +1076,9 @@ function initGeocodingFeatures() {
       try {
         data = JSON.parse(responseText);
       } catch (e) {
-        alert('❌ ' + (L.php_error || 'PHP Fehler') + '!\n\n' + responseText);
+        alert('❌ ' + (L.php_error || 'PHP hiba') + '!\n\n' + responseText);
         geocodeBtn.disabled = false;
-        geocodeBtn.textContent = '🗺️ ' + (L.geocode_button || 'Koordinaten suchen (nach Adresse)');
+        geocodeBtn.textContent = '🗺️ ' + (L.geocode_button || 'Koordináták keresése (cím alapján)');
         return;
       }
 
@@ -1115,11 +1115,11 @@ function initGeocodingFeatures() {
       }
 
     } catch (error) {
-      alert('❌ ' + (L.geocode_error || 'Fehler bei der Koordinatensuche') + '!\n\n' + error.message);
+      alert('❌ ' + (L.geocode_error || 'Hiba a koordináták keresésekor') + '!\n\n' + error.message);
     }
 
     geocodeBtn.disabled = false;
-    geocodeBtn.textContent = '🗺️ ' + (L.geocode_button || 'Koordinaten suchen (nach Adresse)');
+    geocodeBtn.textContent = '🗺️ ' + (L.geocode_button || 'Koordináták keresése (cím alapján)');
   });
 }
 
