@@ -1984,5 +1984,15 @@ return [
     'from' => 'Von',
     'to' => 'Bis',
     'loading' => 'Laden...',
+
+    // ============================================================
+    // General Actions - Allgemeine Aktionen
+    // ============================================================
+    'created' => 'erstellt',
+    'updated' => 'aktualisiert',
+    'deleted' => 'gelöscht',
+    'csv_creating' => 'CSV wird erstellt...',
+    'csv_downloaded' => 'CSV heruntergeladen',
+    'error' => 'Fehler',
 ];
 

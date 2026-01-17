@@ -132,6 +132,11 @@ window.PPV_TRANSLATIONS = window.PPV_TRANSLATIONS || {
     points_unit: "Punkte",
     geo_denied_tip: "📍 Standort aktivieren für Entfernungen",
     load_more_stores: "Weitere Geschäfte laden",
+    qr_loaded: "QR geladen",
+    qr_min: "Min",
+    qr_offline_cached: "Offline - Gespeicherter QR-Code",
+    qr_offline_static: "Offline - Tages-QR (1x pro Geschäft)",
+    qr_offline_error: "Offline - Bitte einmal online laden",
   },
   hu: {
     welcome: "Üdv a PunktePassban",
@@ -196,6 +201,11 @@ window.PPV_TRANSLATIONS = window.PPV_TRANSLATIONS || {
     points_unit: "pont",
     geo_denied_tip: "📍 Engedélyezd a helymeghatározást a távolságokhoz",
     load_more_stores: "További üzletek betöltése",
+    qr_loaded: "QR betöltve",
+    qr_min: "perc",
+    qr_offline_cached: "Offline - Mentett QR-kód",
+    qr_offline_static: "Offline - Napi QR (üzletenként 1x)",
+    qr_offline_error: "Offline - Kérlek csatlakozz egyszer az internethez",
   },
   ro: {
     welcome: "Bun venit la PunktePass",
@@ -260,6 +270,11 @@ window.PPV_TRANSLATIONS = window.PPV_TRANSLATIONS || {
     points_unit: "puncte",
     geo_denied_tip: "📍 Activează locația pentru distanțe",
     load_more_stores: "Încarcă mai multe magazine",
+    qr_loaded: "QR încărcat",
+    qr_min: "min",
+    qr_offline_cached: "Offline - Cod QR salvat",
+    qr_offline_static: "Offline - QR zilnic (1x per magazin)",
+    qr_offline_error: "Offline - Te rugăm conectează-te o dată la internet",
   }
 };
 
@@ -970,7 +985,7 @@ async function initUserDashboard() {
         showQRStatus("✅ " + (T.qr_new_generated || "Neuer QR-Code (30 Min)"), "success");
       } else {
         const remainingMin = Math.floor(data.expires_in / 60);
-        showQRStatus(`✅ QR geladen (${remainingMin} Min)`, "success");
+        showQRStatus(`✅ ${T.qr_loaded || "QR geladen"} (${remainingMin} ${T.qr_min || "Min"})`, "success");
       }
 
 
@@ -994,7 +1009,7 @@ async function initUserDashboard() {
           if (qrLoading) qrLoading.style.display = "none";
           if (qrDisplay) qrDisplay.style.display = "block";
           startQRCountdown(cached.expires_at);
-          showQRStatus("📱 Offline - Gespeicherter QR-Code", "warning");
+          showQRStatus("📱 " + (T.qr_offline_cached || "Offline - Gespeicherter QR-Code"), "warning");
           return;
         }
       }
@@ -1016,14 +1031,14 @@ async function initUserDashboard() {
           const timerEl = document.getElementById("ppv-qr-timer");
           if (timerEl) timerEl.style.display = "none";
 
-          showQRStatus("📱 Offline - Tages-QR (1x pro Geschäft)", "warning");
+          showQRStatus("📱 " + (T.qr_offline_static || "Offline - Tages-QR (1x pro Geschäft)"), "warning");
           return;
         }
       }
 
       // No cache available at all
       if (qrLoading) qrLoading.style.display = "none";
-      showQRStatus("❌ Offline - Bitte einmal online laden", "error");
+      showQRStatus("❌ " + (T.qr_offline_error || "Offline - Bitte einmal online laden"), "error");
     }
   };
 

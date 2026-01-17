@@ -1966,4 +1966,14 @@ return [
     'from' => 'De la',
     'to' => 'Până la',
     'loading' => 'Se încarcă...',
+
+    // ============================================================
+    // General Actions - Acțiuni generale
+    // ============================================================
+    'created' => 'creat',
+    'updated' => 'actualizat',
+    'deleted' => 'șters',
+    'csv_creating' => 'Se creează CSV...',
+    'csv_downloaded' => 'CSV descărcat',
+    'error' => 'Eroare',
 ];

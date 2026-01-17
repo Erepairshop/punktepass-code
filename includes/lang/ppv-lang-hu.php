@@ -1961,4 +1961,14 @@ return [
     'from' => 'Kezdete',
     'to' => 'Vége',
     'loading' => 'Betöltés...',
+
+    // ============================================================
+    // General Actions - Általános műveletek
+    // ============================================================
+    'created' => 'létrehozva',
+    'updated' => 'frissítve',
+    'deleted' => 'törölve',
+    'csv_creating' => 'CSV létrehozása...',
+    'csv_downloaded' => 'CSV letöltve',
+    'error' => 'Hiba',
 ];
