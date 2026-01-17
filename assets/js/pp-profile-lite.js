@@ -188,6 +188,8 @@
                         // Clear fields
                         document.getElementById('ppv-new-email').value = '';
                         document.getElementById('ppv-confirm-email').value = '';
+                        // Reset hasChanges to prevent "unsaved changes" warning
+                        this.hasChanges = false;
                         // Reload to show new email
                         setTimeout(() => location.reload(), 1500);
                     } else {
