@@ -566,21 +566,42 @@ class PPV_Standalone_Admin {
             exit;
         }
 
-        // Meghosszabbítás: ha van subscription_expires_at, ahhoz adunk, ha nincs, mai naptól
-        $current_end = !empty($handler->subscription_expires_at) ? $handler->subscription_expires_at : date('Y-m-d');
-        $new_end = date('Y-m-d', strtotime($current_end . ' + ' . $days . ' days'));
+        // Determine which date field to extend based on subscription status
+        $is_trial = ($handler->subscription_status === 'trial');
 
-        $result = $wpdb->update(
-            $wpdb->prefix . 'ppv_stores',
-            ['subscription_expires_at' => $new_end],
-            ['id' => $handler_id],
-            ['%s'],
-            ['%d']
-        );
+        if ($is_trial) {
+            // Trial: extend trial_ends_at
+            $current_end = !empty($handler->trial_ends_at) ? $handler->trial_ends_at : date('Y-m-d');
+            $new_end = date('Y-m-d', strtotime($current_end . ' + ' . $days . ' days'));
+
+            $result = $wpdb->update(
+                $wpdb->prefix . 'ppv_stores',
+                ['trial_ends_at' => $new_end],
+                ['id' => $handler_id],
+                ['%s'],
+                ['%d']
+            );
+
+            $field_updated = 'trial_ends_at';
+        } else {
+            // Active: extend subscription_expires_at
+            $current_end = !empty($handler->subscription_expires_at) ? $handler->subscription_expires_at : date('Y-m-d');
+            $new_end = date('Y-m-d', strtotime($current_end . ' + ' . $days . ' days'));
+
+            $result = $wpdb->update(
+                $wpdb->prefix . 'ppv_stores',
+                ['subscription_expires_at' => $new_end],
+                ['id' => $handler_id],
+                ['%s'],
+                ['%d']
+            );
+
+            $field_updated = 'subscription_expires_at';
+        }
 
         if ($result !== false) {
             $admin_email = $_SESSION['ppv_admin_email'] ?? 'admin';
-            ppv_log("📅 [Admin Handler Extend] handler_id={$handler_id}, name={$handler->name}, days={$days}, new_end={$new_end}, by={$admin_email}");
+            ppv_log("📅 [Admin Handler Extend] handler_id={$handler_id}, name={$handler->name}, status={$handler->subscription_status}, field={$field_updated}, days={$days}, new_end={$new_end}, by={$admin_email}");
             wp_redirect('/admin/handlers?success=extended');
         } else {
             wp_redirect('/admin/handlers?error=Hiba a meghosszabbítás során');
@@ -1520,15 +1541,14 @@ class PPV_Standalone_Admin {
 
         // Suspicious scans (last 24 hours, unreviewed)
         $counts['suspicious'] = intval($wpdb->get_var(
-            "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_scans
-             WHERE is_suspicious = 1
-             AND reviewed_at IS NULL
+            "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_suspicious_scans
+             WHERE reviewed_at IS NULL
              AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)"
         ));
 
-        // Pending scans (waiting for confirmation)
+        // Pending redemptions (waiting for approval)
         $counts['pending'] = intval($wpdb->get_var(
-            "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_scans WHERE status = 'pending'"
+            "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_rewards_redeemed WHERE status = 'pending'"
         ));
 
         // Cache for 1 minute

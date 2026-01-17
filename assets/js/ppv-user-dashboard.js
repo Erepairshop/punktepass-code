@@ -104,13 +104,14 @@ window.PPV_TRANSLATIONS = window.PPV_TRANSLATIONS || {
     reward_label_date: "Datum:",
     reward_per_scan: "Pro Scan:",
     discount_percent_text: "% Rabatt",
-    discount_fixed_text: "€ Rabatt",
+    discount_fixed_text: "Rabatt",
     points_multiplier_text: "x Punkte",
-    fixed_text: "€ Bonus",
+    fixed_text: "Bonus",
     free_product_text: "Kostenloses Produkt",
     special_offer: "Speziales Angebot",
     err_already_scanned_today: "⚠️ Heute bereits gescannt",
     err_duplicate_scan: "⚠️ Bereits gescannt. Bitte warten.",
+    vacation_label: "Urlaub",
     vip_title: "VIP Boni",
     vip_fix_title: "Fixpunkte",
     vip_streak_title: "X. Scan",
@@ -131,6 +132,11 @@ window.PPV_TRANSLATIONS = window.PPV_TRANSLATIONS || {
     points_unit: "Punkte",
     geo_denied_tip: "📍 Standort aktivieren für Entfernungen",
     load_more_stores: "Weitere Geschäfte laden",
+    qr_loaded: "QR geladen",
+    qr_min: "Min",
+    qr_offline_cached: "Offline - Gespeicherter QR-Code",
+    qr_offline_static: "Offline - Tages-QR (1x pro Geschäft)",
+    qr_offline_error: "Offline - Bitte einmal online laden",
   },
   hu: {
     welcome: "Üdv a PunktePassban",
@@ -165,15 +171,16 @@ window.PPV_TRANSLATIONS = window.PPV_TRANSLATIONS || {
     reward_label_required: "Szükséges:",
     reward_label_reward: "Jutalom:",
     reward_label_date: "Dátum:",
-    reward_per_scan: "Per Scan:",
+    reward_per_scan: "Szkennelésenként:",
     discount_percent_text: "% engedmény",
-    discount_fixed_text: "€ engedmény",
+    discount_fixed_text: "engedmény",
     points_multiplier_text: "x Pontok",
-    fixed_text: "€ Bonus",
+    fixed_text: "Bónusz",
     free_product_text: "Ingyenes termék",
     special_offer: "Különleges ajánlat",
     err_already_scanned_today: "⚠️ Ma már beolvasva",
     err_duplicate_scan: "⚠️ Már beolvasva. Kérlek várj.",
+    vacation_label: "Szabadság",
     vip_title: "VIP Bónuszok",
     vip_fix_title: "Fix pont",
     vip_streak_title: "X. scan",
@@ -194,6 +201,11 @@ window.PPV_TRANSLATIONS = window.PPV_TRANSLATIONS || {
     points_unit: "pont",
     geo_denied_tip: "📍 Engedélyezd a helymeghatározást a távolságokhoz",
     load_more_stores: "További üzletek betöltése",
+    qr_loaded: "QR betöltve",
+    qr_min: "perc",
+    qr_offline_cached: "Offline - Mentett QR-kód",
+    qr_offline_static: "Offline - Napi QR (üzletenként 1x)",
+    qr_offline_error: "Offline - Kérlek csatlakozz egyszer az internethez",
   },
   ro: {
     welcome: "Bun venit la PunktePass",
@@ -228,15 +240,16 @@ window.PPV_TRANSLATIONS = window.PPV_TRANSLATIONS || {
     reward_label_required: "Necesar:",
     reward_label_reward: "Recompensă:",
     reward_label_date: "Dată:",
-    reward_per_scan: "Per Scan:",
+    reward_per_scan: "Per scanare:",
     discount_percent_text: "% Reducere",
-    discount_fixed_text: "€ Reducere",
+    discount_fixed_text: "Reducere",
     points_multiplier_text: "x Puncte",
-    fixed_text: "€ Bonus",
+    fixed_text: "Bonus",
     free_product_text: "Produs gratuit",
     special_offer: "Ofertă specială",
     err_already_scanned_today: "⚠️ Deja scanat astăzi",
     err_duplicate_scan: "⚠️ Deja scanat. Vă rugăm așteptați.",
+    vacation_label: "Concediu",
     vip_title: "Bonusuri VIP",
     vip_fix_title: "Puncte fixe",
     vip_streak_title: "Scan X",
@@ -257,6 +270,11 @@ window.PPV_TRANSLATIONS = window.PPV_TRANSLATIONS || {
     points_unit: "puncte",
     geo_denied_tip: "📍 Activează locația pentru distanțe",
     load_more_stores: "Încarcă mai multe magazine",
+    qr_loaded: "QR încărcat",
+    qr_min: "min",
+    qr_offline_cached: "Offline - Cod QR salvat",
+    qr_offline_static: "Offline - QR zilnic (1x per magazin)",
+    qr_offline_error: "Offline - Te rugăm conectează-te o dată la internet",
   }
 };
 
@@ -464,6 +482,14 @@ async function initUserDashboard() {
   const escapeHtml = (str = '') => {
     const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
     return String(str).replace(/[&<>"']/g, m => map[m]);
+  };
+
+  // Format vacation date to local format (YYYY-MM-DD → DD.MM.)
+  const formatVacationDate = (dateStr) => {
+    if (!dateStr) return '';
+    const parts = dateStr.split('-');
+    if (parts.length !== 3) return dateStr;
+    return `${parts[2]}.${parts[1]}.`;
   };
 
   // ✅ UPDATE GLOBAL HEADER POINTS
@@ -959,7 +985,7 @@ async function initUserDashboard() {
         showQRStatus("✅ " + (T.qr_new_generated || "Neuer QR-Code (30 Min)"), "success");
       } else {
         const remainingMin = Math.floor(data.expires_in / 60);
-        showQRStatus(`✅ QR geladen (${remainingMin} Min)`, "success");
+        showQRStatus(`✅ ${T.qr_loaded || "QR geladen"} (${remainingMin} ${T.qr_min || "Min"})`, "success");
       }
 
 
@@ -983,7 +1009,7 @@ async function initUserDashboard() {
           if (qrLoading) qrLoading.style.display = "none";
           if (qrDisplay) qrDisplay.style.display = "block";
           startQRCountdown(cached.expires_at);
-          showQRStatus("📱 Offline - Gespeicherter QR-Code", "warning");
+          showQRStatus("📱 " + (T.qr_offline_cached || "Offline - Gespeicherter QR-Code"), "warning");
           return;
         }
       }
@@ -1005,14 +1031,14 @@ async function initUserDashboard() {
           const timerEl = document.getElementById("ppv-qr-timer");
           if (timerEl) timerEl.style.display = "none";
 
-          showQRStatus("📱 Offline - Tages-QR (1x pro Geschäft)", "warning");
+          showQRStatus("📱 " + (T.qr_offline_static || "Offline - Tages-QR (1x pro Geschäft)"), "warning");
           return;
         }
       }
 
       // No cache available at all
       if (qrLoading) qrLoading.style.display = "none";
-      showQRStatus("❌ Offline - Bitte einmal online laden", "error");
+      showQRStatus("❌ " + (T.qr_offline_error || "Offline - Bitte einmal online laden"), "error");
     }
   };
 
@@ -1388,6 +1414,10 @@ async function initUserDashboard() {
       ? `<span class="ppv-hours"><i class="ri-time-line"></i> ${escapeHtml(store.open_hours_today)}</span>`
       : '';
 
+    // Currency symbol based on store country
+    const currencyMap = { 'DE': '€', 'HU': 'Ft', 'RO': 'RON' };
+    const currencySymbol = currencyMap[store.country] || '€';
+
     // ✅ REWARDS - FULLY TRANSLATED - MODERN ICONS ✅
     const rewardsHTML = store.rewards && store.rewards.length > 0 ? `
       <div class="ppv-store-rewards">
@@ -1397,12 +1427,19 @@ async function initUserDashboard() {
         <div class="ppv-rewards-list">
           ${store.rewards.map((r, idx) => {
             let rewardText = '';
+            // Format number - remove excessive decimals
+            const formattedValue = parseFloat(r.action_value).toFixed(0);
             if (r.action_type === 'discount_percent') {
-              rewardText = `${r.action_value}${T.discount_percent_text}`;
+              rewardText = `${formattedValue}${T.discount_percent_text}`;
             } else if (r.action_type === 'discount_fixed') {
-              rewardText = `€${r.action_value} ${T.discount_fixed_text}`;
+              // Currency position: € before, Ft/RON after
+              if (currencySymbol === '€') {
+                rewardText = `${currencySymbol}${formattedValue} ${T.discount_fixed_text}`;
+              } else {
+                rewardText = `${formattedValue} ${currencySymbol} ${T.discount_fixed_text}`;
+              }
             } else {
-              rewardText = `${r.action_value} ${r.currency || 'pont'}`;
+              rewardText = `${formattedValue} ${r.currency || 'pont'}`;
             }
 
             // Format end_date if available
@@ -1596,19 +1633,6 @@ async function initUserDashboard() {
         }
       }
 
-      // 3️⃣ DAILY BÓNUSZ
-      if (vip.daily && vip.daily.enabled) {
-        rows.push(`
-          <tr class="ppv-vip-table-row">
-            <td class="ppv-vip-label-cell"><i class="ri-sun-line"></i> ${T.vip_daily_title}</td>
-            <td class="ppv-vip-cell bronze">+${vip.daily.bronze}</td>
-            <td class="ppv-vip-cell silver">+${vip.daily.silver}</td>
-            <td class="ppv-vip-cell gold">+${vip.daily.gold}</td>
-            <td class="ppv-vip-cell platinum">+${vip.daily.platinum}</td>
-          </tr>
-        `);
-      }
-
       return rows.length ? `
         <div class="ppv-store-vip-table">
           <div class="ppv-vip-table-title">
@@ -1660,6 +1684,13 @@ async function initUserDashboard() {
             <i class="ri-arrow-down-s-line"></i>
           </button>
         </div>
+
+        ${store.is_on_vacation ? `
+          <div class="ppv-store-vacation-banner">
+            <i class="ri-suitcase-2-fill"></i>
+            <span>${T.vacation_label || 'Szabadság'}: ${formatVacationDate(store.vacation_from)} - ${formatVacationDate(store.vacation_to)}${store.vacation_message ? ' • ' + escapeHtml(store.vacation_message) : ''}</span>
+          </div>
+        ` : ''}
 
         <div class="ppv-store-details">
           ${galleryHTML}

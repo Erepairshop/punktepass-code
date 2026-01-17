@@ -1,7 +1,7 @@
 <?php
 /**
  * PunktePass Standalone Admin - Handler Management
- * Two tabs: 1) Handler Overview, 2) User to Handler Conversion
+ * Three tabs: 1) Handler Overview, 2) User to Handler Conversion, 3) Handler Linking
  */
 
 // Must be accessed via WordPress
@@ -9,6 +9,122 @@ if (!defined('ABSPATH')) exit;
 
 // Security: Session-based auth is already handled by PPV_Standalone_Admin::process_admin_request()
 global $wpdb;
+
+// ============================================================
+// DATABASE: Ensure linked_to_store_id column exists
+// ============================================================
+$column_exists = $wpdb->get_var("SHOW COLUMNS FROM {$wpdb->prefix}ppv_stores LIKE 'linked_to_store_id'");
+if (!$column_exists) {
+    $wpdb->query("ALTER TABLE {$wpdb->prefix}ppv_stores ADD COLUMN linked_to_store_id INT UNSIGNED DEFAULT NULL");
+    $wpdb->query("CREATE INDEX idx_linked_to_store ON {$wpdb->prefix}ppv_stores (linked_to_store_id)");
+    ppv_log("✅ [PPV_Admin] Added linked_to_store_id column to ppv_stores table");
+}
+
+// ============================================================
+// TAB 3: HANDLER LINKING - FORM SUBMISSIONS
+// ============================================================
+
+// Link handler to main handler
+if (isset($_POST['link_to_main']) && check_admin_referer('ppv_link_handlers', 'ppv_link_nonce')) {
+    $main_handler_id = intval($_POST['main_handler_id'] ?? 0);
+    $linked_handler_id = intval($_POST['linked_handler_id'] ?? 0);
+
+    if (!$main_handler_id || !$linked_handler_id) {
+        $link_error = '⚠️ Válaszd ki a fő händlert és a hozzákapcsolandó händlert!';
+    } elseif ($main_handler_id === $linked_handler_id) {
+        $link_error = '⚠️ A fő händler és a hozzákapcsolandó händler nem lehet ugyanaz!';
+    } else {
+        // Check if the linked handler is already linked somewhere
+        $already_linked = $wpdb->get_var($wpdb->prepare(
+            "SELECT linked_to_store_id FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+            $linked_handler_id
+        ));
+
+        if ($already_linked) {
+            $link_error = '⚠️ Ez a händler már hozzá van kapcsolva egy másik fő händlerhez! Először válaszd le.';
+        } else {
+            // Get handler names for confirmation message
+            $main_handler = $wpdb->get_row($wpdb->prepare(
+                "SELECT name, email FROM {$wpdb->prefix}ppv_stores WHERE id = %d", $main_handler_id
+            ));
+            $linked_handler = $wpdb->get_row($wpdb->prepare(
+                "SELECT name, email FROM {$wpdb->prefix}ppv_stores WHERE id = %d", $linked_handler_id
+            ));
+
+            // Link the handler
+            $wpdb->update(
+                "{$wpdb->prefix}ppv_stores",
+                ['linked_to_store_id' => $main_handler_id],
+                ['id' => $linked_handler_id],
+                ['%d'],
+                ['%d']
+            );
+
+            // Create notifications for both parties
+            if (class_exists('PPV_Handler_Notifications')) {
+                // Notification for the main handler (someone was linked to them)
+                PPV_Handler_Notifications::create_link_notification($main_handler_id, $linked_handler_id, true);
+                // Notification for the linked handler (they were linked to main)
+                PPV_Handler_Notifications::create_link_notification($linked_handler_id, $main_handler_id, false);
+            }
+
+            $link_success = '✅ <strong>' . esc_html($linked_handler->name) . '</strong> mostantól a <strong>' . esc_html($main_handler->name) . '</strong> fiókját látja!';
+            ppv_log("✅ [PPV_Admin] Linked handler #{$linked_handler_id} ({$linked_handler->name}) → main handler #{$main_handler_id} ({$main_handler->name})");
+        }
+    }
+}
+
+// Unlink a handler
+if (isset($_POST['unlink_handler']) && check_admin_referer('ppv_unlink_handler', 'ppv_unlink_nonce')) {
+    $handler_id = intval($_POST['handler_id']);
+
+    // Get the linked_to_store_id before unlinking (for notification)
+    $was_linked_to = $wpdb->get_var($wpdb->prepare(
+        "SELECT linked_to_store_id FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+        $handler_id
+    ));
+
+    $wpdb->update(
+        "{$wpdb->prefix}ppv_stores",
+        ['linked_to_store_id' => null],
+        ['id' => $handler_id],
+        ['%s'],
+        ['%d']
+    );
+
+    // Create unlink notification for the handler
+    if ($was_linked_to && class_exists('PPV_Handler_Notifications')) {
+        PPV_Handler_Notifications::create_unlink_notification($handler_id, $was_linked_to);
+    }
+
+    $link_success = '✅ Händler sikeresen leválasztva! Most már a saját fiókját látja.';
+    ppv_log("✅ [PPV_Admin] Unlinked handler #{$handler_id} - now sees own store");
+}
+
+// Get main handlers with their linked handlers
+$main_handlers_with_links = $wpdb->get_results("
+    SELECT
+        m.id as main_id,
+        m.name as main_name,
+        m.email as main_email,
+        m.company_name as main_company,
+        m.city as main_city,
+        COUNT(l.id) as linked_count
+    FROM {$wpdb->prefix}ppv_stores m
+    INNER JOIN {$wpdb->prefix}ppv_stores l ON l.linked_to_store_id = m.id
+    WHERE (m.parent_store_id IS NULL OR m.parent_store_id = 0)
+    GROUP BY m.id
+    ORDER BY m.name ASC
+");
+
+// Get all linked handlers for display
+$linked_handlers_list = $wpdb->get_results("
+    SELECT s.id, s.name, s.email, s.city, m.id as main_id, m.name as main_name, m.email as main_email
+    FROM {$wpdb->prefix}ppv_stores s
+    INNER JOIN {$wpdb->prefix}ppv_stores m ON s.linked_to_store_id = m.id
+    WHERE s.linked_to_store_id IS NOT NULL
+    ORDER BY m.name, s.name
+");
 
 // ============================================================
 // TAB 1: HANDLER OVERVIEW DATA
@@ -682,8 +798,13 @@ function ppv_format_device_info_json($device_info_json) {
 </head>
 <body>
     <div class="container">
-        <h1>🏪 Handler Management</h1>
-        <p class="subtitle">Handler overview és user-to-handler konverzió</p>
+        <!-- Vissza gomb -->
+        <a href="?ppv_admin=1" style="display: inline-flex; align-items: center; gap: 8px; color: #00d4ff; text-decoration: none; margin-bottom: 20px; font-size: 14px;">
+            <i class="ri-arrow-left-line"></i> Vissza az admin főoldalra
+        </a>
+
+        <h1>🏪 Händler kezelés</h1>
+        <p class="subtitle">Händler áttekintés, konverzió és összekapcsolás</p>
 
         <?php if (isset($success_message)): ?>
             <div class="alert alert-success">
@@ -697,13 +818,28 @@ function ppv_format_device_info_json($device_info_json) {
             </div>
         <?php endif; ?>
 
+        <?php if (isset($link_success)): ?>
+            <div class="alert alert-success">
+                <?php echo $link_success; ?>
+            </div>
+        <?php endif; ?>
+
+        <?php if (isset($link_error)): ?>
+            <div class="alert alert-error">
+                <?php echo $link_error; ?>
+            </div>
+        <?php endif; ?>
+
         <!-- Tab Navigation -->
         <div class="tab-navigation">
             <button class="tab-button active" onclick="switchTab('overview')">
-                <i class="ri-store-2-line"></i> Handler Overview
+                <i class="ri-store-2-line"></i> Áttekintés
             </button>
             <button class="tab-button" onclick="switchTab('conversion')">
-                <i class="ri-user-add-line"></i> User to Handler
+                <i class="ri-user-add-line"></i> User → Händler
+            </button>
+            <button class="tab-button" onclick="switchTab('linking')">
+                <i class="ri-link"></i> Összekapcsolás
             </button>
         </div>
 
@@ -1023,6 +1159,122 @@ function ppv_format_device_info_json($device_info_json) {
                 <?php endif; ?>
             </div>
         </div>
+
+        <!-- ============================================================ -->
+        <!-- TAB 3: HANDLER LINKING -->
+        <!-- ============================================================ -->
+        <div id="tab-linking" class="tab-content">
+            <!-- Existing Links -->
+            <div class="card" style="margin-bottom: 25px;">
+                <h2><i class="ri-group-line"></i> Összekapcsolt händlerek (<?php echo count($linked_handlers_list); ?>)</h2>
+
+                <?php if (empty($linked_handlers_list)): ?>
+                    <p style="text-align: center; color: #94a3b8; padding: 30px;">
+                        <i class="ri-link-unlink" style="font-size: 40px; display: block; margin-bottom: 10px; opacity: 0.5;"></i>
+                        Még nincs összekapcsolt händler.
+                    </p>
+                <?php else: ?>
+                    <div style="display: grid; gap: 10px;">
+                        <?php
+                        $current_main = null;
+                        foreach ($linked_handlers_list as $lh):
+                            // Group header for main handler
+                            if ($current_main !== $lh->main_id):
+                                if ($current_main !== null) echo '</div>'; // Close previous group
+                                $current_main = $lh->main_id;
+                        ?>
+                            <div style="background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); border-radius: 12px; padding: 15px; margin-top: 10px;">
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                                    <i class="ri-vip-crown-2-fill" style="color: #fbbf24; font-size: 20px;"></i>
+                                    <div>
+                                        <strong style="color: #34d399; font-size: 14px;">Fő händler:</strong>
+                                        <span style="color: #fff; font-weight: 600;"><?php echo esc_html($lh->main_name); ?></span>
+                                        <span style="color: #888; font-size: 12px; margin-left: 8px;"><?php echo esc_html($lh->main_email); ?></span>
+                                    </div>
+                                </div>
+                                <div style="margin-left: 30px; font-size: 12px; color: #888; margin-bottom: 8px;">
+                                    <i class="ri-arrow-right-down-line"></i> Az alábbi händlerek a fő händler fiókját látják:
+                                </div>
+                        <?php endif; ?>
+
+                            <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2); padding: 10px 15px; border-radius: 8px; margin-left: 30px;">
+                                <div>
+                                    <strong style="color: #fff;"><?php echo esc_html($lh->name); ?></strong>
+                                    <div style="color: #00d4ff; font-size: 12px;"><?php echo esc_html($lh->email); ?></div>
+                                    <?php if ($lh->city): ?>
+                                        <div style="color: #888; font-size: 11px;"><i class="ri-map-pin-line"></i> <?php echo esc_html($lh->city); ?></div>
+                                    <?php endif; ?>
+                                </div>
+                                <form method="POST" style="margin: 0;" onsubmit="return confirm('Leválasztod? Ezután a saját fiókját fogja látni.');">
+                                    <?php wp_nonce_field('ppv_unlink_handler', 'ppv_unlink_nonce'); ?>
+                                    <input type="hidden" name="handler_id" value="<?php echo $lh->id; ?>">
+                                    <button type="submit" name="unlink_handler" class="btn" style="background: rgba(244,67,54,0.2); color: #f87171; border: 1px solid rgba(244,67,54,0.3); padding: 6px 12px; font-size: 12px;">
+                                        <i class="ri-link-unlink"></i> Leválaszt
+                                    </button>
+                                </form>
+                            </div>
+
+                        <?php endforeach; ?>
+                        <?php if ($current_main !== null) echo '</div>'; // Close last group ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+            <!-- Link New Handler -->
+            <div class="card">
+                <h2><i class="ri-link"></i> Händler hozzákapcsolása fő händlerhez</h2>
+                <p style="color: #94a3b8; margin-bottom: 20px;">
+                    Válaszd ki a <strong>fő händlert</strong> (akinek a fiókját látni fogják), majd a <strong>hozzákapcsolandó händlert</strong>.
+                </p>
+
+                <form method="POST" id="linkForm">
+                    <?php wp_nonce_field('ppv_link_handlers', 'ppv_link_nonce'); ?>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                        <!-- Main Handler Selection -->
+                        <div>
+                            <label style="display: block; color: #34d399; font-weight: 600; margin-bottom: 10px;">
+                                <i class="ri-vip-crown-2-fill" style="color: #fbbf24;"></i> Fő händler (akinek a fiókját látják)
+                            </label>
+                            <select name="main_handler_id" id="mainHandlerSelect" required
+                                    style="width: 100%; padding: 12px 15px; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); border-radius: 10px; color: #fff; font-size: 14px;">
+                                <option value="">-- Válassz fő händlert --</option>
+                                <?php foreach ($handlers_overview as $h): ?>
+                                    <option value="<?php echo $h->id; ?>"><?php echo esc_html($h->name); ?> (<?php echo esc_html($h->email ?? 'nincs email'); ?>)</option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <!-- Linked Handler Selection -->
+                        <div>
+                            <label style="display: block; color: #00d4ff; font-weight: 600; margin-bottom: 10px;">
+                                <i class="ri-user-add-line"></i> Hozzákapcsolandó händler
+                            </label>
+                            <select name="linked_handler_id" id="linkedHandlerSelect" required
+                                    style="width: 100%; padding: 12px 15px; background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.3); border-radius: 10px; color: #fff; font-size: 14px;">
+                                <option value="">-- Válassz händlert --</option>
+                                <?php foreach ($handlers_overview as $h):
+                                    $is_linked = !empty($h->linked_to_store_id);
+                                    if ($is_linked) continue; // Don't show already linked handlers
+                                ?>
+                                    <option value="<?php echo $h->id; ?>"><?php echo esc_html($h->name); ?> (<?php echo esc_html($h->email ?? 'nincs email'); ?>)</option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.3); border-radius: 10px; padding: 15px; margin-bottom: 20px;">
+                        <p style="margin: 0; color: #fbbf24; font-size: 13px;">
+                            <i class="ri-information-line"></i> <strong>Fontos:</strong> A hozzákapcsolt händler a fő händler store-jait, filiáléit és statisztikáit fogja látni, nem a sajátját!
+                        </p>
+                    </div>
+
+                    <button type="submit" name="link_to_main" class="btn btn-primary">
+                        <i class="ri-link"></i> Összekapcsolás
+                    </button>
+                </form>
+            </div>
+        </div>
     </div>
 
     <!-- Handler Details Modal -->
@@ -1238,7 +1490,64 @@ function ppv_format_device_info_json($device_info_json) {
             if (document.getElementById('handlerSearch')) {
                 filterHandlers();
             }
+            // Initialize link handler checkboxes
+            initLinkHandlers();
         });
+
+        // ============================================================
+        // HANDLER LINKING FUNCTIONS
+        // ============================================================
+
+        function filterLinkHandlers() {
+            const searchValue = document.getElementById('linkHandlerSearch').value.toLowerCase();
+            const items = document.querySelectorAll('.link-handler-item');
+
+            items.forEach(item => {
+                const name = item.dataset.name || '';
+                const email = item.dataset.email || '';
+                const city = item.dataset.city || '';
+
+                const matches = name.includes(searchValue) || email.includes(searchValue) || city.includes(searchValue);
+                item.style.display = matches ? 'flex' : 'none';
+            });
+        }
+
+        function initLinkHandlers() {
+            const checkboxes = document.querySelectorAll('#linkHandlerList input[type="checkbox"]');
+            const submitBtn = document.getElementById('linkSubmitBtn');
+            const countSpan = document.getElementById('selectedCount');
+
+            if (!checkboxes.length) return;
+
+            checkboxes.forEach(cb => {
+                cb.addEventListener('change', function() {
+                    const checked = document.querySelectorAll('#linkHandlerList input[type="checkbox"]:checked:not(:disabled)');
+                    const count = checked.length;
+
+                    countSpan.textContent = count + ' händler kiválasztva';
+
+                    if (count >= 2) {
+                        submitBtn.disabled = false;
+                        submitBtn.style.opacity = '1';
+                    } else {
+                        submitBtn.disabled = true;
+                        submitBtn.style.opacity = '0.5';
+                    }
+                });
+            });
+
+            // Style for hover effect
+            document.querySelectorAll('.link-handler-item').forEach(item => {
+                item.addEventListener('mouseenter', function() {
+                    this.style.borderColor = 'rgba(0,212,255,0.3)';
+                    this.style.background = 'rgba(0,212,255,0.05)';
+                });
+                item.addEventListener('mouseleave', function() {
+                    this.style.borderColor = 'rgba(255,255,255,0.08)';
+                    this.style.background = 'rgba(255,255,255,0.03)';
+                });
+            });
+        }
 
         // Handler modal
         let currentHandler = null;

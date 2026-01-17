@@ -61,13 +61,7 @@ class PPV_VIP_Settings {
             time()
         );
 
-        // Remix Icons
-        wp_enqueue_style(
-            'remix-icons',
-            'https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css',
-            [],
-            '3.5.0'
-        );
+        // RemixIcons loaded globally in punktepass.php
 
         // JS
         wp_enqueue_script(
@@ -189,8 +183,7 @@ class PPV_VIP_Settings {
             "SELECT
                 vip_fix_enabled, vip_fix_bronze, vip_fix_silver, vip_fix_gold, vip_fix_platinum,
                 vip_streak_enabled, vip_streak_count, vip_streak_type,
-                vip_streak_bronze, vip_streak_silver, vip_streak_gold, vip_streak_platinum,
-                vip_daily_enabled, vip_daily_bronze, vip_daily_silver, vip_daily_gold, vip_daily_platinum
+                vip_streak_bronze, vip_streak_silver, vip_streak_gold, vip_streak_platinum
              FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
             $store_id
         ));
@@ -209,7 +202,7 @@ class PPV_VIP_Settings {
                 'vip_fix_gold' => intval($store->vip_fix_gold ?? 3),
                 'vip_fix_platinum' => intval($store->vip_fix_platinum ?? 5),
 
-                // 3. Streak bonus (every Xth scan)
+                // 2. Streak bonus (every Xth scan)
                 'vip_streak_enabled' => (bool) ($store->vip_streak_enabled ?? 0),
                 'vip_streak_count' => intval($store->vip_streak_count ?? 10),
                 'vip_streak_type' => $store->vip_streak_type ?? 'fixed',
@@ -217,13 +210,6 @@ class PPV_VIP_Settings {
                 'vip_streak_silver' => intval($store->vip_streak_silver ?? 2),
                 'vip_streak_gold' => intval($store->vip_streak_gold ?? 3),
                 'vip_streak_platinum' => intval($store->vip_streak_platinum ?? 5),
-
-                // 4. Daily first scan bonus
-                'vip_daily_enabled' => (bool) ($store->vip_daily_enabled ?? 0),
-                'vip_daily_bronze' => intval($store->vip_daily_bronze ?? 5),
-                'vip_daily_silver' => intval($store->vip_daily_silver ?? 10),
-                'vip_daily_gold' => intval($store->vip_daily_gold ?? 20),
-                'vip_daily_platinum' => intval($store->vip_daily_platinum ?? 30),
             ]
         ], 200);
     }
@@ -263,7 +249,7 @@ class PPV_VIP_Settings {
         $fix_gold = $getInt('vip_fix_gold', 3, 0, 1000);
         $fix_platinum = $getInt('vip_fix_platinum', 5, 0, 1000);
 
-        // 3. Streak bonus values
+        // 2. Streak bonus values
         $streak_enabled = (bool) $request->get_param('vip_streak_enabled');
         $streak_count = $getInt('vip_streak_count', 10, 2, 100);
         $streak_type = sanitize_text_field($request->get_param('vip_streak_type') ?? 'fixed');
@@ -275,30 +261,20 @@ class PPV_VIP_Settings {
         $streak_gold = $getInt('vip_streak_gold', 3, 0, 1000);
         $streak_platinum = $getInt('vip_streak_platinum', 5, 0, 1000);
 
-        // 4. Daily first scan bonus values
-        $daily_enabled = (bool) $request->get_param('vip_daily_enabled');
-        $daily_bronze = $getInt('vip_daily_bronze', 5, 0, 1000);
-        $daily_silver = $getInt('vip_daily_silver', 10, 0, 1000);
-        $daily_gold = $getInt('vip_daily_gold', 20, 0, 1000);
-        $daily_platinum = $getInt('vip_daily_platinum', 30, 0, 1000);
-
         // Validation: Bronze ≤ Silver ≤ Gold ≤ Platinum for all enabled bonus types
         $errors = [];
         $error_messages = [
             'de' => [
                 'fix' => 'Fixpunkte-Bonus: Die Werte müssen aufsteigend sein (Bronze ≤ Silber ≤ Gold ≤ Platin)',
                 'streak' => 'X. Scan Bonus: Die Werte müssen aufsteigend sein (Bronze ≤ Silber ≤ Gold ≤ Platin)',
-                'daily' => 'Erster Scan: Die Werte müssen aufsteigend sein (Bronze ≤ Silber ≤ Gold ≤ Platin)',
             ],
             'hu' => [
                 'fix' => 'Fix pont bónusz: Az értékeknek növekvő sorrendben kell lenniük (Bronz ≤ Ezüst ≤ Arany ≤ Platina)',
                 'streak' => 'X. scan bónusz: Az értékeknek növekvő sorrendben kell lenniük (Bronz ≤ Ezüst ≤ Arany ≤ Platina)',
-                'daily' => 'Első scan: Az értékeknek növekvő sorrendben kell lenniük (Bronz ≤ Ezüst ≤ Arany ≤ Platina)',
             ],
             'ro' => [
                 'fix' => 'Bonus puncte fixe: Valorile trebuie să fie în ordine crescătoare (Bronz ≤ Argint ≤ Aur ≤ Platină)',
                 'streak' => 'Bonus scanare X: Valorile trebuie să fie în ordine crescătoare (Bronz ≤ Argint ≤ Aur ≤ Platină)',
-                'daily' => 'Prima scanare: Valorile trebuie să fie în ordine crescătoare (Bronz ≤ Argint ≤ Aur ≤ Platină)',
             ],
         ];
         $err = $error_messages[$lang] ?? $error_messages['de'];
@@ -309,9 +285,6 @@ class PPV_VIP_Settings {
         }
         if ($streak_enabled && $streak_type === 'fixed' && !($streak_bronze <= $streak_silver && $streak_silver <= $streak_gold && $streak_gold <= $streak_platinum)) {
             $errors[] = $err['streak'];
-        }
-        if ($daily_enabled && !($daily_bronze <= $daily_silver && $daily_silver <= $daily_gold && $daily_gold <= $daily_platinum)) {
-            $errors[] = $err['daily'];
         }
 
         if (!empty($errors)) {
@@ -340,15 +313,9 @@ class PPV_VIP_Settings {
                 'vip_streak_silver' => $streak_silver,
                 'vip_streak_gold' => $streak_gold,
                 'vip_streak_platinum' => $streak_platinum,
-                // 3. Daily
-                'vip_daily_enabled' => $daily_enabled ? 1 : 0,
-                'vip_daily_bronze' => $daily_bronze,
-                'vip_daily_silver' => $daily_silver,
-                'vip_daily_gold' => $daily_gold,
-                'vip_daily_platinum' => $daily_platinum,
             ],
             ['id' => $store_id],
-            ['%d', '%d', '%d', '%d', '%d', '%d', '%d', '%s', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d'],
+            ['%d', '%d', '%d', '%d', '%d', '%d', '%d', '%s', '%d', '%d', '%d', '%d'],
             ['%d']
         );
 
@@ -392,10 +359,10 @@ class PPV_VIP_Settings {
 
                 // How it works
                 'how_it_works' => 'So funktioniert\'s',
-                'how_step1' => 'Kunden sammeln Punkte durch QR-Code Scans bei allen teilnehmenden PunktePass-Geschäften',
-                'how_step2' => 'Das VIP-Level basiert auf den Gesamtpunkten aus allen Geschäften (Bronze ab 100, Silber ab 500, Gold ab 1000, Platin ab 2000)',
+                'how_step1' => 'Kunden sammeln Scans durch QR-Code Scans bei allen teilnehmenden PunktePass-Geschäften',
+                'how_step2' => 'Das VIP-Level basiert auf der Anzahl der Scans (Bronze ab 25, Silber ab 50, Gold ab 75, Platin ab 100 Scans)',
                 'how_step3' => 'Die hier eingestellten Boni gelten, wenn VIP-Kunden bei dir scannen – höheres Level = mehr Bonuspunkte!',
-                'how_step4' => 'Du kannst verschiedene Bonus-Typen kombinieren: Fixpunkte pro Scan, Streak-Bonus (z.B. jeder 10. Scan) und Tagesbonus',
+                'how_step4' => 'Du kannst verschiedene Bonus-Typen kombinieren: Fixpunkte pro Scan und Streak-Bonus (z.B. jeder 10. Scan)',
                 'bronze_label' => 'Bronze',
                 'silver_label' => 'Silber',
                 'gold_label' => 'Gold',
@@ -417,21 +384,12 @@ class PPV_VIP_Settings {
                 'streak_type_double' => 'Doppelt',
                 'streak_type_triple' => 'Dreifach',
 
-                'daily_title' => 'Erster Scan',
-                'daily_desc' => 'Einmaliger Bonus beim ersten Besuch im Geschäft',
-                'daily_suffix' => ' Punkte',
-
-                // Preview
-                'preview_title' => 'Live-Vorschau',
-                'preview_scenario' => 'Szenario: 100 Punkte Scan, 10. Besuch, erster Besuch im Geschäft',
-                'preview_base' => 'Basis-Punkte',
-                'preview_fix' => 'Fixpunkte',
-                'preview_streak' => 'X. Scan Bonus',
-                'preview_daily' => 'Erster Scan',
-                'preview_total' => 'Gesamt',
-
                 // Validation
                 'validation_error' => 'Die Werte müssen aufsteigend sein: Bronze ≤ Silber ≤ Gold ≤ Platin',
+
+                // Toggle
+                'toggle_on' => 'AN',
+                'toggle_off' => 'AUS',
             ],
             'hu' => [
                 'title' => 'VIP Bónusz Pontok',
@@ -440,10 +398,10 @@ class PPV_VIP_Settings {
 
                 // How it works
                 'how_it_works' => 'Így működik',
-                'how_step1' => 'A vásárlók pontokat gyűjtenek QR-kód beolvasással az összes résztvevő PunktePass üzletben',
-                'how_step2' => 'A VIP szint az összes üzletben gyűjtött pontok alapján alakul (Bronz 100-tól, Ezüst 500-tól, Arany 1000-től, Platina 2000-től)',
+                'how_step1' => 'A vásárlók scaneléseket gyűjtenek QR-kód beolvasással az összes résztvevő PunktePass üzletben',
+                'how_step2' => 'A VIP szint a scanelések száma alapján alakul (Bronz 25-től, Ezüst 50-től, Arany 75-től, Platina 100-tól)',
                 'how_step3' => 'Az itt beállított bónuszok akkor érvényesek, amikor VIP vásárlók nálad scanelnek – magasabb szint = több bónuszpont!',
-                'how_step4' => 'Kombinálhatod a különböző bónusz típusokat: fix pont scanelésenként, streak bónusz (pl. minden 10. scan) és napi bónusz',
+                'how_step4' => 'Kombinálhatod a különböző bónusz típusokat: fix pont scanelésenként és streak bónusz (pl. minden 10. scan)',
                 'bronze_label' => 'Bronz',
                 'silver_label' => 'Ezüst',
                 'gold_label' => 'Arany',
@@ -465,21 +423,12 @@ class PPV_VIP_Settings {
                 'streak_type_double' => 'Dupla',
                 'streak_type_triple' => 'Tripla',
 
-                'daily_title' => 'Első Scan',
-                'daily_desc' => 'Egyszeri bónusz az első látogatáskor',
-                'daily_suffix' => ' pont',
-
-                // Preview
-                'preview_title' => 'Élő Előnézet',
-                'preview_scenario' => 'Forgatókönyv: 100 pontos scan, 10. látogatás, első látogatás a boltban',
-                'preview_base' => 'Alap pontok',
-                'preview_fix' => 'Fix pont',
-                'preview_streak' => 'X. scan bónusz',
-                'preview_daily' => 'Első scan',
-                'preview_total' => 'Összesen',
-
                 // Validation
                 'validation_error' => 'Az értékeknek növekvő sorrendben kell lenniük: Bronz ≤ Ezüst ≤ Arany ≤ Platina',
+
+                // Toggle
+                'toggle_on' => 'BE',
+                'toggle_off' => 'KI',
             ],
             'ro' => [
                 'title' => 'Puncte Bonus VIP',
@@ -488,10 +437,10 @@ class PPV_VIP_Settings {
 
                 // How it works
                 'how_it_works' => 'Cum funcționează',
-                'how_step1' => 'Clienții colectează puncte prin scanarea codului QR la toate magazinele PunktePass participante',
-                'how_step2' => 'Nivelul VIP se bazează pe punctele totale din toate magazinele (Bronz de la 100, Argint de la 500, Aur de la 1000, Platină de la 2000)',
+                'how_step1' => 'Clienții colectează scanări prin scanarea codului QR la toate magazinele PunktePass participante',
+                'how_step2' => 'Nivelul VIP se bazează pe numărul de scanări (Bronz de la 25, Argint de la 50, Aur de la 75, Platină de la 100)',
                 'how_step3' => 'Bonusurile setate aici se aplică când clienții VIP scanează la tine – nivel mai mare = mai multe puncte bonus!',
-                'how_step4' => 'Poți combina diferite tipuri de bonus: puncte fixe per scanare, bonus streak (ex. fiecare a 10-a scanare) și bonus zilnic',
+                'how_step4' => 'Poți combina diferite tipuri de bonus: puncte fixe per scanare și bonus streak (ex. fiecare a 10-a scanare)',
                 'bronze_label' => 'Bronz',
                 'silver_label' => 'Argint',
                 'gold_label' => 'Aur',
@@ -513,31 +462,22 @@ class PPV_VIP_Settings {
                 'streak_type_double' => 'Dublu',
                 'streak_type_triple' => 'Triplu',
 
-                'daily_title' => 'Prima Scanare',
-                'daily_desc' => 'Bonus unic la prima vizită în magazin',
-                'daily_suffix' => ' puncte',
-
-                // Preview
-                'preview_title' => 'Previzualizare Live',
-                'preview_scenario' => 'Scenariu: scanare 100 puncte, a 10-a vizită, prima vizită în magazin',
-                'preview_base' => 'Puncte de bază',
-                'preview_fix' => 'Puncte fixe',
-                'preview_streak' => 'Bonus scanare X',
-                'preview_daily' => 'Prima scanare',
-                'preview_total' => 'Total',
-
                 // Validation
                 'validation_error' => 'Valorile trebuie să fie în ordine crescătoare: Bronz ≤ Argint ≤ Aur ≤ Platină',
+
+                // Toggle
+                'toggle_on' => 'ACTIV',
+                'toggle_off' => 'INACTIV',
             ],
         ][$lang] ?? [
             'title' => 'VIP Bonus-Punkte',
             'subtitle' => 'Gib deinen treuen Kunden extra Punkte basierend auf ihrem Level!',
             'all_branches' => 'Alle Filialen',
             'how_it_works' => 'So funktioniert\'s',
-            'how_step1' => 'Kunden sammeln Punkte durch QR-Code Scans bei allen teilnehmenden PunktePass-Geschäften',
-            'how_step2' => 'Das VIP-Level basiert auf den Gesamtpunkten aus allen Geschäften (Bronze ab 100, Silber ab 500, Gold ab 1000, Platin ab 2000)',
+            'how_step1' => 'Kunden sammeln Scans durch QR-Code Scans bei allen teilnehmenden PunktePass-Geschäften',
+            'how_step2' => 'Das VIP-Level basiert auf der Anzahl der Scans (Bronze ab 25, Silber ab 50, Gold ab 75, Platin ab 100 Scans)',
             'how_step3' => 'Die hier eingestellten Boni gelten, wenn VIP-Kunden bei dir scannen – höheres Level = mehr Bonuspunkte!',
-            'how_step4' => 'Du kannst verschiedene Bonus-Typen kombinieren: Fixpunkte pro Scan, Streak-Bonus (z.B. jeder 10. Scan) und Tagesbonus',
+            'how_step4' => 'Du kannst verschiedene Bonus-Typen kombinieren: Fixpunkte pro Scan und Streak-Bonus (z.B. jeder 10. Scan)',
             'bronze_label' => 'Bronze',
             'silver_label' => 'Silber',
             'gold_label' => 'Gold',
@@ -555,17 +495,9 @@ class PPV_VIP_Settings {
             'streak_type_fixed' => 'Fixpunkte',
             'streak_type_double' => 'Doppelt',
             'streak_type_triple' => 'Dreifach',
-            'daily_title' => 'Erster Scan des Tages',
-            'daily_desc' => 'Erster täglicher Besuch bringt extra Punkte',
-            'daily_suffix' => ' Punkte',
-            'preview_title' => 'Live-Vorschau',
-            'preview_scenario' => 'Szenario: 100 Punkte Scan, 10. Besuch heute, erster Scan heute',
-            'preview_base' => 'Basis-Punkte',
-            'preview_fix' => 'Fixpunkte',
-            'preview_streak' => 'X. Scan Bonus',
-            'preview_daily' => 'Erster Scan',
-            'preview_total' => 'Gesamt',
             'validation_error' => 'Die Werte müssen aufsteigend sein: Bronze ≤ Silber ≤ Gold ≤ Platin',
+            'toggle_on' => 'AN',
+            'toggle_off' => 'AUS',
         ];
 
         ob_start();
@@ -629,10 +561,13 @@ class PPV_VIP_Settings {
                 ═══════════════════════════════════════════════════════════ -->
                 <div class="ppv-vip-card" data-bonus-type="fix">
                     <div class="ppv-vip-card-header">
-                        <label class="ppv-toggle-switch">
-                            <input type="checkbox" id="ppv-fix-enabled" name="vip_fix_enabled">
-                            <span class="ppv-toggle-slider"></span>
-                        </label>
+                        <div class="ppv-toggle-wrapper">
+                            <label class="ppv-toggle-switch">
+                                <input type="checkbox" id="ppv-fix-enabled" name="vip_fix_enabled">
+                                <span class="ppv-toggle-slider"></span>
+                            </label>
+                            <span class="ppv-toggle-status" data-on="<?php echo esc_attr($T['toggle_on']); ?>" data-off="<?php echo esc_attr($T['toggle_off']); ?>"><?php echo esc_html($T['toggle_off']); ?></span>
+                        </div>
                         <div class="ppv-card-title">
                             <i class="ri-add-circle-line"></i>
                             <div>
@@ -685,10 +620,13 @@ class PPV_VIP_Settings {
                 ═══════════════════════════════════════════════════════════ -->
                 <div class="ppv-vip-card" data-bonus-type="streak">
                     <div class="ppv-vip-card-header">
-                        <label class="ppv-toggle-switch">
-                            <input type="checkbox" id="ppv-streak-enabled" name="vip_streak_enabled">
-                            <span class="ppv-toggle-slider"></span>
-                        </label>
+                        <div class="ppv-toggle-wrapper">
+                            <label class="ppv-toggle-switch">
+                                <input type="checkbox" id="ppv-streak-enabled" name="vip_streak_enabled">
+                                <span class="ppv-toggle-slider"></span>
+                            </label>
+                            <span class="ppv-toggle-status" data-on="<?php echo esc_attr($T['toggle_on']); ?>" data-off="<?php echo esc_attr($T['toggle_off']); ?>"><?php echo esc_html($T['toggle_off']); ?></span>
+                        </div>
                         <div class="ppv-card-title">
                             <i class="ri-fire-line"></i>
                             <div>
@@ -749,101 +687,6 @@ class PPV_VIP_Settings {
                             </div>
                         </div>
                         <div class="ppv-validation-error" id="ppv-streak-error"></div>
-                    </div>
-                </div>
-
-                <!-- ═══════════════════════════════════════════════════════════
-                     3. DAILY FIRST SCAN BONUS CARD
-                ═══════════════════════════════════════════════════════════ -->
-                <div class="ppv-vip-card" data-bonus-type="daily">
-                    <div class="ppv-vip-card-header">
-                        <label class="ppv-toggle-switch">
-                            <input type="checkbox" id="ppv-daily-enabled" name="vip_daily_enabled">
-                            <span class="ppv-toggle-slider"></span>
-                        </label>
-                        <div class="ppv-card-title">
-                            <i class="ri-sun-line"></i>
-                            <div>
-                                <strong><?php echo esc_html($T['daily_title']); ?></strong>
-                                <small><?php echo esc_html($T['daily_desc']); ?></small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="ppv-vip-card-body">
-                        <div class="ppv-vip-levels-row">
-                            <div class="ppv-vip-level-input bronze">
-                                <label><?php echo esc_html($T['bronze_label']); ?></label>
-                                <div class="ppv-input-group">
-                                    <span>+</span>
-                                    <input type="number" id="ppv-daily-bronze" name="vip_daily_bronze" min="0" max="1000" value="5">
-                                    <span><?php echo esc_html($T['daily_suffix']); ?></span>
-                                </div>
-                            </div>
-                            <div class="ppv-vip-level-input silver">
-                                <label><?php echo esc_html($T['silver_label']); ?></label>
-                                <div class="ppv-input-group">
-                                    <span>+</span>
-                                    <input type="number" id="ppv-daily-silver" name="vip_daily_silver" min="0" max="1000" value="10">
-                                    <span><?php echo esc_html($T['daily_suffix']); ?></span>
-                                </div>
-                            </div>
-                            <div class="ppv-vip-level-input gold">
-                                <label><?php echo esc_html($T['gold_label']); ?></label>
-                                <div class="ppv-input-group">
-                                    <span>+</span>
-                                    <input type="number" id="ppv-daily-gold" name="vip_daily_gold" min="0" max="1000" value="20">
-                                    <span><?php echo esc_html($T['daily_suffix']); ?></span>
-                                </div>
-                            </div>
-                            <div class="ppv-vip-level-input platinum">
-                                <label><?php echo esc_html($T['platinum_label']); ?></label>
-                                <div class="ppv-input-group">
-                                    <span>+</span>
-                                    <input type="number" id="ppv-daily-platinum" name="vip_daily_platinum" min="0" max="1000" value="30">
-                                    <span><?php echo esc_html($T['daily_suffix']); ?></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="ppv-validation-error" id="ppv-daily-error"></div>
-                    </div>
-                </div>
-
-                <!-- ═══════════════════════════════════════════════════════════
-                     LIVE PREVIEW
-                ═══════════════════════════════════════════════════════════ -->
-                <div class="ppv-vip-preview-extended" id="ppv-vip-preview">
-                    <h4><i class="ri-eye-line"></i> <?php echo esc_html($T['preview_title']); ?></h4>
-                    <p class="ppv-preview-scenario"><?php echo esc_html($T['preview_scenario']); ?></p>
-
-                    <!-- Level selector for preview -->
-                    <div class="ppv-preview-level-selector">
-                        <button type="button" class="ppv-preview-level" data-level="bronze"><?php echo esc_html($T['bronze_label']); ?></button>
-                        <button type="button" class="ppv-preview-level" data-level="silver"><?php echo esc_html($T['silver_label']); ?></button>
-                        <button type="button" class="ppv-preview-level active" data-level="gold"><?php echo esc_html($T['gold_label']); ?></button>
-                        <button type="button" class="ppv-preview-level" data-level="platinum"><?php echo esc_html($T['platinum_label']); ?></button>
-                    </div>
-
-                    <div class="ppv-preview-breakdown">
-                        <div class="ppv-preview-row">
-                            <span><?php echo esc_html($T['preview_base']); ?></span>
-                            <strong id="preview-base">100</strong>
-                        </div>
-                        <div class="ppv-preview-row" id="preview-row-fix">
-                            <span>+ <?php echo esc_html($T['preview_fix']); ?></span>
-                            <strong id="preview-fix-value">+2</strong>
-                        </div>
-                        <div class="ppv-preview-row" id="preview-row-streak">
-                            <span>+ <?php echo esc_html($T['preview_streak']); ?></span>
-                            <strong id="preview-streak-value">+2</strong>
-                        </div>
-                        <div class="ppv-preview-row" id="preview-row-daily">
-                            <span>+ <?php echo esc_html($T['preview_daily']); ?></span>
-                            <strong id="preview-daily-value">+20</strong>
-                        </div>
-                        <div class="ppv-preview-row ppv-preview-total">
-                            <span><?php echo esc_html($T['preview_total']); ?></span>
-                            <strong id="preview-total">124</strong>
-                        </div>
                     </div>
                 </div>
 

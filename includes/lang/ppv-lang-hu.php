@@ -11,6 +11,9 @@ return [
 'unique' => 'Egyedi felhasználók',
 'weekly' => 'Heti',
 'monthly' => 'Havi',
+'toggle_on' => 'BE',
+'toggle_off' => 'KI',
+'save' => 'Mentés',
 
 
 'not_authorized' => '⚠️ Nincs jogosultság',
@@ -510,6 +513,13 @@ return [
 'signup_success' => 'Sikeres regisztráció! Átirányítás...',
 'signup_google_error' => 'Google regisztráció sikertelen',
 'signup_google_success' => 'Sikeres Google regisztráció!',
+'signup_registering' => 'Regisztráció...',
+
+// PASSWORD STRENGTH
+'password_strength_weak' => 'Gyenge',
+'password_strength_medium' => 'Közepes',
+'password_strength_good' => 'Jó',
+'password_strength_strong' => 'Erős',
 
  // ========== GLOBAL / HEADER ==========
     'language' => 'Nyelv',
@@ -741,13 +751,18 @@ return [
     'footer_contact' => 'Kapcsolat',
     'footer_legal' => '© 2025 PunktePass. Minden jog fenntartva.',
     
-    // ========== MAINTENANCE MODE ==========
-    'maintenance_section' => 'Karbantartás',
-    'maintenance_mode' => 'Karbantartási mód',
-    'maintenance_mode_help' => 'Aktiváld a karbantartási módot az üzlet ideiglenes lekapcsolásához',
-    'maintenance_message' => 'Karbantartási üzenet',
-    'maintenance_message_placeholder' => 'pl. Hamarosan visszatérünk! Köszönjük a türelmedet.',
-    'maintenance_message_help' => 'Ez az üzenet megjelenik az ügyfelek számára',
+    // ========== VACATION MODE ==========
+    'vacation_section' => 'Szabadság',
+    'vacation_enabled' => 'Szabadság mód',
+    'vacation_enabled_help' => 'Ha be van kapcsolva, a bolt szabadságon lévőként jelenik meg a megadott időszakban',
+    'vacation_from' => 'Szabadság kezdete',
+    'vacation_to' => 'Szabadság vége',
+    'vacation_dates_help' => 'Válaszd ki az időszakot, amikor az üzlet szabadságon van',
+    'vacation_message' => 'Szabadság üzenet (opcionális)',
+    'vacation_message_placeholder' => 'pl. Január 15-től újra nyitva vagyunk!',
+    'vacation_message_help' => 'Ez az üzenet jelenik meg az ügyfeleknek a szabadság alatt',
+    'vacation_apply_all_hint' => 'A beállítások az összes filiáléra alkalmazásra kerülnek',
+    'select_filiale' => 'Fiók kiválasztása',
 
     // ========== OPENING HOURS ENFORCEMENT ==========
     'opening_hours_section' => 'Nyitvatartás',
@@ -1533,6 +1548,8 @@ return [
     'rewards_date_until' => 'ig',
     'rewards_btn_create' => 'Létrehozás',
     'rewards_btn_creating' => 'Létrehozás...',
+    'rewards_select_filiale' => 'Filiale kiválasztása',
+    'rewards_all_filialen' => 'Összes filiale (csoportosítva)',
 
     // Month names
     'month_january' => 'Január',
@@ -1652,6 +1669,23 @@ return [
     'advanced' => 'Részletes',
     'scanner_stats' => 'Munkatársak',
     'suspicious_scans' => 'Gyanús szkennelések',
+
+    // Device Activity Tab
+    'device_activity' => 'Eszközök',
+    'device_activity_desc' => 'Szkennelési tevékenység eszközönként (utolsó 7 nap).',
+    'device' => 'Eszköz',
+    'total_devices' => 'Aktív eszközök',
+    'mobile_scanners' => 'Mobil szkennerek',
+    'suspicious_devices' => 'Gyanús eszközök',
+    'no_device_data' => 'Még nincs eszközadat.',
+    'device_name' => 'Eszköz neve',
+    'last_scan' => 'Utolsó szkennelés',
+    'scan_count' => 'Szkennelések száma',
+    'device_status' => 'Státusz',
+    'device_registered' => 'Regisztrált',
+    'device_unregistered' => 'Nem regisztrált',
+    'device_suspicious' => 'Gyanús',
+
     'employee_scans' => 'Munkatársi szkennelések',
     'employee_scans_desc' => 'Áttekintés arról, hogy melyik munkatárs hány szkennelést végzett.',
     'total_scanners' => 'Összes szkenner',
@@ -1843,7 +1877,7 @@ return [
     'faq_vip_title' => 'VIP & Bónuszok',
 
     'faq_q11' => 'Mik azok a VIP szintek?',
-    'faq_a11' => 'Minél többet gyűjtesz, annál magasabbra jutsz: Kezdő → Bronz → Ezüst → Arany → Platina. A magasabb szintek jobb bónuszokat hoznak!',
+    'faq_a11' => 'Minél többet scanelsz, annál magasabbra jutsz: Kezdő (0-24 scan) → Bronz (25+) → Ezüst (50+) → Arany (75+) → Platina (100+ scan). A magasabb szintek jobb bónuszokat hoznak!',
 
     'faq_q12' => 'Kapok születésnapi bónuszt?',
     'faq_a12' => 'Ha az üzlet aktiválta ezt a funkciót, a születésnapodon bónuszpontokat kapsz. Add meg a születési dátumodat a beállításokban, hogy élvezheted ezt az előnyt.',
@@ -1904,4 +1938,37 @@ return [
     'app_download_subtitle' => 'Gyűjts pontokat egyszerűen mobilodról',
     'app_download_available' => 'Elérhető itt',
     'app_download_dont_show' => 'Ne mutasd többet',
+
+    // ============================================================
+    // Invoices - Számlázás
+    // ============================================================
+    'invoice_created' => 'Számla sikeresen létrehozva!',
+    'invoice_exists' => 'Számla már létezik',
+    'collective_invoice_created' => 'Gyűjtőszámla létrehozva!',
+    'server_error' => 'Szerverhiba',
+    'invoice_select_period' => 'Kérjük válasszon időszakot',
+    'invoice_email_sent' => 'E-mail elküldve!',
+    'invoice_enter_valid_email' => 'Kérjük adjon meg érvényes e-mail címet',
+    'invoice_download_pdf' => 'PDF letöltése',
+    'invoice_send_email' => 'E-mailben küldés',
+    'invoice_create_pdf' => 'PDF létrehozása',
+    'invoice_load_preview' => 'Előnézet betöltése',
+    'invoice_create_collective' => 'Gyűjtőszámla létrehozása',
+    'invoice_period' => 'Időszak',
+    'invoice_vat_rate' => 'ÁFA kulcs',
+    'invoice_error_loading' => 'Hiba a betöltés során',
+    'cancel' => 'Mégse',
+    'from' => 'Kezdete',
+    'to' => 'Vége',
+    'loading' => 'Betöltés...',
+
+    // ============================================================
+    // General Actions - Általános műveletek
+    // ============================================================
+    'created' => 'létrehozva',
+    'updated' => 'frissítve',
+    'deleted' => 'törölve',
+    'csv_creating' => 'CSV létrehozása...',
+    'csv_downloaded' => 'CSV letöltve',
+    'error' => 'Hiba',
 ];

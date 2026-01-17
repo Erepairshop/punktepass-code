@@ -1,11 +1,10 @@
 /**
- * PunktePass – VIP Settings Management (Extended)
- * Supports 3 bonus types:
+ * PunktePass – VIP Settings Management
+ * Supports 2 bonus types:
  * 1. Fixed point bonus per level
- * 2. Every Xth scan bonus
- * 3. First daily scan bonus
+ * 2. Every Xth scan bonus (streak)
  *
- * Version: 2.1
+ * Version: 2.2
  */
 
 (function() {
@@ -44,24 +43,6 @@
         const streakError = document.getElementById('ppv-streak-error');
         const streakFixedInputs = document.querySelector('.ppv-streak-fixed-inputs');
 
-        // 3. Daily bonus
-        const dailyEnabled = document.getElementById('ppv-daily-enabled');
-        const dailyBronze = document.getElementById('ppv-daily-bronze');
-        const dailySilver = document.getElementById('ppv-daily-silver');
-        const dailyGold = document.getElementById('ppv-daily-gold');
-        const dailyPlatinum = document.getElementById('ppv-daily-platinum');
-        const dailyError = document.getElementById('ppv-daily-error');
-
-        // Preview elements
-        const previewLevelButtons = document.querySelectorAll('.ppv-preview-level');
-        const previewRowFix = document.getElementById('preview-row-fix');
-        const previewRowStreak = document.getElementById('preview-row-streak');
-        const previewRowDaily = document.getElementById('preview-row-daily');
-        const previewFixValue = document.getElementById('preview-fix-value');
-        const previewStreakValue = document.getElementById('preview-streak-value');
-        const previewDailyValue = document.getElementById('preview-daily-value');
-        const previewTotal = document.getElementById('preview-total');
-
         // Save button
         const saveBtn = document.getElementById('ppv-vip-save');
         const statusEl = document.getElementById('ppv-vip-status');
@@ -69,9 +50,6 @@
         // Filiale selector
         const filialeSelect = document.getElementById('ppv-vip-filiale');
         let currentFilialeId = filialeSelect?.value || 'all';
-
-        // Current preview level
-        let currentPreviewLevel = 'gold';
 
         // ═══════════════════════════════════════════════════════════
         // LOAD SETTINGS
@@ -118,17 +96,10 @@
                     if (streakGold) streakGold.value = s.vip_streak_gold;
                     if (streakPlatinum) streakPlatinum.value = s.vip_streak_platinum;
 
-                    // 3. Daily
-                    if (dailyEnabled) dailyEnabled.checked = s.vip_daily_enabled;
-                    if (dailyBronze) dailyBronze.value = s.vip_daily_bronze;
-                    if (dailySilver) dailySilver.value = s.vip_daily_silver;
-                    if (dailyGold) dailyGold.value = s.vip_daily_gold;
-                    if (dailyPlatinum) dailyPlatinum.value = s.vip_daily_platinum;
-
                     // Update UI state
                     updateCardStates();
                     updateStreakTypeVisibility();
-                    updatePreview();
+                    validateAll();
 
                 }
             })
@@ -146,7 +117,6 @@
             const cards = [
                 { toggle: fixEnabled, card: fixEnabled?.closest('.ppv-vip-card') },
                 { toggle: streakEnabled, card: streakEnabled?.closest('.ppv-vip-card') },
-                { toggle: dailyEnabled, card: dailyEnabled?.closest('.ppv-vip-card') },
             ];
 
             cards.forEach(({ toggle, card }) => {
@@ -155,6 +125,15 @@
                     if (body) {
                         body.style.opacity = toggle.checked ? '1' : '0.5';
                         body.style.pointerEvents = toggle.checked ? 'auto' : 'none';
+                    }
+                    // Update status text
+                    const wrapper = toggle.closest('.ppv-toggle-wrapper');
+                    if (wrapper) {
+                        const statusEl = wrapper.querySelector('.ppv-toggle-status');
+                        if (statusEl) {
+                            statusEl.textContent = toggle.checked ? statusEl.dataset.on : statusEl.dataset.off;
+                            statusEl.classList.toggle('active', toggle.checked);
+                        }
                     }
                 }
             });
@@ -207,82 +186,7 @@
                 streakError.style.display = 'none';
             }
 
-            // 3. Daily
-            if (dailyEnabled?.checked) {
-                const valid = validateAscending(dailyBronze?.value, dailySilver?.value, dailyGold?.value, dailyPlatinum?.value);
-                if (dailyError) {
-                    dailyError.textContent = valid ? '' : validationMsg;
-                    dailyError.style.display = valid ? 'none' : 'block';
-                }
-                if (!valid) isValid = false;
-            } else if (dailyError) {
-                dailyError.style.display = 'none';
-            }
-
             return isValid;
-        }
-
-        // ═══════════════════════════════════════════════════════════
-        // LIVE PREVIEW
-        // ═══════════════════════════════════════════════════════════
-
-        function updatePreview() {
-            const basePoints = 100; // Scenario: 100 point scan
-            let total = basePoints;
-
-            // Get values based on current preview level
-            const getValue = (bronze, silver, gold, platinum) => {
-                const values = {
-                    bronze: parseInt(bronze?.value) || 0,
-                    silver: parseInt(silver?.value) || 0,
-                    gold: parseInt(gold?.value) || 0,
-                    platinum: parseInt(platinum?.value) || 0
-                };
-                return values[currentPreviewLevel] || 0;
-            };
-
-            // 1. Fixed bonus
-            if (fixEnabled?.checked) {
-                const fix = getValue(fixBronze, fixSilver, fixGold, fixPlatinum);
-                if (previewFixValue) previewFixValue.textContent = '+' + fix;
-                if (previewRowFix) previewRowFix.style.display = 'flex';
-                total += fix;
-            } else {
-                if (previewRowFix) previewRowFix.style.display = 'none';
-            }
-
-            // 2. Streak bonus (assume 10th scan in preview scenario)
-            if (streakEnabled?.checked) {
-                let streakBonus = 0;
-                if (streakType?.value === 'fixed') {
-                    streakBonus = getValue(streakBronze, streakSilver, streakGold, streakPlatinum);
-                } else if (streakType?.value === 'double') {
-                    streakBonus = basePoints; // Double means +100% = +basePoints
-                } else if (streakType?.value === 'triple') {
-                    streakBonus = basePoints * 2; // Triple means +200% = +2*basePoints
-                }
-                if (previewStreakValue) previewStreakValue.textContent = '+' + streakBonus;
-                if (previewRowStreak) previewRowStreak.style.display = 'flex';
-                total += streakBonus;
-            } else {
-                if (previewRowStreak) previewRowStreak.style.display = 'none';
-            }
-
-            // 3. Daily bonus (assume first scan of day in preview scenario)
-            if (dailyEnabled?.checked) {
-                const daily = getValue(dailyBronze, dailySilver, dailyGold, dailyPlatinum);
-                if (previewDailyValue) previewDailyValue.textContent = '+' + daily;
-                if (previewRowDaily) previewRowDaily.style.display = 'flex';
-                total += daily;
-            } else {
-                if (previewRowDaily) previewRowDaily.style.display = 'none';
-            }
-
-            // Update total
-            if (previewTotal) previewTotal.textContent = total;
-
-            // Validate
-            validateAll();
         }
 
         // ═══════════════════════════════════════════════════════════
@@ -290,44 +194,47 @@
         // ═══════════════════════════════════════════════════════════
 
         // Toggle state changes
-        [fixEnabled, streakEnabled, dailyEnabled].forEach(toggle => {
+        [fixEnabled, streakEnabled].forEach(toggle => {
             if (toggle) {
                 toggle.addEventListener('change', () => {
                     updateCardStates();
-                    updatePreview();
+                    updateToggleStatus(toggle);
+                    validateAll();
                 });
+                // Initialize status text on load
+                updateToggleStatus(toggle);
             }
         });
+
+        // Update toggle status text (BE/KI)
+        function updateToggleStatus(toggle) {
+            const wrapper = toggle.closest('.ppv-toggle-wrapper');
+            if (!wrapper) return;
+            const statusEl = wrapper.querySelector('.ppv-toggle-status');
+            if (!statusEl) return;
+
+            const isChecked = toggle.checked;
+            statusEl.textContent = isChecked ? statusEl.dataset.on : statusEl.dataset.off;
+            statusEl.classList.toggle('active', isChecked);
+        }
 
         // Streak type change
         if (streakType) {
             streakType.addEventListener('change', () => {
                 updateStreakTypeVisibility();
-                updatePreview();
+                validateAll();
             });
         }
 
-        // All input changes trigger preview update
+        // All input changes trigger validation
         const allInputs = [
             fixBronze, fixSilver, fixGold, fixPlatinum,
-            streakCount, streakBronze, streakSilver, streakGold, streakPlatinum,
-            dailyBronze, dailySilver, dailyGold, dailyPlatinum
+            streakCount, streakBronze, streakSilver, streakGold, streakPlatinum
         ];
         allInputs.forEach(input => {
             if (input) {
-                input.addEventListener('input', updatePreview);
+                input.addEventListener('input', validateAll);
             }
-        });
-
-        // Preview level selector
-        previewLevelButtons.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                previewLevelButtons.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                currentPreviewLevel = btn.dataset.level;
-                updatePreview();
-            });
         });
 
         // Filiale change listener - reload settings for selected filiale
@@ -389,13 +296,6 @@
             formData.append('vip_streak_silver', streakSilver?.value || '2');
             formData.append('vip_streak_gold', streakGold?.value || '3');
             formData.append('vip_streak_platinum', streakPlatinum?.value || '5');
-
-            // 3. Daily
-            formData.append('vip_daily_enabled', dailyEnabled?.checked ? '1' : '0');
-            formData.append('vip_daily_bronze', dailyBronze?.value || '5');
-            formData.append('vip_daily_silver', dailySilver?.value || '10');
-            formData.append('vip_daily_gold', dailyGold?.value || '20');
-            formData.append('vip_daily_platinum', dailyPlatinum?.value || '30');
 
             fetch(window.ppv_vip.base + 'vip/save', {
                 method: 'POST',

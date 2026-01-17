@@ -563,12 +563,7 @@ class PPV_QR {
             $is_handler = true;
         }
 
-        wp_enqueue_style(
-            'remixicons',
-            'https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css',
-            [],
-            null
-        );
+        // RemixIcons loaded globally in punktepass.php
 
         // Only enqueue camera scanner JS for handlers/scanners
         if ($is_handler) {

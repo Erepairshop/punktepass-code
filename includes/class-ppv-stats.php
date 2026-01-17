@@ -100,13 +100,29 @@ class PPV_Stats {
             return [];
         }
 
-        // Get all stores: parent + children
+        // 🔗 CHECK IF HANDLER IS LINKED TO A MAIN HANDLER
+        // If linked_to_store_id is set, show the MAIN handler's stores instead
+        $linked_to = $wpdb->get_var($wpdb->prepare(
+            "SELECT linked_to_store_id FROM {$wpdb->prefix}ppv_stores WHERE id = %d AND linked_to_store_id IS NOT NULL",
+            $base_store_id
+        ));
+
+        if ($linked_to) {
+            // This handler is linked to a main handler - use main handler's store
+            $effective_store_id = intval($linked_to);
+            ppv_log("🔗 [Stats] Handler #{$base_store_id} linked to main handler #{$effective_store_id} - showing main's stores");
+        } else {
+            // Not linked, use own store
+            $effective_store_id = $base_store_id;
+        }
+
+        // Get all stores: main store + children (filialen)
         $filialen = $wpdb->get_results($wpdb->prepare("
             SELECT id, name, company_name, address, city, plz
             FROM {$wpdb->prefix}ppv_stores
             WHERE id = %d OR parent_store_id = %d
             ORDER BY (id = %d) DESC, name ASC
-        ", $base_store_id, $base_store_id, $base_store_id));
+        ", $effective_store_id, $effective_store_id, $effective_store_id));
 
         return $filialen ?: [];
     }

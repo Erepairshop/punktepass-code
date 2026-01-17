@@ -10,6 +10,8 @@
 (function() {
     'use strict';
 
+    console.log('🏖️ [PPV] pp-profile-lite.js LOADED - v2.1');
+
     // ============================================================
     // 🚫 TURBO CACHE FIX - Prevent stale data on back navigation
     // ============================================================
@@ -186,6 +188,8 @@
                         // Clear fields
                         document.getElementById('ppv-new-email').value = '';
                         document.getElementById('ppv-confirm-email').value = '';
+                        // Reset hasChanges to prevent "unsaved changes" warning
+                        this.hasChanges = false;
                         // Reload to show new email
                         setTimeout(() => location.reload(), 1500);
                     } else {
@@ -287,7 +291,7 @@
         }
 
         deleteGalleryImage(imageUrl) {
-            if (!confirm(this.strings.confirm_delete_image || 'Bild löschen?')) return;
+            if (!confirm(this.strings.confirm_delete_image || 'Kép törlése?')) return;
 
             const formData = new FormData();
             formData.append('action', 'ppv_delete_gallery_image');
@@ -302,14 +306,14 @@
             .then(r => r.json())
             .then(data => {
                 if (data.success) {
-                    this.showAlert(this.strings.image_deleted || 'Bild gelöscht!', 'success');
+                    this.showAlert(this.strings.image_deleted || 'Kép törölve!', 'success');
                     location.reload();
                 } else {
-                    this.showAlert(data.data?.msg || this.strings.delete_error || 'Fehler beim Löschen', 'error');
+                    this.showAlert(data.data?.msg || this.strings.delete_error || 'Hiba a törlés során', 'error');
                 }
             })
             .catch(err => {
-                this.showAlert(this.strings.delete_error || 'Fehler beim Löschen', 'error');
+                this.showAlert(this.strings.delete_error || 'Hiba a törlés során', 'error');
             });
         }
 
@@ -372,6 +376,110 @@
             this.$form.querySelectorAll('.ppv-file-input').forEach(input => {
                 input.addEventListener('change', (e) => this.handleFileUpload(e));
             });
+
+            // Vacation toggle - enable/disable date fields
+            const vacationToggle = document.getElementById('ppv-vacation-enabled');
+            console.log('[PPV] Vacation toggle found:', !!vacationToggle);
+            if (vacationToggle) {
+                // Remove old listener if exists (for Turbo re-init)
+                vacationToggle.removeEventListener('change', vacationToggle._ppvHandler);
+
+                vacationToggle._ppvHandler = (e) => {
+                    console.log('[PPV] Vacation toggle changed:', e.target.checked);
+                    const vacationFields = document.querySelector('.ppv-vacation-fields');
+                    if (vacationFields) {
+                        vacationFields.style.opacity = e.target.checked ? '1' : '0.5';
+                        vacationFields.style.pointerEvents = e.target.checked ? 'auto' : 'none';
+                    }
+
+                    // Update toggle status text
+                    const wrapper = e.target.closest('.ppv-toggle-wrapper');
+                    if (wrapper) {
+                        const statusEl = wrapper.querySelector('.ppv-toggle-status');
+                        if (statusEl) {
+                            statusEl.textContent = e.target.checked ? statusEl.dataset.on : statusEl.dataset.off;
+                            statusEl.classList.toggle('active', e.target.checked);
+                        }
+                    }
+                };
+                vacationToggle.addEventListener('change', vacationToggle._ppvHandler);
+            }
+
+            // Filiale vacation toggles
+            document.querySelectorAll('.ppv-filiale-vacation-toggle').forEach(toggle => {
+                toggle.addEventListener('change', (e) => {
+                    const storeId = e.target.dataset.storeId;
+                    const card = e.target.closest('.ppv-vacation-filiale-card');
+                    const body = card?.querySelector('.ppv-vacation-card-body');
+
+                    if (body) {
+                        body.style.display = e.target.checked ? 'block' : 'none';
+                    }
+
+                    card?.classList.toggle('vacation-active', e.target.checked);
+
+                    // Update toggle status text
+                    const wrapper = e.target.closest('.ppv-toggle-wrapper');
+                    if (wrapper) {
+                        const statusEl = wrapper.querySelector('.ppv-toggle-status');
+                        if (statusEl) {
+                            statusEl.textContent = e.target.checked ? statusEl.dataset.on : statusEl.dataset.off;
+                            statusEl.classList.toggle('active', e.target.checked);
+                        }
+                    }
+                });
+            });
+
+            // Filiale vacation save buttons
+            document.querySelectorAll('.ppv-save-filiale-vacation').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    this.saveFilialVacation(e.target.closest('button'));
+                });
+            });
+        }
+
+        async saveFilialVacation(btn) {
+            const storeId = btn.dataset.storeId;
+            const card = btn.closest('.ppv-vacation-filiale-card');
+
+            if (!card || !storeId) return;
+
+            const toggle = card.querySelector('.ppv-filiale-vacation-toggle');
+            const fromInput = card.querySelector('.ppv-filiale-vacation-from');
+            const toInput = card.querySelector('.ppv-filiale-vacation-to');
+            const messageInput = card.querySelector('.ppv-filiale-vacation-message');
+
+            btn.classList.add('saving');
+            btn.innerHTML = '<i class="ri-loader-4-line"></i> ...';
+
+            try {
+                const formData = new FormData();
+                formData.append('action', 'ppv_save_filiale_vacation');
+                formData.append('store_id', storeId);
+                formData.append('vacation_enabled', toggle?.checked ? '1' : '0');
+                formData.append('vacation_from', fromInput?.value || '');
+                formData.append('vacation_to', toInput?.value || '');
+                formData.append('vacation_message', messageInput?.value || '');
+
+                const response = await fetch(ppv_profile.ajaxUrl, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    this.showAlert(data.data?.msg || 'Mentve!', 'success');
+                } else {
+                    this.showAlert(data.data?.msg || 'Hiba történt', 'error');
+                }
+            } catch (error) {
+                console.error('Filiale vacation save error:', error);
+                this.showAlert('Hiba történt', 'error');
+            } finally {
+                btn.classList.remove('saving');
+                btn.innerHTML = '<i class="ri-save-line"></i> ' + (this.t('save') || 'Mentés');
+            }
         }
 
         validateEmail(el) {
@@ -550,7 +658,9 @@
                 'latitude': store.latitude,
                 'longitude': store.longitude,
                 'timezone': store.timezone,
-                'maintenance_message': store.maintenance_message
+                'vacation_from': store.vacation_from,
+                'vacation_to': store.vacation_to,
+                'vacation_message': store.vacation_message
             };
 
             // Text/number/select mezők
@@ -566,13 +676,34 @@
                 'is_taxable': store.is_taxable,
                 'active': store.active,
                 'visible': store.visible,
-                'maintenance_mode': store.maintenance_mode
+                'vacation_enabled': store.vacation_enabled
             };
 
             for (const [fieldName, value] of Object.entries(checkboxMap)) {
                 const field = this.$form.querySelector(`[name="${fieldName}"]`);
                 if (field) {
-                    field.checked = !!value;
+                    // Fix: "0" string should be false, "1" or 1 should be true
+                    field.checked = value === true || value === 1 || value === '1';
+
+                    // Update toggle status text if exists
+                    const wrapper = field.closest('.ppv-toggle-wrapper');
+                    if (wrapper) {
+                        const statusEl = wrapper.querySelector('.ppv-toggle-status');
+                        if (statusEl) {
+                            const isChecked = field.checked;
+                            statusEl.textContent = isChecked ? statusEl.dataset.on : statusEl.dataset.off;
+                            statusEl.classList.toggle('active', isChecked);
+                        }
+                    }
+
+                    // Update vacation fields visibility
+                    if (fieldName === 'vacation_enabled') {
+                        const vacationFields = document.querySelector('.ppv-vacation-fields');
+                        if (vacationFields) {
+                            vacationFields.style.opacity = field.checked ? '1' : '0.5';
+                            vacationFields.style.pointerEvents = field.checked ? 'auto' : 'none';
+                        }
+                    }
                 }
             }
         }
@@ -945,9 +1076,9 @@ function initGeocodingFeatures() {
       try {
         data = JSON.parse(responseText);
       } catch (e) {
-        alert('❌ ' + (L.php_error || 'PHP Fehler') + '!\n\n' + responseText);
+        alert('❌ ' + (L.php_error || 'PHP hiba') + '!\n\n' + responseText);
         geocodeBtn.disabled = false;
-        geocodeBtn.textContent = '🗺️ ' + (L.geocode_button || 'Koordinaten suchen (nach Adresse)');
+        geocodeBtn.textContent = '🗺️ ' + (L.geocode_button || 'Koordináták keresése (cím alapján)');
         return;
       }
 
@@ -984,11 +1115,11 @@ function initGeocodingFeatures() {
       }
 
     } catch (error) {
-      alert('❌ ' + (L.geocode_error || 'Fehler bei der Koordinatensuche') + '!\n\n' + error.message);
+      alert('❌ ' + (L.geocode_error || 'Hiba a koordináták keresésekor') + '!\n\n' + error.message);
     }
 
     geocodeBtn.disabled = false;
-    geocodeBtn.textContent = '🗺️ ' + (L.geocode_button || 'Koordinaten suchen (nach Adresse)');
+    geocodeBtn.textContent = '🗺️ ' + (L.geocode_button || 'Koordináták keresése (cím alapján)');
   });
 }
 

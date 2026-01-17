@@ -37,6 +37,10 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
             add_action('wp_ajax_ppv_reset_trusted_device', [__CLASS__, 'ajax_reset_trusted_device']);
             add_action('wp_ajax_nopriv_ppv_reset_trusted_device', [__CLASS__, 'ajax_reset_trusted_device']); // ✅ PPV session auth
 
+            // Filiale Vacation
+            add_action('wp_ajax_ppv_save_filiale_vacation', [__CLASS__, 'ajax_save_filiale_vacation']);
+            add_action('wp_ajax_nopriv_ppv_save_filiale_vacation', [__CLASS__, 'ajax_save_filiale_vacation']);
+
             // Referral Program
             add_action('wp_ajax_ppv_activate_referral_grace_period', [__CLASS__, 'ajax_activate_referral_grace_period']);
             add_action('wp_ajax_nopriv_ppv_activate_referral_grace_period', [__CLASS__, 'ajax_activate_referral_grace_period']);
@@ -159,6 +163,31 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
             }
 
             return 0;
+        }
+
+        /** ============================================================
+         *  🏢 GET FILIALEN FOR VENDOR (parent + children stores)
+         * ============================================================ */
+        private static function get_filialen_for_vendor() {
+            global $wpdb;
+
+            // Get vendor's base store ID (not current filiale)
+            $vendor_store_id = intval($_SESSION['ppv_store_id'] ?? $_SESSION['ppv_vendor_store_id'] ?? 0);
+
+            if (!$vendor_store_id) {
+                return [];
+            }
+
+            // Get all stores: parent + children
+            $filialen = $wpdb->get_results($wpdb->prepare("
+                SELECT id, name, company_name, address, city, plz,
+                       vacation_enabled, vacation_from, vacation_to, vacation_message
+                FROM {$wpdb->prefix}ppv_stores
+                WHERE id = %d OR parent_store_id = %d
+                ORDER BY (id = %d) DESC, name ASC
+            ", $vendor_store_id, $vendor_store_id, $vendor_store_id));
+
+            return $filialen ?: [];
         }
 
         public static function ajax_get_strings() {
@@ -1337,25 +1366,314 @@ if (!empty($store->gallery)) {
 
                 <hr>
 
-                <h3 data-i18n="maintenance_section"><?php echo esc_html(PPV_Lang::t('maintenance_section')); ?></h3>
+                <h3 data-i18n="vacation_section"><?php echo esc_html(PPV_Lang::t('vacation_section')); ?></h3>
 
-                <div class="ppv-checkbox-group">
-                    <label class="ppv-checkbox">
-                        <input type="checkbox" name="maintenance_mode" value="1" <?php checked($store->maintenance_mode ?? 0, 1); ?>>
-                        <strong data-i18n="maintenance_mode"><?php echo esc_html(PPV_Lang::t('maintenance_mode')); ?></strong>
-                        <small data-i18n="maintenance_mode_help"><?php echo esc_html(PPV_Lang::t('maintenance_mode_help')); ?></small>
+                <?php
+                // Get all filialen for vacation management
+                $filialen = self::get_filialen_for_vendor();
+                $has_multiple_filialen = count($filialen) > 1;
+                ?>
+
+                <?php if ($has_multiple_filialen): ?>
+                <style>
+                .ppv-vacation-selector { margin-bottom: 16px; }
+                .ppv-vacation-selector select { width: 100%; padding: 10px 14px; border: 1px solid var(--color-border, #e2e8f0); border-radius: 8px; font-size: 14px; background: var(--color-surface, #fff); cursor: pointer; }
+                .ppv-vacation-form-wrapper { background: var(--color-bg-secondary, #f1f5f9); border: 1px solid var(--color-border, #e2e8f0); border-radius: 12px; padding: 16px; }
+                .ppv-vacation-form-wrapper.vacation-active { border-color: #3b82f6; background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(59, 130, 246, 0.02)); }
+                .ppv-vacation-dates-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+                .ppv-vacation-form-wrapper .ppv-form-group { margin-bottom: 12px; }
+                .ppv-vacation-form-wrapper .ppv-form-group label { font-size: 12px; font-weight: 600; color: var(--color-text-secondary, #64748b); margin-bottom: 4px; display: block; }
+                .ppv-vacation-form-wrapper input[type="date"],
+                .ppv-vacation-form-wrapper input[type="text"] { width: 100%; padding: 8px 12px; border: 1px solid var(--color-border, #e2e8f0); border-radius: 8px; font-size: 14px; background: var(--color-surface, #fff); }
+                .ppv-btn-small { padding: 8px 16px; font-size: 13px; border-radius: 8px; }
+                .ppv-save-filiale-vacation { background: #3b82f6; color: #fff; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+                .ppv-save-filiale-vacation:hover { background: #2563eb; }
+                .ppv-save-filiale-vacation.saving { opacity: 0.7; pointer-events: none; }
+                .ppv-vacation-all-hint { font-size: 12px; color: var(--color-text-secondary, #64748b); margin-top: 4px; font-style: italic; }
+                @media (max-width: 480px) { .ppv-vacation-dates-row { grid-template-columns: 1fr; } }
+                [data-theme="dark"] .ppv-vacation-form-wrapper { background: rgba(30, 41, 59, 0.5); border-color: rgba(59, 130, 246, 0.2); }
+                [data-theme="dark"] .ppv-vacation-form-wrapper.vacation-active { background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(59, 130, 246, 0.05)); }
+                [data-theme="dark"] .ppv-vacation-selector select { background: rgba(15, 23, 42, 0.8); border-color: rgba(59, 130, 246, 0.3); color: #e2e8f0; }
+                [data-theme="dark"] .ppv-vacation-form-wrapper input { background: rgba(15, 23, 42, 0.8); border-color: rgba(59, 130, 246, 0.3); color: #e2e8f0; }
+                </style>
+
+                <!-- 🏢 FILIALE VACATION DROPDOWN SELECTOR -->
+                <div class="ppv-vacation-selector">
+                    <label for="ppv-vacation-filiale-select" style="font-size: 13px; font-weight: 600; color: var(--color-text-secondary, #64748b); margin-bottom: 6px; display: block;">
+                        <?php echo esc_html(PPV_Lang::t('select_filiale') ?? 'Fiók kiválasztása'); ?>
                     </label>
+                    <select id="ppv-vacation-filiale-select">
+                        <option value="all"><?php echo esc_html(PPV_Lang::t('all_branches') ?? 'Összes filiale'); ?></option>
+                        <?php foreach ($filialen as $fil): ?>
+                        <option value="<?php echo intval($fil->id); ?>"
+                                data-vacation-enabled="<?php echo !empty($fil->vacation_enabled) ? '1' : '0'; ?>"
+                                data-vacation-from="<?php echo esc_attr($fil->vacation_from ?? ''); ?>"
+                                data-vacation-to="<?php echo esc_attr($fil->vacation_to ?? ''); ?>"
+                                data-vacation-message="<?php echo esc_attr($fil->vacation_message ?? ''); ?>">
+                            <?php echo esc_html($fil->name ?: $fil->company_name); ?><?php if ($fil->city): ?> (<?php echo esc_html($fil->city); ?>)<?php endif; ?>
+                        </option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
 
-                <div class="ppv-form-group" style="margin-top: 12px;">
-                    <label data-i18n="maintenance_message"><?php echo esc_html(PPV_Lang::t('maintenance_message')); ?></label>
-                    <p class="ppv-help" data-i18n="maintenance_message_help" style="margin-bottom: 8px;">
-                        <?php echo esc_html(PPV_Lang::t('maintenance_message_help')); ?>
-                    </p>
-                    <textarea name="maintenance_message" placeholder="<?php echo esc_attr(PPV_Lang::t('maintenance_message_placeholder')); ?>" style="min-height: 100px;">
-<?php echo esc_textarea($store->maintenance_message ?? ''); ?>
-                    </textarea>
+                <!-- Vacation Form -->
+                <div class="ppv-vacation-form-wrapper" id="ppv-vacation-form-wrapper">
+                    <div class="ppv-vip-toggle-row" style="margin-bottom: 12px;">
+                        <div class="ppv-toggle-wrapper">
+                            <label class="ppv-toggle-switch">
+                                <input type="checkbox" id="ppv-filiale-vacation-toggle">
+                                <span class="ppv-toggle-slider"></span>
+                            </label>
+                            <span class="ppv-toggle-status" id="ppv-filiale-vacation-status" data-on="<?php echo esc_attr(PPV_Lang::t('toggle_on')); ?>" data-off="<?php echo esc_attr(PPV_Lang::t('toggle_off')); ?>"><?php echo esc_html(PPV_Lang::t('toggle_off')); ?></span>
+                        </div>
+                        <div class="ppv-toggle-label">
+                            <strong><?php echo esc_html(PPV_Lang::t('vacation_enabled')); ?></strong>
+                        </div>
+                    </div>
+
+                    <div id="ppv-vacation-fields-wrapper" style="opacity: 0.5; pointer-events: none;">
+                        <div class="ppv-vacation-dates-row">
+                            <div class="ppv-form-group">
+                                <label><?php echo esc_html(PPV_Lang::t('vacation_from')); ?></label>
+                                <input type="date" id="ppv-filiale-vacation-from">
+                            </div>
+                            <div class="ppv-form-group">
+                                <label><?php echo esc_html(PPV_Lang::t('vacation_to')); ?></label>
+                                <input type="date" id="ppv-filiale-vacation-to">
+                            </div>
+                        </div>
+                        <div class="ppv-form-group">
+                            <label><?php echo esc_html(PPV_Lang::t('vacation_message')); ?></label>
+                            <input type="text" id="ppv-filiale-vacation-message" placeholder="<?php echo esc_attr(PPV_Lang::t('vacation_message_placeholder')); ?>">
+                        </div>
+                    </div>
+
+                    <div class="ppv-vacation-all-hint" id="ppv-vacation-all-hint" style="display: none;">
+                        <?php echo esc_html(PPV_Lang::t('vacation_apply_all_hint') ?? 'A beállítások az összes filiáléra alkalmazásra kerülnek'); ?>
+                    </div>
+
+                    <button type="button" class="ppv-btn ppv-btn-small ppv-save-filiale-vacation" id="ppv-save-vacation-btn" style="margin-top: 12px;">
+                        <i class="ri-save-line"></i> <?php echo esc_html(PPV_Lang::t('save') ?? 'Mentés'); ?>
+                    </button>
                 </div>
+
+                <!-- Store filiale data for JS -->
+                <script type="application/json" id="ppv-filialen-data">
+                <?php echo json_encode(array_map(function($f) {
+                    return [
+                        'id' => intval($f->id),
+                        'vacation_enabled' => !empty($f->vacation_enabled) ? 1 : 0,
+                        'vacation_from' => $f->vacation_from ?? '',
+                        'vacation_to' => $f->vacation_to ?? '',
+                        'vacation_message' => $f->vacation_message ?? ''
+                    ];
+                }, $filialen)); ?>
+                </script>
+
+                <!-- Inline filiale vacation handler -->
+                <script>
+                (function() {
+                    var filialeSelect = document.getElementById('ppv-vacation-filiale-select');
+                    var formWrapper = document.getElementById('ppv-vacation-form-wrapper');
+                    var toggle = document.getElementById('ppv-filiale-vacation-toggle');
+                    var status = document.getElementById('ppv-filiale-vacation-status');
+                    var fieldsWrapper = document.getElementById('ppv-vacation-fields-wrapper');
+                    var fromInput = document.getElementById('ppv-filiale-vacation-from');
+                    var toInput = document.getElementById('ppv-filiale-vacation-to');
+                    var msgInput = document.getElementById('ppv-filiale-vacation-message');
+                    var allHint = document.getElementById('ppv-vacation-all-hint');
+                    var saveBtn = document.getElementById('ppv-save-vacation-btn');
+                    var filialeDataEl = document.getElementById('ppv-filialen-data');
+                    var filialeData = filialeDataEl ? JSON.parse(filialeDataEl.textContent) : [];
+
+                    function loadFiliale(storeId) {
+                        if (storeId === 'all') {
+                            // Clear form for "all" selection
+                            toggle.checked = false;
+                            fromInput.value = '';
+                            toInput.value = '';
+                            msgInput.value = '';
+                            allHint.style.display = 'block';
+                        } else {
+                            allHint.style.display = 'none';
+                            var fil = filialeData.find(function(f) { return f.id == storeId; });
+                            if (fil) {
+                                toggle.checked = fil.vacation_enabled == 1;
+                                fromInput.value = fil.vacation_from || '';
+                                toInput.value = fil.vacation_to || '';
+                                msgInput.value = fil.vacation_message || '';
+                            }
+                        }
+                        updateToggleState();
+                    }
+
+                    function updateToggleState() {
+                        var isOn = toggle.checked;
+                        status.textContent = isOn ? (status.dataset.on || 'BE') : (status.dataset.off || 'KI');
+                        status.classList.toggle('active', isOn);
+                        fieldsWrapper.style.opacity = isOn ? '1' : '0.5';
+                        fieldsWrapper.style.pointerEvents = isOn ? 'auto' : 'none';
+                        formWrapper.classList.toggle('vacation-active', isOn);
+                    }
+
+                    function saveVacation() {
+                        var selectedValue = filialeSelect.value;
+                        var storeIds = selectedValue === 'all'
+                            ? filialeData.map(function(f) { return f.id; })
+                            : [parseInt(selectedValue)];
+
+                        saveBtn.innerHTML = '<i class="ri-loader-4-line"></i> ...';
+                        saveBtn.disabled = true;
+
+                        var savePromises = storeIds.map(function(storeId) {
+                            var formData = new FormData();
+                            formData.append('action', 'ppv_save_filiale_vacation');
+                            formData.append('store_id', storeId);
+                            formData.append('vacation_enabled', toggle.checked ? '1' : '0');
+                            formData.append('vacation_from', fromInput.value);
+                            formData.append('vacation_to', toInput.value);
+                            formData.append('vacation_message', msgInput.value);
+
+                            return fetch(ppv_profile.ajaxUrl, {
+                                method: 'POST',
+                                body: formData
+                            }).then(function(r) { return r.json(); });
+                        });
+
+                        Promise.all(savePromises)
+                            .then(function(results) {
+                                saveBtn.disabled = false;
+                                saveBtn.innerHTML = '<i class="ri-save-line"></i> Mentés';
+
+                                var allSuccess = results.every(function(r) { return r.success; });
+                                if (allSuccess) {
+                                    // Update local data
+                                    storeIds.forEach(function(id) {
+                                        var fil = filialeData.find(function(f) { return f.id == id; });
+                                        if (fil) {
+                                            fil.vacation_enabled = toggle.checked ? 1 : 0;
+                                            fil.vacation_from = fromInput.value;
+                                            fil.vacation_to = toInput.value;
+                                            fil.vacation_message = msgInput.value;
+                                        }
+                                    });
+                                    alert(selectedValue === 'all' ? 'Összes fiók mentve!' : 'Mentve!');
+                                } else {
+                                    alert('Hiba történt');
+                                }
+                            })
+                            .catch(function() {
+                                saveBtn.disabled = false;
+                                saveBtn.innerHTML = '<i class="ri-save-line"></i> Mentés';
+                                alert('Hiba történt');
+                            });
+                    }
+
+                    function init() {
+                        if (!filialeSelect || !toggle) return;
+
+                        filialeSelect.onchange = function() {
+                            loadFiliale(this.value);
+                        };
+
+                        toggle.onchange = updateToggleState;
+                        saveBtn.onclick = saveVacation;
+
+                        // Load first selection (all)
+                        loadFiliale('all');
+                    }
+
+                    if (document.readyState === 'loading') {
+                        document.addEventListener('DOMContentLoaded', init);
+                    } else {
+                        init();
+                    }
+                    document.addEventListener('turbo:load', init);
+                })();
+                </script>
+
+                <?php else: ?>
+                <!-- Single store vacation settings -->
+                <div class="ppv-vip-toggle-row">
+                    <div class="ppv-toggle-wrapper">
+                        <label class="ppv-toggle-switch">
+                            <input type="checkbox" id="ppv-vacation-enabled" name="vacation_enabled" value="1" <?php checked($store->vacation_enabled ?? 0, 1); ?>>
+                            <span class="ppv-toggle-slider"></span>
+                        </label>
+                        <span class="ppv-toggle-status <?php echo !empty($store->vacation_enabled) ? 'active' : ''; ?>" data-on="<?php echo esc_attr(PPV_Lang::t('toggle_on')); ?>" data-off="<?php echo esc_attr(PPV_Lang::t('toggle_off')); ?>"><?php echo esc_html(!empty($store->vacation_enabled) ? PPV_Lang::t('toggle_on') : PPV_Lang::t('toggle_off')); ?></span>
+                    </div>
+                    <div class="ppv-toggle-label">
+                        <strong data-i18n="vacation_enabled"><?php echo esc_html(PPV_Lang::t('vacation_enabled')); ?></strong>
+                        <small data-i18n="vacation_enabled_help"><?php echo esc_html(PPV_Lang::t('vacation_enabled_help')); ?></small>
+                    </div>
+                </div>
+
+                <div class="ppv-vacation-fields" style="<?php echo empty($store->vacation_enabled) ? 'opacity: 0.5; pointer-events: none;' : ''; ?>">
+                    <div class="ppv-form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div class="ppv-form-group">
+                            <label data-i18n="vacation_from"><?php echo esc_html(PPV_Lang::t('vacation_from')); ?></label>
+                            <input type="date" name="vacation_from" value="<?php echo esc_attr($store->vacation_from ?? ''); ?>">
+                        </div>
+                        <div class="ppv-form-group">
+                            <label data-i18n="vacation_to"><?php echo esc_html(PPV_Lang::t('vacation_to')); ?></label>
+                            <input type="date" name="vacation_to" value="<?php echo esc_attr($store->vacation_to ?? ''); ?>">
+                        </div>
+                    </div>
+                    <p class="ppv-help" data-i18n="vacation_dates_help" style="margin-top: -8px; margin-bottom: 12px;">
+                        <?php echo esc_html(PPV_Lang::t('vacation_dates_help')); ?>
+                    </p>
+
+                    <div class="ppv-form-group">
+                        <label data-i18n="vacation_message"><?php echo esc_html(PPV_Lang::t('vacation_message')); ?></label>
+                        <p class="ppv-help" data-i18n="vacation_message_help" style="margin-bottom: 8px;">
+                            <?php echo esc_html(PPV_Lang::t('vacation_message_help')); ?>
+                        </p>
+                        <textarea name="vacation_message" placeholder="<?php echo esc_attr(PPV_Lang::t('vacation_message_placeholder')); ?>" style="min-height: 80px;"><?php echo esc_textarea($store->vacation_message ?? ''); ?></textarea>
+                    </div>
+                </div>
+                <?php endif; ?>
+
+                <!-- Inline vacation toggle handler (fallback) -->
+                <script>
+                (function() {
+                    console.log('🏖️ Inline vacation script loaded');
+
+                    function initVacationToggle() {
+                        var toggle = document.getElementById('ppv-vacation-enabled');
+                        var fields = document.querySelector('.ppv-vacation-fields');
+
+                        console.log('🏖️ Toggle element:', toggle);
+                        console.log('🏖️ Fields element:', fields);
+
+                        if (toggle && fields) {
+                            toggle.onchange = function() {
+                                console.log('🏖️ Toggle changed to:', this.checked);
+                                fields.style.opacity = this.checked ? '1' : '0.5';
+                                fields.style.pointerEvents = this.checked ? 'auto' : 'none';
+
+                                // Update status text
+                                var wrapper = toggle.closest('.ppv-toggle-wrapper');
+                                if (wrapper) {
+                                    var status = wrapper.querySelector('.ppv-toggle-status');
+                                    if (status) {
+                                        status.textContent = this.checked ? (status.dataset.on || 'BE') : (status.dataset.off || 'KI');
+                                        status.classList.toggle('active', this.checked);
+                                    }
+                                }
+                            };
+                            console.log('🏖️ Event handler attached!');
+                        }
+                    }
+
+                    // Run on DOM ready and Turbo load
+                    if (document.readyState === 'loading') {
+                        document.addEventListener('DOMContentLoaded', initVacationToggle);
+                    } else {
+                        initVacationToggle();
+                    }
+                    document.addEventListener('turbo:load', initVacationToggle);
+                })();
+                </script>
 
                 <hr>
 
@@ -1621,8 +1939,10 @@ public static function ajax_save_profile() {
         'description' => wp_kses_post($_POST['description'] ?? ''),
         'active' => !empty($_POST['active']) ? 1 : 0,
         'visible' => !empty($_POST['visible']) ? 1 : 0,
-        'maintenance_mode' => !empty($_POST['maintenance_mode']) ? 1 : 0,
-        'maintenance_message' => wp_kses_post($_POST['maintenance_message'] ?? ''),
+        'vacation_enabled' => !empty($_POST['vacation_enabled']) ? 1 : 0,
+        'vacation_from' => !empty($_POST['vacation_from']) ? sanitize_text_field($_POST['vacation_from']) : null,
+        'vacation_to' => !empty($_POST['vacation_to']) ? sanitize_text_field($_POST['vacation_to']) : null,
+        'vacation_message' => sanitize_text_field($_POST['vacation_message'] ?? ''),
         'enforce_opening_hours' => !empty($_POST['enforce_opening_hours']) ? 1 : 0,
         'timezone' => sanitize_text_field($_POST['timezone'] ?? 'Europe/Berlin'),
         'updated_at' => current_time('mysql'),
@@ -1695,8 +2015,10 @@ $format_specs = [
     '%s',  // description
     '%d',  // active
     '%d',  // visible
-    '%d',  // maintenance_mode
-    '%s',  // maintenance_message
+    '%d',  // vacation_enabled
+    '%s',  // vacation_from
+    '%s',  // vacation_to
+    '%s',  // vacation_message
     '%d',  // enforce_opening_hours
     '%s',  // timezone
     '%s',  // updated_at
@@ -1744,6 +2066,9 @@ $result = $wpdb->update(
 
 ppv_log("💾 [DEBUG] Update result: " . ($result !== false ? 'OK (rows: ' . $result . ')' : 'FAILED'));
 ppv_log("💾 [DEBUG] Last SQL error: " . $wpdb->last_error);
+ppv_log("💾 [DEBUG] Vacation enabled: " . ($update_data['vacation_enabled'] ?? 'NULL'));
+ppv_log("💾 [DEBUG] Vacation from: " . ($update_data['vacation_from'] ?? 'NULL'));
+ppv_log("💾 [DEBUG] Vacation to: " . ($update_data['vacation_to'] ?? 'NULL'));
 
     if ($result !== false) {
         // ✅ FIX: Return updated store data so JS can refresh form fields without reload
@@ -1758,7 +2083,11 @@ ppv_log("💾 [DEBUG] Last SQL error: " . $wpdb->last_error);
             'store' => $updated_store  // ✅ This enables updateFormFields() in JS
         ]);
     } else {
-        wp_send_json_error(['msg' => PPV_Lang::t('profile_save_error')]);
+        $error_msg = PPV_Lang::t('profile_save_error');
+        if (!empty($wpdb->last_error)) {
+            $error_msg .= ' | DB: ' . $wpdb->last_error;
+        }
+        wp_send_json_error(['msg' => $error_msg]);
     }
 }
 
@@ -2218,6 +2547,73 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
 
         /**
          * ============================================================
+         * 🏖️ SAVE FILIALE VACATION SETTINGS
+         * ============================================================
+         */
+        public static function ajax_save_filiale_vacation() {
+            self::ensure_session();
+
+            $auth = self::check_auth();
+            if (!$auth['valid']) {
+                wp_send_json_error(['msg' => 'Nincs jogosultság']);
+                return;
+            }
+
+            $target_store_id = intval($_POST['store_id'] ?? 0);
+            if (!$target_store_id) {
+                wp_send_json_error(['msg' => 'Store ID hiányzik']);
+                return;
+            }
+
+            // Verify the user has access to this store (parent or child)
+            $vendor_store_id = intval($_SESSION['ppv_store_id'] ?? $_SESSION['ppv_vendor_store_id'] ?? 0);
+            if (!$vendor_store_id) {
+                wp_send_json_error(['msg' => 'Nincs jogosultság']);
+                return;
+            }
+
+            global $wpdb;
+
+            // Check if target store is the vendor's store or a child of it
+            $is_valid = $wpdb->get_var($wpdb->prepare("
+                SELECT COUNT(*) FROM {$wpdb->prefix}ppv_stores
+                WHERE id = %d AND (id = %d OR parent_store_id = %d)
+            ", $target_store_id, $vendor_store_id, $vendor_store_id));
+
+            if (!$is_valid) {
+                wp_send_json_error(['msg' => 'Nincs jogosultság ehhez a bolthoz']);
+                return;
+            }
+
+            // Update vacation settings
+            $vacation_enabled = !empty($_POST['vacation_enabled']) ? 1 : 0;
+            $vacation_from = !empty($_POST['vacation_from']) ? sanitize_text_field($_POST['vacation_from']) : null;
+            $vacation_to = !empty($_POST['vacation_to']) ? sanitize_text_field($_POST['vacation_to']) : null;
+            $vacation_message = sanitize_text_field($_POST['vacation_message'] ?? '');
+
+            $result = $wpdb->update(
+                "{$wpdb->prefix}ppv_stores",
+                [
+                    'vacation_enabled' => $vacation_enabled,
+                    'vacation_from' => $vacation_from,
+                    'vacation_to' => $vacation_to,
+                    'vacation_message' => $vacation_message
+                ],
+                ['id' => $target_store_id],
+                ['%d', '%s', '%s', '%s'],
+                ['%d']
+            );
+
+            if ($result !== false) {
+                ppv_log("[PPV_VACATION] Vacation settings updated for store #{$target_store_id}");
+                wp_send_json_success(['msg' => PPV_Lang::t('profile_saved_success') ?? 'Mentve!']);
+            } else {
+                wp_send_json_error(['msg' => 'Hiba a mentés során']);
+            }
+        }
+
+        /**
+         * ============================================================
          * 🎁 ACTIVATE REFERRAL GRACE PERIOD
          * ============================================================
          */
@@ -2272,6 +2668,7 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
          * ============================================================
          */
         public static function ajax_change_email() {
+            global $wpdb;
             self::ensure_session();
 
             $auth = self::check_auth();
@@ -2280,15 +2677,13 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
                 return;
             }
 
-            // Get user ID from session
-            $user_id = 0;
-            if (!empty($_SESSION['ppv_user_id'])) {
-                $user_id = intval($_SESSION['ppv_user_id']);
-            } elseif (is_user_logged_in()) {
-                $user_id = get_current_user_id();
-            }
+            // Get identifiers
+            $wp_user_id = is_user_logged_in() ? get_current_user_id() : 0;
+            $ppv_user_id = intval($_SESSION['ppv_user_id'] ?? 0);
+            $store_id = self::get_store_id();
 
-            if (!$user_id) {
+            // Must have at least one valid identifier
+            if (!$wp_user_id && !$ppv_user_id && !$store_id) {
                 wp_send_json_error(['msg' => PPV_Lang::t('error_no_user', 'Felhasználó nem található')]);
                 return;
             }
@@ -2312,26 +2707,51 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
                 return;
             }
 
-            // Check if email already exists
-            if (email_exists($new_email) && email_exists($new_email) !== $user_id) {
+            // Check if email already exists in WordPress users
+            if ($wp_user_id && email_exists($new_email) && email_exists($new_email) !== $wp_user_id) {
                 wp_send_json_error(['msg' => PPV_Lang::t('error_email_exists', 'Ez az e-mail cím már foglalt')]);
                 return;
             }
 
-            // Update user email
-            $result = wp_update_user([
-                'ID' => $user_id,
-                'user_email' => $new_email
-            ]);
-
-            if (is_wp_error($result)) {
-                wp_send_json_error(['msg' => $result->get_error_message()]);
-                return;
+            // Check if email exists in ppv_stores (exclude current store)
+            if ($store_id) {
+                $existing_store = $wpdb->get_var($wpdb->prepare(
+                    "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE email = %s AND id != %d LIMIT 1",
+                    $new_email, $store_id
+                ));
+                if ($existing_store) {
+                    wp_send_json_error(['msg' => PPV_Lang::t('error_email_exists', 'Ez az e-mail cím már foglalt')]);
+                    return;
+                }
             }
 
-            // Also update store email if exists
-            global $wpdb;
-            $store_id = self::get_store_id();
+            // Check if email exists in ppv_users (exclude current user)
+            if ($ppv_user_id > 0) {
+                $existing_ppv_user = $wpdb->get_var($wpdb->prepare(
+                    "SELECT id FROM {$wpdb->prefix}ppv_users WHERE email = %s AND id != %d LIMIT 1",
+                    $new_email, $ppv_user_id
+                ));
+                if ($existing_ppv_user) {
+                    wp_send_json_error(['msg' => PPV_Lang::t('error_email_exists', 'Ez az e-mail cím már foglalt')]);
+                    return;
+                }
+            }
+
+            $updated = false;
+
+            // Update WordPress user email if exists
+            if ($wp_user_id) {
+                $result = wp_update_user([
+                    'ID' => $wp_user_id,
+                    'user_email' => $new_email
+                ]);
+                if (!is_wp_error($result)) {
+                    $updated = true;
+                    ppv_log("[PPV_ACCOUNT] WordPress user email updated for user #{$wp_user_id}");
+                }
+            }
+
+            // Update store email
             if ($store_id) {
                 $wpdb->update(
                     "{$wpdb->prefix}ppv_stores",
@@ -2340,11 +2760,11 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
                     ['%s'],
                     ['%d']
                 );
-                ppv_log("[PPV_ACCOUNT] Store email synced for store #{$store_id}");
+                $updated = true;
+                ppv_log("[PPV_ACCOUNT] Store email updated for store #{$store_id}");
             }
 
-            // ✅ Also update ppv_users email if handler/vendor
-            $ppv_user_id = $_SESSION['ppv_user_id'] ?? 0;
+            // Update ppv_users email if handler/vendor
             if ($ppv_user_id > 0) {
                 $wpdb->update(
                     "{$wpdb->prefix}ppv_users",
@@ -2353,14 +2773,19 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
                     ['%s'],
                     ['%d']
                 );
-                ppv_log("[PPV_ACCOUNT] PPV user email synced for ppv_user #{$ppv_user_id}");
+                $updated = true;
+                ppv_log("[PPV_ACCOUNT] PPV user email updated for ppv_user #{$ppv_user_id}");
 
                 // Update session email
                 $_SESSION['ppv_user_email'] = $new_email;
             }
 
-            ppv_log("[PPV_ACCOUNT] Email changed for user #{$user_id} to: {$new_email}");
-            wp_send_json_success(['msg' => PPV_Lang::t('email_changed_success', 'E-mail cím sikeresen módosítva!')]);
+            if ($updated) {
+                ppv_log("[PPV_ACCOUNT] Email changed to: {$new_email} (wp:{$wp_user_id}, ppv:{$ppv_user_id}, store:{$store_id})");
+                wp_send_json_success(['msg' => PPV_Lang::t('email_changed_success', 'E-mail cím sikeresen módosítva!')]);
+            } else {
+                wp_send_json_error(['msg' => PPV_Lang::t('error', 'Hiba történt')]);
+            }
         }
 
         /**

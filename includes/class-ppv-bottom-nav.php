@@ -24,15 +24,10 @@ class PPV_Bottom_Nav {
      * Assets (CSS + JS)
      * ============================================================ */
     public static function enqueue_assets() {
-        // RemixIcons - always load (blocking) to prevent CLS from icon flash
-        wp_enqueue_style(
-            'remixicons',
-            'https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.min.css',
-            [],
-            null
-        );
+        // RemixIcons loaded globally in punktepass.php
 
-        // 🚀 Pure SPA navigation (no Turbo - uses fetch for instant transitions)
+        // 🚫 SPA navigation PERMANENTLY DISABLED - too many plugin conflicts
+        // Use normal page navigation instead (LiteSpeed cache helps with speed)
 
         wp_enqueue_style(
             'ppv-bottom-nav',
@@ -41,6 +36,7 @@ class PPV_Bottom_Nav {
             filemtime(plugin_dir_path(dirname(__FILE__)) . 'assets/css/ppv-bottom-nav.css')
         );
 
+        // Simple inline JS for active icon + feedback modal only
         wp_register_script('ppv-bottom-nav', false, ['jquery'], time(), true);
         wp_add_inline_script('ppv-bottom-nav', self::inline_js());
         wp_enqueue_script('ppv-bottom-nav');

@@ -252,6 +252,7 @@ $core_modules = [
     'includes/class-ppv-poster.php',
     'includes/class-ppv-bonus-days.php',
     'includes/class-ppv-filiale.php',
+    'includes/class-ppv-handler-notifications.php',
     'includes/api/ppv-stores.php',
     'includes/pp-profile-lite.php',
     'includes/tools/generate-pos-keys.php',
@@ -284,6 +285,7 @@ $core_modules = [
     'includes/class-ppv-standalone-admin.php',
     'includes/class-ppv-device-fingerprint.php',
     'includes/class-ppv-push.php',
+    'includes/class-ppv-weekly-report.php',
 ];
 
 // Debug only if enabled
@@ -397,11 +399,19 @@ add_action('wp_enqueue_scripts', function() {
         return; // Stop - don't load other themes
     }
     
+    // 🔹 REMIXICON - Load once globally (prevents duplicate loading)
+    wp_enqueue_style(
+        'remixicons',
+        'https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css',
+        [],
+        '3.5.0'
+    );
+
     // 🔹 HANDLER-LIGHT.CSS - Always load globally (contains shared UI components)
     wp_enqueue_style(
         'ppv-handler-light',
         PPV_PLUGIN_URL . 'assets/css/handler-light.css',
-        [],
+        ['remixicons'],
         PPV_VERSION
     );
 
@@ -1049,6 +1059,10 @@ add_action('init', function() {
 // 🕓 ACTION SCHEDULER
 // ========================================
 add_action('action_scheduler_init', function () {
+    // Extra safety check: ensure Action Scheduler is fully initialized
+    if (!class_exists('ActionScheduler') || !ActionScheduler::is_initialized()) {
+        return;
+    }
     if (function_exists('as_next_scheduled_action') && function_exists('as_schedule_recurring_action')) {
         if (!as_next_scheduled_action('ppv_daily_qr_regen')) {
             as_schedule_recurring_action(time() + 3600, DAY_IN_SECONDS, 'ppv_daily_qr_regen');

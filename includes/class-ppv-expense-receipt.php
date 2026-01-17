@@ -103,15 +103,15 @@ class PPV_Expense_Receipt {
      * ✅ HAVI BIZONYLAT GENERÁLÁS - JAVÍTOTT VERZIÓ
      * Működik include error nélkül!
      */
-    public static function generate_monthly_receipt($store_id, $year, $month)
+    public static function generate_monthly_receipt($store_id, $year, $month, $group_by_filiale = false)
     {
         global $wpdb;
 
-        ppv_log("📅 [PPV_EXPENSE_RECEIPT] generate_monthly_receipt() called: store={$store_id}, year={$year}, month={$month}");
+        ppv_log("📅 [PPV_EXPENSE_RECEIPT] generate_monthly_receipt() called: store={$store_id}, year={$year}, month={$month}, group={$group_by_filiale}");
 
         // 1️⃣ Store adatok lekérése
         $store = $wpdb->get_row($wpdb->prepare("
-            SELECT id, company_name, address, plz, city, country, tax_id
+            SELECT id, company_name, name, address, plz, city, country, tax_id
             FROM {$wpdb->prefix}ppv_stores
             WHERE id = %d LIMIT 1
         ", $store_id), ARRAY_A);
@@ -124,30 +124,73 @@ class PPV_Expense_Receipt {
         ppv_log("✅ [PPV_EXPENSE_RECEIPT] Store megtalálva: " . $store['company_name']);
 
         // 2️⃣ Beváltások lekérése a hónapra
-        $items = $wpdb->get_results($wpdb->prepare("
-            SELECT
-                r.id,
-                r.user_id,
-                r.store_id,
-                r.reward_id,
-                r.points_spent,
-                r.actual_amount,
-                r.redeemed_at,
-                u.email AS user_email,
-                u.first_name,
-                u.last_name,
-                rw.title AS reward_title,
-                rw.action_value,
-                rw.free_product_value
-            FROM {$wpdb->prefix}ppv_rewards_redeemed r
-            LEFT JOIN {$wpdb->prefix}ppv_users u ON r.user_id = u.id
-            LEFT JOIN {$wpdb->prefix}ppv_rewards rw ON r.reward_id = rw.id
-            WHERE r.store_id = %d
-            AND r.status = 'approved'
-            AND YEAR(r.redeemed_at) = %d
-            AND MONTH(r.redeemed_at) = %d
-            ORDER BY r.redeemed_at ASC
-        ", $store_id, $year, $month));
+        if ($group_by_filiale) {
+            // Get all stores: parent + children
+            $store_ids = $wpdb->get_col($wpdb->prepare("
+                SELECT id FROM {$wpdb->prefix}ppv_stores
+                WHERE id = %d OR parent_store_id = %d
+            ", $store_id, $store_id));
+
+            if (empty($store_ids)) {
+                $store_ids = [$store_id];
+            }
+
+            $store_ids_str = implode(',', array_map('intval', $store_ids));
+
+            $items = $wpdb->get_results($wpdb->prepare("
+                SELECT
+                    r.id,
+                    r.user_id,
+                    r.store_id,
+                    r.reward_id,
+                    r.points_spent,
+                    r.actual_amount,
+                    r.redeemed_at,
+                    u.email AS user_email,
+                    u.first_name,
+                    u.last_name,
+                    rw.title AS reward_title,
+                    rw.action_value,
+                    rw.free_product_value,
+                    s.name AS filiale_name,
+                    s.company_name AS filiale_company,
+                    s.city AS filiale_city
+                FROM {$wpdb->prefix}ppv_rewards_redeemed r
+                LEFT JOIN {$wpdb->prefix}ppv_users u ON r.user_id = u.id
+                LEFT JOIN {$wpdb->prefix}ppv_rewards rw ON r.reward_id = rw.id
+                LEFT JOIN {$wpdb->prefix}ppv_stores s ON r.store_id = s.id
+                WHERE r.store_id IN ({$store_ids_str})
+                AND r.status = 'approved'
+                AND YEAR(r.redeemed_at) = %d
+                AND MONTH(r.redeemed_at) = %d
+                ORDER BY s.name ASC, r.redeemed_at ASC
+            ", $year, $month));
+        } else {
+            $items = $wpdb->get_results($wpdb->prepare("
+                SELECT
+                    r.id,
+                    r.user_id,
+                    r.store_id,
+                    r.reward_id,
+                    r.points_spent,
+                    r.actual_amount,
+                    r.redeemed_at,
+                    u.email AS user_email,
+                    u.first_name,
+                    u.last_name,
+                    rw.title AS reward_title,
+                    rw.action_value,
+                    rw.free_product_value
+                FROM {$wpdb->prefix}ppv_rewards_redeemed r
+                LEFT JOIN {$wpdb->prefix}ppv_users u ON r.user_id = u.id
+                LEFT JOIN {$wpdb->prefix}ppv_rewards rw ON r.reward_id = rw.id
+                WHERE r.store_id = %d
+                AND r.status = 'approved'
+                AND YEAR(r.redeemed_at) = %d
+                AND MONTH(r.redeemed_at) = %d
+                ORDER BY r.redeemed_at ASC
+            ", $store_id, $year, $month));
+        }
 
         if (!$items || count($items) === 0) {
             ppv_log("⚠️ [PPV_EXPENSE_RECEIPT] Nincsenek beváltások: year={$year}, month={$month}");
@@ -166,7 +209,7 @@ class PPV_Expense_Receipt {
         ppv_log("🌍 [PPV_EXPENSE_RECEIPT] Jezik: {$lang}");
 
         // 4️⃣ HTML generálás (az existing generate_html_for_monthly() függvénnyel)
-        $html = self::generate_html_for_monthly($store, $items, $year, $month, $lang);
+        $html = self::generate_html_for_monthly($store, $items, $year, $month, $lang, $group_by_filiale);
 
         if (!$html) {
             ppv_log("❌ [PPV_EXPENSE_RECEIPT] HTML generálás sikertelen");
@@ -189,7 +232,8 @@ class PPV_Expense_Receipt {
         ppv_log("✅ [PPV_EXPENSE_RECEIPT] Könyvtár OK: {$dir}");
 
         // 6️⃣ Fájlnév és útvonal
-        $filename = sprintf("monthly-receipt-%d-%04d%02d.html", $store_id, $year, $month);
+        $suffix = $group_by_filiale ? '-all' : '';
+        $filename = sprintf("monthly-receipt-%d-%04d%02d%s.html", $store_id, $year, $month, $suffix);
         $filepath = $dir . $filename;
 
         // 7️⃣ HTML mentése fájlként UTF-8 BOM-mal (román ékezetek miatt)
@@ -211,15 +255,15 @@ class PPV_Expense_Receipt {
      * ✅ IDŐSZAK BIZONYLAT GENERÁLÁS (Zeitraumbericht)
      * Date range report - similar to monthly but with custom date range
      */
-    public static function generate_date_range_receipt($store_id, $date_from, $date_to)
+    public static function generate_date_range_receipt($store_id, $date_from, $date_to, $group_by_filiale = false)
     {
         global $wpdb;
 
-        ppv_log("📅 [PPV_EXPENSE_RECEIPT] generate_date_range_receipt() called: store={$store_id}, from={$date_from}, to={$date_to}");
+        ppv_log("📅 [PPV_EXPENSE_RECEIPT] generate_date_range_receipt() called: store={$store_id}, from={$date_from}, to={$date_to}, group={$group_by_filiale}");
 
         // 1️⃣ Store adatok lekérése
         $store = $wpdb->get_row($wpdb->prepare("
-            SELECT id, company_name, address, plz, city, country, tax_id
+            SELECT id, company_name, name, address, plz, city, country, tax_id
             FROM {$wpdb->prefix}ppv_stores
             WHERE id = %d LIMIT 1
         ", $store_id), ARRAY_A);
@@ -232,30 +276,73 @@ class PPV_Expense_Receipt {
         ppv_log("✅ [PPV_EXPENSE_RECEIPT] Store megtalálva: " . $store['company_name']);
 
         // 2️⃣ Beváltások lekérése az időszakra
-        $items = $wpdb->get_results($wpdb->prepare("
-            SELECT
-                r.id,
-                r.user_id,
-                r.store_id,
-                r.reward_id,
-                r.points_spent,
-                r.actual_amount,
-                r.redeemed_at,
-                u.email AS user_email,
-                u.first_name,
-                u.last_name,
-                rw.title AS reward_title,
-                rw.action_value,
-                rw.free_product_value
-            FROM {$wpdb->prefix}ppv_rewards_redeemed r
-            LEFT JOIN {$wpdb->prefix}ppv_users u ON r.user_id = u.id
-            LEFT JOIN {$wpdb->prefix}ppv_rewards rw ON r.reward_id = rw.id
-            WHERE r.store_id = %d
-            AND r.status = 'approved'
-            AND DATE(r.redeemed_at) >= %s
-            AND DATE(r.redeemed_at) <= %s
-            ORDER BY r.redeemed_at ASC
-        ", $store_id, $date_from, $date_to));
+        if ($group_by_filiale) {
+            // Get all stores: parent + children
+            $store_ids = $wpdb->get_col($wpdb->prepare("
+                SELECT id FROM {$wpdb->prefix}ppv_stores
+                WHERE id = %d OR parent_store_id = %d
+            ", $store_id, $store_id));
+
+            if (empty($store_ids)) {
+                $store_ids = [$store_id];
+            }
+
+            $store_ids_str = implode(',', array_map('intval', $store_ids));
+
+            $items = $wpdb->get_results($wpdb->prepare("
+                SELECT
+                    r.id,
+                    r.user_id,
+                    r.store_id,
+                    r.reward_id,
+                    r.points_spent,
+                    r.actual_amount,
+                    r.redeemed_at,
+                    u.email AS user_email,
+                    u.first_name,
+                    u.last_name,
+                    rw.title AS reward_title,
+                    rw.action_value,
+                    rw.free_product_value,
+                    s.name AS filiale_name,
+                    s.company_name AS filiale_company,
+                    s.city AS filiale_city
+                FROM {$wpdb->prefix}ppv_rewards_redeemed r
+                LEFT JOIN {$wpdb->prefix}ppv_users u ON r.user_id = u.id
+                LEFT JOIN {$wpdb->prefix}ppv_rewards rw ON r.reward_id = rw.id
+                LEFT JOIN {$wpdb->prefix}ppv_stores s ON r.store_id = s.id
+                WHERE r.store_id IN ({$store_ids_str})
+                AND r.status = 'approved'
+                AND DATE(r.redeemed_at) >= %s
+                AND DATE(r.redeemed_at) <= %s
+                ORDER BY s.name ASC, r.redeemed_at ASC
+            ", $date_from, $date_to));
+        } else {
+            $items = $wpdb->get_results($wpdb->prepare("
+                SELECT
+                    r.id,
+                    r.user_id,
+                    r.store_id,
+                    r.reward_id,
+                    r.points_spent,
+                    r.actual_amount,
+                    r.redeemed_at,
+                    u.email AS user_email,
+                    u.first_name,
+                    u.last_name,
+                    rw.title AS reward_title,
+                    rw.action_value,
+                    rw.free_product_value
+                FROM {$wpdb->prefix}ppv_rewards_redeemed r
+                LEFT JOIN {$wpdb->prefix}ppv_users u ON r.user_id = u.id
+                LEFT JOIN {$wpdb->prefix}ppv_rewards rw ON r.reward_id = rw.id
+                WHERE r.store_id = %d
+                AND r.status = 'approved'
+                AND DATE(r.redeemed_at) >= %s
+                AND DATE(r.redeemed_at) <= %s
+                ORDER BY r.redeemed_at ASC
+            ", $store_id, $date_from, $date_to));
+        }
 
         if (!$items || count($items) === 0) {
             ppv_log("⚠️ [PPV_EXPENSE_RECEIPT] Nincsenek beváltások: from={$date_from}, to={$date_to}");
@@ -274,7 +361,7 @@ class PPV_Expense_Receipt {
         ppv_log("🌍 [PPV_EXPENSE_RECEIPT] Jezik: {$lang}");
 
         // 4️⃣ HTML generálás (időszakra)
-        $html = self::generate_html_for_date_range($store, $items, $date_from, $date_to, $lang);
+        $html = self::generate_html_for_date_range($store, $items, $date_from, $date_to, $lang, $group_by_filiale);
 
         if (!$html) {
             ppv_log("❌ [PPV_EXPENSE_RECEIPT] HTML generálás sikertelen");
@@ -297,7 +384,8 @@ class PPV_Expense_Receipt {
         ppv_log("✅ [PPV_EXPENSE_RECEIPT] Könyvtár OK: {$dir}");
 
         // 6️⃣ Fájlnév és útvonal
-        $filename = sprintf("date-range-receipt-%d-%s-%s.html", $store_id, str_replace('-', '', $date_from), str_replace('-', '', $date_to));
+        $suffix = $group_by_filiale ? '-all' : '';
+        $filename = sprintf("date-range-receipt-%d-%s-%s%s.html", $store_id, str_replace('-', '', $date_from), str_replace('-', '', $date_to), $suffix);
         $filepath = $dir . $filename;
 
         // 7️⃣ HTML mentése fájlként UTF-8 BOM-mal (román ékezetek miatt)
@@ -1008,7 +1096,7 @@ HTML;
     /**
      * 🎨 HTML generálás HAVI bizonylathoz
      */
-    private static function generate_html_for_monthly($store, $redeems, $year, $month, $lang) {
+    private static function generate_html_for_monthly($store, $redeems, $year, $month, $lang, $group_by_filiale = false) {
         $total_amount = 0;
         $total_points = 0;
 
@@ -1017,12 +1105,36 @@ HTML;
             $total_points += intval($r->points_spent ?? 0);
         }
 
+        // Group items by filiale if requested
+        $grouped_redeems = null;
+        if ($group_by_filiale) {
+            $grouped_redeems = [];
+            foreach ($redeems as $r) {
+                $filiale_key = $r->store_id ?? 0;
+                $filiale_name = $r->filiale_name ?: ($r->filiale_company ?: 'Unbekannt');
+                if ($r->filiale_city) {
+                    $filiale_name .= ' – ' . $r->filiale_city;
+                }
+                if (!isset($grouped_redeems[$filiale_key])) {
+                    $grouped_redeems[$filiale_key] = [
+                        'name' => $filiale_name,
+                        'items' => [],
+                        'total_amount' => 0,
+                        'total_points' => 0
+                    ];
+                }
+                $grouped_redeems[$filiale_key]['items'][] = $r;
+                $grouped_redeems[$filiale_key]['total_amount'] += self::calculate_item_amount($r);
+                $grouped_redeems[$filiale_key]['total_points'] += intval($r->points_spent ?? 0);
+            }
+        }
+
         if ($lang === 'RO') {
-            return self::html_monthly_receipt_ro($store, $redeems, $year, $month, $total_amount, $total_points);
+            return self::html_monthly_receipt_ro($store, $redeems, $year, $month, $total_amount, $total_points, $grouped_redeems);
         } elseif ($lang === 'HU') {
-            return self::html_monthly_receipt_hu($store, $redeems, $year, $month, $total_amount, $total_points);
+            return self::html_monthly_receipt_hu($store, $redeems, $year, $month, $total_amount, $total_points, $grouped_redeems);
         } else {
-            return self::html_monthly_receipt_de($store, $redeems, $year, $month, $total_amount, $total_points);
+            return self::html_monthly_receipt_de($store, $redeems, $year, $month, $total_amount, $total_points, $grouped_redeems);
         }
     }
 
@@ -1045,7 +1157,7 @@ HTML;
     /**
      * 🎨 HTML - Havi bizonylat NÉMET verzió - Professional Design
      */
-    private static function html_monthly_receipt_de($store, $redeems, $year, $month, $total_amount, $total_points) {
+    private static function html_monthly_receipt_de($store, $redeems, $year, $month, $total_amount, $total_points, $grouped_redeems = null) {
         $company = htmlspecialchars($store['company_name'] ?? 'Unternehmen', ENT_QUOTES, 'UTF-8');
         $address = htmlspecialchars($store['address'] ?? '', ENT_QUOTES, 'UTF-8');
         $plz = htmlspecialchars($store['plz'] ?? '', ENT_QUOTES, 'UTF-8');
@@ -1060,24 +1172,67 @@ HTML;
         $receipt_num = sprintf('%d-%02d-M', $year, $month);
 
         $rows = '';
-        foreach ($redeems as $r) {
-            $customer = htmlspecialchars(trim(($r->first_name ?? '') . ' ' . ($r->last_name ?? '')), ENT_QUOTES, 'UTF-8');
-            if (!$customer) {
-                $customer = htmlspecialchars($r->user_email ?? 'Unbekannt', ENT_QUOTES, 'UTF-8');
-            }
-            $reward = htmlspecialchars($r->reward_title ?? 'Prämie', ENT_QUOTES, 'UTF-8');
-            $points = intval($r->points_spent ?? 0);
-            $amount = self::calculate_item_amount($r);
-            $amount_fmt = number_format($amount, 2, ',', '.');
-            $date = date('d.m.Y', strtotime($r->redeemed_at));
 
-            $rows .= "<tr>
-                <td>{$date}</td>
-                <td>{$customer}</td>
-                <td>{$reward}</td>
-                <td class=\"num\">{$points}</td>
-                <td class=\"num\">{$amount_fmt}</td>
-            </tr>";
+        // Grouped by filiale
+        if ($grouped_redeems && count($grouped_redeems) > 1) {
+            foreach ($grouped_redeems as $filiale_id => $filiale_data) {
+                $filiale_name = htmlspecialchars($filiale_data['name'], ENT_QUOTES, 'UTF-8');
+                $filiale_total = number_format($filiale_data['total_amount'], 2, ',', '.');
+                $filiale_points = $filiale_data['total_points'];
+
+                $rows .= "<tr class=\"filiale-header\">
+                    <td colspan=\"5\" style=\"background: #e8f4f8; font-weight: 600; padding: 8px; border-top: 2px solid #1a5276;\">
+                        📍 {$filiale_name}
+                    </td>
+                </tr>";
+
+                foreach ($filiale_data['items'] as $r) {
+                    $customer = htmlspecialchars(trim(($r->first_name ?? '') . ' ' . ($r->last_name ?? '')), ENT_QUOTES, 'UTF-8');
+                    if (!$customer) {
+                        $customer = htmlspecialchars($r->user_email ?? 'Unbekannt', ENT_QUOTES, 'UTF-8');
+                    }
+                    $reward = htmlspecialchars($r->reward_title ?? 'Prämie', ENT_QUOTES, 'UTF-8');
+                    $points = intval($r->points_spent ?? 0);
+                    $amount = self::calculate_item_amount($r);
+                    $amount_fmt = number_format($amount, 2, ',', '.');
+                    $date = date('d.m.Y', strtotime($r->redeemed_at));
+
+                    $rows .= "<tr>
+                        <td>{$date}</td>
+                        <td>{$customer}</td>
+                        <td>{$reward}</td>
+                        <td class=\"num\">{$points}</td>
+                        <td class=\"num\">{$amount_fmt}</td>
+                    </tr>";
+                }
+
+                $rows .= "<tr class=\"filiale-subtotal\">
+                    <td colspan=\"3\" style=\"text-align: right; font-weight: 500; background: #f5f5f5;\">Zwischensumme {$filiale_name}:</td>
+                    <td class=\"num\" style=\"font-weight: 500; background: #f5f5f5;\">{$filiale_points}</td>
+                    <td class=\"num\" style=\"font-weight: 500; background: #f5f5f5;\">{$filiale_total} €</td>
+                </tr>";
+            }
+        } else {
+            // Normal single-store layout
+            foreach ($redeems as $r) {
+                $customer = htmlspecialchars(trim(($r->first_name ?? '') . ' ' . ($r->last_name ?? '')), ENT_QUOTES, 'UTF-8');
+                if (!$customer) {
+                    $customer = htmlspecialchars($r->user_email ?? 'Unbekannt', ENT_QUOTES, 'UTF-8');
+                }
+                $reward = htmlspecialchars($r->reward_title ?? 'Prämie', ENT_QUOTES, 'UTF-8');
+                $points = intval($r->points_spent ?? 0);
+                $amount = self::calculate_item_amount($r);
+                $amount_fmt = number_format($amount, 2, ',', '.');
+                $date = date('d.m.Y', strtotime($r->redeemed_at));
+
+                $rows .= "<tr>
+                    <td>{$date}</td>
+                    <td>{$customer}</td>
+                    <td>{$reward}</td>
+                    <td class=\"num\">{$points}</td>
+                    <td class=\"num\">{$amount_fmt}</td>
+                </tr>";
+            }
         }
 
         return <<<HTML
@@ -1719,7 +1874,7 @@ HTML;
     /**
      * 🎨 HTML generálás IDŐSZAK bizonylathoz (Zeitraumbericht)
      */
-    private static function generate_html_for_date_range($store, $redeems, $date_from, $date_to, $lang) {
+    private static function generate_html_for_date_range($store, $redeems, $date_from, $date_to, $lang, $group_by_filiale = false) {
         $total_amount = 0;
         $total_points = 0;
 
@@ -1728,19 +1883,43 @@ HTML;
             $total_points += intval($r->points_spent ?? 0);
         }
 
+        // Group items by filiale if requested
+        $grouped_redeems = null;
+        if ($group_by_filiale) {
+            $grouped_redeems = [];
+            foreach ($redeems as $r) {
+                $filiale_key = $r->store_id ?? 0;
+                $filiale_name = $r->filiale_name ?: ($r->filiale_company ?: 'Unbekannt');
+                if ($r->filiale_city) {
+                    $filiale_name .= ' – ' . $r->filiale_city;
+                }
+                if (!isset($grouped_redeems[$filiale_key])) {
+                    $grouped_redeems[$filiale_key] = [
+                        'name' => $filiale_name,
+                        'items' => [],
+                        'total_amount' => 0,
+                        'total_points' => 0
+                    ];
+                }
+                $grouped_redeems[$filiale_key]['items'][] = $r;
+                $grouped_redeems[$filiale_key]['total_amount'] += self::calculate_item_amount($r);
+                $grouped_redeems[$filiale_key]['total_points'] += intval($r->points_spent ?? 0);
+            }
+        }
+
         if ($lang === 'RO') {
-            return self::html_date_range_receipt_ro($store, $redeems, $date_from, $date_to, $total_amount, $total_points);
+            return self::html_date_range_receipt_ro($store, $redeems, $date_from, $date_to, $total_amount, $total_points, $grouped_redeems);
         } elseif ($lang === 'HU') {
-            return self::html_date_range_receipt_hu($store, $redeems, $date_from, $date_to, $total_amount, $total_points);
+            return self::html_date_range_receipt_hu($store, $redeems, $date_from, $date_to, $total_amount, $total_points, $grouped_redeems);
         } else {
-            return self::html_date_range_receipt_de($store, $redeems, $date_from, $date_to, $total_amount, $total_points);
+            return self::html_date_range_receipt_de($store, $redeems, $date_from, $date_to, $total_amount, $total_points, $grouped_redeems);
         }
     }
 
     /**
      * 🎨 HTML - Időszak bizonylat NÉMET verzió - Professional Design
      */
-    private static function html_date_range_receipt_de($store, $redeems, $date_from, $date_to, $total_amount, $total_points) {
+    private static function html_date_range_receipt_de($store, $redeems, $date_from, $date_to, $total_amount, $total_points, $grouped_redeems = null) {
         $company = htmlspecialchars($store['company_name'] ?? 'Unternehmen', ENT_QUOTES, 'UTF-8');
         $address = htmlspecialchars($store['address'] ?? '', ENT_QUOTES, 'UTF-8');
         $plz = htmlspecialchars($store['plz'] ?? '', ENT_QUOTES, 'UTF-8');
@@ -1756,24 +1935,67 @@ HTML;
         $receipt_num = sprintf('ZR-%s-%s', str_replace('-', '', $date_from), str_replace('-', '', $date_to));
 
         $rows = '';
-        foreach ($redeems as $r) {
-            $customer = htmlspecialchars(trim(($r->first_name ?? '') . ' ' . ($r->last_name ?? '')), ENT_QUOTES, 'UTF-8');
-            if (!$customer) {
-                $customer = htmlspecialchars($r->user_email ?? 'Unbekannt', ENT_QUOTES, 'UTF-8');
-            }
-            $reward = htmlspecialchars($r->reward_title ?? 'Prämie', ENT_QUOTES, 'UTF-8');
-            $points = intval($r->points_spent ?? 0);
-            $amount = self::calculate_item_amount($r);
-            $amount_fmt = number_format($amount, 2, ',', '.');
-            $row_date = date('d.m.Y', strtotime($r->redeemed_at));
 
-            $rows .= "<tr>
-                <td>{$row_date}</td>
-                <td>{$customer}</td>
-                <td>{$reward}</td>
-                <td class=\"num\">{$points}</td>
-                <td class=\"num\">{$amount_fmt}</td>
-            </tr>";
+        // Grouped by filiale
+        if ($grouped_redeems && count($grouped_redeems) > 1) {
+            foreach ($grouped_redeems as $filiale_id => $filiale_data) {
+                $filiale_name = htmlspecialchars($filiale_data['name'], ENT_QUOTES, 'UTF-8');
+                $filiale_total = number_format($filiale_data['total_amount'], 2, ',', '.');
+                $filiale_points = $filiale_data['total_points'];
+
+                $rows .= "<tr class=\"filiale-header\">
+                    <td colspan=\"5\" style=\"background: #e8f4f8; font-weight: 600; padding: 8px; border-top: 2px solid #1a5276;\">
+                        📍 {$filiale_name}
+                    </td>
+                </tr>";
+
+                foreach ($filiale_data['items'] as $r) {
+                    $customer = htmlspecialchars(trim(($r->first_name ?? '') . ' ' . ($r->last_name ?? '')), ENT_QUOTES, 'UTF-8');
+                    if (!$customer) {
+                        $customer = htmlspecialchars($r->user_email ?? 'Unbekannt', ENT_QUOTES, 'UTF-8');
+                    }
+                    $reward = htmlspecialchars($r->reward_title ?? 'Prämie', ENT_QUOTES, 'UTF-8');
+                    $points = intval($r->points_spent ?? 0);
+                    $amount = self::calculate_item_amount($r);
+                    $amount_fmt = number_format($amount, 2, ',', '.');
+                    $date = date('d.m.Y', strtotime($r->redeemed_at));
+
+                    $rows .= "<tr>
+                        <td>{$date}</td>
+                        <td>{$customer}</td>
+                        <td>{$reward}</td>
+                        <td class=\"num\">{$points}</td>
+                        <td class=\"num\">{$amount_fmt}</td>
+                    </tr>";
+                }
+
+                $rows .= "<tr class=\"filiale-subtotal\">
+                    <td colspan=\"3\" style=\"text-align: right; font-weight: 500; background: #f5f5f5;\">Zwischensumme {$filiale_name}:</td>
+                    <td class=\"num\" style=\"font-weight: 500; background: #f5f5f5;\">{$filiale_points}</td>
+                    <td class=\"num\" style=\"font-weight: 500; background: #f5f5f5;\">{$filiale_total} €</td>
+                </tr>";
+            }
+        } else {
+            // Normal single-store layout
+            foreach ($redeems as $r) {
+                $customer = htmlspecialchars(trim(($r->first_name ?? '') . ' ' . ($r->last_name ?? '')), ENT_QUOTES, 'UTF-8');
+                if (!$customer) {
+                    $customer = htmlspecialchars($r->user_email ?? 'Unbekannt', ENT_QUOTES, 'UTF-8');
+                }
+                $reward = htmlspecialchars($r->reward_title ?? 'Prämie', ENT_QUOTES, 'UTF-8');
+                $points = intval($r->points_spent ?? 0);
+                $amount = self::calculate_item_amount($r);
+                $amount_fmt = number_format($amount, 2, ',', '.');
+                $row_date = date('d.m.Y', strtotime($r->redeemed_at));
+
+                $rows .= "<tr>
+                    <td>{$row_date}</td>
+                    <td>{$customer}</td>
+                    <td>{$reward}</td>
+                    <td class=\"num\">{$points}</td>
+                    <td class=\"num\">{$amount_fmt}</td>
+                </tr>";
+            }
         }
 
         $generated_date = date('d.m.Y H:i');

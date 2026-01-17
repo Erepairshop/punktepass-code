@@ -262,15 +262,108 @@ error_log(print_r($data, true));  // Standard PHP log
 - ✅ Event delegation hosszú listákhoz
 - ❌ Ne manipuláld a DOM-ot úgy hogy inputok törlődjék
 
+## ⚡ Performance Optimalizálás
+
+### Jelenlegi PageSpeed Score (2026-01-16):
+| Kategória | Mobil | Desktop |
+|-----------|-------|---------|
+| Performance | 57 | 93+ |
+| Accessibility | 95 | 95 |
+| Best Practices | 96 | 96 |
+| SEO | 92 | 92 |
+
+### Képek - WebP használat
+- ✅ `logo.webp` - használd PNG helyett
+- ✅ `store-default.webp` (35 KB) - PNG volt 905 KB!
+- ✅ Különböző méretek: `-48.webp`, `-64.webp`, `-128.webp`, `-256.webp`
+- 🛠️ Optimalizáló script: `tools/optimize-images.php`
+
+### RemixIcon - Központosított betöltés
+⚠️ **NE tölts be RemixIcon-t külön fájlokban!**
+
+A `punktepass.php` globálisan betölti:
+```php
+wp_enqueue_style('remixicons', 'https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css', [], '3.5.0');
+```
+
+Ha új komponensben kell ikon, csak használd - már be van töltve!
+
+### LiteSpeed Cache Beállítások
+
+#### Cache → Excludes - NE cache-eld ezeket:
+```
+/user_dashboard
+/meine-punkte
+/belohnungen
+/einstellungen
+/qr-center
+/rewards
+/mein-profil
+/statistik
+/login
+/signup
+/logout
+/pos-admin
+/store/
+/wp-json/
+```
+
+#### Fontos beállítások:
+- **Cache Logged-in Users**: OFF (session-alapú auth!)
+- **Cache REST API**: OFF (dinamikus adatok!)
+- **Cache Mobile**: ON
+- **Browser Cache**: ON
+- **JS Minify**: ON
+- **JS Deferred**: ON (NE Delayed!)
+- **CSS Minify**: ON
+- **CSS Combine**: OFF (problémás!)
+- **Font Display**: Swap
+
+### Teljesítmény limitációk
+- 🔴 **341KB CSS** (`ppv-theme-light.css`) - render-blocking, de NE próbáld tömöríteni/splittelni (korábban elromlott)
+- 🔴 **Unused JS/CSS** - code splitting nélkül nehéz javítani
+- ✅ **CLS: 0.002** - kiváló (RemixIcon egységesítés megoldotta)
+- ✅ **TBT: 50ms** - kiváló
+
+## 📄 Összes Oldal/Route Lista
+
+### User oldalak (session-alapú):
+| URL | Shortcode | PHP Class |
+|-----|-----------|-----------|
+| `/user_dashboard` | `[ppv_user_dashboard]` | `PPV_User_Dashboard` |
+| `/meine-punkte` | `[ppv_my_points]` | `PPV_My_Points` |
+| `/belohnungen` | `[ppv_rewards_page]` | `PPV_Belohnungen` |
+| `/einstellungen` | `[ppv_user_settings]` | `PPV_User_Settings` |
+
+### Handler/Vendor oldalak:
+| URL | Shortcode | PHP Class |
+|-----|-----------|-----------|
+| `/qr-center` | `[ppv_qr_center]` | `PPV_QR` |
+| `/rewards` | `[ppv_rewards]` | `PPV_Rewards` |
+| `/mein-profil` | `[pp_store_profile]` | `PPV_Profile_Lite` |
+| `/statistik` | `[ppv_stats_dashboard]` | `PPV_Stats` |
+
+### Auth oldalak:
+| URL | Shortcode | PHP Class |
+|-----|-----------|-----------|
+| `/login` | `[ppv_login_form]` | `PPV_Login` |
+| `/signup` | `[ppv_signup]` | `PPV_Signup` |
+| `/logout` | - | `PPV_Logout` |
+
+### Publikus oldalak (cache-elhető):
+- `/datenschutz`, `/agb`, `/impressum`
+- `/store/{slug}` - publikus store oldal
+
 ## 📞 Kapcsolat / Megjegyzések
 
 - **Ügyfél nyelve**: Magyar
 - **Projekt nyelv**: Német/Magyar/Román (multi-language)
 - **Kód nyelv**: Angol (kommentek, változók)
 - **Git commit**: Angol
+- **Hosting**: Hostinger (LiteSpeed szerver)
 
 ---
 
-**Utolsó frissítés**: 2026-01-15
+**Utolsó frissítés**: 2026-01-16
 **Készítette**: Claude Code
 **Projekt**: PunktePass (Erepairshop/punktepass-code)

@@ -9,6 +9,9 @@ return [
 'trend' => 'Trend',
 'unique' => 'Utilizatori unici',
 'weekly' => 'Săptămânal',
+'toggle_on' => 'ACTIV',
+'toggle_off' => 'INACTIV',
+'save' => 'Salvare',
     'not_authorized' => '⚠️ Nu sunteți autorizat',
     'stats_title' => '📊 Prezentare statistici',
     'advanced_stats_title' => '📈 Statistici avansate',
@@ -522,6 +525,13 @@ return [
 'signup_success' => 'Înregistrare reușită! Redirecționare...',
 'signup_google_error' => 'Înregistrare Google eșuată',
 'signup_google_success' => 'Înregistrare Google reușită!',
+'signup_registering' => 'Înregistrare...',
+
+// PASSWORD STRENGTH
+'password_strength_weak' => 'Slab',
+'password_strength_medium' => 'Mediu',
+'password_strength_good' => 'Bun',
+'password_strength_strong' => 'Puternic',
 
 // ========== GLOBAL / HEADER ==========
     'language' => 'Limbă',
@@ -750,13 +760,18 @@ return [
     'footer_contact' => 'Contact',
     'footer_legal' => '© 2025 PunktePass. Toate drepturile rezervate.',
     
-    // ========== MAINTENANCE MODE ==========
-    'maintenance_section' => 'Întreținere',
-    'maintenance_mode' => 'Mod de Întreținere',
-    'maintenance_mode_help' => 'Activează modul de întreținere pentru a pune magazinul temporar offline',
-    'maintenance_message' => 'Mesaj de Întreținere',
-    'maintenance_message_placeholder' => 'de ex. Revenim în curând! Vă mulțumim pentru răbdare.',
-    'maintenance_message_help' => 'Acest mesaj va fi afișat clienților tăi',
+    // ========== VACATION MODE ==========
+    'vacation_section' => 'Concediu',
+    'vacation_enabled' => 'Mod concediu',
+    'vacation_enabled_help' => 'Când este activat, magazinul va apărea în concediu în perioada selectată',
+    'vacation_from' => 'Concediu de la',
+    'vacation_to' => 'Concediu până la',
+    'vacation_dates_help' => 'Selectează perioada în care magazinul este în concediu',
+    'vacation_message' => 'Mesaj concediu (opțional)',
+    'vacation_message_placeholder' => 'de ex. Revenim pe 15 ianuarie!',
+    'vacation_message_help' => 'Acest mesaj va fi afișat clienților în timpul concediului',
+    'vacation_apply_all_hint' => 'Setările vor fi aplicate la toate filialele',
+    'select_filiale' => 'Selectează filiala',
 
     // ========== OPENING HOURS ENFORCEMENT ==========
     'opening_hours_section' => 'Program',
@@ -1538,6 +1553,8 @@ return [
     'rewards_date_until' => 'până la',
     'rewards_btn_create' => 'Creează',
     'rewards_btn_creating' => 'Se creează...',
+    'rewards_select_filiale' => 'Selectează filiala',
+    'rewards_all_filialen' => 'Toate filialele (grupate)',
 
     // Month names
     'month_january' => 'Ianuarie',
@@ -1657,6 +1674,23 @@ return [
     'advanced' => 'Avansat',
     'scanner_stats' => 'Angajați',
     'suspicious_scans' => 'Scanări suspecte',
+
+    // Device Activity Tab
+    'device_activity' => 'Dispozitive',
+    'device_activity_desc' => 'Activitatea de scanare pe dispozitiv (ultimele 7 zile).',
+    'device' => 'Dispozitiv',
+    'total_devices' => 'Dispozitive active',
+    'mobile_scanners' => 'Scanere mobile',
+    'suspicious_devices' => 'Dispozitive suspecte',
+    'no_device_data' => 'Nu există încă date despre dispozitive.',
+    'device_name' => 'Nume dispozitiv',
+    'last_scan' => 'Ultima scanare',
+    'scan_count' => 'Număr scanări',
+    'device_status' => 'Status',
+    'device_registered' => 'Înregistrat',
+    'device_unregistered' => 'Neînregistrat',
+    'device_suspicious' => 'Suspect',
+
     'employee_scans' => 'Scanări angajați',
     'employee_scans_desc' => 'Prezentare generală a câte scanări a efectuat fiecare angajat.',
     'total_scanners' => 'Total scanere',
@@ -1848,7 +1882,7 @@ return [
     'faq_vip_title' => 'VIP & Bonusuri',
 
     'faq_q11' => 'Ce sunt nivelurile VIP?',
-    'faq_a11' => 'Cu cât colectezi mai mult, cu atât urci mai sus: Începător → Bronz → Argint → Aur → Platină. Nivelurile mai înalte aduc bonusuri mai bune!',
+    'faq_a11' => 'Cu cât scanezi mai mult, cu atât urci mai sus: Începător (0-24 scanări) → Bronz (25+) → Argint (50+) → Aur (75+) → Platină (100+ scanări). Nivelurile mai înalte aduc bonusuri mai bune!',
 
     'faq_q12' => 'Primesc bonus de ziua de naștere?',
     'faq_a12' => 'Dacă magazinul a activat această funcție, primești puncte bonus de ziua ta. Adaugă data nașterii în setări pentru a beneficia de acest avantaj.',
@@ -1909,4 +1943,37 @@ return [
     'app_download_subtitle' => 'Colectează puncte ușor de pe telefon',
     'app_download_available' => 'Disponibil pe',
     'app_download_dont_show' => 'Nu mai afișa',
+
+    // ============================================================
+    // Invoices - Facturi
+    // ============================================================
+    'invoice_created' => 'Factură creată cu succes!',
+    'invoice_exists' => 'Factura există deja',
+    'collective_invoice_created' => 'Factură colectivă creată!',
+    'server_error' => 'Eroare server',
+    'invoice_select_period' => 'Vă rugăm să selectați perioada',
+    'invoice_email_sent' => 'E-mail trimis!',
+    'invoice_enter_valid_email' => 'Vă rugăm să introduceți o adresă de e-mail validă',
+    'invoice_download_pdf' => 'Descarcă PDF',
+    'invoice_send_email' => 'Trimite prin e-mail',
+    'invoice_create_pdf' => 'Creează PDF',
+    'invoice_load_preview' => 'Încarcă previzualizare',
+    'invoice_create_collective' => 'Creează factură colectivă',
+    'invoice_period' => 'Perioadă',
+    'invoice_vat_rate' => 'Cota TVA',
+    'invoice_error_loading' => 'Eroare la încărcare',
+    'cancel' => 'Anulează',
+    'from' => 'De la',
+    'to' => 'Până la',
+    'loading' => 'Se încarcă...',
+
+    // ============================================================
+    // General Actions - Acțiuni generale
+    // ============================================================
+    'created' => 'creat',
+    'updated' => 'actualizat',
+    'deleted' => 'șters',
+    'csv_creating' => 'Se creează CSV...',
+    'csv_downloaded' => 'CSV descărcat',
+    'error' => 'Eroare',
 ];

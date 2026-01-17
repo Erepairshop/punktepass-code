@@ -11,7 +11,43 @@ jQuery(document).ready(function ($) {
   // 🌐 Language detection
   const detectLang = () => document.cookie.match(/ppv_lang=([a-z]{2})/)?.[1] || localStorage.getItem('ppv_lang') || 'de';
   const LANG = detectLang();
-  const T = { de: { daily_points: 'Tägliche Punkte' }, hu: { daily_points: 'Napi pontok' }, ro: { daily_points: 'Puncte zilnice' } }[LANG] || { daily_points: 'Tägliche Punkte' };
+  const T = {
+    de: {
+      daily_points: 'Tägliche Punkte',
+      enter_pin: 'Bitte geben Sie Ihren PIN ein.',
+      checking_login: 'Anmeldung wird geprüft...',
+      login_success: 'Erfolgreich angemeldet!',
+      login_error: 'Serverfehler bei der Anmeldung.',
+      load_error: 'Fehler beim Laden der Daten.',
+      load_stores_error: 'Fehler beim Laden'
+    },
+    hu: {
+      daily_points: 'Napi pontok',
+      enter_pin: 'Kérlek add meg a PIN kódot.',
+      checking_login: 'Bejelentkezés ellenőrzése...',
+      login_success: 'Sikeres bejelentkezés!',
+      login_error: 'Szerverhiba a bejelentkezésnél.',
+      load_error: 'Hiba az adatok betöltésekor.',
+      load_stores_error: 'Hiba a betöltéskor'
+    },
+    ro: {
+      daily_points: 'Puncte zilnice',
+      enter_pin: 'Te rog introdu PIN-ul.',
+      checking_login: 'Se verifică autentificarea...',
+      login_success: 'Autentificare reușită!',
+      login_error: 'Eroare server la autentificare.',
+      load_error: 'Eroare la încărcarea datelor.',
+      load_stores_error: 'Eroare la încărcare'
+    }
+  }[LANG] || {
+    daily_points: 'Tägliche Punkte',
+    enter_pin: 'Bitte geben Sie Ihren PIN ein.',
+    checking_login: 'Anmeldung wird geprüft...',
+    login_success: 'Erfolgreich angemeldet!',
+    login_error: 'Serverfehler bei der Anmeldung.',
+    load_error: 'Fehler beim Laden der Daten.',
+    load_stores_error: 'Fehler beim Laden'
+  };
 
   const $loginView = $("#ppv-pos-login");
   const $dashboardView = $("#ppv-pos-dashboard");
@@ -36,11 +72,11 @@ jQuery(document).ready(function ($) {
   $("#ppv-pos-login-btn").on("click", async function () {
     const pin = $("#ppv-pos-pin").val().trim();
     if (!pin) {
-      $msgLogin.text("❌ Bitte geben Sie Ihren PIN ein.");
+      $msgLogin.text("❌ " + T.enter_pin);
       return;
     }
 
-    $msgLogin.text("⏳ Anmeldung wird geprüft...");
+    $msgLogin.text("⏳ " + T.checking_login);
 
     try {
       const res = await fetch(base + "pos/login", {
@@ -63,7 +99,7 @@ jQuery(document).ready(function ($) {
         localStorage.setItem("ppv_active_store", currentStoreId);
         document.cookie = "ppv_pos_token=" + token + "; path=/; max-age=" + 60 * 60 * 6 + "; SameSite=Lax";
 
-        $msgLogin.text("✅ Erfolgreich angemeldet!");
+        $msgLogin.text("✅ " + T.login_success);
 
         setTimeout(() => {
           showDashboard();
@@ -76,7 +112,7 @@ jQuery(document).ready(function ($) {
 
     } catch (err) {
       console.error("⚠️ Login-Fehler:", err);
-      $msgLogin.text("⚠️ Serverfehler bei der Anmeldung.");
+      $msgLogin.text("⚠️ " + T.login_error);
     }
   }); // login click END
 
@@ -115,7 +151,7 @@ jQuery(document).ready(function ($) {
       }
     } catch (err) {
       console.error("❌ Fehler beim Laden der Stats:", err);
-      $msgDash.text("⚠️ Fehler beim Laden der Daten.");
+      $msgDash.text("⚠️ " + T.load_error);
     }
   }
 
@@ -261,7 +297,7 @@ jQuery(document).ready(function ($) {
 
     } catch (e) {
       console.error("❌ Fehler beim Laden der Stores:", e);
-      dropdown.innerHTML = "<option>Fehler beim Laden</option>";
+      dropdown.innerHTML = `<option>${T.load_stores_error}</option>`;
     }
 
     dropdown.addEventListener("change", (e) => {

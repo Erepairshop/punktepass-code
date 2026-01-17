@@ -10,7 +10,7 @@ class PPV_QR_Share {
         }
 
        // ✅ Helyes mezők a Datenbank alapján
-$store_name = isset($store->name) && $store->name !== '' ? $store->name : 'Mein Geschäft';
+$store_name = isset($store->name) && $store->name !== '' ? $store->name : ($store->company_name ?? '');
 $store_key  = isset($store->store_key) && $store->store_key !== '' ? $store->store_key : sanitize_title($store_name);
 
 // 🔹 Store URL

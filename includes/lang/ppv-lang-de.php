@@ -7,6 +7,9 @@ return [
 'trend' => 'Trend',
 'unique' => 'Einzigartige Nutzer',
 'weekly' => 'Wöchentlich',
+'toggle_on' => 'AN',
+'toggle_off' => 'AUS',
+'save' => 'Speichern',
 'loading' => 'Wird geladen...',
 'loading_data' => 'Daten werden geladen...',
 'error_loading_data' => 'Fehler beim Laden der Daten',
@@ -484,6 +487,13 @@ return [
 'signup_success' => 'Registrierung erfolgreich! Sie werden weitergeleitet...',
 'signup_google_error' => 'Google Registrierung fehlgeschlagen',
 'signup_google_success' => 'Google Registrierung erfolgreich!',
+'signup_registering' => 'Registrierung...',
+
+// PASSWORD STRENGTH
+'password_strength_weak' => 'Schwach',
+'password_strength_medium' => 'Mittel',
+'password_strength_good' => 'Gut',
+'password_strength_strong' => 'Stark',
 
 
 // ========== GLOBAL / HEADER ==========
@@ -721,13 +731,18 @@ return [
     'footer_contact' => 'Kontakt',
     'footer_legal' => '© 2025 PunktePass. Alle Rechte vorbehalten.',
     
-    // ========== MAINTENANCE MODE ==========
-    'maintenance_section' => 'Wartungsmodus',
-    'maintenance_mode' => 'Wartungsmodus',
-    'maintenance_mode_help' => 'Aktiviere den Wartungsmodus, um dein Geschäft vorübergehend offline zu nehmen',
-    'maintenance_message' => 'Wartungsnachricht',
-    'maintenance_message_placeholder' => 'z.B. Wir sind in Kürze zurück! Danke für deine Geduld.',
-    'maintenance_message_help' => 'Diese Nachricht wird deinen Kunden angezeigt',
+    // ========== VACATION MODE ==========
+    'vacation_section' => 'Urlaubsmodus',
+    'vacation_enabled' => 'Urlaubsmodus',
+    'vacation_enabled_help' => 'Wenn aktiviert, wird dein Geschäft im gewählten Zeitraum als im Urlaub angezeigt',
+    'vacation_from' => 'Urlaub von',
+    'vacation_to' => 'Urlaub bis',
+    'vacation_dates_help' => 'Wähle den Zeitraum, in dem dein Geschäft im Urlaub ist',
+    'vacation_message' => 'Urlaubsnachricht (optional)',
+    'vacation_message_placeholder' => 'z.B. Wir sind ab dem 15. Januar wieder für euch da!',
+    'vacation_message_help' => 'Diese Nachricht wird deinen Kunden während des Urlaubs angezeigt',
+    'vacation_apply_all_hint' => 'Die Einstellungen werden auf alle Filialen angewendet',
+    'select_filiale' => 'Filiale auswählen',
 
     // ========== OPENING HOURS ENFORCEMENT ==========
     'opening_hours_section' => 'Öffnungszeiten',
@@ -1556,6 +1571,8 @@ return [
     'rewards_date_until' => 'bis',
     'rewards_btn_create' => 'Erstellen',
     'rewards_btn_creating' => 'Erstelle...',
+    'rewards_select_filiale' => 'Filiale auswählen',
+    'rewards_all_filialen' => 'Alle Filialen (gruppiert)',
 
     // Month names
     'month_january' => 'Januar',
@@ -1675,6 +1692,23 @@ return [
     'advanced' => 'Erweitert',
     'scanner_stats' => 'Mitarbeiter',
     'suspicious_scans' => 'Verdächtige Scans',
+
+    // Device Activity Tab
+    'device_activity' => 'Geräte',
+    'device_activity_desc' => 'Übersicht der Scan-Aktivitäten pro Gerät (letzte 7 Tage).',
+    'device' => 'Gerät',
+    'total_devices' => 'Aktive Geräte',
+    'mobile_scanners' => 'Mobile Scanner',
+    'suspicious_devices' => 'Verdächtige Geräte',
+    'no_device_data' => 'Noch keine Gerätedaten vorhanden.',
+    'device_name' => 'Gerätename',
+    'last_scan' => 'Letzter Scan',
+    'scan_count' => 'Anzahl Scans',
+    'device_status' => 'Status',
+    'device_registered' => 'Registriert',
+    'device_unregistered' => 'Nicht registriert',
+    'device_suspicious' => 'Verdächtig',
+
     'employee_scans' => 'Mitarbeiter Scans',
     'employee_scans_desc' => 'Übersicht welcher Mitarbeiter wie viele Scans durchgeführt hat.',
     'total_scanners' => 'Scanner gesamt',
@@ -1866,7 +1900,7 @@ return [
     'faq_vip_title' => 'VIP & Boni',
 
     'faq_q11' => 'Was sind VIP-Stufen?',
-    'faq_a11' => 'Je mehr du sammelst, desto höher steigst du auf: Starter → Bronze → Silber → Gold → Platin. Höhere Stufen bringen bessere Boni!',
+    'faq_a11' => 'Je mehr du scannst, desto höher steigst du auf: Starter (0-24 Scans) → Bronze (25+) → Silber (50+) → Gold (75+) → Platin (100+ Scans). Höhere Stufen bringen bessere Boni!',
 
     'faq_q12' => 'Bekomme ich einen Geburtstagsbonus?',
     'faq_a12' => 'Wenn das Geschäft diese Funktion aktiviert hat, erhältst du an deinem Geburtstag Bonuspunkte. Trage dein Geburtsdatum in den Einstellungen ein, um davon zu profitieren.',
@@ -1927,5 +1961,38 @@ return [
     'app_download_subtitle' => 'Sammle Punkte einfach von deinem Handy',
     'app_download_available' => 'Verfügbar auf',
     'app_download_dont_show' => 'Nicht mehr anzeigen',
+
+    // ============================================================
+    // Invoices - Rechnungen
+    // ============================================================
+    'invoice_created' => 'Rechnung erfolgreich erstellt!',
+    'invoice_exists' => 'Rechnung bereits vorhanden',
+    'collective_invoice_created' => 'Sammelrechnung erstellt!',
+    'server_error' => 'Serverfehler',
+    'invoice_select_period' => 'Bitte Zeitraum auswählen',
+    'invoice_email_sent' => 'E-Mail gesendet!',
+    'invoice_enter_valid_email' => 'Bitte gültige E-Mail eingeben',
+    'invoice_download_pdf' => 'PDF herunterladen',
+    'invoice_send_email' => 'Per E-Mail senden',
+    'invoice_create_pdf' => 'PDF erstellen',
+    'invoice_load_preview' => 'Vorschau laden',
+    'invoice_create_collective' => 'Sammelrechnung erstellen',
+    'invoice_period' => 'Zeitraum',
+    'invoice_vat_rate' => 'MwSt.-Satz',
+    'invoice_error_loading' => 'Fehler beim Laden',
+    'cancel' => 'Abbrechen',
+    'from' => 'Von',
+    'to' => 'Bis',
+    'loading' => 'Laden...',
+
+    // ============================================================
+    // General Actions - Allgemeine Aktionen
+    // ============================================================
+    'created' => 'erstellt',
+    'updated' => 'aktualisiert',
+    'deleted' => 'gelöscht',
+    'csv_creating' => 'CSV wird erstellt...',
+    'csv_downloaded' => 'CSV heruntergeladen',
+    'error' => 'Fehler',
 ];
 

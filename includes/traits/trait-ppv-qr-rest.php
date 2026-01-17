@@ -632,13 +632,12 @@ trait PPV_QR_REST_Trait {
         $true_base_points = $points_add;
 
         // ═══════════════════════════════════════════════════════════
-        // VIP LEVEL BONUSES (Extended: 4 types)
+        // VIP LEVEL BONUSES (2 types: fix + streak)
         // ═══════════════════════════════════════════════════════════
         $vip_bonus_details = [
-            'pct' => 0,      // 1. Percentage bonus
-            'fix' => 0,      // 2. Fixed point bonus
-            'streak' => 0,   // 3. Every Xth scan bonus
-            'daily' => 0,    // 4. First daily scan bonus
+            'pct' => 0,      // Legacy percentage bonus (unused)
+            'fix' => 0,      // 1. Fixed point bonus
+            'streak' => 0,   // 2. Every Xth scan bonus
         ];
         $vip_bonus_applied = 0;
 
@@ -657,8 +656,7 @@ trait PPV_QR_REST_Trait {
                 SELECT
                     vip_fix_enabled, vip_fix_bronze, vip_fix_silver, vip_fix_gold, vip_fix_platinum,
                     vip_streak_enabled, vip_streak_count, vip_streak_type,
-                    vip_streak_bronze, vip_streak_silver, vip_streak_gold, vip_streak_platinum,
-                    vip_daily_enabled, vip_daily_bronze, vip_daily_silver, vip_daily_gold, vip_daily_platinum
+                    vip_streak_bronze, vip_streak_silver, vip_streak_gold, vip_streak_platinum
                 FROM {$wpdb->prefix}ppv_stores WHERE id = %d
             ", $vip_store_id));
 
@@ -666,16 +664,15 @@ trait PPV_QR_REST_Trait {
             ppv_log("🔍 [PPV_QR] VIP settings for store {$vip_store_id}: " . json_encode([
                 'vip_fix_enabled' => $vip_settings->vip_fix_enabled ?? 'NULL',
                 'vip_fix_bronze' => $vip_settings->vip_fix_bronze ?? 'NULL',
-                'vip_daily_enabled' => $vip_settings->vip_daily_enabled ?? 'NULL',
             ]));
 
             if ($vip_settings) {
-                // Check if user has VIP status (Bronze or higher = 100+ lifetime points)
-                $user_level = PPV_User_Level::get_vip_level_for_bonus($user_id);
+                // Check if user has VIP status (Bronze or higher = 25+ scans AT THIS STORE)
+                $user_level = PPV_User_Level::get_vip_level_for_bonus($user_id, $vip_store_id);
                 $base_points = $points_add;
 
                 // 🔍 DEBUG: Log user level
-                ppv_log("🔍 [PPV_QR] User VIP level: user_id={$user_id}, level=" . ($user_level ?? 'NULL (Starter - no VIP)'));
+                ppv_log("🔍 [PPV_QR] User VIP level at store {$vip_store_id}: user_id={$user_id}, level=" . ($user_level ?? 'NULL (Starter - no VIP)'));
 
                 // Helper to get level-specific value (returns 0 for Starter/null)
                 $getLevelValue = function($bronze, $silver, $gold, $platinum) use ($user_level) {
@@ -741,34 +738,12 @@ trait PPV_QR_REST_Trait {
                     }
                 }
 
-                // 4. FIRST SCAN EVER BONUS (one-time per store)
-                // 🔒 FIX: Track first-scan bonus for verification inside transaction
-                $first_scan_bonus_pending = false;
-
-                if ($vip_settings->vip_daily_enabled && $user_level !== null) {
-                    $ever_scanned_here = (int)$wpdb->get_var($wpdb->prepare("
-                        SELECT COUNT(*) FROM {$wpdb->prefix}ppv_points
-                        WHERE user_id = %d AND store_id = %d AND type = 'qr_scan'
-                    ", $user_id, $store_id));
-
-                    if ($ever_scanned_here === 0) {
-                        $vip_bonus_details['daily'] = $getLevelValue(
-                            $vip_settings->vip_daily_bronze ?? 5,
-                            $vip_settings->vip_daily_silver,
-                            $vip_settings->vip_daily_gold,
-                            $vip_settings->vip_daily_platinum
-                        );
-                        $first_scan_bonus_pending = true;
-                        ppv_log("🎉 [PPV_QR] First scan ever bonus PRE-calculated for user {$user_id} at store {$store_id}");
-                    }
-                }
-
                 // Calculate total VIP bonus
-                $vip_bonus_applied = $vip_bonus_details['pct'] + $vip_bonus_details['fix'] + $vip_bonus_details['streak'] + $vip_bonus_details['daily'];
+                $vip_bonus_applied = $vip_bonus_details['pct'] + $vip_bonus_details['fix'] + $vip_bonus_details['streak'];
 
                 if ($vip_bonus_applied > 0) {
                     $points_add += $vip_bonus_applied;
-                    ppv_log("✅ [PPV_QR] VIP bonuses applied: level={$user_level}, pct=+{$vip_bonus_details['pct']}, fix=+{$vip_bonus_details['fix']}, streak=+{$vip_bonus_details['streak']}, daily=+{$vip_bonus_details['daily']}, total_bonus={$vip_bonus_applied}, total_points={$points_add}");
+                    ppv_log("✅ [PPV_QR] VIP bonuses applied: level={$user_level}, pct=+{$vip_bonus_details['pct']}, fix=+{$vip_bonus_details['fix']}, streak=+{$vip_bonus_details['streak']}, total_bonus={$vip_bonus_applied}, total_points={$points_add}");
                 }
             }
         }
@@ -1002,36 +977,6 @@ trait PPV_QR_REST_Trait {
                 }
             }
 
-            // 🔒 FIX: Verify first-scan bonus INSIDE transaction to prevent race condition
-            if (isset($first_scan_bonus_pending) && $first_scan_bonus_pending) {
-                $actual_scan_count_for_first = (int)$wpdb->get_var($wpdb->prepare("
-                    SELECT COUNT(*) FROM {$wpdb->prefix}ppv_points
-                    WHERE user_id = %d AND store_id = %d AND type = 'qr_scan'
-                ", $user_id, $store_id));
-
-                // If count > 1, this wasn't actually the first scan (race condition)
-                if ($actual_scan_count_for_first > 1) {
-                    $first_scan_bonus_value = $vip_bonus_details['daily'] ?? 0;
-                    if ($first_scan_bonus_value > 0) {
-                        $points_add -= $first_scan_bonus_value;
-                        $vip_bonus_applied -= $first_scan_bonus_value;
-                        $vip_bonus_details['daily'] = 0;
-
-                        // Update the inserted record with corrected points
-                        $wpdb->update(
-                            "{$wpdb->prefix}ppv_points",
-                            ['points' => $points_add],
-                            ['id' => $points_insert_id],
-                            ['%d'],
-                            ['%d']
-                        );
-
-                        ppv_log("🔒 [PPV_QR] First-scan bonus REVOKED due to race condition: actual count={$actual_scan_count_for_first}");
-                    }
-                } else {
-                    ppv_log("🎉 [PPV_QR] First-scan bonus CONFIRMED! This is scan #1 for user at this store");
-                }
-            }
 
             // Update lifetime_points for VIP level calculation
             if (class_exists('PPV_User_Level')) {
