@@ -38,7 +38,7 @@ class PPV_Weekly_Report {
 
         // Get all active stores with email
         $stores = $wpdb->get_results("
-            SELECT id, name, email, country, company_name
+            SELECT id, name, email, country, company_name, city
             FROM {$wpdb->prefix}ppv_stores
             WHERE email IS NOT NULL
               AND email != ''
@@ -269,7 +269,7 @@ class PPV_Weekly_Report {
     private static function get_filialen($store_id) {
         global $wpdb;
         return $wpdb->get_results($wpdb->prepare("
-            SELECT id, name, company_name
+            SELECT id, name, company_name, city
             FROM {$wpdb->prefix}ppv_stores
             WHERE parent_store_id = %d
             ORDER BY name ASC
@@ -327,7 +327,11 @@ class PPV_Weekly_Report {
 
             // Main store stats first
             $main_stats = self::get_single_store_stats($store->id);
-            $main_name = esc_html($store->company_name ?: $store->name ?: $T['main_store']);
+            $main_name = esc_html($store->name ?: $store->company_name ?: $T['main_store']);
+            // Add city if available
+            if (!empty($store->city)) {
+                $main_name .= ' – ' . esc_html($store->city);
+            }
             $filiale_html .= '<tr style="border-bottom: 2px solid #e5e7eb; background: #f0f9ff;">
                 <td style="padding: 10px; font-weight: 600;">📍 ' . $main_name . '</td>
                 <td style="padding: 10px; text-align: center;"><strong>' . $main_stats['week_scans'] . '</strong><br><span style="font-size: 11px; color: #6b7280;">' . $T['total_scans'] . '</span></td>
@@ -338,7 +342,11 @@ class PPV_Weekly_Report {
             // Each filiale
             foreach ($filialen as $filiale) {
                 $f_stats = self::get_single_store_stats($filiale->id);
-                $f_name = esc_html($filiale->company_name ?: $filiale->name ?: 'Filiale #' . $filiale->id);
+                $f_name = esc_html($filiale->name ?: $filiale->company_name ?: 'Filiale #' . $filiale->id);
+                // Add city if available
+                if (!empty($filiale->city)) {
+                    $f_name .= ' – ' . esc_html($filiale->city);
+                }
                 $filiale_html .= '<tr style="border-bottom: 1px solid #e5e7eb;">
                     <td style="padding: 10px;">🏠 ' . $f_name . '</td>
                     <td style="padding: 10px; text-align: center;"><strong>' . $f_stats['week_scans'] . '</strong></td>
