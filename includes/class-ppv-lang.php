@@ -143,12 +143,11 @@ if (!$lang && !empty($_GET['lang'])) {
     }
 
     /** ============================================================
-     *  🔹 Set cookie on all variants
+     *  🔹 Set cookie (single, no domain - consistent with JS)
      * ============================================================ */
     private static function set_cookie_all($lang, $domain, $secure) {
-        foreach (['', $domain, '.' . $domain] as $dom) {
-            @setcookie('ppv_lang', $lang, time() + 31536000, '/', $dom, $secure, true);
-        }
+        // Only set ONE cookie without domain (consistent with JS language switcher)
+        @setcookie('ppv_lang', $lang, time() + 31536000, '/', '', $secure, false);
         $_COOKIE['ppv_lang'] = $lang;
     }
 
