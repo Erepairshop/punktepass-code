@@ -339,28 +339,28 @@ class PPV_User_Tips {
         register_rest_route('ppv/v1', '/tips/pending', [
             'methods'  => 'GET',
             'callback' => [__CLASS__, 'rest_get_pending_tips'],
-            'permission_callback' => ['PPV_Permissions', 'check_user']
+            'permission_callback' => ['PPV_Permissions', 'check_logged_in_user']
         ]);
 
         // Mark tip as shown
         register_rest_route('ppv/v1', '/tips/(?P<tip_key>[a-z_]+)/shown', [
             'methods'  => 'POST',
             'callback' => [__CLASS__, 'rest_mark_shown'],
-            'permission_callback' => ['PPV_Permissions', 'check_user']
+            'permission_callback' => ['PPV_Permissions', 'check_logged_in_user']
         ]);
 
         // Mark tip as dismissed
         register_rest_route('ppv/v1', '/tips/(?P<tip_key>[a-z_]+)/dismiss', [
             'methods'  => 'POST',
             'callback' => [__CLASS__, 'rest_dismiss_tip'],
-            'permission_callback' => ['PPV_Permissions', 'check_user']
+            'permission_callback' => ['PPV_Permissions', 'check_logged_in_user']
         ]);
 
         // Mark tip as clicked (user took action)
         register_rest_route('ppv/v1', '/tips/(?P<tip_key>[a-z_]+)/clicked', [
             'methods'  => 'POST',
             'callback' => [__CLASS__, 'rest_mark_clicked'],
-            'permission_callback' => ['PPV_Permissions', 'check_user']
+            'permission_callback' => ['PPV_Permissions', 'check_logged_in_user']
         ]);
 
         // Admin: Test trigger tip for a user
