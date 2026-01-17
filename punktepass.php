@@ -285,6 +285,7 @@ $core_modules = [
     'includes/class-ppv-standalone-admin.php',
     'includes/class-ppv-device-fingerprint.php',
     'includes/class-ppv-push.php',
+    'includes/class-ppv-weekly-report.php',
 ];
 
 // Debug only if enabled
