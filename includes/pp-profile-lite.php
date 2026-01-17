@@ -2668,6 +2668,7 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
          * ============================================================
          */
         public static function ajax_change_email() {
+            global $wpdb;
             self::ensure_session();
 
             $auth = self::check_auth();
@@ -2676,15 +2677,13 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
                 return;
             }
 
-            // Get user ID from session
-            $user_id = 0;
-            if (!empty($_SESSION['ppv_user_id'])) {
-                $user_id = intval($_SESSION['ppv_user_id']);
-            } elseif (is_user_logged_in()) {
-                $user_id = get_current_user_id();
-            }
+            // Get identifiers
+            $wp_user_id = is_user_logged_in() ? get_current_user_id() : 0;
+            $ppv_user_id = intval($_SESSION['ppv_user_id'] ?? 0);
+            $store_id = self::get_store_id();
 
-            if (!$user_id) {
+            // Must have at least one valid identifier
+            if (!$wp_user_id && !$ppv_user_id && !$store_id) {
                 wp_send_json_error(['msg' => PPV_Lang::t('error_no_user', 'Felhasználó nem található')]);
                 return;
             }
@@ -2708,26 +2707,39 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
                 return;
             }
 
-            // Check if email already exists
-            if (email_exists($new_email) && email_exists($new_email) !== $user_id) {
+            // Check if email already exists in WordPress users
+            if ($wp_user_id && email_exists($new_email) && email_exists($new_email) !== $wp_user_id) {
                 wp_send_json_error(['msg' => PPV_Lang::t('error_email_exists', 'Ez az e-mail cím már foglalt')]);
                 return;
             }
 
-            // Update user email
-            $result = wp_update_user([
-                'ID' => $user_id,
-                'user_email' => $new_email
-            ]);
-
-            if (is_wp_error($result)) {
-                wp_send_json_error(['msg' => $result->get_error_message()]);
-                return;
+            // Check if email exists in ppv_stores (exclude current store)
+            if ($store_id) {
+                $existing_store = $wpdb->get_var($wpdb->prepare(
+                    "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE email = %s AND id != %d LIMIT 1",
+                    $new_email, $store_id
+                ));
+                if ($existing_store) {
+                    wp_send_json_error(['msg' => PPV_Lang::t('error_email_exists', 'Ez az e-mail cím már foglalt')]);
+                    return;
+                }
             }
 
-            // Also update store email if exists
-            global $wpdb;
-            $store_id = self::get_store_id();
+            $updated = false;
+
+            // Update WordPress user email if exists
+            if ($wp_user_id) {
+                $result = wp_update_user([
+                    'ID' => $wp_user_id,
+                    'user_email' => $new_email
+                ]);
+                if (!is_wp_error($result)) {
+                    $updated = true;
+                    ppv_log("[PPV_ACCOUNT] WordPress user email updated for user #{$wp_user_id}");
+                }
+            }
+
+            // Update store email
             if ($store_id) {
                 $wpdb->update(
                     "{$wpdb->prefix}ppv_stores",
@@ -2736,11 +2748,11 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
                     ['%s'],
                     ['%d']
                 );
-                ppv_log("[PPV_ACCOUNT] Store email synced for store #{$store_id}");
+                $updated = true;
+                ppv_log("[PPV_ACCOUNT] Store email updated for store #{$store_id}");
             }
 
-            // ✅ Also update ppv_users email if handler/vendor
-            $ppv_user_id = $_SESSION['ppv_user_id'] ?? 0;
+            // Update ppv_users email if handler/vendor
             if ($ppv_user_id > 0) {
                 $wpdb->update(
                     "{$wpdb->prefix}ppv_users",
@@ -2749,14 +2761,19 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
                     ['%s'],
                     ['%d']
                 );
-                ppv_log("[PPV_ACCOUNT] PPV user email synced for ppv_user #{$ppv_user_id}");
+                $updated = true;
+                ppv_log("[PPV_ACCOUNT] PPV user email updated for ppv_user #{$ppv_user_id}");
 
                 // Update session email
                 $_SESSION['ppv_user_email'] = $new_email;
             }
 
-            ppv_log("[PPV_ACCOUNT] Email changed for user #{$user_id} to: {$new_email}");
-            wp_send_json_success(['msg' => PPV_Lang::t('email_changed_success', 'E-mail cím sikeresen módosítva!')]);
+            if ($updated) {
+                ppv_log("[PPV_ACCOUNT] Email changed to: {$new_email} (wp:{$wp_user_id}, ppv:{$ppv_user_id}, store:{$store_id})");
+                wp_send_json_success(['msg' => PPV_Lang::t('email_changed_success', 'E-mail cím sikeresen módosítva!')]);
+            } else {
+                wp_send_json_error(['msg' => PPV_Lang::t('error', 'Hiba történt')]);
+            }
         }
 
         /**
