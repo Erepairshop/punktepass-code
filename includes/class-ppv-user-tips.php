@@ -77,7 +77,7 @@ class PPV_User_Tips {
                 'delay_minutes' => 60,          // Wait 1 hour after trigger
                 'check_field' => 'name',        // Only show if name is empty
                 'priority' => 10,
-                'icon' => 'ri-user-line',
+                'icon' => '👤',
                 'action_url' => '/einstellungen',
                 'translations' => [
                     'de' => [
@@ -103,7 +103,7 @@ class PPV_User_Tips {
                 'delay_minutes' => 120,         // 2 hours after trigger
                 'check_field' => 'birthday',
                 'priority' => 20,
-                'icon' => 'ri-cake-2-line',
+                'icon' => '🎂',
                 'action_url' => '/einstellungen',
                 'translations' => [
                     'de' => [
@@ -129,7 +129,7 @@ class PPV_User_Tips {
                 'delay_minutes' => 180,         // 3 hours after trigger
                 'check_field' => 'whatsapp',
                 'priority' => 30,
-                'icon' => 'ri-whatsapp-line',
+                'icon' => '📱',
                 'action_url' => '/einstellungen',
                 'translations' => [
                     'de' => [
@@ -155,7 +155,7 @@ class PPV_User_Tips {
                 'delay_minutes' => 240,         // 4 hours after trigger
                 'check_field' => 'push_enabled',
                 'priority' => 40,
-                'icon' => 'ri-notification-3-line',
+                'icon' => '🔔',
                 'action_url' => '/einstellungen#notifications',
                 'translations' => [
                     'de' => [
@@ -182,7 +182,7 @@ class PPV_User_Tips {
                 'check_field' => null,          // Always show (once)
                 'check_condition' => 'no_rewards_redeemed',
                 'priority' => 50,
-                'icon' => 'ri-gift-line',
+                'icon' => '🎁',
                 'action_url' => '/belohnungen',
                 'translations' => [
                     'de' => [
@@ -208,7 +208,7 @@ class PPV_User_Tips {
                 'delay_minutes' => 1440,        // 24 hours after trigger
                 'check_field' => null,
                 'priority' => 100,
-                'icon' => 'ri-star-line',
+                'icon' => '⭐',
                 'action_url' => 'rate_app',     // Special action
                 'translations' => [
                     'de' => [
@@ -235,7 +235,7 @@ class PPV_User_Tips {
                 'delay_minutes' => 60,          // 1 hour delay after trigger
                 'check_field' => null,
                 'priority' => 5,                // High priority
-                'icon' => 'ri-store-2-line',
+                'icon' => '🏪',
                 'action_url' => '/shops',
                 'is_event_based' => true,       // Special flag
                 'translations' => [

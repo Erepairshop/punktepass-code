@@ -101,19 +101,16 @@
     toast.className = 'ppv-tip-toast';
     toast.innerHTML = `
       <div class="ppv-tip-toast-content">
-        <button class="ppv-tip-close" aria-label="Close">
-          <i class="ri-close-line"></i>
-        </button>
+        <button class="ppv-tip-close" aria-label="Close">✕</button>
         <div class="ppv-tip-icon">
-          <i class="${tip.icon}"></i>
+          <span class="ppv-tip-emoji">${tip.icon}</span>
         </div>
         <div class="ppv-tip-body">
           <h4 class="ppv-tip-title">${escapeHtml(tip.title)}</h4>
           <p class="ppv-tip-message">${escapeHtml(tip.message)}</p>
         </div>
         <button class="ppv-tip-action" data-url="${escapeHtml(tip.action_url)}">
-          ${escapeHtml(tip.button)}
-          <i class="ri-arrow-right-line"></i>
+          ${escapeHtml(tip.button)} →
         </button>
       </div>
     `;
@@ -178,9 +175,9 @@
           justify-content: center;
           margin-bottom: 12px;
         }
-        .ppv-tip-icon i {
-          font-size: 24px;
-          color: #fff;
+        .ppv-tip-emoji {
+          font-size: 28px;
+          line-height: 1;
         }
         .ppv-tip-title {
           color: #fff;
@@ -213,9 +210,6 @@
         .ppv-tip-action:hover {
           transform: translateY(-2px);
           box-shadow: 0 4px 12px rgba(6, 182, 212, 0.4);
-        }
-        .ppv-tip-action i {
-          font-size: 16px;
         }
 
         /* Dark theme support */
@@ -302,13 +296,7 @@
       markTipShown(tip.key);
     }, 300);
 
-    // Auto-hide after 15 seconds (unless user interacts)
-    setTimeout(() => {
-      if (document.querySelector('.ppv-tip-toast.show')) {
-        hideTipToast(toast);
-        // Don't dismiss - just hide. Will show again next time.
-      }
-    }, 15000);
+    // Don't auto-hide - wait for user interaction (X or button click)
   }
 
   // Initialize
