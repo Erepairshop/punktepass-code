@@ -204,6 +204,37 @@ class PPV_Weekly_Report {
             array_merge($store_ids, [$week_ago])
         ));
 
+        // NEW: First-time customers this week (users whose first scan at this store was this week)
+        $new_customers = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(DISTINCT p.user_id) FROM $table_points p
+             WHERE p.store_id IN ($placeholders)
+               AND DATE(p.created) >= %s
+               AND NOT EXISTS (
+                   SELECT 1 FROM $table_points p2
+                   WHERE p2.user_id = p.user_id
+                     AND p2.store_id IN ($placeholders)
+                     AND DATE(p2.created) < %s
+               )",
+            array_merge($store_ids, [$week_ago], $store_ids, [$week_ago])
+        ));
+
+        // Returning customers (visited before AND this week)
+        $returning_customers = $unique_users - $new_customers;
+        $returning_percent = $unique_users > 0 ? round(($returning_customers / $unique_users) * 100, 0) : 0;
+
+        // Most active day this week
+        $busiest_day_data = $wpdb->get_row($wpdb->prepare(
+            "SELECT DAYNAME(created) as day_name, DAYOFWEEK(created) as day_num, COUNT(*) as scan_count
+             FROM $table_points
+             WHERE store_id IN ($placeholders) AND DATE(created) >= %s
+             GROUP BY DAYOFWEEK(created), DAYNAME(created)
+             ORDER BY scan_count DESC
+             LIMIT 1",
+            array_merge($store_ids, [$week_ago])
+        ));
+        $busiest_day = $busiest_day_data->day_name ?? null;
+        $busiest_day_count = $busiest_day_data->scan_count ?? 0;
+
         // Calculate trend
         $trend = 0;
         if ($prev_week_scans > 0) {
@@ -215,6 +246,11 @@ class PPV_Weekly_Report {
             'prev_week_scans' => $prev_week_scans,
             'trend' => $trend,
             'unique_users' => $unique_users,
+            'new_customers' => $new_customers,
+            'returning_customers' => $returning_customers,
+            'returning_percent' => $returning_percent,
+            'busiest_day' => $busiest_day,
+            'busiest_day_count' => $busiest_day_count,
             'redemptions' => $redemptions,
             'points_spent' => $points_spent,
             'scanner_stats' => $scanner_stats,
@@ -400,6 +436,29 @@ class PPV_Weekly_Report {
 
             </div>
 
+            <!-- Customer Insights -->
+            <div style="background: #f8fafc; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
+                <h3 style="margin: 0 0 15px; font-size: 16px; color: #374151;">📊 ' . $T['customer_insights'] . '</h3>
+                <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                    <!-- New Customers -->
+                    <div style="flex: 1; min-width: 100px; background: white; border-radius: 8px; padding: 12px; text-align: center; border: 1px solid #e5e7eb;">
+                        <div style="font-size: 22px; font-weight: 700; color: #8b5cf6;">🆕 ' . number_format($stats['new_customers']) . '</div>
+                        <div style="font-size: 12px; color: #6b7280;">' . $T['new_customers'] . '</div>
+                    </div>
+                    <!-- Returning Customers -->
+                    <div style="flex: 1; min-width: 100px; background: white; border-radius: 8px; padding: 12px; text-align: center; border: 1px solid #e5e7eb;">
+                        <div style="font-size: 22px; font-weight: 700; color: #ec4899;">🔄 ' . $stats['returning_percent'] . '%</div>
+                        <div style="font-size: 12px; color: #6b7280;">' . $T['returning_customers'] . '</div>
+                    </div>
+                    <!-- Busiest Day -->
+                    <div style="flex: 1; min-width: 100px; background: white; border-radius: 8px; padding: 12px; text-align: center; border: 1px solid #e5e7eb;">
+                        <div style="font-size: 18px; font-weight: 700; color: #0ea5e9;">📅 ' . ($stats['busiest_day'] ? ($T['days'][$stats['busiest_day']] ?? $stats['busiest_day']) : '-') . '</div>
+                        <div style="font-size: 12px; color: #6b7280;">' . $T['busiest_day'] . '</div>
+                        <div style="font-size: 11px; color: #9ca3af;">' . number_format($stats['busiest_day_count']) . ' ' . $T['scans_text'] . '</div>
+                    </div>
+                </div>
+            </div>
+
             ' . $filiale_html . '
 
             ' . $suspicious_html . '
@@ -455,6 +514,12 @@ class PPV_Weekly_Report {
                 'footer_text' => 'Dieser Bericht wird automatisch jeden Freitag versendet.',
                 'filiale_breakdown' => 'Statistiken nach Filiale',
                 'main_store' => 'Hauptgeschäft',
+                'customer_insights' => 'Kundenanalyse',
+                'new_customers' => 'Neue Kunden',
+                'returning_customers' => 'Stammkunden',
+                'busiest_day' => 'Aktivster Tag',
+                'scans_text' => 'Scans',
+                'days' => ['Sunday' => 'Sonntag', 'Monday' => 'Montag', 'Tuesday' => 'Dienstag', 'Wednesday' => 'Mittwoch', 'Thursday' => 'Donnerstag', 'Friday' => 'Freitag', 'Saturday' => 'Samstag'],
             ],
             'hu' => [
                 'email_subject' => 'Heti jelentés - %s',
@@ -470,6 +535,12 @@ class PPV_Weekly_Report {
                 'footer_text' => 'Ez a jelentés automatikusan kerül kiküldésre minden pénteken.',
                 'filiale_breakdown' => 'Statisztikák filiálék szerint',
                 'main_store' => 'Főüzlet',
+                'customer_insights' => 'Vásárlói elemzés',
+                'new_customers' => 'Új vásárlók',
+                'returning_customers' => 'Visszatérő',
+                'busiest_day' => 'Legaktívabb nap',
+                'scans_text' => 'scan',
+                'days' => ['Sunday' => 'Vasárnap', 'Monday' => 'Hétfő', 'Tuesday' => 'Kedd', 'Wednesday' => 'Szerda', 'Thursday' => 'Csütörtök', 'Friday' => 'Péntek', 'Saturday' => 'Szombat'],
             ],
             'ro' => [
                 'email_subject' => 'Raport săptămânal - %s',
@@ -485,6 +556,12 @@ class PPV_Weekly_Report {
                 'footer_text' => 'Acest raport este trimis automat în fiecare vineri.',
                 'filiale_breakdown' => 'Statistici pe filiale',
                 'main_store' => 'Magazin principal',
+                'customer_insights' => 'Analiza clienților',
+                'new_customers' => 'Clienți noi',
+                'returning_customers' => 'Clienți fideli',
+                'busiest_day' => 'Cea mai activă zi',
+                'scans_text' => 'scanări',
+                'days' => ['Sunday' => 'Duminică', 'Monday' => 'Luni', 'Tuesday' => 'Marți', 'Wednesday' => 'Miercuri', 'Thursday' => 'Joi', 'Friday' => 'Vineri', 'Saturday' => 'Sâmbătă'],
             ],
         ];
 
