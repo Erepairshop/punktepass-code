@@ -527,107 +527,117 @@ class PPV_User_Tips {
     public static function rest_get_pending_tips(WP_REST_Request $request) {
         global $wpdb;
 
-        $user_id = self::get_user_id();
-        if (!$user_id) {
-            return new WP_REST_Response(['success' => false, 'msg' => 'Not authenticated'], 401);
-        }
-
-        // Get language
-        $lang = sanitize_text_field($request->get_param('lang') ?? 'de');
-        if (!in_array($lang, ['de', 'hu', 'ro'])) {
-            $lang = 'de';
-        }
-
-        // Get user data for field checks
-        $user = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}ppv_users WHERE id = %d",
-            $user_id
-        ));
-
-        if (!$user) {
-            return new WP_REST_Response(['success' => false, 'msg' => 'User not found'], 404);
-        }
-
-        // Get triggered tips that haven't been dismissed
-        $triggered_tips = $wpdb->get_results($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}ppv_user_tips
-             WHERE user_id = %d
-             AND triggered_at IS NOT NULL
-             AND dismissed_at IS NULL
-             AND shown_at IS NULL",
-            $user_id
-        ));
-
-        $all_tips = self::get_all_tips();
-        $pending_tips = [];
-        $now = current_time('timestamp');
-
-        foreach ($triggered_tips as $triggered) {
-            $tip_key = $triggered->tip_key;
-
-            if (!isset($all_tips[$tip_key])) continue;
-
-            $tip_config = $all_tips[$tip_key];
-
-            // Check delay time
-            $triggered_time = strtotime($triggered->triggered_at);
-            $delay_seconds = $tip_config['delay_minutes'] * 60;
-
-            if (($now - $triggered_time) < $delay_seconds) {
-                // Not enough time has passed
-                continue;
+        try {
+            $user_id = self::get_user_id();
+            if (!$user_id) {
+                return new WP_REST_Response(['success' => false, 'msg' => 'Not authenticated'], 401);
             }
 
-            // Check if field is already filled
-            if (!empty($tip_config['check_field'])) {
-                $field = $tip_config['check_field'];
-                if (!empty($user->$field)) {
-                    // Field is already filled, dismiss tip automatically
-                    $wpdb->update(
-                        $wpdb->prefix . 'ppv_user_tips',
-                        ['dismissed_at' => current_time('mysql')],
-                        ['id' => $triggered->id],
-                        ['%s'],
-                        ['%d']
-                    );
+            // Get language
+            $lang = sanitize_text_field($request->get_param('lang') ?? 'de');
+            if (!in_array($lang, ['de', 'hu', 'ro'])) {
+                $lang = 'de';
+            }
+
+            // Get user data for field checks
+            $user = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM {$wpdb->prefix}ppv_users WHERE id = %d",
+                $user_id
+            ));
+
+            if (!$user) {
+                return new WP_REST_Response(['success' => false, 'msg' => 'User not found'], 404);
+            }
+
+            // Get triggered tips that haven't been dismissed
+            $triggered_tips = $wpdb->get_results($wpdb->prepare(
+                "SELECT * FROM {$wpdb->prefix}ppv_user_tips
+                 WHERE user_id = %d
+                 AND triggered_at IS NOT NULL
+                 AND dismissed_at IS NULL
+                 AND shown_at IS NULL",
+                $user_id
+            ));
+
+            $all_tips = self::get_all_tips();
+            $pending_tips = [];
+            $now = current_time('timestamp');
+
+            foreach ($triggered_tips as $triggered) {
+                $tip_key = $triggered->tip_key;
+
+                if (!isset($all_tips[$tip_key])) continue;
+
+                $tip_config = $all_tips[$tip_key];
+
+                // Check delay time
+                $triggered_time = strtotime($triggered->triggered_at);
+                $delay_seconds = $tip_config['delay_minutes'] * 60;
+
+                if (($now - $triggered_time) < $delay_seconds) {
+                    // Not enough time has passed
                     continue;
                 }
-            }
 
-            // Check special conditions
-            if (!empty($tip_config['check_condition'])) {
-                if (!self::check_condition($tip_config['check_condition'], $user_id)) {
-                    continue;
+                // Check if field is already filled
+                if (!empty($tip_config['check_field'])) {
+                    $field = $tip_config['check_field'];
+                    if (!empty($user->$field)) {
+                        // Field is already filled, dismiss tip automatically
+                        $wpdb->update(
+                            $wpdb->prefix . 'ppv_user_tips',
+                            ['dismissed_at' => current_time('mysql')],
+                            ['id' => $triggered->id],
+                            ['%s'],
+                            ['%d']
+                        );
+                        continue;
+                    }
                 }
+
+                // Check special conditions
+                if (!empty($tip_config['check_condition'])) {
+                    if (!self::check_condition($tip_config['check_condition'], $user_id)) {
+                        continue;
+                    }
+                }
+
+                // Tip is ready to show
+                $trans = $tip_config['translations'][$lang] ?? $tip_config['translations']['de'];
+
+                $pending_tips[] = [
+                    'key' => $tip_key,
+                    'icon' => $tip_config['icon'],
+                    'title' => $trans['title'],
+                    'message' => $trans['message'],
+                    'button' => $trans['button'],
+                    'action_url' => $tip_config['action_url'],
+                    'priority' => $tip_config['priority'],
+                ];
             }
 
-            // Tip is ready to show
-            $trans = $tip_config['translations'][$lang] ?? $tip_config['translations']['de'];
+            // Sort by priority (lower = more important)
+            usort($pending_tips, function($a, $b) {
+                return $a['priority'] - $b['priority'];
+            });
 
-            $pending_tips[] = [
-                'key' => $tip_key,
-                'icon' => $tip_config['icon'],
-                'title' => $trans['title'],
-                'message' => $trans['message'],
-                'button' => $trans['button'],
-                'action_url' => $tip_config['action_url'],
-                'priority' => $tip_config['priority'],
-            ];
+            // Return only the first tip (most important)
+            $tip_to_show = !empty($pending_tips) ? $pending_tips[0] : null;
+
+            return new WP_REST_Response([
+                'success' => true,
+                'tip' => $tip_to_show,
+                'total_pending' => count($pending_tips)
+            ], 200);
+
+        } catch (Throwable $e) {
+            ppv_log("❌ [PPV_User_Tips] Error in rest_get_pending_tips: " . $e->getMessage() . " at " . $e->getFile() . ":" . $e->getLine());
+            return new WP_REST_Response([
+                'success' => false,
+                'msg' => 'Server error',
+                'debug' => $e->getMessage()
+            ], 500);
         }
-
-        // Sort by priority (lower = more important)
-        usort($pending_tips, function($a, $b) {
-            return $a['priority'] - $b['priority'];
-        });
-
-        // Return only the first tip (most important)
-        $tip_to_show = !empty($pending_tips) ? $pending_tips[0] : null;
-
-        return new WP_REST_Response([
-            'success' => true,
-            'tip' => $tip_to_show,
-            'total_pending' => count($pending_tips)
-        ], 200);
     }
 
     /** ============================================================
