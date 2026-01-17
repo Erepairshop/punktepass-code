@@ -939,6 +939,12 @@ private static function get_today_hours($opening_hours) {
             true
         );
 
+        // Config for User Tips
+        wp_localize_script('ppv-user-tips', 'ppvConfig', [
+            'restBase' => esc_url_raw(rest_url('ppv/v1/')),
+            'nonce' => wp_create_nonce('wp_rest')
+        ]);
+
         $boot = self::build_boot_payload();
 
         wp_add_inline_script(
