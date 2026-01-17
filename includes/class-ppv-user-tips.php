@@ -232,7 +232,7 @@ class PPV_User_Tips {
             // Event-based tip (triggered externally, not by scan count)
             'new_store_nearby' => [
                 'trigger_scans' => 0,           // Not scan-based
-                'delay_minutes' => 30,          // 30 min delay after trigger
+                'delay_minutes' => 60,          // 1 hour delay after trigger
                 'check_field' => null,
                 'priority' => 5,                // High priority
                 'icon' => 'ri-store-2-line',
@@ -266,9 +266,9 @@ class PPV_User_Tips {
      * @param int $store_id The new store ID
      * @param float $lat Store latitude
      * @param float $lng Store longitude
-     * @param float $radius_km Radius in kilometers (default 15km)
+     * @param float $radius_km Radius in kilometers (default 20km)
      */
-    public static function trigger_new_store_nearby($store_id, $lat, $lng, $radius_km = 15) {
+    public static function trigger_new_store_nearby($store_id, $lat, $lng, $radius_km = 20) {
         global $wpdb;
 
         if (!$lat || !$lng) {
@@ -276,20 +276,23 @@ class PPV_User_Tips {
             return 0;
         }
 
-        // Get store info for logging
+        // Get store info for logging and creation date
         $store = $wpdb->get_row($wpdb->prepare(
-            "SELECT name, company_name, city FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+            "SELECT name, company_name, city, created_at FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
             $store_id
         ));
         $store_name = $store->name ?: $store->company_name ?: "Store #{$store_id}";
+        $store_created = $store->created_at ?: current_time('mysql');
 
         // Find users with location who are within radius
+        // AND who registered AFTER the store was created (only new stores matter)
         // Using Haversine formula approximation
         $users = $wpdb->get_results($wpdb->prepare("
             SELECT id, last_lat, last_lng
             FROM {$wpdb->prefix}ppv_users
             WHERE last_lat IS NOT NULL
             AND last_lng IS NOT NULL
+            AND created_at < %s
             AND (
                 6371 * acos(
                     cos(radians(%f)) * cos(radians(last_lat)) *
@@ -297,7 +300,7 @@ class PPV_User_Tips {
                     sin(radians(%f)) * sin(radians(last_lat))
                 )
             ) <= %f
-        ", $lat, $lng, $lat, $radius_km));
+        ", $store_created, $lat, $lng, $lat, $radius_km));
 
         $triggered_count = 0;
 
