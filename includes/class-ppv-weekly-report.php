@@ -17,14 +17,14 @@ class PPV_Weekly_Report {
     }
 
     /**
-     * Schedule weekly cron event (every Monday at 8:00 AM)
+     * Schedule weekly cron event (every Friday at 12:00 noon)
      */
     public static function schedule_cron() {
         if (!wp_next_scheduled('ppv_weekly_report')) {
-            // Next Monday at 8:00 AM server time
-            $next_monday = strtotime('next monday 08:00:00');
-            wp_schedule_event($next_monday, 'weekly', 'ppv_weekly_report');
-            ppv_log("📧 [Weekly Report] Cron scheduled for: " . date('Y-m-d H:i:s', $next_monday));
+            // Next Friday at 12:00 noon server time
+            $next_friday = strtotime('next friday 12:00:00');
+            wp_schedule_event($next_friday, 'weekly', 'ppv_weekly_report');
+            ppv_log("📧 [Weekly Report] Cron scheduled for: " . date('Y-m-d H:i:s', $next_friday));
         }
     }
 
@@ -356,7 +356,7 @@ class PPV_Weekly_Report {
                 'suspicious_scans' => 'Verdächtige Scans',
                 'view_details' => 'Anzeigen',
                 'summary_text' => 'Diese Woche: %s Scans, %s Punkte eingelöst',
-                'footer_text' => 'Dieser Bericht wird automatisch jeden Montag versendet.',
+                'footer_text' => 'Dieser Bericht wird automatisch jeden Freitag versendet.',
             ],
             'hu' => [
                 'email_subject' => 'Heti jelentés - %s',
@@ -369,7 +369,7 @@ class PPV_Weekly_Report {
                 'suspicious_scans' => 'Gyanús scanek',
                 'view_details' => 'Megtekintés',
                 'summary_text' => 'Ezen a héten: %s scan, %s pont beváltva',
-                'footer_text' => 'Ez a jelentés automatikusan kerül kiküldésre minden hétfőn.',
+                'footer_text' => 'Ez a jelentés automatikusan kerül kiküldésre minden pénteken.',
             ],
             'ro' => [
                 'email_subject' => 'Raport săptămânal - %s',
@@ -382,7 +382,7 @@ class PPV_Weekly_Report {
                 'suspicious_scans' => 'Scanări suspecte',
                 'view_details' => 'Vizualizare',
                 'summary_text' => 'Săptămâna aceasta: %s scanări, %s puncte răscumpărate',
-                'footer_text' => 'Acest raport este trimis automat în fiecare luni.',
+                'footer_text' => 'Acest raport este trimis automat în fiecare vineri.',
             ],
         ];
 
