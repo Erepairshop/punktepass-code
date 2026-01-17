@@ -770,6 +770,8 @@ return [
     'vacation_message' => 'Mesaj concediu (opțional)',
     'vacation_message_placeholder' => 'de ex. Revenim pe 15 ianuarie!',
     'vacation_message_help' => 'Acest mesaj va fi afișat clienților în timpul concediului',
+    'vacation_apply_all_hint' => 'Setările vor fi aplicate la toate filialele',
+    'select_filiale' => 'Selectează filiala',
 
     // ========== OPENING HOURS ENFORCEMENT ==========
     'opening_hours_section' => 'Program',

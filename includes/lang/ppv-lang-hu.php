@@ -761,6 +761,8 @@ return [
     'vacation_message' => 'Szabadság üzenet (opcionális)',
     'vacation_message_placeholder' => 'pl. Január 15-től újra nyitva vagyunk!',
     'vacation_message_help' => 'Ez az üzenet jelenik meg az ügyfeleknek a szabadság alatt',
+    'vacation_apply_all_hint' => 'A beállítások az összes filiáléra alkalmazásra kerülnek',
+    'select_filiale' => 'Fiók kiválasztása',
 
     // ========== OPENING HOURS ENFORCEMENT ==========
     'opening_hours_section' => 'Nyitvatartás',

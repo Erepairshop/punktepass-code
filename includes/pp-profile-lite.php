@@ -1376,158 +1376,219 @@ if (!empty($store->gallery)) {
 
                 <?php if ($has_multiple_filialen): ?>
                 <style>
-                .ppv-vacation-filialen { display: flex; flex-direction: column; gap: 12px; }
-                .ppv-vacation-filiale-card { background: var(--color-bg-secondary, #f1f5f9); border: 1px solid var(--color-border, #e2e8f0); border-radius: 12px; overflow: hidden; transition: all 0.2s ease; }
-                .ppv-vacation-filiale-card.vacation-active { border-color: #3b82f6; background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(59, 130, 246, 0.02)); }
-                .ppv-vacation-card-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; gap: 12px; }
-                .ppv-vacation-card-info { display: flex; flex-direction: column; gap: 2px; }
-                .ppv-vacation-card-info strong { font-size: 14px; color: var(--color-text, #1e293b); }
-                .ppv-vacation-card-info small { font-size: 12px; color: var(--color-text-secondary, #64748b); }
-                .ppv-vacation-card-body { padding: 0 16px 16px; border-top: 1px solid var(--color-border, #e2e8f0); }
+                .ppv-vacation-selector { margin-bottom: 16px; }
+                .ppv-vacation-selector select { width: 100%; padding: 10px 14px; border: 1px solid var(--color-border, #e2e8f0); border-radius: 8px; font-size: 14px; background: var(--color-surface, #fff); cursor: pointer; }
+                .ppv-vacation-form-wrapper { background: var(--color-bg-secondary, #f1f5f9); border: 1px solid var(--color-border, #e2e8f0); border-radius: 12px; padding: 16px; }
+                .ppv-vacation-form-wrapper.vacation-active { border-color: #3b82f6; background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(59, 130, 246, 0.02)); }
                 .ppv-vacation-dates-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
-                .ppv-vacation-card-body .ppv-form-group { margin-bottom: 12px; }
-                .ppv-vacation-card-body .ppv-form-group label { font-size: 12px; font-weight: 600; color: var(--color-text-secondary, #64748b); margin-bottom: 4px; display: block; }
-                .ppv-vacation-card-body input[type="date"],
-                .ppv-vacation-card-body input[type="text"] { width: 100%; padding: 8px 12px; border: 1px solid var(--color-border, #e2e8f0); border-radius: 8px; font-size: 14px; background: var(--color-surface, #fff); }
+                .ppv-vacation-form-wrapper .ppv-form-group { margin-bottom: 12px; }
+                .ppv-vacation-form-wrapper .ppv-form-group label { font-size: 12px; font-weight: 600; color: var(--color-text-secondary, #64748b); margin-bottom: 4px; display: block; }
+                .ppv-vacation-form-wrapper input[type="date"],
+                .ppv-vacation-form-wrapper input[type="text"] { width: 100%; padding: 8px 12px; border: 1px solid var(--color-border, #e2e8f0); border-radius: 8px; font-size: 14px; background: var(--color-surface, #fff); }
                 .ppv-btn-small { padding: 8px 16px; font-size: 13px; border-radius: 8px; }
                 .ppv-save-filiale-vacation { background: #3b82f6; color: #fff; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
                 .ppv-save-filiale-vacation:hover { background: #2563eb; }
                 .ppv-save-filiale-vacation.saving { opacity: 0.7; pointer-events: none; }
+                .ppv-vacation-all-hint { font-size: 12px; color: var(--color-text-secondary, #64748b); margin-top: 4px; font-style: italic; }
                 @media (max-width: 480px) { .ppv-vacation-dates-row { grid-template-columns: 1fr; } }
-                [data-theme="dark"] .ppv-vacation-filiale-card { background: rgba(30, 41, 59, 0.5); border-color: rgba(59, 130, 246, 0.2); }
-                [data-theme="dark"] .ppv-vacation-filiale-card.vacation-active { background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(59, 130, 246, 0.05)); }
-                [data-theme="dark"] .ppv-vacation-card-info strong { color: #e2e8f0; }
-                [data-theme="dark"] .ppv-vacation-card-body { border-top-color: rgba(59, 130, 246, 0.2); }
-                [data-theme="dark"] .ppv-vacation-card-body input { background: rgba(15, 23, 42, 0.8); border-color: rgba(59, 130, 246, 0.3); color: #e2e8f0; }
+                [data-theme="dark"] .ppv-vacation-form-wrapper { background: rgba(30, 41, 59, 0.5); border-color: rgba(59, 130, 246, 0.2); }
+                [data-theme="dark"] .ppv-vacation-form-wrapper.vacation-active { background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(59, 130, 246, 0.05)); }
+                [data-theme="dark"] .ppv-vacation-selector select { background: rgba(15, 23, 42, 0.8); border-color: rgba(59, 130, 246, 0.3); color: #e2e8f0; }
+                [data-theme="dark"] .ppv-vacation-form-wrapper input { background: rgba(15, 23, 42, 0.8); border-color: rgba(59, 130, 246, 0.3); color: #e2e8f0; }
                 </style>
-                <!-- 🏢 FILIALE VACATION CARDS -->
-                <div class="ppv-vacation-filialen">
-                    <?php foreach ($filialen as $fil): ?>
-                    <div class="ppv-vacation-filiale-card <?php echo !empty($fil->vacation_enabled) ? 'vacation-active' : ''; ?>" data-store-id="<?php echo intval($fil->id); ?>">
-                        <div class="ppv-vacation-card-header">
-                            <div class="ppv-vacation-card-info">
-                                <strong><?php echo esc_html($fil->name ?: $fil->company_name); ?></strong>
-                                <?php if ($fil->city): ?><small><?php echo esc_html($fil->city); ?></small><?php endif; ?>
-                            </div>
-                            <div class="ppv-toggle-wrapper">
-                                <label class="ppv-toggle-switch">
-                                    <input type="checkbox" class="ppv-filiale-vacation-toggle" data-store-id="<?php echo intval($fil->id); ?>" <?php checked($fil->vacation_enabled ?? 0, 1); ?>>
-                                    <span class="ppv-toggle-slider"></span>
-                                </label>
-                                <span class="ppv-toggle-status <?php echo !empty($fil->vacation_enabled) ? 'active' : ''; ?>" data-on="<?php echo esc_attr(PPV_Lang::t('toggle_on')); ?>" data-off="<?php echo esc_attr(PPV_Lang::t('toggle_off')); ?>"><?php echo esc_html(!empty($fil->vacation_enabled) ? PPV_Lang::t('toggle_on') : PPV_Lang::t('toggle_off')); ?></span>
-                            </div>
-                        </div>
-                        <div class="ppv-vacation-card-body" style="<?php echo empty($fil->vacation_enabled) ? 'display: none;' : ''; ?>">
-                            <div class="ppv-vacation-dates-row">
-                                <div class="ppv-form-group">
-                                    <label><?php echo esc_html(PPV_Lang::t('vacation_from')); ?></label>
-                                    <input type="date" class="ppv-filiale-vacation-from" data-store-id="<?php echo intval($fil->id); ?>" value="<?php echo esc_attr($fil->vacation_from ?? ''); ?>">
-                                </div>
-                                <div class="ppv-form-group">
-                                    <label><?php echo esc_html(PPV_Lang::t('vacation_to')); ?></label>
-                                    <input type="date" class="ppv-filiale-vacation-to" data-store-id="<?php echo intval($fil->id); ?>" value="<?php echo esc_attr($fil->vacation_to ?? ''); ?>">
-                                </div>
-                            </div>
-                            <div class="ppv-form-group">
-                                <label><?php echo esc_html(PPV_Lang::t('vacation_message')); ?></label>
-                                <input type="text" class="ppv-filiale-vacation-message" data-store-id="<?php echo intval($fil->id); ?>" value="<?php echo esc_attr($fil->vacation_message ?? ''); ?>" placeholder="<?php echo esc_attr(PPV_Lang::t('vacation_message_placeholder')); ?>">
-                            </div>
-                            <button type="button" class="ppv-btn ppv-btn-small ppv-save-filiale-vacation" data-store-id="<?php echo intval($fil->id); ?>">
-                                <i class="ri-save-line"></i> <?php echo esc_html(PPV_Lang::t('save') ?? 'Mentés'); ?>
-                            </button>
-                        </div>
-                    </div>
-                    <?php endforeach; ?>
+
+                <!-- 🏢 FILIALE VACATION DROPDOWN SELECTOR -->
+                <div class="ppv-vacation-selector">
+                    <label for="ppv-vacation-filiale-select" style="font-size: 13px; font-weight: 600; color: var(--color-text-secondary, #64748b); margin-bottom: 6px; display: block;">
+                        <?php echo esc_html(PPV_Lang::t('select_filiale') ?? 'Fiók kiválasztása'); ?>
+                    </label>
+                    <select id="ppv-vacation-filiale-select">
+                        <option value="all"><?php echo esc_html(PPV_Lang::t('all_branches') ?? 'Összes filiale'); ?></option>
+                        <?php foreach ($filialen as $fil): ?>
+                        <option value="<?php echo intval($fil->id); ?>"
+                                data-vacation-enabled="<?php echo !empty($fil->vacation_enabled) ? '1' : '0'; ?>"
+                                data-vacation-from="<?php echo esc_attr($fil->vacation_from ?? ''); ?>"
+                                data-vacation-to="<?php echo esc_attr($fil->vacation_to ?? ''); ?>"
+                                data-vacation-message="<?php echo esc_attr($fil->vacation_message ?? ''); ?>">
+                            <?php echo esc_html($fil->name ?: $fil->company_name); ?><?php if ($fil->city): ?> (<?php echo esc_html($fil->city); ?>)<?php endif; ?>
+                        </option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
 
-                <!-- Inline filiale vacation toggle handler -->
+                <!-- Vacation Form -->
+                <div class="ppv-vacation-form-wrapper" id="ppv-vacation-form-wrapper">
+                    <div class="ppv-vip-toggle-row" style="margin-bottom: 12px;">
+                        <div class="ppv-toggle-wrapper">
+                            <label class="ppv-toggle-switch">
+                                <input type="checkbox" id="ppv-filiale-vacation-toggle">
+                                <span class="ppv-toggle-slider"></span>
+                            </label>
+                            <span class="ppv-toggle-status" id="ppv-filiale-vacation-status" data-on="<?php echo esc_attr(PPV_Lang::t('toggle_on')); ?>" data-off="<?php echo esc_attr(PPV_Lang::t('toggle_off')); ?>"><?php echo esc_html(PPV_Lang::t('toggle_off')); ?></span>
+                        </div>
+                        <div class="ppv-toggle-label">
+                            <strong><?php echo esc_html(PPV_Lang::t('vacation_enabled')); ?></strong>
+                        </div>
+                    </div>
+
+                    <div id="ppv-vacation-fields-wrapper" style="opacity: 0.5; pointer-events: none;">
+                        <div class="ppv-vacation-dates-row">
+                            <div class="ppv-form-group">
+                                <label><?php echo esc_html(PPV_Lang::t('vacation_from')); ?></label>
+                                <input type="date" id="ppv-filiale-vacation-from">
+                            </div>
+                            <div class="ppv-form-group">
+                                <label><?php echo esc_html(PPV_Lang::t('vacation_to')); ?></label>
+                                <input type="date" id="ppv-filiale-vacation-to">
+                            </div>
+                        </div>
+                        <div class="ppv-form-group">
+                            <label><?php echo esc_html(PPV_Lang::t('vacation_message')); ?></label>
+                            <input type="text" id="ppv-filiale-vacation-message" placeholder="<?php echo esc_attr(PPV_Lang::t('vacation_message_placeholder')); ?>">
+                        </div>
+                    </div>
+
+                    <div class="ppv-vacation-all-hint" id="ppv-vacation-all-hint" style="display: none;">
+                        <?php echo esc_html(PPV_Lang::t('vacation_apply_all_hint') ?? 'A beállítások az összes filiáléra alkalmazásra kerülnek'); ?>
+                    </div>
+
+                    <button type="button" class="ppv-btn ppv-btn-small ppv-save-filiale-vacation" id="ppv-save-vacation-btn" style="margin-top: 12px;">
+                        <i class="ri-save-line"></i> <?php echo esc_html(PPV_Lang::t('save') ?? 'Mentés'); ?>
+                    </button>
+                </div>
+
+                <!-- Store filiale data for JS -->
+                <script type="application/json" id="ppv-filialen-data">
+                <?php echo json_encode(array_map(function($f) {
+                    return [
+                        'id' => intval($f->id),
+                        'vacation_enabled' => !empty($f->vacation_enabled) ? 1 : 0,
+                        'vacation_from' => $f->vacation_from ?? '',
+                        'vacation_to' => $f->vacation_to ?? '',
+                        'vacation_message' => $f->vacation_message ?? ''
+                    ];
+                }, $filialen)); ?>
+                </script>
+
+                <!-- Inline filiale vacation handler -->
                 <script>
                 (function() {
-                    console.log('🏢 Filiale vacation script loaded');
+                    var filialeSelect = document.getElementById('ppv-vacation-filiale-select');
+                    var formWrapper = document.getElementById('ppv-vacation-form-wrapper');
+                    var toggle = document.getElementById('ppv-filiale-vacation-toggle');
+                    var status = document.getElementById('ppv-filiale-vacation-status');
+                    var fieldsWrapper = document.getElementById('ppv-vacation-fields-wrapper');
+                    var fromInput = document.getElementById('ppv-filiale-vacation-from');
+                    var toInput = document.getElementById('ppv-filiale-vacation-to');
+                    var msgInput = document.getElementById('ppv-filiale-vacation-message');
+                    var allHint = document.getElementById('ppv-vacation-all-hint');
+                    var saveBtn = document.getElementById('ppv-save-vacation-btn');
+                    var filialeDataEl = document.getElementById('ppv-filialen-data');
+                    var filialeData = filialeDataEl ? JSON.parse(filialeDataEl.textContent) : [];
 
-                    function initFilialeVacationToggles() {
-                        document.querySelectorAll('.ppv-filiale-vacation-toggle').forEach(function(toggle) {
-                            console.log('🏢 Found filiale toggle:', toggle.dataset.storeId);
+                    function loadFiliale(storeId) {
+                        if (storeId === 'all') {
+                            // Clear form for "all" selection
+                            toggle.checked = false;
+                            fromInput.value = '';
+                            toInput.value = '';
+                            msgInput.value = '';
+                            allHint.style.display = 'block';
+                        } else {
+                            allHint.style.display = 'none';
+                            var fil = filialeData.find(function(f) { return f.id == storeId; });
+                            if (fil) {
+                                toggle.checked = fil.vacation_enabled == 1;
+                                fromInput.value = fil.vacation_from || '';
+                                toInput.value = fil.vacation_to || '';
+                                msgInput.value = fil.vacation_message || '';
+                            }
+                        }
+                        updateToggleState();
+                    }
 
-                            toggle.onchange = function() {
-                                console.log('🏢 Filiale toggle changed:', this.dataset.storeId, this.checked);
-                                var card = this.closest('.ppv-vacation-filiale-card');
-                                var body = card ? card.querySelector('.ppv-vacation-card-body') : null;
+                    function updateToggleState() {
+                        var isOn = toggle.checked;
+                        status.textContent = isOn ? (status.dataset.on || 'BE') : (status.dataset.off || 'KI');
+                        status.classList.toggle('active', isOn);
+                        fieldsWrapper.style.opacity = isOn ? '1' : '0.5';
+                        fieldsWrapper.style.pointerEvents = isOn ? 'auto' : 'none';
+                        formWrapper.classList.toggle('vacation-active', isOn);
+                    }
 
-                                if (body) {
-                                    body.style.display = this.checked ? 'block' : 'none';
-                                }
+                    function saveVacation() {
+                        var selectedValue = filialeSelect.value;
+                        var storeIds = selectedValue === 'all'
+                            ? filialeData.map(function(f) { return f.id; })
+                            : [parseInt(selectedValue)];
 
-                                if (card) {
-                                    card.classList.toggle('vacation-active', this.checked);
-                                }
+                        saveBtn.innerHTML = '<i class="ri-loader-4-line"></i> ...';
+                        saveBtn.disabled = true;
 
-                                // Update status text
-                                var wrapper = this.closest('.ppv-toggle-wrapper');
-                                if (wrapper) {
-                                    var status = wrapper.querySelector('.ppv-toggle-status');
-                                    if (status) {
-                                        status.textContent = this.checked ? (status.dataset.on || 'BE') : (status.dataset.off || 'KI');
-                                        status.classList.toggle('active', this.checked);
-                                    }
-                                }
-                            };
+                        var savePromises = storeIds.map(function(storeId) {
+                            var formData = new FormData();
+                            formData.append('action', 'ppv_save_filiale_vacation');
+                            formData.append('store_id', storeId);
+                            formData.append('vacation_enabled', toggle.checked ? '1' : '0');
+                            formData.append('vacation_from', fromInput.value);
+                            formData.append('vacation_to', toInput.value);
+                            formData.append('vacation_message', msgInput.value);
+
+                            return fetch(ppv_profile.ajaxUrl, {
+                                method: 'POST',
+                                body: formData
+                            }).then(function(r) { return r.json(); });
                         });
 
-                        // Save buttons
-                        document.querySelectorAll('.ppv-save-filiale-vacation').forEach(function(btn) {
-                            btn.onclick = function(e) {
-                                e.preventDefault();
-                                var storeId = this.dataset.storeId;
-                                var card = this.closest('.ppv-vacation-filiale-card');
-                                if (!card) return;
+                        Promise.all(savePromises)
+                            .then(function(results) {
+                                saveBtn.disabled = false;
+                                saveBtn.innerHTML = '<i class="ri-save-line"></i> Mentés';
 
-                                var toggle = card.querySelector('.ppv-filiale-vacation-toggle');
-                                var fromInput = card.querySelector('.ppv-filiale-vacation-from');
-                                var toInput = card.querySelector('.ppv-filiale-vacation-to');
-                                var msgInput = card.querySelector('.ppv-filiale-vacation-message');
-
-                                this.innerHTML = '<i class="ri-loader-4-line"></i> ...';
-                                this.disabled = true;
-
-                                var formData = new FormData();
-                                formData.append('action', 'ppv_save_filiale_vacation');
-                                formData.append('store_id', storeId);
-                                formData.append('vacation_enabled', toggle && toggle.checked ? '1' : '0');
-                                formData.append('vacation_from', fromInput ? fromInput.value : '');
-                                formData.append('vacation_to', toInput ? toInput.value : '');
-                                formData.append('vacation_message', msgInput ? msgInput.value : '');
-
-                                var btn = this;
-                                fetch(ppv_profile.ajaxUrl, {
-                                    method: 'POST',
-                                    body: formData
-                                })
-                                .then(function(r) { return r.json(); })
-                                .then(function(data) {
-                                    btn.disabled = false;
-                                    btn.innerHTML = '<i class="ri-save-line"></i> Mentés';
-                                    if (data.success) {
-                                        alert(data.data.msg || 'Mentve!');
-                                    } else {
-                                        alert(data.data.msg || 'Hiba történt');
-                                    }
-                                })
-                                .catch(function() {
-                                    btn.disabled = false;
-                                    btn.innerHTML = '<i class="ri-save-line"></i> Mentés';
+                                var allSuccess = results.every(function(r) { return r.success; });
+                                if (allSuccess) {
+                                    // Update local data
+                                    storeIds.forEach(function(id) {
+                                        var fil = filialeData.find(function(f) { return f.id == id; });
+                                        if (fil) {
+                                            fil.vacation_enabled = toggle.checked ? 1 : 0;
+                                            fil.vacation_from = fromInput.value;
+                                            fil.vacation_to = toInput.value;
+                                            fil.vacation_message = msgInput.value;
+                                        }
+                                    });
+                                    alert(selectedValue === 'all' ? 'Összes fiók mentve!' : 'Mentve!');
+                                } else {
                                     alert('Hiba történt');
-                                });
-                            };
-                        });
+                                }
+                            })
+                            .catch(function() {
+                                saveBtn.disabled = false;
+                                saveBtn.innerHTML = '<i class="ri-save-line"></i> Mentés';
+                                alert('Hiba történt');
+                            });
+                    }
+
+                    function init() {
+                        if (!filialeSelect || !toggle) return;
+
+                        filialeSelect.onchange = function() {
+                            loadFiliale(this.value);
+                        };
+
+                        toggle.onchange = updateToggleState;
+                        saveBtn.onclick = saveVacation;
+
+                        // Load first selection (all)
+                        loadFiliale('all');
                     }
 
                     if (document.readyState === 'loading') {
-                        document.addEventListener('DOMContentLoaded', initFilialeVacationToggles);
+                        document.addEventListener('DOMContentLoaded', init);
                     } else {
-                        initFilialeVacationToggles();
+                        init();
                     }
-                    document.addEventListener('turbo:load', initFilialeVacationToggles);
+                    document.addEventListener('turbo:load', init);
                 })();
                 </script>
 

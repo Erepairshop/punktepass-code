@@ -741,6 +741,8 @@ return [
     'vacation_message' => 'Urlaubsnachricht (optional)',
     'vacation_message_placeholder' => 'z.B. Wir sind ab dem 15. Januar wieder für euch da!',
     'vacation_message_help' => 'Diese Nachricht wird deinen Kunden während des Urlaubs angezeigt',
+    'vacation_apply_all_hint' => 'Die Einstellungen werden auf alle Filialen angewendet',
+    'select_filiale' => 'Filiale auswählen',
 
     // ========== OPENING HOURS ENFORCEMENT ==========
     'opening_hours_section' => 'Öffnungszeiten',
