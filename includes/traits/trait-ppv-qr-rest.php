@@ -1218,6 +1218,13 @@ trait PPV_QR_REST_Trait {
         // 🔒 SECURITY: Increment successful scan counter (rate limit 3/min)
         PPV_Permissions::increment_rate_limit('pos_scan_success', 60);
 
+        // 💡 USER TIPS: Trigger tip check after successful scan
+        do_action('ppv_after_scan', $user_id, [
+            'store_id' => $store_id,
+            'points' => $points_add,
+            'scan_id' => $scan_id ?? null
+        ]);
+
         // 📊 CUSTOMER INSIGHTS: Get customer insights for Händler display
         $customer_insights = null;
         if (class_exists('PPV_Customer_Insights')) {
