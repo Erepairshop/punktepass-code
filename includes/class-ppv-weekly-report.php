@@ -227,6 +227,56 @@ class PPV_Weekly_Report {
     }
 
     /**
+     * Get statistics for a single store (no filialen)
+     */
+    private static function get_single_store_stats($store_id) {
+        global $wpdb;
+
+        $today = current_time('Y-m-d');
+        $week_ago = date('Y-m-d', strtotime('-7 days', strtotime($today)));
+
+        $table_points = $wpdb->prefix . 'ppv_points';
+        $table_redeemed = $wpdb->prefix . 'ppv_rewards_redeemed';
+
+        // This week scans for this store only
+        $week_scans = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM $table_points WHERE store_id = %d AND DATE(created) >= %s",
+            $store_id, $week_ago
+        ));
+
+        // Unique users this week
+        $unique_users = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(DISTINCT user_id) FROM $table_points WHERE store_id = %d AND DATE(created) >= %s",
+            $store_id, $week_ago
+        ));
+
+        // Redemptions this week
+        $redemptions = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM $table_redeemed WHERE store_id = %d AND DATE(redeemed_at) >= %s",
+            $store_id, $week_ago
+        ));
+
+        return [
+            'week_scans' => $week_scans,
+            'unique_users' => $unique_users,
+            'redemptions' => $redemptions
+        ];
+    }
+
+    /**
+     * Get filialen for a store
+     */
+    private static function get_filialen($store_id) {
+        global $wpdb;
+        return $wpdb->get_results($wpdb->prepare("
+            SELECT id, name, company_name
+            FROM {$wpdb->prefix}ppv_stores
+            WHERE parent_store_id = %d
+            ORDER BY name ASC
+        ", $store_id));
+    }
+
+    /**
      * Build HTML email body
      */
     private static function build_email_body($store, $stats, $T) {
@@ -254,14 +304,50 @@ class PPV_Weekly_Report {
             $scanner_html = '<p style="color: #6b7280; font-style: italic;">' . $T['no_scanner_data'] . '</p>';
         }
 
-        // Suspicious scans warning with link to stats page
-        $suspicious_html = '';
+        // Suspicious scans - always show (even if 0)
+        $suspicious_url = site_url('/statistik?tab=suspicious');
         if ($stats['suspicious'] > 0) {
-            $suspicious_url = site_url('/statistik?tab=suspicious');
             $suspicious_html = '<div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 12px; margin: 15px 0; border-radius: 4px;">
                 <strong>⚠️ ' . $T['suspicious_scans'] . ':</strong> ' . $stats['suspicious'] . '
                 <a href="' . esc_url($suspicious_url) . '" style="margin-left: 10px; color: #d97706; text-decoration: underline;">' . $T['view_details'] . ' →</a>
             </div>';
+        } else {
+            $suspicious_html = '<div style="background: #f0fdf4; border-left: 4px solid #10b981; padding: 12px; margin: 15px 0; border-radius: 4px;">
+                <strong>✅ ' . $T['suspicious_scans'] . ':</strong> 0
+            </div>';
+        }
+
+        // Filiale breakdown (if store has filialen)
+        $filiale_html = '';
+        $filialen = self::get_filialen($store->id);
+        if (!empty($filialen)) {
+            $filiale_html = '<div style="background: #f8fafc; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
+                <h3 style="margin: 0 0 15px; font-size: 16px; color: #374151;">🏪 ' . $T['filiale_breakdown'] . '</h3>
+                <table style="width:100%; border-collapse: collapse;">';
+
+            // Main store stats first
+            $main_stats = self::get_single_store_stats($store->id);
+            $main_name = esc_html($store->company_name ?: $store->name ?: $T['main_store']);
+            $filiale_html .= '<tr style="border-bottom: 2px solid #e5e7eb; background: #f0f9ff;">
+                <td style="padding: 10px; font-weight: 600;">📍 ' . $main_name . '</td>
+                <td style="padding: 10px; text-align: center;"><strong>' . $main_stats['week_scans'] . '</strong><br><span style="font-size: 11px; color: #6b7280;">' . $T['total_scans'] . '</span></td>
+                <td style="padding: 10px; text-align: center;"><strong>' . $main_stats['unique_users'] . '</strong><br><span style="font-size: 11px; color: #6b7280;">' . $T['unique_customers'] . '</span></td>
+                <td style="padding: 10px; text-align: center;"><strong>' . $main_stats['redemptions'] . '</strong><br><span style="font-size: 11px; color: #6b7280;">' . $T['redemptions'] . '</span></td>
+            </tr>';
+
+            // Each filiale
+            foreach ($filialen as $filiale) {
+                $f_stats = self::get_single_store_stats($filiale->id);
+                $f_name = esc_html($filiale->company_name ?: $filiale->name ?: 'Filiale #' . $filiale->id);
+                $filiale_html .= '<tr style="border-bottom: 1px solid #e5e7eb;">
+                    <td style="padding: 10px;">🏠 ' . $f_name . '</td>
+                    <td style="padding: 10px; text-align: center;"><strong>' . $f_stats['week_scans'] . '</strong></td>
+                    <td style="padding: 10px; text-align: center;"><strong>' . $f_stats['unique_users'] . '</strong></td>
+                    <td style="padding: 10px; text-align: center;"><strong>' . $f_stats['redemptions'] . '</strong></td>
+                </tr>';
+            }
+
+            $filiale_html .= '</table></div>';
         }
 
         $html = '
@@ -305,6 +391,8 @@ class PPV_Weekly_Report {
                 </div>
 
             </div>
+
+            ' . $filiale_html . '
 
             ' . $suspicious_html . '
 
@@ -357,6 +445,8 @@ class PPV_Weekly_Report {
                 'view_details' => 'Anzeigen',
                 'summary_text' => 'Diese Woche: %s Scans, %s Punkte eingelöst',
                 'footer_text' => 'Dieser Bericht wird automatisch jeden Freitag versendet.',
+                'filiale_breakdown' => 'Statistiken nach Filiale',
+                'main_store' => 'Hauptgeschäft',
             ],
             'hu' => [
                 'email_subject' => 'Heti jelentés - %s',
@@ -370,6 +460,8 @@ class PPV_Weekly_Report {
                 'view_details' => 'Megtekintés',
                 'summary_text' => 'Ezen a héten: %s scan, %s pont beváltva',
                 'footer_text' => 'Ez a jelentés automatikusan kerül kiküldésre minden pénteken.',
+                'filiale_breakdown' => 'Statisztikák filiálék szerint',
+                'main_store' => 'Főüzlet',
             ],
             'ro' => [
                 'email_subject' => 'Raport săptămânal - %s',
@@ -383,6 +475,8 @@ class PPV_Weekly_Report {
                 'view_details' => 'Vizualizare',
                 'summary_text' => 'Săptămâna aceasta: %s scanări, %s puncte răscumpărate',
                 'footer_text' => 'Acest raport este trimis automat în fiecare vineri.',
+                'filiale_breakdown' => 'Statistici pe filiale',
+                'main_store' => 'Magazin principal',
             ],
         ];
 
