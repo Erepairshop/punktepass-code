@@ -1067,8 +1067,8 @@ public static function render_landing_page($atts) {
                 $browser_lang = self::get_current_lang();
                 if (!empty($browser_lang)) {
                     $wpdb->update("{$prefix}ppv_users", ['language' => $browser_lang], ['id' => $user->id], ['%s'], ['%d']);
-                    $domain = $_SERVER['HTTP_HOST'] ?? '';
-                    setcookie('ppv_lang', $browser_lang, time() + (86400 * 365), '/', $domain, is_ssl(), false);
+                        // Don't set domain - let browser use current host (consistent with JS)
+                    setcookie('ppv_lang', $browser_lang, time() + (86400 * 365), '/', '', is_ssl(), false);
                 }
 
                 ppv_log("✅ [PPV_Login] Vendor logged in (#{$user->id}, store={$user->vendor_store_id}, lang={$browser_lang})");
@@ -1200,8 +1200,8 @@ public static function render_landing_page($atts) {
             $browser_lang = self::get_current_lang();
             if (!empty($browser_lang)) {
                 $wpdb->update("{$prefix}ppv_users", ['language' => $browser_lang], ['id' => $user->id], ['%s'], ['%d']);
-                $domain = $_SERVER['HTTP_HOST'] ?? '';
-                setcookie('ppv_lang', $browser_lang, time() + (86400 * 365), '/', $domain, is_ssl(), false);
+                // Don't set domain - let browser use current host (consistent with JS)
+                setcookie('ppv_lang', $browser_lang, time() + (86400 * 365), '/', '', is_ssl(), false);
             }
 
             ppv_log("✅ [PPV_Login] User logged in (#{$user->id}, lang={$browser_lang})");
@@ -1537,10 +1537,9 @@ public static function render_landing_page($atts) {
             }
         }
 
-        // 🌐 Set language cookie
+        // 🌐 Set language cookie (no domain - consistent with JS)
         if (!empty($browser_lang)) {
-            $domain = $_SERVER['HTTP_HOST'] ?? '';
-            setcookie('ppv_lang', $browser_lang, time() + (86400 * 365), '/', $domain, is_ssl(), false);
+            setcookie('ppv_lang', $browser_lang, time() + (86400 * 365), '/', '', is_ssl(), false);
         }
 
         // 🔐 Log user in (Session + Token)
@@ -1803,10 +1802,9 @@ public static function render_landing_page($atts) {
             ppv_log("✅ [PPV_Login] Apple user updated (#{$user->id}): lang={$browser_lang}");
         }
 
-        // 🌐 Set language cookie
+        // 🌐 Set language cookie (no domain - consistent with JS)
         if (!empty($browser_lang)) {
-            $domain = $_SERVER['HTTP_HOST'] ?? '';
-            setcookie('ppv_lang', $browser_lang, time() + (86400 * 365), '/', $domain, is_ssl(), false);
+            setcookie('ppv_lang', $browser_lang, time() + (86400 * 365), '/', '', is_ssl(), false);
         }
 
         // 🔐 Log user in (Session + Token)
