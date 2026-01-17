@@ -2725,6 +2725,18 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
                 }
             }
 
+            // Check if email exists in ppv_users (exclude current user)
+            if ($ppv_user_id > 0) {
+                $existing_ppv_user = $wpdb->get_var($wpdb->prepare(
+                    "SELECT id FROM {$wpdb->prefix}ppv_users WHERE email = %s AND id != %d LIMIT 1",
+                    $new_email, $ppv_user_id
+                ));
+                if ($existing_ppv_user) {
+                    wp_send_json_error(['msg' => PPV_Lang::t('error_email_exists', 'Ez az e-mail cím már foglalt')]);
+                    return;
+                }
+            }
+
             $updated = false;
 
             // Update WordPress user email if exists

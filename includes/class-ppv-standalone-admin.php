@@ -1541,15 +1541,14 @@ class PPV_Standalone_Admin {
 
         // Suspicious scans (last 24 hours, unreviewed)
         $counts['suspicious'] = intval($wpdb->get_var(
-            "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_scans
-             WHERE is_suspicious = 1
-             AND reviewed_at IS NULL
+            "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_suspicious_scans
+             WHERE reviewed_at IS NULL
              AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)"
         ));
 
-        // Pending scans (waiting for confirmation)
+        // Pending redemptions (waiting for approval)
         $counts['pending'] = intval($wpdb->get_var(
-            "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_scans WHERE status = 'pending'"
+            "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_rewards_redeemed WHERE status = 'pending'"
         ));
 
         // Cache for 1 minute

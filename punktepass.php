@@ -1059,6 +1059,10 @@ add_action('init', function() {
 // 🕓 ACTION SCHEDULER
 // ========================================
 add_action('action_scheduler_init', function () {
+    // Extra safety check: ensure Action Scheduler is fully initialized
+    if (!class_exists('ActionScheduler') || !ActionScheduler::is_initialized()) {
+        return;
+    }
     if (function_exists('as_next_scheduled_action') && function_exists('as_schedule_recurring_action')) {
         if (!as_next_scheduled_action('ppv_daily_qr_regen')) {
             as_schedule_recurring_action(time() + 3600, DAY_IN_SECONDS, 'ppv_daily_qr_regen');
