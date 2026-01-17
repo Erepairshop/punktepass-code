@@ -1661,10 +1661,7 @@ async function initUserDashboard() {
         <div class="ppv-store-header">
           <img src="${escapeHtml(logo)}" alt="Logo" class="ppv-store-logo">
           <div class="ppv-store-info">
-            ${store.company_name ? `
-              <h4>${escapeHtml(store.company_name)}</h4>
-              ${store.name && store.name !== store.company_name ? `<p class="ppv-store-name-sub" style="font-size: 0.85em; color: #666; margin: 2px 0 0 0;">${escapeHtml(store.name)}</p>` : ''}
-            ` : `<h4>${escapeHtml(store.name)}</h4>`}
+            <h4>${escapeHtml(store.company_name || store.name)}</h4>
             ${store.slogan ? `<p class="ppv-store-slogan">${escapeHtml(store.slogan)}</p>` : ''}
             <div class="ppv-store-badges">
               ${statusBadge}
