@@ -384,13 +384,14 @@ class PPV_User_Tips {
     /**
      * Admin: Test trigger a tip for a user
      * POST /wp-json/ppv/v1/admin/tips/test
-     * Body: { "user_id": 10, "tip_key": "complete_name" }
+     * Body: { "user_id": 10, "tip_key": "complete_name", "clear_field": true }
      */
     public static function admin_test_trigger_tip(WP_REST_Request $request) {
         global $wpdb;
 
         $user_id = intval($request->get_param('user_id'));
         $tip_key = sanitize_text_field($request->get_param('tip_key') ?? 'complete_name');
+        $clear_field = (bool) $request->get_param('clear_field');
 
         if (!$user_id) {
             return new WP_REST_Response(['success' => false, 'msg' => 'user_id required'], 400);
@@ -404,6 +405,41 @@ class PPV_User_Tips {
                 'msg' => 'Invalid tip_key',
                 'available' => array_keys($all_tips)
             ], 400);
+        }
+
+        // Optionally clear the check_field for testing
+        $field_cleared = null;
+        if ($clear_field && !empty($all_tips[$tip_key]['check_field'])) {
+            $field = $all_tips[$tip_key]['check_field'];
+            $field_map = [
+                'name' => 'display_name',
+                'birthday' => 'birthday',
+                'whatsapp' => 'whatsapp',
+                'push_enabled' => 'push_notifications'
+            ];
+            $db_field = $field_map[$field] ?? $field;
+
+            $wpdb->update(
+                $wpdb->prefix . 'ppv_users',
+                [$db_field => null],
+                ['id' => $user_id],
+                ['%s'],
+                ['%d']
+            );
+
+            // Also clear first_name/last_name if clearing display_name (to avoid fallback)
+            if ($db_field === 'display_name') {
+                $wpdb->update(
+                    $wpdb->prefix . 'ppv_users',
+                    ['first_name' => null, 'last_name' => null],
+                    ['id' => $user_id],
+                    ['%s', '%s'],
+                    ['%d']
+                );
+            }
+
+            $field_cleared = $db_field;
+            ppv_log("🧹 [PPV_User_Tips] Cleared field '{$db_field}' for user {$user_id}");
         }
 
         // Delete existing tip for this user (for re-testing)
@@ -432,7 +468,8 @@ class PPV_User_Tips {
         return new WP_REST_Response([
             'success' => true,
             'msg' => "Tip '{$tip_key}' triggered for user {$user_id}",
-            'triggered_at' => $triggered_at
+            'triggered_at' => $triggered_at,
+            'field_cleared' => $field_cleared
         ], 200);
     }
 
