@@ -1345,6 +1345,7 @@ public static function render_dashboard() {
                s.phone, s.public_email, s.website, s.logo, s.qr_logo, s.opening_hours, s.description,
                s.gallery, s.facebook, s.instagram, s.tiktok, s.country, s.slogan,
                s.vacation_enabled, s.vacation_from, s.vacation_to, s.vacation_message,
+               s.vip_enabled,
                s.vip_fix_enabled, s.vip_fix_bronze, s.vip_fix_silver, s.vip_fix_gold, s.vip_fix_platinum,
                s.vip_streak_enabled, s.vip_streak_count, s.vip_streak_type,
                s.vip_streak_bronze, s.vip_streak_silver, s.vip_streak_gold, s.vip_streak_platinum,
@@ -1481,9 +1482,9 @@ public static function render_dashboard() {
 
         // ✅ Get campaigns from batch-loaded data
         $campaigns = $all_campaigns[(int)$store->id] ?? [];
-        // ✅ Build VIP object (only if at least one VIP type is enabled)
+        // ✅ Build VIP object (only if master vip_enabled AND at least one VIP type is enabled)
         $vip = null;
-        $has_vip = (
+        $has_vip = !empty($store->vip_enabled) && (
             !empty($store->vip_fix_enabled) ||
             !empty($store->vip_streak_enabled) ||
             !empty($store->vip_daily_enabled)
