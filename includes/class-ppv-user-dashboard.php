@@ -930,6 +930,15 @@ private static function get_today_hours($opening_hours) {
             true
         );
 
+        // 💡 User Tips - personalized tips/hints
+        wp_enqueue_script(
+            'ppv-user-tips',
+            PPV_PLUGIN_URL . 'assets/js/ppv-user-tips.js',
+            ['ppv-dashboard'],
+            PPV_Core::asset_version(PPV_PLUGIN_DIR . 'assets/js/ppv-user-tips.js'),
+            true
+        );
+
         $boot = self::build_boot_payload();
 
         wp_add_inline_script(

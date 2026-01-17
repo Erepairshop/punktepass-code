@@ -228,7 +228,104 @@ class PPV_User_Tips {
                     ],
                 ],
             ],
+
+            // Event-based tip (triggered externally, not by scan count)
+            'new_store_nearby' => [
+                'trigger_scans' => 0,           // Not scan-based
+                'delay_minutes' => 30,          // 30 min delay after trigger
+                'check_field' => null,
+                'priority' => 5,                // High priority
+                'icon' => 'ri-store-2-line',
+                'action_url' => '/shops',
+                'is_event_based' => true,       // Special flag
+                'translations' => [
+                    'de' => [
+                        'title' => 'Neuer Shop in deiner Nähe!',
+                        'message' => 'Ein neues Geschäft ist jetzt bei PunktePass dabei. Entdecke es und sammle Punkte!',
+                        'button' => 'Jetzt entdecken',
+                    ],
+                    'hu' => [
+                        'title' => 'Új üzlet a közeledben!',
+                        'message' => 'Egy új üzlet csatlakozott a PunktePass-hoz. Fedezd fel és gyűjts pontokat!',
+                        'button' => 'Felfedezem',
+                    ],
+                    'ro' => [
+                        'title' => 'Magazin nou în apropiere!',
+                        'message' => 'Un nou magazin s-a alăturat PunktePass. Descoperă-l și colectează puncte!',
+                        'button' => 'Descoperă acum',
+                    ],
+                ],
+            ],
         ];
+    }
+
+    /**
+     * Trigger "new store nearby" tip for users near a location
+     * Called when a new store is created/activated
+     *
+     * @param int $store_id The new store ID
+     * @param float $lat Store latitude
+     * @param float $lng Store longitude
+     * @param float $radius_km Radius in kilometers (default 15km)
+     */
+    public static function trigger_new_store_nearby($store_id, $lat, $lng, $radius_km = 15) {
+        global $wpdb;
+
+        if (!$lat || !$lng) {
+            ppv_log("⚠️ [PPV_User_Tips] Cannot trigger new_store_nearby - no coordinates for store {$store_id}");
+            return 0;
+        }
+
+        // Get store info for logging
+        $store = $wpdb->get_row($wpdb->prepare(
+            "SELECT name, company_name, city FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
+            $store_id
+        ));
+        $store_name = $store->name ?: $store->company_name ?: "Store #{$store_id}";
+
+        // Find users with location who are within radius
+        // Using Haversine formula approximation
+        $users = $wpdb->get_results($wpdb->prepare("
+            SELECT id, last_lat, last_lng
+            FROM {$wpdb->prefix}ppv_users
+            WHERE last_lat IS NOT NULL
+            AND last_lng IS NOT NULL
+            AND (
+                6371 * acos(
+                    cos(radians(%f)) * cos(radians(last_lat)) *
+                    cos(radians(last_lng) - radians(%f)) +
+                    sin(radians(%f)) * sin(radians(last_lat))
+                )
+            ) <= %f
+        ", $lat, $lng, $lat, $radius_km));
+
+        $triggered_count = 0;
+
+        foreach ($users as $user) {
+            // Check if user already has this tip for this store
+            $existing = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}ppv_user_tips
+                 WHERE user_id = %d AND tip_key = %s",
+                $user->id, 'new_store_nearby'
+            ));
+
+            if (!$existing) {
+                $wpdb->insert(
+                    $wpdb->prefix . 'ppv_user_tips',
+                    [
+                        'user_id' => $user->id,
+                        'tip_key' => 'new_store_nearby',
+                        'triggered_at' => current_time('mysql'),
+                    ],
+                    ['%d', '%s', '%s']
+                );
+                $triggered_count++;
+            }
+        }
+
+        ppv_log("📍 [PPV_User_Tips] New store nearby tip triggered: store={$store_name}, users={$triggered_count}, radius={$radius_km}km");
+
+        return $triggered_count;
     }
 
     /** ============================================================
@@ -281,6 +378,11 @@ class PPV_User_Tips {
         $tips = self::get_all_tips();
 
         foreach ($tips as $tip_key => $tip) {
+            // Skip event-based tips (triggered externally, not by scans)
+            if (!empty($tip['is_event_based'])) {
+                continue;
+            }
+
             // Check if scan threshold is met
             if ($scan_count >= $tip['trigger_scans']) {
                 // Check if tip already triggered
