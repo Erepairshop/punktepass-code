@@ -1482,9 +1482,12 @@ public static function render_dashboard() {
 
         // ✅ Get campaigns from batch-loaded data
         $campaigns = $all_campaigns[(int)$store->id] ?? [];
-        // ✅ Build VIP object (only if master vip_enabled AND at least one VIP type is enabled)
+        // ✅ Build VIP object (only if master vip_enabled is ON)
         $vip = null;
-        $has_vip = !empty($store->vip_enabled) && (
+        $has_vip = !empty($store->vip_enabled);
+
+        // Check if any sub-features are enabled
+        $has_vip_features = (
             !empty($store->vip_fix_enabled) ||
             !empty($store->vip_streak_enabled) ||
             !empty($store->vip_daily_enabled)
