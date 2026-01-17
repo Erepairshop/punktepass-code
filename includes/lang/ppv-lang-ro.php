@@ -1943,4 +1943,27 @@ return [
     'app_download_subtitle' => 'Colectează puncte ușor de pe telefon',
     'app_download_available' => 'Disponibil pe',
     'app_download_dont_show' => 'Nu mai afișa',
+
+    // ============================================================
+    // Invoices - Facturi
+    // ============================================================
+    'invoice_created' => 'Factură creată cu succes!',
+    'invoice_exists' => 'Factura există deja',
+    'collective_invoice_created' => 'Factură colectivă creată!',
+    'server_error' => 'Eroare server',
+    'invoice_select_period' => 'Vă rugăm să selectați perioada',
+    'invoice_email_sent' => 'E-mail trimis!',
+    'invoice_enter_valid_email' => 'Vă rugăm să introduceți o adresă de e-mail validă',
+    'invoice_download_pdf' => 'Descarcă PDF',
+    'invoice_send_email' => 'Trimite prin e-mail',
+    'invoice_create_pdf' => 'Creează PDF',
+    'invoice_load_preview' => 'Încarcă previzualizare',
+    'invoice_create_collective' => 'Creează factură colectivă',
+    'invoice_period' => 'Perioadă',
+    'invoice_vat_rate' => 'Cota TVA',
+    'invoice_error_loading' => 'Eroare la încărcare',
+    'cancel' => 'Anulează',
+    'from' => 'De la',
+    'to' => 'Până la',
+    'loading' => 'Se încarcă...',
 ];

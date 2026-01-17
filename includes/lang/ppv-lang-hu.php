@@ -1938,4 +1938,27 @@ return [
     'app_download_subtitle' => 'Gyűjts pontokat egyszerűen mobilodról',
     'app_download_available' => 'Elérhető itt',
     'app_download_dont_show' => 'Ne mutasd többet',
+
+    // ============================================================
+    // Invoices - Számlázás
+    // ============================================================
+    'invoice_created' => 'Számla sikeresen létrehozva!',
+    'invoice_exists' => 'Számla már létezik',
+    'collective_invoice_created' => 'Gyűjtőszámla létrehozva!',
+    'server_error' => 'Szerverhiba',
+    'invoice_select_period' => 'Kérjük válasszon időszakot',
+    'invoice_email_sent' => 'E-mail elküldve!',
+    'invoice_enter_valid_email' => 'Kérjük adjon meg érvényes e-mail címet',
+    'invoice_download_pdf' => 'PDF letöltése',
+    'invoice_send_email' => 'E-mailben küldés',
+    'invoice_create_pdf' => 'PDF létrehozása',
+    'invoice_load_preview' => 'Előnézet betöltése',
+    'invoice_create_collective' => 'Gyűjtőszámla létrehozása',
+    'invoice_period' => 'Időszak',
+    'invoice_vat_rate' => 'ÁFA kulcs',
+    'invoice_error_loading' => 'Hiba a betöltés során',
+    'cancel' => 'Mégse',
+    'from' => 'Kezdete',
+    'to' => 'Vége',
+    'loading' => 'Betöltés...',
 ];

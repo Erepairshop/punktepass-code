@@ -10,7 +10,7 @@ window.handleGoogleCallback = function(data) {
     ppvLog("🍎 Native Google token received", data);
 
     if (!data || !data.credential) {
-        alert(ppvLogin?.strings?.google_login_failed || "Google Login fehlgeschlagen");
+        alert(ppvLogin?.strings?.google_login_failed || "Google bejelentkezés sikertelen");
         return;
     }
 
@@ -38,12 +38,12 @@ window.handleGoogleCallback = function(data) {
             if (res.success) {
                 window.location.href = res.data.redirect || "/";
             } else {
-                alert(res.data.message || ppvLogin?.strings?.google_login_failed || "Google Login fehlgeschlagen");
+                alert(res.data.message || ppvLogin?.strings?.google_login_failed || "Google bejelentkezés sikertelen");
             }
         },
         error: function(xhr, status, error) {
             ppvLog.error("🍎 AJAX error:", status, error);
-            alert(ppvLogin?.strings?.connection_error || "Verbindungsfehler");
+            alert(ppvLogin?.strings?.connection_error || "Kapcsolódási hiba");
         }
     });
 };
@@ -312,12 +312,12 @@ function initLogin() {
                     if (googleInitialized) {
                         showGooglePrompt();
                     } else {
-                        showAlert(ppvLogin?.strings?.google_loading || 'Google Login wird geladen...', 'info');
+                        showAlert(ppvLogin?.strings?.google_loading || 'Google bejelentkezés betöltése...', 'info');
                     }
                 }, 100);
             } else {
                 glog('❌ Path C: SDK not loaded yet');
-                showAlert(ppvLogin?.strings?.google_loading || 'Google Login wird geladen...', 'info');
+                showAlert(ppvLogin?.strings?.google_loading || 'Google bejelentkezés betöltése...', 'info');
                 // Try again in case SDK loads soon
                 waitForGoogleSDK(clientId);
             }
@@ -502,7 +502,7 @@ function initLogin() {
 
         if (!response.credential) {
             glog('❌ No credential in response!');
-            showAlert(ppvLogin?.strings?.google_login_failed || 'Google Login fehlgeschlagen', 'error');
+            showAlert(ppvLogin?.strings?.google_login_failed || 'Google bejelentkezés sikertelen', 'error');
             return;
         }
 
@@ -534,7 +534,7 @@ function initLogin() {
                 }
             },
             error: function() {
-                showAlert(ppvLogin?.strings?.connection_error || 'Verbindungsfehler. Bitte versuchen Sie es erneut.', 'error');
+                showAlert(ppvLogin?.strings?.connection_error || 'Kapcsolódási hiba. Kérjük, próbálja újra.', 'error');
                 resetGoogleButton($btn);
             }
         });
@@ -629,7 +629,7 @@ function initLogin() {
                     }
                 },
                 error: function() {
-                    showAlert(ppvLogin?.strings?.connection_error || 'Verbindungsfehler. Bitte versuchen Sie es erneut.', 'error');
+                    showAlert(ppvLogin?.strings?.connection_error || 'Kapcsolódási hiba. Kérjük, próbálja újra.', 'error');
                     resetSubmitButton($btn, $btnText, $btnLoader);
                 }
             });
@@ -768,7 +768,7 @@ function initLogin() {
                 }
             },
             error: function() {
-                showAlert(ppvLogin?.strings?.connection_error || 'Verbindungsfehler. Bitte versuchen Sie es erneut.', 'error');
+                showAlert(ppvLogin?.strings?.connection_error || 'Kapcsolódási hiba. Kérjük, próbálja újra.', 'error');
                 resetFacebookButton($btn);
             }
         });
@@ -861,7 +861,7 @@ function initLogin() {
                     }
                 },
                 error: function() {
-                    showAlert(ppvLogin?.strings?.connection_error || 'Verbindungsfehler. Bitte versuchen Sie es erneut.', 'error');
+                    showAlert(ppvLogin?.strings?.connection_error || 'Kapcsolódási hiba. Kérjük, próbálja újra.', 'error');
                     resetTikTokButton($btn);
                 }
             });
@@ -940,7 +940,7 @@ function initLogin() {
             } catch (error) {
                 ppvLog.error('🍎 Apple Sign In error:', error);
                 if (error.error !== 'popup_closed_by_user') {
-                    showAlert(ppvLogin?.strings?.apple_login_failed || 'Apple Login fehlgeschlagen', 'error');
+                    showAlert(ppvLogin?.strings?.apple_login_failed || 'Apple bejelentkezés sikertelen', 'error');
                 }
                 resetAppleButton($btn);
             }
@@ -952,7 +952,7 @@ function initLogin() {
      */
     function handleAppleResponse(response, $btn) {
         if (!response.authorization || !response.authorization.id_token) {
-            showAlert(ppvLogin?.strings?.apple_login_failed || 'Apple Login fehlgeschlagen', 'error');
+            showAlert(ppvLogin?.strings?.apple_login_failed || 'Apple bejelentkezés sikertelen', 'error');
             resetAppleButton($btn);
             return;
         }
@@ -981,12 +981,12 @@ function initLogin() {
                         window.location.href = getFinalRedirectUrl(res.data.redirect);
                     }, 1000);
                 } else {
-                    showAlert(res.data.message || 'Apple Login fehlgeschlagen', 'error');
+                    showAlert(res.data.message || 'Apple bejelentkezés sikertelen', 'error');
                     resetAppleButton($btn);
                 }
             },
             error: function() {
-                showAlert(ppvLogin?.strings?.connection_error || 'Verbindungsfehler. Bitte versuchen Sie es erneut.', 'error');
+                showAlert(ppvLogin?.strings?.connection_error || 'Kapcsolódási hiba. Kérjük, próbálja újra.', 'error');
                 resetAppleButton($btn);
             }
         });

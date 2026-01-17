@@ -1961,5 +1961,28 @@ return [
     'app_download_subtitle' => 'Sammle Punkte einfach von deinem Handy',
     'app_download_available' => 'Verfügbar auf',
     'app_download_dont_show' => 'Nicht mehr anzeigen',
+
+    // ============================================================
+    // Invoices - Rechnungen
+    // ============================================================
+    'invoice_created' => 'Rechnung erfolgreich erstellt!',
+    'invoice_exists' => 'Rechnung bereits vorhanden',
+    'collective_invoice_created' => 'Sammelrechnung erstellt!',
+    'server_error' => 'Serverfehler',
+    'invoice_select_period' => 'Bitte Zeitraum auswählen',
+    'invoice_email_sent' => 'E-Mail gesendet!',
+    'invoice_enter_valid_email' => 'Bitte gültige E-Mail eingeben',
+    'invoice_download_pdf' => 'PDF herunterladen',
+    'invoice_send_email' => 'Per E-Mail senden',
+    'invoice_create_pdf' => 'PDF erstellen',
+    'invoice_load_preview' => 'Vorschau laden',
+    'invoice_create_collective' => 'Sammelrechnung erstellen',
+    'invoice_period' => 'Zeitraum',
+    'invoice_vat_rate' => 'MwSt.-Satz',
+    'invoice_error_loading' => 'Fehler beim Laden',
+    'cancel' => 'Abbrechen',
+    'from' => 'Von',
+    'to' => 'Bis',
+    'loading' => 'Laden...',
 ];
 

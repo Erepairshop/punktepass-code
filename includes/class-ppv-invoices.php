@@ -55,7 +55,28 @@ class PPV_Invoices {
 
         wp_localize_script('ppv-invoices', 'ppv_invoices', [
             'rest_url' => esc_url(rest_url('ppv/v1/')),
-            'nonce' => wp_create_nonce('wp_rest')
+            'nonce' => wp_create_nonce('wp_rest'),
+            'strings' => [
+                'invoice_created' => PPV_Lang::t('invoice_created'),
+                'invoice_exists' => PPV_Lang::t('invoice_exists'),
+                'collective_invoice_created' => PPV_Lang::t('collective_invoice_created'),
+                'server_error' => PPV_Lang::t('server_error'),
+                'select_period' => PPV_Lang::t('invoice_select_period'),
+                'email_sent' => PPV_Lang::t('invoice_email_sent'),
+                'enter_valid_email' => PPV_Lang::t('invoice_enter_valid_email'),
+                'download_pdf' => PPV_Lang::t('invoice_download_pdf'),
+                'send_email' => PPV_Lang::t('invoice_send_email'),
+                'create_pdf' => PPV_Lang::t('invoice_create_pdf'),
+                'load_preview' => PPV_Lang::t('invoice_load_preview'),
+                'create_collective' => PPV_Lang::t('invoice_create_collective'),
+                'cancel' => PPV_Lang::t('cancel'),
+                'period' => PPV_Lang::t('invoice_period'),
+                'from' => PPV_Lang::t('from'),
+                'to' => PPV_Lang::t('to'),
+                'vat_rate' => PPV_Lang::t('invoice_vat_rate'),
+                'loading' => PPV_Lang::t('loading'),
+                'error_loading' => PPV_Lang::t('invoice_error_loading'),
+            ]
         ]);
     }
 
