@@ -362,6 +362,78 @@ class PPV_User_Tips {
             'callback' => [__CLASS__, 'rest_mark_clicked'],
             'permission_callback' => ['PPV_Permissions', 'check_user']
         ]);
+
+        // Admin: Test trigger tip for a user
+        register_rest_route('ppv/v1', '/admin/tips/test', [
+            'methods'  => 'POST',
+            'callback' => [__CLASS__, 'admin_test_trigger_tip'],
+            'permission_callback' => [__CLASS__, 'check_admin_permission']
+        ]);
+    }
+
+    /**
+     * Check admin permission for test endpoints
+     */
+    public static function check_admin_permission() {
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+            @session_start();
+        }
+        return !empty($_SESSION['ppv_admin_logged_in']);
+    }
+
+    /**
+     * Admin: Test trigger a tip for a user
+     * POST /wp-json/ppv/v1/admin/tips/test
+     * Body: { "user_id": 10, "tip_key": "complete_name" }
+     */
+    public static function admin_test_trigger_tip(WP_REST_Request $request) {
+        global $wpdb;
+
+        $user_id = intval($request->get_param('user_id'));
+        $tip_key = sanitize_text_field($request->get_param('tip_key') ?? 'complete_name');
+
+        if (!$user_id) {
+            return new WP_REST_Response(['success' => false, 'msg' => 'user_id required'], 400);
+        }
+
+        // Check if tip exists in config
+        $all_tips = self::get_all_tips();
+        if (!isset($all_tips[$tip_key])) {
+            return new WP_REST_Response([
+                'success' => false,
+                'msg' => 'Invalid tip_key',
+                'available' => array_keys($all_tips)
+            ], 400);
+        }
+
+        // Delete existing tip for this user (for re-testing)
+        $wpdb->delete(
+            $wpdb->prefix . 'ppv_user_tips',
+            ['user_id' => $user_id, 'tip_key' => $tip_key],
+            ['%d', '%s']
+        );
+
+        // Insert new tip with triggered_at in the past (so delay is already passed)
+        $delay = $all_tips[$tip_key]['delay_minutes'] ?? 60;
+        $triggered_at = date('Y-m-d H:i:s', strtotime("-{$delay} minutes -1 minute"));
+
+        $wpdb->insert(
+            $wpdb->prefix . 'ppv_user_tips',
+            [
+                'user_id' => $user_id,
+                'tip_key' => $tip_key,
+                'triggered_at' => $triggered_at,
+            ],
+            ['%d', '%s', '%s']
+        );
+
+        ppv_log("🧪 [PPV_User_Tips] Test tip '{$tip_key}' triggered for user {$user_id}");
+
+        return new WP_REST_Response([
+            'success' => true,
+            'msg' => "Tip '{$tip_key}' triggered for user {$user_id}",
+            'triggered_at' => $triggered_at
+        ], 200);
     }
 
     /** ============================================================
