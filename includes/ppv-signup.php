@@ -2038,7 +2038,7 @@ www.punktepass.de
 
         $handler_user_id = intval($_SESSION['ppv_user_id']);
         $scanner_user_id = intval($_POST['user_id'] ?? 0);
-        $new_filiale_id = intval($_POST['filiale_id'] ?? 0);
+        $new_filiale_id = intval($_POST['new_filiale_id'] ?? $_POST['filiale_id'] ?? 0);
 
         if (!$scanner_user_id || !$new_filiale_id) {
             wp_send_json_error(['message' => 'Ungültige Parameter']);
