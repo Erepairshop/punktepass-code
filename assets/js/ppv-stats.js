@@ -878,6 +878,15 @@ jQuery(document).ready(function($) {
 
         let html = '<div class="ppv-scanner-table">';
 
+        // Helper: format scan + points (e.g. "2 (4P)")
+        const formatScanPoints = (scans, points) => {
+            if (scans === 0 && points === 0) return '0';
+            if (points && points !== scans) {
+                return `${formatNumber(scans)} <span class="ppv-points-badge">(${formatNumber(points)}P)</span>`;
+            }
+            return formatNumber(scans);
+        };
+
         // Table header
         html += `
             <div class="ppv-scanner-row ppv-scanner-header">
@@ -889,7 +898,7 @@ jQuery(document).ready(function($) {
             </div>
         `;
 
-        // Scanner rows
+        // Scanner rows - show scans (points) format
         scanners.forEach((scanner, index) => {
             const rankClass = index < 3 ? `ppv-rank-${index + 1}` : '';
             const rankIcon = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
@@ -899,10 +908,10 @@ jQuery(document).ready(function($) {
                     <div class="ppv-scanner-cell ppv-scanner-name">
                         ${rankIcon} ${escapeHtml(scanner.scanner_name)}
                     </div>
-                    <div class="ppv-scanner-cell">${formatNumber(scanner.today_scans)}</div>
-                    <div class="ppv-scanner-cell">${formatNumber(scanner.week_scans)}</div>
-                    <div class="ppv-scanner-cell">${formatNumber(scanner.month_scans)}</div>
-                    <div class="ppv-scanner-cell ppv-scanner-total">${formatNumber(scanner.total_scans)}</div>
+                    <div class="ppv-scanner-cell">${formatScanPoints(scanner.today_scans, scanner.today_points)}</div>
+                    <div class="ppv-scanner-cell">${formatScanPoints(scanner.week_scans, scanner.week_points)}</div>
+                    <div class="ppv-scanner-cell">${formatScanPoints(scanner.month_scans, scanner.month_points)}</div>
+                    <div class="ppv-scanner-cell ppv-scanner-total">${formatScanPoints(scanner.total_scans, scanner.total_points)}</div>
                 </div>
             `;
         });

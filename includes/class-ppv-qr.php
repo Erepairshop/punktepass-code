@@ -682,9 +682,27 @@ class PPV_QR {
             // Add scanner info if this is a scanner user
             if (!empty($_SESSION['ppv_user_type']) && $_SESSION['ppv_user_type'] === 'scanner' && !empty($_SESSION['ppv_user_id'])) {
                 $scanner_id = intval($_SESSION['ppv_user_id']);
-                $scanner_email = sanitize_email($_SESSION['ppv_user_email'] ?? '');
+
+                // 🔧 FIX: Get scanner's display name from ppv_users (not just email)
+                $scanner_user = $wpdb->get_row($wpdb->prepare(
+                    "SELECT display_name, first_name, last_name, email FROM {$wpdb->prefix}ppv_users WHERE id = %d LIMIT 1",
+                    $scanner_id
+                ));
+
+                // Priority: display_name > first_name + last_name > email
+                $scanner_name = '';
+                if ($scanner_user) {
+                    if (!empty($scanner_user->display_name)) {
+                        $scanner_name = $scanner_user->display_name;
+                    } elseif (!empty($scanner_user->first_name) || !empty($scanner_user->last_name)) {
+                        $scanner_name = trim(($scanner_user->first_name ?? '') . ' ' . ($scanner_user->last_name ?? ''));
+                    } elseif (!empty($scanner_user->email)) {
+                        $scanner_name = $scanner_user->email;
+                    }
+                }
+
                 $store_data['scanner_id'] = $scanner_id;
-                $store_data['scanner_name'] = $scanner_email; // Use email as identifier
+                $store_data['scanner_name'] = $scanner_name ?: sanitize_email($_SESSION['ppv_user_email'] ?? '');
             }
 
             // Add Ably config if enabled

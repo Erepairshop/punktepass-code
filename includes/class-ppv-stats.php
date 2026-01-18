@@ -981,6 +981,7 @@ class PPV_Stats {
 
         // Get all scans with scanner info from metadata (JSON)
         // We extract scanner_id from the JSON metadata column
+        // 🔧 FIX: Include both scan counts AND points given
         $scanner_stats = $wpdb->get_results($wpdb->prepare("
             SELECT
                 JSON_UNQUOTE(JSON_EXTRACT(l.metadata, '$.scanner_id')) as scanner_id,
@@ -989,6 +990,10 @@ class PPV_Stats {
                 SUM(CASE WHEN DATE(l.created_at) = %s THEN 1 ELSE 0 END) as today_scans,
                 SUM(CASE WHEN DATE(l.created_at) >= %s THEN 1 ELSE 0 END) as week_scans,
                 SUM(CASE WHEN DATE(l.created_at) >= %s THEN 1 ELSE 0 END) as month_scans,
+                COALESCE(SUM(l.points_change), 0) as total_points,
+                COALESCE(SUM(CASE WHEN DATE(l.created_at) = %s THEN l.points_change ELSE 0 END), 0) as today_points,
+                COALESCE(SUM(CASE WHEN DATE(l.created_at) >= %s THEN l.points_change ELSE 0 END), 0) as week_points,
+                COALESCE(SUM(CASE WHEN DATE(l.created_at) >= %s THEN l.points_change ELSE 0 END), 0) as month_points,
                 MIN(l.created_at) as first_scan,
                 MAX(l.created_at) as last_scan
             FROM {$table_log} l
@@ -997,7 +1002,7 @@ class PPV_Stats {
               AND JSON_EXTRACT(l.metadata, '$.scanner_id') IS NOT NULL
             GROUP BY scanner_id, scanner_name
             ORDER BY total_scans DESC
-        ", array_merge([$today, $week_start, $month_start], $store_ids)));
+        ", array_merge([$today, $week_start, $month_start, $today, $week_start, $month_start], $store_ids)));
 
         // Format results
         $scanners_formatted = [];
@@ -1041,6 +1046,10 @@ class PPV_Stats {
                 'today_scans' => intval($scanner->today_scans),
                 'week_scans' => intval($scanner->week_scans),
                 'month_scans' => intval($scanner->month_scans),
+                'total_points' => intval($scanner->total_points ?? 0),
+                'today_points' => intval($scanner->today_points ?? 0),
+                'week_points' => intval($scanner->week_points ?? 0),
+                'month_points' => intval($scanner->month_points ?? 0),
                 'first_scan' => $scanner->first_scan,
                 'last_scan' => $scanner->last_scan,
             ];
