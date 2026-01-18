@@ -1689,9 +1689,9 @@ return [
 
     'employee_scans' => 'Munkatársi szkennelések',
     'employee_scans_desc' => 'Áttekintés arról, hogy melyik munkatárs hány szkennelést végzett.',
-    'total_scanners' => 'Összes szkenner',
-    'tracked_scans' => 'Rögzített szkennelések',
-    'untracked_scans' => 'Szkenner nélkül',
+    'total_scanners' => 'Aktív munkatársak',
+    'tracked_scans' => 'Munkatárshoz rendelt',
+    'untracked_scans' => 'Munkatárs nélkül',
     'no_scanner_data' => 'Még nincs szkenner adat. Amint a munkatársak szkenneléseket végeznek, itt megjelennek a statisztikák.',
     'without_assignment' => 'Hozzárendelés nélkül',
     'suspicious_desc' => 'Gyanús távolságból végzett szkennelések.',

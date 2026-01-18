@@ -1712,9 +1712,9 @@ return [
 
     'employee_scans' => 'Mitarbeiter Scans',
     'employee_scans_desc' => 'Übersicht welcher Mitarbeiter wie viele Scans durchgeführt hat.',
-    'total_scanners' => 'Scanner gesamt',
-    'tracked_scans' => 'Erfasste Scans',
-    'untracked_scans' => 'Ohne Scanner',
+    'total_scanners' => 'Aktive Mitarbeiter',
+    'tracked_scans' => 'Zugeordnete Scans',
+    'untracked_scans' => 'Ohne Mitarbeiter',
     'no_scanner_data' => 'Noch keine Scanner-Daten vorhanden. Sobald Mitarbeiter Scans durchführen, erscheinen hier die Statistiken.',
     'without_assignment' => 'Ohne Zuordnung',
     'suspicious_desc' => 'Scans die aus verdächtiger Entfernung durchgeführt wurden.',

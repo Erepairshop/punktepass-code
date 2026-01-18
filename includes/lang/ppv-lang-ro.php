@@ -1693,9 +1693,9 @@ return [
 
     'employee_scans' => 'Scanări angajați',
     'employee_scans_desc' => 'Prezentare generală a câte scanări a efectuat fiecare angajat.',
-    'total_scanners' => 'Total scanere',
-    'tracked_scans' => 'Scanări înregistrate',
-    'untracked_scans' => 'Fără scaner',
+    'total_scanners' => 'Angajați activi',
+    'tracked_scans' => 'Scanări atribuite',
+    'untracked_scans' => 'Fără angajat',
     'no_scanner_data' => 'Nu există încă date despre scanere. Când angajații vor efectua scanări, statisticile vor apărea aici.',
     'without_assignment' => 'Fără atribuire',
     'suspicious_desc' => 'Scanări efectuate de la distanță suspectă.',
