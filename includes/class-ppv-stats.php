@@ -1006,9 +1006,37 @@ class PPV_Stats {
                 continue; // Skip entries without scanner_id
             }
 
+            $scanner_id = intval($scanner->scanner_id);
+            $scanner_name = $scanner->scanner_name;
+
+            // 🔧 FIX: If scanner_name is null or "null" string, fetch from ppv_users table
+            if (empty($scanner_name) || $scanner_name === 'null') {
+                $user_data = $wpdb->get_row($wpdb->prepare(
+                    "SELECT display_name, email, first_name, last_name
+                     FROM {$table_users} WHERE id = %d LIMIT 1",
+                    $scanner_id
+                ));
+
+                if ($user_data) {
+                    // Priority: display_name > first_name + last_name > email
+                    if (!empty($user_data->display_name)) {
+                        $scanner_name = $user_data->display_name;
+                    } elseif (!empty($user_data->first_name) || !empty($user_data->last_name)) {
+                        $scanner_name = trim(($user_data->first_name ?? '') . ' ' . ($user_data->last_name ?? ''));
+                    } elseif (!empty($user_data->email)) {
+                        $scanner_name = $user_data->email;
+                    }
+                }
+            }
+
+            // Final fallback
+            if (empty($scanner_name) || $scanner_name === 'null') {
+                $scanner_name = 'Scanner #' . $scanner_id;
+            }
+
             $scanners_formatted[] = [
-                'scanner_id' => intval($scanner->scanner_id),
-                'scanner_name' => $scanner->scanner_name ?: 'Scanner #' . $scanner->scanner_id,
+                'scanner_id' => $scanner_id,
+                'scanner_name' => $scanner_name,
                 'total_scans' => intval($scanner->total_scans),
                 'today_scans' => intval($scanner->today_scans),
                 'week_scans' => intval($scanner->week_scans),
