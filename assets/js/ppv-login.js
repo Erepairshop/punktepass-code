@@ -618,6 +618,15 @@ function initLogin() {
                             window.location.href = getFinalRedirectUrl(res.data.redirect);
                         }, 1000);
                     } else {
+                        // 🔧 FIX: Handle expired nonce by auto-reloading
+                        if (res.data && res.data.nonce_expired) {
+                            showAlert(res.data.message + ' (Seite wird neu geladen...)', 'error');
+                            setTimeout(function() {
+                                window.location.reload();
+                            }, 1500);
+                            return;
+                        }
+
                         showAlert(res.data.message, 'error');
                         resetSubmitButton($btn, $btnText, $btnLoader);
 

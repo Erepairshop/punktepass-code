@@ -559,7 +559,7 @@ public static function render_landing_page($atts) {
                                         id="ppv-email"
                                         name="email"
                                         placeholder="<?php echo PPV_Lang::t('login_email_placeholder'); ?>"
-                                        autocomplete="off"
+                                        autocomplete="username"
                                         required
                                     >
                                 </div>
@@ -983,10 +983,19 @@ public static function render_landing_page($atts) {
     public static function ajax_login() {
         global $wpdb;
         $prefix = $wpdb->prefix;
-        
+
         self::ensure_session();
-        
-        check_ajax_referer('ppv_login_nonce', 'nonce');
+
+        // 🔧 FIX: Use wp_verify_nonce instead of check_ajax_referer to handle expired nonce gracefully
+        $nonce = sanitize_text_field($_POST['nonce'] ?? '');
+        if (!wp_verify_nonce($nonce, 'ppv_login_nonce')) {
+            ppv_log("⚠️ [PPV_Login] Nonce verification failed - may be expired cache");
+            // Return error with refresh hint instead of dying
+            wp_send_json_error([
+                'message' => PPV_Lang::t('login_error_expired', 'Sitzung abgelaufen. Bitte Seite neu laden.'),
+                'nonce_expired' => true
+            ]);
+        }
 
         // Accept both email and username - use sanitize_text_field instead of sanitize_email
         $login = sanitize_text_field($_POST['email'] ?? '');
