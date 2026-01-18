@@ -1369,6 +1369,62 @@ trait PPV_QR_REST_Trait {
     }
 
     // ============================================================
+    // 🌐 CSV Export Headers (translated by user language)
+    // ============================================================
+    private static function get_csv_export_headers() {
+        // Detect language from cookie, query param, or locale
+        $lang = 'de';
+        if (isset($_COOKIE['ppv_lang'])) {
+            $lang = sanitize_text_field($_COOKIE['ppv_lang']);
+        } elseif (isset($_GET['lang'])) {
+            $lang = sanitize_text_field($_GET['lang']);
+        } else {
+            $lang = substr(get_locale(), 0, 2);
+        }
+
+        $headers = [
+            'de' => [
+                'date' => 'Datum',
+                'time' => 'Zeit',
+                'customer' => 'Kunde',
+                'email' => 'Email',
+                'points' => 'Punkte',
+                'status' => 'Status',
+                'reward' => 'Prämie',
+                'ip' => 'IP',
+                'message' => 'Nachricht',
+                'unknown' => 'Unbekannt'
+            ],
+            'hu' => [
+                'date' => 'Dátum',
+                'time' => 'Idő',
+                'customer' => 'Ügyfél',
+                'email' => 'Email',
+                'points' => 'Pontok',
+                'status' => 'Státusz',
+                'reward' => 'Jutalom',
+                'ip' => 'IP',
+                'message' => 'Üzenet',
+                'unknown' => 'Ismeretlen'
+            ],
+            'ro' => [
+                'date' => 'Data',
+                'time' => 'Ora',
+                'customer' => 'Client',
+                'email' => 'Email',
+                'points' => 'Puncte',
+                'status' => 'Status',
+                'reward' => 'Premiu',
+                'ip' => 'IP',
+                'message' => 'Mesaj',
+                'unknown' => 'Necunoscut'
+            ]
+        ];
+
+        return $headers[$lang] ?? $headers['de'];
+    }
+
+    // ============================================================
     // 📥 REST: EXPORT CSV
     // ============================================================
     public static function rest_export_csv(WP_REST_Request $r) {
@@ -1421,9 +1477,22 @@ trait PPV_QR_REST_Trait {
             LIMIT 1000
         ", $store_id));
 
+        // 🌐 Get translated CSV headers based on user language
+        $csv_headers = self::get_csv_export_headers();
+
         // Build CSV with BOM for Excel UTF-8 support
         $csv_lines = [];
-        $csv_lines[] = 'Datum,Zeit,Kunde,Email,Punkte,Status,Prämie,IP,Nachricht';
+        $csv_lines[] = implode(',', [
+            $csv_headers['date'],
+            $csv_headers['time'],
+            $csv_headers['customer'],
+            $csv_headers['email'],
+            $csv_headers['points'],
+            $csv_headers['status'],
+            $csv_headers['reward'],
+            $csv_headers['ip'],
+            $csv_headers['message']
+        ]);
 
         foreach ($logs as $log) {
             $created = strtotime($log->created_at);
@@ -1432,7 +1501,7 @@ trait PPV_QR_REST_Trait {
 
             $first = trim($log->first_name ?? '');
             $last = trim($log->last_name ?? '');
-            $customer = trim("$first $last") ?: 'Unbekannt';
+            $customer = trim("$first $last") ?: $csv_headers['unknown'];
             $email = $log->email ?: '-';
 
             // Use direct points_change field
