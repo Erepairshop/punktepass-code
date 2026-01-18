@@ -981,11 +981,11 @@ class PPV_Stats {
 
         // Get all scans with scanner info from metadata (JSON)
         // We extract scanner_id from the JSON metadata column
-        // 🔧 FIX: Include both scan counts AND points given
+        // 🔧 FIX: Group ONLY by scanner_id (not scanner_name) to prevent duplicate counting
+        // when the same scanner has logs with different names (e.g., "Scanner" vs "Adrian")
         $scanner_stats = $wpdb->get_results($wpdb->prepare("
             SELECT
                 JSON_UNQUOTE(JSON_EXTRACT(l.metadata, '$.scanner_id')) as scanner_id,
-                JSON_UNQUOTE(JSON_EXTRACT(l.metadata, '$.scanner_name')) as scanner_name,
                 COUNT(*) as total_scans,
                 SUM(CASE WHEN DATE(l.created_at) = %s THEN 1 ELSE 0 END) as today_scans,
                 SUM(CASE WHEN DATE(l.created_at) >= %s THEN 1 ELSE 0 END) as week_scans,
@@ -1000,7 +1000,7 @@ class PPV_Stats {
             WHERE l.store_id IN ({$placeholders})
               AND l.type = 'qr_scan'
               AND JSON_EXTRACT(l.metadata, '$.scanner_id') IS NOT NULL
-            GROUP BY scanner_id, scanner_name
+            GROUP BY scanner_id
             ORDER BY total_scans DESC
         ", array_merge([$today, $week_start, $month_start, $today, $week_start, $month_start], $store_ids)));
 
@@ -1012,30 +1012,29 @@ class PPV_Stats {
             }
 
             $scanner_id = intval($scanner->scanner_id);
-            $scanner_name = $scanner->scanner_name;
 
-            // 🔧 FIX: If scanner_name is null or "null" string, fetch from ppv_users table
-            if (empty($scanner_name) || $scanner_name === 'null') {
-                $user_data = $wpdb->get_row($wpdb->prepare(
-                    "SELECT display_name, email, first_name, last_name
-                     FROM {$table_users} WHERE id = %d LIMIT 1",
-                    $scanner_id
-                ));
+            // 🔧 FIX: ALWAYS fetch scanner_name from ppv_users table (not from log metadata)
+            // The log metadata might have old/incorrect names (like "Scanner" instead of "Adrian")
+            $scanner_name = null;
+            $user_data = $wpdb->get_row($wpdb->prepare(
+                "SELECT display_name, email, first_name, last_name
+                 FROM {$table_users} WHERE id = %d LIMIT 1",
+                $scanner_id
+            ));
 
-                if ($user_data) {
-                    // Priority: display_name > first_name + last_name > email
-                    if (!empty($user_data->display_name)) {
-                        $scanner_name = $user_data->display_name;
-                    } elseif (!empty($user_data->first_name) || !empty($user_data->last_name)) {
-                        $scanner_name = trim(($user_data->first_name ?? '') . ' ' . ($user_data->last_name ?? ''));
-                    } elseif (!empty($user_data->email)) {
-                        $scanner_name = $user_data->email;
-                    }
+            if ($user_data) {
+                // Priority: display_name > first_name + last_name > email
+                if (!empty($user_data->display_name)) {
+                    $scanner_name = $user_data->display_name;
+                } elseif (!empty($user_data->first_name) || !empty($user_data->last_name)) {
+                    $scanner_name = trim(($user_data->first_name ?? '') . ' ' . ($user_data->last_name ?? ''));
+                } elseif (!empty($user_data->email)) {
+                    $scanner_name = $user_data->email;
                 }
             }
 
             // Final fallback
-            if (empty($scanner_name) || $scanner_name === 'null') {
+            if (empty($scanner_name)) {
                 $scanner_name = 'Scanner #' . $scanner_id;
             }
 
