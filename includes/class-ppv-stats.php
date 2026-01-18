@@ -911,10 +911,20 @@ class PPV_Stats {
         $format = sanitize_text_field($req->get_param('format') ?? 'detailed');
         $table_points = $wpdb->prefix . 'ppv_points';
 
+        // 🌐 Get handler's language for CSV headers
+        $lang = self::get_user_lang();
+        $headers = self::get_export_headers($lang);
+
         if ($format === 'summary') {
-            // Summary
-            $csv = "Store ID,Date,Daily Points,Daily Redemptions,Unique Users\n";
-            
+            // Summary - use translated headers
+            $csv = implode(',', [
+                $headers['store_id'],
+                $headers['date'],
+                $headers['daily_points'],
+                $headers['daily_redemptions'],
+                $headers['unique_users']
+            ]) . "\n";
+
             $today = current_time('Y-m-d');
             for ($i = 6; $i >= 0; $i--) {
                 $date = date('Y-m-d', strtotime("-$i days", strtotime($today)));
@@ -926,20 +936,28 @@ class PPV_Stats {
                     "SELECT COUNT(DISTINCT user_id) FROM $table_points WHERE store_id=%d AND DATE(created)=%s",
                     $store_id, $date
                 ));
-                
+
                 $csv .= "$store_id,$date,$points,0,$unique\n";
             }
 
             $filename = 'stats_summary_' . $store_id . '_' . date('Y-m-d') . '.csv';
         } else {
-            // Detailed
-            $csv = "User ID,Email,Name,Total Points,Purchases,Redemptions,Points Spent\n";
-            
+            // Detailed - use translated headers
+            $csv = implode(',', [
+                $headers['user_id'],
+                $headers['email'],
+                $headers['name'],
+                $headers['total_points'],
+                $headers['purchases'],
+                $headers['redemptions'],
+                $headers['points_spent']
+            ]) . "\n";
+
             $rows = $wpdb->get_results($wpdb->prepare("
-                SELECT 
+                SELECT
                     p.user_id,
                     pu.email,
-                    CONCAT(COALESCE(pu.first_name, ''), ' ', COALESCE(pu.last_name, '')) as name,
+                    COALESCE(pu.display_name, CONCAT(COALESCE(pu.first_name, ''), ' ', COALESCE(pu.last_name, ''))) as name,
                     SUM(p.points) as total_points,
                     COUNT(DISTINCT p.id) as purchases,
                     COUNT(DISTINCT pr.id) as redemptions,
@@ -961,13 +979,65 @@ class PPV_Stats {
             $filename = 'stats_detailed_' . $store_id . '_' . date('Y-m-d') . '.csv';
         }
 
-        ppv_log("✅ [Export Advanced] Generated: $filename");
+        ppv_log("✅ [Export Advanced] Generated: $filename (lang: $lang)");
 
         return new WP_REST_Response([
             'success' => true,
             'csv' => $csv,
             'filename' => $filename
         ], 200, ['Cache-Control' => 'no-store']);
+    }
+
+    /**
+     * 🌐 Get translated CSV export headers based on language
+     */
+    private static function get_export_headers($lang) {
+        $headers = [
+            'de' => [
+                'store_id' => 'Filiale ID',
+                'date' => 'Datum',
+                'daily_points' => 'Tägliche Punkte',
+                'daily_redemptions' => 'Tägliche Einlösungen',
+                'unique_users' => 'Einzigartige Nutzer',
+                'user_id' => 'Benutzer ID',
+                'email' => 'E-Mail',
+                'name' => 'Name',
+                'total_points' => 'Gesamtpunkte',
+                'purchases' => 'Käufe',
+                'redemptions' => 'Einlösungen',
+                'points_spent' => 'Punkte ausgegeben'
+            ],
+            'hu' => [
+                'store_id' => 'Üzlet ID',
+                'date' => 'Dátum',
+                'daily_points' => 'Napi pontok',
+                'daily_redemptions' => 'Napi beváltások',
+                'unique_users' => 'Egyedi felhasználók',
+                'user_id' => 'Felhasználó ID',
+                'email' => 'E-mail',
+                'name' => 'Név',
+                'total_points' => 'Összes pont',
+                'purchases' => 'Vásárlások',
+                'redemptions' => 'Beváltások',
+                'points_spent' => 'Elköltött pontok'
+            ],
+            'ro' => [
+                'store_id' => 'ID Magazin',
+                'date' => 'Data',
+                'daily_points' => 'Puncte zilnice',
+                'daily_redemptions' => 'Răscumpărări zilnice',
+                'unique_users' => 'Utilizatori unici',
+                'user_id' => 'ID Utilizator',
+                'email' => 'E-mail',
+                'name' => 'Nume',
+                'total_points' => 'Total puncte',
+                'purchases' => 'Achiziții',
+                'redemptions' => 'Răscumpărări',
+                'points_spent' => 'Puncte cheltuite'
+            ]
+        ];
+
+        return $headers[$lang] ?? $headers['de'];
     }
 
     // ========================================
