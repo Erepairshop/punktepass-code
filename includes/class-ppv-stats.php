@@ -1066,7 +1066,7 @@ class PPV_Stats {
         // Get all scans with scanner info from metadata (JSON)
         // We extract scanner_id from the JSON metadata column
         // 🔧 FIX: Group ONLY by scanner_id (not scanner_name) to prevent duplicate counting
-        // when the same scanner has logs with different names (e.g., "Scanner" vs "Adrian")
+        // 🔧 FIX: Properly exclude NULL and 'null' string values to prevent overlap with untracked
         $scanner_stats = $wpdb->get_results($wpdb->prepare("
             SELECT
                 JSON_UNQUOTE(JSON_EXTRACT(l.metadata, '$.scanner_id')) as scanner_id,
@@ -1084,6 +1084,7 @@ class PPV_Stats {
             WHERE l.store_id IN ({$placeholders})
               AND l.type = 'qr_scan'
               AND JSON_EXTRACT(l.metadata, '$.scanner_id') IS NOT NULL
+              AND JSON_UNQUOTE(JSON_EXTRACT(l.metadata, '$.scanner_id')) NOT IN ('null', '')
             GROUP BY scanner_id
             ORDER BY total_scans DESC
         ", array_merge([$today, $week_start, $month_start, $today, $week_start, $month_start], $store_ids)));
@@ -1091,8 +1092,9 @@ class PPV_Stats {
         // Format results
         $scanners_formatted = [];
         foreach ($scanner_stats as $scanner) {
-            if (empty($scanner->scanner_id) || $scanner->scanner_id === 'null') {
-                continue; // Skip entries without scanner_id
+            // Note: SQL already filters out null/empty scanner_ids, but double-check just in case
+            if (empty($scanner->scanner_id)) {
+                continue;
             }
 
             $scanner_id = intval($scanner->scanner_id);
@@ -1142,6 +1144,7 @@ class PPV_Stats {
         }
 
         // Also get scans without scanner_id (legacy/untracked)
+        // 🔧 FIX: Use JSON_UNQUOTE for proper comparison, matching the tracked query logic
         $untracked_scans = $wpdb->get_row($wpdb->prepare("
             SELECT
                 COUNT(*) as total_scans,
@@ -1151,7 +1154,7 @@ class PPV_Stats {
             WHERE store_id IN ({$placeholders})
               AND type = 'qr_scan'
               AND (JSON_EXTRACT(metadata, '$.scanner_id') IS NULL
-                   OR JSON_EXTRACT(metadata, '$.scanner_id') = 'null')
+                   OR JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.scanner_id')) IN ('null', ''))
         ", array_merge([$today, $week_start], $store_ids)));
 
         // Summary totals
