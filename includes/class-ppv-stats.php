@@ -450,12 +450,15 @@ class PPV_Stats {
         }
 
         // Top 5 Users
+        // 🔧 FIX: Include display_name and username for complete name fallback
         $top5 = $wpdb->get_results($wpdb->prepare("
             SELECT
                 p.user_id,
                 COUNT(*) as purchases,
                 SUM(p.points) as total_points,
                 pu.email,
+                pu.display_name,
+                pu.username,
                 pu.first_name,
                 pu.last_name
             FROM $table_points p
@@ -468,9 +471,16 @@ class PPV_Stats {
 
         $top5_formatted = [];
         foreach ($top5 as $user) {
-            $name = (!empty($user->first_name) || !empty($user->last_name))
-                ? trim($user->first_name . ' ' . $user->last_name)
-                : 'User #' . $user->user_id;
+            // Priority: display_name > username > first_name+last_name > User #ID
+            if (!empty($user->display_name)) {
+                $name = $user->display_name;
+            } elseif (!empty($user->username)) {
+                $name = $user->username;
+            } elseif (!empty($user->first_name) || !empty($user->last_name)) {
+                $name = trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? ''));
+            } else {
+                $name = 'User #' . $user->user_id;
+            }
 
             $top5_formatted[] = [
                 'user_id' => intval($user->user_id),
@@ -744,11 +754,14 @@ class PPV_Stats {
             $store_ids
         )) ?? 0;
 
+        // 🔧 FIX: Join with ppv_rewards table to get reward title (not just ID)
+        $table_rewards = $wpdb->prefix . 'ppv_rewards';
         $top_rewards = $wpdb->get_results($wpdb->prepare(
-            "SELECT reward_id, SUM(points_spent) as total, COUNT(*) as count
-             FROM $table_redeemed
-             WHERE store_id IN ($placeholders) AND status IN ('approved', 'bestätigt')
-             GROUP BY reward_id
+            "SELECT r.reward_id, rw.title as reward_title, SUM(r.points_spent) as total, COUNT(*) as count
+             FROM $table_redeemed r
+             LEFT JOIN $table_rewards rw ON r.reward_id = rw.id
+             WHERE r.store_id IN ($placeholders) AND r.status IN ('approved', 'bestätigt')
+             GROUP BY r.reward_id, rw.title
              ORDER BY total DESC
              LIMIT 5",
             $store_ids
@@ -758,6 +771,7 @@ class PPV_Stats {
         foreach ($top_rewards as $reward) {
             $top_rewards_formatted[] = [
                 'reward_id' => intval($reward->reward_id),
+                'reward_title' => $reward->reward_title ?: ('Reward #' . $reward->reward_id),
                 'total_spent' => intval($reward->total),
                 'redeemed_count' => intval($reward->count)
             ];

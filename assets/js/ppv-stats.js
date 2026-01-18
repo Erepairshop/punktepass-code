@@ -428,10 +428,12 @@ jQuery(document).ready(function($) {
         if (topRewards.length > 0) {
             html += `<div class="ppv-top-rewards"><h4>${T['top_rewards'] || 'Top Rewards'}</h4><div class="ppv-top-rewards-list">`;
             topRewards.forEach((r, i) => {
+                // 🔧 FIX: Use reward_title from backend (not just ID)
+                const rewardName = escapeHtml(r.reward_title || `Reward #${r.reward_id}`);
                 html += `
                     <div class="ppv-reward-item">
                         <span class="ppv-reward-rank">${i + 1}</span>
-                        <span class="ppv-reward-id">Reward #${r.reward_id}</span>
+                        <span class="ppv-reward-name">${rewardName}</span>
                         <span class="ppv-reward-stats">${r.redeemed_count}x</span>
                         <span class="ppv-reward-total">${formatNumber(r.total_spent)} pts</span>
                     </div>
