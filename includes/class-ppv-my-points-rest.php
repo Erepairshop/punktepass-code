@@ -71,6 +71,18 @@ class PPV_My_Points_REST {
     /** 🔹 Adatok visszaadása JSON-ban */
     public static function rest_get_points($request) {
         global $wpdb;
+
+        // 🛡️ CRITICAL: Suppress PHP notices/warnings that break JSON output
+        // These can appear as "<br /><b>Notice...</b>" before JSON response
+        @ini_set('display_errors', 0);
+        error_reporting(E_ERROR | E_PARSE);
+
+        // Clean any existing output buffer (prevents stray HTML from breaking JSON)
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+        ob_start();
+
         $start = microtime(true);
 
         ppv_log("🔍 [PPV_MyPoints_REST::rest_get_points] ========== START ==========");
@@ -157,6 +169,7 @@ if (class_exists('PPV_Lang')) {
             ppv_log("    - SESSION ppv_user_id: " . ($_SESSION['ppv_user_id'] ?? 'none'));
             ppv_log("    - COOKIE ppv_user_token: " . (isset($_COOKIE['ppv_user_token']) ? 'exists' : 'none'));
             ppv_log("🔍 [PPV_MyPoints_REST::rest_get_points] ========== END (401) ==========");
+            ob_end_clean();
             return new WP_REST_Response(['error' => 'unauthorized', 'message' => 'Nicht angemeldet'], 401);
         }
 
@@ -264,10 +277,13 @@ if (class_exists('PPV_Lang')) {
             ppv_log("✅ [PPV_MYPOINTS_REST] Success, response ready (" . round(microtime(true)-$start,3) . "s)");
             ppv_log("📦 [PPV_MYPOINTS_REST] Data: " . substr(json_encode($response),0,500));
 
+            // 🛡️ Clean output buffer before sending JSON (removes any PHP notices)
+            ob_end_clean();
             return rest_ensure_response($response);
 
         } catch (Throwable $e) {
             ppv_log("❌ [PPV_MYPOINTS_REST] ERROR: " . $e->getMessage());
+            ob_end_clean();
             return rest_ensure_response(['error' => 'db_error', 'message' => $e->getMessage()]);
         }
     }
