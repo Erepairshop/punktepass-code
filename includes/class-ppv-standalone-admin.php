@@ -1576,6 +1576,9 @@ class PPV_Standalone_Admin {
         $active_devices = $wpdb->get_var(
             "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_user_devices WHERE status = 'active'"
         );
+        $total_users = $wpdb->get_var(
+            "SELECT COUNT(*) FROM {$wpdb->prefix}ppv_users"
+        );
 
         self::get_admin_header('dashboard');
         ?>
@@ -1597,6 +1600,10 @@ class PPV_Standalone_Admin {
             <div class="stat-card">
                 <div class="number"><?php echo intval($active_devices); ?></div>
                 <div class="label">Regisztrált készülékek</div>
+            </div>
+            <div class="stat-card">
+                <div class="number"><?php echo intval($total_users); ?></div>
+                <div class="label">Regisztrált felhasználók</div>
             </div>
         </div>
 

@@ -930,6 +930,21 @@ private static function get_today_hours($opening_hours) {
             true
         );
 
+        // 💡 User Tips - personalized tips/hints
+        wp_enqueue_script(
+            'ppv-user-tips',
+            PPV_PLUGIN_URL . 'assets/js/ppv-user-tips.js',
+            ['ppv-dashboard'],
+            PPV_Core::asset_version(PPV_PLUGIN_DIR . 'assets/js/ppv-user-tips.js'),
+            true
+        );
+
+        // Config for User Tips
+        wp_localize_script('ppv-user-tips', 'ppvConfig', [
+            'restBase' => esc_url_raw(rest_url('ppv/v1/')),
+            'nonce' => wp_create_nonce('wp_rest')
+        ]);
+
         $boot = self::build_boot_payload();
 
         wp_add_inline_script(
@@ -1345,10 +1360,10 @@ public static function render_dashboard() {
                s.phone, s.public_email, s.website, s.logo, s.qr_logo, s.opening_hours, s.description,
                s.gallery, s.facebook, s.instagram, s.tiktok, s.country, s.slogan,
                s.vacation_enabled, s.vacation_from, s.vacation_to, s.vacation_message,
+               s.vip_enabled,
                s.vip_fix_enabled, s.vip_fix_bronze, s.vip_fix_silver, s.vip_fix_gold, s.vip_fix_platinum,
                s.vip_streak_enabled, s.vip_streak_count, s.vip_streak_type,
-               s.vip_streak_bronze, s.vip_streak_silver, s.vip_streak_gold, s.vip_streak_platinum,
-               s.vip_daily_enabled, s.vip_daily_bronze, s.vip_daily_silver, s.vip_daily_gold, s.vip_daily_platinum
+               s.vip_streak_bronze, s.vip_streak_silver, s.vip_streak_gold, s.vip_streak_platinum
         FROM {$prefix}ppv_stores s
         WHERE s.active = 1
           AND (
@@ -1481,12 +1496,12 @@ public static function render_dashboard() {
 
         // ✅ Get campaigns from batch-loaded data
         $campaigns = $all_campaigns[(int)$store->id] ?? [];
-        // ✅ Build VIP object (only if at least one VIP type is enabled)
+        // ✅ Build VIP object (if vip_fix or vip_streak is enabled)
+        // Note: handlers control VIP via vip_fix_enabled / vip_streak_enabled toggles
         $vip = null;
         $has_vip = (
             !empty($store->vip_fix_enabled) ||
-            !empty($store->vip_streak_enabled) ||
-            !empty($store->vip_daily_enabled)
+            !empty($store->vip_streak_enabled)
         );
 
         if ($has_vip) {
@@ -1506,13 +1521,6 @@ public static function render_dashboard() {
                     'silver' => (int)($store->vip_streak_silver ?? 2),
                     'gold' => (int)($store->vip_streak_gold ?? 3),
                     'platinum' => (int)($store->vip_streak_platinum ?? 5),
-                ] : null,
-                'daily' => !empty($store->vip_daily_enabled) ? [
-                    'enabled' => true,
-                    'bronze' => (int)($store->vip_daily_bronze ?? 5),
-                    'silver' => (int)($store->vip_daily_silver ?? 10),
-                    'gold' => (int)($store->vip_daily_gold ?? 20),
-                    'platinum' => (int)($store->vip_daily_platinum ?? 30),
                 ] : null,
             ];
         }

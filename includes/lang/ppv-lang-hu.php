@@ -956,6 +956,7 @@ return [
 'enter_new_password' => 'Új jelszó megadása',
 'resetting' => 'Visszaállítás...',
 'password_reset_success' => 'Jelszó sikeresen visszaállítva!',
+'filiale_changed' => 'Fiók sikeresen módosítva!',
 'confirm_disable' => 'Biztosan letiltja a scannert?',
 'confirm_enable' => 'Biztosan engedélyezi a scannert?',
 'processing' => 'Feldolgozás...',

@@ -270,6 +270,8 @@ $core_modules = [
     'includes/class-ppv-legal.php',
     'includes/class-ppv-user-level.php',
     'includes/class-ppv-vip-settings.php',
+    'includes/class-ppv-handler-custom.php',
+    'includes/class-ppv-user-tips.php',
     'includes/class-ppv-user-qr.php',
     'includes/class-ppv-ably.php',
     'includes/class-ppv-pos-admin.php',

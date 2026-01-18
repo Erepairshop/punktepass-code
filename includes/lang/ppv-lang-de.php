@@ -981,6 +981,7 @@ return [
 'enter_new_password' => 'Neues Passwort eingeben',
 'resetting' => 'Zurücksetzen...',
 'password_reset_success' => 'Passwort erfolgreich zurückgesetzt!',
+'filiale_changed' => 'Filiale erfolgreich geändert!',
 'confirm_disable' => 'Scanner wirklich deaktivieren?',
 'confirm_enable' => 'Scanner wirklich aktivieren?',
 'processing' => 'Verarbeitung...',
