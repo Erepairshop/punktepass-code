@@ -1015,17 +1015,20 @@ class PPV_Stats {
 
             // 🔧 FIX: ALWAYS fetch scanner_name from ppv_users table (not from log metadata)
             // The log metadata might have old/incorrect names (like "Scanner" instead of "Adrian")
+            // Scanner users are created with 'username' field, NOT display_name!
             $scanner_name = null;
             $user_data = $wpdb->get_row($wpdb->prepare(
-                "SELECT display_name, email, first_name, last_name
+                "SELECT display_name, username, email, first_name, last_name
                  FROM {$table_users} WHERE id = %d LIMIT 1",
                 $scanner_id
             ));
 
             if ($user_data) {
-                // Priority: display_name > first_name + last_name > email
+                // Priority: display_name > username > first_name + last_name > email
                 if (!empty($user_data->display_name)) {
                     $scanner_name = $user_data->display_name;
+                } elseif (!empty($user_data->username)) {
+                    $scanner_name = $user_data->username;
                 } elseif (!empty($user_data->first_name) || !empty($user_data->last_name)) {
                     $scanner_name = trim(($user_data->first_name ?? '') . ' ' . ($user_data->last_name ?? ''));
                 } elseif (!empty($user_data->email)) {
