@@ -1026,6 +1026,8 @@ function initLogin() {
             // Set cookie (1 year expiry)
             const maxAge = 60 * 60 * 24 * 365;
             document.cookie = `ppv_lang=${lang}; path=/; max-age=${maxAge}; SameSite=Lax`;
+            // 🔧 FIX: Set manual flag so browser language won't override after logout
+            document.cookie = `ppv_lang_manual=1; path=/; max-age=${maxAge}; SameSite=Lax`;
 
             // Set localStorage (fallback)
             localStorage.setItem('ppv_lang', lang);

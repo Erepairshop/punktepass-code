@@ -614,14 +614,16 @@
 
         sel.addEventListener('change', function(e) {
             const lang = e.target.value;
-            
+
             // Set cookie
             const maxAge = 60 * 60 * 24 * 365;
             document.cookie = `ppv_lang=${lang}; path=/; max-age=${maxAge}; SameSite=Lax`;
-            
+            // 🔧 FIX: Set manual flag so browser language won't override after logout
+            document.cookie = `ppv_lang_manual=1; path=/; max-age=${maxAge}; SameSite=Lax`;
+
             // Set localStorage
             localStorage.setItem('ppv_lang', lang);
-            
+
             // Reload with URL parameter
             const url = new URL(window.location.href);
             url.searchParams.set('lang', lang);

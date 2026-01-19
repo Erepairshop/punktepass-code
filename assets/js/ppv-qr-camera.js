@@ -1289,7 +1289,10 @@
 
       langSel.addEventListener('change', async e => {
         const newLang = e.target.value;
-        document.cookie = `ppv_lang=${newLang};path=/;max-age=${60 * 60 * 24 * 365}`;
+        const maxAge = 60 * 60 * 24 * 365;
+        document.cookie = `ppv_lang=${newLang};path=/;max-age=${maxAge}`;
+        // 🔧 FIX: Set manual flag so browser language won't override after logout
+        document.cookie = `ppv_lang_manual=1;path=/;max-age=${maxAge}`;
         localStorage.setItem('ppv_lang', newLang);
 
         try {
