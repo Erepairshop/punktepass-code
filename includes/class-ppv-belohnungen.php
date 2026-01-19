@@ -223,6 +223,7 @@ class PPV_Belohnungen {
         $store_points = $wpdb->get_results($wpdb->prepare("
             SELECT
                 s.id AS store_id,
+                s.name AS store_name_short,
                 s.company_name AS store_name,
                 {$logo_select}
                 s.active AS is_active,
@@ -230,7 +231,7 @@ class PPV_Belohnungen {
             FROM {$wpdb->prefix}ppv_stores s
             INNER JOIN {$wpdb->prefix}ppv_points p ON s.id = p.store_id
             WHERE p.user_id = %d
-            GROUP BY s.id, s.company_name, s.active{$logo_group}
+            GROUP BY s.id, s.name, s.company_name, s.active{$logo_group}
             ORDER BY points DESC
         ", $user_id));
 
@@ -256,6 +257,7 @@ class PPV_Belohnungen {
             $missing_stores = $wpdb->get_results($wpdb->prepare("
                 SELECT
                     s.id AS store_id,
+                    s.name AS store_name_short,
                     s.company_name AS store_name,
                     s.logo_url,
                     s.active AS is_active,
@@ -452,7 +454,10 @@ class PPV_Belohnungen {
                                         </div>
                                     <?php endif; ?>
                                     <div class="ppv-rw-store-info">
-                                        <h3><?php echo esc_html($store->store_name); ?></h3>
+                                        <h3><?php echo esc_html($store->store_name ?: $store->store_name_short); ?></h3>
+                                        <?php if (!empty($store->store_name_short) && $store->store_name_short !== $store->store_name): ?>
+                                            <p style="font-size: 0.85em; color: #666; margin: 2px 0 0 0;"><?php echo esc_html($store->store_name_short); ?></p>
+                                        <?php endif; ?>
                                         <span class="ppv-rw-store-points">
                                             <i class="ri-star-fill"></i> <?php echo number_format($store->points); ?>
                                         </span>

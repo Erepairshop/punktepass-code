@@ -948,10 +948,15 @@ function buildRewardsByStore(stores, l) {
     const statusText = achieved ? (l.reward_achieved || 'Einlösbar!') : `${store.remaining} ${l.points_label || 'Punkte'} ${l.points_missing || 'fehlen noch'}`;
     const hiddenClass = index >= ITEMS_PER_PAGE ? 'ppv-reward-hidden' : '';
 
+    // Show both names like user-dashboard (company_name + name if different)
+    const displayName = store.store_name || store.store_name_short || 'Unknown';
+    const subName = store.store_name_short && store.store_name_short !== store.store_name ? store.store_name_short : null;
+
     cardsHtml += `
       <div class="ppv-reward-card ${statusClass} ${hiddenClass}" data-store-id="${store.store_id}" data-index="${index}" style="${index >= ITEMS_PER_PAGE ? 'display:none;' : ''}">
         <div class="reward-header">
-          <h4>${statusIcon} ${escapeHtml(store.store_name)}</h4>
+          <h4>${statusIcon} ${escapeHtml(displayName)}</h4>
+          ${subName ? `<p style="font-size: 12px; color: #64748b; margin: 2px 0 0 0;">${escapeHtml(subName)}</p>` : ''}
           <span class="reward-points">${store.current_points} / ${store.next_goal || '?'}</span>
         </div>
         <div class="reward-progress">
