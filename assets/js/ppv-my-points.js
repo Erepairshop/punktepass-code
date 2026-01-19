@@ -492,38 +492,38 @@
           <!-- 🎁 REFERRAL PROGRAM SECTION -->
           ${buildReferralHtml(d.referral, l, lang)}
 
-          <!-- 📊 STATISTICS SUMMARY -->
-          <div class="ppv-stats-summary">
-            <div class="ppv-summary-card">
-              <div class="card-icon"><i class="ri-calendar-event-fill"></i></div>
+          <!-- 📊 STATISTICS SUMMARY (2x2 grid) -->
+          <div class="ppv-stats-summary ppv-analytics-summary" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 16px 0;">
+            <div class="ppv-summary-card" style="display: flex; align-items: center; gap: 12px; padding: 14px; background: rgba(102, 126, 234, 0.08); border-radius: 12px;">
+              <div class="card-icon" style="font-size: 24px; color: #667eea;"><i class="ri-calendar-event-fill"></i></div>
               <div class="card-content">
-                <div class="label">${l.stats_this_week}</div>
-                <div class="value">${stats.week_points || 0}</div>
-                <div class="unit">${l.points_label}</div>
+                <div class="label" style="font-size: 11px; color: #64748b; text-transform: uppercase;">${l.stats_this_week}</div>
+                <div class="value" style="font-size: 20px; font-weight: 700; color: #1e293b;">${stats.week_points || 0}</div>
+                <div class="unit" style="font-size: 11px; color: #94a3b8;">${l.points_label}</div>
               </div>
             </div>
-            <div class="ppv-summary-card">
-              <div class="card-icon"><i class="ri-calendar-2-fill"></i></div>
+            <div class="ppv-summary-card" style="display: flex; align-items: center; gap: 12px; padding: 14px; background: rgba(118, 75, 162, 0.08); border-radius: 12px;">
+              <div class="card-icon" style="font-size: 24px; color: #764ba2;"><i class="ri-calendar-2-fill"></i></div>
               <div class="card-content">
-                <div class="label">${l.stats_this_month}</div>
-                <div class="value">${stats.month_points || 0}</div>
-                <div class="unit">${l.points_label}</div>
+                <div class="label" style="font-size: 11px; color: #64748b; text-transform: uppercase;">${l.stats_this_month}</div>
+                <div class="value" style="font-size: 20px; font-weight: 700; color: #1e293b;">${stats.month_points || 0}</div>
+                <div class="unit" style="font-size: 11px; color: #94a3b8;">${l.points_label}</div>
               </div>
             </div>
-            <div class="ppv-summary-card">
-              <div class="card-icon"><i class="ri-calendar-check-fill"></i></div>
+            <div class="ppv-summary-card" style="display: flex; align-items: center; gap: 12px; padding: 14px; background: rgba(16, 185, 129, 0.08); border-radius: 12px;">
+              <div class="card-icon" style="font-size: 24px; color: #10b981;"><i class="ri-calendar-check-fill"></i></div>
               <div class="card-content">
-                <div class="label">${l.stats_this_year}</div>
-                <div class="value">${stats.year_points || 0}</div>
-                <div class="unit">${l.points_label}</div>
+                <div class="label" style="font-size: 11px; color: #64748b; text-transform: uppercase;">${l.stats_this_year}</div>
+                <div class="value" style="font-size: 20px; font-weight: 700; color: #1e293b;">${stats.year_points || 0}</div>
+                <div class="unit" style="font-size: 11px; color: #94a3b8;">${l.points_label}</div>
               </div>
             </div>
-            <div class="ppv-summary-card">
-              <div class="card-icon"><i class="ri-fire-fill"></i></div>
+            <div class="ppv-summary-card" style="display: flex; align-items: center; gap: 12px; padding: 14px; background: rgba(245, 158, 11, 0.08); border-radius: 12px;">
+              <div class="card-icon" style="font-size: 24px; color: #f59e0b;"><i class="ri-fire-fill"></i></div>
               <div class="card-content">
-                <div class="label">${l.stats_streak}</div>
-                <div class="value">${stats.current_streak || 0}</div>
-                <div class="unit">${l.stats_days}</div>
+                <div class="label" style="font-size: 11px; color: #64748b; text-transform: uppercase;">${l.stats_streak}</div>
+                <div class="value" style="font-size: 20px; font-weight: 700; color: #1e293b;">${stats.current_streak || 0}</div>
+                <div class="unit" style="font-size: 11px; color: #94a3b8;">${l.stats_days}</div>
               </div>
             </div>
           </div>
