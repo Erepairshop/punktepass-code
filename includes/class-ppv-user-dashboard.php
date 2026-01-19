@@ -1400,17 +1400,9 @@ public static function render_dashboard() {
         ];
         $country_code = $country_codes[$country] ?? 'de';
 
-        // Build search query (priority: zip+city > city > address)
-        if (!empty($zip) && !empty($city)) {
-            $search_query = "{$zip} {$city}";
-        } elseif (!empty($city)) {
-            $search_query = $city;
-        } elseif (!empty($zip)) {
-            $search_query = $zip;
-        } else {
-            // Use address field as last resort
-            $search_query = $address;
-        }
+        // Build search query - use full address for better precision
+        $parts = array_filter([$address, $zip, $city]);
+        $search_query = implode(', ', $parts);
 
         // Check cache first (geocoding results rarely change)
         $cache_key = 'ppv_geo_' . md5("{$search_query}_{$country_code}");
