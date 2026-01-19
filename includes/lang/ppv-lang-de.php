@@ -336,6 +336,7 @@ return [
   'account_deleted' => 'Konto gelöscht',
 
   // Settings - Form fields
+  'address' => 'Adresse',
   'zip' => 'Postleitzahl',
   'street_address' => 'Straße und Hausnummer',
   'street_placeholder' => 'Musterstraße 123',

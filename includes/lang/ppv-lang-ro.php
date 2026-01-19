@@ -375,8 +375,9 @@ return [
   'account_deleted' => 'Cont șters',
 
   // Settings - Form fields
+  'address' => 'Adresă',
   'zip' => 'Cod poștal',
-  'street_address' => 'Strada și numărul',
+  'street_address' => 'Stradă & Număr',
   'street_placeholder' => 'Strada Exemplu 123',
   'zip_placeholder' => '123456',
   'city_placeholder' => 'București',

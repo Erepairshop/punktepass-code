@@ -363,8 +363,9 @@ return [
   'account_deleted' => 'Fiók törölve',
 
   // Settings - Form fields
+  'address' => 'Cím',
   'zip' => 'Irányítószám',
-  'street_address' => 'Utca és házszám',
+  'street_address' => 'Utca & Házszám',
   'street_placeholder' => 'Fő utca 123',
   'zip_placeholder' => '1234',
   'city_placeholder' => 'Budapest',
