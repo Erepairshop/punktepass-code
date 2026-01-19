@@ -522,22 +522,6 @@ class PPV_Belohnungen {
                 </div>
             <?php endif; ?>
 
-            <!-- HOW IT WORKS (Collapsible) -->
-            <div class="ppv-rw-howto">
-                <div class="ppv-rw-howto-header" onclick="ppvToggleHowto(this)">
-                    <h3><i class="ri-lightbulb-line"></i> <?php echo esc_html($L['how_it_works']); ?></h3>
-                    <i class="ri-arrow-down-s-line ppv-rw-chevron"></i>
-                </div>
-                <div class="ppv-rw-howto-content">
-                    <div class="ppv-rw-howto-steps">
-                        <div class="ppv-rw-step"><span class="step-num">1</span><span><?php echo esc_html($L['how_step_1']); ?></span></div>
-                        <div class="ppv-rw-step"><span class="step-num">2</span><span><?php echo esc_html($L['how_step_2']); ?></span></div>
-                        <div class="ppv-rw-step"><span class="step-num">3</span><span><?php echo esc_html($L['how_step_3']); ?></span></div>
-                        <div class="ppv-rw-step"><span class="step-num">4</span><span><?php echo esc_html($L['how_step_4']); ?></span></div>
-                    </div>
-                </div>
-            </div>
-
             <!-- REDEMPTION HISTORY -->
             <?php if (!empty($history)): ?>
                 <div class="ppv-rw-history">
