@@ -98,6 +98,33 @@ class PPV_User_Tips {
                 ],
             ],
 
+            'add_address' => [
+                'trigger_scans' => 1,           // After first scan
+                'delay_minutes' => 60,          // Wait 1 hour after trigger
+                'check_field' => null,          // Use custom condition instead
+                'check_condition' => 'no_location_data', // Check if zip+city are missing
+                'priority' => 15,
+                'icon' => '📍',
+                'action_url' => '/einstellungen',
+                'translations' => [
+                    'de' => [
+                        'title' => 'Finde Geschäfte in deiner Nähe',
+                        'message' => 'Füge deine Adresse hinzu und sieh sofort, welche Geschäfte mit Punktesammlung in deiner Nähe sind – auch ohne GPS!',
+                        'button' => 'Adresse hinzufügen',
+                    ],
+                    'hu' => [
+                        'title' => 'Találd meg a közeli üzleteket',
+                        'message' => 'Add meg a címedet és azonnal láthatod, mely üzletek vannak a közeledben pontgyűjtéssel – GPS nélkül is!',
+                        'button' => 'Cím megadása',
+                    ],
+                    'ro' => [
+                        'title' => 'Găsește magazine în apropiere',
+                        'message' => 'Adaugă adresa ta și vezi imediat ce magazine cu colectare de puncte sunt în apropierea ta – chiar și fără GPS!',
+                        'button' => 'Adaugă adresa',
+                    ],
+                ],
+            ],
+
             'set_birthday' => [
                 'trigger_scans' => 5,
                 'delay_minutes' => 120,         // 2 hours after trigger
@@ -759,6 +786,15 @@ class PPV_User_Tips {
                     $user_id
                 ));
                 return intval($count) === 0;
+
+            case 'no_location_data':
+                // Check if user has neither zip nor city (can't calculate distance)
+                $user = $wpdb->get_row($wpdb->prepare(
+                    "SELECT zip, city FROM {$wpdb->prefix}ppv_users WHERE id = %d",
+                    $user_id
+                ));
+                // Return true if BOTH zip and city are empty (tip should show)
+                return empty(trim($user->zip ?? '')) && empty(trim($user->city ?? ''));
 
             default:
                 return true;

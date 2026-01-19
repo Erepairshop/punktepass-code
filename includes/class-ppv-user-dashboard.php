@@ -1042,6 +1042,13 @@ public static function render_dashboard() {
         'permission_callback' => ['PPV_Permissions', 'allow_anonymous'],
     ]);
 
+    // User address-based location (GPS fallback)
+    register_rest_route('ppv/v1', '/user/address-location', [
+        'methods' => 'GET',
+        'callback' => [__CLASS__, 'rest_get_address_location'],
+        'permission_callback' => ['PPV_Permissions', 'check_authenticated'],
+    ]);
+
     ppv_log("✅ [PPV_Dashboard] REST routes registered (with points-detailed)");
 }
     
@@ -1332,6 +1339,129 @@ public static function render_dashboard() {
         ]
     ], 200);
 }
+
+    /**
+     * Get user's location based on their saved address (GPS fallback)
+     * Uses zip + city to geocode approximate coordinates via OpenStreetMap Nominatim
+     */
+    public static function rest_get_address_location(WP_REST_Request $request) {
+        global $wpdb;
+
+        self::ensure_session();
+
+        // Restore session from token if needed
+        if (class_exists('PPV_SessionBridge') && empty($_SESSION['ppv_user_id'])) {
+            PPV_SessionBridge::restore_from_token();
+        }
+
+        $user_id = self::get_safe_user_id();
+
+        if ($user_id <= 0) {
+            return new WP_REST_Response([
+                'success' => false,
+                'msg' => 'Not authenticated'
+            ], 401);
+        }
+
+        // Get user's address data
+        $user = $wpdb->get_row($wpdb->prepare(
+            "SELECT zip, city, country FROM {$wpdb->prefix}ppv_users WHERE id = %d",
+            $user_id
+        ));
+
+        if (!$user || (empty($user->zip) && empty($user->city))) {
+            return new WP_REST_Response([
+                'success' => false,
+                'msg' => 'no_address',
+                'has_address' => false
+            ], 200);
+        }
+
+        // Build search query for geocoding
+        $zip = trim($user->zip ?? '');
+        $city = trim($user->city ?? '');
+        $country = trim($user->country ?? 'DE');
+
+        // Country code mapping
+        $country_codes = [
+            'DE' => 'de',
+            'HU' => 'hu',
+            'RO' => 'ro',
+            'AT' => 'at',
+            'CH' => 'ch'
+        ];
+        $country_code = $country_codes[$country] ?? 'de';
+
+        // Build search query (prefer zip + city, fallback to city only)
+        $search_query = !empty($zip) ? "{$zip} {$city}" : $city;
+
+        // Check cache first (geocoding results rarely change)
+        $cache_key = 'ppv_geo_' . md5("{$search_query}_{$country_code}");
+        $cached = get_transient($cache_key);
+        if ($cached !== false) {
+            return new WP_REST_Response([
+                'success' => true,
+                'lat' => $cached['lat'],
+                'lng' => $cached['lng'],
+                'source' => 'address',
+                'cached' => true
+            ], 200);
+        }
+
+        // Call OpenStreetMap Nominatim for geocoding
+        $nominatim_url = 'https://nominatim.openstreetmap.org/search';
+        $response = wp_remote_get(
+            add_query_arg([
+                'q' => $search_query,
+                'countrycodes' => $country_code,
+                'format' => 'json',
+                'limit' => 1,
+                'addressdetails' => 0
+            ], $nominatim_url),
+            [
+                'timeout' => 5,
+                'headers' => [
+                    'User-Agent' => 'PunktePass/1.0 (contact@punktepass.de)'
+                ]
+            ]
+        );
+
+        if (is_wp_error($response)) {
+            ppv_log("❌ [Address Location] Nominatim error: " . $response->get_error_message());
+            return new WP_REST_Response([
+                'success' => false,
+                'msg' => 'geocoding_error'
+            ], 200);
+        }
+
+        $body = wp_remote_retrieve_body($response);
+        $data = json_decode($body, true);
+
+        if (empty($data) || !isset($data[0]['lat']) || !isset($data[0]['lon'])) {
+            ppv_log("⚠️ [Address Location] No results for: {$search_query}, {$country_code}");
+            return new WP_REST_Response([
+                'success' => false,
+                'msg' => 'no_results',
+                'has_address' => true
+            ], 200);
+        }
+
+        $lat = floatval($data[0]['lat']);
+        $lng = floatval($data[0]['lon']);
+
+        // Cache result for 7 days (city coordinates don't change)
+        set_transient($cache_key, ['lat' => $lat, 'lng' => $lng], 7 * DAY_IN_SECONDS);
+
+        ppv_log("✅ [Address Location] Geocoded {$search_query} -> {$lat}, {$lng}");
+
+        return new WP_REST_Response([
+            'success' => true,
+            'lat' => $lat,
+            'lng' => $lng,
+            'source' => 'address',
+            'cached' => false
+        ], 200);
+    }
 
    public static function rest_stores_optimized(WP_REST_Request $request) {
     global $wpdb;

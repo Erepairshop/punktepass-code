@@ -131,6 +131,8 @@ window.PPV_TRANSLATIONS = window.PPV_TRANSLATIONS || {
     reward_valid_until: "Gültig bis:",
     points_unit: "Punkte",
     geo_denied_tip: "📍 Standort aktivieren für Entfernungen",
+    location_from_address: "📍 Entfernung basiert auf deiner Adresse",
+    add_address_tip: "📍 Adresse hinzufügen für Entfernungen",
     load_more_stores: "Weitere Geschäfte laden",
     qr_loaded: "QR geladen",
     qr_min: "Min",
@@ -200,6 +202,8 @@ window.PPV_TRANSLATIONS = window.PPV_TRANSLATIONS || {
     reward_valid_until: "Érvényes:",
     points_unit: "pont",
     geo_denied_tip: "📍 Engedélyezd a helymeghatározást a távolságokhoz",
+    location_from_address: "📍 Távolság a címed alapján",
+    add_address_tip: "📍 Add meg a címed a távolságokhoz",
     load_more_stores: "További üzletek betöltése",
     qr_loaded: "QR betöltve",
     qr_min: "perc",
@@ -269,6 +273,8 @@ window.PPV_TRANSLATIONS = window.PPV_TRANSLATIONS || {
     reward_valid_until: "Valid până:",
     points_unit: "puncte",
     geo_denied_tip: "📍 Activează locația pentru distanțe",
+    location_from_address: "📍 Distanța bazată pe adresa ta",
+    add_address_tip: "📍 Adaugă adresa pentru distanțe",
     load_more_stores: "Încarcă mai multe magazine",
     qr_loaded: "QR încărcat",
     qr_min: "min",
@@ -1924,7 +1930,25 @@ async function initUserDashboard() {
         if (freshPos?.coords) {
           userLat = freshPos.coords.latitude;
           userLng = freshPos.coords.longitude;
-        } else {
+        }
+      }
+
+      // 3️⃣ GPS fallback: Use user's address if no GPS coordinates available
+      if (!userLat && !userLng) {
+        try {
+          const addrRes = await fetch(API + 'user/address-location', { cache: 'no-store' });
+          if (addrRes.ok) {
+            const addrData = await addrRes.json();
+            if (addrData.success && addrData.lat && addrData.lng) {
+              userLat = addrData.lat;
+              userLng = addrData.lng;
+              window.PPV_LOCATION_SOURCE = 'address'; // Track source for UI hints
+            } else if (addrData.has_address === false) {
+              window.PPV_NO_ADDRESS = true; // User has no address set
+            }
+          }
+        } catch (addrErr) {
+          // Silent fail - continue without address location
         }
       }
 
@@ -1971,10 +1995,18 @@ async function initUserDashboard() {
     displayedCount = 0;
 
     const currentDistance = window.PPV_CURRENT_DISTANCE || 10; // 📌 Always use saved preference
-    // 📍 Geo denied tip (compact)
-    const geoTipHTML = (!userLat && !userLng && window.PPV_GEO_DENIED)
-      ? `<div class="ppv-geo-tip">${T.geo_denied_tip}</div>`
-      : '';
+    // 📍 Location source tip (compact)
+    let geoTipHTML = '';
+    if (window.PPV_LOCATION_SOURCE === 'address') {
+      // Distance calculated from saved address
+      geoTipHTML = `<div class="ppv-geo-tip ppv-geo-tip-address">${T.location_from_address}</div>`;
+    } else if (!userLat && !userLng && window.PPV_NO_ADDRESS) {
+      // No GPS and no address - suggest adding address
+      geoTipHTML = `<div class="ppv-geo-tip ppv-geo-tip-add"><a href="/einstellungen">${T.add_address_tip}</a></div>`;
+    } else if (!userLat && !userLng && window.PPV_GEO_DENIED) {
+      // GPS denied, no address fallback available
+      geoTipHTML = `<div class="ppv-geo-tip">${T.geo_denied_tip}</div>`;
+    }
     const sliderHTML = `
       <div class="ppv-distance-filter">
         <label><i class="ri-ruler-line"></i> ${T.distance_label}: <span id="ppv-distance-value">${currentDistance}</span> km</label>
