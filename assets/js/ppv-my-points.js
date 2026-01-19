@@ -514,10 +514,10 @@
               </div>
             </div>
 
-            <!-- RECENT ACTIVITY -->
+            <!-- RECENT ACTIVITY (Last 5) -->
             <div class="ppv-points-list">
               <h3><i class="ri-time-fill"></i> ${l.recent}</h3>
-              ${buildEntriesHtml(d.entries || [], l)}
+              ${buildEntriesHtml((d.entries || []).slice(0, 5), l)}
             </div>
           </div>
 
