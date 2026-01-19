@@ -311,23 +311,32 @@ class PPV_User_Tips {
         $store_name = $store->name ?: $store->company_name ?: "Store #{$store_id}";
         $store_created = $store->created_at ?: current_time('mysql');
 
-        // Find users with location who are within radius
-        // AND who registered AFTER the store was created (only new stores matter)
+        // Find users within radius using GPS coordinates OR address coordinates
         // Using Haversine formula approximation
         $users = $wpdb->get_results($wpdb->prepare("
-            SELECT id, last_lat, last_lng
+            SELECT id, last_lat, last_lng, address_lat, address_lng
             FROM {$wpdb->prefix}ppv_users
-            WHERE last_lat IS NOT NULL
-            AND last_lng IS NOT NULL
-            AND created_at < %s
+            WHERE created_at < %s
             AND (
-                6371 * acos(
-                    cos(radians(%f)) * cos(radians(last_lat)) *
-                    cos(radians(last_lng) - radians(%f)) +
-                    sin(radians(%f)) * sin(radians(last_lat))
-                )
-            ) <= %f
-        ", $store_created, $lat, $lng, $lat, $radius_km));
+                -- Users with GPS coordinates
+                (last_lat IS NOT NULL AND last_lng IS NOT NULL AND (
+                    6371 * acos(
+                        cos(radians(%f)) * cos(radians(last_lat)) *
+                        cos(radians(last_lng) - radians(%f)) +
+                        sin(radians(%f)) * sin(radians(last_lat))
+                    )
+                ) <= %f)
+                OR
+                -- Users with address-based coordinates (no GPS)
+                (last_lat IS NULL AND address_lat IS NOT NULL AND address_lng IS NOT NULL AND (
+                    6371 * acos(
+                        cos(radians(%f)) * cos(radians(address_lat)) *
+                        cos(radians(address_lng) - radians(%f)) +
+                        sin(radians(%f)) * sin(radians(address_lat))
+                    )
+                ) <= %f)
+            )
+        ", $store_created, $lat, $lng, $lat, $radius_km, $lat, $lng, $lat, $radius_km));
 
         $triggered_count = 0;
 

@@ -293,6 +293,26 @@ class PPV_User_Settings {
             }
         }
 
+        // Geocode address if any address field changed
+        if (isset($_POST['address']) || isset($_POST['zip']) || isset($_POST['city']) || isset($_POST['country'])) {
+            $addr = sanitize_text_field($_POST['address'] ?? '');
+            $zip_val = sanitize_text_field($_POST['zip'] ?? '');
+            $city_val = sanitize_text_field($_POST['city'] ?? '');
+            $country_for_geo = sanitize_text_field($_POST['country'] ?? 'DE');
+
+            // Only geocode if we have at least some address data
+            if (!empty($addr) || !empty($zip_val) || !empty($city_val)) {
+                $coords = self::geocode_address($addr, $zip_val, $city_val, $country_for_geo);
+                if ($coords) {
+                    $update_data['address_lat'] = $coords['lat'];
+                    $update_data['address_lng'] = $coords['lng'];
+                    $update_format[] = '%f';
+                    $update_format[] = '%f';
+                    ppv_log("📍 [User Settings] Geocoded address for user {$user_id}: {$coords['lat']}, {$coords['lng']}");
+                }
+            }
+        }
+
         // Notification settings
         if (isset($_POST['email_notifications'])) {
             $update_data['email_notifications'] = $_POST['email_notifications'] === 'true' ? 1 : 0;
@@ -883,6 +903,68 @@ class PPV_User_Settings {
         $content = ob_get_clean();
         $content .= do_shortcode('[ppv_bottom_nav]');
         return $content;
+    }
+
+    /**
+     * Geocode address using OpenStreetMap Nominatim
+     * Returns ['lat' => float, 'lng' => float] or null on failure
+     */
+    private static function geocode_address($address, $zip, $city, $country = 'DE') {
+        // Build search query from address parts
+        $parts = array_filter([$address, $zip, $city]);
+        if (empty($parts)) {
+            return null;
+        }
+        $search_query = implode(', ', $parts);
+
+        // Country code mapping
+        $country_codes = [
+            'DE' => 'de', 'HU' => 'hu', 'RO' => 'ro', 'AT' => 'at', 'CH' => 'ch'
+        ];
+        $country_code = $country_codes[$country] ?? 'de';
+
+        // Check cache first
+        $cache_key = 'ppv_geo_' . md5("{$search_query}_{$country_code}");
+        $cached = get_transient($cache_key);
+        if ($cached !== false) {
+            return $cached;
+        }
+
+        // Call OpenStreetMap Nominatim
+        $nominatim_url = 'https://nominatim.openstreetmap.org/search';
+        $response = wp_remote_get(
+            add_query_arg([
+                'q' => $search_query,
+                'countrycodes' => $country_code,
+                'format' => 'json',
+                'limit' => 1,
+                'addressdetails' => 0
+            ], $nominatim_url),
+            [
+                'timeout' => 5,
+                'headers' => ['User-Agent' => 'PunktePass/1.0 (contact@punktepass.de)']
+            ]
+        );
+
+        if (is_wp_error($response)) {
+            ppv_log("❌ [Geocode] Nominatim error: " . $response->get_error_message());
+            return null;
+        }
+
+        $data = json_decode(wp_remote_retrieve_body($response), true);
+        if (empty($data) || !isset($data[0]['lat']) || !isset($data[0]['lon'])) {
+            return null;
+        }
+
+        $result = [
+            'lat' => floatval($data[0]['lat']),
+            'lng' => floatval($data[0]['lon'])
+        ];
+
+        // Cache for 7 days
+        set_transient($cache_key, $result, 7 * DAY_IN_SECONDS);
+
+        return $result;
     }
 
 }
