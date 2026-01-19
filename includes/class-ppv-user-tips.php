@@ -788,13 +788,13 @@ class PPV_User_Tips {
                 return intval($count) === 0;
 
             case 'no_location_data':
-                // Check if user has neither zip nor city (can't calculate distance)
+                // Check if user has no address data for geocoding
                 $user = $wpdb->get_row($wpdb->prepare(
-                    "SELECT zip, city FROM {$wpdb->prefix}ppv_users WHERE id = %d",
+                    "SELECT address, zip, city FROM {$wpdb->prefix}ppv_users WHERE id = %d",
                     $user_id
                 ));
-                // Return true if BOTH zip and city are empty (tip should show)
-                return empty(trim($user->zip ?? '')) && empty(trim($user->city ?? ''));
+                // Return true if ALL address fields are empty (tip should show)
+                return empty(trim($user->address ?? '')) && empty(trim($user->zip ?? '')) && empty(trim($user->city ?? ''));
 
             default:
                 return true;

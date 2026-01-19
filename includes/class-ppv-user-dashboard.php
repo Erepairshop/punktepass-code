@@ -1356,7 +1356,10 @@ public static function render_dashboard() {
 
         $user_id = self::get_safe_user_id();
 
+        ppv_log("📍 [Address Location] user_id={$user_id}");
+
         if ($user_id <= 0) {
+            ppv_log("❌ [Address Location] Not authenticated");
             return new WP_REST_Response([
                 'success' => false,
                 'msg' => 'Not authenticated'
@@ -1365,22 +1368,27 @@ public static function render_dashboard() {
 
         // Get user's address data
         $user = $wpdb->get_row($wpdb->prepare(
-            "SELECT zip, city, country FROM {$wpdb->prefix}ppv_users WHERE id = %d",
+            "SELECT address, zip, city, country FROM {$wpdb->prefix}ppv_users WHERE id = %d",
             $user_id
         ));
 
-        if (!$user || (empty($user->zip) && empty($user->city))) {
+        // Check if user has any address data
+        $address = trim($user->address ?? '');
+        $zip = trim($user->zip ?? '');
+        $city = trim($user->city ?? '');
+        $country = trim($user->country ?? 'DE');
+
+        ppv_log("📍 [Address Location] address='{$address}', zip='{$zip}', city='{$city}', country='{$country}'");
+
+        // No address data at all
+        if (!$user || (empty($address) && empty($zip) && empty($city))) {
+            ppv_log("⚠️ [Address Location] No address data found");
             return new WP_REST_Response([
                 'success' => false,
                 'msg' => 'no_address',
                 'has_address' => false
             ], 200);
         }
-
-        // Build search query for geocoding
-        $zip = trim($user->zip ?? '');
-        $city = trim($user->city ?? '');
-        $country = trim($user->country ?? 'DE');
 
         // Country code mapping
         $country_codes = [
@@ -1392,8 +1400,17 @@ public static function render_dashboard() {
         ];
         $country_code = $country_codes[$country] ?? 'de';
 
-        // Build search query (prefer zip + city, fallback to city only)
-        $search_query = !empty($zip) ? "{$zip} {$city}" : $city;
+        // Build search query (priority: zip+city > city > address)
+        if (!empty($zip) && !empty($city)) {
+            $search_query = "{$zip} {$city}";
+        } elseif (!empty($city)) {
+            $search_query = $city;
+        } elseif (!empty($zip)) {
+            $search_query = $zip;
+        } else {
+            // Use address field as last resort
+            $search_query = $address;
+        }
 
         // Check cache first (geocoding results rarely change)
         $cache_key = 'ppv_geo_' . md5("{$search_query}_{$country_code}");
