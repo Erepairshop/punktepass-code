@@ -285,6 +285,13 @@ class PPV_User_Settings {
             $update_data['zip'] = sanitize_text_field($_POST['zip']);
             $update_format[] = '%s';
         }
+        if (isset($_POST['country'])) {
+            $country_val = sanitize_text_field($_POST['country']);
+            if (in_array($country_val, ['DE', 'HU', 'RO', 'AT', 'CH'])) {
+                $update_data['country'] = $country_val;
+                $update_format[] = '%s';
+            }
+        }
 
         // Notification settings
         if (isset($_POST['email_notifications'])) {
@@ -504,6 +511,7 @@ class PPV_User_Settings {
         $address = $user->address ?? '';
         $city = $user->city ?? '';
         $zip = $user->zip ?? '';
+        $country = $user->country ?? 'DE';
 
         ob_start(); ?>
         <div class="ppv-settings-wrapper">
@@ -554,6 +562,15 @@ class PPV_User_Settings {
                             <input type="text" name="city" value="<?php echo esc_attr($city); ?>" placeholder="<?php echo self::t('city_placeholder'); ?>">
                         </div>
                     </div>
+
+                    <label><?php echo self::t('country'); ?></label>
+                    <select name="country" class="ppv-select">
+                        <option value="DE" <?php selected($country, 'DE'); ?>>🇩🇪 Deutschland</option>
+                        <option value="AT" <?php selected($country, 'AT'); ?>>🇦🇹 Österreich</option>
+                        <option value="CH" <?php selected($country, 'CH'); ?>>🇨🇭 Schweiz</option>
+                        <option value="HU" <?php selected($country, 'HU'); ?>>🇭🇺 Magyarország</option>
+                        <option value="RO" <?php selected($country, 'RO'); ?>>🇷🇴 România</option>
+                    </select>
                 </div>
 
                 <!-- Notifications -->
