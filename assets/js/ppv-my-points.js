@@ -64,6 +64,9 @@
       stats_this_year: "Dieses Jahr",
       stats_streak: "Aktuelle Serie",
       stats_days: "Tage",
+      // Load more
+      load_more: "Mehr anzeigen",
+      more_stores: "weitere",
     },
     hu: {
       title: "Pontjaim",
@@ -104,6 +107,9 @@
       stats_this_year: "Idén",
       stats_streak: "Aktuális sorozat",
       stats_days: "nap",
+      // Load more
+      load_more: "Tovább",
+      more_stores: "további",
     },
     ro: {
       title: "Punctele mele",
@@ -144,6 +150,9 @@
       stats_this_year: "Acest an",
       stats_streak: "Șirul actual",
       stats_days: "zile",
+      // Load more
+      load_more: "Mai multe",
+      more_stores: "în plus",
     }
   };
 
@@ -920,44 +929,98 @@
   }
   
   /** ============================
- * BUILD REWARDS BY STORE HTML
+ * BUILD REWARDS BY STORE HTML (5 at a time with Load More)
  * ============================ */
 function buildRewardsByStore(stores, l) {
   if (!stores || stores.length === 0) {
     return `<p style="text-align:center;color:#999;padding:20px;">${l.no_rewards || 'Még nincs jutalom'}</p>`;
   }
 
-  let html = '';
-  stores.forEach(store => {
+  const ITEMS_PER_PAGE = 5;
+  const uniqueId = 'rewards-' + Date.now();
+
+  // Build all reward cards
+  let cardsHtml = '';
+  stores.forEach((store, index) => {
     const achieved = store.achieved;
     const statusClass = achieved ? 'ppv-reward-achieved' : 'ppv-reward-progress';
     const statusIcon = achieved ? '🎉' : '🎯';
     const statusText = achieved ? (l.reward_achieved || 'Einlösbar!') : `${store.remaining} ${l.points_label || 'Punkte'} ${l.points_missing || 'fehlen noch'}`;
-    
-    html += `
-      <div class="ppv-reward-card ${statusClass}" data-store-id="${store.store_id}">
+    const hiddenClass = index >= ITEMS_PER_PAGE ? 'ppv-reward-hidden' : '';
+
+    cardsHtml += `
+      <div class="ppv-reward-card ${statusClass} ${hiddenClass}" data-store-id="${store.store_id}" data-index="${index}" style="${index >= ITEMS_PER_PAGE ? 'display:none;' : ''}">
         <div class="reward-header">
           <h4>${statusIcon} ${escapeHtml(store.store_name)}</h4>
-          <span class="reward-points">${store.current_points} / ${store.next_goal}</span>
+          <span class="reward-points">${store.current_points} / ${store.next_goal || '?'}</span>
         </div>
         <div class="reward-progress">
-          <div class="progress-bar">
-            <div class="progress-fill" style="width:${store.progress_percent}%;"></div>
+          <div class="progress-bar" style="background: #e2e8f0; border-radius: 4px; height: 8px; overflow: hidden;">
+            <div class="progress-fill" style="width:${store.progress_percent || 0}%; height: 100%; background: linear-gradient(90deg, #667eea, #764ba2); border-radius: 4px;"></div>
           </div>
-          <span class="progress-text">${store.progress_percent}%</span>
+          <span class="progress-text" style="font-size: 12px; color: #64748b;">${store.progress_percent || 0}%</span>
         </div>
         <div class="reward-status">
-          ${achieved 
-            ? `<button class="ppv-btn-claim" onclick="claimReward(${store.store_id})">${l.claim_reward || 'Beváltás'}</button>` 
-            : `<span class="remaining">${statusText}</span>`
+          ${achieved
+            ? `<button class="ppv-btn-claim" onclick="claimReward(${store.store_id})" style="background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer;">${l.claim_reward || 'Beváltás'}</button>`
+            : `<span class="remaining" style="font-size: 13px; color: #64748b;">${statusText}</span>`
           }
         </div>
       </div>
     `;
   });
-  
-  return html;
+
+  // Add "Load More" button if needed
+  const showLoadMore = stores.length > ITEMS_PER_PAGE;
+  const loadMoreBtn = showLoadMore ? `
+    <button id="${uniqueId}-loadmore" class="ppv-load-more-btn" onclick="loadMoreRewards('${uniqueId}', ${ITEMS_PER_PAGE})"
+            style="display: block; width: 100%; padding: 12px; margin-top: 12px; background: rgba(102, 126, 234, 0.1); border: none; border-radius: 8px; color: #667eea; font-weight: 600; cursor: pointer;">
+      ${l.load_more || 'Tovább'} (${stores.length - ITEMS_PER_PAGE} ${l.more_stores || 'további'})
+    </button>
+  ` : '';
+
+  return `
+    <div id="${uniqueId}" class="ppv-rewards-list" data-shown="${ITEMS_PER_PAGE}" data-total="${stores.length}">
+      ${cardsHtml}
+      ${loadMoreBtn}
+    </div>
+  `;
 }
+
+// Load more rewards function
+window.loadMoreRewards = function(containerId, itemsPerPage) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  const shown = parseInt(container.dataset.shown) || itemsPerPage;
+  const total = parseInt(container.dataset.total) || 0;
+  const newShown = shown + itemsPerPage;
+
+  // Show next batch
+  const cards = container.querySelectorAll('.ppv-reward-card');
+  cards.forEach((card, index) => {
+    if (index < newShown) {
+      card.style.display = '';
+      card.classList.remove('ppv-reward-hidden');
+    }
+  });
+
+  container.dataset.shown = newShown;
+
+  // Hide button if all shown
+  const btn = document.getElementById(containerId + '-loadmore');
+  if (btn) {
+    if (newShown >= total) {
+      btn.style.display = 'none';
+    } else {
+      const remaining = total - newShown;
+      btn.innerHTML = `Tovább (${remaining} további)`;
+    }
+  }
+
+  // Haptic feedback
+  if (window.ppvHaptic) window.ppvHaptic('tap');
+};
 
 /** ============================
  * CLAIM REWARD (REDIRECT)
