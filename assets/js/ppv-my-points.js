@@ -957,8 +957,10 @@ function buildRewardsByStore(stores, l) {
     cardsHtml += `
       <div class="ppv-reward-card ${statusClass} ${hiddenClass}" data-store-id="${store.store_id}" data-index="${index}" style="${index >= ITEMS_PER_PAGE ? 'display:none;' : ''}">
         <div class="reward-header">
-          <h4>${statusIcon} ${escapeHtml(companyName || storeName)}</h4>
-          ${storeName && companyName ? `<p style="font-size: 12px; color: #64748b; margin: 2px 0 0 0;">${escapeHtml(storeName)}</p>` : ''}
+          <div class="reward-store-names" style="flex: 1;">
+            <h4 style="margin: 0;">${statusIcon} ${escapeHtml(companyName || storeName)}</h4>
+            ${storeName && companyName ? `<p style="font-size: 12px; color: #64748b; margin: 2px 0 0 0;">${escapeHtml(storeName)}</p>` : ''}
+          </div>
           <span class="reward-points">${store.current_points} / ${store.next_goal || '?'}</span>
         </div>
         <div class="reward-progress">
