@@ -455,7 +455,7 @@ class PPV_Belohnungen {
                                     <?php endif; ?>
                                     <div class="ppv-rw-store-info">
                                         <h3><?php echo esc_html($store->store_name ?: $store->store_name_short); ?></h3>
-                                        <?php if (!empty($store->store_name_short) && $store->store_name_short !== $store->store_name): ?>
+                                        <?php if (!empty($store->store_name_short) && !empty($store->store_name)): ?>
                                             <p style="font-size: 0.85em; color: #666; margin: 2px 0 0 0;"><?php echo esc_html($store->store_name_short); ?></p>
                                         <?php endif; ?>
                                         <span class="ppv-rw-store-points">
