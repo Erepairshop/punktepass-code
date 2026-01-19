@@ -628,8 +628,9 @@
         points_needed: 'Scans noch nötig',
         max_level: 'Maximales Level erreicht!',
         lifetime_points: 'Scans bei',
-        all_shops_info: 'VIP-Level wird pro Geschäft berechnet',
+        all_shops_info: 'VIP-Boni gelten nur in dem Geschäft, wo du sie erreicht hast',
         vip_not_everywhere: 'Nicht alle Geschäfte bieten VIP-Boni an',
+        how_vip_works: 'Je öfter du bei einem Geschäft scannst, desto höher dein VIP-Level dort',
       },
       hu: {
         your_level: 'Legjobb VIP szinted',
@@ -637,8 +638,9 @@
         points_needed: 'scan még szükséges',
         max_level: 'Maximális szint elérve!',
         lifetime_points: 'Scan itt:',
-        all_shops_info: 'A VIP szint üzletenként számítódik',
+        all_shops_info: 'A VIP bónuszok csak abban az üzletben érvényesek, ahol elérted',
         vip_not_everywhere: 'Nem minden üzlet kínál VIP bónuszokat',
+        how_vip_works: 'Minél többet szkennelsz egy üzletben, annál magasabb a VIP szinted ott',
       },
       ro: {
         your_level: 'Cel mai bun nivel VIP',
@@ -646,8 +648,9 @@
         points_needed: 'scanări mai necesare',
         max_level: 'Nivel maxim atins!',
         lifetime_points: 'Scanări la',
-        all_shops_info: 'Nivelul VIP se calculează per magazin',
+        all_shops_info: 'Bonusurile VIP sunt valabile doar în magazinul unde le-ai obținut',
         vip_not_everywhere: 'Nu toate magazinele oferă bonusuri VIP',
+        how_vip_works: 'Cu cât scanezi mai mult la un magazin, cu atât nivelul VIP e mai mare acolo',
       }
     };
 
@@ -740,6 +743,10 @@
         </div>
 
         <!-- Info text -->
+        <p class="ppv-tier-info-text" style="margin-bottom: 6px;">
+          <i class="ri-lightbulb-line"></i>
+          ${t.how_vip_works}
+        </p>
         <p class="ppv-tier-info-text">
           <i class="ri-information-line"></i>
           ${t.all_shops_info}
