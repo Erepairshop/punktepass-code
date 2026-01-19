@@ -75,6 +75,9 @@ class PPV_Belohnungen {
                 'qr_loading' => 'QR-Code wird geladen...',
                 'qr_error' => 'Fehler beim Laden des QR-Codes',
                 'points_collected' => 'Du hast Punkte gesammelt! Zeige deinen QR-Code im Geschäft.',
+                'points_per_scan' => 'Punkte pro Scan',
+                'scans_needed' => 'Besuche fehlen',
+                'scan_singular' => 'Besuch fehlt',
             ],
             'hu' => [
                 'page_title' => 'Jutalmak',
@@ -109,6 +112,9 @@ class PPV_Belohnungen {
                 'qr_loading' => 'QR-kód betöltése...',
                 'qr_error' => 'Hiba a QR-kód betöltésekor',
                 'points_collected' => 'Vannak pontjaid! Mutasd meg a QR-kódod az üzletben.',
+                'points_per_scan' => 'pont/szkennelés',
+                'scans_needed' => 'alkalom hiányzik',
+                'scan_singular' => 'alkalom hiányzik',
             ],
             'ro' => [
                 'page_title' => 'Premiile Mele',
@@ -143,6 +149,9 @@ class PPV_Belohnungen {
                 'qr_loading' => 'Se încarcă codul QR...',
                 'qr_error' => 'Eroare la încărcarea codului QR',
                 'points_collected' => 'Ai puncte colectate! Arată codul QR în magazin.',
+                'points_per_scan' => 'puncte/scanare',
+                'scans_needed' => 'vizite lipsesc',
+                'scan_singular' => 'vizită lipsește',
             ],
         ];
         return $labels[$lang] ?? $labels['de'];
@@ -291,7 +300,7 @@ class PPV_Belohnungen {
             $query_args = array_merge($active_store_ids, [$today, $today]);
 
             $all_rewards = $wpdb->get_results($wpdb->prepare("
-                SELECT id, store_id, title, description, required_points, is_campaign, start_date, end_date
+                SELECT id, store_id, title, description, required_points, points_given, is_campaign, start_date, end_date
                 FROM {$wpdb->prefix}ppv_rewards
                 WHERE store_id IN ($placeholders) AND (active = 1 OR active IS NULL)
                 AND (
@@ -460,9 +469,12 @@ class PPV_Belohnungen {
                                     <?php foreach ($rewards as $reward):
                                         $user_store_points = (int)$store->points;
                                         $required = (int)$reward->required_points;
+                                        $points_per_scan = (int)($reward->points_given ?? 1);
+                                        if ($points_per_scan < 1) $points_per_scan = 1;
                                         $progress = min(100, ($user_store_points / max(1, $required)) * 100);
                                         $is_ready = $user_store_points >= $required;
                                         $missing = max(0, $required - $user_store_points);
+                                        $scans_needed = $is_ready ? 0 : (int)ceil($missing / $points_per_scan);
                                         $is_campaign = !empty($reward->is_campaign);
                                         $end_date_str = $reward->end_date ? date('d.m', strtotime($reward->end_date)) : null;
                                     ?>
@@ -491,6 +503,12 @@ class PPV_Belohnungen {
                                             <div class="ppv-rw-progress">
                                                 <div class="ppv-rw-progress-bar" style="width: <?php echo intval($progress); ?>%"></div>
                                             </div>
+                                            <?php if (!$is_ready): ?>
+                                            <div class="ppv-rw-scan-info" style="display: flex; justify-content: space-between; font-size: 12px; color: #64748b; margin-top: 6px; padding: 0 2px;">
+                                                <span><i class="ri-qr-scan-line"></i> <?php echo $points_per_scan; ?> <?php echo esc_html($L['points_per_scan']); ?></span>
+                                                <span><i class="ri-walk-line"></i> <?php echo $scans_needed; ?> <?php echo esc_html($scans_needed === 1 ? $L['scan_singular'] : $L['scans_needed']); ?></span>
+                                            </div>
+                                            <?php endif; ?>
                                         </div>
                                     <?php endforeach; ?>
                                 <?php else: ?>

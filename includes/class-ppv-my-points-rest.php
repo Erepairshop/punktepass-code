@@ -343,8 +343,9 @@ if (class_exists('PPV_Lang')) {
         $all_rewards_map = [];
 
         if (!empty($store_ids_str)) {
+            // Include points_given for calculating scans needed
             $all_rewards_raw = $wpdb->get_results("
-                SELECT store_id, required_points
+                SELECT store_id, required_points, points_given
                 FROM {$prefix}ppv_rewards
                 WHERE store_id IN ({$store_ids_str})
                 AND required_points > 0
