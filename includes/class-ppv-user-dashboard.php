@@ -1239,14 +1239,26 @@ public static function render_dashboard() {
     if (!empty($stores_with_points)) {
         $store_ids = array_map(fn($s) => (int)$s->store_id, $stores_with_points);
         $store_ids_str = implode(',', array_filter($store_ids));
+        $today = date('Y-m-d');
 
         if (!empty($store_ids_str)) {
-            $all_rewards_raw = $wpdb->get_results("
+            // Same query as belohnungen.php - include active check and campaign dates
+            $all_rewards_raw = $wpdb->get_results($wpdb->prepare("
                 SELECT store_id, required_points
                 FROM {$prefix}ppv_rewards
-                WHERE store_id IN ({$store_ids_str}) AND required_points > 0
+                WHERE store_id IN ({$store_ids_str})
+                AND required_points > 0
+                AND (active = 1 OR active IS NULL)
+                AND (
+                    is_campaign = 0 OR is_campaign IS NULL
+                    OR (
+                        is_campaign = 1
+                        AND (start_date IS NULL OR start_date <= %s)
+                        AND (end_date IS NULL OR end_date >= %s)
+                    )
+                )
                 ORDER BY store_id, required_points ASC
-            ");
+            ", $today, $today));
 
             // Group by store_id
             foreach ($all_rewards_raw as $r) {
