@@ -94,13 +94,13 @@ class PPV_Signup {
             }
         }
 
-        // Google Fonts - Inter
-        wp_enqueue_style(
-            'ppv-inter-font',
-            'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
-            [],
-            null
-        );
+        // Google Fonts - Inter (DISABLED for performance - uses system fonts)
+        // wp_enqueue_style(
+        //     'ppv-inter-font',
+        //     'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
+        //     [],
+        //     null
+        // );
 
         // Use same CSS as login
         wp_enqueue_style(

@@ -273,14 +273,16 @@ class PPV_Performance {
 
     /**
      * Add preconnect hints for faster external resource loading
+     * Note: Google Fonts preconnect DISABLED for performance
      */
     public static function add_preconnect() {
         ?>
         <!-- Preconnect to external resources -->
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <!-- Google Fonts preconnect DISABLED for performance -->
+        <!-- <link rel="preconnect" href="https://fonts.googleapis.com"> -->
+        <!-- <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin> -->
         <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-        <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+        <!-- <link rel="dns-prefetch" href="https://fonts.googleapis.com"> -->
         <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
         <?php
     }

@@ -39,8 +39,9 @@ class PPV_Login {
 
         ?>
         <!-- ⚡ PERFORMANCE: Preconnect to external domains -->
-        <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <!-- Google Fonts preconnect DISABLED for performance -->
+        <!-- <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin> -->
+        <!-- <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin> -->
         <link rel="preconnect" href="https://accounts.google.com" crossorigin>
 
         <!-- ⚡ PERFORMANCE: Preload critical assets -->
@@ -60,9 +61,9 @@ class PPV_Login {
             @media(max-width:640px){.ppv-landing-header{padding:8px 0;padding-top:calc(8px + var(--safe-area-top))}.ppv-header-content{gap:8px;padding:0 12px}.ppv-lang-switcher{padding:2px}.ppv-lang-btn{padding:4px 8px;font-size:12px}}
         </style>
 
-        <!-- Google Fonts - async loading to not block render -->
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'">
-        <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"></noscript>
+        <!-- Google Fonts DISABLED for performance - uses system fonts instead -->
+        <!-- <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'"> -->
+        <!-- <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"></noscript> -->
 
         <!-- Login CSS - Smart versioning -->
         <link rel="stylesheet" href="<?php echo PPV_PLUGIN_URL; ?>assets/css/ppv-login-light.css?ver=<?php echo PPV_Core::asset_version(PPV_PLUGIN_DIR . 'assets/css/ppv-login-light.css'); ?>" type="text/css" media="all" id="ppv-login-main-css">

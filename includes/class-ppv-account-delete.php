@@ -27,13 +27,13 @@ class PPV_Account_Delete {
             return;
         }
 
-        // Google Fonts - Inter
-        wp_enqueue_style(
-            'ppv-inter-font',
-            'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
-            [],
-            null
-        );
+        // Google Fonts - Inter (DISABLED for performance - uses system fonts)
+        // wp_enqueue_style(
+        //     'ppv-inter-font',
+        //     'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
+        //     [],
+        //     null
+        // );
 
         // 🔹 ALWAYS USE LIGHT CSS (contains all dark mode styles via body.ppv-dark selectors)
         wp_enqueue_style(
