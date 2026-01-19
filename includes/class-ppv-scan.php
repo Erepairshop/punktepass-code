@@ -5,7 +5,7 @@ class PPV_Scan {
 
     public static function hooks() {
         add_shortcode('ppv_scan_page', [__CLASS__, 'render_scan_page']);
-        add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
+        // add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']); // Disabled - CSS not used
         add_action('wp_ajax_ppv_auto_add_point', [__CLASS__, 'ajax_auto_add_point']);
         // 🔒 Removed wp_ajax_nopriv - authentication required for point operations
     }

@@ -7,7 +7,7 @@ class PPV_Bonus_Days {
         add_shortcode('ppv_bonus_days', [__CLASS__, 'render_bonus_page']);
         add_action('wp_ajax_ppv_save_bonus_day', [__CLASS__, 'ajax_save_bonus_day']);
         add_action('wp_ajax_ppv_delete_bonus_day', [__CLASS__, 'ajax_delete_bonus_day']);
-        add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
+        // add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']); // Disabled - CSS not used
     }
 
     /** ============================================================

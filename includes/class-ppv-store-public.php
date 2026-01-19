@@ -6,7 +6,7 @@ class PPV_Store_Public {
     /** 🔹 Hook regisztráció */
     public static function hooks() {
         add_shortcode('ppv_store_public', [__CLASS__, 'render_public_store']);
-        add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
+        // add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']); // Disabled - CSS not used
     }
 
     /** 🔹 CSS/JS betöltése */
