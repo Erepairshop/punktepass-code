@@ -23,17 +23,36 @@
   text-align: center;
   text-decoration: none;
   color: #667eea;
-  font-size: 26px;
+  font-size: 24px;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
+  gap: 2px;
   transition: all 0.25s ease;
   cursor: pointer;
+  min-width: 0;
 }
 
 .ppv-bottom-nav .nav-item i {
-  font-size: 26px;
+  font-size: 24px;
   transition: transform 0.25s ease;
+}
+
+/* Label - hidden by default, shown only for active */
+.ppv-bottom-nav.ppv-nav-labeled .nav-item span {
+  display: none;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  line-height: 1;
+}
+
+.ppv-bottom-nav.ppv-nav-labeled .nav-item.active span {
+  display: block;
 }
 
 /* Hover */
@@ -44,8 +63,16 @@
 /* Active */
 .ppv-bottom-nav .nav-item.active {
   color: #764ba2;
-  transform: scale(1.18);
-  text-shadow: 0 0 10px rgba(102,126,234,0.3);
+}
+
+/* Active with label - subtle highlight instead of scale */
+.ppv-bottom-nav.ppv-nav-labeled .nav-item.active {
+  color: #764ba2;
+  transform: none;
+}
+
+.ppv-bottom-nav.ppv-nav-labeled .nav-item.active i {
+  transform: scale(1.1);
 }
 
 /* Touch feedback */
@@ -64,7 +91,9 @@ body.ppv-dark .ppv-bottom-nav .nav-item {
 }
 body.ppv-dark .ppv-bottom-nav .nav-item.active {
   color: #00eaff;
-  text-shadow: 0 0 10px rgba(0,234,255,0.5);
+}
+body.ppv-dark .ppv-bottom-nav.ppv-nav-labeled .nav-item.active {
+  text-shadow: none;
 }
 body.ppv-dark .ppv-bottom-nav .nav-item:hover {
   color: #00eaff;
