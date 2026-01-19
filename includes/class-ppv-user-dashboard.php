@@ -1368,7 +1368,7 @@ public static function render_dashboard() {
 
         // Get user's address data
         $user = $wpdb->get_row($wpdb->prepare(
-            "SELECT address, zip, city, country FROM {$wpdb->prefix}ppv_users WHERE id = %d",
+            "SELECT address, zip, city FROM {$wpdb->prefix}ppv_users WHERE id = %d",
             $user_id
         ));
 
@@ -1376,7 +1376,7 @@ public static function render_dashboard() {
         $address = trim($user->address ?? '');
         $zip = trim($user->zip ?? '');
         $city = trim($user->city ?? '');
-        $country = trim($user->country ?? 'DE');
+        $country = 'DE'; // Default country for geocoding
 
         ppv_log("📍 [Address Location] address='{$address}', zip='{$zip}', city='{$city}', country='{$country}'");
 
