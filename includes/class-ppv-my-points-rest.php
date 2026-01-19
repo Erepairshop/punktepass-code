@@ -300,7 +300,7 @@ if (class_exists('PPV_Lang')) {
         $prefix = $wpdb->prefix;
         $today = date('Y-m-d');
 
-        // 1️⃣ Get ALL active stores that have rewards
+        // 1️⃣ Get ALL active stores that have rewards (including free products with required_points = 0)
         $all_stores_with_rewards = $wpdb->get_results("
             SELECT DISTINCT
                 s.id as store_id,
@@ -308,7 +308,7 @@ if (class_exists('PPV_Lang')) {
             FROM {$prefix}ppv_stores s
             INNER JOIN {$prefix}ppv_rewards r ON r.store_id = s.id
             WHERE s.active = 1
-            AND r.required_points > 0
+            AND r.required_points >= 0
             AND (r.active = 1 OR r.active IS NULL)
             AND (
                 r.is_campaign = 0 OR r.is_campaign IS NULL
@@ -343,12 +343,12 @@ if (class_exists('PPV_Lang')) {
         $all_rewards_map = [];
 
         if (!empty($store_ids_str)) {
-            // Include points_given for calculating scans needed
+            // Include points_given for calculating scans needed (>= 0 to include free products)
             $all_rewards_raw = $wpdb->get_results("
                 SELECT store_id, required_points, points_given
                 FROM {$prefix}ppv_rewards
                 WHERE store_id IN ({$store_ids_str})
-                AND required_points > 0
+                AND required_points >= 0
                 AND (active = 1 OR active IS NULL)
                 AND (
                     is_campaign = 0 OR is_campaign IS NULL

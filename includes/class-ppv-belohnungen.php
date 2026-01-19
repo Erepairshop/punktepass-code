@@ -78,6 +78,7 @@ class PPV_Belohnungen {
                 'points_per_scan' => 'Punkte pro Scan',
                 'scans_needed' => 'Besuche fehlen',
                 'scan_singular' => 'Besuch fehlt',
+                'free_product' => 'Gratis',
             ],
             'hu' => [
                 'page_title' => 'Jutalmak',
@@ -115,6 +116,7 @@ class PPV_Belohnungen {
                 'points_per_scan' => 'pont/szkennelés',
                 'scans_needed' => 'alkalom hiányzik',
                 'scan_singular' => 'alkalom hiányzik',
+                'free_product' => 'Ingyenes',
             ],
             'ro' => [
                 'page_title' => 'Premiile Mele',
@@ -152,6 +154,7 @@ class PPV_Belohnungen {
                 'points_per_scan' => 'puncte/scanare',
                 'scans_needed' => 'vizite lipsesc',
                 'scan_singular' => 'vizită lipsește',
+                'free_product' => 'Gratuit',
             ],
         ];
         return $labels[$lang] ?? $labels['de'];
@@ -300,7 +303,7 @@ class PPV_Belohnungen {
             $query_args = array_merge($active_store_ids, [$today, $today]);
 
             $all_rewards = $wpdb->get_results($wpdb->prepare("
-                SELECT id, store_id, title, description, required_points, points_given, is_campaign, start_date, end_date
+                SELECT id, store_id, title, description, required_points, points_given, is_campaign, start_date, end_date, action_type, action_value
                 FROM {$wpdb->prefix}ppv_rewards
                 WHERE store_id IN ($placeholders) AND (active = 1 OR active IS NULL)
                 AND (
@@ -476,9 +479,15 @@ class PPV_Belohnungen {
                                         $missing = max(0, $required - $user_store_points);
                                         $scans_needed = $is_ready ? 0 : (int)ceil($missing / $points_per_scan);
                                         $is_campaign = !empty($reward->is_campaign);
+                                        $is_free_product = ($reward->action_type ?? '') === 'free_product';
                                         $end_date_str = $reward->end_date ? date('d.m', strtotime($reward->end_date)) : null;
                                     ?>
-                                        <div class="ppv-rw-reward-item <?php echo $is_ready ? 'is-ready' : 'is-locked'; ?> <?php echo $is_campaign ? 'is-campaign' : ''; ?>">
+                                        <div class="ppv-rw-reward-item <?php echo $is_ready ? 'is-ready' : 'is-locked'; ?> <?php echo $is_campaign ? 'is-campaign' : ''; ?> <?php echo $is_free_product ? 'is-free-product' : ''; ?>">
+                                            <?php if ($is_free_product): ?>
+                                                <div class="ppv-rw-free-badge" style="position: absolute; top: 8px; right: 8px; background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600; text-transform: uppercase;">
+                                                    <i class="ri-gift-fill"></i> <?php echo esc_html($L['free_product']); ?>
+                                                </div>
+                                            <?php endif; ?>
                                             <?php if ($is_campaign): ?>
                                                 <div class="ppv-rw-campaign-badge">
                                                     <i class="ri-calendar-event-line"></i>
