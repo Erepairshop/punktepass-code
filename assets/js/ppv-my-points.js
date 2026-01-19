@@ -58,6 +58,12 @@
       reward_achieved: "Einlösbar!",
       claim_reward: "Einlösen",
       points_missing: "fehlen noch",
+      // Statistics
+      stats_this_week: "Diese Woche",
+      stats_this_month: "Dieser Monat",
+      stats_this_year: "Dieses Jahr",
+      stats_streak: "Aktuelle Serie",
+      stats_days: "Tage",
     },
     hu: {
       title: "Pontjaim",
@@ -92,6 +98,12 @@
       reward_achieved: "Beváltható!",
       claim_reward: "Beváltás",
       points_missing: "hiányzik",
+      // Statistics
+      stats_this_week: "Ezen a héten",
+      stats_this_month: "Ebben a hónapban",
+      stats_this_year: "Idén",
+      stats_streak: "Aktuális sorozat",
+      stats_days: "nap",
     },
     ro: {
       title: "Punctele mele",
@@ -126,6 +138,12 @@
       reward_achieved: "Disponibil!",
       claim_reward: "Revendică",
       points_missing: "lipsesc",
+      // Statistics
+      stats_this_week: "Această săptămână",
+      stats_this_month: "Această lună",
+      stats_this_year: "Acest an",
+      stats_streak: "Șirul actual",
+      stats_days: "zile",
     }
   };
 
@@ -368,37 +386,33 @@
     headers.append("X-PPV-Lang", lang);
     if (token) headers.append("Authorization", "Bearer " + token);
 
-    // ✅ NE küldjünk WordPress nonce-t!
-    // A WordPress REST cookie authentication middleware automatikusan fut ha van X-WP-Nonce header,
-    // és 403-at ad vissza invalid nonce esetén, MÉG A permission callback előtt!
-    // Mivel saját session-based permission callback-ünk van (check_mypoints_permission),
-    // nincs szükség WordPress nonce-ra.
     log('🔍 [fetchPointsFromServer] NOT sending X-WP-Nonce (using session-based auth instead)');
 
     const apiUrl = window.ppv_mypoints?.api_url ||
                    `${location.origin}/wp-json/ppv/v1/mypoints`;
 
     log('🔍 [fetchPointsFromServer] API URL:', apiUrl);
-    log('🔍 [fetchPointsFromServer] Using fallback URL:', !window.ppv_mypoints?.api_url);
 
-    log('📡 [fetchPointsFromServer] Making fetch request...');
-    const res = await fetch(apiUrl, {
-      method: "GET",
-      headers,
-      credentials: "include",
-      cache: "no-store",
-    });
+    // Fetch mypoints and analytics summary in parallel
+    log('📡 [fetchPointsFromServer] Making parallel fetch requests...');
+    const [res, summaryRes] = await Promise.all([
+      fetch(apiUrl, {
+        method: "GET",
+        headers,
+        credentials: "include",
+        cache: "no-store",
+      }),
+      fetch('/wp-json/ppv/v1/analytics/summary', {
+        headers: { 'X-PPV-Lang': lang },
+        credentials: 'include'
+      }).catch(() => null) // Don't fail if summary fetch fails
+    ]);
 
     log('🔍 [fetchPointsFromServer] Response status:', res.status, res.statusText);
-    log('🔍 [fetchPointsFromServer] Response headers:');
-    res.headers.forEach((value, key) => {
-      log(`    - ${key}: ${value}`);
-    });
 
     if (!res.ok) {
       error('❌ [fetchPointsFromServer] HTTP error:', res.status);
 
-      // Try to get error body
       let errorBody = '';
       try {
         errorBody = await res.text();
@@ -415,6 +429,24 @@
     }
 
     const jsonData = await res.json();
+
+    // Parse summary data if available
+    let summaryData = null;
+    if (summaryRes && summaryRes.ok) {
+      try {
+        summaryData = await summaryRes.json();
+        log('✅ [fetchPointsFromServer] Summary data loaded');
+      } catch (e) {
+        warn('⚠️ [fetchPointsFromServer] Could not parse summary');
+      }
+    }
+
+    // Merge summary into response
+    if (summaryData?.summary) {
+      jsonData.data = jsonData.data || {};
+      jsonData.data.stats = summaryData.summary;
+    }
+
     log('✅ [fetchPointsFromServer] Success! Data:', jsonData);
     log('🔍 [fetchPointsFromServer] ========== END ==========');
     return jsonData;
@@ -428,16 +460,7 @@
 
     const d = json.data || {};
     const total = d.total || 0;
-    const next = d.remaining || 0;
-    const progress = d.next_goal ? Math.min(100, ((d.next_goal - next) / d.next_goal) * 100) : 0;
-
-    // Tab labels
-    const tabLabels = {
-      de: { points: 'Meine Punkte', analytics: 'Analytics' },
-      hu: { points: 'Pontjaim', analytics: 'Statisztika' },
-      ro: { points: 'Punctele mele', analytics: 'Analiză' }
-    };
-    const tabs = tabLabels[lang] || tabLabels.de;
+    const stats = d.stats || {};
 
     // Offline banner
     const offlineBanner = isOnline ? '' : `
@@ -447,7 +470,7 @@
       </div>
     `;
 
-    // Build HTML with TABS
+    // Build HTML (no tabs)
     let html = offlineBanner + `
       <div class="ppv-dashboard-netto animate-in">
         <div class="ppv-dashboard-inner">
@@ -469,60 +492,61 @@
           <!-- 🎁 REFERRAL PROGRAM SECTION -->
           ${buildReferralHtml(d.referral, l, lang)}
 
-          <!-- 📑 TABS NAVIGATION -->
-          <div class="ppv-mypoints-tabs">
-            <button class="ppv-mypoints-tab active" data-tab="points">
-              <i class="ri-coins-fill"></i> ${tabs.points}
-            </button>
-            <button class="ppv-mypoints-tab" data-tab="analytics">
-              <i class="ri-bar-chart-2-fill"></i> ${tabs.analytics}
-            </button>
-          </div>
-
-          <!-- 📑 TAB CONTENT: POINTS -->
-          <div class="ppv-mypoints-tab-content active" id="ppv-tab-points">
-            <!-- STATS GRID -->
-            <div class="ppv-stats-grid">
-              <div class="ppv-stat-card">
-                <i class="ri-line-chart-fill"></i>
-                <div class="label">${l.avg}</div>
-                <div class="value">${d.avg || 0}</div>
-              </div>
-              <div class="ppv-stat-card">
-                <i class="ri-calendar-event-fill"></i>
-                <div class="label">${l.best_day}</div>
-                <div class="value">${d.top_day ? d.top_day.total + " • " + d.top_day.day : "-"}</div>
-              </div>
-              <div class="ppv-stat-card">
-                <i class="ri-store-2-fill"></i>
-                <div class="label">${l.top_store}</div>
-                <div class="value">${d.top_store ? d.top_store.store_name + " (" + d.top_store.total + ")" : "-"}</div>
+          <!-- 📊 STATISTICS SUMMARY -->
+          <div class="ppv-stats-summary">
+            <div class="ppv-summary-card">
+              <div class="card-icon"><i class="ri-calendar-event-fill"></i></div>
+              <div class="card-content">
+                <div class="label">${l.stats_this_week}</div>
+                <div class="value">${stats.week_points || 0}</div>
+                <div class="unit">${l.points_label}</div>
               </div>
             </div>
-
-            <!-- REWARDS BY STORE -->
-            <div class="ppv-rewards-by-store">
-              <h3><i class="ri-store-2-fill"></i> ${l.rewards_by_store_title || 'Jutalmak boltok szerint'}</h3>
-              ${buildRewardsByStore(d.rewards_by_store || [], l)}
-            </div>
-
-            <!-- TOP 3 -->
-            <div class="ppv-top3">
-              <h3><i class="ri-trophy-fill"></i> ${l.top3}</h3>
-              <div class="ppv-top3-grid">
-                ${buildTop3Html(d.top3 || [], l)}
+            <div class="ppv-summary-card">
+              <div class="card-icon"><i class="ri-calendar-2-fill"></i></div>
+              <div class="card-content">
+                <div class="label">${l.stats_this_month}</div>
+                <div class="value">${stats.month_points || 0}</div>
+                <div class="unit">${l.points_label}</div>
               </div>
             </div>
-
-            <!-- RECENT ACTIVITY (Last 5) -->
-            <div class="ppv-points-list">
-              <h3><i class="ri-time-fill"></i> ${l.recent}</h3>
-              ${buildEntriesHtml((d.entries || []).slice(0, 5), l)}
+            <div class="ppv-summary-card">
+              <div class="card-icon"><i class="ri-calendar-check-fill"></i></div>
+              <div class="card-content">
+                <div class="label">${l.stats_this_year}</div>
+                <div class="value">${stats.year_points || 0}</div>
+                <div class="unit">${l.points_label}</div>
+              </div>
+            </div>
+            <div class="ppv-summary-card">
+              <div class="card-icon"><i class="ri-fire-fill"></i></div>
+              <div class="card-content">
+                <div class="label">${l.stats_streak}</div>
+                <div class="value">${stats.current_streak || 0}</div>
+                <div class="unit">${l.stats_days}</div>
+              </div>
             </div>
           </div>
 
-          <!-- 📑 TAB CONTENT: ANALYTICS -->
-          <div class="ppv-mypoints-tab-content" id="ppv-tab-analytics"></div>
+          <!-- REWARDS BY STORE -->
+          <div class="ppv-rewards-by-store">
+            <h3><i class="ri-store-2-fill"></i> ${l.rewards_by_store_title || 'Jutalmak boltok szerint'}</h3>
+            ${buildRewardsByStore(d.rewards_by_store || [], l)}
+          </div>
+
+          <!-- TOP 3 -->
+          <div class="ppv-top3">
+            <h3><i class="ri-trophy-fill"></i> ${l.top3}</h3>
+            <div class="ppv-top3-grid">
+              ${buildTop3Html(d.top3 || [], l)}
+            </div>
+          </div>
+
+          <!-- RECENT ACTIVITY (Last 5) -->
+          <div class="ppv-points-list">
+            <h3><i class="ri-time-fill"></i> ${l.recent}</h3>
+            ${buildEntriesHtml((d.entries || []).slice(0, 5), l)}
+          </div>
 
         </div>
       </div>
@@ -530,66 +554,6 @@
 
     container.innerHTML = html;
     log('✅ Render complete');
-
-    // Init tab switching
-    initTabSwitching(container);
-
-    // Init analytics directly into tab (no extra wrapper = better iOS scroll)
-    if (window.ppv_analytics) {
-      setTimeout(() => {
-        try {
-          window.ppv_analytics.init('ppv-tab-analytics');
-          log('✅ Analytics initialized');
-        } catch (err) {
-          warn('⚠️ Analytics error:', err.message);
-        }
-      }, 100);
-    }
-  }
-
-  /** ============================
-   * 📑 TAB SWITCHING
-   * ============================ */
-  function initTabSwitching(container) {
-    const tabs = container.querySelectorAll('.ppv-mypoints-tab');
-    const contents = container.querySelectorAll('.ppv-mypoints-tab-content');
-
-    tabs.forEach(tab => {
-      tab.addEventListener('click', () => {
-        // 📳 Haptic feedback on tab switch
-        if (window.ppvHaptic) window.ppvHaptic('tap');
-        const tabName = tab.dataset.tab;
-
-        // Update active tab
-        tabs.forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
-
-        // Update active content
-        contents.forEach(c => c.classList.remove('active'));
-        const targetContent = container.querySelector(`#ppv-tab-${tabName}`);
-        if (targetContent) {
-          targetContent.classList.add('active');
-        }
-
-        // Save to localStorage
-        try {
-          localStorage.setItem('ppv_mypoints_tab', tabName);
-        } catch (e) {}
-
-        log(`📑 Tab switched to: ${tabName}`);
-      });
-    });
-
-    // Restore saved tab
-    try {
-      const savedTab = localStorage.getItem('ppv_mypoints_tab');
-      if (savedTab) {
-        const savedTabBtn = container.querySelector(`.ppv-mypoints-tab[data-tab="${savedTab}"]`);
-        if (savedTabBtn) {
-          savedTabBtn.click();
-        }
-      }
-    } catch (e) {}
   }
 
   /** ============================
