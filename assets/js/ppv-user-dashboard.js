@@ -124,7 +124,6 @@ window.PPV_TRANSLATIONS = window.PPV_TRANSLATIONS || {
     vip_scan: "Scan",
     vip_double: "2x Punkte",
     vip_triple: "3x Punkte",
-    vip_not_all_stores: "Nicht in allen Geschäften verfügbar",
     qr_valid_for: "Gültig noch:",
     qr_expired: "QR-Code abgelaufen",
     qr_refresh: "Neuen QR-Code generieren",
@@ -196,7 +195,6 @@ window.PPV_TRANSLATIONS = window.PPV_TRANSLATIONS || {
     vip_scan: "scan",
     vip_double: "2x Pont",
     vip_triple: "3x Pont",
-    vip_not_all_stores: "Nem minden üzletben elérhető",
     qr_valid_for: "Érvényes még:",
     qr_expired: "QR-kód lejárt",
     qr_refresh: "Új QR-kód generálása",
@@ -268,7 +266,6 @@ window.PPV_TRANSLATIONS = window.PPV_TRANSLATIONS || {
     vip_scan: "scanare",
     vip_double: "2x Puncte",
     vip_triple: "3x Puncte",
-    vip_not_all_stores: "Nu este disponibil în toate magazinele",
     qr_valid_for: "Valid încă:",
     qr_expired: "Cod QR expirat",
     qr_refresh: "Generează cod QR nou",
@@ -1646,7 +1643,6 @@ async function initUserDashboard() {
         <div class="ppv-store-vip-table">
           <div class="ppv-vip-table-title">
             <i class="ri-vip-crown-fill"></i> ${T.vip_title}
-            <span class="ppv-vip-availability-note" style="display: block; font-size: 11px; color: #8892a4; font-weight: 400; margin-top: 4px;"><i class="ri-information-line" style="margin-right: 3px;"></i>${T.vip_not_all_stores}</span>
           </div>
           <table class="ppv-vip-mini-table">
             <thead>

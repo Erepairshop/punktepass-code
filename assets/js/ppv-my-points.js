@@ -656,6 +656,7 @@
         max_level: 'Maximales Level erreicht!',
         lifetime_points: 'Scans bei',
         all_shops_info: 'VIP-Level wird pro Geschäft berechnet',
+        vip_not_everywhere: 'Nicht alle Geschäfte bieten VIP-Boni an',
       },
       hu: {
         your_level: 'Legjobb VIP szinted',
@@ -664,6 +665,7 @@
         max_level: 'Maximális szint elérve!',
         lifetime_points: 'Scan itt:',
         all_shops_info: 'A VIP szint üzletenként számítódik',
+        vip_not_everywhere: 'Nem minden üzlet kínál VIP bónuszokat',
       },
       ro: {
         your_level: 'Cel mai bun nivel VIP',
@@ -672,6 +674,7 @@
         max_level: 'Nivel maxim atins!',
         lifetime_points: 'Scanări la',
         all_shops_info: 'Nivelul VIP se calculează per magazin',
+        vip_not_everywhere: 'Nu toate magazinele oferă bonusuri VIP',
       }
     };
 
@@ -767,6 +770,10 @@
         <p class="ppv-tier-info-text">
           <i class="ri-information-line"></i>
           ${t.all_shops_info}
+        </p>
+        <p class="ppv-tier-info-text ppv-vip-warning" style="color: #f59e0b; margin-top: 6px;">
+          <i class="ri-error-warning-line"></i>
+          ${t.vip_not_everywhere}
         </p>
       </div>
     `;
