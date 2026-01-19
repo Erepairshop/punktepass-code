@@ -300,7 +300,7 @@ if (class_exists('PPV_Lang')) {
         $prefix = $wpdb->prefix;
         $today = date('Y-m-d');
 
-        // 1️⃣ Get ALL active stores that have rewards (including free products with required_points = 0)
+        // 1️⃣ Get ALL active stores that have ANY rewards (no campaign filter - show all)
         $all_stores_with_rewards = $wpdb->get_results("
             SELECT DISTINCT
                 s.id as store_id,
@@ -310,14 +310,6 @@ if (class_exists('PPV_Lang')) {
             INNER JOIN {$prefix}ppv_rewards r ON r.store_id = s.id
             WHERE s.active = 1
             AND (r.active = 1 OR r.active IS NULL)
-            AND (
-                r.is_campaign = 0 OR r.is_campaign IS NULL
-                OR (
-                    r.is_campaign = 1
-                    AND (r.start_date IS NULL OR r.start_date <= '{$today}')
-                    AND (r.end_date IS NULL OR r.end_date >= '{$today}')
-                )
-            )
             ORDER BY s.company_name ASC
         ");
 
@@ -343,21 +335,13 @@ if (class_exists('PPV_Lang')) {
         $all_rewards_map = [];
 
         if (!empty($store_ids_str)) {
-            // Include points_given for calculating scans needed (no required_points filter to include free products)
+            // Include points_given for calculating scans needed (no campaign filter - show all active rewards)
             $all_rewards_raw = $wpdb->get_results("
                 SELECT store_id, required_points, points_given
                 FROM {$prefix}ppv_rewards
                 WHERE store_id IN ({$store_ids_str})
                 AND (active = 1 OR active IS NULL)
-                AND (
-                    is_campaign = 0 OR is_campaign IS NULL
-                    OR (
-                        is_campaign = 1
-                        AND (start_date IS NULL OR start_date <= '{$today}')
-                        AND (end_date IS NULL OR end_date >= '{$today}')
-                    )
-                )
-                ORDER BY store_id, required_points ASC
+                ORDER BY store_id, COALESCE(required_points, 0) ASC
             ");
 
             foreach ($all_rewards_raw as $r) {
