@@ -253,6 +253,9 @@ if (class_exists('PPV_Lang')) {
                 ppv_log("🏆 [PPV_MyPoints_REST] Tier info: level=" . ($data['tier']['level'] ?? 'unknown') . ", progress=" . ($data['tier']['progress'] ?? 0) . "%");
             }
 
+            // 🎁 REWARDS BY STORE - ALL stores with rewards (not just where user has points)
+            $data['rewards_by_store'] = self::get_rewards_by_store($user_id);
+
             // 🎁 REFERRAL PROGRAM DATA
             $data['referral'] = self::get_user_referral_data($user_id, $lang);
 
@@ -286,6 +289,136 @@ if (class_exists('PPV_Lang')) {
             ob_end_clean();
             return rest_ensure_response(['error' => 'db_error', 'message' => $e->getMessage()]);
         }
+    }
+
+    /**
+     * 🎁 Get rewards by store - ALL stores with active rewards
+     * Shows user's progress regardless of whether they have points there
+     */
+    private static function get_rewards_by_store($user_id) {
+        global $wpdb;
+        $prefix = $wpdb->prefix;
+        $today = date('Y-m-d');
+
+        // 1️⃣ Get ALL active stores that have rewards
+        $all_stores_with_rewards = $wpdb->get_results("
+            SELECT DISTINCT
+                s.id as store_id,
+                s.company_name as store_name
+            FROM {$prefix}ppv_stores s
+            INNER JOIN {$prefix}ppv_rewards r ON r.store_id = s.id
+            WHERE s.active = 1
+            AND r.required_points > 0
+            AND (r.active = 1 OR r.active IS NULL)
+            AND (
+                r.is_campaign = 0 OR r.is_campaign IS NULL
+                OR (
+                    r.is_campaign = 1
+                    AND (r.start_date IS NULL OR r.start_date <= '{$today}')
+                    AND (r.end_date IS NULL OR r.end_date >= '{$today}')
+                )
+            )
+            ORDER BY s.company_name ASC
+        ");
+
+        if (empty($all_stores_with_rewards)) {
+            return [];
+        }
+
+        // 2️⃣ Get user's points per store
+        $user_points_by_store = [];
+        $user_points_raw = $wpdb->get_results($wpdb->prepare("
+            SELECT store_id, SUM(points) as total_points
+            FROM {$prefix}ppv_points
+            WHERE user_id = %d
+            GROUP BY store_id
+        ", $user_id));
+        foreach ($user_points_raw as $up) {
+            $user_points_by_store[(int)$up->store_id] = (int)$up->total_points;
+        }
+
+        // 3️⃣ Batch load ALL rewards
+        $store_ids = array_map(fn($s) => (int)$s->store_id, $all_stores_with_rewards);
+        $store_ids_str = implode(',', array_filter($store_ids));
+        $all_rewards_map = [];
+
+        if (!empty($store_ids_str)) {
+            $all_rewards_raw = $wpdb->get_results("
+                SELECT store_id, required_points
+                FROM {$prefix}ppv_rewards
+                WHERE store_id IN ({$store_ids_str})
+                AND required_points > 0
+                AND (active = 1 OR active IS NULL)
+                AND (
+                    is_campaign = 0 OR is_campaign IS NULL
+                    OR (
+                        is_campaign = 1
+                        AND (start_date IS NULL OR start_date <= '{$today}')
+                        AND (end_date IS NULL OR end_date >= '{$today}')
+                    )
+                )
+                ORDER BY store_id, required_points ASC
+            ");
+
+            foreach ($all_rewards_raw as $r) {
+                $sid = (int)$r->store_id;
+                if (!isset($all_rewards_map[$sid])) $all_rewards_map[$sid] = [];
+                $all_rewards_map[$sid][] = $r;
+            }
+        }
+
+        // 4️⃣ Build rewards_by_store array
+        $rewards_by_store = [];
+
+        foreach ($all_stores_with_rewards as $store) {
+            $store_id = (int) $store->store_id;
+            $store_points = $user_points_by_store[$store_id] ?? 0;
+            $store_rewards = $all_rewards_map[$store_id] ?? [];
+
+            if (empty($store_rewards)) {
+                continue;
+            }
+
+            // Find next reward goal
+            $next_goal = null;
+            $remaining = null;
+            $progress_percent = 0;
+            $achieved = false;
+
+            foreach ($store_rewards as $reward) {
+                $req = (int) $reward->required_points;
+                if ($req > $store_points) {
+                    $next_goal = $req;
+                    $remaining = $req - $store_points;
+                    $progress_percent = $store_points > 0 ? round(($store_points / $req) * 100, 1) : 0;
+                    break;
+                }
+            }
+
+            // If no next found (achieved all)
+            if ($next_goal === null && !empty($store_rewards)) {
+                $last_reward = (int) end($store_rewards)->required_points;
+                if ($store_points >= $last_reward) {
+                    $achieved = true;
+                    $next_goal = $last_reward;
+                    $remaining = 0;
+                    $progress_percent = 100;
+                }
+            }
+
+            $rewards_by_store[] = [
+                'store_id' => $store_id,
+                'store_name' => $store->store_name ?: 'Unknown',
+                'current_points' => $store_points,
+                'next_goal' => $next_goal,
+                'remaining' => $remaining,
+                'progress_percent' => $progress_percent,
+                'achieved' => $achieved
+            ];
+        }
+
+        ppv_log("🎁 [PPV_MyPoints_REST] rewards_by_store: " . count($rewards_by_store) . " stores");
+        return $rewards_by_store;
     }
 
     /**

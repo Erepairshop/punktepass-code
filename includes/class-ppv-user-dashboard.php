@@ -1222,50 +1222,28 @@ public static function render_dashboard() {
     ", $user_id));
     
     // ✅ ÚJ! BOLT-SPECIFIKUS REWARD TRACKING
-    // ✅ MÓDOSÍTVA: Minden bolt ahol van aktív jutalom, függetlenül attól hogy gyűjt-e ott pontot
-    $today = date('Y-m-d');
-
-    // 1️⃣ Megkeressük az ÖSSZES aktív boltot ahol van jutalom
-    $all_stores_with_rewards = $wpdb->get_results("
-        SELECT DISTINCT
+    // 1️⃣ Megkeressük melyik boltokban gyűjtött pontot
+    $stores_with_points = $wpdb->get_results($wpdb->prepare("
+        SELECT
             s.id as store_id,
-            s.company_name as store_name
-        FROM {$prefix}ppv_stores s
-        INNER JOIN {$prefix}ppv_rewards r ON r.store_id = s.id
-        WHERE s.active = 1
-        AND r.required_points > 0
-        AND (r.active = 1 OR r.active IS NULL)
-        AND (
-            r.is_campaign = 0 OR r.is_campaign IS NULL
-            OR (
-                r.is_campaign = 1
-                AND (r.start_date IS NULL OR r.start_date <= '{$today}')
-                AND (r.end_date IS NULL OR r.end_date >= '{$today}')
-            )
-        )
-        ORDER BY s.company_name ASC
-    ");
-
-    // 2️⃣ Megkeressük a felhasználó pontjait boltonként
-    $user_points_by_store = [];
-    $user_points_raw = $wpdb->get_results($wpdb->prepare("
-        SELECT store_id, SUM(points) as total_points
-        FROM {$prefix}ppv_points
-        WHERE user_id = %d
-        GROUP BY store_id
+            s.company_name as store_name,
+            SUM(p.points) as total_points
+        FROM {$prefix}ppv_points p
+        LEFT JOIN {$prefix}ppv_stores s ON p.store_id = s.id
+        WHERE p.user_id = %d
+        GROUP BY p.store_id
     ", $user_id));
-    foreach ($user_points_raw as $up) {
-        $user_points_by_store[(int)$up->store_id] = (int)$up->total_points;
-    }
 
-    // 3️⃣ Batch load ALL rewards
+    // ✅ OPTIMIZED: Batch load ALL rewards in 1 query instead of N queries
     $all_rewards_map = [];
-    if (!empty($all_stores_with_rewards)) {
-        $store_ids = array_map(fn($s) => (int)$s->store_id, $all_stores_with_rewards);
+    if (!empty($stores_with_points)) {
+        $store_ids = array_map(fn($s) => (int)$s->store_id, $stores_with_points);
         $store_ids_str = implode(',', array_filter($store_ids));
+        $today = date('Y-m-d');
 
         if (!empty($store_ids_str)) {
-            $all_rewards_raw = $wpdb->get_results("
+            // Same query as belohnungen.php - include active check and campaign dates
+            $all_rewards_raw = $wpdb->get_results($wpdb->prepare("
                 SELECT store_id, required_points
                 FROM {$prefix}ppv_rewards
                 WHERE store_id IN ({$store_ids_str})
@@ -1275,12 +1253,12 @@ public static function render_dashboard() {
                     is_campaign = 0 OR is_campaign IS NULL
                     OR (
                         is_campaign = 1
-                        AND (start_date IS NULL OR start_date <= '{$today}')
-                        AND (end_date IS NULL OR end_date >= '{$today}')
+                        AND (start_date IS NULL OR start_date <= %s)
+                        AND (end_date IS NULL OR end_date >= %s)
                     )
                 )
                 ORDER BY store_id, required_points ASC
-            ");
+            ", $today, $today));
 
             // Group by store_id
             foreach ($all_rewards_raw as $r) {
@@ -1291,35 +1269,36 @@ public static function render_dashboard() {
         }
     }
 
-    // 4️⃣ Minden bolthoz megkeressük a következő jutalmat
+    // 2️⃣ Minden bolthoz megkeressük a következő jutalmat
     $rewards_by_store = [];
 
-    foreach ($all_stores_with_rewards as $store) {
+    foreach ($stores_with_points as $store) {
         $store_id = (int) $store->store_id;
-        $store_points = $user_points_by_store[$store_id] ?? 0; // 0 ha nincs pontja
+        $store_points = (int) $store->total_points;
 
+        // ✅ OPTIMIZED: Use pre-loaded rewards instead of query per store
         $store_rewards = $all_rewards_map[$store_id] ?? [];
-
+        
         if (empty($store_rewards)) {
-            continue;
+            continue; // Nincs jutalom ebben a boltban
         }
-
+        
         // Megkeressük a következő jutalmat
         $next_goal = null;
         $remaining = null;
         $progress_percent = 0;
         $achieved = false;
-
+        
         foreach ($store_rewards as $reward) {
             $req = (int) $reward->required_points;
             if ($req > $store_points) {
                 $next_goal = $req;
                 $remaining = $req - $store_points;
-                $progress_percent = $store_points > 0 ? round(($store_points / $req) * 100, 1) : 0;
+                $progress_percent = round(($store_points / $req) * 100, 1);
                 break;
             }
         }
-
+        
         // Ha nem találtunk (elérte az összeset)
         if ($next_goal === null && !empty($store_rewards)) {
             $last_reward = (int) end($store_rewards)->required_points;
@@ -1330,7 +1309,7 @@ public static function render_dashboard() {
                 $progress_percent = 100;
             }
         }
-
+        
         $rewards_by_store[] = [
             'store_id' => $store_id,
             'store_name' => $store->store_name ?: 'Unknown',
