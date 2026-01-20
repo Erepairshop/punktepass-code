@@ -809,23 +809,23 @@ class PPV_QR {
             </div>
 
             <!-- TAB CONTENT: GERÄTE -->
-            <div class="ppv-tab-content" id="tab-devices">
+            <div class="ppv-tab-content" id="tab-devices" style="border: none; box-shadow: none; padding: 8px 0; background: transparent;">
                 <?php self::render_user_devices($is_scanner); ?>
             </div>
 
             <?php if (!$is_scanner): ?>
             <!-- TAB CONTENT: PRÄMIEN -->
-            <div class="ppv-tab-content" id="tab-rewards">
+            <div class="ppv-tab-content" id="tab-rewards" style="border: none; box-shadow: none; padding: 8px 0; background: transparent;">
                 <?php echo do_shortcode('[ppv_rewards_management]'); ?>
             </div>
 
             <!-- TAB CONTENT: SCANNER BENUTZER -->
-            <div class="ppv-tab-content" id="tab-scanner-users">
+            <div class="ppv-tab-content" id="tab-scanner-users" style="border: none; box-shadow: none; padding: 8px 0; background: transparent;">
                 <?php self::render_scanner_users(); ?>
             </div>
 
             <!-- TAB CONTENT: VIP EINSTELLUNGEN -->
-            <div class="ppv-tab-content" id="tab-vip">
+            <div class="ppv-tab-content" id="tab-vip" style="border: none; box-shadow: none; padding: 8px 0; background: transparent;">
                 <?php echo do_shortcode('[ppv_vip_settings]'); ?>
             </div>
             <?php endif; ?>
