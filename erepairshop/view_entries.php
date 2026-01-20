@@ -73,6 +73,17 @@ $alleEintraege = file_exists($eintraegeDatei) ? file($eintraegeDatei, FILE_IGNOR
 $erledigtStatus = file_exists($erledigtDatei) ? file($erledigtDatei, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
 $alleEintraege = array_reverse($alleEintraege);
 
+// Sort: Offen (nicht erledigt) first, then Erledigt
+usort($alleEintraege, function($a, $b) use ($erledigtStatus) {
+    $partsA = explode('|', $a);
+    $partsB = explode('|', $b);
+    $telefonA = isset($partsA[2]) ? $partsA[2] : '';
+    $telefonB = isset($partsB[2]) ? $partsB[2] : '';
+    $erledigtA = in_array($telefonA, $erledigtStatus) ? 1 : 0;
+    $erledigtB = in_array($telefonB, $erledigtStatus) ? 1 : 0;
+    return $erledigtA - $erledigtB; // Offen (0) comes before Erledigt (1)
+});
+
 // Kommentare laden
 $kommentarDatei = 'kommentare.txt';
 $alleKommentare = file_exists($kommentarDatei) ? file($kommentarDatei, FILE_IGNORE_NEW_LINES) : [];
@@ -776,6 +787,8 @@ $offenCount = $totalCount - $erledigtCount;
                     button.classList.remove('loading');
 
                     if (data.success) {
+                        const grid = document.querySelector('.entries-grid');
+
                         if (data.erledigt) {
                             // Marked as done
                             card.classList.add('erledigt');
@@ -789,8 +802,20 @@ $offenCount = $totalCount - $erledigtCount;
                             badge.classList.remove('offen');
                             badge.classList.add('erledigt');
                             badge.textContent = 'Erledigt';
+
+                            // Animate and move to bottom
+                            card.style.transition = 'all 0.4s ease';
+                            card.style.opacity = '0.5';
+                            card.style.transform = 'scale(0.98)';
+
+                            setTimeout(() => {
+                                grid.appendChild(card);
+                                card.style.opacity = '1';
+                                card.style.transform = 'scale(1)';
+                            }, 300);
+
                         } else {
-                            // Unmarked - scroll to top
+                            // Unmarked - move to top
                             card.classList.remove('erledigt');
                             button.classList.remove('btn-warning');
                             button.classList.add('btn-success');
@@ -803,8 +828,18 @@ $offenCount = $totalCount - $erledigtCount;
                             badge.classList.add('offen');
                             badge.textContent = 'Offen';
 
-                            // Scroll to top
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                            // Animate and move to top
+                            card.style.transition = 'all 0.4s ease';
+                            card.style.opacity = '0.5';
+                            card.style.transform = 'scale(0.98)';
+
+                            setTimeout(() => {
+                                grid.insertBefore(card, grid.firstChild);
+                                card.style.opacity = '1';
+                                card.style.transform = 'scale(1)';
+                                // Scroll to top
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }, 300);
                         }
 
                         // Update stats
