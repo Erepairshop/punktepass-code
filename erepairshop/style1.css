@@ -1,0 +1,75 @@
+/* Basis-Styles */
+body {
+    font-family: 'Roboto', sans-serif; /* Moderne Schriftart */
+    color: #333;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 20px;
+}
+
+.container {
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Leichter Schatten für Tiefe */
+}
+
+/* Stil für Überschriften und Text */
+h1 {
+    font-size: 24px;
+    color: #444;
+    text-align: center;
+}
+
+p {
+    font-size: 16px;
+    line-height: 1.6;
+    margin-bottom: 20px;
+}
+
+/* Button-Design */
+.button {
+    display: inline-block;
+    background-color: #008cba;
+    color: white;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    border-radius: 5px;
+    transition: background-color 0.3s ease; /* Sanfter Übergang */
+}
+
+.button:hover {
+    background-color: #005f73; /* Farbwechsel beim Überfahren */
+}
+
+/* Effekte für Links */
+a {
+    color: #06c;
+    text-decoration: none;
+    position: relative;
+}
+
+a:hover {
+    color: #00449e;
+    text-decoration: none;
+}
+
+a:after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    transform: scaleX(0);
+    height: 2px;
+    bottom: 0;
+    left: 0;
+    background-color: #005f73;
+    transform-origin: bottom right;
+    transition: transform 0.25s ease-out;
+}
+
+a:hover:after {
+    transform: scaleX(1);
+    transform-origin: bottom left;
+}
