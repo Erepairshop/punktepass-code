@@ -804,7 +804,7 @@ class PPV_QR {
             </div>
 
             <!-- TAB CONTENT: SCANNER -->
-            <div class="ppv-tab-content active" id="tab-scanner">
+            <div class="ppv-tab-content active" id="tab-scanner" style="border: none; box-shadow: none; padding: 8px 0; background: transparent;">
                 <?php self::render_pos_scanner(); ?>
             </div>
 
