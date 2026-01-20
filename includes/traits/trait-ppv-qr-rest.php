@@ -48,6 +48,40 @@ trait PPV_QR_REST_Trait {
     }
 
     // ============================================================
+    // 🏪 HELPER: Get Store Display Name (company_name + name)
+    // ============================================================
+    /**
+     * Get formatted store display name
+     * Returns "Company Name - Store Name" if both exist, otherwise just the available one
+     *
+     * @param int $store_id Store ID
+     * @return string Formatted store name
+     */
+    private static function get_store_display_name($store_id) {
+        global $wpdb;
+
+        $store = $wpdb->get_row($wpdb->prepare(
+            "SELECT name, company_name FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
+            $store_id
+        ));
+
+        if (!$store) {
+            return 'PunktePass';
+        }
+
+        $company_name = trim($store->company_name ?? '');
+        $name = trim($store->name ?? '');
+
+        // If both exist and are different, combine them
+        if (!empty($company_name) && !empty($name) && $company_name !== $name) {
+            return "{$company_name} - {$name}";
+        }
+
+        // Return whichever is available
+        return !empty($company_name) ? $company_name : (!empty($name) ? $name : 'PunktePass');
+    }
+
+    // ============================================================
     // 📡 REST ROUTES REGISTRATION
     // ============================================================
     public static function register_rest_routes() {
@@ -283,10 +317,7 @@ trait PPV_QR_REST_Trait {
         // ═══════════════════════════════════════════════════════════
         $opening_check = self::is_store_open_for_scan($store_id);
         if (!$is_demo_mode && !$opening_check['open']) {
-            $store_name = $wpdb->get_var($wpdb->prepare(
-                "SELECT name FROM {$wpdb->prefix}ppv_stores WHERE id=%d LIMIT 1",
-                $store_id
-            ));
+            $store_name = self::get_store_display_name($store_id);
 
             ppv_log("⏰ [PPV_QR] BLOCKED: Scan outside opening hours - store_id={$store_id}, reason={$opening_check['reason']}, hours={$opening_check['hours']}, current={$opening_check['current_time']}");
 
@@ -366,10 +397,7 @@ trait PPV_QR_REST_Trait {
             $customer_name = !empty($user_info->display_name)
                 ? $user_info->display_name
                 : trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
-            $store_name = $wpdb->get_var($wpdb->prepare(
-                "SELECT name FROM {$wpdb->prefix}ppv_stores WHERE id=%d LIMIT 1",
-                $store_id
-            ));
+            $store_name = self::get_store_display_name($store_id);
 
             // ✅ Generate unique scan_id for error deduplication
             $error_scan_id = "err-{$store_id}-{$user_id}-" . time();
@@ -1033,11 +1061,8 @@ trait PPV_QR_REST_Trait {
         // ✅ Generate unique scan_id for deduplication
         $scan_id = "scan-{$store_id}-{$user_id}-{$log_id}";
 
-        // Get store name for response
-        $store_name = $wpdb->get_var($wpdb->prepare(
-            "SELECT name FROM {$wpdb->prefix}ppv_stores WHERE id=%d LIMIT 1",
-            $store_id
-        ));
+        // Get store name for response (company_name + name if both exist)
+        $store_name = self::get_store_display_name($store_id);
 
         // ✅ Get user info for response AND Ably notification
         $user_info = $wpdb->get_row($wpdb->prepare("
@@ -1344,6 +1369,62 @@ trait PPV_QR_REST_Trait {
     }
 
     // ============================================================
+    // 🌐 CSV Export Headers (translated by user language)
+    // ============================================================
+    private static function get_csv_export_headers() {
+        // Detect language from cookie, query param, or locale
+        $lang = 'de';
+        if (isset($_COOKIE['ppv_lang'])) {
+            $lang = sanitize_text_field($_COOKIE['ppv_lang']);
+        } elseif (isset($_GET['lang'])) {
+            $lang = sanitize_text_field($_GET['lang']);
+        } else {
+            $lang = substr(get_locale(), 0, 2);
+        }
+
+        $headers = [
+            'de' => [
+                'date' => 'Datum',
+                'time' => 'Zeit',
+                'customer' => 'Kunde',
+                'email' => 'Email',
+                'points' => 'Punkte',
+                'status' => 'Status',
+                'reward' => 'Prämie',
+                'ip' => 'IP',
+                'message' => 'Nachricht',
+                'unknown' => 'Unbekannt'
+            ],
+            'hu' => [
+                'date' => 'Dátum',
+                'time' => 'Idő',
+                'customer' => 'Ügyfél',
+                'email' => 'Email',
+                'points' => 'Pontok',
+                'status' => 'Státusz',
+                'reward' => 'Jutalom',
+                'ip' => 'IP',
+                'message' => 'Üzenet',
+                'unknown' => 'Ismeretlen'
+            ],
+            'ro' => [
+                'date' => 'Data',
+                'time' => 'Ora',
+                'customer' => 'Client',
+                'email' => 'Email',
+                'points' => 'Puncte',
+                'status' => 'Status',
+                'reward' => 'Premiu',
+                'ip' => 'IP',
+                'message' => 'Mesaj',
+                'unknown' => 'Necunoscut'
+            ]
+        ];
+
+        return $headers[$lang] ?? $headers['de'];
+    }
+
+    // ============================================================
     // 📥 REST: EXPORT CSV
     // ============================================================
     public static function rest_export_csv(WP_REST_Request $r) {
@@ -1396,9 +1477,22 @@ trait PPV_QR_REST_Trait {
             LIMIT 1000
         ", $store_id));
 
+        // 🌐 Get translated CSV headers based on user language
+        $csv_headers = self::get_csv_export_headers();
+
         // Build CSV with BOM for Excel UTF-8 support
         $csv_lines = [];
-        $csv_lines[] = 'Datum,Zeit,Kunde,Email,Punkte,Status,Prämie,IP,Nachricht';
+        $csv_lines[] = implode(',', [
+            $csv_headers['date'],
+            $csv_headers['time'],
+            $csv_headers['customer'],
+            $csv_headers['email'],
+            $csv_headers['points'],
+            $csv_headers['status'],
+            $csv_headers['reward'],
+            $csv_headers['ip'],
+            $csv_headers['message']
+        ]);
 
         foreach ($logs as $log) {
             $created = strtotime($log->created_at);
@@ -1407,7 +1501,7 @@ trait PPV_QR_REST_Trait {
 
             $first = trim($log->first_name ?? '');
             $last = trim($log->last_name ?? '');
-            $customer = trim("$first $last") ?: 'Unbekannt';
+            $customer = trim("$first $last") ?: $csv_headers['unknown'];
             $email = $log->email ?: '-';
 
             // Use direct points_change field
@@ -2166,11 +2260,8 @@ trait PPV_QR_REST_Trait {
             ? $user_info->display_name
             : trim(($user_info->first_name ?? '') . ' ' . ($user_info->last_name ?? ''));
 
-        // Get store name
-        $store_name = $wpdb->get_var($wpdb->prepare(
-            "SELECT name FROM {$wpdb->prefix}ppv_stores WHERE id = %d",
-            $prompt->store_id
-        ));
+        // Get store name (company_name + name if both exist)
+        $store_name = self::get_store_display_name($prompt->store_id);
 
         // Get user's current point balance
         $current_points = (int)$wpdb->get_var($wpdb->prepare(

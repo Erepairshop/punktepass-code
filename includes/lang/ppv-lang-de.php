@@ -192,9 +192,9 @@ return [
 'rewards_form_value_helper' => 'Rabattwert (z.B. 10 für 10% oder 5 für 5 EUR)',
 'rewards_form_free_product_helper' => 'Name des kostenlosen Produkts (z.B. Kaffee + Kuchen)',
 'rewards_form_free_product_value_helper' => 'Der reguläre Preis dieses Produkts',
-'rewards_form_points_given' => 'Punkte vergeben (bei Einlösung) *',
+'rewards_form_points_given' => 'Bonuspunkte bei Einlösung',
 'rewards_form_points_given_placeholder' => 'z. B. 5',
-'rewards_form_points_given_helper' => 'Diese Punkte belohnen den Kunden',
+'rewards_form_points_given_helper' => 'So viele Extrapunkte bekommt der Kunde, wenn er diese Prämie einlöst',
 'rewards_form_save' => 'Speichern',
 'rewards_form_cancel' => 'Abbrechen',
 'rewards_list_loading' => 'Wird geladen...',
@@ -336,6 +336,7 @@ return [
   'account_deleted' => 'Konto gelöscht',
 
   // Settings - Form fields
+  'address' => 'Adresse',
   'zip' => 'Postleitzahl',
   'street_address' => 'Straße und Hausnummer',
   'street_placeholder' => 'Musterstraße 123',
@@ -1712,9 +1713,9 @@ return [
 
     'employee_scans' => 'Mitarbeiter Scans',
     'employee_scans_desc' => 'Übersicht welcher Mitarbeiter wie viele Scans durchgeführt hat.',
-    'total_scanners' => 'Scanner gesamt',
-    'tracked_scans' => 'Erfasste Scans',
-    'untracked_scans' => 'Ohne Scanner',
+    'total_scanners' => 'Aktive Mitarbeiter',
+    'tracked_scans' => 'Zugeordnete Scans',
+    'untracked_scans' => 'Ohne Mitarbeiter',
     'no_scanner_data' => 'Noch keine Scanner-Daten vorhanden. Sobald Mitarbeiter Scans durchführen, erscheinen hier die Statistiken.',
     'without_assignment' => 'Ohne Zuordnung',
     'suspicious_desc' => 'Scans die aus verdächtiger Entfernung durchgeführt wurden.',

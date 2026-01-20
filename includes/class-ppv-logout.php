@@ -125,12 +125,13 @@ class PPV_Logout {
         ppv_log("✅ [PPV_Logout] Session completely destroyed, cookie deleted");
 
         // 3️⃣ Cookie cleanup
+        // 🔧 FIX: DON'T clear ppv_lang - language preference should persist after logout!
         $cookie_names = [
             'ppv_pos_token',
             'ppv_user_token',
             'ppv_user_id',
             'ppv_store_id',
-            'ppv_lang',
+            // 'ppv_lang', // REMOVED - keep language preference!
             'ppv_theme',
             'ppv_handler_theme',
             'ppv_active_store',

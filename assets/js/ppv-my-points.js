@@ -58,6 +58,15 @@
       reward_achieved: "Einlösbar!",
       claim_reward: "Einlösen",
       points_missing: "fehlen noch",
+      // Statistics
+      stats_this_week: "Diese Woche",
+      stats_this_month: "Dieser Monat",
+      stats_this_year: "Dieses Jahr",
+      stats_streak: "Aktuelle Serie",
+      stats_days: "Tage",
+      // Load more
+      load_more: "Mehr anzeigen",
+      more_stores: "weitere",
     },
     hu: {
       title: "Pontjaim",
@@ -92,6 +101,15 @@
       reward_achieved: "Beváltható!",
       claim_reward: "Beváltás",
       points_missing: "hiányzik",
+      // Statistics
+      stats_this_week: "Ezen a héten",
+      stats_this_month: "Ebben a hónapban",
+      stats_this_year: "Idén",
+      stats_streak: "Aktuális sorozat",
+      stats_days: "nap",
+      // Load more
+      load_more: "Tovább",
+      more_stores: "további",
     },
     ro: {
       title: "Punctele mele",
@@ -126,6 +144,15 @@
       reward_achieved: "Disponibil!",
       claim_reward: "Revendică",
       points_missing: "lipsesc",
+      // Statistics
+      stats_this_week: "Această săptămână",
+      stats_this_month: "Această lună",
+      stats_this_year: "Acest an",
+      stats_streak: "Șirul actual",
+      stats_days: "zile",
+      // Load more
+      load_more: "Mai multe",
+      more_stores: "în plus",
     }
   };
 
@@ -368,37 +395,33 @@
     headers.append("X-PPV-Lang", lang);
     if (token) headers.append("Authorization", "Bearer " + token);
 
-    // ✅ NE küldjünk WordPress nonce-t!
-    // A WordPress REST cookie authentication middleware automatikusan fut ha van X-WP-Nonce header,
-    // és 403-at ad vissza invalid nonce esetén, MÉG A permission callback előtt!
-    // Mivel saját session-based permission callback-ünk van (check_mypoints_permission),
-    // nincs szükség WordPress nonce-ra.
     log('🔍 [fetchPointsFromServer] NOT sending X-WP-Nonce (using session-based auth instead)');
 
     const apiUrl = window.ppv_mypoints?.api_url ||
                    `${location.origin}/wp-json/ppv/v1/mypoints`;
 
     log('🔍 [fetchPointsFromServer] API URL:', apiUrl);
-    log('🔍 [fetchPointsFromServer] Using fallback URL:', !window.ppv_mypoints?.api_url);
 
-    log('📡 [fetchPointsFromServer] Making fetch request...');
-    const res = await fetch(apiUrl, {
-      method: "GET",
-      headers,
-      credentials: "include",
-      cache: "no-store",
-    });
+    // Fetch mypoints and analytics summary in parallel
+    log('📡 [fetchPointsFromServer] Making parallel fetch requests...');
+    const [res, summaryRes] = await Promise.all([
+      fetch(apiUrl, {
+        method: "GET",
+        headers,
+        credentials: "include",
+        cache: "no-store",
+      }),
+      fetch('/wp-json/ppv/v1/analytics/summary', {
+        headers: { 'X-PPV-Lang': lang },
+        credentials: 'include'
+      }).catch(() => null) // Don't fail if summary fetch fails
+    ]);
 
     log('🔍 [fetchPointsFromServer] Response status:', res.status, res.statusText);
-    log('🔍 [fetchPointsFromServer] Response headers:');
-    res.headers.forEach((value, key) => {
-      log(`    - ${key}: ${value}`);
-    });
 
     if (!res.ok) {
       error('❌ [fetchPointsFromServer] HTTP error:', res.status);
 
-      // Try to get error body
       let errorBody = '';
       try {
         errorBody = await res.text();
@@ -415,6 +438,24 @@
     }
 
     const jsonData = await res.json();
+
+    // Parse summary data if available
+    let summaryData = null;
+    if (summaryRes && summaryRes.ok) {
+      try {
+        summaryData = await summaryRes.json();
+        log('✅ [fetchPointsFromServer] Summary data loaded');
+      } catch (e) {
+        warn('⚠️ [fetchPointsFromServer] Could not parse summary');
+      }
+    }
+
+    // Merge summary into response
+    if (summaryData?.summary) {
+      jsonData.data = jsonData.data || {};
+      jsonData.data.stats = summaryData.summary;
+    }
+
     log('✅ [fetchPointsFromServer] Success! Data:', jsonData);
     log('🔍 [fetchPointsFromServer] ========== END ==========');
     return jsonData;
@@ -428,16 +469,7 @@
 
     const d = json.data || {};
     const total = d.total || 0;
-    const next = d.remaining || 0;
-    const progress = d.next_goal ? Math.min(100, ((d.next_goal - next) / d.next_goal) * 100) : 0;
-
-    // Tab labels
-    const tabLabels = {
-      de: { points: 'Meine Punkte', analytics: 'Analytics' },
-      hu: { points: 'Pontjaim', analytics: 'Statisztika' },
-      ro: { points: 'Punctele mele', analytics: 'Analiză' }
-    };
-    const tabs = tabLabels[lang] || tabLabels.de;
+    const stats = d.stats || {};
 
     // Offline banner
     const offlineBanner = isOnline ? '' : `
@@ -447,7 +479,7 @@
       </div>
     `;
 
-    // Build HTML with TABS
+    // Build HTML (no tabs)
     let html = offlineBanner + `
       <div class="ppv-dashboard-netto animate-in">
         <div class="ppv-dashboard-inner">
@@ -469,60 +501,61 @@
           <!-- 🎁 REFERRAL PROGRAM SECTION -->
           ${buildReferralHtml(d.referral, l, lang)}
 
-          <!-- 📑 TABS NAVIGATION -->
-          <div class="ppv-mypoints-tabs">
-            <button class="ppv-mypoints-tab active" data-tab="points">
-              <i class="ri-coins-fill"></i> ${tabs.points}
-            </button>
-            <button class="ppv-mypoints-tab" data-tab="analytics">
-              <i class="ri-bar-chart-2-fill"></i> ${tabs.analytics}
-            </button>
-          </div>
-
-          <!-- 📑 TAB CONTENT: POINTS -->
-          <div class="ppv-mypoints-tab-content active" id="ppv-tab-points">
-            <!-- STATS GRID -->
-            <div class="ppv-stats-grid">
-              <div class="ppv-stat-card">
-                <i class="ri-line-chart-fill"></i>
-                <div class="label">${l.avg}</div>
-                <div class="value">${d.avg || 0}</div>
-              </div>
-              <div class="ppv-stat-card">
-                <i class="ri-calendar-event-fill"></i>
-                <div class="label">${l.best_day}</div>
-                <div class="value">${d.top_day ? d.top_day.total + " • " + d.top_day.day : "-"}</div>
-              </div>
-              <div class="ppv-stat-card">
-                <i class="ri-store-2-fill"></i>
-                <div class="label">${l.top_store}</div>
-                <div class="value">${d.top_store ? d.top_store.store_name + " (" + d.top_store.total + ")" : "-"}</div>
+          <!-- 📊 STATISTICS SUMMARY (2x2 grid) -->
+          <div class="ppv-stats-summary ppv-analytics-summary" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 16px 0;">
+            <div class="ppv-summary-card" style="display: flex; align-items: center; gap: 12px; padding: 14px; background: rgba(102, 126, 234, 0.08); border-radius: 12px;">
+              <div class="card-icon" style="font-size: 24px; color: #667eea;"><i class="ri-calendar-event-fill"></i></div>
+              <div class="card-content">
+                <div class="label" style="font-size: 11px; color: #64748b; text-transform: uppercase;">${l.stats_this_week}</div>
+                <div class="value" style="font-size: 20px; font-weight: 700; color: #1e293b;">${stats.week_points || 0}</div>
+                <div class="unit" style="font-size: 11px; color: #94a3b8;">${l.points_label}</div>
               </div>
             </div>
-
-            <!-- REWARDS BY STORE -->
-            <div class="ppv-rewards-by-store">
-              <h3><i class="ri-store-2-fill"></i> ${l.rewards_by_store_title || 'Jutalmak boltok szerint'}</h3>
-              ${buildRewardsByStore(d.rewards_by_store || [], l)}
-            </div>
-
-            <!-- TOP 3 -->
-            <div class="ppv-top3">
-              <h3><i class="ri-trophy-fill"></i> ${l.top3}</h3>
-              <div class="ppv-top3-grid">
-                ${buildTop3Html(d.top3 || [], l)}
+            <div class="ppv-summary-card" style="display: flex; align-items: center; gap: 12px; padding: 14px; background: rgba(118, 75, 162, 0.08); border-radius: 12px;">
+              <div class="card-icon" style="font-size: 24px; color: #764ba2;"><i class="ri-calendar-2-fill"></i></div>
+              <div class="card-content">
+                <div class="label" style="font-size: 11px; color: #64748b; text-transform: uppercase;">${l.stats_this_month}</div>
+                <div class="value" style="font-size: 20px; font-weight: 700; color: #1e293b;">${stats.month_points || 0}</div>
+                <div class="unit" style="font-size: 11px; color: #94a3b8;">${l.points_label}</div>
               </div>
             </div>
-
-            <!-- RECENT ACTIVITY -->
-            <div class="ppv-points-list">
-              <h3><i class="ri-time-fill"></i> ${l.recent}</h3>
-              ${buildEntriesHtml(d.entries || [], l)}
+            <div class="ppv-summary-card" style="display: flex; align-items: center; gap: 12px; padding: 14px; background: rgba(16, 185, 129, 0.08); border-radius: 12px;">
+              <div class="card-icon" style="font-size: 24px; color: #10b981;"><i class="ri-calendar-check-fill"></i></div>
+              <div class="card-content">
+                <div class="label" style="font-size: 11px; color: #64748b; text-transform: uppercase;">${l.stats_this_year}</div>
+                <div class="value" style="font-size: 20px; font-weight: 700; color: #1e293b;">${stats.year_points || 0}</div>
+                <div class="unit" style="font-size: 11px; color: #94a3b8;">${l.points_label}</div>
+              </div>
+            </div>
+            <div class="ppv-summary-card" style="display: flex; align-items: center; gap: 12px; padding: 14px; background: rgba(245, 158, 11, 0.08); border-radius: 12px;">
+              <div class="card-icon" style="font-size: 24px; color: #f59e0b;"><i class="ri-fire-fill"></i></div>
+              <div class="card-content">
+                <div class="label" style="font-size: 11px; color: #64748b; text-transform: uppercase;">${l.stats_streak}</div>
+                <div class="value" style="font-size: 20px; font-weight: 700; color: #1e293b;">${stats.current_streak || 0}</div>
+                <div class="unit" style="font-size: 11px; color: #94a3b8;">${l.stats_days}</div>
+              </div>
             </div>
           </div>
 
-          <!-- 📑 TAB CONTENT: ANALYTICS -->
-          <div class="ppv-mypoints-tab-content" id="ppv-tab-analytics"></div>
+          <!-- REWARDS BY STORE -->
+          <div class="ppv-rewards-by-store">
+            <h3><i class="ri-store-2-fill"></i> ${l.rewards_by_store_title || 'Jutalmak boltok szerint'}</h3>
+            ${buildRewardsByStore(d.rewards_by_store || [], l)}
+          </div>
+
+          <!-- TOP 3 -->
+          <div class="ppv-top3">
+            <h3><i class="ri-trophy-fill"></i> ${l.top3}</h3>
+            <div class="ppv-top3-grid">
+              ${buildTop3Html(d.top3 || [], l)}
+            </div>
+          </div>
+
+          <!-- RECENT ACTIVITY (Last 5) -->
+          <div class="ppv-points-list">
+            <h3><i class="ri-time-fill"></i> ${l.recent}</h3>
+            ${buildEntriesHtml((d.entries || []).slice(0, 5), l)}
+          </div>
 
         </div>
       </div>
@@ -530,66 +563,6 @@
 
     container.innerHTML = html;
     log('✅ Render complete');
-
-    // Init tab switching
-    initTabSwitching(container);
-
-    // Init analytics directly into tab (no extra wrapper = better iOS scroll)
-    if (window.ppv_analytics) {
-      setTimeout(() => {
-        try {
-          window.ppv_analytics.init('ppv-tab-analytics');
-          log('✅ Analytics initialized');
-        } catch (err) {
-          warn('⚠️ Analytics error:', err.message);
-        }
-      }, 100);
-    }
-  }
-
-  /** ============================
-   * 📑 TAB SWITCHING
-   * ============================ */
-  function initTabSwitching(container) {
-    const tabs = container.querySelectorAll('.ppv-mypoints-tab');
-    const contents = container.querySelectorAll('.ppv-mypoints-tab-content');
-
-    tabs.forEach(tab => {
-      tab.addEventListener('click', () => {
-        // 📳 Haptic feedback on tab switch
-        if (window.ppvHaptic) window.ppvHaptic('tap');
-        const tabName = tab.dataset.tab;
-
-        // Update active tab
-        tabs.forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
-
-        // Update active content
-        contents.forEach(c => c.classList.remove('active'));
-        const targetContent = container.querySelector(`#ppv-tab-${tabName}`);
-        if (targetContent) {
-          targetContent.classList.add('active');
-        }
-
-        // Save to localStorage
-        try {
-          localStorage.setItem('ppv_mypoints_tab', tabName);
-        } catch (e) {}
-
-        log(`📑 Tab switched to: ${tabName}`);
-      });
-    });
-
-    // Restore saved tab
-    try {
-      const savedTab = localStorage.getItem('ppv_mypoints_tab');
-      if (savedTab) {
-        const savedTabBtn = container.querySelector(`.ppv-mypoints-tab[data-tab="${savedTab}"]`);
-        if (savedTabBtn) {
-          savedTabBtn.click();
-        }
-      }
-    } catch (e) {}
   }
 
   /** ============================
@@ -655,7 +628,9 @@
         points_needed: 'Scans noch nötig',
         max_level: 'Maximales Level erreicht!',
         lifetime_points: 'Scans bei',
-        all_shops_info: 'VIP-Level wird pro Geschäft berechnet',
+        all_shops_info: 'VIP-Boni gelten nur in dem Geschäft, wo du sie erreicht hast',
+        vip_not_everywhere: 'Nicht alle Geschäfte bieten VIP-Boni an',
+        how_vip_works: 'Je öfter du bei einem Geschäft scannst, desto höher dein VIP-Level dort',
       },
       hu: {
         your_level: 'Legjobb VIP szinted',
@@ -663,7 +638,9 @@
         points_needed: 'scan még szükséges',
         max_level: 'Maximális szint elérve!',
         lifetime_points: 'Scan itt:',
-        all_shops_info: 'A VIP szint üzletenként számítódik',
+        all_shops_info: 'A VIP bónuszok csak abban az üzletben érvényesek, ahol elérted',
+        vip_not_everywhere: 'Nem minden üzlet kínál VIP bónuszokat',
+        how_vip_works: 'Minél többet szkennelsz egy üzletben, annál magasabb a VIP szinted ott',
       },
       ro: {
         your_level: 'Cel mai bun nivel VIP',
@@ -671,7 +648,9 @@
         points_needed: 'scanări mai necesare',
         max_level: 'Nivel maxim atins!',
         lifetime_points: 'Scanări la',
-        all_shops_info: 'Nivelul VIP se calculează per magazin',
+        all_shops_info: 'Bonusurile VIP sunt valabile doar în magazinul unde le-ai obținut',
+        vip_not_everywhere: 'Nu toate magazinele oferă bonusuri VIP',
+        how_vip_works: 'Cu cât scanezi mai mult la un magazin, cu atât nivelul VIP e mai mare acolo',
       }
     };
 
@@ -764,9 +743,17 @@
         </div>
 
         <!-- Info text -->
+        <p class="ppv-tier-info-text" style="margin-bottom: 6px;">
+          <i class="ri-lightbulb-line"></i>
+          ${t.how_vip_works}
+        </p>
         <p class="ppv-tier-info-text">
           <i class="ri-information-line"></i>
           ${t.all_shops_info}
+        </p>
+        <p class="ppv-tier-info-text ppv-vip-warning" style="color: #f59e0b; margin-top: 6px;">
+          <i class="ri-error-warning-line"></i>
+          ${t.vip_not_everywhere}
         </p>
       </div>
     `;
@@ -949,44 +936,107 @@
   }
   
   /** ============================
- * BUILD REWARDS BY STORE HTML
+ * BUILD REWARDS BY STORE HTML (5 at a time with Load More)
  * ============================ */
 function buildRewardsByStore(stores, l) {
   if (!stores || stores.length === 0) {
     return `<p style="text-align:center;color:#999;padding:20px;">${l.no_rewards || 'Még nincs jutalom'}</p>`;
   }
 
-  let html = '';
-  stores.forEach(store => {
+  const ITEMS_PER_PAGE = 5;
+  const uniqueId = 'rewards-' + Date.now();
+
+  // Build all reward cards
+  let cardsHtml = '';
+  stores.forEach((store, index) => {
     const achieved = store.achieved;
     const statusClass = achieved ? 'ppv-reward-achieved' : 'ppv-reward-progress';
     const statusIcon = achieved ? '🎉' : '🎯';
     const statusText = achieved ? (l.reward_achieved || 'Einlösbar!') : `${store.remaining} ${l.points_label || 'Punkte'} ${l.points_missing || 'fehlen noch'}`;
-    
-    html += `
-      <div class="ppv-reward-card ${statusClass}" data-store-id="${store.store_id}">
-        <div class="reward-header">
-          <h4>${statusIcon} ${escapeHtml(store.store_name)}</h4>
-          <span class="reward-points">${store.current_points} / ${store.next_goal}</span>
+    const hiddenClass = index >= ITEMS_PER_PAGE ? 'ppv-reward-hidden' : '';
+
+    // Show both names like user-dashboard (company_name + name)
+    // store_name = company_name, store_name_short = name (filiale)
+    const companyName = store.store_name || '';
+    const storeName = store.store_name_short || '';
+    const displayName = companyName || storeName || 'Unknown';
+
+    cardsHtml += `
+      <div class="ppv-reward-card ${statusClass} ${hiddenClass}" data-store-id="${store.store_id}" data-index="${index}" style="${index >= ITEMS_PER_PAGE ? 'display:none;' : ''}">
+        <div class="reward-header" style="flex-direction: column; align-items: flex-start;">
+          <div style="display: flex; justify-content: space-between; width: 100%; align-items: flex-start;">
+            <h4 style="margin: 0;">${statusIcon} ${escapeHtml(companyName || storeName)}</h4>
+            <span class="reward-points">${store.current_points} / ${store.next_goal || '?'}</span>
+          </div>
+          ${storeName && companyName ? `<p style="font-size: 13px; color: #475569; font-weight: 500; margin: 4px 0 0 24px;">${escapeHtml(storeName)}</p>` : ''}
         </div>
         <div class="reward-progress">
-          <div class="progress-bar">
-            <div class="progress-fill" style="width:${store.progress_percent}%;"></div>
+          <div class="progress-bar" style="background: #e2e8f0; border-radius: 4px; height: 8px; overflow: hidden;">
+            <div class="progress-fill" style="width:${store.progress_percent || 0}%; height: 100%; background: linear-gradient(90deg, #667eea, #764ba2); border-radius: 4px;"></div>
           </div>
-          <span class="progress-text">${store.progress_percent}%</span>
+          <span class="progress-text" style="font-size: 12px; color: #64748b;">${store.progress_percent || 0}%</span>
         </div>
         <div class="reward-status">
-          ${achieved 
-            ? `<button class="ppv-btn-claim" onclick="claimReward(${store.store_id})">${l.claim_reward || 'Beváltás'}</button>` 
-            : `<span class="remaining">${statusText}</span>`
+          ${achieved
+            ? `<button class="ppv-btn-claim" onclick="claimReward(${store.store_id})" style="background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer;">${l.claim_reward || 'Beváltás'}</button>`
+            : `<span class="remaining" style="font-size: 13px; color: #64748b;">${statusText}</span>`
           }
         </div>
       </div>
     `;
   });
-  
-  return html;
+
+  // Add "Load More" button if needed
+  const showLoadMore = stores.length > ITEMS_PER_PAGE;
+  const loadMoreBtn = showLoadMore ? `
+    <button id="${uniqueId}-loadmore" class="ppv-load-more-btn" onclick="loadMoreRewards('${uniqueId}', ${ITEMS_PER_PAGE})"
+            style="display: block; width: 100%; padding: 12px; margin-top: 12px; background: rgba(102, 126, 234, 0.1); border: none; border-radius: 8px; color: #667eea; font-weight: 600; cursor: pointer;">
+      ${l.load_more || 'Tovább'} (${stores.length - ITEMS_PER_PAGE} ${l.more_stores || 'további'})
+    </button>
+  ` : '';
+
+  return `
+    <div id="${uniqueId}" class="ppv-rewards-list" data-shown="${ITEMS_PER_PAGE}" data-total="${stores.length}">
+      ${cardsHtml}
+      ${loadMoreBtn}
+    </div>
+  `;
 }
+
+// Load more rewards function
+window.loadMoreRewards = function(containerId, itemsPerPage) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  const shown = parseInt(container.dataset.shown) || itemsPerPage;
+  const total = parseInt(container.dataset.total) || 0;
+  const newShown = shown + itemsPerPage;
+
+  // Show next batch
+  const cards = container.querySelectorAll('.ppv-reward-card');
+  cards.forEach((card, index) => {
+    if (index < newShown) {
+      card.style.display = '';
+      card.classList.remove('ppv-reward-hidden');
+    }
+  });
+
+  container.dataset.shown = newShown;
+
+  // Hide button if all shown
+  const btn = document.getElementById(containerId + '-loadmore');
+  if (btn) {
+    if (newShown >= total) {
+      btn.style.display = 'none';
+    } else {
+      const remaining = total - newShown;
+      btn.innerHTML = `Tovább (${remaining} további)`;
+    }
+  }
+
+  // Haptic feedback
+  if (window.ppvHaptic) window.ppvHaptic('tap');
+};
 
 /** ============================
  * CLAIM REWARD (REDIRECT)

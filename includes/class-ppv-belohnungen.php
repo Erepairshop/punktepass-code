@@ -75,6 +75,10 @@ class PPV_Belohnungen {
                 'qr_loading' => 'QR-Code wird geladen...',
                 'qr_error' => 'Fehler beim Laden des QR-Codes',
                 'points_collected' => 'Du hast Punkte gesammelt! Zeige deinen QR-Code im Geschäft.',
+                'points_per_scan' => 'Punkte pro Scan',
+                'scans_needed' => 'Besuche fehlen',
+                'scan_singular' => 'Besuch fehlt',
+                'free_product' => 'Gratis',
             ],
             'hu' => [
                 'page_title' => 'Jutalmak',
@@ -109,6 +113,10 @@ class PPV_Belohnungen {
                 'qr_loading' => 'QR-kód betöltése...',
                 'qr_error' => 'Hiba a QR-kód betöltésekor',
                 'points_collected' => 'Vannak pontjaid! Mutasd meg a QR-kódod az üzletben.',
+                'points_per_scan' => 'pont/szkennelés',
+                'scans_needed' => 'alkalom hiányzik',
+                'scan_singular' => 'alkalom hiányzik',
+                'free_product' => 'Ingyenes',
             ],
             'ro' => [
                 'page_title' => 'Premiile Mele',
@@ -143,6 +151,10 @@ class PPV_Belohnungen {
                 'qr_loading' => 'Se încarcă codul QR...',
                 'qr_error' => 'Eroare la încărcarea codului QR',
                 'points_collected' => 'Ai puncte colectate! Arată codul QR în magazin.',
+                'points_per_scan' => 'puncte/scanare',
+                'scans_needed' => 'vizite lipsesc',
+                'scan_singular' => 'vizită lipsește',
+                'free_product' => 'Gratuit',
             ],
         ];
         return $labels[$lang] ?? $labels['de'];
@@ -161,8 +173,8 @@ class PPV_Belohnungen {
         // Theme loader
         wp_enqueue_script('ppv-theme-loader', $plugin_url . 'assets/js/ppv-theme-loader.js', [], time(), false);
 
-        // Fonts (RemixIcons loaded globally in punktepass.php)
-        wp_enqueue_style('google-fonts-inter', 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap', [], null);
+        // Fonts - Google Fonts removed for performance (using system fonts)
+        // wp_enqueue_style('google-fonts-inter', 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap', [], null);
 
         // JS
         wp_enqueue_script('ppv-belohnungen', $plugin_url . 'assets/js/ppv-belohnungen.js', [], time(), true);
@@ -211,6 +223,7 @@ class PPV_Belohnungen {
         $store_points = $wpdb->get_results($wpdb->prepare("
             SELECT
                 s.id AS store_id,
+                s.name AS store_name_short,
                 s.company_name AS store_name,
                 {$logo_select}
                 s.active AS is_active,
@@ -218,7 +231,7 @@ class PPV_Belohnungen {
             FROM {$wpdb->prefix}ppv_stores s
             INNER JOIN {$wpdb->prefix}ppv_points p ON s.id = p.store_id
             WHERE p.user_id = %d
-            GROUP BY s.id, s.company_name, s.active{$logo_group}
+            GROUP BY s.id, s.name, s.company_name, s.active{$logo_group}
             ORDER BY points DESC
         ", $user_id));
 
@@ -244,6 +257,7 @@ class PPV_Belohnungen {
             $missing_stores = $wpdb->get_results($wpdb->prepare("
                 SELECT
                     s.id AS store_id,
+                    s.name AS store_name_short,
                     s.company_name AS store_name,
                     s.logo_url,
                     s.active AS is_active,
@@ -291,7 +305,7 @@ class PPV_Belohnungen {
             $query_args = array_merge($active_store_ids, [$today, $today]);
 
             $all_rewards = $wpdb->get_results($wpdb->prepare("
-                SELECT id, store_id, title, description, required_points, is_campaign, start_date, end_date
+                SELECT id, store_id, title, description, required_points, points_given, is_campaign, start_date, end_date, action_type, action_value
                 FROM {$wpdb->prefix}ppv_rewards
                 WHERE store_id IN ($placeholders) AND (active = 1 OR active IS NULL)
                 AND (
@@ -440,7 +454,10 @@ class PPV_Belohnungen {
                                         </div>
                                     <?php endif; ?>
                                     <div class="ppv-rw-store-info">
-                                        <h3><?php echo esc_html($store->store_name); ?></h3>
+                                        <h3><?php echo esc_html($store->store_name ?: $store->store_name_short); ?></h3>
+                                        <?php if (!empty($store->store_name_short) && !empty($store->store_name)): ?>
+                                            <p style="font-size: 0.85em; color: #666; margin: 2px 0 0 0;"><?php echo esc_html($store->store_name_short); ?></p>
+                                        <?php endif; ?>
                                         <span class="ppv-rw-store-points">
                                             <i class="ri-star-fill"></i> <?php echo number_format($store->points); ?>
                                         </span>
@@ -460,13 +477,22 @@ class PPV_Belohnungen {
                                     <?php foreach ($rewards as $reward):
                                         $user_store_points = (int)$store->points;
                                         $required = (int)$reward->required_points;
+                                        $points_per_scan = (int)($reward->points_given ?? 1);
+                                        if ($points_per_scan < 1) $points_per_scan = 1;
                                         $progress = min(100, ($user_store_points / max(1, $required)) * 100);
                                         $is_ready = $user_store_points >= $required;
                                         $missing = max(0, $required - $user_store_points);
+                                        $scans_needed = $is_ready ? 0 : (int)ceil($missing / $points_per_scan);
                                         $is_campaign = !empty($reward->is_campaign);
+                                        $is_free_product = ($reward->action_type ?? '') === 'free_product';
                                         $end_date_str = $reward->end_date ? date('d.m', strtotime($reward->end_date)) : null;
                                     ?>
-                                        <div class="ppv-rw-reward-item <?php echo $is_ready ? 'is-ready' : 'is-locked'; ?> <?php echo $is_campaign ? 'is-campaign' : ''; ?>">
+                                        <div class="ppv-rw-reward-item <?php echo $is_ready ? 'is-ready' : 'is-locked'; ?> <?php echo $is_campaign ? 'is-campaign' : ''; ?> <?php echo $is_free_product ? 'is-free-product' : ''; ?>">
+                                            <?php if ($is_free_product): ?>
+                                                <div class="ppv-rw-free-badge" style="position: absolute; top: 8px; right: 8px; background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600; text-transform: uppercase;">
+                                                    <i class="ri-gift-fill"></i> <?php echo esc_html($L['free_product']); ?>
+                                                </div>
+                                            <?php endif; ?>
                                             <?php if ($is_campaign): ?>
                                                 <div class="ppv-rw-campaign-badge">
                                                     <i class="ri-calendar-event-line"></i>
@@ -491,6 +517,12 @@ class PPV_Belohnungen {
                                             <div class="ppv-rw-progress">
                                                 <div class="ppv-rw-progress-bar" style="width: <?php echo intval($progress); ?>%"></div>
                                             </div>
+                                            <?php if (!$is_ready): ?>
+                                            <div class="ppv-rw-scan-info" style="display: flex; justify-content: space-between; font-size: 12px; color: #64748b; margin-top: 6px; padding: 0 2px;">
+                                                <span><i class="ri-qr-scan-line"></i> <?php echo $points_per_scan; ?> <?php echo esc_html($L['points_per_scan']); ?></span>
+                                                <span><i class="ri-walk-line"></i> <?php echo $scans_needed; ?> <?php echo esc_html($scans_needed === 1 ? $L['scan_singular'] : $L['scans_needed']); ?></span>
+                                            </div>
+                                            <?php endif; ?>
                                         </div>
                                     <?php endforeach; ?>
                                 <?php else: ?>
@@ -521,22 +553,6 @@ class PPV_Belohnungen {
                     <p><?php echo esc_html($L['no_stores_hint']); ?></p>
                 </div>
             <?php endif; ?>
-
-            <!-- HOW IT WORKS (Collapsible) -->
-            <div class="ppv-rw-howto">
-                <div class="ppv-rw-howto-header" onclick="ppvToggleHowto(this)">
-                    <h3><i class="ri-lightbulb-line"></i> <?php echo esc_html($L['how_it_works']); ?></h3>
-                    <i class="ri-arrow-down-s-line ppv-rw-chevron"></i>
-                </div>
-                <div class="ppv-rw-howto-content">
-                    <div class="ppv-rw-howto-steps">
-                        <div class="ppv-rw-step"><span class="step-num">1</span><span><?php echo esc_html($L['how_step_1']); ?></span></div>
-                        <div class="ppv-rw-step"><span class="step-num">2</span><span><?php echo esc_html($L['how_step_2']); ?></span></div>
-                        <div class="ppv-rw-step"><span class="step-num">3</span><span><?php echo esc_html($L['how_step_3']); ?></span></div>
-                        <div class="ppv-rw-step"><span class="step-num">4</span><span><?php echo esc_html($L['how_step_4']); ?></span></div>
-                    </div>
-                </div>
-            </div>
 
             <!-- REDEMPTION HISTORY -->
             <?php if (!empty($history)): ?>

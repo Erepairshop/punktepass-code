@@ -85,7 +85,10 @@ if (!$lang && !empty($_GET['lang'])) {
                 $_SESSION['ppv_lang'] = $lang;
                 $_COOKIE['ppv_lang']  = $lang;
                 self::set_cookie_all($lang, $domain, $secure);
-                ppv_log("🌍 [PPV_Lang] Selected via GET → {$lang}");
+                // 🔧 FIX: Set manual flag so browser detection won't override after logout
+                @setcookie('ppv_lang_manual', '1', time() + 31536000, '/', '', $secure, false);
+                $_COOKIE['ppv_lang_manual'] = '1';
+                ppv_log("🌍 [PPV_Lang] Selected via GET → {$lang} (manual flag set)");
             }
         }
 
@@ -102,9 +105,18 @@ if (!$lang && !empty($_GET['lang'])) {
         }
 
         // 5️⃣ Browser Accept-Language fallback (FREE, instant, no API call!)
+        // 🔧 FIX: Skip browser detection if user previously selected a language manually
         if (!$lang) {
-            // Check session cache first
-            if (!empty($_SESSION['ppv_browser_lang'])) {
+            // Check if user ever manually selected a language
+            $manual_selection = !empty($_COOKIE['ppv_lang_manual']);
+
+            if ($manual_selection) {
+                // User previously chose a language manually, don't use browser detection
+                // Just use default (German) - the manual cookie was probably cleared by some issue
+                $lang = 'de';
+                ppv_log("🌍 [PPV_Lang] Manual flag exists but no lang cookie - using default → {$lang}");
+            } elseif (!empty($_SESSION['ppv_browser_lang'])) {
+                // Check session cache first
                 $lang = $_SESSION['ppv_browser_lang'];
                 ppv_log("🌍 [PPV_Lang] Browser lang from session → {$lang}");
             } else {

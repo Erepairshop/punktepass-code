@@ -590,23 +590,11 @@ class PPV_QR {
             }
             wp_enqueue_script('ppv-qr', PPV_PLUGIN_URL . 'assets/js/ppv-qr-init.js', $init_deps, $js_version, true);
 
-            // 🌐 Language priority: Cookie > GET > DB > default
-            $lang = sanitize_text_field($_COOKIE['ppv_lang'] ?? '');
-            if (empty($lang) && isset($_GET['lang'])) {
-                $lang = sanitize_text_field($_GET['lang']);
-            }
-            if ((empty($lang) || !in_array($lang, ['de', 'hu', 'ro'])) && !empty($_SESSION['ppv_user_id'])) {
-                global $wpdb;
-                $user_lang = $wpdb->get_var($wpdb->prepare(
-                    "SELECT language FROM {$wpdb->prefix}ppv_users WHERE id=%d LIMIT 1",
-                    intval($_SESSION['ppv_user_id'])
-                ));
-                if (!empty($user_lang) && in_array($user_lang, ['de', 'hu', 'ro'])) {
-                    $lang = $user_lang;
-                }
-            }
+            // 🌐 Use PPV_Lang (already detected at init) - don't do separate detection!
+            // This ensures consistency across all pages
+            $lang = class_exists('PPV_Lang') ? PPV_Lang::$active : 'de';
             if (empty($lang) || !in_array($lang, ['de', 'hu', 'ro'])) {
-                $lang = defined('PPV_LANG_ACTIVE') ? PPV_LANG_ACTIVE : 'de';
+                $lang = 'de';
             }
 
             if (class_exists('PPV_Lang')) {
@@ -682,9 +670,30 @@ class PPV_QR {
             // Add scanner info if this is a scanner user
             if (!empty($_SESSION['ppv_user_type']) && $_SESSION['ppv_user_type'] === 'scanner' && !empty($_SESSION['ppv_user_id'])) {
                 $scanner_id = intval($_SESSION['ppv_user_id']);
-                $scanner_email = sanitize_email($_SESSION['ppv_user_email'] ?? '');
+
+                // 🔧 FIX: Get scanner's name from ppv_users
+                // Scanner users are created with 'username' field (e.g., "Adrian"), NOT display_name!
+                $scanner_user = $wpdb->get_row($wpdb->prepare(
+                    "SELECT display_name, username, first_name, last_name, email FROM {$wpdb->prefix}ppv_users WHERE id = %d LIMIT 1",
+                    $scanner_id
+                ));
+
+                // Priority: display_name > username > first_name + last_name > email
+                $scanner_name = '';
+                if ($scanner_user) {
+                    if (!empty($scanner_user->display_name)) {
+                        $scanner_name = $scanner_user->display_name;
+                    } elseif (!empty($scanner_user->username)) {
+                        $scanner_name = $scanner_user->username;
+                    } elseif (!empty($scanner_user->first_name) || !empty($scanner_user->last_name)) {
+                        $scanner_name = trim(($scanner_user->first_name ?? '') . ' ' . ($scanner_user->last_name ?? ''));
+                    } elseif (!empty($scanner_user->email)) {
+                        $scanner_name = $scanner_user->email;
+                    }
+                }
+
                 $store_data['scanner_id'] = $scanner_id;
-                $store_data['scanner_name'] = $scanner_email; // Use email as identifier
+                $store_data['scanner_name'] = $scanner_name ?: sanitize_email($_SESSION['ppv_user_email'] ?? '');
             }
 
             // Add Ably config if enabled
@@ -795,28 +804,28 @@ class PPV_QR {
             </div>
 
             <!-- TAB CONTENT: SCANNER -->
-            <div class="ppv-tab-content active" id="tab-scanner">
+            <div class="ppv-tab-content active" id="tab-scanner" style="border: none; box-shadow: none; padding: 8px 0; background: transparent;">
                 <?php self::render_pos_scanner(); ?>
             </div>
 
             <!-- TAB CONTENT: GERÄTE -->
-            <div class="ppv-tab-content" id="tab-devices">
+            <div class="ppv-tab-content" id="tab-devices" style="border: none; box-shadow: none; padding: 8px 0; background: transparent;">
                 <?php self::render_user_devices($is_scanner); ?>
             </div>
 
             <?php if (!$is_scanner): ?>
             <!-- TAB CONTENT: PRÄMIEN -->
-            <div class="ppv-tab-content" id="tab-rewards">
+            <div class="ppv-tab-content" id="tab-rewards" style="border: none; box-shadow: none; padding: 8px 0; background: transparent;">
                 <?php echo do_shortcode('[ppv_rewards_management]'); ?>
             </div>
 
             <!-- TAB CONTENT: SCANNER BENUTZER -->
-            <div class="ppv-tab-content" id="tab-scanner-users">
+            <div class="ppv-tab-content" id="tab-scanner-users" style="border: none; box-shadow: none; padding: 8px 0; background: transparent;">
                 <?php self::render_scanner_users(); ?>
             </div>
 
             <!-- TAB CONTENT: VIP EINSTELLUNGEN -->
-            <div class="ppv-tab-content" id="tab-vip">
+            <div class="ppv-tab-content" id="tab-vip" style="border: none; box-shadow: none; padding: 8px 0; background: transparent;">
                 <?php echo do_shortcode('[ppv_vip_settings]'); ?>
             </div>
             <?php endif; ?>

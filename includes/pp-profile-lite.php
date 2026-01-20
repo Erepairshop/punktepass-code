@@ -2794,24 +2794,12 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
          * ============================================================
          */
         public static function ajax_change_password() {
+            global $wpdb;
             self::ensure_session();
 
             $auth = self::check_auth();
             if (!$auth['valid']) {
                 wp_send_json_error(['msg' => PPV_Lang::t('error_no_permission', 'Nincs jogosultság')]);
-                return;
-            }
-
-            // Get user ID from session
-            $user_id = 0;
-            if (!empty($_SESSION['ppv_user_id'])) {
-                $user_id = intval($_SESSION['ppv_user_id']);
-            } elseif (is_user_logged_in()) {
-                $user_id = get_current_user_id();
-            }
-
-            if (!$user_id) {
-                wp_send_json_error(['msg' => PPV_Lang::t('error_no_user', 'Felhasználó nem található')]);
                 return;
             }
 
@@ -2840,21 +2828,103 @@ wp_send_json_error(['msg' => 'A cím nem található! Próbáld meg máshogyan �
                 return;
             }
 
-            // Verify current password
-            $user = get_user_by('ID', $user_id);
-            if (!$user || !wp_check_password($current_password, $user->user_pass, $user_id)) {
-                wp_send_json_error(['msg' => PPV_Lang::t('error_current_password_wrong', 'A jelenlegi jelszó helytelen')]);
-                return;
+            $password_updated = false;
+            $new_hash = password_hash($new_password, PASSWORD_DEFAULT);
+
+            // ============================================================
+            // 🏪 HANDLER/VENDOR: Update ppv_stores password
+            // ============================================================
+            $store_id = self::get_store_id();
+            if ($store_id) {
+                // Get store to verify current password
+                $store = $wpdb->get_row($wpdb->prepare(
+                    "SELECT id, password FROM {$wpdb->prefix}ppv_stores WHERE id = %d LIMIT 1",
+                    $store_id
+                ));
+
+                if ($store && !empty($store->password)) {
+                    // Verify current password against store
+                    if (!password_verify($current_password, $store->password)) {
+                        wp_send_json_error(['msg' => PPV_Lang::t('error_current_password_wrong', 'A jelenlegi jelszó helytelen')]);
+                        return;
+                    }
+
+                    // Update store password
+                    $wpdb->update(
+                        "{$wpdb->prefix}ppv_stores",
+                        ['password' => $new_hash],
+                        ['id' => $store_id],
+                        ['%s'],
+                        ['%d']
+                    );
+                    $password_updated = true;
+                    ppv_log("[PPV_ACCOUNT] Store password updated for store #{$store_id}");
+                }
             }
 
-            // Update password
-            wp_set_password($new_password, $user_id);
+            // ============================================================
+            // 👤 PPV USER: Update ppv_users password (if has password)
+            // ============================================================
+            $ppv_user_id = intval($_SESSION['ppv_user_id'] ?? 0);
+            if ($ppv_user_id > 0) {
+                $ppv_user = $wpdb->get_row($wpdb->prepare(
+                    "SELECT id, password, vendor_store_id FROM {$wpdb->prefix}ppv_users WHERE id = %d LIMIT 1",
+                    $ppv_user_id
+                ));
 
-            // Re-authenticate the user (wp_set_password logs them out)
-            wp_set_auth_cookie($user_id, true);
+                if ($ppv_user) {
+                    // If user has password (not vendor with empty password), verify it
+                    if (!empty($ppv_user->password) && !$password_updated) {
+                        if (!password_verify($current_password, $ppv_user->password)) {
+                            wp_send_json_error(['msg' => PPV_Lang::t('error_current_password_wrong', 'A jelenlegi jelszó helytelen')]);
+                            return;
+                        }
+                    }
 
-            ppv_log("[PPV_ACCOUNT] Password changed for user #{$user_id}");
-            wp_send_json_success(['msg' => PPV_Lang::t('password_changed_success', 'Jelszó sikeresen módosítva!')]);
+                    // Update ppv_users password (even if empty before - now user has one)
+                    $wpdb->update(
+                        "{$wpdb->prefix}ppv_users",
+                        ['password' => $new_hash],
+                        ['id' => $ppv_user_id],
+                        ['%s'],
+                        ['%d']
+                    );
+                    $password_updated = true;
+                    ppv_log("[PPV_ACCOUNT] PPV user password updated for ppv_user #{$ppv_user_id}");
+                }
+            }
+
+            // ============================================================
+            // 🔑 WORDPRESS USER: Update wp_users password
+            // ============================================================
+            if (is_user_logged_in()) {
+                $wp_user_id = get_current_user_id();
+                $wp_user = get_user_by('ID', $wp_user_id);
+
+                if ($wp_user) {
+                    // If no PPV password was verified yet, verify against WP
+                    if (!$password_updated && !wp_check_password($current_password, $wp_user->user_pass, $wp_user_id)) {
+                        wp_send_json_error(['msg' => PPV_Lang::t('error_current_password_wrong', 'A jelenlegi jelszó helytelen')]);
+                        return;
+                    }
+
+                    // Update WP password
+                    wp_set_password($new_password, $wp_user_id);
+
+                    // Re-authenticate the user (wp_set_password logs them out)
+                    wp_set_auth_cookie($wp_user_id, true);
+
+                    $password_updated = true;
+                    ppv_log("[PPV_ACCOUNT] WordPress password updated for wp_user #{$wp_user_id}");
+                }
+            }
+
+            if ($password_updated) {
+                ppv_log("[PPV_ACCOUNT] Password changed successfully (store:{$store_id}, ppv_user:{$ppv_user_id})");
+                wp_send_json_success(['msg' => PPV_Lang::t('password_changed_success', 'Jelszó sikeresen módosítva!')]);
+            } else {
+                wp_send_json_error(['msg' => PPV_Lang::t('error_no_user', 'Felhasználó nem található')]);
+            }
         }
     }
 

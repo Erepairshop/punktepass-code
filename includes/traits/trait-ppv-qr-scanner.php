@@ -162,36 +162,28 @@ trait PPV_QR_Scanner_Trait {
         $is_scanner = class_exists('PPV_Permissions') && PPV_Permissions::is_scanner_user();
 
         if (!$is_scanner): ?>
-        <div class="ppv-trial-info-block" style="margin-bottom: 15px; padding: 12px 16px; background: <?php echo $info_color; ?>; border-radius: 10px;">
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <span style="font-size: 24px;"><?php echo $info_icon; ?></span>
+        <div class="ppv-trial-info-block" style="margin-bottom: 10px; padding: 8px 12px; background: <?php echo $info_color; ?>; border-radius: 8px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 18px;"><?php echo $info_icon; ?></span>
                     <div>
-                        <div style="font-weight: bold; font-size: 15px; margin-bottom: 2px;">
+                        <div style="font-weight: 600; font-size: 13px;">
                             <?php echo $info_message; ?>
                         </div>
                         <?php if ($renewal_requested): ?>
-                            <div style="font-size: 12px; opacity: 0.9; color: #00e6ff;">
-                                <?php echo self::t('renewal_in_progress', 'Aboverlängerung in Bearbeitung - Wir kontaktieren Sie bald per E-Mail oder Telefon'); ?>
-                            </div>
-                        <?php elseif ($show_description && $subscription_status === 'active'): ?>
-                            <div style="font-size: 12px; opacity: 0.7;">
-                                <?php echo self::t('subscription_info_desc', 'Aktive Premium-Mitgliedschaft'); ?>
-                            </div>
-                        <?php elseif ($subscription_status === 'trial' && $trial_days_left > 0): ?>
-                            <div style="font-size: 12px; opacity: 0.7;">
-                                <?php echo self::t('trial_info_desc', 'Registriert mit 30 Tage Probezeit'); ?>
+                            <div style="font-size: 11px; opacity: 0.9; color: #00e6ff;">
+                                <?php echo self::t('renewal_in_progress', 'Verlängerung in Bearbeitung'); ?>
                             </div>
                         <?php endif; ?>
                     </div>
                 </div>
                 <?php if ($show_upgrade_button): ?>
-                    <button id="ppv-request-renewal-btn" class="ppv-btn-outline" style="padding: 6px 12px; font-size: 13px; white-space: nowrap;">
-                        📧 <?php echo self::t('upgrade_now', 'Jetzt upgraden'); ?>
+                    <button id="ppv-request-renewal-btn" class="ppv-btn-outline" style="padding: 4px 10px; font-size: 11px; white-space: nowrap;">
+                        <?php echo self::t('upgrade_now', 'Upgrade'); ?>
                     </button>
                 <?php elseif ($show_renewal_button): ?>
-                    <button id="ppv-request-renewal-btn" class="ppv-btn-outline" style="padding: 6px 12px; font-size: 13px; white-space: nowrap;">
-                        📧 <?php echo self::t('request_renewal', 'Abo verlängern'); ?>
+                    <button id="ppv-request-renewal-btn" class="ppv-btn-outline" style="padding: 4px 10px; font-size: 11px; white-space: nowrap;">
+                        <?php echo self::t('request_renewal', 'Verlängern'); ?>
                     </button>
                 <?php endif; ?>
             </div>
@@ -228,26 +220,8 @@ trait PPV_QR_Scanner_Trait {
                 </button>
             </div>
 
-            <div class="ppv-pos-header">
-                <h4 class="ppv-pos-title"><?php echo self::t('table_title', '📋 Letzte Scans'); ?></h4>
-
-                <!-- 📥 CSV EXPORT DROPDOWN -->
-                <div class="ppv-csv-wrapper">
-                    <button id="ppv-csv-export-btn" class="ppv-btn ppv-csv-btn">
-                        📥 <?php echo self::t('csv_export', 'CSV Export'); ?>
-                    </button>
-                    <div id="ppv-csv-export-menu" class="ppv-csv-dropdown">
-                        <a href="#" class="ppv-csv-export-option" data-period="today">
-                            📅 <?php echo self::t('csv_today', 'Heute'); ?>
-                        </a>
-                        <a href="#" class="ppv-csv-export-option" data-period="date">
-                            📆 <?php echo self::t('csv_date', 'Datum wählen'); ?>
-                        </a>
-                        <a href="#" class="ppv-csv-export-option" data-period="month">
-                            <i class="ri-file-chart-line"></i> <?php echo self::t('csv_month', 'Diesen Monat'); ?>
-                        </a>
-                    </div>
-                </div>
+            <div class="ppv-pos-header" style="margin-bottom: 8px;">
+                <h4 class="ppv-pos-title" style="font-size: 14px; margin: 0;"><?php echo self::t('table_title', '📋 Letzte Scans'); ?></h4>
             </div>
 
             <table id="ppv-pos-log" class="glass-table">
@@ -260,6 +234,24 @@ trait PPV_QR_Scanner_Trait {
                 </thead>
                 <tbody></tbody>
             </table>
+
+            <!-- 📥 CSV EXPORT DROPDOWN - at bottom -->
+            <div class="ppv-csv-wrapper" style="margin-top: 12px; text-align: center;">
+                <button id="ppv-csv-export-btn" class="ppv-btn ppv-csv-btn" style="padding: 8px 14px; font-size: 12px;">
+                    📥 <?php echo self::t('csv_export', 'CSV Export'); ?>
+                </button>
+                <div id="ppv-csv-export-menu" class="ppv-csv-dropdown">
+                    <a href="#" class="ppv-csv-export-option" data-period="today">
+                        📅 <?php echo self::t('csv_today', 'Heute'); ?>
+                    </a>
+                    <a href="#" class="ppv-csv-export-option" data-period="date">
+                        📆 <?php echo self::t('csv_date', 'Datum wählen'); ?>
+                    </a>
+                    <a href="#" class="ppv-csv-export-option" data-period="month">
+                        <i class="ri-file-chart-line"></i> <?php echo self::t('csv_month', 'Diesen Monat'); ?>
+                    </a>
+                </div>
+            </div>
 
             <!-- 🎥 CAMERA SCANNER MODAL -->
             <div id="ppv-camera-modal" class="ppv-modal" role="dialog" aria-modal="true" style="display: none;">
@@ -354,20 +346,20 @@ trait PPV_QR_Scanner_Trait {
 
         // Always show switcher (even if only 1 location, to allow adding new)
         ?>
-        <div class="ppv-filiale-switcher" style="margin-bottom: 20px; padding: 15px;">
-            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                <label for="ppv-filiale-select" style="font-weight: 600; margin: 0;">
-                    <i class="ri-store-2-line"></i> <?php echo self::t('current_filiale', 'Aktuelle Filiale'); ?>:
+        <div class="ppv-filiale-switcher" style="margin-bottom: 10px; padding: 10px 12px;">
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <label for="ppv-filiale-select" style="font-weight: 600; margin: 0; font-size: 12px;">
+                    <i class="ri-store-2-line"></i> <?php echo self::t('current_filiale', 'Filiale'); ?>:
                 </label>
 
-                <select id="ppv-filiale-select" style="flex: 1; min-width: 200px; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-color, #e0e0e0); background: var(--bg-secondary, #fff); color: var(--text-primary, #333);">
+                <select id="ppv-filiale-select" style="flex: 1; min-width: 140px; padding: 6px 10px; font-size: 13px; border-radius: 6px; border: 1px solid var(--border-color, #e0e0e0); background: var(--bg-secondary, #fff); color: var(--text-primary, #333);">
                     <?php foreach ($filialen as $filiale): ?>
                         <option value="<?php echo esc_attr($filiale->id); ?>" <?php selected($filiale->id, $current_filiale_id); ?>>
                             <?php
                             echo esc_html($filiale->name);
                             // Show "Main Location" label for parent store
                             if ($filiale->id == $parent_id && (empty($filiale->parent_store_id) || $filiale->parent_store_id === null)) {
-                                echo ' (' . self::t('main_location', 'Hauptstandort') . ')';
+                                echo ' (' . self::t('main_location', 'Haupt') . ')';
                             }
                             if (!empty($filiale->city)) {
                                 echo ' - ' . esc_html($filiale->city);
@@ -377,8 +369,8 @@ trait PPV_QR_Scanner_Trait {
                     <?php endforeach; ?>
                 </select>
 
-                <button id="ppv-add-filiale-btn" class="ppv-btn" type="button" style="white-space: nowrap;">
-                    <i class="ri-add-line"></i> <?php echo self::t('add_filiale', 'Filiale hinzufügen'); ?>
+                <button id="ppv-add-filiale-btn" class="ppv-btn" type="button" style="white-space: nowrap; padding: 6px 10px; font-size: 12px;">
+                    <i class="ri-add-line"></i> <?php echo self::t('add_filiale', 'Neu'); ?>
                 </button>
             </div>
 

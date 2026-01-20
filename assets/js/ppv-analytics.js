@@ -12,7 +12,6 @@ if (typeof window.PPV_Analytics === 'undefined') {
 window.PPV_Analytics = class PPV_Analytics {
   constructor() {
     this.data = null;
-    this.stores = null;
     this.summary = null;
     this.range = 30;
     this.container = null;
@@ -156,30 +155,26 @@ window.PPV_Analytics = class PPV_Analytics {
       const lang = window.ppv_mypoints?.lang || 'de';
       const headers = { 'X-PPV-Lang': lang };
 
-      // ✅ FIX: Fetch ALL data in PARALLEL (was sequential - major performance issue!)
-      this.log('📡 [Analytics] Starting parallel fetch (3 requests)...');
+      // Fetch trend and summary in parallel
+      this.log('📡 [Analytics] Starting parallel fetch (2 requests)...');
       const startTime = performance.now();
 
-      const [trendRes, storesRes, summaryRes] = await Promise.all([
+      const [trendRes, summaryRes] = await Promise.all([
         fetch(`/wp-json/ppv/v1/analytics/trend?range=${this.range}`, { headers, credentials: 'include' }),
-        fetch(`/wp-json/ppv/v1/analytics/stores?range=${this.range}`, { headers, credentials: 'include' }),
         fetch('/wp-json/ppv/v1/analytics/summary', { headers, credentials: 'include' })
       ]);
 
       // Check responses
       if (!trendRes.ok) throw new Error('Trend fetch failed: ' + trendRes.status);
-      if (!storesRes.ok) throw new Error('Stores fetch failed: ' + storesRes.status);
       if (!summaryRes.ok) throw new Error('Summary fetch failed: ' + summaryRes.status);
 
       // Parse JSON in parallel too
-      const [trendData, storesData, summaryData] = await Promise.all([
+      const [trendData, summaryData] = await Promise.all([
         trendRes.json(),
-        storesRes.json(),
         summaryRes.json()
       ]);
 
       this.data = trendData;
-      this.stores = storesData;
       this.summary = summaryData;
 
       const duration = Math.round(performance.now() - startTime);
@@ -187,7 +182,6 @@ window.PPV_Analytics = class PPV_Analytics {
 
       if (this.DEBUG) {
         this.log('📊 Trend:', this.data);
-        this.log('🏪 Stores:', this.stores);
         this.log('📈 Summary:', this.summary);
       }
     } catch (err) {
@@ -267,15 +261,6 @@ window.PPV_Analytics = class PPV_Analytics {
         <div id="ppv-chart-trend" class="ppv-chart-container" style="touch-action: pan-y;"></div>
       </div>
 
-      <!-- Store Breakdown Chart -->
-      <div class="ppv-analytics-section">
-        <h4>${l.analytics_stores_title}</h4>
-        <div class="ppv-stores-breakdown" style="touch-action: pan-y;">
-          <div id="ppv-chart-stores" class="ppv-chart-container ppv-chart-pie" style="touch-action: pan-y;"></div>
-          <div id="ppv-stores-list" class="ppv-stores-list"></div>
-        </div>
-      </div>
-
       <!-- Best Day Info -->
       <div class="ppv-analytics-section">
         <h4>${l.analytics_best_day_title}</h4>
@@ -288,8 +273,6 @@ window.PPV_Analytics = class PPV_Analytics {
     // Populate data
     this.populateSummary();
     this.renderTrendChart();
-    this.renderStoresChart();
-    this.renderStoresList();
     this.renderBestDay();
   }
 
@@ -332,66 +315,6 @@ window.PPV_Analytics = class PPV_Analytics {
     // Simple SVG chart (fallback if Recharts not available)
     const html = this.generateTrendChartSVG(chartData);
     container.innerHTML = html;
-  }
-
-  /** ============================================================
-   * RENDER STORES CHART (PIE CHART)
-   * ============================================================ */
-  renderStoresChart() {
-    const lang = window.ppv_mypoints?.lang || 'de';
-    const l = this.getLabels(lang);
-
-    if (!this.stores?.stores || this.stores.stores.length === 0) {
-      document.getElementById('ppv-chart-stores').innerHTML = `<p>${l.analytics_no_data}</p>`;
-      return;
-    }
-
-    const container = document.getElementById('ppv-chart-stores');
-    const stores = this.stores.stores.slice(0, 5); // Top 5
-
-    const html = this.generatePieChartSVG(stores);
-    container.innerHTML = html;
-  }
-
-  /** ============================================================
-   * RENDER STORES LIST
-   * ============================================================ */
-  renderStoresList() {
-    const lang = window.ppv_mypoints?.lang || 'de';
-    const l = this.getLabels(lang);
-
-    if (!this.stores?.stores || this.stores.stores.length === 0) {
-      document.getElementById('ppv-stores-list').innerHTML = `<p>${l.analytics_no_data}</p>`;
-      return;
-    }
-
-    const stores = this.stores.stores;
-    let html = '';
-
-    stores.forEach((store, index) => {
-      const colors = ['#667eea', '#764ba2', '#f59e0b', '#10b981', '#ef4444'];
-      const color = colors[index % colors.length];
-
-      html += `
-        <div class="ppv-store-item">
-          <div class="store-color" style="background-color: ${color};"></div>
-          <div class="store-info">
-            <div class="store-name">${store.name}</div>
-            <div class="store-stats">
-              <span>${store.visits} ${l.analytics_visits}</span>
-              <span>•</span>
-              <span>${store.avg_points} ${l.analytics_avg_points}</span>
-            </div>
-          </div>
-          <div class="store-points">
-            <div class="points">${store.points}</div>
-            <div class="percentage">${store.percentage}${l.analytics_percentage}</div>
-          </div>
-        </div>
-      `;
-    });
-
-    document.getElementById('ppv-stores-list').innerHTML = html;
   }
 
   /** ============================================================
@@ -531,63 +454,6 @@ window.PPV_Analytics = class PPV_Analytics {
         <!-- Axes -->
         <line x1="${padding}" y1="${height - padding}" x2="${width - padding}" y2="${height - padding}" 
               stroke="#0f172a" stroke-width="1" />
-      </svg>
-    `;
-  }
-
-  /** ============================================================
-   * GENERATE SVG PIE CHART (Fallback)
-   * ============================================================ */
-  generatePieChartSVG(data) {
-    if (data.length === 0) return '<p>No data</p>';
-
-    const size = 300;
-    const radius = 100;
-    const cx = size / 2;
-    const cy = size / 2;
-
-    const colors = ['#667eea', '#764ba2', '#f59e0b', '#10b981', '#ef4444'];
-    const total = data.reduce((sum, d) => sum + d.points, 0);
-
-    let currentAngle = 0;
-    let slicesHtml = '';
-
-    data.forEach((store, index) => {
-      const slicePercent = store.points / total;
-      const sliceAngle = slicePercent * 360;
-      const startAngle = currentAngle;
-      const endAngle = currentAngle + sliceAngle;
-
-      const color = colors[index % colors.length];
-
-      // SVG arc path
-      const x1 = cx + radius * Math.cos((startAngle * Math.PI) / 180);
-      const y1 = cy + radius * Math.sin((startAngle * Math.PI) / 180);
-      const x2 = cx + radius * Math.cos((endAngle * Math.PI) / 180);
-      const y2 = cy + radius * Math.sin((endAngle * Math.PI) / 180);
-
-      const largeArc = sliceAngle > 180 ? 1 : 0;
-
-      const pathData = `
-        M ${cx} ${cy}
-        L ${x1} ${y1}
-        A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2}
-        Z
-      `;
-
-      slicesHtml += `
-        <path d="${pathData}" fill="${color}" opacity="0.8" class="ppv-pie-slice"
-              title="${store.name}: ${store.points} (${store.percentage}%)">
-          <title>${store.name}: ${store.points} (${store.percentage}%)</title>
-        </path>
-      `;
-
-      currentAngle = endAngle;
-    });
-
-    return `
-      <svg viewBox="0 0 ${size} ${size}" class="ppv-pie-chart" style="touch-action: none; pointer-events: none;">
-        ${slicesHtml}
       </svg>
     `;
   }

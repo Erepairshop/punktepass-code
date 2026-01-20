@@ -618,6 +618,15 @@ function initLogin() {
                             window.location.href = getFinalRedirectUrl(res.data.redirect);
                         }, 1000);
                     } else {
+                        // 🔧 FIX: Handle expired nonce by auto-reloading
+                        if (res.data && res.data.nonce_expired) {
+                            showAlert(res.data.message + ' (Seite wird neu geladen...)', 'error');
+                            setTimeout(function() {
+                                window.location.reload();
+                            }, 1500);
+                            return;
+                        }
+
                         showAlert(res.data.message, 'error');
                         resetSubmitButton($btn, $btnText, $btnLoader);
 
@@ -1017,6 +1026,8 @@ function initLogin() {
             // Set cookie (1 year expiry)
             const maxAge = 60 * 60 * 24 * 365;
             document.cookie = `ppv_lang=${lang}; path=/; max-age=${maxAge}; SameSite=Lax`;
+            // 🔧 FIX: Set manual flag so browser language won't override after logout
+            document.cookie = `ppv_lang_manual=1; path=/; max-age=${maxAge}; SameSite=Lax`;
 
             // Set localStorage (fallback)
             localStorage.setItem('ppv_lang', lang);

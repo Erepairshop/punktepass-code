@@ -5,7 +5,7 @@ class PPV_POS_Log {
 
     public static function hooks() {
         add_action('admin_menu', [__CLASS__, 'add_admin_page']);
-        add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_styles']);
+        // add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_styles']); // Disabled - admin only
     }
 
     /** 🔹 Admin menüpont */

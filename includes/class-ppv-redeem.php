@@ -10,7 +10,7 @@ class PPV_Redeem {
 
     public static function hooks() {
         add_shortcode('ppv_redeem_rewards', [__CLASS__, 'render_redeem_page']);
-        add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
+        // add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']); // Disabled - CSS not used
         add_action('rest_api_init', [__CLASS__, 'register_rest_routes']);
     }
 

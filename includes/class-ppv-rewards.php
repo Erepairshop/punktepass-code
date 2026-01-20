@@ -209,8 +209,8 @@ class PPV_Rewards {
         // Theme loader
         wp_enqueue_script('ppv-theme-loader', $plugin_url . 'assets/js/ppv-theme-loader.js', [], time(), false);
 
-        // Fonts (RemixIcons loaded globally in punktepass.php)
-        wp_enqueue_style('google-fonts-inter', 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap', [], null);
+        // Fonts - Google Fonts removed for performance (using system fonts)
+        // wp_enqueue_style('google-fonts-inter', 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap', [], null);
 
         // Ably (if enabled) - use shared manager
         $dependencies = [];

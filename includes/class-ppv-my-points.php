@@ -87,15 +87,6 @@ class PPV_My_Points {
         // ============================================================
         wp_enqueue_script('jquery');
 
-        // Analytics
-        wp_enqueue_script(
-            'ppv-analytics',
-            PPV_PLUGIN_URL . 'assets/js/ppv-analytics.js',
-            ['jquery'],
-            time(),
-            true
-        );
-
         // 📡 ABLY: Load JS library + shared manager if configured
         $js_deps = ['jquery'];
         if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {

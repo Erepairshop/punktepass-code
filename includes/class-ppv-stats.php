@@ -450,12 +450,15 @@ class PPV_Stats {
         }
 
         // Top 5 Users
+        // 🔧 FIX: Include display_name and username for complete name fallback
         $top5 = $wpdb->get_results($wpdb->prepare("
             SELECT
                 p.user_id,
                 COUNT(*) as purchases,
                 SUM(p.points) as total_points,
                 pu.email,
+                pu.display_name,
+                pu.username,
                 pu.first_name,
                 pu.last_name
             FROM $table_points p
@@ -468,9 +471,16 @@ class PPV_Stats {
 
         $top5_formatted = [];
         foreach ($top5 as $user) {
-            $name = (!empty($user->first_name) || !empty($user->last_name))
-                ? trim($user->first_name . ' ' . $user->last_name)
-                : 'User #' . $user->user_id;
+            // Priority: display_name > username > first_name+last_name > User #ID
+            if (!empty($user->display_name)) {
+                $name = $user->display_name;
+            } elseif (!empty($user->username)) {
+                $name = $user->username;
+            } elseif (!empty($user->first_name) || !empty($user->last_name)) {
+                $name = trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? ''));
+            } else {
+                $name = 'User #' . $user->user_id;
+            }
 
             $top5_formatted[] = [
                 'user_id' => intval($user->user_id),
@@ -744,11 +754,14 @@ class PPV_Stats {
             $store_ids
         )) ?? 0;
 
+        // 🔧 FIX: Join with ppv_rewards table to get reward title (not just ID)
+        $table_rewards = $wpdb->prefix . 'ppv_rewards';
         $top_rewards = $wpdb->get_results($wpdb->prepare(
-            "SELECT reward_id, SUM(points_spent) as total, COUNT(*) as count
-             FROM $table_redeemed
-             WHERE store_id IN ($placeholders) AND status IN ('approved', 'bestätigt')
-             GROUP BY reward_id
+            "SELECT r.reward_id, rw.title as reward_title, SUM(r.points_spent) as total, COUNT(*) as count
+             FROM $table_redeemed r
+             LEFT JOIN $table_rewards rw ON r.reward_id = rw.id
+             WHERE r.store_id IN ($placeholders) AND r.status IN ('approved', 'bestätigt')
+             GROUP BY r.reward_id, rw.title
              ORDER BY total DESC
              LIMIT 5",
             $store_ids
@@ -758,6 +771,7 @@ class PPV_Stats {
         foreach ($top_rewards as $reward) {
             $top_rewards_formatted[] = [
                 'reward_id' => intval($reward->reward_id),
+                'reward_title' => $reward->reward_title ?: ('Reward #' . $reward->reward_id),
                 'total_spent' => intval($reward->total),
                 'redeemed_count' => intval($reward->count)
             ];
@@ -897,10 +911,20 @@ class PPV_Stats {
         $format = sanitize_text_field($req->get_param('format') ?? 'detailed');
         $table_points = $wpdb->prefix . 'ppv_points';
 
+        // 🌐 Get handler's language for CSV headers
+        $lang = self::get_user_lang();
+        $headers = self::get_export_headers($lang);
+
         if ($format === 'summary') {
-            // Summary
-            $csv = "Store ID,Date,Daily Points,Daily Redemptions,Unique Users\n";
-            
+            // Summary - use translated headers
+            $csv = implode(',', [
+                $headers['store_id'],
+                $headers['date'],
+                $headers['daily_points'],
+                $headers['daily_redemptions'],
+                $headers['unique_users']
+            ]) . "\n";
+
             $today = current_time('Y-m-d');
             for ($i = 6; $i >= 0; $i--) {
                 $date = date('Y-m-d', strtotime("-$i days", strtotime($today)));
@@ -912,20 +936,28 @@ class PPV_Stats {
                     "SELECT COUNT(DISTINCT user_id) FROM $table_points WHERE store_id=%d AND DATE(created)=%s",
                     $store_id, $date
                 ));
-                
+
                 $csv .= "$store_id,$date,$points,0,$unique\n";
             }
 
             $filename = 'stats_summary_' . $store_id . '_' . date('Y-m-d') . '.csv';
         } else {
-            // Detailed
-            $csv = "User ID,Email,Name,Total Points,Purchases,Redemptions,Points Spent\n";
-            
+            // Detailed - use translated headers
+            $csv = implode(',', [
+                $headers['user_id'],
+                $headers['email'],
+                $headers['name'],
+                $headers['total_points'],
+                $headers['purchases'],
+                $headers['redemptions'],
+                $headers['points_spent']
+            ]) . "\n";
+
             $rows = $wpdb->get_results($wpdb->prepare("
-                SELECT 
+                SELECT
                     p.user_id,
                     pu.email,
-                    CONCAT(COALESCE(pu.first_name, ''), ' ', COALESCE(pu.last_name, '')) as name,
+                    COALESCE(pu.display_name, CONCAT(COALESCE(pu.first_name, ''), ' ', COALESCE(pu.last_name, ''))) as name,
                     SUM(p.points) as total_points,
                     COUNT(DISTINCT p.id) as purchases,
                     COUNT(DISTINCT pr.id) as redemptions,
@@ -947,13 +979,65 @@ class PPV_Stats {
             $filename = 'stats_detailed_' . $store_id . '_' . date('Y-m-d') . '.csv';
         }
 
-        ppv_log("✅ [Export Advanced] Generated: $filename");
+        ppv_log("✅ [Export Advanced] Generated: $filename (lang: $lang)");
 
         return new WP_REST_Response([
             'success' => true,
             'csv' => $csv,
             'filename' => $filename
         ], 200, ['Cache-Control' => 'no-store']);
+    }
+
+    /**
+     * 🌐 Get translated CSV export headers based on language
+     */
+    private static function get_export_headers($lang) {
+        $headers = [
+            'de' => [
+                'store_id' => 'Filiale ID',
+                'date' => 'Datum',
+                'daily_points' => 'Tägliche Punkte',
+                'daily_redemptions' => 'Tägliche Einlösungen',
+                'unique_users' => 'Einzigartige Nutzer',
+                'user_id' => 'Benutzer ID',
+                'email' => 'E-Mail',
+                'name' => 'Name',
+                'total_points' => 'Gesamtpunkte',
+                'purchases' => 'Käufe',
+                'redemptions' => 'Einlösungen',
+                'points_spent' => 'Punkte ausgegeben'
+            ],
+            'hu' => [
+                'store_id' => 'Üzlet ID',
+                'date' => 'Dátum',
+                'daily_points' => 'Napi pontok',
+                'daily_redemptions' => 'Napi beváltások',
+                'unique_users' => 'Egyedi felhasználók',
+                'user_id' => 'Felhasználó ID',
+                'email' => 'E-mail',
+                'name' => 'Név',
+                'total_points' => 'Összes pont',
+                'purchases' => 'Vásárlások',
+                'redemptions' => 'Beváltások',
+                'points_spent' => 'Elköltött pontok'
+            ],
+            'ro' => [
+                'store_id' => 'ID Magazin',
+                'date' => 'Data',
+                'daily_points' => 'Puncte zilnice',
+                'daily_redemptions' => 'Răscumpărări zilnice',
+                'unique_users' => 'Utilizatori unici',
+                'user_id' => 'ID Utilizator',
+                'email' => 'E-mail',
+                'name' => 'Nume',
+                'total_points' => 'Total puncte',
+                'purchases' => 'Achiziții',
+                'redemptions' => 'Răscumpărări',
+                'points_spent' => 'Puncte cheltuite'
+            ]
+        ];
+
+        return $headers[$lang] ?? $headers['de'];
     }
 
     // ========================================
@@ -981,44 +1065,86 @@ class PPV_Stats {
 
         // Get all scans with scanner info from metadata (JSON)
         // We extract scanner_id from the JSON metadata column
+        // 🔧 FIX: Group ONLY by scanner_id (not scanner_name) to prevent duplicate counting
+        // 🔧 FIX: Properly exclude NULL and 'null' string values to prevent overlap with untracked
         $scanner_stats = $wpdb->get_results($wpdb->prepare("
             SELECT
                 JSON_UNQUOTE(JSON_EXTRACT(l.metadata, '$.scanner_id')) as scanner_id,
-                JSON_UNQUOTE(JSON_EXTRACT(l.metadata, '$.scanner_name')) as scanner_name,
                 COUNT(*) as total_scans,
                 SUM(CASE WHEN DATE(l.created_at) = %s THEN 1 ELSE 0 END) as today_scans,
                 SUM(CASE WHEN DATE(l.created_at) >= %s THEN 1 ELSE 0 END) as week_scans,
                 SUM(CASE WHEN DATE(l.created_at) >= %s THEN 1 ELSE 0 END) as month_scans,
+                COALESCE(SUM(l.points_change), 0) as total_points,
+                COALESCE(SUM(CASE WHEN DATE(l.created_at) = %s THEN l.points_change ELSE 0 END), 0) as today_points,
+                COALESCE(SUM(CASE WHEN DATE(l.created_at) >= %s THEN l.points_change ELSE 0 END), 0) as week_points,
+                COALESCE(SUM(CASE WHEN DATE(l.created_at) >= %s THEN l.points_change ELSE 0 END), 0) as month_points,
                 MIN(l.created_at) as first_scan,
                 MAX(l.created_at) as last_scan
             FROM {$table_log} l
             WHERE l.store_id IN ({$placeholders})
               AND l.type = 'qr_scan'
               AND JSON_EXTRACT(l.metadata, '$.scanner_id') IS NOT NULL
-            GROUP BY scanner_id, scanner_name
+              AND JSON_UNQUOTE(JSON_EXTRACT(l.metadata, '$.scanner_id')) NOT IN ('null', '')
+            GROUP BY scanner_id
             ORDER BY total_scans DESC
-        ", array_merge([$today, $week_start, $month_start], $store_ids)));
+        ", array_merge([$today, $week_start, $month_start, $today, $week_start, $month_start], $store_ids)));
 
         // Format results
         $scanners_formatted = [];
         foreach ($scanner_stats as $scanner) {
-            if (empty($scanner->scanner_id) || $scanner->scanner_id === 'null') {
-                continue; // Skip entries without scanner_id
+            // Note: SQL already filters out null/empty scanner_ids, but double-check just in case
+            if (empty($scanner->scanner_id)) {
+                continue;
+            }
+
+            $scanner_id = intval($scanner->scanner_id);
+
+            // 🔧 FIX: ALWAYS fetch scanner_name from ppv_users table (not from log metadata)
+            // The log metadata might have old/incorrect names (like "Scanner" instead of "Adrian")
+            // Scanner users are created with 'username' field, NOT display_name!
+            $scanner_name = null;
+            $user_data = $wpdb->get_row($wpdb->prepare(
+                "SELECT display_name, username, email, first_name, last_name
+                 FROM {$table_users} WHERE id = %d LIMIT 1",
+                $scanner_id
+            ));
+
+            if ($user_data) {
+                // Priority: display_name > username > first_name + last_name > email
+                if (!empty($user_data->display_name)) {
+                    $scanner_name = $user_data->display_name;
+                } elseif (!empty($user_data->username)) {
+                    $scanner_name = $user_data->username;
+                } elseif (!empty($user_data->first_name) || !empty($user_data->last_name)) {
+                    $scanner_name = trim(($user_data->first_name ?? '') . ' ' . ($user_data->last_name ?? ''));
+                } elseif (!empty($user_data->email)) {
+                    $scanner_name = $user_data->email;
+                }
+            }
+
+            // Final fallback
+            if (empty($scanner_name)) {
+                $scanner_name = 'Scanner #' . $scanner_id;
             }
 
             $scanners_formatted[] = [
-                'scanner_id' => intval($scanner->scanner_id),
-                'scanner_name' => $scanner->scanner_name ?: 'Scanner #' . $scanner->scanner_id,
+                'scanner_id' => $scanner_id,
+                'scanner_name' => $scanner_name,
                 'total_scans' => intval($scanner->total_scans),
                 'today_scans' => intval($scanner->today_scans),
                 'week_scans' => intval($scanner->week_scans),
                 'month_scans' => intval($scanner->month_scans),
+                'total_points' => intval($scanner->total_points ?? 0),
+                'today_points' => intval($scanner->today_points ?? 0),
+                'week_points' => intval($scanner->week_points ?? 0),
+                'month_points' => intval($scanner->month_points ?? 0),
                 'first_scan' => $scanner->first_scan,
                 'last_scan' => $scanner->last_scan,
             ];
         }
 
         // Also get scans without scanner_id (legacy/untracked)
+        // 🔧 FIX: Use JSON_UNQUOTE for proper comparison, matching the tracked query logic
         $untracked_scans = $wpdb->get_row($wpdb->prepare("
             SELECT
                 COUNT(*) as total_scans,
@@ -1028,7 +1154,7 @@ class PPV_Stats {
             WHERE store_id IN ({$placeholders})
               AND type = 'qr_scan'
               AND (JSON_EXTRACT(metadata, '$.scanner_id') IS NULL
-                   OR JSON_EXTRACT(metadata, '$.scanner_id') = 'null')
+                   OR JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.scanner_id')) IN ('null', ''))
         ", array_merge([$today, $week_start], $store_ids)));
 
         // Summary totals

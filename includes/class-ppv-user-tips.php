@@ -98,6 +98,33 @@ class PPV_User_Tips {
                 ],
             ],
 
+            'add_address' => [
+                'trigger_scans' => 1,           // After first scan
+                'delay_minutes' => 60,          // Wait 1 hour after trigger
+                'check_field' => null,          // Use custom condition instead
+                'check_condition' => 'no_location_data', // Check if zip+city are missing
+                'priority' => 15,
+                'icon' => '📍',
+                'action_url' => '/einstellungen',
+                'translations' => [
+                    'de' => [
+                        'title' => 'Finde Geschäfte in deiner Nähe',
+                        'message' => 'Füge deine Adresse hinzu und sieh sofort, welche Geschäfte mit Punktesammlung in deiner Nähe sind – auch ohne GPS!',
+                        'button' => 'Adresse hinzufügen',
+                    ],
+                    'hu' => [
+                        'title' => 'Találd meg a közeli üzleteket',
+                        'message' => 'Add meg a címedet és azonnal láthatod, mely üzletek vannak a közeledben pontgyűjtéssel – GPS nélkül is!',
+                        'button' => 'Cím megadása',
+                    ],
+                    'ro' => [
+                        'title' => 'Găsește magazine în apropiere',
+                        'message' => 'Adaugă adresa ta și vezi imediat ce magazine cu colectare de puncte sunt în apropierea ta – chiar și fără GPS!',
+                        'button' => 'Adaugă adresa',
+                    ],
+                ],
+            ],
+
             'set_birthday' => [
                 'trigger_scans' => 5,
                 'delay_minutes' => 120,         // 2 hours after trigger
@@ -284,23 +311,32 @@ class PPV_User_Tips {
         $store_name = $store->name ?: $store->company_name ?: "Store #{$store_id}";
         $store_created = $store->created_at ?: current_time('mysql');
 
-        // Find users with location who are within radius
-        // AND who registered AFTER the store was created (only new stores matter)
+        // Find users within radius using GPS coordinates OR address coordinates
         // Using Haversine formula approximation
         $users = $wpdb->get_results($wpdb->prepare("
-            SELECT id, last_lat, last_lng
+            SELECT id, last_lat, last_lng, address_lat, address_lng
             FROM {$wpdb->prefix}ppv_users
-            WHERE last_lat IS NOT NULL
-            AND last_lng IS NOT NULL
-            AND created_at < %s
+            WHERE created_at < %s
             AND (
-                6371 * acos(
-                    cos(radians(%f)) * cos(radians(last_lat)) *
-                    cos(radians(last_lng) - radians(%f)) +
-                    sin(radians(%f)) * sin(radians(last_lat))
-                )
-            ) <= %f
-        ", $store_created, $lat, $lng, $lat, $radius_km));
+                -- Users with GPS coordinates
+                (last_lat IS NOT NULL AND last_lng IS NOT NULL AND (
+                    6371 * acos(
+                        cos(radians(%f)) * cos(radians(last_lat)) *
+                        cos(radians(last_lng) - radians(%f)) +
+                        sin(radians(%f)) * sin(radians(last_lat))
+                    )
+                ) <= %f)
+                OR
+                -- Users with address-based coordinates (no GPS)
+                (last_lat IS NULL AND address_lat IS NOT NULL AND address_lng IS NOT NULL AND (
+                    6371 * acos(
+                        cos(radians(%f)) * cos(radians(address_lat)) *
+                        cos(radians(address_lng) - radians(%f)) +
+                        sin(radians(%f)) * sin(radians(address_lat))
+                    )
+                ) <= %f)
+            )
+        ", $store_created, $lat, $lng, $lat, $radius_km, $lat, $lng, $lat, $radius_km));
 
         $triggered_count = 0;
 
@@ -759,6 +795,15 @@ class PPV_User_Tips {
                     $user_id
                 ));
                 return intval($count) === 0;
+
+            case 'no_location_data':
+                // Check if user has no address data for geocoding
+                $user = $wpdb->get_row($wpdb->prepare(
+                    "SELECT address, zip, city FROM {$wpdb->prefix}ppv_users WHERE id = %d",
+                    $user_id
+                ));
+                // Return true if ALL address fields are empty (tip should show)
+                return empty(trim($user->address ?? '')) && empty(trim($user->zip ?? '')) && empty(trim($user->city ?? ''));
 
             default:
                 return true;
