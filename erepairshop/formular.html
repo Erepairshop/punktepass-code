@@ -2,229 +2,791 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Handyreparatur-Formular</title>
-    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <style>
-    body {
-        font-family: 'Poppins', sans-serif;
-        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-        margin: 0;
-        padding: 20px;
-        color: #333;
-    }
+        :root {
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --primary-light: #dbeafe;
+            --success: #10b981;
+            --success-light: #d1fae5;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+            --radius: 12px;
+            --radius-lg: 16px;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
 
-    .container {
-        max-width: 1500px;
-        margin: 20px auto;
-        background-color: #ffffff;
-        padding: 20px;
-        box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-        border-radius: 20px;
-    }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    .header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-    }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: var(--gray-800);
+            line-height: 1.5;
+            padding: 20px;
+        }
 
-    .header h2 {
-        font-size: 28px;
-        color: #333;
-    }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
 
-    .logo {
-        height: 75px;
-        width: auto;
-    }
+        /* Header Card */
+        .header-card {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-lg);
+            text-align: center;
+        }
 
-    .form-group {
-        margin-bottom: 25px;
-    }
+        .logo {
+            height: 60px;
+            width: auto;
+            margin-bottom: 16px;
+        }
 
-    .form-group label {
-        display: block;
-        margin-bottom: 10px;
-        font-weight: bold;
-        color: #333;
-        font-size: 20px;
-    }
+        .header-card h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
 
-    .form-group input[type="text"],
-    .form-group input[type="tel"],
-    .form-group select,
-    .form-group textarea {
-        width: 100%;
-        padding: 20px;
-        border: 2px solid #ddd;
-        border-radius: 20px;
-        box-sizing: border-box;
-        transition: border-color 0.3s ease;
-        font-size: 18px;
-    }
+        .header-card h1 i {
+            color: var(--primary);
+        }
 
-    .form-group input[type="text"]:focus,
-    .form-group input[type="tel"]:focus,
-    .form-group select:focus,
-    .form-group textarea:focus {
-        border-color: #007bff;
-        box-shadow: 0 0 8px rgba(0,123,255,.5);
-    }
+        .header-card p {
+            color: var(--gray-500);
+            font-size: 14px;
+        }
 
-    button[type="button"], button[type="submit"] {
-        background-image: linear-gradient(45deg, #007bff 0%, #662d8c 100%);
-        color: white;
-        padding: 20px 40px; /* Vergrößerung für bessere Touch-Reaktionsfähigkeit */
-        border: none;
-        border-radius: 20px;
-        cursor: pointer;
-        font-size: 22px; /* Größere Schrift für bessere Lesbarkeit */
-        transition: background-color 0.3s ease;
-        margin-top: 20px;
-        display: block; /* Zentriert den Button */
-        width: 100%; /* Volle Breite für leichtere Touch-Ziel */
-    }
+        /* Form Card */
+        .form-card {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            box-shadow: var(--shadow-lg);
+        }
 
-    button[type="button"]:hover, button[type="submit"]:hover {
-        background-color: #0056b3;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-    }
+        /* Progress Steps */
+        .progress-steps {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 32px;
+            position: relative;
+        }
 
-    #musterCanvas {
-        border: 2px dashed #ddd;
-        margin-bottom: 20px;
-        background: #f7f7f7;
-        touch-action: none;
-        border-radius: 4px;
-        width: 100%; /* Anpassung für responsive Design */
-        max-width: 300px; /* Maximale Breite festlegen */
-        height: 300px; /* Höhe beibehalten */
-    }
+        .progress-steps::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 40px;
+            right: 40px;
+            height: 2px;
+            background: var(--gray-200);
+            z-index: 0;
+        }
 
-    .muster-punkt {
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-        background: #000;
-        position: absolute;
-        margin: -15px 0 0 -15px;
-        pointer-events: none;
-    }
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 1;
+        }
+
+        .step-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--gray-200);
+            color: var(--gray-500);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            margin-bottom: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .step.active .step-icon {
+            background: var(--primary);
+            color: white;
+        }
+
+        .step.completed .step-icon {
+            background: var(--success);
+            color: white;
+        }
+
+        .step-label {
+            font-size: 11px;
+            color: var(--gray-500);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .step.active .step-label {
+            color: var(--primary);
+        }
+
+        /* Form Groups */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--gray-700);
+            font-size: 14px;
+        }
+
+        .form-group label i {
+            margin-right: 6px;
+            color: var(--primary);
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="tel"],
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid var(--gray-200);
+            border-radius: var(--radius);
+            font-size: 16px;
+            font-family: inherit;
+            transition: all 0.2s ease;
+            background: var(--gray-50);
+            color: var(--gray-800);
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: white;
+            box-shadow: 0 0 0 4px var(--primary-light);
+        }
+
+        .form-group input::placeholder {
+            color: var(--gray-400);
+        }
+
+        /* Select with icon */
+        .select-wrapper {
+            position: relative;
+        }
+
+        .select-wrapper select {
+            appearance: none;
+            padding-right: 40px;
+            cursor: pointer;
+        }
+
+        .select-wrapper::after {
+            content: '\eb3a';
+            font-family: 'remixicon';
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-400);
+            pointer-events: none;
+        }
+
+        /* Brand Options Grid */
+        .brand-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .brand-option {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 16px;
+            border: 2px solid var(--gray-200);
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: var(--gray-50);
+        }
+
+        .brand-option:hover {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .brand-option.selected {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .brand-option input {
+            display: none;
+        }
+
+        .brand-option i {
+            font-size: 24px;
+            color: var(--gray-600);
+        }
+
+        .brand-option.selected i {
+            color: var(--primary);
+        }
+
+        .brand-option span {
+            font-weight: 500;
+            color: var(--gray-700);
+        }
+
+        /* Problem Options */
+        .problem-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .problem-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            border: 2px solid var(--gray-200);
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: var(--gray-50);
+        }
+
+        .problem-option:hover {
+            border-color: var(--primary);
+        }
+
+        .problem-option.selected {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .problem-option input {
+            display: none;
+        }
+
+        .problem-option i {
+            font-size: 20px;
+            color: var(--gray-500);
+        }
+
+        .problem-option.selected i {
+            color: var(--primary);
+        }
+
+        .problem-option span {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--gray-700);
+        }
+
+        /* Security Type Toggle */
+        .security-toggle {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .security-btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 16px;
+            border: 2px solid var(--gray-200);
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: var(--gray-50);
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--gray-700);
+        }
+
+        .security-btn:hover {
+            border-color: var(--primary);
+        }
+
+        .security-btn.active {
+            border-color: var(--primary);
+            background: var(--primary);
+            color: white;
+        }
+
+        .security-btn i {
+            font-size: 20px;
+        }
+
+        /* Canvas Container */
+        .canvas-container {
+            background: var(--gray-100);
+            border-radius: var(--radius);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #musterCanvas {
+            border: 3px solid var(--gray-300);
+            border-radius: var(--radius);
+            background: white;
+            touch-action: none;
+            cursor: crosshair;
+        }
+
+        .canvas-hint {
+            margin-top: 12px;
+            font-size: 13px;
+            color: var(--gray-500);
+            text-align: center;
+        }
+
+        .reset-btn {
+            margin-top: 12px;
+            padding: 10px 20px;
+            background: var(--gray-200);
+            border: none;
+            border-radius: 8px;
+            color: var(--gray-700);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .reset-btn:hover {
+            background: var(--gray-300);
+        }
+
+        /* Submit Button */
+        .submit-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, var(--primary) 0%, #8b5cf6 100%);
+            border: none;
+            border-radius: var(--radius);
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 24px;
+            box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .submit-btn i {
+            font-size: 20px;
+        }
+
+        /* Hidden */
+        .hidden {
+            display: none !important;
+        }
+
+        /* Slide animation */
+        .slide-in {
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Success Message */
+        .success-message {
+            display: none;
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .success-message i {
+            font-size: 64px;
+            color: var(--success);
+            margin-bottom: 20px;
+        }
+
+        .success-message h2 {
+            color: var(--gray-900);
+            margin-bottom: 12px;
+        }
+
+        .success-message p {
+            color: var(--gray-500);
+        }
+
+        /* Responsive */
+        @media (max-width: 500px) {
+            body {
+                padding: 12px;
+            }
+
+            .header-card,
+            .form-card {
+                padding: 20px;
+            }
+
+            .brand-grid,
+            .problem-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .progress-steps {
+                display: none;
+            }
+
+            #musterCanvas {
+                width: 250px !important;
+                height: 250px !important;
+            }
+        }
     </style>
 </head>
 <body>
-<div class="container">
-        <div class="header">
-            <h2>Handyreparatur-Formular</h2>
-            <img src="logo.png" alt="Firmenlogo" class="logo">
-        </div>
-    <form id="repairForm" action="send_mail.php" method="post">
-        <div class="form-group">
-            <label for="name">Name:</label>
-            <input type="text" id="name" name="name" required>
+    <div class="container">
+        <!-- Header -->
+        <div class="header-card">
+            <img src="logo.png" alt="Logo" class="logo">
+            <h1><i class="ri-smartphone-line"></i> Reparatur-Formular</h1>
+            <p>Bitte füllen Sie alle Felder aus, um Ihr Gerät zur Reparatur anzumelden.</p>
         </div>
 
-        <div class="form-group">
-            <label for="phone">Telefonnummer:</label>
-            <input type="tel" id="phone" name="phone" required inputmode="numeric">
+        <!-- Form -->
+        <div class="form-card">
+            <!-- Progress Steps -->
+            <div class="progress-steps">
+                <div class="step active" data-step="1">
+                    <div class="step-icon"><i class="ri-user-line"></i></div>
+                    <span class="step-label">Kontakt</span>
+                </div>
+                <div class="step" data-step="2">
+                    <div class="step-icon"><i class="ri-smartphone-line"></i></div>
+                    <span class="step-label">Gerät</span>
+                </div>
+                <div class="step" data-step="3">
+                    <div class="step-icon"><i class="ri-tools-line"></i></div>
+                    <span class="step-label">Problem</span>
+                </div>
+                <div class="step" data-step="4">
+                    <div class="step-icon"><i class="ri-lock-line"></i></div>
+                    <span class="step-label">Sicherheit</span>
+                </div>
+            </div>
+
+            <form id="repairForm" action="send_mail.php" method="post">
+                <!-- Step 1: Contact Info -->
+                <div class="form-group">
+                    <label for="name"><i class="ri-user-line"></i> Ihr Name</label>
+                    <input type="text" id="name" name="name" placeholder="Max Mustermann" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="phone"><i class="ri-phone-line"></i> Telefonnummer</label>
+                    <input type="tel" id="phone" name="phone" placeholder="0170 1234567" required inputmode="numeric">
+                </div>
+
+                <!-- Step 2: Device Info -->
+                <div class="form-group">
+                    <label><i class="ri-smartphone-line"></i> Gerätemarke</label>
+                    <div class="brand-grid">
+                        <label class="brand-option" data-brand="apple">
+                            <input type="radio" name="brand" value="apple" required>
+                            <i class="ri-apple-fill"></i>
+                            <span>iPhone</span>
+                        </label>
+                        <label class="brand-option" data-brand="samsung">
+                            <input type="radio" name="brand" value="samsung">
+                            <i class="ri-smartphone-line"></i>
+                            <span>Samsung</span>
+                        </label>
+                        <label class="brand-option" data-brand="huawei">
+                            <input type="radio" name="brand" value="huawei">
+                            <i class="ri-smartphone-line"></i>
+                            <span>Huawei</span>
+                        </label>
+                        <label class="brand-option" data-brand="xiaomi">
+                            <input type="radio" name="brand" value="xiaomi">
+                            <i class="ri-smartphone-line"></i>
+                            <span>Xiaomi</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="model"><i class="ri-hashtag"></i> Modell</label>
+                    <input type="text" id="model" name="model" placeholder="z.B. iPhone 14 Pro, Galaxy S23" required>
+                </div>
+
+                <!-- Step 3: Problem -->
+                <div class="form-group">
+                    <label><i class="ri-tools-line"></i> Was ist das Problem?</label>
+                    <div class="problem-grid">
+                        <label class="problem-option">
+                            <input type="radio" name="problem" value="display" required>
+                            <i class="ri-smartphone-line"></i>
+                            <span>Displaybruch</span>
+                        </label>
+                        <label class="problem-option">
+                            <input type="radio" name="problem" value="battery">
+                            <i class="ri-battery-low-line"></i>
+                            <span>Akkuproblem</span>
+                        </label>
+                        <label class="problem-option">
+                            <input type="radio" name="problem" value="water">
+                            <i class="ri-drop-line"></i>
+                            <span>Wasserschaden</span>
+                        </label>
+                        <label class="problem-option">
+                            <input type="radio" name="problem" value="charging">
+                            <i class="ri-plug-line"></i>
+                            <span>Ladebuchse</span>
+                        </label>
+                        <label class="problem-option">
+                            <input type="radio" name="problem" value="buttons">
+                            <i class="ri-radio-button-line"></i>
+                            <span>Tasten defekt</span>
+                        </label>
+                        <label class="problem-option">
+                            <input type="radio" name="problem" value="backcover">
+                            <i class="ri-shape-line"></i>
+                            <span>Backcover</span>
+                        </label>
+                        <label class="problem-option">
+                            <input type="radio" name="problem" value="frame">
+                            <i class="ri-layout-line"></i>
+                            <span>Rahmen verbogen</span>
+                        </label>
+                        <label class="problem-option">
+                            <input type="radio" name="problem" value="other">
+                            <i class="ri-question-line"></i>
+                            <span>Andere</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group hidden" id="otherProblem">
+                    <label for="other"><i class="ri-edit-line"></i> Bitte beschreiben</label>
+                    <input type="text" id="other" name="other" placeholder="Beschreiben Sie das Problem...">
+                </div>
+
+                <!-- Step 4: Security -->
+                <div class="form-group">
+                    <label><i class="ri-lock-line"></i> PIN oder Muster (falls vorhanden)</label>
+                    <div class="security-toggle">
+                        <button type="button" class="security-btn" data-type="pin">
+                            <i class="ri-keyboard-line"></i> PIN
+                        </button>
+                        <button type="button" class="security-btn" data-type="muster">
+                            <i class="ri-pattern-lock-line"></i> Muster
+                        </button>
+                    </div>
+                    <input type="hidden" name="sicherheitstyp" id="sicherheitstyp" value="">
+                </div>
+
+                <!-- PIN Input -->
+                <div class="form-group hidden slide-in" id="pinInput">
+                    <label for="pin"><i class="ri-keyboard-line"></i> PIN eingeben</label>
+                    <input type="text" name="pin" id="pin" placeholder="Geräte-PIN" autocomplete="off" inputmode="numeric">
+                </div>
+
+                <!-- Pattern Input -->
+                <div class="form-group hidden slide-in" id="musterInput">
+                    <label><i class="ri-pattern-lock-line"></i> Muster zeichnen</label>
+                    <div class="canvas-container">
+                        <canvas id="musterCanvas" width="280" height="280"></canvas>
+                        <p class="canvas-hint">Verbinden Sie die Punkte mit dem Finger oder der Maus</p>
+                        <button type="button" class="reset-btn" onclick="resetCanvas()">
+                            <i class="ri-refresh-line"></i> Zurücksetzen
+                        </button>
+                    </div>
+                    <input type="hidden" name="muster" id="musterData">
+                </div>
+
+                <!-- Submit -->
+                <button type="button" class="submit-btn" onclick="submitForm()">
+                    <i class="ri-send-plane-fill"></i> Auftrag absenden
+                </button>
+            </form>
+
+            <!-- Success Message -->
+            <div class="success-message" id="successMessage">
+                <i class="ri-checkbox-circle-fill"></i>
+                <h2>Vielen Dank!</h2>
+                <p>Ihr Reparaturauftrag wurde erfolgreich übermittelt. Wir melden uns in Kürze bei Ihnen.</p>
+            </div>
         </div>
-
-        <div class="form-group">
-            <label for="brand">Gerätemarke:</label>
-            <select id="brand" name="brand" required>
-                <option value="">Bitte auswählen</option>
-                <option value="apple">Iphone</option>
-                <option value="samsung">Samsung</option>
-                <option value="huawei">Huawei</option>
-                <option value="xiaomi">Xiaomi</option>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label for="model">Modell (bitte eingeben):</label>
-            <input type="text" id="model" name="model" required>
-        </div>
-
-        <div class="form-group">
-            <label for="problem">Beschreibung des Problems:</label>
-            <select id="problem" name="problem" required onchange="toggleOtherProblem()">
-                <option value="">Bitte auswählen</option>
-                <option value="display">Displaybruch</option>
-                <option value="battery">Akkuproblem</option>
-                <option value="water">Wasserschaden</option>
-                <option value="charging">Ladebuchse defekt</option>
-                <option value="buttons">Tasten funktionieren nicht</option>
-                <option value="backcover">Backcover beschädigt</option>
-                <option value="frame">Rahmen verbogen</option>
-                <option value="other">Andere</option>
-            </select>
-        </div>
-
-        <div class="form-group" id="andereProblem" style="display: none;">
-            <label for="other">Anderes Problem (bitte beschreiben):</label>
-            <input type="text" id="other" name="other">
-        </div>
-
-     <div class="form-group">
-    <label for="sicherheitstyp">Pin / Muster (falls vorhanden): </label>
-    <select name="sicherheitstyp" id="sicherheitstyp" onchange="toggleSicherheitstyp(this.value);" required>
-        <option value="">Bitte auswählen</option> <!-- Standardoption hinzugefügt -->
-        <option value="pin">PIN</option>
-        <option value="muster">Muster</option>
-    </select>
-</div>
-
-        <!-- PIN-Eingabefeld -->
-        <div id="pin_input" class="form-group" style="display:none;">
-            <label for="pin">PIN des Geräts </label>
-            <input type="text" name="pin" id="pin" autocomplete="off">
-        </div>
-
-        <!-- Muster-Eingabebereich -->
-<div id="muster_input" class="form-group" style="display:none;">
-        <label for="musterCanvas">Zeichnen Sie das Muster (Verbinden Sie die Punkte):</label>
-        <canvas id="musterCanvas" width="300" height="300"></canvas>
-        <input type="hidden" name="muster" id="musterInput">
-        <!-- Button zum Zurücksetzen des Musters -->
-       <button type="button" onclick="resetCanvas()">Muster zurücksetzen</button>
     </div>
 
-
-
-       <button type="button" onclick="submitForm()">Absenden</button>
-    </form>
-
-   <script>
-    function toggleOtherProblem() {
-        var problemSelect = document.getElementById('problem');
-        var andereProblemInput = document.getElementById('andereProblem');
-        if (problemSelect.value === 'other') {
-            andereProblemInput.style.display = 'block';
-        } else {
-            andereProblemInput.style.display = 'none';
-        }
-    }
-
-    function submitForm() {
-        var canvasData = document.getElementById('musterCanvas').toDataURL();
-        document.getElementById('musterInput').value = canvasData;
-        document.getElementById('repairForm').submit();
-    }
-
-    function toggleSicherheitstyp(typ) {
-        var pinInput = document.getElementById('pin_input');
-        var musterInput = document.getElementById('muster_input');
-        if (typ === 'pin') {
-            pinInput.style.display = 'block';
-            musterInput.style.display = 'none';
-        } else if (typ === 'muster') {
-            pinInput.style.display = 'none';
-            musterInput.style.display = 'block';
-        }
-    }
-
+    <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Brand selection
+        const brandOptions = document.querySelectorAll('.brand-option');
+        brandOptions.forEach(option => {
+            option.addEventListener('click', function() {
+                brandOptions.forEach(o => o.classList.remove('selected'));
+                this.classList.add('selected');
+                this.querySelector('input').checked = true;
+                updateProgress();
+            });
+        });
+
+        // Problem selection
+        const problemOptions = document.querySelectorAll('.problem-option');
+        problemOptions.forEach(option => {
+            option.addEventListener('click', function() {
+                problemOptions.forEach(o => o.classList.remove('selected'));
+                this.classList.add('selected');
+                this.querySelector('input').checked = true;
+
+                // Show/hide other problem input
+                const otherProblem = document.getElementById('otherProblem');
+                if (this.querySelector('input').value === 'other') {
+                    otherProblem.classList.remove('hidden');
+                } else {
+                    otherProblem.classList.add('hidden');
+                }
+                updateProgress();
+            });
+        });
+
+        // Security type toggle
+        const securityBtns = document.querySelectorAll('.security-btn');
+        const pinInput = document.getElementById('pinInput');
+        const musterInput = document.getElementById('musterInput');
+        const sicherheitstyp = document.getElementById('sicherheitstyp');
+
+        securityBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const type = this.dataset.type;
+
+                securityBtns.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                sicherheitstyp.value = type;
+
+                if (type === 'pin') {
+                    pinInput.classList.remove('hidden');
+                    musterInput.classList.add('hidden');
+                } else if (type === 'muster') {
+                    pinInput.classList.add('hidden');
+                    musterInput.classList.remove('hidden');
+                    resetCanvas();
+                }
+                updateProgress();
+            });
+        });
+
+        // Progress update
+        function updateProgress() {
+            const steps = document.querySelectorAll('.step');
+            const name = document.getElementById('name').value;
+            const phone = document.getElementById('phone').value;
+            const brand = document.querySelector('input[name="brand"]:checked');
+            const model = document.getElementById('model').value;
+            const problem = document.querySelector('input[name="problem"]:checked');
+            const security = sicherheitstyp.value;
+
+            // Step 1: Contact
+            if (name && phone) {
+                steps[0].classList.add('completed');
+                steps[0].classList.remove('active');
+                steps[1].classList.add('active');
+            } else {
+                steps[0].classList.add('active');
+            }
+
+            // Step 2: Device
+            if (brand && model) {
+                steps[1].classList.add('completed');
+                steps[1].classList.remove('active');
+                steps[2].classList.add('active');
+            }
+
+            // Step 3: Problem
+            if (problem) {
+                steps[2].classList.add('completed');
+                steps[2].classList.remove('active');
+                steps[3].classList.add('active');
+            }
+
+            // Step 4: Security
+            if (security) {
+                steps[3].classList.add('completed');
+            }
+        }
+
+        // Input listeners for progress
+        document.getElementById('name').addEventListener('input', updateProgress);
+        document.getElementById('phone').addEventListener('input', updateProgress);
+        document.getElementById('model').addEventListener('input', updateProgress);
+
+        // Canvas Pattern Drawing
         const canvas = document.getElementById('musterCanvas');
         const ctx = canvas.getContext('2d');
         const gridNum = 3;
@@ -236,6 +798,11 @@
         function createGrid() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             points = [];
+
+            // Draw background
+            ctx.fillStyle = '#f9fafb';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
             for (let i = 1; i <= gridNum; i++) {
                 for (let j = 1; j <= gridNum; j++) {
                     let point = {
@@ -245,35 +812,40 @@
                         index: ((i - 1) * gridNum) + (j - 1)
                     };
                     points.push(point);
+
+                    // Outer circle
                     ctx.beginPath();
-                    ctx.arc(point.x, point.y, 10, 0, Math.PI * 2);
-                    ctx.fillStyle = '#000';
+                    ctx.arc(point.x, point.y, 20, 0, Math.PI * 2);
+                    ctx.fillStyle = '#e5e7eb';
+                    ctx.fill();
+                    ctx.closePath();
+
+                    // Inner circle
+                    ctx.beginPath();
+                    ctx.arc(point.x, point.y, 8, 0, Math.PI * 2);
+                    ctx.fillStyle = '#6b7280';
                     ctx.fill();
                     ctx.closePath();
                 }
             }
         }
 
-        function resetCanvas() {
+        window.resetCanvas = function() {
             isDrawing = false;
             lastPointIndex = null;
             points.forEach(p => p.isDrawn = false);
             createGrid();
-            document.getElementById('musterInput').value = '';
-        }
+            document.getElementById('musterData').value = '';
+        };
 
-        // Funktion zum Extrahieren von Koordinaten aus Events
         function getCoordinates(event) {
+            let rect = canvas.getBoundingClientRect();
             if (event.touches) {
-                // Für Touch-Events
-                let rect = canvas.getBoundingClientRect();
                 return {
                     x: event.touches[0].clientX - rect.left,
                     y: event.touches[0].clientY - rect.top,
                 };
             } else {
-                // Für Mouse-Events
-                let rect = canvas.getBoundingClientRect();
                 return {
                     x: event.clientX - rect.left,
                     y: event.clientY - rect.top,
@@ -282,17 +854,33 @@
         }
 
         function drawMuster(x, y) {
-            let nextPointIndex = points.findIndex(p => 
+            let nextPointIndex = points.findIndex(p =>
                 Math.sqrt((p.x - x) ** 2 + (p.y - y) ** 2) < gridGap / 2 && !p.isDrawn
             );
+
             if (nextPointIndex !== -1) {
                 points[nextPointIndex].isDrawn = true;
+
+                // Highlight point
+                ctx.beginPath();
+                ctx.arc(points[nextPointIndex].x, points[nextPointIndex].y, 20, 0, Math.PI * 2);
+                ctx.fillStyle = '#3b82f6';
+                ctx.fill();
+                ctx.closePath();
+
+                ctx.beginPath();
+                ctx.arc(points[nextPointIndex].x, points[nextPointIndex].y, 8, 0, Math.PI * 2);
+                ctx.fillStyle = 'white';
+                ctx.fill();
+                ctx.closePath();
+
                 if (lastPointIndex !== null) {
                     ctx.beginPath();
                     ctx.moveTo(points[lastPointIndex].x, points[lastPointIndex].y);
                     ctx.lineTo(points[nextPointIndex].x, points[nextPointIndex].y);
-                    ctx.strokeStyle = '#ff0000';
-                    ctx.lineWidth = 5;
+                    ctx.strokeStyle = '#3b82f6';
+                    ctx.lineWidth = 4;
+                    ctx.lineCap = 'round';
                     ctx.stroke();
                     ctx.closePath();
                 }
@@ -300,20 +888,18 @@
             }
         }
 
-        window.resetCanvas = resetCanvas;
-
         function startDrawing(event) {
             isDrawing = true;
             let coords = getCoordinates(event);
             drawMuster(coords.x, coords.y);
-            event.preventDefault(); // Verhindert das Scrollen auf Touch-Geräten
+            event.preventDefault();
         }
 
         function draw(event) {
             if (isDrawing) {
                 let coords = getCoordinates(event);
                 drawMuster(coords.x, coords.y);
-                event.preventDefault(); // Verhindert das Scrollen auf Touch-Geräten
+                event.preventDefault();
             }
         }
 
@@ -321,20 +907,39 @@
             isDrawing = false;
         }
 
-        // Event-Listener für Maus und Touch
         canvas.addEventListener('mousedown', startDrawing);
         canvas.addEventListener('touchstart', startDrawing);
-
         canvas.addEventListener('mousemove', draw);
         canvas.addEventListener('touchmove', draw);
-
         canvas.addEventListener('mouseup', stopDrawing);
         canvas.addEventListener('mouseout', stopDrawing);
         canvas.addEventListener('touchend', stopDrawing);
 
-        resetCanvas();
-
+        createGrid();
     });
-</script>
+
+    function submitForm() {
+        // Validate form
+        const form = document.getElementById('repairForm');
+        const name = document.getElementById('name').value;
+        const phone = document.getElementById('phone').value;
+        const brand = document.querySelector('input[name="brand"]:checked');
+        const model = document.getElementById('model').value;
+        const problem = document.querySelector('input[name="problem"]:checked');
+
+        if (!name || !phone || !brand || !model || !problem) {
+            alert('Bitte füllen Sie alle Pflichtfelder aus.');
+            return;
+        }
+
+        // Get canvas data
+        const canvas = document.getElementById('musterCanvas');
+        const canvasData = canvas.toDataURL();
+        document.getElementById('musterData').value = canvasData;
+
+        // Submit
+        form.submit();
+    }
+    </script>
 </body>
 </html>
