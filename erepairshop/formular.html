@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Handyreparatur-Formular</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+    body {
+        font-family: 'Poppins', sans-serif;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        margin: 0;
+        padding: 20px;
+        color: #333;
+    }
+
+    .container {
+        max-width: 1500px;
+        margin: 20px auto;
+        background-color: #ffffff;
+        padding: 20px;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        border-radius: 20px;
+    }
+
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .header h2 {
+        font-size: 28px;
+        color: #333;
+    }
+
+    .logo {
+        height: 75px;
+        width: auto;
+    }
+
+    .form-group {
+        margin-bottom: 25px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 10px;
+        font-weight: bold;
+        color: #333;
+        font-size: 20px;
+    }
+
+    .form-group input[type="text"],
+    .form-group input[type="tel"],
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 20px;
+        border: 2px solid #ddd;
+        border-radius: 20px;
+        box-sizing: border-box;
+        transition: border-color 0.3s ease;
+        font-size: 18px;
+    }
+
+    .form-group input[type="text"]:focus,
+    .form-group input[type="tel"]:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 8px rgba(0,123,255,.5);
+    }
+
+    button[type="button"], button[type="submit"] {
+        background-image: linear-gradient(45deg, #007bff 0%, #662d8c 100%);
+        color: white;
+        padding: 20px 40px; /* Vergrößerung für bessere Touch-Reaktionsfähigkeit */
+        border: none;
+        border-radius: 20px;
+        cursor: pointer;
+        font-size: 22px; /* Größere Schrift für bessere Lesbarkeit */
+        transition: background-color 0.3s ease;
+        margin-top: 20px;
+        display: block; /* Zentriert den Button */
+        width: 100%; /* Volle Breite für leichtere Touch-Ziel */
+    }
+
+    button[type="button"]:hover, button[type="submit"]:hover {
+        background-color: #0056b3;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+
+    #musterCanvas {
+        border: 2px dashed #ddd;
+        margin-bottom: 20px;
+        background: #f7f7f7;
+        touch-action: none;
+        border-radius: 4px;
+        width: 100%; /* Anpassung für responsive Design */
+        max-width: 300px; /* Maximale Breite festlegen */
+        height: 300px; /* Höhe beibehalten */
+    }
+
+    .muster-punkt {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: #000;
+        position: absolute;
+        margin: -15px 0 0 -15px;
+        pointer-events: none;
+    }
+    </style>
+</head>
+<body>
+<div class="container">
+        <div class="header">
+            <h2>Handyreparatur-Formular</h2>
+            <img src="logo.png" alt="Firmenlogo" class="logo">
+        </div>
+    <form id="repairForm" action="send_mail.php" method="post">
+        <div class="form-group">
+            <label for="name">Name:</label>
+            <input type="text" id="name" name="name" required>
+        </div>
+
+        <div class="form-group">
+            <label for="phone">Telefonnummer:</label>
+            <input type="tel" id="phone" name="phone" required inputmode="numeric">
+        </div>
+
+        <div class="form-group">
+            <label for="brand">Gerätemarke:</label>
+            <select id="brand" name="brand" required>
+                <option value="">Bitte auswählen</option>
+                <option value="apple">Iphone</option>
+                <option value="samsung">Samsung</option>
+                <option value="huawei">Huawei</option>
+                <option value="xiaomi">Xiaomi</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="model">Modell (bitte eingeben):</label>
+            <input type="text" id="model" name="model" required>
+        </div>
+
+        <div class="form-group">
+            <label for="problem">Beschreibung des Problems:</label>
+            <select id="problem" name="problem" required onchange="toggleOtherProblem()">
+                <option value="">Bitte auswählen</option>
+                <option value="display">Displaybruch</option>
+                <option value="battery">Akkuproblem</option>
+                <option value="water">Wasserschaden</option>
+                <option value="charging">Ladebuchse defekt</option>
+                <option value="buttons">Tasten funktionieren nicht</option>
+                <option value="backcover">Backcover beschädigt</option>
+                <option value="frame">Rahmen verbogen</option>
+                <option value="other">Andere</option>
+            </select>
+        </div>
+
+        <div class="form-group" id="andereProblem" style="display: none;">
+            <label for="other">Anderes Problem (bitte beschreiben):</label>
+            <input type="text" id="other" name="other">
+        </div>
+
+     <div class="form-group">
+    <label for="sicherheitstyp">Pin / Muster (falls vorhanden): </label>
+    <select name="sicherheitstyp" id="sicherheitstyp" onchange="toggleSicherheitstyp(this.value);" required>
+        <option value="">Bitte auswählen</option> <!-- Standardoption hinzugefügt -->
+        <option value="pin">PIN</option>
+        <option value="muster">Muster</option>
+    </select>
+</div>
+
+        <!-- PIN-Eingabefeld -->
+        <div id="pin_input" class="form-group" style="display:none;">
+            <label for="pin">PIN des Geräts </label>
+            <input type="text" name="pin" id="pin" autocomplete="off">
+        </div>
+
+        <!-- Muster-Eingabebereich -->
+<div id="muster_input" class="form-group" style="display:none;">
+        <label for="musterCanvas">Zeichnen Sie das Muster (Verbinden Sie die Punkte):</label>
+        <canvas id="musterCanvas" width="300" height="300"></canvas>
+        <input type="hidden" name="muster" id="musterInput">
+        <!-- Button zum Zurücksetzen des Musters -->
+       <button type="button" onclick="resetCanvas()">Muster zurücksetzen</button>
+    </div>
+
+
+
+       <button type="button" onclick="submitForm()">Absenden</button>
+    </form>
+
+   <script>
+    function toggleOtherProblem() {
+        var problemSelect = document.getElementById('problem');
+        var andereProblemInput = document.getElementById('andereProblem');
+        if (problemSelect.value === 'other') {
+            andereProblemInput.style.display = 'block';
+        } else {
+            andereProblemInput.style.display = 'none';
+        }
+    }
+
+    function submitForm() {
+        var canvasData = document.getElementById('musterCanvas').toDataURL();
+        document.getElementById('musterInput').value = canvasData;
+        document.getElementById('repairForm').submit();
+    }
+
+    function toggleSicherheitstyp(typ) {
+        var pinInput = document.getElementById('pin_input');
+        var musterInput = document.getElementById('muster_input');
+        if (typ === 'pin') {
+            pinInput.style.display = 'block';
+            musterInput.style.display = 'none';
+        } else if (typ === 'muster') {
+            pinInput.style.display = 'none';
+            musterInput.style.display = 'block';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const canvas = document.getElementById('musterCanvas');
+        const ctx = canvas.getContext('2d');
+        const gridNum = 3;
+        const gridGap = canvas.width / (gridNum + 1);
+        let points = [];
+        let isDrawing = false;
+        let lastPointIndex = null;
+
+        function createGrid() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            points = [];
+            for (let i = 1; i <= gridNum; i++) {
+                for (let j = 1; j <= gridNum; j++) {
+                    let point = {
+                        x: j * gridGap,
+                        y: i * gridGap,
+                        isDrawn: false,
+                        index: ((i - 1) * gridNum) + (j - 1)
+                    };
+                    points.push(point);
+                    ctx.beginPath();
+                    ctx.arc(point.x, point.y, 10, 0, Math.PI * 2);
+                    ctx.fillStyle = '#000';
+                    ctx.fill();
+                    ctx.closePath();
+                }
+            }
+        }
+
+        function resetCanvas() {
+            isDrawing = false;
+            lastPointIndex = null;
+            points.forEach(p => p.isDrawn = false);
+            createGrid();
+            document.getElementById('musterInput').value = '';
+        }
+
+        // Funktion zum Extrahieren von Koordinaten aus Events
+        function getCoordinates(event) {
+            if (event.touches) {
+                // Für Touch-Events
+                let rect = canvas.getBoundingClientRect();
+                return {
+                    x: event.touches[0].clientX - rect.left,
+                    y: event.touches[0].clientY - rect.top,
+                };
+            } else {
+                // Für Mouse-Events
+                let rect = canvas.getBoundingClientRect();
+                return {
+                    x: event.clientX - rect.left,
+                    y: event.clientY - rect.top,
+                };
+            }
+        }
+
+        function drawMuster(x, y) {
+            let nextPointIndex = points.findIndex(p => 
+                Math.sqrt((p.x - x) ** 2 + (p.y - y) ** 2) < gridGap / 2 && !p.isDrawn
+            );
+            if (nextPointIndex !== -1) {
+                points[nextPointIndex].isDrawn = true;
+                if (lastPointIndex !== null) {
+                    ctx.beginPath();
+                    ctx.moveTo(points[lastPointIndex].x, points[lastPointIndex].y);
+                    ctx.lineTo(points[nextPointIndex].x, points[nextPointIndex].y);
+                    ctx.strokeStyle = '#ff0000';
+                    ctx.lineWidth = 5;
+                    ctx.stroke();
+                    ctx.closePath();
+                }
+                lastPointIndex = nextPointIndex;
+            }
+        }
+
+        window.resetCanvas = resetCanvas;
+
+        function startDrawing(event) {
+            isDrawing = true;
+            let coords = getCoordinates(event);
+            drawMuster(coords.x, coords.y);
+            event.preventDefault(); // Verhindert das Scrollen auf Touch-Geräten
+        }
+
+        function draw(event) {
+            if (isDrawing) {
+                let coords = getCoordinates(event);
+                drawMuster(coords.x, coords.y);
+                event.preventDefault(); // Verhindert das Scrollen auf Touch-Geräten
+            }
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+        }
+
+        // Event-Listener für Maus und Touch
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('touchstart', startDrawing);
+
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('touchmove', draw);
+
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+        canvas.addEventListener('touchend', stopDrawing);
+
+        resetCanvas();
+
+    });
+</script>
+</body>
+</html>
