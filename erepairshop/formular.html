@@ -482,7 +482,133 @@
             color: var(--gray-500);
         }
 
-        /* Responsive */
+        /* Tablet Landscape Mode */
+        @media (min-width: 768px) and (max-width: 1200px) and (orientation: landscape) {
+            body {
+                padding: 16px 24px;
+            }
+
+            .container {
+                max-width: 100%;
+                display: grid;
+                grid-template-columns: 280px 1fr;
+                gap: 20px;
+                align-items: start;
+            }
+
+            .header-card {
+                position: sticky;
+                top: 16px;
+                margin-bottom: 0;
+            }
+
+            .form-card {
+                padding: 28px;
+            }
+
+            .progress-steps {
+                margin-bottom: 24px;
+            }
+
+            .form-row {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 16px;
+            }
+
+            .form-group label {
+                font-size: 15px;
+            }
+
+            .form-group input[type="text"],
+            .form-group input[type="tel"],
+            .form-group select {
+                padding: 16px 18px;
+                font-size: 17px;
+            }
+
+            .brand-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+
+            .brand-option {
+                padding: 18px 12px;
+                flex-direction: column;
+                gap: 6px;
+            }
+
+            .brand-option i {
+                font-size: 28px;
+            }
+
+            .problem-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+
+            .problem-option {
+                padding: 14px;
+                flex-direction: column;
+                text-align: center;
+                gap: 6px;
+            }
+
+            .problem-option i {
+                font-size: 24px;
+            }
+
+            .security-toggle {
+                max-width: 400px;
+            }
+
+            .security-btn {
+                padding: 18px;
+                font-size: 16px;
+            }
+
+            .canvas-container {
+                flex-direction: row;
+                gap: 20px;
+                align-items: center;
+            }
+
+            #musterCanvas {
+                width: 240px !important;
+                height: 240px !important;
+            }
+
+            .submit-btn {
+                max-width: 400px;
+                margin-left: auto;
+                margin-right: auto;
+                padding: 20px;
+                font-size: 19px;
+            }
+        }
+
+        /* Large Tablet Landscape (iPad Pro etc) */
+        @media (min-width: 1024px) and (orientation: landscape) {
+            .container {
+                max-width: 1200px;
+                grid-template-columns: 320px 1fr;
+            }
+
+            .brand-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+
+            .problem-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+
+            .form-group input[type="text"],
+            .form-group input[type="tel"],
+            .form-group select {
+                padding: 18px 20px;
+                font-size: 18px;
+            }
+        }
+
+        /* Small Mobile */
         @media (max-width: 500px) {
             body {
                 padding: 12px;
@@ -505,6 +631,28 @@
             #musterCanvas {
                 width: 250px !important;
                 height: 250px !important;
+            }
+        }
+
+        /* Portrait mode - single column */
+        @media (orientation: portrait) and (min-width: 600px) {
+            .container {
+                max-width: 600px;
+            }
+
+            .brand-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .problem-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .form-group input[type="text"],
+            .form-group input[type="tel"],
+            .form-group select {
+                padding: 16px 18px;
+                font-size: 17px;
             }
         }
     </style>
@@ -541,15 +689,17 @@
             </div>
 
             <form id="repairForm" action="send_mail.php" method="post">
-                <!-- Step 1: Contact Info -->
-                <div class="form-group">
-                    <label for="name"><i class="ri-user-line"></i> Ihr Name</label>
-                    <input type="text" id="name" name="name" placeholder="Max Mustermann" required>
-                </div>
+                <!-- Step 1: Contact Info (2 columns on tablet) -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="name"><i class="ri-user-line"></i> Ihr Name</label>
+                        <input type="text" id="name" name="name" placeholder="Max Mustermann" required>
+                    </div>
 
-                <div class="form-group">
-                    <label for="phone"><i class="ri-phone-line"></i> Telefonnummer</label>
-                    <input type="tel" id="phone" name="phone" placeholder="0170 1234567" required inputmode="numeric">
+                    <div class="form-group">
+                        <label for="phone"><i class="ri-phone-line"></i> Telefonnummer</label>
+                        <input type="tel" id="phone" name="phone" placeholder="0170 1234567" required inputmode="numeric">
+                    </div>
                 </div>
 
                 <!-- Step 2: Device Info -->
