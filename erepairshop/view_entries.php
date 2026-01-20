@@ -127,8 +127,15 @@ while ($row = $kommentarStmt->fetch()) {
 
 // Count stats
 $totalCount = count($alleEintraege);
-$erledigtCount = count($erledigtStatus);
-$offenCount = $totalCount - $erledigtCount;
+$erledigtCount = 0;
+$offenCount = 0;
+foreach ($alleEintraege as $entry) {
+    if (in_array($entry['telefon'], $erledigtStatus)) {
+        $erledigtCount++;
+    } else {
+        $offenCount++;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="de">
