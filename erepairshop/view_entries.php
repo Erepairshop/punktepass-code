@@ -6,6 +6,29 @@ $erledigtDatei = 'erledigt_status.txt';
 if (isset($_POST['ajax']) && $_POST['ajax'] === '1') {
     header('Content-Type: application/json');
 
+    // Mark ALL as done
+    if (isset($_POST['markAllAsDone'])) {
+        $eintraegeDatei = 'entries.txt';
+        $alleEintraege = file_exists($eintraegeDatei) ? file($eintraegeDatei, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
+        $erledigtStatus = file_exists($erledigtDatei) ? file($erledigtDatei, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
+
+        $newlyMarked = [];
+        foreach ($alleEintraege as $eintrag) {
+            $parts = explode('|', $eintrag);
+            if (isset($parts[2])) {
+                $telefon = $parts[2];
+                if (!in_array($telefon, $erledigtStatus)) {
+                    $erledigtStatus[] = $telefon;
+                    $newlyMarked[] = $telefon;
+                }
+            }
+        }
+
+        file_put_contents($erledigtDatei, implode("\n", array_values($erledigtStatus)));
+        echo json_encode(['success' => true, 'marked' => $newlyMarked, 'count' => count($newlyMarked)]);
+        exit;
+    }
+
     if (isset($_POST['markAsDone'], $_POST['identifikator'])) {
         $identifikator = $_POST['identifikator'];
         $erledigtStatus = file_exists($erledigtDatei) ? file($erledigtDatei, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
@@ -167,11 +190,15 @@ $offenCount = $totalCount - $erledigtCount;
             padding: 24px;
             margin-bottom: 24px;
             box-shadow: var(--shadow);
+        }
+
+        .header-top {
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 16px;
+            gap: 12px;
+            margin-bottom: 16px;
         }
 
         .header h1 {
@@ -181,10 +208,16 @@ $offenCount = $totalCount - $erledigtCount;
             display: flex;
             align-items: center;
             gap: 12px;
+            margin: 0;
         }
 
         .header h1 i {
             color: var(--primary);
+        }
+
+        .mark-all-btn {
+            padding: 10px 16px !important;
+            font-size: 14px !important;
         }
 
         .stats {
@@ -605,7 +638,14 @@ $offenCount = $totalCount - $erledigtCount;
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <h1><i class="ri-smartphone-line"></i> Reparatur-Aufträge</h1>
+            <div class="header-top">
+                <h1><i class="ri-smartphone-line"></i> Reparatur-Aufträge</h1>
+                <?php if ($offenCount > 0): ?>
+                <button type="button" class="btn btn-success mark-all-btn" id="markAllBtn">
+                    <i class="ri-check-double-line"></i> Alle erledigt
+                </button>
+                <?php endif; ?>
+            </div>
             <div class="stats">
                 <div class="stat-card">
                     <div class="stat-number"><?php echo $totalCount; ?></div>
@@ -872,6 +912,86 @@ $offenCount = $totalCount - $erledigtCount;
                 statNumbers[1].textContent = offen;
                 statNumbers[2].textContent = erledigt;
             }
+
+            // Hide "Mark All" button if no open entries
+            const markAllBtn = document.getElementById('markAllBtn');
+            if (markAllBtn) {
+                markAllBtn.style.display = offen > 0 ? 'inline-flex' : 'none';
+            }
+        }
+
+        // Mark All as Done button
+        const markAllBtn = document.getElementById('markAllBtn');
+        if (markAllBtn) {
+            markAllBtn.addEventListener('click', function() {
+                if (!confirm('Möchten Sie wirklich ALLE offenen Aufträge als erledigt markieren?')) {
+                    return;
+                }
+
+                const button = this;
+                button.classList.add('loading');
+                button.disabled = true;
+
+                fetch(window.location.href, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: 'ajax=1&markAllAsDone=1'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    button.classList.remove('loading');
+                    button.disabled = false;
+
+                    if (data.success && data.count > 0) {
+                        const grid = document.querySelector('.entries-grid');
+
+                        // Mark all open cards as erledigt
+                        document.querySelectorAll('.entry-card:not(.erledigt)').forEach((card, index) => {
+                            setTimeout(() => {
+                                card.classList.add('erledigt');
+
+                                // Update button
+                                const btn = card.querySelector('.erledigt-btn');
+                                if (btn) {
+                                    btn.classList.remove('btn-success');
+                                    btn.classList.add('btn-warning');
+                                    btn.innerHTML = '<i class="ri-arrow-go-back-line"></i> Rückgängig';
+                                    btn.dataset.erledigt = '1';
+                                }
+
+                                // Update badge
+                                const badge = card.querySelector('.status-badge');
+                                if (badge) {
+                                    badge.classList.remove('offen');
+                                    badge.classList.add('erledigt');
+                                    badge.textContent = 'Erledigt';
+                                }
+
+                                // Move to bottom with animation
+                                card.style.transition = 'all 0.3s ease';
+                                card.style.opacity = '0.7';
+                                setTimeout(() => {
+                                    grid.appendChild(card);
+                                    card.style.opacity = '1';
+                                }, 200);
+                            }, index * 100); // Stagger animation
+                        });
+
+                        // Update stats after all animations
+                        setTimeout(() => {
+                            updateStats();
+                        }, data.count * 100 + 300);
+                    }
+                })
+                .catch(error => {
+                    button.classList.remove('loading');
+                    button.disabled = false;
+                    console.error('Error:', error);
+                    alert('Fehler beim Markieren. Bitte Seite neu laden.');
+                });
+            });
         }
 
         // Scroll to top button
