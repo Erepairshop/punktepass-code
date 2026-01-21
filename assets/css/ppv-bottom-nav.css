@@ -251,3 +251,112 @@ body.ppv-spa-loading::before {
   border-radius: 8px;
   cursor: pointer;
 }
+
+/* ========================================
+   FEEDBACK MODAL - Success/Error Messages
+   ======================================== */
+
+/* Success view - bright and visible */
+.ppv-feedback-success {
+  text-align: center;
+  padding: 30px 20px;
+}
+
+.ppv-feedback-success i {
+  font-size: 64px;
+  color: #4ade80;
+  margin-bottom: 16px;
+  display: block;
+}
+
+.ppv-feedback-success h4 {
+  color: #ffffff;
+  font-size: 22px;
+  margin: 0 0 8px 0;
+}
+
+.ppv-feedback-success p {
+  color: #e0e0e0;
+  font-size: 15px;
+  margin: 0;
+}
+
+/* Error/Success message box - BRIGHT colors */
+.ppv-feedback-message {
+  padding: 12px 16px;
+  border-radius: 10px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  display: none;
+  text-align: center;
+  font-weight: 500;
+}
+
+.ppv-feedback-message.show {
+  display: block;
+}
+
+.ppv-feedback-message.error {
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid #ef4444;
+  color: #fca5a5;
+}
+
+.ppv-feedback-message.success {
+  background: rgba(74, 222, 128, 0.2);
+  border: 1px solid #4ade80;
+  color: #bbf7d0;
+}
+
+/* Star buttons - ensure clickability */
+.ppv-feedback-stars {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.ppv-star {
+  background: transparent;
+  border: none;
+  font-size: 36px;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 8px;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.ppv-star:hover,
+.ppv-star:focus {
+  color: #ffc107;
+  transform: scale(1.15);
+  outline: none;
+}
+
+.ppv-star.active {
+  color: #ffc107;
+  transform: scale(1.1);
+}
+
+.ppv-star.active i::before {
+  content: "\f186";
+}
+
+/* Category buttons - ensure clickability */
+.ppv-feedback-cat {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+}
+
+/* Rating section visibility */
+#ppv-feedback-rating-section {
+  margin-bottom: 20px;
+}
+
+#ppv-feedback-rating-section p {
+  color: #e0e0e0;
+  font-size: 15px;
+  margin: 0 0 12px 0;
+}
