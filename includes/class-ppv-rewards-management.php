@@ -1439,6 +1439,13 @@ class PPV_Rewards_Management {
             ], 400);
         }
 
+        // 🔧 FIX: Get OLD title for matching rewards in filialen
+        // This fixes duplicate rewards when title is changed during edit
+        $old_title = $wpdb->get_var($wpdb->prepare(
+            "SELECT title FROM {$wpdb->prefix}ppv_rewards WHERE id = %d",
+            $id
+        ));
+
         // Build update data array
         $update_data = [
             'title'           => $title,
@@ -1482,11 +1489,12 @@ class PPV_Rewards_Management {
                     );
                     $updated_count++;
                 } else {
-                    // Other filiale - check if reward with same title exists
+                    // Other filiale - check if reward with OLD title exists (handles title changes!)
+                    // 🔧 FIX: Use old_title for matching, not new title
                     $existing = $wpdb->get_var($wpdb->prepare(
                         "SELECT id FROM {$wpdb->prefix}ppv_rewards WHERE store_id = %d AND title = %s LIMIT 1",
                         $filiale_id,
-                        $title
+                        $old_title ?: $title
                     ));
 
                     if ($existing) {
