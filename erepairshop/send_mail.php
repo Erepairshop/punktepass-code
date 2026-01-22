@@ -1,38 +1,43 @@
 <?php
+require_once __DIR__ . '/db_config.php';
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Empfangen der Formulardaten
-    $name = htmlspecialchars($_POST['name']);
-    $phone = htmlspecialchars($_POST['phone']);
-    $brand = htmlspecialchars($_POST['brand']);
-    $model = htmlspecialchars($_POST['model']);
-    $problem = htmlspecialchars($_POST['problem']);
+    $name = htmlspecialchars($_POST['name'] ?? '');
+    $phone = htmlspecialchars($_POST['phone'] ?? '');
+    $brand = htmlspecialchars($_POST['brand'] ?? '');
+    $model = htmlspecialchars($_POST['model'] ?? '');
+    $problem = htmlspecialchars($_POST['problem'] ?? '');
     $other = isset($_POST['other']) ? htmlspecialchars($_POST['other']) : '';
     $pin = isset($_POST['pin']) ? htmlspecialchars($_POST['pin']) : 'N/A';
-    
+
     // Empfangen und Verarbeiten der Musterdaten
     $muster_base64 = isset($_POST['muster']) ? $_POST['muster'] : '';
     $muster_image_path = '';
     if (!empty($muster_base64)) {
         $muster_data = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $muster_base64));
         $muster_image_path = 'uploads/muster_' . uniqid() . '.png';
-        file_put_contents($muster_image_path, $muster_data);
+        file_put_contents(__DIR__ . '/' . $muster_image_path, $muster_data);
     }
 
-    // Vorbereitung der Daten für die Speicherung in 'entries.txt'
-    $entry = implode("|", [
-        date("Y-m-d H:i:s"),
-        $name,
-        $phone,
-        $brand,
-        $model,
-        $problem,
-        $other,
-        $pin,
-        $muster_image_path // Pfad des gespeicherten Musterbildes
-    ]) . "\n";
-
-    // Speichern der Daten in 'entries.txt'
-    file_put_contents('entries.txt', $entry, FILE_APPEND | LOCK_EX);
+    // Speichern der Daten in der Datenbank
+    try {
+        $pdo = getDB();
+        $stmt = $pdo->prepare("INSERT INTO entries (datum, name, telefon, marke, modell, problem, other, pin, muster_image_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([
+            date("Y-m-d H:i:s"),
+            $name,
+            $phone,
+            $brand,
+            $model,
+            $problem,
+            $other,
+            $pin,
+            $muster_image_path
+        ]);
+    } catch (Exception $e) {
+        error_log("Fehler beim Speichern: " . $e->getMessage());
+    }
 
     // Vorbereitung der E-Mail-Nachricht
     $to = 'borota25@gmail.com';
@@ -50,7 +55,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Hinzufügen des Musterbildes als Anhang, falls vorhanden
     if (!empty($muster_image_path)) {
         $file_name = basename($muster_image_path);
-        $file_content = file_get_contents($muster_image_path);
+        $file_content = file_get_contents(__DIR__ . '/' . $muster_image_path);
         $file_encoded = chunk_split(base64_encode($file_content));
 
         $message .= "--" . $boundary . "\r\n";
