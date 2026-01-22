@@ -338,6 +338,15 @@ class PPV_Bottom_Nav {
 
             // ============ FEEDBACK MODAL (Event Delegation - Turbo Safe) ============
             let feedbackEventsInitialized = false;
+
+            // 🔧 Store state in variables (more reliable than hidden inputs)
+            let feedbackState = {
+                category: '',
+                rating: 0,
+                pageUrl: '',
+                deviceInfo: ''
+            };
+
             function initFeedbackModal() {
                 if (feedbackEventsInitialized) return;
                 feedbackEventsInitialized = true;
@@ -367,16 +376,24 @@ class PPV_Bottom_Nav {
                 };
                 const catMeta = translations[lang] || translations.de;
 
+                // Error messages by language
+                const errorMsgs = {
+                    de: { selectRating: 'Bitte wählen Sie eine Bewertung.', describeIssue: 'Bitte beschreiben Sie Ihr Anliegen.', selectCategory: 'Bitte wählen Sie eine Kategorie.', networkError: 'Netzwerkfehler', sendError: 'Fehler beim Senden' },
+                    hu: { selectRating: 'Kérjük válasszon értékelést.', describeIssue: 'Kérjük írja le a kérését.', selectCategory: 'Kérjük válasszon kategóriát.', networkError: 'Hálózati hiba', sendError: 'Küldési hiba' },
+                    en: { selectRating: 'Please select a rating.', describeIssue: 'Please describe your request.', selectCategory: 'Please select a category.', networkError: 'Network error', sendError: 'Error sending' }
+                };
+                const errors = errorMsgs[lang] || errorMsgs.de;
+
                 function resetModal() {
+                    feedbackState.category = '';
+                    feedbackState.rating = 0;
                     \$('#ppv-feedback-step1').addClass('active');
                     \$('#ppv-feedback-step2, #ppv-feedback-step3').removeClass('active');
                     \$('#ppv-feedback-message').val('');
                     \$('#ppv-feedback-email').val('');
-                    \$('#ppv-feedback-category').val('');
-                    \$('#ppv-feedback-rating-value').val('0');
                     \$('.ppv-star').removeClass('active');
                     \$('#ppv-feedback-rating-section').hide();
-                    \$('#ppv-feedback-msg').removeClass('show error success');
+                    \$('#ppv-feedback-msg').removeClass('show error success').text('');
                 }
 
                 function getDeviceInfo() {
@@ -401,8 +418,8 @@ class PPV_Bottom_Nav {
                     e.preventDefault();
                     e.stopPropagation();
                     resetModal();
-                    \$('#ppv-feedback-page').val(window.location.pathname);
-                    \$('#ppv-feedback-device').val(getDeviceInfo());
+                    feedbackState.pageUrl = window.location.pathname;
+                    feedbackState.deviceInfo = getDeviceInfo();
                     \$('#ppv-feedback-modal').addClass('show');
                 });
 
@@ -419,9 +436,13 @@ class PPV_Bottom_Nav {
                 // Category selection
                 \$(document).on('click', '.ppv-feedback-cat', function() {
                     const cat = \$(this).data('category');
-                    const meta = catMeta[cat];
+                    if (!cat || !catMeta[cat]) return;
 
-                    \$('#ppv-feedback-category').val(cat);
+                    const meta = catMeta[cat];
+                    feedbackState.category = cat;
+                    feedbackState.rating = 0;
+                    \$('.ppv-star').removeClass('active');
+
                     \$('#ppv-feedback-cat-header').html('<i class=\"' + meta.icon + '\"></i><span>' + meta.text + '</span>');
                     \$('#ppv-feedback-message').attr('placeholder', meta.placeholder);
 
@@ -434,6 +455,7 @@ class PPV_Bottom_Nav {
 
                     \$('#ppv-feedback-step1').removeClass('active');
                     \$('#ppv-feedback-step2').addClass('active');
+                    \$('#ppv-feedback-msg').removeClass('show error success').text('');
                     setTimeout(function() { \$('#ppv-feedback-message').focus(); }, 100);
                 });
 
@@ -441,18 +463,20 @@ class PPV_Bottom_Nav {
                 \$(document).on('click', '#ppv-feedback-back', function() {
                     \$('#ppv-feedback-step2').removeClass('active');
                     \$('#ppv-feedback-step1').addClass('active');
+                    \$('#ppv-feedback-msg').removeClass('show error success').text('');
                 });
 
                 // Star rating
                 \$(document).on('click', '.ppv-star', function() {
-                    const rating = \$(this).data('rating');
-                    \$('#ppv-feedback-rating-value').val(rating);
+                    const rating = parseInt(\$(this).data('rating')) || 0;
+                    feedbackState.rating = rating;
                     \$('.ppv-star').removeClass('active');
                     \$('.ppv-star').each(function() {
-                        if (\$(this).data('rating') <= rating) {
+                        if (parseInt(\$(this).data('rating')) <= rating) {
                             \$(this).addClass('active');
                         }
                     });
+                    \$('#ppv-feedback-msg').removeClass('show error success').text('');
                 });
 
                 // Submit feedback
@@ -460,23 +484,31 @@ class PPV_Bottom_Nav {
                     const \$btn = \$(this);
                     const \$msg = \$('#ppv-feedback-msg');
                     const message = \$('#ppv-feedback-message').val().trim();
-                    const category = \$('#ppv-feedback-category').val();
-                    const rating = \$('#ppv-feedback-rating-value').val();
-                    const userType = \$('#ppv-feedback-modal').data('user-type');
+                    const category = feedbackState.category;
+                    const rating = feedbackState.rating;
+                    const userType = \$('#ppv-feedback-modal').data('user-type') || 'user';
 
-                    // Validate
-                    if (category === 'rating' && rating === '0') {
-                        \$msg.removeClass('success').addClass('error show').text('Bitte wählen Sie eine Bewertung.');
+                    // Validate category
+                    if (!category) {
+                        \$msg.removeClass('success').addClass('error show').text(errors.selectCategory);
                         return;
                     }
+
+                    // Validate rating for rating category
+                    if (category === 'rating' && rating < 1) {
+                        \$msg.removeClass('success').addClass('error show').text(errors.selectRating);
+                        return;
+                    }
+
+                    // Validate message for non-rating categories
                     if (!message && category !== 'rating') {
-                        \$msg.removeClass('success').addClass('error show').text('Bitte beschreiben Sie Ihr Anliegen.');
+                        \$msg.removeClass('success').addClass('error show').text(errors.describeIssue);
                         \$('#ppv-feedback-message').focus();
                         return;
                     }
 
                     \$btn.prop('disabled', true).html('<i class=\"ri-loader-4-line ri-spin\"></i> Senden...');
-                    \$msg.removeClass('show error success');
+                    \$msg.removeClass('show error success').text('');
 
                     \$.ajax({
                         url: '{$ajax_url}',
@@ -488,8 +520,8 @@ class PPV_Bottom_Nav {
                             message: message,
                             rating: rating,
                             email: \$('#ppv-feedback-email').val() || '',
-                            page_url: \$('#ppv-feedback-page').val(),
-                            device_info: \$('#ppv-feedback-device').val(),
+                            page_url: feedbackState.pageUrl,
+                            device_info: feedbackState.deviceInfo,
                             user_type: userType
                         },
                         success: function(res) {
@@ -500,11 +532,11 @@ class PPV_Bottom_Nav {
                                     \$('#ppv-feedback-modal').removeClass('show');
                                 }, 2000);
                             } else {
-                                \$msg.removeClass('success').addClass('error show').text(res.data?.message || 'Fehler beim Senden');
+                                \$msg.removeClass('success').addClass('error show').text(res.data?.message || errors.sendError);
                             }
                         },
                         error: function() {
-                            \$msg.removeClass('success').addClass('error show').text('Netzwerkfehler');
+                            \$msg.removeClass('success').addClass('error show').text(errors.networkError);
                         },
                         complete: function() {
                             \$btn.prop('disabled', false).html('<i class=\"ri-send-plane-line\"></i> Absenden');

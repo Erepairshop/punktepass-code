@@ -26,6 +26,10 @@ class PPV_Belohnungen {
     public static function hooks() {
         add_shortcode('ppv_rewards_page', [__CLASS__, 'render_rewards_page']);
         add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
+
+        // AJAX handlers for store rating
+        add_action('wp_ajax_ppv_rate_store', [__CLASS__, 'ajax_rate_store']);
+        add_action('wp_ajax_nopriv_ppv_rate_store', [__CLASS__, 'ajax_rate_store']);
     }
 
     private static function get_lang() {
@@ -79,6 +83,15 @@ class PPV_Belohnungen {
                 'scans_needed' => 'Besuche fehlen',
                 'scan_singular' => 'Besuch fehlt',
                 'free_product' => 'Gratis',
+                // Store rating labels
+                'rate_store' => 'Geschäft bewerten',
+                'rate_store_title' => 'Bewertung',
+                'rate_store_question' => 'Wie zufrieden bist du mit diesem Geschäft?',
+                'rate_store_submit' => 'Bewertung senden',
+                'rate_store_thanks' => 'Danke für deine Bewertung!',
+                'rate_store_already' => 'Du hast dieses Jahr bereits bewertet.',
+                'rate_store_select' => 'Bitte wähle eine Bewertung.',
+                'rate_store_error' => 'Fehler beim Speichern.',
             ],
             'hu' => [
                 'page_title' => 'Jutalmak',
@@ -117,6 +130,15 @@ class PPV_Belohnungen {
                 'scans_needed' => 'alkalom hiányzik',
                 'scan_singular' => 'alkalom hiányzik',
                 'free_product' => 'Ingyenes',
+                // Store rating labels
+                'rate_store' => 'Üzlet értékelése',
+                'rate_store_title' => 'Értékelés',
+                'rate_store_question' => 'Mennyire vagy elégedett ezzel az üzlettel?',
+                'rate_store_submit' => 'Értékelés küldése',
+                'rate_store_thanks' => 'Köszönjük az értékelést!',
+                'rate_store_already' => 'Idén már értékeltél.',
+                'rate_store_select' => 'Kérlek válassz értékelést.',
+                'rate_store_error' => 'Hiba a mentés során.',
             ],
             'ro' => [
                 'page_title' => 'Premiile Mele',
@@ -155,6 +177,15 @@ class PPV_Belohnungen {
                 'scans_needed' => 'vizite lipsesc',
                 'scan_singular' => 'vizită lipsește',
                 'free_product' => 'Gratuit',
+                // Store rating labels
+                'rate_store' => 'Evaluează magazinul',
+                'rate_store_title' => 'Evaluare',
+                'rate_store_question' => 'Cât de mulțumit ești de acest magazin?',
+                'rate_store_submit' => 'Trimite evaluarea',
+                'rate_store_thanks' => 'Mulțumim pentru evaluare!',
+                'rate_store_already' => 'Ai evaluat deja anul acesta.',
+                'rate_store_select' => 'Te rog selectează o evaluare.',
+                'rate_store_error' => 'Eroare la salvare.',
             ],
         ];
         return $labels[$lang] ?? $labels['de'];
@@ -532,6 +563,14 @@ class PPV_Belohnungen {
                                         <p><?php echo esc_html($L['no_rewards_yet']); ?></p>
                                     </div>
                                 <?php endif; ?>
+
+                                <!-- Store Rating Button -->
+                                <div class="ppv-store-rate-section">
+                                    <button class="ppv-store-rate-btn" data-store-id="<?php echo esc_attr($store->store_id); ?>" data-store-name="<?php echo esc_attr($store->store_name ?: $store->store_name_short); ?>">
+                                        <i class="ri-star-line"></i>
+                                        <span><?php echo esc_html($L['rate_store']); ?></span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     <?php endforeach; ?>
@@ -577,10 +616,365 @@ class PPV_Belohnungen {
 
         </div>
 
+        <!-- STORE RATING MODAL -->
+        <div id="ppv-store-rating-modal" class="ppv-store-rating-modal">
+            <div class="ppv-store-rating-content">
+                <div class="ppv-store-rating-header">
+                    <h3><i class="ri-star-line"></i> <?php echo esc_html($L['rate_store_title']); ?></h3>
+                    <button id="ppv-store-rating-close" class="ppv-store-rating-close">&times;</button>
+                </div>
+                <div class="ppv-store-rating-body">
+                    <p class="ppv-store-rating-name" id="ppv-store-rating-name"></p>
+                    <p class="ppv-store-rating-question"><?php echo esc_html($L['rate_store_question']); ?></p>
+                    <div class="ppv-store-rating-stars">
+                        <button class="ppv-store-star" data-rating="1"><i class="ri-star-line"></i></button>
+                        <button class="ppv-store-star" data-rating="2"><i class="ri-star-line"></i></button>
+                        <button class="ppv-store-star" data-rating="3"><i class="ri-star-line"></i></button>
+                        <button class="ppv-store-star" data-rating="4"><i class="ri-star-line"></i></button>
+                        <button class="ppv-store-star" data-rating="5"><i class="ri-star-line"></i></button>
+                    </div>
+                    <div id="ppv-store-rating-msg" class="ppv-store-rating-msg"></div>
+                    <button id="ppv-store-rating-submit" class="ppv-store-rating-submit">
+                        <i class="ri-send-plane-line"></i> <?php echo esc_html($L['rate_store_submit']); ?>
+                    </button>
+                </div>
+                <div class="ppv-store-rating-success" style="display: none;">
+                    <i class="ri-checkbox-circle-line"></i>
+                    <p><?php echo esc_html($L['rate_store_thanks']); ?></p>
+                </div>
+            </div>
+        </div>
+
+        <script>
+        (function() {
+            const $ = jQuery;
+            let selectedStoreId = null;
+            let selectedRating = 0;
+
+            const L = {
+                thanks: <?php echo json_encode($L['rate_store_thanks']); ?>,
+                already: <?php echo json_encode($L['rate_store_already']); ?>,
+                select: <?php echo json_encode($L['rate_store_select']); ?>,
+                error: <?php echo json_encode($L['rate_store_error']); ?>
+            };
+
+            // Open modal
+            $(document).on('click', '.ppv-store-rate-btn', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                selectedStoreId = $(this).data('store-id');
+                const storeName = $(this).data('store-name');
+                $('#ppv-store-rating-name').text(storeName);
+                selectedRating = 0;
+                $('.ppv-store-star').removeClass('active');
+                $('#ppv-store-rating-msg').removeClass('show error success').text('');
+                $('.ppv-store-rating-body').show();
+                $('.ppv-store-rating-success').hide();
+                $('#ppv-store-rating-modal').addClass('show');
+            });
+
+            // Close modal
+            $(document).on('click', '#ppv-store-rating-close', function() {
+                $('#ppv-store-rating-modal').removeClass('show');
+            });
+            $(document).on('click', '#ppv-store-rating-modal', function(e) {
+                if (e.target === this) $(this).removeClass('show');
+            });
+
+            // Star selection
+            $(document).on('click', '.ppv-store-star', function() {
+                selectedRating = parseInt($(this).data('rating'));
+                $('.ppv-store-star').removeClass('active');
+                $('.ppv-store-star').each(function() {
+                    if (parseInt($(this).data('rating')) <= selectedRating) {
+                        $(this).addClass('active');
+                    }
+                });
+                $('#ppv-store-rating-msg').removeClass('show error success').text('');
+            });
+
+            // Submit rating
+            $(document).on('click', '#ppv-store-rating-submit', function() {
+                const $btn = $(this);
+                const $msg = $('#ppv-store-rating-msg');
+
+                if (selectedRating < 1) {
+                    $msg.addClass('error show').text(L.select);
+                    return;
+                }
+
+                $btn.prop('disabled', true).html('<i class="ri-loader-4-line ri-spin"></i>');
+
+                $.ajax({
+                    url: '<?php echo admin_url('admin-ajax.php'); ?>',
+                    type: 'POST',
+                    data: {
+                        action: 'ppv_rate_store',
+                        nonce: '<?php echo wp_create_nonce('ppv_store_rating_nonce'); ?>',
+                        store_id: selectedStoreId,
+                        rating: selectedRating
+                    },
+                    success: function(res) {
+                        if (res.success) {
+                            $('.ppv-store-rating-body').hide();
+                            $('.ppv-store-rating-success').show();
+                            setTimeout(function() {
+                                $('#ppv-store-rating-modal').removeClass('show');
+                            }, 2000);
+                        } else {
+                            $msg.addClass('error show').text(res.data?.message || L.error);
+                        }
+                    },
+                    error: function() {
+                        $msg.addClass('error show').text(L.error);
+                    },
+                    complete: function() {
+                        $btn.prop('disabled', false).html('<i class="ri-send-plane-line"></i> <?php echo esc_js($L['rate_store_submit']); ?>');
+                    }
+                });
+            });
+        })();
+        </script>
+
+        <style>
+        /* Store Rating Modal */
+        .ppv-store-rating-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(4px);
+            z-index: 99999;
+            align-items: flex-end;
+            justify-content: center;
+        }
+        .ppv-store-rating-modal.show { display: flex; }
+
+        .ppv-store-rating-content {
+            background: linear-gradient(145deg, #1a1a2e, #16213e);
+            width: 100%;
+            max-width: 400px;
+            border-radius: 20px 20px 0 0;
+            overflow: hidden;
+            animation: slideUp 0.3s ease;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+
+        .ppv-store-rating-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(0,217,255,0.2);
+        }
+        .ppv-store-rating-header h3 {
+            color: #00d9ff;
+            font-size: 18px;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .ppv-store-rating-close {
+            background: none;
+            border: none;
+            color: #888;
+            font-size: 28px;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .ppv-store-rating-body { padding: 20px; }
+
+        .ppv-store-rating-name {
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            text-align: center;
+            margin: 0 0 8px 0;
+        }
+        .ppv-store-rating-question {
+            color: #aaa;
+            text-align: center;
+            margin: 0 0 20px 0;
+            font-size: 14px;
+        }
+
+        .ppv-store-rating-stars {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        .ppv-store-star {
+            background: transparent;
+            border: none;
+            font-size: 36px;
+            color: #444;
+            cursor: pointer;
+            transition: all 0.2s;
+            padding: 4px;
+        }
+        .ppv-store-star:hover,
+        .ppv-store-star.active {
+            color: #ffc107;
+            transform: scale(1.15);
+        }
+        .ppv-store-star.active i::before { content: "\\f186"; }
+
+        .ppv-store-rating-msg {
+            display: none;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 14px;
+        }
+        .ppv-store-rating-msg.show { display: block; }
+        .ppv-store-rating-msg.error {
+            background: rgba(255,100,100,0.2);
+            color: #ffcccc;
+        }
+
+        .ppv-store-rating-submit {
+            width: 100%;
+            background: linear-gradient(135deg, #00d9ff, #00b8d9);
+            border: none;
+            border-radius: 10px;
+            padding: 14px;
+            color: #000;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .ppv-store-rating-success {
+            text-align: center;
+            padding: 40px 20px;
+        }
+        .ppv-store-rating-success i {
+            font-size: 60px;
+            color: #4ade80;
+        }
+        .ppv-store-rating-success p {
+            color: #fff;
+            font-size: 16px;
+            margin: 15px 0 0 0;
+        }
+
+        /* Rate button in store card */
+        .ppv-store-rate-section {
+            padding: 15px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            margin-top: 10px;
+        }
+        .ppv-store-rate-btn {
+            width: 100%;
+            background: linear-gradient(135deg, rgba(255,193,7,0.2), rgba(255,152,0,0.2));
+            border: 1px solid rgba(255,193,7,0.3);
+            border-radius: 10px;
+            padding: 12px;
+            color: #ffc107;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        .ppv-store-rate-btn:hover {
+            background: linear-gradient(135deg, rgba(255,193,7,0.3), rgba(255,152,0,0.3));
+            transform: translateY(-1px);
+        }
+        </style>
+
         <?php
         $content = ob_get_clean();
         $content .= do_shortcode('[ppv_bottom_nav]');
         return $content;
+    }
+
+    /**
+     * AJAX handler for store rating
+     * Users can rate once per 12 months per store
+     */
+    public static function ajax_rate_store() {
+        global $wpdb;
+
+        // Verify nonce
+        if (!wp_verify_nonce($_POST['nonce'] ?? '', 'ppv_store_rating_nonce')) {
+            wp_send_json_error(['message' => 'Ungültiger Sicherheitstoken']);
+            return;
+        }
+
+        // Get PPV user ID from session
+        self::ensure_session();
+        $user_id = intval($_SESSION['ppv_user_id'] ?? 0);
+
+        if (!$user_id) {
+            wp_send_json_error(['message' => 'Bitte einloggen']);
+            return;
+        }
+
+        $store_id = intval($_POST['store_id'] ?? 0);
+        $rating = intval($_POST['rating'] ?? 0);
+
+        if (!$store_id || $rating < 1 || $rating > 5) {
+            wp_send_json_error(['message' => 'Ungültige Bewertung']);
+            return;
+        }
+
+        // Check if user already rated this store in the last 12 months
+        $twelve_months_ago = date('Y-m-d H:i:s', strtotime('-12 months'));
+
+        $existing = $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM {$wpdb->prefix}pp_reviews
+             WHERE store_id = %d AND user_id = %d AND created_at > %s
+             LIMIT 1",
+            $store_id, $user_id, $twelve_months_ago
+        ));
+
+        if ($existing) {
+            $lang = self::get_lang();
+            $L = self::get_labels($lang);
+            wp_send_json_error(['message' => $L['rate_store_already']]);
+            return;
+        }
+
+        // Delete old rating if exists (allows re-rating after 12 months)
+        $wpdb->delete(
+            "{$wpdb->prefix}pp_reviews",
+            ['store_id' => $store_id, 'user_id' => $user_id],
+            ['%d', '%d']
+        );
+
+        // Insert new rating
+        $result = $wpdb->insert(
+            "{$wpdb->prefix}pp_reviews",
+            [
+                'store_id' => $store_id,
+                'user_id' => $user_id,
+                'rating' => $rating,
+                'comment' => '',
+                'created_at' => current_time('mysql')
+            ],
+            ['%d', '%d', '%d', '%s', '%s']
+        );
+
+        if ($result) {
+            wp_send_json_success(['message' => 'Bewertung gespeichert']);
+        } else {
+            wp_send_json_error(['message' => 'Fehler beim Speichern']);
+        }
     }
 }
 
