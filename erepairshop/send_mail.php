@@ -11,10 +11,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $other = isset($_POST['other']) ? htmlspecialchars($_POST['other']) : '';
     $pin = isset($_POST['pin']) ? htmlspecialchars($_POST['pin']) : 'N/A';
 
-    // Empfangen und Verarbeiten der Musterdaten
+    // Empfangen und Verarbeiten der Musterdaten - nur wenn "muster" als Sicherheitstyp gewählt wurde
+    $sicherheitstyp = $_POST['sicherheitstyp'] ?? '';
     $muster_base64 = isset($_POST['muster']) ? $_POST['muster'] : '';
     $muster_image_path = '';
-    if (!empty($muster_base64)) {
+
+    // Nur Musterbild speichern wenn Sicherheitstyp "muster" ist und Daten vorhanden sind
+    if ($sicherheitstyp === 'muster' && !empty($muster_base64) && strpos($muster_base64, 'data:image') === 0) {
         $muster_data = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $muster_base64));
         $muster_image_path = 'uploads/muster_' . uniqid() . '.png';
         file_put_contents(__DIR__ . '/' . $muster_image_path, $muster_data);
