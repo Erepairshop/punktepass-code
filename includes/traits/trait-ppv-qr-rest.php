@@ -1142,7 +1142,7 @@ trait PPV_QR_REST_Trait {
             ORDER BY created_at DESC LIMIT 1
         ", $user_id, $store_id));
 
-        // Get user's current total points (after this scan)
+        // Get user's current total points (for display)
         $user_total_points = (int) $wpdb->get_var($wpdb->prepare(
             "SELECT COALESCE(SUM(points), 0) FROM {$wpdb->prefix}ppv_points WHERE user_id = %d",
             $user_id
@@ -1154,13 +1154,19 @@ trait PPV_QR_REST_Trait {
             $reward_store_id = PPV_Filiale::get_parent_id($store_id);
         }
 
-        // Find available rewards that user can redeem
+        // 🔧 FIX: Get STORE-SPECIFIC points for redemption check (not total!)
+        $store_points = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COALESCE(SUM(points), 0) FROM {$wpdb->prefix}ppv_points WHERE user_id = %d AND store_id = %d",
+            $user_id, $store_id
+        ));
+
+        // Find available rewards that user can redeem (based on STORE points, not total!)
         $available_rewards = $wpdb->get_results($wpdb->prepare("
             SELECT id, title, description, required_points, action_type, action_value, free_product_value
             FROM {$wpdb->prefix}ppv_rewards
             WHERE store_id = %d AND required_points <= %d AND required_points > 0
             ORDER BY required_points DESC
-        ", $reward_store_id, $user_total_points));
+        ", $reward_store_id, $store_points));
 
         if (!empty($available_rewards)) {
             // User can redeem! Create or refresh prompt
@@ -1223,7 +1229,7 @@ trait PPV_QR_REST_Trait {
                 'timeout_seconds' => 60
             ];
 
-            ppv_log("🎁 [PPV_QR] Redemption prompt created: user={$user_id}, store={$store_id}, rewards=" . count($rewards_array) . ", points={$user_total_points}");
+            ppv_log("🎁 [PPV_QR] Redemption prompt created: user={$user_id}, store={$store_id}, rewards=" . count($rewards_array) . ", store_points={$store_points}, total_points={$user_total_points}");
 
             // 📡 ABLY: Send redemption prompt to user's dashboard
             if (class_exists('PPV_Ably') && PPV_Ably::is_enabled()) {
@@ -2581,7 +2587,7 @@ trait PPV_QR_REST_Trait {
     private static function check_and_create_redemption_prompt($user_id, $store_id, $scanner_id) {
         global $wpdb;
 
-        // Get user's current total points
+        // Get user's current total points (for display)
         $user_total_points = (int) $wpdb->get_var($wpdb->prepare(
             "SELECT COALESCE(SUM(points), 0) FROM {$wpdb->prefix}ppv_points WHERE user_id = %d",
             $user_id
@@ -2593,13 +2599,19 @@ trait PPV_QR_REST_Trait {
             $reward_store_id = PPV_Filiale::get_parent_id($store_id);
         }
 
-        // Find available rewards that user can redeem
+        // 🔧 FIX: Get STORE-SPECIFIC points for redemption check (not total!)
+        $store_points = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COALESCE(SUM(points), 0) FROM {$wpdb->prefix}ppv_points WHERE user_id = %d AND store_id = %d",
+            $user_id, $store_id
+        ));
+
+        // Find available rewards that user can redeem (based on STORE points, not total!)
         $available_rewards = $wpdb->get_results($wpdb->prepare("
             SELECT id, title, description, required_points, action_type, action_value, free_product_value
             FROM {$wpdb->prefix}ppv_rewards
             WHERE store_id = %d AND required_points <= %d AND required_points > 0
             ORDER BY required_points DESC
-        ", $reward_store_id, $user_total_points));
+        ", $reward_store_id, $store_points));
 
         if (empty($available_rewards)) {
             return null; // No available rewards
