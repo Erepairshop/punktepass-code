@@ -1154,13 +1154,22 @@ trait PPV_QR_REST_Trait {
             $reward_store_id = PPV_Filiale::get_parent_id($store_id);
         }
 
-        // 🔧 FIX: Get STORE-SPECIFIC points for redemption check (not total!)
+        // 🔧 FIX: Get points for this store GROUP (parent + all filialen)
+        // Points collected at any filiale count toward rewards at any location
+        $store_group_ids = [$reward_store_id];
+        if (class_exists('PPV_Filiale')) {
+            $filialen = PPV_Filiale::get_filialen($reward_store_id);
+            if (!empty($filialen)) {
+                $store_group_ids = array_map(function($f) { return (int)$f->id; }, $filialen);
+            }
+        }
+        $store_ids_placeholder = implode(',', array_fill(0, count($store_group_ids), '%d'));
         $store_points = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COALESCE(SUM(points), 0) FROM {$wpdb->prefix}ppv_points WHERE user_id = %d AND store_id = %d",
-            $user_id, $store_id
+            "SELECT COALESCE(SUM(points), 0) FROM {$wpdb->prefix}ppv_points WHERE user_id = %d AND store_id IN ($store_ids_placeholder)",
+            array_merge([$user_id], $store_group_ids)
         ));
 
-        // Find available rewards that user can redeem (based on STORE points, not total!)
+        // Find available rewards that user can redeem (based on store GROUP points)
         $available_rewards = $wpdb->get_results($wpdb->prepare("
             SELECT id, title, description, required_points, action_type, action_value, free_product_value
             FROM {$wpdb->prefix}ppv_rewards
@@ -2599,13 +2608,22 @@ trait PPV_QR_REST_Trait {
             $reward_store_id = PPV_Filiale::get_parent_id($store_id);
         }
 
-        // 🔧 FIX: Get STORE-SPECIFIC points for redemption check (not total!)
+        // 🔧 FIX: Get points for this store GROUP (parent + all filialen)
+        // Points collected at any filiale count toward rewards at any location
+        $store_group_ids = [$reward_store_id];
+        if (class_exists('PPV_Filiale')) {
+            $filialen = PPV_Filiale::get_filialen($reward_store_id);
+            if (!empty($filialen)) {
+                $store_group_ids = array_map(function($f) { return (int)$f->id; }, $filialen);
+            }
+        }
+        $store_ids_placeholder = implode(',', array_fill(0, count($store_group_ids), '%d'));
         $store_points = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COALESCE(SUM(points), 0) FROM {$wpdb->prefix}ppv_points WHERE user_id = %d AND store_id = %d",
-            $user_id, $store_id
+            "SELECT COALESCE(SUM(points), 0) FROM {$wpdb->prefix}ppv_points WHERE user_id = %d AND store_id IN ($store_ids_placeholder)",
+            array_merge([$user_id], $store_group_ids)
         ));
 
-        // Find available rewards that user can redeem (based on STORE points, not total!)
+        // Find available rewards that user can redeem (based on store GROUP points)
         $available_rewards = $wpdb->get_results($wpdb->prepare("
             SELECT id, title, description, required_points, action_type, action_value, free_product_value
             FROM {$wpdb->prefix}ppv_rewards
