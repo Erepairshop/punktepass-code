@@ -450,7 +450,7 @@ class PPV_User_Tips {
             $field_map = [
                 'name' => 'display_name',
                 'birthday' => 'birthday',
-                'whatsapp' => 'whatsapp',
+                'whatsapp' => 'phone_number',  // WhatsApp tip checks phone_number field
                 'push_enabled' => 'push_notifications'
             ];
             $db_field = $field_map[$field] ?? $field;
@@ -618,7 +618,26 @@ class PPV_User_Tips {
                 // Check if field is already filled
                 if (!empty($tip_config['check_field'])) {
                     $field = $tip_config['check_field'];
-                    if (!empty($user->$field)) {
+
+                    // 🔧 FIX: Map config field names to actual database column names
+                    $field_map = [
+                        'name' => 'display_name',
+                        'push_enabled' => 'push_notifications',
+                        'whatsapp' => 'phone_number'  // WhatsApp tip checks if phone number is added
+                    ];
+                    $db_field = $field_map[$field] ?? $field;
+
+                    // For 'name', also check first_name/last_name as fallbacks
+                    $is_filled = false;
+                    if ($field === 'name') {
+                        $is_filled = !empty(trim($user->display_name ?? ''))
+                                  || !empty(trim($user->first_name ?? ''))
+                                  || !empty(trim($user->last_name ?? ''));
+                    } else {
+                        $is_filled = !empty($user->$db_field);
+                    }
+
+                    if ($is_filled) {
                         // Field is already filled, dismiss tip automatically
                         $wpdb->update(
                             $wpdb->prefix . 'ppv_user_tips',
