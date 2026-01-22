@@ -953,6 +953,17 @@ private static function get_today_hours($opening_hours) {
             'before'
         );
 
+        // Add store rating config (nonce + ajax_url)
+        wp_add_inline_script(
+            'ppv-dashboard',
+            'window.ppv_dashboard = ' . wp_json_encode([
+                'ajax_url' => admin_url('admin-ajax.php'),
+                'nonce' => wp_create_nonce('ppv_store_rating_nonce'),
+                'lang' => self::get_user_lang()
+            ]) . ';',
+            'before'
+        );
+
         if (class_exists('PPV_Lang') && !empty(PPV_Lang::$strings)) {
             wp_add_inline_script(
                 'ppv-dashboard',

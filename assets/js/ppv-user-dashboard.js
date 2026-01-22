@@ -139,6 +139,7 @@ window.PPV_TRANSLATIONS = window.PPV_TRANSLATIONS || {
     qr_offline_cached: "Offline - Gespeicherter QR-Code",
     qr_offline_static: "Offline - Tages-QR (1x pro Geschäft)",
     qr_offline_error: "Offline - Bitte einmal online laden",
+    rate_store: "Bewerten",
   },
   hu: {
     welcome: "Üdv a PunktePassban",
@@ -210,6 +211,7 @@ window.PPV_TRANSLATIONS = window.PPV_TRANSLATIONS || {
     qr_offline_cached: "Offline - Mentett QR-kód",
     qr_offline_static: "Offline - Napi QR (üzletenként 1x)",
     qr_offline_error: "Offline - Kérlek csatlakozz egyszer az internethez",
+    rate_store: "Értékelés",
   },
   ro: {
     welcome: "Bun venit la PunktePass",
@@ -281,6 +283,7 @@ window.PPV_TRANSLATIONS = window.PPV_TRANSLATIONS || {
     qr_offline_cached: "Offline - Cod QR salvat",
     qr_offline_static: "Offline - QR zilnic (1x per magazin)",
     qr_offline_error: "Offline - Te rugăm conectează-te o dată la internet",
+    rate_store: "Evaluare",
   }
 };
 
@@ -1717,6 +1720,9 @@ async function initUserDashboard() {
             ${store.phone ? `<a href="tel:${escapeHtml(store.phone)}" class="ppv-action-btn ppv-call"><i class="ri-phone-fill"></i> ${T.call}</a>` : ''}
             ${store.public_email ? `<a href="mailto:${escapeHtml(store.public_email)}" class="ppv-action-btn ppv-email"><i class="ri-mail-fill"></i> E-Mail</a>` : ''}
             ${store.website ? `<a href="${escapeHtml(store.website)}" target="_blank" rel="noopener" class="ppv-action-btn ppv-web"><i class="ri-global-line"></i> ${T.website}</a>` : ''}
+            <button class="ppv-action-btn ppv-rate ppv-store-rate-btn" data-store-id="${store.id}" data-store-name="${escapeHtml(store.company_name || store.name)}" type="button">
+              <i class="ri-star-line"></i> ${T.rate_store || 'Bewerten'}
+            </button>
           </div>
         </div>
       </div>
@@ -1849,6 +1855,17 @@ async function initUserDashboard() {
         const images = Array.from(card.querySelectorAll('.ppv-gallery-thumb')).map(img => img.src);
         const index = Array.from(card.querySelectorAll('.ppv-gallery-thumb')).indexOf(galleryThumb);
         openLightbox(images, index);
+        return;
+      }
+
+      // 4️⃣ RATE STORE - Store rating modal
+      const rateBtn = e.target.closest('.ppv-store-rate-btn');
+      if (rateBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const storeId = rateBtn.getAttribute('data-store-id');
+        const storeName = rateBtn.getAttribute('data-store-name');
+        openStoreRatingModal(storeId, storeName);
         return;
       }
     });
@@ -2251,6 +2268,157 @@ async function initUserDashboard() {
     } else {
       createToast();
     }
+  };
+
+  // ============================================================
+  // ⭐ STORE RATING MODAL
+  // ============================================================
+  window.openStoreRatingModal = function(storeId, storeName) {
+    // Check if modal already exists
+    let modal = document.getElementById('ppv-store-rating-modal');
+    if (!modal) {
+      // Create modal HTML
+      const ratingLabels = {
+        de: { title: 'Bewertung', question: 'Wie zufrieden bist du mit diesem Geschäft?', submit: 'Bewertung senden', thanks: 'Danke für deine Bewertung!', already: 'Du hast dieses Jahr bereits bewertet.', select: 'Bitte wähle eine Bewertung.', error: 'Fehler beim Speichern.' },
+        hu: { title: 'Értékelés', question: 'Mennyire vagy elégedett ezzel az üzlettel?', submit: 'Értékelés küldése', thanks: 'Köszönjük az értékelést!', already: 'Idén már értékeltél.', select: 'Kérlek válassz értékelést.', error: 'Hiba a mentés során.' },
+        ro: { title: 'Evaluare', question: 'Cât de mulțumit ești de acest magazin?', submit: 'Trimite evaluarea', thanks: 'Mulțumim pentru evaluare!', already: 'Ai evaluat deja anul acesta.', select: 'Te rog selectează o evaluare.', error: 'Eroare la salvare.' }
+      };
+      const lang = window.ppv_dashboard?.lang || 'de';
+      const RL = ratingLabels[lang] || ratingLabels.de;
+
+      const modalHTML = `
+        <div id="ppv-store-rating-modal" class="ppv-store-rating-modal">
+          <div class="ppv-store-rating-content">
+            <div class="ppv-store-rating-header">
+              <h3><i class="ri-star-line"></i> ${RL.title}</h3>
+              <button id="ppv-store-rating-close" class="ppv-store-rating-close">&times;</button>
+            </div>
+            <div class="ppv-store-rating-body">
+              <p class="ppv-store-rating-name" id="ppv-store-rating-name"></p>
+              <p class="ppv-store-rating-question">${RL.question}</p>
+              <div class="ppv-store-rating-stars">
+                <button class="ppv-store-star" data-rating="1"><i class="ri-star-line"></i></button>
+                <button class="ppv-store-star" data-rating="2"><i class="ri-star-line"></i></button>
+                <button class="ppv-store-star" data-rating="3"><i class="ri-star-line"></i></button>
+                <button class="ppv-store-star" data-rating="4"><i class="ri-star-line"></i></button>
+                <button class="ppv-store-star" data-rating="5"><i class="ri-star-line"></i></button>
+              </div>
+              <div id="ppv-store-rating-msg" class="ppv-store-rating-msg"></div>
+              <button id="ppv-store-rating-submit" class="ppv-store-rating-submit">
+                <i class="ri-send-plane-line"></i> ${RL.submit}
+              </button>
+            </div>
+            <div class="ppv-store-rating-success" style="display: none;">
+              <i class="ri-checkbox-circle-line"></i>
+              <p>${RL.thanks}</p>
+            </div>
+          </div>
+        </div>
+        <style>
+        .ppv-store-rating-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);z-index:99999;align-items:flex-end;justify-content:center}
+        .ppv-store-rating-modal.show{display:flex}
+        .ppv-store-rating-content{background:linear-gradient(145deg,#1a1a2e,#16213e);width:100%;max-width:400px;border-radius:20px 20px 0 0;overflow:hidden;animation:ppvSlideUp .3s ease}
+        @keyframes ppvSlideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+        .ppv-store-rating-header{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid rgba(0,217,255,0.2)}
+        .ppv-store-rating-header h3{color:#00d9ff;font-size:18px;margin:0;display:flex;align-items:center;gap:8px}
+        .ppv-store-rating-close{background:none;border:none;color:#888;font-size:28px;cursor:pointer;line-height:1}
+        .ppv-store-rating-body{padding:20px}
+        .ppv-store-rating-name{color:#fff;font-size:16px;font-weight:600;text-align:center;margin:0 0 8px 0}
+        .ppv-store-rating-question{color:#aaa;text-align:center;margin:0 0 20px 0;font-size:14px}
+        .ppv-store-rating-stars{display:flex;justify-content:center;gap:8px;margin-bottom:20px}
+        .ppv-store-star{background:transparent;border:none;font-size:36px;color:#444;cursor:pointer;transition:all .2s;padding:4px}
+        .ppv-store-star:hover,.ppv-store-star.active{color:#ffc107;transform:scale(1.15)}
+        .ppv-store-star.active i::before{content:"\\f186"}
+        .ppv-store-rating-msg{display:none;padding:10px;border-radius:8px;margin-bottom:15px;text-align:center;font-size:14px}
+        .ppv-store-rating-msg.show{display:block}
+        .ppv-store-rating-msg.error{background:rgba(255,100,100,0.2);color:#ffcccc}
+        .ppv-store-rating-submit{width:100%;background:linear-gradient(135deg,#00d9ff,#00b8d9);border:none;border-radius:10px;padding:14px;color:#000;font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+        .ppv-store-rating-success{text-align:center;padding:40px 20px}
+        .ppv-store-rating-success i{font-size:60px;color:#4ade80}
+        .ppv-store-rating-success p{color:#fff;font-size:16px;margin:15px 0 0 0}
+        .ppv-action-btn.ppv-rate{background:linear-gradient(135deg,rgba(255,193,7,0.15),rgba(255,152,0,0.15))!important;border:1px solid rgba(255,193,7,0.3)!important;color:#d97706!important}
+        .ppv-action-btn.ppv-rate:hover{background:linear-gradient(135deg,rgba(255,193,7,0.25),rgba(255,152,0,0.25))!important}
+        </style>
+      `;
+      document.body.insertAdjacentHTML('beforeend', modalHTML);
+      modal = document.getElementById('ppv-store-rating-modal');
+
+      // Event listeners
+      document.getElementById('ppv-store-rating-close').addEventListener('click', () => {
+        modal.classList.remove('show');
+      });
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.classList.remove('show');
+      });
+
+      // Star selection
+      let selectedRating = 0;
+      modal.querySelectorAll('.ppv-store-star').forEach(star => {
+        star.addEventListener('click', () => {
+          selectedRating = parseInt(star.dataset.rating);
+          modal.querySelectorAll('.ppv-store-star').forEach(s => {
+            s.classList.toggle('active', parseInt(s.dataset.rating) <= selectedRating);
+          });
+          document.getElementById('ppv-store-rating-msg').classList.remove('show', 'error');
+        });
+      });
+
+      // Submit
+      document.getElementById('ppv-store-rating-submit').addEventListener('click', async () => {
+        const currentStoreId = modal.dataset.storeId;
+        const msg = document.getElementById('ppv-store-rating-msg');
+        const btn = document.getElementById('ppv-store-rating-submit');
+        const lang = window.ppv_dashboard?.lang || 'de';
+        const RL = ratingLabels[lang] || ratingLabels.de;
+
+        if (selectedRating < 1) {
+          msg.textContent = RL.select;
+          msg.classList.add('show', 'error');
+          return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i>';
+
+        try {
+          const formData = new FormData();
+          formData.append('action', 'ppv_rate_store');
+          formData.append('nonce', window.ppv_dashboard?.nonce || '');
+          formData.append('store_id', currentStoreId);
+          formData.append('rating', selectedRating);
+
+          const res = await fetch(window.ppv_dashboard?.ajax_url || '/wp-admin/admin-ajax.php', {
+            method: 'POST',
+            body: formData
+          });
+          const data = await res.json();
+
+          if (data.success) {
+            modal.querySelector('.ppv-store-rating-body').style.display = 'none';
+            modal.querySelector('.ppv-store-rating-success').style.display = 'block';
+            setTimeout(() => modal.classList.remove('show'), 2000);
+          } else {
+            msg.textContent = data.data?.message || RL.error;
+            msg.classList.add('show', 'error');
+          }
+        } catch (err) {
+          msg.textContent = RL.error;
+          msg.classList.add('show', 'error');
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = `<i class="ri-send-plane-line"></i> ${RL.submit}`;
+        }
+      });
+    }
+
+    // Reset and show modal
+    modal.dataset.storeId = storeId;
+    document.getElementById('ppv-store-rating-name').textContent = storeName;
+    modal.querySelectorAll('.ppv-store-star').forEach(s => s.classList.remove('active'));
+    document.getElementById('ppv-store-rating-msg').classList.remove('show', 'error');
+    modal.querySelector('.ppv-store-rating-body').style.display = 'block';
+    modal.querySelector('.ppv-store-rating-success').style.display = 'none';
+    modal.classList.add('show');
   };
 
 }
