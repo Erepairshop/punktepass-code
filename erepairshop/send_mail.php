@@ -74,57 +74,53 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Senden der E-Mail-Nachricht
 
 if (mail($to, $subject, $message, $headers)) {
-        // Modern success page
+        // Modern in-store success page with confetti
         echo '<!DOCTYPE html>
         <html lang="de">
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <meta http-equiv="refresh" content="15;url=https://erepairshop.de/formular/formular.html">
-            <title>Auftrag erfolgreich!</title>
-            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+            <meta http-equiv="refresh" content="5;url=https://erepairshop.de/formular/formular.html">
+            <title>✓ Gespeichert!</title>
+            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
             <style>
                 * { margin: 0; padding: 0; box-sizing: border-box; }
 
                 body {
-                    font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+                    font-family: "Inter", sans-serif;
                     min-height: 100vh;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    padding: 20px;
+                    background: #0f0f23;
                     overflow: hidden;
                 }
 
-                .success-container {
-                    background: rgba(255, 255, 255, 0.95);
-                    backdrop-filter: blur(20px);
-                    border-radius: 24px;
-                    padding: 50px 40px;
-                    max-width: 480px;
-                    width: 100%;
+                .container {
                     text-align: center;
-                    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-                    animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+                    z-index: 10;
                 }
 
-                @keyframes slideUp {
-                    from { opacity: 0; transform: translateY(30px); }
-                    to { opacity: 1; transform: translateY(0); }
+                .success-icon {
+                    width: 160px;
+                    height: 160px;
+                    margin: 0 auto 40px;
+                    position: relative;
                 }
 
-                .checkmark-circle {
-                    width: 100px;
-                    height: 100px;
-                    margin: 0 auto 30px;
+                .circle-bg {
+                    width: 160px;
+                    height: 160px;
                     border-radius: 50%;
-                    background: linear-gradient(135deg, #00c853 0%, #00e676 100%);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    animation: scaleIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
-                    box-shadow: 0 10px 40px rgba(0, 200, 83, 0.4);
+                    background: linear-gradient(135deg, #00d26a 0%, #00ff88 100%);
+                    position: absolute;
+                    animation: pulse 2s ease-in-out infinite, scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+                    box-shadow: 0 0 60px rgba(0, 210, 106, 0.5), 0 0 120px rgba(0, 210, 106, 0.3);
+                }
+
+                @keyframes pulse {
+                    0%, 100% { box-shadow: 0 0 60px rgba(0, 210, 106, 0.5), 0 0 120px rgba(0, 210, 106, 0.3); }
+                    50% { box-shadow: 0 0 80px rgba(0, 210, 106, 0.7), 0 0 150px rgba(0, 210, 106, 0.4); }
                 }
 
                 @keyframes scaleIn {
@@ -133,16 +129,21 @@ if (mail($to, $subject, $message, $headers)) {
                 }
 
                 .checkmark {
-                    width: 45px;
-                    height: 45px;
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    width: 70px;
+                    height: 70px;
                     stroke: white;
-                    stroke-width: 3;
+                    stroke-width: 4;
                     fill: none;
                     stroke-linecap: round;
                     stroke-linejoin: round;
                     stroke-dasharray: 100;
                     stroke-dashoffset: 100;
-                    animation: drawCheck 0.6s ease-out 0.5s forwards;
+                    animation: drawCheck 0.6s ease-out 0.4s forwards;
+                    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
                 }
 
                 @keyframes drawCheck {
@@ -150,188 +151,140 @@ if (mail($to, $subject, $message, $headers)) {
                 }
 
                 h1 {
-                    font-size: 28px;
-                    font-weight: 700;
-                    color: #1a1a2e;
+                    font-size: 48px;
+                    font-weight: 800;
+                    color: white;
                     margin-bottom: 16px;
-                    animation: fadeIn 0.5s ease 0.3s both;
+                    animation: fadeUp 0.6s ease 0.3s both;
+                    text-shadow: 0 4px 20px rgba(0,0,0,0.3);
                 }
 
                 .subtitle {
-                    font-size: 17px;
-                    color: #4a5568;
-                    line-height: 1.7;
-                    margin-bottom: 35px;
-                    animation: fadeIn 0.5s ease 0.4s both;
+                    font-size: 20px;
+                    color: rgba(255,255,255,0.7);
+                    animation: fadeUp 0.6s ease 0.5s both;
                 }
 
-                @keyframes fadeIn {
-                    from { opacity: 0; transform: translateY(10px); }
+                @keyframes fadeUp {
+                    from { opacity: 0; transform: translateY(20px); }
                     to { opacity: 1; transform: translateY(0); }
                 }
 
-                .info-card {
-                    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-                    border-radius: 16px;
-                    padding: 24px;
-                    margin-bottom: 30px;
-                    animation: fadeIn 0.5s ease 0.5s both;
+                /* Confetti */
+                .confetti {
+                    position: fixed;
+                    width: 15px;
+                    height: 15px;
+                    top: -20px;
+                    animation: confettiFall 3s ease-out forwards;
                 }
 
-                .info-row {
-                    display: flex;
-                    align-items: center;
-                    justify-content: flex-start;
-                    gap: 14px;
-                    padding: 12px 0;
-                    border-bottom: 1px solid rgba(0,0,0,0.06);
+                @keyframes confettiFall {
+                    0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+                    100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
                 }
 
-                .info-row:last-child { border-bottom: none; }
+                .c1 { background: #ff6b6b; left: 10%; animation-delay: 0s; border-radius: 50%; }
+                .c2 { background: #4ecdc4; left: 20%; animation-delay: 0.2s; }
+                .c3 { background: #ffe66d; left: 30%; animation-delay: 0.1s; border-radius: 50%; }
+                .c4 { background: #95e1d3; left: 40%; animation-delay: 0.3s; }
+                .c5 { background: #f38181; left: 50%; animation-delay: 0.15s; border-radius: 50%; }
+                .c6 { background: #aa96da; left: 60%; animation-delay: 0.25s; }
+                .c7 { background: #fcbad3; left: 70%; animation-delay: 0.05s; border-radius: 50%; }
+                .c8 { background: #a8d8ea; left: 80%; animation-delay: 0.35s; }
+                .c9 { background: #00d26a; left: 90%; animation-delay: 0.1s; border-radius: 50%; }
+                .c10 { background: #ffd93d; left: 15%; animation-delay: 0.4s; }
+                .c11 { background: #6bcb77; left: 25%; animation-delay: 0.2s; border-radius: 50%; }
+                .c12 { background: #ff8b94; left: 35%; animation-delay: 0.3s; }
+                .c13 { background: #b5ead7; left: 45%; animation-delay: 0.15s; border-radius: 50%; }
+                .c14 { background: #c7ceea; left: 55%; animation-delay: 0.25s; }
+                .c15 { background: #ffc8dd; left: 65%; animation-delay: 0.1s; border-radius: 50%; }
+                .c16 { background: #bde0fe; left: 75%; animation-delay: 0.35s; }
+                .c17 { background: #e2f0cb; left: 85%; animation-delay: 0.2s; border-radius: 50%; }
+                .c18 { background: #ffc107; left: 95%; animation-delay: 0.4s; }
 
-                .info-icon {
-                    width: 42px;
-                    height: 42px;
-                    border-radius: 12px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 20px;
-                    flex-shrink: 0;
+                /* Progress ring */
+                .progress-ring {
+                    position: fixed;
+                    bottom: 30px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    animation: fadeUp 0.6s ease 0.7s both;
                 }
 
-                .icon-phone { background: linear-gradient(135deg, #3b82f6, #2563eb); }
-                .icon-time { background: linear-gradient(135deg, #f59e0b, #d97706); }
-                .icon-location { background: linear-gradient(135deg, #10b981, #059669); }
-
-                .info-text {
-                    text-align: left;
+                .progress-ring svg {
+                    width: 50px;
+                    height: 50px;
+                    transform: rotate(-90deg);
                 }
 
-                .info-label {
-                    font-size: 12px;
-                    color: #94a3b8;
-                    text-transform: uppercase;
-                    letter-spacing: 0.5px;
-                    margin-bottom: 2px;
+                .progress-ring circle {
+                    fill: none;
+                    stroke-width: 4;
                 }
 
-                .info-value {
-                    font-size: 15px;
-                    font-weight: 600;
-                    color: #1e293b;
-                }
-
-                .redirect-notice {
-                    font-size: 13px;
-                    color: #94a3b8;
-                    animation: fadeIn 0.5s ease 0.6s both;
-                }
-
-                .progress-bar {
-                    width: 100%;
-                    height: 4px;
-                    background: #e2e8f0;
-                    border-radius: 2px;
-                    margin-top: 12px;
-                    overflow: hidden;
+                .progress-bg {
+                    stroke: rgba(255,255,255,0.2);
                 }
 
                 .progress-fill {
-                    height: 100%;
-                    background: linear-gradient(90deg, #667eea, #764ba2);
-                    border-radius: 2px;
-                    animation: progressFill 15s linear forwards;
+                    stroke: #00d26a;
+                    stroke-dasharray: 126;
+                    stroke-dashoffset: 126;
+                    stroke-linecap: round;
+                    animation: progressRing 5s linear forwards;
                 }
 
-                @keyframes progressFill {
-                    from { width: 0%; }
-                    to { width: 100%; }
+                @keyframes progressRing {
+                    to { stroke-dashoffset: 0; }
                 }
 
-                /* Floating particles */
-                .particles {
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    pointer-events: none;
-                    overflow: hidden;
-                    z-index: -1;
-                }
-
-                .particle {
-                    position: absolute;
-                    width: 10px;
-                    height: 10px;
-                    background: rgba(255,255,255,0.3);
-                    border-radius: 50%;
-                    animation: float 4s ease-in-out infinite;
-                }
-
-                @keyframes float {
-                    0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.5; }
-                    50% { transform: translateY(-20px) rotate(180deg); opacity: 1; }
-                }
-
-                @media (max-width: 500px) {
-                    .success-container { padding: 40px 25px; }
-                    h1 { font-size: 24px; }
-                    .subtitle { font-size: 15px; }
-                    .checkmark-circle { width: 80px; height: 80px; }
-                    .checkmark { width: 35px; height: 35px; }
+                .progress-text {
+                    color: rgba(255,255,255,0.5);
+                    font-size: 12px;
+                    margin-top: 8px;
                 }
             </style>
         </head>
         <body>
-            <div class="particles">
-                <div class="particle" style="left: 10%; top: 20%; animation-delay: 0s;"></div>
-                <div class="particle" style="left: 20%; top: 80%; animation-delay: 1s;"></div>
-                <div class="particle" style="left: 60%; top: 10%; animation-delay: 2s;"></div>
-                <div class="particle" style="left: 80%; top: 60%; animation-delay: 0.5s;"></div>
-                <div class="particle" style="left: 40%; top: 40%; animation-delay: 1.5s;"></div>
-                <div class="particle" style="left: 90%; top: 30%; animation-delay: 2.5s;"></div>
-            </div>
+            <!-- Confetti -->
+            <div class="confetti c1"></div>
+            <div class="confetti c2"></div>
+            <div class="confetti c3"></div>
+            <div class="confetti c4"></div>
+            <div class="confetti c5"></div>
+            <div class="confetti c6"></div>
+            <div class="confetti c7"></div>
+            <div class="confetti c8"></div>
+            <div class="confetti c9"></div>
+            <div class="confetti c10"></div>
+            <div class="confetti c11"></div>
+            <div class="confetti c12"></div>
+            <div class="confetti c13"></div>
+            <div class="confetti c14"></div>
+            <div class="confetti c15"></div>
+            <div class="confetti c16"></div>
+            <div class="confetti c17"></div>
+            <div class="confetti c18"></div>
 
-            <div class="success-container">
-                <div class="checkmark-circle">
+            <div class="container">
+                <div class="success-icon">
+                    <div class="circle-bg"></div>
                     <svg class="checkmark" viewBox="0 0 24 24">
                         <path d="M4 12l6 6L20 6"/>
                     </svg>
                 </div>
 
-                <h1>Auftrag erfolgreich!</h1>
-                <p class="subtitle">Vielen Dank für Ihr Vertrauen. Wir haben Ihren Reparaturauftrag erhalten und kümmern uns schnellstmöglich darum.</p>
+                <h1>Gespeichert!</h1>
+                <p class="subtitle">Auftrag wurde erfolgreich angelegt</p>
+            </div>
 
-                <div class="info-card">
-                    <div class="info-row">
-                        <div class="info-icon icon-phone">📞</div>
-                        <div class="info-text">
-                            <div class="info-label">Kontakt</div>
-                            <div class="info-value">09074 / 21 03</div>
-                        </div>
-                    </div>
-                    <div class="info-row">
-                        <div class="info-icon icon-time">⏰</div>
-                        <div class="info-text">
-                            <div class="info-label">Bearbeitungszeit</div>
-                            <div class="info-value">In der Regel 1-2 Werktage</div>
-                        </div>
-                    </div>
-                    <div class="info-row">
-                        <div class="info-icon icon-location">📍</div>
-                        <div class="info-text">
-                            <div class="info-label">Abholung</div>
-                            <div class="info-value">Siedlungsring 51, Höchstädt</div>
-                        </div>
-                    </div>
-                </div>
-
-                <p class="redirect-notice">Sie werden automatisch weitergeleitet...</p>
-                <div class="progress-bar">
-                    <div class="progress-fill"></div>
-                </div>
+            <div class="progress-ring">
+                <svg viewBox="0 0 44 44">
+                    <circle class="progress-bg" cx="22" cy="22" r="20"/>
+                    <circle class="progress-fill" cx="22" cy="22" r="20"/>
+                </svg>
+                <div class="progress-text">Nächster Kunde...</div>
             </div>
         </body>
         </html>';
