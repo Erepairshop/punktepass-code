@@ -182,7 +182,7 @@ class PPV_Rewards_Management {
         }
 
         $store = $wpdb->get_row($wpdb->prepare(
-            "SELECT company_name, country FROM {$wpdb->prefix}ppv_stores WHERE id=%d",
+            "SELECT company_name, country, parent_store_id FROM {$wpdb->prefix}ppv_stores WHERE id=%d",
             $store_id
         ));
 
@@ -190,6 +190,27 @@ class PPV_Rewards_Management {
         $country = $store->country ?? 'DE';
         $currency_map = ['DE' => 'EUR', 'HU' => 'HUF', 'RO' => 'RON'];
         $currency = $currency_map[$country] ?? 'EUR';
+
+        // 🏢 FILIALE CHECK: Is this store a filiale?
+        $is_filiale = !empty($store->parent_store_id);
+        $parent_points_given = 0;
+        $parent_store_name = '';
+
+        if ($is_filiale) {
+            // Get parent store's points_given value
+            $parent_data = $wpdb->get_row($wpdb->prepare("
+                SELECT s.company_name, r.points_given
+                FROM {$wpdb->prefix}ppv_stores s
+                LEFT JOIN {$wpdb->prefix}ppv_rewards r ON r.store_id = s.id AND r.points_given > 0
+                WHERE s.id = %d
+                ORDER BY r.id ASC LIMIT 1
+            ", $store->parent_store_id));
+
+            if ($parent_data) {
+                $parent_store_name = $parent_data->company_name ?? '';
+                $parent_points_given = intval($parent_data->points_given ?? 0);
+            }
+        }
 
         // 🏢 Get all filialen for this vendor
         $filialen = self::get_filialen_for_vendor();
@@ -201,6 +222,8 @@ class PPV_Rewards_Management {
             window.PPV_STORE_ID = <?php echo intval($store_id); ?>;
             window.PPV_FILIALEN = <?php echo wp_json_encode($filialen); ?>;
             window.PPV_HAS_MULTIPLE_FILIALEN = <?php echo $has_multiple_filialen ? 'true' : 'false'; ?>;
+            window.PPV_IS_FILIALE = <?php echo $is_filiale ? 'true' : 'false'; ?>;
+            window.PPV_PARENT_POINTS_GIVEN = <?php echo intval($parent_points_given); ?>;
         </script>
 
         <div class="ppv-rewards-management-wrapper">
@@ -260,10 +283,22 @@ class PPV_Rewards_Management {
                                 <input type="text" name="action_value" id="reward-value" placeholder="<?php echo esc_attr(PPV_Lang::t('rewards_form_value_placeholder') ?: 'pl. 10'); ?>" required>
                             </div>
 
-                            <div class="ppv-form-group">
-                                <label><i class="ri-coin-line"></i> <?php echo esc_html(PPV_Lang::t('rewards_form_points_given') ?: 'Bónusz pontok'); ?></label>
-                                <input type="number" name="points_given" id="reward-points-given" placeholder="<?php echo esc_attr(PPV_Lang::t('rewards_form_points_given_placeholder') ?: 'pl. 5'); ?>" min="0" max="20" required>
-                                <small><?php echo esc_html(PPV_Lang::t('rewards_form_points_given_helper') ?: 'Beváltáskor kapott pontok'); ?> (max. 20)</small>
+                            <div class="ppv-form-group <?php echo $is_filiale ? 'ppv-filiale-locked' : ''; ?>">
+                                <label><i class="ri-coin-line"></i> <?php echo esc_html(PPV_Lang::t('rewards_form_points_given') ?: 'Punkte pro Scan'); ?></label>
+                                <?php if ($is_filiale): ?>
+                                    <input type="number" name="points_given" id="reward-points-given" value="<?php echo intval($parent_points_given); ?>" min="0" max="20" readonly disabled class="ppv-input-disabled">
+                                    <small class="ppv-filiale-notice">
+                                        <i class="ri-lock-line"></i>
+                                        <?php
+                                        $filiale_notice = PPV_Lang::t('rewards_filiale_points_locked')
+                                            ?: 'Dieser Wert wird vom Hauptgeschäft übernommen (%s). Änderungen nur dort möglich.';
+                                        echo esc_html(sprintf($filiale_notice, $parent_store_name ?: 'Parent'));
+                                        ?>
+                                    </small>
+                                <?php else: ?>
+                                    <input type="number" name="points_given" id="reward-points-given" placeholder="<?php echo esc_attr(PPV_Lang::t('rewards_form_points_given_placeholder') ?: 'z.B. 2'); ?>" min="0" max="20" required>
+                                    <small><?php echo esc_html(PPV_Lang::t('rewards_form_points_given_helper') ?: 'Punkte die der Kunde pro Scan erhält'); ?> (max. 20)</small>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
@@ -544,6 +579,39 @@ class PPV_Rewards_Management {
             border: 3px solid rgba(100, 116, 139, 0.8) !important;
             color: #e2e8f0 !important;
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4) !important;
+        }
+
+        /* 🔒 Filiale locked field */
+        .ppv-filiale-locked {
+            position: relative;
+        }
+        .ppv-filiale-locked .ppv-input-disabled {
+            background: rgba(100, 116, 139, 0.15) !important;
+            color: #64748b !important;
+            cursor: not-allowed;
+            border: 2px dashed rgba(100, 116, 139, 0.4) !important;
+        }
+        .ppv-filiale-notice {
+            display: flex;
+            align-items: flex-start;
+            gap: 6px;
+            margin-top: 8px;
+            padding: 10px 12px;
+            background: linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(245, 158, 11, 0.1) 100%);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            border-radius: 8px;
+            color: #d97706 !important;
+            font-size: 0.85rem !important;
+            line-height: 1.4;
+        }
+        .ppv-filiale-notice i {
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        body.ppv-dark .ppv-filiale-notice,
+        [data-theme="dark"] .ppv-filiale-notice {
+            background: linear-gradient(135deg, rgba(251, 191, 36, 0.2) 0%, rgba(245, 158, 11, 0.15) 100%);
+            color: #fbbf24 !important;
         }
 
         /* Campaign Section */
