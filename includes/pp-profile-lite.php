@@ -18,6 +18,7 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
 
         public static function hooks() {
             add_action('wp_head', [__CLASS__, 'add_turbo_no_cache_meta'], 1);
+            add_action('init', [__CLASS__, 'track_handler_activity_on_page_load'], 20); // 📊 Track handler activity
             add_action('wp_ajax_ppv_get_strings', [__CLASS__, 'ajax_get_strings']);
             add_action('wp_ajax_ppv_geocode_address', [__CLASS__, 'ajax_geocode_address']);
             add_action('wp_ajax_nopriv_ppv_geocode_address', [__CLASS__, 'ajax_geocode_address']);
@@ -224,6 +225,40 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
             $_SESSION[$session_key] = $now;
 
             ppv_log("📊 [PPV_Profile] Updated last_active_at for handler #{$store_id}");
+        }
+
+        /** ============================================================
+         *  📊 TRACK HANDLER ACTIVITY ON PAGE LOAD (called via init hook)
+         * ============================================================ */
+        public static function track_handler_activity_on_page_load() {
+            // Start session if needed
+            self::ensure_session();
+
+            // Check for handler session
+            $store_id = 0;
+
+            // Session-based store ID
+            if (!empty($_SESSION['ppv_store_id'])) {
+                $store_id = intval($_SESSION['ppv_store_id']);
+            } elseif (!empty($_SESSION['ppv_current_filiale_id'])) {
+                $store_id = intval($_SESSION['ppv_current_filiale_id']);
+            } elseif (!empty($_SESSION['ppv_vendor_store_id'])) {
+                $store_id = intval($_SESSION['ppv_vendor_store_id']);
+            }
+
+            // POS token cookie fallback
+            if (!$store_id && !empty($_COOKIE['ppv_pos_token'])) {
+                global $wpdb;
+                $store_id = intval($wpdb->get_var($wpdb->prepare(
+                    "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE pos_token = %s LIMIT 1",
+                    sanitize_text_field($_COOKIE['ppv_pos_token'])
+                )));
+            }
+
+            // Track if we have a store_id
+            if ($store_id) {
+                self::track_handler_activity($store_id);
+            }
         }
 
         /** ============================================================
