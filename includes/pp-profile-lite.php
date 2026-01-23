@@ -89,6 +89,8 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
         // ==================== AUTH CHECK ====================
         private static function check_auth() {
             if (is_user_logged_in()) {
+                // 📊 Track handler activity if this WP user is also a handler
+                self::maybe_track_wp_user_handler_activity();
                 return ['valid' => true, 'type' => 'wp_user', 'user_id' => get_current_user_id()];
             }
 
@@ -108,6 +110,8 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
                 global $wpdb;
                 $store = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}ppv_stores WHERE pos_token = %s LIMIT 1", sanitize_text_field($_COOKIE['ppv_pos_token'])));
                 if ($store) {
+                    // 📊 Track handler activity
+                    self::track_handler_activity(intval($store->id));
                     return ['valid' => true, 'type' => 'ppv_stores', 'store_id' => intval($store->id), 'store' => $store];
                 }
             }
@@ -121,6 +125,25 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
             }
 
             return ['valid' => false];
+        }
+
+        /** ============================================================
+         *  📊 TRACK WP USER HANDLER ACTIVITY (if WP user is also a handler)
+         * ============================================================ */
+        private static function maybe_track_wp_user_handler_activity() {
+            global $wpdb;
+            $user_id = get_current_user_id();
+            if (!$user_id) return;
+
+            // Check if this WP user has a store
+            $store_id = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id = %d LIMIT 1",
+                $user_id
+            ));
+
+            if ($store_id) {
+                self::track_handler_activity(intval($store_id));
+            }
         }
 
         private static function ensure_session() {
