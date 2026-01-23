@@ -1000,7 +1000,8 @@ function ppv_format_device_info_json($device_info_json) {
                                             echo '<span style="color: #666;">-</span>';
                                         } else {
                                             $last_active = strtotime($handler->last_active_at);
-                                            $diff = time() - $last_active;
+                                            $now = current_time('timestamp'); // Use WordPress local time
+                                            $diff = $now - $last_active;
 
                                             if ($diff < 300) {
                                                 // Less than 5 minutes - online now
