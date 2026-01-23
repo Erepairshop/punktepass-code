@@ -95,6 +95,8 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
             // 🏪 FILIALE SUPPORT: Use session-aware store ID
             if (!empty($_SESSION['ppv_store_id']) || !empty($_SESSION['ppv_current_filiale_id'])) {
                 $store_id = self::get_store_id();
+                // 📊 Track handler activity
+                self::track_handler_activity($store_id);
                 return ['valid' => true, 'type' => 'ppv_stores', 'store_id' => $store_id, 'is_pos' => !empty($_SESSION['ppv_is_pos'])];
             }
 
@@ -163,6 +165,42 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
             }
 
             return 0;
+        }
+
+        /** ============================================================
+         *  📊 TRACK HANDLER ACTIVITY (throttled to every 5 minutes)
+         * ============================================================ */
+        private static function track_handler_activity($store_id) {
+            if (!$store_id) {
+                return;
+            }
+
+            global $wpdb;
+            $table = $wpdb->prefix . 'ppv_stores';
+
+            // Check last activity to throttle updates (only update every 5 minutes)
+            $session_key = 'ppv_last_activity_update_' . $store_id;
+            $last_update = $_SESSION[$session_key] ?? 0;
+            $now = time();
+
+            // Throttle: only update if more than 5 minutes have passed
+            if ($now - $last_update < 300) {
+                return;
+            }
+
+            // Update last_active_at
+            $wpdb->update(
+                $table,
+                ['last_active_at' => current_time('mysql')],
+                ['id' => $store_id],
+                ['%s'],
+                ['%d']
+            );
+
+            // Save throttle timestamp in session
+            $_SESSION[$session_key] = $now;
+
+            ppv_log("📊 [PPV_Profile] Updated last_active_at for handler #{$store_id}");
         }
 
         /** ============================================================
