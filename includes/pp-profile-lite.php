@@ -18,6 +18,7 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
 
         public static function hooks() {
             add_action('wp_head', [__CLASS__, 'add_turbo_no_cache_meta'], 1);
+            add_action('init', [__CLASS__, 'track_handler_activity_on_page_load'], 20); // 📊 Track handler activity
             add_action('wp_ajax_ppv_get_strings', [__CLASS__, 'ajax_get_strings']);
             add_action('wp_ajax_ppv_geocode_address', [__CLASS__, 'ajax_geocode_address']);
             add_action('wp_ajax_nopriv_ppv_geocode_address', [__CLASS__, 'ajax_geocode_address']);
@@ -89,12 +90,16 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
         // ==================== AUTH CHECK ====================
         private static function check_auth() {
             if (is_user_logged_in()) {
+                // 📊 Track handler activity if this WP user is also a handler
+                self::maybe_track_wp_user_handler_activity();
                 return ['valid' => true, 'type' => 'wp_user', 'user_id' => get_current_user_id()];
             }
 
             // 🏪 FILIALE SUPPORT: Use session-aware store ID
             if (!empty($_SESSION['ppv_store_id']) || !empty($_SESSION['ppv_current_filiale_id'])) {
                 $store_id = self::get_store_id();
+                // 📊 Track handler activity
+                self::track_handler_activity($store_id);
                 return ['valid' => true, 'type' => 'ppv_stores', 'store_id' => $store_id, 'is_pos' => !empty($_SESSION['ppv_is_pos'])];
             }
 
@@ -106,6 +111,8 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
                 global $wpdb;
                 $store = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}ppv_stores WHERE pos_token = %s LIMIT 1", sanitize_text_field($_COOKIE['ppv_pos_token'])));
                 if ($store) {
+                    // 📊 Track handler activity
+                    self::track_handler_activity(intval($store->id));
                     return ['valid' => true, 'type' => 'ppv_stores', 'store_id' => intval($store->id), 'store' => $store];
                 }
             }
@@ -119,6 +126,25 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
             }
 
             return ['valid' => false];
+        }
+
+        /** ============================================================
+         *  📊 TRACK WP USER HANDLER ACTIVITY (if WP user is also a handler)
+         * ============================================================ */
+        private static function maybe_track_wp_user_handler_activity() {
+            global $wpdb;
+            $user_id = get_current_user_id();
+            if (!$user_id) return;
+
+            // Check if this WP user has a store
+            $store_id = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE user_id = %d LIMIT 1",
+                $user_id
+            ));
+
+            if ($store_id) {
+                self::track_handler_activity(intval($store_id));
+            }
         }
 
         private static function ensure_session() {
@@ -163,6 +189,76 @@ if (!class_exists('PPV_Profile_Lite_i18n')) {
             }
 
             return 0;
+        }
+
+        /** ============================================================
+         *  📊 TRACK HANDLER ACTIVITY (throttled to every 5 minutes)
+         * ============================================================ */
+        private static function track_handler_activity($store_id) {
+            if (!$store_id) {
+                return;
+            }
+
+            global $wpdb;
+            $table = $wpdb->prefix . 'ppv_stores';
+
+            // Check last activity to throttle updates (only update every 5 minutes)
+            $session_key = 'ppv_last_activity_update_' . $store_id;
+            $last_update = $_SESSION[$session_key] ?? 0;
+            $now = time();
+
+            // Throttle: only update if more than 5 minutes have passed
+            if ($now - $last_update < 300) {
+                return;
+            }
+
+            // Update last_active_at
+            $wpdb->update(
+                $table,
+                ['last_active_at' => current_time('mysql')],
+                ['id' => $store_id],
+                ['%s'],
+                ['%d']
+            );
+
+            // Save throttle timestamp in session
+            $_SESSION[$session_key] = $now;
+
+            ppv_log("📊 [PPV_Profile] Updated last_active_at for handler #{$store_id}");
+        }
+
+        /** ============================================================
+         *  📊 TRACK HANDLER ACTIVITY ON PAGE LOAD (called via init hook)
+         * ============================================================ */
+        public static function track_handler_activity_on_page_load() {
+            // Start session if needed
+            self::ensure_session();
+
+            // Check for handler session
+            $store_id = 0;
+
+            // Session-based store ID
+            if (!empty($_SESSION['ppv_store_id'])) {
+                $store_id = intval($_SESSION['ppv_store_id']);
+            } elseif (!empty($_SESSION['ppv_current_filiale_id'])) {
+                $store_id = intval($_SESSION['ppv_current_filiale_id']);
+            } elseif (!empty($_SESSION['ppv_vendor_store_id'])) {
+                $store_id = intval($_SESSION['ppv_vendor_store_id']);
+            }
+
+            // POS token cookie fallback
+            if (!$store_id && !empty($_COOKIE['ppv_pos_token'])) {
+                global $wpdb;
+                $store_id = intval($wpdb->get_var($wpdb->prepare(
+                    "SELECT id FROM {$wpdb->prefix}ppv_stores WHERE pos_token = %s LIMIT 1",
+                    sanitize_text_field($_COOKIE['ppv_pos_token'])
+                )));
+            }
+
+            // Track if we have a store_id
+            if ($store_id) {
+                self::track_handler_activity($store_id);
+            }
         }
 
         /** ============================================================

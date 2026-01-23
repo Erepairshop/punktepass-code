@@ -1,6 +1,7 @@
 <?php
-// Erledigt-Status setzen oder entfernen (AJAX support)
-$erledigtDatei = 'erledigt_status.txt';
+require_once __DIR__ . '/db_config.php';
+
+$pdo = getDB();
 
 // AJAX request handling
 if (isset($_POST['ajax']) && $_POST['ajax'] === '1') {
@@ -8,43 +9,54 @@ if (isset($_POST['ajax']) && $_POST['ajax'] === '1') {
 
     // Mark ALL as done
     if (isset($_POST['markAllAsDone'])) {
-        $eintraegeDatei = 'entries.txt';
-        $alleEintraege = file_exists($eintraegeDatei) ? file($eintraegeDatei, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
-        $erledigtStatus = file_exists($erledigtDatei) ? file($erledigtDatei, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
+        try {
+            // Get all phone numbers from entries that are not yet marked as done
+            $stmt = $pdo->query("SELECT DISTINCT telefon FROM entries WHERE telefon NOT IN (SELECT telefon FROM erledigt_status)");
+            $openEntries = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
-        $newlyMarked = [];
-        foreach ($alleEintraege as $eintrag) {
-            $parts = explode('|', $eintrag);
-            if (isset($parts[2])) {
-                $telefon = $parts[2];
-                if (!in_array($telefon, $erledigtStatus)) {
-                    $erledigtStatus[] = $telefon;
+            $newlyMarked = [];
+            $insertStmt = $pdo->prepare("INSERT IGNORE INTO erledigt_status (telefon) VALUES (?)");
+
+            foreach ($openEntries as $telefon) {
+                $insertStmt->execute([$telefon]);
+                if ($insertStmt->rowCount() > 0) {
                     $newlyMarked[] = $telefon;
                 }
             }
-        }
 
-        file_put_contents($erledigtDatei, implode("\n", array_values($erledigtStatus)));
-        echo json_encode(['success' => true, 'marked' => $newlyMarked, 'count' => count($newlyMarked)]);
+            echo json_encode(['success' => true, 'marked' => $newlyMarked, 'count' => count($newlyMarked)]);
+        } catch (Exception $e) {
+            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+        }
         exit;
     }
 
+    // Toggle single entry
     if (isset($_POST['markAsDone'], $_POST['identifikator'])) {
         $identifikator = $_POST['identifikator'];
-        $erledigtStatus = file_exists($erledigtDatei) ? file($erledigtDatei, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
 
-        $wasErledigt = in_array($identifikator, $erledigtStatus);
+        try {
+            // Check if already marked
+            $checkStmt = $pdo->prepare("SELECT id FROM erledigt_status WHERE telefon = ?");
+            $checkStmt->execute([$identifikator]);
+            $exists = $checkStmt->fetch();
 
-        if (($key = array_search($identifikator, $erledigtStatus)) !== false) {
-            unset($erledigtStatus[$key]);
-            $nowErledigt = false;
-        } else {
-            $erledigtStatus[] = $identifikator;
-            $nowErledigt = true;
+            if ($exists) {
+                // Remove from done
+                $deleteStmt = $pdo->prepare("DELETE FROM erledigt_status WHERE telefon = ?");
+                $deleteStmt->execute([$identifikator]);
+                $nowErledigt = false;
+            } else {
+                // Mark as done
+                $insertStmt = $pdo->prepare("INSERT INTO erledigt_status (telefon) VALUES (?)");
+                $insertStmt->execute([$identifikator]);
+                $nowErledigt = true;
+            }
+
+            echo json_encode(['success' => true, 'erledigt' => $nowErledigt]);
+        } catch (Exception $e) {
+            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
         }
-
-        file_put_contents($erledigtDatei, implode("\n", array_values($erledigtStatus)));
-        echo json_encode(['success' => true, 'erledigt' => $nowErledigt, 'wasErledigt' => $wasErledigt]);
         exit;
     }
 
@@ -52,19 +64,20 @@ if (isset($_POST['ajax']) && $_POST['ajax'] === '1') {
     exit;
 }
 
-// Normal POST handling (fallback)
+// Normal POST handling (fallback for non-AJAX)
 if (isset($_POST['markAsDone'], $_POST['identifikator'])) {
     $identifikator = $_POST['identifikator'];
-    $erledigtStatus = file_exists($erledigtDatei) ? file($erledigtDatei, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
 
-    if (($key = array_search($identifikator, $erledigtStatus)) !== false) {
-        unset($erledigtStatus[$key]);
+    $checkStmt = $pdo->prepare("SELECT id FROM erledigt_status WHERE telefon = ?");
+    $checkStmt->execute([$identifikator]);
+
+    if ($checkStmt->fetch()) {
+        $pdo->prepare("DELETE FROM erledigt_status WHERE telefon = ?")->execute([$identifikator]);
     } else {
-        $erledigtStatus[] = $identifikator;
+        $pdo->prepare("INSERT INTO erledigt_status (telefon) VALUES (?)")->execute([$identifikator]);
     }
 
-    file_put_contents($erledigtDatei, implode("\n", array_values($erledigtStatus)));
-    header("Location: ".$_SERVER['PHP_SELF']);
+    header("Location: " . $_SERVER['PHP_SELF']);
     exit;
 }
 
@@ -73,63 +86,56 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (isset($_POST['kommentar'], $_POST['identifikator']) && !empty($_POST['kommentar'])) {
         $kommentar = trim($_POST['kommentar']);
         $identifikator = trim($_POST['identifikator']);
-        $kommentarEintrag = $identifikator . '|' . uniqid() . '|' . $kommentar . "\n";
-        file_put_contents('kommentare.txt', $kommentarEintrag, FILE_APPEND);
-        header("Location: ".$_SERVER['PHP_SELF']);
+        $kommentarId = uniqid();
+
+        $stmt = $pdo->prepare("INSERT INTO kommentare (kommentar_id, telefon, kommentar) VALUES (?, ?, ?)");
+        $stmt->execute([$kommentarId, $identifikator, $kommentar]);
+
+        header("Location: " . $_SERVER['PHP_SELF']);
         exit;
     } elseif (isset($_POST['loesche_kommentar'], $_POST['kommentar_id'])) {
         $kommentar_id = $_POST['kommentar_id'];
-        $alleKommentare = file('kommentare.txt', FILE_IGNORE_NEW_LINES);
-        $alleKommentare = array_filter($alleKommentare, function($line) use ($kommentar_id) {
-            $parts = explode('|', $line);
-            return isset($parts[1]) && trim($parts[1]) !== $kommentar_id;
-        });
-        file_put_contents('kommentare.txt', implode("\n", $alleKommentare));
-        header("Location: ".$_SERVER['PHP_SELF']);
+
+        $stmt = $pdo->prepare("DELETE FROM kommentare WHERE kommentar_id = ?");
+        $stmt->execute([$kommentar_id]);
+
+        header("Location: " . $_SERVER['PHP_SELF']);
         exit;
     }
 }
 
-// Einträge und Erledigt-Status laden
-$eintraegeDatei = 'entries.txt';
-$alleEintraege = file_exists($eintraegeDatei) ? file($eintraegeDatei, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
-$erledigtStatus = file_exists($erledigtDatei) ? file($erledigtDatei, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
-$alleEintraege = array_reverse($alleEintraege);
+// Load entries - Offen first, then Erledigt
+$stmt = $pdo->query("
+    SELECT e.*,
+           CASE WHEN es.telefon IS NOT NULL THEN 1 ELSE 0 END as ist_erledigt
+    FROM entries e
+    LEFT JOIN erledigt_status es ON e.telefon = es.telefon
+    ORDER BY ist_erledigt ASC, e.id DESC
+");
+$alleEintraege = $stmt->fetchAll();
 
-// Sort: Offen (nicht erledigt) first, then Erledigt
-usort($alleEintraege, function($a, $b) use ($erledigtStatus) {
-    $partsA = explode('|', $a);
-    $partsB = explode('|', $b);
-    $telefonA = isset($partsA[2]) ? $partsA[2] : '';
-    $telefonB = isset($partsB[2]) ? $partsB[2] : '';
-    $erledigtA = in_array($telefonA, $erledigtStatus) ? 1 : 0;
-    $erledigtB = in_array($telefonB, $erledigtStatus) ? 1 : 0;
-    return $erledigtA - $erledigtB; // Offen (0) comes before Erledigt (1)
-});
+// Load erledigt status as array for quick lookup
+$erledigtStmt = $pdo->query("SELECT telefon FROM erledigt_status");
+$erledigtStatus = $erledigtStmt->fetchAll(PDO::FETCH_COLUMN);
 
-// Kommentare laden
-$kommentarDatei = 'kommentare.txt';
-$alleKommentare = file_exists($kommentarDatei) ? file($kommentarDatei, FILE_IGNORE_NEW_LINES) : [];
+// Load kommentare
+$kommentarStmt = $pdo->query("SELECT telefon, kommentar_id, kommentar FROM kommentare ORDER BY created_at ASC");
 $kommentarArray = [];
-foreach ($alleKommentare as $kommentarEintrag) {
-    $parts = explode('|', $kommentarEintrag, 3);
-    if (count($parts) === 3) {
-        list($kommentarIdentifikator, $kommentarId, $kommentarText) = $parts;
-        $kommentarArray[$kommentarIdentifikator][$kommentarId] = $kommentarText;
-    }
+while ($row = $kommentarStmt->fetch()) {
+    $kommentarArray[$row['telefon']][$row['kommentar_id']] = $row['kommentar'];
 }
 
 // Count stats
 $totalCount = count($alleEintraege);
 $erledigtCount = 0;
-foreach ($alleEintraege as $eintrag) {
-    if (empty($eintrag)) continue;
-    $parts = explode('|', $eintrag);
-    if (isset($parts[2]) && in_array($parts[2], $erledigtStatus)) {
+$offenCount = 0;
+foreach ($alleEintraege as $entry) {
+    if (in_array($entry['telefon'], $erledigtStatus)) {
         $erledigtCount++;
+    } else {
+        $offenCount++;
     }
 }
-$offenCount = $totalCount - $erledigtCount;
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -163,11 +169,7 @@ $offenCount = $totalCount - $erledigtCount;
             --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -177,13 +179,8 @@ $offenCount = $totalCount - $erledigtCount;
             line-height: 1.5;
         }
 
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
-        }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
 
-        /* Header */
         .header {
             background: white;
             border-radius: var(--radius);
@@ -211,20 +208,11 @@ $offenCount = $totalCount - $erledigtCount;
             margin: 0;
         }
 
-        .header h1 i {
-            color: var(--primary);
-        }
+        .header h1 i { color: var(--primary); }
 
-        .mark-all-btn {
-            padding: 10px 16px !important;
-            font-size: 14px !important;
-        }
+        .mark-all-btn { padding: 10px 16px !important; font-size: 14px !important; }
 
-        .stats {
-            display: flex;
-            gap: 16px;
-            flex-wrap: wrap;
-        }
+        .stats { display: flex; gap: 16px; flex-wrap: wrap; }
 
         .stat-card {
             background: var(--gray-50);
@@ -237,24 +225,10 @@ $offenCount = $totalCount - $erledigtCount;
         .stat-card.success { background: var(--success-light); }
         .stat-card.warning { background: #fef3c7; }
 
-        .stat-number {
-            font-size: 28px;
-            font-weight: 700;
-            color: var(--gray-900);
-        }
+        .stat-number { font-size: 28px; font-weight: 700; color: var(--gray-900); }
+        .stat-label { font-size: 12px; color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.5px; }
 
-        .stat-label {
-            font-size: 12px;
-            color: var(--gray-500);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        /* Cards Grid */
-        .entries-grid {
-            display: grid;
-            gap: 16px;
-        }
+        .entries-grid { display: grid; gap: 16px; }
 
         .entry-card {
             background: white;
@@ -265,10 +239,7 @@ $offenCount = $totalCount - $erledigtCount;
             border-left: 4px solid var(--primary);
         }
 
-        .entry-card:hover {
-            box-shadow: var(--shadow-lg);
-            transform: translateY(-2px);
-        }
+        .entry-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
 
         .entry-card.erledigt {
             border-left-color: var(--success);
@@ -285,31 +256,11 @@ $offenCount = $totalCount - $erledigtCount;
             gap: 12px;
         }
 
-        .entry-title {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
+        .entry-title { display: flex; flex-direction: column; gap: 4px; }
+        .entry-name { font-size: 18px; font-weight: 600; color: var(--gray-900); }
+        .entry-date { font-size: 13px; color: var(--gray-500); display: flex; align-items: center; gap: 4px; }
 
-        .entry-name {
-            font-size: 18px;
-            font-weight: 600;
-            color: var(--gray-900);
-        }
-
-        .entry-date {
-            font-size: 13px;
-            color: var(--gray-500);
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .entry-status {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+        .entry-status { display: flex; align-items: center; gap: 8px; }
 
         .status-badge {
             padding: 6px 12px;
@@ -320,15 +271,8 @@ $offenCount = $totalCount - $erledigtCount;
             letter-spacing: 0.5px;
         }
 
-        .status-badge.offen {
-            background: #fef3c7;
-            color: #92400e;
-        }
-
-        .status-badge.erledigt {
-            background: var(--success-light);
-            color: #065f46;
-        }
+        .status-badge.offen { background: #fef3c7; color: #92400e; }
+        .status-badge.erledigt { background: var(--success-light); color: #065f46; }
 
         .entry-body {
             padding: 16px 20px;
@@ -337,32 +281,11 @@ $offenCount = $totalCount - $erledigtCount;
             gap: 16px;
         }
 
-        .info-group {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
+        .info-group { display: flex; flex-direction: column; gap: 4px; }
+        .info-label { font-size: 11px; color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 500; }
+        .info-value { font-size: 15px; color: var(--gray-800); font-weight: 500; }
+        .info-value.highlight { color: var(--primary); font-weight: 600; }
 
-        .info-label {
-            font-size: 11px;
-            color: var(--gray-500);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            font-weight: 500;
-        }
-
-        .info-value {
-            font-size: 15px;
-            color: var(--gray-800);
-            font-weight: 500;
-        }
-
-        .info-value.highlight {
-            color: var(--primary);
-            font-weight: 600;
-        }
-
-        /* Actions */
         .entry-actions {
             padding: 16px 20px;
             background: var(--gray-50);
@@ -386,63 +309,19 @@ $offenCount = $totalCount - $erledigtCount;
             text-decoration: none;
         }
 
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-success { background: var(--success); color: white; }
+        .btn-success:hover { background: #059669; }
+        .btn-warning { background: var(--warning); color: white; }
+        .btn-warning:hover { background: #d97706; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-outline { background: white; color: var(--gray-700); border: 1px solid var(--gray-300); }
+        .btn-outline:hover { background: var(--gray-100); border-color: var(--gray-400); }
 
-        .btn-primary:hover {
-            background: var(--primary-dark);
-        }
-
-        .btn-success {
-            background: var(--success);
-            color: white;
-        }
-
-        .btn-success:hover {
-            background: #059669;
-        }
-
-        .btn-warning {
-            background: var(--warning);
-            color: white;
-        }
-
-        .btn-warning:hover {
-            background: #d97706;
-        }
-
-        .btn-danger {
-            background: var(--danger);
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background: #dc2626;
-        }
-
-        .btn-outline {
-            background: white;
-            color: var(--gray-700);
-            border: 1px solid var(--gray-300);
-        }
-
-        .btn-outline:hover {
-            background: var(--gray-100);
-            border-color: var(--gray-400);
-        }
-
-        /* Comments */
-        .comments-section {
-            padding: 0 20px 16px;
-        }
-
-        .comment-form {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 12px;
-        }
+        .comments-section { padding: 0 20px 16px; }
+        .comment-form { display: flex; gap: 8px; margin-bottom: 12px; }
 
         .comment-input {
             flex: 1;
@@ -470,11 +349,7 @@ $offenCount = $totalCount - $erledigtCount;
             gap: 12px;
         }
 
-        .comment-text {
-            font-size: 14px;
-            color: var(--gray-700);
-            flex: 1;
-        }
+        .comment-text { font-size: 14px; color: var(--gray-700); flex: 1; }
 
         .comment-delete {
             background: none;
@@ -486,12 +361,8 @@ $offenCount = $totalCount - $erledigtCount;
             transition: all 0.2s ease;
         }
 
-        .comment-delete:hover {
-            color: var(--danger);
-            background: var(--danger-light);
-        }
+        .comment-delete:hover { color: var(--danger); background: var(--danger-light); }
 
-        /* Muster Link */
         .muster-link {
             display: inline-flex;
             align-items: center;
@@ -506,15 +377,9 @@ $offenCount = $totalCount - $erledigtCount;
             transition: all 0.2s ease;
         }
 
-        .muster-link:hover {
-            background: var(--primary-dark);
-        }
+        .muster-link:hover { background: var(--primary-dark); }
 
-        /* Loading State */
-        .btn.loading {
-            opacity: 0.7;
-            pointer-events: none;
-        }
+        .btn.loading { opacity: 0.7; pointer-events: none; }
 
         .btn.loading::after {
             content: '';
@@ -527,11 +392,8 @@ $offenCount = $totalCount - $erledigtCount;
             margin-left: 6px;
         }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Scroll to top button */
         .scroll-top {
             position: fixed;
             bottom: 24px;
@@ -553,17 +415,9 @@ $offenCount = $totalCount - $erledigtCount;
             visibility: hidden;
         }
 
-        .scroll-top.visible {
-            opacity: 1;
-            visibility: visible;
-        }
+        .scroll-top.visible { opacity: 1; visibility: visible; }
+        .scroll-top:hover { background: var(--primary-dark); transform: translateY(-3px); }
 
-        .scroll-top:hover {
-            background: var(--primary-dark);
-            transform: translateY(-3px);
-        }
-
-        /* Empty State */
         .empty-state {
             text-align: center;
             padding: 60px 20px;
@@ -572,71 +426,26 @@ $offenCount = $totalCount - $erledigtCount;
             box-shadow: var(--shadow);
         }
 
-        .empty-state i {
-            font-size: 64px;
-            color: var(--gray-300);
-            margin-bottom: 16px;
-        }
+        .empty-state i { font-size: 64px; color: var(--gray-300); margin-bottom: 16px; }
+        .empty-state h3 { color: var(--gray-600); margin-bottom: 8px; }
+        .empty-state p { color: var(--gray-500); }
 
-        .empty-state h3 {
-            color: var(--gray-600);
-            margin-bottom: 8px;
-        }
-
-        .empty-state p {
-            color: var(--gray-500);
-        }
-
-        /* Responsive */
         @media (max-width: 768px) {
-            .container {
-                padding: 12px;
-            }
-
-            .header {
-                padding: 16px;
-            }
-
-            .header h1 {
-                font-size: 20px;
-            }
-
-            .stat-card {
-                min-width: 80px;
-                padding: 10px 14px;
-            }
-
-            .stat-number {
-                font-size: 22px;
-            }
-
-            .entry-body {
-                grid-template-columns: 1fr 1fr;
-            }
-
-            .entry-actions {
-                flex-direction: column;
-            }
-
-            .entry-actions .btn {
-                width: 100%;
-                justify-content: center;
-            }
-
-            .comment-form {
-                flex-direction: column;
-            }
-
-            .comment-form .btn {
-                width: 100%;
-                justify-content: center;
-            }
+            .container { padding: 12px; }
+            .header { padding: 16px; }
+            .header h1 { font-size: 20px; }
+            .stat-card { min-width: 80px; padding: 10px 14px; }
+            .stat-number { font-size: 22px; }
+            .entry-body { grid-template-columns: 1fr 1fr; }
+            .entry-actions { flex-direction: column; }
+            .entry-actions .btn { width: 100%; justify-content: center; }
+            .comment-form { flex-direction: column; }
+            .comment-form .btn { width: 100%; justify-content: center; }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Header -->
         <div class="header">
             <div class="header-top">
                 <h1><i class="ri-smartphone-line"></i> Reparatur-Aufträge</h1>
@@ -662,7 +471,6 @@ $offenCount = $totalCount - $erledigtCount;
             </div>
         </div>
 
-        <!-- Entries -->
         <div class="entries-grid">
             <?php if (empty($alleEintraege)): ?>
                 <div class="empty-state">
@@ -671,12 +479,9 @@ $offenCount = $totalCount - $erledigtCount;
                     <p>Sobald Kunden das Formular ausfüllen, erscheinen die Aufträge hier.</p>
                 </div>
             <?php else: ?>
-                <?php foreach ($alleEintraege as $eintrag): ?>
-                    <?php if (empty($eintrag)) continue; ?>
+                <?php foreach ($alleEintraege as $entry): ?>
                     <?php
-                    $parts = explode('|', $eintrag);
-                    if (count($parts) < 9) continue;
-                    list($datum, $name, $telefon, $marke, $modell, $problem, $other, $pin, $musterImagePath) = $parts;
+                    $telefon = $entry['telefon'];
                     $istErledigt = in_array($telefon, $erledigtStatus);
                     $problemLabels = [
                         'display' => 'Displaybruch',
@@ -688,15 +493,15 @@ $offenCount = $totalCount - $erledigtCount;
                         'frame' => 'Rahmen verbogen',
                         'other' => 'Andere'
                     ];
-                    $problemText = $problemLabels[$problem] ?? $problem;
+                    $problemText = $problemLabels[$entry['problem']] ?? $entry['problem'];
                     ?>
                     <div class="entry-card <?php echo $istErledigt ? 'erledigt' : ''; ?>" data-id="<?php echo htmlspecialchars($telefon); ?>">
                         <div class="entry-header">
                             <div class="entry-title">
-                                <div class="entry-name"><?php echo htmlspecialchars($name); ?></div>
+                                <div class="entry-name"><?php echo htmlspecialchars($entry['name']); ?></div>
                                 <div class="entry-date">
                                     <i class="ri-calendar-line"></i>
-                                    <?php echo htmlspecialchars($datum); ?>
+                                    <?php echo htmlspecialchars($entry['datum']); ?>
                                 </div>
                             </div>
                             <div class="entry-status">
@@ -717,25 +522,25 @@ $offenCount = $totalCount - $erledigtCount;
                             </div>
                             <div class="info-group">
                                 <span class="info-label">Gerät</span>
-                                <span class="info-value"><?php echo htmlspecialchars(ucfirst($marke)); ?> <?php echo htmlspecialchars($modell); ?></span>
+                                <span class="info-value"><?php echo htmlspecialchars(ucfirst($entry['marke'])); ?> <?php echo htmlspecialchars($entry['modell']); ?></span>
                             </div>
                             <div class="info-group">
                                 <span class="info-label">Problem</span>
                                 <span class="info-value"><?php echo htmlspecialchars($problemText); ?></span>
                             </div>
-                            <?php if (!empty($other)): ?>
+                            <?php if (!empty($entry['other'])): ?>
                             <div class="info-group">
                                 <span class="info-label">Details</span>
-                                <span class="info-value"><?php echo htmlspecialchars($other); ?></span>
+                                <span class="info-value"><?php echo htmlspecialchars($entry['other']); ?></span>
                             </div>
                             <?php endif; ?>
                             <div class="info-group">
                                 <span class="info-label">PIN/Muster</span>
                                 <span class="info-value">
-                                    <?php if (!empty($pin)): ?>
-                                        <strong><?php echo htmlspecialchars($pin); ?></strong>
-                                    <?php elseif (!empty($musterImagePath)): ?>
-                                        <a href="/formular/<?php echo htmlspecialchars($musterImagePath); ?>" target="_blank" class="muster-link">
+                                    <?php if (!empty($entry['pin'])): ?>
+                                        <strong><?php echo htmlspecialchars($entry['pin']); ?></strong>
+                                    <?php elseif (!empty($entry['muster_image_path'])): ?>
+                                        <a href="/formular/<?php echo htmlspecialchars($entry['muster_image_path']); ?>" target="_blank" class="muster-link">
                                             <i class="ri-pattern-lock-line"></i> Muster anzeigen
                                         </a>
                                     <?php else: ?>
@@ -745,7 +550,6 @@ $offenCount = $totalCount - $erledigtCount;
                             </div>
                         </div>
 
-                        <!-- Comments Section -->
                         <div class="comments-section">
                             <form class="comment-form" method="post">
                                 <input type="hidden" name="identifikator" value="<?php echo htmlspecialchars($telefon); ?>">
@@ -771,7 +575,6 @@ $offenCount = $totalCount - $erledigtCount;
                             <?php endif; ?>
                         </div>
 
-                        <!-- Actions -->
                         <div class="entry-actions">
                             <button type="button" class="btn <?php echo $istErledigt ? 'btn-warning' : 'btn-success'; ?> erledigt-btn"
                                     data-id="<?php echo htmlspecialchars($telefon); ?>"
@@ -782,7 +585,8 @@ $offenCount = $totalCount - $erledigtCount;
 
                             <form action="loesche_eintrag.php" method="post" style="display: inline;"
                                   onsubmit="return confirm('Möchten Sie diesen Auftrag wirklich löschen?');">
-                                <input type="hidden" name="eintrag" value="<?php echo htmlspecialchars($eintrag); ?>">
+                                <input type="hidden" name="entry_id" value="<?php echo $entry['id']; ?>">
+                                <input type="hidden" name="telefon" value="<?php echo htmlspecialchars($telefon); ?>">
                                 <button type="submit" class="btn btn-danger">
                                     <i class="ri-delete-bin-line"></i> Löschen
                                 </button>
@@ -794,14 +598,12 @@ $offenCount = $totalCount - $erledigtCount;
         </div>
     </div>
 
-    <!-- Scroll to top button -->
     <button class="scroll-top" id="scrollTop" title="Nach oben">
         <i class="ri-arrow-up-line"></i>
     </button>
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Erledigt Toggle with AJAX
         document.querySelectorAll('.erledigt-btn').forEach(function(btn) {
             btn.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -809,17 +611,12 @@ $offenCount = $totalCount - $erledigtCount;
                 const button = this;
                 const card = button.closest('.entry-card');
                 const identifikator = button.dataset.id;
-                const wasErledigt = button.dataset.erledigt === '1';
 
-                // Add loading state
                 button.classList.add('loading');
 
-                // Send AJAX request
                 fetch(window.location.href, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: 'ajax=1&markAsDone=1&identifikator=' + encodeURIComponent(identifikator)
                 })
                 .then(response => response.json())
@@ -830,77 +627,55 @@ $offenCount = $totalCount - $erledigtCount;
                         const grid = document.querySelector('.entries-grid');
 
                         if (data.erledigt) {
-                            // Marked as done
                             card.classList.add('erledigt');
                             button.classList.remove('btn-success');
                             button.classList.add('btn-warning');
                             button.innerHTML = '<i class="ri-arrow-go-back-line"></i> Rückgängig';
                             button.dataset.erledigt = '1';
 
-                            // Update status badge
                             const badge = card.querySelector('.status-badge');
                             badge.classList.remove('offen');
                             badge.classList.add('erledigt');
                             badge.textContent = 'Erledigt';
 
-                            // Animate and move to bottom
                             card.style.transition = 'all 0.4s ease';
                             card.style.opacity = '0.5';
-                            card.style.transform = 'scale(0.98)';
-
                             setTimeout(() => {
                                 grid.appendChild(card);
                                 card.style.opacity = '1';
-                                card.style.transform = 'scale(1)';
                             }, 300);
-
                         } else {
-                            // Unmarked - move to top
                             card.classList.remove('erledigt');
                             button.classList.remove('btn-warning');
                             button.classList.add('btn-success');
                             button.innerHTML = '<i class="ri-check-line"></i> Als erledigt markieren';
                             button.dataset.erledigt = '0';
 
-                            // Update status badge
                             const badge = card.querySelector('.status-badge');
                             badge.classList.remove('erledigt');
                             badge.classList.add('offen');
                             badge.textContent = 'Offen';
 
-                            // Animate and move to top
                             card.style.transition = 'all 0.4s ease';
                             card.style.opacity = '0.5';
-                            card.style.transform = 'scale(0.98)';
-
                             setTimeout(() => {
                                 grid.insertBefore(card, grid.firstChild);
                                 card.style.opacity = '1';
-                                card.style.transform = 'scale(1)';
-                                // Scroll to top
                                 window.scrollTo({ top: 0, behavior: 'smooth' });
                             }, 300);
                         }
 
-                        // Update stats
                         updateStats();
                     }
                 })
                 .catch(error => {
                     button.classList.remove('loading');
                     console.error('Error:', error);
-                    // Fallback to form submit
-                    const form = document.createElement('form');
-                    form.method = 'post';
-                    form.innerHTML = '<input type="hidden" name="identifikator" value="' + identifikator + '">' +
-                                     '<input type="hidden" name="markAsDone" value="1">';
-                    document.body.appendChild(form);
-                    form.submit();
+                    location.reload();
                 });
             });
         });
 
-        // Update stats without page reload
         function updateStats() {
             const total = document.querySelectorAll('.entry-card').length;
             const erledigt = document.querySelectorAll('.entry-card.erledigt').length;
@@ -913,20 +688,16 @@ $offenCount = $totalCount - $erledigtCount;
                 statNumbers[2].textContent = erledigt;
             }
 
-            // Hide "Mark All" button if no open entries
             const markAllBtn = document.getElementById('markAllBtn');
             if (markAllBtn) {
                 markAllBtn.style.display = offen > 0 ? 'inline-flex' : 'none';
             }
         }
 
-        // Mark All as Done button
         const markAllBtn = document.getElementById('markAllBtn');
         if (markAllBtn) {
             markAllBtn.addEventListener('click', function() {
-                if (!confirm('Möchten Sie wirklich ALLE offenen Aufträge als erledigt markieren?')) {
-                    return;
-                }
+                if (!confirm('Möchten Sie wirklich ALLE offenen Aufträge als erledigt markieren?')) return;
 
                 const button = this;
                 button.classList.add('loading');
@@ -934,9 +705,7 @@ $offenCount = $totalCount - $erledigtCount;
 
                 fetch(window.location.href, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: 'ajax=1&markAllAsDone=1'
                 })
                 .then(response => response.json())
@@ -947,12 +716,9 @@ $offenCount = $totalCount - $erledigtCount;
                     if (data.success && data.count > 0) {
                         const grid = document.querySelector('.entries-grid');
 
-                        // Mark all open cards as erledigt
                         document.querySelectorAll('.entry-card:not(.erledigt)').forEach((card, index) => {
                             setTimeout(() => {
                                 card.classList.add('erledigt');
-
-                                // Update button
                                 const btn = card.querySelector('.erledigt-btn');
                                 if (btn) {
                                     btn.classList.remove('btn-success');
@@ -960,29 +726,22 @@ $offenCount = $totalCount - $erledigtCount;
                                     btn.innerHTML = '<i class="ri-arrow-go-back-line"></i> Rückgängig';
                                     btn.dataset.erledigt = '1';
                                 }
-
-                                // Update badge
                                 const badge = card.querySelector('.status-badge');
                                 if (badge) {
                                     badge.classList.remove('offen');
                                     badge.classList.add('erledigt');
                                     badge.textContent = 'Erledigt';
                                 }
-
-                                // Move to bottom with animation
                                 card.style.transition = 'all 0.3s ease';
                                 card.style.opacity = '0.7';
                                 setTimeout(() => {
                                     grid.appendChild(card);
                                     card.style.opacity = '1';
                                 }, 200);
-                            }, index * 100); // Stagger animation
+                            }, index * 100);
                         });
 
-                        // Update stats after all animations
-                        setTimeout(() => {
-                            updateStats();
-                        }, data.count * 100 + 300);
+                        setTimeout(() => updateStats(), data.count * 100 + 300);
                     }
                 })
                 .catch(error => {
@@ -994,17 +753,10 @@ $offenCount = $totalCount - $erledigtCount;
             });
         }
 
-        // Scroll to top button
         const scrollTopBtn = document.getElementById('scrollTop');
-
         window.addEventListener('scroll', function() {
-            if (window.scrollY > 300) {
-                scrollTopBtn.classList.add('visible');
-            } else {
-                scrollTopBtn.classList.remove('visible');
-            }
+            scrollTopBtn.classList.toggle('visible', window.scrollY > 300);
         });
-
         scrollTopBtn.addEventListener('click', function() {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         });

@@ -307,6 +307,13 @@ document.addEventListener("DOMContentLoaded", function () {
           if (startDateInput) startDateInput.value = reward.start_date || "";
           if (endDateInput) endDateInput.value = reward.end_date || "";
 
+          // 🏢 Auto-check "apply to all" if multiple filialen exist
+          // When editing, assume user wants to sync across all locations
+          const applyAllCheckbox = document.getElementById("reward-apply-all");
+          if (applyAllCheckbox && window.PPV_HAS_MULTIPLE_FILIALEN) {
+            applyAllCheckbox.checked = true;
+          }
+
           // Trigger field visibility update
           toggleRewardFields();
 

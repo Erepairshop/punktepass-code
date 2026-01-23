@@ -21,6 +21,16 @@ if (!$column_exists) {
 }
 
 // ============================================================
+// DATABASE: Ensure last_active_at column exists (for handler activity tracking)
+// ============================================================
+$last_active_col = $wpdb->get_var("SHOW COLUMNS FROM {$wpdb->prefix}ppv_stores LIKE 'last_active_at'");
+if (!$last_active_col) {
+    $wpdb->query("ALTER TABLE {$wpdb->prefix}ppv_stores ADD COLUMN last_active_at DATETIME DEFAULT NULL COMMENT 'Last handler activity timestamp'");
+    $wpdb->query("CREATE INDEX idx_last_active ON {$wpdb->prefix}ppv_stores (last_active_at)");
+    ppv_log("✅ [PPV_Admin] Added last_active_at column to ppv_stores table");
+}
+
+// ============================================================
 // TAB 3: HANDLER LINKING - FORM SUBMISSIONS
 // ============================================================
 
@@ -882,6 +892,7 @@ function ppv_format_device_info_json($device_info_json) {
                                 <th>Scanner</th>
                                 <th>Készülékek</th>
                                 <th>Fiókok</th>
+                                <th>Aktivitás</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -932,7 +943,8 @@ function ppv_format_device_info_json($device_info_json) {
                                     'max_filialen' => $handler->max_filialen ?? 1,
                                     'filiale_count' => intval($handler->filiale_count),
                                     'device_count' => count($handler_devices),
-                                    'devices' => $devices_json
+                                    'devices' => $devices_json,
+                                    'last_active_at' => $handler->last_active_at ?? null
                                 ], JSON_HEX_APOS | JSON_HEX_QUOT);
                             ?>
                                 <tr class="clickable-row handler-row"
@@ -981,6 +993,36 @@ function ppv_format_device_info_json($device_info_json) {
                                         <span style="color: <?php echo $current_filialen >= $max_filialen ? '#f44336' : '#4caf50'; ?>;">
                                             <?php echo $current_filialen; ?>/<?php echo $max_filialen; ?>
                                         </span>
+                                    </td>
+                                    <td>
+                                        <?php
+                                        if (empty($handler->last_active_at)) {
+                                            echo '<span style="color: #666;">-</span>';
+                                        } else {
+                                            $last_active = strtotime($handler->last_active_at);
+                                            $diff = time() - $last_active;
+
+                                            if ($diff < 300) {
+                                                // Less than 5 minutes - online now
+                                                echo '<span style="color: #4caf50; font-weight: 600;">🟢 Online</span>';
+                                            } elseif ($diff < 3600) {
+                                                // Less than 1 hour
+                                                $mins = floor($diff / 60);
+                                                echo '<span style="color: #8bc34a;">' . $mins . ' perce</span>';
+                                            } elseif ($diff < 86400) {
+                                                // Less than 24 hours
+                                                $hours = floor($diff / 3600);
+                                                echo '<span style="color: #ff9800;">' . $hours . ' órája</span>';
+                                            } elseif ($diff < 604800) {
+                                                // Less than 7 days
+                                                $days = floor($diff / 86400);
+                                                echo '<span style="color: #f44336;">' . $days . ' napja</span>';
+                                            } else {
+                                                // More than 7 days
+                                                echo '<span style="color: #666;">' . date('M j', $last_active) . '</span>';
+                                            }
+                                        }
+                                        ?>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>

@@ -450,7 +450,7 @@ class PPV_User_Tips {
             $field_map = [
                 'name' => 'display_name',
                 'birthday' => 'birthday',
-                'whatsapp' => 'whatsapp',
+                'whatsapp' => 'phone_number',  // WhatsApp tip checks phone_number field
                 'push_enabled' => 'push_notifications'
             ];
             $db_field = $field_map[$field] ?? $field;
@@ -555,6 +555,94 @@ class PPV_User_Tips {
                 }
             }
         }
+
+        // 🎁 Check and trigger "almost reward" tips
+        self::trigger_almost_reward_tips($user_id, $scan_data['store_id'] ?? null);
+    }
+
+    /**
+     * 🎁 Trigger "almost reward" tip after scan
+     * Will be shown 30 minutes later
+     */
+    private static function trigger_almost_reward_tips($user_id, $scanned_store_id = null) {
+        global $wpdb;
+
+        // Focus on the store that was just scanned (if provided)
+        $store_condition = $scanned_store_id ? $wpdb->prepare(" AND p.store_id = %d", $scanned_store_id) : "";
+
+        // Get stores where user is close to a reward
+        $user_points = $wpdb->get_results($wpdb->prepare("
+            SELECT
+                p.store_id,
+                COALESCE(SUM(p.points), 0) as current_points,
+                s.name as store_name,
+                s.company_name
+            FROM {$wpdb->prefix}ppv_points p
+            JOIN {$wpdb->prefix}ppv_stores s ON s.id = p.store_id
+            WHERE p.user_id = %d {$store_condition}
+            GROUP BY p.store_id
+        ", $user_id));
+
+        foreach ($user_points as $up) {
+            $store_id = (int)$up->store_id;
+            $current_points = (int)$up->current_points;
+
+            // Get the store's points_given (points per scan)
+            $points_per_scan = (int)$wpdb->get_var($wpdb->prepare("
+                SELECT points_given FROM {$wpdb->prefix}ppv_rewards
+                WHERE store_id = %d AND points_given > 0 AND active = 1
+                LIMIT 1
+            ", $store_id)) ?: 1;
+
+            // Check if user would reach a reward with 1 more scan
+            $potential_reward = $wpdb->get_row($wpdb->prepare("
+                SELECT id, title, required_points
+                FROM {$wpdb->prefix}ppv_rewards
+                WHERE store_id = %d
+                AND active = 1
+                AND required_points > 0
+                AND required_points > %d
+                AND required_points <= %d
+                ORDER BY required_points ASC
+                LIMIT 1
+            ", $store_id, $current_points, $current_points + $points_per_scan));
+
+            if ($potential_reward) {
+                $tip_key = 'almost_reward_' . $store_id;
+
+                // Check if already triggered recently (not dismissed in last 24h, not triggered in last 6h)
+                $existing = $wpdb->get_row($wpdb->prepare("
+                    SELECT * FROM {$wpdb->prefix}ppv_user_tips
+                    WHERE user_id = %d AND tip_key = %s
+                    AND (
+                        (dismissed_at IS NOT NULL AND dismissed_at > DATE_SUB(NOW(), INTERVAL 24 HOUR))
+                        OR (triggered_at > DATE_SUB(NOW(), INTERVAL 6 HOUR) AND dismissed_at IS NULL)
+                    )
+                ", $user_id, $tip_key));
+
+                if (!$existing) {
+                    // Delete old entries for this tip
+                    $wpdb->delete(
+                        $wpdb->prefix . 'ppv_user_tips',
+                        ['user_id' => $user_id, 'tip_key' => $tip_key],
+                        ['%d', '%s']
+                    );
+
+                    // Trigger new tip (will be shown after 30 min)
+                    $wpdb->insert(
+                        $wpdb->prefix . 'ppv_user_tips',
+                        [
+                            'user_id' => $user_id,
+                            'tip_key' => $tip_key,
+                            'triggered_at' => current_time('mysql'),
+                        ],
+                        ['%d', '%s', '%s']
+                    );
+
+                    ppv_log("🎁 [PPV_User_Tips] Triggered almost_reward tip for user {$user_id} at store {$store_id} - reward: {$potential_reward->title}");
+                }
+            }
+        }
     }
 
     /** ============================================================
@@ -618,7 +706,26 @@ class PPV_User_Tips {
                 // Check if field is already filled
                 if (!empty($tip_config['check_field'])) {
                     $field = $tip_config['check_field'];
-                    if (!empty($user->$field)) {
+
+                    // 🔧 FIX: Map config field names to actual database column names
+                    $field_map = [
+                        'name' => 'display_name',
+                        'push_enabled' => 'push_notifications',
+                        'whatsapp' => 'phone_number'  // WhatsApp tip checks if phone number is added
+                    ];
+                    $db_field = $field_map[$field] ?? $field;
+
+                    // For 'name', also check first_name/last_name as fallbacks
+                    $is_filled = false;
+                    if ($field === 'name') {
+                        $is_filled = !empty(trim($user->display_name ?? ''))
+                                  || !empty(trim($user->first_name ?? ''))
+                                  || !empty(trim($user->last_name ?? ''));
+                    } else {
+                        $is_filled = !empty($user->$db_field);
+                    }
+
+                    if ($is_filled) {
                         // Field is already filled, dismiss tip automatically
                         $wpdb->update(
                             $wpdb->prefix . 'ppv_user_tips',
@@ -650,6 +757,12 @@ class PPV_User_Tips {
                     'action_url' => $tip_config['action_url'],
                     'priority' => $tip_config['priority'],
                 ];
+            }
+
+            // 🎁 Check for "almost reward" tip (dynamic, not stored in DB)
+            $almost_reward_tip = self::get_almost_reward_tip($user_id, $lang);
+            if ($almost_reward_tip) {
+                $pending_tips[] = $almost_reward_tip;
             }
 
             // Sort by priority (lower = more important)
@@ -689,6 +802,28 @@ class PPV_User_Tips {
             return new WP_REST_Response(['success' => false], 401);
         }
 
+        // For dynamic tips (almost_reward_X), create entry if not exists
+        if (strpos($tip_key, 'almost_reward_') === 0) {
+            $existing = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}ppv_user_tips WHERE user_id = %d AND tip_key = %s",
+                $user_id, $tip_key
+            ));
+            if (!$existing) {
+                $wpdb->insert(
+                    $wpdb->prefix . 'ppv_user_tips',
+                    [
+                        'user_id' => $user_id,
+                        'tip_key' => $tip_key,
+                        'triggered_at' => current_time('mysql'),
+                        'shown_at' => current_time('mysql'),
+                    ],
+                    ['%d', '%s', '%s', '%s']
+                );
+                ppv_log("👁️ [PPV_User_Tips] Dynamic tip '{$tip_key}' shown to user {$user_id}");
+                return new WP_REST_Response(['success' => true], 200);
+            }
+        }
+
         $wpdb->update(
             $wpdb->prefix . 'ppv_user_tips',
             ['shown_at' => current_time('mysql')],
@@ -713,6 +848,29 @@ class PPV_User_Tips {
 
         if (!$user_id) {
             return new WP_REST_Response(['success' => false], 401);
+        }
+
+        // For dynamic tips (almost_reward_X), create entry with dismissed_at
+        if (strpos($tip_key, 'almost_reward_') === 0) {
+            $existing = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}ppv_user_tips WHERE user_id = %d AND tip_key = %s",
+                $user_id, $tip_key
+            ));
+            if (!$existing) {
+                $wpdb->insert(
+                    $wpdb->prefix . 'ppv_user_tips',
+                    [
+                        'user_id' => $user_id,
+                        'tip_key' => $tip_key,
+                        'triggered_at' => current_time('mysql'),
+                        'shown_at' => current_time('mysql'),
+                        'dismissed_at' => current_time('mysql'),
+                    ],
+                    ['%d', '%s', '%s', '%s', '%s']
+                );
+                ppv_log("❌ [PPV_User_Tips] Dynamic tip '{$tip_key}' dismissed by user {$user_id}");
+                return new WP_REST_Response(['success' => true], 200);
+            }
         }
 
         $wpdb->update(
@@ -808,6 +966,126 @@ class PPV_User_Tips {
             default:
                 return true;
         }
+    }
+
+    /**
+     * 🎁 Check if user has a pending "almost reward" tip ready to show (30 min after scan)
+     * Returns array with store/reward info or null
+     */
+    private static function get_almost_reward_tip($user_id, $lang = 'de') {
+        global $wpdb;
+
+        // Get triggered almost_reward tips that are ready (30 min delay passed, not shown/dismissed)
+        $ready_tips = $wpdb->get_results($wpdb->prepare("
+            SELECT tip_key, triggered_at FROM {$wpdb->prefix}ppv_user_tips
+            WHERE user_id = %d
+            AND tip_key LIKE 'almost_reward_%%'
+            AND triggered_at IS NOT NULL
+            AND triggered_at <= DATE_SUB(NOW(), INTERVAL 30 MINUTE)
+            AND shown_at IS NULL
+            AND dismissed_at IS NULL
+            ORDER BY triggered_at ASC
+            LIMIT 1
+        ", $user_id));
+
+        if (empty($ready_tips)) {
+            return null;
+        }
+
+        $tip = $ready_tips[0];
+        $store_id = (int)str_replace('almost_reward_', '', $tip->tip_key);
+
+        // Verify user is still 1 scan away from a reward at this store
+        $current_points = (int)$wpdb->get_var($wpdb->prepare("
+            SELECT COALESCE(SUM(points), 0) FROM {$wpdb->prefix}ppv_points
+            WHERE user_id = %d AND store_id = %d
+        ", $user_id, $store_id));
+
+        $store = $wpdb->get_row($wpdb->prepare("
+            SELECT name, company_name FROM {$wpdb->prefix}ppv_stores WHERE id = %d
+        ", $store_id));
+
+        if (!$store) {
+            return null;
+        }
+
+        $store_name = $store->name ?: $store->company_name;
+
+        // Get points per scan
+        $points_per_scan = (int)$wpdb->get_var($wpdb->prepare("
+            SELECT points_given FROM {$wpdb->prefix}ppv_rewards
+            WHERE store_id = %d AND points_given > 0 AND active = 1
+            LIMIT 1
+        ", $store_id)) ?: 1;
+
+        // Find the reward they're close to
+        $reward = $wpdb->get_row($wpdb->prepare("
+            SELECT id, title, required_points
+            FROM {$wpdb->prefix}ppv_rewards
+            WHERE store_id = %d
+            AND active = 1
+            AND required_points > 0
+            AND required_points > %d
+            AND required_points <= %d
+            ORDER BY required_points ASC
+            LIMIT 1
+        ", $store_id, $current_points, $current_points + $points_per_scan));
+
+        if (!$reward) {
+            // User already got the reward or situation changed - dismiss the tip
+            $wpdb->update(
+                $wpdb->prefix . 'ppv_user_tips',
+                ['dismissed_at' => current_time('mysql')],
+                ['user_id' => $user_id, 'tip_key' => $tip->tip_key],
+                ['%s'],
+                ['%d', '%s']
+            );
+            return null;
+        }
+
+        $ar = [
+            'store_id' => $store_id,
+            'store_name' => $store_name,
+            'reward_id' => $reward->id,
+            'reward_title' => $reward->title,
+            'current_points' => $current_points,
+            'required_points' => (int)$reward->required_points,
+            'points_needed' => (int)$reward->required_points - $current_points
+        ];
+
+        // Translations
+        $translations = [
+            'de' => [
+                'title' => 'Fast geschafft!',
+                'message' => 'Noch ein Besuch bei %s und du erhältst: %s',
+                'button' => 'Zum Shop'
+            ],
+            'hu' => [
+                'title' => 'Majdnem megvan!',
+                'message' => 'Még egy látogatás a %s üzletben és tiéd lehet: %s',
+                'button' => 'Ugrás a bolthoz'
+            ],
+            'ro' => [
+                'title' => 'Aproape ai reușit!',
+                'message' => 'Încă o vizită la %s și poți obține: %s',
+                'button' => 'Mergi la magazin'
+            ]
+        ];
+
+        $t = $translations[$lang] ?? $translations['de'];
+
+        return [
+            'key' => 'almost_reward_' . $ar['store_id'],
+            'icon' => '🎁',
+            'title' => $t['title'],
+            'message' => sprintf($t['message'], $ar['store_name'], $ar['reward_title']),
+            'button' => $t['button'],
+            'action_url' => '/belohnungen',
+            'priority' => 1, // High priority - show first!
+            'is_dynamic' => true,
+            'store_id' => $ar['store_id'],
+            'reward_data' => $ar
+        ];
     }
 
     /**

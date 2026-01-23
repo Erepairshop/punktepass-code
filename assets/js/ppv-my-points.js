@@ -537,12 +537,6 @@
             </div>
           </div>
 
-          <!-- REWARDS BY STORE -->
-          <div class="ppv-rewards-by-store">
-            <h3><i class="ri-store-2-fill"></i> ${l.rewards_by_store_title || 'Jutalmak boltok szerint'}</h3>
-            ${buildRewardsByStore(d.rewards_by_store || [], l)}
-          </div>
-
           <!-- TOP 3 -->
           <div class="ppv-top3">
             <h3><i class="ri-trophy-fill"></i> ${l.top3}</h3>
