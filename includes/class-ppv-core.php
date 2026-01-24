@@ -413,6 +413,35 @@ class PPV_Core {
             ppv_log("✅ [PPV_Core] Migration 2.5 completed - Performance indexes added");
             update_option('ppv_db_migration_version', '2.5');
         }
+
+        // Migration 2.6: Add WhatsApp-related columns to ppv_users
+        if (version_compare($current_version, '2.6', '<')) {
+            $users_table = $wpdb->prefix . 'ppv_users';
+
+            // Add phone_number column
+            $phone_col = $wpdb->get_var("SHOW COLUMNS FROM {$users_table} LIKE 'phone_number'");
+            if (!$phone_col) {
+                $wpdb->query("ALTER TABLE {$users_table} ADD COLUMN phone_number VARCHAR(20) DEFAULT NULL");
+                ppv_log("✅ [PPV_Core] Added 'phone_number' column to ppv_users table");
+            }
+
+            // Add whatsapp_consent column
+            $wa_consent_col = $wpdb->get_var("SHOW COLUMNS FROM {$users_table} LIKE 'whatsapp_consent'");
+            if (!$wa_consent_col) {
+                $wpdb->query("ALTER TABLE {$users_table} ADD COLUMN whatsapp_consent TINYINT(1) DEFAULT 0");
+                ppv_log("✅ [PPV_Core] Added 'whatsapp_consent' column to ppv_users table");
+            }
+
+            // Add whatsapp_consent_at column
+            $wa_consent_at_col = $wpdb->get_var("SHOW COLUMNS FROM {$users_table} LIKE 'whatsapp_consent_at'");
+            if (!$wa_consent_at_col) {
+                $wpdb->query("ALTER TABLE {$users_table} ADD COLUMN whatsapp_consent_at DATETIME DEFAULT NULL");
+                ppv_log("✅ [PPV_Core] Added 'whatsapp_consent_at' column to ppv_users table");
+            }
+
+            ppv_log("✅ [PPV_Core] Migration 2.6 completed - WhatsApp columns added");
+            update_option('ppv_db_migration_version', '2.6');
+        }
     }
 
     /**
