@@ -1,0 +1,119 @@
+workflows:
+  ios-workflow:
+    name: iOS Build & TestFlight
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: de.erepairshop.punktepass
+      vars:
+        XCODE_WORKSPACE: "PunktePass.xcworkspace"
+        XCODE_SCHEME: "PunktePass"
+      xcode: 15.2
+      cocoapods: default
+
+    triggering:
+      events:
+        - push
+        - pull_request
+      branch_patterns:
+        - pattern: 'main'
+          include: true
+          source: true
+        - pattern: 'release/*'
+          include: true
+          source: true
+      cancel_previous_builds: true
+
+    scripts:
+      - name: Install CocoaPods dependencies
+        script: |
+          cd Xcode
+          pod install --repo-update
+
+      - name: Set up code signing
+        script: |
+          keychain initialize
+
+      - name: Increment build number
+        script: |
+          cd Xcode
+          LATEST_BUILD_NUMBER=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APP_ID" || echo "0")
+          agvtool new-version -all $((LATEST_BUILD_NUMBER + 1))
+
+      - name: Build iOS app
+        script: |
+          cd Xcode
+          xcode-project build-ipa \
+            --workspace "$XCODE_WORKSPACE" \
+            --scheme "$XCODE_SCHEME" \
+            --config Release
+
+    artifacts:
+      - Xcode/build/ios/ipa/*.ipa
+      - Xcode/build/ios/xcarchive/*.xcarchive
+      - /tmp/xcodebuild_logs/*.log
+
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        beta_groups:
+          - Beta Testers
+      email:
+        recipients:
+          - borota25@gmail.com
+        notify:
+          success: true
+          failure: true
+
+  ios-debug:
+    name: iOS Debug Build
+    max_build_duration: 30
+    instance_type: mac_mini_m2
+
+    environment:
+      vars:
+        XCODE_WORKSPACE: "PunktePass.xcworkspace"
+        XCODE_SCHEME: "PunktePass"
+      xcode: 15.2
+      cocoapods: default
+
+    triggering:
+      events:
+        - pull_request
+      branch_patterns:
+        - pattern: '*'
+          include: true
+          source: true
+      cancel_previous_builds: true
+
+    scripts:
+      - name: Install CocoaPods dependencies
+        script: |
+          cd Xcode
+          pod install --repo-update
+
+      - name: Build iOS app (Debug)
+        script: |
+          cd Xcode
+          xcodebuild \
+            -workspace "$XCODE_WORKSPACE" \
+            -scheme "$XCODE_SCHEME" \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'platform=iOS Simulator,name=iPhone 15' \
+            clean build
+
+    artifacts:
+      - /tmp/xcodebuild_logs/*.log
+
+    publishing:
+      email:
+        recipients:
+          - borota25@gmail.com
+        notify:
+          success: false
+          failure: true
