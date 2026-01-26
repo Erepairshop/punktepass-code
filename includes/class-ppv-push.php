@@ -209,8 +209,15 @@ class PPV_Push {
      * Permission: User or POS token
      * ============================================================ */
     public static function verify_user_or_pos($request = null) {
+        // WordPress logged in user
         if (is_user_logged_in()) return true;
 
+        // PunktePass session (customer/user login)
+        if (!empty($_SESSION['ppv_user_id'])) {
+            return true;
+        }
+
+        // Bearer token authentication
         $token = $request ? $request->get_header('Authorization') : null;
         if ($token && strpos($token, 'Bearer ') === 0) {
             $bearer = substr($token, 7);
@@ -219,6 +226,7 @@ class PPV_Push {
             }
         }
 
+        // POS or other API authentication
         if (class_exists('PPV_API')) {
             return PPV_API::verify_pos_or_user($request);
         }
