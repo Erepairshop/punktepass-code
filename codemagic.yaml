@@ -14,7 +14,7 @@ workflows:
       vars:
         XCODE_WORKSPACE: "PunktePass.xcworkspace"
         XCODE_SCHEME: "PunktePass"
-      xcode: 15.2
+      xcode: latest
       cocoapods: default
 
     triggering:
@@ -80,7 +80,7 @@ workflows:
       vars:
         XCODE_WORKSPACE: "PunktePass.xcworkspace"
         XCODE_SCHEME: "PunktePass"
-      xcode: 15.2
+      xcode: latest
       cocoapods: default
 
     triggering:
