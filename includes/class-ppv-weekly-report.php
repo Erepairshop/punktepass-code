@@ -467,6 +467,13 @@ class PPV_Weekly_Report {
         $trend_color = $stats['trend'] >= 0 ? '#10b981' : '#ef4444';
         $trend_text = ($stats['trend'] >= 0 ? '+' : '') . $stats['trend'] . '%';
 
+        // Determine domain based on country
+        $country = strtolower(trim($store->country ?? ''));
+        $domain = 'punktepass.de'; // default
+        if (in_array($country, ['romania', 'románia', 'rumänien', 'ro'])) {
+            $domain = 'punktepass.ro';
+        }
+
         // Scanner list HTML
         $scanner_html = '';
         if (!empty($stats['scanner_stats'])) {
@@ -648,7 +655,7 @@ class PPV_Weekly_Report {
                 ' . $T['footer_text'] . '
             </p>
             <p style="margin: 8px 0 0; font-size: 11px; color: #9ca3af;">
-                <a href="https://punktepass.de" style="color: #6366f1; text-decoration: none;">punktepass.de</a>
+                <a href="https://' . $domain . '" style="color: #6366f1; text-decoration: none;">' . $domain . '</a>
             </p>
         </div>
 
