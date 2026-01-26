@@ -442,6 +442,39 @@ class PPV_Core {
             ppv_log("✅ [PPV_Core] Migration 2.6 completed - WhatsApp columns added");
             update_option('ppv_db_migration_version', '2.6');
         }
+
+        // Migration 2.7: Add user settings columns to ppv_users
+        if (version_compare($current_version, '2.7', '<')) {
+            $users_table = $wpdb->prefix . 'ppv_users';
+
+            // Notification settings columns
+            $columns_to_add = [
+                'email_notifications' => 'TINYINT(1) DEFAULT 1',
+                'push_notifications' => 'TINYINT(1) DEFAULT 1',
+                'promo_notifications' => 'TINYINT(1) DEFAULT 1',
+                'profile_visible' => 'TINYINT(1) DEFAULT 1',
+                'marketing_emails' => 'TINYINT(1) DEFAULT 0',
+                'data_sharing' => 'TINYINT(1) DEFAULT 0',
+                'address' => 'VARCHAR(255) DEFAULT NULL',
+                'city' => 'VARCHAR(100) DEFAULT NULL',
+                'zip' => 'VARCHAR(20) DEFAULT NULL',
+                'country' => 'VARCHAR(5) DEFAULT NULL',
+                'address_lat' => 'DECIMAL(10,8) DEFAULT NULL',
+                'address_lng' => 'DECIMAL(11,8) DEFAULT NULL',
+                'birthday' => 'DATE DEFAULT NULL',
+            ];
+
+            foreach ($columns_to_add as $col_name => $col_def) {
+                $exists = $wpdb->get_var("SHOW COLUMNS FROM {$users_table} LIKE '{$col_name}'");
+                if (!$exists) {
+                    $wpdb->query("ALTER TABLE {$users_table} ADD COLUMN {$col_name} {$col_def}");
+                    ppv_log("✅ [PPV_Core] Added '{$col_name}' column to ppv_users table");
+                }
+            }
+
+            ppv_log("✅ [PPV_Core] Migration 2.7 completed - User settings columns added");
+            update_option('ppv_db_migration_version', '2.7');
+        }
     }
 
     /**
