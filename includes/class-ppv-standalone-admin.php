@@ -872,6 +872,10 @@ class PPV_Standalone_Admin {
         $_SESSION['ppv_admin_store_name'] = $store->name;
 
         ppv_log("🔐 [Admin] Sikeres bejelentkezés: {$email} (Store #{$store->id})");
+
+        // Session mentése redirect előtt
+        session_write_close();
+
         wp_redirect('/admin/dashboard');
         exit;
     }
