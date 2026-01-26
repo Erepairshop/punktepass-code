@@ -136,11 +136,34 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
 
+    function detectCountryLang() {
+      // Detect language based on timezone
+      try {
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        if (tz === 'Europe/Berlin' || tz === 'Europe/Vienna' || tz === 'Europe/Zurich') {
+          return 'de'; // Germany, Austria, Switzerland
+        } else if (tz === 'Europe/Bucharest') {
+          return 'ro'; // Romania
+        } else if (tz === 'Europe/Budapest') {
+          return 'hu'; // Hungary
+        }
+      } catch (e) {}
+      return 'ro'; // Default Romanian
+    }
+
     function applyOnceStable() {
-      const lang =
-        localStorage.getItem(LANG_KEY) ||
-        document.cookie.match(/(?:^| )ppv_lang=([^;]+)/)?.[1] ||
-        "ro";
+      let lang = localStorage.getItem(LANG_KEY) ||
+                 document.cookie.match(/(?:^| )ppv_lang=([^;]+)/)?.[1];
+
+      // If no language set, detect by timezone and set cookie
+      if (!lang) {
+        lang = detectCountryLang();
+        // Set cookie so PHP can use it on next request
+        document.cookie = `ppv_lang=${lang}; path=/; max-age=31536000; SameSite=Lax`;
+        localStorage.setItem(LANG_KEY, lang);
+        console.log('🌍 [PPV] Auto-detected language by timezone:', lang);
+      }
+
       translateMenu(lang);
     }
 
