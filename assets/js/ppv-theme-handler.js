@@ -1,6 +1,6 @@
 /**
  * PunktePass – Global Theme + App Bridge
- * Version: 3.5 POS-Aware Stable
+ * Version: 4.0 - Simplified Language Handling
  * ✅ Dark / Light Theme Switch (auto cache reload)
  * ✅ Multilingual Menu Translator (DE/HU/RO/EN)
  * ✅ SPA Navigation Bridge + Toast System
@@ -13,7 +13,6 @@
   const LANG_KEY = "ppv_lang";
   const DARK_LOGO = "/wp-content/plugins/punktepass/assets/img/logo.webp";
   const LIGHT_LOGO = "/wp-content/plugins/punktepass/assets/img/logo.webp";
-
 
   document.addEventListener("DOMContentLoaded", () => {
       // ⛔ Skip entire script on POS dashboard pages
@@ -125,7 +124,7 @@ document.addEventListener("DOMContentLoaded", () => {
         hu: { home: "Kezdőlap", points: "Pontjaim", rewards: "Jutalmak", settings: "Beállítások" },
         en: { home: "Home", points: "My Points", rewards: "Rewards", settings: "Settings" },
       };
-      const t = labels[lang] || labels.de;
+      const t = labels[lang] || labels.ro;
 
       document.querySelectorAll("#punktepass-menu [data-key]").forEach((el) => {
         const key = el.getAttribute("data-key");
@@ -137,10 +136,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function applyOnceStable() {
-      const lang =
-        localStorage.getItem(LANG_KEY) ||
-        document.cookie.match(/(?:^| )ppv_lang=([^;]+)/)?.[1] ||
-        "de";
+      // Get language from cookie or localStorage (PHP sets this based on browser detection)
+      let lang = document.cookie.match(/(?:^| )ppv_lang=([^;]+)/)?.[1] ||
+                 localStorage.getItem(LANG_KEY) ||
+                 'ro'; // Default Romanian
+
+        localStorage.setItem(LANG_KEY, lang);
+      }
+
       translateMenu(lang);
     }
 

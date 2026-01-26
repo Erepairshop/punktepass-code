@@ -16,7 +16,7 @@ if (window.PPV_REDEEM_ADMIN_LOADED) {
   window.PPV_REDEEM_ADMIN_LOADED = true;
 
 // 🌐 Language detection
-const detectLang = () => document.cookie.match(/ppv_lang=([a-z]{2})/)?.[1] || localStorage.getItem('ppv_lang') || 'de';
+const detectLang = () => document.cookie.match(/ppv_lang=([a-z]{2})/)?.[1] || localStorage.getItem('ppv_lang') || 'ro';
 const LANG = detectLang();
 const T = { de: { points: 'Punkte' }, hu: { points: 'pont' }, ro: { points: 'puncte' } }[LANG] || { points: 'Punkte' };
 

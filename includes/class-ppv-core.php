@@ -413,6 +413,68 @@ class PPV_Core {
             ppv_log("✅ [PPV_Core] Migration 2.5 completed - Performance indexes added");
             update_option('ppv_db_migration_version', '2.5');
         }
+
+        // Migration 2.6: Add WhatsApp-related columns to ppv_users
+        if (version_compare($current_version, '2.6', '<')) {
+            $users_table = $wpdb->prefix . 'ppv_users';
+
+            // Add phone_number column
+            $phone_col = $wpdb->get_var("SHOW COLUMNS FROM {$users_table} LIKE 'phone_number'");
+            if (!$phone_col) {
+                $wpdb->query("ALTER TABLE {$users_table} ADD COLUMN phone_number VARCHAR(20) DEFAULT NULL");
+                ppv_log("✅ [PPV_Core] Added 'phone_number' column to ppv_users table");
+            }
+
+            // Add whatsapp_consent column
+            $wa_consent_col = $wpdb->get_var("SHOW COLUMNS FROM {$users_table} LIKE 'whatsapp_consent'");
+            if (!$wa_consent_col) {
+                $wpdb->query("ALTER TABLE {$users_table} ADD COLUMN whatsapp_consent TINYINT(1) DEFAULT 0");
+                ppv_log("✅ [PPV_Core] Added 'whatsapp_consent' column to ppv_users table");
+            }
+
+            // Add whatsapp_consent_at column
+            $wa_consent_at_col = $wpdb->get_var("SHOW COLUMNS FROM {$users_table} LIKE 'whatsapp_consent_at'");
+            if (!$wa_consent_at_col) {
+                $wpdb->query("ALTER TABLE {$users_table} ADD COLUMN whatsapp_consent_at DATETIME DEFAULT NULL");
+                ppv_log("✅ [PPV_Core] Added 'whatsapp_consent_at' column to ppv_users table");
+            }
+
+            ppv_log("✅ [PPV_Core] Migration 2.6 completed - WhatsApp columns added");
+            update_option('ppv_db_migration_version', '2.6');
+        }
+
+        // Migration 2.7: Add user settings columns to ppv_users
+        if (version_compare($current_version, '2.7', '<')) {
+            $users_table = $wpdb->prefix . 'ppv_users';
+
+            // Notification settings columns
+            $columns_to_add = [
+                'email_notifications' => 'TINYINT(1) DEFAULT 1',
+                'push_notifications' => 'TINYINT(1) DEFAULT 1',
+                'promo_notifications' => 'TINYINT(1) DEFAULT 1',
+                'profile_visible' => 'TINYINT(1) DEFAULT 1',
+                'marketing_emails' => 'TINYINT(1) DEFAULT 0',
+                'data_sharing' => 'TINYINT(1) DEFAULT 0',
+                'address' => 'VARCHAR(255) DEFAULT NULL',
+                'city' => 'VARCHAR(100) DEFAULT NULL',
+                'zip' => 'VARCHAR(20) DEFAULT NULL',
+                'country' => 'VARCHAR(5) DEFAULT NULL',
+                'address_lat' => 'DECIMAL(10,8) DEFAULT NULL',
+                'address_lng' => 'DECIMAL(11,8) DEFAULT NULL',
+                'birthday' => 'DATE DEFAULT NULL',
+            ];
+
+            foreach ($columns_to_add as $col_name => $col_def) {
+                $exists = $wpdb->get_var("SHOW COLUMNS FROM {$users_table} LIKE '{$col_name}'");
+                if (!$exists) {
+                    $wpdb->query("ALTER TABLE {$users_table} ADD COLUMN {$col_name} {$col_def}");
+                    ppv_log("✅ [PPV_Core] Added '{$col_name}' column to ppv_users table");
+                }
+            }
+
+            ppv_log("✅ [PPV_Core] Migration 2.7 completed - User settings columns added");
+            update_option('ppv_db_migration_version', '2.7');
+        }
     }
 
     /**
