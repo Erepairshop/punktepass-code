@@ -137,29 +137,10 @@ if (!$lang && !empty($_GET['lang'])) {
 
                 if ($domain_lang) {
                     $lang = $domain_lang;
-                } elseif (!empty($_SESSION['ppv_browser_lang'])) {
-                    // Check session cache for browser lang
-                    $lang = $_SESSION['ppv_browser_lang'];
-                    ppv_log("🌍 [PPV_Lang] Browser lang from session → {$lang}");
                 } else {
-                    // Parse Accept-Language header (e.g. "hu-HU,hu;q=0.9,de;q=0.8")
-                    $accept = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '';
-                    $lang = 'ro'; // Default Romanian
-
-                    if ($accept) {
-                        // Check for German
-                        if (preg_match('/\bde\b/i', $accept)) {
-                            $lang = 'de';
-                        }
-                        // Check for Hungarian
-                        elseif (preg_match('/\bhu\b/i', $accept)) {
-                            $lang = 'hu';
-                        }
-                    }
-
-                    // Cache in session
-                    $_SESSION['ppv_browser_lang'] = $lang;
-                    ppv_log("🌍 [PPV_Lang] Browser Accept-Language → {$lang}");
+                    // Default to Romanian (no browser detection)
+                    $lang = 'ro';
+                    ppv_log("🌍 [PPV_Lang] Using default → {$lang}");
                 }
             }
         }
