@@ -21,7 +21,7 @@ class ViewController: UIViewController, WKNavigationDelegate, UIDocumentInteract
     private var themeObservation: NSKeyValueObservation?
     var currentWebViewTheme: UIUserInterfaceStyle = .unspecified
     override var prefersStatusBarHidden: Bool {
-        return true
+        return false
     }
 
     override var preferredStatusBarStyle : UIStatusBarStyle {
