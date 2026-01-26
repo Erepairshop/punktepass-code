@@ -11,8 +11,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ application: UIApplication,
                        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
 
-// TODO: if we're using Firebase, uncomment next string
-        //FirebaseApp.configure()
+// Firebase initialization for push notifications
+        FirebaseApp.configure()
 
         // [START set_messaging_delegate]
         Messaging.messaging().delegate = self
@@ -28,8 +28,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
       //      options: authOptions,
       //      completionHandler: {_, _ in })
 
-// TODO: if we're using Firebase, uncomment next string
-        // application.registerForRemoteNotifications()
+// Register for remote notifications
+        application.registerForRemoteNotifications()
 
         // [END register_for_notifications]
         return true
