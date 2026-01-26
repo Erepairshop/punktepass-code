@@ -1,6 +1,6 @@
 jQuery(document).ready(function($){
   // 🌐 Language detection
-  const detectLang = () => document.cookie.match(/ppv_lang=([a-z]{2})/)?.[1] || localStorage.getItem('ppv_lang') || 'de';
+  const detectLang = () => document.cookie.match(/ppv_lang=([a-z]{2})/)?.[1] || localStorage.getItem('ppv_lang') || 'ro';
   const LANG = detectLang();
   const T = {
     de: { download_starting: 'Download startet...' },

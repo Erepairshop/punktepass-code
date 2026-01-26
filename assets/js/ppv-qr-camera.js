@@ -1284,7 +1284,7 @@
       const langSel = document.getElementById('ppv-lang-select');
       if (!langSel) return;
 
-      const cur = (document.cookie.match(/ppv_lang=([^;]+)/) || [])[1] || 'de';
+      const cur = (document.cookie.match(/ppv_lang=([^;]+)/) || [])[1] || 'ro';
       langSel.value = cur;
 
       langSel.addEventListener('change', async e => {

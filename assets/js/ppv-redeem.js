@@ -15,7 +15,7 @@ jQuery(document).ready(function ($) {
    * ============================================================ */
   const detectLang = () => {
     return document.cookie.match(/ppv_lang=([a-z]{2})/)?.[1] ||
-           localStorage.getItem('ppv_lang') || 'de';
+           localStorage.getItem('ppv_lang') || 'ro';
   };
   const LANG = detectLang();
   const T = {

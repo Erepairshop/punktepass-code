@@ -125,7 +125,7 @@ document.addEventListener("DOMContentLoaded", () => {
         hu: { home: "Kezdőlap", points: "Pontjaim", rewards: "Jutalmak", settings: "Beállítások" },
         en: { home: "Home", points: "My Points", rewards: "Rewards", settings: "Settings" },
       };
-      const t = labels[lang] || labels.de;
+      const t = labels[lang] || labels.ro;
 
       document.querySelectorAll("#punktepass-menu [data-key]").forEach((el) => {
         const key = el.getAttribute("data-key");
@@ -140,7 +140,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const lang =
         localStorage.getItem(LANG_KEY) ||
         document.cookie.match(/(?:^| )ppv_lang=([^;]+)/)?.[1] ||
-        "de";
+        "ro";
       translateMenu(lang);
     }
 
