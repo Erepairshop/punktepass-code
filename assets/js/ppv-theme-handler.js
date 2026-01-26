@@ -14,6 +14,29 @@
   const DARK_LOGO = "/wp-content/plugins/punktepass/assets/img/logo.webp";
   const LIGHT_LOGO = "/wp-content/plugins/punktepass/assets/img/logo.webp";
 
+  // 🌍 IMMEDIATE LANGUAGE DETECTION (runs before page renders)
+  (function detectLangEarly() {
+    const hasLang = localStorage.getItem(LANG_KEY) ||
+                    document.cookie.match(/(?:^| )ppv_lang=([^;]+)/)?.[1];
+    if (!hasLang) {
+      let lang = 'ro'; // default
+      try {
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        if (tz === 'Europe/Berlin' || tz === 'Europe/Vienna' || tz === 'Europe/Zurich') {
+          lang = 'de';
+        } else if (tz === 'Europe/Bucharest') {
+          lang = 'ro';
+        } else if (tz === 'Europe/Budapest') {
+          lang = 'hu';
+        }
+      } catch (e) {}
+      document.cookie = `ppv_lang=${lang}; path=/; max-age=31536000; SameSite=Lax`;
+      localStorage.setItem(LANG_KEY, lang);
+      console.log('🌍 [PPV] Language detected by timezone:', lang, '- reloading...');
+      window.location.reload();
+      return;
+    }
+  })();
 
   document.addEventListener("DOMContentLoaded", () => {
       // ⛔ Skip entire script on POS dashboard pages

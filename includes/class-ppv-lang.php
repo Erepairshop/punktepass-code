@@ -19,6 +19,31 @@ class PPV_Lang {
      * ============================================================ */
     public static function hooks() {
         add_action('init', [__CLASS__, 'detect'], 1);
+        add_action('wp_head', [__CLASS__, 'early_lang_detect_script'], 1);
+    }
+
+    /** ============================================================
+     *  🔹 Early inline script for timezone-based language detection
+     * ============================================================ */
+    public static function early_lang_detect_script() {
+        // Only output if no language cookie exists
+        if (!empty($_COOKIE['ppv_lang'])) {
+            return;
+        }
+        ?>
+        <script>
+        (function(){
+            if(localStorage.getItem('ppv_lang')||document.cookie.match(/ppv_lang=/))return;
+            var tz,lang='ro';
+            try{tz=Intl.DateTimeFormat().resolvedOptions().timeZone}catch(e){}
+            if(tz==='Europe/Berlin'||tz==='Europe/Vienna'||tz==='Europe/Zurich')lang='de';
+            else if(tz==='Europe/Budapest')lang='hu';
+            document.cookie='ppv_lang='+lang+';path=/;max-age=31536000;SameSite=Lax';
+            localStorage.setItem('ppv_lang',lang);
+            location.reload();
+        })();
+        </script>
+        <?php
     }
 
     /** ============================================================
