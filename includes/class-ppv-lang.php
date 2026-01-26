@@ -3,10 +3,15 @@ if (!defined('ABSPATH')) exit;
 
 /**
  * PunktePass – Multi-Language Handler
- * Version: 3.9 Stable (Cookie + JS + Session Sync)
- * - Works on PWA, Dashboard, and MyPoints pages
- * - No more header conflicts
- * - Self-healing cookie overwrite
+ * Version: 4.0 - Browser Detection + Redirect Support
+ *
+ * Priority:
+ * 1. REST header (X-PPV-Lang) - for API calls
+ * 2. GET param (?lang=ro) - from redirect or manual switch
+ * 3. Cookie (ppv_lang)
+ * 4. Session
+ * 5. Browser Accept-Language
+ * 6. Default: Romanian
  */
 
 class PPV_Lang {
@@ -19,31 +24,6 @@ class PPV_Lang {
      * ============================================================ */
     public static function hooks() {
         add_action('init', [__CLASS__, 'detect'], 1);
-        add_action('wp_head', [__CLASS__, 'early_lang_detect_script'], 1);
-    }
-
-    /** ============================================================
-     *  🔹 Early inline script for timezone-based language detection
-     * ============================================================ */
-    public static function early_lang_detect_script() {
-        // Only output if no language cookie exists
-        if (!empty($_COOKIE['ppv_lang'])) {
-            return;
-        }
-        ?>
-        <script>
-        (function(){
-            if(localStorage.getItem('ppv_lang')||document.cookie.match(/ppv_lang=/))return;
-            var tz,lang='ro';
-            try{tz=Intl.DateTimeFormat().resolvedOptions().timeZone}catch(e){}
-            if(tz==='Europe/Berlin'||tz==='Europe/Vienna'||tz==='Europe/Zurich')lang='de';
-            else if(tz==='Europe/Budapest')lang='hu';
-            document.cookie='ppv_lang='+lang+';path=/;max-age=31536000;SameSite=Lax';
-            localStorage.setItem('ppv_lang',lang);
-            location.reload();
-        })();
-        </script>
-        <?php
     }
 
     /** ============================================================
@@ -55,178 +35,140 @@ class PPV_Lang {
         if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
             @session_start();
         }
-        
+
         // 🧠 LITESPEED / CLOUDFLARE REST HEADER FIX
-foreach (getallheaders() as $hkey => $hval) {
-    if (strtolower($hkey) === 'x-ppv-lang') {
-        $_SERVER['HTTP_X_PPV_LANG'] = $hval;
-        ppv_log("🧩 [PPV_Lang] Header recovered via getallheaders(): {$hval}");
-        break;
-    }
-}
-
-        // 🔹 REST fix – ha van HTTP_X_PPV_LANG header, az mindent felülír
-if (!empty($_SERVER['HTTP_X_PPV_LANG'])) {
-    $rest_lang = strtolower(sanitize_text_field($_SERVER['HTTP_X_PPV_LANG']));
-    if (in_array($rest_lang, ['de','hu','ro'], true)) {
-        self::$active = $rest_lang;
-        $_COOKIE['ppv_lang'] = $rest_lang;
-        $_SESSION['ppv_lang'] = $rest_lang;
-        ppv_log("🌍 [PPV_Lang] REST header forced language → {$rest_lang}");
-        self::load($rest_lang);
-        return; // ⛔ nincs további detektálás, REST fix prioritás
-    }
-}
-
-
+        foreach (getallheaders() as $hkey => $hval) {
+            if (strtolower($hkey) === 'x-ppv-lang') {
+                $_SERVER['HTTP_X_PPV_LANG'] = $hval;
+                break;
+            }
+        }
 
         $domain = str_replace('www.', '', $_SERVER['HTTP_HOST'] ?? 'punktepass.de');
         $secure = !empty($_SERVER['HTTPS']);
 
         $lang = null;
 
-        // 1️⃣ JS-Sync param (always wins)
-        if (!empty($_GET['ppv_js_lang'])) {
-            $jslang = strtolower(sanitize_text_field($_GET['ppv_js_lang']));
-            if (in_array($jslang, ['de', 'hu', 'ro'], true)) {
-                $lang = $jslang;
-                $_SESSION['ppv_lang'] = $lang;
-                $_COOKIE['ppv_lang']  = $lang;
-                self::set_cookie_all($lang, $domain, $secure);
-                ppv_log("🌍 [PPV_Lang] Synced language via JS param → {$lang}");
+        // 1️⃣ REST header (API calls)
+        if (!empty($_SERVER['HTTP_X_PPV_LANG'])) {
+            $rest_lang = strtolower(sanitize_text_field($_SERVER['HTTP_X_PPV_LANG']));
+            if (in_array($rest_lang, ['de','hu','ro'], true)) {
+                self::$active = $rest_lang;
+                $_COOKIE['ppv_lang'] = $rest_lang;
+                $_SESSION['ppv_lang'] = $rest_lang;
+                ppv_log("🌍 [PPV_Lang] REST header → {$rest_lang}");
+                self::load($rest_lang);
+                return;
             }
         }
-        // 🔹 Universal GET alias (handle ?lang= too)
-if (!$lang && !empty($_GET['lang'])) {
-    $_GET['ppv_lang'] = $_GET['lang']; // unify
-}
 
-
-        // 2️⃣ GET param (manual switch)
-        if (!$lang && !empty($_GET['ppv_lang'])) {
-            $getlang = strtolower(sanitize_text_field($_GET['ppv_lang']));
-            if (in_array($getlang, ['de','hu','ro'], true)) {
-                $lang = $getlang;
+        // 2️⃣ GET param - ?lang=ro (from redirect or language switcher)
+        // Also handle ?ppv_lang= and ?ppv_js_lang=
+        $get_lang = $_GET['lang'] ?? $_GET['ppv_lang'] ?? $_GET['ppv_js_lang'] ?? null;
+        if ($get_lang) {
+            $get_lang = strtolower(sanitize_text_field($get_lang));
+            if (in_array($get_lang, ['de', 'hu', 'ro'], true)) {
+                $lang = $get_lang;
                 $_SESSION['ppv_lang'] = $lang;
-                $_COOKIE['ppv_lang']  = $lang;
                 self::set_cookie_all($lang, $domain, $secure);
-                // 🔧 FIX: Set manual flag so browser detection won't override after logout
-                @setcookie('ppv_lang_manual', '1', time() + 31536000, '/', '', $secure, false);
-                $_COOKIE['ppv_lang_manual'] = '1';
-                ppv_log("🌍 [PPV_Lang] Selected via GET → {$lang} (manual flag set)");
+                ppv_log("🌍 [PPV_Lang] GET param → {$lang}");
             }
         }
 
         // 3️⃣ Cookie
         if (!$lang && !empty($_COOKIE['ppv_lang'])) {
-            $lang = strtolower($_COOKIE['ppv_lang']);
-            ppv_log("🌍 [PPV_Lang] Using cookie → {$lang}");
+            $cookie_lang = strtolower($_COOKIE['ppv_lang']);
+            if (in_array($cookie_lang, ['de', 'hu', 'ro'], true)) {
+                $lang = $cookie_lang;
+                ppv_log("🌍 [PPV_Lang] Cookie → {$lang}");
+            }
         }
 
-        // 4️⃣ Session fallback
+        // 4️⃣ Session
         if (!$lang && !empty($_SESSION['ppv_lang'])) {
-            $lang = $_SESSION['ppv_lang'];
-            ppv_log("🌍 [PPV_Lang] Using session → {$lang}");
+            $session_lang = strtolower($_SESSION['ppv_lang']);
+            if (in_array($session_lang, ['de', 'hu', 'ro'], true)) {
+                $lang = $session_lang;
+                ppv_log("🌍 [PPV_Lang] Session → {$lang}");
+            }
         }
 
-        // 5️⃣ Domain-based language detection (for punktepass.ro, punktepass.hu)
+        // 5️⃣ Browser Accept-Language detection
         if (!$lang) {
-            // Check if user ever manually selected a language
-            $manual_selection = !empty($_COOKIE['ppv_lang_manual']);
-
-            if ($manual_selection) {
-                // User previously chose a language manually, don't use domain/browser detection
-                $lang = 'ro';
-                ppv_log("🌍 [PPV_Lang] Manual flag exists but no lang cookie - using default → {$lang}");
-            } else {
-                // Check multiple sources for original domain (handles redirects)
-                $check_domains = [
-                    $domain,
-                    $_SERVER['HTTP_X_FORWARDED_HOST'] ?? '',
-                    $_SERVER['HTTP_REFERER'] ?? '',
-                    $_SERVER['HTTP_ORIGIN'] ?? ''
-                ];
-                $domain_lang = null;
-
-                foreach ($check_domains as $check) {
-                    if (strpos($check, 'punktepass.ro') !== false) {
-                        $domain_lang = 'ro';
-                        ppv_log("🌍 [PPV_Lang] Domain detection → punktepass.ro found in: {$check}");
-                        break;
-                    } elseif (strpos($check, 'punktepass.hu') !== false) {
-                        $domain_lang = 'hu';
-                        ppv_log("🌍 [PPV_Lang] Domain detection → punktepass.hu found in: {$check}");
-                        break;
-                    }
+            $accept = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '';
+            if ($accept) {
+                // Check for German (de, de-DE, de-AT, de-CH)
+                if (preg_match('/\bde\b/i', $accept)) {
+                    $lang = 'de';
+                    ppv_log("🌍 [PPV_Lang] Browser detection → de");
                 }
-
-                if ($domain_lang) {
-                    $lang = $domain_lang;
-                } else {
-                    // Default to Romanian (no browser detection)
+                // Check for Hungarian (hu, hu-HU)
+                elseif (preg_match('/\bhu\b/i', $accept)) {
+                    $lang = 'hu';
+                    ppv_log("🌍 [PPV_Lang] Browser detection → hu");
+                }
+                // Check for Romanian (ro, ro-RO)
+                elseif (preg_match('/\bro\b/i', $accept)) {
                     $lang = 'ro';
-                    ppv_log("🌍 [PPV_Lang] Using default → {$lang}");
+                    ppv_log("🌍 [PPV_Lang] Browser detection → ro");
                 }
             }
         }
 
+        // 6️⃣ Default: Romanian
+        if (!$lang) {
+            $lang = 'ro';
+            ppv_log("🌍 [PPV_Lang] Default → ro");
+        }
+
+        // Set cookie if not already set (for subsequent requests)
+        if (empty($_COOKIE['ppv_lang'])) {
+            self::set_cookie_all($lang, $domain, $secure);
+        }
+
         self::$active = $lang;
-        ppv_log("🧠 [PPV_Lang::FINAL] Active={$lang} | GET=" . json_encode($_GET) . " | COOKIE=" . ($_COOKIE['ppv_lang'] ?? '-') . " | SESSION=" . ($_SESSION['ppv_lang'] ?? '-'));
+        ppv_log("🧠 [PPV_Lang::FINAL] Active={$lang}");
 
         self::load($lang);
-        
-        ppv_log('🧠 [PPV_Lang REST/GET Sync] lang=' . (self::$active ?? '-') . 
-          ' | GET=' . json_encode($_GET) . 
-          ' | HEADER=' . ($_SERVER['HTTP_X_PPV_LANG'] ?? '-') . 
-          ' | COOKIE=' . ($_COOKIE['ppv_lang'] ?? '-') . 
-          ' | SESSION=' . ($_SESSION['ppv_lang'] ?? '-'));
-
     }
 
     /** ============================================================
-     *  🔹 Set cookie (single, no domain - consistent with JS)
+     *  🔹 Set cookie
      * ============================================================ */
     private static function set_cookie_all($lang, $domain, $secure) {
-        // Only set ONE cookie without domain (consistent with JS language switcher)
         @setcookie('ppv_lang', $lang, time() + 31536000, '/', '', $secure, false);
         $_COOKIE['ppv_lang'] = $lang;
     }
 
     /** ============================================================
- *  🔹 Load language file (universal)
- * ============================================================ */
-public static function load($lang) {
-    $path = PPV_PLUGIN_DIR . "includes/lang/ppv-lang-{$lang}.php";
-    $fallback = PPV_PLUGIN_DIR . "includes/lang/ppv-lang-de.php";
+     *  🔹 Load language file
+     * ============================================================ */
+    public static function load($lang) {
+        $path = PPV_PLUGIN_DIR . "includes/lang/ppv-lang-{$lang}.php";
+        $fallback = PPV_PLUGIN_DIR . "includes/lang/ppv-lang-ro.php"; // Romanian fallback
 
-    // ha nem létezik, német fallback
-    if (!file_exists($path)) {
-        $path = $fallback;
-        $lang = 'de';
-    }
-
-    // próbálja include-olni
-    $data = include $path;
-
-    if (is_array($data)) {
-        self::$strings = $data;
-    } else {
-        // ha a fájl nem return-t használ, próbáljuk $strings változóból olvasni
-        $strings = [];
-        include $path;
-        if (isset($strings) && is_array($strings)) {
-            self::$strings = $strings;
-        } else {
-            self::$strings = [];
-            ppv_log("⚠️ [PPV_Lang] No valid strings in {$path}");
+        if (!file_exists($path)) {
+            $path = $fallback;
+            $lang = 'ro';
         }
+
+        $data = include $path;
+
+        if (is_array($data)) {
+            self::$strings = $data;
+        } else {
+            $strings = [];
+            include $path;
+            if (isset($strings) && is_array($strings)) {
+                self::$strings = $strings;
+            } else {
+                self::$strings = [];
+                ppv_log("⚠️ [PPV_Lang] No valid strings in {$path}");
+            }
+        }
+
+        self::$active = $lang;
     }
-
-    self::$active = $lang;
-    ppv_log("🧠 [PPV_Lang] Loaded " . count(self::$strings) . " keys for '{$lang}' from {$path}");
-}
-
-
 
     /** ============================================================
      *  🔹 Translate helper
@@ -240,11 +182,7 @@ public static function load($lang) {
      * ============================================================ */
     public static function current() {
         return self::$active ?? 'ro';
-        
-        
     }
-    
-    
 }
 
 PPV_Lang::hooks();

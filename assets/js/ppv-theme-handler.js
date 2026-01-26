@@ -1,6 +1,6 @@
 /**
  * PunktePass – Global Theme + App Bridge
- * Version: 3.5 POS-Aware Stable
+ * Version: 4.0 - Simplified Language Handling
  * ✅ Dark / Light Theme Switch (auto cache reload)
  * ✅ Multilingual Menu Translator (DE/HU/RO/EN)
  * ✅ SPA Navigation Bridge + Toast System
@@ -13,30 +13,6 @@
   const LANG_KEY = "ppv_lang";
   const DARK_LOGO = "/wp-content/plugins/punktepass/assets/img/logo.webp";
   const LIGHT_LOGO = "/wp-content/plugins/punktepass/assets/img/logo.webp";
-
-  // 🌍 IMMEDIATE LANGUAGE DETECTION (runs before page renders)
-  (function detectLangEarly() {
-    const hasLang = localStorage.getItem(LANG_KEY) ||
-                    document.cookie.match(/(?:^| )ppv_lang=([^;]+)/)?.[1];
-    if (!hasLang) {
-      let lang = 'ro'; // default
-      try {
-        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        if (tz === 'Europe/Berlin' || tz === 'Europe/Vienna' || tz === 'Europe/Zurich') {
-          lang = 'de';
-        } else if (tz === 'Europe/Bucharest') {
-          lang = 'ro';
-        } else if (tz === 'Europe/Budapest') {
-          lang = 'hu';
-        }
-      } catch (e) {}
-      document.cookie = `ppv_lang=${lang}; path=/; max-age=31536000; SameSite=Lax`;
-      localStorage.setItem(LANG_KEY, lang);
-      console.log('🌍 [PPV] Language detected by timezone:', lang, '- reloading...');
-      window.location.reload();
-      return;
-    }
-  })();
 
   document.addEventListener("DOMContentLoaded", () => {
       // ⛔ Skip entire script on POS dashboard pages
@@ -159,35 +135,13 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
 
-    function detectCountryLang() {
-      // Detect language based on timezone
-      try {
-        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        if (tz === 'Europe/Berlin' || tz === 'Europe/Vienna' || tz === 'Europe/Zurich') {
-          return 'de'; // Germany, Austria, Switzerland
-        } else if (tz === 'Europe/Bucharest') {
-          return 'ro'; // Romania
-        } else if (tz === 'Europe/Budapest') {
-          return 'hu'; // Hungary
-        }
-      } catch (e) {}
-      return 'ro'; // Default Romanian
-    }
-
     function applyOnceStable() {
-      let lang = localStorage.getItem(LANG_KEY) ||
-                 document.cookie.match(/(?:^| )ppv_lang=([^;]+)/)?.[1];
+      // Get language from cookie or localStorage (PHP sets this based on browser detection)
+      let lang = document.cookie.match(/(?:^| )ppv_lang=([^;]+)/)?.[1] ||
+                 localStorage.getItem(LANG_KEY) ||
+                 'ro'; // Default Romanian
 
-      // If no language set, detect by timezone and set cookie + reload
-      if (!lang) {
-        lang = detectCountryLang();
-        // Set cookie so PHP can use it on next request
-        document.cookie = `ppv_lang=${lang}; path=/; max-age=31536000; SameSite=Lax`;
         localStorage.setItem(LANG_KEY, lang);
-        console.log('🌍 [PPV] Auto-detected language by timezone:', lang, '- reloading...');
-        // Reload page so PHP can use the new cookie
-        window.location.reload();
-        return;
       }
 
       translateMenu(lang);
